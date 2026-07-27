@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en" 
+      data-omega-engine-spec="INDUSTRIAL-ENTERPRISE-CORE"
+      data-omega-contract-version="8.0.0-ULTIMATE"
+      data-omega-html-version="10.0.0-ENTERPRISE-FINAL"
+      data-boot-state="INITIALIZING">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#000000">
+    <title>Global Geopolitical Strategy Simulator | OMEGA CORE</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Share+Tech+Mono&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="leaflet.css">
+    <link rel="stylesheet" href="style.css">
+
+    <style>
+        :root {
+            --omega-neon: #00ffcc;
+            --omega-danger: #ff4444;
+            --omega-bg: #000000;
+            --omega-glass: rgba(0, 20, 20, 0.85);
+            --omega-border: rgba(0, 255, 204, 0.3);
+            --safe-top: env(safe-area-inset-top);
+            --safe-bottom: env(safe-area-inset-bottom);
+            --font-mono: 'Share Tech Mono', monospace;
+            --font-title: 'Orbitron', sans-serif;
+        }
+
+        html, body, #app {
+            width: 100%; height: 100%; margin: 0; padding: 0;
+            overflow: hidden; background: var(--omega-bg);
+            font-family: 'Inter', sans-serif; color: #eee;
+        }
+
+        /* [FIX P1] Safe Area & Layering */
+        #render-engine-root { position: fixed; inset: 0; z-index: 1; overflow: hidden; touch-action: auto; }
+        #map { width: 100%; height: 100%; }
+        
+        .leaflet-container { background: #000 !important; touch-action: pan-x pan-y !important; }
+
+        #ui-engine-root { 
+            position: fixed; inset: 0; z-index: 100; 
+            pointer-events: none; display: flex; flex-direction: column;
+            padding-top: var(--safe-top); padding-bottom: var(--safe-bottom);
+        }
+
+        .ui-top-hud {
+            position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+            width: auto; max-width: 95%; background: var(--omega-glass);
+            border: 1px solid var(--omega-border); border-radius: 0 0 12px 12px;
+            padding: 6px 20px; display: flex; gap: 20px; pointer-events: auto;
+            backdrop-filter: blur(10px); z-index: 101;
+        }
+
+        .res-node { font-family: var(--font-mono); font-size: 14px; display: flex; align-items: center; gap: 5px; }
+        .res-node span:first-child { color: var(--omega-neon); font-weight: bold; }
+
+        .ui-right-controls {
+            position: absolute; right: 15px; top: 50%; transform: translateY(-50%);
+            display: flex; flex-direction: column; gap: 12px;
+            background: var(--omega-glass); border: 1px solid var(--omega-border);
+            padding: 12px; border-radius: 30px; pointer-events: auto;
+            backdrop-filter: blur(8px);
+        }
+
+        .icon-btn {
+            width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--omega-border);
+            background: rgba(255,255,255,0.05); color: #fff; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; font-size: 18px;
+        }
+
+        .ui-bottom-navigation {
+            position: absolute; bottom: 15px; left: 50%; transform: translateX(-50%);
+            width: 90%; max-width: 600px; background: var(--omega-glass);
+            border: 1px solid var(--omega-border); border-radius: 14px;
+            padding: 8px; display: flex; justify-content: space-around;
+            pointer-events: auto; backdrop-filter: blur(12px);
+        }
+
+        .nav-btn {
+            background: none; border: none; color: #888; font-family: var(--font-title);
+            font-size: 11px; text-transform: uppercase; cursor: pointer;
+            display: flex; flex-direction: column; align-items: center; gap: 4px;
+        }
+        .nav-btn.active { color: var(--omega-neon); }
+
+        .omega-modal {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 95%; height: 88%; background: var(--omega-glass);
+            border: 1px solid var(--omega-border); border-radius: 14px;
+            pointer-events: auto; z-index: 1000; backdrop-filter: blur(20px);
+            display: none;
+        }
+
+        .tab-pane { display: none; }
+        .tab-pane.active { display: block !important; }
+        #debug-root { display: none; }
+
+        /* [P2 Fatal Recovery Style] */
+        #fatal-screen {
+            position: fixed; inset: 0; z-index: 99999; background: #000;
+            display: none; flex-direction: column; align-items: center; justify-content: center;
+            text-align: center; padding: 20px;
+        }
+    </style>
+
+    <script>
+        /* [TELEMETRY RING BUFFER - FIX P2] */
+        window.__OMEGA_DIAG__ = {
+            state: "BOOTING",
+            boot: { start: performance.now(), timeline: [], scriptStatus: {} },
+            errors: [], resources: [], metrics: { fps: 0, mem: 0, tick: 0 },
+            snapshot: () => {
+                const data = { telemetry: window.__OMEGA_DIAG__, engineLoaded: !!window.Omega };
+                const blob = new Blob([JSON.stringify(data, null, 4)], {type: 'application/json'});
+                const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+                a.download = `OMEGA_FINAL_REPORT_${Date.now()}.json`; a.click();
+            }
+        };
+
+        window.__LOG_EVENT__ = (evt) => {
+            const timeline = window.__OMEGA_DIAG__.boot.timeline;
+            timeline.push({ event: evt, ts: performance.now() - window.__OMEGA_DIAG__.boot.start });
+            if (timeline.length > 500) timeline.shift(); // [FIX P2] Memory Management
+            console.log(`[OMEGA] ${evt}`);
+        };
+
+        // [FIX P1] Global Error & Resource Failure Detector
+        window.addEventListener('error', (e) => {
+            if (e.target.tagName) {
+                window.__OMEGA_DIAG__.resources.push({ tag: e.target.tagName, src: e.target.src || e.target.href, ts: performance.now() });
+                const fileName = (e.target.src || e.target.href || "").split('/').pop();
+                if(fileName) window.__OMEGA_DIAG__.boot.scriptStatus[fileName] = 'ERROR';
+            } else {
+                window.__OMEGA_DIAG__.errors.push({ msg: e.message, file: e.filename, type: 'RUNTIME' });
+            }
+        }, true);
+    </script>
+</head>
+<body>
+
+    <div id="fatal-screen" role="alert">
+        <h1 style="color:var(--omega-danger); font-family:var(--font-title);">KERNEL PANIC</h1>
+        <p id="fatal-msg" style="color:#aaa;">Critical Initialization Error</p>
+        <div style="display:flex; gap:10px;">
+            <button onclick="location.reload()" style="padding:12px; background:var(--omega-neon); border:none; cursor:pointer; font-weight:bold;">RETRY BOOT</button>
+            <button onclick="window.__OMEGA_DIAG__.snapshot()" style="padding:12px; background:#333; color:#fff; border:none; cursor:pointer;">DOWNLOAD LOG</button>
+        </div>
+    </div>
+
+    <div id="app" role="main">
+        <div id="render-engine-root"><div id="map"></div></div>
+        
+        <div id="ui-engine-root">
+            <!-- [FIX P1] Resource HUD with Sibling Spans -->
+            <div class="ui-top-hud" role="status" aria-live="polite">
+                <div class="res-node"><span>CASH</span><span id="res-cash">0</span><span></span></div>
+                <div class="res-node"><span>OIL</span><span id="res-oil">0</span><span></span></div>
+                <div class="res-node"><span>STEEL</span><span id="res-steel">0</span><span></span></div>
+                <div class="res-node"><span>URAN</span><span id="res-uranium">0</span><span></span></div>
+                <div class="res-node"><span>POP</span><span id="res-manpower">0</span><span></span></div>
+            </div>
+
+            <div class="ui-right-controls" role="toolbar">
+                <button id="btn-home" class="icon-btn">🏛</button>
+                <button id="btn-main-cabinet" class="icon-btn">📂</button>
+                <button id="btn-resource-overlay" class="icon-btn">🌍</button>
+                <button id="btn-relation-overlay" class="icon-btn">📊</button>
+            </div>
+
+            <!-- [FIX P1] Command Hub with Missing IDs -->
+            <div id="command-hub-modal" class="omega-modal" role="dialog" aria-modal="true">
+                <div style="padding:20px; height:100%; display:flex; flex-direction:column;">
+                    <header style="display:flex; justify-content:space-between; border-bottom:1px solid var(--omega-border); padding-bottom:10px;">
+                        <h2 id="modal-country-name" style="font-family:var(--font-title); color:var(--omega-neon);">--</h2>
+                        <button id="btn-close-hub" style="background:none; border:none; color:#fff; cursor:pointer; font-size:20px;">×</button>
+                    </header>
+                    <div style="padding:10px 0; font-size:12px; font-family:var(--font-mono); display:flex; gap:20px;">
+                        <div id="econ-gdp">GDP: --</div>
+                        <div id="econ-debt">DEBT: --</div>
+                    </div>
+                    <div style="flex:1; display:flex; margin-top:10px; overflow:hidden;">
+                        <aside id="hub-tabs" role="tablist" style="width:120px; border-right:1px solid var(--omega-border); display:flex; flex-direction:column; gap:5px;">
+                            <button class="tab-btn active" data-tab="tab-population" role="tab">POPULATION</button>
+                            <button class="tab-btn" data-tab="tab-military" role="tab">MILITARY</button>
+                            <button class="tab-btn" data-tab="tab-diplomacy" role="tab">DIPLOMACY</button>
+                            <button class="tab-btn" data-tab="tab-projects" role="tab">PROJECTS</button>
+                            <button class="tab-btn" data-tab="tab-internal" role="tab">INTERNAL</button>
+                        </aside>
+                        <main class="tab-content" style="flex:1; padding-left:15px; overflow-y:auto;">
+                            <div id="tab-population" class="tab-pane active" role="tabpanel"></div>
+                            <div id="tab-military" class="tab-pane" role="tabpanel"></div>
+                            <div id="tab-diplomacy" class="tab-pane" role="tabpanel">
+                                <div id="diplomacy-list"></div>
+                            </div>
+                            <div id="tab-projects" class="tab-pane" role="tabpanel"></div>
+                            <div id="tab-internal" class="tab-pane" role="tabpanel"></div>
+                        </main>
+                    </div>
+                </div>
+            </div>
+
+            <div id="cabinet-full-window" class="omega-modal" role="dialog" style="inset:0; width:100%; height:100%; transform:none; border-radius:0;">
+                <button id="btn-close-cabinet" style="position:absolute; top:20px; right:20px; padding:10px; z-index:10;">BACK</button>
+                <div class="cabinet-body" id="cabinet-body" style="padding:60px 20px;"></div>
+            </div>
+
+            <nav class="ui-bottom-navigation" role="navigation">
+                <button id="btn-politics" class="nav-btn"><span>🏛</span><span>STATE</span></button>
+                <button id="btn-build" class="nav-btn"><span>🏗</span><span>ECON</span></button>
+                <button id="btn-hq" class="nav-btn"><span>🏰</span><span>HQ</span></button>
+                <button id="btn-military-dock" class="nav-btn"><span>🛡</span><span>MIL</span></button>
+                <button id="btn-diplomacy-dock" class="nav-btn"><span>🌐</span><span>DIPL</span></button>
+                <button id="btn-settings" class="nav-btn"><span>⚙</span><span>SYSTEM</span></button>
+            </nav>
+        </div>
+        
+        <div id="resource-filter-box" class="hidden"><select id="resource-selector"></select></div>
+        <div id="debug-root" aria-hidden="true"></div>
+
+        <div id="template-root" style="display: none !important;">
+            <template id="template-ui-button"><button class="c-omega-button"><span class="label-slot"></span></button></template>
+            <template id="template-ui-window"><section class="omega-window-container"><div class="panel-body"></div></section></template>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            var s = document.createElement('script');
+            s.src = "https://cdn.jsdelivr.net/npm/eruda";
+            s.async = true;
+            s.onload = function() {
+                if (window.eruda) {
+                    try {
+                        eruda.init({ theme: 'dark' });
+                        console.log("[OMEGA] Eruda DevTools initialized.");
+                    } catch(e) {}
+                }
+            };
+            s.onerror = function() {
+                console.log("[OMEGA] Eruda script skipped or offline.");
+            };
+            document.head.appendChild(s);
+        })();
+    </script>
+
+<script src="leaflet.js" defer onload="window.__OMEGA_DIAG__.boot.scriptStatus['leaflet.js']='LOADED'"></script>
+
+<script src="map-engine-1.js" defer onload="window.__OMEGA_DIAG__.boot.scriptStatus['map-engine-1.js']='LOADED'"></script>
+
+<script src="map-engine-2.js" defer onload="window.__OMEGA_DIAG__.boot.scriptStatus['map-engine-2.js']='LOADED'"></script>
+
+<script src="omega_kernel.js" defer onload="window.__OMEGA_DIAG__.boot.scriptStatus['omega_kernel.js']='LOADED'"></script>
+
+<script src="presentation-engine.js" defer onload="window.__OMEGA_DIAG__.boot.scriptStatus['presentation-engine.js']='LOADED'"></script>
+
+<script src="ui_engine_core.js" defer></script>
+
+<script src="ministry_engine.js" defer></script>
+
+<script src="game-logic.js" defer></script>
+
+<script>
+        (function() {
+            let frames = 0, lastTime = performance.now();
+            function monitorLoop() {
+                frames++; const now = performance.now();
+                if (now >= lastTime + 1000) {
+                    window.__OMEGA_DIAG__.metrics.fps = frames;
+                    frames = 0; lastTime = now;
+                }
+                requestAnimationFrame(monitorLoop);
+            }
+            monitorLoop();
+        })();
+          </script>
+
+    <script>
+    /** 
+     * OMEGA ENTERPRISE COMPOSITION ROOT (V10.0.0)
+     * Responsibility: Orchestration, Lifecycle, Shutdown, Sync.
+     */
+    (function () {
+        const OMEGA_BOOT = {
+            validateContract: () => {
+                const req = [
+                    'map', 'res-cash', 'res-oil', 'command-hub-modal', 'cabinet-full-window',
+                    'econ-gdp', 'econ-debt', 'diplomacy-list', 'tab-internal', 'tab-projects'
+                ];
+                const missing = req.filter(id => !document.getElementById(id));
+                if (missing.length > 0) throw new Error("Contract Violation: Missing IDs " + missing.join(", "));
+                
+                // [FIX P1] Verify Script Load Status
+                const critical = ['leaflet.js', 'omega_kernel.js', 'presentation-engine.js'];
+                critical.forEach(src => {
+                    if(window.__OMEGA_DIAG__.boot.scriptStatus[src] === 'ERROR') throw new Error(`Script Load Failure: ${src}`);
+                });
+                window.__LOG_EVENT__("ALL_CONTRACTS_VERIFIED");
+            }
+        };
+
+        const triggerFatal = (msg) => {
+            const screen = document.getElementById('fatal-screen');
+            const msgEl = document.getElementById('fatal-msg');
+            if (screen) { screen.style.display = 'flex'; msgEl.innerText = msg; }
+            window.__OMEGA_DIAG__.state = "FAILED";
+            if (window.Omega && window.Omega.App && window.Omega.App.stopLoop) window.Omega.App.stopLoop();
+        };
+
+        const initOmega = () => {
+            if (window.__OMEGA_DIAG__.state === "RUNNING") return;
+            window.__LOG_EVENT__("BOOTSTRAP_SEQUENCE_START");
+
+            try {
+                OMEGA_BOOT.validateContract();
+
+                if (!window.Omega || !window.Omega.Kernel) throw new Error("Kernel Core Missing.");
+                const kernel = window.Omega.Kernel;
+                
+                // [FIX P1] Single Shared Bridge Creation
+                let sharedBridge = null;
+                if (typeof kernel.createBridge === "function") {
+                    sharedBridge = kernel.createBridge();
+                    window.__LOG_EVENT__("SHARED_BRIDGE_ESTABLISHED");
+                }
+                
+                const PE = window.PresentationEngine || window.PresentationEngine;
+                let presentation;
+                if (typeof PE === 'function') {
+                    try {
+                        presentation = new PE(kernel);
+                        // [FIX P1] Inject Shared Bridge into Presentation
+                        if(sharedBridge) presentation.bridge = sharedBridge; 
+                        
+                        // [FIX P3] Subscribe to Presentation Ready State
+                        window.addEventListener('UI_INTERIOR_READY', () => window.__LOG_EVENT__("PRESENTATION_INTERIOR_READY"));
+                    } catch (peErr) { console.warn("Presentation Sync Warn", peErr); }
+                }
+
+                const MINISTRIES = ["economy", "defense"];
+                MINISTRIES.forEach(id => {
+                    if (typeof kernel.registerMinistry === "function") kernel.registerMinistry(id);
+                });
+                // [FIX P3] Expose System Objects
+                window.Omega.App = { kernel, presentation, bridge: sharedBridge, state: "READY" };
+
+                if (window.OmegaMinistry && typeof window.OmegaMinistry.createRuntime === "function") {
+                    const ministryRuntime = window.OmegaMinistry.createRuntime();
+                    if (ministryRuntime && typeof ministryRuntime.init === "function") {
+                        ministryRuntime.init(sharedBridge);
+                        window.__LOG_EVENT__("MINISTRY_RUNTIME_INIT_CALLED");
+                    }
+                    if (window.OMEGA_UI_ADAPTER && !window.OMEGA_UI_ADAPTER.runtime) {
+                        window.OMEGA_UI_ADAPTER.init(ministryRuntime, sharedBridge, presentation);
+                        window.__LOG_EVENT__("UI_ADAPTER_MANUAL_INIT_CALLED");
+                    }
+                } else {
+                    console.warn("[OMEGA] OmegaMinistry.createRuntime not found.");
+                }
+
+                document.addEventListener("visibilitychange", () => {
+                    isPaused = document.hidden;
+                    window.__LOG_EVENT__(isPaused ? "CORE_SLEEP" : "CORE_WAKE");
+                });
+
+                function engineLoop(now) {
+                    if (isPaused) { rafId = requestAnimationFrame(engineLoop); return; }
+                    const dt = now - lastTime; lastTime = now; tick++;
+                    window.__OMEGA_DIAG__.metrics.tick = tick;
+
+                    MINISTRIES.forEach(id => {
+                        if (typeof kernel.pumpOrchestratedPipelineTick === "function") {
+                            kernel.pumpOrchestratedPipelineTick(id, dt, tick, { onMessage: () => {} });
+                        }
+                    });
+
+                    if (tick === 1) {
+                        setTimeout(() => {
+                            const mapInst = window.map || (window.Game && window.Game.Map && window.Game.Map.map);
+                            if (mapInst && typeof mapInst.invalidateSize === 'function') mapInst.invalidateSize();
+                        }, 200); // [FIX P2] Delayed OMEGA_READY sync
+                    }
+                    rafId = requestAnimationFrame(engineLoop);
+                }
+
+                rafId = requestAnimationFrame(engineLoop);
+
+                // Start Transition
+                if (presentation && typeof presentation.triggerTransition === "function") {
+                    presentation.triggerTransition({ ministryId: "economy" });
+                }
+
+                // [FIX P2] Safe Dispatch
+                setTimeout(() => {
+                    window.__OMEGA_DIAG__.state = "RUNNING";
+                    window.dispatchEvent(new CustomEvent("OMEGA_READY", { detail: window.Omega.App }));
+                    window.__LOG_EVENT__("SYSTEM_LIVE_ENTERPRISE");
+                }, 500);
+
+                // [FIX P1/P2] Universal Cleanup & Shutdown
+                const shutdown = () => {
+                    window.__LOG_EVENT__("SYSTEM_SHUTDOWN_CLEANUP");
+                    if (rafId) cancelAnimationFrame(rafId);
+                    if (kernel && typeof kernel.stopOrchestratedPipeline === 'function') kernel.stopOrchestratedPipeline();
+                    if (presentation && typeof presentation.destroy === 'function') presentation.destroy();
+                };
+
+                window.Omega.App.stopLoop = shutdown;
+                window.addEventListener("beforeunload", shutdown);
+
+            } catch (err) {
+                triggerFatal(err.message);
+                console.error("[FATAL]", err);
+            }
+        };
+
+        // [FIX P1] Boot only when window and all assets are ready
+        window.addEventListener("load", initOmega);
+    })();
+    </script>
+</body>
+</html>

@@ -1,0 +1,784 @@
+{
+  "ministers_database": {
+    "Home_Affairs": [
+      {
+        "id": "Home_Affairs_1", "age": 52, "background": "Police Commissioner", "gender": "male",
+        "stats": { "discipline": 85, "aggression": 65, "empathy": 40, "corruption": 10, "strategic": 80 },
+        "efficiency": { "decision_speed": 75, "accuracy": 80, "crisis_handling": 85 },
+        "ideology": { "type": "nationalist" },
+        "regional_names": {
+          "islamic": "Tariq Al-Mansoor", "south_asia": "Ranveer Malhotra", "east_asia": "Kenjiro Tanaka", "sub_saharan": "Kwame Nkrumah",
+          "slavic": "Vladimir Sokolov", "latin_america": "Alejandro Silva", "south_east_asia": "Joko Widodo", "western": "Robert Vance"
+        }
+      },
+      {
+        "id": "Home_Affairs_2", "background": "Crisis Mitigation Director", "age": 46, "gender": "male",
+        "stats": { "discipline": 60, "aggression": 40, "empathy": 80, "corruption": 15, "strategic": 85 },
+        "efficiency": { "decision_speed": 85, "accuracy": 85, "crisis_handling": 80 },
+        "ideology": { "type": "liberal" },
+        "regional_names": {
+          "islamic": "Yasir Al-Ghamdi", "south_asia": "Aditya Vardhan", "east_asia": "Junichiro Koizumi", "sub_saharan": "Babajide Adeniyi",
+          "slavic": "Nikolai Volkov", "latin_america": "Carlos Mendez", "south_east_asia": "Somsak Santos", "western": "Arthur Sterling"
+        }
+      },
+      {
+        "id": "Home_Affairs_3", "background": "Federal Marshal Chief", "age": 58, "gender": "male",
+        "stats": { "discipline": 90, "aggression": 80, "empathy": 30, "corruption": 5, "strategic": 70 },
+        "efficiency": { "decision_speed": 90, "accuracy": 75, "crisis_handling": 90 },
+        "ideology": { "type": "authoritarian" },
+        "regional_names": {
+          "islamic": "Kamal Al-Farsi", "south_asia": "Chandra Shekhar", "east_asia": "Hiroshi Yamato", "sub_saharan": "Chukwu Emeka",
+          "slavic": "Dmitry Belov", "latin_america": "Mateo Rodriguez", "south_east_asia": "Nguyen Van", "western": "Harrison Vance"
+        }
+      },
+      {
+        "id": "Home_Affairs_4", "background": "Social Policy Specialist", "age": 42, "gender": "female",
+        "stats": { "discipline": 80, "aggression": 35, "empathy": 80, "corruption": 10, "strategic": 80 },
+        "efficiency": { "decision_speed": 80, "accuracy": 85, "crisis_handling": 75 },
+        "ideology": { "type": "secular" },
+        "regional_names": {
+          "islamic": "Aisha Al-Saud", "south_asia": "Meenakshi Iyer", "east_asia": "Keiko Matsui", "sub_saharan": "Zola Ndlovu",
+          "slavic": "Svetlana Volkova", "latin_america": "Diana Vance", "south_east_asia": "Yuki Tanaka", "western": "Victoria Sterling"
+        }
+      },
+      {
+        "id": "Home_Affairs_5", "background": "Strategic Security Lead", "age": 49, "gender": "male",
+        "stats": { "discipline": 75, "aggression": 55, "empathy": 50, "corruption": 20, "strategic": 90 },
+        "efficiency": { "decision_speed": 85, "accuracy": 80, "crisis_handling": 85 },
+        "ideology": { "type": "nationalist" },
+        "regional_names": {
+          "islamic": "Fahim Ahmed", "south_asia": "Vikramaditya Sen", "east_asia": "Shen Wei", "sub_saharan": "Koffi Annan",
+          "slavic": "Alexey Orlov", "latin_america": "Julian Sinclair", "south_east_asia": "Joko Widodo", "western": "Charles Sterling"
+        }
+      }
+    ],
+    "Defense": [
+      {
+        "id": "Defense_1", "background": "Retired 4-Star General", "age": 62, "gender": "male",
+        "stats": { "discipline": 95, "aggression": 85, "empathy": 20, "corruption": 5, "strategic": 90 },
+        "efficiency": { "decision_speed": 85, "accuracy": 85, "crisis_handling": 95 },
+        "ideology": { "type": "nationalist" },
+        "regional_names": {
+          "islamic": "Khalid Al-Zamil", "south_asia": "Rajveer Singh", "east_asia": "Yamamoto Kenji", "sub_saharan": "Kwame Mensah",
+          "slavic": "General Sokolov", "latin_america": "General Silva", "south_east_asia": "General Joko", "western": "General Vance"
+        }
+      },
+      {
+        "id": "Defense_2", "background": "Joint Chiefs Analyst", "age": 55, "gender": "male",
+        "stats": { "discipline": 88, "aggression": 60, "empathy": 40, "corruption": 10, "strategic": 95 },
+        "efficiency": { "decision_speed": 80, "accuracy": 90, "crisis_handling": 90 },
+        "ideology": { "type": "secular" },
+        "regional_names": {
+          "islamic": "Omar Al-Saif", "south_asia": "Aditya Shastry", "east_asia": "Tanaka Hiroshi", "sub_saharan": "Abebe Bikila",
+          "slavic": "Nikolai Volkov", "latin_america": "Carlos Mendez", "south_east_asia": "Somsak Santos", "western": "Arthur Sterling"
+        }
+      },
+      {
+        "id": "Defense_3", "background": "Border Security Expert", "age": 48, "gender": "male",
+        "stats": { "discipline": 82, "aggression": 70, "empathy": 50, "corruption": 15, "strategic": 85 },
+        "efficiency": { "decision_speed": 85, "accuracy": 80, "crisis_handling": 85 },
+        "ideology": { "type": "nationalist" },
+        "regional_names": {
+          "islamic": "Tariq Khan", "south_asia": "Ranveer Malhotra", "east_asia": "Junichiro Koizumi", "sub_saharan": "Babajide Adeniyi",
+          "slavic": "Dmitry Belov", "latin_america": "Mateo Rodriguez", "south_east_asia": "Nguyen Van", "western": "Harrison Vance"
+        }
+      },
+      {
+        "id": "Defense_4", "background": "Navy Command Admiral", "age": 59, "gender": "male",
+        "stats": { "discipline": 92, "aggression": 55, "empathy": 45, "corruption": 5, "strategic": 88 },
+        "efficiency": { "decision_speed": 75, "accuracy": 85, "crisis_handling": 90 },
+        "ideology": { "type": "authoritarian" },
+        "regional_names": {
+          "islamic": "Farhan Al-Maktoum", "south_asia": "Chandra Shekhar", "east_asia": "Hiroshi Yamato", "sub_saharan": "Chukwu Emeka",
+          "slavic": "Svetlana Volkova", "latin_america": "Diana Vance", "south_east_asia": "Yuki Tanaka", "western": "Victoria Sterling"
+        }
+      },
+      {
+        "id": "Defense_5", "background": "Vanguard Force Commander", "age": 45, "gender": "male",
+        "stats": { "discipline": 80, "aggression": 80, "empathy": 30, "corruption": 20, "strategic": 80 },
+        "efficiency": { "decision_speed": 90, "accuracy": 75, "crisis_handling": 85 },
+        "ideology": { "type": "nationalist" },
+        "regional_names": {
+          "islamic": "Yasir Al-Ghamdi", "south_asia": "Vikramaditya Sen", "east_asia": "Shen Wei", "sub_saharan": "Koffi Annan",
+          "slavic": "Alexey Orlov", "latin_america": "Julian Sinclair", "south_east_asia": "Joko Widodo", "western": "Charles Sterling"
+        }
+      }
+    ],
+    "Finance": [
+      {
+        "id": "Finance_1", "background": "Former IMF Representative", "age": 54, "gender": "male",
+        "stats": { "discipline": 80, "aggression": 40, "empathy": 50, "corruption": 8, "strategic": 92 },
+        "efficiency": { "decision_speed": 80, "accuracy": 92, "crisis_handling": 85 },
+        "ideology": { "type": "secular" },
+        "regional_names": {
+          "islamic": "Zubayer Al-Hasan", "south_asia": "Rajesh Malhotra", "east_asia": "Zhao Jin", "sub_saharan": "Koffi Annan",
+          "slavic": "Belov Dmitry", "latin_america": "Alejandro Silva", "south_east_asia": "Joko Widodo", "western": "Robert Vance"
+        }
+      },
+      {
+        "id": "Finance_2", "background": "Central Bank Director", "age": 51, "gender": "male",
+        "stats": { "discipline": 85, "aggression": 35, "empathy": 60, "corruption": 12, "strategic": 88 },
+        "efficiency": { "decision_speed": 85, "accuracy": 88, "crisis_handling": 80 },
+        "ideology": { "type": "liberal" },
+        "regional_names": {
+          "islamic": "Fahim Ahmed", "south_asia": "Aditya Vardhan", "east_asia": "Sook-ja Park", "sub_saharan": "Babajide Adeniyi",
+          "slavic": "Nikolai Volkov", "latin_america": "Carlos Mendez", "south_east_asia": "Somsak Santos", "western": "Arthur Sterling"
+        }
+      },
+      {
+        "id": "Finance_3", "background": "Macroeconomic Strategist", "age": 47, "gender": "male",
+        "stats": { "discipline": 75, "aggression": 50, "empathy": 45, "corruption": 25, "strategic": 85 },
+        "efficiency": { "decision_speed": 80, "accuracy": 82, "crisis_handling": 78 },
+        "ideology": { "type": "secular" },
+        "regional_names": {
+          "islamic": "Asif Al-Nasser", "south_asia": "Chandra Shekhar", "east_asia": "Keiko Matsui", "sub_saharan": "Chukwu Emeka",
+          "slavic": "Dmitry Belov", "latin_america": "Mateo Rodriguez", "south_east_asia": "Nguyen Van", "western": "Harrison Vance"
+        }
+      },
+      {
+        "id": "Finance_4", "background": "Treasury Auditor General", "age": 60, "gender": "female",
+        "stats": { "discipline": 92, "aggression": 30, "empathy": 55, "corruption": 2, "strategic": 90 },
+        "efficiency": { "decision_speed": 75, "accuracy": 95, "crisis_handling": 88 },
+        "ideology": { "type": "nationalist" },
+        "regional_names": {
+          "islamic": "Soraya Al-Khatib", "south_asia": "Meenakshi Iyer", "east_asia": "Min-ji Kim", "sub_saharan": "Zola Ndlovu",
+          "slavic": "Svetlana Volkova", "latin_america": "Diana Vance", "south_east_asia": "Yuki Tanaka", "western": "Victoria Sterling"
+        }
+      },
+      {
+        "id": "Finance_5", "background": "Trade Investment Banker", "age": 43, "gender": "male",
+        "stats": { "discipline": 70, "aggression": 60, "empathy": 35, "corruption": 30, "strategic": 82 },
+        "efficiency": { "decision_speed": 90, "accuracy": 78, "crisis_handling": 82 },
+        "ideology": { "type": "liberal" },
+        "regional_names": {
+          "islamic": "Tariq Al-Mansoor", "south_asia": "Vikramaditya Sen", "east_asia": "Shen Wei", "sub_saharan": "Amina Bello",
+          "slavic": "Alexey Orlov", "latin_america": "Julian Sinclair", "south_east_asia": "Joko Widodo", "western": "Charles Sterling"
+        }
+      }
+    ],
+    "Foreign_Affairs": [
+      {
+        "id": "Foreign_Affairs_1", "background": "Ambassador Plenipotentiary", "age": 56, "gender": "female",
+        "stats": { "discipline": 80, "aggression": 45, "empathy": 65, "corruption": 8, "strategic": 90 },
+        "efficiency": { "decision_speed": 80, "accuracy": 88, "crisis_handling": 85 },
+        "ideology": { "type": "secular" },
+        "regional_names": {
+          "islamic": "Nadia Al-Qasimi", "south_asia": "Ranveer Malhotra", "east_asia": "Zhao Jin", "sub_saharan": "Kwame Nkrumah",
+          "slavic": "Elena Sokolova", "latin_america": "Alejandro Silva", "south_east_asia": "Nguyen Van", "western": "Robert Vance"
+        }
+      },
+      {
+        "id": "Foreign_Affairs_2", "background": "Treaty Negotiator Chief", "age": 48, "gender": "male",
+        "stats": { "discipline": 75, "aggression": 30, "empathy": 70, "corruption": 15, "strategic": 85 },
+        "efficiency": { "decision_speed": 85, "accuracy": 82, "crisis_handling": 80 },
+        "ideology": { "type": "liberal" },
+        "regional_names": {
+          "islamic": "Yasir Al-Ghamdi", "south_asia": "Aditya Vardhan", "east_asia": "Keiko Matsui", "sub_saharan": "Babajide Adeniyi",
+          "slavic": "Nikolai Volkov", "latin_america": "Carlos Mendez", "south_east_asia": "Somsak Santos", "western": "Arthur Sterling"
+        }
+      },
+      {
+        "id": "Foreign_Affairs_3", "background": "International Relations Dean", "age": 52, "gender": "male",
+        "stats": { "discipline": 85, "aggression": 45, "empathy": 55, "corruption": 5, "strategic": 92 },
+        "efficiency": { "decision_speed": 75, "accuracy": 90, "crisis_handling": 90 },
+        "ideology": { "type": "secular" },
+        "regional_names": {
+          "islamic": "Kamal Al-Farsi", "south_asia": "Chandra Shekhar", "east_asia": "Hiroshi Yamato", "sub_saharan": "Chukwu Emeka",
+          "slavic": "Dmitry Belov", "latin_america": "Mateo Rodriguez", "south_east_asia": "Joko Widodo", "western": "Harrison Vance"
+        }
+      },
+      {
+        "id": "Foreign_Affairs_4", "background": "Diplomatic Envoy Special", "age": 44, "gender": "female",
+        "stats": { "discipline": 88, "aggression": 35, "empathy": 80, "corruption": 8, "strategic": 88 },
+        "efficiency": { "decision_speed": 82, "accuracy": 88, "crisis_handling": 82 },
+        "ideology": { "type": "liberal" },
+        "regional_names": {
+          "islamic": "Soraya Al-Khatib", "south_asia": "Meenakshi Iyer", "east_asia": "Min-ji Kim", "sub_saharan": "Zola Ndlovu",
+          "slavic": "Svetlana Volkova", "latin_america": "Diana Vance", "south_east_asia": "Yuki Tanaka", "western": "Victoria Sterling"
+        }
+      },
+      {
+        "id": "Foreign_Affairs_5", "background": "Global Alliances Coordinator", "age": 46, "gender": "male",
+        "stats": { "discipline": 70, "aggression": 60, "empathy": 50, "corruption": 20, "strategic": 80 },
+        "efficiency": { "decision_speed": 90, "accuracy": 75, "crisis_handling": 78 },
+        "ideology": { "type": "nationalist" },
+        "regional_names": {
+          "islamic": "Fahim Ahmed", "south_asia": "Vikramaditya Sen", "east_asia": "Shen Wei", "sub_saharan": "Amina Bello",
+          "slavic": "Alexey Orlov", "latin_america": "Julian Sinclair", "south_east_asia": "Joko Widodo", "western": "Charles Sterling"
+        }
+      }
+    ],
+    "Intelligence": [
+      {
+        "id": "Intelligence_1", "background": "Covert Ops Director", "age": 49, "gender": "male",
+        "stats": { "discipline": 92, "aggression": 75, "empathy": 25, "corruption": 10, "strategic": 95 },
+        "efficiency": { "decision_speed": 85, "accuracy": 90, "crisis_handling": 92 },
+        "ideology": { "type": "nationalist" },
+        "regional_names": {
+          "islamic": "Tariq Khan", "south_asia": "Ranveer Malhotra", "east_asia": "Kenjiro Tanaka", "sub_saharan": "Kwame Nkrumah",
+          "slavic": "Vladimir Sokolov", "latin_america": "Alejandro Silva", "south_east_asia": "Nguyen Van", "western": "Robert Vance"
+        }
+      },
+      {
+        "id": "Intelligence_2", "background": "Counter-Terrorism Chief", "age": 44, "gender": "male",
+        "stats": { "discipline": 85, "aggression": 65, "empathy": 35, "corruption": 15, "strategic": 90 },
+        "efficiency": { "decision_speed": 88, "accuracy": 85, "crisis_handling": 88 },
+        "ideology": { "type": "secular" },
+        "regional_names": {
+          "islamic": "Yasir Al-Ghamdi", "south_asia": "Aditya Vardhan", "east_asia": "Junichiro Koizumi", "sub_saharan": "Babajide Adeniyi",
+          "slavic": "Nikolai Volkov", "latin_america": "Carlos Mendez", "south_east_asia": "Somsak Santos", "western": "Arthur Sterling"
+        }
+      },
+      {
+        "id": "Intelligence_3", "background": "Signals Intelligence Expert", "age": 41, "gender": "male",
+        "stats": { "discipline": 80, "aggression": 50, "empathy": 40, "corruption": 20, "strategic": 85 },
+        "efficiency": { "decision_speed": 82, "accuracy": 82, "crisis_handling": 80 },
+        "ideology": { "type": "nationalist" },
+        "regional_names": {
+          "islamic": "Fahim Ahmed", "south_asia": "Chandra Shekhar", "east_asia": "Hiroshi Yamato", "sub_saharan": "Chukwu Emeka",
+          "slavic": "Dmitry Belov", "latin_america": "Mateo Rodriguez", "south_east_asia": "Joko Widodo", "western": "Harrison Vance"
+        }
+      },
+      {
+        "id": "Intelligence_4", "background": "Foreign Surveillance Lead", "age": 43, "gender": "female",
+        "stats": { "discipline": 85, "aggression": 55, "empathy": 45, "corruption": 5, "strategic": 90 },
+        "efficiency": { "decision_speed": 78, "accuracy": 92, "crisis_handling": 85 },
+        "ideology": { "type": "liberal" },
+        "regional_names": {
+          "islamic": "Soraya Al-Khatib", "south_asia": "Meenakshi Iyer", "east_asia": "Keiko Matsui", "sub_saharan": "Zola Ndlovu",
+          "slavic": "Svetlana Volkova", "latin_america": "Diana Vance", "south_east_asia": "Yuki Tanaka", "western": "Victoria Sterling"
+        }
+      },
+      {
+        "id": "Intelligence_5", "background": "Cyber Warfare Analyst", "age": 40, "gender": "male",
+        "stats": { "discipline": 82, "aggression": 60, "empathy": 30, "corruption": 25, "strategic": 82 },
+        "efficiency": { "decision_speed": 90, "accuracy": 75, "crisis_handling": 78 },
+        "ideology": { "type": "secular" },
+        "regional_names": {
+          "islamic": "Tariq Al-Mansoor", "south_asia": "Vikramaditya Sen", "east_asia": "Shen Wei", "sub_saharan": "Amina Bello",
+          "slavic": "Alexey Orlov", "latin_america": "Julian Sinclair", "south_east_asia": "Joko Widodo", "western": "Charles Sterling"
+        }
+      }
+    ],
+    "Justice": [
+      {
+        "id": "Justice_1", "background": "Supreme Court Justice", "age": 63, "gender": "male",
+        "stats": { "discipline": 95, "aggression": 25, "empathy": 70, "corruption": 2, "strategic": 90 },
+        "efficiency": { "decision_speed": 70, "accuracy": 95, "crisis_handling": 88 },
+        "ideology": { "type": "secular" },
+        "regional_names": {
+          "islamic": "Kamal Al-Farsi", "south_asia": "Chandra Shekhar", "east_asia": "Sook-ja Park", "sub_saharan": "Koffi Annan",
+          "slavic": "Vladimir Sokolov", "latin_america": "Alejandro Silva", "south_east_asia": "Joko Widodo", "western": "Robert Vance"
+        }
+      },
+      {
+        "id": "Justice_2", "background": "Constitutional Law Scholar", "age": 51, "gender": "male",
+        "stats": { "discipline": 88, "aggression": 30, "empathy": 65, "corruption": 5, "strategic": 85 },
+        "efficiency": { "decision_speed": 75, "accuracy": 90, "crisis_handling": 82 },
+        "ideology": { "type": "liberal" },
+        "regional_names": {
+          "islamic": "Aisha Al-Saud", "south_asia": "Aditya Vardhan", "east_asia": "Xiaoting Chen", "sub_saharan": "Babajide Adeniyi",
+          "slavic": "Nikolai Volkov", "latin_america": "Carlos Mendez", "south_east_asia": "Somsak Santos", "western": "Arthur Sterling"
+        }
+      },
+      {
+        "id": "Justice_3", "background": "Anti-Corruption Prosecutor", "age": 47, "gender": "male",
+        "stats": { "discipline": 90, "aggression": 65, "empathy": 45, "corruption": 10, "strategic": 80 },
+        "efficiency": { "decision_speed": 85, "accuracy": 82, "crisis_handling": 85 },
+        "ideology": { "type": "authoritarian" },
+        "regional_names": {
+          "islamic": "Tariq Khan", "south_asia": "Ranveer Malhotra", "east_asia": "Junichiro Koizumi", "sub_saharan": "Chukwu Emeka",
+          "slavic": "Dmitry Belov", "latin_america": "Mateo Rodriguez", "south_east_asia": "Nguyen Van", "western": "Harrison Vance"
+        }
+      },
+      {
+        "id": "Justice_4", "background": "Judicial Ombudsman", "age": 43, "gender": "female",
+        "stats": { "discipline": 75, "aggression": 25, "empathy": 85, "corruption": 5, "strategic": 78 },
+        "efficiency": { "decision_speed": 80, "accuracy": 85, "crisis_handling": 75 },
+        "ideology": { "type": "secular" },
+        "regional_names": {
+          "islamic": "Soraya Al-Khatib", "south_asia": "Meenakshi Iyer", "east_asia": "Keiko Matsui", "sub_saharan": "Zola Ndlovu",
+          "slavic": "Svetlana Volkova", "latin_america": "Diana Vance", "south_east_asia": "Yuki Tanaka", "western": "Victoria Sterling"
+        }
+      },
+      {
+        "id": "Justice_5", "background": "Civil Rights Jurist", "age": 55, "gender": "male",
+        "stats": { "discipline": 82, "aggression": 40, "empathy": 70, "corruption": 15, "strategic": 82 },
+        "efficiency": { "decision_speed": 78, "accuracy": 85, "crisis_handling": 80 },
+        "ideology": { "type": "nationalist" },
+        "regional_names": {
+          "islamic": "Fahim Ahmed", "south_asia": "Vikramaditya Sen", "east_asia": "Shen Wei", "sub_saharan": "Amina Bello",
+          "slavic": "Alexey Orlov", "latin_america": "Julian Sinclair", "south_east_asia": "Joko Widodo", "western": "Charles Sterling"
+        }
+      }
+    ],
+    "Economy_Commerce": [
+      {
+        "id": "Economy_Commerce_1", "background": "International Trade Commissioner", "age": 53, "gender": "male",
+        "stats": { "discipline": 80, "aggression": 45, "empathy": 50, "corruption": 12, "strategic": 90 },
+        "efficiency": { "decision_speed": 80, "accuracy": 88, "crisis_handling": 85 },
+        "ideology": { "type": "liberal" },
+        "regional_names": {
+          "islamic": "Tariq Al-Mansoor", "south_asia": "Rajesh Malhotra", "east_asia": "Zhao Jin", "sub_saharan": "Kwame Nkrumah",
+          "slavic": "Dmitry Belov", "latin_america": "Alejandro Silva", "south_east_asia": "Joko Widodo", "western": "Robert Vance"
+        }
+      },
+      {
+        "id": "Economy_Commerce_2", "background": "Chamber of Commerce Chairperson", "age": 49, "gender": "male",
+        "stats": { "discipline": 85, "aggression": 40, "empathy": 55, "corruption": 15, "strategic": 85 },
+        "efficiency": { "decision_speed": 85, "accuracy": 82, "crisis_handling": 80 },
+        "ideology": { "type": "secular" },
+        "regional_names": {
+          "islamic": "Yasir Al-Ghamdi", "south_asia": "Aditya Vardhan", "east_asia": "Xiaoting Chen", "sub_saharan": "Babajide Adeniyi",
+          "slavic": "Nikolai Volkov", "latin_america": "Carlos Mendez", "south_east_asia": "Somsak Santos", "western": "Arthur Sterling"
+        }
+      },
+      {
+        "id": "Economy_Commerce_3", "background": "Industrial Investment Banker", "age": 46, "gender": "male",
+        "stats": { "discipline": 75, "aggression": 55, "empathy": 45, "corruption": 25, "strategic": 88 },
+        "efficiency": { "decision_speed": 88, "accuracy": 80, "crisis_handling": 82 },
+        "ideology": { "type": "liberal" },
+        "regional_names": {
+          "islamic": "Kamal Al-Farsi", "south_asia": "Chandra Shekhar", "east_asia": "Junichiro Koizumi", "sub_saharan": "Chukwu Emeka",
+          "slavic": "Vladimir Sokolov", "latin_america": "Mateo Rodriguez", "south_east_asia": "Nguyen Van", "western": "Harrison Vance"
+        }
+      },
+      {
+        "id": "Economy_Commerce_4", "background": "Fiscal Regulation Advisor", "age": 42, "gender": "female",
+        "stats": { "discipline": 88, "aggression": 35, "empathy": 65, "corruption": 8, "strategic": 85 },
+        "efficiency": { "decision_speed": 80, "accuracy": 88, "crisis_handling": 78 },
+        "ideology": { "type": "nationalist" },
+        "regional_names": {
+          "islamic": "Soraya Al-Khatib", "south_asia": "Meenakshi Iyer", "east_asia": "Min-ji Kim", "sub_saharan": "Zola Ndlovu",
+          "slavic": "Svetlana Volkova", "latin_america": "Diana Vance", "south_east_asia": "Yuki Tanaka", "western": "Victoria Sterling"
+        }
+      },
+      {
+        "id": "Economy_Commerce_5", "background": "Maritime Logistics Director", "age": 51, "gender": "male",
+        "stats": { "discipline": 78, "aggression": 50, "empathy": 50, "corruption": 20, "strategic": 80 },
+        "efficiency": { "decision_speed": 82, "accuracy": 80, "crisis_handling": 80 },
+        "ideology": { "type": "secular" },
+        "regional_names": {
+          "islamic": "Fahim Ahmed", "south_asia": "Vikramaditya Sen", "east_asia": "Shen Wei", "sub_saharan": "Amina Bello",
+          "slavic": "Alexey Orlov", "latin_america": "Julian Sinclair", "south_east_asia": "Joko Widodo", "western": "Charles Sterling"
+        }
+      }
+    ],
+    "Energy_Infrastructure": [
+      {
+        "id": "Energy_Infrastructure_1", "background": "Senior Grid Security Director", "age": 55, "gender": "male",
+        "stats": { "discipline": 90, "aggression": 50, "empathy": 40, "corruption": 10, "strategic": 85 },
+        "efficiency": { "decision_speed": 78, "accuracy": 85, "crisis_handling": 90 },
+        "ideology": { "type": "secular" },
+        "regional_names": {
+          "islamic": "Tariq Al-Mansoor", "south_asia": "Rajesh Malhotra", "east_asia": "Kenjiro Tanaka", "sub_saharan": "Kwame Nkrumah",
+          "slavic": "Dmitry Belov", "latin_america": "Alejandro Silva", "south_east_asia": "Joko Widodo", "western": "Robert Vance"
+        }
+      },
+      {
+        "id": "Energy_Infrastructure_2", "background": "Civil Infrastructure Admin", "age": 51, "gender": "male",
+        "stats": { "discipline": 85, "aggression": 40, "empathy": 50, "corruption": 15, "strategic": 80 },
+        "efficiency": { "decision_speed": 82, "accuracy": 80, "crisis_handling": 85 },
+        "ideology": { "type": "nationalist" },
+        "regional_names": {
+          "islamic": "Yasir Al-Ghamdi", "south_asia": "Aditya Vardhan", "east_asia": "Hiroshi Yamato", "sub_saharan": "Babajide Adeniyi",
+          "slavic": "Nikolai Volkov", "latin_america": "Carlos Mendez", "south_east_asia": "Somsak Santos", "western": "Arthur Sterling"
+        }
+      },
+      {
+        "id": "Energy_Infrastructure_3", "background": "Deep-Sea Port Authority Chief", "age": 47, "gender": "male",
+        "stats": { "discipline": 80, "aggression": 60, "empathy": 35, "corruption": 25, "strategic": 82 },
+        "efficiency": { "decision_speed": 85, "accuracy": 78, "crisis_handling": 82 },
+        "ideology": { "type": "liberal" },
+        "regional_names": {
+          "islamic": "Kamal Al-Farsi", "south_asia": "Chandra Shekhar", "east_asia": "Junichiro Koizumi", "sub_saharan": "Chukwu Emeka",
+          "slavic": "Vladimir Sokolov", "latin_america": "Mateo Rodriguez", "south_east_asia": "Nguyen Van", "western": "Harrison Vance"
+        }
+      },
+      {
+        "id": "Energy_Infrastructure_4", "background": "Nuclear Grid Administrator", "age": 44, "gender": "female",
+        "stats": { "discipline": 92, "aggression": 45, "empathy": 45, "corruption": 5, "strategic": 88 },
+        "efficiency": { "decision_speed": 80, "accuracy": 92, "crisis_handling": 88 },
+        "ideology": { "type": "secular" },
+        "regional_names": {
+          "islamic": "Soraya Al-Khatib", "south_asia": "Meenakshi Iyer", "east_asia": "Min-ji Kim", "sub_saharan": "Zola Ndlovu",
+          "slavic": "Svetlana Volkova", "latin_america": "Diana Vance", "south_east_asia": "Yuki Tanaka", "western": "Victoria Sterling"
+        }
+      },
+      {
+        "id": "Energy_Infrastructure_5", "background": "Logistics Highway Director", "age": 49, "gender": "male",
+        "stats": { "discipline": 78, "aggression": 55, "empathy": 45, "corruption": 20, "strategic": 78 },
+        "efficiency": { "decision_speed": 88, "accuracy": 75, "crisis_handling": 80 },
+        "ideology": { "type": "nationalist" },
+        "regional_names": {
+          "islamic": "Fahim Ahmed", "south_asia": "Vikramaditya Sen", "east_asia": "Shen Wei", "sub_saharan": "Amina Bello",
+          "slavic": "Alexey Orlov", "latin_america": "Julian Sinclair", "south_east_asia": "Joko Widodo", "western": "Charles Sterling"
+        }
+      }
+    ],
+    "Science_Technology": [
+      {
+        "id": "Science_Technology_1", "background": "Aerospace Propulsion Director", "age": 48, "gender": "male",
+        "stats": { "discipline": 85, "aggression": 40, "empathy": 40, "corruption": 8, "strategic": 92 },
+        "efficiency": { "decision_speed": 80, "accuracy": 90, "crisis_handling": 85 },
+        "ideology": { "type": "secular" },
+        "regional_names": {
+          "islamic": "Tariq Al-Mansoor", "south_asia": "Rajesh Malhotra", "east_asia": "Kenjiro Tanaka", "sub_saharan": "Kwame Nkrumah",
+          "slavic": "Dmitry Belov", "latin_america": "Alejandro Silva", "south_east_asia": "Joko Widodo", "western": "Robert Vance"
+        }
+      },
+      {
+        "id": "Science_Technology_2", "background": "AI & Cyber Security Researcher", "age": 42, "gender": "male",
+        "stats": { "discipline": 80, "aggression": 35, "empathy": 50, "corruption": 5, "strategic": 88 },
+        "efficiency": { "decision_speed": 85, "accuracy": 88, "crisis_handling": 82 },
+        "ideology": { "type": "liberal" },
+        "regional_names": {
+          "islamic": "Yasir Al-Ghamdi", "south_asia": "Aditya Vardhan", "east_asia": "Hiroshi Yamato", "sub_saharan": "Babajide Adeniyi",
+          "slavic": "Nikolai Volkov", "latin_america": "Carlos Mendez", "south_east_asia": "Somsak Santos", "western": "Arthur Sterling"
+        }
+      },
+      {
+        "id": "Science_Technology_3", "background": "Quantum Computing Pioneer", "age": 45, "gender": "male",
+        "stats": { "discipline": 75, "aggression": 45, "empathy": 45, "corruption": 15, "strategic": 85 },
+        "efficiency": { "decision_speed": 78, "accuracy": 85, "crisis_handling": 80 },
+        "ideology": { "type": "secular" },
+        "regional_names": {
+          "islamic": "Kamal Al-Farsi", "south_asia": "Chandra Shekhar", "east_asia": "Junichiro Koizumi", "sub_saharan": "Chukwu Emeka",
+          "slavic": "Vladimir Sokolov", "latin_america": "Mateo Rodriguez", "south_east_asia": "Nguyen Van", "western": "Harrison Vance"
+        }
+      },
+      {
+        "id": "Science_Technology_4", "background": "Robotics Lab Founder", "age": 40, "gender": "female",
+        "stats": { "discipline": 88, "aggression": 30, "empathy": 60, "corruption": 2, "strategic": 88 },
+        "efficiency": { "decision_speed": 82, "accuracy": 92, "crisis_handling": 85 },
+        "ideology": { "type": "liberal" },
+        "regional_names": {
+          "islamic": "Soraya Al-Khatib", "south_asia": "Meenakshi Iyer", "east_asia": "Min-ji Kim", "sub_saharan": "Zola Ndlovu",
+          "slavic": "Svetlana Volkova", "latin_america": "Diana Vance", "south_east_asia": "Yuki Tanaka", "western": "Victoria Sterling"
+        }
+      },
+      {
+        "id": "Science_Technology_5", "background": "Biotechnology Lead Developer", "age": 46, "gender": "male",
+        "stats": { "discipline": 78, "aggression": 50, "empathy": 45, "corruption": 20, "strategic": 78 },
+        "efficiency": { "decision_speed": 88, "accuracy": 75, "crisis_handling": 78 },
+        "ideology": { "type": "nationalist" },
+        "regional_names": {
+          "islamic": "Fahim Ahmed", "south_asia": "Vikramaditya Sen", "east_asia": "Shen Wei", "sub_saharan": "Amina Bello",
+          "slavic": "Alexey Orlov", "latin_america": "Julian Sinclair", "south_east_asia": "Joko Widodo", "western": "Charles Sterling"
+        }
+      }
+    ],
+    "Public_Welfare": [
+      {
+        "id": "Public_Welfare_1", "background": "Public Health Director", "age": 54, "gender": "male",
+        "stats": { "discipline": 75, "aggression": 30, "empathy": 85, "corruption": 5, "strategic": 82 },
+        "efficiency": { "decision_speed": 78, "accuracy": 85, "crisis_handling": 88 },
+        "ideology": { "type": "liberal" },
+        "regional_names": {
+          "islamic": "Tariq Al-Mansoor", "south_asia": "Rajesh Malhotra", "east_asia": "Kenjiro Tanaka", "sub_saharan": "Kwame Nkrumah",
+          "slavic": "Dmitry Belov", "latin_america": "Alejandro Silva", "south_east_asia": "Joko Widodo", "western": "Robert Vance"
+        }
+      },
+      {
+        "id": "Public_Welfare_2", "background": "Social Security Welfare Lead", "age": 48, "gender": "male",
+        "stats": { "discipline": 80, "aggression": 25, "empathy": 90, "corruption": 8, "strategic": 80 },
+        "efficiency": { "decision_speed": 82, "accuracy": 82, "crisis_handling": 82 },
+        "ideology": { "type": "secular" },
+        "regional_names": {
+          "islamic": "Yasir Al-Ghamdi", "south_asia": "Aditya Vardhan", "east_asia": "Hiroshi Yamato", "sub_saharan": "Babajide Adeniyi",
+          "slavic": "Nikolai Volkov", "latin_america": "Carlos Mendez", "south_east_asia": "Somsak Santos", "western": "Arthur Sterling"
+        }
+      },
+      {
+        "id": "Public_Welfare_3", "background": "Educational Reform Specialist", "age": 51, "gender": "male",
+        "stats": { "discipline": 85, "aggression": 35, "empathy": 75, "corruption": 10, "strategic": 85 },
+        "efficiency": { "decision_speed": 80, "accuracy": 88, "crisis_handling": 80 },
+        "ideology": { "type": "nationalist" },
+        "regional_names": {
+          "islamic": "Kamal Al-Farsi", "south_asia": "Chandra Shekhar", "east_asia": "Junichiro Koizumi", "sub_saharan": "Chukwu Emeka",
+          "slavic": "Vladimir Sokolov", "latin_america": "Mateo Rodriguez", "south_east_asia": "Nguyen Van", "western": "Harrison Vance"
+        }
+      },
+      {
+        "id": "Public_Welfare_4", "background": "Humanitarian Mission Director", "age": 43, "gender": "female",
+        "stats": { "discipline": 70, "aggression": 20, "empathy": 95, "corruption": 2, "strategic": 78 },
+        "efficiency": { "decision_speed": 85, "accuracy": 80, "crisis_handling": 75 },
+        "ideology": { "type": "liberal" },
+        "regional_names": {
+          "islamic": "Soraya Al-Khatib", "south_asia": "Meenakshi Iyer", "east_asia": "Min-ji Kim", "sub_saharan": "Zola Ndlovu",
+          "slavic": "Svetlana Volkova", "latin_america": "Diana Vance", "south_east_asia": "Yuki Tanaka", "western": "Victoria Sterling"
+        }
+      },
+      {
+        "id": "Public_Welfare_5", "background": "Medical Administration Dean", "age": 47, "gender": "male",
+        "stats": { "discipline": 78, "aggression": 40, "empathy": 80, "corruption": 15, "strategic": 80 },
+        "efficiency": { "decision_speed": 82, "accuracy": 80, "crisis_handling": 82 },
+        "ideology": { "type": "secular" },
+        "regional_names": {
+          "islamic": "Fahim Ahmed", "south_asia": "Vikramaditya Sen", "east_asia": "Shen Wei", "sub_saharan": "Amina Bello",
+          "slavic": "Alexey Orlov", "latin_america": "Julian Sinclair", "south_east_asia": "Joko Widodo", "western": "Charles Sterling"
+        }
+      }
+    ],
+    "Agriculture_Food": [
+      {
+        "id": "Agriculture_Food_1", "background": "Agronomic Research Director", "age": 52, "gender": "male",
+        "stats": { "discipline": 85, "aggression": 30, "empathy": 60, "corruption": 8, "strategic": 82 },
+        "efficiency": { "decision_speed": 78, "accuracy": 88, "crisis_handling": 85 },
+        "ideology": { "type": "nationalist" },
+        "regional_names": {
+          "islamic": "Tariq Al-Mansoor", "south_asia": "Rajesh Malhotra", "east_asia": "Kenjiro Tanaka", "sub_saharan": "Kwame Nkrumah",
+          "slavic": "Dmitry Belov", "latin_america": "Alejandro Silva", "south_east_asia": "Joko Widodo", "western": "Robert Vance"
+        }
+      },
+      {
+        "id": "Agriculture_Food_2", "background": "Famine Relief Commissioner", "age": 49, "gender": "male",
+        "stats": { "discipline": 80, "aggression": 25, "empathy": 75, "corruption": 10, "strategic": 85 },
+        "efficiency": { "decision_speed": 82, "accuracy": 82, "crisis_handling": 88 },
+        "ideology": { "type": "secular" },
+        "regional_names": {
+          "islamic": "Yasir Al-Ghamdi", "south_asia": "Aditya Vardhan", "east_asia": "Hiroshi Yamato", "sub_saharan": "Babajide Adeniyi",
+          "slavic": "Nikolai Volkov", "latin_america": "Carlos Mendez", "south_east_asia": "Somsak Santos", "western": "Arthur Sterling"
+        }
+      },
+      {
+        "id": "Agriculture_Food_3", "background": "Global Crop Security Advisor", "age": 46, "gender": "male",
+        "stats": { "discipline": 75, "aggression": 40, "empathy": 55, "corruption": 15, "strategic": 80 },
+        "efficiency": { "decision_speed": 85, "accuracy": 80, "crisis_handling": 80 },
+        "ideology": { "type": "liberal" },
+        "regional_names": {
+          "islamic": "Kamal Al-Farsi", "south_asia": "Chandra Shekhar", "east_asia": "Junichiro Koizumi", "sub_saharan": "Chukwu Emeka",
+          "slavic": "Vladimir Sokolov", "latin_america": "Mateo Rodriguez", "south_east_asia": "Nguyen Van", "western": "Harrison Vance"
+        }
+      },
+      {
+        "id": "Agriculture_Food_4", "background": "Organic Farm Cooperatives Lead", "age": 43, "gender": "female",
+        "stats": { "discipline": 88, "aggression": 20, "empathy": 80, "corruption": 5, "strategic": 85 },
+        "efficiency": { "decision_speed": 80, "accuracy": 92, "crisis_handling": 82 },
+        "ideology": { "type": "secular" },
+        "regional_names": {
+          "islamic": "Soraya Al-Khatib", "south_asia": "Meenakshi Iyer", "east_asia": "Min-ji Kim", "sub_saharan": "Zola Ndlovu",
+          "slavic": "Svetlana Volkova", "latin_america": "Diana Vance", "south_east_asia": "Yuki Tanaka", "western": "Victoria Sterling"
+        }
+      },
+      {
+        "id": "Agriculture_Food_5", "background": "Irrigation Projects Manager", "age": 51, "gender": "male",
+        "stats": { "discipline": 78, "aggression": 45, "empathy": 50, "corruption": 20, "strategic": 78 },
+        "efficiency": { "decision_speed": 88, "accuracy": 75, "crisis_handling": 78 },
+        "ideology": { "type": "nationalist" },
+        "regional_names": {
+          "islamic": "Fahim Ahmed", "south_asia": "Vikramaditya Sen", "east_asia": "Shen Wei", "sub_saharan": "Amina Bello",
+          "slavic": "Alexey Orlov", "latin_america": "Julian Sinclair", "south_east_asia": "Joko Widodo", "western": "Charles Sterling"
+        }
+      }
+    ],
+    "Environment_Climate": [
+      {
+        "id": "Environment_Climate_1", "background": "Ecology Protection Lead", "age": 51, "gender": "male",
+        "stats": { "discipline": 80, "aggression": 30, "empathy": 75, "corruption": 5, "strategic": 85 },
+        "efficiency": { "decision_speed": 78, "accuracy": 85, "crisis_handling": 85 },
+        "ideology": { "type": "secular" },
+        "regional_names": {
+          "islamic": "Tariq Al-Mansoor", "south_asia": "Rajesh Malhotra", "east_asia": "Kenjiro Tanaka", "sub_saharan": "Kwame Nkrumah",
+          "slavic": "Dmitry Belov", "latin_america": "Alejandro Silva", "south_east_asia": "Joko Widodo", "western": "Robert Vance"
+        }
+      },
+      {
+        "id": "Environment_Climate_2", "background": "Meteorological Crisis Specialist", "age": 45, "gender": "male",
+        "stats": { "discipline": 85, "aggression": 35, "empathy": 70, "corruption": 10, "strategic": 82 },
+        "efficiency": { "decision_speed": 82, "accuracy": 82, "crisis_handling": 88 },
+        "ideology": { "type": "nationalist" },
+        "regional_names": {
+          "islamic": "Yasir Al-Ghamdi", "south_asia": "Aditya Vardhan", "east_asia": "Hiroshi Yamato", "sub_saharan": "Babajide Adeniyi",
+          "slavic": "Nikolai Volkov", "latin_america": "Carlos Mendez", "south_east_asia": "Somsak Santos", "western": "Arthur Sterling"
+        }
+      },
+      {
+        "id": "Environment_Climate_3", "background": "Carbon Regulation Advisor", "age": 48, "gender": "male",
+        "stats": { "discipline": 75, "aggression": 40, "empathy": 60, "corruption": 15, "strategic": 80 },
+        "efficiency": { "decision_speed": 85, "accuracy": 78, "crisis_handling": 80 },
+        "ideology": { "type": "liberal" },
+        "regional_names": {
+          "islamic": "Kamal Al-Farsi", "south_asia": "Chandra Shekhar", "east_asia": "Junichiro Koizumi", "sub_saharan": "Chukwu Emeka",
+          "slavic": "Vladimir Sokolov", "latin_america": "Mateo Rodriguez", "south_east_asia": "Nguyen Van", "western": "Harrison Vance"
+        }
+      },
+      {
+        "id": "Environment_Climate_4", "background": "Renewable Energy Advocate", "age": 41, "gender": "female",
+        "stats": { "discipline": 88, "aggression": 20, "empathy": 85, "corruption": 2, "strategic": 88 },
+        "efficiency": { "decision_speed": 80, "accuracy": 92, "crisis_handling": 82 },
+        "ideology": { "type": "secular" },
+        "regional_names": {
+          "islamic": "Soraya Al-Khatib", "south_asia": "Meenakshi Iyer", "east_asia": "Min-ji Kim", "sub_saharan": "Zola Ndlovu",
+          "slavic": "Svetlana Volkova", "latin_america": "Diana Vance", "south_east_asia": "Yuki Tanaka", "western": "Victoria Sterling"
+        }
+      },
+      {
+        "id": "Environment_Climate_5", "background": "Wildlife Reserve Director", "age": 50, "gender": "male",
+        "stats": { "discipline": 78, "aggression": 45, "empathy": 65, "corruption": 20, "strategic": 78 },
+        "efficiency": { "decision_speed": 88, "accuracy": 75, "crisis_handling": 78 },
+        "ideology": { "type": "nationalist" },
+        "regional_names": {
+          "islamic": "Fahim Ahmed", "south_asia": "Vikramaditya Sen", "east_asia": "Shen Wei", "sub_saharan": "Amina Bello",
+          "slavic": "Alexey Orlov", "latin_america": "Julian Sinclair", "south_east_asia": "Joko Widodo", "western": "Charles Sterling"
+        }
+      }
+    ],
+    "Information_Media": [
+      {
+        "id": "Information_Media_1", "background": "Information Warfare Analyst", "age": 49, "gender": "male",
+        "stats": { "discipline": 80, "aggression": 70, "empathy": 40, "corruption": 12, "strategic": 92 },
+        "efficiency": { "decision_speed": 85, "accuracy": 80, "crisis_handling": 85 },
+        "ideology": { "type": "nationalist" },
+        "regional_names": {
+          "islamic": "Tariq Khan", "south_asia": "Ranveer Malhotra", "east_asia": "Kenjiro Tanaka", "sub_saharan": "Kwame Nkrumah",
+          "slavic": "Vladimir Sokolov", "latin_america": "Alejandro Silva", "south_east_asia": "Nguyen Van", "western": "Robert Vance"
+        }
+      },
+      {
+        "id": "Information_Media_2", "background": "Broadcasting Regulation Lead", "age": 46, "gender": "male",
+        "stats": { "discipline": 75, "aggression": 45, "empathy": 65, "corruption": 15, "strategic": 85 },
+        "efficiency": { "decision_speed": 80, "accuracy": 85, "crisis_handling": 80 },
+        "ideology": { "type": "secular" },
+        "regional_names": {
+          "islamic": "Yasir Al-Ghamdi", "south_asia": "Aditya Vardhan", "east_asia": "Hiroshi Yamato", "sub_saharan": "Babajide Adeniyi",
+          "slavic": "Nikolai Volkov", "latin_america": "Carlos Mendez", "south_east_asia": "Somsak Santos", "western": "Arthur Sterling"
+        }
+      },
+      {
+        "id": "Information_Media_3", "background": "Strategic Communications Director", "age": 52, "gender": "male",
+        "stats": { "discipline": 85, "aggression": 55, "empathy": 50, "corruption": 10, "strategic": 88 },
+        "efficiency": { "decision_speed": 88, "accuracy": 78, "crisis_handling": 82 },
+        "ideology": { "type": "liberal" },
+        "regional_names": {
+          "islamic": "Kamal Al-Farsi", "south_asia": "Chandra Shekhar", "east_asia": "Junichiro Koizumi", "sub_saharan": "Chukwu Emeka",
+          "slavic": "Dmitry Belov", "latin_america": "Mateo Rodriguez", "south_east_asia": "Joko Widodo", "western": "Harrison Vance"
+        }
+      },
+      {
+        "id": "Information_Media_4", "background": "Press Secretary General", "age": 41, "gender": "female",
+        "stats": { "discipline": 88, "aggression": 30, "empathy": 80, "corruption": 5, "strategic": 85 },
+        "efficiency": { "decision_speed": 82, "accuracy": 92, "crisis_handling": 85 },
+        "ideology": { "type": "secular" },
+        "regional_names": {
+          "islamic": "Soraya Al-Khatib", "south_asia": "Meenakshi Iyer", "east_asia": "Min-ji Kim", "sub_saharan": "Zola Ndlovu",
+          "slavic": "Svetlana Volkova", "latin_america": "Diana Vance", "south_east_asia": "Yuki Tanaka", "western": "Victoria Sterling"
+        }
+      },
+      {
+        "id": "Information_Media_5", "background": "Propaganda Wing Director", "age": 50, "gender": "male",
+        "stats": { "discipline": 78, "aggression": 80, "empathy": 25, "corruption": 20, "strategic": 80 },
+        "efficiency": { "decision_speed": 90, "accuracy": 75, "crisis_handling": 78 },
+        "ideology": { "type": "nationalist" },
+        "regional_names": {
+          "islamic": "Fahim Ahmed", "south_asia": "Vikramaditya Sen", "east_asia": "Shen Wei", "sub_saharan": "Amina Bello",
+          "slavic": "Alexey Orlov", "latin_america": "Julian Sinclair", "south_east_asia": "Joko Widodo", "western": "Charles Sterling"
+        }
+      }
+    ],
+    "Labor_Immigration": [
+      {
+        "id": "Labor_Immigration_1", "background": "Immigration Control Director", "age": 53, "gender": "male",
+        "stats": { "discipline": 85, "aggression": 65, "empathy": 40, "corruption": 8, "strategic": 85 },
+        "efficiency": { "decision_speed": 80, "accuracy": 88, "crisis_handling": 85 },
+        "ideology": { "type": "secular" },
+        "regional_names": {
+          "islamic": "Tariq Al-Mansoor", "south_asia": "Rajesh Malhotra", "east_asia": "Kenjiro Tanaka", "sub_saharan": "Kwame Nkrumah",
+          "slavic": "Dmitry Belov", "latin_america": "Alejandro Silva", "south_east_asia": "Joko Widodo", "western": "Robert Vance"
+        }
+      },
+      {
+        "id": "Labor_Immigration_2", "background": "Trade Unions Arbitrator", "age": 47, "gender": "male",
+        "stats": { "discipline": 75, "aggression": 35, "empathy": 80, "corruption": 12, "strategic": 82 },
+        "efficiency": { "decision_speed": 85, "accuracy": 82, "crisis_handling": 80 },
+        "ideology": { "type": "liberal" },
+        "regional_names": {
+          "islamic": "Yasir Al-Ghamdi", "south_asia": "Aditya Vardhan", "east_asia": "Hiroshi Yamato", "sub_saharan": "Babajide Adeniyi",
+          "slavic": "Nikolai Volkov", "latin_america": "Carlos Mendez", "south_east_asia": "Somsak Santos", "western": "Arthur Sterling"
+        }
+      },
+      {
+        "id": "Labor_Immigration_3", "background": "Vocational Training Expert", "age": 50, "gender": "male",
+        "stats": { "discipline": 80, "aggression": 45, "empathy": 60, "corruption": 15, "strategic": 80 },
+        "efficiency": { "decision_speed": 82, "accuracy": 85, "crisis_handling": 82 },
+        "ideology": { "type": "secular" },
+        "regional_names": {
+          "islamic": "Kamal Al-Farsi", "south_asia": "Chandra Shekhar", "east_asia": "Junichiro Koizumi", "sub_saharan": "Chukwu Emeka",
+          "slavic": "Vladimir Sokolov", "latin_america": "Mateo Rodriguez", "south_east_asia": "Nguyen Van", "western": "Harrison Vance"
+        }
+      },
+      {
+        "id": "Labor_Immigration_4", "background": "Expatriate Welfare Director", "age": 42, "gender": "female",
+        "stats": { "discipline": 82, "aggression": 30, "empathy": 85, "corruption": 5, "strategic": 85 },
+        "efficiency": { "decision_speed": 80, "accuracy": 90, "crisis_handling": 78 },
+        "ideology": { "type": "liberal" },
+        "regional_names": {
+          "islamic": "Soraya Al-Khatib", "south_asia": "Meenakshi Iyer", "east_asia": "Min-ji Kim", "sub_saharan": "Zola Ndlovu",
+          "slavic": "Svetlana Volkova", "latin_america": "Diana Vance", "south_east_asia": "Yuki Tanaka", "western": "Victoria Sterling"
+        }
+      },
+      {
+        "id": "Labor_Immigration_5", "background": "Workforce Allocation Analyst", "age": 49, "gender": "male",
+        "stats": { "discipline": 78, "aggression": 55, "empathy": 50, "corruption": 20, "strategic": 78 },
+        "efficiency": { "decision_speed": 88, "accuracy": 75, "crisis_handling": 80 },
+        "ideology": { "type": "nationalist" },
+        "regional_names": {
+          "islamic": "Fahim Ahmed", "south_asia": "Vikramaditya Sen", "east_asia": "Shen Wei", "sub_saharan": "Amina Bello",
+          "slavic": "Alexey Orlov", "latin_america": "Julian Sinclair", "south_east_asia": "Joko Widodo", "western": "Charles Sterling"
+        }
+      }
+    ],
+    "Culture_Religion": [
+      {
+        "id": "Culture_Religion_1", "background": "National Heritage Chief", "age": 56, "gender": "male",
+        "stats": { "discipline": 80, "aggression": 40, "empathy": 75, "corruption": 5, "strategic": 85 },
+        "efficiency": { "decision_speed": 75, "accuracy": 85, "crisis_handling": 80 },
+        "ideology": { "type": "nationalist" },
+        "regional_names": {
+          "islamic": "Tariq Al-Mansoor", "south_asia": "Rajesh Malhotra", "east_asia": "Kenjiro Tanaka", "sub_saharan": "Kwame Nkrumah",
+          "slavic": "Dmitry Belov", "latin_america": "Alejandro Silva", "south_east_asia": "Joko Widodo", "western": "Robert Vance"
+        }
+      },
+      {
+        "id": "Culture_Religion_2", "background": "Interfaith Harmony Delegate", "age": 50, "gender": "male",
+        "stats": { "discipline": 75, "aggression": 25, "empathy": 90, "corruption": 8, "strategic": 88 },
+        "efficiency": { "decision_speed": 82, "accuracy": 82, "crisis_handling": 85 },
+        "ideology": { "type": "secular" },
+        "regional_names": {
+          "islamic": "Yasir Al-Ghamdi", "south_asia": "Aditya Vardhan", "east_asia": "Hiroshi Yamato", "sub_saharan": "Babajide Adeniyi",
+          "slavic": "Nikolai Volkov", "latin_america": "Carlos Mendez", "south_east_asia": "Somsak Santos", "western": "Arthur Sterling"
+        }
+      },
+      {
+        "id": "Culture_Religion_3", "background": "Cultural Diplomacy Director", "age": 52, "gender": "male",
+        "stats": { "discipline": 85, "aggression": 35, "empathy": 70, "corruption": 10, "strategic": 82 },
+        "efficiency": { "decision_speed": 88, "accuracy": 78, "crisis_handling": 82 },
+        "ideology": { "type": "liberal" },
+        "regional_names": {
+          "islamic": "Kamal Al-Farsi", "south_asia": "Chandra Shekhar", "east_asia": "Junichiro Koizumi", "sub_saharan": "Chukwu Emeka",
+          "slavic": "Vladimir Sokolov", "latin_america": "Mateo Rodriguez", "south_east_asia": "Nguyen Van", "western": "Harrison Vance"
+        }
+      },
+      {
+        "id": "Culture_Religion_4", "background": "Endowments Administrator", "age": 44, "gender": "female",
+        "stats": { "discipline": 88, "aggression": 30, "empathy": 80, "corruption": 5, "strategic": 85 },
+        "efficiency": { "decision_speed": 80, "accuracy": 92, "crisis_handling": 82 },
+        "ideology": { "type": "secular" },
+        "regional_names": {
+          "islamic": "Soraya Al-Khatib", "south_asia": "Meenakshi Iyer", "east_asia": "Min-ji Kim", "sub_saharan": "Zola Ndlovu",
+          "slavic": "Svetlana Volkova", "latin_america": "Diana Vance", "south_east_asia": "Yuki Tanaka", "western": "Victoria Sterling"
+        }
+      },
+      {
+        "id": "Culture_Religion_5", "background": "Theological Council Chairman", "age": 60, "gender": "male",
+        "stats": { "discipline": 90, "aggression": 50, "empathy": 60, "corruption": 15, "strategic": 78 },
+        "efficiency": { "decision_speed": 75, "accuracy": 85, "crisis_handling": 78 },
+        "ideology": { "type": "nationalist" },
+        "regional_names": {
+          "islamic": "Aisha Al-Saud", "south_asia": "Vikramaditya Sen", "east_asia": "Shen Wei", "sub_saharan": "Amina Bello",
+          "slavic": "Alexey Orlov", "latin_america": "Julian Sinclair", "south_east_asia": "Joko Widodo", "western": "Charles Sterling"
+        }
+      }
+    ]
+  }
+      }

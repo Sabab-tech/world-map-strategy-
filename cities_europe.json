@@ -1,0 +1,1622 @@
+{
+  "region": "European Strategy Grid",
+  "countries": [
+    {
+      "name": "United Kingdom",
+      "capital": {
+        "name": "London",
+        "type": "political",
+        "description": "National capital and global financial command hub",
+        "lat": 51.5074,
+        "lon": -0.1278
+      },
+      "economic": [
+        {
+          "name": "Manchester",
+          "description": "Industrial core and major technology powerhouse",
+          "lat": 53.4808,
+          "lon": -2.2426
+        },
+        {
+          "name": "Birmingham",
+          "description": "Engineering, manufacturing and central transport node",
+          "lat": 52.4862,
+          "lon": -1.8904
+        }
+      ],
+      "military": [
+        {
+          "name": "Portsmouth Naval Base",
+          "description": "Primary headquarters and fleet command of the Royal Navy",
+          "lat": 50.8135,
+          "lon": -1.0911
+        }
+      ],
+      "secret": [
+        {
+          "name": "RAF Menwith Hill",
+          "description": "High-security strategic monitoring and global intelligence hub",
+          "lat": 54.0090,
+          "lon": -1.6901,
+          "status": "locked"
+        },
+        {
+          "name": "Faslane Nuclear Base",
+          "description": "Strategic nuclear submarine defense command",
+          "lat": 56.0682,
+          "lon": -4.8155,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "France",
+      "capital": {
+        "name": "Paris",
+        "type": "political",
+        "description": "National capital and major European cultural center",
+        "lat": 48.8566,
+        "lon": 2.3522
+      },
+      "economic": [
+        {
+          "name": "Marseille",
+          "description": "Largest commercial seaport on the Mediterranean coast",
+          "lat": 43.2965,
+          "lon": 5.3698
+        },
+        {
+          "name": "Lyon",
+          "description": "Chemical, pharmaceutical and biotechnology trade hub",
+          "lat": 45.7640,
+          "lon": 4.8357
+        }
+      ],
+      "military": [
+        {
+          "name": "Toulon Naval Base",
+          "description": "Main naval command and aircraft carrier fleet sector",
+          "lat": 43.1242,
+          "lon": 5.9280
+        }
+      ],
+      "secret": [
+        {
+          "name": "Ile Longue Submarine Base",
+          "description": "Subterranean nuclear ballistic missile submarine base",
+          "lat": 48.3000,
+          "lon": -4.5000,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "Germany",
+      "capital": {
+        "name": "Berlin",
+        "type": "political",
+        "description": "National capital and central administrative hub",
+        "lat": 52.5200,
+        "lon": 13.4050
+      },
+      "economic": [
+        {
+          "name": "Frankfurt",
+          "description": "Financial capital of Germany and major European aviation hub",
+          "lat": 50.1109,
+          "lon": 8.6821
+        },
+        {
+          "name": "Hamburg Port Area",
+          "description": "Germany's largest commercial shipping port and logistics node",
+          "lat": 53.5511,
+          "lon": 9.9937
+        },
+        {
+          "name": "Munich",
+          "description": "Advanced automotive, aerospace and technological industrial core",
+          "lat": 48.1351,
+          "lon": 11.5820
+        }
+      ],
+      "military": [
+        {
+          "name": "Ramstein Air Base",
+          "description": "Command headquarters for allied air forces in Europe",
+          "lat": 49.4350,
+          "lon": 7.6000
+        }
+      ],
+      "secret": [
+        {
+          "name": "Geltow Command Grid",
+          "description": "Strategic joint forces operations command center",
+          "lat": 52.3667,
+          "lon": 12.9667,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "Italy",
+      "capital": {
+        "name": "Rome",
+        "type": "political",
+        "description": "National capital and historic administrative center",
+        "lat": 41.9028,
+        "lon": 12.4964
+      },
+      "economic": [
+        {
+          "name": "Milan",
+          "description": "Financial heart, industrial core and economic capital of Italy",
+          "lat": 45.4642,
+          "lon": 9.1900
+        },
+        {
+          "name": "Genoa Port",
+          "description": "Primary northern deepwater seaport and manufacturing gateway",
+          "lat": 44.4056,
+          "lon": 8.9463
+        }
+      ],
+      "military": [
+        {
+          "name": "Sigonella Naval Station",
+          "description": "Strategic air base providing Mediterranean surveillance and support",
+          "lat": 37.4011,
+          "lon": 14.9211
+        }
+      ],
+      "secret": [
+        {
+          "name": "Mount Soratte Grid",
+          "description": "Deep subterranean strategic bunker and emergency command center",
+          "lat": 42.2333,
+          "lon": 12.5167,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "Spain",
+      "capital": {
+        "name": "Madrid",
+        "type": "political",
+        "description": "National capital and primary government headquarters",
+        "lat": 40.4168,
+        "lon": -3.7038
+      },
+      "economic": [
+        {
+          "name": "Barcelona Port Area",
+          "description": "Primary Mediterranean industrial port and commerce center",
+          "lat": 41.3851,
+          "lon": 2.1734
+        }
+      ],
+      "military": [
+        {
+          "name": "Rota Naval Base",
+          "description": "Strategic joint naval defense base on the Atlantic gateway",
+          "lat": 36.6167,
+          "lon": -6.3500
+        }
+      ],
+      "secret": [
+        {
+          "name": "Gibraltar Straits West",
+          "description": "Strategic maritime choke point electronic surveillance sector",
+          "lat": 36.0134,
+          "lon": -5.6034,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "Norway",
+      "capital": {
+        "name": "Oslo",
+        "type": "political",
+        "description": "National capital and maritime trade administrative center",
+        "lat": 59.9139,
+        "lon": 10.7522
+      },
+      "economic": [
+        {
+          "name": "Bergen",
+          "description": "Major energy production logistics and shipping hub",
+          "lat": 60.3913,
+          "lon": 5.3221
+        }
+      ],
+      "military": [
+        {
+          "name": "Haakonsvern Naval Base",
+          "description": "Main base of the Royal Norwegian Navy and northern defense node",
+          "lat": 60.3340,
+          "lon": 5.2230
+        }
+      ],
+      "secret": [
+        {
+          "name": "Vardo Radar Grid",
+          "description": "High-latitude radar station for arctic border and space tracking",
+          "lat": 70.3705,
+          "lon": 31.1111,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "Netherlands",
+      "capital": {
+        "name": "Amsterdam",
+        "type": "political",
+        "description": "National capital and major cultural and trade hub",
+        "lat": 52.3676,
+        "lon": 4.9041
+      },
+      "economic": [
+        {
+          "name": "Rotterdam",
+          "description": "Europe's largest commercial seaport and heavy industrial gate",
+          "lat": 51.9244,
+          "lon": 4.4777
+        }
+      ],
+      "military": [
+        {
+          "name": "Den Helder Naval Base",
+          "description": "Primary base of the Royal Netherlands Navy",
+          "lat": 52.9563,
+          "lon": 4.7570
+        }
+      ],
+      "secret": [
+        {
+          "name": "Volkel Air Base",
+          "description": "High-security strategic airbase and strategic storage depot",
+          "lat": 51.6500,
+          "lon": 5.7000,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "Poland",
+      "capital": {
+        "name": "Warsaw",
+        "type": "political",
+        "description": "National capital and historical administrative center",
+        "lat": 52.2297,
+        "lon": 21.0122
+      },
+      "economic": [
+        {
+          "name": "Gdansk Port",
+          "description": "Primary Baltic Sea seaport and logistics terminal",
+          "lat": 54.3520,
+          "lon": 18.6466
+        }
+      ],
+      "military": [
+        {
+          "name": "Szczecin Allied Command",
+          "description": "Strategic multinational corps defense headquarters",
+          "lat": 53.4285,
+          "lon": 14.5528
+        }
+      ],
+      "secret": [
+        {
+          "name": "Redzikowo Shield Base",
+          "description": "High-tech NATO missile interceptor defense facility",
+          "lat": 54.4780,
+          "lon": 17.1120,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "Sweden",
+      "capital": {
+        "name": "Stockholm",
+        "type": "political",
+        "description": "National capital and economic-political core of Scandinavia",
+        "lat": 59.3293,
+        "lon": 18.0686
+      },
+      "economic": [
+        {
+          "name": "Gothenburg Port Area",
+          "description": "Largest industrial port and major manufacturing hub",
+          "lat": 57.7089,
+          "lon": 11.9746
+        }
+      ],
+      "military": [
+        {
+          "name": "Karlskrona Naval Base",
+          "description": "Primary headquarters and shipyard of the Swedish Navy",
+          "lat": 56.1612,
+          "lon": 15.5869
+        }
+      ],
+      "secret": [
+        {
+          "name": "Musko Subterranean Base",
+          "description": "Vast underground granite-sheltered naval base",
+          "lat": 59.0000,
+          "lon": 18.0000,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "Switzerland",
+      "capital": {
+        "name": "Bern",
+        "type": "political",
+        "description": "De facto national capital and federal administrative center",
+        "lat": 46.9480,
+        "lon": 7.4474
+      },
+      "economic": [
+        {
+          "name": "Zurich",
+          "description": "Financial capital of Switzerland and major global banking node",
+          "lat": 47.3769,
+          "lon": 8.5417
+        },
+        {
+          "name": "Geneva",
+          "description": "Diplomatic center and headquarters of global organizations",
+          "lat": 46.2044,
+          "lon": 6.1432
+        }
+      ],
+      "military": [
+        {
+          "name": "Thun Armor Command",
+          "description": "Main defense command and tactical armored vehicles center",
+          "lat": 46.7580,
+          "lon": 7.6280
+        }
+      ],
+      "secret": [
+        {
+          "name": "Gotthard Fort Grid",
+          "description": "Massive alpine fortress system designed for national defense",
+          "lat": 46.5500,
+          "lon": 8.6000,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "Austria",
+      "capital": {
+        "name": "Vienna",
+        "type": "political",
+        "description": "National capital and major central European diplomatic hub",
+        "lat": 48.2082,
+        "lon": 16.3738
+      },
+      "economic": [
+        {
+          "name": "Linz Industrial Core",
+          "description": "Major heavy industry and advanced steel production center",
+          "lat": 48.3069,
+          "lon": 14.2858
+        }
+      ],
+      "military": [
+        {
+          "name": "Melk Pioneer Base",
+          "description": "Strategic military engineering and navigation command",
+          "lat": 48.2285,
+          "lon": 15.3312
+        }
+      ],
+      "secret": [
+        {
+          "name": "Alps Radar Grid",
+          "description": "High-altitude airspace defense and radar monitoring facility",
+          "lat": 47.2500,
+          "lon": 11.5000,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "Greece",
+      "capital": {
+        "name": "Athens",
+        "type": "political",
+        "description": "National capital and historical administration center",
+        "lat": 37.9838,
+        "lon": 23.7275
+      },
+      "economic": [
+        {
+          "name": "Piraeus Port Area",
+          "description": "Highly strategic Mediterranean shipping container mega-port",
+          "lat": 37.9430,
+          "lon": 23.6470
+        }
+      ],
+      "military": [
+        {
+          "name": "Souda Bay Naval Base",
+          "description": "Primary deepwater naval base and allied operations node in Crete",
+          "lat": 35.4855,
+          "lon": 24.1355
+        }
+      ],
+      "secret": [
+        {
+          "name": "Mount Athos Maritime Watch",
+          "description": "Strategic Aegean Sea naval surveillance sector",
+          "lat": 40.1500,
+          "lon": 24.3000,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "Portugal",
+      "capital": {
+        "name": "Lisbon",
+        "type": "political",
+        "description": "National capital and historic Atlantic maritime hub",
+        "lat": 38.7223,
+        "lon": -9.1393
+      },
+      "economic": [
+        {
+          "name": "Porto",
+          "description": "Northern industrial center and commercial seaport",
+          "lat": 41.1579,
+          "lon": -8.6291
+        }
+      ],
+      "military": [
+        {
+          "name": "Lajes Strategic Field",
+          "description": "Crucial transatlantic military airbase located in Azores",
+          "lat": 38.7617,
+          "lon": -27.0906
+        }
+      ],
+      "secret": [
+        {
+          "name": "Santa Maria Radar Station",
+          "description": "Transatlantic aerospace tracking and monitoring grid",
+          "lat": 36.9800,
+          "lon": -25.1300,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "Belgium",
+      "capital": {
+        "name": "Brussels",
+        "type": "political",
+        "description": "De facto capital of the European Union and NATO headquarters",
+        "lat": 50.8503,
+        "lon": 4.3517
+      },
+      "economic": [
+        {
+          "name": "Antwerp",
+          "description": "Europe's second-largest port and major global diamond trade center",
+          "lat": 51.2194,
+          "lon": 4.4025
+        }
+      ],
+      "military": [
+        {
+          "name": "Zaventem Air Command",
+          "description": "Strategic military transport and defense logistics airport",
+          "lat": 50.9010,
+          "lon": 4.4856
+        }
+      ],
+      "secret": [
+        {
+          "name": "Kleine Brogel Base",
+          "description": "High-security strategic airbase under allied surveillance network",
+          "lat": 51.1683,
+          "lon": 5.4700,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "Denmark",
+      "capital": {
+        "name": "Copenhagen",
+        "type": "political",
+        "description": "National capital and historic gateway to the Baltic Sea",
+        "lat": 55.6761,
+        "lon": 12.5683
+      },
+      "economic": [
+        {
+          "name": "Aarhus Port",
+          "description": "Primary commercial shipping port and industrial hub",
+          "lat": 56.1518,
+          "lon": 10.2064
+        }
+      ],
+      "military": [
+        {
+          "name": "Karup Air Command",
+          "description": "Main air command and joint tactical operations base",
+          "lat": 56.2975,
+          "lon": 9.1244
+        }
+      ],
+      "secret": [
+        {
+          "name": "Bornholm Island Grid",
+          "description": "Strategic Baltic Sea radar monitoring and surveillance post",
+          "lat": 55.1200,
+          "lon": 14.9000,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "Finland",
+      "capital": {
+        "name": "Helsinki",
+        "type": "political",
+        "description": "National capital and major Baltic economic hub",
+        "lat": 60.1699,
+        "lon": 24.9384
+      },
+      "economic": [
+        {
+          "name": "Turku",
+          "description": "Southwestern industrial seaport and historic trading node",
+          "lat": 60.4518,
+          "lon": 22.2666
+        }
+      ],
+      "military": [
+        {
+          "name": "Rovaniemi Air Base",
+          "description": "High-latitude Arctic defense wing and air force command",
+          "lat": 66.5651,
+          "lon": 25.8312
+        }
+      ],
+      "secret": [
+        {
+          "name": "Karelia Border Monitor",
+          "description": "High-security eastern land border surveillance perimeter",
+          "lat": 62.0000,
+          "lon": 31.0000,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "Czech Republic",
+      "capital": {
+        "name": "Prague",
+        "type": "political",
+        "description": "National capital and major central European economic core",
+        "lat": 50.0755,
+        "lon": 14.4378
+      },
+      "economic": [
+        {
+          "name": "Brno",
+          "description": "Central industrial, technology and manufacturing hub",
+          "lat": 49.1951,
+          "lon": 16.6068
+        }
+      ],
+      "military": [
+        {
+          "name": "Caslav Air Base",
+          "description": "Primary tactical air defense base and fighter jet wing",
+          "lat": 49.9142,
+          "lon": 15.3855
+        }
+      ],
+      "secret": [
+        {
+          "name": "Temelin Energy Zone",
+          "description": "High-security nuclear installation and power grid node",
+          "lat": 49.1801,
+          "lon": 14.3777,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "Romania",
+      "capital": {
+        "name": "Bucharest",
+        "type": "political",
+        "description": "National capital and economic hub of eastern Europe",
+        "lat": 44.4268,
+        "lon": 26.1025
+      },
+      "economic": [
+        {
+          "name": "Constanta",
+          "description": "Critical Black Sea cargo port and major maritime terminal",
+          "lat": 44.1792,
+          "lon": 28.6498
+        }
+      ],
+      "military": [
+        {
+          "name": "Kogalniceanu Airbase",
+          "description": "Major regional NATO joint air forces operations command",
+          "lat": 44.3644,
+          "lon": 28.4878
+        }
+      ],
+      "secret": [
+        {
+          "name": "Deveselu Shield Station",
+          "description": "Aegis Ashore strategic missile defense facility",
+          "lat": 44.0683,
+          "lon": 24.4100,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "Hungary",
+      "capital": {
+        "name": "Budapest",
+        "type": "political",
+        "description": "National capital and primary cultural-economic core",
+        "lat": 47.4979,
+        "lon": 19.0402
+      },
+      "economic": [
+        {
+          "name": "Debrecen",
+          "description": "Eastern trade hub and major pharmaceutical corridor",
+          "lat": 47.5316,
+          "lon": 21.6273
+        }
+      ],
+      "military": [
+        {
+          "name": "Papa Air Base",
+          "description": "Strategic multinational military heavy airlift wing base",
+          "lat": 47.3639,
+          "lon": 17.4967
+        }
+      ],
+      "secret": [
+        {
+          "name": "Paks Nuclear Grid",
+          "description": "Highly guarded strategic nuclear power plant network",
+          "lat": 46.5728,
+          "lon": 18.8544,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "Ireland",
+      "capital": {
+        "name": "Dublin",
+        "type": "political",
+        "description": "National capital and global technology financial center",
+        "lat": 53.3498,
+        "lon": -6.2603
+      },
+      "economic": [
+        {
+          "name": "Cork Port Area",
+          "description": "Southern trade port and major pharmaceutical chemical hub",
+          "lat": 51.8985,
+          "lon": -8.4756
+        }
+      ],
+      "military": [
+        {
+          "name": "Baldonnel Air Command",
+          "description": "Primary defensive air command and tactical aviation base",
+          "lat": 53.3014,
+          "lon": -6.4467
+        }
+      ],
+      "secret": [
+        {
+          "name": "Shannon Strategic Zone",
+          "description": "Transatlantic flight corridor surveillance and tracking node",
+          "lat": 52.7000,
+          "lon": -8.9000,
+          "status": "locked"
+        }
+      ]
+        },{
+      "name": "Bulgaria",
+      "capital": {
+        "name": "Sofia",
+        "type": "political",
+        "description": "National capital and historic central Balkan administrative hub",
+        "lat": 42.6977,
+        "lon": 23.3219
+      },
+      "economic": [
+        {
+          "name": "Varna Port",
+          "description": "Major commercial shipping seaport on the Black Sea",
+          "lat": 43.2141,
+          "lon": 27.9147
+        }
+      ],
+      "military": [
+        {
+          "name": "Bezmer Air Base",
+          "description": "Key strategic combat aviation and training wing",
+          "lat": 42.4542,
+          "lon": 26.3522
+        }
+      ],
+      "secret": [
+        {
+          "name": "Burgas Oil Terminal",
+          "description": "Critical maritime energy import and logistics pipeline zone",
+          "lat": 42.5000,
+          "lon": 27.4667,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "Croatia",
+      "capital": {
+        "name": "Zagreb",
+        "type": "political",
+        "description": "National capital and central economic gateway",
+        "lat": 45.8150,
+        "lon": 15.9819
+      },
+      "economic": [
+        {
+          "name": "Rijeka Port",
+          "description": "Deepwater Adriatic seaport and major heavy industry gateway",
+          "lat": 45.3271,
+          "lon": 14.4422
+        }
+      ],
+      "military": [
+        {
+          "name": "Lora Naval Base",
+          "description": "Main operations base of the Croatian Navy located in Split",
+          "lat": 43.5244,
+          "lon": 16.4312
+        }
+      ],
+      "secret": [
+        {
+          "name": "Kornati Surveillance Grid",
+          "description": "Adriatic Sea coastal radar and maritime warning network",
+          "lat": 43.8000,
+          "lon": 15.3000,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "Serbia",
+      "capital": {
+        "name": "Belgrade",
+        "type": "political",
+        "description": "National capital and historic central hub on the Danube",
+        "lat": 44.7872,
+        "lon": 20.4573
+      },
+      "economic": [
+        {
+          "name": "Nis",
+          "description": "Southern industrial center and vital regional transport node",
+          "lat": 43.3209,
+          "lon": 21.8954
+        }
+      ],
+      "military": [
+        {
+          "name": "Batajnica Air Base",
+          "description": "Primary military airforce wing and air interceptor center",
+          "lat": 44.9350,
+          "lon": 20.2581
+        }
+      ],
+      "secret": [
+        {
+          "name": "Pancevo Strategic Zone",
+          "description": "Highly guarded petrochemical refinery and energy reserve",
+          "lat": 44.8739,
+          "lon": 20.6403,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "Slovakia",
+      "capital": {
+        "name": "Bratislava",
+        "type": "political",
+        "description": "National capital situated on the Danube border gateway",
+        "lat": 48.1486,
+        "lon": 17.1077
+      },
+      "economic": [
+        {
+          "name": "Kosice",
+          "description": "Eastern metallurgical hub and heavy steel manufacturing base",
+          "lat": 48.7164,
+          "lon": 21.2611
+        }
+      ],
+      "military": [
+        {
+          "name": "Sliac Tactical Base",
+          "description": "Strategic central air defense and fighter aviation squadron",
+          "lat": 48.6183,
+          "lon": 19.1350
+        }
+      ],
+      "secret": [
+        {
+          "name": "Bohunice Energy Zone",
+          "description": "High-security nuclear facility and national grid command",
+          "lat": 48.4900,
+          "lon": 17.6700,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "Lithuania",
+      "capital": {
+        "name": "Vilnius",
+        "type": "political",
+        "description": "National capital and major cultural-administrative core",
+        "lat": 54.6872,
+        "lon": 25.2797
+      },
+      "economic": [
+        {
+          "name": "Klaipeda",
+          "description": "Crucial ice-free Baltic Sea deepwater commercial port",
+          "lat": 55.7033,
+          "lon": 21.1442
+        }
+      ],
+      "military": [
+        {
+          "name": "Siauliai Air Base",
+          "description": "Main base of NATO Baltic Air Policing tactical operations",
+          "lat": 55.8936,
+          "lon": 23.3944
+        }
+      ],
+      "secret": [
+        {
+          "name": "Suwalki Gap East Corridor",
+          "description": "Highly strategic land border defense and monitoring corridor",
+          "lat": 54.3000,
+          "lon": 23.5000,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "Estonia",
+      "capital": {
+        "name": "Tallinn",
+        "type": "political",
+        "description": "National capital and digital-technological economic seaport",
+        "lat": 59.4370,
+        "lon": 24.7536
+      },
+      "economic": [
+        {
+          "name": "Tartu",
+          "description": "Scientific, cultural and educational center of Estonia",
+          "lat": 58.3780,
+          "lon": 26.7290
+        }
+      ],
+      "military": [
+        {
+          "name": "Amari Air Base",
+          "description": "Strategic northern regional NATO air patrol interceptor base",
+          "lat": 59.2600,
+          "lon": 24.2000
+        }
+      ],
+      "secret": [
+        {
+          "name": "Narva Electronic Perimeter",
+          "description": "Eastern electronic border monitoring and sensor grid",
+          "lat": 59.3700,
+          "lon": 28.2000,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "Belarus",
+      "capital": {
+        "name": "Minsk",
+        "type": "political",
+        "description": "National capital and major heavy manufacturing core",
+        "lat": 53.9006,
+        "lon": 27.5590
+      },
+      "economic": [
+        {
+          "name": "Gomel",
+          "description": "Major southeastern industrial, chemical and machinery hub",
+          "lat": 52.4345,
+          "lon": 30.9754
+        }
+      ],
+      "military": [
+        {
+          "name": "Baranovichi Air Base",
+          "description": "Primary high-alert military interceptor aviation wing",
+          "lat": 53.1000,
+          "lon": 26.0500
+        }
+      ],
+      "secret": [
+        {
+          "name": "Ostrovets Nuclear Zone",
+          "description": "Highly fortified nuclear facility located near the western border",
+          "lat": 54.7500,
+          "lon": 25.9800,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "Iceland",
+      "capital": {
+        "name": "Reykjavik",
+        "type": "political",
+        "description": "National capital and North Atlantic shipping gateway",
+        "lat": 64.1466,
+        "lon": -21.9426
+      },
+      "economic": [
+        {
+          "name": "Akureyri",
+          "description": "Northern commercial port and primary fishing trade base",
+          "lat": 65.6833,
+          "lon": -18.0878
+        }
+      ],
+      "military": [
+        {
+          "name": "Keflavik Naval Command",
+          "description": "Highly vital transatlantic anti-submarine surveillance airbase",
+          "lat": 63.9786,
+          "lon": -22.6056
+        }
+      ],
+      "secret": [
+        {
+          "name": "GIUK Gap Surveillance System",
+          "description": "North Atlantic deep-sea acoustic submarine tracking grid",
+          "lat": 63.5000,
+          "lon": -20.0000,
+          "status": "locked"
+        }
+      ]
+     },
+    {
+      "name": "Latvia",
+      "capital": {
+        "name": "Riga",
+        "type": "political",
+        "description": "National capital and major Baltic trade gateway",
+        "lat": 56.9496,
+        "lon": 24.1052
+      },
+      "economic": [
+        {
+          "name": "Ventspils",
+          "description": "Ice-free commercial seaport on the Baltic Sea",
+          "lat": 57.3894,
+          "lon": 21.5606
+        }
+      ],
+      "military": [
+        {
+          "name": "Lielvarde Air Base",
+          "description": "Strategic regional military air operations command",
+          "lat": 56.6780,
+          "lon": 24.8510
+        }
+      ],
+      "secret": [
+        {
+          "name": "Liepaja Naval Grid",
+          "description": "Baltic sea electronic and submarine surveillance station",
+          "lat": 56.5200,
+          "lon": 21.0000,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "Luxembourg",
+      "capital": {
+        "name": "Luxembourg",
+        "type": "political",
+        "description": "National capital and European financial headquarters",
+        "lat": 49.6116,
+        "lon": 6.1319
+      },
+      "economic": [
+        {
+          "name": "Esch-sur-Alzette",
+          "description": "Industrial core and major technological hub",
+          "lat": 49.4972,
+          "lon": 5.9814
+        }
+      ],
+      "military": [
+        {
+          "name": "Herrenberg Base",
+          "description": "Main military command and joint training center",
+          "lat": 49.8514,
+          "lon": 6.1432
+        }
+      ],
+      "secret": [
+        {
+          "name": "Euro-Reserve Grid",
+          "description": "Underground high-security financial reserve vault network",
+          "lat": 49.6000,
+          "lon": 6.1000,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "Albania",
+      "capital": {
+        "name": "Tirana",
+        "type": "political",
+        "description": "National capital and economic-political center",
+        "lat": 41.3275,
+        "lon": 19.8187
+      },
+      "economic": [
+        {
+          "name": "Durres Port Area",
+          "description": "Largest Adriatic seaport and primary logistics gateway",
+          "lat": 41.3181,
+          "lon": 19.4432
+        }
+      ],
+      "military": [
+        {
+          "name": "Kucova Tactical Base",
+          "description": "NATO joint tactical aviation support base",
+          "lat": 40.7850,
+          "lon": 20.0142
+        }
+      ],
+      "secret": [
+        {
+          "name": "Sazan Island Grid",
+          "description": "Highly secure military surveillance island in the Adriatic Sea",
+          "lat": 40.5000,
+          "lon": 19.3000,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "Bosnia and Herzegovina",
+      "capital": {
+        "name": "Sarajevo",
+        "type": "political",
+        "description": "National capital and historic central Balkan administrative hub",
+        "lat": 43.8563,
+        "lon": 18.4131
+      },
+      "economic": [
+        {
+          "name": "Banja Luka",
+          "description": "Northwestern trading and regional transport corridor",
+          "lat": 44.7722,
+          "lon": 17.1910
+        }
+      ],
+      "military": [
+        {
+          "name": "Tuzla Air Base",
+          "description": "Strategic joint defense military aviation airbase",
+          "lat": 44.4586,
+          "lon": 18.7231
+        }
+      ],
+      "secret": [
+        {
+          "name": "Han Pijesak Bunker",
+          "description": "Subterranean bomb-proof emergency operations command bunker",
+          "lat": 44.0833,
+          "lon": 18.9500,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "North Macedonia",
+      "capital": {
+        "name": "Skopje",
+        "type": "political",
+        "description": "National capital and prominent administrative core",
+        "lat": 41.9965,
+        "lon": 21.4314
+      },
+      "economic": [
+        {
+          "name": "Bitola",
+          "description": "Southern agricultural, economic and industrial hub",
+          "lat": 41.0311,
+          "lon": 21.3327
+        }
+      ],
+      "military": [
+        {
+          "name": "Petrovec Tactical Base",
+          "description": "Primary military helicopter wing and tactical center",
+          "lat": 41.9612,
+          "lon": 21.6292
+        }
+      ],
+      "secret": [
+        {
+          "name": "Krivolak Training Grid",
+          "description": "Vast high-security military training and operations grid",
+          "lat": 41.5667,
+          "lon": 22.0333,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "Montenegro",
+      "capital": {
+        "name": "Podgorica",
+        "type": "political",
+        "description": "National capital and political-administrative core",
+        "lat": 42.4304,
+        "lon": 19.2594
+      },
+      "economic": [
+        {
+          "name": "Bar Port",
+          "description": "Key Adriatic deepwater cargo port and transport gate",
+          "lat": 42.0931,
+          "lon": 19.1001
+        }
+      ],
+      "military": [
+        {
+          "name": "Golubovci Air Base",
+          "description": "Tactical helicopter aviation and radar defense outpost",
+          "lat": 42.3612,
+          "lon": 19.2522
+        }
+      ],
+      "secret": [
+        {
+          "name": "Kotor Bay Defence",
+          "description": "Highly fortified naval bay electronic surveillance system",
+          "lat": 42.4500,
+          "lon": 18.6500,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "Slovenia",
+      "capital": {
+        "name": "Ljubljana",
+        "type": "political",
+        "description": "National capital and primary cultural-administrative hub",
+        "lat": 46.0569,
+        "lon": 14.5058
+      },
+      "economic": [
+        {
+          "name": "Koper Port",
+          "description": "Strategic northern Adriatic container seaport and trade gateway",
+          "lat": 45.5480,
+          "lon": 13.7294
+        }
+      ],
+      "military": [
+        {
+          "name": "Cerklje ob Krki Base",
+          "description": "NATO joint tactical aviation support airfield",
+          "lat": 45.8986,
+          "lon": 15.5312
+        }
+      ],
+      "secret": [
+        {
+          "name": "Postojna Alpine Grid",
+          "description": "Subterranean alpine reserve and weapons storage depot",
+          "lat": 45.7800,
+          "lon": 14.2100,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "Moldova",
+      "capital": {
+        "name": "Chisinau",
+        "type": "political",
+        "description": "National capital and primary administrative core",
+        "lat": 47.0105,
+        "lon": 28.8638
+      },
+      "economic": [
+        {
+          "name": "Balti",
+          "description": "Northern industrial hub and commerce center",
+          "lat": 47.7617,
+          "lon": 27.9289
+        }
+      ],
+      "military": [
+        {
+          "name": "Marculesti Air Base",
+          "description": "Tactical air force command and logistics airfield",
+          "lat": 47.8544,
+          "lon": 28.2100
+        }
+      ],
+      "secret": [
+        {
+          "name": "Transnistria Border Grid",
+          "description": "High-alert border monitoring and electronic surveillance zone",
+          "lat": 46.8500,
+          "lon": 29.6000,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "Malta",
+      "capital": {
+        "name": "Valletta",
+        "type": "political",
+        "description": "National capital and historic Mediterranean island fortress",
+        "lat": 35.8989,
+        "lon": 14.5146
+      },
+      "economic": [
+        {
+          "name": "Marsaxlokk Port",
+          "description": "Major container shipping and Mediterranean trade hub",
+          "lat": 35.8417,
+          "lon": 14.5456
+        }
+      ],
+      "military": [
+        {
+          "name": "Luqa Airfield",
+          "description": "Critical maritime patrol and defense aviation base",
+          "lat": 35.8575,
+          "lon": 14.4775
+        }
+      ],
+      "secret": [
+        {
+          "name": "Malta Channel Surveillance",
+          "description": "Undersea acoustic sensor network and shipping tracker",
+          "lat": 36.0000,
+          "lon": 14.4500,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "Kosovo",
+      "capital": {
+        "name": "Pristina",
+        "type": "political",
+        "description": "National capital and central administrative hub",
+        "lat": 42.6629,
+        "lon": 21.1655
+      },
+      "economic": [
+        {
+          "name": "Mitrovica",
+          "description": "Northern industrial core and vital mineral mining hub",
+          "lat": 42.8901,
+          "lon": 20.8656
+        }
+      ],
+      "military": [
+        {
+          "name": "Film City Command",
+          "description": "Strategic KFOR international military command headquarters",
+          "lat": 42.6500,
+          "lon": 21.1400
+        }
+      ],
+      "secret": [
+        {
+          "name": "Gazivoda Lake Grid",
+          "description": "Highly guarded critical water and infrastructure defense perimeter",
+          "lat": 42.9200,
+          "lon": 20.6500,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "Liechtenstein",
+      "capital": {
+        "name": "Vaduz",
+        "type": "political",
+        "description": "National capital, royal castle seat and administrative core",
+        "lat": 47.1410,
+        "lon": 9.5209
+      },
+      "economic": [
+        {
+          "name": "Schaan",
+          "description": "Largest municipality and primary industrial-tech hub",
+          "lat": 47.1650,
+          "lon": 9.5080
+        }
+      ],
+      "military": [
+        {
+          "name": "Balzers Post",
+          "description": "Southern gateway border and security coordination post",
+          "lat": 47.0667,
+          "lon": 9.5000
+        }
+      ],
+      "secret": [
+        {
+          "name": "Alpine Vault Network",
+          "description": "High-security underground financial and digital asset vault",
+          "lat": 47.1200,
+          "lon": 9.5500,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "Czechia",
+      "capital": {
+        "name": "Prague",
+        "type": "political",
+        "description": "National capital and major Central European core",
+        "lat": 50.0755,
+        "lon": 14.4378
+      },
+      "economic": [
+        {
+          "name": "Brno",
+          "description": "Central industrial, technology and manufacturing hub",
+          "lat": 49.1951,
+          "lon": 16.6068
+        }
+      ],
+      "military": [
+        {
+          "name": "Caslav Tactical Base",
+          "description": "Primary tactical air defense base and jet fighter wing",
+          "lat": 49.9142,
+          "lon": 15.3855
+        }
+      ],
+      "secret": [
+        {
+          "name": "Temelin Energy Grid",
+          "description": "High-security nuclear facility and national power grid command",
+          "lat": 49.1801,
+          "lon": 14.3777,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "Lithuania",
+      "capital": {
+        "name": "Vilnius",
+        "type": "political",
+        "description": "National capital and primary cultural-administrative core",
+        "lat": 54.6872,
+        "lon": 25.2797
+      },
+      "economic": [
+        {
+          "name": "Klaipeda",
+          "description": "Crucial ice-free Baltic Sea deepwater commercial seaport",
+          "lat": 55.7033,
+          "lon": 21.1442
+        }
+      ],
+      "military": [
+        {
+          "name": "Siauliai Air Base",
+          "description": "Main base of NATO Baltic Air Policing tactical operations",
+          "lat": 55.8936,
+          "lon": 23.3944
+        }
+      ],
+      "secret": [
+        {
+          "name": "Suwalki Gap East Corridor",
+          "description": "Highly strategic land border defense and monitoring corridor",
+          "lat": 54.3000,
+          "lon": 23.5000,
+          "status": "locked"
+        }
+      ]
+     },
+    {
+      "name": "Monaco",
+      "capital": {
+        "name": "Monaco",
+        "type": "political",
+        "description": "Sovereign city-state capital and historic Mediterranean palace seat",
+        "lat": 43.7384,
+        "lon": 7.4246
+      },
+      "economic": [
+        {
+          "name": "Monte Carlo",
+          "description": "Principal economic, tourism and high-finance core",
+          "lat": 43.7417,
+          "lon": 7.4280
+        }
+      ],
+      "military": [
+        {
+          "name": "Palace Guard Base",
+          "description": "Elite sovereign military and security coordination post",
+          "lat": 43.7312,
+          "lon": 7.4200
+        }
+      ],
+      "secret": [
+        {
+          "name": "Ligurian Sea Surveillance",
+          "description": "Strategic maritime radar tracking and naval warning grid",
+          "lat": 43.7000,
+          "lon": 7.4500,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "Andorra",
+      "capital": {
+        "name": "Andorra la Vella",
+        "type": "political",
+        "description": "National capital and high-altitude European commercial center",
+        "lat": 42.5063,
+        "lon": 1.5218
+      },
+      "economic": [
+        {
+          "name": "Escaldes-Engordany",
+          "description": "Principal commercial hub and thermal water resort node",
+          "lat": 42.5080,
+          "lon": 1.5333
+        }
+      ],
+      "military": [
+        {
+          "name": "Pyrenees Border Command",
+          "description": "Strategic mountain pass security coordination center",
+          "lat": 42.5500,
+          "lon": 1.5000
+        }
+      ],
+      "secret": [
+        {
+          "name": "Madriu Reserve Grid",
+          "description": "High-altitude mountain valley security and storage zone",
+          "lat": 42.4800,
+          "lon": 1.6000,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "San Marino",
+      "capital": {
+        "name": "San Marino",
+        "type": "political",
+        "description": "National capital and historic central Apennine core",
+        "lat": 43.9424,
+        "lon": 12.4578
+      },
+      "economic": [
+        {
+          "name": "Dogana",
+          "description": "Largest commercial town and primary border transit node",
+          "lat": 43.9801,
+          "lon": 12.5000
+        }
+      ],
+      "military": [
+        {
+          "name": "Mount Titano Guard",
+          "description": "Historic fortress defense command and state guard",
+          "lat": 43.9333,
+          "lon": 12.4500
+        }
+      ],
+      "secret": [
+        {
+          "name": "Central Apennine Radar",
+          "description": "High-altitude strategic airspace defense radar grid",
+          "lat": 43.9000,
+          "lon": 12.4000,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "Vatican City",
+      "capital": {
+        "name": "Vatican City",
+        "type": "political",
+        "description": "Sovereign ecclesiastical city-state capital and Holy See seat",
+        "lat": 41.9029,
+        "lon": 12.4534
+      },
+      "economic": [
+        {
+          "name": "Vatican Bank Grid",
+          "description": "Highly secure sovereign financial and administrative network",
+          "lat": 41.9025,
+          "lon": 12.4545
+        }
+      ],
+      "military": [
+        {
+          "name": "Swiss Guard Command",
+          "description": "Elite sovereign defense and security force headquarters",
+          "lat": 41.9035,
+          "lon": 12.4550
+        }
+      ],
+      "secret": [
+        {
+          "name": "Apostolic Archive Vault",
+          "description": "Highly secure underground historical archive storage facility",
+          "lat": 41.9020,
+          "lon": 12.4525,
+          "status": "locked"
+        }
+      ]
+     }
+   ]
+  }

@@ -1,0 +1,828 @@
+{
+  "region": "North America Strategy Grid",
+  "countries": [
+    {
+      "name": "United States of America",
+      "capital": {
+        "name": "Washington D.C.",
+        "type": "political",
+        "description": "National capital and global political-military command core",
+        "lat": 38.8951,
+        "lon": -77.0364
+      },
+      "economic": [
+        {
+          "name": "New York City",
+          "description": "Global financial capital and massive trade gateway",
+          "lat": 40.7128,
+          "lon": -74.0060
+        },
+        {
+          "name": "Los Angeles",
+          "description": "Primary West Coast economic hub and mega container port",
+          "lat": 34.0522,
+          "lon": -118.2437
+        }
+      ],
+      "military": [
+        {
+          "name": "Norfolk Naval Base",
+          "description": "World's largest naval station and Atlantic fleet headquarters",
+          "lat": 36.9383,
+          "lon": -76.3013
+        }
+      ],
+      "secret": [
+        {
+          "name": "Area 51",
+          "description": "Highly classified aerospace testing facility and military grid",
+          "lat": 37.2333,
+          "lon": -115.8167,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "Canada",
+      "capital": {
+        "name": "Ottawa",
+        "type": "political",
+        "description": "National capital and federal administration center",
+        "lat": 45.4215,
+        "lon": -75.6972
+      },
+      "economic": [
+        {
+          "name": "Toronto",
+          "description": "Primary financial capital and industrial core of Canada",
+          "lat": 43.6532,
+          "lon": -79.3832
+        },
+        {
+          "name": "Vancouver Port Area",
+          "description": "Primary Pacific shipping seaport and major trade gate",
+          "lat": 49.2827,
+          "lon": -123.1207
+        }
+      ],
+      "military": [
+        {
+          "name": "Halifax Naval Base",
+          "description": "Main base and fleet command of the Royal Canadian Navy",
+          "lat": 44.6500,
+          "lon": -63.5833
+        }
+      ],
+      "secret": [
+        {
+          "name": "CFS Alert",
+          "description": "World's northernmost strategic military signals intelligence station",
+          "lat": 82.5018,
+          "lon": -62.3389,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "Mexico",
+      "capital": {
+        "name": "Mexico City",
+        "type": "political",
+        "description": "National capital and major cultural-economic core",
+        "lat": 19.4326,
+        "lon": -99.1332
+      },
+      "economic": [
+        {
+          "name": "Monterrey",
+          "description": "Prominent heavy industry, manufacturing and commercial hub",
+          "lat": 25.6866,
+          "lon": -100.3161
+        },
+        {
+          "name": "Veracruz Port",
+          "description": "Primary Gulf of Mexico commercial seaport and trade gateway",
+          "lat": 19.1738,
+          "lon": -96.1342
+        }
+      ],
+      "military": [
+        {
+          "name": "Santa Lucia Air Base",
+          "description": "Primary military airforce tactical command and airfield base",
+          "lat": 19.7431,
+          "lon": -98.9912
+        }
+      ],
+      "secret": [
+        {
+          "name": "Tehuantepec Canal",
+          "description": "Strategic proposed shipping canal and electronic surveillance corridor",
+          "lat": 16.5000,
+          "lon": -95.0000,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "Guatemala",
+      "capital": {
+        "name": "Guatemala City",
+        "type": "political",
+        "description": "National capital and major economic hub of Central America",
+        "lat": 14.6349,
+        "lon": -90.5069
+      },
+      "economic": [
+        {
+          "name": "Quetzaltenango",
+          "description": "Western regional trading, commercial and industrial corridor",
+          "lat": 14.8347,
+          "lon": -91.5181
+        }
+      ],
+      "military": [
+        {
+          "name": "Puerto San Jose Base",
+          "description": "Primary Pacific fleet command and coastal patrol post",
+          "lat": 13.9167,
+          "lon": -90.8333
+        }
+      ],
+      "secret": [
+        {
+          "name": "Peten Jungle Grid",
+          "description": "High-security northern jungle border surveillance and radar post",
+          "lat": 16.9000,
+          "lon": -90.0000,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "Belize",
+      "capital": {
+        "name": "Belmopan",
+        "type": "political",
+        "description": "National capital and planned federal administrative center",
+        "lat": 17.2510,
+        "lon": -88.7667
+      },
+      "economic": [
+        {
+          "name": "Belize City",
+          "description": "Largest economic hub, commercial center and cargo seaport",
+          "lat": 17.5000,
+          "lon": -88.1975
+        }
+      ],
+      "military": [
+        {
+          "name": "Price Barracks",
+          "description": "Main headquarters of the Belize Defence Force",
+          "lat": 17.5444,
+          "lon": -88.2434
+        }
+      ],
+      "secret": [
+        {
+          "name": "Barrier Reef Grid",
+          "description": "Strategic coastal reef monitoring and maritime tracking network",
+          "lat": 17.3000,
+          "lon": -87.8000,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "El Salvador",
+      "capital": {
+        "name": "San Salvador",
+        "type": "political",
+        "description": "National capital and major economic core",
+        "lat": 13.6929,
+        "lon": -89.2182
+      },
+      "economic": [
+        {
+          "name": "San Miguel",
+          "description": "Eastern commercial center and regional trading hub",
+          "lat": 13.4833,
+          "lon": -88.1833
+        }
+      ],
+      "military": [
+        {
+          "name": "Comalapa Air Base",
+          "description": "Strategic military airfield and tactical defense aviation base",
+          "lat": 13.4433,
+          "lon": -89.0556
+        }
+      ],
+      "secret": [
+        {
+          "name": "Fonseca Gulf Guard",
+          "description": "Highly strategic naval strait tracking and security radar",
+          "lat": 13.1500,
+          "lon": -87.9000,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "Honduras",
+      "capital": {
+        "name": "Tegucigalpa",
+        "type": "political",
+        "description": "National capital and historical administrative center",
+        "lat": 14.0818,
+        "lon": -87.2069
+      },
+      "economic": [
+        {
+          "name": "San Pedro Sula",
+          "description": "Primary industrial center, cargo logistics and trading hub",
+          "lat": 15.5049,
+          "lon": -88.0250
+        }
+      ],
+      "military": [
+        {
+          "name": "Soto Cano Air Base",
+          "description": "Joint strategic combat military command and tactical airfield",
+          "lat": 14.3817,
+          "lon": -87.6433
+        }
+      ],
+      "secret": [
+        {
+          "name": "Mosquitia Border Grid",
+          "description": "Remote rainforest border surveillance and radar outpost",
+          "lat": 15.0000,
+          "lon": -84.5000,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "Nicaragua",
+      "capital": {
+        "name": "Managua",
+        "type": "political",
+        "description": "National capital and central administrative core",
+        "lat": 12.1150,
+        "lon": -86.2367
+      },
+      "economic": [
+        {
+          "name": "Corinto Seaport",
+          "description": "Primary Pacific deepwater cargo and commercial port",
+          "lat": 12.4833,
+          "lon": -87.1667
+        }
+      ],
+      "military": [
+        {
+          "name": "Sandino Air Base",
+          "description": "Primary fighter aviation command and airforce base",
+          "lat": 12.1411,
+          "lon": -86.1667
+        }
+      ],
+      "secret": [
+        {
+          "name": "Canal Route Survey",
+          "description": "Strategic maritime transport channel development corridor",
+          "lat": 12.0000,
+          "lon": -84.0000,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "Costa Rica",
+      "capital": {
+        "name": "San Jose",
+        "type": "political",
+        "description": "National capital and economic-political heart",
+        "lat": 9.9281,
+        "lon": -84.0907
+      },
+      "economic": [
+        {
+          "name": "Puerto Limon",
+          "description": "Primary Caribbean seaport and heavy trade gateway",
+          "lat": 10.0020,
+          "lon": -83.0244
+        }
+      ],
+      "military": [
+        {
+          "name": "Murcielago Border Post",
+          "description": "Primary tactical border patrol and security coordination camp",
+          "lat": 10.9500,
+          "lon": -85.7000
+        }
+      ],
+      "secret": [
+        {
+          "name": "Cocos Island Grid",
+          "description": "Strategic deepwater Pacific maritime surveillance outpost",
+          "lat": 5.5333,
+          "lon": -87.0667,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "Panama",
+      "capital": {
+        "name": "Panama City",
+        "type": "political",
+        "description": "National capital and global shipping administrative core",
+        "lat": 8.9824,
+        "lon": -79.5199
+      },
+      "economic": [
+        {
+          "name": "Colon",
+          "description": "Major Free Trade Zone and primary Atlantic container port",
+          "lat": 9.3520,
+          "lon": -79.9001
+        }
+      ],
+      "military": [
+        {
+          "name": "Senan Naval Post",
+          "description": "Primary maritime coastal guard and patrol ship base",
+          "lat": 8.9500,
+          "lon": -79.5500
+        }
+      ],
+      "secret": [
+        {
+          "name": "Panama Canal Control",
+          "description": "Highly secure global shipping choke point monitoring command",
+          "lat": 9.0000,
+          "lon": -79.6000,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "Cuba",
+      "capital": {
+        "name": "Havana",
+        "type": "political",
+        "description": "National capital and historic Caribbean command hub",
+        "lat": 23.1136,
+        "lon": -82.3666
+      },
+      "economic": [
+        {
+          "name": "Santiago de Cuba",
+          "description": "Second largest city and major eastern commercial seaport",
+          "lat": 20.0167,
+          "lon": -75.8333
+        }
+      ],
+      "military": [
+        {
+          "name": "Cienfuegos Base",
+          "description": "Primary naval command and fleet shipyard of the Cuban Navy",
+          "lat": 22.1444,
+          "lon": -80.4500
+        }
+      ],
+      "secret": [
+        {
+          "name": "Lourdes Surveillance",
+          "description": "High-security signal intelligence and electronic monitoring grid",
+          "lat": 22.9833,
+          "lon": -82.4833,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "Jamaica",
+      "capital": {
+        "name": "Kingston",
+        "type": "political",
+        "description": "National capital and natural deepwater seaport core",
+        "lat": 17.9714,
+        "lon": -76.7936
+      },
+      "economic": [
+        {
+          "name": "Montego Bay",
+          "description": "Primary tourism capital and commercial logistical trade node",
+          "lat": 18.4714,
+          "lon": -77.9189
+        }
+      ],
+      "military": [
+        {
+          "name": "Up Park Camp",
+          "description": "Headquarters of the Jamaica Defence Force and training command",
+          "lat": 17.9800,
+          "lon": -76.7800
+        }
+      ],
+      "secret": [
+        {
+          "name": "Pedro Cays Watch",
+          "description": "Strategic Caribbean maritime security and radar warning station",
+          "lat": 17.0000,
+          "lon": -77.8000,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "Haiti",
+      "capital": {
+        "name": "Port-au-Prince",
+        "type": "political",
+        "description": "National capital and primary administrative seaport",
+        "lat": 18.5392,
+        "lon": -72.3364
+      },
+      "economic": [
+        {
+          "name": "Cap-Haitien",
+          "description": "Primary northern trading port and commercial gateway",
+          "lat": 19.7500,
+          "lon": -72.2000
+        }
+      ],
+      "military": [
+        {
+          "name": "Bizoton Patrol Base",
+          "description": "Primary maritime coastal guard and patrol ship command",
+          "lat": 18.5256,
+          "lon": -72.3785
+        }
+      ],
+      "secret": [
+        {
+          "name": "Windward Passage Monitor",
+          "description": "Strategic maritime shipping and strait surveillance grid",
+          "lat": 19.7000,
+          "lon": -73.5000,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "Dominican Republic",
+      "capital": {
+        "name": "Santo Domingo",
+        "type": "political",
+        "description": "National capital and prominent Caribbean seaport",
+        "lat": 18.4861,
+        "lon": -69.9312
+      },
+      "economic": [
+        {
+          "name": "Santiago",
+          "description": "Second largest city and major northern industrial hub",
+          "lat": 19.4517,
+          "lon": -70.6971
+        }
+      ],
+      "military": [
+        {
+          "name": "San Isidro Air Base",
+          "description": "Primary military airfield and tactical air force command",
+          "lat": 18.5033,
+          "lon": -69.7600
+        }
+      ],
+      "secret": [
+        {
+          "name": "Mona Passage Grid",
+          "description": "Strategic maritime tracking radar and airspace patrol zone",
+          "lat": 18.5000,
+          "lon": -68.4000,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "Bahamas",
+      "capital": {
+        "name": "Nassau",
+        "type": "political",
+        "description": "National capital and primary commercial seaport",
+        "lat": 25.0475,
+        "lon": -77.3554
+      },
+      "economic": [
+        {
+          "name": "Freeport Port",
+          "description": "Primary industrial zone and container transshipment terminal",
+          "lat": 26.5333,
+          "lon": -78.6833
+        }
+      ],
+      "military": [
+        {
+          "name": "Coral Harbour Base",
+          "description": "Headquarters of the Royal Bahamas Defence Force",
+          "lat": 24.9924,
+          "lon": -77.4924
+        }
+      ],
+      "secret": [
+        {
+          "name": "AUTEC Navy Grid",
+          "description": "Joint US-UK high-security underwater testing and acoustic facility",
+          "lat": 24.7500,
+          "lon": -77.7500,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "Antigua and Barbuda",
+      "capital": {
+        "name": "St. John's",
+        "type": "political",
+        "description": "National capital and historic central administrative seaport",
+        "lat": 17.1167,
+        "lon": -61.8500
+      },
+      "economic": [
+        {
+          "name": "Codrington",
+          "description": "Primary town on Barbuda island and regional commerce core",
+          "lat": 17.6333,
+          "lon": -61.8333
+        }
+      ],
+      "military": [
+        {
+          "name": "Camp Blizzard",
+          "description": "Main base and barracks of the Antigua and Barbuda Defence Force",
+          "lat": 17.1333,
+          "lon": -61.7833
+        }
+      ],
+      "secret": [
+        {
+          "name": "Antigua Space Station",
+          "description": "High-security space tracking and telemetry radar facility",
+          "lat": 17.1500,
+          "lon": -61.8000,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "Barbados",
+      "capital": {
+        "name": "Bridgetown",
+        "type": "political",
+        "description": "National capital and historic Atlantic maritime gateway",
+        "lat": 13.1132,
+        "lon": -59.5988
+      },
+      "economic": [
+        {
+          "name": "Speightstown",
+          "description": "Secondary commercial port and northern trade core",
+          "lat": 13.2500,
+          "lon": -59.6333
+        }
+      ],
+      "military": [
+        {
+          "name": "Paragon Defense Base",
+          "description": "Primary headquarters and barracks of the Barbados Defence Force",
+          "lat": 13.0722,
+          "lon": -59.4922
+        }
+      ],
+      "secret": [
+        {
+          "name": "Atlantic Radar Station",
+          "description": "High-alert maritime surveillance and early-warning radar",
+          "lat": 13.1500,
+          "lon": -59.5000,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "Dominica",
+      "capital": {
+        "name": "Roseau",
+        "type": "political",
+        "description": "National capital and primary administrative seaport",
+        "lat": 15.3012,
+        "lon": -61.3883
+      },
+      "economic": [
+        {
+          "name": "Portsmouth",
+          "description": "Secondary shipping port and agricultural commerce hub",
+          "lat": 15.5667,
+          "lon": -61.4667
+        }
+      ],
+      "military": [
+        {
+          "name": "Morne Bruce Post",
+          "description": "Primary police defense command and security outpost",
+          "lat": 15.2989,
+          "lon": -61.3812
+        }
+      ],
+      "secret": [
+        {
+          "name": "Dominica Channel Grid",
+          "description": "Strategic maritime strait tracking and shipping warning grid",
+          "lat": 15.4000,
+          "lon": -61.4000,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "Grenada",
+      "capital": {
+        "name": "St. George's",
+        "type": "political",
+        "description": "National capital and historic southern Caribbean seaport",
+        "lat": 12.0529,
+        "lon": -61.7489
+      },
+      "economic": [
+        {
+          "name": "Grenville",
+          "description": "Secondary island commercial city and agricultural trade node",
+          "lat": 12.1221,
+          "lon": -61.6241
+        }
+      ],
+      "military": [
+        {
+          "name": "Camp Salines",
+          "description": "Primary paramilitary defense force headquarters",
+          "lat": 12.0167,
+          "lon": -61.7833
+        }
+      ],
+      "secret": [
+        {
+          "name": "Grenadines Patrol Grid",
+          "description": "Strategic southern maritime monitoring and security network",
+          "lat": 12.2000,
+          "lon": -61.6000,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "Saint Kitts and Nevis",
+      "capital": {
+        "name": "Basseterre",
+        "type": "political",
+        "description": "National capital atoll and primary commercial seaport",
+        "lat": 17.2941,
+        "lon": -62.7247
+      },
+      "economic": [
+        {
+          "name": "Charlestown",
+          "description": "Primary town on Nevis island and regional commerce core",
+          "lat": 17.1333,
+          "lon": -62.6167
+        }
+      ],
+      "military": [
+        {
+          "name": "Camp Springfield",
+          "description": "Headquarters and barracks of the St. Kitts and Nevis Defence Force",
+          "lat": 17.3000,
+          "lon": -62.7333
+        }
+      ],
+      "secret": [
+        {
+          "name": "Narrows Passage Patrol",
+          "description": "Strategic maritime channel monitoring and security patrol",
+          "lat": 17.2000,
+          "lon": -62.6500,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "Saint Lucia",
+      "capital": {
+        "name": "Castries",
+        "type": "political",
+        "description": "National capital and historic central administrative seaport",
+        "lat": 14.0090,
+        "lon": -60.9875
+      },
+      "economic": [
+        {
+          "name": "Vieux Fort",
+          "description": "Secondary commercial port, airport and industrial logistics core",
+          "lat": 13.7223,
+          "lon": -60.9520
+        }
+      ],
+      "military": [
+        {
+          "name": "La Toc Patrol Post",
+          "description": "Royal Saint Lucia Police Force marine unit outpost",
+          "lat": 14.0050,
+          "lon": -61.0000
+        }
+      ],
+      "secret": [
+        {
+          "name": "Saint Lucia Channel Grid",
+          "description": "Strategic maritime strait tracking and airspace defense radar",
+          "lat": 14.1500,
+          "lon": -60.9500,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "Saint Vincent and the Grenadines",
+      "capital": {
+        "name": "Kingstown",
+        "type": "political",
+        "description": "National capital and primary administrative seaport",
+        "lat": 13.1575,
+        "lon": -61.2241
+      },
+      "economic": [
+        {
+          "name": "Port Elizabeth",
+          "description": "Primary town in Bequia island and regional commerce core",
+          "lat": 13.0033,
+          "lon": -61.2367
+        }
+      ],
+      "military": [
+        {
+          "name": "Calliaqua Command",
+          "description": "Primary national coast guard base and marine patrol base",
+          "lat": 13.1311,
+          "lon": -61.2012
+        }
+      ],
+      "secret": [
+        {
+          "name": "Grenadines Passage Patrol",
+          "description": "Strategic maritime strait tracking and warning radar grid",
+          "lat": 12.8000,
+          "lon": -61.2500,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "Trinidad and Tobago",
+      "capital": {
+        "name": "Port of Spain",
+        "type": "political",
+        "description": "National capital and primary maritime trade center",
+        "lat": 10.6667,
+        "lon": -61.5167
+      },
+      "economic": [
+        {
+          "name": "San Fernando",
+          "description": "Industrial core and primary petroleum refinery-logistics hub",
+          "lat": 10.2833,
+          "lon": -61.4667
+        }
+      ],
+      "military": [
+        {
+          "name": "Chaguaramas Base",
+          "description": "Headquarters of the Trinidad and Tobago Coast Guard",
+          "lat": 10.6823,
+          "lon": -61.6292
+        }
+      ],
+      "secret": [
+        {
+          "name": "Galeota Offshore Grid",
+          "description": "High-security petroleum platforms and coastal protection network",
+          "lat": 10.1333,
+          "lon": -61.0000,
+          "status": "locked"
+        }
+      ]
+    }
+  ]
+ }

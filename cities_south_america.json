@@ -1,0 +1,443 @@
+{
+  "region": "South America Strategy Grid",
+  "countries": [
+    {
+      "name": "Brazil",
+      "capital": {
+        "name": "Brasilia",
+        "type": "political",
+        "description": "National capital and planned federal administration core",
+        "lat": -15.7938,
+        "lon": -47.8827
+      },
+      "economic": [
+        {
+          "name": "Sao Paulo",
+          "description": "Largest financial capital and economic powerhouse of South America",
+          "lat": -23.5505,
+          "lon": -46.6333
+        },
+        {
+          "name": "Rio de Janeiro",
+          "description": "Major cultural capital and prominent Atlantic trade seaport",
+          "lat": -22.9068,
+          "lon": -43.1729
+        }
+      ],
+      "military": [
+        {
+          "name": "Rio Grande Naval Base",
+          "description": "Strategic southern fleet command of the Brazilian Navy",
+          "lat": -32.0350,
+          "lon": -52.0986
+        }
+      ],
+      "secret": [
+        {
+          "name": "Amazon Radar Network",
+          "description": "Highly secure SIVAM rainforest surveillance and airspace tracking grid",
+          "lat": -3.1190,
+          "lon": -60.0217,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "Argentina",
+      "capital": {
+        "name": "Buenos Aires",
+        "type": "political",
+        "description": "National capital and major Atlantic commercial megacity",
+        "lat": -34.6037,
+        "lon": -58.3816
+      },
+      "economic": [
+        {
+          "name": "Rosario Port Area",
+          "description": "Major agricultural export port on the Parana River",
+          "lat": -32.9442,
+          "lon": -60.6505
+        },
+        {
+          "name": "Cordoba",
+          "description": "Secondary industrial, aerospace and technological core",
+          "lat": -31.4201,
+          "lon": -64.1888
+        }
+      ],
+      "military": [
+        {
+          "name": "Puerto Belgrano Naval Base",
+          "description": "Main base and fleet command headquarters of the Argentine Navy",
+          "lat": -38.8833,
+          "lon": -62.1000
+        }
+      ],
+      "secret": [
+        {
+          "name": "Patagonia Deep Space Station",
+          "description": "Strategic satellite tracking and deep-space monitoring facility",
+          "lat": -38.1914,
+          "lon": -70.1350,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "Colombia",
+      "capital": {
+        "name": "Bogota",
+        "type": "political",
+        "description": "National capital and high-altitude administrative center",
+        "lat": 4.7110,
+        "lon": -74.0721
+      },
+      "economic": [
+        {
+          "name": "Medellin",
+          "description": "Major industrial center, commercial hub and business core",
+          "lat": 6.2442,
+          "lon": -75.5748
+        },
+        {
+          "name": "Barranquilla Port",
+          "description": "Primary Caribbean shipping port and maritime trade terminal",
+          "lat": 10.9639,
+          "lon": -74.7963
+        }
+      ],
+      "military": [
+        {
+          "name": "Cartagena Naval Base",
+          "description": "Primary Caribbean naval command and fleet base",
+          "lat": 10.4242,
+          "lon": -75.5433
+        }
+      ],
+      "secret": [
+        {
+          "name": "Pacific Radar Guard",
+          "description": "Strategic maritime surveillance and naval tracking zone",
+          "lat": 1.5000,
+          "lon": -78.0000,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "Peru",
+      "capital": {
+        "name": "Lima",
+        "type": "political",
+        "description": "National capital and primary Pacific commercial core",
+        "lat": -12.0464,
+        "lon": -77.0428
+      },
+      "economic": [
+        {
+          "name": "Arequipa",
+          "description": "Secondary commercial, legal and heavy manufacturing center",
+          "lat": -16.4090,
+          "lon": -71.5375
+        }
+      ],
+      "military": [
+        {
+          "name": "Callao Naval Base",
+          "description": "Main base and fleet command headquarters of the Peruvian Navy",
+          "lat": -12.0563,
+          "lon": -77.1242
+        }
+      ],
+      "secret": [
+        {
+          "name": "Andean Surveillance Grid",
+          "description": "High-altitude airspace defense tracking and radar network",
+          "lat": -10.0000,
+          "lon": -75.0000,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "Venezuela",
+      "capital": {
+        "name": "Caracas",
+        "type": "political",
+        "description": "National capital and major cultural-administrative core",
+        "lat": 10.4806,
+        "lon": -66.9036
+      },
+      "economic": [
+        {
+          "name": "Maracaibo",
+          "description": "Major oil refinery, production and maritime shipping seaport",
+          "lat": 10.6589,
+          "lon": -71.6550
+        }
+      ],
+      "military": [
+        {
+          "name": "Puerto Cabello Base",
+          "description": "Primary naval command and shipyard of the Venezuelan Navy",
+          "lat": 10.4833,
+          "lon": -68.0167
+        }
+      ],
+      "secret": [
+        {
+          "name": "Orinoco Tar Belt Grid",
+          "description": "Highly guarded strategic petroleum and oil sands security zone",
+          "lat": 8.0000,
+          "lon": -63.5000,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "Chile",
+      "capital": {
+        "name": "Santiago",
+        "type": "political",
+        "description": "National capital and major administrative core",
+        "lat": -33.4489,
+        "lon": -70.6693
+      },
+      "economic": [
+        {
+          "name": "Valparaiso Port Area",
+          "description": "Legislative capital and primary commercial shipping seaport",
+          "lat": -33.0472,
+          "lon": -71.6127
+        }
+      ],
+      "military": [
+        {
+          "name": "Talcahuano Naval Base",
+          "description": "Main base and primary shipyard of the Chilean Navy",
+          "lat": -36.7242,
+          "lon": -73.1167
+        }
+      ],
+      "secret": [
+        {
+          "name": "Atacama Space Radar",
+          "description": "Strategic high-altitude aerospace radar tracking facility",
+          "lat": -24.0000,
+          "lon": -70.0000,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "Ecuador",
+      "capital": {
+        "name": "Quito",
+        "type": "political",
+        "description": "High-altitude national capital and historic administrative core",
+        "lat": -0.1807,
+        "lon": -78.4678
+      },
+      "economic": [
+        {
+          "name": "Guayaquil Port",
+          "description": "Largest city, commercial heart and primary seaport",
+          "lat": -2.1708,
+          "lon": -79.9224
+        }
+      ],
+      "military": [
+        {
+          "name": "Manta Air Base",
+          "description": "Strategic military airfield and Pacific surveillance command",
+          "lat": -0.9500,
+          "lon": -80.7011
+        }
+      ],
+      "secret": [
+        {
+          "name": "Galapagos Patrol Grid",
+          "description": "Highly secure marine reserve protection and monitoring system",
+          "lat": -0.9000,
+          "lon": -89.6000,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "Bolivia",
+      "capital": {
+        "name": "La Paz",
+        "type": "political",
+        "description": "Administrative capital and highest national capital in the world",
+        "lat": -16.5000,
+        "lon": -68.1118
+      },
+      "economic": [
+        {
+          "name": "Santa Cruz",
+          "description": "Largest commercial city, industrial and agricultural hub",
+          "lat": -17.7863,
+          "lon": -63.1812
+        }
+      ],
+      "military": [
+        {
+          "name": "Riberalta River Base",
+          "description": "Primary northern river fleet command and border guard post",
+          "lat": -11.0000,
+          "lon": -66.0735
+        }
+      ],
+      "secret": [
+        {
+          "name": "Salar de Uyuni Lithium Grid",
+          "description": "Highly guarded strategic lithium reserve extraction security zone",
+          "lat": -20.1333,
+          "lon": -67.4118,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "Paraguay",
+      "capital": {
+        "name": "Asuncion",
+        "type": "political",
+        "description": "National capital and historic river port core",
+        "lat": -25.2637,
+        "lon": -57.5759
+      },
+      "economic": [
+        {
+          "name": "Ciudad del Este",
+          "description": "Major commercial trading gateway on the tri-border area",
+          "lat": -25.5097,
+          "lon": -54.6111
+        }
+      ],
+      "military": [
+        {
+          "name": "Mariscal Estigarribia Base",
+          "description": "Strategic Chaco region military airfield and land command base",
+          "lat": -22.0333,
+          "lon": -60.6111
+        }
+      ],
+      "secret": [
+        {
+          "name": "Itaipu Hydroelectric Grid",
+          "description": "Highly secure joint bi-national mega power station perimeter",
+          "lat": -25.4083,
+          "lon": -54.5889,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "Uruguay",
+      "capital": {
+        "name": "Montevideo",
+        "type": "political",
+        "description": "National capital and primary maritime trading seaport",
+        "lat": -34.9011,
+        "lon": -56.1644
+      },
+      "economic": [
+        {
+          "name": "Punta del Este",
+          "description": "Prominent commercial tourism seaport and maritime logistics hub",
+          "lat": -34.9575,
+          "lon": -54.9429
+        }
+      ],
+      "military": [
+        {
+          "name": "Capitan Curbelo Airbase",
+          "description": "Strategic naval aviation and coastal monitoring command base",
+          "lat": -34.8517,
+          "lon": -55.0931
+        }
+      ],
+      "secret": [
+        {
+          "name": "Rio de la Plata Watch",
+          "description": "Joint maritime shipping tracking and early warning radar system",
+          "lat": -34.9000,
+          "lon": -56.0000,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "Guyana",
+      "capital": {
+        "name": "Georgetown",
+        "type": "political",
+        "description": "National capital and major Atlantic commercial seaport",
+        "lat": 6.8045,
+        "lon": -58.1554
+      },
+      "economic": [
+        {
+          "name": "Linden",
+          "description": "Primary bauxite mining city and inland shipping core",
+          "lat": 5.9997,
+          "lon": -57.8000
+        }
+      ],
+      "military": [
+        {
+          "name": "Camp Ayanganna",
+          "description": "Primary headquarters of the Guyana Defence Force",
+          "lat": 6.8111,
+          "lon": -58.1417
+        }
+      ],
+      "secret": [
+        {
+          "name": "Essequibo Frontier Grid",
+          "description": "Highly secure western border surveillance and military monitoring zone",
+          "lat": 6.5000,
+          "lon": -59.0000,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "Suriname",
+      "capital": {
+        "name": "Paramaribo",
+        "type": "political",
+        "description": "National capital and primary administrative seaport",
+        "lat": 5.8664,
+        "lon": -55.1667
+      },
+      "economic": [
+        {
+          "name": "Nieuw Nickerie",
+          "description": "Secondary commercial port and western agricultural gateway",
+          "lat": 5.9389,
+          "lon": -56.9806
+        }
+      ],
+      "military": [
+        {
+          "name": "Memre Boekoe Barracks",
+          "description": "Primary military defense command and army base",
+          "lat": 5.8333,
+          "lon": -55.2000
+        }
+      ],
+      "secret": [
+        {
+          "name": "Brokopondo Hydro Grid",
+          "description": "Fortified hydroelectric dam and energy infrastructure security node",
+          "lat": 4.7500,
+          "lon": -55.1000,
+          "status": "locked"
+        }
+      ]
+    }
+  ]
+}

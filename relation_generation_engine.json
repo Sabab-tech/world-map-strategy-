@@ -1,0 +1,110 @@
+{
+  "RELATION_GENERATION_ENGINE": {
+    "enabled": true,
+
+    "weights": {
+      "historical": 0.15,
+      "diplomatic": 0.15,
+      "economic": 0.15,
+      "military": 0.10,
+      "intelligence": 0.05,
+      "cultural": 0.10,
+      "strategic": 0.15,
+      "societal": 0.05,
+      "international": 0.10
+    },
+
+    "generation_rules": {
+
+      "historical": {
+        "historical_memory": "country_a.history_to[country_b]",
+        "past_wars": "shared_wars",
+        "past_alliances": "shared_alliances",
+        "past_betrayals": "recorded_betrayals",
+        "territorial_claims": "territorial_conflicts",
+        "colonial_legacy": "colonial_overlap"
+      },
+
+      "diplomatic": {
+        "trust": "calculated",
+        "political_alignment": "ideology_similarity",
+        "diplomatic_cooperation": "treaty_score",
+        "embassy_level": "default_embassy_score",
+        "international_voting_alignment": "organization_alignment",
+        "leadership_chemistry": "leader_personality_match"
+      },
+
+      "economic": {
+        "trade_volume": "trade_flow",
+        "import_dependency": "import_exposure",
+        "export_dependency": "export_exposure",
+        "foreign_investment": "investment_flow",
+        "debt_exposure": "debt_ratio",
+        "economic_aid": "aid_score",
+        "sanction_pressure": "sanction_score",
+        "technology_cooperation": "technology_links"
+      },
+
+      "military": {
+        "military_cooperation": "joint_operations",
+        "joint_exercises": "exercise_count",
+        "arms_trade": "arms_transfer",
+        "threat_perception": "threat_index",
+        "military_rivalry": "rivalry_index",
+        "defense_pact_strength": "defense_treaties",
+        "force_projection_concern": "regional_force_presence"
+      },
+
+      "intelligence": {
+        "intelligence_cooperation": "intel_sharing",
+        "spy_activity": "spy_score",
+        "counter_intelligence_pressure": "counter_spy_score",
+        "cyber_operations": "cyber_activity",
+        "secret_operations": "covert_activity",
+        "information_sharing": "intel_exchange"
+      },
+
+      "cultural": {
+        "language_similarity": "language_match",
+        "religion_similarity": "religion_match",
+        "ethnic_similarity": "ethnic_overlap",
+        "cultural_exchange": "exchange_programs",
+        "tourism_flow": "tourism_index",
+        "diaspora_strength": "diaspora_population"
+      },
+
+      "strategic": {
+        "border_dispute": "border_conflict",
+        "water_dispute": "water_conflict",
+        "sea_dispute": "maritime_conflict",
+        "resource_competition": "resource_overlap",
+        "energy_dependency": "energy_links",
+        "trade_route_importance": "route_importance",
+        "geopolitical_competition": "regional_competition"
+      },
+
+      "societal": {
+        "public_opinion": "public_sentiment",
+        "migration_pressure": "migration_flow",
+        "refugee_pressure": "refugee_flow",
+        "media_sentiment": "media_score",
+        "people_to_people_relations": "people_contact"
+      },
+
+      "international": {
+        "alliance_overlap": "shared_alliances",
+        "organization_cooperation": "shared_organizations",
+        "proxy_conflict": "proxy_conflicts",
+        "third_party_pressure": "external_pressure",
+        "global_alignment": "bloc_alignment"
+      }
+    },
+
+    "auto_generation": {
+      "generate_for_all_country_pairs": true,
+      "update_daily": true,
+      "create_missing_relations": true,
+      "recalculate_after_major_events": true
+    }
+  }
+      }

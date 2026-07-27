@@ -1,0 +1,501 @@
+{
+  "region": "Oceania Strategy Grid",
+  "countries": [
+    {
+      "name": "Australia",
+      "capital": {
+        "name": "Canberra",
+        "type": "political",
+        "description": "National capital and planned federal administration core",
+        "lat": -35.2809,
+        "lon": 149.1300
+      },
+      "economic": [
+        {
+          "name": "Sydney",
+          "description": "Largest financial capital and major global trade port",
+          "lat": -33.8688,
+          "lon": 151.2093
+        },
+        {
+          "name": "Melbourne",
+          "description": "Industrial, cultural and commercial seaport powerhouse",
+          "lat": -37.8136,
+          "lon": 144.9631
+        }
+      ],
+      "military": [
+        {
+          "name": "Darwin Naval Base",
+          "description": "Strategic northern gateway and maritime defense stronghold",
+          "lat": -12.4634,
+          "lon": 130.8456
+        }
+      ],
+      "secret": [
+        {
+          "name": "Pine Gap Facility",
+          "description": "Joint US-Australian high-security satellite surveillance station",
+          "lat": -23.7989,
+          "lon": 133.7372,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "New Zealand",
+      "capital": {
+        "name": "Wellington",
+        "type": "political",
+        "description": "National capital and southernmost sovereign administrative core",
+        "lat": -41.2865,
+        "lon": 174.7762
+      },
+      "economic": [
+        {
+          "name": "Auckland Port",
+          "description": "Largest commercial seaport and economic capital of New Zealand",
+          "lat": -36.8485,
+          "lon": 174.7633
+        }
+      ],
+      "military": [
+        {
+          "name": "Devonport Naval Base",
+          "description": "Primary naval command and shipyard of the Royal New Zealand Navy",
+          "lat": -36.8300,
+          "lon": 174.7950
+        }
+      ],
+      "secret": [
+        {
+          "name": "Waihopai Station",
+          "description": "Highly secure satellite communications interception facility",
+          "lat": -41.5700,
+          "lon": 173.8000,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "Papua New Guinea",
+      "capital": {
+        "name": "Port Moresby",
+        "type": "political",
+        "description": "National capital and key administrative seaport",
+        "lat": -9.4438,
+        "lon": 147.1803
+      },
+      "economic": [
+        {
+          "name": "Lae",
+          "description": "Largest industrial hub, manufacturing and commercial trade base",
+          "lat": -6.7221,
+          "lon": 146.9847
+        }
+      ],
+      "military": [
+        {
+          "name": "Lombrum Naval Base",
+          "description": "Strategic deepwater joint naval facility on Manus Island",
+          "lat": -2.0435,
+          "lon": 147.3712
+        }
+      ],
+      "secret": [
+        {
+          "name": "Ok Tedi Mine Zone",
+          "description": "Protected high-security essential copper and gold extraction perimeter",
+          "lat": -5.2000,
+          "lon": 141.1300,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "Fiji",
+      "capital": {
+        "name": "Suva",
+        "type": "political",
+        "description": "National capital and primary diplomatic hub of Polynesia",
+        "lat": -18.1248,
+        "lon": 178.4501
+      },
+      "economic": [
+        {
+          "name": "Nadi",
+          "description": "Primary international tourism gateway and major transport hub",
+          "lat": -17.8011,
+          "lon": 177.4150
+        }
+      ],
+      "military": [
+        {
+          "name": "Togalevu Base",
+          "description": "Main naval forces training facility and regional patrol base",
+          "lat": -18.1500,
+          "lon": 178.3500
+        }
+      ],
+      "secret": [
+        {
+          "name": "Lau Islands Patrol",
+          "description": "Strategic eastern maritime surveillance and counter-smuggling radar",
+          "lat": -18.2000,
+          "lon": -178.8000,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "Solomon Islands",
+      "capital": {
+        "name": "Honiara",
+        "type": "political",
+        "description": "National capital and historic central naval gateway",
+        "lat": -9.4323,
+        "lon": 159.9556
+      },
+      "economic": [
+        {
+          "name": "Gizo",
+          "description": "Western regional trading, commercial and transport node",
+          "lat": -8.1000,
+          "lon": 156.8400
+        }
+      ],
+      "military": [
+        {
+          "name": "Henderson Field Guard",
+          "description": "Historic tactical airfield security and regional operations center",
+          "lat": -9.4285,
+          "lon": 160.0544
+        }
+      ],
+      "secret": [
+        {
+          "name": "Guadalcanal Radar Network",
+          "description": "Strategic maritime and airspace tracking security installation",
+          "lat": -9.5000,
+          "lon": 160.1500,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "Vanuatu",
+      "capital": {
+        "name": "Port Vila",
+        "type": "political",
+        "description": "National capital and primary administrative seaport",
+        "lat": -17.7333,
+        "lon": 168.3167
+      },
+      "economic": [
+        {
+          "name": "Luganville",
+          "description": "Secondary commercial port and industrial logistics node",
+          "lat": -15.5333,
+          "lon": 167.1667
+        }
+      ],
+      "military": [
+        {
+          "name": "Mala Patrol Base",
+          "description": "Primary maritime patrol coordination and state police post",
+          "lat": -17.7400,
+          "lon": 168.3000
+        }
+      ],
+      "secret": [
+        {
+          "name": "Torres Strait East Surveillance",
+          "description": "Highly strategic outer island maritime monitoring radar grid",
+          "lat": -13.0000,
+          "lon": 166.5000,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "Samoa",
+      "capital": {
+        "name": "Apia",
+        "type": "political",
+        "description": "National capital and central maritime administrative core",
+        "lat": -13.8333,
+        "lon": -171.7667
+      },
+      "economic": [
+        {
+          "name": "Salelologa Port",
+          "description": "Primary economic gateway and ferry logistics terminal on Savai'i",
+          "lat": -13.7384,
+          "lon": -172.2150
+        }
+      ],
+      "military": [
+        {
+          "name": "Mulinu'u Patrol Post",
+          "description": "Primary coastal defense and maritime patrol security outpost",
+          "lat": -13.8242,
+          "lon": -171.7856
+        }
+      ],
+      "secret": [
+        {
+          "name": "Faleolo Radar Station",
+          "description": "Strategic central Pacific airspace tracking radar grid",
+          "lat": -13.8300,
+          "lon": -172.0000,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "Tonga",
+      "capital": {
+        "name": "Nuku'alofa",
+        "type": "political",
+        "description": "National royal capital and administrative seaport",
+        "lat": -21.1333,
+        "lon": -175.2000
+      },
+      "economic": [
+        {
+          "name": "Neiafu Port Area",
+          "description": "Secondary commercial port and major maritime tourism hub",
+          "lat": -18.6500,
+          "lon": -173.9833
+        }
+      ],
+      "military": [
+        {
+          "name": "Taliai Military Camp",
+          "description": "Headquarters of His Majesty's Armed Forces in Tonga",
+          "lat": -21.2500,
+          "lon": -175.1500
+        }
+      ],
+      "secret": [
+        {
+          "name": "Tonga Trench Watch",
+          "description": "Deep-sea acoustic sensor network and surveillance grid",
+          "lat": -21.0000,
+          "lon": -174.5000,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "Kiribati",
+      "capital": {
+        "name": "Tarawa",
+        "type": "political",
+        "description": "National capital atoll and primary administrative hub",
+        "lat": 1.3500,
+        "lon": 172.9833
+      },
+      "economic": [
+        {
+          "name": "Kiritimati",
+          "description": "Christmas Island commercial zone and primary copra production hub",
+          "lat": 1.9833,
+          "lon": -157.4667
+        }
+      ],
+      "military": [
+        {
+          "name": "Betio Patrol Station",
+          "description": "Primary maritime coastal guard and patrol ship post",
+          "lat": 1.3563,
+          "lon": 172.9300
+        }
+      ],
+      "secret": [
+        {
+          "name": "Line Islands Grid",
+          "description": "Strategic equatorial marine monitoring and surveillance network",
+          "lat": 1.8000,
+          "lon": -157.3000,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "Micronesia",
+      "capital": {
+        "name": "Palikir",
+        "type": "political",
+        "description": "National capital and sovereign administrative center",
+        "lat": 6.9175,
+        "lon": 158.1570
+      },
+      "economic": [
+        {
+          "name": "Weno",
+          "description": "Primary commercial trading and marketplace core in Chuuk",
+          "lat": 7.4500,
+          "lon": 151.8500
+        }
+      ],
+      "military": [
+        {
+          "name": "Pohnpei Maritime Command",
+          "description": "Strategic coastal patrol vessel base and maritime command",
+          "lat": 6.9667,
+          "lon": 158.2167
+        }
+      ],
+      "secret": [
+        {
+          "name": "Chuuk Lagoon Defense Sector",
+          "description": "Deepwater historic lagoon military surveillance system",
+          "lat": 7.3612,
+          "lon": 151.7522,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "Marshall Islands",
+      "capital": {
+        "name": "Majuro",
+        "type": "political",
+        "description": "National capital atoll and primary commercial port",
+        "lat": 7.0897,
+        "lon": 171.3754
+      },
+      "economic": [
+        {
+          "name": "Ebeye Port",
+          "description": "Densely populated economic hub on Kwajalein Atoll",
+          "lat": 8.7833,
+          "lon": 167.7333
+        }
+      ],
+      "military": [
+        {
+          "name": "Kwajalein Range Airfield",
+          "description": "Highly guarded strategic airfield and missile tracking post",
+          "lat": 8.7244,
+          "lon": 167.7333
+        }
+      ],
+      "secret": [
+        {
+          "name": "Reagan Missile Defense Site",
+          "description": "Strategic ballistic missile testing and outer-space tracking grid",
+          "lat": 9.0000,
+          "lon": 167.5000,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "Palau",
+      "capital": {
+        "name": "Ngerulmud",
+        "type": "political",
+        "description": "National capital and federal executive center",
+        "lat": 7.5004,
+        "lon": 134.6242
+      },
+      "economic": [
+        {
+          "name": "Koror",
+          "description": "Primary economic capital, tourism center and commercial seaport",
+          "lat": 7.3417,
+          "lon": 134.4780
+        }
+      ],
+      "military": [
+        {
+          "name": "Angaur Defense Post",
+          "description": "Strategic southern island surveillance and defensive post",
+          "lat": 6.9000,
+          "lon": 134.1300
+        }
+      ],
+      "secret": [
+        {
+          "name": "Peleliu Surveillance Grid",
+          "description": "Strategic maritime tracking radar and air defense sector",
+          "lat": 7.0134,
+          "lon": 134.2500,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "Tuvalu",
+      "capital": {
+        "name": "Funafuti",
+        "type": "political",
+        "description": "National capital atoll and central administration core",
+        "lat": -8.5167,
+        "lon": 179.2167
+      },
+      "economic": [
+        {
+          "name": "Vaitupu",
+          "description": "Secondary island economic and maritime transport hub",
+          "lat": -7.4667,
+          "lon": 178.6833
+        }
+      ],
+      "military": [
+        {
+          "name": "Fongafale Patrol Post",
+          "description": "Primary coastal defense and maritime patrol security outpost",
+          "lat": -8.5200,
+          "lon": 179.2000
+        }
+      ],
+      "secret": [
+        {
+          "name": "Polynesian Passage Watch",
+          "description": "Strategic maritime shipping route surveillance radar grid",
+          "lat": -8.0000,
+          "lon": 179.0000,
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "name": "Nauru",
+      "capital": {
+        "name": "Yaren",
+        "type": "political",
+        "description": "De facto national capital and federal administrative center",
+        "lat": -0.5475,
+        "lon": 166.9189
+      },
+      "economic": [
+        {
+          "name": "Aiwo",
+          "description": "Primary commercial seaport and industrial phosphate processing hub",
+          "lat": -0.5333,
+          "lon": 166.9100
+        }
+      ],
+      "military": [
+        {
+          "name": "Nauru Maritime Unit",
+          "description": "Sovereign coastal defense and maritime patrol post",
+          "lat": -0.5400,
+          "lon": 166.9200
+        }
+      ],
+      "secret": [
+        {
+          "name": "Equatorial Transit Grid",
+          "description": "Highly guarded equatorial shipping lane tracking network",
+          "lat": 0.0000,
+          "lon": 166.9000,
+          "status": "locked"
+        }
+      ]
+    }
+  ]
+}

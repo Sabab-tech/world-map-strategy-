@@ -1,0 +1,139 @@
+{
+  "BANGLADESH": {
+
+    "INDIA": {
+      "overall": 65,
+      "trade": 95,
+      "political": 55,
+      "military": 45,
+      "intelligence": 50,
+      "cultural": 75,
+      "trust": 50,
+      "influence": 70,
+      "dependency": 85,
+      "border_tension": 60,
+      "military_threat": 25,
+
+      "trade_agreement": true,
+      "defense_pact": false,
+      "alliance": false,
+      "sanctions": false,
+      "embassy_level": 100,
+      "war_state": false,
+
+      "active_modifiers": [
+        {
+          "type": "border_pressure",
+          "value": -10,
+          "duration": 365
+        }
+      ]
+    },
+
+    "CHINA": {
+      "overall": 78,
+      "trade": 92,
+      "political": 70,
+      "military": 60,
+      "intelligence": 55,
+      "cultural": 40,
+      "trust": 65,
+      "influence": 75,
+      "dependency": 80,
+      "border_tension": 15,
+      "military_threat": 20,
+
+      "trade_agreement": true,
+      "defense_pact": false,
+      "alliance": false,
+      "sanctions": false,
+      "embassy_level": 100,
+      "war_state": false,
+
+      "active_modifiers": [
+        {
+          "type": "belt_road_investment",
+          "value": +8,
+          "duration": 730
+        }
+      ]
+    },
+
+    "USA": {
+      "overall": 80,
+      "trade": 85,
+      "political": 75,
+      "military": 60,
+      "intelligence": 70,
+      "cultural": 85,
+      "trust": 65,
+      "influence": 80,
+      "dependency": 55,
+      "border_tension": 0,
+      "military_threat": 10,
+
+      "trade_agreement": true,
+      "defense_pact": false,
+      "alliance": false,
+      "sanctions": false,
+      "embassy_level": 100,
+      "war_state": false,
+
+      "active_modifiers": [
+        {
+          "type": "aid_program",
+          "value": +5,
+          "duration": 365
+        }
+      ]
+    },
+
+    "RUSSIA": {
+      "overall": 72,
+      "trade": 70,
+      "political": 70,
+      "military": 75,
+      "intelligence": 60,
+      "cultural": 45,
+      "trust": 60,
+      "influence": 55,
+      "dependency": 45,
+      "border_tension": 5,
+      "military_threat": 15,
+
+      "trade_agreement": true,
+      "defense_pact": false,
+      "alliance": false,
+      "sanctions": false,
+      "embassy_level": 100,
+      "war_state": false,
+
+      "active_modifiers": []
+    },
+
+    "JAPAN": {
+      "overall": 88,
+      "trade": 90,
+      "political": 80,
+      "military": 50,
+      "intelligence": 55,
+      "cultural": 75,
+      "trust": 85,
+      "influence": 80,
+      "dependency": 60,
+      "border_tension": 0,
+      "military_threat": 5,
+
+      "trade_agreement": true,
+      "defense_pact": false,
+      "alliance": false,
+      "sanctions": false,
+      "embassy_level": 100,
+      "war_state": false,
+
+      "active_modifiers": [
+        {
+          "type": "infrastructure_support",
+          "value": +10,
+          "duration": 540
+    },
