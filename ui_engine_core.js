@@ -193,6 +193,7 @@ const _styles = {
             .om-m-icon { width: 75%; height: 75%; object-fit: contain; filter: drop-shadow(0 0 6px var(--om-cyan-glow)); }
             .om-m-svg-fallback { width: 26px; height: 24px; fill: var(--om-m-accent); filter: drop-shadow(0 0 6px var(--om-m-accent)); }
             .om-card-center { flex-grow: 1; margin: 0 22px; display: flex; flex-direction: column; z-index: 1; }
+            .om-m-top-row { display: flex; flex-direction: column; }
             .om-m-title { font-size: 16px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; color: var(--om-ivory-text); text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
             .om-m-subtitle { font-size: 12px; color: var(--om-slate-mute); margin-top: 3px; }
             
@@ -236,35 +237,60 @@ const AccessCard = {
     },
     createSkeleton() {
         const el = document.createElement('div'); el.setAttribute('tabindex', '0'); el.setAttribute('role', 'button');
-        el.className = 'om-royal-card cabinet-card om-prepare-entrance';
+        el.className = 'access-card om-royal-card cabinet-card start-entrance om-start-entrance';
         el.innerHTML = `
-            <div class="om-card-surface"></div>
-            <div class="om-card-accent-strip"></div>
-            <div class="om-card-left"><img class="om-m-icon om-hidden" draggable="false"><svg class="om-m-svg-fallback om-hidden" viewBox="0 0 24 24"><path d=""></path></svg></div>
-            <div class="om-card-center"><div class="om-m-top-row"><span class="om-m-title"></span><span class="om-m-subtitle"></span></div><div class="om-m-bottom-slot om-hidden"></div></div>
-            <div class="om-card-right"><div class="om-m-status-pill"><div class="om-m-dot"></div><span class="om-m-status-text"></span></div><span class="om-m-chevron">›</span></div>`;
+            <div class="card-icon-box">
+                <span class="m-emoji-icon">🏛️</span>
+            </div>
+            <div class="m-title om-m-title"></div>
+            <div class="m-subtitle om-m-subtitle"></div>
+            <div class="card-accent-strip om-card-accent-strip"></div>`;
         return el;
     },
     hydrate(el, data) {
-        el.dataset.id = data.id; el.classList.remove('om-start-entrance', 'om-hidden', 'om-pressed'); el.classList.add('om-prepare-entrance'); el.style.setProperty('--om-m-accent', data.theme?.accent || '#D4AF37');
-        el.querySelector('.om-m-title').textContent = data.title; el.querySelector('.om-m-subtitle').textContent = data.subtitle;
-        const statusKey = (data.status || "READY").toUpperCase(); el.querySelector('.om-m-status-pill').className = 'om-m-status-pill ' + (STATUS_MAP[statusKey] || 'om-status-ready'); el.querySelector('.om-m-status-text').textContent = statusKey;
-        const visual = ASSET_RESOLVER.resolve(data.id, data.icon); const img = el.querySelector('.om-m-icon'); const svg = el.querySelector('.om-m-svg-fallback');
-        [img, svg].forEach(v => v.classList.add('om-hidden'));
-        if (visual.path) {
-            if (img.getAttribute('src') !== visual.path) { const token = Math.random().toString(36).substring(7); img.dataset.token = token; img.onload = () => { if(img.dataset.token === token) img.classList.remove('om-hidden'); }; img.onerror = () => { if(img.dataset.token === token) { img.classList.add('om-hidden'); img.removeAttribute('src'); svg.classList.remove('om-hidden'); } }; img.src = visual.path; } else img.classList.remove('om-hidden');
-        } else { svg.querySelector('path').setAttribute('d', visual.symbol); svg.classList.remove('om-hidden'); }
+        el.dataset.id = data.id; el.classList.remove('hidden', 'om-hidden', 'om-pressed', 'prepare-entrance', 'om-prepare-entrance'); el.classList.add('start-entrance', 'om-start-entrance');
+        el.style.setProperty('--om-m-accent', data.theme?.accent || '#D4AF37');
+        el.style.setProperty('--card-accent', data.theme?.accent || '#D4AF37');
+        
+        const emojiEl = el.querySelector('.m-emoji-icon');
+        if (emojiEl) {
+            emojiEl.textContent = data.emoji || '🏛️';
+        }
+
+        const titleEl = el.querySelector('.om-m-title') || el.querySelector('.m-title');
+        if (titleEl) titleEl.textContent = data.title;
+        const subEl = el.querySelector('.om-m-subtitle') || el.querySelector('.m-subtitle');
+        if (subEl) subEl.textContent = data.subtitle || '';
+
         _payloadStore.set(el, Object.freeze(data.payload || {})); return el;
     },
     reset(el) {
-        el.className = 'om-royal-card cabinet-card om-hidden'; el.removeAttribute('style'); const img = el.querySelector('.om-m-icon'); img.onload = img.onerror = null; img.removeAttribute('src'); img.classList.add('om-hidden');
-        el.onpointerdown = el.onpointerup = el.onpointermove = el.onpointercancel = el.onpointerleave = el.onkeydown = null; _payloadStore.delete(el); return el;
+        el.className = 'om-royal-card cabinet-card om-hidden'; el.removeAttribute('style');
+        el.onpointerdown = el.onpointerup = el.onpointermove = el.onpointercancel = el.onpointerleave = el.onkeydown = el.onclick = null; _payloadStore.delete(el); return el;
     },
     recycle(el) { if (_pool.length < CONSTANTS.MAX_POOL) _pool.push(this.reset(el)); else el.remove(); }
 };
 
 const ASSET_RESOLVER = {
-    _paths: Object.freeze({ cabinet: "M12 2L2 7l10 5 10-5-10-5zm0 18l-10-5 10 5 10-5-10 5z", interior: "M12 5.67L16.29 10H7.71L12 5.67M12 2L2 12h3v8h14v-8h3L12 2z", defense: "M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z" }),
+    _paths: Object.freeze({
+        cabinet: "M12 2L2 7l10 5 10-5-10-5zm0 18l-10-5 10 5 10-5-10 5z",
+        interior: "M12 5.67L16.29 10H7.71L12 5.67M12 2L2 12h3v8h14v-8h3L12 2z",
+        defense: "M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z",
+        military: "M12 2L4 5v6c0 5.25 3.4 10.2 8 11.5 4.6-1.3 8-6.25 8-11.5V5l-8-3zm-1 6h2v6h-2V8zm0 8h2v2h-2v-2z",
+        finance: "M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1H6.32c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z",
+        economy: "M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6h-6z",
+        trade: "M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4V8h16v10zm-2-1h-3v-2h3v2zm-5 0H4v-2h9v2z",
+        foreign: "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z",
+        intelligence: "M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z",
+        transport: "M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.85 7h10.29l1.04 3H5.81l1.04-3zM19 17H5v-4h14v4z",
+        resource: "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z",
+        health: "M19 3H5c-1.1 0-1.99.9-1.99 2L3 19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z",
+        education: "M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82zM12 3L1 9l11 6 9-4.91V17h2V9L12 3z",
+        technology: "M20 18c1.1 0 1.99-.9 1.99-2L22 5c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v11c0 1.1.9 2 2 2H0v2h24v-2h-4zM4 5h16v11H4V5z",
+        projects: "M19 3h-4.18C14.4 1.84 13.3 1 12 1c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm2 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z",
+        culture: "M12 3L1 9l11 6 9-4.91V17h2V9L12 3zM3.27 9L12 4.23 20.73 9 12 13.77 3.27 9z",
+        statistics: "M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"
+    }),
     resolve(id, iconPath) { return { path: iconPath || null, symbol: this._paths[id] || "M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" }; }
 };
 
@@ -449,6 +475,10 @@ const OMEGA_UI_RET_OBJ = {
             this.renderInteriorHQ();
             return;
         }
+        if (targetScreen !== CONSTANTS.DEFAULT_SCREEN && targetScreen !== "cabinet" && targetScreen !== "MAIN_GOV" && targetScreen !== "POLITICS") {
+            this.renderExecutiveMinistryHQ(targetScreen);
+            return;
+        }
 
         uiLayer.insertAdjacentHTML('afterbegin', `<div id="om-state-header" class="om-state-header"><div class="om-state-title">STATE COUNCIL</div><div class="om-state-metrics"><div class="om-metric-item">Cycle <span class="om-val-year"></span></div><div class="om-metric-item">Treasury <span class="om-val-treasury"></span></div><div class="om-metric-item">Stability <span class="om-val-stability"></span></div><div class="om-metric-item">GDP <span class="om-val-gdp"></span></div></div></div>`);
         this.updateHeader(); 
@@ -458,22 +488,62 @@ const OMEGA_UI_RET_OBJ = {
         } catch(e) {}
 
         const dataList = window.GLOBAL_MINISTRY_MANIFEST;
-        const catMap = new Map(); dataList.forEach(d => { if(d.id && d.title) { const s = _sectionMap.get(d.id) || 'Other'; if (!catMap.has(s)) catMap.set(s, []); catMap.get(s).push(d); }});
-        const incomingIds = new Set(dataList.map(d => d.id));
-        _activeElements.forEach((el, id) => { if (!incomingIds.has(id)) { if (el.parentNode === uiLayer) uiLayer.removeChild(el); AccessCard.recycle(el); _activeElements.delete(id); } });
-        
+        const gridContainer = document.createElement('div');
+        gridContainer.className = 'om-cabinet-grid-container';
+        uiLayer.appendChild(gridContainer);
+
         const sched = requestAnimationFrame;
-        SECTION_CONFIG.forEach((sec, sIdx) => {
-            const items = catMap.get(sec.title); const divId = `om-div-${sec.title.replace(/\s/g, '-')}`;
-            if (!items) return;
-            const d = document.createElement('div'); d.id = divId; d.className = 'om-royal-divider'; d.innerHTML = `<span class="om-divider-label">${sec.title}</span><div class="om-divider-line"></div>`; uiLayer.appendChild(d);
-            items.forEach((data, i) => {
-                let el = _activeElements.get(data.id);
-                if (!el) { el = AccessCard.get(data); this.attachInput(el); } else AccessCard.hydrate(el, data);
-                uiLayer.appendChild(el); _activeElements.set(data.id, el);
-                if (!el.classList.contains('om-start-entrance')) sched(() => setTimeout(() => el.classList.add('om-start-entrance'), (sIdx * 100) + (i * CONSTANTS.STAGGER_DELAY)));
-            });
+        dataList.forEach((data, i) => {
+            let el = _activeElements.get(data.id);
+            if (!el) { 
+                el = AccessCard.get(data); 
+                this.attachInput(el); 
+            } else {
+                AccessCard.hydrate(el, data);
+            }
+            gridContainer.appendChild(el); 
+            _activeElements.set(data.id, el);
+            if (!el.classList.contains('om-start-entrance')) {
+                sched(() => setTimeout(() => el.classList.add('om-start-entrance'), i * 30));
+            }
         });
+    },
+    renderExecutiveMinistryHQ(ministryId) {
+        const item = window.GLOBAL_MINISTRY_MANIFEST?.find(m => m.id === ministryId);
+        const title = item ? item.title.toUpperCase() : ministryId.toUpperCase();
+        const subtitle = item ? item.subtitle : "Executive Directorate Office";
+        const emoji = item ? item.emoji : "🏛️";
+        const body = document.getElementById("cabinet-body"); if(!body) return;
+
+        body.innerHTML = `
+            <div class="interior-command cabinet-card" style="max-width: 600px; margin: 0 auto; text-align: center; padding: 25px; background: rgba(11, 21, 36, 0.95); border: 1px solid rgba(212, 175, 55, 0.4); border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+                <div style="font-size: 54px; margin-bottom: 10px;">${emoji}</div>
+                <h1 style="font-family: var(--font-title); color: #ffd700; font-size: 22px; margin: 0 0 5px 0;">${title}</h1>
+                <p style="color: #94a3b8; font-size: 13px; margin: 0 0 20px 0; font-family: var(--font-mono);">${subtitle}</p>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px;">
+                    <button id="btn-hq-act-1" class="om-command-btn" style="height: 55px; border-color: #00e5ff;">⚡ EXECUTIVE DIRECTIVE<br><span style="font-size:10px; color:#8a99ad;">Issue State Order</span></button>
+                    <button id="btn-hq-act-2" class="om-command-btn" style="height: 55px; border-color: #eab308;">📊 ALLOCATE BUDGET<br><span style="font-size:10px; color:#8a99ad;">+$10M Treasury Shift</span></button>
+                    <button id="btn-hq-act-3" class="om-command-btn" style="height: 55px; border-color: #22c55e;">🛡️ SECTOR READINESS<br><span style="font-size:10px; color:#8a99ad;">Audit Operations</span></button>
+                    <button id="btn-hq-act-4" class="om-command-btn" style="height: 55px; border-color: #a855f7;">📜 POLICY REFORM<br><span style="font-size:10px; color:#8a99ad;">Legislation Drafting</span></button>
+                </div>
+
+                <button id="btn-back-main" class="om-command-btn" style="border-color:#7f8c8d; width: 100%;">🔙 BACK TO STATE COUNCIL</button>
+            </div>
+        `;
+
+        document.getElementById("btn-back-main").onclick = () => { this.render(null, CONSTANTS.DEFAULT_SCREEN); };
+        
+        const showActionToast = (actName) => {
+            this.showAdvisePopup(title, `${actName} executed successfully under Executive Cabinet Authority.`);
+        };
+        document.getElementById("btn-hq-act-1").onclick = () => showActionToast("Executive Directive");
+        document.getElementById("btn-hq-act-2").onclick = () => {
+            if (window.Game && window.Game.resources) Game.resources.cash += 10000000;
+            showActionToast("Treasury Budget Allocation (+$10M)");
+        };
+        document.getElementById("btn-hq-act-3").onclick = () => showActionToast("Sector Readiness Audit");
+        document.getElementById("btn-hq-act-4").onclick = () => showActionToast("Policy Reform Directive");
     },
     attachInput(el) {
         let sX, pId = null, isD = false;
@@ -481,22 +551,27 @@ const OMEGA_UI_RET_OBJ = {
         el.onpointermove = (e) => { if (e.pointerId !== pId) return; if (Math.abs(e.clientX - sX) > CONSTANTS.DRAG_THRESHOLD) { isD = true; el.classList.remove('om-pressed'); } };
         el.onpointerup = (e) => { if (e.pointerId !== pId) return; el.classList.remove('om-pressed'); if (!isD && Math.abs(e.clientX - sX) < CONSTANTS.DRAG_THRESHOLD) this.handleSelection(el.dataset.id); try { el.releasePointerCapture(pId); } catch(err) {} pId = null; };
         el.onpointercancel = el.onlostpointercapture = () => { el.classList.remove('om-pressed'); pId = null; };
+        el.onclick = (e) => {
+            if (!isD) this.handleSelection(el.dataset.id);
+        };
     },
     handleSelection(id) {
         _log("INFO", "Selection", `User initiated transition interface trigger on ID: ${id}`);
         if (this.runtime?.api?.feature && this.runtime.api.feature("UI_LOCK")) return; 
-        if (id === "interior") { this.openInteriorIntro(); return; }
-        const el = _activeElements.get(id), payload = el ? _payloadStore.get(el) : {};
-        try { const messaging = this.runtime?.api?.messaging?.(); if(messaging && typeof messaging.route === "function") messaging.route(CONSTANTS.UI_OWNER, id, EVENTS.SELECTED, { priority: "NORMAL", data: payload }); } catch(e) {}
+        this.openMinistryIntro(id);
     },
-    openInteriorIntro() {
-        _log("INFO", "InteriorHQ", "Requesting seamless transition trigger to PresentationEngine...");
+    openMinistryIntro(id) {
+        _log("INFO", "MinistryIntro", `Requesting transition trigger to PresentationEngine for: ${id}`);
         const presentation = this.presentation || window.Omega?.App?.presentation;
+        const item = window.GLOBAL_MINISTRY_MANIFEST?.find(m => m.id === id);
+        const title = item ? item.title.toUpperCase() : id.toUpperCase();
+        const subtitle = item ? item.subtitle : "Executive Directorate Office";
+
         if(presentation && typeof presentation.triggerTransition === "function") {
-            presentation.triggerTransition({ ministryId: "interior", title: "MINISTRY OF INTERIOR", subtitle: "Guardian of National Stability" });
+            presentation.triggerTransition({ ministryId: id, title, subtitle });
         } else {
-            _log("WARN", "InteriorHQ", "Presentation trigger transition contract unavailable. Rendering HQ manually.");
-            this.renderInteriorHQ();
+            _log("WARN", "MinistryIntro", "Presentation trigger transition contract unavailable. Rendering HQ manually.");
+            this.render(null, id);
         }
     },
     renderInteriorHQ() {
@@ -573,7 +648,10 @@ const OMEGA_UI_RET_OBJ = {
                     modal.className = "om-modal-overlay";
                     modal.innerHTML = `
                         <div class="om-modal-content">
-                            <div class="om-modal-header" style="font-size:18px;">🏛️ UPGRADE ${label}</div>
+                            <div class="om-modal-header" style="font-size:18px; display:flex; justify-content:space-between; align-items:center;">
+                                <span>🏛️ UPGRADE ${label}</span>
+                                <button id="btn-top-close-fac" style="background:rgba(255,68,68,0.25); border:1px solid #ff4444; color:#fff; border-radius:6px; padding:4px 10px; font-weight:bold; cursor:pointer; font-size:12px;">✕ EXIT</button>
+                            </div>
                             <div style="text-align:center; margin:15px 0;"><span style="font-size:60px;">🏢</span></div>
                             <div class="om-modal-desc">
                                 Current Administrative Standard: Level ${currentLvl}<br>
@@ -587,10 +665,13 @@ const OMEGA_UI_RET_OBJ = {
                                 <button id="btn-fac-advise" class="om-command-btn" style="flex:1; border-color:#e67e22;">MINISTER ADVICE</button>
                                 <button id="btn-fac-build" class="om-command-btn" style="flex:1; background:#2ecc71;">🔨 UPGRADE DISTRICT</button>
                             </div>
-                            <button id="btn-close-fac-mod" class="om-command-btn" style="border-color:#7f8c8d; margin-top:15px; height:40px;">CLOSE WINDOW</button>
+                            <button id="btn-close-fac-mod" class="om-command-btn" style="border-color:#ff4444; background:rgba(255,68,68,0.2); margin-top:15px; height:40px; font-weight:bold; color:#fff;">✕ EXIT WINDOW</button>
                         </div>`;
                     document.body.appendChild(modal);
-                    document.getElementById("btn-close-fac-mod").onclick = () => { modal.remove(); };
+                    const closeMod = () => { modal.remove(); };
+                    document.getElementById("btn-close-fac-mod").onclick = closeMod;
+                    document.getElementById("btn-top-close-fac").onclick = closeMod;
+                    modal.onclick = (e) => { if (e.target === modal) closeMod(); };
                     
                     document.getElementById("btn-fac-advise").onclick = () => {
                         const treasury = this.getMetric("STATE_TREASURY");
@@ -798,10 +879,11 @@ const OMEGA_UI_RET_OBJ = {
             const overlay = document.createElement("div");
             overlay.className = "om-advise-popup";
             overlay.innerHTML = `
-                <div class="om-advise-box">
-                    <div class="om-advise-title">${title}</div>
+                <div class="om-advise-box" style="position:relative;">
+                    <button class="om-advise-close-btn" style="position:absolute; top:12px; right:12px; background:rgba(255,68,68,0.25); border:1px solid #ff4444; color:#fff; border-radius:4px; padding:2px 8px; font-weight:bold; cursor:pointer; font-size:12px;" aria-label="Close Advisory">✕ EXIT</button>
+                    <div class="om-advise-title" style="padding-right:50px;">${title}</div>
                     <div class="om-advise-text">${text}</div>
-                    <div class="om-advise-dismiss">CLICK TO DISMISS ADVISORY</div>
+                    <div class="om-advise-dismiss" style="margin-top:15px; background:rgba(0,255,204,0.15); border:1px solid var(--om-cyan-glow); padding:8px; border-radius:6px; cursor:pointer; text-align:center; font-weight:bold;">CLICK OR PRESS ESC TO EXIT</div>
                 </div>`;
             document.body.appendChild(overlay);
             overlay.onclick = () => { overlay.remove(); };
@@ -813,23 +895,23 @@ const OMEGA_UI_RET_OBJ = {
 // --- GLOBAL MANIFEST DECLARATION - SECURED & UNTOUCHED (17 MINISTRIES) ---
 window.GLOBAL_MINISTRY_MANIFEST = (() => {
     const data = [
-        { id: 'cabinet', title: 'State Coordination', subtitle: 'Executive Coordination Bureau', icon: 'cabinet.png', theme: { accent: '#2c3e50' }, status: 'PRIORITY' },
-        { id: 'defense', title: 'Ministry of Defense', subtitle: 'Strategic Operations Command', icon: 'defense.png', theme: { accent: '#8b0000' }, status: 'SECURED' },
-        { id: 'military', title: 'Ministry of Military', subtitle: 'National Force Logistics', icon: 'military.png', theme: { accent: '#445362' }, status: 'ACTIVE' },
-        { id: 'finance', title: 'Ministry of Finance', subtitle: 'National Treasury Office', icon: 'finance.png', theme: { accent: '#D8C79B' }, status: 'STABLE' },
-        { id: 'economy', title: 'Ministry of Economy', subtitle: 'Economic Planning Authority', icon: 'economy.png', theme: { accent: '#065535' }, status: 'ACTIVE' },
-        { id: 'trade', title: 'Ministry of Trade', subtitle: 'Global Commerce Bureau', icon: 'trade.png', theme: { accent: '#3498db' }, status: 'READY' },
-        { id: 'foreign', title: 'Foreign Affairs', subtitle: 'Foreign Diplomatic Corps', icon: 'foreign.png', theme: { accent: '#002366' }, status: 'STABLE' },
-        { id: 'intelligence', title: 'Intelligence Agency', subtitle: 'Internal Security Directorate', icon: 'intel.png', theme: { accent: '#310062' }, status: 'CLASSIFIED' },
-        { id: 'interior', title: 'Ministry of Interior', subtitle: 'Provincial Administration', icon: 'interior.png', theme: { accent: '#4C5E70' }, status: 'ACTIVE' },
-        { id: 'transport', title: 'Transport & Infra', subtitle: 'National Infrastructure Grid', icon: 'transport.png', theme: { accent: '#e67e22' }, status: 'ACTIVE' },
-        { id: 'resource', title: 'Resource Management', subtitle: 'Strategic Resource Authority', icon: 'resource.png', theme: { accent: '#d35400' }, status: 'PRIORITY' },
-        { id: 'health', title: 'Health & Population', subtitle: 'Population Administration Bureau', icon: 'health.png', theme: { accent: '#b22222' }, status: 'STABLE' },
-        { id: 'education', title: 'Ministry of Education', subtitle: 'Human Capital Commission', icon: 'education.png', theme: { accent: '#0f52ba' }, status: 'READY' },
-        { id: 'technology', title: 'Ministry of Tech', subtitle: 'Scientific Research Agency', icon: 'technology.png', theme: { accent: '#4682b4' }, status: 'READY' },
-        { id: 'projects', title: 'Strategic Projects', subtitle: 'National Mission Office', icon: 'projects.png', theme: { accent: '#8e44ad' }, status: 'ACTIVE' },
-        { id: 'culture', title: 'Culture & Media', subtitle: 'Cultural Identity Bureau', icon: 'culture.png', theme: { accent: '#f39c12' }, status: 'STABLE' },
-        { id: 'statistics', title: 'Ministry of Stats', subtitle: 'National Data Authority', icon: 'stats.png', theme: { accent: '#7f8c8d' }, status: 'ACTIVE' }
+        { id: 'cabinet', title: 'State Coordination', subtitle: 'Executive Bureau', emoji: '🏛️', theme: { accent: '#2c3e50' }, status: 'PRIORITY' },
+        { id: 'defense', title: 'Ministry of Defense', subtitle: 'Operations Command', emoji: '🛡️', theme: { accent: '#8b0000' }, status: 'SECURED' },
+        { id: 'military', title: 'Ministry of Military', subtitle: 'Force Logistics', emoji: '⚔️', theme: { accent: '#445362' }, status: 'ACTIVE' },
+        { id: 'finance', title: 'Ministry of Finance', subtitle: 'Treasury Office', emoji: '💰', theme: { accent: '#D8C79B' }, status: 'STABLE' },
+        { id: 'economy', title: 'Ministry of Economy', subtitle: 'Planning Authority', emoji: '⚙️', theme: { accent: '#065535' }, status: 'ACTIVE' },
+        { id: 'trade', title: 'Ministry of Trade', subtitle: 'Global Commerce', emoji: '🔄', theme: { accent: '#3498db' }, status: 'READY' },
+        { id: 'foreign', title: 'Foreign Affairs', subtitle: 'Diplomatic Corps', emoji: '🌐', theme: { accent: '#002366' }, status: 'STABLE' },
+        { id: 'intelligence', title: 'Intelligence Agency', subtitle: 'Internal Security', emoji: '🕵️', theme: { accent: '#310062' }, status: 'CLASSIFIED' },
+        { id: 'interior', title: 'Ministry of Interior', subtitle: 'Civil Administration', emoji: '🏢', theme: { accent: '#4C5E70' }, status: 'ACTIVE' },
+        { id: 'transport', title: 'Transport & Infra', subtitle: 'Infrastructure Grid', emoji: '✈️', theme: { accent: '#e67e22' }, status: 'ACTIVE' },
+        { id: 'resource', title: 'Resource Management', subtitle: 'Resource Authority', emoji: '⛏️', theme: { accent: '#d35400' }, status: 'PRIORITY' },
+        { id: 'health', title: 'Health & Population', subtitle: 'Health Administration', emoji: '⚕️', theme: { accent: '#b22222' }, status: 'STABLE' },
+        { id: 'education', title: 'Ministry of Education', subtitle: 'Human Capital', emoji: '📚', theme: { accent: '#0f52ba' }, status: 'READY' },
+        { id: 'technology', title: 'Science & Tech', subtitle: 'Research Agency', emoji: '🔬', theme: { accent: '#4682b4' }, status: 'READY' },
+        { id: 'projects', title: 'Laws & Projects', subtitle: 'National Missions', emoji: '📜', theme: { accent: '#8e44ad' }, status: 'ACTIVE' },
+        { id: 'culture', title: 'Culture & Media', subtitle: 'Cultural Identity', emoji: '🎨', theme: { accent: '#f39c12' }, status: 'STABLE' },
+        { id: 'statistics', title: 'Ministry of Stats', subtitle: 'Data Authority', emoji: '📊', theme: { accent: '#7f8c8d' }, status: 'ACTIVE' }
     ];
     const freeze = (o) => { Object.freeze(o); Object.getOwnPropertyNames(o).forEach(p => { if (o[p] !== null && (typeof o[p] === "object" || typeof o[p] === "function") && !Object.isFrozen(o[p])) freeze(o[p]); }); return o; };
     return freeze(data);

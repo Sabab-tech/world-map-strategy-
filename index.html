@@ -37,7 +37,7 @@
         #render-engine-root { position: fixed; inset: 0; z-index: 1; overflow: hidden; touch-action: auto; }
         #map { width: 100%; height: 100%; }
         
-        .leaflet-container { background: #000 !important; touch-action: pan-x pan-y !important; }
+        .leaflet-container { background: #1b4965 !important; touch-action: pan-x pan-y !important; }
 
         #ui-engine-root { 
             position: fixed; inset: 0; z-index: 100; 
@@ -150,69 +150,287 @@
     </div>
 
     <div id="app" role="main">
-        <div id="render-engine-root"><div id="map"></div></div>
+        <div id="render-engine-root">
+            <div id="map"></div>
+        </div>
         
         <div id="ui-engine-root">
-            <!-- [FIX P1] Resource HUD with Sibling Spans -->
-            <div class="ui-top-hud" role="status" aria-live="polite">
-                <div class="res-node"><span>CASH</span><span id="res-cash">0</span><span></span></div>
-                <div class="res-node"><span>OIL</span><span id="res-oil">0</span><span></span></div>
-                <div class="res-node"><span>STEEL</span><span id="res-steel">0</span><span></span></div>
-                <div class="res-node"><span>URAN</span><span id="res-uranium">0</span><span></span></div>
-                <div class="res-node"><span>POP</span><span id="res-manpower">0</span><span></span></div>
-            </div>
-
-            <div class="ui-right-controls" role="toolbar">
-                <button id="btn-home" class="icon-btn">🏛</button>
-                <button id="btn-main-cabinet" class="icon-btn">📂</button>
-                <button id="btn-resource-overlay" class="icon-btn">🌍</button>
-                <button id="btn-relation-overlay" class="icon-btn">📊</button>
-            </div>
-
-            <!-- [FIX P1] Command Hub with Missing IDs -->
-            <div id="command-hub-modal" class="omega-modal" role="dialog" aria-modal="true">
-                <div style="padding:20px; height:100%; display:flex; flex-direction:column;">
-                    <header style="display:flex; justify-content:space-between; border-bottom:1px solid var(--omega-border); padding-bottom:10px;">
-                        <h2 id="modal-country-name" style="font-family:var(--font-title); color:var(--omega-neon);">--</h2>
-                        <button id="btn-close-hub" style="background:none; border:none; color:#fff; cursor:pointer; font-size:20px;">×</button>
-                    </header>
-                    <div style="padding:10px 0; font-size:12px; font-family:var(--font-mono); display:flex; gap:20px;">
-                        <div id="econ-gdp">GDP: --</div>
-                        <div id="econ-debt">DEBT: --</div>
+            <!-- 🛰️ TOP STATUS AREA (Unified AAA Top Header) -->
+            <div id="top-status-bar" class="top-status-bar" role="banner">
+                <div class="status-group status-left">
+                    <span class="status-item"><span class="icon">⏰</span> <span id="status-clock">2026.07.27 | 03:42:15 UTC</span></span>
+                    <div class="speed-controls" role="group" aria-label="Game Speed">
+                        <button class="speed-btn" data-speed="0" title="Pause Game">⏸</button>
+                        <button class="speed-btn active" data-speed="1" title="Normal Speed">1x</button>
+                        <button class="speed-btn" data-speed="2" title="Fast Speed">2x</button>
+                        <button class="speed-btn" data-speed="5" title="Ultra Speed">5x</button>
                     </div>
-                    <div style="flex:1; display:flex; margin-top:10px; overflow:hidden;">
-                        <aside id="hub-tabs" role="tablist" style="width:120px; border-right:1px solid var(--omega-border); display:flex; flex-direction:column; gap:5px;">
-                            <button class="tab-btn active" data-tab="tab-population" role="tab">POPULATION</button>
-                            <button class="tab-btn" data-tab="tab-military" role="tab">MILITARY</button>
-                            <button class="tab-btn" data-tab="tab-diplomacy" role="tab">DIPLOMACY</button>
-                            <button class="tab-btn" data-tab="tab-projects" role="tab">PROJECTS</button>
-                            <button class="tab-btn" data-tab="tab-internal" role="tab">INTERNAL</button>
-                        </aside>
-                        <main class="tab-content" style="flex:1; padding-left:15px; overflow-y:auto;">
-                            <div id="tab-population" class="tab-pane active" role="tabpanel"></div>
-                            <div id="tab-military" class="tab-pane" role="tabpanel"></div>
-                            <div id="tab-diplomacy" class="tab-pane" role="tabpanel">
-                                <div id="diplomacy-list"></div>
-                            </div>
-                            <div id="tab-projects" class="tab-pane" role="tabpanel"></div>
-                            <div id="tab-internal" class="tab-pane" role="tabpanel"></div>
+                </div>
+
+                <div class="status-group status-resources" role="status">
+                    <div class="res-node" title="Treasury Reserve">
+                        <span class="res-icon">💵</span>
+                        <span id="res-cash" class="res-val">$100M</span>
+                        <span class="res-trend positive">▲ +5K/s</span>
+                    </div>
+                    <div class="res-node" title="Political Power">
+                        <span class="res-icon">🏛️</span>
+                        <span id="res-power" class="res-val">850 PP</span>
+                        <span class="res-trend positive">▲ +2.5/s</span>
+                    </div>
+                    <div class="res-node" title="Military Manpower">
+                        <span class="res-icon">👥</span>
+                        <span id="res-manpower" class="res-val">500K</span>
+                        <span class="res-trend positive">▲ +150/s</span>
+                    </div>
+                    <div class="res-node" title="Energy Production">
+                        <span class="res-icon">⚡</span>
+                        <span id="res-energy" class="res-val">12.4 GW</span>
+                        <span class="res-trend positive">▲ +1.2 GW</span>
+                    </div>
+                    <div class="res-node" title="Crude Oil Stockpile">
+                        <span class="res-icon">🛢️</span>
+                        <span id="res-oil" class="res-val">500K BBL</span>
+                        <span class="res-trend positive">▲ +200/s</span>
+                    </div>
+                    <div class="res-node" title="Steel Industrial Output">
+                        <span class="res-icon">⚙️</span>
+                        <span id="res-steel" class="res-val">100K T</span>
+                        <span class="res-trend positive">▲ +100/s</span>
+                    </div>
+                </div>
+
+                <div class="status-group status-right">
+                    <span class="status-item green"><span class="icon">💾</span> <span id="status-autosave">SYNCED</span></span>
+                    <span class="status-item cyan"><span class="icon">📡</span> <span id="status-link">ONLINE</span></span>
+                    <span class="status-item debug-fps"><span id="status-fps">60 FPS</span></span>
+                </div>
+            </div>
+
+            <!-- 🔔 TOP RIGHT NOTIFICATION STACK -->
+            <div id="notification-stack" class="notification-stack" role="region" aria-label="Notifications">
+                <!-- Notifications dynamically pushed here -->
+            </div>
+
+            <!-- 🎛️ RIGHT QUICK DOCK (Search, Events, Layers) -->
+            <div class="ui-right-controls" role="toolbar" aria-label="Quick Tools">
+                <button id="btn-quick-search" class="icon-btn" title="Instant Search (Countries, Cities, Bases)">🔍</button>
+                <button id="btn-quick-events" class="icon-btn" title="Global Events & Directives">⚠</button>
+                <button id="btn-quick-layers" class="icon-btn" title="Map Overlays & Layers">🛰</button>
+            </div>
+
+            <!-- 🔍 INSTANT SEARCH DRAWER -->
+            <div id="search-drawer" class="omega-drawer" role="dialog" aria-modal="true">
+                <div class="drawer-header">
+                    <span>🔍 GLOBAL STRATEGIC SEARCH</span>
+                    <button id="btn-close-search" class="drawer-close">✕</button>
+                </div>
+                <div class="drawer-body">
+                    <input type="text" id="search-input" placeholder="Type country, capital, or base name..." />
+                    <div id="search-results-container" class="search-results"></div>
+                </div>
+            </div>
+
+            <!-- ⚠ GLOBAL EVENTS DRAWER -->
+            <div id="events-drawer" class="omega-drawer" role="dialog" aria-modal="true">
+                <div class="drawer-header">
+                    <span style="color:#ef4444;">⚠ LIVE STRATEGIC SITUATIONS</span>
+                    <button id="btn-close-events" class="drawer-close">✕</button>
+                </div>
+                <div id="events-feed-container" class="drawer-body events-feed"></div>
+            </div>
+
+            <!-- 🛰️ MAP LAYERS DRAWER -->
+            <div id="layers-drawer" class="omega-drawer" role="dialog" aria-modal="true">
+                <div class="drawer-header">
+                    <span>🛰️ MAP LAYER SPECTRUM</span>
+                    <button id="btn-close-layers" class="drawer-close">✕</button>
+                </div>
+                <div class="drawer-body layer-options-grid">
+                    <button class="layer-opt-btn active" data-layer="satellite">🌐 Ultra HD Satellite Terrain</button>
+                    <button class="layer-opt-btn" data-layer="political">🗺️ Political Border Focus</button>
+                    <button class="layer-opt-btn" data-layer="night">🌃 Night Lights & Power Grid</button>
+                    <button class="layer-opt-btn" data-layer="weather">🌧️ Dynamic Weather Radar</button>
+                    <button class="layer-opt-btn" data-layer="resources">💎 Resource Heatmap</button>
+                </div>
+            </div>
+
+            <!-- 📜 DAILY QUESTS & STATE MISSIONS MODAL -->
+            <div id="daily-quests-modal" class="omega-modal" role="dialog" aria-modal="true" style="display:none; max-width:580px; width:92%; height:auto; max-height:85vh;">
+                <div style="padding:20px; display:flex; flex-direction:column;">
+                    <header style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--omega-border); padding-bottom:12px; margin-bottom:15px;">
+                        <div style="font-family:var(--font-title); color:#ffd700; font-size:16px; font-weight:bold; display:flex; align-items:center; gap:8px;">
+                            <span>📜</span> <span>DAILY QUESTS & EXECUTIVE MISSIONS</span>
+                        </div>
+                        <button id="btn-close-quests" class="omega-close-btn" style="background:rgba(255,68,68,0.25); border:1px solid var(--omega-danger); color:#fff; border-radius:6px; padding:6px 14px; font-weight:bold; cursor:pointer; font-family:var(--font-mono); font-size:12px;">
+                            ✕ CLOSE
+                        </button>
+                    </header>
+
+                    <div style="font-family:var(--font-mono); font-size:12px; color:#94a3b8; margin-bottom:15px;">
+                        Complete daily state directives to secure national funds, manpower, and strategic stability reserves.
+                    </div>
+
+                    <div id="quest-list-container" style="display:flex; flex-direction:column; gap:12px; max-height:50vh; overflow-y:auto; padding-right:5px;">
+                        <!-- Quest Items Rendered Dynamically -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- 🌐 COUNTRY INTELLIGENCE OPERATING SYSTEM (IOS v2.0) -->
+            <div id="command-hub-modal" class="omega-modal ios-modal-window" role="dialog" aria-modal="true">
+                <div class="ios-wrapper">
+                    <!-- 🛰️ TOP IOS SYSTEM BAR -->
+                    <header class="ios-header">
+                        <div class="ios-title-group">
+                            <span class="ios-classified-tag">CLASSIFIED // IOS v2.0</span>
+                            <h2 id="modal-country-name" class="ios-country-heading">COMMAND HQ: UNITED STATES</h2>
+                            <span id="ios-status-tag" class="ios-status-badge">SOVEREIGN STATE</span>
+                        </div>
+                        <div style="font-size:11px; font-family:var(--font-mono); display:flex; gap:12px; color:#94a3b8;">
+                            <div id="econ-gdp">GDP: --</div>
+                            <div id="econ-debt">DEBT: --</div>
+                        </div>
+                        <div class="ios-header-actions">
+                            <button id="btn-toggle-advisor" class="ios-advisor-btn" title="Toggle AI Strategic Advisor">
+                                <span class="adv-icon">🤖</span>
+                                <span>AI ADVISOR</span>
+                                <span class="adv-pulse"></span>
+                            </button>
+                            <button id="btn-close-hub" class="ios-exit-btn" title="Exit Intelligence Operating System">
+                                <span>✕</span><span>EXIT IOS</span>
+                            </button>
+                        </div>
+                    </header>
+
+                    <!-- Hidden Contract Compatibility Container -->
+                    <div id="contract-compat-container" style="display:none;" aria-hidden="true">
+                        <div id="tab-population" class="tab-pane"></div>
+                        <div id="tab-military" class="tab-pane"></div>
+                        <div id="tab-diplomacy" class="tab-pane"><div id="diplomacy-list"></div></div>
+                        <div id="tab-projects" class="tab-pane"></div>
+                        <div id="tab-internal" class="tab-pane"></div>
+                    </div>
+
+                    <!-- ↔️ CHAPTER HORIZONTAL SWIPE NAVIGATION BAR -->
+                    <div class="ios-chapter-bar">
+                        <button id="btn-chapter-prev" class="chapter-arrow-btn" title="Previous Chapter">◀</button>
+                        <nav id="ios-chapter-nav" class="ios-chapter-track">
+                            <button class="chapter-tab active" data-chapter="1"><span>01</span> OVERVIEW</button>
+                            <button class="chapter-tab" data-chapter="2"><span>02</span> GOVERNMENT</button>
+                            <button class="chapter-tab" data-chapter="3"><span>03</span> MILITARY</button>
+                            <button class="chapter-tab" data-chapter="4"><span>04</span> ECONOMY</button>
+                            <button class="chapter-tab" data-chapter="5"><span>05</span> RESOURCES</button>
+                            <button class="chapter-tab" data-chapter="6"><span>06</span> DIPLOMACY</button>
+                            <button class="chapter-tab" data-chapter="7"><span>07</span> INTELLIGENCE</button>
+                            <button class="chapter-tab" data-chapter="8"><span>08</span> INFRASTRUCTURE</button>
+                            <button class="chapter-tab" data-chapter="9"><span>09</span> TECHNOLOGY</button>
+                            <button class="chapter-tab" data-chapter="10"><span>10</span> SOCIETY</button>
+                            <button class="chapter-tab" data-chapter="11"><span>11</span> OPERATIONS</button>
+                        </nav>
+                        <button id="btn-chapter-next" class="chapter-arrow-btn" title="Next Chapter">▶</button>
+                    </div>
+
+                    <!-- 📖 CHAPTER MAIN WORKSPACE & AI ADVISOR DOCK -->
+                    <div class="ios-content-viewport">
+                        <!-- CHAPTER CONTENT DISPLAY -->
+                        <main id="ios-chapter-stage" class="ios-chapter-stage">
+                            <!-- Dynamic Chapter content injected here by JavaScript -->
                         </main>
+
+                        <!-- 🤖 AI STRATEGIC ADVISOR PANEL -->
+                        <aside id="ios-advisor-dock" class="ios-advisor-dock active">
+                            <div class="advisor-dock-header">
+                                <div class="advisor-title-text">
+                                    <span>🤖</span> <span>AI STRATEGIC ADVISOR</span>
+                                </div>
+                                <button id="btn-close-advisor" class="advisor-close-x">✕</button>
+                            </div>
+                            <div class="advisor-dock-body">
+                                <div class="advisor-chapter-indicator">ACTIVE CHAPTER: <span id="advisor-chapter-name">01 OVERVIEW</span></div>
+                                <div id="advisor-insights-text" class="advisor-insights-content">
+                                    Initiating Strategic Analysis Engine... Select a chapter to receive context-aware command intelligence.
+                                </div>
+                                <div id="advisor-action-container" class="advisor-action-box">
+                                    <button id="btn-advisor-execute" class="advisor-execute-btn">⚡ EXECUTE STRATEGIC DIRECTIVE</button>
+                                </div>
+                            </div>
+                        </aside>
                     </div>
                 </div>
             </div>
 
             <div id="cabinet-full-window" class="omega-modal" role="dialog" style="inset:0; width:100%; height:100%; transform:none; border-radius:0;">
-                <button id="btn-close-cabinet" style="position:absolute; top:20px; right:20px; padding:10px; z-index:10;">BACK</button>
-                <div class="cabinet-body" id="cabinet-body" style="padding:60px 20px;"></div>
+                <div class="cabinet-top-header" style="display:flex; justify-content:space-between; align-items:center; padding:12px 20px; background:rgba(0,18,28,0.95); border-bottom:1px solid var(--omega-border); position:relative; z-index:20;">
+                    <div style="font-family:var(--font-title); font-size:15px; color:var(--omega-neon); display:flex; align-items:center; gap:8px;">
+                        <span>🏛️</span><span>STATE COUNCIL EXECUTIVE CABINET</span>
+                    </div>
+                    <button id="btn-close-cabinet" class="omega-close-btn" style="background:rgba(255,68,68,0.25); border:1px solid var(--omega-danger); color:#fff; border-radius:6px; padding:6px 16px; font-weight:bold; cursor:pointer; font-family:var(--font-mono); font-size:13px; display:flex; align-items:center; gap:6px;">
+                        <span>✕</span><span>EXIT CABINET</span>
+                    </button>
+                </div>
+                <div class="cabinet-body" id="cabinet-body" style="padding:20px; overflow-y:auto; height:calc(100% - 55px);"></div>
             </div>
 
-            <nav class="ui-bottom-navigation" role="navigation">
-                <button id="btn-politics" class="nav-btn"><span>🏛</span><span>STATE</span></button>
-                <button id="btn-build" class="nav-btn"><span>🏗</span><span>ECON</span></button>
-                <button id="btn-hq" class="nav-btn"><span>🏰</span><span>HQ</span></button>
-                <button id="btn-military-dock" class="nav-btn"><span>🛡</span><span>MIL</span></button>
-                <button id="btn-diplomacy-dock" class="nav-btn"><span>🌐</span><span>DIPL</span></button>
-                <button id="btn-settings" class="nav-btn"><span>⚙</span><span>SYSTEM</span></button>
+            <!-- 🗺️ COUNTRY INFO CARD (Height: 140px - Appears above navigation) -->
+            <div id="country-info-card" class="country-info-card" role="region" aria-label="Country Strategic Data">
+                <div class="card-left">
+                    <div class="country-flag-badge" id="card-country-flag">🌐</div>
+                    <div class="country-meta">
+                        <h2 id="card-country-name">SELECT A NATION</h2>
+                        <div id="card-country-leader" class="country-sub">Leader: Unspecified</div>
+                        <div id="card-country-gov" class="country-sub">Gov: Sovereign Republic</div>
+                    </div>
+                </div>
+
+                <div class="card-stats-grid">
+                    <div class="stat-box"><span class="stat-lbl">POPULATION</span><span id="card-stat-pop" class="stat-val">--</span></div>
+                    <div class="stat-box"><span class="stat-lbl">GDP TREASURY</span><span id="card-stat-gdp" class="stat-val">--</span></div>
+                    <div class="stat-box"><span class="stat-lbl">STABILITY</span><span id="card-stat-stability" class="stat-val">--</span></div>
+                    <div class="stat-box"><span class="stat-lbl">RELATIONS</span><span id="card-stat-relations" class="stat-val">--</span></div>
+                    <div class="stat-box"><span class="stat-lbl">MIL POWER</span><span id="card-stat-mil" class="stat-val">--</span></div>
+                </div>
+
+                <div class="card-action-bar">
+                    <button class="card-act-btn" id="btn-card-cabinet">🏛 CABINET</button>
+                    <button class="card-act-btn" id="btn-card-diplomacy">🤝 DIPLOMACY</button>
+                    <button class="card-act-btn" id="btn-card-military">🛡 MILITARY</button>
+                    <button class="card-act-btn" id="btn-card-economy">💰 ECONOMY</button>
+                    <button class="card-act-btn" id="btn-card-intel">🛰 INTEL</button>
+                    <button id="btn-close-card" class="card-close-btn" title="Close Card">✕</button>
+                </div>
+            </div>
+
+            <!-- 🏛️ BOTTOM COMMAND BAR (76px Height) -->
+            <nav class="ui-bottom-navigation" role="navigation" aria-label="Main Command Navigation">
+                <button id="btn-politics" class="nav-btn active">
+                    <span class="nav-icon">🏛</span>
+                    <span class="nav-text">CABINET</span>
+                </button>
+                <button id="btn-hq" class="nav-btn">
+                    <span class="nav-icon">⚔</span>
+                    <span class="nav-text">COMMAND</span>
+                </button>
+                <button id="btn-build" class="nav-btn">
+                    <span class="nav-icon">💰</span>
+                    <span class="nav-text">ECONOMY</span>
+                </button>
+                <button id="btn-military-dock" class="nav-btn">
+                    <span class="nav-icon">🛡</span>
+                    <span class="nav-text">MILITARY</span>
+                </button>
+                <button id="btn-diplomacy-dock" class="nav-btn">
+                    <span class="nav-icon">🤝</span>
+                    <span class="nav-text">DIPLOMACY</span>
+                </button>
+                <button id="btn-research-dock" class="nav-btn">
+                    <span class="nav-icon">🧪</span>
+                    <span class="nav-text">RESEARCH</span>
+                </button>
+                <button id="btn-intel-dock" class="nav-btn">
+                    <span class="nav-icon">🛰</span>
+                    <span class="nav-text">INTEL</span>
+                </button>
             </nav>
         </div>
         
@@ -224,26 +442,6 @@
             <template id="template-ui-window"><section class="omega-window-container"><div class="panel-body"></div></section></template>
         </div>
     </div>
-
-    <script>
-        (function() {
-            var s = document.createElement('script');
-            s.src = "https://cdn.jsdelivr.net/npm/eruda";
-            s.async = true;
-            s.onload = function() {
-                if (window.eruda) {
-                    try {
-                        eruda.init({ theme: 'dark' });
-                        console.log("[OMEGA] Eruda DevTools initialized.");
-                    } catch(e) {}
-                }
-            };
-            s.onerror = function() {
-                console.log("[OMEGA] Eruda script skipped or offline.");
-            };
-            document.head.appendChild(s);
-        })();
-    </script>
 
 <script src="leaflet.js" defer onload="window.__OMEGA_DIAG__.boot.scriptStatus['leaflet.js']='LOADED'"></script>
 
@@ -260,6 +458,7 @@
 <script src="ministry_engine.js" defer></script>
 
 <script src="game-logic.js" defer></script>
+<script src="country-ios.js" defer></script>
 
 <script>
         (function() {
@@ -358,6 +557,11 @@
                 } else {
                     console.warn("[OMEGA] OmegaMinistry.createRuntime not found.");
                 }
+
+                let isPaused = false;
+                let rafId = null;
+                let lastTime = performance.now();
+                let tick = 0;
 
                 document.addEventListener("visibilitychange", () => {
                     isPaused = document.hidden;

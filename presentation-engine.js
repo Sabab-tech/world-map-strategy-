@@ -527,7 +527,150 @@ class PresentationEngine {
         this.sharedState.activeFlow = null;
     }
 
-    // Helper functions like getBackground, createLoadingBar, getOrCreateLayer, etc., remain exactly as they logically should be, but are omitted here only to save redundant character limits as the core logic above resolves your specified issues.
-                }
+    getOrCreateLayer(id, zIndex) {
+        let layer = document.getElementById(id);
+        if (!layer) {
+            layer = document.createElement("div");
+            layer.id = id;
+            layer.className = `ui-layer ${id}`;
+            layer.style.position = "fixed";
+            layer.style.inset = "0";
+            layer.style.zIndex = String(zIndex);
+            layer.style.display = "none";
+            layer.style.opacity = "0";
+            layer.style.backgroundSize = "cover";
+            layer.style.backgroundPosition = "center";
+            this.root.appendChild(layer);
+        } else {
+            layer.style.zIndex = String(zIndex);
+        }
+        this.layers.set(id, layer);
+        return layer;
+    }
+
+    createLoadingBar() {
+        let bar = document.getElementById("om-loading-bar");
+        if (!bar) {
+            bar = document.createElement("div");
+            bar.id = "om-loading-bar";
+            bar.style.position = "fixed";
+            bar.style.top = "0";
+            bar.style.left = "0";
+            bar.style.height = "3px";
+            bar.style.width = "0%";
+            bar.style.backgroundColor = "#00ffff";
+            bar.style.zIndex = "10000";
+            bar.style.transition = "width 0.3s ease";
+            document.body.appendChild(bar);
+        }
+        return bar;
+    }
+
+    getBackground(ministryId) {
+        if (this.backgroundRegistry.has(ministryId)) {
+            return this.backgroundRegistry.get(ministryId);
+        }
+        return "economy_bg.jpg.jpg";
+    }
+
+    preloadAsset(url) {
+        if (this.assetCache.has(url)) return Promise.resolve(this.assetCache.get(url));
+        if (this.pendingPreloads.has(url)) return this.pendingPreloads.get(url);
+        const promise = new Promise((resolve) => {
+            const img = new Image();
+            img.onload = img.onerror = () => {
+                this.assetCache.set(url, img);
+                this.pendingPreloads.delete(url);
+                resolve(img);
+            };
+            img.src = url;
+        });
+        this.pendingPreloads.set(url, promise);
+        return promise;
+    }
+
+    runLoading(flowId, bgUrl, signal) {
+        return new Promise((resolve, reject) => {
+            if (signal.aborted || flowId !== this.currentFlowId) return reject(new Error("aborted"));
+            this.logInfo("[VISUAL: LOADING] Running loading sequence...");
+            this.setState(this.STATE.LOADING);
+            
+            if (this.loadingBar) {
+                this.loadingBar.style.width = "50%";
+            }
+            
+            const timer = setTimeout(() => {
+                this.timers.delete(timer);
+                if (signal.aborted || flowId !== this.currentFlowId) return reject(new Error("aborted"));
+                if (this.loadingBar) this.loadingBar.style.width = "100%";
+                setTimeout(() => {
+                    if (this.loadingBar) this.loadingBar.style.width = "0%";
+                    resolve();
+                }, 200);
+            }, 300);
+            this.timers.add(timer);
+        });
+    }
+
+    executeSeamlessCrossfade(oldBg, newBg) {
+        if (this.bgLayer) {
+            this.bgLayer.style.backgroundImage = `url(${newBg})`;
+        }
+    }
+
+    verifyExplicitLayerStack() {
+        if (this.bgLayer) this.bgLayer.style.zIndex = "1";
+        if (this.introLayer) this.introLayer.style.zIndex = "10";
+        if (this.uiLayer) this.uiLayer.style.zIndex = "20";
+        const fullWindow = document.getElementById("cabinet-full-window");
+        if (fullWindow) fullWindow.style.zIndex = "9999";
+    }
+
+    injectBaseStyles() {
+        const id = "presentation-engine-base-styles";
+        if (document.getElementById(id)) return;
+        const style = document.createElement("style");
+        style.id = id;
+        style.textContent = `
+            .ui-layer { pointer-events: auto; }
+            #cabinet-full-window { display: flex; flex-direction: column; }
+        `;
+        document.head.appendChild(style);
+    }
+
+    setupResizeHandler() {
+        window.addEventListener("resize", () => {
+            const mapInst = window.map || (window.Game && window.Game.Map && window.Game.Map.map);
+            if (mapInst && typeof mapInst.invalidateSize === "function") {
+                mapInst.invalidateSize();
+            }
+        });
+    }
+
+    setupVisibilityHandler() {
+        document.addEventListener("visibilitychange", () => {
+            this.isTabPaused = document.hidden;
+        });
+    }
+
+    safeRequestAnimationFrame(cb) {
+        const id = requestAnimationFrame((timestamp) => {
+            this.animationFrames.delete(id);
+            cb(timestamp);
+        });
+        this.animationFrames.add(id);
+        return id;
+    }
+
+    destroy() {
+        this.state = this.STATE.DESTROYED;
+        this.sharedState.isDestroyed = true;
+        this.timers.forEach(t => clearTimeout(t));
+        this.animationFrames.forEach(f => cancelAnimationFrame(f));
+        this.timers.clear();
+        this.animationFrames.clear();
+        if (this.activeAbortController) this.activeAbortController.abort();
+    }
+}
                 
         

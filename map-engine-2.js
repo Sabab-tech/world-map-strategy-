@@ -41,20 +41,143 @@ Game.worldState = {
     turn: 1
 };
 
-// ম্যাপের প্রতিটি দেশের রঙ পরিবর্তন করার ফাংশন ওভাররাইড
+// ম্যাপের প্রতিটি দেশের রঙ পরিবর্তন করার জন্য স্যাটেলাইট এবং ভৌগোলিক টেরেইন কালার প্যালেট
 window.getCountryColor = function(name) {
-    if (!name) return "#1e293b";
+    if (!name) return "#3e592e";
+    const norm = name.toLowerCase().trim();
+
+    // বাস্তব পৃথিবীর জলবায়ু ও ভূপ্রকৃতি (Biomes) অনুযায়ী নিখুঁত স্যাটেলাইট টেরেইন কালার ম্যাপিং
+    const biomeMap = {
+        // Arctic Snow / Ice Sheet
+        "greenland": "#dce7ee",
+        "antarctica": "#e2e8f0",
+        "spitsbergen": "#cbd5e1",
+
+        // Boreal Coniferous Taiga Forest
+        "russia": "#3e592e",
+        "canada": "#486938",
+        "sweden": "#3d572d",
+        "norway": "#354e28",
+        "finland": "#38522b",
+        "iceland": "#6b7d8a",
+        "mongolia": "#82754d",
+
+        // Sahara & Middle East Desert Sandstone
+        "saudi arabia": "#c4a36b",
+        "egypt": "#c2a068",
+        "algeria": "#bd9a62",
+        "libya": "#c4a268",
+        "western sahara": "#ba9860",
+        "mauritania": "#b5945c",
+        "mali": "#ac8b56",
+        "niger": "#aa8954",
+        "chad": "#a88752",
+        "sudan": "#b3925d",
+        "eritrea": "#a68550",
+        "somalia": "#9e7f4c",
+        "iraq": "#b3945e",
+        "iran": "#a88a56",
+        "pakistan": "#9c8152",
+        "afghanistan": "#a18554",
+        "australia": "#b38354",
+        "kazakhstan": "#918155",
+        "turkmenistan": "#a69360",
+        "uzbekistan": "#a18f5d",
+        "yemen": "#b89a66",
+        "oman": "#ba9c68",
+
+        // Sahel & Savannah Transition Zone
+        "south sudan": "#827a48",
+        "ethiopia": "#787644",
+        "djibouti": "#a38350",
+        "senegal": "#7a7d48",
+        "the gambia": "#6e7844",
+        "gambia": "#6e7844",
+        "burkina faso": "#7f7a46",
+        "nigeria": "#586938",
+        "benin": "#546838",
+        "togo": "#526738",
+        "ghana": "#4a6334",
+        "cote d'ivoire": "#466132",
+        "ivory coast": "#466132",
+        "liberia": "#3d5a2d",
+        "sierra leone": "#3a572a",
+        "guinea": "#425e2e",
+        "guinea-bissau": "#456030",
+
+        // Equatorial Tropical Jungle & Congo Basin
+        "democratic republic of the congo": "#2e4d23",
+        "congo": "#315025",
+        "central african republic": "#4d6333",
+        "cameroon": "#3f5c2d",
+        "gabon": "#2d4b21",
+        "equatorial guinea": "#2c4a20",
+        "uganda": "#3a5929",
+        "kenya": "#636d3c",
+        "rwanda": "#3d5a2a",
+        "burundi": "#3e5b2b",
+        "tanzania": "#506233",
+        "angola": "#596637",
+        "zambia": "#4d6132",
+        "malawi": "#485e30",
+        "mozambique": "#546636",
+        "zimbabwe": "#5d6b38",
+        "namibia": "#968152",
+        "botswana": "#88784b",
+        "south africa": "#6b6e3f",
+        "lesotho": "#5c643b",
+        "eswatini": "#4d6032",
+        "swaziland": "#4d6032",
+        "madagascar": "#4c6631",
+        "brazil": "#2e5225",
+        "indonesia": "#294a20",
+        "colombia": "#325427",
+        "venezuela": "#38592c",
+        "peru": "#615746",
+        "malaysia": "#26471e",
+        "philippines": "#2b4d22",
+        "papua new guinea": "#2a4a20",
+        "bangladesh": "#2e5225",
+        "india": "#576b37",
+        "vietnam": "#315226",
+
+        // Temperate Woodland & Agriculture
+        "united states": "#5e7a3d",
+        "united states of america": "#5e7a3d",
+        "usa": "#5e7a3d",
+        "china": "#596e38",
+        "france": "#526e38",
+        "germany": "#4f6b35",
+        "united kingdom": "#54703b",
+        "uk": "#54703b",
+        "poland": "#526d37",
+        "ukraine": "#617a3f",
+        "italy": "#63733c",
+        "spain": "#877848",
+        "turkey": "#7a7543",
+        "japan": "#3a572a",
+        "argentina": "#5c6d44",
+        "mexico": "#857348",
+
+        // Alpine Mountain Slate & Andes
+        "chile": "#5c5548",
+        "switzerland": "#50575e",
+        "austria": "#4b535a",
+        "nepal": "#615d54",
+        "bolivia": "#736856"
+    };
+
+    if (biomeMap[norm]) return biomeMap[norm];
+
     let hash = 0;
-    for (let i = 0; i < name.length; i++) {
-        hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    for (let i = 0; i < norm.length; i++) {
+        hash = norm.charCodeAt(i) + ((hash << 5) - hash);
     }
-    const colors = [
-        "#557A46", "#C28C5F", "#A14C50", "#205E40", "#134460", "#A68C53", 
-        "#B87F65", "#7C4DFF", "#00B0FF", "#4CAF50", "#FF9100", "#00E676", 
-        "#EC407A", "#AB47BC", "#26A69A", "#5C6BC0", "#8D6E63", "#9CCC65", 
-        "#29B6F6", "#FFD54F", "#82B1FF", "#E040FB", "#A1887F", "#26C6DA"
+    const satellitePalette = [
+        "#486938", "#5e7a3d", "#857348", "#2e5225", "#c2a06b", 
+        "#54703b", "#3e592e", "#736856", "#576b37", "#3d572d"
     ];
-    return colors[Math.abs(hash) % colors.length];
+    return satellitePalette[Math.abs(hash) % satellitePalette.length];
 };
 
 // আমেরিকার নাম (USA) শো করার জন্য ফ্রেন্ডলি নেম ফাংশন ওভাররাইড
@@ -397,20 +520,33 @@ Game.Map = {
         this.hubsGroupLayer = window.hubsGroupLayer;
         this.bindMapDOMEvents();
 
+        // 🌍 100% Offline Vector Map Engine
+        try {
+            if (window.satelliteLayer) {
+                this.map.removeLayer(window.satelliteLayer);
+                window.satelliteLayer = null;
+            }
+        } catch (err) {
+            console.warn("Satellite cleanup notice:", err);
+        }
+
         this.map.on('zoomend', function() {
             var currentZoom = window.map.getZoom();
             if (Game.geojsonLayer) {
                 Game.geojsonLayer.eachLayer(function(layer) {
                     if (layer !== Game.selectedLayer) {
-                        layer.setStyle({ weight: currentZoom > 5.5 ? 1.0 : 0.5 });
+                        layer.setStyle({ 
+                            weight: currentZoom > 5.5 ? 1.2 : 0.8,
+                            dashArray: null
+                        });
                     } else {
                         var displayName = Game.currentActiveCountry;
                         if (displayName) {
-                            var coastal = window.isCoastalCountry(displayName);
                             layer.setStyle({
-                                color: "#00e5ff",
-                                opacity: coastal ? 0.65 : 0.95,
-                                weight: coastal ? (currentZoom > 5.5 ? 30 : 18) : (currentZoom > 5.5 ? 3.5 : 2.5)
+                                color: "#ffd700",
+                                opacity: 1.0,
+                                weight: 2.2,
+                                dashArray: null
                             });
                         }
                     }
@@ -472,28 +608,67 @@ Game.Map = {
         if (countryData.military) countryData.military.forEach(h => hubs.push(Object.assign({}, h, { role: 'military' })));
         if (countryData.secret) countryData.secret.forEach(h => hubs.push(Object.assign({}, h, { role: 'secret' })));
 
-        var currentRadius = (this.map.getZoom() * 0.8);
-
         hubs.forEach(hub => {
             var latitude = hub.lat, longitude = hub.lon || hub.lng;
             if (!latitude || !longitude) return;
 
-            var color = '#38bdf8';
-            if (hub.role === 'economic') color = '#eab308';
-            if (hub.role === 'military') color = '#ef4444';
-            if (hub.role === 'secret') color = '#a855f7';
+            var roleBadge = '🏙️';
+            var roleColor = '#00e5ff';
+            var roleTitle = 'National Capital';
 
-            var hubMarker = L.circleMarker([latitude, longitude], {
-                radius: currentRadius, fillColor: color, color: '#ffffff', weight: 2.5, fillOpacity: 0.95
+            if (hub.role === 'capital') { roleBadge = '👑'; roleColor = '#ffd700'; roleTitle = 'Capital Command Hub'; }
+            else if (hub.role === 'economic') { roleBadge = '🏭'; roleColor = '#eab308'; roleTitle = 'Industrial Economic Hub'; }
+            else if (hub.role === 'military') { roleBadge = '🛡️'; roleColor = '#ef4444'; roleTitle = 'Military Logistics Node'; }
+            else if (hub.role === 'secret') { roleBadge = '🛰️'; roleColor = '#a855f7'; roleTitle = 'Strategic Intelligence Base'; }
+
+            var hubIcon = L.divIcon({
+                className: 'city-hub-marker',
+                html: `
+                    <div style="
+                        display: flex;
+                        align-items: center;
+                        gap: 6px;
+                        background: rgba(11, 20, 36, 0.92);
+                        border: 1.5px solid ${roleColor};
+                        padding: 4px 10px;
+                        border-radius: 20px;
+                        box-shadow: 0 0 12px ${roleColor}80;
+                        cursor: pointer;
+                        white-space: nowrap;
+                        transform: translate(-50%, -50%);
+                    ">
+                        <span style="font-size: 15px; line-height: 1;">${roleBadge}</span>
+                        <span style="font-size: 11px; font-weight: bold; color: #ffffff; font-family: 'Share Tech Mono', monospace;">${hub.name}</span>
+                    </div>
+                `,
+                iconSize: [0, 0]
             });
 
-            var popupContent = `<div class="game-popup">
-                <span class="game-popup-title">${hub.name}</span>
-                <span class="role-${hub.role}">${hub.role}</span>
-                <span class="game-popup-desc">${hub.description || ''}</span>
-            </div>`;
+            var hubMarker = L.marker([latitude, longitude], { icon: hubIcon });
+
+            var popupContent = `
+                <div class="game-custom-popup-content" style="padding: 12px; font-family: 'Share Tech Mono', monospace; background: #0b1524; color: #ffffff; border-radius: 8px;">
+                    <div style="font-size: 16px; font-weight: bold; color: ${roleColor}; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+                        <span>${roleBadge}</span> <span>${hub.name}</span>
+                    </div>
+                    <div style="font-size: 11px; color: #cbd5e1; margin-bottom: 8px; text-transform: uppercase;">
+                        ${roleTitle} • [${Game.currentActiveCountry}]
+                    </div>
+                    <div style="font-size: 12px; color: #94a3b8; line-height: 1.4; margin-bottom: 10px; background: rgba(255,255,255,0.05); padding: 8px; border-radius: 4px;">
+                        ${hub.description || 'Primary regional administrative and infrastructure installation.'}
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 6px;">
+                        <button onclick="window.OMEGA_UI_ADAPTER && window.OMEGA_UI_ADAPTER.showAdvisePopup('CITY HUB UPGRADE', 'Upgrading infrastructure node for ${hub.name}...')" style="padding: 6px 10px; background: rgba(0, 229, 255, 0.2); border: 1px solid #00e5ff; color: #00e5ff; font-weight: bold; font-size: 11px; border-radius: 4px; cursor: pointer; text-align: left;">
+                            🔨 UPGRADE HUB INFRASTRUCTURE
+                        </button>
+                        <button onclick="window.OMEGA_UI_ADAPTER && window.OMEGA_UI_ADAPTER.showAdvisePopup('SECURITY GARRISON', 'Deploying regional defense garrison to ${hub.name}...')" style="padding: 6px 10px; background: rgba(239, 68, 68, 0.2); border: 1px solid #ef4444; color: #ef4444; font-weight: bold; font-size: 11px; border-radius: 4px; cursor: pointer; text-align: left;">
+                            🛡️ STATION GARRISON FORCES
+                        </button>
+                    </div>
+                </div>
+            `;
             
-            hubMarker.bindPopup(popupContent, { maxWidth: 300, className: 'game-popup' });
+            hubMarker.bindPopup(popupContent, { maxWidth: 300, className: 'game-custom-popup' });
             this.hubsGroupLayer.addLayer(hubMarker);
         });
     }
@@ -518,14 +693,15 @@ Game.Map.renderGeoJSON = function(geoData) {
             var props = feature.properties || {};
             var geoName = props.ADMIN || props.name || props.NAME;
             var config = Game.findCountryConfig(geoName);
-            var defaultColor = "#1e293b"; 
+            var defaultColor = "#3e592e"; 
             if (config) defaultColor = window.getCountryColor(config.name);
             return { 
-                color: "rgba(255, 255, 255, 0.45)", 
-                weight: self.map.getZoom() > 5.5 ? 1.0 : 0.5, 
+                color: "rgba(255, 255, 255, 0.4)", 
+                weight: self.map.getZoom() > 5.5 ? 1.2 : 0.8, 
                 opacity: 1.0, 
+                dashArray: null,
                 fillColor: defaultColor, 
-                fillOpacity: 0.85 
+                fillOpacity: 0.82 
             };
         },
         onEachFeature: function(feature, layer) {
@@ -548,7 +724,7 @@ Game.Map.renderGeoJSON = function(geoData) {
             if (displayName === "France" && center.lat < 35) { return; }
 
             var marker = L.marker(center, {
-                icon: L.divIcon({ className: "country-label", html: `<div style="transform: translate(-50%, -50%); font-size:9px; white-space: nowrap;">${Game.getGameFriendlyName(displayName)}</div>`, iconSize: [0, 0] }),
+                icon: L.divIcon({ className: "country-label", html: `<div class="country-label-inner" style="transform: translate(-50%, -50%); white-space: nowrap;">${Game.getGameFriendlyName(displayName)}</div>`, iconSize: [0, 0] }),
                 interactive: false
             });
 
@@ -558,14 +734,7 @@ Game.Map.renderGeoJSON = function(geoData) {
             layer.on({
                 click: function(e) {
                     L.DomEvent.stopPropagation(e);
-                    if (Game.selectedLayer && Game.geojsonLayer) Game.geojsonLayer.resetStyle(Game.selectedLayer);
-                    Game.selectedLayer = e.target;
-                    var currentZoom = self.map.getZoom();
-                    var coastal = window.isCoastalCountry(displayName);
-
-                    Game.selectedLayer.setStyle({ color: "#00e5ff", opacity: coastal ? 0.65 : 0.95, weight: coastal ? (currentZoom > 5.5 ? 30 : 18) : (currentZoom > 5.5 ? 3.5 : 2.5), fillColor: "#0284c7" });
-                    Game.currentActiveCountry = displayName;
-                    self.renderCountryHubs();
+                    Game.selectCountryByName(displayName, e.target);
                 }
             });
         }
@@ -575,49 +744,50 @@ Game.Map.renderGeoJSON = function(geoData) {
     this.renderOceanLabels();
 };
 
-Game.Map.toggleCommandHub = function(show) {
-    if (!Game.dom.hubModal) return;
+Game.selectCountryByName = function(countryName, layerTarget) {
+    if (!countryName) return;
+    this.currentActiveCountry = countryName;
+
+    if (layerTarget) {
+        if (this.selectedLayer && this.geojsonLayer) this.geojsonLayer.resetStyle(this.selectedLayer);
+        this.selectedLayer = layerTarget;
+        this.selectedLayer.setStyle({ 
+            color: "#ffd700", 
+            opacity: 1.0, 
+            weight: 2.5, 
+            dashArray: null,
+            fillColor: "#00e5ff", 
+            fillOpacity: 0.35 
+        });
+    }
+
+    if (this.Map) {
+        this.Map.renderCountryHubs();
+    }
+
+    if (typeof this.updateCountryInfoCard === 'function') {
+        this.updateCountryInfoCard(countryName);
+    }
+
+    // Close drawers on country select
+    if (typeof this.closeAllDrawers === 'function') {
+        this.closeAllDrawers();
+    }
+};
+
+Game.Map.toggleCommandHub = function(show, initialChapter = 1) {
     if (show) {
-        Game.dom.hubModal.style.display = 'flex';
-        const selectedId = Game.getCountryId(Game.currentActiveCountry);
-
-        if (selectedId && Game.state.economy[selectedId]) {
-            const econ = Game.state.economy[selectedId];
-            const pop = Game.state.population[selectedId] || {};
-
-            Game.dom.modalCountryName.innerText = `COMMAND HQ: ${selectedId.replace(/_/g, " ")}`;
-            Game.dom.econGdp.innerText = `GDP: ${Game.formatGameNumber(econ.gdp)} (Growth: ${econ.gdp_growth || 0}%)`;
-            Game.dom.econDebt.innerText = `Debt: ${Game.formatGameNumber(econ.debt)} (Unemp: ${econ.unemployment_rate || 0}%)`;
-            
-            if (Game.dom.popPane && pop.population_2015) {
-                Game.dom.popPane.innerHTML = `<h3>👥 Demographics of ${selectedId.replace(/_/g, " ")}</h3>
-                    <div class="info-grid">
-                        <div class="info-card"><h4>Baseline Population</h4><span>${Game.formatPopulationNumber(pop.population_2015)}</span></div>
-                        <div class="info-card"><h4>Annual Growth</h4><span>${pop.annual_growth_rate || 0}%</span></div>
-                    </div>`;
-            }
-
-            if (Game.dom.dipList && Game.state.relations[selectedId]) {
-                const relationsList = Game.state.relations[selectedId];
-                let listHtml = `<h4>Diplomatic Standing Summary</h4>`;
-                const targetStates = ["USA", "RUSSIA", "CHINA", "INDIA", "BANGLADESH"];
-                
-                targetStates.forEach(target => {
-                    const targetKey = target.toUpperCase();
-                    if (relationsList[targetKey]) {
-                        const scoreData = relationsList[targetKey];
-                        listHtml += `<div class="info-card">
-                            <h4>Relations with ${targetKey}</h4>
-                            <span>Overall Index: <strong>${scoreData.overall}</strong> (${scoreData.status})</span><br>
-                            <span style="font-size:11px; color:#94a3b8;">Border Tension: ${scoreData.border_tension}% | Threat: ${scoreData.military_threat}%</span>
-                        </div>`;
-                    }
-                });
-                Game.dom.dipList.innerHTML = listHtml;
-            }
+        if (window.CountryIOS) {
+            window.CountryIOS.open(Game.currentActiveCountry || "USA", initialChapter);
+        } else if (Game.dom.hubModal) {
+            Game.dom.hubModal.style.display = 'flex';
         }
     } else {
-        Game.dom.hubModal.style.display = 'none';
+        if (window.CountryIOS) {
+            window.CountryIOS.close();
+        } else if (Game.dom.hubModal) {
+            Game.dom.hubModal.style.display = 'none';
+        }
     }
 };
 

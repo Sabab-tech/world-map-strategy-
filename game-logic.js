@@ -91,23 +91,28 @@ setInterval(function() {
 
     if (cashEl) {
         cashEl.innerText = formatGameNumber(window.resources.cash).replace("$", "💵");
-        cashEl.nextElementSibling.innerText = `+${formatGameNumber(window.resourceRates.cash)}/s`;
+        const trend = cashEl.closest('.res-node')?.querySelector('.res-trend');
+        if (trend) trend.innerText = `▲ +${formatGameNumber(window.resourceRates.cash)}/s`;
     }
     if (oilEl) {
         oilEl.innerText = formatPopulationNumber(window.resources.oil) + " BBL";
-        oilEl.nextElementSibling.innerText = `+${window.resourceRates.oil}/s`;
+        const trend = oilEl.closest('.res-node')?.querySelector('.res-trend');
+        if (trend) trend.innerText = `▲ +${window.resourceRates.oil}/s`;
     }
     if (steelEl) {
         steelEl.innerText = formatPopulationNumber(window.resources.steel) + " T";
-        steelEl.nextElementSibling.innerText = `+${window.resourceRates.steel}/s`;
+        const trend = steelEl.closest('.res-node')?.querySelector('.res-trend');
+        if (trend) trend.innerText = `▲ +${window.resourceRates.steel}/s`;
     }
     if (uraniumEl) {
         uraniumEl.innerText = window.resources.uranium.toString() + " KG";
-        uraniumEl.nextElementSibling.innerText = `+${window.resourceRates.uranium}/s`;
+        const trend = uraniumEl.closest('.res-node')?.querySelector('.res-trend');
+        if (trend) trend.innerText = `▲ +${window.resourceRates.uranium}/s`;
     }
     if (manpowerEl) {
         manpowerEl.innerText = formatPopulationNumber(window.resources.manpower);
-        manpowerEl.nextElementSibling.innerText = `+${window.resourceRates.manpower}/s`;
+        const trend = manpowerEl.closest('.res-node')?.querySelector('.res-trend');
+        if (trend) trend.innerText = `▲ +${window.resourceRates.manpower}/s`;
     }
 }, 1000);
 
@@ -130,8 +135,10 @@ window.toggleCommandHub = function(show) {
             }
 
             // ১ম লেয়ার ডাইনামিক ডেটা লোডিং
-            document.getElementById('econ-gdp').innerText = `GDP: ${formatGameNumber(econ.gdp)} (Annual Growth: ${econ.gdp_growth || 0}%)`;
-            document.getElementById('econ-debt').innerText = `National Debt: ${formatGameNumber(econ.debt)} (Unemployment: ${econ.unemployment_rate || 0}%)`;
+            const egdp = document.getElementById('econ-gdp');
+            if (egdp) egdp.innerText = `GDP: ${formatGameNumber(econ.gdp)} (Annual Growth: ${econ.gdp_growth || 0}%)`;
+            const edebt = document.getElementById('econ-debt');
+            if (edebt) edebt.innerText = `National Debt: ${formatGameNumber(econ.debt)} (Unemployment: ${econ.unemployment_rate || 0}%)`;
             
             // পপুলেশন ডাইনামিক ডেটা
             const popPane = document.getElementById('tab-population');
