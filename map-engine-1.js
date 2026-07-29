@@ -2,7 +2,7 @@
    MAP ENGINE 1: UI CONTROLLER, DOM CACHE & TICKERS (map-engine-1.js)
    ============================================================================ */
 
-window.Game = {
+var Game = window.Game = {
     resources: { 
         cash: 100000000, 
         oil: 500000, 
@@ -242,28 +242,71 @@ window.Game = {
             });
         });
 
+        // 🏛️ BOTTOM BAR: 17 MINISTRIES BUTTON
+        const btnMinistryDock = document.getElementById('btn-ministry-dock');
+        if (btnMinistryDock) {
+            btnMinistryDock.addEventListener('click', () => {
+                const activeCountry = Game.currentActiveCountry || 'BANGLADESH';
+                if (window.CountryIOS) {
+                    window.CountryIOS.open(activeCountry, 5); // Chapter 5: 17 Strategic Ministries
+                } else if (window.ResourceMinistryEngine) {
+                    window.ResourceMinistryEngine.renderExecutiveDashboard();
+                }
+            });
+        }
+
+        // 👁️ BOTTOM BAR: VIEW SELECTED COUNTRY BUTTON
+        const btnViewMap = document.getElementById('btn-view-map');
+        if (btnViewMap) {
+            btnViewMap.addEventListener('click', (e) => {
+                if (e) e.stopPropagation();
+                const activeCountry = (Game.currentActiveCountry || 'BANGLADESH').replace(/_/g, " ");
+                self.closeAllDrawers();
+                if (window.CountryIOS) {
+                    window.CountryIOS.open(activeCountry, 1); // Chapter 1: Country Overview / View
+                } else if (Game.Map && typeof Game.Map.toggleCommandHub === 'function') {
+                    Game.Map.toggleCommandHub(true, 1);
+                }
+            });
+        }
+
         // 🎛️ RIGHT QUICK DOCK BINDINGS
         const btnSearch = document.getElementById('btn-quick-search');
         const drawerSearch = document.getElementById('search-drawer');
         const btnCloseSearch = document.getElementById('btn-close-search');
+        if (drawerSearch && typeof L !== 'undefined' && L.DomEvent) {
+            L.DomEvent.disableClickPropagation(drawerSearch);
+            L.DomEvent.disableScrollPropagation(drawerSearch);
+        }
         if (btnSearch && drawerSearch) {
-            btnSearch.addEventListener('click', () => {
+            btnSearch.addEventListener('click', (e) => {
+                if (e && e.stopPropagation) e.stopPropagation();
                 const isVis = drawerSearch.style.display === 'flex';
                 self.closeAllDrawers();
                 if (!isVis) {
                     drawerSearch.style.display = 'flex';
-                    document.getElementById('search-input').focus();
+                    const inp = document.getElementById('search-input');
+                    if (inp) { inp.focus(); inp.value = ""; }
                     self.renderSearch("");
                 }
             });
         }
         if (btnCloseSearch && drawerSearch) {
-            btnCloseSearch.addEventListener('click', () => drawerSearch.style.display = 'none');
+            btnCloseSearch.addEventListener('click', (e) => {
+                if (e && e.stopPropagation) e.stopPropagation();
+                drawerSearch.style.display = 'none';
+            });
         }
 
         const searchInput = document.getElementById('search-input');
         if (searchInput) {
-            searchInput.addEventListener('input', (e) => self.renderSearch(e.target.value));
+            searchInput.addEventListener('input', (e) => {
+                if (e && e.stopPropagation) e.stopPropagation();
+                self.renderSearch(e.target.value);
+            });
+            if (typeof L !== 'undefined' && L.DomEvent) {
+                L.DomEvent.disableClickPropagation(searchInput);
+            }
         }
 
         const btnEvents = document.getElementById('btn-quick-events');
@@ -389,65 +432,41 @@ window.Game = {
         }
 
         // 🏛️ BOTTOM NAVIGATION BINDINGS
-        const btnPolitics = document.getElementById('btn-politics');
-        if (btnPolitics) {
-            btnPolitics.addEventListener('click', () => {
-                self.setActiveNavButton('btn-politics');
-                Game.Map.toggleCommandHub(false);
-                self.toggleMainCabinet(true);
-            });
-        }
-        const btnHq = document.getElementById('btn-hq');
-        if (btnHq) {
-            btnHq.addEventListener('click', () => {
-                self.setActiveNavButton('btn-hq');
-                self.toggleMainCabinet(false);
-                Game.Map.toggleCommandHub(true);
+        const getActiveCountry = () => (Game.currentActiveCountry || window.currentActiveCountry || 'USA');
+
+        const btnCmdHq = document.getElementById('btn-command-hq') || document.getElementById('btn-hq') || document.getElementById('btn-politics');
+        if (btnCmdHq) {
+            btnCmdHq.addEventListener('click', () => {
+                self.setActiveNavButton('btn-command-hq');
+                if (window.CountryIOS) window.CountryIOS.open(getActiveCountry(), 1);
             });
         }
         const btnBuild = document.getElementById('btn-build');
         if (btnBuild) {
             btnBuild.addEventListener('click', () => {
                 self.setActiveNavButton('btn-build');
-                self.toggleMainCabinet(false);
-                Game.Map.toggleCommandHub(true);
-                self.switchTabDirectly('tab-projects');
+                if (window.CountryIOS) window.CountryIOS.open(getActiveCountry(), 4);
             });
         }
         const btnMil = document.getElementById('btn-military-dock');
         if (btnMil) {
             btnMil.addEventListener('click', () => {
                 self.setActiveNavButton('btn-military-dock');
-                self.toggleMainCabinet(false);
-                Game.Map.toggleCommandHub(true);
-                self.switchTabDirectly('tab-military');
+                if (window.CountryIOS) window.CountryIOS.open(getActiveCountry(), 3);
             });
         }
         const btnDip = document.getElementById('btn-diplomacy-dock');
         if (btnDip) {
             btnDip.addEventListener('click', () => {
                 self.setActiveNavButton('btn-diplomacy-dock');
-                self.toggleMainCabinet(false);
-                Game.Map.toggleCommandHub(true);
-                self.switchTabDirectly('tab-diplomacy');
+                if (window.CountryIOS) window.CountryIOS.open(getActiveCountry(), 6);
             });
         }
-        const btnResearch = document.getElementById('btn-research-dock');
-        if (btnResearch) {
-            btnResearch.addEventListener('click', () => {
-                self.setActiveNavButton('btn-research-dock');
-                self.toggleMainCabinet(false);
-                Game.Map.toggleCommandHub(true);
-                self.switchTabDirectly('tab-projects');
-            });
-        }
-        const btnIntel = document.getElementById('btn-intel-dock');
-        if (btnIntel) {
-            btnIntel.addEventListener('click', () => {
-                self.setActiveNavButton('btn-intel-dock');
-                self.toggleMainCabinet(false);
-                Game.Map.toggleCommandHub(true);
-                self.switchTabDirectly('tab-internal');
+        const btnResDock = document.getElementById('btn-resources-dock');
+        if (btnResDock) {
+            btnResDock.addEventListener('click', () => {
+                self.setActiveNavButton('btn-resources-dock');
+                if (window.CountryIOS) window.CountryIOS.open(getActiveCountry(), 5);
             });
         }
     },
@@ -457,6 +476,18 @@ window.Game = {
     closeAllDrawers() {
         const drawers = document.querySelectorAll('.omega-drawer');
         drawers.forEach(d => d.style.display = 'none');
+
+        // Clean single active window enforcement
+        if (window.CountryIOS && typeof window.CountryIOS.close === 'function') {
+            window.CountryIOS.close();
+        }
+        const cabWin = document.getElementById('cabinet-full-window');
+        if (cabWin) { cabWin.style.display = 'none'; cabWin.style.opacity = '0'; }
+        const questsModal = document.getElementById('daily-quests-modal');
+        if (questsModal) questsModal.style.display = 'none';
+        if (window.Game && window.Game.Map && typeof window.Game.Map.closeCityDetailBar === 'function') {
+            window.Game.Map.closeCityDetailBar();
+        }
     },
 
     showNotification(title, message, type = "info") {
@@ -527,22 +558,169 @@ window.Game = {
         const q = query.toLowerCase().trim();
         let html = '';
 
-        const countries = Object.keys(Game.locationsRegistry || {});
-        const matches = countries.filter(c => c.toLowerCase().includes(q)).slice(0, 8);
+        // Bengali name mappings
+        const bnCountryMap = {
+            "bangladesh": "বাংলাদেশ", "usa": "যুক্তরাষ্ট্র", "united states": "যুক্তরাষ্ট্র",
+            "india": "ভারত", "china": "চীন", "russia": "রাশিয়া", "saudi arabia": "সৌদি আরব",
+            "uk": "যুক্তরাজ্য", "united kingdom": "যুক্তরাজ্য", "germany": "জার্মানি",
+            "japan": "জাপান", "pakistan": "পাকিস্তান", "france": "ফ্রান্স",
+            "brazil": "ব্রাজিল", "canada": "কানাডা", "australia": "অস্ট্রেলিয়া",
+            "turkey": "তুরস্ক", "iran": "ইরান", "egypt": "মিশর", "indonesia": "ইন্দোনেশিয়া"
+        };
 
-        if (matches.length === 0) {
-            container.innerHTML = `<div style="font-size:11px; color:#64748b;">No matching nations found.</div>`;
+        const masterList = [
+            "USA", "Bangladesh", "India", "China", "Russia", "Saudi_Arabia",
+            "United_Kingdom", "Germany", "Japan", "Pakistan", "France", "Brazil",
+            "Canada", "Australia", "Turkey", "Iran", "Egypt", "Indonesia", "South_Africa",
+            "Mexico", "Argentina", "Italy", "Spain", "South_Korea", "Vietnam", "Ukraine"
+        ];
+
+        const countriesFromRegistry = Object.keys(Game.locationsRegistry || {});
+        const allCountries = Array.from(new Set([...masterList, ...countriesFromRegistry]));
+
+        if (!q) {
+            html = `<div style="font-size:10px; color:#ffd700; font-family:var(--font-mono); margin-bottom:8px; font-weight:bold;">📍 QUICK SELECT POPULAR NATIONS:</div>
+            <div style="display:flex; flex-wrap:wrap; gap:6px;">`;
+            const quickList = ["Bangladesh", "USA", "India", "China", "Russia", "Saudi_Arabia", "United_Kingdom", "Germany", "Japan"];
+            quickList.forEach(name => {
+                const bn = bnCountryMap[name.toLowerCase()] || name;
+                html += `<button onclick="window.GameEngine.handleSearchSelect('country', '${name}', null, null, null, event)" style="padding:6px 10px; background:rgba(0,229,255,0.15); border:1px solid #00e5ff; color:#00e5ff; font-size:11px; font-weight:bold; border-radius:6px; cursor:pointer; font-family:var(--font-mono);">
+                    🌐 ${name.replace(/_/g, " ")} (${bn})
+                </button>`;
+            });
+            html += `</div>`;
+            container.innerHTML = html;
             return;
         }
 
-        matches.forEach(name => {
+        // 1. Search Country Matches
+        const countryMatches = allCountries.filter(c => {
+            const normC = c.toLowerCase().replace(/_/g, " ");
+            const bnName = (bnCountryMap[normC] || "").toLowerCase();
+            return normC.includes(q) || bnName.includes(q) || c.toLowerCase().includes(q);
+        }).slice(0, 8);
+
+        // 2. Search City/Capital Matches
+        const cityMatches = [];
+        if (Game.locationsRegistry) {
+            for (let cId in Game.locationsRegistry) {
+                const cData = Game.locationsRegistry[cId];
+                if (cData && cData.cities && Array.isArray(cData.cities)) {
+                    cData.cities.forEach(city => {
+                        if (city.name && city.name.toLowerCase().includes(q)) {
+                            cityMatches.push({
+                                name: city.name,
+                                country: cData.name || cId,
+                                lat: city.lat,
+                                lng: city.lng,
+                                role: city.role || 'CITY'
+                            });
+                        }
+                    });
+                }
+            }
+        }
+
+        // 3. Search Strategic Resource Deposits
+        const depositMatches = [];
+        const deposits = (window.ResourceMinistryEngine && window.ResourceMinistryEngine.deposits) ? window.ResourceMinistryEngine.deposits : [];
+        deposits.forEach(dep => {
+            if (dep.name.toLowerCase().includes(q) || (dep.country && dep.country.toLowerCase().includes(q))) {
+                depositMatches.push(dep);
+            }
+        });
+
+        if (countryMatches.length === 0 && cityMatches.length === 0 && depositMatches.length === 0) {
+            container.innerHTML = `<div style="font-size:11px; color:#ef4444; font-family:var(--font-mono); padding:8px;">❌ No matching nation, city, or strategic deposit found for "${query}".</div>`;
+            return;
+        }
+
+        // Render Country Matches
+        countryMatches.forEach(name => {
             const displayName = name.replace(/_/g, " ").toUpperCase();
-            html += `<div class="search-item" onclick="Game.selectCountryByName('${name}')">
-                🌐 <strong>${displayName}</strong>
+            const bn = bnCountryMap[name.toLowerCase()] || "";
+            html += `<div class="search-item" onclick="window.GameEngine.handleSearchSelect('country', '${name}', null, null, null, event)" style="cursor:pointer; padding:8px 10px; background:rgba(15,23,42,0.8); border-bottom:1px solid rgba(255,255,255,0.05); display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                    <strong style="color:#00e5ff; font-family:var(--font-mono);">🌐 ${displayName}</strong>
+                    ${bn ? `<span style="font-size:10px; color:#ffd700; margin-left:6px; font-family:var(--font-mono);">(${bn})</span>` : ''}
+                </div>
+                <span style="font-size:10px; padding:2px 6px; background:rgba(34,197,94,0.2); color:#22c55e; border-radius:4px; font-family:var(--font-mono); font-weight:bold;">COUNTRY</span>
+            </div>`;
+        });
+
+        // Render City Matches
+        cityMatches.slice(0, 6).forEach(city => {
+            html += `<div class="search-item" onclick="window.GameEngine.handleSearchSelect('city', '${city.name}', ${city.lat}, ${city.lng}, '${city.country}', event)" style="cursor:pointer; padding:8px 10px; background:rgba(15,23,42,0.8); border-bottom:1px solid rgba(255,255,255,0.05); display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                    <strong style="color:#ffd700; font-family:var(--font-mono);">🏙️ ${city.name.toUpperCase()}</strong>
+                    <span style="font-size:10px; color:#cbd5e1; margin-left:6px; font-family:var(--font-mono);">(${city.country})</span>
+                </div>
+                <span style="font-size:10px; padding:2px 6px; background:rgba(0,229,255,0.2); color:#00e5ff; border-radius:4px; font-family:var(--font-mono); font-weight:bold;">CITY / HUB</span>
+            </div>`;
+        });
+
+        // Render Deposit Matches
+        depositMatches.slice(0, 6).forEach(dep => {
+            html += `<div class="search-item" onclick="window.GameEngine.handleSearchSelect('deposit', '${dep.name}', ${dep.lat}, ${dep.lng}, '${dep.country}', event)" style="cursor:pointer; padding:8px 10px; background:rgba(15,23,42,0.8); border-bottom:1px solid rgba(255,255,255,0.05); display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                    <strong style="color:#22c55e; font-family:var(--font-mono);">⛏️ ${dep.name.toUpperCase()}</strong>
+                    <span style="font-size:10px; color:#a855f7; margin-left:6px; font-family:var(--font-mono);">(${dep.country})</span>
+                </div>
+                <span style="font-size:10px; padding:2px 6px; background:rgba(234,179,8,0.2); color:#eab308; border-radius:4px; font-family:var(--font-mono); font-weight:bold;">RESOURCE</span>
             </div>`;
         });
 
         container.innerHTML = html;
+    },
+
+    handleSearchSelect(type, name, lat, lng, extraCountry, e) {
+        if (e) {
+            if (e.preventDefault) e.preventDefault();
+            if (e.stopPropagation) e.stopPropagation();
+        }
+
+        const drawers = document.querySelectorAll('.omega-drawer');
+        drawers.forEach(d => d.style.display = 'none');
+
+        if (type === 'country') {
+            const cleanName = name.replace(/_/g, " ").trim();
+            if (window.Game && typeof window.Game.selectCountryByName === 'function') {
+                window.Game.selectCountryByName(cleanName);
+            }
+            
+            // Camera FlyTo target
+            let targetLat = lat, targetLng = lng;
+            if (!targetLat || !targetLng) {
+                const config = window.Game.findCountryConfig ? window.Game.findCountryConfig(cleanName) : null;
+                if (config && config.lat && (config.lng || config.lng === 0)) {
+                    targetLat = config.lat; targetLng = config.lng;
+                } else {
+                    const norm = (cleanName || "").toLowerCase().replace(/[^a-z]/g, "").trim();
+                    if (window.Game.visualCenters && window.Game.visualCenters[norm]) {
+                        targetLat = window.Game.visualCenters[norm][0];
+                        targetLng = window.Game.visualCenters[norm][1];
+                    }
+                }
+            }
+
+            if (window.map && targetLat && targetLng) {
+                window.map.flyTo([targetLat, targetLng], 5.5, { duration: 1.3 });
+            }
+
+            this.showNotification("GLOBAL SEARCH FOCUS", `LOCATED NATION: ${cleanName.toUpperCase()}`, "info");
+        } else if (type === 'city' || type === 'deposit') {
+            const targetCountry = extraCountry || 'BANGLADESH';
+            if (window.Game && typeof window.Game.selectCountryByName === 'function') {
+                window.Game.selectCountryByName(targetCountry);
+            }
+            if (window.map && lat && lng) {
+                window.map.flyTo([lat, lng], 8, { duration: 1.3 });
+            }
+            if (type === 'city' && Game.Map && typeof Game.Map.openCityDetailBar === 'function') {
+                Game.Map.openCityDetailBar({ name: name, country: targetCountry, lat: lat, lng: lng, role: 'COMMERCIAL / ADMIN' });
+            }
+            this.showNotification("GLOBAL SEARCH FOCUS", `LOCATED OBJECT: ${name.toUpperCase()} (${targetCountry})`, "info");
+        }
     },
 
     renderEventsFeed() {
@@ -566,11 +744,37 @@ window.Game = {
     },
 
     switchMapLayer(layerType) {
-        this.showNotification("MAP SPECTRUM", `Switched layer to ${layerType.toUpperCase()}`, "info");
+        this.showNotification("MAP SPECTRUM", `MAP TERRAIN SWITCHED TO: ${layerType.toUpperCase()}`, "info");
+        
+        if (!window.map || typeof L === 'undefined') return;
+
+        if (window.currentMapTileLayer) {
+            window.map.removeLayer(window.currentMapTileLayer);
+        } else if (window.satelliteLayer) {
+            window.map.removeLayer(window.satelliteLayer);
+        }
+
+        let tileUrl = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
+        let attr = 'Esri World Imagery Satellite';
+
+        if (layerType === 'political') {
+            tileUrl = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
+            attr = 'CartoDB Political Voyager';
+        } else if (layerType === 'night') {
+            tileUrl = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+            attr = 'CartoDB Night Grid';
+        } else if (layerType === 'weather') {
+            tileUrl = 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png';
+            attr = 'OpenTopoMap Weather Grid';
+        }
+
+        window.currentMapTileLayer = L.tileLayer(tileUrl, { attribution: attr, maxZoom: 18, opacity: 0.95 }).addTo(window.map);
+        window.currentMapTileLayer.bringToBack();
+
         if (layerType === "resources") {
-            if (Game.Map && Game.Map.toggleResourceOverlay) Game.Map.toggleResourceOverlay();
-        } else {
-            if (Game.geojsonLayer) Game.geojsonLayer.resetStyle();
+            if (Game.Map && Game.Map.toggleResourceOverlay) {
+                Game.Map.toggleResourceOverlay();
+            }
         }
     },
 
@@ -688,6 +892,25 @@ window.Game = {
             if (self.dom.resManpower) {
                 self.dom.resManpower.innerText = self.formatPopulationNumber(self.resources.manpower);
             }
+
+            // 🚨 CRITICAL RESOURCE ALERT MONITOR (Triggers visual alert cards in #notification-stack)
+            if (!self._alertState) self._alertState = {};
+
+            // Cash threshold alert ($10 Million minimum)
+            if (self.resources.cash < 10000000 && !self._alertState.cash) {
+                self._alertState.cash = true;
+                self.showNotification("CRITICAL TREASURY", "State cash reserve dropped below $10,000,000 threshold!", "danger");
+            } else if (self.resources.cash >= 10000000) {
+                self._alertState.cash = false;
+            }
+
+            // Oil threshold alert (50,000 BBL minimum)
+            if (self.resources.oil < 50000 && !self._alertState.oil) {
+                self._alertState.oil = true;
+                self.showNotification("CRITICAL OIL SHORTAGE", "Strategic crude oil stockpile dropped below 50,000 BBL!", "danger");
+            } else if (self.resources.oil >= 50000) {
+                self._alertState.oil = false;
+            }
         }, 1000);
 
         console.log("Game Core Engine initialized.");
@@ -697,7 +920,7 @@ window.Game = {
 window.bounds = L.latLngBounds(L.latLng(-60, -180), L.latLng(85, 180));
 
 // ============================================================================
-// ম্যাপ এবং হাব লেয়ার ইনিশিয়ালাইজেশন কোড
+// ম্যাপ এবং হাব লেয়ার ইনিশিয়ালাইজেশন কোড (ISRO / Modern Age 3 Satellite Style)
 // ============================================================================
 window.map = L.map('map', {
     maxBounds: window.bounds,
@@ -706,6 +929,13 @@ window.map = L.map('map', {
     maxZoom: 8,
     zoomControl: false
 }).setView([20, 0], 2.5);
+
+// 🛰️ ULTRA HD SATELLITE TILE LAYER (ArcGIS World Imagery)
+window.satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    attribution: 'Esri World Imagery Satellite',
+    maxZoom: 18,
+    opacity: 0.95
+}).addTo(window.map);
 
 window.hubsGroupLayer = L.layerGroup().addTo(window.map);
 

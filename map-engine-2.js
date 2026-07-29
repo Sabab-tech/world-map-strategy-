@@ -520,23 +520,13 @@ Game.Map = {
         this.hubsGroupLayer = window.hubsGroupLayer;
         this.bindMapDOMEvents();
 
-        // 🌍 100% Offline Vector Map Engine
-        try {
-            if (window.satelliteLayer) {
-                this.map.removeLayer(window.satelliteLayer);
-                window.satelliteLayer = null;
-            }
-        } catch (err) {
-            console.warn("Satellite cleanup notice:", err);
-        }
-
         this.map.on('zoomend', function() {
             var currentZoom = window.map.getZoom();
             if (Game.geojsonLayer) {
                 Game.geojsonLayer.eachLayer(function(layer) {
                     if (layer !== Game.selectedLayer) {
                         layer.setStyle({ 
-                            weight: currentZoom > 5.5 ? 1.2 : 0.8,
+                            weight: currentZoom > 5.5 ? 1.4 : 0.9,
                             dashArray: null
                         });
                     } else {
@@ -545,7 +535,7 @@ Game.Map = {
                             layer.setStyle({
                                 color: "#ffd700",
                                 opacity: 1.0,
-                                weight: 2.2,
+                                weight: 2.5,
                                 dashArray: null
                             });
                         }
@@ -554,6 +544,8 @@ Game.Map = {
             }
             if (Game.currentActiveCountry) {
                 Game.Map.renderCountryHubs();
+            } else {
+                Game.Map.renderGlobalCapitalHubs();
             }
             Game.LabelSystem.updateCountryLabels();
         });
@@ -565,7 +557,14 @@ Game.Map = {
             }
             Game.currentActiveCountry = null;
             if (Game.hubsGroupLayer) Game.hubsGroupLayer.clearLayers();
+            Game.Map.closeCityDetailBar();
+            Game.Map.renderGlobalCapitalHubs();
         });
+
+        // Render global capitals on start
+        setTimeout(() => {
+            this.renderGlobalCapitalHubs();
+        }, 500);
     },
 
     bindMapDOMEvents() {
@@ -596,10 +595,10 @@ Game.Map = {
     renderCountryHubs() {
         if (!this.hubsGroupLayer) return;
         this.hubsGroupLayer.clearLayers(); 
-        if (!Game.currentActiveCountry) return;
+        if (!Game.currentActiveCountry) return; // STRICT REQUIREMENT: Only render cities for selected country!
 
         const countryId = Game.getCountryId(Game.currentActiveCountry);
-        const countryData = Game.locationsRegistry[countryId];
+        const countryData = Game.locationsRegistry ? Game.locationsRegistry[countryId] : null;
         if (!countryData) return;
 
         let hubs = [];
@@ -609,36 +608,27 @@ Game.Map = {
         if (countryData.secret) countryData.secret.forEach(h => hubs.push(Object.assign({}, h, { role: 'secret' })));
 
         hubs.forEach(hub => {
-            var latitude = hub.lat, longitude = hub.lon || hub.lng;
-            if (!latitude || !longitude) return;
+            var latitude = hub.lat, longitude = hub.lon !== undefined ? hub.lon : hub.lng;
+            if (!latitude || longitude === undefined) return;
 
-            var roleBadge = '🏙️';
             var roleColor = '#00e5ff';
-            var roleTitle = 'National Capital';
+            var roleTitle = 'Regional Hub';
 
-            if (hub.role === 'capital') { roleBadge = '👑'; roleColor = '#ffd700'; roleTitle = 'Capital Command Hub'; }
-            else if (hub.role === 'economic') { roleBadge = '🏭'; roleColor = '#eab308'; roleTitle = 'Industrial Economic Hub'; }
-            else if (hub.role === 'military') { roleBadge = '🛡️'; roleColor = '#ef4444'; roleTitle = 'Military Logistics Node'; }
-            else if (hub.role === 'secret') { roleBadge = '🛰️'; roleColor = '#a855f7'; roleTitle = 'Strategic Intelligence Base'; }
+            if (hub.role === 'capital') { roleColor = '#ffd700'; roleTitle = 'Capital Command Hub'; }
+            else if (hub.role === 'economic') { roleColor = '#f59e0b'; roleTitle = 'Industrial Economic Hub'; }
+            else if (hub.role === 'military') { roleColor = '#ef4444'; roleTitle = 'Military Defense Station'; }
+            else if (hub.role === 'secret') { roleColor = '#a855f7'; roleTitle = 'Strategic Intelligence Base'; }
 
             var hubIcon = L.divIcon({
-                className: 'city-hub-marker',
+                className: 'city-btn-marker-container',
                 html: `
-                    <div style="
-                        display: flex;
-                        align-items: center;
-                        gap: 6px;
-                        background: rgba(11, 20, 36, 0.92);
-                        border: 1.5px solid ${roleColor};
-                        padding: 4px 10px;
-                        border-radius: 20px;
-                        box-shadow: 0 0 12px ${roleColor}80;
-                        cursor: pointer;
-                        white-space: nowrap;
-                        transform: translate(-50%, -50%);
+                    <div class="city-btn-marker" style="
+                        border-color: ${roleColor};
+                        box-shadow: 0 0 6px ${roleColor}55;
+                        padding: 2px 7px;
                     ">
-                        <span style="font-size: 15px; line-height: 1;">${roleBadge}</span>
-                        <span style="font-size: 11px; font-weight: bold; color: #ffffff; font-family: 'Share Tech Mono', monospace;">${hub.name}</span>
+                        <span class="city-btn-dot" style="background: ${roleColor}; box-shadow: 0 0 6px ${roleColor}; width: 6px; height: 6px;"></span>
+                        <span class="city-btn-label" style="font-size: 10px;">${hub.name}</span>
                     </div>
                 `,
                 iconSize: [0, 0]
@@ -646,31 +636,134 @@ Game.Map = {
 
             var hubMarker = L.marker([latitude, longitude], { icon: hubIcon });
 
-            var popupContent = `
-                <div class="game-custom-popup-content" style="padding: 12px; font-family: 'Share Tech Mono', monospace; background: #0b1524; color: #ffffff; border-radius: 8px;">
-                    <div style="font-size: 16px; font-weight: bold; color: ${roleColor}; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
-                        <span>${roleBadge}</span> <span>${hub.name}</span>
-                    </div>
-                    <div style="font-size: 11px; color: #cbd5e1; margin-bottom: 8px; text-transform: uppercase;">
-                        ${roleTitle} • [${Game.currentActiveCountry}]
-                    </div>
-                    <div style="font-size: 12px; color: #94a3b8; line-height: 1.4; margin-bottom: 10px; background: rgba(255,255,255,0.05); padding: 8px; border-radius: 4px;">
-                        ${hub.description || 'Primary regional administrative and infrastructure installation.'}
-                    </div>
-                    <div style="display: flex; flex-direction: column; gap: 6px;">
-                        <button onclick="window.OMEGA_UI_ADAPTER && window.OMEGA_UI_ADAPTER.showAdvisePopup('CITY HUB UPGRADE', 'Upgrading infrastructure node for ${hub.name}...')" style="padding: 6px 10px; background: rgba(0, 229, 255, 0.2); border: 1px solid #00e5ff; color: #00e5ff; font-weight: bold; font-size: 11px; border-radius: 4px; cursor: pointer; text-align: left;">
-                            🔨 UPGRADE HUB INFRASTRUCTURE
-                        </button>
-                        <button onclick="window.OMEGA_UI_ADAPTER && window.OMEGA_UI_ADAPTER.showAdvisePopup('SECURITY GARRISON', 'Deploying regional defense garrison to ${hub.name}...')" style="padding: 6px 10px; background: rgba(239, 68, 68, 0.2); border: 1px solid #ef4444; color: #ef4444; font-weight: bold; font-size: 11px; border-radius: 4px; cursor: pointer; text-align: left;">
-                            🛡️ STATION GARRISON FORCES
-                        </button>
-                    </div>
-                </div>
-            `;
-            
-            hubMarker.bindPopup(popupContent, { maxWidth: 300, className: 'game-custom-popup' });
+            hubMarker.on('click', function(e) {
+                L.DomEvent.stopPropagation(e);
+                Game.Map.openCityDetailBar(hub, Game.currentActiveCountry, roleColor, roleTitle);
+            });
+
             this.hubsGroupLayer.addLayer(hubMarker);
         });
+    },
+
+    renderGlobalCapitalHubs() {
+        if (!this.hubsGroupLayer) return;
+        this.hubsGroupLayer.clearLayers(); // Clean slate, do not render global hubs when unselected
+    },
+
+    renderOceanLabels() {
+        if (!this.map) return;
+        if (this.oceanLayerGroup) {
+            this.oceanLayerGroup.clearLayers();
+        } else {
+            this.oceanLayerGroup = L.layerGroup().addTo(this.map);
+        }
+
+        var zoom = this.map.getZoom();
+
+        var oceans = [
+            { name: "PACIFIC OCEAN", lat: -10, lng: -140, size: 13 },
+            { name: "NORTH ATLANTIC OCEAN", lat: 30, lng: -45, size: 12 },
+            { name: "SOUTH ATLANTIC OCEAN", lat: -25, lng: -20, size: 11 },
+            { name: "INDIAN OCEAN", lat: -22, lng: 80, size: 12 },
+            { name: "ARCTIC OCEAN", lat: 83, lng: 10, size: 12 },
+            { name: "SOUTHERN OCEAN", lat: -65, lng: 0, size: 11 },
+            { name: "MEDITERRANEAN SEA", lat: 34, lng: 18, size: 9 },
+            { name: "BAY OF BENGAL", lat: 14, lng: 88, size: 9 },
+            { name: "ARABIAN SEA", lat: 15, lng: 64, size: 9 },
+            { name: "CARIBBEAN SEA", lat: 15, lng: -75, size: 9 }
+        ];
+
+        oceans.forEach(o => {
+            if (o.size <= 9 && zoom < 3.8) return;
+
+            var icon = L.divIcon({
+                className: 'ocean-label-marker',
+                html: `<div style="
+                    font-family: 'Share Tech Mono', 'Cinzel', monospace;
+                    font-size: ${o.size}px;
+                    font-style: italic;
+                    font-weight: 600;
+                    color: rgba(56, 189, 248, 0.42);
+                    letter-spacing: 3px;
+                    text-transform: uppercase;
+                    white-space: nowrap;
+                    pointer-events: none;
+                    user-select: none;
+                    text-shadow: 0 0 8px rgba(0, 0, 0, 0.95);
+                    transform: translate(-50%, -50%);
+                ">${o.name}</div>`,
+                iconSize: [0, 0]
+            });
+
+            var m = L.marker([o.lat, o.lng], { icon: icon, interactive: false });
+            this.oceanLayerGroup.addLayer(m);
+        });
+    },
+
+    openCityDetailBar(hub, countryName, roleColor, roleTitle) {
+        const bar = document.getElementById('city-detail-bar');
+        if (!bar) return;
+
+        const dot = document.getElementById('city-bar-role-dot');
+        const elName = document.getElementById('city-bar-name');
+        const elTag = document.getElementById('city-bar-tag');
+        const elType = document.getElementById('city-bar-type');
+        const elCoords = document.getElementById('city-bar-coords');
+        const elPop = document.getElementById('city-bar-pop');
+        const elDesc = document.getElementById('city-bar-desc');
+
+        const themeColor = roleColor || '#00e5ff';
+
+        if (dot) {
+            dot.style.background = themeColor;
+            dot.style.boxShadow = `0 0 12px ${themeColor}`;
+        }
+        if (elName) elName.innerText = (hub.name || "CITY HUB").toUpperCase();
+        if (elTag) elTag.innerText = `${(roleTitle || hub.role || 'HUB').toUpperCase()} • ${countryName ? countryName.toUpperCase() : 'SOVEREIGN STATE'}`;
+        if (elType) elType.innerText = (hub.type || hub.role || 'Political / Administrative').toUpperCase();
+        
+        const lat = hub.lat ? Number(hub.lat).toFixed(2) : '0.00';
+        const lonVal = hub.lon !== undefined ? hub.lon : hub.lng;
+        const lon = lonVal !== undefined ? Number(lonVal).toFixed(2) : '0.00';
+        if (elCoords) elCoords.innerText = `${lat}°N, ${lon}°E`;
+
+        let popVal = hub.population ? Game.formatPopulationNumber(hub.population) : (hub.role === 'capital' ? '12.8 Million' : (hub.role === 'economic' ? '6.5 Million' : '2.4 Million'));
+        if (elPop) elPop.innerText = popVal;
+
+        if (elDesc) elDesc.innerText = hub.description || 'Primary regional administrative, industrial, and strategic installation.';
+
+        bar.style.borderColor = themeColor;
+        bar.style.boxShadow = `0 20px 60px rgba(0,0,0,0.92), 0 0 35px ${themeColor}40`;
+        bar.classList.add('active');
+
+        // Automatically vanish all other buttons & navigation overlays while city detail card is open
+        document.body.classList.add('city-focus-active');
+    },
+
+    closeCityDetailBar() {
+        const bar = document.getElementById('city-detail-bar');
+        if (bar) bar.classList.remove('active');
+        document.body.classList.remove('city-focus-active');
+    },
+
+    actionUpgradeCity() {
+        const elName = document.getElementById('city-bar-name');
+        const name = elName ? elName.innerText : 'City';
+        if (window.OMEGA_UI_ADAPTER && typeof window.OMEGA_UI_ADAPTER.showAdvisePopup === 'function') {
+            window.OMEGA_UI_ADAPTER.showAdvisePopup("INFRASTRUCTURE UPGRADE", `Initiated high-speed infrastructure expansion for ${name}. Treasury allocated!`);
+        } else if (typeof Game.showNotification === 'function') {
+            Game.showNotification("INFRASTRUCTURE UPGRADE", `Upgrading hub infrastructure for ${name}`, "info");
+        }
+    },
+
+    actionGarrisonCity() {
+        const elName = document.getElementById('city-bar-name');
+        const name = elName ? elName.innerText : 'City';
+        if (window.OMEGA_UI_ADAPTER && typeof window.OMEGA_UI_ADAPTER.showAdvisePopup === 'function') {
+            window.OMEGA_UI_ADAPTER.showAdvisePopup("SECURITY DEPLOYMENT", `Stationed regional defense garrison and tactical forces at ${name}. Defense level boosted!`);
+        } else if (typeof Game.showNotification === 'function') {
+            Game.showNotification("SECURITY GARRISON", `Stationed defense forces at ${name}`, "info");
+        }
     }
 };
 
@@ -691,22 +784,28 @@ Game.Map.renderGeoJSON = function(geoData) {
         },
         style: function(feature) {
             var props = feature.properties || {};
-            var geoName = props.ADMIN || props.name || props.NAME;
+            var geoName = props.ADMIN || props.name || props.NAME || "";
+            if (geoName.toLowerCase() === "west bank" || geoName.toLowerCase() === "gaza" || geoName.toLowerCase() === "gaza strip") {
+                geoName = "Palestine";
+            }
             var config = Game.findCountryConfig(geoName);
-            var defaultColor = "#3e592e"; 
+            var defaultColor = "#2c4235"; 
             if (config) defaultColor = window.getCountryColor(config.name);
             return { 
-                color: "rgba(255, 255, 255, 0.4)", 
-                weight: self.map.getZoom() > 5.5 ? 1.2 : 0.8, 
-                opacity: 1.0, 
+                color: "rgba(255, 255, 255, 0.85)", 
+                weight: 1.2, 
+                opacity: 0.9, 
                 dashArray: null,
                 fillColor: defaultColor, 
-                fillOpacity: 0.82 
+                fillOpacity: 0.25 
             };
         },
         onEachFeature: function(feature, layer) {
             var props = feature.properties || {};
-            var geoName = props.ADMIN || props.name || props.NAME;
+            var geoName = props.ADMIN || props.name || props.NAME || "";
+            if (geoName.toLowerCase() === "west bank" || geoName.toLowerCase() === "gaza" || geoName.toLowerCase() === "gaza strip") {
+                geoName = "Palestine";
+            }
             var config = Game.findCountryConfig(geoName);
             var displayName = config ? config.name : geoName;
             if (!displayName) return;
@@ -791,20 +890,122 @@ Game.Map.toggleCommandHub = function(show, initialChapter = 1) {
     }
 };
 
+Game.Map.renderResourceDeposits = function(filterResourceType) {
+    if (!this.map || typeof L === 'undefined') return;
+
+    if (!this.resourceDepositsLayer) {
+        this.resourceDepositsLayer = L.layerGroup().addTo(this.map);
+    }
+    this.resourceDepositsLayer.clearLayers();
+
+    const deposits = (window.ResourceMinistryEngine && window.ResourceMinistryEngine.deposits) ? window.ResourceMinistryEngine.deposits : [];
+    const resources = (window.ResourceMinistryEngine && window.ResourceMinistryEngine.resources) ? window.ResourceMinistryEngine.resources : {};
+
+    const activeFilter = filterResourceType || (Game.dom && Game.dom.resFilterBox && Game.dom.resFilterBox.querySelector('select') ? Game.dom.resFilterBox.querySelector('select').value : 'ALL');
+    const activeCountryNorm = (Game.currentActiveCountry || 'BANGLADESH').replace(/_/g, " ").toUpperCase();
+
+    deposits.forEach(dep => {
+        const depCountryNorm = (dep.country || '').replace(/_/g, " ").toUpperCase();
+
+        // Single-Country Mode vs Global Specific Resource Filter Mode
+        if (activeFilter === 'ALL' || activeFilter === 'NONE' || activeFilter === 'COUNTRY') {
+            // Show ONLY current active country's deposits
+            if (depCountryNorm !== activeCountryNorm) return;
+        } else {
+            // Filter by specific resource type across ALL countries worldwide
+            const filterNorm = activeFilter.toLowerCase();
+            const depResNorm = (dep.resId || '').toLowerCase();
+            const depNameNorm = (dep.name || '').toLowerCase();
+            if (depResNorm !== filterNorm && !depNameNorm.includes(filterNorm)) {
+                return; // skip non-matching deposits
+            }
+        }
+
+        const resInfo = resources[dep.resId] || { icon: '⛏️', name: dep.resId, category: 'Minerals' };
+        const icon = resInfo.icon || '⛏️';
+
+        const markerHtml = `
+            <div style="
+                background: rgba(15, 23, 42, 0.95);
+                border: 1px solid #ffd700;
+                border-radius: 10px;
+                padding: 1px 5px;
+                display: inline-flex;
+                align-items: center;
+                gap: 3px;
+                box-shadow: 0 2px 6px rgba(0, 0, 0, 0.8);
+                color: #f8fafc;
+                font-family: 'Share Tech Mono', monospace;
+                font-size: 9px;
+                font-weight: bold;
+                white-space: nowrap;
+                max-width: 95px;
+                overflow: hidden;
+                cursor: pointer;
+            ">
+                <span style="font-size:10px;">${icon}</span>
+                <span style="overflow:hidden; text-overflow:ellipsis;">${dep.name}</span>
+            </div>
+        `;
+
+        const customIcon = L.divIcon({
+            html: markerHtml,
+            className: 'resource-deposit-div-icon',
+            iconSize: [95, 20],
+            iconAnchor: [47, 10]
+        });
+
+        const marker = L.marker([dep.lat, dep.lng], { icon: customIcon });
+
+        const popupContent = `
+            <div style="font-family:'Segoe UI', sans-serif; color:#f8fafc; width:220px; padding:6px;">
+                <div style="font-size:12px; font-weight:bold; color:#ffd700; border-bottom:1px solid rgba(255,215,0,0.3); padding-bottom:4px; margin-bottom:6px; font-family:var(--font-title);">
+                    ${icon} ${dep.name.toUpperCase()}
+                </div>
+                <div style="font-size:11px; color:#cbd5e1; line-height:1.4; font-family:var(--font-mono); margin-bottom:8px;">
+                    <div>Country: <strong style="color:#00e5ff;">${dep.country}</strong></div>
+                    <div>Reserves: <strong style="color:#22c55e;">${dep.reserve}</strong></div>
+                    <div>Status: <strong style="color:#a855f7;">${dep.status}</strong></div>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:4px;">
+                    <button onclick="window.ResourceMinistryEngine.executeDirective('expand_facility', '${dep.resId}');" style="padding:4px 8px; background:rgba(34,197,94,0.2); border:1px solid #22c55e; color:#22c55e; font-size:10px; font-weight:bold; border-radius:4px; cursor:pointer;">
+                        🏭 EXPAND CAPACITY (+25%)
+                    </button>
+                    <button onclick="if(window.CountryIOS) window.CountryIOS.open('${dep.country}', 5);" style="padding:4px 8px; background:rgba(0,229,255,0.2); border:1px solid #00e5ff; color:#00e5ff; font-size:10px; font-weight:bold; border-radius:4px; cursor:pointer;">
+                        🏛️ OPEN MINISTRY (17 MINISTRIES)
+                    </button>
+                </div>
+            </div>
+        `;
+
+        marker.bindPopup(popupContent, {
+            className: 'dark-theme-popup'
+        });
+
+        this.resourceDepositsLayer.addLayer(marker);
+    });
+};
+
 Game.Map.toggleResourceOverlay = function() {
-    if (Game.dom.resFilterBox.style.display === 'flex') {
+    if (Game.dom.resFilterBox && Game.dom.resFilterBox.style.display === 'flex') {
         Game.dom.resFilterBox.style.display = 'none';
-        Game.dom.btnResOverlay.classList.remove('active');
+        if (Game.dom.btnResOverlay) Game.dom.btnResOverlay.classList.remove('active');
         if (Game.geojsonLayer) Game.geojsonLayer.resetStyle();
+        if (this.resourceDepositsLayer) this.resourceDepositsLayer.clearLayers();
     } else {
-        Game.dom.resFilterBox.style.display = 'flex';
-        Game.dom.relFilterBox.style.display = 'none';
-        Game.dom.btnResOverlay.classList.add('active');
-        Game.dom.btnRelOverlay.classList.remove('active');
+        if (Game.dom.resFilterBox) Game.dom.resFilterBox.style.display = 'flex';
+        if (Game.dom.relFilterBox) Game.dom.relFilterBox.style.display = 'none';
+        if (Game.dom.btnResOverlay) Game.dom.btnResOverlay.classList.add('active');
+        if (Game.dom.btnRelOverlay) Game.dom.btnRelOverlay.classList.remove('active');
+
+        this.renderResourceDeposits('ALL');
     }
 };
 
 Game.Map.applyResourceMapFilter = function(resourceType) {
+    if (this.renderResourceDeposits) {
+        this.renderResourceDeposits(resourceType);
+    }
     if (!Game.geojsonLayer) return;
     if (resourceType === "NONE") { Game.geojsonLayer.resetStyle(); return; }
 

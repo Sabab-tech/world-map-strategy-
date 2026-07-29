@@ -94,7 +94,9 @@
   { "code": "JO", "name": "Jordan", "lat": 30.5852, "lng": 36.2384, "minZoom": 4.0, "maxZoom": 9.0, "importance": 3 },
   { "code": "LB", "name": "Lebanon", "lat": 33.8547, "lng": 35.8623, "minZoom": 4.5, "maxZoom": 9.0, "importance": 3 },
   { "code": "IL", "name": "Israel", "lat": 31.0461, "lng": 34.8516, "minZoom": 4.5, "maxZoom": 9.0, "importance": 4 },
-  { "code": "PS", "name": "Palestine", "lat": 31.9522, "lng": 35.2332, "minZoom": 4.5, "maxZoom": 9.0, "importance": 3 },
+  { "code": "PS", "name": "Palestine", "lat": 31.9522, "lng": 35.2332, "minZoom": 4.5, "maxZoom": 9.0, "importance": 4 },
+  { "code": "BH", "name": "Bahrain", "lat": 26.0667, "lng": 50.5577, "minZoom": 5.0, "maxZoom": 9.5, "importance": 4 },
+  { "code": "MV", "name": "Maldives", "lat": 3.2028, "lng": 73.2207, "minZoom": 5.0, "maxZoom": 9.5, "importance": 4 },
 
   { "code": "QA", "name": "Qatar", "lat": 25.3548, "lng": 51.1839, "minZoom": 5.0, "maxZoom": 9.5, "importance": 4 },
   { "code": "AE", "name": "United Arab Emirates", "lat": 23.4241, "lng": 53.8478, "minZoom": 4.5, "maxZoom": 9.0, "importance": 4 },

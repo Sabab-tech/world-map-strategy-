@@ -45,7 +45,7 @@ window.CountryIOS = {
         const btnExecuteAdv = document.getElementById('btn-advisor-execute');
         if (btnExecuteAdv) btnExecuteAdv.addEventListener('click', () => this.executeAdvisorDirective());
 
-        // Swipe gesture setup on the stage
+        // Disable sensitive touch swipe tab changes per user request
         const stage = document.getElementById('ios-chapter-stage');
         if (stage) {
             stage.addEventListener('touchstart', (e) => {
@@ -54,7 +54,7 @@ window.CountryIOS = {
 
             stage.addEventListener('touchend', (e) => {
                 this.touchEndX = e.changedTouches[0].screenX;
-                this.handleSwipeGesture();
+                // Auto-swipe disabled so player only changes tabs using tab buttons
             }, { passive: true });
         }
     },
@@ -63,8 +63,18 @@ window.CountryIOS = {
         this.activeCountry = (countryName || (window.Game && window.Game.currentActiveCountry) || window.currentActiveCountry || "USA").toUpperCase();
         this.activeChapter = initialChapter;
 
+        // Hide legacy cabinet window if open to prevent screen overlaps
+        const cabWin = document.getElementById('cabinet-full-window');
+        if (cabWin) {
+            cabWin.style.display = 'none';
+            cabWin.style.opacity = '0';
+            cabWin.style.pointerEvents = 'none';
+        }
+
         const modal = document.getElementById('command-hub-modal');
         if (modal) modal.style.display = 'flex';
+
+        document.body.classList.add('modal-open');
 
         this.updateHeader();
         this.switchChapter(this.activeChapter);
@@ -73,6 +83,8 @@ window.CountryIOS = {
     close() {
         const modal = document.getElementById('command-hub-modal');
         if (modal) modal.style.display = 'none';
+
+        document.body.classList.remove('modal-open');
     },
 
     toggleAdvisor(show) {
@@ -196,71 +208,108 @@ window.CountryIOS = {
     },
 
     // -------------------------------------------------------------------------
-    // CHAPTER 01: OVERVIEW
+    // CHAPTER 01: OVERVIEW & STRATEGIC DIPLOMACY PANEL (MATCHING USER SCREENSHOT)
     // -------------------------------------------------------------------------
     renderChapter1_Overview(countryKey, econ, pop, rel) {
-        const fmtNum = window.formatGameNumber || ((n) => `$${(n/1e9).toFixed(1)}B`);
-        const fmtPop = window.formatPopulationNumber || ((n) => `${(n/1e6).toFixed(1)}M`);
         const nameClean = countryKey.replace(/_/g, " ");
 
+        const capitalMap = {
+            "USA": "Washington D.C.", "BANGLADESH": "Dhaka", "INDIA": "New Delhi",
+            "CHINA": "Beijing", "RUSSIA": "Moscow", "UNITED KINGDOM": "London",
+            "UK": "London", "GERMANY": "Berlin", "JAPAN": "Tokyo", "FRANCE": "Paris",
+            "SAUDI ARABIA": "Riyadh", "PAKISTAN": "Islamabad", "TURKEY": "Ankara",
+            "IRAN": "Tehran", "EGYPT": "Cairo", "BRAZIL": "Brasilia", "CANADA": "Ottawa",
+            "PALESTINE": "Jerusalem / Ramallah", "BAHRAIN": "Manama", "MALDIVES": "Male"
+        };
+        const capital = capitalMap[countryKey.toUpperCase()] || "Capital HQ";
+
+        const cashVal = econ.gdp ? (econ.gdp / 1e8).toFixed(1) + "k" : "244.8k";
+        const influenceVal = (pop.population_2015 ? (pop.population_2015 / 6e5).toFixed(1) : "502.8") + "k";
+        const popVal = pop.population_2015 ? (pop.population_2015 / 1e6).toFixed(1) + "M" : "66.6M";
+        const relationVal = rel.standing || "friendship (65)";
+
+        // Country flag icon mapping
+        const flagMap = {
+            "UNITED KINGDOM": "🇬🇧", "UK": "🇬🇧", "USA": "🇺🇸", "BANGLADESH": "🇧🇩",
+            "INDIA": "🇮🇳", "CHINA": "🇨🇳", "RUSSIA": "🇷🇺", "GERMANY": "🇩🇪",
+            "JAPAN": "🇯🇵", "FRANCE": "🇫🇷", "SAUDI ARABIA": "🇸🇦", "PALESTINE": "🇵🇸",
+            "BAHRAIN": "🇧🇭", "MALDIVES": "🇲🇻", "PAKISTAN": "🇵🇰", "TURKEY": "🇹🇷"
+        };
+        const flag = flagMap[countryKey.toUpperCase()] || "🌐";
+
         return `
-            <div style="display:flex; flex-direction:column; gap:20px;">
-                <!-- TOP SNAPSHOT -->
-                <div class="ios-grid-3">
-                    <div class="ios-card">
-                        <div class="ios-card-title"><span>NATIONAL SNAPSHOT</span><span>🚩</span></div>
-                        <div class="ios-card-val" style="color:#00e5ff;">${nameClean}</div>
-                        <div class="ios-card-sub">Capital: Strategic Metro | Gov: Sovereign State</div>
-                        <div class="ios-card-sub">Head of State: Executive Command</div>
+            <div class="command-tactical-container">
+                <!-- 🚩 GRAND DIPLOMATIC STRATEGIC BANNER -->
+                <div class="tactical-header-banner">
+                    <div class="banner-flag-badge">${flag}</div>
+                    <div class="banner-title-box">
+                        <h2 class="banner-country-title">${nameClean.toUpperCase()} · ${capital.toUpperCase()}</h2>
+                        <div class="banner-metrics-row">
+                            <span class="metric-item">🪙 <strong style="color:#fcd34d;">${cashVal}</strong></span>
+                            <span class="metric-item">💖 <strong style="color:#f43f5e;">${influenceVal}</strong></span>
+                            <span class="metric-item">👥 <strong style="color:#38bdf8;">${popVal}</strong></span>
+                            <span class="metric-item">😊 <strong style="color:#4ade80;">${relationVal}</strong></span>
+                        </div>
                     </div>
-
-                    <div class="ios-card">
-                        <div class="ios-card-title"><span>TREASURY & DEMOGRAPHICS</span><span>📊</span></div>
-                        <div class="ios-card-val">${fmtNum(econ.gdp || 1e12)}</div>
-                        <div class="ios-card-sub">Population: ${fmtPop(pop.population_2015 || 5e7)}</div>
-                        <div class="ios-card-sub">Territory: 9,833,520 sq km</div>
-                    </div>
-
-                    <div class="ios-card">
-                        <div class="ios-card-title"><span>STRATEGIC STATUS</span><span>🛡️</span></div>
-                        <div class="ios-card-val" style="color:#22c55e;">STABILITY 94%</div>
-                        <div class="ios-card-sub">Global Influence Index: 92/100</div>
-                        <div class="ios-card-sub">National Security Status: ALIGNED</div>
-                    </div>
+                    <div class="banner-flag-badge">${flag}</div>
                 </div>
 
-                <!-- EXECUTIVE SUMMARY -->
-                <div class="ios-card">
-                    <div class="ios-card-title"><span>CLASSIFIED EXECUTIVE SUMMARY</span><span>📄</span></div>
-                    <p style="font-size:12px; line-height:1.6; color:#cbd5e1; margin:0;">
-                        ${nameClean} maintains high strategic importance with robust economic infrastructure and a highly capable defense force. Core priority focuses on maintaining regional hegemony, energy security, and technologically superior defense grids.
-                    </p>
-                </div>
+                <!-- ⚔️ 8 STRATEGIC ACTION BUTTONS GRID (EXACT SCREENSHOT MATCH) -->
+                <div class="tactical-actions-grid">
+                    <div class="tactical-card ios-act-btn" data-action="destroy-embassy">
+                        <div class="tactical-img-box img-destroy-embassy">
+                            <div class="tactical-img-overlay danger-overlay">🏛️ ✖</div>
+                        </div>
+                        <div class="tactical-card-label">Destroy Embassy</div>
+                    </div>
 
-                <!-- CIRCULAR RADAR INDICATORS -->
-                <div>
-                    <div class="ios-card-title" style="margin-bottom:8px; font-weight:bold; color:#00e5ff;">CIRCULAR RADAR STRATEGIC INDICATORS</div>
-                    <div class="ios-radar-grid">
-                        <div class="ios-radar-card">
-                            <div class="radar-ring" style="--val: 88;"><span class="radar-val-text">88%</span></div>
-                            <span class="ios-card-title">ECONOMY</span>
+                    <div class="tactical-card ios-act-btn" data-action="non-aggression">
+                        <div class="tactical-img-box img-non-aggression">
+                            <div class="tactical-img-overlay peace-overlay">📜 🕊️</div>
                         </div>
-                        <div class="ios-radar-card">
-                            <div class="radar-ring" style="--val: 94;"><span class="radar-val-text">94%</span></div>
-                            <span class="ios-card-title">MILITARY</span>
+                        <div class="tactical-card-label">Non-Aggression Pact</div>
+                    </div>
+
+                    <div class="tactical-card ios-act-btn" data-action="defensive-alliance">
+                        <div class="tactical-img-box img-defensive-alliance">
+                            <div class="tactical-img-overlay alliance-overlay">🛡️ 🤝</div>
                         </div>
-                        <div class="ios-radar-card">
-                            <div class="radar-ring" style="--val: 91;"><span class="radar-val-text">91%</span></div>
-                            <span class="ios-card-title">TECHNOLOGY</span>
+                        <div class="tactical-card-label">Defensive Alliance</div>
+                    </div>
+
+                    <div class="tactical-card ios-act-btn" data-action="terminate-trade">
+                        <div class="tactical-img-box img-terminate-trade">
+                            <div class="tactical-img-overlay danger-overlay">🚫 📦</div>
                         </div>
-                        <div class="ios-radar-card">
-                            <div class="radar-ring" style="--val: 85;"><span class="radar-val-text">85%</span></div>
-                            <span class="ios-card-title">DIPLOMACY</span>
+                        <div class="tactical-card-label">Terminate Trade Agreement</div>
+                    </div>
+
+                    <div class="tactical-card ios-act-btn" data-action="research-contract">
+                        <div class="tactical-img-box img-research-contract">
+                            <div class="tactical-img-overlay tech-overlay">🔬 🧬</div>
                         </div>
-                        <div class="ios-radar-card">
-                            <div class="radar-ring" style="--val: 92;"><span class="radar-val-text">92%</span></div>
-                            <span class="ios-card-title">STABILITY</span>
+                        <div class="tactical-card-label">Research Contract</div>
+                    </div>
+
+                    <div class="tactical-card ios-act-btn" data-action="send-troops">
+                        <div class="tactical-img-box img-send-troops">
+                            <div class="tactical-img-overlay military-overlay">🎖️ 🪖</div>
                         </div>
+                        <div class="tactical-card-label">Send Troops</div>
+                    </div>
+
+                    <div class="tactical-card ios-act-btn" data-action="call-to-arms">
+                        <div class="tactical-img-box img-call-to-arms">
+                            <div class="tactical-img-overlay military-overlay">📣 ⚔️</div>
+                        </div>
+                        <div class="tactical-card-label">Call to Arms</div>
+                    </div>
+
+                    <div class="tactical-card ios-act-btn" data-action="impose-sanctions">
+                        <div class="tactical-img-box img-impose-sanctions">
+                            <div class="tactical-img-overlay danger-overlay">🔥 💥</div>
+                        </div>
+                        <div class="tactical-card-label">Impose Sanctions</div>
                     </div>
                 </div>
             </div>
@@ -417,58 +466,121 @@ window.CountryIOS = {
     // -------------------------------------------------------------------------
     renderChapter4_Economy(countryKey, econ, pop) {
         const fmtNum = window.formatGameNumber || ((n) => `$${(n/1e9).toFixed(1)}B`);
+        const nameClean = countryKey.replace(/_/g, " ").toUpperCase();
+        
         return `
-            <div style="display:flex; flex-direction:column; gap:20px;">
+            <div style="display:flex; flex-direction:column; gap:16px; max-width:960px; margin:0 auto;">
+                <!-- TOP HEADER & EXIT BUTTON -->
+                <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(15,23,42,0.8); padding:10px 16px; border-radius:8px; border:1px solid rgba(0,229,255,0.2);">
+                    <div>
+                        <span style="font-size:10px; color:#ffd700; font-family:var(--font-mono); font-weight:bold;">🏛️ MINISTRY OF FINANCE & NATIONAL TREASURY</span>
+                        <h3 style="margin:2px 0 0 0; color:#f8fafc; font-size:15px; font-family:var(--font-mono);">${nameClean} ECONOMIC DASHBOARD</h3>
+                    </div>
+                    <button onclick="window.CountryIOS.close()" style="padding:6px 14px; background:rgba(239,68,68,0.2); border:1px solid #ef4444; color:#ef4444; font-size:11px; font-weight:bold; border-radius:6px; cursor:pointer; font-family:var(--font-mono); transition:all 0.2s;">
+                        ✕ EXIT / CLOSE
+                    </button>
+                </div>
+
+                <!-- MACROECONOMIC CARDS -->
                 <div class="ios-grid-4">
-                    <div class="ios-card">
-                        <div class="ios-card-title">ANNUAL GDP</div>
-                        <div class="ios-card-val">${fmtNum(econ.gdp || 21e12)}</div>
-                        <div class="ios-card-sub">Growth: +${econ.gdp_growth || 2.4}% / yr</div>
+                    <div class="ios-card" style="border-left:3px solid #00e5ff;">
+                        <div class="ios-card-title">GROSS DOMESTIC PRODUCT (GDP)</div>
+                        <div class="ios-card-val" style="color:#00e5ff;">${fmtNum(econ.gdp || 21e12)}</div>
+                        <div class="ios-card-sub">Annual Growth: <strong style="color:#22c55e;">+${econ.gdp_growth || 2.4}% / yr</strong></div>
                     </div>
-                    <div class="ios-card">
-                        <div class="ios-card-title">NATIONAL DEBT</div>
+                    <div class="ios-card" style="border-left:3px solid #ef4444;">
+                        <div class="ios-card-title">SOVEREIGN NATIONAL DEBT</div>
                         <div class="ios-card-val" style="color:#ef4444;">${fmtNum(econ.debt || 28e12)}</div>
-                        <div class="ios-card-sub">Debt/GDP: 122%</div>
+                        <div class="ios-card-sub">Debt-to-GDP Ratio: <strong style="color:#ffd700;">118%</strong></div>
                     </div>
-                    <div class="ios-card">
-                        <div class="ios-card-title">UNEMPLOYMENT</div>
-                        <div class="ios-card-val">${econ.unemployment_rate || 3.8}%</div>
-                        <div class="ios-card-sub">Inflation: 2.1%</div>
+                    <div class="ios-card" style="border-left:3px solid #ffd700;">
+                        <div class="ios-card-title">UNEMPLOYMENT & INFLATION</div>
+                        <div class="ios-card-val" style="color:#ffd700;">${econ.unemployment_rate || 3.8}% / 2.2%</div>
+                        <div class="ios-card-sub">Labor Force: 164M Workers</div>
                     </div>
-                    <div class="ios-card">
-                        <div class="ios-card-title">TRADE BALANCE</div>
-                        <div class="ios-card-val" style="color:#22c55e;">+$45.2 Billion</div>
-                        <div class="ios-card-sub">Currency: USD ($)</div>
+                    <div class="ios-card" style="border-left:3px solid #22c55e;">
+                        <div class="ios-card-title">FOREIGN TRADE BALANCE</div>
+                        <div class="ios-card-val" style="color:#22c55e;">+$48.5 Billion</div>
+                        <div class="ios-card-sub">Reserves: $142 Billion</div>
                     </div>
                 </div>
 
-                <div class="ios-chart-box">
-                    <div class="ios-card-title" style="margin-bottom:10px; color:#00e5ff;">5-YEAR ECONOMIC GDP GROWTH TREND</div>
-                    <svg width="100%" height="120" viewBox="0 0 400 100" preserveAspectRatio="none">
-                        <path d="M 0,80 Q 100,20 200,50 T 400,10" fill="none" stroke="#00e5ff" stroke-width="3"/>
-                        <circle cx="0" cy="80" r="4" fill="#00e5ff"/>
-                        <circle cx="100" cy="35" r="4" fill="#00e5ff"/>
-                        <circle cx="200" cy="50" r="4" fill="#00e5ff"/>
-                        <circle cx="300" cy="25" r="4" fill="#00e5ff"/>
-                        <circle cx="400" cy="10" r="4" fill="#ffd700"/>
-                    </svg>
+                <!-- HIGH VISIBILITY HIGH-TECH GRAPH & METERS -->
+                <div class="ios-grid-2">
+                    <div class="ios-chart-box" style="background:rgba(15,23,42,0.8); border:1px solid rgba(0,229,255,0.2); padding:14px; border-radius:8px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                            <span style="font-size:11px; color:#00e5ff; font-family:var(--font-mono); font-weight:bold;">📈 5-YEAR REAL GDP TRAJECTORY</span>
+                            <span style="font-size:10px; color:#22c55e; font-family:var(--font-mono);">STABLE OUTLOOK</span>
+                        </div>
+                        <svg width="100%" height="130" viewBox="0 0 380 110" preserveAspectRatio="none">
+                            <defs>
+                                <linearGradient id="gdpGrad" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%" stop-color="#00e5ff" stop-opacity="0.3"/>
+                                    <stop offset="100%" stop-color="#00e5ff" stop-opacity="0.0"/>
+                                </linearGradient>
+                            </defs>
+                            <path d="M 10,90 Q 95,45 190,60 T 370,15 L 370,100 L 10,100 Z" fill="url(#gdpGrad)"/>
+                            <path d="M 10,90 Q 95,45 190,60 T 370,15" fill="none" stroke="#00e5ff" stroke-width="3"/>
+                            <line x1="10" y1="100" x2="370" y2="100" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+                            <circle cx="10" cy="90" r="4" fill="#00e5ff"/>
+                            <circle cx="100" cy="48" r="4" fill="#00e5ff"/>
+                            <circle cx="190" cy="60" r="4" fill="#00e5ff"/>
+                            <circle cx="280" cy="30" r="4" fill="#00e5ff"/>
+                            <circle cx="370" cy="15" r="5" fill="#ffd700"/>
+                            <text x="10" y="108" fill="#64748b" font-size="9" font-family="monospace">2022</text>
+                            <text x="100" y="108" fill="#64748b" font-size="9" font-family="monospace">2023</text>
+                            <text x="190" y="108" fill="#64748b" font-size="9" font-family="monospace">2024</text>
+                            <text x="280" y="108" fill="#64748b" font-size="9" font-family="monospace">2025</text>
+                            <text x="350" y="108" fill="#ffd700" font-size="9" font-family="monospace">2026 PROJ</text>
+                        </svg>
+                    </div>
+
+                    <div class="ios-chart-box" style="background:rgba(15,23,42,0.8); border:1px solid rgba(255,215,0,0.2); padding:14px; border-radius:8px;">
+                        <div style="font-size:11px; color:#ffd700; font-family:var(--font-mono); font-weight:bold; margin-bottom:12px;">🏭 ECONOMIC SECTORAL BREAKDOWN</div>
+                        <div style="display:flex; flex-direction:column; gap:10px; font-family:var(--font-mono); font-size:11px; color:#cbd5e1;">
+                            <div>
+                                <div style="display:flex; justify-content:space-between; margin-bottom:3px;">
+                                    <span>SERVICES & TECHNOLOGY</span><strong style="color:#00e5ff;">68.4%</strong>
+                                </div>
+                                <div style="width:100%; height:8px; background:rgba(255,255,255,0.1); border-radius:4px; overflow:hidden;">
+                                    <div style="width:68.4%; height:100%; background:#00e5ff;"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div style="display:flex; justify-content:space-between; margin-bottom:3px;">
+                                    <span>INDUSTRY & MANUFACTURING</span><strong style="color:#ffd700;">23.2%</strong>
+                                </div>
+                                <div style="width:100%; height:8px; background:rgba(255,255,255,0.1); border-radius:4px; overflow:hidden;">
+                                    <div style="width:23.2%; height:100%; background:#ffd700;"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div style="display:flex; justify-content:space-between; margin-bottom:3px;">
+                                    <span>AGRICULTURE & RAW MATERIALS</span><strong style="color:#22c55e;">8.4%</strong>
+                                </div>
+                                <div style="width:100%; height:8px; background:rgba(255,255,255,0.1); border-radius:4px; overflow:hidden;">
+                                    <div style="width:8.4%; height:100%; background:#22c55e;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                <!-- QUICK ACTIONS -->
+                <!-- DIRECTIVE ACTIONS -->
                 <div>
-                    <div class="ios-card-title" style="margin-bottom:8px; color:#ffd700; font-weight:bold;">ECONOMIC DIRECTIVE ACTIONS</div>
+                    <div class="ios-card-title" style="margin-bottom:8px; color:#ffd700; font-weight:bold; font-family:var(--font-mono);">⚡ TREASURY DIRECTIVE ACTIONS</div>
                     <div class="ios-actions-grid">
                         <button class="ios-act-btn" data-action="trade-agreement">
-                            <span>📜 TRADE AGREEMENT</span><span>⚡ EXECUTE</span>
+                            <span>📜 BILATERAL TRADE DEAL</span><span>⚡ EXECUTE</span>
                         </button>
                         <button class="ios-act-btn" data-action="investment">
-                            <span>🏗️ STRATEGIC INVESTMENT</span><span>⚡ EXECUTE</span>
+                            <span>🏗️ INFRASTRUCTURE BONDS</span><span>⚡ EXECUTE</span>
                         </button>
                         <button class="ios-act-btn" data-action="financial-aid">
-                            <span>💵 FINANCIAL AID</span><span>⚡ EXECUTE</span>
+                            <span>💵 REVENUE TAX REFORM</span><span>⚡ EXECUTE</span>
                         </button>
                         <button class="ios-act-btn" data-action="sanctions">
-                            <span>⛔ ECONOMIC SANCTIONS</span><span>⚡ EXECUTE</span>
+                            <span>⛔ CENTRAL BANK RATE SET</span><span>⚡ EXECUTE</span>
                         </button>
                     </div>
                 </div>
@@ -477,62 +589,189 @@ window.CountryIOS = {
     },
 
     // -------------------------------------------------------------------------
-    // CHAPTER 05: RESOURCES
+    // CHAPTER 05: RESOURCES - AUTONOMOUS RESOURCE MINISTRY ENGINE & NRMS
     // -------------------------------------------------------------------------
     renderChapter5_Resources(countryKey) {
+        const nrms = window.ResourceMinistryEngine ? window.ResourceMinistryEngine.getSummary() : null;
+        
+        if (!nrms) {
+            return `<div style="padding:20px; color:#ef4444; font-family:'Share Tech Mono', monospace;">Resource Intelligence Engine Offline.</div>`;
+        }
+
+        const briefingText = nrms.briefing;
+        const metrics = nrms.globalMetrics;
+        const resList = nrms.resourcesList;
+        const debates = nrms.debates || [];
+        const surveys = metrics.surveysUnderway || [];
+
+        let surveyHtml = "";
+        if (surveys.length > 0) {
+            surveyHtml = `
+                <div style="background:rgba(15,23,42,0.9); border:1px solid rgba(0,229,255,0.4); border-radius:10px; padding:12px; margin-bottom:12px;">
+                    <div style="font-size:12px; font-weight:bold; color:#00e5ff; font-family:var(--font-title); margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+                        <span>⛏️ ACTIVE GEOLOGICAL SURVEYS IN PROGRESS (${surveys.length})</span>
+                        <span style="font-size:10px; color:#ffd700; font-family:var(--font-mono);">DEEP EARTH RADAR ACTIVE</span>
+                    </div>
+                    <div style="display:flex; flex-direction:column; gap:8px;">
+                        ${surveys.map(s => `
+                            <div style="background:rgba(0,0,0,0.4); padding:8px; border-radius:6px; border-left:3px solid #00e5ff;">
+                                <div style="display:flex; justify-content:space-between; font-size:11px; font-weight:bold; color:#f8fafc; font-family:var(--font-mono);">
+                                    <span>${s.resName} Survey (${s.country})</span>
+                                    <span style="color:#22c55e;">${s.progress}%</span>
+                                </div>
+                                <div style="font-size:10px; color:#94a3b8; font-family:var(--font-mono); margin:2px 0 4px 0;">
+                                    Stage: ${s.stageName} • Est. Time: ${s.estimatedDays} Days
+                                </div>
+                                <div style="width:100%; height:4px; background:rgba(255,255,255,0.1); border-radius:2px; overflow:hidden;">
+                                    <div style="width:${s.progress}%; height:100%; background:linear-gradient(90deg, #00e5ff, #22c55e);"></div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        let resGridHtml = resList.map(r => {
+            const selfSuffColor = r.selfSufficiencyRatio >= 100 ? '#22c55e' : (r.selfSufficiencyRatio >= 75 ? '#eab308' : '#ef4444');
+            const netColor = r.netBalance >= 0 ? '#22c55e' : '#ef4444';
+            const netSign = r.netBalance >= 0 ? '+' : '';
+
+            return `
+                <div class="ios-card" style="border-top: 2px solid ${selfSuffColor}; position: relative; padding:12px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                        <span style="font-size:13px; font-weight:bold; color:#f8fafc; font-family:var(--font-title);">${r.icon} ${r.name.toUpperCase()}</span>
+                        <span style="font-size:10px; padding:2px 6px; border-radius:10px; background:${selfSuffColor}22; color:${selfSuffColor}; font-weight:bold; border:1px solid ${selfSuffColor}; font-family:var(--font-mono);">
+                            ${r.selfSufficiencyRatio}% ${r.selfSufficiencyRatio >= 100 ? 'SECURE' : 'DEFICIT'}
+                        </span>
+                    </div>
+                    
+                    <div style="font-size:10px; color:#94a3b8; font-family:var(--font-mono); margin-bottom:6px;">${r.bnName} • ${r.category}</div>
+
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px; font-size:11px; color:#cbd5e1; font-family:var(--font-mono); margin-bottom:8px;">
+                        <div>Output: <strong style="color:#00e5ff;">${r.dailyProduction.toLocaleString()}</strong></div>
+                        <div>Consume: <strong style="color:#f97316;">${r.dailyConsumption.toLocaleString()}</strong></div>
+                        <div>Net Flow: <strong style="color:${netColor};">${netSign}${r.netBalance.toLocaleString()}</strong></div>
+                        <div>Stock Days: <strong style="color:#ffd700;">${r.stockDays} Days</strong></div>
+                        <div>Mines/Plants: <strong style="color:#22c55e;">${r.activeFacilities} Active</strong></div>
+                        <div>Stockpile: <strong style="color:#a855f7;">${r.warehouseStock.toLocaleString()}</strong></div>
+                    </div>
+
+                    <div style="font-size:10px; color:#94a3b8; line-height:1.3; background:rgba(0,0,0,0.3); padding:4px 6px; border-radius:4px; font-family:var(--font-mono); margin-bottom:8px;">
+                        ⛓️ ${r.processChain}
+                    </div>
+
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:4px;">
+                        <button onclick="window.ResourceMinistryEngine.executeDirective('survey', '${r.id}');" style="padding:5px 4px; background:rgba(0,229,255,0.15); border:1px solid #00e5ff; color:#00e5ff; font-size:10px; font-weight:bold; border-radius:4px; cursor:pointer;">
+                            ⛏️ SURVEY
+                        </button>
+                        <button onclick="window.ResourceMinistryEngine.executeDirective('expand_facility', '${r.id}');" style="padding:5px 4px; background:rgba(34,197,94,0.15); border:1px solid #22c55e; color:#22c55e; font-size:10px; font-weight:bold; border-radius:4px; cursor:pointer;">
+                            🏭 EXPAND (+25%)
+                        </button>
+                        <button onclick="window.ResourceMinistryEngine.executeDirective('add_reserve', '${r.id}');" style="padding:5px 4px; background:rgba(255,215,0,0.15); border:1px solid #ffd700; color:#ffd700; font-size:10px; font-weight:bold; border-radius:4px; cursor:pointer;">
+                            📦 SPR (+50K)
+                        </button>
+                        <button onclick="window.ResourceMinistryEngine.executeDirective('focus_map', '${r.id}');" style="padding:5px 4px; background:rgba(168,85,247,0.15); border:1px solid #a855f7; color:#a855f7; font-size:10px; font-weight:bold; border-radius:4px; cursor:pointer;">
+                            🗺️ FOCUS MAP
+                        </button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        let debatesHtml = debates.map(d => `
+            <div style="background:rgba(15,23,42,0.85); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:10px; display:flex; flex-direction:column; gap:6px;">
+                <div style="display:flex; gap:10px; align-items:flex-start;">
+                    <div style="font-size:22px; line-height:1;">${d.avatar}</div>
+                    <div style="flex:1;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2px;">
+                            <span style="font-size:11px; font-weight:bold; color:#f8fafc; font-family:var(--font-title);">${d.speaker.toUpperCase()} (${d.role.toUpperCase()})</span>
+                            <span style="font-size:9px; padding:1px 5px; border-radius:4px; background:rgba(0,229,255,0.1); color:#00e5ff; font-family:var(--font-mono);">ADVISORY DECREE</span>
+                        </div>
+                        <div style="font-size:11px; color:#cbd5e1; font-style:italic; line-height:1.3; font-family:var(--font-mono);">${d.text}</div>
+                    </div>
+                </div>
+                ${d.options ? `
+                    <div style="display:flex; gap:6px; margin-top:4px; padding-left:32px;">
+                        ${d.options.map(opt => `
+                            <button onclick="window.ResourceMinistryEngine.executeDirective('cabinet_vote', '${d.id}', '${opt.action}');" style="padding:4px 8px; background:rgba(0,229,255,0.15); border:1px solid #00e5ff; color:#00e5ff; font-size:10px; font-weight:bold; border-radius:4px; cursor:pointer;">
+                                ${opt.label}
+                            </button>
+                        `).join('')}
+                    </div>
+                ` : ''}
+            </div>
+        `).join('');
+
         return `
-            <div style="display:flex; flex-direction:column; gap:20px;">
-                <div class="ios-grid-4">
-                    <div class="ios-card">
-                        <div class="ios-card-title">🛢️ CRUDE OIL</div>
-                        <div class="ios-card-val">12.5M BBL/day</div>
-                        <div class="ios-card-sub">Reserves: High</div>
+            <div style="display:flex; flex-direction:column; gap:16px;">
+                <!-- MINISTER AI EXECUTIVE BRIEFING HEADER -->
+                <div style="background:linear-gradient(135deg, rgba(11,20,36,0.95), rgba(15,23,42,0.95)); border:1.5px solid #00e5ff; border-radius:12px; padding:16px; box-shadow:0 0 20px rgba(0,229,255,0.15);">
+                    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(0,229,255,0.2); padding-bottom:10px; margin-bottom:12px;">
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <span style="font-size:28px;">🧠</span>
+                            <div>
+                                <div style="font-size:15px; font-weight:bold; color:#00e5ff; font-family:var(--font-title); letter-spacing:1px;">DR. ARIS THORNE</div>
+                                <div style="font-size:11px; color:#94a3b8; font-family:var(--font-mono);">Sovereign Minister of Resource Intelligence</div>
+                            </div>
+                        </div>
+                        <div style="text-align:right;">
+                            <span style="font-size:10px; padding:3px 10px; border-radius:12px; background:rgba(255,215,0,0.15); border:1px solid #ffd700; color:#ffd700; font-weight:bold; font-family:var(--font-mono);">
+                                AUTONOMY: ${metrics.autonomyIndex}%
+                            </span>
+                        </div>
                     </div>
-                    <div class="ios-card">
-                        <div class="ios-card-title">🔥 NATURAL GAS</div>
-                        <div class="ios-card-val">950B M3/yr</div>
-                        <div class="ios-card-sub">Net Exporter</div>
+
+                    <div style="font-size:12px; color:#e2e8f0; line-height:1.5; font-family:var(--font-mono); background:rgba(0,0,0,0.4); padding:12px; border-radius:8px; border-left:3px solid #00e5ff; margin-bottom:12px;">
+                        ${briefingText}
                     </div>
-                    <div class="ios-card">
-                        <div class="ios-card-title">⚛️ URANIUM</div>
-                        <div class="ios-card-val">4,500 Tons</div>
-                        <div class="ios-card-sub">Strategic Stockpile: 98%</div>
-                    </div>
-                    <div class="ios-card">
-                        <div class="ios-card-title">🔋 LITHIUM & RARE EARTHS</div>
-                        <div class="ios-card-val">1.2M Tons</div>
-                        <div class="ios-card-sub">Tech Supply Chain</div>
+
+                    <div class="ios-grid-4">
+                        <div class="ios-card" style="padding:8px 12px;">
+                            <div class="ios-card-title">AUTONOMY SCORE</div>
+                            <div class="ios-card-val" style="color:${metrics.autonomyIndex >= 75 ? '#22c55e' : '#eab308'};">${metrics.autonomyIndex}%</div>
+                        </div>
+                        <div class="ios-card" style="padding:8px 12px;">
+                            <div class="ios-card-title">RESERVES CAPACITY</div>
+                            <div class="ios-card-val" style="color:#00e5ff;">${metrics.strategicReservesTotalDays} Days</div>
+                        </div>
+                        <div class="ios-card" style="padding:8px 12px;">
+                            <div class="ios-card-title">ACTIVE SURVEYS</div>
+                            <div class="ios-card-val" style="color:#ffd700;">${surveys.length}</div>
+                        </div>
+                        <div class="ios-card" style="padding:8px 12px;">
+                            <div class="ios-card-title">UNIVERSAL PIPELINES</div>
+                            <div class="ios-card-val" style="color:#a855f7;">17 Strategic</div>
+                        </div>
                     </div>
                 </div>
 
-                <div class="ios-grid-3">
-                    <div class="ios-card">
-                        <div class="ios-card-title">IRON & STEEL</div>
-                        <div class="ios-card-val">85M Tons/yr</div>
-                    </div>
-                    <div class="ios-card">
-                        <div class="ios-card-title">WATER RESERVES</div>
-                        <div class="ios-card-val" style="color:#22c55e;">Abundant</div>
-                    </div>
-                    <div class="ios-card">
-                        <div class="ios-card-title">FOOD PRODUCTION INDEX</div>
-                        <div class="ios-card-val" style="color:#22c55e;">142.8 (Self-Sufficient)</div>
-                    </div>
-                </div>
+                <!-- ACTIVE SURVEYS TRACKER -->
+                ${surveyHtml}
 
-                <!-- QUICK ACTIONS -->
+                <!-- 17 UNIVERSAL RESOURCE REGISTRY MATRIX -->
                 <div>
-                    <div class="ios-card-title" style="margin-bottom:8px; color:#00e5ff; font-weight:bold;">RESOURCE AGREEMENTS & OVERLAYS</div>
-                    <div class="ios-actions-grid">
-                        <button class="ios-act-btn" data-action="resource-deal">
-                            <span>📦 RESOURCE AGREEMENT</span><span>⚡ EXECUTE</span>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                        <div style="font-size:13px; font-weight:bold; color:#ffd700; font-family:var(--font-title); letter-spacing:0.5px;">
+                            📦 NATIONAL RESOURCE REGISTRY (17 STRATEGIC PIPELINES)
+                        </div>
+                        <button onclick="Game.Map.toggleResourceOverlay(); if(window.CountryIOS) window.CountryIOS.close();" style="padding:5px 12px; background:rgba(255,215,0,0.2); border:1px solid #ffd700; color:#ffd700; font-size:11px; font-weight:bold; border-radius:6px; cursor:pointer;">
+                            🗺️ SHOW ALL ON MAP
                         </button>
-                        <button class="ios-act-btn" data-action="exploration">
-                            <span>⛏️ EXPLORATION GRANT</span><span>⚡ EXECUTE</span>
-                        </button>
-                        <button class="ios-act-btn" data-action="resource-map">
-                            <span>🗺️ SHOW MAP OVERLAY</span><span>⚡ TOGGLE</span>
-                        </button>
+                    </div>
+
+                    <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap:10px; max-height:480px; overflow-y:auto; padding-right:4px;">
+                        ${resGridHtml}
+                    </div>
+                </div>
+
+                <!-- INTER-MINISTRY CABINET COUNCIL DEBATES -->
+                <div style="background:rgba(11,20,36,0.8); border:1px solid rgba(255,255,255,0.1); border-radius:10px; padding:14px;">
+                    <div style="font-size:12px; font-weight:bold; color:#00e5ff; font-family:var(--font-title); margin-bottom:10px; letter-spacing:0.5px;">
+                        🏛️ INTER-MINISTRY RESOURCE CABINET COUNCIL DEBATES & POLICY VOTER
+                    </div>
+                    <div style="display:flex; flex-direction:column; gap:8px;">
+                        ${debatesHtml}
                     </div>
                 </div>
             </div>
@@ -905,4 +1144,10 @@ window.CountryIOS = {
 // Auto-initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
     window.CountryIOS.init();
+});
+
+window.addEventListener('RESOURCE_STATE_UPDATED', () => {
+    if (window.CountryIOS && window.CountryIOS.activeChapter === 5 && window.CountryIOS.activeCountry) {
+        window.CountryIOS.switchChapter(5);
+    }
 });

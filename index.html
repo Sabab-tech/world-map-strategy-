@@ -339,7 +339,7 @@
                         </main>
 
                         <!-- 🤖 AI STRATEGIC ADVISOR PANEL -->
-                        <aside id="ios-advisor-dock" class="ios-advisor-dock active">
+                        <aside id="ios-advisor-dock" class="ios-advisor-dock collapsed">
                             <div class="advisor-dock-header">
                                 <div class="advisor-title-text">
                                     <span>🤖</span> <span>AI STRATEGIC ADVISOR</span>
@@ -374,6 +374,9 @@
 
             <!-- 🗺️ COUNTRY INFO CARD (Height: 140px - Appears above navigation) -->
             <div id="country-info-card" class="country-info-card" role="region" aria-label="Country Strategic Data">
+                <button id="btn-close-card-top" class="card-top-close-btn" onclick="if(window.Game && window.Game.closeCountryInfoCard) window.Game.closeCountryInfoCard();" title="Close Country Card">
+                    ✕ বন্ধ করুন
+                </button>
                 <div class="card-left">
                     <div class="country-flag-badge" id="card-country-flag">🌐</div>
                     <div class="country-meta">
@@ -397,44 +400,91 @@
                     <button class="card-act-btn" id="btn-card-military">🛡 MILITARY</button>
                     <button class="card-act-btn" id="btn-card-economy">💰 ECONOMY</button>
                     <button class="card-act-btn" id="btn-card-intel">🛰 INTEL</button>
-                    <button id="btn-close-card" class="card-close-btn" title="Close Card">✕</button>
+                    <button id="btn-close-card" class="card-close-btn" onclick="if(window.Game && window.Game.closeCountryInfoCard) window.Game.closeCountryInfoCard();" title="Close Card">✕ বন্ধ</button>
                 </div>
             </div>
 
             <!-- 🏛️ BOTTOM COMMAND BAR (76px Height) -->
+            <!-- 🏙️ CENTERED CITY DETAIL MODAL CARD -->
+            <div id="city-detail-bar" class="city-detail-bar" role="dialog" aria-modal="true">
+                <div class="city-modal-header">
+                    <div class="city-bar-left">
+                        <span id="city-bar-role-dot" class="city-bar-dot"></span>
+                        <div class="city-bar-titles">
+                            <span id="city-bar-name" class="city-bar-name">DHAKA</span>
+                            <span id="city-bar-tag" class="city-bar-tag">CAPITAL COMMAND HUB • BANGLADESH</span>
+                        </div>
+                    </div>
+                    <button class="city-modal-exit-btn" onclick="Game.Map.closeCityDetailBar()">
+                        <span>✕</span> <span>EXIT / BACK</span>
+                    </button>
+                </div>
+                <div class="city-modal-body">
+                    <div class="city-bar-stats">
+                        <div class="city-stat-item">
+                            <span class="stat-label">HUB TYPE</span>
+                            <span id="city-bar-type" class="stat-val">POLITICAL / ADMIN</span>
+                        </div>
+                        <div class="city-stat-item">
+                            <span class="stat-label">GEOGRAPHIC COORDS</span>
+                            <span id="city-bar-coords" class="stat-val">23.81°N, 90.41°E</span>
+                        </div>
+                        <div class="city-stat-item">
+                            <span class="stat-label">METRO POPULATION</span>
+                            <span id="city-bar-pop" class="stat-val">12.5M</span>
+                        </div>
+                    </div>
+                    <div class="city-desc-box">
+                        <span class="stat-label">STRATEGIC PROFILE & DESCRIPTION</span>
+                        <div id="city-bar-desc" class="city-desc-text">National capital, administrative command center, and primary sovereign economic engine.</div>
+                    </div>
+                    <div class="city-bar-actions">
+                        <button class="city-bar-btn upgrade-btn" onclick="Game.Map.actionUpgradeCity()">🔨 UPGRADE INFRASTRUCTURE</button>
+                        <button class="city-bar-btn garrison-btn" onclick="Game.Map.actionGarrisonCity()">🛡️ STATION GARRISON</button>
+                    </div>
+                </div>
+            </div>
+
             <nav class="ui-bottom-navigation" role="navigation" aria-label="Main Command Navigation">
-                <button id="btn-politics" class="nav-btn active">
-                    <span class="nav-icon">🏛</span>
-                    <span class="nav-text">CABINET</span>
+                <button id="btn-ministry-dock" class="nav-btn active" title="17 Strategic Resource Ministries Dashboard">
+                    <span class="nav-icon">🏛️</span>
+                    <span class="nav-text">১৭টি মন্ত্রণালয়</span>
                 </button>
-                <button id="btn-hq" class="nav-btn">
-                    <span class="nav-icon">⚔</span>
-                    <span class="nav-text">COMMAND</span>
-                </button>
-                <button id="btn-build" class="nav-btn">
-                    <span class="nav-icon">💰</span>
-                    <span class="nav-text">ECONOMY</span>
-                </button>
-                <button id="btn-military-dock" class="nav-btn">
-                    <span class="nav-icon">🛡</span>
-                    <span class="nav-text">MILITARY</span>
-                </button>
-                <button id="btn-diplomacy-dock" class="nav-btn">
-                    <span class="nav-icon">🤝</span>
-                    <span class="nav-text">DIPLOMACY</span>
-                </button>
-                <button id="btn-research-dock" class="nav-btn">
-                    <span class="nav-icon">🧪</span>
-                    <span class="nav-text">RESEARCH</span>
-                </button>
-                <button id="btn-intel-dock" class="nav-btn">
-                    <span class="nav-icon">🛰</span>
-                    <span class="nav-text">INTEL</span>
+                <button id="btn-view-map" class="nav-btn" title="Toggle Map Layer Spectrum & Camera Focus">
+                    <span class="nav-icon">👁️</span>
+                    <span class="nav-text">ভিউ</span>
                 </button>
             </nav>
         </div>
         
-        <div id="resource-filter-box" class="hidden"><select id="resource-selector"></select></div>
+        <div id="resource-filter-box" class="resource-filter-bar hidden">
+            <div class="res-filter-header">
+                <span class="res-filter-title">💎 SOVEREIGN RESOURCE MAP OVERLAY</span>
+                <button class="res-filter-close" onclick="Game.Map.toggleResourceOverlay()">✕</button>
+            </div>
+            <div class="res-filter-controls">
+                <select id="resource-selector" onchange="Game.Map.applyResourceMapFilter(this.value)">
+                    <option value="ALL">🌐 ALL 17 STRATEGIC RESOURCE DEPOSITS</option>
+                    <option value="crude_oil">🛢️ Crude Oil (অপরিশোধিত তেল)</option>
+                    <option value="natural_gas">🔥 Natural Gas (প্রাকৃতিক গ্যাস)</option>
+                    <option value="rare_earth">💎 Rare Earth Minerals (বিরল মৃত্তিকা)</option>
+                    <option value="uranium">⚛️ Uranium (ইউরেনিয়াম)</option>
+                    <option value="iron_ore">⛏️ Iron Ore (আকরিক লোহা)</option>
+                    <option value="copper">🔌 Copper (তামা)</option>
+                    <option value="bauxite">📦 Bauxite / Aluminum (বক্সাইট)</option>
+                    <option value="coal">🪨 Coal (কয়লা)</option>
+                    <option value="limestone">🧱 Limestone (চুনাপাথর)</option>
+                    <option value="electricity">⚡ Power Grid & Hydro (বিদ্যুৎ)</option>
+                    <option value="rice">🌾 Rice Grain (ধান/চাল)</option>
+                    <option value="wheat">🌾 Wheat (গম)</option>
+                    <option value="water">💧 Water Reserves (মিঠা পানি)</option>
+                    <option value="timber">🪵 Timber & Forests (বনজ কাষ্ঠ)</option>
+                    <option value="cement">🏗️ Cement Plants (সিমেন্ট)</option>
+                    <option value="sand">⏳ Silica Sand (শিল্প বালি)</option>
+                </select>
+                <button class="res-quick-btn" onclick="if(window.CountryIOS) window.CountryIOS.open((window.Game && window.Game.currentActiveCountry) || 'USA', 5)">🏛️ OPEN MINISTRY</button>
+            </div>
+        </div>
         <div id="debug-root" aria-hidden="true"></div>
 
         <div id="template-root" style="display: none !important;">
@@ -456,6 +506,7 @@
 <script src="ui_engine_core.js" defer></script>
 
 <script src="ministry_engine.js" defer></script>
+<script src="resource_ministry_engine.js" defer></script>
 
 <script src="game-logic.js" defer></script>
 <script src="country-ios.js" defer></script>
