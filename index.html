@@ -362,14 +362,117 @@
 
             <div id="cabinet-full-window" class="omega-modal" role="dialog" style="inset:0; width:100%; height:100%; transform:none; border-radius:0;">
                 <div class="cabinet-top-header" style="display:flex; justify-content:space-between; align-items:center; padding:12px 20px; background:rgba(0,18,28,0.95); border-bottom:1px solid var(--omega-border); position:relative; z-index:20;">
-                    <div style="font-family:var(--font-title); font-size:15px; color:var(--omega-neon); display:flex; align-items:center; gap:8px;">
-                        <span>🏛️</span><span>STATE COUNCIL EXECUTIVE CABINET</span>
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <button id="btn-back-cabinet" class="omega-back-btn" onclick="window.toggleMainCabinet(false);" style="background:rgba(0,229,255,0.15); border:1px solid var(--omega-neon); color:#00e5ff; border-radius:6px; padding:6px 14px; font-weight:bold; cursor:pointer; font-family:var(--font-mono); font-size:13px; display:flex; align-items:center; gap:6px;" title="Back to Command HQ">
+                            <span>⬅️</span><span>BACK TO HQ</span>
+                        </button>
+                        <div style="font-family:var(--font-title); font-size:15px; color:var(--omega-neon); display:flex; align-items:center; gap:8px;">
+                            <span>🏛️</span><span>STATE COUNCIL EXECUTIVE CABINET</span>
+                        </div>
                     </div>
-                    <button id="btn-close-cabinet" class="omega-close-btn" style="background:rgba(255,68,68,0.25); border:1px solid var(--omega-danger); color:#fff; border-radius:6px; padding:6px 16px; font-weight:bold; cursor:pointer; font-family:var(--font-mono); font-size:13px; display:flex; align-items:center; gap:6px;">
-                        <span>✕</span><span>EXIT CABINET</span>
-                    </button>
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <span id="cabinet-country-badge" style="background:rgba(0,229,255,0.1); border:1px solid #00e5ff; color:#00e5ff; padding:4px 10px; border-radius:12px; font-family:var(--font-mono); font-size:11px; font-weight:bold;">USA STATE COUNCIL</span>
+                        <button id="btn-close-cabinet" class="omega-close-btn" onclick="window.toggleMainCabinet(false);" style="background:rgba(255,68,68,0.25); border:1px solid var(--omega-danger); color:#fff; border-radius:6px; padding:6px 16px; font-weight:bold; cursor:pointer; font-family:var(--font-mono); font-size:13px; display:flex; align-items:center; gap:6px;">
+                            <span>✕</span><span>EXIT CABINET</span>
+                        </button>
+                    </div>
                 </div>
                 <div class="cabinet-body" id="cabinet-body" style="padding:20px; overflow-y:auto; height:calc(100% - 55px);"></div>
+            </div>
+
+            <!-- 🎙️ MINISTER INTERROGATION & DIALOGUE MODAL -->
+            <div id="minister-interrogation-modal" class="omega-modal" role="dialog" aria-modal="true" style="display:none; max-width:820px; width:95%; height:88vh; max-height:780px;">
+                <div style="display:flex; flex-direction:column; height:100%; padding:0; background:rgba(2,11,20,0.98); border:1px solid var(--omega-neon); border-radius:12px; overflow:hidden; box-shadow:0 0 35px rgba(0,229,255,0.25);">
+                    <header style="display:flex; justify-content:space-between; align-items:center; padding:12px 18px; background:rgba(0,18,28,0.95); border-bottom:1px solid rgba(0,229,255,0.3);">
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <button onclick="document.getElementById('minister-interrogation-modal').style.display='none';" style="background:rgba(0,229,255,0.15); border:1px solid #00e5ff; color:#00e5ff; border-radius:6px; padding:5px 12px; font-weight:bold; cursor:pointer; font-family:var(--font-mono); font-size:12px; display:flex; align-items:center; gap:6px;">
+                                <span>⬅️</span><span>BACK TO CABINET</span>
+                            </button>
+                            <div style="font-family:var(--font-title); color:#00e5ff; font-size:15px; font-weight:bold; display:flex; align-items:center; gap:6px;">
+                                <span>🎙️</span><span id="interrogation-title">MINISTER INTERROGATION & DIALOGUE FRAMEWORK</span>
+                            </div>
+                        </div>
+                        <button onclick="document.getElementById('minister-interrogation-modal').style.display='none';" style="background:rgba(255,68,68,0.25); border:1px solid #ef4444; color:#fff; border-radius:6px; padding:5px 12px; font-weight:bold; cursor:pointer; font-family:var(--font-mono); font-size:12px;">
+                            ✕ CLOSE
+                        </button>
+                    </header>
+
+                    <div style="display:grid; grid-template-columns:250px 1fr; flex:1; overflow:hidden;">
+                        <!-- Left Sidebar: Minister Profile & Cognitive Metrics -->
+                        <div style="background:rgba(1,15,28,0.85); border-right:1px solid rgba(0,229,255,0.2); padding:16px; display:flex; flex-direction:column; gap:12px; overflow-y:auto;">
+                            <div style="text-align:center; padding-bottom:10px; border-bottom:1px solid rgba(255,255,255,0.1);">
+                                <div id="interrogation-avatar" style="font-size:52px; line-height:1; margin-bottom:8px;">🏛️</div>
+                                <div id="interrogation-name" style="font-size:14px; font-weight:bold; color:#f8fafc; font-family:var(--font-title);">Hon. Minister</div>
+                                <div id="interrogation-role" style="font-size:11px; color:#00e5ff; font-family:var(--font-mono);">Ministry of State</div>
+                            </div>
+
+                            <div style="background:rgba(0,0,0,0.5); padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.1); font-family:var(--font-mono); font-size:11px; display:flex; flex-direction:column; gap:6px;">
+                                <div style="display:flex; justify-content:space-between;">
+                                    <span style="color:#94a3b8;">Trust Score:</span>
+                                    <strong id="interrogation-trust" style="color:#22c55e;">85/100</strong>
+                                </div>
+                                <div style="display:flex; justify-content:space-between;">
+                                    <span style="color:#94a3b8;">Reliability:</span>
+                                    <strong id="interrogation-reliability" style="color:#00e5ff;">92%</strong>
+                                </div>
+                                <div style="display:flex; justify-content:space-between;">
+                                    <span style="color:#94a3b8;">Loyalty:</span>
+                                    <strong id="interrogation-loyalty" style="color:#ffd700;">HIGH</strong>
+                                </div>
+                                <div style="display:flex; justify-content:space-between;">
+                                    <span style="color:#94a3b8;">Stress Level:</span>
+                                    <strong id="interrogation-stress" style="color:#f97316;">LOW (14%)</strong>
+                                </div>
+                            </div>
+
+                            <div style="font-size:11px; font-family:var(--font-mono); color:#cbd5e1;">
+                                <div style="color:#ffd700; font-weight:bold; margin-bottom:4px;">🧠 COGNITIVE ENGINE PIPELINE</div>
+                                <div id="interrogation-cognitive-status" style="font-size:10px; color:#94a3b8; line-height:1.4;">
+                                    Active: Memory Engine V3, 25-Layer Multi-Domain Analysis, NLG Engine, Trust V3 Matrix.
+                                </div>
+                            </div>
+
+                            <div style="margin-top:auto; font-size:10px; color:#64748b; font-family:var(--font-mono); text-align:center;">
+                                OMEGA AI ENGINE v13.14
+                            </div>
+                        </div>
+
+                        <!-- Right Main: Speech, Thoughts & Interactive Interrogation Dialogue -->
+                        <div style="display:flex; flex-direction:column; padding:16px; gap:12px; background:rgba(0,8,16,0.6); overflow-y:auto;">
+                            <!-- Internal Speech & Thought Display Box -->
+                            <div style="background:rgba(15,23,42,0.9); border:1px solid rgba(0,229,255,0.3); border-radius:8px; padding:12px; display:flex; flex-direction:column; gap:8px;">
+                                <div style="font-size:11px; font-weight:bold; color:#ffd700; font-family:var(--font-mono); display:flex; justify-content:space-between; align-items:center;">
+                                    <span>💬 MINISTER's LIVE SPEECH & POLICY THOUGHTS (মন্ত্রীর নিজস্ব বক্তব্য ও চিন্তাভাবনা)</span>
+                                    <span style="font-size:9px; background:rgba(0,229,255,0.2); color:#00e5ff; padding:2px 6px; border-radius:4px;">NLG ENGINE v3</span>
+                                </div>
+                                <div id="interrogation-thought-box" style="font-size:12px; color:#f8fafc; font-family:var(--font-mono); background:rgba(0,0,0,0.5); padding:10px; border-radius:6px; line-height:1.5; border-left:3px solid #00e5ff; max-height:110px; overflow-y:auto;">
+                                    Initializing minister dialogue pipeline...
+                                </div>
+                            </div>
+
+                            <!-- Live Conversation History Feed -->
+                            <div style="flex:1; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:12px; display:flex; flex-direction:column; gap:10px; overflow-y:auto; min-height:200px;" id="interrogation-chat-history">
+                                <div style="font-size:11px; color:#64748b; font-family:var(--font-mono); text-align:center;">--- INTERROGATION SESSION STARTED ---</div>
+                            </div>
+
+                            <!-- Quick Strategic Question Triggers -->
+                            <div>
+                                <div style="font-size:11px; font-weight:bold; color:#94a3b8; font-family:var(--font-mono); margin-bottom:6px;">⚡ PRESET STRATEGIC QUESTIONS (মন্ত্রীকে সরাসরি প্রশ্ন করুন):</div>
+                                <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;" id="interrogation-quick-questions">
+                                    <!-- Injected dynamically by JS -->
+                                </div>
+                            </div>
+
+                            <!-- Custom Question Input Box -->
+                            <div style="display:flex; gap:8px;">
+                                <input type="text" id="interrogation-input" placeholder="Type custom question for the minister..." style="flex:1; background:rgba(15,23,42,0.9); border:1px solid rgba(0,229,255,0.4); color:#fff; padding:8px 12px; border-radius:6px; font-family:var(--font-mono); font-size:12px;" />
+                                <button id="btn-submit-interrogation" style="background:linear-gradient(135deg, #00e5ff, #0066ff); border:none; color:#000; font-weight:bold; padding:8px 16px; border-radius:6px; cursor:pointer; font-family:var(--font-mono); font-size:12px;">
+                                    ❓ ASK MINISTER
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- 🗺️ COUNTRY INFO CARD (Height: 140px - Appears above navigation) -->
@@ -487,12 +590,20 @@
         </div>
         <div id="debug-root" aria-hidden="true"></div>
 
+        <div id="rotate-warning">
+            <div class="rotate-panel">
+                <h1>🔄 ROTATE DEVICE (অটো-রোটেট / ল্যান্ডস্কেপ মোড)</h1>
+                <p>Landscape mode is required for full geopolitical command interface</p>
+            </div>
+        </div>
+
         <div id="template-root" style="display: none !important;">
             <template id="template-ui-button"><button class="c-omega-button"><span class="label-slot"></span></button></template>
             <template id="template-ui-window"><section class="omega-window-container"><div class="panel-body"></div></section></template>
         </div>
     </div>
 
+<script src="design-tokens.js"></script>
 <script src="leaflet.js" defer onload="window.__OMEGA_DIAG__.boot.scriptStatus['leaflet.js']='LOADED'"></script>
 
 <script src="map-engine-1.js" defer onload="window.__OMEGA_DIAG__.boot.scriptStatus['map-engine-1.js']='LOADED'"></script>

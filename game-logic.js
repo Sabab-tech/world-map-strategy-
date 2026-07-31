@@ -289,6 +289,10 @@ window.toggleMainCabinet = function(show) {
     const cabinet = document.getElementById('cabinet-full-window');
     if (!cabinet) return;
     if (show) {
+        const country = (window.CountryIOS && window.CountryIOS.activeCountry) || window.currentActiveCountry || "USA";
+        if (window.OmegaCabinetUI && window.OmegaCabinetUI.renderCabinet) {
+            window.OmegaCabinetUI.renderCabinet(country);
+        }
         cabinet.style.display = 'flex';
     } else {
         cabinet.style.display = 'none';

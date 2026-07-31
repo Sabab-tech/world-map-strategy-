@@ -344,11 +344,14 @@ window.CountryIOS = {
                     <div class="ios-card">
                         <div class="ios-card-title">STATE MINISTRIES</div>
                         <div style="font-size:12px; color:#cbd5e1; display:flex; flex-direction:column; gap:6px;">
-                            <div>🏛️ Ministry of State & Foreign Affairs (Active)</div>
+                            <div>🏛️ Ministry of Foreign Affairs (Active)</div>
                             <div>🛡️ Department of Defense (Alert Level 2)</div>
                             <div>💰 Department of Treasury & Commerce (Stable)</div>
                             <div>⚖️ Ministry of Justice & Law Enforcement</div>
                         </div>
+                        <button onclick="window.toggleMainCabinet(true);" style="margin-top:12px; width:100%; padding:10px 14px; background:linear-gradient(135deg, rgba(0,229,255,0.25), rgba(0,102,255,0.35)); border:1px solid #00e5ff; color:#00e5ff; font-weight:bold; font-family:var(--font-mono); border-radius:6px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; box-shadow:0 0 10px rgba(0,229,255,0.2);">
+                            <span>🏛️</span> <span>OPEN CABINET & ASK MINISTERS (মন্ত্রণালয় হাব)</span>
+                        </button>
                     </div>
 
                     <div class="ios-card">

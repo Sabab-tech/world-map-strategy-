@@ -2375,4 +2375,270 @@ body.ios-active .ui-right-controls {
     padding: 2px 4px;
 }
 
+/* ============================================================================
+   PARCHMENT GOLD EXECUTIVE CABINET OVERLAY (EXACT MATCH TO USER SCREENSHOT)
+   ============================================================================ */
+#cabinet-full-window {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; width: 100vw; height: 100vh;
+    background: rgba(10, 15, 25, 0.88);
+    backdrop-filter: blur(8px);
+    z-index: 5000;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+    box-sizing: border-box;
+}
+
+.parchment-cabinet-container {
+    background: #e7ded0;
+    background-image: radial-gradient(#d8ccb8 1.5px, transparent 0);
+    background-size: 20px 20px;
+    border: 3px solid #c5a059;
+    outline: 2px solid #8e6c31;
+    outline-offset: -6px;
+    border-radius: 12px;
+    box-shadow: 0 12px 45px rgba(0, 0, 0, 0.85), inset 0 0 25px rgba(184, 147, 75, 0.3);
+    color: #2c2217;
+    font-family: 'Cinzel', 'Times New Roman', Georgia, serif;
+    display: flex;
+    flex-direction: column;
+    padding: 14px;
+    max-width: 1080px;
+    width: 96%;
+    max-height: 94vh;
+    margin: auto;
+    position: relative;
+    box-sizing: border-box;
+}
+
+/* TOP PARCHMENT HUD BAR */
+.parchment-top-hud {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(220, 208, 185, 0.9);
+    border: 1px solid #b89329;
+    border-radius: 20px;
+    padding: 6px 16px;
+    margin-bottom: 12px;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.15);
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.parchment-res-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.parchment-res-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #f4edd9;
+    border: 1px solid #c8b58f;
+    border-radius: 14px;
+    padding: 4px 10px;
+    font-size: 12px;
+    font-weight: bold;
+    color: #3d301d;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    font-family: 'Inter', sans-serif;
+}
+
+/* CAROUSEL & GRID WRAPPER */
+.parchment-grid-viewport {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    padding: 8px 0;
+}
+
+.parchment-grid-slider {
+    display: grid;
+    grid-template-rows: repeat(2, 1fr);
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(170px, 1fr);
+    gap: 14px;
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    padding: 8px 4px;
+    touch-action: pan-x;
+    -webkit-overflow-scrolling: touch;
+}
+
+.parchment-grid-slider::-webkit-scrollbar {
+    height: 8px;
+}
+.parchment-grid-slider::-webkit-scrollbar-thumb {
+    background: #b89329;
+    border-radius: 4px;
+}
+.parchment-grid-slider::-webkit-scrollbar-track {
+    background: rgba(0,0,0,0.08);
+}
+
+/* PARCHMENT CARD BUTTON (EXACT SCREENSHOT STYLE) */
+.parchment-card-btn {
+    width: 170px;
+    height: 165px;
+    background: linear-gradient(180deg, #f5ebd9 0%, #e0d4bc 100%);
+    border: 2px solid #2d2417;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.25), inset 0 0 0 1px #fff7e6;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 6px;
+    cursor: pointer;
+    position: relative;
+    transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+    user-select: none;
+    box-sizing: border-box;
+}
+
+.parchment-card-btn:hover, .parchment-card-btn:active {
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 8px 20px rgba(184,147,75,0.45), inset 0 0 0 1px #ffffff;
+    border-color: #8e6c31;
+}
+
+.parchment-lvl-banner {
+    background: linear-gradient(180deg, #dfba61 0%, #a8812c 100%);
+    border: 1px solid #634a13;
+    color: #2b1f06;
+    font-size: 10px;
+    font-weight: 800;
+    padding: 1px 10px;
+    border-radius: 3px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    font-family: 'Inter', sans-serif;
+}
+
+.parchment-icon-box {
+    width: 72px;
+    height: 72px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 42px;
+    filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
+    margin: 2px 0;
+}
+
+.parchment-card-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #2b2216;
+    text-align: center;
+    line-height: 1.2;
+    font-family: 'Inter', sans-serif;
+    text-shadow: 0 1px 0 rgba(255,255,255,0.6);
+}
+
+/* NAV ARROWS ON CAROUSEL SIDES */
+.parchment-nav-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 10;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #d8c39a;
+    border: 2px solid #8e6c31;
+    color: #3b2a11;
+    font-size: 16px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+}
+.parchment-nav-arrow.left { left: 2px; }
+.parchment-nav-arrow.right { right: 2px; }
+.parchment-nav-arrow:hover {
+    background: #f0e3c8;
+    transform: translateY(-50%) scale(1.1);
+}
+
+/* BOTTOM CATEGORY TAB BAR */
+.parchment-bottom-tabs {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 8px;
+    border-top: 1px solid #c8b58f;
+    padding-top: 8px;
+    flex-wrap: wrap;
+}
+
+.parchment-tab-btn {
+    background: #dfd4be;
+    border: 1px solid #9c7b39;
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 11px;
+    font-weight: bold;
+    color: #40321c;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.15s;
+    font-family: 'Inter', sans-serif;
+}
+
+.parchment-tab-btn.active, .parchment-tab-btn:hover {
+    background: #f5ebd5;
+    border-color: #5c4315;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    color: #1c1308;
+}
+
+/* ROTATION FALLBACK OVERLAY (SPEC SECTION 11) */
+#rotate-warning {
+    position: fixed;
+    inset: 0;
+    background: #050912;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 999999;
+}
+
+.rotate-panel {
+    padding: 40px;
+    border: 2px solid #C9A227;
+    background: #101B30;
+    text-align: center;
+    color: white;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+    font-family: 'Inter', sans-serif;
+}
+
+.rotate-panel h1 {
+    font-size: 20px;
+    color: #C9A227;
+    margin: 0 0 10px 0;
+    font-family: 'Share Tech Mono', monospace;
+}
+
+.rotate-panel p {
+    font-size: 14px;
+    color: #cbd5e1;
+    margin: 0;
+}
+
+
+
 

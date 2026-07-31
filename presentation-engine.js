@@ -640,6 +640,9 @@ class PresentationEngine {
 
     setupResizeHandler() {
         window.addEventListener("resize", () => {
+            if (window.Omega && window.Omega.OrientationManager) {
+                window.Omega.OrientationManager.detect();
+            }
             const mapInst = window.map || (window.Game && window.Game.Map && window.Game.Map.map);
             if (mapInst && typeof mapInst.invalidateSize === "function") {
                 mapInst.invalidateSize();
