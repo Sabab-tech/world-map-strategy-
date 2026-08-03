@@ -336,7 +336,14 @@ const OMEGA_UI_RET_OBJ = {
  */
     init(runtimeInstance, bridgeInstance, presentationInstance) {
         if (this._initialized) {
-            _log("WARN", "init", "Adapter already initialized. Preventing duplicate processes.");
+            if (presentationInstance && !this.presentation) {
+                this.presentation = presentationInstance;
+                _log("INFO", "init", "Late-bound PresentationEngine connected to OMEGA_UI_ADAPTER.");
+            }
+            if (bridgeInstance && !this.bridge) {
+                this.bridge = bridgeInstance;
+            }
+            _log("WARN", "init", "Adapter already initialized. Updated runtime references.");
             return;
         }
         try {

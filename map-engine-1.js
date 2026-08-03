@@ -245,12 +245,11 @@ var Game = window.Game = {
         // 🏛️ BOTTOM BAR: 17 MINISTRIES BUTTON
         const btnMinistryDock = document.getElementById('btn-ministry-dock');
         if (btnMinistryDock) {
-            btnMinistryDock.addEventListener('click', () => {
-                const activeCountry = Game.currentActiveCountry || 'BANGLADESH';
-                if (window.CountryIOS) {
-                    window.CountryIOS.open(activeCountry, 5); // Chapter 5: 17 Strategic Ministries
-                } else if (window.ResourceMinistryEngine) {
-                    window.ResourceMinistryEngine.renderExecutiveDashboard();
+            btnMinistryDock.addEventListener('click', (e) => {
+                if (typeof window.openMainMinistryView === 'function') {
+                    window.openMainMinistryView(e);
+                } else if (window.OmegaLayerManager) {
+                    window.OmegaLayerManager.setLayer(1);
                 }
             });
         }
@@ -259,13 +258,10 @@ var Game = window.Game = {
         const btnViewMap = document.getElementById('btn-view-map');
         if (btnViewMap) {
             btnViewMap.addEventListener('click', (e) => {
-                if (e) e.stopPropagation();
-                const activeCountry = (Game.currentActiveCountry || 'BANGLADESH').replace(/_/g, " ");
-                self.closeAllDrawers();
-                if (window.CountryIOS) {
-                    window.CountryIOS.open(activeCountry, 1); // Chapter 1: Country Overview / View
-                } else if (Game.Map && typeof Game.Map.toggleCommandHub === 'function') {
-                    Game.Map.toggleCommandHub(true, 1);
+                if (typeof window.openMainMapView === 'function') {
+                    window.openMainMapView(e);
+                } else if (window.OmegaLayerManager) {
+                    window.OmegaLayerManager.setLayer(0);
                 }
             });
         }
@@ -397,9 +393,14 @@ var Game = window.Game = {
 
         const btnCardCab = document.getElementById('btn-card-cabinet');
         if (btnCardCab) {
-            btnCardCab.addEventListener('click', () => {
-                if (window.CountryIOS) window.CountryIOS.open(Game.currentActiveCountry, 2);
-                else self.toggleMainCabinet(true);
+            btnCardCab.addEventListener('click', (e) => {
+                if (typeof window.openMainMinistryView === 'function') {
+                    window.openMainMinistryView(e);
+                } else if (window.OmegaLayerManager) {
+                    window.OmegaLayerManager.setLayer(1);
+                } else {
+                    self.toggleMainCabinet(true);
+                }
             });
         }
         const btnCardDip = document.getElementById('btn-card-diplomacy');
@@ -934,8 +935,13 @@ window.map = L.map('map', {
 window.satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
     attribution: 'Esri World Imagery Satellite',
     maxZoom: 18,
-    opacity: 0.95
+    opacity: 0.95,
+    errorTileUrl: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256"><rect width="256" height="256" fill="%231a2620"/><text x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" fill="%23384e3d" font-family="monospace" font-size="12">SATELLITE TILE</text></svg>'
 }).addTo(window.map);
+
+window.satelliteLayer.on('tileerror', function(e) {
+    console.warn('[Map Engine] Satellite tile load glitch handled gracefully:', e.coords);
+});
 
 window.hubsGroupLayer = L.layerGroup().addTo(window.map);
 

@@ -155,6 +155,11 @@
         </div>
         
         <div id="ui-engine-root">
+            <!-- ⬅️ GLOBAL PERMANENT TACTICAL BACK BUTTON -->
+            <button id="global-back-btn" class="global-back-btn" style="display:none;" onclick="window.closeAnyActiveModal();" title="Return to Previous Screen / Map">
+                <span>⬅️</span> <span>BACK (পিছনে যান)</span>
+            </button>
+
             <!-- 🛰️ TOP STATUS AREA (Unified AAA Top Header) -->
             <div id="top-status-bar" class="top-status-bar" role="banner">
                 <div class="status-group status-left">
@@ -327,6 +332,7 @@
                             <button class="chapter-tab" data-chapter="9"><span>09</span> TECHNOLOGY</button>
                             <button class="chapter-tab" data-chapter="10"><span>10</span> SOCIETY</button>
                             <button class="chapter-tab" data-chapter="11"><span>11</span> OPERATIONS</button>
+                            <button class="chapter-tab" data-chapter="12"><span>12</span> WORLD ECOSYSTEM & CAUSAL</button>
                         </nav>
                         <button id="btn-chapter-next" class="chapter-arrow-btn" title="Next Chapter">▶</button>
                     </div>
@@ -360,6 +366,32 @@
                 </div>
             </div>
 
+            <!-- 🏛️ LAYER 2/3: SELECTED MINISTRY SPECIFIC DEEP DASHBOARD -->
+            <div id="ministry-dashboard-view" class="omega-modal" style="display:none;">
+                <header class="sticky-layer-header">
+                    <div class="sticky-header-left">
+                        <button class="parchment-back-btn" onclick="window.OmegaLayerManager.popLayer();" title="Back to Cabinet (পিছনে যান)">
+                            <span class="back-icon">⬅️</span>
+                            <span>EXIT / BACK (পিছনে যান)</span>
+                        </button>
+                        <div class="breadcrumb-trail">
+                            <span class="crumb">WORLD</span>
+                            <span class="crumb-sep">›</span>
+                            <span class="crumb">GOVERNMENT HQ</span>
+                            <span class="crumb-sep">›</span>
+                            <span class="crumb active" id="dash-crumb-title">MINISTRY DASHBOARD</span>
+                        </div>
+                    </div>
+                    <div class="sticky-header-right">
+                        <div class="layer-status-pill">LAYER 2: <span id="dash-layer-status">MINISTRY CONTROL ROOM</span> ●</div>
+                    </div>
+                </header>
+
+                <div id="ministry-dashboard-content" class="ministry-content-area">
+                    <!-- Dynamically populated by JS based on selected Ministry identity & theme -->
+                </div>
+            </div>
+
             <div id="cabinet-full-window" class="omega-modal" role="dialog" style="inset:0; width:100%; height:100%; transform:none; border-radius:0;">
                 <div class="cabinet-top-header" style="display:flex; justify-content:space-between; align-items:center; padding:12px 20px; background:rgba(0,18,28,0.95); border-bottom:1px solid var(--omega-border); position:relative; z-index:20;">
                     <div style="display:flex; align-items:center; gap:12px;">
@@ -385,8 +417,8 @@
                 <div style="display:flex; flex-direction:column; height:100%; padding:0; background:rgba(2,11,20,0.98); border:1px solid var(--omega-neon); border-radius:12px; overflow:hidden; box-shadow:0 0 35px rgba(0,229,255,0.25);">
                     <header style="display:flex; justify-content:space-between; align-items:center; padding:12px 18px; background:rgba(0,18,28,0.95); border-bottom:1px solid rgba(0,229,255,0.3);">
                         <div style="display:flex; align-items:center; gap:10px;">
-                            <button onclick="document.getElementById('minister-interrogation-modal').style.display='none';" style="background:rgba(0,229,255,0.15); border:1px solid #00e5ff; color:#00e5ff; border-radius:6px; padding:5px 12px; font-weight:bold; cursor:pointer; font-family:var(--font-mono); font-size:12px; display:flex; align-items:center; gap:6px;">
-                                <span>⬅️</span><span>BACK TO CABINET</span>
+                            <button onclick="document.getElementById('minister-interrogation-modal').style.display='none';" style="background:linear-gradient(180deg, rgba(0,229,255,0.25), rgba(0,100,150,0.4)); border:1.5px solid #00e5ff; color:#00e5ff; border-radius:8px; padding:6px 14px; font-weight:bold; cursor:pointer; font-family:var(--font-mono); font-size:12px; display:flex; align-items:center; gap:6px; box-shadow:0 0 10px rgba(0,229,255,0.3);">
+                                <span>⬅️</span><span>BACK TO CABINET (পিছনে যান)</span>
                             </button>
                             <div style="font-family:var(--font-title); color:#00e5ff; font-size:15px; font-weight:bold; display:flex; align-items:center; gap:6px;">
                                 <span>🎙️</span><span id="interrogation-title">MINISTER INTERROGATION & DIALOGUE FRAMEWORK</span>
@@ -498,7 +530,7 @@
                 </div>
 
                 <div class="card-action-bar">
-                    <button class="card-act-btn" id="btn-card-cabinet">🏛 CABINET</button>
+                    <button class="card-act-btn" id="btn-card-cabinet" onclick="window.openMainMinistryView(event);">🏛 CABINET</button>
                     <button class="card-act-btn" id="btn-card-diplomacy">🤝 DIPLOMACY</button>
                     <button class="card-act-btn" id="btn-card-military">🛡 MILITARY</button>
                     <button class="card-act-btn" id="btn-card-economy">💰 ECONOMY</button>
@@ -549,11 +581,11 @@
             </div>
 
             <nav class="ui-bottom-navigation" role="navigation" aria-label="Main Command Navigation">
-                <button id="btn-ministry-dock" class="nav-btn active" title="17 Strategic Resource Ministries Dashboard">
+                <button id="btn-ministry-dock" class="nav-btn active" title="17 Strategic Resource Ministries Dashboard" onclick="window.openMainMinistryView(event);">
                     <span class="nav-icon">🏛️</span>
                     <span class="nav-text">১৭টি মন্ত্রণালয়</span>
                 </button>
-                <button id="btn-view-map" class="nav-btn" title="Toggle Map Layer Spectrum & Camera Focus">
+                <button id="btn-view-map" class="nav-btn" title="Toggle Map Layer Spectrum & Camera Focus" onclick="window.openMainMapView(event);">
                     <span class="nav-icon">👁️</span>
                     <span class="nav-text">ভিউ</span>
                 </button>
@@ -617,7 +649,10 @@
 <script src="ui_engine_core.js" defer></script>
 
 <script src="ministry_engine.js" defer></script>
+<script src="cabinet_engine.js" defer></script>
 <script src="resource_ministry_engine.js" defer></script>
+<script src="world_ecosystem_engine.js" defer></script>
+<script src="display_and_layer_system.js" defer></script>
 
 <script src="game-logic.js" defer></script>
 <script src="country-ios.js" defer></script>
@@ -712,7 +747,7 @@
                         ministryRuntime.init(sharedBridge);
                         window.__LOG_EVENT__("MINISTRY_RUNTIME_INIT_CALLED");
                     }
-                    if (window.OMEGA_UI_ADAPTER && !window.OMEGA_UI_ADAPTER.runtime) {
+                    if (window.OMEGA_UI_ADAPTER) {
                         window.OMEGA_UI_ADAPTER.init(ministryRuntime, sharedBridge, presentation);
                         window.__LOG_EVENT__("UI_ADAPTER_MANUAL_INIT_CALLED");
                     }

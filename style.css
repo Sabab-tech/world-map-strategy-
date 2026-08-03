@@ -2404,13 +2404,16 @@ body.ios-active .ui-right-controls {
     font-family: 'Cinzel', 'Times New Roman', Georgia, serif;
     display: flex;
     flex-direction: column;
-    padding: 14px;
-    max-width: 1080px;
+    padding: 16px;
+    max-width: 1140px;
     width: 96%;
-    max-height: 94vh;
+    max-height: 96vh;
     margin: auto;
     position: relative;
     box-sizing: border-box;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    touch-action: manipulation;
 }
 
 /* TOP PARCHMENT HUD BAR */
@@ -2418,14 +2421,15 @@ body.ios-active .ui-right-controls {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: rgba(220, 208, 185, 0.9);
+    background: rgba(220, 208, 185, 0.95);
     border: 1px solid #b89329;
-    border-radius: 20px;
-    padding: 6px 16px;
+    border-radius: 14px;
+    padding: 8px 16px;
     margin-bottom: 12px;
     box-shadow: inset 0 1px 3px rgba(0,0,0,0.15);
     flex-wrap: wrap;
     gap: 8px;
+    flex-shrink: 0;
 }
 
 .parchment-res-group {
@@ -2454,38 +2458,69 @@ body.ios-active .ui-right-controls {
 .parchment-grid-viewport {
     position: relative;
     width: 100%;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
     overflow: hidden;
-    padding: 8px 0;
+    padding: 4px 0;
+    touch-action: manipulation;
 }
 
 .parchment-grid-slider {
-    display: grid;
-    grid-template-rows: repeat(2, 1fr);
-    grid-auto-flow: column;
-    grid-auto-columns: minmax(170px, 1fr);
+    display: flex;
+    flex-direction: row;
     gap: 14px;
     overflow-x: auto;
+    overflow-y: hidden;
     scroll-behavior: smooth;
-    padding: 8px 4px;
-    touch-action: pan-x;
+    padding: 12px 6px;
+    touch-action: pan-x pan-y;
     -webkit-overflow-scrolling: touch;
+    cursor: grab;
+    user-select: none;
+    max-height: 60vh;
+}
+
+.parchment-grid-slider.mode-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(154px, 1fr));
+    grid-template-rows: auto;
+    grid-auto-flow: row;
+    overflow-x: hidden;
+    overflow-y: auto;
+    max-height: 65vh;
+    min-height: 320px;
+    gap: 14px;
+    padding: 12px 8px;
+    touch-action: pan-y;
+    -webkit-overflow-scrolling: touch;
+    cursor: grab;
+    user-select: none;
+}
+
+.parchment-grid-slider.mode-grid .parchment-card-btn {
+    width: 100%;
 }
 
 .parchment-grid-slider::-webkit-scrollbar {
-    height: 8px;
+    height: 10px;
+    width: 10px;
 }
 .parchment-grid-slider::-webkit-scrollbar-thumb {
-    background: #b89329;
-    border-radius: 4px;
+    background: linear-gradient(180deg, #b89329, #8e6c31);
+    border-radius: 5px;
+    border: 1px solid #5c4315;
 }
 .parchment-grid-slider::-webkit-scrollbar-track {
-    background: rgba(0,0,0,0.08);
+    background: rgba(0,0,0,0.12);
+    border-radius: 5px;
 }
 
-/* PARCHMENT CARD BUTTON (EXACT SCREENSHOT STYLE) */
+/* PARCHMENT CARD BUTTON (SLEEK REDUCED SIZE) */
 .parchment-card-btn {
-    width: 170px;
-    height: 165px;
+    width: 152px;
+    height: 148px;
+    min-height: 148px;
     background: linear-gradient(180deg, #f5ebd9 0%, #e0d4bc 100%);
     border: 2px solid #2d2417;
     border-radius: 8px;
@@ -2604,6 +2639,364 @@ body.ios-active .ui-right-controls {
     color: #1c1308;
 }
 
+/* EMBOSSED 3D PICTURE-STYLE BACK BUTTON */
+.parchment-back-btn {
+    background: linear-gradient(180deg, #f3e6cd 0%, #c8ab71 50%, #8e6c31 100%);
+    border: 2px solid #5c4315;
+    border-radius: 12px;
+    color: #2c1e09;
+    padding: 6px 14px;
+    font-weight: 800;
+    cursor: pointer;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.8), inset 0 -2px 0 rgba(0, 0, 0, 0.2);
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6);
+    transition: all 0.2s ease-in-out;
+    user-select: none;
+    font-family: 'Share Tech Mono', monospace;
+    white-space: nowrap;
+}
+
+.parchment-back-btn:hover {
+    transform: translateY(-2px) scale(1.03);
+    background: linear-gradient(180deg, #fff3dc 0%, #dab87c 50%, #a17c38 100%);
+    box-shadow: 0 6px 16px rgba(184, 147, 75, 0.5), inset 0 1px 0 #ffffff;
+    border-color: #3b2a0c;
+}
+
+.parchment-back-btn:active {
+    transform: translateY(1px) scale(0.98);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.4), inset 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.parchment-back-btn .back-icon {
+    font-size: 14px;
+    display: inline-block;
+    filter: drop-shadow(0 1px 1px rgba(0,0,0,0.3));
+}
+
+/* ============================================================================
+   AAA GOVERNMENT UI NAVIGATION HIERARCHY & LAYER SYSTEM STYLES
+   ============================================================================ */
+
+/* STICKY HEADER SYSTEM (ALWAYS FIXED AT TOP OF ANY OPEN LAYER) */
+.sticky-layer-header {
+    position: sticky;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    background: rgba(8, 14, 24, 0.96);
+    backdrop-filter: blur(14px);
+    border-bottom: 2px solid rgba(0, 229, 255, 0.35);
+    padding: 10px 18px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6);
+    box-sizing: border-box;
+    gap: 12px;
+}
+
+.sticky-header-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+
+.breadcrumb-trail {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+.breadcrumb-trail .crumb { color: #94a3b8; }
+.breadcrumb-trail .crumb-sep { color: #475569; font-weight: bold; }
+.breadcrumb-trail .crumb.active { 
+    color: #00e5ff; 
+    text-shadow: 0 0 10px rgba(0, 229, 255, 0.6); 
+}
+
+.sticky-header-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.layer-status-pill {
+    background: rgba(0, 229, 255, 0.12);
+    border: 1px solid rgba(0, 229, 255, 0.4);
+    color: #00e5ff;
+    padding: 4px 12px;
+    border-radius: 14px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    font-weight: bold;
+    letter-spacing: 0.5px;
+}
+
+/* LAYER STATE OVERLAYS & BLUR EFFECTS */
+body[data-active-layer="0"] #render-engine-root { filter: none; opacity: 1; pointer-events: auto; }
+body[data-active-layer="0"] .ui-top-hud { display: flex; }
+body[data-active-layer="0"] .ui-bottom-navigation { display: flex; }
+
+body[data-active-layer="1"] #render-engine-root,
+body[data-active-layer="2"] #render-engine-root,
+body[data-active-layer="3"] #render-engine-root,
+body[data-active-layer="4"] #render-engine-root,
+body[data-active-layer="5"] #render-engine-root {
+    filter: blur(10px) brightness(0.4);
+    pointer-events: none !origin-pointer-events;
+    transition: filter 0.3s ease, opacity 0.3s ease;
+}
+
+/* MINISTRY SPECIFIC DEEP DASHBOARD (LAYER 2 / 3) */
+#ministry-dashboard-view {
+    position: fixed;
+    top: 0; left: 0; width: 100vw; height: 100vh;
+    z-index: 950;
+    display: none;
+    flex-direction: column;
+    overflow-y: auto;
+    box-sizing: border-box;
+    padding: 0;
+    animation: layerSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ministry-content-area {
+    padding: 20px;
+    box-sizing: border-box;
+    max-width: 1400px;
+    margin: 0 auto;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* RESPONSIVE SAFE AREA GRID */
+.ministry-dept-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.dept-card {
+    background: rgba(15, 23, 42, 0.88);
+    border: 1.5px solid rgba(255, 255, 255, 0.12);
+    border-radius: 12px;
+    padding: 16px;
+    transition: all 0.2s ease-in-out;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.dept-card:hover {
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 0 10px 28px rgba(0, 229, 255, 0.3);
+    border-color: #00e5ff;
+}
+
+.dept-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 8px;
+}
+
+.dept-card-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: #f8fafc;
+    letter-spacing: 0.5px;
+}
+
+.dept-action-btn {
+    padding: 8px 14px;
+    background: linear-gradient(135deg, rgba(0, 229, 255, 0.2), rgba(0, 102, 255, 0.3));
+    border: 1px solid #00e5ff;
+    color: #00e5ff;
+    font-weight: 700;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s ease-in-out;
+    text-align: center;
+}
+
+.dept-action-btn:hover {
+    background: linear-gradient(135deg, rgba(0, 229, 255, 0.4), rgba(0, 102, 255, 0.5));
+    box-shadow: 0 0 12px rgba(0, 229, 255, 0.4);
+}
+
+/* ============================================================================
+   MINISTRY UNIQUE VISUAL THEMES (MINISTRY IDENTITY)
+   ============================================================================ */
+
+/* 🛡️ DEFENSE MINISTRY THEME */
+.theme-defense {
+    background: radial-gradient(circle at 50% 30%, #152232 0%, #060e17 100%) !important;
+    border-color: #f97316 !important;
+}
+.theme-defense .sticky-layer-header {
+    border-bottom-color: #f97316 !important;
+    background: rgba(15, 24, 36, 0.98) !important;
+}
+.theme-defense .dept-card {
+    border-color: rgba(249, 115, 22, 0.3);
+    background: rgba(15, 24, 36, 0.9);
+}
+.theme-defense .dept-card:hover {
+    border-color: #f97316;
+    box-shadow: 0 10px 28px rgba(249, 115, 22, 0.35);
+}
+
+/* 💰 FINANCE & TREASURY THEME */
+.theme-finance {
+    background: radial-gradient(circle at 50% 30%, #261f0d 0%, #0d0a04 100%) !important;
+    border-color: #ffd700 !important;
+}
+.theme-finance .sticky-layer-header {
+    border-bottom-color: #ffd700 !important;
+    background: rgba(26, 21, 9, 0.98) !important;
+}
+.theme-finance .dept-card {
+    border-color: rgba(255, 215, 0, 0.3);
+    background: rgba(26, 21, 9, 0.9);
+}
+.theme-finance .dept-card:hover {
+    border-color: #ffd700;
+    box-shadow: 0 10px 28px rgba(255, 215, 0, 0.35);
+}
+
+/* 🛰️ INTELLIGENCE & CYBER THEME */
+.theme-intelligence {
+    background: radial-gradient(circle at 50% 30%, #032433 0%, #010c14 100%) !important;
+    border-color: #00e5ff !important;
+}
+.theme-intelligence .sticky-layer-header {
+    border-bottom-color: #00e5ff !important;
+    background: rgba(3, 30, 43, 0.98) !important;
+}
+.theme-intelligence .dept-card {
+    border-color: rgba(0, 229, 255, 0.3);
+    background: rgba(3, 30, 43, 0.9);
+}
+.theme-intelligence .dept-card:hover {
+    border-color: #00e5ff;
+    box-shadow: 0 10px 28px rgba(0, 229, 255, 0.4);
+}
+
+/* ⚡ ENERGY & MINING THEME */
+.theme-energy {
+    background: radial-gradient(circle at 50% 30%, #2b2505 0%, #0e0c01 100%) !important;
+    border-color: #eab308 !important;
+}
+.theme-energy .sticky-layer-header {
+    border-bottom-color: #eab308 !important;
+    background: rgba(30, 26, 4, 0.98) !important;
+}
+.theme-energy .dept-card {
+    border-color: rgba(234, 179, 8, 0.3);
+    background: rgba(30, 26, 4, 0.9);
+}
+
+/* 🌾 AGRICULTURE & FOOD THEME */
+.theme-agriculture {
+    background: radial-gradient(circle at 50% 30%, #0b301b 0%, #03140a 100%) !important;
+    border-color: #22c55e !important;
+}
+.theme-agriculture .sticky-layer-header {
+    border-bottom-color: #22c55e !important;
+    background: rgba(11, 38, 22, 0.98) !important;
+}
+.theme-agriculture .dept-card {
+    border-color: rgba(34, 197, 94, 0.3);
+    background: rgba(11, 38, 22, 0.9);
+}
+
+/* 👮 INTERIOR & POLICE SECURITY THEME */
+.theme-interior {
+    background: radial-gradient(circle at 50% 30%, #300d17 0%, #120308 100%) !important;
+    border-color: #ef4444 !important;
+}
+.theme-interior .sticky-layer-header {
+    border-bottom-color: #ef4444 !important;
+    background: rgba(38, 10, 18, 0.98) !important;
+}
+
+/* 🚢 TRADE & TRANSPORT THEME */
+.theme-trade {
+    background: radial-gradient(circle at 50% 30%, #0a2638 0%, #030f18 100%) !important;
+    border-color: #38bdf8 !important;
+}
+.theme-trade .sticky-layer-header {
+    border-bottom-color: #38bdf8 !important;
+    background: rgba(10, 32, 48, 0.98) !important;
+}
+
+/* 🏥 HEALTH & WELFARE THEME */
+.theme-health {
+    background: radial-gradient(circle at 50% 30%, #032b2b 0%, #011212 100%) !important;
+    border-color: #06b6d4 !important;
+}
+
+/* 🏛️ LAWS & FOREIGN AFFAIRS THEME */
+.theme-governance {
+    background: radial-gradient(circle at 50% 30%, #2b1836 0%, #0e0712 100%) !important;
+    border-color: #d946ef !important;
+}
+
+/* KEYFRAME ANIMATIONS FOR THEMATIC EFFECTS */
+@keyframes layerSlideUp {
+    from { transform: translateY(35px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes radarSweep {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+@keyframes scanLine {
+    0% { top: 0%; }
+    100% { top: 100%; }
+}
+
+/* AUTOMATIC LANDSCAPE RESPONSIVE OVERRIDES */
+body.is-landscape #rotate-warning {
+    display: none !important;
+}
+
+body.is-landscape .parchment-cabinet-container {
+    width: 98vw !important;
+    height: 96vh !important;
+    max-width: 1400px;
+    padding: 12px;
+}
+
+body.is-landscape .parchment-grid-slider {
+    grid-template-rows: repeat(2, 1fr);
+    grid-auto-columns: minmax(160px, 1fr);
+    gap: 12px;
+}
+
 /* ROTATION FALLBACK OVERLAY (SPEC SECTION 11) */
 #rotate-warning {
     position: fixed;
@@ -2638,6 +3031,558 @@ body.ios-active .ui-right-controls {
     color: #cbd5e1;
     margin: 0;
 }
+
+/* ============================================================================
+   AAA SCREEN ROOT ISOLATION & STABILIZATION PROTOCOL (v2.0)
+   ============================================================================ */
+#render-engine-root {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    z-index: 1 !important;
+    overflow: hidden !important;
+    transform: none !important;
+}
+
+#world-ui-root {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    z-index: 100 !important;
+    pointer-events: none !important;
+    transform: none !important;
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    transition: filter 0.3s ease, opacity 0.3s ease;
+}
+
+#cabinet-full-window {
+    position: fixed !important;
+    inset: 0 !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    z-index: 1000 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
+    transform: none !important;
+    background: rgba(4, 9, 18, 0.98) !important;
+    backdrop-filter: blur(20px) !important;
+    box-sizing: border-box !important;
+}
+
+#ministry-dashboard-view {
+    position: fixed !important;
+    inset: 0 !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    z-index: 1100 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
+    transform: none !important;
+    background: rgba(3, 8, 16, 0.98) !important;
+    backdrop-filter: blur(20px) !important;
+    box-sizing: border-box !important;
+}
+
+#minister-interrogation-modal {
+    position: fixed !important;
+    inset: 0 !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    z-index: 1200 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
+    transform: none !important;
+    box-sizing: border-box !important;
+}
+
+/* SLIM TOP BAR WITH DYNAMIC INFORMATION SWITCH */
+.slim-top-bar {
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 96%;
+    max-width: 1280px;
+    background: rgba(2, 11, 20, 0.92);
+    border: 1.5px solid rgba(0, 229, 255, 0.35);
+    border-radius: 12px;
+    padding: 6px 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    pointer-events: auto;
+    backdrop-filter: blur(14px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.7);
+    z-index: 101;
+    font-family: 'Share Tech Mono', monospace;
+}
+
+.slim-bar-left, .slim-bar-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.slim-btn {
+    background: rgba(0, 229, 255, 0.12);
+    border: 1px solid rgba(0, 229, 255, 0.3);
+    color: #00e5ff;
+    padding: 6px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.2s ease;
+}
+
+.slim-btn:hover {
+    background: rgba(0, 229, 255, 0.25);
+    box-shadow: 0 0 10px rgba(0, 229, 255, 0.4);
+}
+
+.slim-country-badge {
+    background: rgba(0, 229, 255, 0.08);
+    border: 1px solid rgba(0, 229, 255, 0.25);
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-weight: bold;
+    color: #f8fafc;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.slim-time-controls {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(0, 0, 0, 0.4);
+    padding: 3px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.slim-time-btn {
+    background: none;
+    border: none;
+    color: #94a3b8;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.slim-time-btn.active, .slim-time-btn:hover {
+    background: rgba(0, 229, 255, 0.2);
+    color: #00e5ff;
+    font-weight: bold;
+}
+
+/* DYNAMIC INFORMATION SWITCH SELECTOR */
+.slim-bar-center {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+}
+
+.slim-info-switch-box {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(0, 229, 255, 0.25);
+    border-radius: 10px;
+    padding: 4px 12px;
+    width: 100%;
+    max-width: 720px;
+}
+
+.slim-mode-dropdown {
+    background: rgba(0, 229, 255, 0.15);
+    border: 1px solid #00e5ff;
+    color: #00e5ff;
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: bold;
+    padding: 4px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    outline: none;
+}
+
+.slim-dropdown-mini {
+    background: rgba(255, 215, 0, 0.15);
+    border: 1px solid #ffd700;
+    color: #ffd700;
+    font-family: inherit;
+    font-size: 10px;
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 4px;
+    outline: none;
+}
+
+.slim-info-feed {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    overflow-x: auto;
+    white-space: nowrap;
+    flex: 1;
+    padding: 2px 0;
+}
+
+.slim-stat-item {
+    display: flex;
+    flex-direction: column;
+    font-size: 10px;
+    line-height: 1.2;
+}
+
+.slim-stat-lbl {
+    color: #94a3b8;
+    font-size: 9px;
+    letter-spacing: 0.5px;
+}
+
+.slim-stat-val {
+    font-weight: bold;
+    font-size: 12px;
+}
+
+.slim-stat-val.gold { color: #ffd700; }
+.slim-stat-val.cyan { color: #00e5ff; }
+.slim-stat-val.green { color: #22c55e; }
+.slim-stat-val.red { color: #ef4444; }
+.slim-stat-val.orange { color: #f97316; }
+
+.slim-expand-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #f8fafc;
+    border-radius: 6px;
+    padding: 4px 8px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.slim-expand-btn:hover {
+    background: rgba(0, 229, 255, 0.3);
+    color: #00e5ff;
+}
+
+.slim-detail-overlay {
+    position: fixed;
+    top: 52px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90%;
+    max-width: 680px;
+    z-index: 102;
+    pointer-events: auto;
+    box-shadow: 0 15px 45px rgba(0,0,0,0.9);
+}
+
+/* ADAPTIVE RIGHT SIDEBAR */
+.adaptive-right-sidebar {
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background: rgba(2, 11, 20, 0.9);
+    border: 1.5px solid rgba(0, 229, 255, 0.35);
+    border-radius: 16px;
+    padding: 10px;
+    pointer-events: auto;
+    backdrop-filter: blur(14px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.7);
+    z-index: 101;
+}
+
+.sidebar-icon-btn {
+    width: 52px;
+    height: 52px;
+    border-radius: 12px;
+    border: 1px solid rgba(0, 229, 255, 0.25);
+    background: rgba(0, 229, 255, 0.08);
+    color: #fff;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    transition: all 0.2s ease;
+    font-family: 'Share Tech Mono', monospace;
+}
+
+.sidebar-icon-btn .btn-lbl {
+    font-size: 8px;
+    margin-top: 2px;
+    color: #cbd5e1;
+}
+
+.sidebar-icon-btn:hover {
+    background: rgba(0, 229, 255, 0.25);
+    border-color: #00e5ff;
+    box-shadow: 0 0 12px rgba(0, 229, 255, 0.4);
+}
+
+.sidebar-icon-btn.highlight {
+    background: linear-gradient(135deg, rgba(0, 229, 255, 0.25), rgba(0, 102, 255, 0.3));
+    border-color: #00e5ff;
+}
+
+.sidebar-icon-btn.danger {
+    background: rgba(239, 68, 68, 0.15);
+    border-color: rgba(239, 68, 68, 0.4);
+}
+
+.sidebar-icon-btn.danger:hover {
+    background: rgba(239, 68, 68, 0.3);
+    border-color: #ef4444;
+}
+
+/* UI DIAGNOSTIC HUD BADGE */
+.ui-diagnostic-hud {
+    position: fixed;
+    bottom: 8px;
+    left: 12px;
+    background: rgba(0, 0, 0, 0.85);
+    border: 1px solid rgba(0, 229, 255, 0.3);
+    border-radius: 6px;
+    padding: 3px 8px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    color: #94a3b8;
+    z-index: 9999;
+    pointer-events: none;
+}
+
+/* ============================================================================
+   TARGETED UX FIXES (BLUR REMOVAL, BACK BUTTON, CAROUSEL & COUNTRY MODAL FIT)
+   ============================================================================ */
+
+/* 1. Complete Screen Blur Removal across all Modals & Overlays */
+#command-hub-modal, .omega-modal, #cabinet-full-window, #ministry-dashboard-view, 
+#minister-interrogation-modal, .country-info-card, .city-detail-bar, .top-filter-box, 
+#resource-filter-box, .om-state-header, .ios-card, .ios-advisor-dock, .sticky-layer-header,
+.dark-theme-popup .leaflet-popup-content-wrapper {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    filter: none !important;
+}
+
+body[data-active-layer="1"] #render-engine-root,
+body[data-active-layer="2"] #render-engine-root,
+body[data-active-layer="3"] #render-engine-root,
+body[data-active-layer="4"] #render-engine-root,
+body[data-active-layer="5"] #render-engine-root {
+    filter: none !important;
+    opacity: 1 !important;
+}
+
+#command-hub-modal {
+    background: rgba(4, 12, 24, 0.98) !important;
+    border: 2px solid rgba(0, 229, 255, 0.5) !important;
+    box-shadow: 0 0 35px rgba(0, 0, 0, 0.9) !important;
+    z-index: 100000 !important;
+}
+
+#cabinet-full-window, #ministry-dashboard-view {
+    background: rgba(4, 12, 24, 0.98) !important;
+}
+
+/* 2. Global Permanent Tactical Back Button Styling */
+.global-back-btn, #global-back-btn {
+    position: fixed !important;
+    top: 10px !important;
+    left: 12px !important;
+    z-index: 9999999 !important;
+    background: linear-gradient(135deg, #0f172a, #1e293b) !important;
+    border: 2px solid #00e5ff !important;
+    color: #00e5ff !important;
+    padding: 8px 18px !important;
+    border-radius: 8px !important;
+    font-family: 'Share Tech Mono', monospace !important;
+    font-size: 13px !important;
+    font-weight: 800 !important;
+    cursor: pointer !important;
+    box-shadow: 0 4px 20px rgba(0, 229, 255, 0.5) !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    transition: all 0.2s ease !important;
+    pointer-events: auto !important;
+}
+
+.global-back-btn:hover {
+    background: #00e5ff !important;
+    color: #041322 !important;
+    transform: scale(1.05) !important;
+    box-shadow: 0 0 25px rgba(0, 229, 255, 0.9) !important;
+}
+
+/* 3. Smooth Silky Carousel Scrolling & Dragging Fix */
+.parchment-grid-viewport {
+    position: relative !important;
+    width: 100% !important;
+    overflow: hidden !important;
+    padding: 10px 0 !important;
+}
+
+.parchment-grid-slider {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    gap: 14px !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    scroll-behavior: smooth !important;
+    padding: 12px 6px !important;
+    touch-action: pan-x !important;
+    -webkit-overflow-scrolling: touch !important;
+    user-select: none !important;
+    cursor: grab !important;
+}
+
+.parchment-grid-slider:active {
+    cursor: grabbing !important;
+}
+
+.parchment-grid-slider .parchment-card-btn {
+    flex: 0 0 152px !important;
+    min-width: 152px !important;
+    width: 152px !important;
+    cursor: pointer !important;
+    pointer-events: auto !important;
+    touch-action: manipulation !important;
+    transition: transform 0.15s ease, box-shadow 0.15s ease !important;
+}
+
+.parchment-grid-slider .parchment-card-btn:active {
+    transform: scale(0.95) !important;
+    box-shadow: 0 0 15px rgba(0, 229, 255, 0.6) !important;
+}
+
+.parchment-grid-slider.mode-grid {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)) !important;
+    grid-auto-flow: row !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    max-height: 54vh !important;
+    gap: 12px !important;
+}
+
+.parchment-grid-slider.mode-grid .parchment-card-btn {
+    width: 100% !important;
+    flex: none !important;
+}
+
+/* 4. Country IOS & Modal Scrolling / Movement Fix */
+.ios-content-viewport, .ios-chapter-stage, .ministry-content-area, .cabinet-body {
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    pointer-events: auto !important;
+}
+
+.country-info-card {
+    pointer-events: auto !important;
+    z-index: 99900 !important;
+}
+
+/* 5. Title Bar Constraint & Overflow Prevention */
+.top-status-bar, #top-status-bar {
+    max-width: 100vw !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+    padding: 4px 10px !important;
+    flex-wrap: wrap !important;
+    justify-content: space-between !important;
+    gap: 4px !important;
+}
+
+.status-group {
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+    max-width: 100% !important;
+}
+
+.status-resources {
+    max-width: calc(100vw - 180px) !important;
+    overflow: hidden !important;
+    flex-wrap: nowrap !important;
+}
+
+.res-node {
+    flex-shrink: 1 !important;
+    min-width: 0 !important;
+    white-space: nowrap !important;
+    text-overflow: ellipsis !important;
+    overflow: hidden !important;
+}
+
+.res-val {
+    white-space: nowrap !important;
+}
+
+/* 6. Dropdown Controls Fix */
+select, select#resource-selector, select#relation-selector, select#resource-type-select, .res-filter-controls select {
+    pointer-events: auto !important;
+    z-index: 200000 !important;
+    cursor: pointer !important;
+    position: relative !important;
+    background: #0f172a !important;
+    color: #00e5ff !important;
+    border: 1.5px solid rgba(0, 229, 255, 0.5) !important;
+    border-radius: 6px !important;
+    padding: 6px 12px !important;
+    font-family: 'Share Tech Mono', monospace !important;
+    font-size: 12px !important;
+    font-weight: bold !important;
+    outline: none !important;
+}
+
+/* 7. Bottom Navigation & Ministry Dock Unblock Rules */
+#world-ui-root {
+    pointer-events: auto !important;
+}
+
+.ui-bottom-navigation {
+    pointer-events: auto !important;
+    z-index: 99999 !important;
+}
+
+#btn-ministry-dock, #btn-view-map, #btn-card-cabinet {
+    pointer-events: auto !important;
+    cursor: pointer !important;
+    z-index: 100000 !important;
+    position: relative !important;
+}
+
+#cabinet-full-window {
+    z-index: 999999 !important;
+}
+
+
+
 
 
 

@@ -286,16 +286,24 @@ window.applyRelationsMapFilter = function(focusCountry) {
 
 // ৬. সম্পূর্ণ ক্যাবিনেট হাব কন্ট্রোল লজিক
 window.toggleMainCabinet = function(show) {
-    const cabinet = document.getElementById('cabinet-full-window');
-    if (!cabinet) return;
-    if (show) {
-        const country = (window.CountryIOS && window.CountryIOS.activeCountry) || window.currentActiveCountry || "USA";
-        if (window.OmegaCabinetUI && window.OmegaCabinetUI.renderCabinet) {
-            window.OmegaCabinetUI.renderCabinet(country);
+    if (window.OmegaLayerManager) {
+        if (show) {
+            window.OmegaLayerManager.setLayer(1);
+        } else {
+            window.OmegaLayerManager.setLayer(0);
         }
-        cabinet.style.display = 'flex';
     } else {
-        cabinet.style.display = 'none';
+        const cabinet = document.getElementById('cabinet-full-window');
+        if (!cabinet) return;
+        if (show) {
+            const country = (window.CountryIOS && window.CountryIOS.activeCountry) || window.currentActiveCountry || "USA";
+            if (window.OmegaCabinetUI && window.OmegaCabinetUI.renderCabinet) {
+                window.OmegaCabinetUI.renderCabinet(country);
+            }
+            cabinet.style.display = 'flex';
+        } else {
+            cabinet.style.display = 'none';
+        }
     }
 };
 

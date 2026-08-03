@@ -263,13 +263,262 @@ window.OmegaMinistry = window.OmegaMinistry || {};
  * Matching exact screenshot aesthetics: Parchment, Gold trim, 2-Row Grid,
  * Horizontal Slider/Swipe, 3D/Isometric Icons, and Landscape Auto-Rotate!
  * ============================================================================ */
+/* ============================================================================
+ * AAA GOVERNMENT UI NAVIGATION HIERARCHY & LAYER SYSTEM
+ * LAYER 0: World Map
+ * LAYER 1: Government HQ (17 Strategic Ministries Cabinet)
+ * LAYER 2 / 3: Selected Ministry Specific Deep Dashboard & Control Room
+ * LAYER 4: Department / Directive Action Panel
+ * LAYER 5: Interrogation & Dialogue Modal
+ * ============================================================================ */
+window.OmegaLayerManager = {
+    currentLayer: 0,
+    layerStack: [0],
+    activeMinistryId: null,
+
+    setLayer(layerNum, data = {}) {
+        console.log(`[AAA LAYER ENGINE] Transitioning to Layer ${layerNum}`, data);
+        this.currentLayer = layerNum;
+        if (this.layerStack[this.layerStack.length - 1] !== layerNum) {
+            this.layerStack.push(layerNum);
+        }
+
+        document.body.setAttribute('data-active-layer', String(layerNum));
+
+        // Call PresentationEngine transition log/hook
+        if (window.Omega && window.Omega.App && window.Omega.App.presentation) {
+            try {
+                window.Omega.App.presentation.logInfo(`[AAA LAYER ENGINE] Layer ${layerNum} Active`);
+            } catch(e){}
+        }
+
+        const fullWin = document.getElementById('cabinet-full-window');
+        const dashWin = document.getElementById('ministry-dashboard-view');
+        const interrogModal = document.getElementById('minister-interrogation-modal');
+        const commandHub = document.getElementById('command-hub-modal');
+        const cardInfo = document.getElementById('country-info-card');
+
+        // Always hide overlapping popups to prevent screen blur and dark backdrop accumulation
+        if (commandHub && layerNum > 0) commandHub.style.display = 'none';
+        if (cardInfo && layerNum > 0) cardInfo.style.display = 'none';
+
+        if (layerNum === 0) {
+            if (fullWin) fullWin.style.display = 'none';
+            if (dashWin) dashWin.style.display = 'none';
+            if (interrogModal) interrogModal.style.display = 'none';
+            if (commandHub) commandHub.style.display = 'none';
+            if (cardInfo) cardInfo.style.display = 'none';
+            document.body.classList.remove('modal-open');
+        } else if (layerNum === 1) {
+            if (dashWin) dashWin.style.display = 'none';
+            if (interrogModal) interrogModal.style.display = 'none';
+            if (fullWin) {
+                fullWin.style.display = 'flex';
+                fullWin.style.zIndex = '99999';
+                fullWin.style.background = 'rgba(4, 12, 24, 0.98)';
+                fullWin.style.opacity = '1';
+                fullWin.style.pointerEvents = 'auto';
+            }
+            document.body.classList.add('modal-open');
+            window.OmegaCabinetUI.renderCabinet(window.Game ? window.Game.currentActiveCountry : 'USA');
+        } else if (layerNum === 2 || layerNum === 3) {
+            if (fullWin) fullWin.style.display = 'none';
+            if (interrogModal) interrogModal.style.display = 'none';
+            if (dashWin) {
+                dashWin.style.display = 'flex';
+                dashWin.style.zIndex = '99999';
+                dashWin.style.background = 'rgba(4, 12, 24, 0.98)';
+                dashWin.style.opacity = '1';
+                dashWin.style.pointerEvents = 'auto';
+            }
+            document.body.classList.add('modal-open');
+            if (data.ministryId) {
+                this.activeMinistryId = data.ministryId;
+                window.OmegaCabinetUI.renderMinistryDashboard(data.ministryId);
+            }
+        } else if (layerNum === 5) {
+            if (interrogModal) {
+                interrogModal.style.display = 'flex';
+                interrogModal.style.zIndex = '100000';
+                interrogModal.style.background = 'rgba(4, 12, 24, 0.98)';
+                interrogModal.style.opacity = '1';
+                interrogModal.style.pointerEvents = 'auto';
+            }
+            document.body.classList.add('modal-open');
+            if (data.ministryId) {
+                window.OmegaCabinetUI.openInterrogationModal(data.ministryId);
+            }
+        }
+
+        if (window.updateGlobalBackButtonVisibility) {
+            window.updateGlobalBackButtonVisibility();
+        }
+    },
+
+    popLayer() {
+        if (this.layerStack.length > 1) {
+            this.layerStack.pop();
+            const prev = this.layerStack[this.layerStack.length - 1];
+            this.setLayer(prev);
+        } else {
+            this.setLayer(0);
+        }
+        if (window.updateGlobalBackButtonVisibility) {
+            window.updateGlobalBackButtonVisibility();
+        }
+    }
+};
+
 window.OmegaCabinetUI = {
     activeCountry: "USA",
     currentInterrogatedMinister: null,
     chatHistories: {},
     activeCategoryFilter: "ALL",
+    cabinetViewMode: typeof localStorage !== 'undefined' ? (localStorage.getItem('omega_cabinet_view_mode') || 'carousel') : 'carousel',
+    activeDashboardTab: 'interrogate',
 
-    // 17 Strategic State Ministries with 3D/Isometric Emoji Visuals
+    // Country Intelligence & Specifications Lookup Core (No hardcoded countries)
+    getCountryDetails(countryKey) {
+        const raw = (countryKey || (window.Game && window.Game.currentActiveCountry) || window.currentActiveCountry || "USA").toString().toUpperCase().trim();
+        const norm = raw.replace(/_/g, " ");
+
+        const lookup = {
+            "BANGLADESH": {
+                code: "BD", flag: "🇧🇩", name: "Bangladesh",
+                govtName: "People's Republic of Bangladesh Executive Cabinet",
+                capital: "Dhaka", govtSystem: "Parliamentary Republic",
+                population: "173.0 Million", gdp: "$455.2 Billion",
+                militaryRank: "#37 Worldwide", economicRank: "#33 Worldwide",
+                hdi: "0.661 (Medium)", stability: "88% High",
+                leader: "Executive Prime Minister", currency: "BDT (৳)", language: "Bangla"
+            },
+            "USA": {
+                code: "US", flag: "🇺🇸", name: "United States",
+                govtName: "United States Executive Cabinet",
+                capital: "Washington, D.C.", govtSystem: "Federal Presidential Constitutional Republic",
+                population: "335.0 Million", gdp: "$27.36 Trillion",
+                militaryRank: "#1 Worldwide", economicRank: "#1 Worldwide",
+                hdi: "0.921 (Very High)", stability: "92% High",
+                leader: "President of the United States", currency: "USD ($)", language: "English"
+            },
+            "UNITED STATES": {
+                code: "US", flag: "🇺🇸", name: "United States",
+                govtName: "United States Executive Cabinet",
+                capital: "Washington, D.C.", govtSystem: "Federal Presidential Constitutional Republic",
+                population: "335.0 Million", gdp: "$27.36 Trillion",
+                militaryRank: "#1 Worldwide", economicRank: "#1 Worldwide",
+                hdi: "0.921 (Very High)", stability: "92% High",
+                leader: "President of the United States", currency: "USD ($)", language: "English"
+            },
+            "UNITED STATES OF AMERICA": {
+                code: "US", flag: "🇺🇸", name: "United States",
+                govtName: "United States Executive Cabinet",
+                capital: "Washington, D.C.", govtSystem: "Federal Presidential Constitutional Republic",
+                population: "335.0 Million", gdp: "$27.36 Trillion",
+                militaryRank: "#1 Worldwide", economicRank: "#1 Worldwide",
+                hdi: "0.921 (Very High)", stability: "92% High",
+                leader: "President of the United States", currency: "USD ($)", language: "English"
+            },
+            "JAPAN": {
+                code: "JP", flag: "🇯🇵", name: "Japan",
+                govtName: "Cabinet of Japan",
+                capital: "Tokyo", govtSystem: "Constitutional Monarchy with Parliamentary Government",
+                population: "124.5 Million", gdp: "$4.21 Trillion",
+                militaryRank: "#8 Worldwide", economicRank: "#4 Worldwide",
+                hdi: "0.920 (Very High)", stability: "95% Very High",
+                leader: "Prime Minister of Japan", currency: "JPY (¥)", language: "Japanese"
+            },
+            "BRAZIL": {
+                code: "BR", flag: "🇧🇷", name: "Brazil",
+                govtName: "Federative Republic of Brazil Cabinet",
+                capital: "Brasília", govtSystem: "Federal Presidential Republic",
+                population: "215.3 Million", gdp: "$2.17 Trillion",
+                militaryRank: "#12 Worldwide", economicRank: "#9 Worldwide",
+                hdi: "0.760 (High)", stability: "82% Stable",
+                leader: "President of Brazil", currency: "BRL (R$)", language: "Portuguese"
+            },
+            "TURKEY": {
+                code: "TR", flag: "🇹🇷", name: "Türkiye",
+                govtName: "Presidential Cabinet of Türkiye",
+                capital: "Ankara", govtSystem: "Unitary Presidential Republic",
+                population: "85.3 Million", gdp: "$1.15 Trillion",
+                militaryRank: "#11 Worldwide", economicRank: "#17 Worldwide",
+                hdi: "0.838 (Very High)", stability: "84% Stable",
+                leader: "President of Türkiye", currency: "TRY (₺)", language: "Turkish"
+            },
+            "TURKIYE": {
+                code: "TR", flag: "🇹🇷", name: "Türkiye",
+                govtName: "Presidential Cabinet of Türkiye",
+                capital: "Ankara", govtSystem: "Unitary Presidential Republic",
+                population: "85.3 Million", gdp: "$1.15 Trillion",
+                militaryRank: "#11 Worldwide", economicRank: "#17 Worldwide",
+                hdi: "0.838 (Very High)", stability: "84% Stable",
+                leader: "President of Türkiye", currency: "TRY (₺)", language: "Turkish"
+            },
+            "GERMANY": {
+                code: "DE", flag: "🇩🇪", name: "Germany",
+                govtName: "Cabinet of Germany",
+                capital: "Berlin", govtSystem: "Federal Parliamentary Republic",
+                population: "84.4 Million", gdp: "$4.46 Trillion",
+                militaryRank: "#19 Worldwide", economicRank: "#3 Worldwide",
+                hdi: "0.942 (Very High)", stability: "94% Very High",
+                leader: "Chancellor of Germany", currency: "EUR (€)", language: "German"
+            },
+            "UNITED KINGDOM": {
+                code: "GB", flag: "🇬🇧", name: "United Kingdom",
+                govtName: "His Majesty's Government Cabinet",
+                capital: "London", govtSystem: "Constitutional Monarchy & Parliamentary Democracy",
+                population: "67.7 Million", gdp: "$3.33 Trillion",
+                militaryRank: "#6 Worldwide", economicRank: "#6 Worldwide",
+                hdi: "0.929 (Very High)", stability: "91% High",
+                leader: "Prime Minister", currency: "GBP (£)", language: "English"
+            },
+            "CHINA": {
+                code: "CN", flag: "🇨🇳", name: "China",
+                govtName: "State Council of the People's Republic of China",
+                capital: "Beijing", govtSystem: "Socialist One-Party Republic",
+                population: "1.41 Billion", gdp: "$17.7 Trillion",
+                militaryRank: "#3 Worldwide", economicRank: "#2 Worldwide",
+                hdi: "0.768 (High)", stability: "90% High",
+                leader: "Premier of the State Council", currency: "CNY (¥)", language: "Mandarin Chinese"
+            },
+            "INDIA": {
+                code: "IN", flag: "🇮🇳", name: "India",
+                govtName: "Union Council of Ministers of India",
+                capital: "New Delhi", govtSystem: "Federal Parliamentary Democratic Republic",
+                population: "1.43 Billion", gdp: "$3.73 Trillion",
+                militaryRank: "#4 Worldwide", economicRank: "#5 Worldwide",
+                hdi: "0.633 (Medium)", stability: "86% Stable",
+                leader: "Prime Minister of India", currency: "INR (₹)", language: "Hindi & English"
+            },
+            "RUSSIA": {
+                code: "RU", flag: "🇷🇺", name: "Russia",
+                govtName: "Government of the Russian Federation",
+                capital: "Moscow", govtSystem: "Federal Semi-Presidential Republic",
+                population: "144.4 Million", gdp: "$2.24 Trillion",
+                militaryRank: "#2 Worldwide", economicRank: "#8 Worldwide",
+                hdi: "0.822 (Very High)", stability: "85% Stable",
+                leader: "Chairman of the Government", currency: "RUB (₽)", language: "Russian"
+            }
+        };
+
+        if (lookup[norm]) return lookup[norm];
+        if (lookup[raw]) return lookup[raw];
+
+        // Format generic fallback cleanly
+        const cleanName = norm.toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
+        return {
+            code: raw.substring(0, 2), flag: "🌐", name: cleanName,
+            govtName: `${cleanName} Executive Cabinet`,
+            capital: "State Capital", govtSystem: "Sovereign Republic",
+            population: "50.0 Million", gdp: "$150.0 Billion",
+            militaryRank: "#25 Worldwide", economicRank: "#28 Worldwide",
+            hdi: "0.780 (High)", stability: "85% Stable",
+            leader: "Head of State", currency: "National Currency", language: "Official Language"
+        };
+    },
+
+    // 17 Strategic State Ministries with 3D/Isometric Visual Identities
     ministriesDatabase: {
         trade: {
             id: 'trade',
@@ -279,7 +528,6 @@ window.OmegaCabinetUI = {
             ministerName: 'Hon. Arthur Pendelton',
             avatar: '🪙',
             icon3D: '🪙',
-            lvl: 'LVL 1',
             role: 'Minister of International Trade',
             status: 'ACTIVE',
             efficiency: 92,
@@ -290,7 +538,7 @@ window.OmegaCabinetUI = {
             speechQuote: 'Global trade agreements are yielding strong surplus revenue. Foreign export routes secured.',
             presetQuestions: [
                 { id: 'q1', text: 'How can we expand our export revenues this quarter?', bn: 'এই ত্রৈমাসিকে রপ্তানি আয় বাড়ানোর উপায় কী?' },
-                { id: 'q2', text: 'Are there foreign trade sanctions affecting our ships?', bn: 'বাণিজ্যিক জাহাজে কি কোনো বিদেশী নিষেধাজ্ঞা আছে?' }
+                { id: 'q2', text: 'Are there foreign trade sanctions affecting our ships?', bn: 'বাণিজ্যিক জাহাজে কি কোনো перезаনি নিষেধাজ্ঞা আছে?' }
             ]
         },
         production: {
@@ -301,7 +549,6 @@ window.OmegaCabinetUI = {
             ministerName: 'Eng. Viktor Steel',
             avatar: '⚙️',
             icon3D: '⚙️',
-            lvl: 'LVL 1',
             role: 'Minister of Heavy Production & Industry',
             status: 'OPTIMAL',
             efficiency: 95,
@@ -323,7 +570,6 @@ window.OmegaCabinetUI = {
             ministerName: 'Dr. Evelyn Vance',
             avatar: '📋',
             icon3D: '📋',
-            lvl: 'LVL 1',
             role: 'Commissioner of National Revenue & Tax',
             status: 'STABLE',
             efficiency: 89,
@@ -345,7 +591,6 @@ window.OmegaCabinetUI = {
             ministerName: 'Gov. Sterling Hayes',
             avatar: '🏦',
             icon3D: '🏦',
-            lvl: 'LVL 1',
             role: 'Governor of Central Bank & Treasury',
             status: 'SECURE',
             efficiency: 96,
@@ -367,7 +612,6 @@ window.OmegaCabinetUI = {
             ministerName: 'Justice Victoria Thorne',
             avatar: '⚖️',
             icon3D: '⚖️',
-            lvl: 'LVL 1',
             role: 'Attorney General & Minister of Law',
             status: 'ENFORCED',
             efficiency: 91,
@@ -389,7 +633,6 @@ window.OmegaCabinetUI = {
             ministerName: 'Prof. Alistair Finch',
             avatar: '🎓',
             icon3D: '🎓',
-            lvl: 'LVL 1',
             role: 'Minister of Education & Talent Academy',
             status: 'ADVANCING',
             efficiency: 93,
@@ -411,7 +654,6 @@ window.OmegaCabinetUI = {
             ministerName: 'Eng. Marcus Brody',
             avatar: '✈️',
             icon3D: '✈️',
-            lvl: 'LVL 1',
             role: 'Minister of Infrastructure & Transport',
             status: 'EXPANDING',
             efficiency: 94,
@@ -433,7 +675,6 @@ window.OmegaCabinetUI = {
             ministerName: 'Dr. Aris Thorne',
             avatar: '🔬',
             icon3D: '🔬',
-            lvl: 'LVL 1',
             role: 'Director of Science & Quantum Innovation',
             status: 'BREAKTHROUGH',
             efficiency: 97,
@@ -455,7 +696,6 @@ window.OmegaCabinetUI = {
             ministerName: 'General Marcus Sterling',
             avatar: '🛡️',
             icon3D: '🛡️',
-            lvl: 'LVL 1',
             role: 'Secretary of Defense & Supreme War Command',
             status: 'DEFCON 2',
             efficiency: 98,
@@ -477,7 +717,6 @@ window.OmegaCabinetUI = {
             ministerName: 'Hon. Alexander Vance',
             avatar: '🏛️',
             icon3D: '🏛️',
-            lvl: 'LVL 1',
             role: 'Minister of Diplomatic Missions & Treaties',
             status: 'DIPLOMATIC',
             efficiency: 91,
@@ -499,7 +738,6 @@ window.OmegaCabinetUI = {
             ministerName: 'Eng. Tariq Al-Hassan',
             avatar: '⚡',
             icon3D: '⚡',
-            lvl: 'LVL 1',
             role: 'Minister of Strategic Fuel & Resources',
             status: 'POWERFUL',
             efficiency: 92,
@@ -521,7 +759,6 @@ window.OmegaCabinetUI = {
             ministerName: 'Director Samantha Reed',
             avatar: '🕵️',
             icon3D: '🕵️',
-            lvl: 'LVL 1',
             role: 'Director of Intelligence & Cyber Security',
             status: 'VIGILANT',
             efficiency: 96,
@@ -543,7 +780,6 @@ window.OmegaCabinetUI = {
             ministerName: 'Dr. Gabriel Silva',
             avatar: '🌾',
             icon3D: '🌾',
-            lvl: 'LVL 1',
             role: 'Minister of Agriculture & Food Reserves',
             status: 'ABUNDANT',
             efficiency: 90,
@@ -565,7 +801,6 @@ window.OmegaCabinetUI = {
             ministerName: 'Minister Jonathan Blake',
             avatar: '🚓',
             icon3D: '🚓',
-            lvl: 'LVL 1',
             role: 'Minister of Civil Order & Public Safety',
             status: 'PEACEFUL',
             efficiency: 88,
@@ -587,7 +822,6 @@ window.OmegaCabinetUI = {
             ministerName: 'Dr. Clara Oswald',
             avatar: '🏥',
             icon3D: '🏥',
-            lvl: 'LVL 1',
             role: 'Minister of Healthcare & Emergency Medicine',
             status: 'HEALTHY',
             efficiency: 92,
@@ -609,7 +843,6 @@ window.OmegaCabinetUI = {
             ministerName: 'Dr. Elena Rostova',
             avatar: '💰',
             icon3D: '💰',
-            lvl: 'LVL 1',
             role: 'Minister of Finance & Budget Allocations',
             status: 'BALANCED',
             efficiency: 95,
@@ -631,7 +864,6 @@ window.OmegaCabinetUI = {
             ministerName: 'Eng. Hans Zimmermann',
             avatar: '🏗️',
             icon3D: '🏗️',
-            lvl: 'LVL 1',
             role: 'Chief Engineer of Sovereign Megaprojects',
             status: 'CONSTRUCTING',
             efficiency: 93,
@@ -647,104 +879,597 @@ window.OmegaCabinetUI = {
         }
     },
 
+    setCabinetViewMode(mode) {
+        this.cabinetViewMode = mode;
+        if (typeof localStorage !== 'undefined') {
+            localStorage.setItem('omega_cabinet_view_mode', mode);
+        }
+        this.renderCabinet(this.activeCountry);
+    },
+
+    openCountryInfoDrawer() {
+        const c = this.getCountryDetails(this.activeCountry);
+        let modal = document.getElementById('country-info-modal');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'country-info-modal';
+            modal.className = 'omega-modal';
+            modal.style.cssText = 'display:flex; justify-content:center; align-items:center; z-index:2000;';
+            document.body.appendChild(modal);
+        }
+
+        modal.innerHTML = `
+            <div style="width:90%; max-width:540px; max-height:85vh; overflow-y:auto; -webkit-overflow-scrolling:touch; background:rgba(4,16,28,0.98); border:1.5px solid #00e5ff; border-radius:14px; padding:20px; color:#f8fafc; font-family:'Share Tech Mono',monospace; box-shadow:0 0 35px rgba(0,229,255,0.3);">
+                <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(0,229,255,0.3); padding-bottom:12px; margin-bottom:16px; position:sticky; top:0; background:rgba(4,16,28,0.95); z-index:10;">
+                    <div style="display:flex; align-items:center; gap:10px; font-size:18px; font-weight:bold; color:#00e5ff;">
+                        <span style="font-size:28px;">${c.flag}</span> <span>${c.name.toUpperCase()}</span>
+                    </div>
+                    <button onclick="document.getElementById('country-info-modal').style.display='none';" style="background:rgba(255,68,68,0.25); border:1.5px solid #ef4444; color:#fff; border-radius:6px; padding:6px 14px; font-weight:bold; cursor:pointer; font-size:12px;">✕ CLOSE (বন্ধ করুন)</button>
+                </div>
+
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; font-size:12px; line-height:1.6;">
+                    <div style="background:rgba(255,255,255,0.04); padding:8px 12px; border-radius:8px;">
+                        <span style="color:#94a3b8; font-size:10px;">CAPITAL CITY</span><br/>
+                        <strong style="color:#f8fafc; font-size:13px;">${c.capital}</strong>
+                    </div>
+                    <div style="background:rgba(255,255,255,0.04); padding:8px 12px; border-radius:8px;">
+                        <span style="color:#94a3b8; font-size:10px;">GOVERNMENT SYSTEM</span><br/>
+                        <strong style="color:#00e5ff; font-size:12px;">${c.govtSystem}</strong>
+                    </div>
+                    <div style="background:rgba(255,255,255,0.04); padding:8px 12px; border-radius:8px;">
+                        <span style="color:#94a3b8; font-size:10px;">POPULATION</span><br/>
+                        <strong style="color:#ffd700; font-size:13px;">${c.population}</strong>
+                    </div>
+                    <div style="background:rgba(255,255,255,0.04); padding:8px 12px; border-radius:8px;">
+                        <span style="color:#94a3b8; font-size:10px;">GROSS DOMESTIC PRODUCT</span><br/>
+                        <strong style="color:#22c55e; font-size:13px;">${c.gdp}</strong>
+                    </div>
+                    <div style="background:rgba(255,255,255,0.04); padding:8px 12px; border-radius:8px;">
+                        <span style="color:#94a3b8; font-size:10px;">MILITARY RANK</span><br/>
+                        <strong style="color:#ef4444; font-size:13px;">${c.militaryRank}</strong>
+                    </div>
+                    <div style="background:rgba(255,255,255,0.04); padding:8px 12px; border-radius:8px;">
+                        <span style="color:#94a3b8; font-size:10px;">ECONOMIC RANK</span><br/>
+                        <strong style="color:#00e5ff; font-size:13px;">${c.economicRank}</strong>
+                    </div>
+                    <div style="background:rgba(255,255,255,0.04); padding:8px 12px; border-radius:8px;">
+                        <span style="color:#94a3b8; font-size:10px;">HUMAN DEVELOPMENT (HDI)</span><br/>
+                        <strong style="color:#22c55e; font-size:12px;">${c.hdi}</strong>
+                    </div>
+                    <div style="background:rgba(255,255,255,0.04); padding:8px 12px; border-radius:8px;">
+                        <span style="color:#94a3b8; font-size:10px;">NATIONAL STABILITY</span><br/>
+                        <strong style="color:#22c55e; font-size:12px;">${c.stability}</strong>
+                    </div>
+                    <div style="background:rgba(255,255,255,0.04); padding:8px 12px; border-radius:8px; grid-column:span 2;">
+                        <span style="color:#94a3b8; font-size:10px;">EXECUTIVE LEADER & CURRENCY</span><br/>
+                        <strong style="color:#f8fafc;">${c.leader}</strong> | Currency: <strong style="color:#ffd700;">${c.currency}</strong> | Language: <strong style="color:#00e5ff;">${c.language}</strong>
+                    </div>
+                </div>
+            </div>
+        `;
+        modal.style.display = 'flex';
+    },
+
+    openAuthorityInfoModal() {
+        let modal = document.getElementById('authority-info-modal');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'authority-info-modal';
+            modal.className = 'omega-modal';
+            modal.style.cssText = 'display:flex; justify-content:center; align-items:center; z-index:2000;';
+            document.body.appendChild(modal);
+        }
+
+        modal.innerHTML = `
+            <div style="width:90%; max-width:560px; max-height:85vh; overflow-y:auto; -webkit-overflow-scrolling:touch; background:rgba(4,16,28,0.98); border:1.5px solid #ffd700; border-radius:14px; padding:20px; color:#f8fafc; font-family:'Share Tech Mono',monospace; box-shadow:0 0 35px rgba(255,215,0,0.3);">
+                <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,215,0,0.3); padding-bottom:12px; margin-bottom:14px; position:sticky; top:0; background:rgba(4,16,28,0.95); z-index:10;">
+                    <div style="font-size:16px; font-weight:bold; color:#ffd700; display:flex; align-items:center; gap:8px;">
+                        <span>⭐</span><span>NATIONAL AUTHORITY & LEGITIMACY INDEX</span>
+                    </div>
+                    <button onclick="document.getElementById('authority-info-modal').style.display='none';" style="background:rgba(255,68,68,0.25); border:1.5px solid #ef4444; color:#fff; border-radius:6px; padding:6px 14px; font-weight:bold; cursor:pointer; font-size:12px;">✕ CLOSE (বন্ধ করুন)</button>
+                </div>
+
+                <div style="font-size:12px; color:#cbd5e1; margin-bottom:14px; line-height:1.5;">
+                    National Authority represents sovereign state legitimacy, public trust, and executive control. It is calculated dynamically based on economic growth, stability, and corruption levels.
+                </div>
+
+                <div style="display:flex; flex-direction:column; gap:8px; font-size:11px;">
+                    <div style="background:rgba(34,197,94,0.12); border:1px solid #22c55e; padding:8px 12px; border-radius:8px;">
+                        <strong style="color:#22c55e; font-size:12px;">85 - 100: STRONG NATIONAL SUPPORT</strong><br/>
+                        Full public legitimacy. Zero civil unrest risk, +10% economic efficiency bonus, accelerated legislative decree approvals.
+                    </div>
+                    <div style="background:rgba(0,229,255,0.12); border:1px solid #00e5ff; padding:8px 12px; border-radius:8px;">
+                        <strong style="color:#00e5ff; font-size:12px;">70 - 84: STABLE GOVERNANCE</strong><br/>
+                        Standard operational state. Normal civil satisfaction, steady state treasury flows, predictable foreign relations.
+                    </div>
+                    <div style="background:rgba(249,115,22,0.12); border:1px solid #f97316; padding:8px 12px; border-radius:8px;">
+                        <strong style="color:#f97316; font-size:12px;">50 - 69: WARNING LEVEL</strong><br/>
+                        Protest risk rising. Decreased public trust, mild corruption expansion, slower ministry directive execution times.
+                    </div>
+                    <div style="background:rgba(239,68,68,0.12); border:1px solid #ef4444; padding:8px 12px; border-radius:8px;">
+                        <strong style="color:#ef4444; font-size:12px;">30 - 49: CRITICAL UNREST</strong><br/>
+                        Civil protests nationwide. Corruption spikes across departments, high risk of strike actions and budget leakage.
+                    </div>
+                    <div style="background:rgba(168,85,247,0.12); border:1px solid #a855f7; padding:8px 12px; border-radius:8px;">
+                        <strong style="color:#a855f7; font-size:12px;">0 - 29: NATIONAL CRISIS / COUP RISK</strong><br/>
+                        Extreme civil collapse. High threat of military intervention or regime change event. Emergency state decrees required.
+                    </div>
+                </div>
+            </div>
+        `;
+        modal.style.display = 'flex';
+    },
+
+    mainCabinetView: 'council', // 'council' or 'ministries'
+
+    setCabinetMainView(view) {
+        this.mainCabinetView = view;
+        this.renderCabinet(this.activeCountry);
+    },
+
     renderCabinet(countryKey) {
-        this.activeCountry = (countryKey || window.currentActiveCountry || "USA").toUpperCase();
+        this.activeCountry = (countryKey || (window.Game && window.Game.currentActiveCountry) || window.currentActiveCountry || "USA").toUpperCase();
+        const countryDetails = this.getCountryDetails(this.activeCountry);
 
         const fullWin = document.getElementById('cabinet-full-window');
         if (!fullWin) return;
 
-        // Trigger landscape orientation attempt via OrientationManager
+        // Trigger orientation handling if available
         if (window.Omega && window.Omega.OrientationManager) {
             window.Omega.OrientationManager.initialize().catch(() => {});
-        } else if (window.screen && window.screen.orientation && window.screen.orientation.lock) {
-            window.screen.orientation.lock('landscape').catch(() => {});
         }
 
         const cashVal = window.resources && window.resources.cash !== undefined ? window.resources.cash : 51780572;
-        const formattedCash = window.formatGameNumber ? window.formatGameNumber(cashVal) : '51,780,572';
+        const formattedCash = window.formatGameNumber ? window.formatGameNumber(cashVal) : '$51.78M';
+
+        const isGrid = this.cabinetViewMode === 'grid';
+        const isCouncil = this.mainCabinetView !== 'ministries';
 
         let html = `
             <div class="parchment-cabinet-container">
                 
-                <!-- TOP HUD BAR MATCHING SCREENSHOT -->
+                <!-- TOP HUD BAR WITH STICKY BACK BUTTON & DYNAMIC COUNTRY BINDING -->
                 <div class="parchment-top-hud">
-                    <div style="display:flex; align-items:center; gap:10px;">
-                        <button onclick="window.toggleMainCabinet(false);" style="background:#d8c39a; border:2px solid #8e6c31; color:#2c1e09; padding:5px 12px; border-radius:12px; font-weight:bold; cursor:pointer; font-size:11px; display:flex; align-items:center; gap:6px; box-shadow:0 2px 4px rgba(0,0,0,0.15);" title="Back to Command HQ">
-                            <span>⬅️</span><span>EXIT / BACK (পিছনে যান)</span>
+                    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                        <button class="parchment-back-btn" onclick="window.OmegaLayerManager.popLayer();" title="Back to World Map">
+                            <span class="back-icon">⬅️</span><span>EXIT / BACK (পিছনে যান)</span>
                         </button>
-                        <div style="font-weight:bold; color:#3d2c14; font-size:14px; letter-spacing:1px;">
-                            🏛️ ${this.activeCountry.replace(/_/g, " ")} EXECUTIVE CABINET (মন্ত্রণালয় হাব)
+
+                        <div style="font-weight:bold; color:#2c1e09; font-size:14px; letter-spacing:0.5px; font-family:'Share Tech Mono', monospace; display:flex; align-items:center; gap:8px;">
+                            <span>${countryDetails.flag}</span>
+                            <span>${countryDetails.name.toUpperCase()} EXECUTIVE CABINET</span>
+                            <button onclick="window.OmegaCabinetUI.openCountryInfoDrawer();" style="background:rgba(0,0,0,0.08); border:1px solid #9c7b39; color:#3d2c14; border-radius:50%; width:22px; height:22px; font-size:11px; cursor:pointer; font-weight:bold; display:inline-flex; align-items:center; justify-content:center;" title="View Country Specifications">ⓘ</button>
                         </div>
                     </div>
 
                     <div class="parchment-res-group">
-                        <div class="parchment-res-item">🪙 <span>15,300</span></div>
-                        <div class="parchment-res-item">💎 <span>300</span></div>
-                        <div class="parchment-res-item">💰 <span>${formattedCash}</span></div>
-                        <div class="parchment-res-item">⭐ <span>50</span></div>
-                        <div class="parchment-res-item">🚩 <span>${this.activeCountry}</span></div>
+                        <div class="parchment-res-item" title="State Treasury">💰 <span>${formattedCash}</span></div>
+                        <div class="parchment-res-item" title="National Authority Score (Click info for breakdown)">
+                            ⭐ <span>Authority: 85/100</span>
+                            <button onclick="window.OmegaCabinetUI.openAuthorityInfoModal();" style="background:none; border:none; cursor:pointer; font-size:11px; padding:0; margin-left:2px; color:#5c4315;" title="Authority Breakdown">ⓘ</button>
+                        </div>
+                        ${!isCouncil ? `
+                        <div class="parchment-res-item">
+                            <button onclick="window.OmegaCabinetUI.setCabinetViewMode('${isGrid ? 'carousel' : 'grid'}');" style="background:none; border:none; color:#2c1e09; font-weight:bold; cursor:pointer; font-size:11px; display:flex; align-items:center; gap:4px;" title="Switch View Mode">
+                                <span>${isGrid ? '☰ Carousel View' : '☷ Grid View'}</span>
+                            </button>
+                        </div>
+                        ` : ''}
                     </div>
                 </div>
 
-                <!-- MAIN CAROUSEL SLIDER WITH NAV ARROWS (2-ROW GRID SLIDER) -->
-                <div class="parchment-grid-viewport">
-                    <button class="parchment-nav-arrow left" onclick="document.getElementById('parchment-slider').scrollBy({left: -320, behavior: 'smooth'});">◀</button>
-                    <button class="parchment-nav-arrow right" onclick="document.getElementById('parchment-slider').scrollBy({left: 320, behavior: 'smooth'});">▶</button>
-
-                    <div id="parchment-slider" class="parchment-grid-slider">
+                <!-- MAIN CABINET ARCHITECTURE NAVIGATION TABS -->
+                <div style="display:flex; gap:8px; margin-bottom:12px; border-bottom:2px solid #b89329; padding-bottom:8px; flex-shrink:0;">
+                    <button onclick="window.OmegaCabinetUI.setCabinetMainView('council');" class="parchment-tab-btn ${isCouncil ? 'active' : ''}" style="flex:1; padding:8px 12px; font-size:12px; font-weight:bold; justify-content:center; border-radius:8px;">
+                        🏛️ NATIONAL EXECUTIVE COUNCIL (10 Subsystems)
+                    </button>
+                    <button onclick="window.OmegaCabinetUI.setCabinetMainView('ministries');" class="parchment-tab-btn ${!isCouncil ? 'active' : ''}" style="flex:1; padding:8px 12px; font-size:12px; font-weight:bold; justify-content:center; border-radius:8px;">
+                        🏢 17 STATE MINISTRIES (মন্ত্রণালয়সমূহ)
+                    </button>
+                </div>
         `;
 
-        const minList = Object.values(this.ministriesDatabase).filter(m => {
-            if (this.activeCategoryFilter === "ALL") return true;
-            return m.category === this.activeCategoryFilter;
-        });
+        if (isCouncil) {
+            // Render 10 Cabinet Subsystems view
+            const activeSys = (window.OmegaCabinetEngine && window.OmegaCabinetEngine.activeSubsystem) || 'governance';
+            const sysList = [
+                { id: 'governance', label: '🏛️ Governance', bn: 'শাসনব্যবস্থা' },
+                { id: 'meetings', label: '🤝 Meetings', bn: 'বৈঠক ও ভোট' },
+                { id: 'directives', label: '⚡ Decrees', bn: 'অধ্যাদেশ' },
+                { id: 'coordination', label: '🔄 Synergy', bn: 'সমন্বয়' },
+                { id: 'intelligence', label: '🕵️ Intel', bn: 'গোয়েন্দা' },
+                { id: 'projects', label: '🏗️ Megaprojects', bn: 'মেগা প্রজেক্ট' },
+                { id: 'budget', label: '💰 Budget', bn: 'বাজেট' },
+                { id: 'crisis', label: '🚨 Crisis', bn: 'সংকট' },
+                { id: 'audits', label: '📊 Audits', bn: 'অডিট' },
+                { id: 'strategy', label: '🎯 Strategy', bn: 'ভিশন 2050' }
+            ];
 
-        minList.forEach(m => {
             html += `
-                <div class="parchment-card-btn" onclick="window.OmegaCabinetUI.openInterrogationModal('${m.id}');" title="Interrogate ${m.title}">
-                    <div class="parchment-lvl-banner">${m.lvl}</div>
-                    <div class="parchment-icon-box">${m.icon3D}</div>
-                    <div class="parchment-card-title">${m.title}</div>
-                </div>
+                <div style="display:flex; gap:6px; overflow-x:auto; padding-bottom:10px; margin-bottom:12px; flex-shrink:0; -webkit-overflow-scrolling:touch;">
             `;
-        });
 
-        html += `
+            sysList.forEach(s => {
+                const isActive = activeSys === s.id;
+                html += `
+                    <button onclick="window.OmegaCabinetEngine.setSubsystem('${s.id}'); window.OmegaCabinetUI.renderCabinet('${this.activeCountry}');" 
+                        style="background:${isActive ? '#5c4315' : '#dfd4be'}; color:${isActive ? '#fff' : '#40321c'}; border:1px solid #9c7b39; border-radius:6px; padding:6px 12px; font-size:11px; font-weight:bold; cursor:pointer; white-space:nowrap; transition:all 0.15s ease;">
+                        ${s.label}
+                    </button>
+                `;
+            });
+
+            html += `
+                </div>
+                <div id="cabinet-subsystem-root" style="flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; padding-right:4px;"></div>
+            `;
+        } else {
+            // Render 17 Ministries Grid / Carousel
+            html += `
+                <!-- CATEGORY FILTER TAB BAR -->
+                <div style="display:flex; gap:6px; overflow-x:auto; padding-bottom:8px; margin-bottom:8px; flex-shrink:0;">
+                    <button onclick="window.OmegaCabinetUI.setFilter('ALL');" class="parchment-tab-btn ${this.activeCategoryFilter === 'ALL' ? 'active' : ''}">🌐 All Ministries (17)</button>
+                    <button onclick="window.OmegaCabinetUI.setFilter('economy');" class="parchment-tab-btn ${this.activeCategoryFilter === 'economy' ? 'active' : ''}">💰 Economy & Finance</button>
+                    <button onclick="window.OmegaCabinetUI.setFilter('defense');" class="parchment-tab-btn ${this.activeCategoryFilter === 'defense' ? 'active' : ''}">🛡️ Defense & Cyber</button>
+                    <button onclick="window.OmegaCabinetUI.setFilter('infrastructure');" class="parchment-tab-btn ${this.activeCategoryFilter === 'infrastructure' ? 'active' : ''}">🏗️ Infrastructure</button>
+                    <button onclick="window.OmegaCabinetUI.setFilter('governance');" class="parchment-tab-btn ${this.activeCategoryFilter === 'governance' ? 'active' : ''}">🏛️ Governance & Law</button>
+                    <button onclick="window.OmegaCabinetUI.setFilter('social');" class="parchment-tab-btn ${this.activeCategoryFilter === 'social' ? 'active' : ''}">🏥 Health & Social</button>
+                    <button onclick="window.OmegaCabinetUI.setFilter('agriculture');" class="parchment-tab-btn ${this.activeCategoryFilter === 'agriculture' ? 'active' : ''}">🌾 Energy & Food</button>
+                </div>
+
+                <!-- CAROUSEL OR GRID VIEWPORT -->
+                <div class="parchment-grid-viewport">
+                    ${!isGrid ? `
+                        <button class="parchment-nav-arrow left" onclick="document.getElementById('parchment-slider').scrollBy({left: -320, behavior: 'smooth'});">◀</button>
+                        <button class="parchment-nav-arrow right" onclick="document.getElementById('parchment-slider').scrollBy({left: 320, behavior: 'smooth'});">▶</button>
+                    ` : ''}
+
+                    <div id="parchment-slider" class="parchment-grid-slider ${isGrid ? 'mode-grid' : ''}">
+            `;
+
+            const minList = Object.values(this.ministriesDatabase).filter(m => {
+                if (this.activeCategoryFilter === "ALL") return true;
+                return m.category === this.activeCategoryFilter;
+            });
+
+            minList.forEach(m => {
+                html += `
+                    <div class="parchment-card-btn" data-ministry-id="${m.id}" onclick="window.OmegaLayerManager.setLayer(2, { ministryId: '${m.id}' });" title="Open ${m.title} Control Room">
+                        <div style="font-size:10px; font-weight:800; color:#16a34a; background:rgba(34,197,94,0.15); border:1px solid #22c55e; padding:1px 8px; border-radius:10px;">⚡ ${m.efficiency}% EFF</div>
+                        <div class="parchment-icon-box">${m.icon3D}</div>
+                        <div class="parchment-card-title">${m.title}</div>
+                    </div>
+                `;
+            });
+
+            html += `
                     </div>
                 </div>
+            `;
+        }
 
-                <!-- BOTTOM FILTER CATEGORY TABS -->
-                <div class="parchment-bottom-tabs">
-                    <button class="parchment-tab-btn ${this.activeCategoryFilter==='ALL'?'active':''}" onclick="window.OmegaCabinetUI.setFilter('ALL');">
-                        🌐 ALL MINISTRIES (সবগুলো)
-                    </button>
-                    <button class="parchment-tab-btn ${this.activeCategoryFilter==='economy'?'active':''}" onclick="window.OmegaCabinetUI.setFilter('economy');">
-                        🪙 ECONOMY & TRADE
-                    </button>
-                    <button class="parchment-tab-btn ${this.activeCategoryFilter==='defense'?'active':''}" onclick="window.OmegaCabinetUI.setFilter('defense');">
-                        🛡️ DEFENSE & INTEL
-                    </button>
-                    <button class="parchment-tab-btn ${this.activeCategoryFilter==='governance'?'active':''}" onclick="window.OmegaCabinetUI.setFilter('governance');">
-                        🏛️ LAWS & FOREIGN
-                    </button>
-                    <button class="parchment-tab-btn ${this.activeCategoryFilter==='infrastructure'?'active':''}" onclick="window.OmegaCabinetUI.setFilter('infrastructure');">
-                        🏗️ INFRASTRUCTURE & SCIENCE
-                    </button>
-                    <button class="parchment-tab-btn ${this.activeCategoryFilter==='agriculture'?'active':''}" onclick="window.OmegaCabinetUI.setFilter('agriculture');">
-                        🌾 ENERGY & FOOD
-                    </button>
-                </div>
-
+        html += `
             </div>
         `;
 
         fullWin.innerHTML = html;
         fullWin.style.display = 'flex';
+
+        if (isCouncil && window.OmegaCabinetEngine) {
+            window.OmegaCabinetEngine.renderCabinetSubsystem();
+        } else {
+            this.initViewportScrollHandlers();
+        }
+    },
+
+    initViewportScrollHandlers() {
+        const slider = document.getElementById('parchment-slider');
+        const container = document.querySelector('.parchment-cabinet-container');
+        if (!slider) return;
+
+        let isMouseDown = false;
+        let startX = 0;
+        let startY = 0;
+        let initialScrollLeft = 0;
+        let initialScrollTop = 0;
+        let isDraggedFar = false;
+
+        // Smooth mouse wheel scroll
+        const onWheel = (e) => {
+            if (slider.classList.contains('mode-grid')) {
+                slider.scrollTop += e.deltaY;
+            } else {
+                const delta = Math.abs(e.deltaY) > Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
+                slider.scrollLeft += delta;
+            }
+        };
+        slider.addEventListener('wheel', onWheel, { passive: true });
+
+        // Desktop Drag-to-Scroll engine
+        slider.style.cursor = 'grab';
+
+        const onMouseDown = (e) => {
+            if (e.button !== 0) return; // left click only
+            isMouseDown = true;
+            isDraggedFar = false;
+            startX = e.clientX;
+            startY = e.clientY;
+            initialScrollLeft = slider.scrollLeft;
+            initialScrollTop = slider.scrollTop;
+            slider.style.cursor = 'grabbing';
+        };
+
+        const onMouseMove = (e) => {
+            if (!isMouseDown) return;
+            const deltaX = startX - e.clientX;
+            const deltaY = startY - e.clientY;
+            const dist = Math.hypot(deltaX, deltaY);
+
+            if (dist > 8) {
+                isDraggedFar = true;
+            }
+
+            if (slider.classList.contains('mode-grid')) {
+                slider.scrollTop = initialScrollTop + deltaY;
+            } else {
+                slider.scrollLeft = initialScrollLeft + deltaX;
+            }
+        };
+
+        const onMouseUp = () => {
+            if (isMouseDown) {
+                isMouseDown = false;
+                slider.style.cursor = 'grab';
+            }
+        };
+
+        slider.addEventListener('mousedown', onMouseDown);
+        window.addEventListener('mousemove', onMouseMove);
+        window.addEventListener('mouseup', onMouseUp);
+
+        // Click interceptor: prevent opening cards if user dragged heavily
+        slider.addEventListener('click', (e) => {
+            if (isDraggedFar) {
+                e.preventDefault();
+                e.stopPropagation();
+                isDraggedFar = false;
+                return;
+            }
+            isDraggedFar = false;
+
+            const card = e.target.closest('.parchment-card-btn');
+            if (card && card.dataset.ministryId) {
+                if (window.OmegaLayerManager) {
+                    window.OmegaLayerManager.setLayer(2, { ministryId: card.dataset.ministryId });
+                }
+            }
+        }, true);
     },
 
     setFilter(cat) {
         this.activeCategoryFilter = cat;
         this.renderCabinet(this.activeCountry);
+    },
+
+    setDashboardTab(tab) {
+        this.activeDashboardTab = tab;
+        if (this.currentDashboardMinistryId) {
+            this.renderMinistryDashboard(this.currentDashboardMinistryId);
+        }
+    },
+
+    renderMinistryDashboard(ministryId) {
+        const m = this.ministriesDatabase[ministryId];
+        if (!m) return;
+
+        this.currentDashboardMinistryId = ministryId;
+        const countryDetails = this.getCountryDetails(this.activeCountry);
+
+        const dashWin = document.getElementById('ministry-dashboard-view');
+        const contentArea = document.getElementById('ministry-dashboard-content');
+        const crumbTitle = document.getElementById('dash-crumb-title');
+        const statusPill = document.getElementById('dash-layer-status');
+
+        if (!dashWin || !contentArea) return;
+
+        dashWin.className = "omega-modal"; 
+        let themeClass = "theme-governance";
+        if (m.category === 'defense' || m.id === 'defense') themeClass = "theme-defense";
+        else if (m.category === 'economy' || m.id === 'taxes' || m.id === 'central_bank' || m.id === 'trade' || m.id === 'treasury_finance') themeClass = "theme-finance";
+        else if (m.id === 'intelligence_cyber') themeClass = "theme-intelligence";
+        else if (m.id === 'energy_mining') themeClass = "theme-energy";
+        else if (m.category === 'agriculture' || m.id === 'agriculture_food') themeClass = "theme-agriculture";
+        else if (m.id === 'interior_security') themeClass = "theme-interior";
+        else if (m.id === 'infrastructure' || m.id === 'mega_projects') themeClass = "theme-trade";
+        else if (m.id === 'health_welfare') themeClass = "theme-health";
+
+        dashWin.classList.add(themeClass);
+
+        if (crumbTitle) crumbTitle.innerHTML = `🌍 World / ${countryDetails.flag} Government / ${m.title}`;
+        if (statusPill) statusPill.innerHTML = `${m.title.toUpperCase()} CONTROL ROOM`;
+
+        const activeTab = this.activeDashboardTab || 'interrogate';
+
+        let html = `
+            <!-- 3-TIER TYPOGRAPHY & ELEGANT AAA HERO HEADER -->
+            <div style="background:rgba(2,11,20,0.85); border:1px solid rgba(0,229,255,0.25); border-radius:12px; padding:16px 20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+                <div style="display:flex; align-items:center; gap:16px;">
+                    <button onclick="window.OmegaLayerManager.popLayer();" style="background:linear-gradient(135deg,rgba(15,23,42,0.9),rgba(30,41,59,0.9)); border:1.5px solid #00e5ff; color:#00e5ff; padding:8px 14px; border-radius:8px; font-weight:bold; cursor:pointer; font-family:'Share Tech Mono',monospace; font-size:12px; display:flex; align-items:center; gap:6px; box-shadow:0 0 10px rgba(0,229,255,0.2);">
+                        <span>⬅️</span> <span>BACK (পিছনে যান)</span>
+                    </button>
+                    <div style="font-size:40px; background:rgba(0,229,255,0.08); padding:8px 14px; border-radius:12px; border:1px solid rgba(0,229,255,0.2);">${m.avatar}</div>
+                    <div>
+                        <h1 style="margin:0; font-family:'Inter',sans-serif; font-weight:700; font-size:20px; color:#f8fafc; letter-spacing:0.2px;">${m.title}</h1>
+                        <div style="font-size:12px; font-weight:500; color:#00e5ff; margin-top:2px;">${m.bnTitle}</div>
+                        <div style="font-size:11px; color:#94a3b8; margin-top:3px; line-height:1.4;">
+                            Minister: <strong style="color:#f8fafc;">${m.ministerName}</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
+                    <div style="background:rgba(0,0,0,0.4); padding:8px 14px; border-radius:8px; border:1px solid rgba(255,255,255,0.1); font-family:'Share Tech Mono',monospace; font-size:11px;">
+                        <span style="color:#94a3b8;">EFFICIENCY</span><br/><strong style="color:#22c55e; font-size:14px;">${m.efficiency}%</strong>
+                    </div>
+                    <div style="background:rgba(0,0,0,0.4); padding:8px 14px; border-radius:8px; border:1px solid rgba(255,255,255,0.1); font-family:'Share Tech Mono',monospace; font-size:11px;">
+                        <span style="color:#94a3b8;">ANNUAL BUDGET</span><br/><strong style="color:#ffd700; font-size:14px;">${m.budget}</strong>
+                    </div>
+                    <div style="background:rgba(0,0,0,0.4); padding:8px 14px; border-radius:8px; border:1px solid rgba(255,255,255,0.1); font-family:'Share Tech Mono',monospace; font-size:11px;">
+                        <span style="color:#94a3b8;">STATUS</span><br/><strong style="color:#00e5ff; font-size:14px;">${m.status}</strong>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ACTION BAR (CONTEXT NAVIGATION) -->
+            <div style="display:flex; gap:10px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:10px; flex-wrap:wrap;">
+                <button onclick="window.OmegaCabinetUI.setDashboardTab('interrogate');" style="background:${activeTab==='interrogate'?'linear-gradient(135deg,#00e5ff,#0066ff)':'rgba(255,255,255,0.06)'}; color:${activeTab==='interrogate'?'#000':'#cbd5e1'}; font-weight:bold; padding:8px 16px; border-radius:8px; border:none; cursor:pointer; font-family:'Share Tech Mono',monospace; font-size:12px; display:flex; align-items:center; gap:6px;">
+                    🎙️ Interrogate Minister
+                </button>
+                <button onclick="window.OmegaCabinetUI.setDashboardTab('directives');" style="background:${activeTab==='directives'?'linear-gradient(135deg,#00e5ff,#0066ff)':'rgba(255,255,255,0.06)'}; color:${activeTab==='directives'?'#000':'#cbd5e1'}; font-weight:bold; padding:8px 16px; border-radius:8px; border:none; cursor:pointer; font-family:'Share Tech Mono',monospace; font-size:12px; display:flex; align-items:center; gap:6px;">
+                    ⚙️ Directives & Decrees
+                </button>
+                <button onclick="window.OmegaCabinetUI.setDashboardTab('reports');" style="background:${activeTab==='reports'?'linear-gradient(135deg,#00e5ff,#0066ff)':'rgba(255,255,255,0.06)'}; color:${activeTab==='reports'?'#000':'#cbd5e1'}; font-weight:bold; padding:8px 16px; border-radius:8px; border:none; cursor:pointer; font-family:'Share Tech Mono',monospace; font-size:12px; display:flex; align-items:center; gap:6px;">
+                    📊 Reports & Metrics
+                </button>
+                <button onclick="window.OmegaCabinetUI.setDashboardTab('personnel');" style="background:${activeTab==='personnel'?'linear-gradient(135deg,#00e5ff,#0066ff)':'rgba(255,255,255,0.06)'}; color:${activeTab==='personnel'?'#000':'#cbd5e1'}; font-weight:bold; padding:8px 16px; border-radius:8px; border:none; cursor:pointer; font-family:'Share Tech Mono',monospace; font-size:12px; display:flex; align-items:center; gap:6px;">
+                    📁 Personnel & Audits
+                </button>
+            </div>
+        `;
+
+        if (activeTab === 'interrogate') {
+            html += `
+                <!-- MINISTER SPEECH QUOTE & INTERROGATE TRIGGER -->
+                <div style="background:rgba(0,229,255,0.06); border:1px solid rgba(0,229,255,0.3); border-radius:10px; padding:16px; font-size:13px; color:#e2e8f0; display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;">
+                    <div style="display:flex; align-items:center; gap:12px; flex:1;">
+                        <span style="font-size:24px;">💬</span>
+                        <div style="font-style:italic;">"${m.speechQuote}"</div>
+                    </div>
+                    <button onclick="window.OmegaLayerManager.setLayer(5, { ministryId: '${m.id}' });" style="background:linear-gradient(135deg,#00e5ff,#0066ff); border:none; color:#000; font-weight:800; font-family:'Share Tech Mono',monospace; font-size:12px; padding:10px 18px; border-radius:8px; cursor:pointer; display:flex; align-items:center; gap:8px; box-shadow:0 0 15px rgba(0,229,255,0.4); white-space:nowrap;">
+                        🎙️ OPEN INTERROGATION DIALOGUE
+                    </button>
+                </div>
+            `;
+        }
+
+        if (activeTab === 'directives' || activeTab === 'interrogate') {
+            html += `
+                <!-- STRATEGIC DEPARTMENT DIRECTIVES GRID -->
+                <div>
+                    <div style="font-family:'Inter',sans-serif; font-size:14px; color:#f8fafc; font-weight:700; margin-bottom:12px; display:flex; align-items:center; gap:8px;">
+                        <span>⚡</span><span>Strategic Department Directives & Policy Controls</span>
+                    </div>
+                    <div class="ministry-dept-grid">
+                        <div class="dept-card">
+                            <div class="dept-card-header">
+                                <span class="dept-card-title">Department 01: Infrastructure Upgrade</span>
+                                <span style="font-size:10px; color:#22c55e; font-family:'Share Tech Mono',monospace;">OPTIMAL ●</span>
+                            </div>
+                            <div style="font-size:12px; color:#cbd5e1; flex:1; line-height:1.4;">
+                                Expand physical facilities, automate administrative operations, and increase sector throughput.
+                            </div>
+                            <button class="dept-action-btn" onclick="window.OmegaCabinetUI.executeDeptAction('${m.id}', 'upgrade_capacity');">
+                                🔨 Expand Sector Capacity ($1.2B)
+                            </button>
+                        </div>
+
+                        <div class="dept-card">
+                            <div class="dept-card-header">
+                                <span class="dept-card-title">Department 02: Sovereign Executive Decrees</span>
+                                <span style="font-size:10px; color:#00e5ff; font-family:'Share Tech Mono',monospace;">ACTIVE ●</span>
+                            </div>
+                            <div style="font-size:12px; color:#cbd5e1; flex:1; line-height:1.4;">
+                                Issue sovereign executive decree to increase efficiency and sector output by +12%.
+                            </div>
+                            <button class="dept-action-btn" onclick="window.OmegaCabinetUI.executeDeptAction('${m.id}', 'issue_decree');">
+                                📜 Issue Sovereign Decree
+                            </button>
+                        </div>
+
+                        <div class="dept-card">
+                            <div class="dept-card-header">
+                                <span class="dept-card-title">Department 03: Emergency Budget Allocation</span>
+                                <span style="font-size:10px; color:#ffd700; font-family:'Share Tech Mono',monospace;">BALANCED ●</span>
+                            </div>
+                            <div style="font-size:12px; color:#cbd5e1; flex:1; line-height:1.4;">
+                                Reallocate national treasury reserves into emergency sector subsidies.
+                            </div>
+                            <button class="dept-action-btn" onclick="window.OmegaCabinetUI.executeDeptAction('${m.id}', 'allocate_budget');">
+                                💰 Reallocate Subsidies
+                            </button>
+                        </div>
+
+                        <div class="dept-card">
+                            <div class="dept-card-header">
+                                <span class="dept-card-title">Department 04: Intelligence & Loyalty Audit</span>
+                                <span style="font-size:10px; color:#a855f7; font-family:'Share Tech Mono',monospace;">SECURE ●</span>
+                            </div>
+                            <div style="font-size:12px; color:#cbd5e1; flex:1; line-height:1.4;">
+                                Conduct intelligence audit across ministry staff to prevent corruption and leaks.
+                            </div>
+                            <button class="dept-action-btn" onclick="window.OmegaCabinetUI.executeDeptAction('${m.id}', 'audit_loyalty');">
+                                🔍 Conduct Audit
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        if (activeTab === 'reports') {
+            html += `
+                <div style="background:rgba(2,11,20,0.8); border:1px solid rgba(0,229,255,0.2); border-radius:12px; padding:16px; font-family:'Share Tech Mono',monospace; color:#e2e8f0;">
+                    <div style="color:#00e5ff; font-size:14px; font-weight:bold; margin-bottom:12px;">📊 SOVEREIGN SECTOR PERFORMANCE REPORT</div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; font-size:12px;">
+                        <div style="background:rgba(255,255,255,0.04); padding:10px; border-radius:8px;">Operational Throughput: <strong style="color:#22c55e;">94.2%</strong></div>
+                        <div style="background:rgba(255,255,255,0.04); padding:10px; border-radius:8px;">Fiscal Efficiency Index: <strong style="color:#ffd700;">${m.efficiency}%</strong></div>
+                        <div style="background:rgba(255,255,255,0.04); padding:10px; border-radius:8px;">Staff Quality Rating: <strong style="color:#00e5ff;">Grade A</strong></div>
+                        <div style="background:rgba(255,255,255,0.04); padding:10px; border-radius:8px;">Corruption Index: <strong style="color:#22c55e;">1.2% (Negligible)</strong></div>
+                        <div style="background:rgba(255,255,255,0.04); padding:10px; border-radius:8px;">Public Satisfaction: <strong style="color:#22c55e;">89% Positive</strong></div>
+                        <div style="background:rgba(255,255,255,0.04); padding:10px; border-radius:8px;">Annual Budget Allocation: <strong style="color:#ffd700;">${m.budget}</strong></div>
+                    </div>
+                </div>
+            `;
+        }
+
+        if (activeTab === 'personnel') {
+            html += `
+                <div style="background:rgba(2,11,20,0.8); border:1px solid rgba(0,229,255,0.2); border-radius:12px; padding:16px; font-family:'Share Tech Mono',monospace; color:#e2e8f0;">
+                    <div style="color:#00e5ff; font-size:14px; font-weight:bold; margin-bottom:12px;">📁 MINISTRY EXECUTIVE PERSONNEL & STAFF ROSTER</div>
+                    <div style="display:flex; flex-direction:column; gap:8px; font-size:12px;">
+                        <div style="display:flex; justify-content:space-between; padding:8px; background:rgba(255,255,255,0.04); border-radius:6px;">
+                            <span>${m.ministerName} (${m.role})</span>
+                            <span style="color:#22c55e;">Trust: ${m.trust}/100 | Loyalty: ${m.loyalty}</span>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; padding:8px; background:rgba(255,255,255,0.04); border-radius:6px;">
+                            <span>Chief Operations Director</span>
+                            <span style="color:#00e5ff;">Efficiency: 92% | Verified</span>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; padding:8px; background:rgba(255,255,255,0.04); border-radius:6px;">
+                            <span>Head of Financial Auditing</span>
+                            <span style="color:#ffd700;">Audit Clear | No Leaks</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        contentArea.innerHTML = html;
+    },
+
+    executeDeptAction(ministryId, actionType) {
+        const m = this.ministriesDatabase[ministryId];
+        if (!m) return;
+
+        if (window.Game && window.Game.Map && window.Game.Map.showNotification) {
+            window.Game.Map.showNotification(
+                "DIRECTIVE EXECUTED",
+                `Successfully issued directive [${actionType.toUpperCase()}] for ${m.title}!`,
+                "success"
+            );
+        } else {
+            alert(`Successfully executed directive [${actionType.toUpperCase()}] for ${m.title}!`);
+        }
     },
 
     openInterrogationModal(ministerId) {

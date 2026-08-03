@@ -78,6 +78,9 @@ window.CountryIOS = {
 
         this.updateHeader();
         this.switchChapter(this.activeChapter);
+        if (window.updateGlobalBackButtonVisibility) {
+            window.updateGlobalBackButtonVisibility();
+        }
     },
 
     close() {
@@ -85,6 +88,9 @@ window.CountryIOS = {
         if (modal) modal.style.display = 'none';
 
         document.body.classList.remove('modal-open');
+        if (window.updateGlobalBackButtonVisibility) {
+            window.updateGlobalBackButtonVisibility();
+        }
     },
 
     toggleAdvisor(show) {
@@ -105,13 +111,13 @@ window.CountryIOS = {
 
     prevChapter() {
         let ch = this.activeChapter - 1;
-        if (ch < 1) ch = 11;
+        if (ch < 1) ch = 12;
         this.switchChapter(ch);
     },
 
     nextChapter() {
         let ch = this.activeChapter + 1;
-        if (ch > 11) ch = 1;
+        if (ch > 12) ch = 1;
         this.switchChapter(ch);
     },
 
@@ -197,6 +203,9 @@ window.CountryIOS = {
                 break;
             case 11:
                 stage.innerHTML = this.renderChapter11_Operations(countryKey);
+                break;
+            case 12:
+                stage.innerHTML = this.renderChapter12_WorldEcosystem(countryKey);
                 break;
         }
 
@@ -1081,6 +1090,142 @@ window.CountryIOS = {
         `;
     },
 
+    // -------------------------------------------------------------------------
+    // CHAPTER 12: WORLD ECOSYSTEM & CAUSAL DEPENDENCY ENGINE
+    // -------------------------------------------------------------------------
+    renderChapter12_WorldEcosystem(countryKey) {
+        const profile = window.WorldEcosystemEngine ? window.WorldEcosystemEngine.getCountryProfile(countryKey) : {
+            geography: { isLandlocked: false, borderLengthKm: 4500 },
+            resources: { crude_oil: { importNeed: 120000 }, semiconductors: { importNeed: 2000000 } },
+            population: { total: 330000000, happinessScore: 72 },
+            government: { cabinetStability: 80, corruptionIndex: 25 },
+            aiPersonality: { aggressiveExpansion: 35, riskTolerance: 40, pragmaticRealism: 75, strategicVision: 80 },
+            media: { pressFreedomIndex: 75 },
+            tech: { semiconductorFabDominance: 60, cyberAttackPower: 85 },
+            blocs: ["NATO", "AUKUS"],
+            influenceSphere: "Western / Transatlantic"
+        };
+
+        const logs = window.WorldEcosystemEngine ? window.WorldEcosystemEngine.getCausalEventLog() : [];
+        const countryName = countryKey.replace(/_/g, " ");
+
+        return `
+            <div class="command-tactical-container" style="display:flex; flex-direction:column; gap:16px;">
+                <!-- HEADER BANNER -->
+                <div class="tactical-header-banner" style="background: linear-gradient(135deg, rgba(0,229,255,0.15), rgba(15,23,42,0.9)); border:1px solid var(--omega-neon); padding:16px; border-radius:10px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <div style="font-family:var(--font-title); font-size:18px; color:var(--omega-neon); font-weight:bold;">
+                                🌐 LIVING WORLD STATE ECOSYSTEM & CAUSAL DEPENDENCY ENGINE
+                            </div>
+                            <div style="font-family:var(--font-mono); font-size:12px; color:#cbd5e1; margin-top:4px;">
+                                Sovereign State: <strong style="color:#fff;">${countryName}</strong> | Systemic Interconnected Architecture (15 Active Ecosystem Subsystems)
+                            </div>
+                        </div>
+                        <div style="background:rgba(0,229,255,0.1); border:1px solid #00e5ff; color:#00e5ff; padding:6px 14px; border-radius:8px; font-family:var(--font-mono); font-size:12px; font-weight:bold;">
+                            SYSTEMIC STATUS: ONLINE
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ⚡ LIVE CAUSAL CASCADE CONTROLLER & LOG VISUALIZER -->
+                <div style="background:rgba(2,11,20,0.85); border:1px solid var(--omega-border); border-radius:10px; padding:16px; display:flex; flex-direction:column; gap:12px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(0,229,255,0.2); padding-bottom:10px;">
+                        <div style="font-family:var(--font-title); color:#ffd700; font-size:14px; font-weight:bold; display:flex; align-items:center; gap:8px;">
+                            <span>⚡</span><span>MULTI-STEP CAUSAL CASCADE SIMULATOR (বহু-লেয়ার প্রতিক্রিয়া ইঞ্জিন)</span>
+                        </div>
+                        <span style="font-size:11px; font-family:var(--font-mono); color:#94a3b8;">Trigger real-time downstream feedback loops</span>
+                    </div>
+
+                    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:10px;">
+                        <button onclick="window.WorldEcosystemEngine && window.WorldEcosystemEngine.triggerCausalCascade({ originCountry: '${countryKey}', targetCountry: 'CHN', type: 'TRADE_SANCTION', severity: 1.5 }); window.CountryIOS.switchChapter(12);" style="background:linear-gradient(180deg, rgba(239,68,68,0.25), rgba(153,27,27,0.4)); border:1px solid #ef4444; color:#fca5a5; padding:10px; border-radius:8px; font-family:var(--font-mono); font-size:12px; font-weight:bold; cursor:pointer; text-align:left;">
+                            🛑 High-Tech Semiconductor Embargo
+                        </button>
+                        <button onclick="window.WorldEcosystemEngine && window.WorldEcosystemEngine.triggerCausalCascade({ originCountry: '${countryKey}', targetCountry: 'RUS', type: 'TARIFF_HIKE', severity: 2.0 }); window.CountryIOS.switchChapter(12);" style="background:linear-gradient(180deg, rgba(245,158,11,0.25), rgba(180,83,9,0.4)); border:1px solid #f59e0b; color:#fde68a; padding:10px; border-radius:8px; font-family:var(--font-mono); font-size:12px; font-weight:bold; cursor:pointer; text-align:left;">
+                            🛢️ Crude Oil & Gas Export Sanction
+                        </button>
+                        <button onclick="window.WorldEcosystemEngine && window.WorldEcosystemEngine.triggerCausalCascade({ originCountry: '${countryKey}', targetCountry: 'IRN', type: 'MILITARY_MOBILIZATION', severity: 1.8 }); window.CountryIOS.switchChapter(12);" style="background:linear-gradient(180deg, rgba(16,185,129,0.25), rgba(4,120,87,0.4)); border:1px solid #10b981; color:#a7f3d0; padding:10px; border-radius:8px; font-family:var(--font-mono); font-size:12px; font-weight:bold; cursor:pointer; text-align:left;">
+                            ⚔️ Border Force Mobilization
+                        </button>
+                    </div>
+
+                    <!-- Live Causal Cascade Log -->
+                    <div style="background:rgba(0,0,0,0.6); border:1px solid rgba(0,229,255,0.2); border-radius:8px; padding:12px; max-height:260px; overflow-y:auto; font-family:var(--font-mono); font-size:12px;">
+                        <div style="color:#00e5ff; font-weight:bold; margin-bottom:8px; display:flex; justify-content:space-between;">
+                            <span>📜 LATEST CAUSAL CASCADE REACTION FEED:</span>
+                            <span style="color:#94a3b8; font-size:10px;">Showing real-time feedback steps</span>
+                        </div>
+                        ${logs.length === 0 ? '<div style="color:#64748b;">No recent causal cascade events triggered. Click a trigger button above to initiate a multi-node systemic cascade.</div>' : ''}
+                        ${logs.map(log => `
+                            <div style="border-left:3px solid #00e5ff; padding-left:10px; margin-bottom:12px;">
+                                <div style="color:#ffd700; font-weight:bold; font-size:11px;">
+                                    [${log.timestamp.substring(11,19)}] Event: ${log.eventType} (${log.origin} ➔ ${log.target}) | Severity: ${log.severity}x
+                                </div>
+                                <div style="display:flex; flex-direction:column; gap:4px; margin-top:6px;">
+                                    ${log.steps.map(s => `
+                                        <div style="background:rgba(15,23,42,0.8); padding:6px 10px; border-radius:4px; border:1px solid rgba(255,255,255,0.05); display:flex; justify-content:space-between;">
+                                            <span style="color:#38bdf8;">Step ${s.step} [${s.layer}]: ${s.node}</span>
+                                            <span style="color:#a7f3d0; font-weight:bold;">${s.impact}</span>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+
+                <!-- 🧠 SOVEREIGN AI COGNITIVE PERSONALITY & DEPENDENCY GRAPH -->
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
+                    <!-- AI Cognitive Dimensions -->
+                    <div style="background:rgba(2,11,20,0.85); border:1px solid var(--omega-border); border-radius:10px; padding:16px;">
+                        <div style="font-family:var(--font-title); color:#00e5ff; font-size:13px; font-weight:bold; margin-bottom:12px; display:flex; align-items:center; gap:8px;">
+                            <span>🧠</span><span>SOVEREIGN AI COGNITIVE PERSONALITY (10 DIMENSIONS)</span>
+                        </div>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; font-family:var(--font-mono); font-size:11px;">
+                            <div style="background:rgba(0,0,0,0.4); padding:8px; border-radius:6px; border:1px solid rgba(255,255,255,0.08);">
+                                <span style="color:#94a3b8;">Aggressive Expansion:</span>
+                                <div style="color:#f87171; font-weight:bold; font-size:13px;">${profile.aiPersonality.aggressiveExpansion}/100</div>
+                            </div>
+                            <div style="background:rgba(0,0,0,0.4); padding:8px; border-radius:6px; border:1px solid rgba(255,255,255,0.08);">
+                                <span style="color:#94a3b8;">Risk Tolerance:</span>
+                                <div style="color:#fbbf24; font-weight:bold; font-size:13px;">${profile.aiPersonality.riskTolerance}/100</div>
+                            </div>
+                            <div style="background:rgba(0,0,0,0.4); padding:8px; border-radius:6px; border:1px solid rgba(255,255,255,0.08);">
+                                <span style="color:#94a3b8;">Pragmatic Realism:</span>
+                                <div style="color:#34d399; font-weight:bold; font-size:13px;">${profile.aiPersonality.pragmaticRealism}/100</div>
+                            </div>
+                            <div style="background:rgba(0,0,0,0.4); padding:8px; border-radius:6px; border:1px solid rgba(255,255,255,0.08);">
+                                <span style="color:#94a3b8;">Strategic Vision:</span>
+                                <div style="color:#38bdf8; font-weight:bold; font-size:13px;">${profile.aiPersonality.strategicVision}/100</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Strategic Blocs & Chokepoints -->
+                    <div style="background:rgba(2,11,20,0.85); border:1px solid var(--omega-border); border-radius:10px; padding:16px;">
+                        <div style="font-family:var(--font-title); color:#ffd700; font-size:13px; font-weight:bold; margin-bottom:12px; display:flex; align-items:center; gap:8px;">
+                            <span>🏛️</span><span>ACTIVE ALLIANCE BLOCS & CHOKEPOINT CONTROL</span>
+                        </div>
+                        <div style="font-family:var(--font-mono); font-size:11px; display:flex; flex-direction:column; gap:8px;">
+                            <div style="background:rgba(0,0,0,0.4); padding:8px; border-radius:6px; border:1px solid rgba(255,255,255,0.08);">
+                                <span style="color:#94a3b8;">Active Alliance Blocs:</span>
+                                <div style="color:#00e5ff; font-weight:bold; font-size:12px; margin-top:2px;">
+                                    ${(profile.blocs || []).join(", ") || "Non-Aligned / Independent"}
+                                </div>
+                            </div>
+                            <div style="background:rgba(0,0,0,0.4); padding:8px; border-radius:6px; border:1px solid rgba(255,255,255,0.08);">
+                                <span style="color:#94a3b8;">Influence Sphere:</span>
+                                <div style="color:#a7f3d0; font-weight:bold; font-size:12px; margin-top:2px;">
+                                    ${profile.influenceSphere || "Western / Transatlantic"}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    },
+
     // BIND QUICK ACTION BUTTONS
     bindQuickActions() {
         const btns = document.querySelectorAll('.ios-act-btn:not(.locked)');
@@ -1110,7 +1255,7 @@ window.CountryIOS = {
         const countryName = countryKey.replace(/_/g, " ");
         const chNames = [
             "01 OVERVIEW", "02 GOVERNMENT", "03 MILITARY", "04 ECONOMY", "05 RESOURCES",
-            "06 DIPLOMACY", "07 INTELLIGENCE", "08 INFRASTRUCTURE", "09 TECHNOLOGY", "10 SOCIETY", "11 OPERATIONS"
+            "06 DIPLOMACY", "07 INTELLIGENCE", "08 INFRASTRUCTURE", "09 TECHNOLOGY", "10 SOCIETY", "11 OPERATIONS", "12 WORLD ECOSYSTEM"
         ];
 
         chTag.innerText = chNames[chNum - 1] || "01 OVERVIEW";
@@ -1126,7 +1271,8 @@ window.CountryIOS = {
             8: `<strong>INFRASTRUCTURE ADVICE:</strong> High-speed logistics grid is operating at 92%. Modernizing seaport nodes will further accelerate trade throughput.`,
             9: `<strong>TECHNOLOGY ADVICE:</strong> Quantum compute R&D is advanced. Initiating a Joint R&D Venture will accelerate research progress by +25%.`,
             10: `<strong>SOCIETY ADVICE:</strong> Public morale and happiness are high (78.4). Excellent social stability ensures low civil unrest risk.`,
-            11: `<strong>OPERATIONS ADVICE:</strong> Optimal executive action: Propose Trade Accord or Establish Embassy to solidify strategic dominance.`
+            11: `<strong>OPERATIONS ADVICE:</strong> Optimal executive action: Propose Trade Accord or Establish Embassy to solidify strategic dominance.`,
+            12: `<strong>WORLD ECOSYSTEM ADVICE:</strong> Execute a targeted Causal Cascade or inspect structural Node Dependencies to analyze multi-tier systemic feedback loops.`
         };
 
         text.innerHTML = adviceMap[chNum] || "Select a chapter to generate tactical intelligence.";
