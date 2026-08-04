@@ -1,6 +1,5 @@
 {
   "BANGLADESH": {
-
     "INDIA": {
       "overall": 65,
       "trade": 95,
@@ -13,14 +12,12 @@
       "dependency": 85,
       "border_tension": 60,
       "military_threat": 25,
-
       "trade_agreement": true,
       "defense_pact": false,
       "alliance": false,
       "sanctions": false,
       "embassy_level": 100,
       "war_state": false,
-
       "active_modifiers": [
         {
           "type": "border_pressure",
@@ -29,7 +26,6 @@
         }
       ]
     },
-
     "CHINA": {
       "overall": 78,
       "trade": 92,
@@ -42,23 +38,20 @@
       "dependency": 80,
       "border_tension": 15,
       "military_threat": 20,
-
       "trade_agreement": true,
       "defense_pact": false,
       "alliance": false,
       "sanctions": false,
       "embassy_level": 100,
       "war_state": false,
-
       "active_modifiers": [
         {
           "type": "belt_road_investment",
-          "value": +8,
+          "value": 8,
           "duration": 730
         }
       ]
     },
-
     "USA": {
       "overall": 80,
       "trade": 85,
@@ -71,23 +64,20 @@
       "dependency": 55,
       "border_tension": 0,
       "military_threat": 10,
-
       "trade_agreement": true,
       "defense_pact": false,
       "alliance": false,
       "sanctions": false,
       "embassy_level": 100,
       "war_state": false,
-
       "active_modifiers": [
         {
           "type": "aid_program",
-          "value": +5,
+          "value": 5,
           "duration": 365
         }
       ]
     },
-
     "RUSSIA": {
       "overall": 72,
       "trade": 70,
@@ -100,17 +90,14 @@
       "dependency": 45,
       "border_tension": 5,
       "military_threat": 15,
-
       "trade_agreement": true,
       "defense_pact": false,
       "alliance": false,
       "sanctions": false,
       "embassy_level": 100,
       "war_state": false,
-
       "active_modifiers": []
     },
-
     "JAPAN": {
       "overall": 88,
       "trade": 90,
@@ -123,17 +110,19 @@
       "dependency": 60,
       "border_tension": 0,
       "military_threat": 5,
-
       "trade_agreement": true,
       "defense_pact": false,
       "alliance": false,
       "sanctions": false,
       "embassy_level": 100,
       "war_state": false,
-
       "active_modifiers": [
         {
           "type": "infrastructure_support",
-          "value": +10,
+          "value": 10,
           "duration": 540
-    },
+        }
+      ]
+    }
+  }
+}

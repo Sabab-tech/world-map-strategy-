@@ -518,8 +518,29 @@ window.OmegaCabinetUI = {
         };
     },
 
-    // 17 Strategic State Ministries with 3D/Isometric Visual Identities
+    // 18 Strategic State Ministries with 3D/Isometric Visual Identities
     ministriesDatabase: {
+        cabinet_council: {
+            id: 'cabinet_council',
+            category: 'governance',
+            title: 'Executive Cabinet',
+            bnTitle: 'কেবিনেট (জাতীয় নীতি পর্ষদ)',
+            ministerName: 'Hon. Prime Minister / Chief Executive',
+            avatar: '🏛️',
+            icon3D: '🏛️',
+            role: 'Head of Cabinet & Supreme Executive Council',
+            status: 'SOVEREIGN',
+            efficiency: 99,
+            budget: '$250.0B',
+            loyalty: 'EXTREME',
+            trust: 99,
+            stress: 5,
+            speechQuote: 'Executive Cabinet: The Cabinet directs all state ministries, executive council subsystems, decrees, and strategic policies.',
+            presetQuestions: [
+                { id: 'q1', text: 'Convene emergency Cabinet voting session?', bn: 'জরুরি কেবিনেট ভোট সেশন ডাকবেন?' },
+                { id: 'q2', text: 'Execute sovereign policy alignment across all ministries?', bn: 'সকল মন্ত্রণালয়ে নীতি বাস্তবায়ন করবেন?' }
+            ]
+        },
         trade: {
             id: 'trade',
             category: 'economy',
@@ -904,7 +925,7 @@ window.OmegaCabinetUI = {
                     <div style="display:flex; align-items:center; gap:10px; font-size:18px; font-weight:bold; color:#00e5ff;">
                         <span style="font-size:28px;">${c.flag}</span> <span>${c.name.toUpperCase()}</span>
                     </div>
-                    <button onclick="document.getElementById('country-info-modal').style.display='none';" style="background:rgba(255,68,68,0.25); border:1.5px solid #ef4444; color:#fff; border-radius:6px; padding:6px 14px; font-weight:bold; cursor:pointer; font-size:12px;">✕ CLOSE (বন্ধ করুন)</button>
+                    <button onclick="document.getElementById('country-info-modal').style.display='none';" style="background:rgba(255,68,68,0.25); border:1.5px solid #ef4444; color:#fff; border-radius:6px; padding:6px 14px; font-weight:bold; cursor:pointer; font-size:12px;">✕ CLOSE</button>
                 </div>
 
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; font-size:12px; line-height:1.6;">
@@ -966,7 +987,7 @@ window.OmegaCabinetUI = {
                     <div style="font-size:16px; font-weight:bold; color:#ffd700; display:flex; align-items:center; gap:8px;">
                         <span>⭐</span><span>NATIONAL AUTHORITY & LEGITIMACY INDEX</span>
                     </div>
-                    <button onclick="document.getElementById('authority-info-modal').style.display='none';" style="background:rgba(255,68,68,0.25); border:1.5px solid #ef4444; color:#fff; border-radius:6px; padding:6px 14px; font-weight:bold; cursor:pointer; font-size:12px;">✕ CLOSE (বন্ধ করুন)</button>
+                    <button onclick="document.getElementById('authority-info-modal').style.display='none';" style="background:rgba(255,68,68,0.25); border:1.5px solid #ef4444; color:#fff; border-radius:6px; padding:6px 14px; font-weight:bold; cursor:pointer; font-size:12px;">✕ CLOSE</button>
                 </div>
 
                 <div style="font-size:12px; color:#cbd5e1; margin-bottom:14px; line-height:1.5;">
@@ -1032,7 +1053,7 @@ window.OmegaCabinetUI = {
                 <div class="parchment-top-hud">
                     <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
                         <button class="parchment-back-btn" onclick="window.OmegaLayerManager.popLayer();" title="Back to World Map">
-                            <span class="back-icon">⬅️</span><span>EXIT / BACK (পিছনে যান)</span>
+                            <span class="back-icon">⬅️</span><span>EXIT / BACK</span>
                         </button>
 
                         <div style="font-weight:bold; color:#2c1e09; font-size:14px; letter-spacing:0.5px; font-family:'Share Tech Mono', monospace; display:flex; align-items:center; gap:8px;">
@@ -1064,7 +1085,7 @@ window.OmegaCabinetUI = {
                         🏛️ NATIONAL EXECUTIVE COUNCIL (10 Subsystems)
                     </button>
                     <button onclick="window.OmegaCabinetUI.setCabinetMainView('ministries');" class="parchment-tab-btn ${!isCouncil ? 'active' : ''}" style="flex:1; padding:8px 12px; font-size:12px; font-weight:bold; justify-content:center; border-radius:8px;">
-                        🏢 17 STATE MINISTRIES (মন্ত্রণালয়সমূহ)
+                        🏢 18 STATE MINISTRIES
                     </button>
                 </div>
         `;
@@ -1073,16 +1094,16 @@ window.OmegaCabinetUI = {
             // Render 10 Cabinet Subsystems view
             const activeSys = (window.OmegaCabinetEngine && window.OmegaCabinetEngine.activeSubsystem) || 'governance';
             const sysList = [
-                { id: 'governance', label: '🏛️ Governance', bn: 'শাসনব্যবস্থা' },
-                { id: 'meetings', label: '🤝 Meetings', bn: 'বৈঠক ও ভোট' },
-                { id: 'directives', label: '⚡ Decrees', bn: 'অধ্যাদেশ' },
-                { id: 'coordination', label: '🔄 Synergy', bn: 'সমন্বয়' },
-                { id: 'intelligence', label: '🕵️ Intel', bn: 'গোয়েন্দা' },
-                { id: 'projects', label: '🏗️ Megaprojects', bn: 'মেগা প্রজেক্ট' },
-                { id: 'budget', label: '💰 Budget', bn: 'বাজেট' },
-                { id: 'crisis', label: '🚨 Crisis', bn: 'সংকট' },
-                { id: 'audits', label: '📊 Audits', bn: 'অডিট' },
-                { id: 'strategy', label: '🎯 Strategy', bn: 'ভিশন 2050' }
+                { id: 'governance', label: '🏛️ Governance' },
+                { id: 'meetings', label: '🤝 Meetings & Votes' },
+                { id: 'directives', label: '⚡ Decrees' },
+                { id: 'coordination', label: '🔄 Synergy' },
+                { id: 'intelligence', label: '🕵️ Intel' },
+                { id: 'projects', label: '🏗️ Megaprojects' },
+                { id: 'budget', label: '💰 Budget' },
+                { id: 'crisis', label: '🚨 Crisis' },
+                { id: 'audits', label: '📊 Audits' },
+                { id: 'strategy', label: '🎯 Strategy 2050' }
             ];
 
             html += `
@@ -1104,11 +1125,11 @@ window.OmegaCabinetUI = {
                 <div id="cabinet-subsystem-root" style="flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; padding-right:4px;"></div>
             `;
         } else {
-            // Render 17 Ministries Grid / Carousel
+            // Render 18 Ministries Grid / Carousel
             html += `
                 <!-- CATEGORY FILTER TAB BAR -->
                 <div style="display:flex; gap:6px; overflow-x:auto; padding-bottom:8px; margin-bottom:8px; flex-shrink:0;">
-                    <button onclick="window.OmegaCabinetUI.setFilter('ALL');" class="parchment-tab-btn ${this.activeCategoryFilter === 'ALL' ? 'active' : ''}">🌐 All Ministries (17)</button>
+                    <button onclick="window.OmegaCabinetUI.setFilter('ALL');" class="parchment-tab-btn ${this.activeCategoryFilter === 'ALL' ? 'active' : ''}">🌐 All Ministries (18)</button>
                     <button onclick="window.OmegaCabinetUI.setFilter('economy');" class="parchment-tab-btn ${this.activeCategoryFilter === 'economy' ? 'active' : ''}">💰 Economy & Finance</button>
                     <button onclick="window.OmegaCabinetUI.setFilter('defense');" class="parchment-tab-btn ${this.activeCategoryFilter === 'defense' ? 'active' : ''}">🛡️ Defense & Cyber</button>
                     <button onclick="window.OmegaCabinetUI.setFilter('infrastructure');" class="parchment-tab-btn ${this.activeCategoryFilter === 'infrastructure' ? 'active' : ''}">🏗️ Infrastructure</button>
@@ -1133,9 +1154,11 @@ window.OmegaCabinetUI = {
             });
 
             minList.forEach(m => {
+                const isCab = m.id === 'cabinet_council';
+                const clickFn = isCab ? "window.OmegaCabinetUI.setCabinetMainView('council');" : `window.OmegaLayerManager.setLayer(2, { ministryId: '${m.id}' });`;
                 html += `
-                    <div class="parchment-card-btn" data-ministry-id="${m.id}" onclick="window.OmegaLayerManager.setLayer(2, { ministryId: '${m.id}' });" title="Open ${m.title} Control Room">
-                        <div style="font-size:10px; font-weight:800; color:#16a34a; background:rgba(34,197,94,0.15); border:1px solid #22c55e; padding:1px 8px; border-radius:10px;">⚡ ${m.efficiency}% EFF</div>
+                    <div class="parchment-card-btn" data-ministry-id="${m.id}" onclick="${clickFn}" title="Open ${m.title} Control Room">
+                        <div style="font-size:10px; font-weight:800; color:${isCab ? '#ca8a04' : '#16a34a'}; background:${isCab ? 'rgba(234,179,8,0.2)' : 'rgba(34,197,94,0.15)'}; border:1px solid ${isCab ? '#eab308' : '#22c55e'}; padding:1px 8px; border-radius:10px;">${isCab ? '🏛️ CABINET' : '⚡ ' + m.efficiency + '% EFF'}</div>
                         <div class="parchment-icon-box">${m.icon3D}</div>
                         <div class="parchment-card-title">${m.title}</div>
                     </div>
@@ -1157,93 +1180,112 @@ window.OmegaCabinetUI = {
 
         if (isCouncil && window.OmegaCabinetEngine) {
             window.OmegaCabinetEngine.renderCabinetSubsystem();
-        } else {
-            this.initViewportScrollHandlers();
         }
+        this.initViewportScrollHandlers();
     },
 
     initViewportScrollHandlers() {
         const slider = document.getElementById('parchment-slider');
         const container = document.querySelector('.parchment-cabinet-container');
-        if (!slider) return;
+        const sysRoot = document.getElementById('cabinet-subsystem-root');
+        const fullWin = document.getElementById('cabinet-full-window');
 
-        let isMouseDown = false;
-        let startX = 0;
-        let startY = 0;
-        let initialScrollLeft = 0;
-        let initialScrollTop = 0;
-        let isDraggedFar = false;
+        const attachDragAndTouch = (el, isSlider = false) => {
+            if (!el) return;
 
-        // Smooth mouse wheel scroll
-        const onWheel = (e) => {
-            if (slider.classList.contains('mode-grid')) {
-                slider.scrollTop += e.deltaY;
-            } else {
-                const delta = Math.abs(e.deltaY) > Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
-                slider.scrollLeft += delta;
-            }
-        };
-        slider.addEventListener('wheel', onWheel, { passive: true });
+            let isDown = false;
+            let startX = 0;
+            let startY = 0;
+            let scrollLeft = 0;
+            let scrollTop = 0;
+            let isMovedFar = false;
 
-        // Desktop Drag-to-Scroll engine
-        slider.style.cursor = 'grab';
+            const onStart = (clientX, clientY) => {
+                isDown = true;
+                isMovedFar = false;
+                startX = clientX;
+                startY = clientY;
+                scrollLeft = el.scrollLeft;
+                scrollTop = el.scrollTop;
+                el.style.cursor = 'grabbing';
+            };
 
-        const onMouseDown = (e) => {
-            if (e.button !== 0) return; // left click only
-            isMouseDown = true;
-            isDraggedFar = false;
-            startX = e.clientX;
-            startY = e.clientY;
-            initialScrollLeft = slider.scrollLeft;
-            initialScrollTop = slider.scrollTop;
-            slider.style.cursor = 'grabbing';
-        };
+            const onMove = (clientX, clientY) => {
+                if (!isDown) return;
+                const dx = startX - clientX;
+                const dy = startY - clientY;
 
-        const onMouseMove = (e) => {
-            if (!isMouseDown) return;
-            const deltaX = startX - e.clientX;
-            const deltaY = startY - e.clientY;
-            const dist = Math.hypot(deltaX, deltaY);
-
-            if (dist > 8) {
-                isDraggedFar = true;
-            }
-
-            if (slider.classList.contains('mode-grid')) {
-                slider.scrollTop = initialScrollTop + deltaY;
-            } else {
-                slider.scrollLeft = initialScrollLeft + deltaX;
-            }
-        };
-
-        const onMouseUp = () => {
-            if (isMouseDown) {
-                isMouseDown = false;
-                slider.style.cursor = 'grab';
-            }
-        };
-
-        slider.addEventListener('mousedown', onMouseDown);
-        window.addEventListener('mousemove', onMouseMove);
-        window.addEventListener('mouseup', onMouseUp);
-
-        // Click interceptor: prevent opening cards if user dragged heavily
-        slider.addEventListener('click', (e) => {
-            if (isDraggedFar) {
-                e.preventDefault();
-                e.stopPropagation();
-                isDraggedFar = false;
-                return;
-            }
-            isDraggedFar = false;
-
-            const card = e.target.closest('.parchment-card-btn');
-            if (card && card.dataset.ministryId) {
-                if (window.OmegaLayerManager) {
-                    window.OmegaLayerManager.setLayer(2, { ministryId: card.dataset.ministryId });
+                if (Math.hypot(dx, dy) > 6) {
+                    isMovedFar = true;
                 }
-            }
-        }, true);
+
+                if (isSlider && !el.classList.contains('mode-grid')) {
+                    el.scrollLeft = scrollLeft + dx;
+                } else {
+                    el.scrollTop = scrollTop + dy;
+                    if (el.classList.contains('mode-grid')) {
+                        el.scrollLeft = scrollLeft + dx;
+                    }
+                }
+            };
+
+            const onEnd = () => {
+                if (isDown) {
+                    isDown = false;
+                    el.style.cursor = 'grab';
+                }
+            };
+
+            // Mouse Events
+            el.addEventListener('mousedown', (e) => {
+                if (e.button !== 0) return;
+                onStart(e.clientX, e.clientY);
+            });
+            window.addEventListener('mousemove', (e) => {
+                onMove(e.clientX, e.clientY);
+            });
+            window.addEventListener('mouseup', onEnd);
+
+            // Touch Events (Mobile Dragging Up/Down & Side-to-Side)
+            el.addEventListener('touchstart', (e) => {
+                if (e.touches && e.touches.length === 1) {
+                    onStart(e.touches[0].clientX, e.touches[0].clientY);
+                }
+            }, { passive: true });
+
+            el.addEventListener('touchmove', (e) => {
+                if (isDown && e.touches && e.touches.length === 1) {
+                    onMove(e.touches[0].clientX, e.touches[0].clientY);
+                }
+            }, { passive: true });
+
+            el.addEventListener('touchend', onEnd, { passive: true });
+            el.addEventListener('touchcancel', onEnd, { passive: true });
+
+            // Smooth Wheel Scrolling
+            el.addEventListener('wheel', (e) => {
+                if (isSlider && !el.classList.contains('mode-grid')) {
+                    const delta = Math.abs(e.deltaY) > Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
+                    el.scrollLeft += delta;
+                } else {
+                    el.scrollTop += e.deltaY;
+                }
+            }, { passive: true });
+
+            // Prevent unwanted card click when dragging
+            el.addEventListener('click', (e) => {
+                if (isMovedFar) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    isMovedFar = false;
+                }
+            }, true);
+        };
+
+        if (slider) attachDragAndTouch(slider, true);
+        if (sysRoot) attachDragAndTouch(sysRoot, false);
+        if (container) attachDragAndTouch(container, false);
+        if (fullWin) attachDragAndTouch(fullWin, false);
     },
 
     setFilter(cat) {
@@ -1295,12 +1337,12 @@ window.OmegaCabinetUI = {
             <div style="background:rgba(2,11,20,0.85); border:1px solid rgba(0,229,255,0.25); border-radius:12px; padding:16px 20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
                 <div style="display:flex; align-items:center; gap:16px;">
                     <button onclick="window.OmegaLayerManager.popLayer();" style="background:linear-gradient(135deg,rgba(15,23,42,0.9),rgba(30,41,59,0.9)); border:1.5px solid #00e5ff; color:#00e5ff; padding:8px 14px; border-radius:8px; font-weight:bold; cursor:pointer; font-family:'Share Tech Mono',monospace; font-size:12px; display:flex; align-items:center; gap:6px; box-shadow:0 0 10px rgba(0,229,255,0.2);">
-                        <span>⬅️</span> <span>BACK (পিছনে যান)</span>
+                        <span>⬅️</span> <span>BACK</span>
                     </button>
                     <div style="font-size:40px; background:rgba(0,229,255,0.08); padding:8px 14px; border-radius:12px; border:1px solid rgba(0,229,255,0.2);">${m.avatar}</div>
                     <div>
                         <h1 style="margin:0; font-family:'Inter',sans-serif; font-weight:700; font-size:20px; color:#f8fafc; letter-spacing:0.2px;">${m.title}</h1>
-                        <div style="font-size:12px; font-weight:500; color:#00e5ff; margin-top:2px;">${m.bnTitle}</div>
+                        <div style="font-size:12px; font-weight:500; color:#00e5ff; margin-top:2px;">${m.role}</div>
                         <div style="font-size:11px; color:#94a3b8; margin-top:3px; line-height:1.4;">
                             Minister: <strong style="color:#f8fafc;">${m.ministerName}</strong>
                         </div>
@@ -1494,7 +1536,7 @@ window.OmegaCabinetUI = {
         if (title) title.innerText = `${m.title.toUpperCase()} - MINISTER INTERROGATION HUB`;
         if (avatar) avatar.innerText = m.avatar;
         if (name) name.innerText = m.ministerName;
-        if (role) role.innerText = `${m.role} (${m.bnTitle})`;
+        if (role) role.innerText = m.role;
         if (trust) trust.innerText = `${m.trust}/100`;
         if (reliability) reliability.innerText = `${m.efficiency}%`;
         if (loyalty) loyalty.innerText = m.loyalty;

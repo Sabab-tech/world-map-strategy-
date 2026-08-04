@@ -156,8 +156,8 @@
         
         <div id="ui-engine-root">
             <!-- ⬅️ GLOBAL PERMANENT TACTICAL BACK BUTTON -->
-            <button id="global-back-btn" class="global-back-btn" style="display:none;" onclick="window.closeAnyActiveModal();" title="Return to Previous Screen / Map">
-                <span>⬅️</span> <span>BACK (পিছনে যান)</span>
+            <button id="global-back-btn" class="global-back-btn" style="display:none;" onclick="window.OmegaLayerManager ? window.OmegaLayerManager.popLayer() : window.closeAnyActiveModal();" title="Return to Previous Screen / Map">
+                <span>⬅️</span> <span>BACK</span>
             </button>
 
             <!-- 🛰️ TOP STATUS AREA (Unified AAA Top Header) -->
@@ -370,9 +370,9 @@
             <div id="ministry-dashboard-view" class="omega-modal" style="display:none;">
                 <header class="sticky-layer-header">
                     <div class="sticky-header-left">
-                        <button class="parchment-back-btn" onclick="window.OmegaLayerManager.popLayer();" title="Back to Cabinet (পিছনে যান)">
+                        <button class="parchment-back-btn" onclick="window.OmegaLayerManager.popLayer();" title="Back to Cabinet">
                             <span class="back-icon">⬅️</span>
-                            <span>EXIT / BACK (পিছনে যান)</span>
+                            <span>EXIT / BACK</span>
                         </button>
                         <div class="breadcrumb-trail">
                             <span class="crumb">WORLD</span>
@@ -395,7 +395,7 @@
             <div id="cabinet-full-window" class="omega-modal" role="dialog" style="inset:0; width:100%; height:100%; transform:none; border-radius:0;">
                 <div class="cabinet-top-header" style="display:flex; justify-content:space-between; align-items:center; padding:12px 20px; background:rgba(0,18,28,0.95); border-bottom:1px solid var(--omega-border); position:relative; z-index:20;">
                     <div style="display:flex; align-items:center; gap:12px;">
-                        <button id="btn-back-cabinet" class="omega-back-btn" onclick="window.toggleMainCabinet(false);" style="background:rgba(0,229,255,0.15); border:1px solid var(--omega-neon); color:#00e5ff; border-radius:6px; padding:6px 14px; font-weight:bold; cursor:pointer; font-family:var(--font-mono); font-size:13px; display:flex; align-items:center; gap:6px;" title="Back to Command HQ">
+                        <button id="btn-back-cabinet" class="omega-back-btn" onclick="window.OmegaLayerManager.popLayer();" style="background:rgba(0,229,255,0.15); border:1px solid var(--omega-neon); color:#00e5ff; border-radius:6px; padding:6px 14px; font-weight:bold; cursor:pointer; font-family:var(--font-mono); font-size:13px; display:flex; align-items:center; gap:6px;" title="Back to Command HQ">
                             <span>⬅️</span><span>BACK TO HQ</span>
                         </button>
                         <div style="font-family:var(--font-title); font-size:15px; color:var(--omega-neon); display:flex; align-items:center; gap:8px;">
@@ -404,12 +404,12 @@
                     </div>
                     <div style="display:flex; align-items:center; gap:12px;">
                         <span id="cabinet-country-badge" style="background:rgba(0,229,255,0.1); border:1px solid #00e5ff; color:#00e5ff; padding:4px 10px; border-radius:12px; font-family:var(--font-mono); font-size:11px; font-weight:bold;">USA STATE COUNCIL</span>
-                        <button id="btn-close-cabinet" class="omega-close-btn" onclick="window.toggleMainCabinet(false);" style="background:rgba(255,68,68,0.25); border:1px solid var(--omega-danger); color:#fff; border-radius:6px; padding:6px 16px; font-weight:bold; cursor:pointer; font-family:var(--font-mono); font-size:13px; display:flex; align-items:center; gap:6px;">
+                        <button id="btn-close-cabinet" class="omega-close-btn" onclick="window.OmegaLayerManager.setLayer(0);" style="background:rgba(255,68,68,0.25); border:1px solid var(--omega-danger); color:#fff; border-radius:6px; padding:6px 16px; font-weight:bold; cursor:pointer; font-family:var(--font-mono); font-size:13px; display:flex; align-items:center; gap:6px;">
                             <span>✕</span><span>EXIT CABINET</span>
                         </button>
                     </div>
                 </div>
-                <div class="cabinet-body" id="cabinet-body" style="padding:20px; overflow-y:auto; height:calc(100% - 55px);"></div>
+                <div class="cabinet-body" id="cabinet-body" style="padding:16px 12px; overflow-y:auto; -webkit-overflow-scrolling:touch; touch-action:pan-y; height:calc(100% - 55px); box-sizing:border-box;"></div>
             </div>
 
             <!-- 🎙️ MINISTER INTERROGATION & DIALOGUE MODAL -->
@@ -417,14 +417,14 @@
                 <div style="display:flex; flex-direction:column; height:100%; padding:0; background:rgba(2,11,20,0.98); border:1px solid var(--omega-neon); border-radius:12px; overflow:hidden; box-shadow:0 0 35px rgba(0,229,255,0.25);">
                     <header style="display:flex; justify-content:space-between; align-items:center; padding:12px 18px; background:rgba(0,18,28,0.95); border-bottom:1px solid rgba(0,229,255,0.3);">
                         <div style="display:flex; align-items:center; gap:10px;">
-                            <button onclick="document.getElementById('minister-interrogation-modal').style.display='none';" style="background:linear-gradient(180deg, rgba(0,229,255,0.25), rgba(0,100,150,0.4)); border:1.5px solid #00e5ff; color:#00e5ff; border-radius:8px; padding:6px 14px; font-weight:bold; cursor:pointer; font-family:var(--font-mono); font-size:12px; display:flex; align-items:center; gap:6px; box-shadow:0 0 10px rgba(0,229,255,0.3);">
-                                <span>⬅️</span><span>BACK TO CABINET (পিছনে যান)</span>
+                            <button onclick="window.OmegaLayerManager.popLayer();" style="background:linear-gradient(180deg, rgba(0,229,255,0.25), rgba(0,100,150,0.4)); border:1.5px solid #00e5ff; color:#00e5ff; border-radius:8px; padding:6px 14px; font-weight:bold; cursor:pointer; font-family:var(--font-mono); font-size:12px; display:flex; align-items:center; gap:6px; box-shadow:0 0 10px rgba(0,229,255,0.3);">
+                                <span>⬅️</span><span>BACK TO CABINET</span>
                             </button>
                             <div style="font-family:var(--font-title); color:#00e5ff; font-size:15px; font-weight:bold; display:flex; align-items:center; gap:6px;">
                                 <span>🎙️</span><span id="interrogation-title">MINISTER INTERROGATION & DIALOGUE FRAMEWORK</span>
                             </div>
                         </div>
-                        <button onclick="document.getElementById('minister-interrogation-modal').style.display='none';" style="background:rgba(255,68,68,0.25); border:1px solid #ef4444; color:#fff; border-radius:6px; padding:5px 12px; font-weight:bold; cursor:pointer; font-family:var(--font-mono); font-size:12px;">
+                        <button onclick="window.OmegaLayerManager.popLayer();" style="background:rgba(255,68,68,0.25); border:1px solid #ef4444; color:#fff; border-radius:6px; padding:5px 12px; font-weight:bold; cursor:pointer; font-family:var(--font-mono); font-size:12px;">
                             ✕ CLOSE
                         </button>
                     </header>
@@ -474,7 +474,7 @@
                             <!-- Internal Speech & Thought Display Box -->
                             <div style="background:rgba(15,23,42,0.9); border:1px solid rgba(0,229,255,0.3); border-radius:8px; padding:12px; display:flex; flex-direction:column; gap:8px;">
                                 <div style="font-size:11px; font-weight:bold; color:#ffd700; font-family:var(--font-mono); display:flex; justify-content:space-between; align-items:center;">
-                                    <span>💬 MINISTER's LIVE SPEECH & POLICY THOUGHTS (মন্ত্রীর নিজস্ব বক্তব্য ও চিন্তাভাবনা)</span>
+                                    <span>💬 MINISTER'S LIVE SPEECH & POLICY THOUGHTS</span>
                                     <span style="font-size:9px; background:rgba(0,229,255,0.2); color:#00e5ff; padding:2px 6px; border-radius:4px;">NLG ENGINE v3</span>
                                 </div>
                                 <div id="interrogation-thought-box" style="font-size:12px; color:#f8fafc; font-family:var(--font-mono); background:rgba(0,0,0,0.5); padding:10px; border-radius:6px; line-height:1.5; border-left:3px solid #00e5ff; max-height:110px; overflow-y:auto;">
@@ -489,7 +489,7 @@
 
                             <!-- Quick Strategic Question Triggers -->
                             <div>
-                                <div style="font-size:11px; font-weight:bold; color:#94a3b8; font-family:var(--font-mono); margin-bottom:6px;">⚡ PRESET STRATEGIC QUESTIONS (মন্ত্রীকে সরাসরি প্রশ্ন করুন):</div>
+                                <div style="font-size:11px; font-weight:bold; color:#94a3b8; font-family:var(--font-mono); margin-bottom:6px;">⚡ PRESET STRATEGIC QUESTIONS (INTERROGATE MINISTER):</div>
                                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;" id="interrogation-quick-questions">
                                     <!-- Injected dynamically by JS -->
                                 </div>
@@ -510,7 +510,7 @@
             <!-- 🗺️ COUNTRY INFO CARD (Height: 140px - Appears above navigation) -->
             <div id="country-info-card" class="country-info-card" role="region" aria-label="Country Strategic Data">
                 <button id="btn-close-card-top" class="card-top-close-btn" onclick="if(window.Game && window.Game.closeCountryInfoCard) window.Game.closeCountryInfoCard();" title="Close Country Card">
-                    ✕ বন্ধ করুন
+                    ✕ CLOSE
                 </button>
                 <div class="card-left">
                     <div class="country-flag-badge" id="card-country-flag">🌐</div>
@@ -535,7 +535,7 @@
                     <button class="card-act-btn" id="btn-card-military">🛡 MILITARY</button>
                     <button class="card-act-btn" id="btn-card-economy">💰 ECONOMY</button>
                     <button class="card-act-btn" id="btn-card-intel">🛰 INTEL</button>
-                    <button id="btn-close-card" class="card-close-btn" onclick="if(window.Game && window.Game.closeCountryInfoCard) window.Game.closeCountryInfoCard();" title="Close Card">✕ বন্ধ</button>
+                    <button id="btn-close-card" class="card-close-btn" onclick="if(window.Game && window.Game.closeCountryInfoCard) window.Game.closeCountryInfoCard();" title="Close Card">✕ CLOSE</button>
                 </div>
             </div>
 
@@ -581,13 +581,13 @@
             </div>
 
             <nav class="ui-bottom-navigation" role="navigation" aria-label="Main Command Navigation">
-                <button id="btn-ministry-dock" class="nav-btn active" title="17 Strategic Resource Ministries Dashboard" onclick="window.openMainMinistryView(event);">
+                <button id="btn-ministry-dock" class="nav-btn active" title="18 Strategic State Ministries Dashboard" onclick="window.openMainMinistryView(event);">
                     <span class="nav-icon">🏛️</span>
-                    <span class="nav-text">১৭টি মন্ত্রণালয়</span>
+                    <span class="nav-text">18 MINISTRIES</span>
                 </button>
                 <button id="btn-view-map" class="nav-btn" title="Toggle Map Layer Spectrum & Camera Focus" onclick="window.openMainMapView(event);">
                     <span class="nav-icon">👁️</span>
-                    <span class="nav-text">ভিউ</span>
+                    <span class="nav-text">VIEW</span>
                 </button>
             </nav>
         </div>
@@ -600,22 +600,22 @@
             <div class="res-filter-controls">
                 <select id="resource-selector" onchange="Game.Map.applyResourceMapFilter(this.value)">
                     <option value="ALL">🌐 ALL 17 STRATEGIC RESOURCE DEPOSITS</option>
-                    <option value="crude_oil">🛢️ Crude Oil (অপরিশোধিত তেল)</option>
-                    <option value="natural_gas">🔥 Natural Gas (প্রাকৃতিক গ্যাস)</option>
-                    <option value="rare_earth">💎 Rare Earth Minerals (বিরল মৃত্তিকা)</option>
-                    <option value="uranium">⚛️ Uranium (ইউরেনিয়াম)</option>
-                    <option value="iron_ore">⛏️ Iron Ore (আকরিক লোহা)</option>
-                    <option value="copper">🔌 Copper (তামা)</option>
-                    <option value="bauxite">📦 Bauxite / Aluminum (বক্সাইট)</option>
-                    <option value="coal">🪨 Coal (কয়লা)</option>
-                    <option value="limestone">🧱 Limestone (চুনাপাথর)</option>
-                    <option value="electricity">⚡ Power Grid & Hydro (বিদ্যুৎ)</option>
-                    <option value="rice">🌾 Rice Grain (ধান/চাল)</option>
-                    <option value="wheat">🌾 Wheat (গম)</option>
-                    <option value="water">💧 Water Reserves (মিঠা পানি)</option>
-                    <option value="timber">🪵 Timber & Forests (বনজ কাষ্ঠ)</option>
-                    <option value="cement">🏗️ Cement Plants (সিমেন্ট)</option>
-                    <option value="sand">⏳ Silica Sand (শিল্প বালি)</option>
+                    <option value="crude_oil">🛢️ Crude Oil</option>
+                    <option value="natural_gas">🔥 Natural Gas</option>
+                    <option value="rare_earth">💎 Rare Earth Minerals</option>
+                    <option value="uranium">⚛️ Uranium</option>
+                    <option value="iron_ore">⛏️ Iron Ore</option>
+                    <option value="copper">🔌 Copper</option>
+                    <option value="bauxite">📦 Bauxite / Aluminum</option>
+                    <option value="coal">🪨 Coal</option>
+                    <option value="limestone">🧱 Limestone</option>
+                    <option value="electricity">⚡ Power Grid & Hydro</option>
+                    <option value="rice">🌾 Rice Grain</option>
+                    <option value="wheat">🌾 Wheat</option>
+                    <option value="water">💧 Water Reserves</option>
+                    <option value="timber">🪵 Timber & Forests</option>
+                    <option value="cement">🏗️ Cement Plants</option>
+                    <option value="sand">⏳ Silica Sand</option>
                 </select>
                 <button class="res-quick-btn" onclick="if(window.CountryIOS) window.CountryIOS.open((window.Game && window.Game.currentActiveCountry) || 'USA', 5)">🏛️ OPEN MINISTRY</button>
             </div>
@@ -624,7 +624,7 @@
 
         <div id="rotate-warning">
             <div class="rotate-panel">
-                <h1>🔄 ROTATE DEVICE (অটো-রোটেট / ল্যান্ডস্কেপ মোড)</h1>
+                <h1>🔄 ROTATE DEVICE (LANDSCAPE MODE REQUIRED)</h1>
                 <p>Landscape mode is required for full geopolitical command interface</p>
             </div>
         </div>
@@ -820,5 +820,23 @@
         window.addEventListener("load", initOmega);
     })();
     </script>
+    <!-- ⌛ HIGH-TECH EXECUTIVE LOADING OVERLAY -->
+    <div id="cabinet-loading-overlay" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(2,11,20,0.92); backdrop-filter:blur(10px); z-index:99999; align-items:center; justify-content:center; flex-direction:column; gap:20px; font-family:'Share Tech Mono',monospace;">
+        <div style="background:rgba(15,23,42,0.95); border:2px solid #00e5ff; border-radius:16px; padding:32px 40px; box-shadow:0 0 50px rgba(0,229,255,0.4); text-align:center; max-width:450px; width:90%;">
+            <div style="font-size:36px; margin-bottom:12px; animation: pulse 1.5s infinite alternate;">🏛️</div>
+            <div id="loading-overlay-title" style="color:#00e5ff; font-weight:bold; font-size:16px; letter-spacing:1px; margin-bottom:16px; text-transform:uppercase;">SYNCHRONIZING EXECUTIVE COMMAND...</div>
+            
+            <!-- PROGRESS BAR CONTAINER -->
+            <div style="width:100%; background:rgba(255,255,255,0.1); border:1px solid rgba(0,229,255,0.3); height:16px; border-radius:8px; overflow:hidden; position:relative; box-shadow:inset 0 0 8px rgba(0,0,0,0.6);">
+                <div id="loading-overlay-bar" style="width:0%; height:100%; background:linear-gradient(90deg, #00e5ff, #0066ff, #ffd700); border-radius:8px; transition:width 0.05s linear; box-shadow:0 0 12px #00e5ff;"></div>
+            </div>
+            
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; font-size:12px;">
+                <span style="color:#94a3b8;" id="loading-overlay-status">Calibrating Ministerial Matrix...</span>
+                <span style="color:#ffd700; font-weight:bold; font-size:14px;" id="loading-overlay-percent">0%</span>
+            </div>
+        </div>
+    </div>
+
 </body>
 </html>

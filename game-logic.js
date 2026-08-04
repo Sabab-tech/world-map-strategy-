@@ -45,34 +45,39 @@ function formatPopulationNumber(num) {
 }
 
 // ১. পবুলেশন ও ইকোনমি জেসন ডেটা লোডার এবং রিলেশন ড্রপডাউন সিঙ্ক
-window.initializeWorldGameDatabase = function() {
-    fetch('population.json?v=' + new Date().getTime())
-        .then(res => res.json())
-        .then(popData => {
+window.initializeWorldGameDatabase = async function() {
+    try {
+        const fetcher = window.fetchResilient || (async (f) => {
+            const res = await fetch(f + '?v=' + Date.now());
+            return res.ok ? await res.json() : null;
+        });
+
+        const popData = await fetcher('population.json');
+        if (popData) {
             window.gameState.population = popData;
             console.log("Population Engine Database Sync Ready.");
-            return fetch('economy.json?v=' + new Date().getTime());
-        })
-        .then(res => res.json())
-        .then(econData => {
+        }
+
+        const econData = await fetcher('economy.json');
+        if (econData) {
             window.gameState.economy = econData;
             console.log("Economy Engine Database Sync Ready.");
+        }
 
-            // রিলেশন সিলেকশন বক্স ডাটা দিয়ে পূর্ণ করা
-            const relSelector = document.getElementById('relation-selector');
-            if (relSelector) {
-                relSelector.innerHTML = '<option value="NONE">-- Select Focus Country --</option>';
-                Object.keys(window.gameState.economy).sort().forEach(countryKey => {
-                    const opt = document.createElement('option');
-                    opt.value = countryKey;
-                    opt.innerText = countryKey.replace(/_/g, " ");
-                    relSelector.appendChild(opt);
-                });
-            }
-        })
-        .catch(err => {
-            console.error("ডেটা ফাইল লোড করতে সমস্যা হয়েছে:", err);
-        });
+        // রিলেশন সিলেকশন বক্স ডাটা দিয়ে পূর্ণ করা
+        const relSelector = document.getElementById('relation-selector');
+        if (relSelector && window.gameState.economy) {
+            relSelector.innerHTML = '<option value="NONE">-- Select Focus Country --</option>';
+            Object.keys(window.gameState.economy).sort().forEach(countryKey => {
+                const opt = document.createElement('option');
+                opt.value = countryKey;
+                opt.innerText = countryKey.replace(/_/g, " ");
+                relSelector.appendChild(opt);
+            });
+        }
+    } catch (err) {
+        console.warn("Database load notice (handled):", err);
+    }
 };
 
 // ২. রিয়েল-টাইম আয়ের লুপ (প্রতি সেকেন্ডে একবার চলবে)
@@ -244,6 +249,9 @@ window.applyRelationsMapFilter = function(focusCountry) {
         return;
     }
 
+    const activeIdeo = window.OmegaCabinetEngine ? window.OmegaCabinetEngine.activeIdeology : 'capitalism';
+    const activeRel = window.OmegaCabinetEngine ? window.OmegaCabinetEngine.activeReligion : 'islam';
+
     window.geojsonLayer.eachLayer(layer => {
         const props = layer.feature.properties || {};
         let geoName = props.ADMIN || props.name || props.NAME || props.Country;
@@ -259,28 +267,42 @@ window.applyRelationsMapFilter = function(focusCountry) {
             return;
         }
 
-        // সম্পর্কের ডাইনামিক নির্ধারণী অ্যালগরিদম
-        let score = 0;
-        if (focusCountry === "CHINA" && normName === "PAKISTAN") score = 90;
-        else if (focusCountry === "CHINA" && normName === "INDIA") score = -45;
-        else if (focusCountry === "UNITED_STATES_OF_AMERICA" && normName === "RUSSIA") score = -80;
-        else if (focusCountry === "UNITED_STATES_OF_AMERICA" && normName === "UNITED_KINGDOM") score = 95;
-        else {
+        // সম্পর্কের ডাইনামিক নির্ধারণী অ্যালগরিদম (Dynamic Geopolitical Emergent Relations Engine)
+        let rawScore = 50;
+        if (window.OmegaWorldEcosystem && typeof window.OmegaWorldEcosystem.computeEmergentRelation === 'function') {
+            rawScore = window.OmegaWorldEcosystem.computeEmergentRelation(focusCountry, normName);
+        } else {
             let hash = 0;
             const keyString = focusCountry + normName;
             for (let i = 0; i < keyString.length; i++) {
                 hash = keyString.charCodeAt(i) + ((hash << 5) - hash);
             }
-            score = (Math.abs(hash) % 200) - 100;
+            rawScore = (Math.abs(hash) % 100);
         }
 
+        // Active State Ideology & Religion Modifier
+        let modifier = 0;
+        if (activeIdeo === 'sharia' || activeRel === 'islam') {
+            const isIslamicState = ["PAKISTAN", "TURKEY", "SAUDI_ARABIA", "EGYPT", "INDONESIA", "MALAYSIA", "IRAN", "QATAR", "UNITED_ARAB_EMIRATES"].includes(normName);
+            if (isIslamicState) modifier += 20;
+        } else if (activeIdeo === 'socialism' || activeIdeo === 'communism') {
+            const isLeftState = ["CHINA", "RUSSIA", "CUBA", "VIETNAM", "VENEZUELA"].includes(normName);
+            if (isLeftState) modifier += 25;
+            else if (["UNITED_STATES_OF_AMERICA", "UNITED_KINGDOM"].includes(normName)) modifier -= 20;
+        } else if (activeIdeo === 'capitalism' || activeIdeo === 'democracy') {
+            const isWesternState = ["UNITED_STATES_OF_AMERICA", "UNITED_KINGDOM", "FRANCE", "GERMANY", "JAPAN", "CANADA", "AUSTRALIA"].includes(normName);
+            if (isWesternState) modifier += 20;
+        }
+
+        const score = Math.max(-100, Math.min(100, ((rawScore - 50) * 2) + modifier));
+
         let color = '#475569';
-        if (score > 60) color = '#22c55e';
+        if (score > 50) color = '#22c55e';
         else if (score > 15) color = '#a3e635';
-        else if (score < -60) color = '#ef4444';
+        else if (score < -50) color = '#ef4444';
         else if (score < -15) color = '#f97316';
 
-        layer.setStyle({ fillColor: color, fillOpacity: 0.65, color: 'rgba(255,255,255,0.1)', weight: 0.5 });
+        layer.setStyle({ fillColor: color, fillOpacity: 0.7, color: 'rgba(255,255,255,0.15)', weight: 0.6 });
     });
 };
 

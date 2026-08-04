@@ -371,16 +371,27 @@ Game.Diplomacy = {
 Game.DataLoader = {
     async loadAssets() {
         try {
-            const popRes = await fetch('population.json?v=' + new Date().getTime());
-            Game.state.population = await popRes.json();
+            const fetcher = window.fetchResilient || (async (f) => {
+                const res = await fetch(f + '?v=' + Date.now());
+                return res.ok ? await res.json() : null;
+            });
 
-            const econRes = await fetch('economy.json?v=' + new Date().getTime());
-            Game.state.economy = await econRes.json();
+            const popData = await fetcher('population.json');
+            if (popData && typeof popData === 'object') {
+                Game.state.population = popData;
+            }
 
-            Game.Diplomacy.generateAllBilateralRelations();
+            const econData = await fetcher('economy.json');
+            if (econData && typeof econData === 'object') {
+                Game.state.economy = econData;
+            }
 
-            const relSelector = Game.dom.relSelector; 
-            if (relSelector) {
+            if (Game.Diplomacy && typeof Game.Diplomacy.generateAllBilateralRelations === 'function') {
+                Game.Diplomacy.generateAllBilateralRelations();
+            }
+
+            const relSelector = (Game.dom && Game.dom.relSelector) || document.getElementById('relation-selector'); 
+            if (relSelector && Game.state.economy) {
                 relSelector.innerHTML = '<option value="NONE">-- Select Target --</option>';
                 Object.keys(Game.state.economy).sort().forEach(countryKey => {
                     const opt = document.createElement('option');
@@ -391,36 +402,42 @@ Game.DataLoader = {
             }
 
             // ম্যাপ লোড হওয়ার পর ডাইনামিক্যালি প্রতিটি দেশের জন্য সিমুলেশন ডাটা জেনারেট করা হয়
-            Object.keys(Game.state.economy).forEach(countryKey => {
-                const econ = Game.state.economy[countryKey];
-                let ai_type = "survival";
-                if (econ.gdp > 500000000000) { 
-                    ai_type = "greedy";
-                }
-                if (countryKey === "CHINA" || countryKey === "USA" || countryKey === "RUSSIA") {
-                    ai_type = "aggressive";
-                }
-                if (countryKey === "BANGLADESH") {
-                    ai_type = "survival";
-                }
-                econ.ai = ai_type;
-                econ.money = econ.money || 500;
-                econ.debt = econ.debt || 0;
-                econ.stock = econ.stock || {"food": 100, "oil": 80, "metal": 90};
-                econ.production = econ.production || 120;
-                econ.trade_power = econ.trade_power || 100;
-            });
+            if (Game.state.economy) {
+                Object.keys(Game.state.economy).forEach(countryKey => {
+                    const econ = Game.state.economy[countryKey];
+                    if (!econ) return;
+                    let ai_type = "survival";
+                    if (econ.gdp > 500000000000) { 
+                        ai_type = "greedy";
+                    }
+                    if (countryKey === "CHINA" || countryKey === "USA" || countryKey === "RUSSIA") {
+                        ai_type = "aggressive";
+                    }
+                    if (countryKey === "BANGLADESH") {
+                        ai_type = "survival";
+                    }
+                    econ.ai = ai_type;
+                    econ.money = econ.money || 500;
+                    econ.debt = econ.debt || 0;
+                    econ.stock = econ.stock || {"food": 100, "oil": 80, "metal": 90};
+                    econ.production = econ.production || 120;
+                    econ.trade_power = econ.trade_power || 100;
+                });
+            }
 
-            const configRes = await fetch('countries.json?v=' + new Date().getTime());
-            const countryConfig = await configRes.json();
-            countryConfig.forEach(c => {
-                Game.countryLookup[Game.normalizeName(c.name)] = c;
-            });
+            const countryConfig = await fetcher('countries.json');
+            if (Array.isArray(countryConfig)) {
+                countryConfig.forEach(c => {
+                    if (c && c.name) {
+                        Game.countryLookup[Game.normalizeName(c.name)] = c;
+                    }
+                });
+            }
 
-            const geoRes = await fetch('world.json?v=' + new Date().getTime());
-            const geoData = await geoRes.json();
-
-            Game.Map.renderGeoJSON(geoData);
+            const geoData = await fetcher('world.json');
+            if (geoData && geoData.type) {
+                Game.Map.renderGeoJSON(geoData);
+            }
 
         } catch (error) {
             console.error("❌ ডাটা পাইপলাইন এরর:", error);
@@ -1085,32 +1102,56 @@ Game.findCountryConfig = function(name) {
     return Game.countryLookup[Game.normalizeName(name)] || null;
 };
 
-window.loadGameCities = function() {
+window.loadGameCities = async function() {
     const files = ['cities.json', 'cities_europe.json', 'cities_africa.json', 'cities_oceania.json', 'cities_north_america.json', 'cities_south_america.json'];
-    Promise.all(files.map(f => fetch(f + '?v=' + new Date().getTime()).then(res => res.json())))
-        .then(results => {
-            Game.locationsRegistry = {};
-            results.forEach(data => {
-                let countriesArray = [];
-                if (data.regions) {
-                    for (let reg in data.regions) { 
-                        countriesArray = countriesArray.concat(data.regions[reg].countries || []); 
-                    }
-                } else if (data.countries) {
-                    countriesArray = data.countries;
-                } else {
-                    countriesArray = Array.isArray(data) ? data : Object.values(data);
+    Game.locationsRegistry = Game.locationsRegistry || {};
+    
+    try {
+        const fetcher = window.fetchResilient || (async (f) => {
+            const res = await fetch(f + '?v=' + Date.now());
+            return res.ok ? await res.json() : null;
+        });
+
+        const results = await Promise.all(files.map(f => fetcher(f).catch(() => null)));
+        
+        results.forEach(data => {
+            if (!data) return;
+            let countriesArray = [];
+            if (data.regions) {
+                for (let reg in data.regions) { 
+                    countriesArray = countriesArray.concat(data.regions[reg].countries || []); 
                 }
-                countriesArray.forEach(c => { 
+            } else if (data.countries) {
+                countriesArray = data.countries;
+            } else {
+                countriesArray = Array.isArray(data) ? data : Object.values(data);
+            }
+            countriesArray.forEach(c => { 
+                if (c && c.name) {
                     Game.locationsRegistry[Game.getCountryId(c.name)] = c; 
-                });
+                }
             });
-            console.log("Cities Database Sync Ready.");
-            
+        });
+        console.log("Cities Database Sync Ready.");
+    } catch (err) {
+        console.warn("Cities Database Sync warning:", err);
+    }
+
+    try {
+        if (Game.Map && typeof Game.Map.init === 'function') {
             Game.Map.init(); 
+        }
+    } catch (mErr) {
+        console.error("Map init error:", mErr);
+    }
+
+    try {
+        if (Game.DataLoader && typeof Game.DataLoader.loadAssets === 'function') {
             Game.DataLoader.loadAssets();
-        })
-        .catch(err => console.error("ডাটাবেজ সিঙ্ক সমস্যা:", err));
+        }
+    } catch (aErr) {
+        console.error("DataLoader error:", aErr);
+    }
 };
 
 function safeAppEngineBootstrap() {

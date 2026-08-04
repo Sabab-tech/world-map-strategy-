@@ -38,3 +38,47 @@ window.OmegaDesign = {
 };
 
 console.log("[OMEGA DESIGN TOKENS] System loaded successfully.");
+
+/**
+ * Global Resilient Fetch Utility for JSON resources with multiple path attempts and retries
+ */
+window.fetchResilient = async function(filename) {
+    if (!filename) return null;
+    const cleanName = filename.replace(/^\/+/, '');
+    
+    const candidates = [
+        cleanName,
+        './' + cleanName,
+        '/' + cleanName
+    ];
+
+    if (window.location && window.location.pathname) {
+        const dir = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
+        if (dir) candidates.push(dir + cleanName);
+    }
+    if (window.location && window.location.origin && window.location.origin !== 'null') {
+        candidates.push(window.location.origin + '/' + cleanName);
+    }
+
+    const uniqueCandidates = Array.from(new Set(candidates));
+    const cacheBuster = '?v=' + Date.now();
+
+    for (let attempt = 0; attempt < 3; attempt++) {
+        for (const url of uniqueCandidates) {
+            try {
+                const response = await fetch(url + cacheBuster);
+                if (response.ok) {
+                    const data = await response.json();
+                    return data;
+                }
+            } catch (e) {
+                // Silently try next path or retry attempt
+            }
+        }
+        await new Promise(r => setTimeout(r, 150));
+    }
+
+    console.warn(`[ResilientFetch] Could not fetch "${filename}" after retries.`);
+    return null;
+};
+

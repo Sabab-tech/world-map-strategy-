@@ -279,12 +279,14 @@
         layerStack: [0],
         activeMinistryId: null,
 
-        setLayer(layerNum, data = {}) {
+        setLayer(layerNum, data = {}, skipPush = false) {
             console.log(`[AAA LAYER ENGINE] Transitioning to Layer ${layerNum}`, data);
             this.currentLayer = layerNum;
 
-            if (this.layerStack[this.layerStack.length - 1] !== layerNum) {
-                this.layerStack.push(layerNum);
+            if (!skipPush) {
+                if (this.layerStack[this.layerStack.length - 1] !== layerNum) {
+                    this.layerStack.push(layerNum);
+                }
             }
 
             document.body.setAttribute('data-active-layer', String(layerNum));
@@ -434,12 +436,54 @@
         },
 
         popLayer() {
+            // 1. Close interrogation modal if active
+            const interrogModal = document.getElementById('minister-interrogation-modal');
+            if (interrogModal && (interrogModal.style.display === 'flex' || interrogModal.style.display === 'block')) {
+                interrogModal.style.display = 'none';
+                interrogModal.style.opacity = '0';
+                interrogModal.style.pointerEvents = 'none';
+
+                if (this.layerStack[this.layerStack.length - 1] === 5) {
+                    this.layerStack.pop();
+                }
+
+                const prevLayer = (this.layerStack.length > 0) ? this.layerStack[this.layerStack.length - 1] : 1;
+                this.setLayer(prevLayer, {}, true);
+                return;
+            }
+
+            // 2. Handle inner subsystem/subview back navigation in Cabinet (Layer 1)
+            if (this.currentLayer === 1 && window.OmegaCabinetEngine) {
+                if (window.OmegaCabinetEngine.govSubView && window.OmegaCabinetEngine.govSubView !== 'overview') {
+                    if (typeof window.OmegaCabinetEngine.setGovSubView === 'function') {
+                        window.OmegaCabinetEngine.setGovSubView('overview');
+                    } else {
+                        window.OmegaCabinetEngine.govSubView = 'overview';
+                    }
+                    return;
+                }
+                if (window.OmegaCabinetEngine.activeSubsystem && window.OmegaCabinetEngine.activeSubsystem !== 'governance') {
+                    if (typeof window.OmegaCabinetEngine.setActiveSubsystem === 'function') {
+                        window.OmegaCabinetEngine.setActiveSubsystem('governance');
+                    } else if (typeof window.OmegaCabinetEngine.setSubsystem === 'function') {
+                        window.OmegaCabinetEngine.setSubsystem('governance');
+                    } else {
+                        window.OmegaCabinetEngine.activeSubsystem = 'governance';
+                    }
+                    if (typeof window.OmegaCabinetEngine.setGovSubView === 'function') {
+                        window.OmegaCabinetEngine.setGovSubView('overview');
+                    }
+                    return;
+                }
+            }
+
+            // 3. Normal stack popping
             if (this.layerStack.length > 1) {
                 this.layerStack.pop();
                 const prev = this.layerStack[this.layerStack.length - 1];
-                this.setLayer(prev);
+                this.setLayer(prev, {}, true);
             } else {
-                this.setLayer(0);
+                this.setLayer(0, {}, true);
             }
         },
 
@@ -544,7 +588,13 @@
 
         const isModalVisible = (el) => el && window.getComputedStyle(el).display !== 'none' && el.style.display !== 'none';
 
-        if (layer > 0 || isModalVisible(cmdHub) || isModalVisible(countryCard) || isModalVisible(cityBar) || isModalVisible(interrogModal) || isModalVisible(fullWin) || isModalVisible(dashWin)) {
+        // When inside Cabinet (Layer 1) or Ministry Room (Layer 2), hide global cyan button so it doesn't overlap header titles
+        if (layer > 0 || isModalVisible(fullWin) || isModalVisible(dashWin)) {
+            btn.style.display = 'none';
+            return;
+        }
+
+        if (isModalVisible(cmdHub) || isModalVisible(countryCard) || isModalVisible(cityBar) || isModalVisible(interrogModal)) {
             btn.style.display = 'flex';
         } else {
             btn.style.display = 'none';

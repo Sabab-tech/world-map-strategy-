@@ -358,8 +358,8 @@ window.CountryIOS = {
                             <div>💰 Department of Treasury & Commerce (Stable)</div>
                             <div>⚖️ Ministry of Justice & Law Enforcement</div>
                         </div>
-                        <button onclick="window.toggleMainCabinet(true);" style="margin-top:12px; width:100%; padding:10px 14px; background:linear-gradient(135deg, rgba(0,229,255,0.25), rgba(0,102,255,0.35)); border:1px solid #00e5ff; color:#00e5ff; font-weight:bold; font-family:var(--font-mono); border-radius:6px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; box-shadow:0 0 10px rgba(0,229,255,0.2);">
-                            <span>🏛️</span> <span>OPEN CABINET & ASK MINISTERS (মন্ত্রণালয় হাব)</span>
+                        <button onclick="window.OmegaLayerManager.setLayer(1);" style="margin-top:12px; width:100%; padding:10px 14px; background:linear-gradient(135deg, rgba(0,229,255,0.25), rgba(0,102,255,0.35)); border:1px solid #00e5ff; color:#00e5ff; font-weight:bold; font-family:var(--font-mono); border-radius:6px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; box-shadow:0 0 10px rgba(0,229,255,0.2);">
+                            <span>🏛️</span> <span>OPEN CABINET & ASK MINISTERS (CABINET HQ)</span>
                         </button>
                     </div>
 
@@ -1132,7 +1132,7 @@ window.CountryIOS = {
                 <div style="background:rgba(2,11,20,0.85); border:1px solid var(--omega-border); border-radius:10px; padding:16px; display:flex; flex-direction:column; gap:12px;">
                     <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(0,229,255,0.2); padding-bottom:10px;">
                         <div style="font-family:var(--font-title); color:#ffd700; font-size:14px; font-weight:bold; display:flex; align-items:center; gap:8px;">
-                            <span>⚡</span><span>MULTI-STEP CAUSAL CASCADE SIMULATOR (বহু-লেয়ার প্রতিক্রিয়া ইঞ্জিন)</span>
+                            <span>⚡</span><span>MULTI-STEP CAUSAL CASCADE SIMULATOR</span>
                         </div>
                         <span style="font-size:11px; font-family:var(--font-mono); color:#94a3b8;">Trigger real-time downstream feedback loops</span>
                     </div>
