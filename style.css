@@ -2392,7 +2392,8 @@ body.ios-active .ui-right-controls {
     overflow-y: auto !important;
     -webkit-overflow-scrolling: touch !important;
     touch-action: pan-y !important;
-    scroll-snap-type: y proximity;
+    overscroll-behavior-y: contain;
+    will-change: scroll-position;
 }
 
 .parchment-cabinet-container {
@@ -3653,6 +3654,12 @@ select, select#resource-selector, select#relation-selector, select#resource-type
     overflow: visible !important;
     height: auto !important;
     max-height: none !important;
+}
+
+.parchment-card-btn, .dept-card {
+    content-visibility: auto;
+    contain-intrinsic-size: 0 100px;
+    transform: translateZ(0);
 }
 
 

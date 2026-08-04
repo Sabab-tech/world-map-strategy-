@@ -1186,106 +1186,37 @@ window.OmegaCabinetUI = {
 
     initViewportScrollHandlers() {
         const slider = document.getElementById('parchment-slider');
-        const container = document.querySelector('.parchment-cabinet-container');
-        const sysRoot = document.getElementById('cabinet-subsystem-root');
-        const fullWin = document.getElementById('cabinet-full-window');
-
-        const attachDragAndTouch = (el, isSlider = false) => {
-            if (!el) return;
-
+        if (slider && !slider.dataset.scrollInit) {
+            slider.dataset.scrollInit = 'true';
             let isDown = false;
             let startX = 0;
-            let startY = 0;
             let scrollLeft = 0;
-            let scrollTop = 0;
-            let isMovedFar = false;
 
-            const onStart = (clientX, clientY) => {
+            slider.addEventListener('mousedown', (e) => {
+                if (e.button !== 0) return;
                 isDown = true;
-                isMovedFar = false;
-                startX = clientX;
-                startY = clientY;
-                scrollLeft = el.scrollLeft;
-                scrollTop = el.scrollTop;
-                el.style.cursor = 'grabbing';
-            };
+                startX = e.clientX;
+                scrollLeft = slider.scrollLeft;
+                slider.style.cursor = 'grabbing';
+            });
 
-            const onMove = (clientX, clientY) => {
+            slider.addEventListener('mousemove', (e) => {
                 if (!isDown) return;
-                const dx = startX - clientX;
-                const dy = startY - clientY;
+                e.preventDefault();
+                const dx = startX - e.clientX;
+                slider.scrollLeft = scrollLeft + dx;
+            });
 
-                if (Math.hypot(dx, dy) > 6) {
-                    isMovedFar = true;
-                }
-
-                if (isSlider && !el.classList.contains('mode-grid')) {
-                    el.scrollLeft = scrollLeft + dx;
-                } else {
-                    el.scrollTop = scrollTop + dy;
-                    if (el.classList.contains('mode-grid')) {
-                        el.scrollLeft = scrollLeft + dx;
-                    }
-                }
-            };
-
-            const onEnd = () => {
+            const stopDrag = () => {
                 if (isDown) {
                     isDown = false;
-                    el.style.cursor = 'grab';
+                    slider.style.cursor = 'grab';
                 }
             };
 
-            // Mouse Events
-            el.addEventListener('mousedown', (e) => {
-                if (e.button !== 0) return;
-                onStart(e.clientX, e.clientY);
-            });
-            window.addEventListener('mousemove', (e) => {
-                onMove(e.clientX, e.clientY);
-            });
-            window.addEventListener('mouseup', onEnd);
-
-            // Touch Events (Mobile Dragging Up/Down & Side-to-Side)
-            el.addEventListener('touchstart', (e) => {
-                if (e.touches && e.touches.length === 1) {
-                    onStart(e.touches[0].clientX, e.touches[0].clientY);
-                }
-            }, { passive: true });
-
-            el.addEventListener('touchmove', (e) => {
-                if (isDown && e.touches && e.touches.length === 1) {
-                    onMove(e.touches[0].clientX, e.touches[0].clientY);
-                }
-            }, { passive: true });
-
-            el.addEventListener('touchend', onEnd, { passive: true });
-            el.addEventListener('touchcancel', onEnd, { passive: true });
-
-            // Smooth Wheel Scrolling
-            el.addEventListener('wheel', (e) => {
-                if (isSlider && !el.classList.contains('mode-grid')) {
-                    const delta = Math.abs(e.deltaY) > Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
-                    el.scrollLeft += delta;
-                } else {
-                    el.scrollTop += e.deltaY;
-                }
-            }, { passive: true });
-
-            // Prevent unwanted card click when dragging
-            el.addEventListener('click', (e) => {
-                if (isMovedFar) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    isMovedFar = false;
-                }
-            }, true);
-        };
-
-        if (slider) attachDragAndTouch(slider, true);
-        if (sysRoot) attachDragAndTouch(sysRoot, false);
-        if (container) attachDragAndTouch(container, false);
-        if (fullWin) attachDragAndTouch(fullWin, false);
+            slider.addEventListener('mouseleave', stopDrag);
+            slider.addEventListener('mouseup', stopDrag);
+        }
     },
 
     setFilter(cat) {
@@ -1496,7 +1427,97 @@ window.OmegaCabinetUI = {
             `;
         }
 
+        // Historical Multi-Line Trend Chart (Recharts) in Ministry Dashboard View
+        html += `
+            <div id="recharts-trend-container" style="background:rgba(2,11,20,0.9); border:1px solid rgba(0,229,255,0.3); border-radius:12px; padding:16px; margin-top:16px;">
+                <div style="font-family:'Share Tech Mono',monospace; color:#00e5ff; font-size:13px; font-weight:bold; margin-bottom:12px; display:flex; align-items:center; justify-content:space-between;">
+                    <span>📈 HISTORICAL MACROECONOMIC & MILITARY POWER TREND (RECHARTS)</span>
+                    <span style="font-size:10px; color:#ffd700; background:rgba(255,215,0,0.15); border:1px solid rgba(255,215,0,0.4); padding:2px 8px; border-radius:10px;">MULTI-LINE ANALYTICS</span>
+                </div>
+                <div id="recharts-gdp-mil-chart" style="width:100%; height:260px;"></div>
+            </div>
+        `;
+
         contentArea.innerHTML = html;
+        setTimeout(() => {
+            this.renderRechartsChart('recharts-gdp-mil-chart', this.activeCountry);
+        }, 30);
+    },
+
+    renderRechartsChart(containerId, activeCountry) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+
+        const cData = (window.Game && window.Game.countryLookup && window.Game.countryLookup[activeCountry]) || { gdp: '$25.4T', militaryPower: 88 };
+        let rawGdp = typeof cData.gdp === 'number' ? cData.gdp : parseFloat(String(cData.gdp || '25').replace(/[^0-9.]/g, '')) || 25;
+        let rawMil = typeof cData.militaryPower === 'number' ? cData.militaryPower : parseFloat(String(cData.militaryPower || '80').replace(/[^0-9.]/g, '')) || 80;
+
+        const data = [
+            { year: '2021', gdp: Number((rawGdp * 0.82).toFixed(2)), military: Number((rawMil * 0.85).toFixed(1)) },
+            { year: '2022', gdp: Number((rawGdp * 0.87).toFixed(2)), military: Number((rawMil * 0.88).toFixed(1)) },
+            { year: '2023', gdp: Number((rawGdp * 0.91).toFixed(2)), military: Number((rawMil * 0.92).toFixed(1)) },
+            { year: '2024', gdp: Number((rawGdp * 0.95).toFixed(2)), military: Number((rawMil * 0.95).toFixed(1)) },
+            { year: '2025', gdp: Number((rawGdp * 0.98).toFixed(2)), military: Number((rawMil * 0.98).toFixed(1)) },
+            { year: '2026', gdp: Number((rawGdp * 1.00).toFixed(2)), military: Number((rawMil * 1.00).toFixed(1)) },
+        ];
+
+        if (window.Recharts && window.React && window.ReactDOM) {
+            try {
+                const { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } = window.Recharts;
+                const e = window.React.createElement;
+
+                const chartElement = e(ResponsiveContainer, { width: '100%', height: '100%' },
+                    e(LineChart, { data: data, margin: { top: 10, right: 20, left: 10, bottom: 5 } },
+                        e(CartesianGrid, { strokeDasharray: '3 3', stroke: 'rgba(255,255,255,0.1)' }),
+                        e(XAxis, { dataKey: 'year', stroke: '#94a3b8', tick: { fill: '#94a3b8', fontSize: 11 } }),
+                        e(YAxis, { yAxisId: 'left', stroke: '#00e5ff', tick: { fill: '#00e5ff', fontSize: 11 }, unit: 'T' }),
+                        e(YAxis, { yAxisId: 'right', orientation: 'right', stroke: '#ffd700', tick: { fill: '#ffd700', fontSize: 11 } }),
+                        e(Tooltip, { contentStyle: { backgroundColor: '#0f172a', borderColor: '#00e5ff', borderRadius: '8px', color: '#fff', fontSize: '12px' } }),
+                        e(Legend, { wrapperStyle: { fontSize: '12px', color: '#cbd5e1' } }),
+                        e(Line, { yAxisId: 'left', type: 'monotone', dataKey: 'gdp', name: 'National GDP ($ T/B)', stroke: '#00e5ff', strokeWidth: 3, dot: { r: 4, fill: '#00e5ff' } }),
+                        e(Line, { yAxisId: 'right', type: 'monotone', dataKey: 'military', name: 'Military Power Score', stroke: '#ffd700', strokeWidth: 3, dot: { r: 4, fill: '#ffd700' } })
+                    )
+                );
+
+                if (window.ReactDOM.createRoot) {
+                    if (!container._reactRoot) {
+                        container._reactRoot = window.ReactDOM.createRoot(container);
+                    }
+                    container._reactRoot.render(chartElement);
+                } else {
+                    window.ReactDOM.render(chartElement, container);
+                }
+                return;
+            } catch (err) {
+                console.warn("Recharts render error, using fallback SVG:", err);
+            }
+        }
+
+        const svgWidth = 600;
+        const svgHeight = 220;
+        const padding = 35;
+        const pointsGdp = data.map((d, i) => {
+            const x = padding + (i / (data.length - 1)) * (svgWidth - 2 * padding);
+            const y = svgHeight - padding - ((d.gdp / (rawGdp * 1.1)) * (svgHeight - 2 * padding));
+            return `${x},${y}`;
+        }).join(' ');
+        
+        const pointsMil = data.map((d, i) => {
+            const x = padding + (i / (data.length - 1)) * (svgWidth - 2 * padding);
+            const y = svgHeight - padding - ((d.military / (rawMil * 1.1)) * (svgHeight - 2 * padding));
+            return `${x},${y}`;
+        }).join(' ');
+
+        container.innerHTML = `
+            <svg viewBox="0 0 ${svgWidth} ${svgHeight}" style="width:100%; height:100%; overflow:visible;">
+                <polyline fill="none" stroke="#00e5ff" stroke-width="3" points="${pointsGdp}" />
+                <polyline fill="none" stroke="#ffd700" stroke-width="3" points="${pointsMil}" />
+                ${data.map((d, i) => {
+                    const x = padding + (i / (data.length - 1)) * (svgWidth - 2 * padding);
+                    return `<text x="${x}" y="${svgHeight - 10}" fill="#94a3b8" font-size="10" text-anchor="middle">${d.year}</text>`;
+                }).join('')}
+            </svg>
+        `;
     },
 
     executeDeptAction(ministryId, actionType) {

@@ -1103,7 +1103,7 @@ Game.findCountryConfig = function(name) {
 };
 
 window.loadGameCities = async function() {
-    const files = ['cities.json', 'cities_europe.json', 'cities_africa.json', 'cities_oceania.json', 'cities_north_america.json', 'cities_south_america.json'];
+    const files = ['cities.json'];
     Game.locationsRegistry = Game.locationsRegistry || {};
     
     try {

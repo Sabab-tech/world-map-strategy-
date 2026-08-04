@@ -182,16 +182,19 @@ window.toggleResourceOverlay = function() {
     const filterBox = document.getElementById('resource-filter-box');
     const relationBox = document.getElementById('relation-filter-box');
     const btn = document.getElementById('btn-resource-overlay');
+    const relBtn = document.getElementById('btn-relation-overlay');
+
+    if (!filterBox) return;
 
     if (filterBox.style.display === 'flex') {
         filterBox.style.display = 'none';
-        btn.classList.remove('active');
+        if (btn) btn.classList.remove('active');
         if (window.geojsonLayer) window.geojsonLayer.resetStyle();
     } else {
         filterBox.style.display = 'flex';
-        relationBox.style.display = 'none';
-        btn.classList.add('active');
-        document.getElementById('btn-relation-overlay').classList.remove('active');
+        if (relationBox) relationBox.style.display = 'none';
+        if (btn) btn.classList.add('active');
+        if (relBtn) relBtn.classList.remove('active');
     }
 };
 
@@ -205,8 +208,8 @@ window.applyResourceMapFilter = function(resourceType) {
     window.geojsonLayer.eachLayer(layer => {
         const props = layer.feature.properties || {};
         const geoName = props.ADMIN || props.name || props.NAME || props.Country;
-        const normName = window.normalizeName(geoName);
-        const countryData = window.locationsRegistry[normName];
+        const normName = window.normalizeName ? window.normalizeName(geoName) : (geoName || '').toLowerCase();
+        const countryData = (window.locationsRegistry && window.locationsRegistry[normName]) || null;
 
         let hasResource = false;
         if (countryData) {
@@ -229,16 +232,19 @@ window.toggleRelationOverlay = function() {
     const filterBox = document.getElementById('relation-filter-box');
     const resourceBox = document.getElementById('resource-filter-box');
     const btn = document.getElementById('btn-relation-overlay');
+    const resBtn = document.getElementById('btn-resource-overlay');
+
+    if (!filterBox) return;
 
     if (filterBox.style.display === 'flex') {
         filterBox.style.display = 'none';
-        btn.classList.remove('active');
+        if (btn) btn.classList.remove('active');
         if (window.geojsonLayer) window.geojsonLayer.resetStyle();
     } else {
         filterBox.style.display = 'flex';
-        resourceBox.style.display = 'none';
-        btn.classList.add('active');
-        document.getElementById('btn-resource-overlay').classList.remove('active');
+        if (resourceBox) resourceBox.style.display = 'none';
+        if (btn) btn.classList.add('active');
+        if (resBtn) resBtn.classList.remove('active');
     }
 };
 
