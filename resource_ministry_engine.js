@@ -232,6 +232,97 @@ window.ResourceMinistryEngine = (() => {
             outputs: ['concrete_mix', 'solar_glass', 'silicon_wafer_precursor'],
             storageRule: 'Open Riverbed Stockpiles',
             strategicImportance: 'Crucial for land reclamation, concrete mixing, glassmaking, and semiconductor silicon.'
+        },
+        rare_earth: {
+            id: 'rare_earth',
+            name: 'Rare Earth Elements (REE)',
+            bnName: 'বিরল মৃত্তিকা মৌল (রেয়ার আর্থ)',
+            icon: '⚛️',
+            category: 'Critical Minerals',
+            baseValue: 45000,
+            purityGrades: ['Bastnäsite Concentrate', 'Monazite Heavy Fraction', '99.99% Separated Oxides'],
+            inputs: ['acid_leach', 'solvent_extraction'],
+            outputs: ['permanent_magnets', 'guided_missile_guidance', 'radar', 'EV_motors'],
+            storageRule: 'High Security Underground Storage',
+            strategicImportance: 'Indispensable for defense radars, precision guided weapons, EV motors, and jet engines.'
+        },
+        lithium: {
+            id: 'lithium',
+            name: 'Lithium (LCE)',
+            bnName: 'লিথিয়াম',
+            icon: '🔋',
+            category: 'Battery Minerals',
+            baseValue: 28000,
+            purityGrades: ['Spodumene Concentrate 6%', 'Battery Grade Carbonate 99.5%', 'Lithium Hydroxide'],
+            inputs: ['evaporation_ponds', 'hard_rock_crushing'],
+            outputs: ['ev_batteries', 'grid_energy_storage', 'submarine_power'],
+            storageRule: 'Climate Controlled Sealed Vaults',
+            strategicImportance: 'Powerhouse mineral for energy transition, submarine batteries, and grid storage.'
+        },
+        cobalt: {
+            id: 'cobalt',
+            name: 'Cobalt',
+            bnName: 'কোবাল্ট',
+            icon: '🔷',
+            category: 'Critical Minerals',
+            baseValue: 34000,
+            purityGrades: ['Cobalt Hydroxide', 'High Purity Cathode Grade'],
+            inputs: ['copper_nickel_tailings'],
+            outputs: ['superalloys', 'jet_turbines', 'battery_cathodes'],
+            storageRule: 'Secured Warehouse',
+            strategicImportance: 'High-temperature superalloys for jet engines and energy dense batteries.'
+        },
+        semiconductor: {
+            id: 'semiconductor',
+            name: 'Semiconductors & Chips',
+            bnName: 'সেমিকন্ডাক্টর & চিপস',
+            icon: '💻',
+            category: 'High-Tech Strategy',
+            baseValue: 120000,
+            purityGrades: ['Legacy 28nm+', 'Advanced 7nm/5nm', 'Cutting Edge 3nm/2nm'],
+            inputs: ['ultra_pure_silica', 'rare_earth', 'EUV_lithography'],
+            outputs: ['ai_supercomputers', 'radar_arrays', 'guided_missiles', 'cyber_warfare'],
+            storageRule: 'Cleanroom Sealed Inert Vault',
+            strategicImportance: 'The ultimate digital and military force multiplier underpinning modern power.'
+        },
+        gold: {
+            id: 'gold',
+            name: 'Gold Deposits',
+            bnName: 'স্বর্ণ সঞ্চয়',
+            icon: '🥇',
+            category: 'Precious Metals',
+            baseValue: 65000000,
+            purityGrades: ['Dore Bar 80%', 'Bullion 99.99%'],
+            inputs: ['deep_shafts', 'cyanide_leaching'],
+            outputs: ['sovereign_reserves', 'microelectronics'],
+            storageRule: 'Central Bank Subterranean Fortress Vault',
+            strategicImportance: 'Ultimate sovereign monetary reserve asset and inflation hedge.'
+        },
+        titanium: {
+            id: 'titanium',
+            name: 'Titanium Ore',
+            bnName: 'টাইটানিয়াম',
+            icon: '🛡️',
+            category: 'Strategic Metals',
+            baseValue: 18000,
+            purityGrades: ['Ilmenite Ore', 'Titanium Sponge 99.7%'],
+            inputs: ['magnesium_reduction'],
+            outputs: ['stealth_jets', 'submarines', 'missile_casings'],
+            storageRule: 'Dry Inert Depot',
+            strategicImportance: 'High strength-to-weight alloy essential for hypersonic and aerospace engineering.'
+        },
+        diamond: {
+            id: 'diamond',
+            name: 'Industrial & Gem Diamond',
+            bnName: 'হীরা সঞ্চয়',
+            icon: '💎',
+            category: 'Precious & Industrial',
+            baseValue: 8500000,
+            purityGrades: ['Industrial Grit', 'Gem Grade Cut'],
+            inputs: ['kimberlite_mining'],
+            outputs: ['precision_cutting', 'sovereign_treasury'],
+            storageRule: 'Vault Storage',
+            strategicImportance: 'Hardest material for industrial drill bits and liquid sovereign reserve.'
         }
     };
 
@@ -599,7 +690,64 @@ window.ResourceMinistryEngine = (() => {
     // -------------------------------------------------------------------------
     return {
         resources: STRATEGIC_RESOURCES,
-        deposits: GEOGRAPHIC_DEPOSITS,
+        get deposits() {
+            const combined = [...GEOGRAPHIC_DEPOSITS];
+            const existingCountries = new Set(GEOGRAPHIC_DEPOSITS.map(d => (d.country || '').replace(/_/g, " ").toUpperCase()));
+            
+            if (window.Game && window.Game.locationsRegistry) {
+                const reg = window.Game.locationsRegistry;
+                const keyMinerals = [
+                    { resId: 'natural_gas', nameSuffix: 'Sovereign Gas Basin', reserve: '3.5 TCF', status: 'Active Field' },
+                    { resId: 'crude_oil', nameSuffix: 'Petroleum Field', reserve: '1.2B Barrels', status: 'Active Deposit' },
+                    { resId: 'uranium', nameSuffix: 'Uranium Ore Deposit', reserve: '85,000 Tons', status: 'Strategic Reserve' },
+                    { resId: 'rare_earth', nameSuffix: 'Rare Earth Minerals Deposit', reserve: '2.4M Tons', status: 'Geological Reserve' },
+                    { resId: 'gold', nameSuffix: 'Gold Mine Reserve', reserve: '450 Tons', status: 'Active Mine' },
+                    { resId: 'lithium', nameSuffix: 'Lithium Brine Field', reserve: '890,000 Tons', status: 'Active Extraction' },
+                    { resId: 'iron_ore', nameSuffix: 'Iron Ore Belt', reserve: '1.8B Tons', status: 'Mining Complex' },
+                    { resId: 'copper', nameSuffix: 'Copper-Gold Deposit', reserve: '14M Tons', status: 'Open Pit' },
+                    { resId: 'coal', nameSuffix: 'Coal Basin', reserve: '8.5B Tons', status: 'Active Mine' },
+                    { resId: 'bauxite', nameSuffix: 'Bauxite / Aluminum Reserve', reserve: '650M Tons', status: 'Smelter Hub' }
+                ];
+
+                for (let cId in reg) {
+                    const countryObj = reg[cId];
+                    const cName = (countryObj.name || countryObj.ADMIN || cId).replace(/_/g, " ").toUpperCase();
+                    if (!existingCountries.has(cName) && countryObj.lat !== undefined && countryObj.lng !== undefined) {
+                        const lat = Number(countryObj.lat);
+                        const lng = Number(countryObj.lng);
+                        if (isNaN(lat) || isNaN(lng)) continue;
+                        
+                        let hash = 0;
+                        for (let i = 0; i < cName.length; i++) hash = (hash << 5) - hash + cName.charCodeAt(i);
+                        hash = Math.abs(hash);
+
+                        const min1 = keyMinerals[hash % keyMinerals.length];
+                        const min2 = keyMinerals[(hash + 4) % keyMinerals.length];
+
+                        combined.push({
+                            name: `${cName} ${min1.nameSuffix}`,
+                            resId: min1.resId,
+                            country: cName,
+                            lat: lat + 0.15,
+                            lng: lng + 0.20,
+                            reserve: min1.reserve,
+                            status: min1.status
+                        });
+
+                        combined.push({
+                            name: `${cName} ${min2.nameSuffix}`,
+                            resId: min2.resId,
+                            country: cName,
+                            lat: lat - 0.20,
+                            lng: lng - 0.15,
+                            reserve: min2.reserve,
+                            status: min2.status
+                        });
+                    }
+                }
+            }
+            return combined;
+        },
         engine: instance,
 
         getSummary() {

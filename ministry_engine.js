@@ -390,7 +390,19 @@ window.OmegaCabinetUI = {
                 population: "173.0 Million", gdp: "$455.2 Billion",
                 militaryRank: "#37 Worldwide", economicRank: "#33 Worldwide",
                 hdi: "0.661 (Medium)", stability: "88% High",
-                leader: "Executive Prime Minister", currency: "BDT (৳)", language: "Bangla"
+                leader: "Executive Prime Minister", currency: "BDT (৳)", language: "Bangla",
+                ministers: {
+                    foreign_affairs: { name: "Dr. A. K. Abdul Momen", role: "Foreign Minister of Bangladesh" },
+                    defense: { name: "Gen. Waker-Uz-Zaman", role: "Chief of Army & Defense Command" },
+                    finance_economy: { name: "Abul Hassan Mahmood Ali", role: "Minister of Finance & Treasury" },
+                    agriculture_food: { name: "Dr. Md. Abdus Shahid", role: "Minister of Agriculture & Food" },
+                    interior_security: { name: "Asaduzzaman Khan", role: "Minister of Home Affairs" },
+                    infrastructure: { name: "Obaidul Quader", role: "Minister of Road Transport & Bridges" },
+                    health_welfare: { name: "Dr. Samanta Lal Sen", role: "Minister of Health & Welfare" },
+                    education: { name: "Mohibul Hassan Chowdhoury", role: "Minister of Education" },
+                    science_research: { name: "Yafes Osman", role: "Minister of Science & Technology" },
+                    energy_mining: { name: "Nasrul Hamid", role: "State Minister for Power & Resources" }
+                }
             },
             "USA": {
                 code: "US", flag: "🇺🇸", name: "United States",
@@ -399,7 +411,13 @@ window.OmegaCabinetUI = {
                 population: "335.0 Million", gdp: "$27.36 Trillion",
                 militaryRank: "#1 Worldwide", economicRank: "#1 Worldwide",
                 hdi: "0.921 (Very High)", stability: "92% High",
-                leader: "President of the United States", currency: "USD ($)", language: "English"
+                leader: "President of the United States", currency: "USD ($)", language: "English",
+                ministers: {
+                    foreign_affairs: { name: "Hon. Alexander Vance", role: "Secretary of State & Diplomatic Missions" },
+                    defense: { name: "General Marcus Sterling", role: "Secretary of Defense & Supreme Command" },
+                    finance_economy: { name: "Dr. Evelyn Reed", role: "Secretary of Treasury & Economic Policy" },
+                    agriculture_food: { name: "Hon. Sarah Jenkins", role: "Secretary of Agriculture & Strategic Reserves" }
+                }
             },
             "UNITED STATES": {
                 code: "US", flag: "🇺🇸", name: "United States",
@@ -1216,6 +1234,13 @@ window.OmegaCabinetUI = {
 
             slider.addEventListener('mouseleave', stopDrag);
             slider.addEventListener('mouseup', stopDrag);
+
+            // Mouse wheel horizontal scroll support
+            slider.addEventListener('wheel', (e) => {
+                if (!slider.classList.contains('mode-grid') && e.deltaY !== 0) {
+                    slider.scrollLeft += e.deltaY;
+                }
+            }, { passive: true });
         }
     },
 
@@ -1229,6 +1254,63 @@ window.OmegaCabinetUI = {
         if (this.currentDashboardMinistryId) {
             this.renderMinistryDashboard(this.currentDashboardMinistryId);
         }
+    },
+
+    activeMoFASubview: 'reputation',
+
+    setMoFASubview(subview) {
+        this.activeMoFASubview = subview;
+        if (this.currentDashboardMinistryId === 'foreign_affairs') {
+            this.renderMinistryDashboard('foreign_affairs');
+        }
+    },
+
+    executeMoFAAction(actionType, target, param) {
+        let msg = "";
+        const country = this.activeCountry || "BANGLADESH";
+
+        if (actionType === 'establish_ties') {
+            msg = `🌐 Diplomatic ties formally established with ${target}! Embassies scheduled for construction.`;
+        } else if (actionType === 'upgrade_relation') {
+            msg = `🕊️ Bilateral relations with ${target} upgraded to Strategic Partnership (+15 Trust, +10 Trade).`;
+        } else if (actionType === 'downgrade_relation') {
+            msg = `⚠️ Diplomatic demarche delivered to ${target}. Relations downgraded to Distant.`;
+        } else if (actionType === 'recall_ambassador') {
+            msg = `🚪 Ambassador recalled from ${target} for urgent sovereign consultations.`;
+        } else if (actionType === 'expel_ambassador') {
+            msg = `🚨 Foreign Ambassador from ${target} declared Persona Non Grata and given 48 hours to depart.`;
+        } else if (actionType === 'open_embassy') {
+            msg = `🏢 New Sovereign Embassy opened in ${target} capital ($150M Treasury allocated).`;
+        } else if (actionType === 'diplomatic_summit') {
+            msg = `🤝 High-Level Bilateral Summit hosted with ${target} delegation. Signed 3 Joint Directives.`;
+        } else if (actionType === 'run_ai_cognition') {
+            if (window.OmegaCognitiveEngine) {
+                const res = window.OmegaCognitiveEngine.process(param || "Assess bilateral security and trade pact", "DIPLOMATIC_ENGAGEMENT", country, target);
+                const logSummary = res.stageLog.slice(0, 5).map(s => `[Stage ${s.stage}]: ${s.name}`).join("\n");
+                msg = `🧠 [40-STAGE AI COGNITION ENGINE EXECUTED]\n\nTarget: ${target}\nConfidence: ${res.confidenceScore}%\nStrategic Payoff: ${res.strategicPayoff}\nRisk Exposure: ${res.simulatedRisk}\n\nPipeline Summary:\n${logSummary}\n...\n[Stage 40]: Self-Reflection & Meta-Cognitive Logging Completed!\n\nAI Advice:\n"${res.finalResponseText}"`;
+            } else {
+                msg = `🧠 AI Cognition Engine executed for ${target}. Confidence: 94%. Advice: Maintain peaceful non-alignment.`;
+            }
+        } else if (actionType === 'request_imf_loan') {
+            msg = `💰 IMF Board approves $2.5B Emergency Balance of Payments Support Facility! Reserves credited.`;
+        } else if (actionType === 'request_wb_grant') {
+            msg = `🏗️ World Bank approves $1.8B Green Infrastructure Development Grant!`;
+        } else if (actionType === 'vote_un_resolution') {
+            msg = `🏛️ Sovereign Vote cast at UN General Assembly for Resolution #4082. UN Prestige +5!`;
+        } else if (actionType === 'sign_treaty') {
+            msg = `📜 New Sovereign Treaty "${target}" signed and ratified into International Law!`;
+        } else if (actionType === 'appoint_ambassador') {
+            msg = `🎖️ Senior Diplomat appointed as Ambassador to ${target}. (Diplomacy: 94, Cultural IQ: 89, Integrity: Flawless).`;
+        } else if (actionType === 'dispatch_aid') {
+            msg = `🎁 $100M Foreign Aid & Emergency Medical Supplies dispatched to ${target}. Global Prestige +8!`;
+        } else if (actionType === 'resolve_crisis') {
+            msg = `🚨 Geopolitical Crisis Directive executed! Emergency Security Detail deployed to ${target}. Threat Neutralized.`;
+        } else {
+            msg = `⚡ Diplomatic Action "${actionType}" executed successfully for target "${target}".`;
+        }
+
+        window.showOmegaNotification("DIPLOMATIC DIRECTIVE", msg, "success");
+        this.renderMinistryDashboard('foreign_affairs');
     },
 
     renderMinistryDashboard(ministryId) {
@@ -1260,6 +1342,16 @@ window.OmegaCabinetUI = {
 
         if (crumbTitle) crumbTitle.innerHTML = `🌍 World / ${countryDetails.flag} Government / ${m.title}`;
         if (statusPill) statusPill.innerHTML = `${m.title.toUpperCase()} CONTROL ROOM`;
+
+        if (ministryId === 'foreign_affairs') {
+            this.renderMoFADashboard(m, contentArea);
+            return;
+        }
+
+        if (ministryId === 'defense' || ministryId === 'military') {
+            this.renderMoDDashboard(m, contentArea);
+            return;
+        }
 
         const activeTab = this.activeDashboardTab || 'interrogate';
 
@@ -1440,25 +1532,102 @@ window.OmegaCabinetUI = {
 
         contentArea.innerHTML = html;
         setTimeout(() => {
-            this.renderRechartsChart('recharts-gdp-mil-chart', this.activeCountry);
+            this.renderRechartsChart('recharts-gdp-mil-chart', this.activeCountry, ministryId);
         }, 30);
     },
 
-    renderRechartsChart(containerId, activeCountry) {
+    renderRechartsChart(containerId, activeCountry, ministryId = 'economy') {
         const container = document.getElementById(containerId);
         if (!container) return;
 
-        const cData = (window.Game && window.Game.countryLookup && window.Game.countryLookup[activeCountry]) || { gdp: '$25.4T', militaryPower: 88 };
-        let rawGdp = typeof cData.gdp === 'number' ? cData.gdp : parseFloat(String(cData.gdp || '25').replace(/[^0-9.]/g, '')) || 25;
-        let rawMil = typeof cData.militaryPower === 'number' ? cData.militaryPower : parseFloat(String(cData.militaryPower || '80').replace(/[^0-9.]/g, '')) || 80;
+        const cDetails = this.getCountryDetails(activeCountry);
+        const cData = (window.Game && window.Game.countryLookup && window.Game.countryLookup[activeCountry]) || { gdp: cDetails.gdp || '$455.2B', militaryPower: 85 };
+        let rawGdp = typeof cData.gdp === 'number' ? cData.gdp : parseFloat(String(cData.gdp || '455.2').replace(/[^0-9.]/g, '')) || 450;
+        let rawMil = typeof cData.militaryPower === 'number' ? cData.militaryPower : parseFloat(String(cData.militaryPower || '85').replace(/[^0-9.]/g, '')) || 85;
+
+        let primaryName = "Sector Primary Index";
+        let secondaryName = "Efficiency Rating";
+        let tertiaryName = "Sovereign Stability";
+        let pColor = "#00e5ff";
+        let sColor = "#ffd700";
+        let tColor = "#22c55e";
+        let unitLeft = " %";
+
+        let pFactor = 1.0, sFactor = 1.0, tFactor = 1.0;
+
+        if (ministryId === 'defense' || ministryId === 'military') {
+            primaryName = "Military Combat Readiness Index";
+            secondaryName = "Defense Procurement ($B)";
+            tertiaryName = "Border Fortress Defense %";
+            unitLeft = "";
+            pColor = "#ef4444"; sColor = "#f59e0b"; tColor = "#3b82f6";
+            pFactor = rawMil; sFactor = rawGdp * 0.08; tFactor = 88;
+        } else if (ministryId === 'foreign_affairs' || ministryId === 'foreign') {
+            primaryName = "Global Alliance Reputation";
+            secondaryName = "Bilateral Treaties Signed";
+            tertiaryName = "Diplomatic Trust Score %";
+            pColor = "#3b82f6"; sColor = "#10b981"; tColor = "#f59e0b";
+            pFactor = 82; sFactor = 24; tFactor = 90;
+        } else if (ministryId === 'intelligence_cyber' || ministryId === 'intelligence') {
+            primaryName = "Cyber Shield Security %";
+            secondaryName = "Threat Interception Rate %";
+            tertiaryName = "Counter-Espionage Index";
+            pColor = "#a855f7"; sColor = "#00e5ff"; tColor = "#ef4444";
+            pFactor = 86; sFactor = 94; tFactor = 78;
+        } else if (ministryId === 'health' || ministryId === 'health_welfare') {
+            primaryName = "Healthcare System Capacity %";
+            secondaryName = "Pandemic Prevention Index";
+            tertiaryName = "Life Expectancy Index";
+            pColor = "#10b981"; sColor = "#00e5ff"; tColor = "#f59e0b";
+            pFactor = 89; sFactor = 92; tFactor = 84;
+        } else if (ministryId === 'education') {
+            primaryName = "Human Capital Index";
+            secondaryName = "STEM R&D Scholar Outputs";
+            tertiaryName = "Literacy & Technical Skill %";
+            pColor = "#3b82f6"; sColor = "#8b5cf6"; tColor = "#10b981";
+            pFactor = 88; sFactor = 45; tFactor = 95;
+        } else if (ministryId === 'technology' || ministryId === 'science') {
+            primaryName = "Tech Sovereignty Index %";
+            secondaryName = "Patent Output Volume";
+            tertiaryName = "Quantum AI Grid Readiness %";
+            pColor = "#00e5ff"; sColor = "#ec4899"; tColor = "#8b5cf6";
+            pFactor = 81; sFactor = 120; tFactor = 76;
+        } else if (ministryId === 'transport' || ministryId === 'infrastructure') {
+            primaryName = "Logistics Transit Velocity %";
+            secondaryName = "Power Grid Baseload Reliability %";
+            tertiaryName = "Port Cargo Throughput Index";
+            pColor = "#f97316"; sColor = "#eab308"; tColor = "#06b6d4";
+            pFactor = 85; sFactor = 96; tFactor = 79;
+        } else if (ministryId === 'energy_mining' || ministryId === 'resource') {
+            primaryName = "Strategic Energy Stockpile %";
+            secondaryName = "Domestic Power Gen (TWh)";
+            tertiaryName = "Material Reserve Ratio";
+            pColor = "#eab308"; sColor = "#f97316"; tColor = "#10b981";
+            pFactor = 91; sFactor = 320; tFactor = 84;
+        } else if (ministryId === 'interior_security' || ministryId === 'interior') {
+            primaryName = "Public Order & Law Enforcement %";
+            secondaryName = "Emergency Dispatch Velocity (min)";
+            tertiaryName = "Civil Stability Rating %";
+            pColor = "#6366f1"; sColor = "#ef4444"; tColor = "#10b981";
+            pFactor = 87; sFactor = 4.2; tFactor = 89;
+        } else {
+            // Default economy/finance/trade/cabinet
+            primaryName = "National GDP ($ Billion)";
+            secondaryName = "Treasury Reserve ($ Billion)";
+            tertiaryName = "Sovereign Stability Index";
+            unitLeft = " B";
+            pColor = "#00e5ff"; sColor = "#ffd700"; tColor = "#22c55e";
+            pFactor = rawGdp; sFactor = rawGdp * 0.25; tFactor = 92;
+        }
 
         const data = [
-            { year: '2021', gdp: Number((rawGdp * 0.82).toFixed(2)), military: Number((rawMil * 0.85).toFixed(1)) },
-            { year: '2022', gdp: Number((rawGdp * 0.87).toFixed(2)), military: Number((rawMil * 0.88).toFixed(1)) },
-            { year: '2023', gdp: Number((rawGdp * 0.91).toFixed(2)), military: Number((rawMil * 0.92).toFixed(1)) },
-            { year: '2024', gdp: Number((rawGdp * 0.95).toFixed(2)), military: Number((rawMil * 0.95).toFixed(1)) },
-            { year: '2025', gdp: Number((rawGdp * 0.98).toFixed(2)), military: Number((rawMil * 0.98).toFixed(1)) },
-            { year: '2026', gdp: Number((rawGdp * 1.00).toFixed(2)), military: Number((rawMil * 1.00).toFixed(1)) },
+            { year: '2020', val1: Number((pFactor * 0.76).toFixed(1)), val2: Number((sFactor * 0.72).toFixed(1)), val3: Number((tFactor * 0.82).toFixed(1)) },
+            { year: '2021', val1: Number((pFactor * 0.83).toFixed(1)), val2: Number((sFactor * 0.80).toFixed(1)), val3: Number((tFactor * 0.86).toFixed(1)) },
+            { year: '2022', val1: Number((pFactor * 0.81).toFixed(1)), val2: Number((sFactor * 0.85).toFixed(1)), val3: Number((tFactor * 0.84).toFixed(1)) },
+            { year: '2023', val1: Number((pFactor * 0.90).toFixed(1)), val2: Number((sFactor * 0.91).toFixed(1)), val3: Number((tFactor * 0.90).toFixed(1)) },
+            { year: '2024', val1: Number((pFactor * 0.95).toFixed(1)), val2: Number((sFactor * 0.94).toFixed(1)), val3: Number((tFactor * 0.93).toFixed(1)) },
+            { year: '2025', val1: Number((pFactor * 0.98).toFixed(1)), val2: Number((sFactor * 0.97).toFixed(1)), val3: Number((tFactor * 0.96).toFixed(1)) },
+            { year: '2026', val1: Number((pFactor * 1.04).toFixed(1)), val2: Number((sFactor * 1.03).toFixed(1)), val3: Number((tFactor * 0.99).toFixed(1)) }
         ];
 
         if (window.Recharts && window.React && window.ReactDOM) {
@@ -1470,12 +1639,13 @@ window.OmegaCabinetUI = {
                     e(LineChart, { data: data, margin: { top: 10, right: 20, left: 10, bottom: 5 } },
                         e(CartesianGrid, { strokeDasharray: '3 3', stroke: 'rgba(255,255,255,0.1)' }),
                         e(XAxis, { dataKey: 'year', stroke: '#94a3b8', tick: { fill: '#94a3b8', fontSize: 11 } }),
-                        e(YAxis, { yAxisId: 'left', stroke: '#00e5ff', tick: { fill: '#00e5ff', fontSize: 11 }, unit: 'T' }),
-                        e(YAxis, { yAxisId: 'right', orientation: 'right', stroke: '#ffd700', tick: { fill: '#ffd700', fontSize: 11 } }),
-                        e(Tooltip, { contentStyle: { backgroundColor: '#0f172a', borderColor: '#00e5ff', borderRadius: '8px', color: '#fff', fontSize: '12px' } }),
+                        e(YAxis, { yAxisId: 'left', stroke: pColor, tick: { fill: pColor, fontSize: 11 }, unit: unitLeft }),
+                        e(YAxis, { yAxisId: 'right', orientation: 'right', stroke: sColor, tick: { fill: sColor, fontSize: 11 } }),
+                        e(Tooltip, { contentStyle: { backgroundColor: '#0f172a', borderColor: pColor, borderRadius: '8px', color: '#fff', fontSize: '12px' } }),
                         e(Legend, { wrapperStyle: { fontSize: '12px', color: '#cbd5e1' } }),
-                        e(Line, { yAxisId: 'left', type: 'monotone', dataKey: 'gdp', name: 'National GDP ($ T/B)', stroke: '#00e5ff', strokeWidth: 3, dot: { r: 4, fill: '#00e5ff' } }),
-                        e(Line, { yAxisId: 'right', type: 'monotone', dataKey: 'military', name: 'Military Power Score', stroke: '#ffd700', strokeWidth: 3, dot: { r: 4, fill: '#ffd700' } })
+                        e(Line, { yAxisId: 'left', type: 'monotone', dataKey: 'val1', name: primaryName, stroke: pColor, strokeWidth: 3, dot: { r: 5, fill: pColor } }),
+                        e(Line, { yAxisId: 'right', type: 'monotone', dataKey: 'val2', name: secondaryName, stroke: sColor, strokeWidth: 3, dot: { r: 5, fill: sColor } }),
+                        e(Line, { yAxisId: 'right', type: 'monotone', dataKey: 'val3', name: tertiaryName, stroke: tColor, strokeWidth: 2, strokeDasharray: '4 4', dot: { r: 4, fill: tColor } })
                     )
                 );
 
@@ -1493,28 +1663,61 @@ window.OmegaCabinetUI = {
             }
         }
 
-        const svgWidth = 600;
-        const svgHeight = 220;
-        const padding = 35;
-        const pointsGdp = data.map((d, i) => {
+        // Breathtaking Interactive SVG Fallback
+        const svgWidth = 640;
+        const svgHeight = 230;
+        const padding = 40;
+        const minVal1 = Math.min(...data.map(d => d.val1));
+        const maxVal1 = Math.max(...data.map(d => d.val1));
+        const minVal2 = Math.min(...data.map(d => d.val2));
+        const maxVal2 = Math.max(...data.map(d => d.val2));
+
+        const points1 = data.map((d, i) => {
             const x = padding + (i / (data.length - 1)) * (svgWidth - 2 * padding);
-            const y = svgHeight - padding - ((d.gdp / (rawGdp * 1.1)) * (svgHeight - 2 * padding));
-            return `${x},${y}`;
-        }).join(' ');
-        
-        const pointsMil = data.map((d, i) => {
+            const y = svgHeight - padding - (((d.val1 - minVal1 * 0.8) / (maxVal1 * 1.15 - minVal1 * 0.8 || 1)) * (svgHeight - 2 * padding));
+            return { x, y, val: d.val1, year: d.year };
+        });
+
+        const points2 = data.map((d, i) => {
             const x = padding + (i / (data.length - 1)) * (svgWidth - 2 * padding);
-            const y = svgHeight - padding - ((d.military / (rawMil * 1.1)) * (svgHeight - 2 * padding));
-            return `${x},${y}`;
-        }).join(' ');
+            const y = svgHeight - padding - (((d.val2 - minVal2 * 0.8) / (maxVal2 * 1.15 - minVal2 * 0.8 || 1)) * (svgHeight - 2 * padding));
+            return { x, y, val: d.val2, year: d.year };
+        });
+
+        const poly1 = points1.map(p => `${p.x},${p.y}`).join(' ');
+        const poly2 = points2.map(p => `${p.x},${p.y}`).join(' ');
 
         container.innerHTML = `
-            <svg viewBox="0 0 ${svgWidth} ${svgHeight}" style="width:100%; height:100%; overflow:visible;">
-                <polyline fill="none" stroke="#00e5ff" stroke-width="3" points="${pointsGdp}" />
-                <polyline fill="none" stroke="#ffd700" stroke-width="3" points="${pointsMil}" />
+            <div style="font-family:'Share Tech Mono',monospace; display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; font-size:11px;">
+                <span style="color:${pColor};">${primaryName}: ${data[data.length-1].val1}</span>
+                <span style="color:${sColor};">${secondaryName}: ${data[data.length-1].val2}</span>
+                <span style="color:${tColor};">${tertiaryName}: ${data[data.length-1].val3}%</span>
+            </div>
+            <svg viewBox="0 0 ${svgWidth} ${svgHeight}" style="width:100%; height:100%; overflow:visible; background:rgba(2,8,18,0.95); border-radius:10px; border:1px solid rgba(0,229,255,0.25);">
+                <line x1="${padding}" y1="${padding}" x2="${svgWidth - padding}" y2="${padding}" stroke="rgba(255,255,255,0.08)" stroke-dasharray="4 4" />
+                <line x1="${padding}" y1="${svgHeight/2}" x2="${svgWidth - padding}" y2="${svgHeight/2}" stroke="rgba(255,255,255,0.08)" stroke-dasharray="4 4" />
+                <line x1="${padding}" y1="${svgHeight - padding}" x2="${svgWidth - padding}" y2="${svgHeight - padding}" stroke="rgba(0,229,255,0.3)" />
+
+                <polyline fill="none" stroke="${pColor}" stroke-width="3.5" points="${poly1}" />
+                <polyline fill="none" stroke="${sColor}" stroke-width="3" stroke-dasharray="6 2" points="${poly2}" />
+
+                ${points1.map((p) => `
+                    <circle cx="${p.x}" cy="${p.y}" r="5" fill="${pColor}" stroke="#fff" stroke-width="1.5">
+                        <title>Year ${p.year}: ${p.val}</title>
+                    </circle>
+                    <text x="${p.x}" y="${p.y - 10}" fill="${pColor}" font-size="9" font-family="monospace" text-anchor="middle" font-weight="bold">${p.val}</text>
+                `).join('')}
+
+                ${points2.map((p) => `
+                    <circle cx="${p.x}" cy="${p.y}" r="4" fill="${sColor}" stroke="#000" stroke-width="1">
+                        <title>Year ${p.year}: ${p.val}</title>
+                    </circle>
+                `).join('')}
+
+                <!-- X Axis Year Labels -->
                 ${data.map((d, i) => {
                     const x = padding + (i / (data.length - 1)) * (svgWidth - 2 * padding);
-                    return `<text x="${x}" y="${svgHeight - 10}" fill="#94a3b8" font-size="10" text-anchor="middle">${d.year}</text>`;
+                    return `<text x="${x}" y="${svgHeight - 12}" fill="#94a3b8" font-size="10" font-family="monospace" text-anchor="middle">${d.year}</text>`;
                 }).join('')}
             </svg>
         `;
@@ -1524,15 +1727,708 @@ window.OmegaCabinetUI = {
         const m = this.ministriesDatabase[ministryId];
         if (!m) return;
 
-        if (window.Game && window.Game.Map && window.Game.Map.showNotification) {
-            window.Game.Map.showNotification(
+        if (window.showOmegaNotification) {
+            window.showOmegaNotification(
                 "DIRECTIVE EXECUTED",
                 `Successfully issued directive [${actionType.toUpperCase()}] for ${m.title}!`,
                 "success"
             );
-        } else {
-            alert(`Successfully executed directive [${actionType.toUpperCase()}] for ${m.title}!`);
         }
+    },
+
+    setMoDSubview(subviewId) {
+        this.activeMoDSubview = subviewId;
+        this.renderMinistryDashboard('defense');
+    },
+
+    setDefconLevel(level) {
+        this.defconLevel = parseInt(level, 10);
+        const defconLabels = {
+            1: "DEFCON 1: MAXIMUM WAR READINESS & STRATEGIC MISSILE SILO UNLOCK",
+            2: "DEFCON 2: ELEVATED ALERT - AIR DEFENSE DOMES & SUBMARINE FLEET ACTIVE",
+            3: "DEFCON 3: GUARDED POSTURE - RESERVE TROOP STANDBY & CYBER FIREWALL",
+            4: "DEFCON 4: STANDARD MILITARY PATROL & BORDER RECONNAISSANCE",
+            5: "DEFCON 5: PEACETIME DIPLOMATIC & INSTRUCTIONAL OPERATIONS"
+        };
+        const defconTypes = { 1: "danger", 2: "warning", 3: "warning", 4: "info", 5: "success" };
+        if (window.showOmegaNotification) {
+            window.showOmegaNotification("DEFCON WAR ALERT UPDATED", defconLabels[this.defconLevel] || "ALERT UPDATED", defconTypes[this.defconLevel] || "info");
+        }
+        if (this.ministriesDatabase && this.ministriesDatabase.defense) {
+            this.ministriesDatabase.defense.status = `DEFCON ${this.defconLevel}`;
+        }
+        this.renderMinistryDashboard('defense');
+    },
+
+    calculateORS(countryKey) {
+        if (!this.orsData) {
+            this.orsData = {
+                infantry: 88,
+                armor: 84,
+                air_defense: 92,
+                air_force: 89,
+                navy: 82,
+                ammunition: 95,
+                recon: 96,
+                cyber_ew: 91,
+                satellite: 87,
+                morale: 94
+            };
+        }
+        const vals = Object.values(this.orsData);
+        const sum = vals.reduce((a, b) => a + b, 0);
+        const avg = Math.round(sum / vals.length);
+        let rating = "T1 STRATEGIC SUPREMACY";
+        if (avg < 50) rating = "CRITICAL VULNERABILITY";
+        else if (avg < 70) rating = "MODERATE DEGRADATION";
+        else if (avg < 85) rating = "STANDARD DEFENSE POSTURE";
+
+        return { score: avg, rating, breakdown: this.orsData };
+    },
+
+    updateORSParameter(paramKey, delta) {
+        if (!this.orsData) this.calculateORS();
+        if (this.orsData[paramKey] !== undefined) {
+            this.orsData[paramKey] = Math.max(10, Math.min(100, this.orsData[paramKey] + delta));
+            if (window.showOmegaNotification) {
+                window.showOmegaNotification("ORS PARAMETER ADJUSTED", `Updated ${paramKey.toUpperCase()} readiness to ${this.orsData[paramKey]}%`, "info");
+            }
+            this.renderMinistryDashboard('defense');
+        }
+    },
+
+    executeDefenseCommand(cmdId) {
+        const ops = {
+            air_defense: { name: "Air Defense Shield Modernization", cost: 1500, param: "air_defense", boost: 5, msg: "Upgraded SAM missile batteries and Phased-Array Radars! Air Defense +5%" },
+            infantry: { name: "Frontline Force Modernization", cost: 800, param: "infantry", boost: 6, msg: "Equipped 150,000 frontline infantry with body armor & night vision! Infantry +6%" },
+            air_force: { name: "Stealth Strike Jets & Drone Fleet", cost: 1200, param: "air_force", boost: 7, msg: "Acquired 36 Multirole Fighter Jets & 200 Strike Drones! Air Force +7%" },
+            navy: { name: "Deep-Sea Submarine Patrol", cost: 950, param: "navy", boost: 6, msg: "Deployed 4 Stealth Submarines & Guided-Missile Frigates! Navy +6%" },
+            cyber_ew: { name: "Cyber Counter-EW Command", cost: 500, param: "cyber_ew", boost: 5, msg: "Hardened satellite links & electronic radar jamming grid! Cyber EW +5%" },
+            ballistic: { name: "Strategic Ballistic Silo Expansion", cost: 2000, param: "satellite", boost: 8, msg: "Constructed 12 subterranean hypersonic missile silos! Strategic Silos +8%" },
+            fortress: { name: "Border Bunker & Pillbox System", cost: 600, param: "armor", boost: 6, msg: "Reinforced 280km border river barrier & pillbox bunkers! Fortifications +6%" },
+            ammunition: { name: "155mm Ordnance Factory Ramp-Up", cost: 750, param: "ammunition", boost: 7, msg: "Expanded munitions production to 12,000 shells/day! Ammo Stockpile +7%" },
+            reserves: { name: "100K Active Reserve Mobilization", cost: 400, param: "morale", boost: 5, msg: "Mobilized 100,000 trained reserves for active deployment! Morale & Readiness +5%" },
+            special_ops: { name: "Black-Ops Counter-Sabotage Unit", cost: 350, param: "recon", boost: 6, msg: "Inducted 2,500 counter-terrorism special forces operatives! Special Ops +6%" },
+            satellites: { name: "Low-Earth Orbit Spy Constellation", cost: 1100, param: "satellite", boost: 6, msg: "Launched 6 military surveillance micro-satellites! Satellite Guidance +6%" },
+            joint_drills: { name: "Strategic Ally Joint Exercises", cost: 300, param: "morale", boost: 4, msg: "Conducted combined live-fire war games with international allies! Combined Morale +4%" }
+        };
+
+        const op = ops[cmdId];
+        if (!op) return;
+
+        if (window.resources && window.resources.cash !== undefined && window.resources.cash < op.cost * 1000000) {
+            if (window.showOmegaNotification) window.showOmegaNotification("TREASURY DEFICIT", `Insufficient funds! Required: $${op.cost}M`, "error");
+            return;
+        }
+
+        if (window.resources && window.resources.cash !== undefined) {
+            window.resources.cash -= op.cost * 1000000;
+        }
+
+        this.updateORSParameter(op.param, op.boost);
+        if (window.showOmegaNotification) {
+            window.showOmegaNotification("DEFENSE DIRECTIVE EXECUTED", `🛡️ ${op.msg}`, "success");
+        }
+    },
+
+    executeDefenseProcurement(itemId) {
+        if (!this.procurementItems) {
+            this.procurementItems = [
+                { id: 'f35_jets', name: '5th-Gen Multirole Stealth Aircraft', stage: 7, maxStage: 8, cost: 1200 },
+                { id: 'sam_shield', name: 'Strategic SAM Air Defense Shield', stage: 8, maxStage: 8, cost: 1500 },
+                { id: 'mbt_tanks', name: 'Main Battle Tank Armored Division', stage: 5, maxStage: 8, cost: 850 },
+                { id: 'attack_subs', name: 'Stealth Attack Submarines', stage: 4, maxStage: 8, cost: 1100 },
+                { id: 'strike_drones', name: 'Autonomous Strike Drone Swarms', stage: 6, maxStage: 8, cost: 450 },
+                { id: 'hypersonic', name: 'Hypersonic Glide Interceptor', stage: 3, maxStage: 8, cost: 1800 },
+                { id: 'ew_radar', name: 'Quantum Radar Jamming Stations', stage: 8, maxStage: 8, cost: 350 },
+                { id: 'night_vision', name: 'Infantry Night Vision & Optics', stage: 8, maxStage: 8, cost: 200 }
+            ];
+        }
+
+        const item = this.procurementItems.find(i => i.id === itemId);
+        if (!item) return;
+
+        if (item.stage >= item.maxStage) {
+            if (window.showOmegaNotification) window.showOmegaNotification("PROCUREMENT COMPLETE", `📦 ${item.name} is already 100% field deployed!`, "info");
+            return;
+        }
+
+        item.stage += 1;
+        const stageNames = ["Requirement Def.", "Global RFI", "Tech Trials", "Sovereign Bidding", "Contract Signed", "Factory Production", "QA Inspection", "Field Deployed"];
+        if (window.showOmegaNotification) {
+            window.showOmegaNotification("PROCUREMENT ADVANCED", `⚙️ Advanced ${item.name} to Stage ${item.stage}/8: ${stageNames[item.stage - 1]}`, "success");
+        }
+
+        if (item.stage === 8) {
+            this.updateORSParameter('air_defense', 4);
+        }
+
+        this.renderMinistryDashboard('defense');
+    },
+
+    renderMoDDashboard(m, contentArea) {
+        const activeSub = this.activeMoDSubview || 'ors_breakdown';
+        const countryKey = this.activeCountry || "BANGLADESH";
+        const cDetails = this.getCountryDetails(countryKey);
+
+        const ministerName = (cDetails.ministers && cDetails.ministers['defense'] && cDetails.ministers['defense'].name) || m.ministerName;
+        const ministerRole = (cDetails.ministers && cDetails.ministers['defense'] && cDetails.ministers['defense'].role) || m.role;
+
+        const ors = this.calculateORS(countryKey);
+        const defcon = this.defconLevel || 2;
+        const defconColors = { 1: '#ef4444', 2: '#f97316', 3: '#eab308', 4: '#3b82f6', 5: '#10b981' };
+        const defconLabels = { 1: 'DEFCON 1 (MAX WAR)', 2: 'DEFCON 2 (ELEVATED)', 3: 'DEFCON 3 (GUARDED)', 4: 'DEFCON 4 (NORMAL)', 5: 'DEFCON 5 (PEACE)' };
+
+        if (!this.procurementItems) {
+            this.procurementItems = [
+                { id: 'f35_jets', name: '5th-Gen Multirole Stealth Aircraft', stage: 7, maxStage: 8, cost: 1200 },
+                { id: 'sam_shield', name: 'Strategic SAM Air Defense Shield', stage: 8, maxStage: 8, cost: 1500 },
+                { id: 'mbt_tanks', name: 'Main Battle Tank Armored Division', stage: 5, maxStage: 8, cost: 850 },
+                { id: 'attack_subs', name: 'Stealth Attack Submarines', stage: 4, maxStage: 8, cost: 1100 },
+                { id: 'strike_drones', name: 'Autonomous Strike Drone Swarms', stage: 6, maxStage: 8, cost: 450 },
+                { id: 'hypersonic', name: 'Hypersonic Glide Interceptor', stage: 3, maxStage: 8, cost: 1800 },
+                { id: 'ew_radar', name: 'Quantum Radar Jamming Stations', stage: 8, maxStage: 8, cost: 350 },
+                { id: 'night_vision', name: 'Infantry Night Vision & Optics', stage: 8, maxStage: 8, cost: 200 }
+            ];
+        }
+
+        let html = `
+            <!-- MoD AAA HERO HEADER -->
+            <div style="background:linear-gradient(135deg,rgba(15,23,42,0.95),rgba(153,27,27,0.85)); border:1.5px solid #ef4444; border-radius:12px; padding:16px 20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; box-shadow:0 0 22px rgba(239,68,68,0.3);">
+                <div style="display:flex; align-items:center; gap:16px;">
+                    <div style="font-size:38px; background:rgba(239,68,68,0.1); padding:8px 14px; border-radius:12px; border:1px solid rgba(239,68,68,0.4);">🛡️</div>
+                    <div>
+                        <h1 style="margin:0; font-family:'Inter',sans-serif; font-weight:800; font-size:22px; color:#f8fafc; letter-spacing:0.3px;">MINISTRY OF DEFENSE & SUPREME COMMAND (${cDetails.name.toUpperCase()})</h1>
+                        <div style="font-size:12px; font-weight:600; color:#ef4444; margin-top:2px;">Operational Readiness Score (ORS) Engine, 12 Master Operations & Procurement Pipeline</div>
+                        <div style="font-size:11px; color:#cbd5e1; margin-top:2px;">
+                            Commander: <strong style="color:#ffd700;">${ministerName}</strong> (${ministerRole}) | Alert: <strong style="color:${defconColors[defcon]};">${defconLabels[defcon]}</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+                    <!-- ORS GAUGE BADGE -->
+                    <div style="background:rgba(0,0,0,0.6); border:1px solid ${ors.score >= 80 ? '#22c55e' : (ors.score >= 65 ? '#00e5ff' : '#ffd700')}; padding:8px 16px; border-radius:10px; text-align:center;">
+                        <div style="font-size:10px; color:#94a3b8; font-family:'Share Tech Mono',monospace;">TOTAL ORS SCORE</div>
+                        <div style="font-size:22px; font-weight:900; color:${ors.score >= 80 ? '#22c55e' : (ors.score >= 65 ? '#00e5ff' : '#ffd700')}; font-family:'Share Tech Mono',monospace;">
+                            ${ors.score}% <span style="font-size:11px; color:#94a3b8;">${ors.rating}</span>
+                        </div>
+                    </div>
+
+                    <!-- DEFCON SELECTOR -->
+                    <div style="display:flex; flex-direction:column; gap:4px;">
+                        <div style="font-size:9.5px; color:#94a3b8; font-family:'Share Tech Mono',monospace;">DEFCON WAR ALERT LEVEL</div>
+                        <div style="display:flex; gap:3px;">
+                            ${[1,2,3,4,5].map(lvl => `
+                                <button onclick="window.OmegaCabinetUI.setDefconLevel(${lvl});" style="
+                                    background: ${defcon === lvl ? defconColors[lvl] : 'rgba(15,23,42,0.8)'};
+                                    color: ${defcon === lvl ? '#000' : '#94a3b8'};
+                                    border: 1px solid ${defconColors[lvl]};
+                                    font-weight: bold;
+                                    font-size: 10px;
+                                    padding: 4px 8px;
+                                    border-radius: 4px;
+                                    cursor: pointer;
+                                    font-family: 'Share Tech Mono', monospace;
+                                ">D${lvl}</button>
+                            `).join('')}
+                        </div>
+                    </div>
+
+                    <button onclick="window.OmegaLayerManager.setLayer(5, { ministryId: 'defense' });" style="background:linear-gradient(135deg,#ef4444,#991b1b); border:none; color:#fff; font-weight:800; font-family:'Share Tech Mono',monospace; font-size:12px; padding:10px 16px; border-radius:8px; cursor:pointer; display:flex; align-items:center; gap:6px; box-shadow:0 0 15px rgba(239,68,68,0.5);">
+                        🎙️ INTERROGATE DEFENSE CHIEF
+                    </button>
+                </div>
+            </div>
+
+            <!-- MoD 5 SUBVIEW NAVIGATION TABS -->
+            <div style="display:flex; gap:8px; border-bottom:1px solid rgba(239,68,68,0.3); padding-bottom:8px; margin-top:14px; overflow-x:auto; scrollbar-width:thin;">
+                ${[
+                    { id: 'ors_breakdown', label: '🛡️ ORS 10-Parameter Matrix', color: '#22c55e' },
+                    { id: 'master_ops', label: '⚔️ 12 Master Command Operations', color: '#ef4444' },
+                    { id: 'procurement', label: '📦 8-Step Procurement Pipeline', color: '#ffd700' },
+                    { id: 'garrison', label: '🪖 Troop Garrison & Bases', color: '#38bdf8' },
+                    { id: 'arsenal_threat', label: '📡 Arsenal & Strategic Threat Radar', color: '#a855f7' }
+                ].map(tab => `
+                    <button onclick="window.OmegaCabinetUI.setMoDSubview('${tab.id}');" style="
+                        background: ${activeSub === tab.id ? `linear-gradient(135deg, ${tab.color}, #000)` : 'rgba(15,23,42,0.85)'};
+                        color: ${activeSub === tab.id ? '#fff' : '#cbd5e1'};
+                        border: 1px solid ${activeSub === tab.id ? tab.color : 'rgba(255,255,255,0.12)'};
+                        padding: 8px 14px;
+                        border-radius: 8px;
+                        font-family: 'Share Tech Mono', monospace;
+                        font-size: 11px;
+                        font-weight: bold;
+                        cursor: pointer;
+                        white-space: nowrap;
+                        transition: all 0.2s ease;
+                        box-shadow: ${activeSub === tab.id ? `0 0 12px ${tab.color}40` : 'none'};
+                    ">
+                        ${tab.label}
+                    </button>
+                `).join('')}
+            </div>
+            <div style="margin-top:14px;">
+        `;
+
+        if (activeSub === 'ors_breakdown') {
+            const params = [
+                { id: 'infantry', name: 'Land Infantry & Special Forces', val: ors.breakdown.infantry, icon: '🪖' },
+                { id: 'armor', name: 'Main Battle Tank & Armored Yield', val: ors.breakdown.armor, icon: '🚜' },
+                { id: 'air_defense', name: 'Integrated SAM Air Defense Domes', val: ors.breakdown.air_defense, icon: '🛡️' },
+                { id: 'air_force', name: 'Air Interception & Multirole Jets', val: ors.breakdown.air_force, icon: '✈️' },
+                { id: 'navy', name: 'Submarines & Maritime Fleet Patrol', val: ors.breakdown.navy, icon: '⚓' },
+                { id: 'ammunition', name: 'Ammunition Stockpile & Logistics', val: ors.breakdown.ammunition, icon: '📦' },
+                { id: 'recon', name: 'Special Recon & Counter-Sabotage', val: ors.breakdown.recon, icon: '🦅' },
+                { id: 'cyber_ew', name: 'Cyber Warfare & Electronic Jamming', val: ors.breakdown.cyber_ew, icon: '💻' },
+                { id: 'satellite', name: 'Satellite Guidance & Ballistic Silos', val: ors.breakdown.satellite, icon: '🛰️' },
+                { id: 'morale', name: 'Troop Morale & High Command Integrity', val: ors.breakdown.morale, icon: '🎖️' }
+            ];
+
+            html += `
+                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:12px;">
+                    ${params.map(p => `
+                        <div style="background:rgba(15,23,42,0.9); border:1px solid rgba(255,255,255,0.1); border-radius:10px; padding:14px; display:flex; flex-direction:column; gap:8px;">
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <span style="font-size:13px; font-weight:bold; color:#f8fafc; display:flex; align-items:center; gap:6px;">
+                                    <span>${p.icon}</span> <span>${p.name}</span>
+                                </span>
+                                <span style="font-family:'Share Tech Mono',monospace; font-size:14px; font-weight:bold; color:${p.val >= 85 ? '#22c55e' : '#ffd700'};">${p.val}%</span>
+                            </div>
+                            <div style="width:100%; height:8px; background:rgba(0,0,0,0.5); border-radius:4px; overflow:hidden;">
+                                <div style="width:${p.val}%; height:100%; background:linear-gradient(90deg, #ef4444, #22c55e); transition:width 0.3s ease;"></div>
+                            </div>
+                            <div style="display:flex; justify-content:space-between; margin-top:4px;">
+                                <button onclick="window.OmegaCabinetUI.updateORSParameter('${p.id}', -5);" style="background:rgba(239,68,68,0.2); border:1px solid #ef4444; color:#ef4444; padding:3px 10px; border-radius:4px; cursor:pointer; font-size:10px; font-weight:bold;">-5% DEGRADE</button>
+                                <button onclick="window.OmegaCabinetUI.updateORSParameter('${p.id}', 5);" style="background:rgba(34,197,94,0.2); border:1px solid #22c55e; color:#22c55e; padding:3px 10px; border-radius:4px; cursor:pointer; font-size:10px; font-weight:bold;">+5% REINFORCE</button>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        if (activeSub === 'master_ops') {
+            const masterCmds = [
+                { id: 'air_defense', title: 'Integrated SAM Shield Modernization', cost: '$1.5B', icon: '🛡️', category: 'AIR DEFENSE', desc: 'Deploy Phased-Array Radars & Iron-Dome SAM batteries across strategic capitals.' },
+                { id: 'infantry', title: 'Frontline Division Modernization', cost: '$800M', icon: '🪖', category: 'INFANTRY', desc: 'Equip 150,000 active frontline troops with ballistic body armor, night optics & digital radios.' },
+                { id: 'air_force', title: 'Stealth Jets & Strike Drones', cost: '$1.2B', icon: '✈️', category: 'AIR FORCE', desc: 'Acquire 36 5th-Gen stealth fighters and 200 autonomous loitering attack drones.' },
+                { id: 'navy', title: 'Deep-Sea Submarine Deterrence', cost: '$950M', icon: '⚓', category: 'NAVY', desc: 'Deploy stealth attack submarines & guided-missile frigates to sovereign EEZ.' },
+                { id: 'cyber_ew', title: 'Cyber Defense & Counter-EW', cost: '$500M', icon: '💻', category: 'CYBER COMMAND', desc: 'Harden military satellite communication links and activate radar jamming frequencies.' },
+                { id: 'ballistic', title: 'Strategic Ballistic Silo Network', cost: '$2.0B', icon: '🚀', category: 'STRATEGIC SILOS', desc: 'Construct hardened underground launch silos for long-range deterrent missiles.' },
+                { id: 'fortress', title: 'Border Concrete Pillbox Grid', cost: '$600M', icon: '🧱', category: 'FORTIFICATIONS', desc: 'Build reinforced concrete bunkers, anti-tank ditches & river barrier defenses.' },
+                { id: 'ammunition', title: '155mm Shell Ordnance Expansion', cost: '$750M', icon: '📦', category: 'MUNITIONS', desc: 'Scale up domestic defense industrial factories to produce 12,000 heavy artillery shells daily.' },
+                { id: 'reserves', title: '100,000 Active Reserve Mobilization', cost: '$400M', icon: '⚡', category: 'RESERVES', desc: 'Issue national call-up order for 100,000 trained military reserve troops.' },
+                { id: 'special_ops', title: 'Elite Counter-Sabotage Black Ops', cost: '$350M', icon: '🦅', category: 'SPECIAL FORCES', desc: 'Train & deploy specialized tactical insertion teams for counter-sabotage operations.' },
+                { id: 'satellites', title: 'LEO Military Spy Satellite Grid', cost: '$1.1B', icon: '🛰️', category: 'RECONNAISSANCE', desc: 'Launch 6 low-Earth orbit radar imaging satellites for continuous target tracking.' },
+                { id: 'joint_drills', title: 'Strategic Ally Joint War Games', cost: '$300M', icon: '🤝', category: 'DIPLOMATIC DEFENSE', desc: 'Host combined live-fire naval and airborne maneuvers with friendly allied nations.' }
+            ];
+
+            html += `
+                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:12px;">
+                    ${masterCmds.map(c => `
+                        <div style="background:rgba(15,23,42,0.92); border:1px solid rgba(239,68,68,0.3); border-radius:10px; padding:14px; display:flex; flex-direction:column; justify-content:space-between; gap:10px;">
+                            <div>
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                                    <span style="font-size:10px; font-weight:bold; color:#ef4444; font-family:'Share Tech Mono',monospace;">${c.category}</span>
+                                    <span style="font-size:11px; font-weight:bold; color:#ffd700; font-family:'Share Tech Mono',monospace;">${c.cost}</span>
+                                </div>
+                                <div style="font-size:14px; font-weight:bold; color:#f8fafc; display:flex; align-items:center; gap:8px;">
+                                    <span>${c.icon}</span> <span>${c.title}</span>
+                                </div>
+                                <div style="font-size:11px; color:#cbd5e1; margin-top:6px; line-height:1.4;">${c.desc}</div>
+                            </div>
+                            <button onclick="window.OmegaCabinetUI.executeDefenseCommand('${c.id}');" style="background:linear-gradient(135deg,#ef4444,#991b1b); border:none; color:#fff; padding:8px 12px; border-radius:6px; font-weight:bold; font-family:'Share Tech Mono',monospace; font-size:11px; cursor:pointer; box-shadow:0 0 10px rgba(239,68,68,0.4);">
+                                ⚡ EXECUTE DEFENSE DIRECTIVE
+                            </button>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        if (activeSub === 'procurement') {
+            const stageLabels = ["1. Req.", "2. RFI", "3. Trials", "4. Bidding", "5. Contract", "6. Factory", "7. QA", "8. Deployed"];
+
+            html += `
+                <div style="background:rgba(15,23,42,0.9); border:1px solid rgba(255,215,0,0.3); border-radius:10px; padding:16px;">
+                    <div style="font-size:14px; font-weight:bold; color:#ffd700; font-family:'Share Tech Mono',monospace; margin-bottom:14px; display:flex; align-items:center; gap:8px;">
+                        <span>📦</span> <span>STRATEGIC ARMS PROCUREMENT PIPELINE (8-STEP DEPLOYMENT MATRIX)</span>
+                    </div>
+
+                    <div style="display:flex; flex-direction:column; gap:12px;">
+                        ${this.procurementItems.map(item => `
+                            <div style="background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:12px;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                                    <span style="font-size:13px; font-weight:bold; color:#f8fafc;">${item.name}</span>
+                                    <span style="font-size:11px; color:${item.stage === 8 ? '#22c55e' : '#ffd700'}; font-family:'Share Tech Mono',monospace; font-weight:bold;">
+                                        STAGE ${item.stage}/8 ${item.stage === 8 ? '● 100% FIELD DEPLOYED' : '● IN PIPELINE'}
+                                    </span>
+                                </div>
+
+                                <div style="display:grid; grid-template-columns:repeat(8, 1fr); gap:4px; margin-bottom:10px;">
+                                    ${stageLabels.map((lbl, idx) => `
+                                        <div style="
+                                            background: ${idx < item.stage ? (item.stage === 8 ? '#22c55e' : '#ffd700') : 'rgba(255,255,255,0.05)'};
+                                            color: ${idx < item.stage ? '#000' : '#64748b'};
+                                            font-size: 9px;
+                                            font-weight: bold;
+                                            text-align: center;
+                                            padding: 4px 2px;
+                                            border-radius: 4px;
+                                            font-family: 'Share Tech Mono', monospace;
+                                        ">${lbl}</div>
+                                    `).join('')}
+                                </div>
+
+                                <div style="display:flex; justify-content:space-between; align-items:center;">
+                                    <span style="font-size:11px; color:#cbd5e1;">Unit Procurement Budget: <strong style="color:#ffd700;">$${item.cost}M</strong></span>
+                                    <button onclick="window.OmegaCabinetUI.executeDefenseProcurement('${item.id}');" ${item.stage >= 8 ? 'disabled' : ''} style="
+                                        background: ${item.stage >= 8 ? '#334155' : 'linear-gradient(135deg,#ffd700,#b45309)'};
+                                        color: ${item.stage >= 8 ? '#94a3b8' : '#000'};
+                                        border: none;
+                                        padding: 6px 14px;
+                                        border-radius: 6px;
+                                        font-weight: bold;
+                                        font-family: 'Share Tech Mono', monospace;
+                                        font-size: 11px;
+                                        cursor: ${item.stage >= 8 ? 'default' : 'pointer'};
+                                    ">
+                                        ${item.stage >= 8 ? '✅ 100% DEPLOYED' : '⏩ ADVANCE STAGE ($150M)'}
+                                    </button>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        if (activeSub === 'garrison') {
+            html += `
+                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:12px;">
+                    <div style="background:rgba(15,23,42,0.9); border:1px solid rgba(56,189,248,0.3); border-radius:10px; padding:14px;">
+                        <div style="font-size:12px; font-weight:bold; color:#38bdf8; font-family:'Share Tech Mono',monospace;">CENTRAL HIGH COMMAND GARRISON</div>
+                        <div style="font-size:24px; font-weight:bold; color:#f8fafc; margin-top:4px;">180,000 Active Troops</div>
+                        <div style="font-size:11px; color:#cbd5e1; margin-top:4px;">Status: <strong style="color:#22c55e;">PEAK OPERATIONAL STANCE</strong></div>
+                    </div>
+                    <div style="background:rgba(15,23,42,0.9); border:1px solid rgba(239,68,68,0.3); border-radius:10px; padding:14px;">
+                        <div style="font-size:12px; font-weight:bold; color:#ef4444; font-family:'Share Tech Mono',monospace;">BORDER RIVERS & COASTAL GARRISON</div>
+                        <div style="font-size:24px; font-weight:bold; color:#f8fafc; margin-top:4px;">95,000 Border Guards</div>
+                        <div style="font-size:11px; color:#cbd5e1; margin-top:4px;">Status: <strong style="color:#ffd700;">HIGH WATCH ALERT</strong></div>
+                    </div>
+                    <div style="background:rgba(15,23,42,0.9); border:1px solid rgba(168,85,247,0.3); border-radius:10px; padding:14px;">
+                        <div style="font-size:12px; font-weight:bold; color:#a855f7; font-family:'Share Tech Mono',monospace;">CAPITAL STRATEGIC AIRBASE</div>
+                        <div style="font-size:24px; font-weight:bold; color:#f8fafc; margin-top:4px;">4 Wing Squadrons</div>
+                        <div style="font-size:11px; color:#cbd5e1; margin-top:4px;">Status: <strong style="color:#00e5ff;">5-MIN SCRAMBLE READY</strong></div>
+                    </div>
+                </div>
+            `;
+        }
+
+        if (activeSub === 'arsenal_threat') {
+            html += `
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+                    <div style="background:rgba(15,23,42,0.9); border:1px solid rgba(168,85,247,0.3); border-radius:10px; padding:16px;">
+                        <div style="font-size:14px; font-weight:bold; color:#a855f7; font-family:'Share Tech Mono',monospace; margin-bottom:12px;">🛡️ NATIONAL WEAPONS ARSENAL</div>
+                        <div style="display:flex; flex-direction:column; gap:8px; font-size:12px; font-family:'Share Tech Mono',monospace;">
+                            <div style="display:flex; justify-content:space-between; padding:8px; background:rgba(255,255,255,0.04); border-radius:6px;">
+                                <span>Main Battle Tanks (MBT):</span> <strong style="color:#00e5ff;">1,240 Units</strong>
+                            </div>
+                            <div style="display:flex; justify-content:space-between; padding:8px; background:rgba(255,255,255,0.04); border-radius:6px;">
+                                <span>Multirole Stealth Fighters:</span> <strong style="color:#00e5ff;">186 Aircraft</strong>
+                            </div>
+                            <div style="display:flex; justify-content:space-between; padding:8px; background:rgba(255,255,255,0.04); border-radius:6px;">
+                                <span>Strategic SAM Batteries:</span> <strong style="color:#22c55e;">64 Domes</strong>
+                            </div>
+                            <div style="display:flex; justify-content:space-between; padding:8px; background:rgba(255,255,255,0.04); border-radius:6px;">
+                                <span>Stealth Submarines & Frigates:</span> <strong style="color:#38bdf8;">28 Vessels</strong>
+                            </div>
+                            <div style="display:flex; justify-content:space-between; padding:8px; background:rgba(255,255,255,0.04); border-radius:6px;">
+                                <span>155mm Ordnance Supply:</span> <strong style="color:#ffd700;">120 Days Continuous</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="background:rgba(15,23,42,0.9); border:1px solid rgba(239,68,68,0.4); border-radius:10px; padding:16px;">
+                        <div style="font-size:14px; font-weight:bold; color:#ef4444; font-family:'Share Tech Mono',monospace; margin-bottom:12px;">📡 STRATEGIC THREAT RADAR</div>
+                        <div style="display:flex; flex-direction:column; gap:10px; font-size:12px;">
+                            <div style="background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); padding:10px; border-radius:6px;">
+                                <div style="font-weight:bold; color:#ef4444;">AIRBORNE THREAT VECTOR: LOW</div>
+                                <div style="color:#cbd5e1; margin-top:2px;">SAM Dome Interception Probability: <strong style="color:#22c55e;">94.8%</strong></div>
+                            </div>
+                            <div style="background:rgba(0,229,255,0.1); border:1px solid rgba(0,229,255,0.3); padding:10px; border-radius:6px;">
+                                <div style="font-weight:bold; color:#00e5ff;">MARITIME EEZ SECURITY: SECURE</div>
+                                <div style="color:#cbd5e1; margin-top:2px;">Coastal Patrol Response Time: <strong style="color:#00e5ff;">8.5 Minutes</strong></div>
+                            </div>
+                            <div style="background:rgba(255,215,0,0.1); border:1px solid rgba(255,215,0,0.3); padding:10px; border-radius:6px;">
+                                <div style="font-weight:bold; color:#ffd700;">CYBER JAMMING SHIELD: ONLINE</div>
+                                <div style="color:#cbd5e1; margin-top:2px;">Counter-Electronic Intrusion Block Rate: <strong style="color:#22c55e;">99.1%</strong></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        contentArea.innerHTML = html;
+    },
+
+    renderMoFADashboard(m, contentArea) {
+        const activeSub = this.activeMoFASubview || 'reputation';
+        const countryKey = this.activeCountry || "BANGLADESH";
+        const cDetails = this.getCountryDetails(countryKey);
+
+        const ministerName = (cDetails.ministers && cDetails.ministers['foreign_affairs'] && cDetails.ministers['foreign_affairs'].name) || m.ministerName;
+        const ministerRole = (cDetails.ministers && cDetails.ministers['foreign_affairs'] && cDetails.ministers['foreign_affairs'].role) || m.role;
+
+        let html = `
+            <!-- MoFA AAA HERO HEADER -->
+            <div style="background:linear-gradient(135deg,rgba(15,23,42,0.95),rgba(30,58,138,0.85)); border:1.5px solid #00e5ff; border-radius:12px; padding:16px 20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; box-shadow:0 0 20px rgba(0,229,255,0.2);">
+                <div style="display:flex; align-items:center; gap:16px;">
+                    <div style="font-size:38px; background:rgba(0,229,255,0.1); padding:8px 14px; border-radius:12px; border:1px solid rgba(0,229,255,0.3);">🌐</div>
+                    <div>
+                        <h1 style="margin:0; font-family:'Inter',sans-serif; font-weight:800; font-size:22px; color:#f8fafc; letter-spacing:0.3px;">MINISTRY OF FOREIGN AFFAIRS (${cDetails.name.toUpperCase()})</h1>
+                        <div style="font-size:12px; font-weight:600; color:#00e5ff; margin-top:2px;">Sovereignty, International Pacts & Autonomous Diplomatic AI</div>
+                        <div style="font-size:11px; color:#cbd5e1; margin-top:2px;">Minister: <strong style="color:#ffd700;">${ministerName}</strong> (${ministerRole}) | State: <strong style="color:#22c55e;">PEACEFUL NON-ALIGNMENT</strong></div>
+                    </div>
+                </div>
+
+                <div style="display:flex; gap:10px; align-items:center;">
+                    <button onclick="window.OmegaLayerManager.setLayer(5, { ministryId: 'foreign_affairs' });" style="background:linear-gradient(135deg,#00e5ff,#0066ff); border:none; color:#000; font-weight:800; font-family:'Share Tech Mono',monospace; font-size:12px; padding:10px 16px; border-radius:8px; cursor:pointer; display:flex; align-items:center; gap:6px; box-shadow:0 0 12px rgba(0,229,255,0.4);">
+                        🎙️ INTERROGATE FOREIGN MINISTER
+                    </button>
+                </div>
+            </div>
+
+            <!-- MoFA 10 SUBVIEW NAVIGATION TABS -->
+            <div style="display:flex; gap:6px; border-bottom:1px solid rgba(0,229,255,0.25); padding-bottom:8px; margin-top:14px; overflow-x:auto; scrollbar-width:thin;">
+                ${[
+                    { id: 'reputation', label: '🌐 Reputation', color: '#00e5ff' },
+                    { id: 'relations', label: '🕊️ Bilateral Relations', color: '#22c55e' },
+                    { id: 'orgs', label: '🏛️ Int. Organizations', color: '#ffd700' },
+                    { id: 'treaties', label: '📜 Treaties & Pacts', color: '#a855f7' },
+                    { id: 'embassies', label: '🏢 Embassies', color: '#38bdf8' },
+                    { id: 'missions', label: '✈️ Special Missions', color: '#f97316' },
+                    { id: 'negotiations', label: '🤝 AI Negotiator (40 Stages)', color: '#ec4899' },
+                    { id: 'consular', label: '🛂 Consular & Visas', color: '#10b981' },
+                    { id: 'aid', label: '🎁 Foreign Aid', color: '#eab308' },
+                    { id: 'crisis', label: '🚨 Crisis Desk', color: '#ef4444' }
+                ].map(tab => `
+                    <button onclick="window.OmegaCabinetUI.setMoFASubview('${tab.id}');" style="
+                        background: ${activeSub === tab.id ? `linear-gradient(135deg, ${tab.color}, #000)` : 'rgba(15,23,42,0.8)'};
+                        color: ${activeSub === tab.id ? '#fff' : '#cbd5e1'};
+                        border: 1px solid ${activeSub === tab.id ? tab.color : 'rgba(255,255,255,0.1)'};
+                        padding: 7px 13px;
+                        border-radius: 8px;
+                        font-family: 'Share Tech Mono', monospace;
+                        font-size: 11px;
+                        font-weight: bold;
+                        cursor: pointer;
+                        white-space: nowrap;
+                        transition: all 0.2s ease;
+                        box-shadow: ${activeSub === tab.id ? `0 0 10px ${tab.color}40` : 'none'};
+                    ">
+                        ${tab.label}
+                    </button>
+                `).join('')}
+            </div>
+            <div style="margin-top:14px;">
+        `;
+
+        if (activeSub === 'reputation') {
+            html += `
+                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px;">
+                    <div style="background:rgba(15,23,42,0.85); border:1px solid rgba(0,229,255,0.3); border-radius:10px; padding:14px;">
+                        <div style="font-size:11px; color:#94a3b8; font-family:'Share Tech Mono',monospace;">GLOBAL PRESTIGE SCORE</div>
+                        <div style="font-size:26px; font-weight:800; color:#00e5ff; margin-top:4px;">92 <span style="font-size:13px; color:#22c55e;">/ 100</span></div>
+                        <div style="font-size:10px; color:#cbd5e1; margin-top:4px;">Tier 1 Sovereign Influence</div>
+                    </div>
+                    <div style="background:rgba(15,23,42,0.85); border:1px solid rgba(34,197,94,0.3); border-radius:10px; padding:14px;">
+                        <div style="font-size:11px; color:#94a3b8; font-family:'Share Tech Mono',monospace;">SOVEREIGN TRUST RATING</div>
+                        <div style="font-size:26px; font-weight:800; color:#22c55e; margin-top:4px;">88 <span style="font-size:13px; color:#22c55e;">/ 100</span></div>
+                        <div style="font-size:10px; color:#cbd5e1; margin-top:4px;">High International Credibility</div>
+                    </div>
+                    <div style="background:rgba(15,23,42,0.85); border:1px solid rgba(255,215,0,0.3); border-radius:10px; padding:14px;">
+                        <div style="font-size:11px; color:#94a3b8; font-family:'Share Tech Mono',monospace;">TREATY RELIABILITY INDEX</div>
+                        <div style="font-size:26px; font-weight:800; color:#ffd700; margin-top:4px;">96%</div>
+                        <div style="font-size:10px; color:#cbd5e1; margin-top:4px;">Flawless Treaty Compliance</div>
+                    </div>
+                    <div style="background:rgba(15,23,42,0.85); border:1px solid rgba(168,85,247,0.3); border-radius:10px; padding:14px;">
+                        <div style="font-size:11px; color:#94a3b8; font-family:'Share Tech Mono',monospace;">PEACE & MEDIATION RATING</div>
+                        <div style="font-size:26px; font-weight:800; color:#a855f7; margin-top:4px;">85 <span style="font-size:13px; color:#22c55e;">/ 100</span></div>
+                        <div style="font-size:10px; color:#cbd5e1; margin-top:4px;">Active Regional Peacekeeper</div>
+                    </div>
+                </div>
+            `;
+        } else if (activeSub === 'relations') {
+            html += `
+                <div style="background:rgba(15,23,42,0.85); border:1px solid rgba(0,229,255,0.3); border-radius:10px; padding:16px;">
+                    <div style="font-size:14px; font-weight:bold; color:#00e5ff; font-family:'Share Tech Mono',monospace; margin-bottom:12px;">
+                        🕊️ BILATERAL DIPLOMATIC RELATIONS CONTROL CENTER
+                    </div>
+                    <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:16px;">
+                        <label style="font-size:12px; color:#cbd5e1;">Target Foreign State:</label>
+                        <select id="mofa-target-country" style="background:#0f172a; border:1px solid #00e5ff; color:#fff; padding:6px 12px; border-radius:6px; font-family:'Share Tech Mono',monospace; font-size:12px;">
+                            <option value="USA">UNITED STATES OF AMERICA</option>
+                            <option value="CHINA">CHINA</option>
+                            <option value="RUSSIA">RUSSIA</option>
+                            <option value="INDIA" selected>INDIA</option>
+                            <option value="PAKISTAN">PAKISTAN</option>
+                            <option value="SAUDI ARABIA">SAUDI ARABIA</option>
+                            <option value="UNITED KINGDOM">UNITED KINGDOM</option>
+                            <option value="JAPAN">JAPAN</option>
+                            <option value="GERMANY">GERMANY</option>
+                            <option value="TURKEY">TURKEY</option>
+                        </select>
+                    </div>
+
+                    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:10px;">
+                        <button onclick="window.OmegaCabinetUI.executeMoFAAction('establish_ties', document.getElementById('mofa-target-country').value);" style="background:rgba(34,197,94,0.15); border:1px solid #22c55e; color:#22c55e; padding:10px; border-radius:8px; font-weight:bold; cursor:pointer; font-size:11px;">
+                            🌐 ESTABLISH FORMAL TIES
+                        </button>
+                        <button onclick="window.OmegaCabinetUI.executeMoFAAction('upgrade_relation', document.getElementById('mofa-target-country').value);" style="background:rgba(0,229,255,0.15); border:1px solid #00e5ff; color:#00e5ff; padding:10px; border-radius:8px; font-weight:bold; cursor:pointer; font-size:11px;">
+                            🕊️ UPGRADE TO STRATEGIC PARTNER
+                        </button>
+                        <button onclick="window.OmegaCabinetUI.executeMoFAAction('open_embassy', document.getElementById('mofa-target-country').value);" style="background:rgba(255,215,0,0.15); border:1px solid #ffd700; color:#ffd700; padding:10px; border-radius:8px; font-weight:bold; cursor:pointer; font-size:11px;">
+                            🏢 OPEN EMBASSY ($150M)
+                        </button>
+                        <button onclick="window.OmegaCabinetUI.executeMoFAAction('diplomatic_summit', document.getElementById('mofa-target-country').value);" style="background:rgba(168,85,247,0.15); border:1px solid #a855f7; color:#a855f7; padding:10px; border-radius:8px; font-weight:bold; cursor:pointer; font-size:11px;">
+                            🤝 HOST BILATERAL SUMMIT ($50M)
+                        </button>
+                        <button onclick="window.OmegaCabinetUI.executeMoFAAction('downgrade_relation', document.getElementById('mofa-target-country').value);" style="background:rgba(239,68,68,0.15); border:1px solid #ef4444; color:#ef4444; padding:10px; border-radius:8px; font-weight:bold; cursor:pointer; font-size:11px;">
+                            ⚠️ ISSUE DIPLOMATIC DEMARCHE
+                        </button>
+                        <button onclick="window.OmegaCabinetUI.executeMoFAAction('expel_ambassador', document.getElementById('mofa-target-country').value);" style="background:rgba(239,68,68,0.25); border:1px solid #ef4444; color:#ff8888; padding:10px; border-radius:8px; font-weight:bold; cursor:pointer; font-size:11px;">
+                            🚨 EXPEL AMBASSADOR (PERSONA NON GRATA)
+                        </button>
+                    </div>
+                </div>
+            `;
+        } else if (activeSub === 'orgs') {
+            html += `
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                    <div style="background:rgba(15,23,42,0.85); border:1px solid rgba(0,229,255,0.3); border-radius:10px; padding:14px;">
+                        <div style="font-size:13px; font-weight:bold; color:#00e5ff; font-family:'Share Tech Mono',monospace; margin-bottom:8px;">
+                            🏛️ UNITED NATIONS (UN DESK)
+                        </div>
+                        <div style="font-size:11px; color:#cbd5e1; margin-bottom:10px; line-height:1.4;">
+                            Resolution #4082 (Global Green Security). General Assembly Vote Pending.
+                        </div>
+                        <button onclick="window.OmegaCabinetUI.executeMoFAAction('vote_un_resolution', 'UN Resolution 4082');" style="background:linear-gradient(135deg,#00e5ff,#0066ff); border:none; color:#000; font-weight:bold; padding:8px 14px; border-radius:6px; cursor:pointer; font-size:11px;">
+                            📜 CAST SOVEREIGN UN VOTE
+                        </button>
+                    </div>
+
+                    <div style="background:rgba(15,23,42,0.85); border:1px solid rgba(255,215,0,0.3); border-radius:10px; padding:14px;">
+                        <div style="font-size:13px; font-weight:bold; color:#ffd700; font-family:'Share Tech Mono',monospace; margin-bottom:8px;">
+                            🏦 INTERNATIONAL MONETARY FUND (IMF)
+                        </div>
+                        <div style="font-size:11px; color:#cbd5e1; margin-bottom:10px; line-height:1.4;">
+                            Apply for Emergency Balance-of-Payments Support Facility ($2.5B).
+                        </div>
+                        <button onclick="window.OmegaCabinetUI.executeMoFAAction('request_imf_loan', 'IMF');" style="background:linear-gradient(135deg,#ffd700,#f59e0b); border:none; color:#000; font-weight:bold; padding:8px 14px; border-radius:6px; cursor:pointer; font-size:11px;">
+                            💰 REQUEST $2.5B EMERGENCY FACILITY
+                        </button>
+                    </div>
+
+                    <div style="background:rgba(15,23,42,0.85); border:1px solid rgba(34,197,94,0.3); border-radius:10px; padding:14px;">
+                        <div style="font-size:13px; font-weight:bold; color:#22c55e; font-family:'Share Tech Mono',monospace; margin-bottom:8px;">
+                            🌐 WORLD BANK
+                        </div>
+                        <div style="font-size:11px; color:#cbd5e1; margin-bottom:10px; line-height:1.4;">
+                            Green Infrastructure & Climate Adaptation Development Grant.
+                        </div>
+                        <button onclick="window.OmegaCabinetUI.executeMoFAAction('request_wb_grant', 'World Bank');" style="background:linear-gradient(135deg,#22c55e,#10b981); border:none; color:#000; font-weight:bold; padding:8px 14px; border-radius:6px; cursor:pointer; font-size:11px;">
+                            🏗️ APPLY FOR $1.8B DEVELOPMENT GRANT
+                        </button>
+                    </div>
+
+                    <div style="background:rgba(15,23,42,0.85); border:1px solid rgba(168,85,247,0.3); border-radius:10px; padding:14px;">
+                        <div style="font-size:13px; font-weight:bold; color:#a855f7; font-family:'Share Tech Mono',monospace; margin-bottom:8px;">
+                            ⚖️ INTERNATIONAL COURT OF JUSTICE (ICJ)
+                        </div>
+                        <div style="font-size:11px; color:#cbd5e1; margin-bottom:10px; line-height:1.4;">
+                            Transboundary River Water Rights & Maritime Boundary Dispute.
+                        </div>
+                        <button onclick="window.OmegaCabinetUI.executeMoFAAction('sign_treaty', 'ICJ Maritime Brief');" style="background:linear-gradient(135deg,#a855f7,#6366f1); border:none; color:#fff; font-weight:bold; padding:8px 14px; border-radius:6px; cursor:pointer; font-size:11px;">
+                            ⚖️ SUBMIT LEGAL BRIEF TO ICJ
+                        </button>
+                    </div>
+                </div>
+            `;
+        } else if (activeSub === 'negotiations') {
+            html += `
+                <div style="background:rgba(15,23,42,0.9); border:1.5px solid #ec4899; border-radius:10px; padding:16px; box-shadow:0 0 15px rgba(236,72,153,0.2);">
+                    <div style="font-size:14px; font-weight:bold; color:#ec4899; font-family:'Share Tech Mono',monospace; margin-bottom:8px; display:flex; align-items:center; justify-content:space-between;">
+                        <span>🤝 AUTONOMOUS 40-STAGE AI INTERNATIONAL NEGOTIATOR</span>
+                        <span style="font-size:10px; background:rgba(236,72,153,0.2); border:1px solid #ec4899; padding:2px 8px; border-radius:10px; color:#fff;">LEXICON & REASONING ENGINE</span>
+                    </div>
+                    <div style="font-size:12px; color:#cbd5e1; margin-bottom:14px; line-height:1.4;">
+                        Select a target foreign state and negotiation goal to execute all 40 Stages of the Foreign Minister Cognitive Pipeline!
+                    </div>
+
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px;">
+                        <div>
+                            <label style="font-size:11px; color:#94a3b8; font-family:'Share Tech Mono',monospace;">TARGET NATION:</label>
+                            <select id="ai-neg-target" style="width:100%; background:#0f172a; border:1px solid #ec4899; color:#fff; padding:8px; border-radius:6px; font-family:'Share Tech Mono',monospace; font-size:12px; margin-top:4px;">
+                                <option value="INDIA">INDIA (Transboundary Water & Border Trade)</option>
+                                <option value="CHINA">CHINA (Infrastructure & Belt-Road Investment)</option>
+                                <option value="USA">UNITED STATES (Strategic Defense & Tariff Exemption)</option>
+                                <option value="SAUDI ARABIA">SAUDI ARABIA (Energy Security & Labor Pacts)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="font-size:11px; color:#94a3b8; font-family:'Share Tech Mono',monospace;">NEGOTIATION INTENT:</label>
+                            <select id="ai-neg-intent" style="width:100%; background:#0f172a; border:1px solid #ec4899; color:#fff; padding:8px; border-radius:6px; font-family:'Share Tech Mono',monospace; font-size:12px; margin-top:4px;">
+                                <option value="Transboundary Water Sharing Treaty">Transboundary Water Sharing Treaty</option>
+                                <option value="Bilateral Preferential Trade Pact">Bilateral Preferential Trade Pact</option>
+                                <option value="Mutual Maritime Defense & Patrol Pact">Mutual Maritime Defense & Patrol Pact</option>
+                                <option value="Emergency Hostage & Border Security Resolution">Emergency Hostage & Border Security Resolution</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <button onclick="window.OmegaCabinetUI.executeMoFAAction('run_ai_cognition', document.getElementById('ai-neg-target').value, document.getElementById('ai-neg-intent').value);" style="width:100%; background:linear-gradient(135deg,#ec4899,#8b5cf6); border:none; color:#fff; font-weight:800; font-family:'Share Tech Mono',monospace; font-size:13px; padding:12px; border-radius:8px; cursor:pointer; box-shadow:0 0 15px rgba(236,72,153,0.4);">
+                        ⚡ RUN 40-STAGE FOREIGN MINISTER COGNITIVE ENGINE
+                    </button>
+                </div>
+            `;
+        } else {
+            // Generic subview fallback for treaties, embassies, missions, consular, aid, crisis
+            html += `
+                <div style="background:rgba(15,23,42,0.85); border:1px solid rgba(0,229,255,0.3); border-radius:10px; padding:16px;">
+                    <div style="font-size:14px; font-weight:bold; color:#00e5ff; font-family:'Share Tech Mono',monospace; margin-bottom:12px;">
+                        🌐 DIPLOMATIC MODULE: ${activeSub.toUpperCase()}
+                    </div>
+                    <div style="font-size:12px; color:#cbd5e1; margin-bottom:14px; line-height:1.4;">
+                        Sovereign Foreign Ministry directive controls for ${activeSub}.
+                    </div>
+                    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                        <button onclick="window.OmegaCabinetUI.executeMoFAAction('sign_treaty', '${activeSub.toUpperCase()} Pact');" style="background:linear-gradient(135deg,#00e5ff,#0066ff); border:none; color:#000; font-weight:bold; padding:10px 16px; border-radius:6px; cursor:pointer; font-size:11px;">
+                            📜 EXECUTE ${activeSub.toUpperCase()} DIRECTIVE
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        html += `
+            </div>
+            <!-- Historical Recharts Multi-Line Trend Chart -->
+            <div id="recharts-trend-container" style="background:rgba(2,11,20,0.9); border:1px solid rgba(0,229,255,0.3); border-radius:12px; padding:16px; margin-top:16px;">
+                <div style="font-family:'Share Tech Mono',monospace; color:#00e5ff; font-size:13px; font-weight:bold; margin-bottom:12px; display:flex; align-items:center; justify-content:space-between;">
+                    <span>📈 HISTORICAL MACROECONOMIC & MILITARY POWER TREND (RECHARTS)</span>
+                    <span style="font-size:10px; color:#ffd700; background:rgba(255,215,0,0.15); border:1px solid rgba(255,215,0,0.4); padding:2px 8px; border-radius:10px;">MULTI-LINE ANALYTICS</span>
+                </div>
+                <div id="recharts-gdp-mil-chart" style="width:100%; height:240px;"></div>
+            </div>
+        `;
+
+        contentArea.innerHTML = html;
+        setTimeout(() => {
+            this.renderRechartsChart('recharts-gdp-mil-chart', countryKey);
+        }, 30);
     },
 
     openInterrogationModal(ministerId) {
@@ -1673,6 +2569,13 @@ window.OmegaCabinetUI = {
     processQuestionAndReply(minister, questionText) {
         if (!this.chatHistories[minister.id]) this.chatHistories[minister.id] = [];
 
+        const countryKey = this.activeCountry || "BANGLADESH";
+        const cDetails = this.getCountryDetails(countryKey);
+        
+        // Dynamically resolution for localized minister name and role
+        const mName = (cDetails.ministers && cDetails.ministers[minister.id] && cDetails.ministers[minister.id].name) || minister.ministerName;
+        const mRole = (cDetails.ministers && cDetails.ministers[minister.id] && cDetails.ministers[minister.id].role) || minister.role;
+
         this.chatHistories[minister.id].push({
             sender: 'USER',
             text: questionText
@@ -1683,46 +2586,42 @@ window.OmegaCabinetUI = {
         setTimeout(() => {
             let replyText = "";
             let impactAnalysis = "";
+            const isBengali = /[\u0980-\u09FF]/.test(questionText);
+            const qLower = questionText.toLowerCase();
 
-            if (window.OmegaMinistry) {
-                if (window.OmegaMinistry._part3 && window.OmegaMinistry._part3.MultiDomainAnalysisEngine) {
-                    try {
-                        const analyzer = new window.OmegaMinistry._part3.MultiDomainAnalysisEngine();
-                        const analysisResult = analyzer.analyzeObservation25Layers({ text: questionText, domain: minister.id });
-                        impactAnalysis = `Economic: ${analysisResult.layers?.economy?.score || '+1.5%'}, Defense: ${analysisResult.layers?.military?.score || 'STABLE'}, Social: ${analysisResult.layers?.social?.score || 'HIGH'}`;
-                    } catch(e){}
-                }
-
-                if (window.OmegaMinistry._part4 && window.OmegaMinistry._part4.NaturalLanguageGenerationEngine) {
-                    try {
-                        const nlg = new window.OmegaMinistry._part4.NaturalLanguageGenerationEngine();
-                        replyText = nlg.generateSemanticText({ question: questionText, minister: minister.ministerName, role: minister.role }, "RESPONSIVE");
-                    } catch(e){}
-                }
-            }
-
-            if (!replyText || replyText.length < 10) {
-                const textLower = questionText.toLowerCase();
-                if (textLower.includes('readiness') || textLower.includes('threat') || textLower.includes('strike') || textLower.includes('বিপদ') || textLower.includes('হুমকি')) {
-                    replyText = `Commander, our threat level is actively monitored. Efficiency is currently at ${minister.efficiency}%. All readiness networks are operating within parameters, and strategic assets are secured.`;
-                } else if (textLower.includes('budget') || textLower.includes('money') || textLower.includes('tax') || textLower.includes('অর্থ') || textLower.includes('বাজেট')) {
-                    replyText = `Regarding finances, our allocation of ${minister.budget} is being deployed with strict financial discipline. Treasury reserves remain stable for upcoming strategic projects.`;
-                } else if (textLower.includes('plan') || textLower.includes('policy') || textLower.includes('পরিকল্পনা') || textLower.includes('নীতি')) {
-                    replyText = `Our primary policy focuses on absolute operational sovereignty and regional stability. We are executing directives with 25-layer impact assessment to ensure zero national risk.`;
+            if (isBengali) {
+                if (qLower.includes('প্রস্তুতি') || qLower.includes('হুমকি') || qLower.includes('যুদ্ধ') || qLower.includes('প্রতিরক্ষা') || qLower.includes('আক্রমণ')) {
+                    replyText = `মাননীয় এক্সিকিউটিভ কমান্ডার, ${cDetails.name}-এর ${mRole} হিসেবে জানাচ্ছি: আমাদের ${minister.title} সর্বোচ্চ DEFCON প্রস্তুতিতে রয়েছে। কাজের দক্ষতা ${minister.efficiency}% এবং জাতীয় সার্বভৌমত্ব সম্পূর্ণ সুরক্ষিত।`;
+                } else if (qLower.includes('অর্থ') || qLower.includes('বাজেট') || qLower.includes('টাকা') || qLower.includes('রাজস্ব') || qLower.includes('খরচ')) {
+                    replyText = `আপনার অর্থনৈতিক প্রশ্নের জবাবে: ${cDetails.name}-এর জন্য বরাদ্দকৃত বার্ষিক বাজেট ${minister.budget} শতভাগ স্বচ্ছতা ও অর্থনৈতিক শৃঙ্খলা মেনে ব্যবহৃত হচ্ছে। জাতীয় রাজকোষ শক্তিশালী রয়েছে।`;
+                } else if (qLower.includes('নীতি') || qLower.includes('পরিকল্পনা') || qLower.includes('চুক্তি') || qLower.includes('সম্পর্ক') || qLower.includes('কাজ')) {
+                    replyText = `আপনার আদেশ বাস্তবায়নে: আমি (${mName}) সরাসরি ২৫-স্তরের কৌশলগত পর্যালোচনা শুরু করেছি। "${questionText}" সংক্রান্ত পদক্ষেপের ফলে ${cDetails.name}-এর জাতীয় স্বার্থ ১০০% সুরক্ষিত থাকবে।`;
                 } else {
-                    replyText = `Executive Order acknowledged. Under my direction as ${minister.role}, we have synchronized all 12 memory stores and strategic priority channels to execute your directives immediately.`;
+                    replyText = `Executive Order গৃহীত হয়েছে, স্যার! ${cDetails.name}-এর ${mRole} হিসেবে আমি (${mName}) আপনার নির্দেশনা ("${questionText}") বাস্তবায়নে সংশ্লিষ্ট সকল বিভাগকে তাত্ক্ষণিক নির্দেশ প্রদান করছি।`;
+                }
+            } else {
+                if (qLower.includes('readiness') || qLower.includes('threat') || qLower.includes('strike') || qLower.includes('defense') || qLower.includes('war')) {
+                    replyText = `Commander, regarding your query: As ${mRole} of ${cDetails.name}, I confirm our operational efficiency is at ${minister.efficiency}%. Threat vectors are actively monitored and defense dromes are secured.`;
+                } else if (qLower.includes('budget') || qLower.includes('money') || qLower.includes('tax') || qLower.includes('finance') || qLower.includes('revenue')) {
+                    replyText = `Regarding national treasury allocations: Our annual budget of ${minister.budget} for ${cDetails.name} is deployed with strict audit controls under my direct oversight as ${mName}.`;
+                } else if (qLower.includes('plan') || qLower.includes('policy') || qLower.includes('treaty') || qLower.includes('relation') || qLower.includes('foreign')) {
+                    replyText = `As ${mName} (${mRole}), I have executed a 25-layer strategic simulation regarding "${questionText}". Sovereign stability of ${cDetails.name} remains protected at ${cDetails.stability || '88%'}.`;
+                } else {
+                    replyText = `Executive Directive acknowledged, Commander! As ${mName}, ${mRole} of ${cDetails.name}, I have synchronized all departmental channels to execute your order regarding "${questionText}" immediately.`;
                 }
             }
+
+            impactAnalysis = `Economic Impact: +${(Math.random()*1.8 + 0.5).toFixed(1)}% • Operational Efficiency: ${minister.efficiency}% • Sovereign Stability: ${cDetails.stability || '88%'}`;
 
             this.chatHistories[minister.id].push({
                 sender: 'MINISTER',
-                senderName: minister.ministerName,
+                senderName: mName,
                 text: replyText,
-                analysis: impactAnalysis || `Trust Score: ${minister.trust}/100 • Reliability: ${minister.efficiency}% • Domain Impact: POSITIVE`
+                analysis: impactAnalysis
             });
 
             this.renderChatHistory(minister.id);
-        }, 300);
+        }, 250);
     },
 
     executeDirective(ministerId, directiveType) {
@@ -1735,11 +2634,11 @@ window.OmegaCabinetUI = {
             }
             m.efficiency = Math.min(100, m.efficiency + 3);
             m.trust = Math.min(100, m.trust + 2);
-            alert(`💵 $10 Billion Allocated to ${m.title}! Department Efficiency increased to ${m.efficiency}%.`);
+            window.showOmegaNotification("TREASURY ALLOCATION", `💵 $10 Billion Allocated to ${m.title}! Department Efficiency increased to ${m.efficiency}%.`, "success");
             this.renderCabinet(this.activeCountry);
         } else if (directiveType === 'policy') {
             m.efficiency = Math.min(100, m.efficiency + 2);
-            alert(`⚡ Executive Directive Issued to ${m.ministerName} (${m.role})! Operational alignment updated.`);
+            window.showOmegaNotification("EXECUTIVE ALIGNMENT", `⚡ Executive Directive Issued to ${m.ministerName} (${m.role})! Operational alignment updated.`, "info");
             this.renderCabinet(this.activeCountry);
         }
     }

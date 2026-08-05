@@ -778,17 +778,17 @@ window.OmegaCabinetEngine = {
                         <div style="background:rgba(15,23,42,0.8); border:1px solid rgba(239,68,68,0.4); border-radius:8px; padding:12px;">
                             <strong style="color:#ef4444; font-size:12px;">🚨 Emergency War Mobilization Decree</strong>
                             <p style="color:#cbd5e1; font-size:11px; margin:6px 0;">Converts 40% civilian factory output into defense munitions for 90 days.</p>
-                            <button onclick="alert('Decree Enacted: Emergency War Mobilization Active!')" style="width:100%; background:rgba(239,68,68,0.2); border:1px solid #ef4444; color:#ef4444; font-weight:bold; padding:6px; border-radius:6px; cursor:pointer; margin-top:6px; font-size:11px;">SIGN DECREE</button>
+                            <button onclick="window.showOmegaNotification('🚨 WAR MOBILIZATION DECREE', 'Emergency War Mobilization Enacted! Civilian output reallocated.', 'danger')" style="width:100%; background:rgba(239,68,68,0.2); border:1px solid #ef4444; color:#ef4444; font-weight:bold; padding:6px; border-radius:6px; cursor:pointer; margin-top:6px; font-size:11px;">SIGN DECREE</button>
                         </div>
                         <div style="background:rgba(15,23,42,0.8); border:1px solid rgba(0,229,255,0.4); border-radius:8px; padding:12px;">
                             <strong style="color:#00e5ff; font-size:12px;">🛡️ National Sovereign Sukuk & Financial Shield</strong>
                             <p style="color:#cbd5e1; font-size:11px; margin:6px 0;">Mandates zero-interest Sukuk bonds to fund strategic food and energy reserves.</p>
-                            <button onclick="alert('Decree Enacted: Sovereign Sukuk Shield Active!')" style="width:100%; background:rgba(0,229,255,0.2); border:1px solid #00e5ff; color:#00e5ff; font-weight:bold; padding:6px; border-radius:6px; cursor:pointer; margin-top:6px; font-size:11px;">SIGN DECREE</button>
+                            <button onclick="window.showOmegaNotification('🛡️ SUKUK SHIELD DECREE', 'Sovereign Sukuk Shield Enacted! Reserve liquidity secured.', 'success')" style="width:100%; background:rgba(0,229,255,0.2); border:1px solid #00e5ff; color:#00e5ff; font-weight:bold; padding:6px; border-radius:6px; cursor:pointer; margin-top:6px; font-size:11px;">SIGN DECREE</button>
                         </div>
                         <div style="background:rgba(15,23,42,0.8); border:1px solid rgba(34,197,94,0.4); border-radius:8px; padding:12px;">
                             <strong style="color:#22c55e; font-size:12px;">🌾 Strategic Grain Reserve Mandate</strong>
                             <p style="color:#cbd5e1; font-size:11px; margin:6px 0;">Mandates 100% strategic food storage, eliminating famine risk during blockades.</p>
-                            <button onclick="alert('Decree Enacted: Grain Mandate Enforced!')" style="width:100%; background:rgba(34,197,94,0.2); border:1px solid #22c55e; color:#22c55e; font-weight:bold; padding:6px; border-radius:6px; cursor:pointer; margin-top:6px; font-size:11px;">SIGN DECREE</button>
+                            <button onclick="window.showOmegaNotification('🌾 GRAIN MANDATE DECREE', 'Strategic Grain Reserve Mandate Enforced! Food security locked at 100%.', 'success')" style="width:100%; background:rgba(34,197,94,0.2); border:1px solid #22c55e; color:#22c55e; font-weight:bold; padding:6px; border-radius:6px; cursor:pointer; margin-top:6px; font-size:11px;">SIGN DECREE</button>
                         </div>
                     </div>
                 </div>
@@ -807,20 +807,26 @@ window.OmegaCabinetEngine = {
 
     startPolicyTransition(targetName, days, costBillion) {
         this.activeTransition = { targetName, daysRemaining: days, totalDays: days, progress: 5, cost: costBillion };
-        alert(`🏛️ Policy Reform Initiated: Transitioning state structure to "${targetName}". Duration: ${days} days.`);
-        this.renderCabinetSubsystem();
+        window.showOmegaNotification('🏛️ POLICY REFORM INITIATED', `Transitioning state structure to "${targetName.toUpperCase()}". Duration: ${days} days.`, 'info');
+        if (window.OmegaCabinetUI && typeof window.OmegaCabinetUI.renderCabinet === 'function') {
+            window.OmegaCabinetUI.renderCabinet(window.OmegaCabinetUI.activeCountry || 'USA');
+        }
     },
 
     setActiveReligion(relId) {
         this.activeReligion = relId;
-        alert(`🕌 State Moral and Demographic Primary Religion updated to: ${relId.toUpperCase()}`);
-        this.renderCabinetSubsystem();
+        window.showOmegaNotification('🕌 STATE RELIGION DECREE', `State Moral & Demographic Primary Religion updated to: ${relId.toUpperCase()}`, 'success');
+        if (window.OmegaCabinetUI && typeof window.OmegaCabinetUI.renderCabinet === 'function') {
+            window.OmegaCabinetUI.renderCabinet(window.OmegaCabinetUI.activeCountry || 'USA');
+        }
     },
 
     setActiveIdeology(ideoId) {
         this.activeIdeology = ideoId;
-        alert(`📜 Active State Political Ideology updated to: ${ideoId.toUpperCase()}`);
-        this.renderCabinetSubsystem();
+        window.showOmegaNotification('📜 STATE IDEOLOGY DECREE', `Active State Political Ideology updated to: ${ideoId.toUpperCase()}`, 'success');
+        if (window.OmegaCabinetUI && typeof window.OmegaCabinetUI.renderCabinet === 'function') {
+            window.OmegaCabinetUI.renderCabinet(window.OmegaCabinetUI.activeCountry || 'USA');
+        }
     },
 
     submitSelectedPresetMotion() {

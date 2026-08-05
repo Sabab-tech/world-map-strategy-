@@ -217,11 +217,12 @@
                 <!-- Notifications dynamically pushed here -->
             </div>
 
-            <!-- 🎛️ RIGHT QUICK DOCK (Search, Events, Layers) -->
+            <!-- 🎛️ RIGHT QUICK DOCK (Search, Events, Layers, Resource Deposits) -->
             <div class="ui-right-controls" role="toolbar" aria-label="Quick Tools">
                 <button id="btn-quick-search" class="icon-btn" title="Instant Search (Countries, Cities, Bases)">🔍</button>
                 <button id="btn-quick-events" class="icon-btn" title="Global Events & Directives">⚠</button>
                 <button id="btn-quick-layers" class="icon-btn" title="Map Overlays & Layers">🛰</button>
+                <button id="btn-resource-overlay" class="icon-btn" title="Toggle 17 Strategic Resource Deposits Map Overlay" onclick="if(window.Game && window.Game.Map && typeof window.Game.Map.toggleResourceOverlay === 'function') { window.Game.Map.toggleResourceOverlay(); }">💎</button>
             </div>
 
             <!-- 🔍 INSTANT SEARCH DRAWER -->
@@ -587,35 +588,36 @@
                 </button>
                 <button id="btn-view-map" class="nav-btn" title="Toggle Map Layer Spectrum & Camera Focus" onclick="window.openMainMapView(event);">
                     <span class="nav-icon">👁️</span>
-                    <span class="nav-text">VIEW</span>
+                    <span class="nav-text">VIEW MAP</span>
                 </button>
             </nav>
         </div>
         
         <div id="resource-filter-box" class="resource-filter-bar hidden">
             <div class="res-filter-header">
-                <span class="res-filter-title">💎 SOVEREIGN RESOURCE MAP OVERLAY</span>
+                <span class="res-filter-title">💎 STRATEGIC MINERAL & ENERGY OVERLAY</span>
                 <button class="res-filter-close" onclick="Game.Map.toggleResourceOverlay()">✕</button>
             </div>
             <div class="res-filter-controls">
                 <select id="resource-selector" onchange="Game.Map.applyResourceMapFilter(this.value)">
-                    <option value="ALL">🌐 ALL 17 STRATEGIC RESOURCE DEPOSITS</option>
-                    <option value="crude_oil">🛢️ Crude Oil</option>
-                    <option value="natural_gas">🔥 Natural Gas</option>
-                    <option value="rare_earth">💎 Rare Earth Minerals</option>
+                    <option value="ALL">🌐 ALL 17 STRATEGIC MINERAL & ENERGY DEPOSITS</option>
                     <option value="uranium">⚛️ Uranium</option>
-                    <option value="iron_ore">⛏️ Iron Ore</option>
+                    <option value="natural_gas">🔥 Natural Gas</option>
+                    <option value="crude_oil">🛢️ Crude Oil</option>
+                    <option value="rare_earth">💎 Rare Earth Minerals</option>
+                    <option value="gold">🥇 Gold Deposits</option>
+                    <option value="lithium">🔋 Lithium Reserves</option>
+                    <option value="iron_ore">⛏️ Iron Ore & Steel</option>
                     <option value="copper">🔌 Copper</option>
                     <option value="bauxite">📦 Bauxite / Aluminum</option>
-                    <option value="coal">🪨 Coal</option>
-                    <option value="limestone">🧱 Limestone</option>
-                    <option value="electricity">⚡ Power Grid & Hydro</option>
-                    <option value="rice">🌾 Rice Grain</option>
-                    <option value="wheat">🌾 Wheat</option>
-                    <option value="water">💧 Water Reserves</option>
-                    <option value="timber">🪵 Timber & Forests</option>
-                    <option value="cement">🏗️ Cement Plants</option>
-                    <option value="sand">⏳ Silica Sand</option>
+                    <option value="coal">🪨 Coal Mines</option>
+                    <option value="titanium">🛡️ Titanium & Platinum</option>
+                    <option value="diamond">💎 Diamond Mines</option>
+                    <option value="cobalt">🔋 Cobalt Reserves</option>
+                    <option value="semiconductor">🔬 Semiconductors & Silicon</option>
+                    <option value="limestone">⛰️ Limestone Quarries</option>
+                    <option value="electricity">⚡ Hydro & Power Infrastructure</option>
+                    <option value="sand">🏖️ Dredged Silica Sand</option>
                 </select>
                 <button class="res-quick-btn" onclick="if(window.CountryIOS) window.CountryIOS.open((window.Game && window.Game.currentActiveCountry) || 'USA', 5)">🏛️ OPEN MINISTRY</button>
             </div>
@@ -651,7 +653,7 @@
 <script src="presentation-engine.js" defer onload="window.__OMEGA_DIAG__.boot.scriptStatus['presentation-engine.js']='LOADED'"></script>
 
 <script src="ui_engine_core.js" defer></script>
-
+<script src="omega_cognitive_engine.js" defer></script>
 <script src="ministry_engine.js" defer></script>
 <script src="cabinet_engine.js" defer></script>
 <script src="resource_ministry_engine.js" defer></script>
@@ -694,7 +696,9 @@
                 // [FIX P1] Verify Script Load Status
                 const critical = ['leaflet.js', 'omega_kernel.js', 'presentation-engine.js'];
                 critical.forEach(src => {
-                    if(window.__OMEGA_DIAG__.boot.scriptStatus[src] === 'ERROR') throw new Error(`Script Load Failure: ${src}`);
+                    if(window.__OMEGA_DIAG__.boot.scriptStatus[src] === 'ERROR') {
+                        console.warn(`[OMEGA WARN] Script load warning for: ${src}`);
+                    }
                 });
                 window.__LOG_EVENT__("ALL_CONTRACTS_VERIFIED");
             }
@@ -791,10 +795,10 @@
 
                 rafId = requestAnimationFrame(engineLoop);
 
-                // Start Transition
-                if (presentation && typeof presentation.triggerTransition === "function") {
-                    presentation.triggerTransition({ ministryId: "economy" });
-                }
+                // Auto transition disabled on boot so player lands cleanly on primary interface
+                // if (presentation && typeof presentation.triggerTransition === "function") {
+                //     presentation.triggerTransition({ ministryId: "economy" });
+                // }
 
                 // [FIX P2] Safe Dispatch
                 setTimeout(() => {

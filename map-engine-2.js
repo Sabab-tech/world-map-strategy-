@@ -858,6 +858,11 @@ Game.Map.renderGeoJSON = function(geoData) {
 
     Game.LabelSystem.updateCountryLabels();
     this.renderOceanLabels();
+    setTimeout(() => {
+        if (typeof this.renderResourceDeposits === 'function') {
+            this.renderResourceDeposits('NONE');
+        }
+    }, 200);
 };
 
 Game.selectCountryByName = function(countryName, layerTarget) {
@@ -879,6 +884,13 @@ Game.selectCountryByName = function(countryName, layerTarget) {
 
     if (this.Map) {
         this.Map.renderCountryHubs();
+        const resBox = document.getElementById('resource-filter-box');
+        const isResBoxOpen = resBox && !resBox.classList.contains('hidden') && resBox.style.display !== 'none';
+        if (isResBoxOpen) {
+            this.Map.renderResourceDeposits('COUNTRY');
+        } else if (this.Map.resourceDepositsLayer) {
+            this.Map.resourceDepositsLayer.clearLayers();
+        }
     }
 
     if (typeof this.updateCountryInfoCard === 'function') {
@@ -908,30 +920,44 @@ Game.Map.toggleCommandHub = function(show, initialChapter = 1) {
 };
 
 Game.Map.renderResourceDeposits = function(filterResourceType) {
+    this.map = this.map || window.map;
     if (!this.map || typeof L === 'undefined') return;
 
     if (!this.resourceDepositsLayer) {
         this.resourceDepositsLayer = L.layerGroup().addTo(this.map);
+    } else if (!this.map.hasLayer(this.resourceDepositsLayer)) {
+        this.resourceDepositsLayer.addTo(this.map);
     }
     this.resourceDepositsLayer.clearLayers();
 
-    const deposits = (window.ResourceMinistryEngine && window.ResourceMinistryEngine.deposits) ? window.ResourceMinistryEngine.deposits : [];
-    const resources = (window.ResourceMinistryEngine && window.ResourceMinistryEngine.resources) ? window.ResourceMinistryEngine.resources : {};
+    const box = document.getElementById('resource-filter-box') || (Game.dom && Game.dom.resFilterBox);
+    const isBoxVisible = box && !box.classList.contains('hidden') && box.style.display !== 'none';
 
-    const activeFilter = filterResourceType || (Game.dom && Game.dom.resFilterBox && Game.dom.resFilterBox.querySelector('select') ? Game.dom.resFilterBox.querySelector('select').value : 'ALL');
+    const selectEl = document.querySelector('#resource-filter-box select') || (Game.dom && Game.dom.resFilterBox ? Game.dom.resFilterBox.querySelector('select') : null);
+    const activeFilter = filterResourceType || (selectEl ? selectEl.value : 'ALL');
+
+    if (activeFilter === 'NONE' || !isBoxVisible) return;
+
+    const engine = window.ResourceMinistryEngine;
+    const deposits = (engine && engine.deposits) ? engine.deposits : [];
+    const resources = (engine && engine.resources) ? engine.resources : {};
     const activeCountryNorm = (Game.currentActiveCountry || 'BANGLADESH').replace(/_/g, " ").toUpperCase();
+    const nonMinerals = ['rice', 'wheat', 'water', 'timber', 'cement', 'food_processing'];
 
     deposits.forEach(dep => {
+        const depResNorm = (dep.resId || '').toLowerCase();
+        // Filter out non-minerals from map rendering
+        if (nonMinerals.includes(depResNorm)) return;
+
         const depCountryNorm = (dep.country || '').replace(/_/g, " ").toUpperCase();
 
         // Single-Country Mode vs Global Specific Resource Filter Mode
-        if (activeFilter === 'ALL' || activeFilter === 'NONE' || activeFilter === 'COUNTRY') {
+        if (activeFilter === 'COUNTRY') {
             // Show ONLY current active country's deposits
             if (depCountryNorm !== activeCountryNorm) return;
-        } else {
+        } else if (activeFilter !== 'ALL' && activeFilter !== 'NONE' && activeFilter !== '') {
             // Filter by specific resource type across ALL countries worldwide
             const filterNorm = activeFilter.toLowerCase();
-            const depResNorm = (dep.resId || '').toLowerCase();
             const depNameNorm = (dep.name || '').toLowerCase();
             if (depResNorm !== filterNorm && !depNameNorm.includes(filterNorm)) {
                 return; // skip non-matching deposits
@@ -940,56 +966,80 @@ Game.Map.renderResourceDeposits = function(filterResourceType) {
 
         const resInfo = resources[dep.resId] || { icon: '⛏️', name: dep.resId, category: 'Minerals' };
         const icon = resInfo.icon || '⛏️';
+        const isRareEarth = (dep.resId === 'rare_earth' || (dep.name && dep.name.toLowerCase().includes('rare earth')));
+        const isEnergy = (dep.resId === 'uranium' || dep.resId === 'crude_oil' || dep.resId === 'natural_gas');
 
+        const borderColor = isRareEarth ? '#e9d5ff' : (isEnergy ? '#00e5ff' : '#ffd700');
+        const glowColor = isRareEarth ? 'rgba(168,85,247,0.8)' : (isEnergy ? 'rgba(0,229,255,0.7)' : 'rgba(255,215,0,0.6)');
+
+        // Compact circular pin marker with icon
         const markerHtml = `
-            <div style="
-                background: rgba(15, 23, 42, 0.95);
-                border: 1px solid #ffd700;
-                border-radius: 10px;
-                padding: 1px 5px;
-                display: inline-flex;
+            <div title="${dep.name} (${dep.country})" style="
+                background: ${isRareEarth ? 'radial-gradient(circle, #a855f7 0%, #0f172a 100%)' : 'rgba(15, 23, 42, 0.95)'};
+                border: 1.5px solid ${borderColor};
+                border-radius: 50%;
+                width: 24px;
+                height: 24px;
+                display: flex;
                 align-items: center;
-                gap: 3px;
-                box-shadow: 0 2px 6px rgba(0, 0, 0, 0.8);
-                color: #f8fafc;
-                font-family: 'Share Tech Mono', monospace;
-                font-size: 9px;
-                font-weight: bold;
-                white-space: nowrap;
-                max-width: 95px;
-                overflow: hidden;
+                justify-content: center;
+                box-shadow: 0 0 10px ${glowColor};
+                font-size: 12px;
                 cursor: pointer;
+                transition: transform 0.2s ease;
             ">
-                <span style="font-size:10px;">${icon}</span>
-                <span style="overflow:hidden; text-overflow:ellipsis;">${dep.name}</span>
+                <span>${icon}</span>
             </div>
         `;
 
         const customIcon = L.divIcon({
             html: markerHtml,
-            className: 'resource-deposit-div-icon',
-            iconSize: [95, 20],
-            iconAnchor: [47, 10]
+            className: 'resource-deposit-compact-icon',
+            iconSize: [24, 24],
+            iconAnchor: [12, 12]
         });
 
         const marker = L.marker([dep.lat, dep.lng], { icon: customIcon });
 
-        const popupContent = `
-            <div style="font-family:'Segoe UI', sans-serif; color:#f8fafc; width:220px; padding:6px;">
-                <div style="font-size:12px; font-weight:bold; color:#ffd700; border-bottom:1px solid rgba(255,215,0,0.3); padding-bottom:4px; margin-bottom:6px; font-family:var(--font-title);">
-                    ${icon} ${dep.name.toUpperCase()}
+        let reDetailsHtml = '';
+        if (isRareEarth) {
+            const ree = dep.rare_earth_elements || {
+                "Neodymium (Nd)": "35%",
+                "Dysprosium (Dy)": "18%",
+                "Terbium (Tb)": "10%",
+                "Praseodymium (Pr)": "15%",
+                "Yttrium (Y)": "12%",
+                "Lanthanum (La)": "10%"
+            };
+            reDetailsHtml = `
+                <div style="background:rgba(168,85,247,0.12); border:1px solid rgba(168,85,247,0.4); border-radius:6px; padding:6px; margin-top:6px;">
+                    <div style="font-size:10px; font-weight:bold; color:#e9d5ff; font-family:var(--font-mono); margin-bottom:4px;">
+                        ⚛️ RARE EARTH COMPOSITION BREAKDOWN:
+                    </div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:3px; font-size:9px; color:#cbd5e1; font-family:var(--font-mono);">
+                        ${Object.entries(ree).map(([el, pct]) => `<div>• ${el}: <strong style="color:#22c55e;">${pct}</strong></div>`).join('')}
+                    </div>
                 </div>
-                <div style="font-size:11px; color:#cbd5e1; line-height:1.4; font-family:var(--font-mono); margin-bottom:8px;">
+            `;
+        }
+
+        const popupContent = `
+            <div style="font-family:'Segoe UI', sans-serif; color:#f8fafc; width:250px; padding:6px;">
+                <div style="font-size:12px; font-weight:bold; color:${borderColor}; border-bottom:1px solid rgba(255,215,0,0.3); padding-bottom:4px; margin-bottom:6px; font-family:var(--font-title); display:flex; align-items:center; gap:6px;">
+                    <span>${icon}</span> <span>${dep.name.toUpperCase()}</span>
+                </div>
+                <div style="font-size:11px; color:#cbd5e1; line-height:1.5; font-family:var(--font-mono); margin-bottom:8px;">
                     <div>Country: <strong style="color:#00e5ff;">${dep.country}</strong></div>
                     <div>Reserves: <strong style="color:#22c55e;">${dep.reserve}</strong></div>
                     <div>Status: <strong style="color:#a855f7;">${dep.status}</strong></div>
                 </div>
-                <div style="display:flex; flex-direction:column; gap:4px;">
-                    <button onclick="window.ResourceMinistryEngine.executeDirective('expand_facility', '${dep.resId}');" style="padding:4px 8px; background:rgba(34,197,94,0.2); border:1px solid #22c55e; color:#22c55e; font-size:10px; font-weight:bold; border-radius:4px; cursor:pointer;">
+                ${reDetailsHtml}
+                <div style="display:flex; flex-direction:column; gap:5px; margin-top:8px;">
+                    <button onclick="if(window.ResourceMinistryEngine) window.ResourceMinistryEngine.executeDirective('expand_facility', '${dep.resId}');" style="padding:5px 10px; background:rgba(34,197,94,0.2); border:1px solid #22c55e; color:#22c55e; font-size:10px; font-weight:bold; border-radius:4px; cursor:pointer;">
                         🏭 EXPAND CAPACITY (+25%)
                     </button>
-                    <button onclick="if(window.CountryIOS) window.CountryIOS.open('${dep.country}', 5);" style="padding:4px 8px; background:rgba(0,229,255,0.2); border:1px solid #00e5ff; color:#00e5ff; font-size:10px; font-weight:bold; border-radius:4px; cursor:pointer;">
-                        🏛️ OPEN MINISTRY (17 MINISTRIES)
+                    <button onclick="if(window.CountryIOS) window.CountryIOS.open('${dep.country}', 5);" style="padding:5px 10px; background:rgba(0,229,255,0.2); border:1px solid #00e5ff; color:#00e5ff; font-size:10px; font-weight:bold; border-radius:4px; cursor:pointer;">
+                        🏛️ OPEN RESOURCE MINISTRY
                     </button>
                 </div>
             </div>
@@ -1004,16 +1054,33 @@ Game.Map.renderResourceDeposits = function(filterResourceType) {
 };
 
 Game.Map.toggleResourceOverlay = function() {
-    if (Game.dom.resFilterBox && Game.dom.resFilterBox.style.display === 'flex') {
-        Game.dom.resFilterBox.style.display = 'none';
-        if (Game.dom.btnResOverlay) Game.dom.btnResOverlay.classList.remove('active');
+    this.map = this.map || window.map;
+    const box = document.getElementById('resource-filter-box') || (Game.dom && Game.dom.resFilterBox);
+    const relBox = document.getElementById('relation-filter-box') || (Game.dom && Game.dom.relFilterBox);
+    const btn = document.getElementById('btn-resource-overlay') || (Game.dom && Game.dom.btnResOverlay);
+    const relBtn = document.getElementById('btn-relation-overlay') || (Game.dom && Game.dom.btnRelOverlay);
+
+    const isCurrentlyVisible = box && !box.classList.contains('hidden') && box.style.display !== 'none';
+
+    if (isCurrentlyVisible) {
+        if (box) {
+            box.classList.add('hidden');
+            box.style.display = 'none';
+        }
+        if (btn) btn.classList.remove('active');
         if (Game.geojsonLayer) Game.geojsonLayer.resetStyle();
         if (this.resourceDepositsLayer) this.resourceDepositsLayer.clearLayers();
     } else {
-        if (Game.dom.resFilterBox) Game.dom.resFilterBox.style.display = 'flex';
-        if (Game.dom.relFilterBox) Game.dom.relFilterBox.style.display = 'none';
-        if (Game.dom.btnResOverlay) Game.dom.btnResOverlay.classList.add('active');
-        if (Game.dom.btnRelOverlay) Game.dom.btnRelOverlay.classList.remove('active');
+        if (box) {
+            box.classList.remove('hidden');
+            box.style.display = 'flex';
+        }
+        if (relBox) {
+            relBox.classList.add('hidden');
+            relBox.style.display = 'none';
+        }
+        if (btn) btn.classList.add('active');
+        if (relBtn) relBtn.classList.remove('active');
 
         this.renderResourceDeposits('ALL');
     }

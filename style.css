@@ -868,11 +868,11 @@ body, html {
 }
 
 .ui-right-controls .icon-btn:hover, .ui-right-controls .icon-btn.active {
-    border-color: #3b82f6;
-    color: #60a5fa;
-    background: rgba(30, 41, 59, 0.95);
-    box-shadow: 0 0 14px rgba(59, 130, 246, 0.4);
-    transform: scale(1.05);
+    border-color: #00e5ff !important;
+    color: #00e5ff !important;
+    background: linear-gradient(135deg, rgba(0, 229, 255, 0.25), rgba(15, 23, 42, 0.95)) !important;
+    box-shadow: 0 0 18px rgba(0, 229, 255, 0.6), inset 0 0 10px rgba(0, 229, 255, 0.3) !important;
+    transform: scale(1.08) !important;
 }
 
 /* 3. DYNAMIC COUNTRY PANEL */
@@ -1709,7 +1709,7 @@ body.city-focus-active #relation-filter-box {
     border: 1.5px solid rgba(0, 229, 255, 0.6);
     border-radius: 16px;
     z-index: 99999;
-    backdrop-filter: blur(24px);
+    backdrop-filter: blur(6px);
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.95), 0 0 35px rgba(0, 229, 255, 0.3);
     display: flex;
     flex-direction: column;
@@ -1943,20 +1943,22 @@ body.city-focus-active #relation-filter-box {
     letter-spacing: 0.2px;
 }
 
-/* AUTO-VANISH ALL BUTTONS & OVERLAYS WHEN CITY DETAIL BAR, DRAWER, OR MODAL IS OPEN */
-body.city-focus-active .ui-bottom-navigation,
-body.city-focus-active #resource-filter-box,
-body.city-focus-active #relation-filter-box,
-body.city-focus-active #notification-stack,
-body.city-focus-active .country-card-hub,
-body.city-focus-active #command-hub-modal,
-body.modal-open .ui-bottom-navigation,
-body.modal-open .ui-right-controls,
-body.modal-open #resource-filter-box,
-body.modal-open #relation-filter-box,
-body.modal-open .country-card-hub,
+/* AUTO-VANISH OVERLAYS ONLY WHEN FULL SCREEN MODALS ARE ACTIVE IN LAYERS 1, 2, 3, 5 */
+body[data-active-layer="1"] .ui-bottom-navigation,
+body[data-active-layer="1"] .ui-right-controls,
+body[data-active-layer="1"] #top-status-bar,
+body[data-active-layer="2"] .ui-bottom-navigation,
+body[data-active-layer="2"] .ui-right-controls,
+body[data-active-layer="2"] #top-status-bar,
+body[data-active-layer="3"] .ui-bottom-navigation,
+body[data-active-layer="3"] .ui-right-controls,
+body[data-active-layer="3"] #top-status-bar,
+body[data-active-layer="5"] .ui-bottom-navigation,
+body[data-active-layer="5"] .ui-right-controls,
+body[data-active-layer="5"] #top-status-bar,
 body.ios-active .ui-bottom-navigation,
-body.ios-active .ui-right-controls {
+body.ios-active .ui-right-controls,
+body.ios-active #top-status-bar {
     display: none !important;
     opacity: 0 !important;
     pointer-events: none !important;
@@ -2759,8 +2761,9 @@ body[data-active-layer="2"] #render-engine-root,
 body[data-active-layer="3"] #render-engine-root,
 body[data-active-layer="4"] #render-engine-root,
 body[data-active-layer="5"] #render-engine-root {
-    filter: blur(10px) brightness(0.4);
-    pointer-events: none !origin-pointer-events;
+    filter: none;
+    opacity: 1;
+    pointer-events: none;
     transition: filter 0.3s ease, opacity 0.3s ease;
 }
 
@@ -3078,7 +3081,7 @@ body.is-landscape .parchment-grid-slider {
     border-radius: 0 !important;
     transform: none !important;
     background: rgba(4, 9, 18, 0.98) !important;
-    backdrop-filter: blur(20px) !important;
+    backdrop-filter: blur(4px) !important;
     box-sizing: border-box !important;
 }
 
@@ -3089,14 +3092,36 @@ body.is-landscape .parchment-grid-slider {
     left: 0 !important;
     width: 100vw !important;
     height: 100vh !important;
-    z-index: 1100 !important;
+    z-index: 9500 !important;
     margin: 0 !important;
     padding: 0 !important;
     border-radius: 0 !important;
     transform: none !important;
     background: rgba(3, 8, 16, 0.98) !important;
-    backdrop-filter: blur(20px) !important;
     box-sizing: border-box !important;
+    display: none;
+    flex-direction: column;
+    overflow-y: auto !important;
+    pointer-events: auto;
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-y !important;
+}
+
+#ministry-dashboard-content, .ministry-content-area {
+    flex: 1 1 auto !important;
+    overflow-y: auto !important;
+    max-height: calc(100vh - 45px) !important;
+    padding: 16px 20px 80px 20px !important;
+    box-sizing: border-box !important;
+    pointer-events: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-y !important;
+}
+
+#cabinet-full-window, .cabinet-body, #cabinet-subsystem-root, .omega-modal {
+    pointer-events: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-y !important;
 }
 
 #minister-interrogation-modal {
@@ -3387,7 +3412,7 @@ body.is-landscape .parchment-grid-slider {
    TARGETED UX FIXES (BLUR REMOVAL, BACK BUTTON, CAROUSEL & COUNTRY MODAL FIT)
    ============================================================================ */
 
-/* 1. Complete Screen Blur Removal across all Modals & Overlays */
+/* 1. Complete Screen Blur Removal & Z-Index Hierarchy */
 #command-hub-modal, .omega-modal, #cabinet-full-window, #ministry-dashboard-view, 
 #minister-interrogation-modal, .country-info-card, .city-detail-bar, .top-filter-box, 
 #resource-filter-box, .om-state-header, .ios-card, .ios-advisor-dock, .sticky-layer-header,
@@ -3410,34 +3435,81 @@ body[data-active-layer="5"] #render-engine-root {
     background: rgba(4, 12, 24, 0.98) !important;
     border: 2px solid rgba(0, 229, 255, 0.5) !important;
     box-shadow: 0 0 35px rgba(0, 0, 0, 0.9) !important;
-    z-index: 100000 !important;
+    z-index: 9500 !important;
 }
 
 #cabinet-full-window, #ministry-dashboard-view {
-    background: rgba(4, 12, 24, 0.98) !important;
+    position: fixed !important;
+    inset: 0 !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    background: #030810 !important;
+    z-index: 9500 !important;
+    box-sizing: border-box !important;
+    flex-direction: column !important;
+    overflow-y: auto !important;
+    pointer-events: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-y !important;
+    overscroll-behavior-y: contain !important;
+}
+
+#minister-interrogation-modal {
+    position: fixed !important;
+    inset: 0 !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    background: #020812 !important;
+    z-index: 9600 !important;
+    box-sizing: border-box !important;
+    flex-direction: column !important;
+    overflow-y: auto !important;
+    pointer-events: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-y !important;
+    overscroll-behavior-y: contain !important;
+}
+
+#ministry-dashboard-content, .ministry-content-area, .cabinet-body {
+    flex: 1 1 auto !important;
+    overflow-y: auto !important;
+    max-height: calc(100vh - 54px) !important;
+    padding: 14px 16px 80px 16px !important;
+    box-sizing: border-box !important;
+    pointer-events: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-y !important;
+    overscroll-behavior-y: contain !important;
 }
 
 /* 2. Global Permanent Tactical Back Button Styling */
 .global-back-btn, #global-back-btn {
     position: fixed !important;
-    top: 10px !important;
-    left: 12px !important;
-    z-index: 9999999 !important;
-    background: linear-gradient(135deg, #0f172a, #1e293b) !important;
-    border: 2px solid #00e5ff !important;
-    color: #00e5ff !important;
-    padding: 8px 18px !important;
-    border-radius: 8px !important;
+    top: 54px !important;
+    left: 14px !important;
+    height: 34px !important;
+    line-height: 30px !important;
+    padding: 0 14px !important;
+    font-size: 11px !important;
+    font-weight: bold !important;
     font-family: 'Share Tech Mono', monospace !important;
-    font-size: 13px !important;
-    font-weight: 800 !important;
+    border-radius: 6px !important;
+    z-index: 99990 !important;
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.95)) !important;
+    border: 1.5px solid #00e5ff !important;
+    color: #00e5ff !important;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.6), 0 0 15px rgba(0, 229, 255, 0.3) !important;
     cursor: pointer !important;
-    box-shadow: 0 4px 20px rgba(0, 229, 255, 0.5) !important;
     display: flex !important;
     align-items: center !important;
-    gap: 8px !important;
-    transition: all 0.2s ease !important;
+    gap: 6px !important;
     pointer-events: auto !important;
+    transition: all 0.2s ease !important;
+    backdrop-filter: blur(8px) !important;
 }
 
 .global-back-btn:hover {
@@ -3463,7 +3535,7 @@ body[data-active-layer="5"] #render-engine-root {
     overflow-y: hidden !important;
     scroll-behavior: smooth !important;
     padding: 12px 6px !important;
-    touch-action: pan-x !important;
+    touch-action: pan-x pan-y !important;
     -webkit-overflow-scrolling: touch !important;
     user-select: none !important;
     cursor: grab !important;
@@ -3493,8 +3565,8 @@ body[data-active-layer="5"] #render-engine-root {
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)) !important;
     grid-auto-flow: row !important;
     overflow-x: hidden !important;
-    overflow-y: auto !important;
-    max-height: 54vh !important;
+    overflow-y: visible !important;
+    max-height: none !important;
     gap: 12px !important;
 }
 
@@ -3517,37 +3589,67 @@ body[data-active-layer="5"] #render-engine-root {
 
 /* 5. Title Bar Constraint & Overflow Prevention */
 .top-status-bar, #top-status-bar {
+    width: 100vw !important;
     max-width: 100vw !important;
+    height: 48px !important;
+    min-height: 48px !important;
     box-sizing: border-box !important;
     overflow: hidden !important;
-    padding: 4px 10px !important;
-    flex-wrap: wrap !important;
+    padding: 0 12px !important;
+    display: flex !important;
+    flex-wrap: nowrap !important;
     justify-content: space-between !important;
-    gap: 4px !important;
+    align-items: center !important;
+    gap: 10px !important;
+    z-index: 99900 !important;
 }
 
 .status-group {
-    flex-wrap: wrap !important;
-    gap: 6px !important;
-    max-width: 100% !important;
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    gap: 10px !important;
+    flex-shrink: 0 !important;
 }
 
 .status-resources {
-    max-width: calc(100vw - 180px) !important;
-    overflow: hidden !important;
+    flex: 1 1 auto !important;
+    display: flex !important;
     flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    white-space: nowrap !important;
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+    gap: 14px !important;
+    align-items: center !important;
+    padding: 4px 12px !important;
+    background: rgba(15, 23, 42, 0.75) !important;
+    border: 1px solid rgba(0, 229, 255, 0.25) !important;
+    border-radius: 8px !important;
+}
+
+.status-resources::-webkit-scrollbar {
+    display: none !important;
 }
 
 .res-node {
-    flex-shrink: 1 !important;
-    min-width: 0 !important;
+    flex-shrink: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 5px !important;
+    font-size: 11px !important;
     white-space: nowrap !important;
-    text-overflow: ellipsis !important;
-    overflow: hidden !important;
+    opacity: 1 !important;
+    visibility: visible !important;
 }
 
 .res-val {
     white-space: nowrap !important;
+    font-family: 'Share Tech Mono', monospace !important;
+    font-size: 11.5px !important;
+    font-weight: bold !important;
+    color: #00e5ff !important;
 }
 
 /* 6. Dropdown Controls Fix */
@@ -3567,20 +3669,36 @@ select, select#resource-selector, select#relation-selector, select#resource-type
     outline: none !important;
 }
 
-/* 7. Bottom Navigation & Ministry Dock Unblock Rules */
-#world-ui-root {
+/* 7. Bottom Navigation & Right Map Controls Unblock Rules */
+#world-ui-root, #ui-engine-root {
+    pointer-events: none !important;
+}
+
+.ui-right-controls, .ui-right-controls .icon-btn, #btn-resource-overlay, #btn-layer-overlay, #btn-map-search, #btn-govt-mode, #resource-filter-box, #relation-filter-box {
     pointer-events: auto !important;
+    cursor: pointer !important;
+    z-index: 100000 !important;
+    position: relative;
+}
+
+.ui-right-controls {
+    position: fixed !important;
+    top: 64px !important;
+    right: 16px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
 }
 
 .ui-bottom-navigation {
     pointer-events: auto !important;
-    z-index: 99999 !important;
+    z-index: 999999 !important;
 }
 
-#btn-ministry-dock, #btn-view-map, #btn-card-cabinet {
+#btn-ministry-dock, #btn-religion-ideology, #btn-view-map, #btn-card-cabinet {
     pointer-events: auto !important;
     cursor: pointer !important;
-    z-index: 100000 !important;
+    z-index: 1000000 !important;
     position: relative !important;
 }
 
@@ -3590,7 +3708,7 @@ select, select#resource-selector, select#relation-selector, select#resource-type
 
 /* Remove big background box container from map ministry dock & let buttons fly cleanly on map */
 .ui-bottom-navigation {
-    position: absolute !important;
+    position: fixed !important;
     bottom: 20px !important;
     left: 50% !important;
     transform: translateX(-50%) !important;
@@ -3604,10 +3722,10 @@ select, select#resource-selector, select#relation-selector, select#resource-type
     gap: 16px !important;
     justify-content: center !important;
     align-items: center !important;
-    pointer-events: none !important;
+    pointer-events: auto !important;
     backdrop-filter: none !important;
     box-shadow: none !important;
-    z-index: 99999 !important;
+    z-index: 999999 !important;
 }
 
 #btn-ministry-dock, #btn-view-map, #btn-card-cabinet, .ui-bottom-navigation .nav-btn {

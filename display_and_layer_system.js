@@ -7,6 +7,44 @@
     'use strict';
 
     /* ============================================================================
+     * GLOBAL NOTIFICATION SYSTEM (Iframe-Safe Non-Blocking Visual Toast Stack)
+     * ============================================================================ */
+    window.showOmegaNotification = function(title, message, type = "info") {
+        try {
+            const stack = document.getElementById('notification-stack') || document.body;
+            if (!stack) return;
+            const card = document.createElement('div');
+            card.className = `notif-card ${type}`;
+            const color = type === 'danger' ? '#ef4444' : (type === 'success' ? '#22c55e' : '#00e5ff');
+            card.style.cssText = `
+                background: rgba(4, 15, 30, 0.95);
+                border: 1.5px solid ${color};
+                border-left: 5px solid ${color};
+                color: #fff;
+                padding: 12px 16px;
+                border-radius: 10px;
+                margin-bottom: 8px;
+                font-family: 'Share Tech Mono', monospace;
+                font-size: 12px;
+                box-shadow: 0 4px 25px rgba(0,0,0,0.8);
+                pointer-events: auto;
+                z-index: 9999999;
+                transition: all 0.3s ease;
+            `;
+            card.innerHTML = `<strong style="color:${color}; font-size:13px; display:block; margin-bottom:2px;">${title}</strong><div style="color:#cbd5e1; line-height:1.4;">${message}</div>`;
+            stack.appendChild(card);
+            setTimeout(() => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateX(20px)';
+                setTimeout(() => card.remove(), 400);
+            }, 4500);
+        } catch (e) {
+            console.log('[Notification fallback]', title, message);
+        }
+    };
+    window.showNotification = window.showOmegaNotification;
+
+    /* ============================================================================
      * 1. CENTRALIZED DISPLAY MANAGER (Orientation, Viewport & Safe Areas)
      * ============================================================================ */
     window.DisplayManager = {
@@ -278,6 +316,43 @@
         currentLayer: 0,
         layerStack: [0],
         activeMinistryId: null,
+        activeModalId: null,
+
+        setActiveModal(modalId) {
+            console.log(`[AAA LAYER ENGINE] Setting active modal: ${modalId}`);
+            // Hide previous active modal if different
+            if (this.activeModalId && this.activeModalId !== modalId) {
+                const prev = document.getElementById(this.activeModalId);
+                if (prev) {
+                    prev.style.display = 'none';
+                    prev.style.pointerEvents = 'none';
+                }
+            }
+            this.activeModalId = modalId;
+            const target = document.getElementById(modalId);
+            if (target) {
+                target.style.display = 'flex';
+                target.style.pointerEvents = 'auto';
+                target.style.zIndex = '999999';
+                document.body.classList.add('modal-open');
+            }
+        },
+
+        closeActiveModal() {
+            if (this.activeModalId) {
+                const curr = document.getElementById(this.activeModalId);
+                if (curr) {
+                    curr.style.display = 'none';
+                    curr.style.pointerEvents = 'none';
+                }
+                this.activeModalId = null;
+            }
+            document.body.classList.remove('modal-open');
+        },
+
+        getActiveModal() {
+            return this.activeModalId;
+        },
 
         setLayer(layerNum, data = {}, skipPush = false) {
             console.log(`[AAA LAYER ENGINE] Transitioning to Layer ${layerNum}`, data);
@@ -314,7 +389,7 @@
                     interrogModal.style.pointerEvents = 'none';
                 }
                 if (worldUi) {
-                    worldUi.style.pointerEvents = 'auto';
+                    worldUi.style.pointerEvents = 'none';
                     worldUi.style.filter = 'none';
                     worldUi.style.opacity = '1';
                 }
@@ -360,9 +435,9 @@
                     fullWin.style.zIndex = '999999';
                 }
                 if (worldUi) {
-                    worldUi.style.filter = 'blur(10px) brightness(0.4)';
+                    worldUi.style.filter = 'none';
                     worldUi.style.opacity = '0.5';
-                    worldUi.style.pointerEvents = 'auto';
+                    worldUi.style.pointerEvents = 'none';
                 }
                 document.body.classList.add('modal-open');
                 
@@ -399,9 +474,9 @@
                     dashWin.style.zIndex = '999999';
                 }
                 if (worldUi) {
-                    worldUi.style.filter = 'blur(12px) brightness(0.3)';
+                    worldUi.style.filter = 'none';
                     worldUi.style.opacity = '0.4';
-                    worldUi.style.pointerEvents = 'auto';
+                    worldUi.style.pointerEvents = 'none';
                 }
                 document.body.classList.add('modal-open');
                 if (data.ministryId) {
@@ -661,6 +736,54 @@
         }
     };
 
+    window.openReligionIdeologySystem = function(e) {
+        if (e && typeof e.preventDefault === 'function') e.preventDefault();
+        if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
+
+        console.log('[OMEGA NAV] openReligionIdeologySystem triggered directly');
+
+        if (window.Game && typeof window.Game.closeAllDrawers === 'function') {
+            window.Game.closeAllDrawers();
+        } else {
+            const drawers = ['command-hub-modal', 'country-info-card', 'city-detail-bar', 'search-drawer', 'events-drawer', 'layers-drawer', 'resource-filter-box', 'relation-filter-box', 'daily-quests-modal'];
+            drawers.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.style.display = 'none';
+            });
+        }
+
+        if (window.OmegaCabinetEngine) {
+            window.OmegaCabinetEngine.activeSubsystem = 'governance';
+            window.OmegaCabinetEngine.govSubView = 'overview';
+        }
+
+        if (window.OmegaLayerManager) {
+            window.OmegaLayerManager.setLayer(1);
+        } else {
+            const fullWin = document.getElementById('cabinet-full-window');
+            if (fullWin) {
+                fullWin.style.display = 'flex';
+                fullWin.style.position = 'fixed';
+                fullWin.style.inset = '0';
+                fullWin.style.width = '100vw';
+                fullWin.style.height = '100vh';
+                fullWin.style.opacity = '1';
+                fullWin.style.pointerEvents = 'auto';
+                fullWin.style.visibility = 'visible';
+                fullWin.style.zIndex = '999999';
+            }
+            document.body.classList.add('modal-open');
+            const activeCountry = (window.Game && window.Game.currentActiveCountry) || window.currentActiveCountry || 'BANGLADESH';
+            if (window.OmegaCabinetUI && typeof window.OmegaCabinetUI.renderCabinet === 'function') {
+                window.OmegaCabinetUI.renderCabinet(activeCountry);
+            }
+        }
+
+        if (window.OmegaCabinetEngine && typeof window.OmegaCabinetEngine.setSubsystem === 'function') {
+            window.OmegaCabinetEngine.setSubsystem('governance');
+        }
+    };
+
     window.openMainMapView = function(e) {
         if (e && typeof e.preventDefault === 'function') e.preventDefault();
         if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
@@ -678,6 +801,11 @@
             if (interrogModal) interrogModal.style.display = 'none';
             document.body.classList.remove('modal-open');
         }
+
+        if (window.map && typeof window.map.invalidateSize === 'function') {
+            setTimeout(() => { window.map.invalidateSize(); }, 50);
+        }
+
         if (window.updateGlobalBackButtonVisibility) {
             window.updateGlobalBackButtonVisibility();
         }
@@ -691,6 +819,35 @@
         if (window.updateGlobalBackButtonVisibility) {
             window.updateGlobalBackButtonVisibility();
         }
+
+        const bindDockBtn = (id, handler) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            const wrapHandler = (e) => {
+                if (e.cancelable) e.preventDefault();
+                e.stopPropagation();
+                handler(e);
+            };
+            el.addEventListener('click', wrapHandler);
+            el.addEventListener('pointerdown', wrapHandler);
+            el.addEventListener('touchstart', wrapHandler, { passive: false });
+        };
+
+        bindDockBtn('btn-ministry-dock', window.openMainMinistryView);
+        bindDockBtn('btn-religion-ideology', window.openReligionIdeologySystem);
+        bindDockBtn('btn-view-map', window.openMainMapView);
+
+        // Global Touch Scroll Lockup Prevention for Mobile WebViews & Touch Devices
+        document.addEventListener('touchstart', (e) => {
+            const scrollEl = e.target.closest('#ministry-dashboard-content, .ministry-content-area, .cabinet-body, #ministry-dashboard-view, #cabinet-full-window, #minister-interrogation-modal, .ios-content-viewport, #command-hub-modal');
+            if (scrollEl) {
+                if (scrollEl.scrollTop <= 0) {
+                    scrollEl.scrollTop = 1;
+                } else if (scrollEl.scrollTop + scrollEl.offsetHeight >= scrollEl.scrollHeight) {
+                    scrollEl.scrollTop = scrollEl.scrollHeight - scrollEl.offsetHeight - 1;
+                }
+            }
+        }, { passive: true });
     });
 
 })();

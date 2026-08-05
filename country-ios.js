@@ -1239,11 +1239,7 @@ window.CountryIOS = {
 
     executeAction(actionType) {
         const countryName = this.activeCountry.replace(/_/g, " ");
-        if (window.showNotification) {
-            window.showNotification("EXECUTIVE DIRECTIVE", `Directive ${actionType.toUpperCase()} dispatched for ${countryName}`, "info");
-        } else {
-            alert(`Executive Directive ${actionType.toUpperCase()} dispatched for ${countryName}`);
-        }
+        window.showOmegaNotification("EXECUTIVE DIRECTIVE", `Directive ${actionType.toUpperCase()} dispatched for ${countryName}`, "info");
     },
 
     // AI STRATEGIC ADVISOR RECOMMENDATIONS ENGINE

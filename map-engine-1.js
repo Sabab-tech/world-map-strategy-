@@ -925,7 +925,10 @@ window.bounds = L.latLngBounds(L.latLng(-60, -180), L.latLng(85, 180));
 // ============================================================================
 window.map = L.map('map', {
     maxBounds: window.bounds,
-    maxBoundsViscosity: 1.0,
+    maxBoundsViscosity: 0.5,
+    inertia: true,
+    inertiaDeceleration: 3000,
+    bounceAtZoomLimits: false,
     minZoom: 2.1,
     maxZoom: 8,
     zoomControl: false

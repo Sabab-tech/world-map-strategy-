@@ -371,12 +371,12 @@ const OMEGA_UI_RET_OBJ = {
             requestAnimationFrame(() => {
                 if (!attemptForcedRender()) {
                     _log("WARN", "init", "DOM targets not yet instantiated. Setting up MutationObserver sync gate...");
-                    const wrapper = document.getElementById("cabinet-full-window") || document.body;
+                    const wrapper = document.getElementById("cabinet-full-window") || document.getElementById("ui-engine-root") || document.body;
                     _renderObserver = new MutationObserver((mutations, obs) => {
                         _log("INFO", "DOM_Observer", "Cabinet window node detected. Forcing setup render...");
                         if (attemptForcedRender()) obs.disconnect();
                     });
-                    _renderObserver.observe(wrapper, { childList: true, subtree: wrapper === document.body });
+                    _renderObserver.observe(wrapper, { childList: true, subtree: false });
                 }
             });
 
@@ -431,9 +431,9 @@ const OMEGA_UI_RET_OBJ = {
             return true;
         };
         if (!binder()) {
-            const winObs = document.getElementById("cabinet-full-window") || document.body;
+            const winObs = document.getElementById("cabinet-full-window") || document.getElementById("ui-engine-root") || document.body;
             _observer = new MutationObserver(() => { if (binder()) _observer.disconnect(); }); 
-            _observer.observe(winObs, {childList: true, subtree: winObs === document.body}); 
+            _observer.observe(winObs, {childList: true, subtree: false}); 
         }
     },
     registerMandatoryEvents() {

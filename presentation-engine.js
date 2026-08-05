@@ -176,7 +176,7 @@ class PresentationEngine {
             return true;
         }
 
-        this.logWarning("[STEP 3.1: DOM CHECK] Priority nodes missing. Constructing sync gate (Observer)...");
+        this.logWarning("[STEP 3.1: DOM CHECK] Priority nodes missing. Constructing target-focused sync gate...");
 
         return new Promise((resolve) => {
             const observer = new MutationObserver(() => {
@@ -188,7 +188,8 @@ class PresentationEngine {
                 }
             });
 
-            observer.observe(this.root, { childList: true, subtree: true });
+            const targetObs = document.getElementById("cabinet-full-window") || this.root;
+            observer.observe(targetObs, { childList: true, subtree: false });
 
             const fallbackTimer = setTimeout(() => {
                 observer.disconnect();
@@ -237,7 +238,7 @@ class PresentationEngine {
             });
 
             const target = document.getElementById("cabinet-body") || this.root;
-            if (target) observer.observe(target, { childList: true, subtree: true });
+            if (target) observer.observe(target, { childList: true, subtree: false });
 
             const timer = setTimeout(() => {
                 observer.disconnect();
@@ -246,7 +247,7 @@ class PresentationEngine {
             }, timeoutMs);
             this.timers.add(timer);
         });
-            }
+    }
                         async triggerTransition(data) {
         if (this.state === this.STATE.DESTROYED) {
             this.logError("[TRANSITION BLOCKED] System is in DESTROYED state.");
@@ -353,18 +354,16 @@ class PresentationEngine {
             this.bgLayer.style.display = "none";
             this.uiLayer.style.display = "none";
 
-            // INTRO EFFECT FIX: Force CSS Reflow for Smooth Transition
-            this.introLayer.style.transition = "none"; // Disable temporarily
+            // INTRO EFFECT FIX: Smooth Scale & Opacity Transition
+            this.introLayer.style.transition = "none";
             this.introLayer.style.opacity = "0";
             this.introLayer.style.display = "block";
             this.introLayer.style.backgroundImage = `url(${bgUrl})`;
             
-            // Force browser to recalculate styles (Reflow)
-            void this.introLayer.offsetWidth; 
-
-            // Re-enable transition and trigger fade in
-            this.introLayer.style.transition = "opacity 0.6s ease-in-out";
-            this.introLayer.style.opacity = "1"; 
+            this.safeRequestAnimationFrame(() => {
+                this.introLayer.style.transition = "opacity 0.4s ease-in-out";
+                this.introLayer.style.opacity = "1"; 
+            }); 
 
             let timer = null;
             let hideTimer = null;
@@ -425,21 +424,19 @@ class PresentationEngine {
                 this.logWarning("[VISUAL: INTERIOR] 'cabinet-full-window' not found for stacking adjustment.");
             }
 
-            // CSS Reflow for Interior Animation Sync
+            // Optimized Interior Transition (No Heavy Blur Bottlenecks)
             this.bgLayer.style.transition = "none";
-            this.bgLayer.style.filter = "blur(35px) brightness(0.20) saturate(0.5)";
-            this.bgLayer.style.transform = "scale(1.25)";
+            this.bgLayer.style.filter = "brightness(0.3) saturate(0.8)";
+            this.bgLayer.style.transform = "scale(1.05)";
             this.bgLayer.style.opacity = "0";
             
-            void this.bgLayer.offsetWidth; // Force Reflow
-
-            this.bgLayer.style.transition = "filter 0.8s cubic-bezier(0.25, 1, 0.5, 1), transform 0.8s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.6s ease";
+            this.bgLayer.style.transition = "filter 0.4s ease, transform 0.4s ease, opacity 0.4s ease";
             
             this.safeRequestAnimationFrame(() => {
                 this.bgLayer.style.opacity = "1";
                 this.uiLayer.style.opacity = "1";
-                this.bgLayer.style.filter = "blur(18px) brightness(0.35) saturate(0.85)";
-                this.bgLayer.style.transform = "scale(1.12)";
+                this.bgLayer.style.filter = "brightness(0.4) saturate(0.9)";
+                this.bgLayer.style.transform = "scale(1.0)";
             });
 
             this.verifyExplicitLayerStack(); 
@@ -574,8 +571,21 @@ class PresentationEngine {
     }
 
     preloadAsset(url) {
-        if (this.assetCache.has(url)) return Promise.resolve(this.assetCache.get(url));
+        if (this.assetCache.has(url)) {
+            const cachedImg = this.assetCache.get(url);
+            this.assetCache.delete(url);
+            this.assetCache.set(url, cachedImg);
+            return Promise.resolve(cachedImg);
+        }
         if (this.pendingPreloads.has(url)) return this.pendingPreloads.get(url);
+        
+        // Strict LRU Cache Eviction Policy
+        while (this.assetCache.size >= this.MAX_CACHE_SIZE) {
+            const oldestKey = this.assetCache.keys().next().value;
+            if (oldestKey) this.assetCache.delete(oldestKey);
+            else break;
+        }
+
         const promise = new Promise((resolve) => {
             const img = new Image();
             img.onload = img.onerror = () => {
