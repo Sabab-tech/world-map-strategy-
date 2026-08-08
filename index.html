@@ -203,6 +203,11 @@
                         <span id="res-steel" class="res-val">100K T</span>
                         <span class="res-trend positive">▲ +100/s</span>
                     </div>
+                    <div class="res-node" title="Uranium & Rare Earth Stockpile">
+                        <span class="res-icon">☢️</span>
+                        <span id="res-uranium" class="res-val">500 KG</span>
+                        <span class="res-trend positive">▲ +5/s</span>
+                    </div>
                 </div>
 
                 <div class="status-group status-right">
@@ -393,7 +398,7 @@
                 </div>
             </div>
 
-            <div id="cabinet-full-window" class="omega-modal" role="dialog" style="inset:0; width:100%; height:100%; transform:none; border-radius:0;">
+            <div id="cabinet-full-window" class="omega-modal" role="dialog" style="display:none; inset:0; width:100%; height:100%; transform:none; border-radius:0;">
                 <div class="cabinet-top-header" style="display:flex; justify-content:space-between; align-items:center; padding:12px 20px; background:rgba(0,18,28,0.95); border-bottom:1px solid var(--omega-border); position:relative; z-index:20;">
                     <div style="display:flex; align-items:center; gap:12px;">
                         <button id="btn-back-cabinet" class="omega-back-btn" onclick="window.OmegaLayerManager.popLayer();" style="background:rgba(0,229,255,0.15); border:1px solid var(--omega-neon); color:#00e5ff; border-radius:6px; padding:6px 14px; font-weight:bold; cursor:pointer; font-family:var(--font-mono); font-size:13px; display:flex; align-items:center; gap:6px;" title="Back to Command HQ">
@@ -410,7 +415,7 @@
                         </button>
                     </div>
                 </div>
-                <div class="cabinet-body" id="cabinet-body" style="padding:16px 12px; overflow-y:auto; -webkit-overflow-scrolling:touch; touch-action:pan-y; height:calc(100% - 55px); box-sizing:border-box;"></div>
+                <div class="cabinet-body" id="cabinet-body" style="padding:16px 16px 120px 16px; overflow:visible; height:auto; min-height:min-content; box-sizing:border-box;"></div>
             </div>
 
             <!-- 🎙️ MINISTER INTERROGATION & DIALOGUE MODAL -->

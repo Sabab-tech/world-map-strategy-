@@ -93,11 +93,24 @@ setInterval(function() {
     const steelEl = document.getElementById('res-steel');
     const uraniumEl = document.getElementById('res-uranium');
     const manpowerEl = document.getElementById('res-manpower');
+    const powerEl = document.getElementById('res-power');
+    const energyEl = document.getElementById('res-energy');
 
     if (cashEl) {
         cashEl.innerText = formatGameNumber(window.resources.cash).replace("$", "💵");
         const trend = cashEl.closest('.res-node')?.querySelector('.res-trend');
         if (trend) trend.innerText = `▲ +${formatGameNumber(window.resourceRates.cash)}/s`;
+    }
+    if (powerEl) {
+        powerEl.innerText = "850 PP";
+    }
+    if (manpowerEl) {
+        manpowerEl.innerText = formatPopulationNumber(window.resources.manpower);
+        const trend = manpowerEl.closest('.res-node')?.querySelector('.res-trend');
+        if (trend) trend.innerText = `▲ +${window.resourceRates.manpower}/s`;
+    }
+    if (energyEl) {
+        energyEl.innerText = "14.8 GW";
     }
     if (oilEl) {
         oilEl.innerText = formatPopulationNumber(window.resources.oil) + " BBL";
@@ -113,11 +126,6 @@ setInterval(function() {
         uraniumEl.innerText = window.resources.uranium.toString() + " KG";
         const trend = uraniumEl.closest('.res-node')?.querySelector('.res-trend');
         if (trend) trend.innerText = `▲ +${window.resourceRates.uranium}/s`;
-    }
-    if (manpowerEl) {
-        manpowerEl.innerText = formatPopulationNumber(window.resources.manpower);
-        const trend = manpowerEl.closest('.res-node')?.querySelector('.res-trend');
-        if (trend) trend.innerText = `▲ +${window.resourceRates.manpower}/s`;
     }
 }, 1000);
 

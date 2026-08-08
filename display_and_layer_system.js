@@ -663,13 +663,8 @@
 
         const isModalVisible = (el) => el && window.getComputedStyle(el).display !== 'none' && el.style.display !== 'none';
 
-        // When inside Cabinet (Layer 1) or Ministry Room (Layer 2), hide global cyan button so it doesn't overlap header titles
-        if (layer > 0 || isModalVisible(fullWin) || isModalVisible(dashWin)) {
-            btn.style.display = 'none';
-            return;
-        }
-
-        if (isModalVisible(cmdHub) || isModalVisible(countryCard) || isModalVisible(cityBar) || isModalVisible(interrogModal)) {
+        // Show permanent global back button whenever any modal or sublayer is open
+        if (layer > 0 || isModalVisible(fullWin) || isModalVisible(dashWin) || isModalVisible(cmdHub) || isModalVisible(countryCard) || isModalVisible(cityBar) || isModalVisible(interrogModal)) {
             btn.style.display = 'flex';
         } else {
             btn.style.display = 'none';
@@ -839,8 +834,8 @@
 
         // Global Touch Scroll Lockup Prevention for Mobile WebViews & Touch Devices
         document.addEventListener('touchstart', (e) => {
-            const scrollEl = e.target.closest('#ministry-dashboard-content, .ministry-content-area, .cabinet-body, #ministry-dashboard-view, #cabinet-full-window, #minister-interrogation-modal, .ios-content-viewport, #command-hub-modal');
-            if (scrollEl) {
+            const scrollEl = e.target.closest('#ministry-dashboard-content, .ministry-content-area, .cabinet-body, #cabinet-body, .ios-content-viewport, #ios-chapter-stage');
+            if (scrollEl && scrollEl.scrollHeight > scrollEl.clientHeight) {
                 if (scrollEl.scrollTop <= 0) {
                     scrollEl.scrollTop = 1;
                 } else if (scrollEl.scrollTop + scrollEl.offsetHeight >= scrollEl.scrollHeight) {

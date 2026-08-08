@@ -1905,42 +1905,50 @@ body.city-focus-active #relation-filter-box {
     background: rgba(255, 255, 255, 0.2);
 }
 
-/* 📍 CLEAN CITY BUTTON MARKERS (NO ICONS / NO CLUTTER) */
+/* 📍 CLEAN CITY BUTTON MARKERS (VERY COMPACT & NON-OVERLAPPING) */
 .city-btn-marker {
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    gap: 6px;
-    background: rgba(8, 15, 28, 0.94);
-    border-width: 1.5px;
+    gap: 3px;
+    background: rgba(6, 11, 20, 0.92);
+    border-width: 1px;
     border-style: solid;
-    padding: 3px 10px;
-    border-radius: 16px;
+    padding: 1px 4px;
+    border-radius: 5px;
     cursor: pointer;
     white-space: nowrap;
     transform: translate(-50%, -50%);
-    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
     user-select: none;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+    line-height: 1;
 }
 
 .city-btn-marker:hover {
-    transform: translate(-50%, -55%) scale(1.08);
-    background: rgba(15, 23, 42, 0.98);
+    transform: translate(-50%, -50%) scale(1.15);
+    background: rgba(12, 22, 38, 0.98);
+    z-index: 9999 !important;
 }
 
 .city-btn-dot {
-    width: 8px;
-    height: 8px;
+    width: 4px;
+    height: 4px;
     border-radius: 50%;
     display: inline-block;
     flex-shrink: 0;
 }
 
 .city-btn-label {
-    font-size: 9.5px;
+    font-size: 7.5px;
     font-weight: 700;
+    max-width: 60px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     color: #ffffff;
     font-family: 'Share Tech Mono', monospace;
-    letter-spacing: 0.2px;
+    letter-spacing: 0.1px;
+}
 }
 
 /* AUTO-VANISH OVERLAYS ONLY WHEN FULL SCREEN MODALS ARE ACTIVE IN LAYERS 1, 2, 3, 5 */
@@ -3438,7 +3446,26 @@ body[data-active-layer="5"] #render-engine-root {
     z-index: 9500 !important;
 }
 
-#cabinet-full-window, #ministry-dashboard-view {
+/* Explicit rule for hidden elements to NEVER intercept pointer events or render */
+[style*="display: none"], [style*="display:none"], .hidden, [hidden] {
+    display: none !important;
+    pointer-events: none !important;
+}
+
+/* Ensure HUD and bottom navigation stay visible and clickable unless a full modal is explicitly active */
+body.modal-open #top-status-bar,
+body.modal-open #special-map-controls,
+body.modal-open .top-filter-box {
+    display: none !important;
+    pointer-events: none !important;
+}
+
+/* 1. Modal Containers & Scroll Hierarchy */
+.omega-modal, .modal, .modal-backdrop, .modal-container, #omega-rel-ideology-modal, #minister-interrogation-modal, #command-hub-modal {
+    touch-action: pan-y !important;
+}
+
+#cabinet-full-window:not([style*="display: none"]):not([style*="display:none"]) {
     position: fixed !important;
     inset: 0 !important;
     top: 0 !important;
@@ -3446,17 +3473,59 @@ body[data-active-layer="5"] #render-engine-root {
     width: 100vw !important;
     height: 100vh !important;
     background: #030810 !important;
-    z-index: 9500 !important;
+    z-index: 999900 !important;
     box-sizing: border-box !important;
+    display: flex !important;
     flex-direction: column !important;
     overflow-y: auto !important;
+    overflow-x: hidden !important;
     pointer-events: auto !important;
     -webkit-overflow-scrolling: touch !important;
     touch-action: pan-y !important;
-    overscroll-behavior-y: contain !important;
 }
 
-#minister-interrogation-modal {
+#ministry-dashboard-view:not([style*="display: none"]):not([style*="display:none"]) {
+    position: fixed !important;
+    inset: 0 !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    background: #030810 !important;
+    z-index: 999900 !important;
+    box-sizing: border-box !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    pointer-events: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-y !important;
+}
+
+#ministry-dashboard-view .sticky-layer-header {
+    position: relative !important;
+    top: auto !important;
+    flex-shrink: 0 !important;
+    width: 100% !important;
+    z-index: 100 !important;
+}
+
+/* Ensure buttons and interactive elements in #ministry-dashboard-view and #cabinet-full-window have proper z-index and pointer-events: auto */
+#ministry-dashboard-view button, #cabinet-full-window button,
+#ministry-dashboard-view select, #cabinet-full-window select,
+#ministry-dashboard-view input, #cabinet-full-window input,
+#ministry-dashboard-view a, #cabinet-full-window a,
+#ministry-dashboard-view [onclick], #cabinet-full-window [onclick],
+.cabinet-body button, .ministry-content-area button,
+.parchment-card-btn, .dept-card, .res-quick-btn {
+    pointer-events: auto !important;
+    cursor: pointer !important;
+    position: relative !important;
+    z-index: 10 !important;
+}
+
+#minister-interrogation-modal:not([style*="display: none"]):not([style*="display:none"]) {
     position: fixed !important;
     inset: 0 !important;
     top: 0 !important;
@@ -3464,49 +3533,85 @@ body[data-active-layer="5"] #render-engine-root {
     width: 100vw !important;
     height: 100vh !important;
     background: #020812 !important;
-    z-index: 9600 !important;
+    z-index: 999950 !important;
     box-sizing: border-box !important;
+    display: flex !important;
     flex-direction: column !important;
-    overflow-y: auto !important;
+    overflow: hidden !important;
     pointer-events: auto !important;
     -webkit-overflow-scrolling: touch !important;
-    touch-action: pan-y !important;
-    overscroll-behavior-y: contain !important;
 }
 
-#ministry-dashboard-content, .ministry-content-area, .cabinet-body {
-    flex: 1 1 auto !important;
-    overflow-y: auto !important;
-    max-height: calc(100vh - 54px) !important;
-    padding: 14px 16px 80px 16px !important;
+.cabinet-body, #cabinet-body {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    max-width: 1400px !important;
+    margin: 0 auto !important;
+    min-height: min-content !important;
+    height: auto !important;
+    overflow: visible !important;
+    padding: 14px 16px 120px 16px !important;
     box-sizing: border-box !important;
     pointer-events: auto !important;
-    -webkit-overflow-scrolling: touch !important;
-    touch-action: pan-y !important;
-    overscroll-behavior-y: contain !important;
+}
+
+.ministry-content-area, #ministry-dashboard-content {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    max-width: 1400px !important;
+    margin: 0 auto !important;
+    min-height: min-content !important;
+    height: auto !important;
+    overflow: visible !important;
+    padding: 16px 16px 120px 16px !important;
+    box-sizing: border-box !important;
+    pointer-events: auto !important;
+}
+
+.parchment-cabinet-container {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    min-height: min-content !important;
+    height: auto !important;
+    overflow: visible !important;
+    box-sizing: border-box !important;
+    pointer-events: auto !important;
+}
+
+#cabinet-subsystem-root {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    min-height: min-content !important;
+    height: auto !important;
+    overflow: visible !important;
+    box-sizing: border-box !important;
+    pointer-events: auto !important;
 }
 
 /* 2. Global Permanent Tactical Back Button Styling */
 .global-back-btn, #global-back-btn {
     position: fixed !important;
-    top: 54px !important;
+    top: 12px !important;
     left: 14px !important;
-    height: 34px !important;
-    line-height: 30px !important;
-    padding: 0 14px !important;
-    font-size: 11px !important;
+    height: 36px !important;
+    line-height: 32px !important;
+    padding: 0 16px !important;
+    font-size: 12px !important;
     font-weight: bold !important;
     font-family: 'Share Tech Mono', monospace !important;
-    border-radius: 6px !important;
-    z-index: 99990 !important;
-    background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.95)) !important;
+    border-radius: 8px !important;
+    z-index: 9999999 !important;
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(30, 41, 59, 0.98)) !important;
     border: 1.5px solid #00e5ff !important;
     color: #00e5ff !important;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.6), 0 0 15px rgba(0, 229, 255, 0.3) !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.8), 0 0 18px rgba(0, 229, 255, 0.5) !important;
     cursor: pointer !important;
-    display: flex !important;
-    align-items: center !important;
-    gap: 6px !important;
+    align-items: center;
+    gap: 6px;
     pointer-events: auto !important;
     transition: all 0.2s ease !important;
     backdrop-filter: blur(8px) !important;
@@ -3718,14 +3823,27 @@ select, select#resource-selector, select#relation-selector, select#resource-type
     border: none !important;
     border-radius: 0 !important;
     padding: 0 !important;
-    display: flex !important;
     gap: 16px !important;
     justify-content: center !important;
     align-items: center !important;
     pointer-events: auto !important;
     backdrop-filter: none !important;
     box-shadow: none !important;
-    z-index: 999999 !important;
+    z-index: 999900 !important;
+}
+
+body[data-active-layer="0"]:not(.modal-open) .ui-bottom-navigation {
+    display: flex !important;
+    pointer-events: auto !important;
+}
+
+body[data-active-layer="1"] .ui-bottom-navigation,
+body[data-active-layer="2"] .ui-bottom-navigation,
+body[data-active-layer="3"] .ui-bottom-navigation,
+body[data-active-layer="5"] .ui-bottom-navigation,
+body.modal-open .ui-bottom-navigation {
+    display: none !important;
+    pointer-events: none !important;
 }
 
 #btn-ministry-dock, #btn-view-map, #btn-card-cabinet, .ui-bottom-navigation .nav-btn {

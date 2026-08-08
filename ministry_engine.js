@@ -1140,7 +1140,7 @@ window.OmegaCabinetUI = {
 
             html += `
                 </div>
-                <div id="cabinet-subsystem-root" style="flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; padding-right:4px;"></div>
+                <div id="cabinet-subsystem-root" style="display:flex; flex-direction:column; width:100%; min-height:min-content; height:auto; overflow:visible;"></div>
             `;
         } else {
             // Render 18 Ministries Grid / Carousel
@@ -1353,6 +1353,11 @@ window.OmegaCabinetUI = {
             return;
         }
 
+        if (ministryId === 'energy_mining' || ministryId === 'resource') {
+            this.renderResourceMinistryDashboard(m, contentArea);
+            return;
+        }
+
         const activeTab = this.activeDashboardTab || 'interrogate';
 
         let html = `
@@ -1386,7 +1391,7 @@ window.OmegaCabinetUI = {
             </div>
 
             <!-- ACTION BAR (CONTEXT NAVIGATION) -->
-            <div style="display:flex; gap:10px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:10px; flex-wrap:wrap;">
+            <div style="display:flex; gap:10px; border-bottom:1px solid rgba(255,255,255,0.1); padding:8px 0; flex-wrap:wrap; flex-shrink:0; min-height:44px; position:relative; background:rgba(3,8,16,0.95); z-index:10; border-radius:8px; margin:6px 0;">
                 <button onclick="window.OmegaCabinetUI.setDashboardTab('interrogate');" style="background:${activeTab==='interrogate'?'linear-gradient(135deg,#00e5ff,#0066ff)':'rgba(255,255,255,0.06)'}; color:${activeTab==='interrogate'?'#000':'#cbd5e1'}; font-weight:bold; padding:8px 16px; border-radius:8px; border:none; cursor:pointer; font-family:'Share Tech Mono',monospace; font-size:12px; display:flex; align-items:center; gap:6px;">
                     🎙️ Interrogate Minister
                 </button>
@@ -1896,6 +1901,9 @@ window.OmegaCabinetUI = {
             <!-- MoD AAA HERO HEADER -->
             <div style="background:linear-gradient(135deg,rgba(15,23,42,0.95),rgba(153,27,27,0.85)); border:1.5px solid #ef4444; border-radius:12px; padding:16px 20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; box-shadow:0 0 22px rgba(239,68,68,0.3);">
                 <div style="display:flex; align-items:center; gap:16px;">
+                    <button onclick="window.OmegaLayerManager.popLayer();" style="background:linear-gradient(135deg,rgba(15,23,42,0.9),rgba(30,41,59,0.9)); border:1.5px solid #ef4444; color:#ef4444; padding:8px 14px; border-radius:8px; font-weight:bold; cursor:pointer; font-family:'Share Tech Mono',monospace; font-size:12px; display:flex; align-items:center; gap:6px; box-shadow:0 0 10px rgba(239,68,68,0.2);">
+                        <span>⬅️</span> <span>BACK TO CABINET</span>
+                    </button>
                     <div style="font-size:38px; background:rgba(239,68,68,0.1); padding:8px 14px; border-radius:12px; border:1px solid rgba(239,68,68,0.4);">🛡️</div>
                     <div>
                         <h1 style="margin:0; font-family:'Inter',sans-serif; font-weight:800; font-size:22px; color:#f8fafc; letter-spacing:0.3px;">MINISTRY OF DEFENSE & SUPREME COMMAND (${cDetails.name.toUpperCase()})</h1>
@@ -1942,7 +1950,7 @@ window.OmegaCabinetUI = {
             </div>
 
             <!-- MoD 5 SUBVIEW NAVIGATION TABS -->
-            <div style="display:flex; gap:8px; border-bottom:1px solid rgba(239,68,68,0.3); padding-bottom:8px; margin-top:14px; overflow-x:auto; scrollbar-width:thin;">
+            <div style="display:flex; gap:8px; border-bottom:1px solid rgba(239,68,68,0.3); padding:8px 0; margin-top:10px; overflow-x:auto; scrollbar-width:thin; flex-shrink:0; min-height:44px; position:relative; background:rgba(3,8,16,0.95); z-index:10; border-radius:8px;">
                 ${[
                     { id: 'ors_breakdown', label: '🛡️ ORS 10-Parameter Matrix', color: '#22c55e' },
                     { id: 'master_ops', label: '⚔️ 12 Master Command Operations', color: '#ef4444' },
@@ -2186,6 +2194,9 @@ window.OmegaCabinetUI = {
             <!-- MoFA AAA HERO HEADER -->
             <div style="background:linear-gradient(135deg,rgba(15,23,42,0.95),rgba(30,58,138,0.85)); border:1.5px solid #00e5ff; border-radius:12px; padding:16px 20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; box-shadow:0 0 20px rgba(0,229,255,0.2);">
                 <div style="display:flex; align-items:center; gap:16px;">
+                    <button onclick="window.OmegaLayerManager.popLayer();" style="background:linear-gradient(135deg,rgba(15,23,42,0.9),rgba(30,41,59,0.9)); border:1.5px solid #00e5ff; color:#00e5ff; padding:8px 14px; border-radius:8px; font-weight:bold; cursor:pointer; font-family:'Share Tech Mono',monospace; font-size:12px; display:flex; align-items:center; gap:6px; box-shadow:0 0 10px rgba(0,229,255,0.2);">
+                        <span>⬅️</span> <span>BACK TO CABINET</span>
+                    </button>
                     <div style="font-size:38px; background:rgba(0,229,255,0.1); padding:8px 14px; border-radius:12px; border:1px solid rgba(0,229,255,0.3);">🌐</div>
                     <div>
                         <h1 style="margin:0; font-family:'Inter',sans-serif; font-weight:800; font-size:22px; color:#f8fafc; letter-spacing:0.3px;">MINISTRY OF FOREIGN AFFAIRS (${cDetails.name.toUpperCase()})</h1>
@@ -2202,7 +2213,7 @@ window.OmegaCabinetUI = {
             </div>
 
             <!-- MoFA 10 SUBVIEW NAVIGATION TABS -->
-            <div style="display:flex; gap:6px; border-bottom:1px solid rgba(0,229,255,0.25); padding-bottom:8px; margin-top:14px; overflow-x:auto; scrollbar-width:thin;">
+            <div style="display:flex; gap:6px; border-bottom:1px solid rgba(0,229,255,0.25); padding:8px 0; margin-top:10px; overflow-x:auto; scrollbar-width:thin; flex-shrink:0; min-height:44px; position:relative; background:rgba(3,8,16,0.95); z-index:10; border-radius:8px;">
                 ${[
                     { id: 'reputation', label: '🌐 Reputation', color: '#00e5ff' },
                     { id: 'relations', label: '🕊️ Bilateral Relations', color: '#22c55e' },
@@ -2429,6 +2440,385 @@ window.OmegaCabinetUI = {
         setTimeout(() => {
             this.renderRechartsChart('recharts-gdp-mil-chart', countryKey);
         }, 30);
+    },
+
+    setResourceGraphSub(subId) {
+        this.activeResourceSub = subId;
+        const m = this.ministriesDatabase['energy_mining'] || this.ministriesDatabase['resource'];
+        const contentArea = document.getElementById('ministry-dashboard-content');
+        if (m && contentArea) {
+            this.renderResourceMinistryDashboard(m, contentArea);
+        }
+    },
+
+    renderResourceMinistryDashboard(m, container) {
+        const countryDetails = this.getCountryDetails(this.activeCountry);
+        this.activeResourceSub = this.activeResourceSub || 'power_grid';
+
+        if (window._resourceChartTimer) {
+            clearInterval(window._resourceChartTimer);
+            window._resourceChartTimer = null;
+        }
+
+        const cash = window.resources && window.resources.cash !== undefined ? window.resources.cash : 100000000;
+        const oil = window.resources && window.resources.oil !== undefined ? window.resources.oil : 500000;
+        const steel = window.resources && window.resources.steel !== undefined ? window.resources.steel : 100000;
+        const uranium = window.resources && window.resources.uranium !== undefined ? window.resources.uranium : 500;
+        
+        const formatNum = (num) => window.formatPopulationNumber ? window.formatPopulationNumber(num) : num.toLocaleString();
+        const formatCash = (num) => window.formatGameNumber ? window.formatGameNumber(num) : '$' + (num / 1000000).toFixed(1) + 'M';
+
+        let html = `
+            <!-- AAA HERO HEADER -->
+            <div style="background:linear-gradient(135deg, rgba(20, 14, 4, 0.92), rgba(10, 20, 30, 0.95)); border:1px solid rgba(234, 179, 8, 0.35); border-radius:12px; padding:16px 20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; box-shadow:0 8px 24px rgba(0,0,0,0.6);">
+                <div style="display:flex; align-items:center; gap:16px;">
+                    <button onclick="window.OmegaLayerManager.popLayer();" style="background:linear-gradient(135deg,rgba(15,23,42,0.9),rgba(30,41,59,0.9)); border:1.5px solid #eab308; color:#eab308; padding:8px 14px; border-radius:8px; font-weight:bold; cursor:pointer; font-family:'Share Tech Mono',monospace; font-size:12px; display:flex; align-items:center; gap:6px; box-shadow:0 0 10px rgba(234,179,8,0.2);">
+                        <span>⬅️</span> <span>BACK TO CABINET</span>
+                    </button>
+                    <div style="font-size:36px; background:rgba(234,179,8,0.12); padding:8px 14px; border-radius:12px; border:1px solid rgba(234,179,8,0.3); color:#eab308;">⚡</div>
+                    <div>
+                        <h1 style="margin:0; font-family:'Inter',sans-serif; font-weight:700; font-size:20px; color:#f8fafc; letter-spacing:0.2px;">${m.title} (${m.bnTitle || 'জ্বালানি ও প্রাকৃতিক সম্পদ'})</h1>
+                        <div style="font-size:12px; font-weight:500; color:#eab308; margin-top:2px;">${m.role} • ${countryDetails.flag} ${countryDetails.name}</div>
+                        <div style="font-size:11px; color:#94a3b8; margin-top:3px; line-height:1.4;">
+                            Minister: <strong style="color:#f8fafc;">${m.ministerName}</strong> • Status: <strong style="color:#22c55e;">${m.status}</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+                    <div style="background:rgba(0,0,0,0.5); padding:8px 14px; border-radius:8px; border:1px solid rgba(234,179,8,0.25); font-family:'Share Tech Mono',monospace; font-size:11px;">
+                        <span style="color:#94a3b8;">SECTOR EFFICIENCY</span><br/><strong style="color:#22c55e; font-size:14px;">${m.efficiency}%</strong>
+                    </div>
+                    <div style="background:rgba(0,0,0,0.5); padding:8px 14px; border-radius:8px; border:1px solid rgba(234,179,8,0.25); font-family:'Share Tech Mono',monospace; font-size:11px;">
+                        <span style="color:#94a3b8;">ENERGY BUDGET</span><br/><strong style="color:#ffd700; font-size:14px;">${m.budget}</strong>
+                    </div>
+                    <button onclick="window.OmegaLayerManager.setLayer(5, { ministryId: '${m.id}' });" style="background:linear-gradient(135deg,#eab308,#f59e0b); border:none; color:#000; font-weight:800; font-family:'Share Tech Mono',monospace; font-size:12px; padding:10px 16px; border-radius:8px; cursor:pointer; display:flex; align-items:center; gap:6px; box-shadow:0 0 15px rgba(234,179,8,0.3);">
+                        🎙️ INTERROGATE MINISTER
+                    </button>
+                </div>
+            </div>
+
+            <!-- LIVE NATIONAL RESOURCE TELEMETRY STATUS BAR -->
+            <div style="background:rgba(15, 23, 42, 0.95); border:1px solid rgba(234, 179, 8, 0.3); border-radius:10px; padding:12px 16px; display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px;">
+                <div style="font-family:'Share Tech Mono',monospace; font-size:12px; font-weight:bold; color:#eab308; display:flex; align-items:center; gap:6px;">
+                    <span>💎</span> <span>NATIONAL STRATEGIC RESOURCE RESERVES:</span>
+                </div>
+                <div style="display:flex; gap:16px; flex-wrap:wrap; align-items:center;">
+                    <div style="display:flex; align-items:center; gap:6px; font-family:'Share Tech Mono',monospace; font-size:12px;">
+                        <span>💵</span> <span style="color:#94a3b8;">Treasury:</span> <strong id="res-min-cash" style="color:#22c55e;">${formatCash(cash)}</strong>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:6px; font-family:'Share Tech Mono',monospace; font-size:12px;">
+                        <span>⚡</span> <span style="color:#94a3b8;">Power Grid:</span> <strong id="res-min-energy" style="color:#00e5ff;">14.8 GW</strong> <span style="font-size:10px; color:#22c55e;">(▲ +1.2 GW)</span>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:6px; font-family:'Share Tech Mono',monospace; font-size:12px;">
+                        <span>🛢️</span> <span style="color:#94a3b8;">Oil Stockpile:</span> <strong id="res-min-oil" style="color:#eab308;">${formatNum(oil)} BBL</strong> <span style="font-size:10px; color:#22c55e;">(▲ +500/s)</span>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:6px; font-family:'Share Tech Mono',monospace; font-size:12px;">
+                        <span>⚙️</span> <span style="color:#94a3b8;">Steel Reserves:</span> <strong id="res-min-steel" style="color:#cbd5e1;">${formatNum(steel)} T</strong>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:6px; font-family:'Share Tech Mono',monospace; font-size:12px;">
+                        <span>☢️</span> <span style="color:#94a3b8;">Uranium / Rare Earths:</span> <strong id="res-min-uranium" style="color:#a855f7;">${uranium} KG</strong>
+                    </div>
+                </div>
+            </div>
+
+            <!-- REAL-TIME DYNAMIC GRAPH CONTAINER & METRIC SELECTOR -->
+            <div style="background:rgba(8, 15, 28, 0.95); border:1px solid rgba(234, 179, 8, 0.25); border-radius:12px; padding:16px; display:flex; flex-direction:column; gap:12px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <span style="font-size:16px;">📈</span>
+                        <span style="font-family:'Inter',sans-serif; font-size:14px; font-weight:700; color:#f8fafc;">Real-Time Dynamic Resource Graph & Telemetry</span>
+                        <span style="background:rgba(34,197,94,0.15); border:1px solid #22c55e; color:#22c55e; font-size:10px; font-family:'Share Tech Mono',monospace; padding:2px 8px; border-radius:10px;">LIVE REALITY ENGINE ●</span>
+                    </div>
+
+                    <!-- GRAPH METRIC SUBVIEW TAB BUTTONS -->
+                    <div style="display:flex; gap:6px; overflow-x:auto; flex-shrink:0;">
+                        ${[
+                            { id: 'power_grid', label: '⚡ Power Grid (GW)', color: '#00e5ff' },
+                            { id: 'oil_yield', label: '🛢️ Crude Oil (BBL/s)', color: '#eab308' },
+                            { id: 'steel_refinery', label: '⚙️ Steel Production (T/s)', color: '#a855f7' },
+                            { id: 'nuclear_rare', label: '☢️ Uranium & Grid Baseload', color: '#22c55e' }
+                        ].map(tab => `
+                            <button onclick="window.OmegaCabinetUI.setResourceGraphSub('${tab.id}');" style="
+                                background:${this.activeResourceSub === tab.id ? tab.color : 'rgba(255,255,255,0.06)'};
+                                color:${this.activeResourceSub === tab.id ? '#000' : '#cbd5e1'};
+                                border:1px solid ${tab.color};
+                                font-weight:bold;
+                                padding:6px 12px;
+                                border-radius:6px;
+                                font-family:'Share Tech Mono',monospace;
+                                font-size:11px;
+                                cursor:pointer;
+                                white-space:nowrap;
+                            ">${tab.label}</button>
+                        `).join('')}
+                    </div>
+                </div>
+
+                <!-- LIVE CANVAS REAL-TIME DYNAMIC GRAPH -->
+                <div style="position:relative; width:100%; height:220px; background:rgba(2, 8, 16, 0.85); border:1px solid rgba(255,255,255,0.08); border-radius:8px; overflow:hidden; display:flex; flex-direction:column; justify-content:center; align-items:center;">
+                    <canvas id="resource-live-canvas" width="900" height="220" style="width:100%; height:100%; display:block;"></canvas>
+                </div>
+                <div style="display:flex; justify-content:space-between; font-family:'Share Tech Mono',monospace; font-size:10px; color:#64748b; padding:0 4px;">
+                    <span>T-30s Ticks</span>
+                    <span>Real-Time Frequency: 1.0 Hz</span>
+                    <span>Live Status: Operational</span>
+                </div>
+            </div>
+
+            <!-- ACTIONABLE RESOURCE DIRECTIVES & EXECUTION HUB -->
+            <div style="display:flex; flex-direction:column; gap:12px;">
+                <div style="font-family:'Inter',sans-serif; font-size:14px; color:#f8fafc; font-weight:700; display:flex; align-items:center; gap:8px;">
+                    <span>⚡</span> <span>Executive Resource Directives & Strategic Mega-Projects</span>
+                </div>
+
+                <div class="ministry-dept-grid">
+                    <div class="dept-card" style="border-color:rgba(234,179,8,0.4);">
+                        <div class="dept-card-header">
+                            <span class="dept-card-title">🛢️ Strategic Petroleum Extraction</span>
+                            <span style="font-size:10px; color:#22c55e; font-family:'Share Tech Mono',monospace;">ACTIVE ●</span>
+                        </div>
+                        <div style="font-size:12px; color:#cbd5e1; flex:1; line-height:1.4;">
+                            Drill deepwater offshore oil reserves to boost national petroleum stockpiles by +50,000 BBL and yield +500 BBL/s extraction rate.
+                        </div>
+                        <button class="dept-action-btn" onclick="window.OmegaCabinetUI.executeResourceDirective('drill_oil');" style="background:linear-gradient(135deg,#eab308,#ca8a04); color:#000;">
+                            🛢️ Drill Offshore Oil Reserve ($800M)
+                        </button>
+                    </div>
+
+                    <div class="dept-card" style="border-color:rgba(0,229,255,0.4);">
+                        <div class="dept-card-header">
+                            <span class="dept-card-title">⚡ 2,400MW Nuclear Power Plant</span>
+                            <span style="font-size:10px; color:#00e5ff; font-family:'Share Tech Mono',monospace;">PLANNED ●</span>
+                        </div>
+                        <div style="font-size:12px; color:#cbd5e1; flex:1; line-height:1.4;">
+                            Construct dual-reactor nuclear facility to secure uninterrupted zero-carbon electrical baseload for heavy manufacturing plants.
+                        </div>
+                        <button class="dept-action-btn" onclick="window.OmegaCabinetUI.executeResourceDirective('build_nuclear');" style="background:linear-gradient(135deg,#00e5ff,#0284c7); color:#000;">
+                            ⚛️ Build Nuclear Reactor ($2.0B)
+                        </button>
+                    </div>
+
+                    <div class="dept-card" style="border-color:rgba(168,85,247,0.4);">
+                        <div class="dept-card-header">
+                            <span class="dept-card-title">⛏️ Strategic Mining & Rare Earths</span>
+                            <span style="font-size:10px; color:#a855f7; font-family:'Share Tech Mono',monospace;">OPTIMAL ●</span>
+                        </div>
+                        <div style="font-size:12px; color:#cbd5e1; flex:1; line-height:1.4;">
+                            Expand lithium and uranium mining operations to supply military defence industries and advanced electronics exporters.
+                        </div>
+                        <button class="dept-action-btn" onclick="window.OmegaCabinetUI.executeResourceDirective('expand_mining');" style="background:linear-gradient(135deg,#a855f7,#7e22ce); color:#fff;">
+                            ⛏️ Expand Rare Earth Mining ($1.2B)
+                        </button>
+                    </div>
+
+                    <div class="dept-card" style="border-color:rgba(34,197,94,0.4);">
+                        <div class="dept-card-header">
+                            <span class="dept-card-title">☀️ Offshore Wind & Solar Grid</span>
+                            <span style="font-size:10px; color:#22c55e; font-family:'Share Tech Mono',monospace;">GREEN ●</span>
+                        </div>
+                        <div style="font-size:12px; color:#cbd5e1; flex:1; line-height:1.4;">
+                            Deploy 1,000 MW coastal offshore wind turbines to diversify grid energy mix and reduce fossil fuel dependency.
+                        </div>
+                        <button class="dept-action-btn" onclick="window.OmegaCabinetUI.executeResourceDirective('build_solar');" style="background:linear-gradient(135deg,#22c55e,#15803d); color:#fff;">
+                            ☀️ Build Offshore Wind Grid ($600M)
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        container.innerHTML = html;
+
+        setTimeout(() => {
+            this.initLiveResourceGraph(this.activeResourceSub);
+        }, 50);
+    },
+
+    initLiveResourceGraph(subType) {
+        const canvas = document.getElementById('resource-live-canvas');
+        if (!canvas) return;
+
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        const rect = canvas.getBoundingClientRect();
+        canvas.width = rect.width || 800;
+        canvas.height = rect.height || 220;
+
+        if (!window._resourceGraphHistory || window._resourceGraphHistoryType !== subType) {
+            window._resourceGraphHistoryType = subType;
+            window._resourceGraphHistory = [];
+            const baseVal = subType === 'power_grid' ? 14.8 : (subType === 'oil_yield' ? 500 : (subType === 'steel_refinery' ? 320 : 85));
+            for (let i = 0; i < 25; i++) {
+                const noise = (Math.random() - 0.48) * (baseVal * 0.08);
+                window._resourceGraphHistory.push(Number((baseVal + noise).toFixed(2)));
+            }
+        }
+
+        const renderFrame = () => {
+            const width = canvas.width;
+            const height = canvas.height;
+            ctx.clearRect(0, 0, width, height);
+
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.06)';
+            ctx.lineWidth = 1;
+            for (let x = 0; x < width; x += 40) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, height);
+                ctx.stroke();
+            }
+            for (let y = 0; y < height; y += 35) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(width, y);
+                ctx.stroke();
+            }
+
+            const data = window._resourceGraphHistory;
+            if (!data || data.length < 2) return;
+
+            const maxVal = Math.max(...data) * 1.15 || 100;
+            const minVal = Math.min(...data) * 0.85 || 0;
+            const range = (maxVal - minVal) || 1;
+
+            const getX = (i) => (i / (data.length - 1)) * (width - 40) + 20;
+            const getY = (val) => height - 30 - ((val - minVal) / range) * (height - 60);
+
+            let strokeColor = '#00e5ff';
+            let fillColor = 'rgba(0, 229, 255, 0.15)';
+            if (subType === 'oil_yield') { strokeColor = '#eab308'; fillColor = 'rgba(234, 179, 8, 0.15)'; }
+            else if (subType === 'steel_refinery') { strokeColor = '#a855f7'; fillColor = 'rgba(168, 85, 247, 0.15)'; }
+            else if (subType === 'nuclear_rare') { strokeColor = '#22c55e'; fillColor = 'rgba(34, 197, 94, 0.15)'; }
+
+            ctx.beginPath();
+            ctx.moveTo(getX(0), height - 20);
+            for (let i = 0; i < data.length; i++) {
+                ctx.lineTo(getX(i), getY(data[i]));
+            }
+            ctx.lineTo(getX(data.length - 1), height - 20);
+            ctx.closePath();
+            ctx.fillStyle = fillColor;
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.strokeStyle = strokeColor;
+            ctx.lineWidth = 3;
+            for (let i = 0; i < data.length; i++) {
+                if (i === 0) ctx.moveTo(getX(i), getY(data[i]));
+                else ctx.lineTo(getX(i), getY(data[i]));
+            }
+            ctx.stroke();
+
+            for (let i = 0; i < data.length; i++) {
+                const x = getX(i);
+                const y = getY(data[i]);
+                ctx.beginPath();
+                ctx.arc(x, y, i === data.length - 1 ? 5 : 3, 0, Math.PI * 2);
+                ctx.fillStyle = i === data.length - 1 ? '#ffffff' : strokeColor;
+                ctx.fill();
+                if (i === data.length - 1) {
+                    ctx.strokeStyle = strokeColor;
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                }
+            }
+
+            const lastVal = data[data.length - 1];
+            ctx.font = 'bold 12px "Share Tech Mono", monospace';
+            ctx.fillStyle = strokeColor;
+            ctx.textAlign = 'right';
+            let unitStr = subType === 'power_grid' ? ' GW' : (subType === 'oil_yield' ? ' BBL/s' : (subType === 'steel_refinery' ? ' T/s' : ' %'));
+            ctx.fillText(`CURRENT: ${lastVal}${unitStr}`, width - 20, 25);
+        };
+
+        renderFrame();
+
+        if (window._resourceChartTimer) clearInterval(window._resourceChartTimer);
+        window._resourceChartTimer = setInterval(() => {
+            if (!document.getElementById('resource-live-canvas')) {
+                clearInterval(window._resourceChartTimer);
+                return;
+            }
+            const data = window._resourceGraphHistory;
+            if (!data) return;
+            const last = data[data.length - 1];
+            const delta = (Math.random() - 0.47) * (last * 0.035);
+            const nextVal = Number(Math.max(1, last + delta).toFixed(2));
+            data.shift();
+            data.push(nextVal);
+            renderFrame();
+
+            const cashEl = document.getElementById('res-min-cash');
+            const oilEl = document.getElementById('res-min-oil');
+            const steelEl = document.getElementById('res-min-steel');
+            const uraniumEl = document.getElementById('res-min-uranium');
+            const energyEl = document.getElementById('res-min-energy');
+
+            if (cashEl && window.resources && window.resources.cash !== undefined) {
+                cashEl.innerText = window.formatGameNumber ? window.formatGameNumber(window.resources.cash) : '$' + (window.resources.cash / 1000000).toFixed(1) + 'M';
+            }
+            if (oilEl && window.resources && window.resources.oil !== undefined) {
+                oilEl.innerText = (window.formatPopulationNumber ? window.formatPopulationNumber(window.resources.oil) : window.resources.oil) + ' BBL';
+            }
+            if (steelEl && window.resources && window.resources.steel !== undefined) {
+                steelEl.innerText = (window.formatPopulationNumber ? window.formatPopulationNumber(window.resources.steel) : window.resources.steel) + ' T';
+            }
+            if (uraniumEl && window.resources && window.resources.uranium !== undefined) {
+                uraniumEl.innerText = window.resources.uranium + ' KG';
+            }
+        }, 1000);
+    },
+
+    executeResourceDirective(directiveType) {
+        if (!window.resources) window.resources = { cash: 100000000, oil: 500000, steel: 100000, uranium: 500, manpower: 500000 };
+
+        if (directiveType === 'drill_oil') {
+            if (window.resources.cash < 800000000) {
+                if (window.showOmegaNotification) window.showOmegaNotification("INSUFFICIENT FUNDS", "❌ $800M needed for Deepwater Offshore Oil Rig Drilling!", "error");
+                return;
+            }
+            window.resources.cash -= 800000000;
+            window.resources.oil += 50000;
+            if (window.resourceRates) window.resourceRates.oil += 500;
+            if (window.showOmegaNotification) window.showOmegaNotification("OFFSHORE OIL RIG ACTIVE", "🛢️ Deepwater Crude Well Online! +50,000 BBL added to Stockpiles. Extraction yield +500 BBL/s!", "success");
+        } else if (directiveType === 'build_nuclear') {
+            if (window.resources.cash < 2000000000) {
+                if (window.showOmegaNotification) window.showOmegaNotification("INSUFFICIENT FUNDS", "❌ $2.0B needed to build Nuclear Reactor!", "error");
+                return;
+            }
+            window.resources.cash -= 2000000000;
+            window.resources.uranium += 100;
+            if (window.showOmegaNotification) window.showOmegaNotification("NUCLEAR REACTOR COMMISSIONED", "⚛️ 2,400MW Dual Reactor commissioned! National Grid Baseload secured +2.4 GW!", "success");
+        } else if (directiveType === 'expand_mining') {
+            if (window.resources.cash < 1200000000) {
+                if (window.showOmegaNotification) window.showOmegaNotification("INSUFFICIENT FUNDS", "❌ $1.2B needed for Mining Expansion!", "error");
+                return;
+            }
+            window.resources.cash -= 1200000000;
+            window.resources.steel += 10000;
+            window.resources.uranium += 250;
+            if (window.showOmegaNotification) window.showOmegaNotification("RARE EARTH MINES EXPANDED", "⛏️ Lithium & Uranium Extraction operational! +10,000 T Steel & +250 KG Uranium added!", "success");
+        } else if (directiveType === 'build_solar') {
+            if (window.resources.cash < 600000000) {
+                if (window.showOmegaNotification) window.showOmegaNotification("INSUFFICIENT FUNDS", "❌ $600M needed for Offshore Wind Grid!", "error");
+                return;
+            }
+            window.resources.cash -= 600000000;
+            if (window.showOmegaNotification) window.showOmegaNotification("OFFSHORE WIND GRID ONLINE", "☀️ 1,000 MW Coastal Wind Turbines active! National grid green energy ratio +12%!", "success");
+        }
+
+        if (window._resourceGraphHistory) {
+            const last = window._resourceGraphHistory[window._resourceGraphHistory.length - 1];
+            window._resourceGraphHistory[window._resourceGraphHistory.length - 1] = Number((last * 1.25).toFixed(2));
+        }
+
+        const m = this.ministriesDatabase['energy_mining'] || this.ministriesDatabase['resource'];
+        const contentArea = document.getElementById('ministry-dashboard-content');
+        if (m && contentArea) {
+            this.renderResourceMinistryDashboard(m, contentArea);
+        }
     },
 
     openInterrogationModal(ministerId) {

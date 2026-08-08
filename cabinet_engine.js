@@ -488,6 +488,9 @@ window.OmegaCabinetEngine = {
     setGovSubView(mode) {
         this.govSubView = mode;
         this.renderCabinetSubsystem();
+        if (window.OmegaCabinetUI && typeof window.OmegaCabinetUI.renderCabinet === 'function') {
+            window.OmegaCabinetUI.renderCabinet(window.OmegaCabinetUI.activeCountry || 'USA');
+        }
     },
 
     // 1. 🏛️ GOVERNANCE, RELIGIONS & IDEOLOGIES SYSTEM

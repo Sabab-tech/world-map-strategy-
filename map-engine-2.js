@@ -624,9 +624,14 @@ Game.Map = {
         if (countryData.military) countryData.military.forEach(h => hubs.push(Object.assign({}, h, { role: 'military' })));
         if (countryData.secret) countryData.secret.forEach(h => hubs.push(Object.assign({}, h, { role: 'secret' })));
 
+        const currentZoom = this.map ? this.map.getZoom() : 4;
+
         hubs.forEach(hub => {
             var latitude = hub.lat, longitude = hub.lon !== undefined ? hub.lon : hub.lng;
             if (!latitude || longitude === undefined) return;
+
+            // When zoomed far out (zoom < 3.2), only show capital to prevent clutter
+            if (currentZoom < 3.2 && hub.role !== 'capital') return;
 
             var roleColor = '#00e5ff';
             var roleTitle = 'Regional Hub';
@@ -641,11 +646,11 @@ Game.Map = {
                 html: `
                     <div class="city-btn-marker" style="
                         border-color: ${roleColor};
-                        box-shadow: 0 0 6px ${roleColor}55;
-                        padding: 2px 7px;
+                        box-shadow: 0 0 4px ${roleColor}44;
+                        padding: 1px 4px;
                     ">
-                        <span class="city-btn-dot" style="background: ${roleColor}; box-shadow: 0 0 6px ${roleColor}; width: 6px; height: 6px;"></span>
-                        <span class="city-btn-label" style="font-size: 10px;">${hub.name}</span>
+                        <span class="city-btn-dot" style="background: ${roleColor}; box-shadow: 0 0 4px ${roleColor}; width: 4px; height: 4px;"></span>
+                        <span class="city-btn-label" style="font-size: 7.5px;">${hub.name}</span>
                     </div>
                 `,
                 iconSize: [0, 0]
