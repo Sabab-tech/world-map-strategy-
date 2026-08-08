@@ -1358,6 +1358,13 @@ window.OmegaCabinetUI = {
             return;
         }
 
+        if (ministryId === 'education' || ministryId === 'education_ministry') {
+            if (window.EducationEngine && typeof window.EducationEngine.renderDashboard === 'function') {
+                window.EducationEngine.renderDashboard(m, contentArea);
+                return;
+            }
+        }
+
         const activeTab = this.activeDashboardTab || 'interrogate';
 
         let html = `

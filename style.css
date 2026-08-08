@@ -2395,9 +2395,9 @@ body.ios-active #top-status-bar {
     background: rgba(10, 15, 25, 0.88);
     backdrop-filter: blur(8px);
     z-index: 5000;
-    align-items: flex-start;
-    justify-content: center;
-    padding: 12px;
+    align-items: stretch;
+    justify-content: flex-start;
+    padding: 0;
     box-sizing: border-box;
     overflow-y: auto !important;
     -webkit-overflow-scrolling: touch !important;
@@ -3003,8 +3003,9 @@ body.is-landscape #rotate-warning {
 }
 
 body.is-landscape .parchment-cabinet-container {
-    width: 98vw !important;
-    height: 96vh !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: min-content !important;
     max-width: 1400px;
     padding: 12px;
 }
@@ -3477,11 +3478,27 @@ body.modal-open .top-filter-box {
     box-sizing: border-box !important;
     display: flex !important;
     flex-direction: column !important;
+    justify-content: flex-start !important;
+    align-items: stretch !important;
     overflow-y: auto !important;
     overflow-x: hidden !important;
     pointer-events: auto !important;
     -webkit-overflow-scrolling: touch !important;
     touch-action: pan-y !important;
+}
+
+.cabinet-top-header {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding: 10px 16px 10px 140px !important;
+    background: rgba(0, 18, 28, 0.98) !important;
+    border-bottom: 1.5px solid var(--omega-border, #00e5ff) !important;
+    position: relative !important;
+    z-index: 20 !important;
+    flex-shrink: 0 !important;
+    min-height: 52px !important;
+    box-sizing: border-box !important;
 }
 
 #ministry-dashboard-view:not([style*="display: none"]):not([style*="display:none"]) {
@@ -3496,6 +3513,8 @@ body.modal-open .top-filter-box {
     box-sizing: border-box !important;
     display: flex !important;
     flex-direction: column !important;
+    justify-content: flex-start !important;
+    align-items: stretch !important;
     overflow-y: auto !important;
     overflow-x: hidden !important;
     pointer-events: auto !important;
@@ -3509,6 +3528,7 @@ body.modal-open .top-filter-box {
     flex-shrink: 0 !important;
     width: 100% !important;
     z-index: 100 !important;
+    padding-left: 140px !important;
 }
 
 /* Ensure buttons and interactive elements in #ministry-dashboard-view and #cabinet-full-window have proper z-index and pointer-events: auto */
@@ -3537,6 +3557,8 @@ body.modal-open .top-filter-box {
     box-sizing: border-box !important;
     display: flex !important;
     flex-direction: column !important;
+    justify-content: flex-start !important;
+    align-items: stretch !important;
     overflow: hidden !important;
     pointer-events: auto !important;
     -webkit-overflow-scrolling: touch !important;
@@ -3545,13 +3567,15 @@ body.modal-open .top-filter-box {
 .cabinet-body, #cabinet-body {
     display: flex !important;
     flex-direction: column !important;
+    justify-content: flex-start !important;
+    align-items: stretch !important;
     width: 100% !important;
     max-width: 1400px !important;
     margin: 0 auto !important;
     min-height: min-content !important;
     height: auto !important;
     overflow: visible !important;
-    padding: 14px 16px 120px 16px !important;
+    padding: 12px 16px 120px 16px !important;
     box-sizing: border-box !important;
     pointer-events: auto !important;
 }
@@ -3559,6 +3583,8 @@ body.modal-open .top-filter-box {
 .ministry-content-area, #ministry-dashboard-content {
     display: flex !important;
     flex-direction: column !important;
+    justify-content: flex-start !important;
+    align-items: stretch !important;
     width: 100% !important;
     max-width: 1400px !important;
     margin: 0 auto !important;
@@ -3573,12 +3599,15 @@ body.modal-open .top-filter-box {
 .parchment-cabinet-container {
     display: flex !important;
     flex-direction: column !important;
+    justify-content: flex-start !important;
+    align-items: stretch !important;
     width: 100% !important;
     min-height: min-content !important;
     height: auto !important;
     overflow: visible !important;
     box-sizing: border-box !important;
     pointer-events: auto !important;
+    margin-top: 0 !important;
 }
 
 #cabinet-subsystem-root {
