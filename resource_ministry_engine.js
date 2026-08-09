@@ -686,10 +686,31 @@ window.ResourceMinistryEngine = (() => {
     const instance = new AutonomousResourceMinistry();
 
     // -------------------------------------------------------------------------
+    // DYNAMIC CONNECTION TO RESOURCES.JSON DATABASE
+    // -------------------------------------------------------------------------
+    let resourceDatabaseCache = null;
+    async function loadResourceDatabase() {
+        if (resourceDatabaseCache) return resourceDatabaseCache;
+        try {
+            const resp = await fetch('resources.json');
+            if (resp.ok) {
+                resourceDatabaseCache = await resp.json();
+                window.resourceDatabase = resourceDatabaseCache;
+            }
+        } catch (e) {
+            console.warn("Could not load resources.json:", e);
+        }
+        return resourceDatabaseCache;
+    }
+    loadResourceDatabase();
+
+    // -------------------------------------------------------------------------
     // 4. EXECUTIVE DASHBOARD UI RENDERER (CHAPTER 05 IN COUNTRY IOS)
     // -------------------------------------------------------------------------
     return {
         resources: STRATEGIC_RESOURCES,
+        getResourceDatabase: () => resourceDatabaseCache || window.resourceDatabase,
+        loadResourceDatabase,
         get deposits() {
             const combined = [...GEOGRAPHIC_DEPOSITS];
             const existingCountries = new Set(GEOGRAPHIC_DEPOSITS.map(d => (d.country || '').replace(/_/g, " ").toUpperCase()));

@@ -2051,5 +2051,793 @@
     "uncertaintyModels": {},
     "tradeBaselines": {},
     "resourceDependencies": {}
+  },
+  "GSRSK_Master_Resource_Data_v14": {
+    "metadata": {
+      "schemaVersion": "GSRSK-v14.0-DATA-BRAIN",
+      "engineCompatibility": "v14.0-Kernel",
+      "dataAsOf": "2026-08-08",
+      "unitSystem": "SI",
+      "currency": "USD",
+      "countryStandard": "ISO-3166-1-alpha-3",
+      "reserveStandards": [
+        "USGS",
+        "JORC",
+        "NI_43-101",
+        "PRMS"
+      ]
+    },
+    "resource_types": {
+      "crude_oil": {
+        "id": "crude_oil",
+        "name": "Crude Oil",
+        "bnName": "অপরিশোধিত তেল",
+        "icon": "🛢️",
+        "category": "hydrocarbon",
+        "baseValue": 82.5,
+        "priceVolatilityIndex": 0.65,
+        "priceElasticityDemand": -0.15,
+        "priceElasticitySupply": 0.1,
+        "unit": "barrel",
+        "physicalState": "liquid",
+        "subTypes": {
+          "light_sweet": {
+            "name": "Light Sweet Crude",
+            "apiGravityMin": 38,
+            "sulfurMaxPercent": 0.5
+          },
+          "medium_sour": {
+            "name": "Medium Sour Crude",
+            "apiGravityMin": 28,
+            "sulfurMaxPercent": 2.5
+          },
+          "heavy_crude": {
+            "name": "Heavy Crude",
+            "apiGravityMin": 18,
+            "sulfurMaxPercent": 3.5
+          },
+          "extra_heavy_bitumen": {
+            "name": "Extra Heavy Bitumen",
+            "apiGravityMin": 8,
+            "sulfurMaxPercent": 5.0
+          }
+        },
+        "processChain": [
+          "extraction",
+          "desulfurization",
+          "fractional_distillation",
+          "cracking"
+        ]
+      },
+      "natural_gas": {
+        "id": "natural_gas",
+        "name": "Natural Gas",
+        "bnName": "প্রাকৃতিক গ্যাস",
+        "icon": "🔥",
+        "category": "hydrocarbon",
+        "baseValue": 0.45,
+        "priceVolatilityIndex": 0.78,
+        "priceElasticityDemand": -0.4,
+        "priceElasticitySupply": 0.12,
+        "unit": "cubic_meter",
+        "physicalState": "gas",
+        "subTypes": {
+          "conventional_dry": {
+            "methanePercentMin": 95.0,
+            "nglContent": "low"
+          },
+          "wet_gas_ngl": {
+            "methanePercentMin": 70.0,
+            "nglContent": "high"
+          },
+          "shale_gas": {
+            "reservoirType": "black_shale",
+            "extractionTech": "fracking"
+          },
+          "coalbed_methane": {
+            "reservoirType": "coal_seam",
+            "extractionTech": "dewatering"
+          }
+        },
+        "processChain": [
+          "extraction",
+          "dehydration",
+          "fractionation",
+          "liquefaction_lng"
+        ]
+      },
+      "iron_ore": {
+        "id": "iron_ore",
+        "name": "Iron Ore",
+        "bnName": "লৌহ আকরিক",
+        "icon": "⛏️",
+        "category": "ferrous_metal",
+        "baseValue": 112.5,
+        "priceVolatilityIndex": 0.35,
+        "priceElasticityDemand": -0.25,
+        "priceElasticitySupply": 0.15,
+        "unit": "metric_ton",
+        "physicalState": "solid",
+        "subTypes": {
+          "hematite_high_grade": {
+            "fePercentAvg": 65.0,
+            "silicaMaxPercent": 3.0
+          },
+          "magnetite_bif": {
+            "fePercentAvg": 32.0,
+            "requiresBeneficiation": true
+          },
+          "goethite_limonite": {
+            "fePercentAvg": 52.0,
+            "moisturePercent": 10.0
+          }
+        },
+        "processChain": [
+          "extraction",
+          "crushing",
+          "magnetic_separation",
+          "pelletization",
+          "smelting"
+        ]
+      },
+      "rare_earth": {
+        "id": "rare_earth",
+        "name": "Rare Earth Elements (REE)",
+        "bnName": "বিরল খনিজ উপাদান",
+        "icon": "🧪",
+        "category": "critical_mineral",
+        "baseValue": 68000.0,
+        "priceVolatilityIndex": 0.9,
+        "priceElasticityDemand": -0.45,
+        "priceElasticitySupply": 0.08,
+        "unit": "metric_ton",
+        "physicalState": "solid",
+        "subTypes": {
+          "lree_light": {
+            "keyElements": [
+              "Neodymium",
+              "Praseodymium",
+              "Cerium"
+            ]
+          },
+          "hree_heavy": {
+            "keyElements": [
+              "Dysprosium",
+              "Terbium",
+              "Yttrium"
+            ]
+          }
+        },
+        "processChain": [
+          "extraction",
+          "acid_leaching",
+          "solvent_extraction",
+          "reduction_smelting"
+        ]
+      },
+      "lithium": {
+        "id": "lithium",
+        "name": "Lithium Ore/Brine",
+        "bnName": "লিথিয়াম",
+        "icon": "🔋",
+        "category": "critical_mineral",
+        "baseValue": 14200.0,
+        "priceVolatilityIndex": 0.85,
+        "priceElasticityDemand": -0.5,
+        "priceElasticitySupply": 0.18,
+        "unit": "metric_ton",
+        "physicalState": "solid",
+        "subTypes": {
+          "spodumene_hardrock": {
+            "li2oPercentAvg": 1.5,
+            "hostRock": "pegmatite"
+          },
+          "salar_brine": {
+            "lithiumPpmAvg": 800,
+            "extractionTech": "evaporation_dLE"
+          }
+        },
+        "processChain": [
+          "extraction",
+          "calcination",
+          "acid_roasting",
+          "precipitation_carbonate"
+        ]
+      },
+      "semiconductor": {
+        "id": "semiconductor",
+        "name": "Advanced Semiconductor Chips",
+        "bnName": "সেমিকন্ডাক্টর চিপ",
+        "icon": "🎛️",
+        "category": "high_tech_processed",
+        "baseValue": 450000.0,
+        "priceVolatilityIndex": 0.7,
+        "priceElasticityDemand": -0.6,
+        "priceElasticitySupply": 0.05,
+        "unit": "metric_ton",
+        "physicalState": "solid",
+        "subTypes": {
+          "advanced_sub_3nm": {
+            "nodeSizeNm": 3,
+            "waferType": "silicon_euv"
+          },
+          "legacy_microcontroller": {
+            "nodeSizeNm": 28,
+            "waferType": "planar_silicon"
+          }
+        },
+        "processChain": [
+          "silicon_purification",
+          "ingot_slicing",
+          "euv_photolithography",
+          "dicing_packaging"
+        ]
+      },
+      "wheat": {
+        "id": "wheat",
+        "name": "Wheat Grain",
+        "bnName": "গম",
+        "icon": "🌾",
+        "category": "agriculture",
+        "baseValue": 220.0,
+        "priceVolatilityIndex": 0.4,
+        "priceElasticityDemand": -0.1,
+        "priceElasticitySupply": 0.35,
+        "unit": "metric_ton",
+        "physicalState": "solid",
+        "subTypes": {
+          "hard_red_winter": {
+            "proteinPercentMin": 12.0
+          },
+          "soft_white": {
+            "proteinPercentMin": 9.5
+          }
+        },
+        "processChain": [
+          "harvesting",
+          "cleaning",
+          "milling",
+          "flour_processing"
+        ]
+      },
+      "rice": {
+        "id": "rice",
+        "name": "Paddy/Processed Rice",
+        "bnName": "ধান / চাল",
+        "icon": "🍚",
+        "category": "agriculture",
+        "baseValue": 410.0,
+        "priceVolatilityIndex": 0.32,
+        "priceElasticityDemand": -0.08,
+        "priceElasticitySupply": 0.3,
+        "unit": "metric_ton",
+        "physicalState": "solid",
+        "subTypes": {
+          "aromatic_basmati": {
+            "grainLengthMm": 7.0
+          },
+          "indica_long_grain": {
+            "grainLengthMm": 6.0
+          }
+        },
+        "processChain": [
+          "harvesting",
+          "drying",
+          "husking",
+          "polishing"
+        ]
+      },
+      "coal": {
+        "id": "coal",
+        "name": "Coal (Coking & Thermal)",
+        "bnName": "কয়লা",
+        "icon": "⬛",
+        "category": "fossil_fuel",
+        "baseValue": 185.0,
+        "priceVolatilityIndex": 0.45,
+        "priceElasticityDemand": -0.25,
+        "priceElasticitySupply": 0.2,
+        "unit": "metric_ton",
+        "physicalState": "solid",
+        "subTypes": {
+          "premium_coking": {
+            "csrIndexMin": 65,
+            "purpose": "metallurgical_coke"
+          },
+          "thermal_bituminous": {
+            "calorificKcalKg": 6000,
+            "purpose": "power_generation"
+          },
+          "lignite_brown": {
+            "moisturePercentMax": 45.0,
+            "purpose": "local_power"
+          }
+        },
+        "processChain": [
+          "extraction",
+          "washing",
+          "crushing",
+          "coking_or_combustion"
+        ]
+      },
+      "copper": {
+        "id": "copper",
+        "name": "Copper Ore/Concentrate",
+        "bnName": "তামা",
+        "icon": "🥉",
+        "category": "non_ferrous_metal",
+        "baseValue": 8850.0,
+        "priceVolatilityIndex": 0.42,
+        "priceElasticityDemand": -0.35,
+        "priceElasticitySupply": 0.2,
+        "unit": "metric_ton",
+        "physicalState": "solid",
+        "subTypes": {
+          "porphyry_sulfide": {
+            "cuPercentAvg": 0.7,
+            "byproductGoldGton": 0.5
+          },
+          "oxide_ore": {
+            "cuPercentAvg": 1.2,
+            "processingMethod": "sx_ew"
+          }
+        },
+        "processChain": [
+          "extraction",
+          "grinding",
+          "froth_flotation",
+          "smelting",
+          "electro_refining"
+        ]
+      },
+      "bauxite": {
+        "id": "bauxite",
+        "name": "Bauxite Ore",
+        "bnName": "বক্সাইট",
+        "icon": "🪨",
+        "category": "non_ferrous_metal",
+        "baseValue": 52.0,
+        "priceVolatilityIndex": 0.22,
+        "priceElasticityDemand": -0.2,
+        "priceElasticitySupply": 0.3,
+        "unit": "metric_ton",
+        "physicalState": "solid",
+        "subTypes": {
+          "gibbsite_trihydrate": {
+            "aluminaPercentAvg": 48.0,
+            "reactiveSilicaMax": 2.5
+          },
+          "boehmite_monohydrate": {
+            "aluminaPercentAvg": 55.0,
+            "digestionTempC": 240
+          }
+        },
+        "processChain": [
+          "extraction",
+          "bayer_digestion",
+          "calcination",
+          "hall_heroult_smelting"
+        ]
+      },
+      "limestone": {
+        "id": "limestone",
+        "name": "Industrial Limestone",
+        "bnName": "চুনাপাথর",
+        "icon": "🏛️",
+        "category": "industrial_mineral",
+        "baseValue": 18.0,
+        "priceVolatilityIndex": 0.1,
+        "priceElasticityDemand": -0.6,
+        "priceElasticitySupply": 0.8,
+        "unit": "metric_ton",
+        "physicalState": "solid",
+        "subTypes": {
+          "high_calcium": {
+            "caco3PercentMin": 95.0
+          },
+          "dolomitic": {
+            "mgco3PercentMin": 15.0
+          }
+        },
+        "processChain": [
+          "quarrying",
+          "crushing",
+          "calcination_kiln",
+          "clinker_milling"
+        ]
+      },
+      "uranium": {
+        "id": "uranium",
+        "name": "Uranium Ore (Yellowcake)",
+        "bnName": "ইউরেনিয়াম",
+        "icon": "☢️",
+        "category": "nuclear_fuel",
+        "baseValue": 185000.0,
+        "priceVolatilityIndex": 0.6,
+        "priceElasticityDemand": -0.08,
+        "priceElasticitySupply": 0.05,
+        "unit": "metric_ton",
+        "physicalState": "solid",
+        "subTypes": {
+          "sandstone_isl": {
+            "u3o8PercentAvg": 0.1,
+            "extractionTech": "in_situ_leaching"
+          },
+          "unconformity_hardrock": {
+            "u3o8PercentAvg": 15.0,
+            "extractionTech": "underground_jet"
+          }
+        },
+        "processChain": [
+          "extraction",
+          "milling",
+          "conversion_uf6",
+          "centrifuge_enrichment"
+        ]
+      },
+      "electricity": {
+        "id": "electricity",
+        "name": "Electrical Energy",
+        "bnName": "বিদ্যুৎ",
+        "icon": "⚡",
+        "category": "energy_utility",
+        "baseValue": 120.0,
+        "priceVolatilityIndex": 0.5,
+        "priceElasticityDemand": -0.3,
+        "priceElasticitySupply": 0.5,
+        "unit": "MWh",
+        "physicalState": "energy",
+        "subTypes": {
+          "baseload_thermal_nuclear": {
+            "availabilityFactor": 0.9
+          },
+          "intermittent_renewable": {
+            "availabilityFactor": 0.35
+          }
+        },
+        "processChain": [
+          "generation",
+          "high_voltage_stepup",
+          "grid_transmission",
+          "distribution"
+        ]
+      },
+      "timber": {
+        "id": "timber",
+        "name": "Industrial Timber/Wood",
+        "bnName": "কাঠ",
+        "icon": "🪵",
+        "category": "renewable_material",
+        "baseValue": 210.0,
+        "priceVolatilityIndex": 0.25,
+        "priceElasticityDemand": -0.3,
+        "priceElasticitySupply": 0.35,
+        "unit": "cubic_meter",
+        "physicalState": "solid",
+        "subTypes": {
+          "industrial_hardwood": {
+            "densityKgM3": 850,
+            "usage": "construction_furniture"
+          },
+          "industrial_softwood": {
+            "densityKgM3": 500,
+            "usage": "pulp_paper_framing"
+          }
+        },
+        "processChain": [
+          "harvesting",
+          "debarking",
+          "sawmilling",
+          "kiln_drying"
+        ]
+      },
+      "steel": {
+        "id": "steel",
+        "name": "Crude/Refined Steel",
+        "bnName": "ইস্পাত",
+        "icon": "🏗️",
+        "category": "processed_metal",
+        "baseValue": 580.0,
+        "priceVolatilityIndex": 0.3,
+        "priceElasticityDemand": -0.4,
+        "priceElasticitySupply": 0.4,
+        "unit": "metric_ton",
+        "physicalState": "solid",
+        "subTypes": {
+          "crude_billet": {
+            "fePercentAvg": 98.0,
+            "carbonPercent": 0.2
+          },
+          "armor_grade_alloy": {
+            "nickelChromiumAdditives": true,
+            "hardnessBrinell": 500
+          }
+        },
+        "processChain": [
+          "blast_furnace_smelting",
+          "bof_refining",
+          "continuous_casting",
+          "rolling"
+        ]
+      },
+      "refined_fuel": {
+        "id": "refined_fuel",
+        "name": "Refined Petroleum Fuels",
+        "bnName": "পরিশোধিত জ্বালানি",
+        "icon": "⛽",
+        "category": "processed_hydrocarbon",
+        "baseValue": 125.0,
+        "priceVolatilityIndex": 0.55,
+        "priceElasticityDemand": -0.2,
+        "priceElasticitySupply": 0.3,
+        "unit": "barrel",
+        "physicalState": "liquid",
+        "subTypes": {
+          "diesel_ultra_low_sulfur": {
+            "cetaneNumberMin": 51,
+            "sulfurPpmMax": 10
+          },
+          "aviation_jet_a1": {
+            "freezePointCMax": -47,
+            "flashPointCMin": 38
+          },
+          "gasoline_octane_95": {
+            "ronIndex": 95
+          }
+        },
+        "processChain": [
+          "crude_distillation",
+          "hydrotreating",
+          "catalytic_reforming",
+          "blending"
+        ]
+      },
+      "military_armor": {
+        "id": "military_armor",
+        "name": "Military Composite Armor",
+        "bnName": "সামরিক বর্ম",
+        "icon": "🛡️",
+        "category": "defense_processed",
+        "baseValue": 125000.0,
+        "priceVolatilityIndex": 0.8,
+        "priceElasticityDemand": -0.05,
+        "priceElasticitySupply": 0.02,
+        "unit": "metric_ton",
+        "physicalState": "solid",
+        "subTypes": {
+          "chobham_ceramic_composite": {
+            "densityKgM3": 4200,
+            "hardnessRating": 95.0
+          },
+          "depleted_uranium_matrix": {
+            "densityKgM3": 18500,
+            "hardnessRating": 99.5
+          }
+        },
+        "processChain": [
+          "alloy_sintering",
+          "ceramic_pressing",
+          "vacuum_bonding",
+          "armor_assembly"
+        ]
+      },
+      "gold": {
+        "id": "gold",
+        "name": "Gold Ore/Bullion",
+        "bnName": "সোনা",
+        "icon": "🥇",
+        "category": "precious_metal",
+        "baseValue": 2350.0,
+        "priceVolatilityIndex": 0.3,
+        "priceElasticityDemand": -0.1,
+        "priceElasticitySupply": 0.05,
+        "unit": "troy_ounce",
+        "physicalState": "solid",
+        "subTypes": {
+          "refractory_dore": {
+            "auPurityPercent": 85.0
+          },
+          "investment_bullion_9999": {
+            "auPurityPercent": 99.99
+          }
+        },
+        "processChain": [
+          "mining",
+          "cyanidation_leaching",
+          "electrowinning",
+          "induction_smelting"
+        ]
+      }
+    },
+    "processing_plants": {
+      "refining_chains": {
+        "OIL_REFINERY_STANDARD": {
+          "id": "OIL_REFINERY_STANDARD",
+          "name": "Crude Hydrocarbon Refinery",
+          "inputResId": "crude_oil",
+          "outputResId": "refined_fuel",
+          "conversionRatio": 0.94,
+          "energyIntensityGJ": 0.45,
+          "processingLossPercent": 6.0,
+          "byproductResId": "petrochemical_feedstock"
+        },
+        "STEELWORKS_INTEGRATED": {
+          "id": "STEELWORKS_INTEGRATED",
+          "name": "Integrated Blast Furnace Steelworks",
+          "inputResId": "iron_ore",
+          "outputResId": "steel",
+          "conversionRatio": 0.625,
+          "energyIntensityGJ": 19.5,
+          "processingLossPercent": 4.5,
+          "byproductResId": "blast_furnace_slag"
+        },
+        "COPPER_SMELTER_FLASH": {
+          "id": "COPPER_SMELTER_FLASH",
+          "name": "Flash Smelting Copper Refinery",
+          "inputResId": "copper",
+          "outputResId": "copper",
+          "conversionRatio": 0.96,
+          "energyIntensityGJ": 18.2,
+          "processingLossPercent": 4.0,
+          "byproductResId": "gold"
+        },
+        "ALUMINA_HALL_HEROULT": {
+          "id": "ALUMINA_HALL_HEROULT",
+          "name": "Bayer-Hall-Héroult Aluminium Smelter",
+          "inputResId": "bauxite",
+          "outputResId": "bauxite",
+          "conversionRatio": 0.22,
+          "energyIntensityGJ": 52.0,
+          "processingLossPercent": 8.0,
+          "byproductResId": "red_mud_waste"
+        },
+        "SEMICONDUCTOR_FAB_EUV": {
+          "id": "SEMICONDUCTOR_FAB_EUV",
+          "name": "Giga-Fab Photolithography Complex",
+          "inputResId": "rare_earth",
+          "outputResId": "semiconductor",
+          "conversionRatio": 0.05,
+          "energyIntensityGJ": 450.0,
+          "processingLossPercent": 12.0,
+          "byproductResId": "chemical_waste_slurry"
+        },
+        "ARMOR_DEFENSE_FACILITY": {
+          "id": "ARMOR_DEFENSE_FACILITY",
+          "name": "Heavy Metallurgy Defense Foundry",
+          "inputResId": "steel",
+          "outputResId": "military_armor",
+          "conversionRatio": 0.75,
+          "energyIntensityGJ": 85.0,
+          "processingLossPercent": 5.0,
+          "byproductResId": "scrap_metal_recyclable"
+        },
+        "URANIUM_CENTRIFUGE_PLANT": {
+          "id": "URANIUM_CENTRIFUGE_PLANT",
+          "name": "Cascade Centrifuge Enrichment Facility",
+          "inputResId": "uranium",
+          "outputResId": "uranium",
+          "conversionRatio": 0.12,
+          "energyIntensityGJ": 140.0,
+          "processingLossPercent": 2.0,
+          "byproductResId": "depleted_uranium_tails"
+        }
+      }
+    },
+    "standard_deposit_template": {
+      "id": "DEP_MASTER_SCHEMA_TEMPLATE_000",
+      "name": "Master Geological Deposit Blueprint",
+      "resId": "iron_ore",
+      "countryId": "ISO",
+      "lat": 0.0,
+      "lng": 0.0,
+      "initialReserve": 1000000000,
+      "currentReserve": 1000000000,
+      "extractedTotal": 0,
+      "oreGrade": 62.5,
+      "depthMeters": 180,
+      "baseCapacity": 50000000,
+      "baseOpexPerUnit": 28.5,
+      "damageRatio": 0.0,
+      "armorHardeningRating": 75.0
+    },
+    "infrastructure_nodes": {},
+    "infrastructure_edges": {},
+    "infrastructure_schemas": {
+      "node_template": {
+        "id": "NODE_TEMPLATE_000",
+        "name": "Master Node Blueprint",
+        "type": "sea_port",
+        "countryId": "ISO",
+        "lat": 0.0,
+        "lng": 0.0,
+        "designCapacityPerDay": 500000,
+        "initialStatus": "operational",
+        "damageRatio": 0.0
+      },
+      "edge_template": {
+        "id": "EDGE_TEMPLATE_000",
+        "sourceNodeId": "NODE_SOURCE_000",
+        "targetNodeId": "NODE_TARGET_000",
+        "mode": "rail",
+        "distanceKm": 250,
+        "maxDesignThroughputCapacityPerDay": 350000,
+        "terrainType": "flat",
+        "basePhysicalQualityFactor": 0.95,
+        "currentConditionFactor": 1.0
+      }
+    },
+    "resource_companies": {},
+    "corporate_capability_categories": [
+      "deep_sea_drilling",
+      "open_pit_heavy_mining",
+      "underground_shaft_mining",
+      "heavy_haul_rail_logistics",
+      "hydrocarbon_refining",
+      "metallurgical_smelting",
+      "euv_photolithography",
+      "defense_foundry_casting"
+    ],
+    "policy_options": {
+      "POL_EXPORT_BAN": {
+        "id": "POL_EXPORT_BAN",
+        "name": "Strategic Commodity Export Ban",
+        "bnName": "কৌশলগত রফতানি নিষেধাজ্ঞা",
+        "category": "trade_restriction",
+        "effects": {
+          "domesticSupplyRatio": 0.4,
+          "marketPriceImpact": 0.25,
+          "diplomaticFriction": 0.3
+        }
+      },
+      "POL_STRATEGIC_STOCKPILING": {
+        "id": "POL_STRATEGIC_STOCKPILING",
+        "name": "National Strategic Stockpile Reserve Mandate",
+        "bnName": "জাতীয় কৌশলগত জরুরি মজুত নীতি",
+        "category": "reserve_security",
+        "effects": {
+          "bufferDurationMonths": 6.0,
+          "annualBudgetOpexUSD": 150000000
+        }
+      },
+      "POL_MINING_SUBSIDY": {
+        "id": "POL_MINING_SUBSIDY",
+        "name": "Resource Extraction Technology Subsidy",
+        "bnName": "খনি উত্তোলন প্রযুক্তি ভর্তুকি",
+        "category": "production_incentive",
+        "effects": {
+          "extractionEfficiencyGain": 0.15,
+          "opexReductionPercent": -0.1
+        }
+      },
+      "POL_NATIONALIZATION": {
+        "id": "POL_NATIONALIZATION",
+        "name": "Sovereign Asset Nationalization",
+        "bnName": "সম্পদের সার্বভৌম জাতীয়করণ",
+        "category": "sovereignty",
+        "effects": {
+          "stateSharePercent": 100.0,
+          "foreignCapitalFlightRisk": 0.7
+        }
+      }
+    },
+    "countryProfiles": {},
+    "occurrences": {},
+    "deposits": {},
+    "fields": {},
+    "mines": {},
+    "wells": {},
+    "resourceEstimates": {},
+    "qualityProfiles": {},
+    "productionBaselines": {},
+    "extractionProfiles": {},
+    "associatedResources": {},
+    "ownershipBaselines": {},
+    "developmentStates": {},
+    "discoveryPotential": {},
+    "uncertaintyModels": {},
+    "environmentalProfiles": {},
+    "strategicProfiles": {},
+    "tradeBaselines": {},
+    "sources": {}
   }
 }
