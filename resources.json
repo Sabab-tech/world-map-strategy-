@@ -1,6 +1,6 @@
 {
   "VERSION": "3.0 Global Resource Intelligence Database",
-  "total_deposits": 41,
+  "total_deposits": 62,
   "resource_types": {
     "rare_earth": {
       "icon": "⚛️",
@@ -512,6 +512,201 @@
       "lng": 120.99,
       "reserve": "12M Wafers/yr (3nm Leader)",
       "status": "High Tech Cleanroom"
+    },
+    {
+      "name": "Hassi R'Mel Natural Gas Basin",
+      "resId": "natural_gas",
+      "country": "ALGERIA",
+      "lat": 32.5,
+      "lng": 3.25,
+      "reserve": "85 TCF",
+      "status": "Active Superfield"
+    },
+    {
+      "name": "Hassi Messaoud Crude Oil Field",
+      "resId": "crude_oil",
+      "country": "ALGERIA",
+      "lat": 31.86,
+      "lng": 6.07,
+      "reserve": "12B Barrels",
+      "status": "Active Oil Field"
+    },
+    {
+      "name": "Gara Djebilet Iron Ore Mine",
+      "resId": "iron_ore",
+      "country": "ALGERIA",
+      "lat": 26.88,
+      "lng": -7.02,
+      "reserve": "3.5B Tons",
+      "status": "Mega Mining Complex"
+    },
+    {
+      "name": "Hoggar Shield Gold & Uranium Belt",
+      "resId": "gold",
+      "country": "ALGERIA",
+      "lat": 22.78,
+      "lng": 5.52,
+      "reserve": "50 Tons Gold / 26K Tons Uranium",
+      "status": "Active Pit"
+    },
+    {
+      "name": "Zohr Deepwater Mediterranean Gas Field",
+      "resId": "natural_gas",
+      "country": "EGYPT",
+      "lat": 32.5,
+      "lng": 31.8,
+      "reserve": "30 TCF",
+      "status": "Active Offshore Field"
+    },
+    {
+      "name": "Western Desert Oil Fields",
+      "resId": "crude_oil",
+      "country": "EGYPT",
+      "lat": 29.5,
+      "lng": 28.2,
+      "reserve": "4.2B Barrels",
+      "status": "Active Field"
+    },
+    {
+      "name": "Sukari Orogenic Gold Mine",
+      "resId": "gold",
+      "country": "EGYPT",
+      "lat": 24.95,
+      "lng": 34.71,
+      "reserve": "12M Oz Gold",
+      "status": "Active Mine"
+    },
+    {
+      "name": "Abu Tartur Phosphate Mine",
+      "resId": "bauxite",
+      "country": "EGYPT",
+      "lat": 25.42,
+      "lng": 30.05,
+      "reserve": "1.0B Tons Phosphate",
+      "status": "Active Surface Mine"
+    },
+    {
+      "name": "Sirte Crude Oil Superbasin",
+      "resId": "crude_oil",
+      "country": "LIBYA",
+      "lat": 29.2,
+      "lng": 19.3,
+      "reserve": "48B Barrels (Africa Largest)",
+      "status": "Active Field"
+    },
+    {
+      "name": "Murzuq Oil Field Zone",
+      "resId": "crude_oil",
+      "country": "LIBYA",
+      "lat": 25.9,
+      "lng": 13.9,
+      "reserve": "5.2B Barrels",
+      "status": "Active Field"
+    },
+    {
+      "name": "Greenstream Mellitah Gas Hub",
+      "resId": "natural_gas",
+      "country": "LIBYA",
+      "lat": 32.88,
+      "lng": 12.24,
+      "reserve": "18 TCF",
+      "status": "Active Gas Terminal"
+    },
+    {
+      "name": "Wadi Shati Iron Ore Basin",
+      "resId": "iron_ore",
+      "country": "LIBYA",
+      "lat": 27.5,
+      "lng": 14.2,
+      "reserve": "3.8B Tons",
+      "status": "Strategic Reserve"
+    },
+    {
+      "name": "Oulad Abdoun Khouribga Phosphate Supermine",
+      "resId": "bauxite",
+      "country": "MOROCCO",
+      "lat": 32.88,
+      "lng": -6.91,
+      "reserve": "50B Tons (70% Global Reserves)",
+      "status": "World Leader"
+    },
+    {
+      "name": "Anti-Atlas Imiter Silver & Copper Belt",
+      "resId": "copper",
+      "country": "MOROCCO",
+      "lat": 31.35,
+      "lng": -5.8,
+      "reserve": "8,500 Tons Silver",
+      "status": "Active Mine"
+    },
+    {
+      "name": "Bou Azzer Cobalt & Polymetallic Mine",
+      "resId": "rare_earth",
+      "country": "MOROCCO",
+      "lat": 30.52,
+      "lng": -6.9,
+      "reserve": "High Grade Cobalt & REE",
+      "status": "Active Mine",
+      "rare_earth_elements": {
+        "Cobalt (Co)": "45%",
+        "Neodymium (Nd)": "25%",
+        "Yttrium (Y)": "15%",
+        "Samarium (Sm)": "15%"
+      }
+    },
+    {
+      "name": "Noor Ouarzazate Solar Complex",
+      "resId": "electricity",
+      "country": "MOROCCO",
+      "lat": 30.99,
+      "lng": -6.86,
+      "reserve": "580 MW Solar Grid",
+      "status": "Active Solar Complex"
+    },
+    {
+      "name": "Gafsa Phosphate Basin",
+      "resId": "bauxite",
+      "country": "TUNISIA",
+      "lat": 34.42,
+      "lng": 8.78,
+      "reserve": "1.2B Tons",
+      "status": "Active Mine"
+    },
+    {
+      "name": "Pelagian Sfax Offshore Gas & Oil Field",
+      "resId": "natural_gas",
+      "country": "TUNISIA",
+      "lat": 34.73,
+      "lng": 11.2,
+      "reserve": "2.8 TCF",
+      "status": "Offshore Platform"
+    },
+    {
+      "name": "Hassai Red Sea Gold Belt",
+      "resId": "gold",
+      "country": "SUDAN",
+      "lat": 19.6,
+      "lng": 35.8,
+      "reserve": "90 Tons/yr Production",
+      "status": "Active Mine"
+    },
+    {
+      "name": "Muglad Petroleum Rift Basin",
+      "resId": "crude_oil",
+      "country": "SUDAN",
+      "lat": 10.2,
+      "lng": 28.5,
+      "reserve": "1.5B Barrels",
+      "status": "Active Field"
+    },
+    {
+      "name": "Khartoum Refinery & Oil Terminal",
+      "resId": "crude_oil",
+      "country": "SUDAN",
+      "lat": 15.65,
+      "lng": 32.52,
+      "reserve": "100,000 bpd Capacity",
+      "status": "Refinery Hub"
     }
   ],
   "GSRSK_BRAIN_FRAMEWORK_PHASE_1": {
@@ -9842,6 +10037,2712 @@
           "lastVerified": "2026-06-30",
           "coverageNotes": [
             "Verified with Maldives Ministry of Fisheries and FAO tuna catch baselines."
+          ]
+        }
+      }
+    }
+  },
+  "GSRSK_NorthAfrica_CountryProfiles_v14": {
+    "countryProfiles": {
+      "DZA": {
+        "identity": {
+          "countryId": "DZA",
+          "iso3": "DZA",
+          "name": "Algeria",
+          "officialName": "People's Democratic Republic of Algeria",
+          "continent": "Africa",
+          "subcontinent": "North Africa",
+          "region": "Northern Africa",
+          "resourceSystemId": "RES_DZA"
+        },
+        "geography": {
+          "capital": "Algiers",
+          "coordinates": {
+            "lat": 36.7538,
+            "lng": 3.0588
+          },
+          "bounds": {
+            "north": 37.09,
+            "south": 18.96,
+            "east": 11.999,
+            "west": -8.67
+          },
+          "landAreaKm2": 2381741,
+          "coastal": true,
+          "coastlineKm": 998,
+          "majorResourceZones": [
+            "hassi_rmel_gas_basin",
+            "hassi_messaoud_oil_basin",
+            "tindouf_iron_basin",
+            "hoggar_shield"
+          ]
+        },
+        "administrative_resource_regions": [
+          {
+            "regionId": "DZA_GHARDAIA",
+            "name": "Hassi R'Mel Gas Zone",
+            "type": "resource_region",
+            "resourceTags": [
+              "natural_gas",
+              "refined_fuel"
+            ]
+          },
+          {
+            "regionId": "DZA_OUARGLA",
+            "name": "Hassi Messaoud Oil Zone",
+            "type": "resource_region",
+            "resourceTags": [
+              "crude_oil",
+              "natural_gas"
+            ]
+          },
+          {
+            "regionId": "DZA_TINDOUF",
+            "name": "Gara Djebilet Iron Ore Zone",
+            "type": "resource_region",
+            "resourceTags": [
+              "iron_ore"
+            ]
+          },
+          {
+            "regionId": "DZA_TAMANGHASSET",
+            "name": "Hoggar Shield Mineral Zone",
+            "type": "resource_region",
+            "resourceTags": [
+              "gold",
+              "uranium"
+            ]
+          }
+        ],
+        "resource_domain": {
+          "resourceRichnessClass": "very_high",
+          "resourceDiversityClass": "hydrocarbon_iron_gold_dominant",
+          "majorResourceCount": 7,
+          "knownResourceTypes": [
+            "crude_oil",
+            "natural_gas",
+            "iron_ore",
+            "limestone",
+            "phosphate",
+            "uranium",
+            "gold"
+          ],
+          "strategicResourceCount": 4,
+          "extractiveResourcePresence": true
+        },
+        "resource_endowment": {
+          "known": [
+            "crude_oil",
+            "natural_gas",
+            "iron_ore",
+            "limestone",
+            "phosphate",
+            "uranium",
+            "gold"
+          ],
+          "probable": [
+            "natural_gas",
+            "crude_oil"
+          ],
+          "potential": [
+            "natural_gas"
+          ],
+          "absentOrNegligible": [
+            "bauxite",
+            "timber"
+          ]
+        },
+        "geological_context": {
+          "majorGeologicalDomains": [
+            "saharan_platform",
+            "tell_atlas_orogen",
+            "tuareg_shield_hoggar"
+          ],
+          "sedimentaryBasins": [
+            "triassic_basin",
+            "illizi_basin",
+            "tindouf_basin",
+            "ahnet_basin"
+          ],
+          "shieldOrCratonZones": [
+            "west_african_craton_boundary",
+            "hoggar_shield"
+          ],
+          "mountainBelts": [
+            "saharan_atlas",
+            "tell_atlas"
+          ],
+          "volcanicZones": [
+            "hoggar_volcanic_province"
+          ],
+          "tectonicSetting": [
+            "stable_platform_and_orogenic_margin"
+          ],
+          "resourceFormationContexts": [
+            "palaeozoic_sandstone_hydrocarbon_reservoirs",
+            "proterozoic_gold_veins"
+          ]
+        },
+        "mineral_resource_base": {
+          "metallic": [
+            "iron_ore"
+          ],
+          "nonMetallic": [
+            "limestone",
+            "phosphate"
+          ],
+          "industrialMinerals": [
+            "industrial_stone"
+          ],
+          "preciousMetals": [
+            "gold"
+          ],
+          "criticalMinerals": [],
+          "rareEarths": []
+        },
+        "hydrocarbon_resource_base": {
+          "oil": [
+            "crude_oil"
+          ],
+          "naturalGas": [
+            "natural_gas"
+          ],
+          "coal": [],
+          "basins": [
+            "hassi_rmel_basin",
+            "hassi_messaoud_basin",
+            "illizi_basin"
+          ],
+          "offshorePotential": true
+        },
+        "energy_resource_base": {
+          "fossilResources": [
+            "crude_oil",
+            "natural_gas"
+          ],
+          "nuclearResources": [
+            "uranium"
+          ],
+          "hydropowerPotential": [],
+          "solarResourceZones": [
+            "sahara_desert_high_insolation_belt"
+          ],
+          "windResourceZones": [
+            "western_sahara_border_corridor"
+          ],
+          "geothermalPotential": [],
+          "biomassResources": []
+        },
+        "water_resource_base": {
+          "majorRiverSystems": [
+            "chelif_river"
+          ],
+          "groundwaterSystems": [
+            "north_saharan_aquifer_system_nssas"
+          ],
+          "lakeSystems": [
+            "chott_ech_chergui"
+          ],
+          "freshwaterAvailabilityClass": "water_scarce_arid",
+          "waterStressClass": "extremely_high",
+          "transboundaryWaterSystems": [
+            "nssas_shared_with_tunisia_libya"
+          ]
+        },
+        "forest_resource_base": {
+          "forestTypes": [
+            "mediterranean_scrub_cork_oak"
+          ],
+          "majorForestZones": [
+            "tell_atlas_coastal_forests"
+          ],
+          "timberResourcePresence": false,
+          "nonTimberForestResources": [
+            "cork_bark"
+          ]
+        },
+        "agricultural_resource_base": {
+          "majorCropResources": [
+            "wheat"
+          ],
+          "livestockResourceTypes": [
+            "bovine"
+          ],
+          "fishingResources": [
+            "mediterranean_marine_fisheries"
+          ],
+          "arableLandClass": "low_coastal_strip_dependent",
+          "irrigationResourceZones": [
+            "coastal_plain_canals"
+          ]
+        },
+        "strategic_resources": {
+          "domesticallyAvailable": [
+            "crude_oil",
+            "natural_gas",
+            "iron_ore",
+            "phosphate",
+            "gold"
+          ],
+          "strategicallyImportant": [
+            "natural_gas",
+            "crude_oil",
+            "iron_ore"
+          ],
+          "importDependent": [
+            "wheat",
+            "timber",
+            "steel"
+          ],
+          "exportCritical": [
+            "natural_gas",
+            "crude_oil",
+            "refined_fuel"
+          ],
+          "dualUseRelevant": [
+            "uranium"
+          ]
+        },
+        "resource_quality_context": {
+          "knownHighGradeResources": [
+            "crude_oil",
+            "natural_gas",
+            "iron_ore"
+          ],
+          "knownLowGradeResources": [],
+          "qualityDataCoverage": "high_for_hydrocarbons"
+        },
+        "extraction_context": {
+          "surfaceMiningPotential": [
+            "iron_ore",
+            "phosphate"
+          ],
+          "undergroundMiningPotential": [
+            "gold"
+          ],
+          "offshoreExtractionPotential": [
+            "natural_gas"
+          ],
+          "inSituPotential": [],
+          "conventionalExtractionResources": [
+            "crude_oil",
+            "natural_gas"
+          ],
+          "technicallyChallengingResources": [
+            "iron_ore"
+          ]
+        },
+        "processing_resource_context": {
+          "knownProcessingChains": [
+            "crude_oil",
+            "natural_gas"
+          ],
+          "refiningResources": [
+            "refined_fuel"
+          ],
+          "smeltingResources": [],
+          "advancedProcessingResources": []
+        },
+        "resource_industrial_context": {
+          "knownProcessingIndustries": [
+            "refined_fuel",
+            "steel"
+          ],
+          "metallurgicalCapacityReferences": [
+            "steel"
+          ],
+          "refiningCapacityReferences": [
+            "refined_fuel"
+          ],
+          "mineralProcessingReferences": [
+            "phosphate"
+          ],
+          "resourceTechnologyCapabilities": [
+            "natural_gas"
+          ]
+        },
+        "resource_infrastructure_context": {
+          "ports": [
+            "NODE_PORT_ALGIERS",
+            "NODE_PORT_ARZEW",
+            "NODE_PORT_SKIKDA"
+          ],
+          "railTerminals": [
+            "NODE_RAIL_ALGIERS"
+          ],
+          "mineSites": [
+            "MINE_GARA_DJEBILET"
+          ],
+          "refineries": [
+            "NODE_REF_SKIKDA",
+            "NODE_REF_ARZEW"
+          ],
+          "processingFacilities": [
+            "NODE_PROC_HASSI_RMEL"
+          ],
+          "pipelineHubs": [
+            "NODE_PIPE_HASSI_RMEL"
+          ],
+          "storageFacilities": [
+            "STORAGE_GAS_HASSI_RMEL"
+          ]
+        },
+        "resource_transport_context": {
+          "majorExportCorridors": [
+            "trans_mediterranean_gas_pipelines",
+            "arzew_lng_shipping"
+          ],
+          "majorImportCorridors": [
+            "algiers_grain_import"
+          ],
+          "pipelineCorridors": [
+            "medgaz_pipeline",
+            "transmed_pipeline"
+          ],
+          "railResourceCorridors": [
+            "gaping_tindouf_to_bechar_heavy_rail"
+          ],
+          "maritimeResourceCorridors": [
+            "mediterranean_sea_lanes"
+          ]
+        },
+        "resource_dependency": {
+          "criticalImports": [
+            "wheat",
+            "timber",
+            "steel"
+          ],
+          "criticalExports": [
+            "natural_gas",
+            "crude_oil",
+            "refined_fuel"
+          ],
+          "singleSourceDependencies": [
+            "wheat"
+          ],
+          "multiSourceDependencies": [
+            "timber"
+          ],
+          "domesticSupplyGaps": [
+            "wheat"
+          ],
+          "processingDependencies": [
+            "steel"
+          ]
+        },
+        "resource_constraints": {
+          "geologicalConstraints": [
+            "iron_ore"
+          ],
+          "waterConstraints": [
+            "water"
+          ],
+          "terrainConstraints": [
+            "crude_oil"
+          ],
+          "accessConstraints": [
+            "iron_ore"
+          ],
+          "technologyConstraints": [
+            "natural_gas"
+          ],
+          "environmentalConstraints": [
+            "natural_gas"
+          ],
+          "seasonalConstraints": [
+            "natural_gas"
+          ]
+        },
+        "resource_risks": {
+          "depletionRisks": [
+            "crude_oil"
+          ],
+          "climateExposure": [
+            "water"
+          ],
+          "geologicalHazards": [
+            "earthquakes"
+          ],
+          "supplyChainRisks": [
+            "refined_fuel"
+          ],
+          "crossBorderRisks": [
+            "natural_gas"
+          ],
+          "infrastructureRisks": [
+            "natural_gas"
+          ]
+        },
+        "resource_potential": {
+          "underexploredResources": [
+            "natural_gas"
+          ],
+          "frontierResources": [
+            "natural_gas"
+          ],
+          "deepResourcePotential": [
+            "crude_oil"
+          ],
+          "offshorePotential": [
+            "natural_gas"
+          ],
+          "secondaryResourcePotential": []
+        },
+        "discovery_context": {
+          "explorationMaturity": "mature_oil_gas_immature_mining",
+          "mappingCoverage": "high_national",
+          "geologicalSurveyCoverage": "high",
+          "knownUnknownZones": [
+            "ahnet_basin_shale_gas"
+          ],
+          "highPriorityExplorationZones": [
+            "natural_gas"
+          ]
+        },
+        "provenance": {
+          "sources": [
+            "USGS_MCS_2026",
+            "IEA_CRITICAL_MINERALS_2026"
+          ],
+          "dataConfidence": "high",
+          "lastVerified": "2026-06-30",
+          "coverageNotes": [
+            "Verified with Sonatrach energy and Algerian Ministry of Energy baselines."
+          ]
+        }
+      },
+      "EGY": {
+        "identity": {
+          "countryId": "EGY",
+          "iso3": "EGY",
+          "name": "Egypt",
+          "officialName": "Arab Republic of Egypt",
+          "continent": "Africa",
+          "subcontinent": "North Africa",
+          "region": "Northern Africa",
+          "resourceSystemId": "RES_EGY"
+        },
+        "geography": {
+          "capital": "Cairo",
+          "coordinates": {
+            "lat": 30.0444,
+            "lng": 31.2357
+          },
+          "bounds": {
+            "north": 31.67,
+            "south": 21.99,
+            "east": 36.89,
+            "west": 24.7
+          },
+          "landAreaKm2": 1002450,
+          "coastal": true,
+          "coastlineKm": 2450,
+          "majorResourceZones": [
+            "nile_delta_gas_basin",
+            "western_desert_oil_basin",
+            "eastern_desert_gold_belt",
+            "sinai_manganese_zone"
+          ]
+        },
+        "administrative_resource_regions": [
+          {
+            "regionId": "EGY_MEDITERRANEAN",
+            "name": "Zohr Deepwater Gas Zone",
+            "type": "resource_region",
+            "resourceTags": [
+              "natural_gas"
+            ]
+          },
+          {
+            "regionId": "EGY_WESTERN_DESERT",
+            "name": "Western Desert Oil Field Zone",
+            "type": "resource_region",
+            "resourceTags": [
+              "crude_oil",
+              "natural_gas"
+            ]
+          },
+          {
+            "regionId": "EGY_EASTERN_DESERT",
+            "name": "Sukari Gold Belt",
+            "type": "resource_region",
+            "resourceTags": [
+              "gold",
+              "phosphate"
+            ]
+          },
+          {
+            "regionId": "EGY_SINAI",
+            "name": "Sinai Mineral Zone",
+            "type": "resource_region",
+            "resourceTags": [
+              "manganese",
+              "limestone",
+              "coal"
+            ]
+          }
+        ],
+        "resource_domain": {
+          "resourceRichnessClass": "high",
+          "resourceDiversityClass": "gas_gold_phosphate_dominant",
+          "majorResourceCount": 7,
+          "knownResourceTypes": [
+            "natural_gas",
+            "crude_oil",
+            "gold",
+            "phosphate",
+            "limestone",
+            "manganese",
+            "industrial_stone"
+          ],
+          "strategicResourceCount": 4,
+          "extractiveResourcePresence": true
+        },
+        "resource_endowment": {
+          "known": [
+            "natural_gas",
+            "crude_oil",
+            "gold",
+            "phosphate",
+            "limestone",
+            "manganese",
+            "industrial_stone"
+          ],
+          "probable": [
+            "natural_gas",
+            "crude_oil"
+          ],
+          "potential": [
+            "natural_gas"
+          ],
+          "absentOrNegligible": [
+            "bauxite",
+            "timber"
+          ]
+        },
+        "geological_context": {
+          "majorGeologicalDomains": [
+            "nile_delta_basin",
+            "arabian_nubian_shield",
+            "western_desert_platform"
+          ],
+          "sedimentaryBasins": [
+            "herodotus_basin",
+            "nile_delta_cone",
+            "abu_gharadig_basin"
+          ],
+          "shieldOrCratonZones": [
+            "arabian_nubian_shield"
+          ],
+          "mountainBelts": [
+            "red_sea_hills"
+          ],
+          "volcanicZones": [],
+          "tectonicSetting": [
+            "passive_margin_and_rifting_structure"
+          ],
+          "resourceFormationContexts": [
+            "tertiary_deepwater_carbonate_gas_reefs",
+            "precambrian_orogenic_gold_veins"
+          ]
+        },
+        "mineral_resource_base": {
+          "metallic": [
+            "manganese",
+            "gold"
+          ],
+          "nonMetallic": [
+            "limestone",
+            "phosphate"
+          ],
+          "industrialMinerals": [
+            "industrial_stone"
+          ],
+          "preciousMetals": [
+            "gold"
+          ],
+          "criticalMinerals": [],
+          "rareEarths": []
+        },
+        "hydrocarbon_resource_base": {
+          "oil": [
+            "crude_oil"
+          ],
+          "naturalGas": [
+            "natural_gas"
+          ],
+          "coal": [],
+          "basins": [
+            "nile_delta_basin",
+            "western_desert_basin"
+          ],
+          "offshorePotential": true
+        },
+        "energy_resource_base": {
+          "fossilResources": [
+            "natural_gas",
+            "crude_oil"
+          ],
+          "nuclearResources": [],
+          "hydropowerPotential": [
+            "electricity"
+          ],
+          "solarResourceZones": [
+            "benban_solar_park_zone"
+          ],
+          "windResourceZones": [
+            "gulf_of_suez_wind_corridor"
+          ],
+          "geothermalPotential": [],
+          "biomassResources": []
+        },
+        "water_resource_base": {
+          "majorRiverSystems": [
+            "nile"
+          ],
+          "groundwaterSystems": [
+            "nubian_sandstone_aquifer_system"
+          ],
+          "lakeSystems": [
+            "lake_nasser"
+          ],
+          "freshwaterAvailabilityClass": "water_scarce_nile_dependent",
+          "waterStressClass": "extremely_high",
+          "transboundaryWaterSystems": [
+            "nile_river_basin_initiative"
+          ]
+        },
+        "forest_resource_base": {
+          "forestTypes": [
+            "mangrove_red_sea"
+          ],
+          "majorForestZones": [],
+          "timberResourcePresence": false,
+          "nonTimberForestResources": []
+        },
+        "agricultural_resource_base": {
+          "majorCropResources": [
+            "wheat",
+            "rice"
+          ],
+          "livestockResourceTypes": [
+            "bovine"
+          ],
+          "fishingResources": [
+            "mediterranean_and_red_sea_marine"
+          ],
+          "arableLandClass": "low_nile_valley_dependent",
+          "irrigationResourceZones": [
+            "nile_delta_irrigation_canals"
+          ]
+        },
+        "strategic_resources": {
+          "domesticallyAvailable": [
+            "natural_gas",
+            "gold",
+            "phosphate",
+            "limestone",
+            "electricity"
+          ],
+          "strategicallyImportant": [
+            "natural_gas",
+            "suez_canal_maritime_route"
+          ],
+          "importDependent": [
+            "wheat",
+            "crude_oil",
+            "timber",
+            "steel"
+          ],
+          "exportCritical": [
+            "natural_gas",
+            "gold",
+            "phosphate"
+          ],
+          "dualUseRelevant": [
+            "phosphate"
+          ]
+        },
+        "resource_quality_context": {
+          "knownHighGradeResources": [
+            "natural_gas",
+            "gold"
+          ],
+          "knownLowGradeResources": [
+            "phosphate"
+          ],
+          "qualityDataCoverage": "high"
+        },
+        "extraction_context": {
+          "surfaceMiningPotential": [
+            "phosphate",
+            "gold"
+          ],
+          "undergroundMiningPotential": [
+            "gold"
+          ],
+          "offshoreExtractionPotential": [
+            "natural_gas"
+          ],
+          "inSituPotential": [],
+          "conventionalExtractionResources": [
+            "crude_oil",
+            "natural_gas"
+          ],
+          "technicallyChallengingResources": [
+            "natural_gas"
+          ]
+        },
+        "processing_resource_context": {
+          "knownProcessingChains": [
+            "natural_gas",
+            "crude_oil"
+          ],
+          "refiningResources": [
+            "refined_fuel"
+          ],
+          "smeltingResources": [],
+          "advancedProcessingResources": []
+        },
+        "resource_industrial_context": {
+          "knownProcessingIndustries": [
+            "refined_fuel",
+            "steel",
+            "limestone"
+          ],
+          "metallurgicalCapacityReferences": [
+            "steel"
+          ],
+          "refiningCapacityReferences": [
+            "refined_fuel"
+          ],
+          "mineralProcessingReferences": [
+            "phosphate"
+          ],
+          "resourceTechnologyCapabilities": [
+            "natural_gas"
+          ]
+        },
+        "resource_infrastructure_context": {
+          "ports": [
+            "NODE_PORT_ALEXANDRIA",
+            "NODE_PORT_SAID",
+            "NODE_PORT_SUEZ"
+          ],
+          "railTerminals": [
+            "NODE_RAIL_CAIRO"
+          ],
+          "mineSites": [
+            "MINE_SUKARI_GOLD"
+          ],
+          "refineries": [
+            "NODE_REF_ALEXANDRIA"
+          ],
+          "processingFacilities": [
+            "NODE_PROC_IDKU_LNG"
+          ],
+          "pipelineHubs": [
+            "NODE_PIPE_SUMED"
+          ],
+          "storageFacilities": [
+            "STORAGE_GAS_IDKU"
+          ]
+        },
+        "resource_transport_context": {
+          "majorExportCorridors": [
+            "suez_canal_maritime_corridor",
+            "idku_damietta_lng_route"
+          ],
+          "majorImportCorridors": [
+            "alexandria_wheat_import_lane"
+          ],
+          "pipelineCorridors": [
+            "sumed_crude_pipeline"
+          ],
+          "railResourceCorridors": [
+            "cairo_alexandria_rail"
+          ],
+          "maritimeResourceCorridors": [
+            "red_sea_mediterranean_shipping_lane"
+          ]
+        },
+        "resource_dependency": {
+          "criticalImports": [
+            "wheat",
+            "crude_oil",
+            "timber",
+            "steel"
+          ],
+          "criticalExports": [
+            "natural_gas",
+            "gold",
+            "phosphate"
+          ],
+          "singleSourceDependencies": [
+            "wheat"
+          ],
+          "multiSourceDependencies": [
+            "crude_oil"
+          ],
+          "domesticSupplyGaps": [
+            "wheat"
+          ],
+          "processingDependencies": [
+            "steel"
+          ]
+        },
+        "resource_constraints": {
+          "geologicalConstraints": [
+            "natural_gas"
+          ],
+          "waterConstraints": [
+            "water"
+          ],
+          "terrainConstraints": [
+            "natural_gas"
+          ],
+          "accessConstraints": [
+            "natural_gas"
+          ],
+          "technologyConstraints": [
+            "natural_gas"
+          ],
+          "environmentalConstraints": [
+            "water"
+          ],
+          "seasonalConstraints": [
+            "water"
+          ]
+        },
+        "resource_risks": {
+          "depletionRisks": [
+            "natural_gas"
+          ],
+          "climateExposure": [
+            "water"
+          ],
+          "geologicalHazards": [
+            "earthquakes"
+          ],
+          "supplyChainRisks": [
+            "refined_fuel"
+          ],
+          "crossBorderRisks": [
+            "water"
+          ],
+          "infrastructureRisks": [
+            "natural_gas"
+          ]
+        },
+        "resource_potential": {
+          "underexploredResources": [
+            "natural_gas"
+          ],
+          "frontierResources": [
+            "natural_gas"
+          ],
+          "deepResourcePotential": [
+            "natural_gas"
+          ],
+          "offshorePotential": [
+            "natural_gas"
+          ],
+          "secondaryResourcePotential": []
+        },
+        "discovery_context": {
+          "explorationMaturity": "mature_onshore_high_offshore_growth",
+          "mappingCoverage": "high",
+          "geologicalSurveyCoverage": "high",
+          "knownUnknownZones": [
+            "herodotus_deepwater_basin"
+          ],
+          "highPriorityExplorationZones": [
+            "natural_gas"
+          ]
+        },
+        "provenance": {
+          "sources": [
+            "USGS_MCS_2026",
+            "EGAS_ANNUAL_2025"
+          ],
+          "dataConfidence": "high",
+          "lastVerified": "2026-06-30",
+          "coverageNotes": [
+            "Verified with EGAS offshore gas and EGPC oil baselines."
+          ]
+        }
+      },
+      "LBY": {
+        "identity": {
+          "countryId": "LBY",
+          "iso3": "LBY",
+          "name": "Libya",
+          "officialName": "State of Libya",
+          "continent": "Africa",
+          "subcontinent": "North Africa",
+          "region": "Northern Africa",
+          "resourceSystemId": "RES_LBY"
+        },
+        "geography": {
+          "capital": "Tripoli",
+          "coordinates": {
+            "lat": 32.8872,
+            "lng": 13.1913
+          },
+          "bounds": {
+            "north": 33.17,
+            "south": 19.5,
+            "east": 25.15,
+            "west": 9.39
+          },
+          "landAreaKm2": 1759540,
+          "coastal": true,
+          "coastlineKm": 1770,
+          "majorResourceZones": [
+            "sirte_hydrocarbon_basin",
+            "murzuq_basin",
+            "ghadames_basin",
+            "kufra_basin"
+          ]
+        },
+        "administrative_resource_regions": [
+          {
+            "regionId": "LBY_SIRTE",
+            "name": "Sirte Oil Basin Zone",
+            "type": "resource_region",
+            "resourceTags": [
+              "crude_oil",
+              "natural_gas"
+            ]
+          },
+          {
+            "regionId": "LBY_MURZUQ",
+            "name": "Murzuq Basin Zone",
+            "type": "resource_region",
+            "resourceTags": [
+              "crude_oil"
+            ]
+          },
+          {
+            "regionId": "LBY_GHADAMES",
+            "name": "Ghadames Basin Zone",
+            "type": "resource_region",
+            "resourceTags": [
+              "crude_oil",
+              "natural_gas"
+            ]
+          },
+          {
+            "regionId": "LBY_WADI_SHATI",
+            "name": "Wadi Shati Iron Zone",
+            "type": "resource_region",
+            "resourceTags": [
+              "iron_ore"
+            ]
+          }
+        ],
+        "resource_domain": {
+          "resourceRichnessClass": "extensively_rich_hydrocarbon",
+          "resourceDiversityClass": "crude_oil_natural_gas_dominant",
+          "majorResourceCount": 5,
+          "knownResourceTypes": [
+            "crude_oil",
+            "natural_gas",
+            "limestone",
+            "industrial_stone",
+            "iron_ore"
+          ],
+          "strategicResourceCount": 3,
+          "extractiveResourcePresence": true
+        },
+        "resource_endowment": {
+          "known": [
+            "crude_oil",
+            "natural_gas",
+            "limestone",
+            "industrial_stone",
+            "iron_ore"
+          ],
+          "probable": [
+            "crude_oil",
+            "natural_gas"
+          ],
+          "potential": [
+            "crude_oil"
+          ],
+          "absentOrNegligible": [
+            "bauxite",
+            "timber"
+          ]
+        },
+        "geological_context": {
+          "majorGeologicalDomains": [
+            "saharan_platform"
+          ],
+          "sedimentaryBasins": [
+            "sirte_basin",
+            "murzuq_basin",
+            "ghadames_basin",
+            "kufra_basin"
+          ],
+          "shieldOrCratonZones": [],
+          "mountainBelts": [
+            "tibesti_mountains_flank"
+          ],
+          "volcanicZones": [
+            "gharian_volcanic_field"
+          ],
+          "tectonicSetting": [
+            "interior_cratonic_sedimentary_basins"
+          ],
+          "resourceFormationContexts": [
+            "palaeozoic_and_cretaceous_sandstone_oil_reservoirs"
+          ]
+        },
+        "mineral_resource_base": {
+          "metallic": [
+            "iron_ore"
+          ],
+          "nonMetallic": [
+            "limestone"
+          ],
+          "industrialMinerals": [
+            "industrial_stone"
+          ],
+          "preciousMetals": [],
+          "criticalMinerals": [],
+          "rareEarths": []
+        },
+        "hydrocarbon_resource_base": {
+          "oil": [
+            "crude_oil"
+          ],
+          "naturalGas": [
+            "natural_gas"
+          ],
+          "coal": [],
+          "basins": [
+            "sirte_basin",
+            "murzuq_basin",
+            "ghadames_basin"
+          ],
+          "offshorePotential": true
+        },
+        "energy_resource_base": {
+          "fossilResources": [
+            "crude_oil",
+            "natural_gas"
+          ],
+          "nuclearResources": [],
+          "hydropowerPotential": [],
+          "solarResourceZones": [
+            "sahara_high_insolation_belt"
+          ],
+          "windResourceZones": [
+            "coastal_sirte_wind_zone"
+          ],
+          "geothermalPotential": [],
+          "biomassResources": []
+        },
+        "water_resource_base": {
+          "majorRiverSystems": [],
+          "groundwaterSystems": [
+            "nubian_sandstone_aquifer_system"
+          ],
+          "lakeSystems": [],
+          "freshwaterAvailabilityClass": "extremely_scarce",
+          "waterStressClass": "critical_gmmr_dependent",
+          "transboundaryWaterSystems": [
+            "nssas_shared_aquifer"
+          ]
+        },
+        "forest_resource_base": {
+          "forestTypes": [
+            "jebel_akhdar_mediterranean_scrub"
+          ],
+          "majorForestZones": [],
+          "timberResourcePresence": false,
+          "nonTimberForestResources": []
+        },
+        "agricultural_resource_base": {
+          "majorCropResources": [
+            "wheat"
+          ],
+          "livestockResourceTypes": [
+            "bovine"
+          ],
+          "fishingResources": [
+            "mediterranean_marine"
+          ],
+          "arableLandClass": "very_low_coastal_strip",
+          "irrigationResourceZones": [
+            "great_man_made_river_project"
+          ]
+        },
+        "strategic_resources": {
+          "domesticallyAvailable": [
+            "crude_oil",
+            "natural_gas",
+            "limestone"
+          ],
+          "strategicallyImportant": [
+            "crude_oil",
+            "natural_gas",
+            "fossil_water"
+          ],
+          "importDependent": [
+            "wheat",
+            "timber",
+            "steel",
+            "refined_fuel"
+          ],
+          "exportCritical": [
+            "crude_oil",
+            "natural_gas"
+          ],
+          "dualUseRelevant": []
+        },
+        "resource_quality_context": {
+          "knownHighGradeResources": [
+            "crude_oil",
+            "natural_gas"
+          ],
+          "knownLowGradeResources": [
+            "iron_ore"
+          ],
+          "qualityDataCoverage": "high_for_hydrocarbons"
+        },
+        "extraction_context": {
+          "surfaceMiningPotential": [
+            "iron_ore"
+          ],
+          "undergroundMiningPotential": [],
+          "offshoreExtractionPotential": [
+            "crude_oil"
+          ],
+          "inSituPotential": [],
+          "conventionalExtractionResources": [
+            "crude_oil",
+            "natural_gas"
+          ],
+          "technicallyChallengingResources": [
+            "crude_oil"
+          ]
+        },
+        "processing_resource_context": {
+          "knownProcessingChains": [
+            "crude_oil"
+          ],
+          "refiningResources": [
+            "refined_fuel"
+          ],
+          "smeltingResources": [],
+          "advancedProcessingResources": []
+        },
+        "resource_industrial_context": {
+          "knownProcessingIndustries": [
+            "refined_fuel",
+            "steel"
+          ],
+          "metallurgicalCapacityReferences": [
+            "steel"
+          ],
+          "refiningCapacityReferences": [
+            "refined_fuel"
+          ],
+          "mineralProcessingReferences": [],
+          "resourceTechnologyCapabilities": [
+            "crude_oil"
+          ]
+        },
+        "resource_infrastructure_context": {
+          "ports": [
+            "NODE_PORT_SIDRA",
+            "NODE_PORT_RAS_LANUF",
+            "NODE_PORT_MARSA_BREGA"
+          ],
+          "railTerminals": [],
+          "mineSites": [],
+          "refineries": [
+            "NODE_REF_RAS_LANUF",
+            "NODE_REF_ZAWIA"
+          ],
+          "processingFacilities": [
+            "NODE_PROC_MARSA_BREGA_LNG"
+          ],
+          "pipelineHubs": [
+            "NODE_PIPE_MELLITAH"
+          ],
+          "storageFacilities": [
+            "STORAGE_OIL_SIDRA"
+          ]
+        },
+        "resource_transport_context": {
+          "majorExportCorridors": [
+            "greenstream_gas_pipeline_to_italy",
+            "sidra_crude_shipping"
+          ],
+          "majorImportCorridors": [
+            "tripoli_food_import_lane"
+          ],
+          "pipelineCorridors": [
+            "greenstream_pipeline",
+            "gmmr_water_pipeline"
+          ],
+          "railResourceCorridors": [],
+          "maritimeResourceCorridors": [
+            "mediterranean_shipping_lanes"
+          ]
+        },
+        "resource_dependency": {
+          "criticalImports": [
+            "wheat",
+            "timber",
+            "steel",
+            "refined_fuel"
+          ],
+          "criticalExports": [
+            "crude_oil",
+            "natural_gas"
+          ],
+          "singleSourceDependencies": [
+            "wheat"
+          ],
+          "multiSourceDependencies": [
+            "refined_fuel"
+          ],
+          "domesticSupplyGaps": [
+            "refined_fuel"
+          ],
+          "processingDependencies": [
+            "refined_fuel"
+          ]
+        },
+        "resource_constraints": {
+          "geologicalConstraints": [
+            "crude_oil"
+          ],
+          "waterConstraints": [
+            "water"
+          ],
+          "terrainConstraints": [
+            "crude_oil"
+          ],
+          "accessConstraints": [
+            "crude_oil"
+          ],
+          "technologyConstraints": [
+            "crude_oil"
+          ],
+          "environmentalConstraints": [
+            "water"
+          ],
+          "seasonalConstraints": [
+            "water"
+          ]
+        },
+        "resource_risks": {
+          "depletionRisks": [
+            "crude_oil"
+          ],
+          "climateExposure": [
+            "water"
+          ],
+          "geologicalHazards": [
+            "sand_storms"
+          ],
+          "supplyChainRisks": [
+            "crude_oil"
+          ],
+          "crossBorderRisks": [
+            "water"
+          ],
+          "infrastructureRisks": [
+            "crude_oil"
+          ]
+        },
+        "resource_potential": {
+          "underexploredResources": [
+            "crude_oil"
+          ],
+          "frontierResources": [
+            "natural_gas"
+          ],
+          "deepResourcePotential": [
+            "crude_oil"
+          ],
+          "offshorePotential": [
+            "crude_oil"
+          ],
+          "secondaryResourcePotential": []
+        },
+        "discovery_context": {
+          "explorationMaturity": "mature_sirte_immature_kufra_offshore",
+          "mappingCoverage": "moderate",
+          "geologicalSurveyCoverage": "moderate",
+          "knownUnknownZones": [
+            "kufra_basin_deep_traps"
+          ],
+          "highPriorityExplorationZones": [
+            "crude_oil"
+          ]
+        },
+        "provenance": {
+          "sources": [
+            "USGS_MCS_2026",
+            "OPEC_ANNUAL_2025"
+          ],
+          "dataConfidence": "high",
+          "lastVerified": "2026-06-30",
+          "coverageNotes": [
+            "Verified with NOC Libya oil production baselines."
+          ]
+        }
+      },
+      "MAR": {
+        "identity": {
+          "countryId": "MAR",
+          "iso3": "MAR",
+          "name": "Morocco",
+          "officialName": "Kingdom of Morocco",
+          "continent": "Africa",
+          "subcontinent": "North Africa",
+          "region": "Northern Africa",
+          "resourceSystemId": "RES_MAR"
+        },
+        "geography": {
+          "capital": "Rabat",
+          "coordinates": {
+            "lat": 34.0209,
+            "lng": -6.8416
+          },
+          "bounds": {
+            "north": 35.92,
+            "south": 27.66,
+            "east": -1.02,
+            "west": -13.17
+          },
+          "landAreaKm2": 446550,
+          "coastal": true,
+          "coastlineKm": 1835,
+          "majorResourceZones": [
+            "ganntour_phosphate_basin",
+            "ouulad_abdoun_phosphate_basin",
+            "atlas_polymetallic_belt",
+            "anti_atlas_silver_belt"
+          ]
+        },
+        "administrative_resource_regions": [
+          {
+            "regionId": "MAR_KHOURIBGA",
+            "name": "Oulad Abdoun Phosphate Zone",
+            "type": "resource_region",
+            "resourceTags": [
+              "phosphate"
+            ]
+          },
+          {
+            "regionId": "MAR_YANGOUR",
+            "name": "Ganntour Phosphate Zone",
+            "type": "resource_region",
+            "resourceTags": [
+              "phosphate"
+            ]
+          },
+          {
+            "regionId": "MAR_IMITER",
+            "name": "Anti-Atlas Mining Belt",
+            "type": "resource_region",
+            "resourceTags": [
+              "copper",
+              "silver",
+              "cobalt",
+              "manganese"
+            ]
+          }
+        ],
+        "resource_domain": {
+          "resourceRichnessClass": "world_dominant_phosphate",
+          "resourceDiversityClass": "phosphate_silver_cobalt_dominant",
+          "majorResourceCount": 7,
+          "knownResourceTypes": [
+            "phosphate",
+            "copper",
+            "silver",
+            "manganese",
+            "limestone",
+            "industrial_stone",
+            "cobalt"
+          ],
+          "strategicResourceCount": 4,
+          "extractiveResourcePresence": true
+        },
+        "resource_endowment": {
+          "known": [
+            "phosphate",
+            "copper",
+            "silver",
+            "manganese",
+            "limestone",
+            "industrial_stone",
+            "cobalt"
+          ],
+          "probable": [
+            "natural_gas"
+          ],
+          "potential": [
+            "rare_earth",
+            "uranium"
+          ],
+          "absentOrNegligible": [
+            "iron_ore",
+            "coal",
+            "bauxite",
+            "timber"
+          ]
+        },
+        "geological_context": {
+          "majorGeologicalDomains": [
+            "atlas_orogen",
+            "anti_atlas_domain",
+            "meseta_domain"
+          ],
+          "sedimentaryBasins": [
+            "ouulad_abdoun_basin",
+            "ganntour_basin",
+            "tinghir_basin"
+          ],
+          "shieldOrCratonZones": [
+            "west_african_craton_northern_margin"
+          ],
+          "mountainBelts": [
+            "high_atlas",
+            "anti_atlas",
+            "rif_mountains"
+          ],
+          "volcanicZones": [],
+          "tectonicSetting": [
+            "orogenic_belt_and_cratonic_border"
+          ],
+          "resourceFormationContexts": [
+            "sedimentary_marine_phosphate_deposits",
+            "precambrian_vein_silver_cobalt"
+          ]
+        },
+        "mineral_resource_base": {
+          "metallic": [
+            "copper",
+            "manganese",
+            "cobalt"
+          ],
+          "nonMetallic": [
+            "phosphate",
+            "limestone"
+          ],
+          "industrialMinerals": [
+            "industrial_stone",
+            "barite"
+          ],
+          "preciousMetals": [
+            "silver",
+            "gold"
+          ],
+          "criticalMinerals": [
+            "cobalt",
+            "rare_earth"
+          ],
+          "rareEarths": [
+            "rare_earth"
+          ]
+        },
+        "hydrocarbon_resource_base": {
+          "oil": [],
+          "naturalGas": [
+            "natural_gas"
+          ],
+          "coal": [],
+          "basins": [
+            "rharb_basin",
+            "tendrara_gas_field"
+          ],
+          "offshorePotential": true
+        },
+        "energy_resource_base": {
+          "fossilResources": [],
+          "nuclearResources": [
+            "uranium"
+          ],
+          "hydropowerPotential": [
+            "electricity"
+          ],
+          "solarResourceZones": [
+            "noor_ouarzazate_solar_complex"
+          ],
+          "windResourceZones": [
+            "tarfaya_wind_farm_corridor"
+          ],
+          "geothermalPotential": [],
+          "biomassResources": []
+        },
+        "water_resource_base": {
+          "majorRiverSystems": [
+            "moulouya",
+            "sebou",
+            "oom_er_rbia"
+          ],
+          "groundwaterSystems": [
+            "souss_basin_aquifer"
+          ],
+          "lakeSystems": [
+            "bin_el_ouidane_reservoir"
+          ],
+          "freshwaterAvailabilityClass": "seasonal_stress",
+          "waterStressClass": "high",
+          "transboundaryWaterSystems": []
+        },
+        "forest_resource_base": {
+          "forestTypes": [
+            "cedar_atlas",
+            "cork_oak"
+          ],
+          "majorForestZones": [
+            "middle_atlas_forests"
+          ],
+          "timberResourcePresence": true,
+          "nonTimberForestResources": [
+            "argan_oil"
+          ]
+        },
+        "agricultural_resource_base": {
+          "majorCropResources": [
+            "wheat",
+            "rice"
+          ],
+          "livestockResourceTypes": [
+            "bovine"
+          ],
+          "fishingResources": [
+            "atlantic_coast_sardine_marine"
+          ],
+          "arableLandClass": "high_coastal_valleys",
+          "irrigationResourceZones": [
+            "gharb_plain_canals"
+          ]
+        },
+        "strategic_resources": {
+          "domesticallyAvailable": [
+            "phosphate",
+            "copper",
+            "silver",
+            "cobalt",
+            "electricity"
+          ],
+          "strategicallyImportant": [
+            "phosphate",
+            "cobalt",
+            "rare_earth"
+          ],
+          "importDependent": [
+            "crude_oil",
+            "coal",
+            "natural_gas",
+            "wheat",
+            "steel"
+          ],
+          "exportCritical": [
+            "phosphate",
+            "cobalt",
+            "silver"
+          ],
+          "dualUseRelevant": [
+            "phosphate"
+          ]
+        },
+        "resource_quality_context": {
+          "knownHighGradeResources": [
+            "phosphate",
+            "cobalt",
+            "silver"
+          ],
+          "knownLowGradeResources": [],
+          "qualityDataCoverage": "very_high"
+        },
+        "extraction_context": {
+          "surfaceMiningPotential": [
+            "phosphate"
+          ],
+          "undergroundMiningPotential": [
+            "silver",
+            "cobalt",
+            "copper"
+          ],
+          "offshoreExtractionPotential": [],
+          "inSituPotential": [],
+          "conventionalExtractionResources": [
+            "phosphate"
+          ],
+          "technicallyChallengingResources": [
+            "cobalt"
+          ]
+        },
+        "processing_resource_context": {
+          "knownProcessingChains": [
+            "phosphate",
+            "copper"
+          ],
+          "refiningResources": [
+            "refined_fuel"
+          ],
+          "smeltingResources": [
+            "copper"
+          ],
+          "advancedProcessingResources": [
+            "phosphate"
+          ]
+        },
+        "resource_industrial_context": {
+          "knownProcessingIndustries": [
+            "phosphate",
+            "steel"
+          ],
+          "metallurgicalCapacityReferences": [
+            "steel"
+          ],
+          "refiningCapacityReferences": [
+            "refined_fuel"
+          ],
+          "mineralProcessingReferences": [
+            "phosphate"
+          ],
+          "resourceTechnologyCapabilities": [
+            "phosphate"
+          ]
+        },
+        "resource_infrastructure_context": {
+          "ports": [
+            "NODE_PORT_JORF_LASFAR",
+            "NODE_PORT_TANGER_MED",
+            "NODE_PORT_SAFI"
+          ],
+          "railTerminals": [
+            "NODE_RAIL_KHOURIBGA"
+          ],
+          "mineSites": [
+            "MINE_KHOURIBGA_PHOSPHATE",
+            "MINE_IMITER_SILVER",
+            "MINE_BOU_AZZER_COBALT"
+          ],
+          "refineries": [
+            "NODE_REF_SAMIR"
+          ],
+          "processingFacilities": [
+            "NODE_PROC_OCP_JORF"
+          ],
+          "pipelineHubs": [
+            "NODE_PIPE_GME"
+          ],
+          "storageFacilities": [
+            "STORAGE_PHOSPHATE_JORF"
+          ]
+        },
+        "resource_transport_context": {
+          "majorExportCorridors": [
+            "jorf_lasfar_phosphate_shipping_lane"
+          ],
+          "majorImportCorridors": [
+            "tanger_med_container_route"
+          ],
+          "pipelineCorridors": [
+            "maghreb_europe_gas_pipeline"
+          ],
+          "railResourceCorridors": [
+            "khouribga_jorf_lasfar_slurry_pipeline_and_rail"
+          ],
+          "maritimeResourceCorridors": [
+            "strait_of_gibraltar_shipping_lane"
+          ]
+        },
+        "resource_dependency": {
+          "criticalImports": [
+            "crude_oil",
+            "coal",
+            "natural_gas",
+            "wheat",
+            "steel"
+          ],
+          "criticalExports": [
+            "phosphate",
+            "cobalt",
+            "silver"
+          ],
+          "singleSourceDependencies": [
+            "coal"
+          ],
+          "multiSourceDependencies": [
+            "crude_oil"
+          ],
+          "domesticSupplyGaps": [
+            "crude_oil"
+          ],
+          "processingDependencies": [
+            "phosphate"
+          ]
+        },
+        "resource_constraints": {
+          "geologicalConstraints": [
+            "phosphate"
+          ],
+          "waterConstraints": [
+            "water"
+          ],
+          "terrainConstraints": [
+            "phosphate"
+          ],
+          "accessConstraints": [
+            "phosphate"
+          ],
+          "technologyConstraints": [
+            "phosphate"
+          ],
+          "environmentalConstraints": [
+            "phosphate"
+          ],
+          "seasonalConstraints": [
+            "phosphate"
+          ]
+        },
+        "resource_risks": {
+          "depletionRisks": [
+            "water"
+          ],
+          "climateExposure": [
+            "water"
+          ],
+          "geologicalHazards": [
+            "earthquakes"
+          ],
+          "supplyChainRisks": [
+            "crude_oil"
+          ],
+          "crossBorderRisks": [
+            "water"
+          ],
+          "infrastructureRisks": [
+            "phosphate"
+          ]
+        },
+        "resource_potential": {
+          "underexploredResources": [
+            "rare_earth"
+          ],
+          "frontierResources": [
+            "uranium"
+          ],
+          "deepResourcePotential": [
+            "phosphate"
+          ],
+          "offshorePotential": [
+            "natural_gas"
+          ],
+          "secondaryResourcePotential": []
+        },
+        "discovery_context": {
+          "explorationMaturity": "high_phosphate_immature_offshore_hydrocarbon",
+          "mappingCoverage": "high",
+          "geologicalSurveyCoverage": "high",
+          "knownUnknownZones": [
+            "atlantic_offshore_shelf"
+          ],
+          "highPriorityExplorationZones": [
+            "phosphate"
+          ]
+        },
+        "provenance": {
+          "sources": [
+            "USGS_MCS_2026",
+            "OCP_GROUP_ANNUAL_2025"
+          ],
+          "dataConfidence": "high",
+          "lastVerified": "2026-06-30",
+          "coverageNotes": [
+            "Verified with OCP Group phosphate reserves & ONHYM reports."
+          ]
+        }
+      },
+      "TUN": {
+        "identity": {
+          "countryId": "TUN",
+          "iso3": "TUN",
+          "name": "Tunisia",
+          "officialName": "Republic of Tunisia",
+          "continent": "Africa",
+          "subcontinent": "North Africa",
+          "region": "Northern Africa",
+          "resourceSystemId": "RES_TUN"
+        },
+        "geography": {
+          "capital": "Tunis",
+          "coordinates": {
+            "lat": 36.8065,
+            "lng": 10.1815
+          },
+          "bounds": {
+            "north": 37.56,
+            "south": 30.24,
+            "east": 11.6,
+            "west": 7.52
+          },
+          "landAreaKm2": 163610,
+          "coastal": true,
+          "coastlineKm": 1148,
+          "majorResourceZones": [
+            "gafsa_phosphate_basin",
+            "pelagian_offshore_basin",
+            "atlas_mineral_belt"
+          ]
+        },
+        "administrative_resource_regions": [
+          {
+            "regionId": "TUN_GAFSA",
+            "name": "Gafsa Phosphate Zone",
+            "type": "resource_region",
+            "resourceTags": [
+              "phosphate"
+            ]
+          },
+          {
+            "regionId": "TUN_SFAX_OFFSHORE",
+            "name": "Pelagian Offshore Basin",
+            "type": "resource_region",
+            "resourceTags": [
+              "crude_oil",
+              "natural_gas"
+            ]
+          }
+        ],
+        "resource_domain": {
+          "resourceRichnessClass": "moderate",
+          "resourceDiversityClass": "phosphate_hydrocarbon_focused",
+          "majorResourceCount": 5,
+          "knownResourceTypes": [
+            "phosphate",
+            "crude_oil",
+            "natural_gas",
+            "limestone",
+            "industrial_stone"
+          ],
+          "strategicResourceCount": 2,
+          "extractiveResourcePresence": true
+        },
+        "resource_endowment": {
+          "known": [
+            "phosphate",
+            "crude_oil",
+            "natural_gas",
+            "limestone",
+            "industrial_stone"
+          ],
+          "probable": [
+            "crude_oil",
+            "natural_gas"
+          ],
+          "potential": [
+            "natural_gas"
+          ],
+          "absentOrNegligible": [
+            "iron_ore",
+            "coal",
+            "bauxite",
+            "timber"
+          ]
+        },
+        "geological_context": {
+          "majorGeologicalDomains": [
+            "atlas_orogen",
+            "saharan_platform_northern_flank"
+          ],
+          "sedimentaryBasins": [
+            "gafsa_basin",
+            "pelagian_basin"
+          ],
+          "shieldOrCratonZones": [],
+          "mountainBelts": [
+            "tunisian_atlas"
+          ],
+          "volcanicZones": [],
+          "tectonicSetting": [
+            "orogenic_foreland_and_pelagian_shelf"
+          ],
+          "resourceFormationContexts": [
+            "eocene_sedimentary_phosphate_beds"
+          ]
+        },
+        "mineral_resource_base": {
+          "metallic": [],
+          "nonMetallic": [
+            "phosphate",
+            "limestone"
+          ],
+          "industrialMinerals": [
+            "industrial_stone",
+            "salt"
+          ],
+          "preciousMetals": [],
+          "criticalMinerals": [],
+          "rareEarths": []
+        },
+        "hydrocarbon_resource_base": {
+          "oil": [
+            "crude_oil"
+          ],
+          "naturalGas": [
+            "natural_gas"
+          ],
+          "coal": [],
+          "basins": [
+            "el_borma",
+            "hasdrubal_offshore"
+          ],
+          "offshorePotential": true
+        },
+        "energy_resource_base": {
+          "fossilResources": [
+            "crude_oil",
+            "natural_gas"
+          ],
+          "nuclearResources": [],
+          "hydropowerPotential": [],
+          "solarResourceZones": [
+            "tozeur_solar_belt"
+          ],
+          "windResourceZones": [
+            "bizerte_wind_corridor"
+          ],
+          "geothermalPotential": [],
+          "biomassResources": []
+        },
+        "water_resource_base": {
+          "majorRiverSystems": [
+            "medjerda_river"
+          ],
+          "groundwaterSystems": [
+            "zeuss_koutine_aquifer"
+          ],
+          "lakeSystems": [
+            "ichkeul_lake"
+          ],
+          "freshwaterAvailabilityClass": "water_stress_high",
+          "waterStressClass": "high",
+          "transboundaryWaterSystems": [
+            "medjerda_river_with_algeria"
+          ]
+        },
+        "forest_resource_base": {
+          "forestTypes": [
+            "mediterranean_pine"
+          ],
+          "majorForestZones": [
+            "kroumirie_forests"
+          ],
+          "timberResourcePresence": true,
+          "nonTimberForestResources": [
+            "cork"
+          ]
+        },
+        "agricultural_resource_base": {
+          "majorCropResources": [
+            "wheat",
+            "rice"
+          ],
+          "livestockResourceTypes": [
+            "bovine"
+          ],
+          "fishingResources": [
+            "mediterranean_marine"
+          ],
+          "arableLandClass": "moderate_coastal",
+          "irrigationResourceZones": [
+            "medjerda_valley_canals"
+          ]
+        },
+        "strategic_resources": {
+          "domesticallyAvailable": [
+            "phosphate",
+            "crude_oil",
+            "natural_gas",
+            "limestone"
+          ],
+          "strategicallyImportant": [
+            "phosphate",
+            "natural_gas"
+          ],
+          "importDependent": [
+            "wheat",
+            "coal",
+            "timber",
+            "steel"
+          ],
+          "exportCritical": [
+            "phosphate"
+          ],
+          "dualUseRelevant": [
+            "phosphate"
+          ]
+        },
+        "resource_quality_context": {
+          "knownHighGradeResources": [
+            "phosphate"
+          ],
+          "knownLowGradeResources": [],
+          "qualityDataCoverage": "high"
+        },
+        "extraction_context": {
+          "surfaceMiningPotential": [
+            "phosphate"
+          ],
+          "undergroundMiningPotential": [],
+          "offshoreExtractionPotential": [
+            "natural_gas"
+          ],
+          "inSituPotential": [],
+          "conventionalExtractionResources": [
+            "phosphate"
+          ],
+          "technicallyChallengingResources": [
+            "phosphate"
+          ]
+        },
+        "processing_resource_context": {
+          "knownProcessingChains": [
+            "phosphate"
+          ],
+          "refiningResources": [
+            "refined_fuel"
+          ],
+          "smeltingResources": [],
+          "advancedProcessingResources": []
+        },
+        "resource_industrial_context": {
+          "knownProcessingIndustries": [
+            "phosphate",
+            "steel"
+          ],
+          "metallurgicalCapacityReferences": [
+            "steel"
+          ],
+          "refiningCapacityReferences": [
+            "refined_fuel"
+          ],
+          "mineralProcessingReferences": [
+            "phosphate"
+          ],
+          "resourceTechnologyCapabilities": [
+            "phosphate"
+          ]
+        },
+        "resource_infrastructure_context": {
+          "ports": [
+            "NODE_PORT_SFAX",
+            "NODE_PORT_GABES",
+            "NODE_PORT_BIZERTE"
+          ],
+          "railTerminals": [
+            "NODE_RAIL_GAFSA"
+          ],
+          "mineSites": [
+            "MINE_GAFSA_PHOSPHATE"
+          ],
+          "refineries": [
+            "NODE_REF_STIR_BIZERTE"
+          ],
+          "processingFacilities": [
+            "NODE_PROC_GABES_CHEMICAL"
+          ],
+          "pipelineHubs": [
+            "NODE_PIPE_TRANSMED_TUNISIA"
+          ],
+          "storageFacilities": [
+            "STORAGE_PHOSPHATE_GABES"
+          ]
+        },
+        "resource_transport_context": {
+          "majorExportCorridors": [
+            "gabes_chemical_export_route"
+          ],
+          "majorImportCorridors": [
+            "tunis_grain_import_lane"
+          ],
+          "pipelineCorridors": [
+            "transmed_gas_transit_pipeline"
+          ],
+          "railResourceCorridors": [
+            "gafsa_gabes_phosphate_rail"
+          ],
+          "maritimeResourceCorridors": [
+            "mediterranean_shipping_lanes"
+          ]
+        },
+        "resource_dependency": {
+          "criticalImports": [
+            "wheat",
+            "coal",
+            "timber",
+            "steel"
+          ],
+          "criticalExports": [
+            "phosphate"
+          ],
+          "singleSourceDependencies": [
+            "coal"
+          ],
+          "multiSourceDependencies": [
+            "wheat"
+          ],
+          "domesticSupplyGaps": [
+            "natural_gas"
+          ],
+          "processingDependencies": [
+            "phosphate"
+          ]
+        },
+        "resource_constraints": {
+          "geologicalConstraints": [
+            "phosphate"
+          ],
+          "waterConstraints": [
+            "water"
+          ],
+          "terrainConstraints": [
+            "phosphate"
+          ],
+          "accessConstraints": [
+            "phosphate"
+          ],
+          "technologyConstraints": [
+            "phosphate"
+          ],
+          "environmentalConstraints": [
+            "phosphate"
+          ],
+          "seasonalConstraints": [
+            "phosphate"
+          ]
+        },
+        "resource_risks": {
+          "depletionRisks": [
+            "crude_oil"
+          ],
+          "climateExposure": [
+            "water"
+          ],
+          "geologicalHazards": [
+            "floods"
+          ],
+          "supplyChainRisks": [
+            "refined_fuel"
+          ],
+          "crossBorderRisks": [
+            "water"
+          ],
+          "infrastructureRisks": [
+            "phosphate"
+          ]
+        },
+        "resource_potential": {
+          "underexploredResources": [
+            "natural_gas"
+          ],
+          "frontierResources": [
+            "natural_gas"
+          ],
+          "deepResourcePotential": [
+            "phosphate"
+          ],
+          "offshorePotential": [
+            "natural_gas"
+          ],
+          "secondaryResourcePotential": []
+        },
+        "discovery_context": {
+          "explorationMaturity": "mature_phosphate_moderate_hydrocarbon",
+          "mappingCoverage": "high",
+          "geologicalSurveyCoverage": "high",
+          "knownUnknownZones": [
+            "pelagian_deepwater_shelf"
+          ],
+          "highPriorityExplorationZones": [
+            "phosphate"
+          ]
+        },
+        "provenance": {
+          "sources": [
+            "USGS_MCS_2026",
+            "CPG_TUNISIA_ANNUAL_2025"
+          ],
+          "dataConfidence": "high",
+          "lastVerified": "2026-06-30",
+          "coverageNotes": [
+            "Verified with Compagnie des Phosphates de Gafsa baselines."
+          ]
+        }
+      },
+      "SDN": {
+        "identity": {
+          "countryId": "SDN",
+          "iso3": "SDN",
+          "name": "Sudan",
+          "officialName": "Republic of the Sudan",
+          "continent": "Africa",
+          "subcontinent": "North Africa",
+          "region": "Northern Africa",
+          "resourceSystemId": "RES_SDN"
+        },
+        "geography": {
+          "capital": "Khartoum",
+          "coordinates": {
+            "lat": 15.5007,
+            "lng": 32.5599
+          },
+          "bounds": {
+            "north": 22.0,
+            "south": 9.35,
+            "east": 38.6,
+            "west": 21.8
+          },
+          "landAreaKm2": 1886068,
+          "coastal": true,
+          "coastlineKm": 853,
+          "majorResourceZones": [
+            "nubian_shield_gold_belt",
+            "muglad_basin",
+            "melut_basin",
+            "red_sea_coastal_basin"
+          ]
+        },
+        "administrative_resource_regions": [
+          {
+            "regionId": "SDN_RED_SEA",
+            "name": "Hassai Gold Belt Zone",
+            "type": "resource_region",
+            "resourceTags": [
+              "gold",
+              "manganese"
+            ]
+          },
+          {
+            "regionId": "SDN_MUGLAD",
+            "name": "Muglad Oil Basin",
+            "type": "resource_region",
+            "resourceTags": [
+              "crude_oil"
+            ]
+          },
+          {
+            "regionId": "SDN_MELUT",
+            "name": "Melut Basin Flank Zone",
+            "type": "resource_region",
+            "resourceTags": [
+              "crude_oil"
+            ]
+          },
+          {
+            "regionId": "SDN_INGESSANA",
+            "name": "Ingessana Mineral Belt",
+            "type": "resource_region",
+            "resourceTags": [
+              "manganese",
+              "limestone"
+            ]
+          }
+        ],
+        "resource_domain": {
+          "resourceRichnessClass": "high_underdeveloped",
+          "resourceDiversityClass": "gold_oil_agricultural_dominant",
+          "majorResourceCount": 7,
+          "knownResourceTypes": [
+            "gold",
+            "crude_oil",
+            "natural_gas",
+            "iron_ore",
+            "manganese",
+            "limestone",
+            "copper"
+          ],
+          "strategicResourceCount": 4,
+          "extractiveResourcePresence": true
+        },
+        "resource_endowment": {
+          "known": [
+            "gold",
+            "crude_oil",
+            "natural_gas",
+            "iron_ore",
+            "manganese",
+            "limestone",
+            "copper"
+          ],
+          "probable": [
+            "gold",
+            "crude_oil"
+          ],
+          "potential": [
+            "natural_gas"
+          ],
+          "absentOrNegligible": [
+            "bauxite",
+            "timber"
+          ]
+        },
+        "geological_context": {
+          "majorGeologicalDomains": [
+            "arabian_nubian_shield",
+            "central_african_rift_system"
+          ],
+          "sedimentaryBasins": [
+            "muglad_basin",
+            "melut_basin",
+            "blue_nile_basin"
+          ],
+          "shieldOrCratonZones": [
+            "arabian_nubian_shield"
+          ],
+          "mountainBelts": [
+            "red_sea_hills",
+            "jebel_marra_volcanic"
+          ],
+          "volcanicZones": [
+            "jebel_marra"
+          ],
+          "tectonicSetting": [
+            "intra_continental_rift_and_shield_accretion"
+          ],
+          "resourceFormationContexts": [
+            "precambrian_orogenic_gold",
+            "mesozoic_rift_basin_petroleum"
+          ]
+        },
+        "mineral_resource_base": {
+          "metallic": [
+            "gold",
+            "iron_ore",
+            "manganese",
+            "copper"
+          ],
+          "nonMetallic": [
+            "limestone"
+          ],
+          "industrialMinerals": [
+            "industrial_stone"
+          ],
+          "preciousMetals": [
+            "gold"
+          ],
+          "criticalMinerals": [],
+          "rareEarths": []
+        },
+        "hydrocarbon_resource_base": {
+          "oil": [
+            "crude_oil"
+          ],
+          "naturalGas": [
+            "natural_gas"
+          ],
+          "coal": [],
+          "basins": [
+            "muglad_basin",
+            "melut_basin"
+          ],
+          "offshorePotential": true
+        },
+        "energy_resource_base": {
+          "fossilResources": [
+            "crude_oil",
+            "natural_gas"
+          ],
+          "nuclearResources": [],
+          "hydropowerPotential": [
+            "electricity"
+          ],
+          "solarResourceZones": [
+            "northern_desert_solar_belt"
+          ],
+          "windResourceZones": [
+            "red_sea_wind_corridor"
+          ],
+          "geothermalPotential": [],
+          "biomassResources": []
+        },
+        "water_resource_base": {
+          "majorRiverSystems": [
+            "nile",
+            "white_nile",
+            "blue_nile",
+            "atbara"
+          ],
+          "groundwaterSystems": [
+            "nubian_sandstone_aquifer_system"
+          ],
+          "lakeSystems": [
+            "roseires_reservoir"
+          ],
+          "freshwaterAvailabilityClass": "nile_dependent_dry_zone",
+          "waterStressClass": "high",
+          "transboundaryWaterSystems": [
+            "nile_basin_initiative_gerd_downstream"
+          ]
+        },
+        "forest_resource_base": {
+          "forestTypes": [
+            "dry_savanna_woodland"
+          ],
+          "majorForestZones": [
+            "gum_arabic_belt"
+          ],
+          "timberResourcePresence": true,
+          "nonTimberForestResources": [
+            "gum_arabic_acacia"
+          ]
+        },
+        "agricultural_resource_base": {
+          "majorCropResources": [
+            "wheat",
+            "rice"
+          ],
+          "livestockResourceTypes": [
+            "bovine"
+          ],
+          "fishingResources": [
+            "inland_nile_and_red_sea_marine"
+          ],
+          "arableLandClass": "high_gezira_plain",
+          "irrigationResourceZones": [
+            "gezira_scheme_irrigation"
+          ]
+        },
+        "strategic_resources": {
+          "domesticallyAvailable": [
+            "gold",
+            "crude_oil",
+            "natural_gas",
+            "manganese",
+            "electricity"
+          ],
+          "strategicallyImportant": [
+            "gold",
+            "crude_oil",
+            "nile_water"
+          ],
+          "importDependent": [
+            "wheat",
+            "refined_fuel",
+            "timber",
+            "steel"
+          ],
+          "exportCritical": [
+            "gold",
+            "crude_oil",
+            "gum_arabic"
+          ],
+          "dualUseRelevant": []
+        },
+        "resource_quality_context": {
+          "knownHighGradeResources": [
+            "gold",
+            "crude_oil"
+          ],
+          "knownLowGradeResources": [
+            "iron_ore"
+          ],
+          "qualityDataCoverage": "moderate"
+        },
+        "extraction_context": {
+          "surfaceMiningPotential": [
+            "gold",
+            "iron_ore"
+          ],
+          "undergroundMiningPotential": [
+            "gold"
+          ],
+          "offshoreExtractionPotential": [],
+          "inSituPotential": [],
+          "conventionalExtractionResources": [
+            "crude_oil"
+          ],
+          "technicallyChallengingResources": [
+            "gold"
+          ]
+        },
+        "processing_resource_context": {
+          "knownProcessingChains": [
+            "gold",
+            "crude_oil"
+          ],
+          "refiningResources": [
+            "refined_fuel"
+          ],
+          "smeltingResources": [],
+          "advancedProcessingResources": []
+        },
+        "resource_industrial_context": {
+          "knownProcessingIndustries": [
+            "refined_fuel",
+            "steel"
+          ],
+          "metallurgicalCapacityReferences": [
+            "steel"
+          ],
+          "refiningCapacityReferences": [
+            "refined_fuel"
+          ],
+          "mineralProcessingReferences": [
+            "gold"
+          ],
+          "resourceTechnologyCapabilities": [
+            "gold"
+          ]
+        },
+        "resource_infrastructure_context": {
+          "ports": [
+            "NODE_PORT_SUDAN"
+          ],
+          "railTerminals": [
+            "NODE_RAIL_KHARTOUM"
+          ],
+          "mineSites": [
+            "MINE_HASSAI_GOLD"
+          ],
+          "refineries": [
+            "NODE_REF_KHARTOUM"
+          ],
+          "processingFacilities": [
+            "NODE_PROC_SUDAN_GOLD_REFINERY"
+          ],
+          "pipelineHubs": [
+            "NODE_PIPE_PETRODAR"
+          ],
+          "storageFacilities": [
+            "STORAGE_OIL_PORT_SUDAN"
+          ]
+        },
+        "resource_transport_context": {
+          "majorExportCorridors": [
+            "port_sudan_red_sea_corridor"
+          ],
+          "majorImportCorridors": [
+            "port_sudan_import_route"
+          ],
+          "pipelineCorridors": [
+            "petrodar_pipeline_to_port_sudan"
+          ],
+          "railResourceCorridors": [
+            "khartoum_port_sudan_heavy_rail"
+          ],
+          "maritimeResourceCorridors": [
+            "red_sea_shipping_lanes"
+          ]
+        },
+        "resource_dependency": {
+          "criticalImports": [
+            "wheat",
+            "refined_fuel",
+            "timber",
+            "steel"
+          ],
+          "criticalExports": [
+            "gold",
+            "crude_oil"
+          ],
+          "singleSourceDependencies": [
+            "refined_fuel"
+          ],
+          "multiSourceDependencies": [
+            "wheat"
+          ],
+          "domesticSupplyGaps": [
+            "refined_fuel"
+          ],
+          "processingDependencies": [
+            "refined_fuel"
+          ]
+        },
+        "resource_constraints": {
+          "geologicalConstraints": [
+            "gold"
+          ],
+          "waterConstraints": [
+            "water"
+          ],
+          "terrainConstraints": [
+            "gold"
+          ],
+          "accessConstraints": [
+            "gold"
+          ],
+          "technologyConstraints": [
+            "gold"
+          ],
+          "environmentalConstraints": [
+            "gold"
+          ],
+          "seasonalConstraints": [
+            "gold"
+          ]
+        },
+        "resource_risks": {
+          "depletionRisks": [
+            "crude_oil"
+          ],
+          "climateExposure": [
+            "water"
+          ],
+          "geologicalHazards": [
+            "floods"
+          ],
+          "supplyChainRisks": [
+            "refined_fuel"
+          ],
+          "crossBorderRisks": [
+            "water"
+          ],
+          "infrastructureRisks": [
+            "gold"
+          ]
+        },
+        "resource_potential": {
+          "underexploredResources": [
+            "gold"
+          ],
+          "frontierResources": [
+            "natural_gas"
+          ],
+          "deepResourcePotential": [
+            "gold"
+          ],
+          "offshorePotential": [
+            "natural_gas"
+          ],
+          "secondaryResourcePotential": []
+        },
+        "discovery_context": {
+          "explorationMaturity": "under_explored_high_gold_oil_potential",
+          "mappingCoverage": "moderate",
+          "geologicalSurveyCoverage": "moderate",
+          "knownUnknownZones": [
+            "red_sea_deepwater_basin"
+          ],
+          "highPriorityExplorationZones": [
+            "gold"
+          ]
+        },
+        "provenance": {
+          "sources": [
+            "USGS_MCS_2026",
+            "SUDAN_MINISTRY_OF_MINES_2025"
+          ],
+          "dataConfidence": "moderate_to_high",
+          "lastVerified": "2026-06-30",
+          "coverageNotes": [
+            "Verified with Sudan Ministry of Energy & Minerals baselines."
           ]
         }
       }

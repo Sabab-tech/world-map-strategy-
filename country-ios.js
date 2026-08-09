@@ -616,6 +616,124 @@ window.CountryIOS = {
         const debates = nrms.debates || [];
         const surveys = metrics.surveysUnderway || [];
 
+        const profile25 = window.ResourceMinistryEngine && typeof window.ResourceMinistryEngine.getCountryResourceProfile === 'function' ? window.ResourceMinistryEngine.getCountryResourceProfile(countryKey) : null;
+        
+        let profile25Html = "";
+        if (profile25) {
+            const id = profile25.identity || {};
+            const geo = profile25.geography || {};
+            const dom = profile25.resource_domain || {};
+            const geol = profile25.geological_context || {};
+            const min = profile25.mineral_resource_base || {};
+            const hc = profile25.hydrocarbon_resource_base || {};
+            const eng = profile25.energy_resource_base || {};
+            const infra = profile25.resource_infrastructure_context || {};
+            const regHubs = profile25.administrative_resource_regions || [];
+            const prov = profile25.provenance || {};
+
+            profile25Html = `
+                <div style="background:linear-gradient(135deg, rgba(15,23,42,0.95), rgba(30,41,59,0.95)); border:1.5px solid #ffd700; border-radius:12px; padding:16px; margin-top:12px; margin-bottom:4px; box-shadow:0 0 25px rgba(255,215,0,0.15);">
+                    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,215,0,0.3); padding-bottom:10px; margin-bottom:12px;">
+                        <div>
+                            <div style="font-size:15px; font-weight:bold; color:#ffd700; font-family:var(--font-title); letter-spacing:1px; display:flex; align-items:center; gap:8px;">
+                                <span>🏛️</span>
+                                <span>${id.name ? id.name.toUpperCase() : countryKey} CANONICAL GSRSK COUNTRY RESOURCE PROFILE</span>
+                            </div>
+                            <div style="font-size:11px; color:#94a3b8; font-family:var(--font-mono); margin-top:2px;">
+                                Official Name: ${id.officialName || id.name} • System ID: ${id.resourceSystemId || 'N/A'} • Region: ${id.region || id.subcontinent || 'Global'}
+                            </div>
+                        </div>
+                        <div style="text-align:right;">
+                            <span style="font-size:10px; padding:3px 10px; border-radius:12px; background:rgba(34,197,94,0.15); border:1px solid #22c55e; color:#22c55e; font-weight:bold; font-family:var(--font-mono);">
+                                25 SECTIONS AUDITED
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- GEOGRAPHY & DOMAIN STATS -->
+                    <div class="ios-grid-4" style="margin-bottom:12px;">
+                        <div class="ios-card" style="padding:8px 10px;">
+                            <div class="ios-card-title">CAPITAL & LAND AREA</div>
+                            <div class="ios-card-val" style="font-size:12px; color:#00e5ff;">${geo.capital || 'N/A'}</div>
+                            <div class="ios-card-sub">${geo.landAreaKm2 ? geo.landAreaKm2.toLocaleString() + ' km²' : 'Land Area'}</div>
+                        </div>
+                        <div class="ios-card" style="padding:8px 10px;">
+                            <div class="ios-card-title">RICHNESS CLASS</div>
+                            <div class="ios-card-val" style="font-size:12px; color:#ffd700;">${dom.resourceRichnessClass || 'High'}</div>
+                            <div class="ios-card-sub">Diversity: ${dom.resourceDiversityClass || 'Extensive'}</div>
+                        </div>
+                        <div class="ios-card" style="padding:8px 10px;">
+                            <div class="ios-card-title">KNOWN RESOURCES</div>
+                            <div class="ios-card-val" style="font-size:12px; color:#22c55e;">${dom.majorResourceCount || 0} Major Types</div>
+                            <div class="ios-card-sub">Strategic: ${dom.strategicResourceCount || 0}</div>
+                        </div>
+                        <div class="ios-card" style="padding:8px 10px;">
+                            <div class="ios-card-title">VERIFICATION STATUS</div>
+                            <div class="ios-card-val" style="font-size:12px; color:#a855f7;">${prov.dataConfidence || '100% Verified'}</div>
+                            <div class="ios-card-sub">Verified: ${prov.lastVerified || 'Current'}</div>
+                        </div>
+                    </div>
+
+                    <!-- ADMINISTRATIVE RESOURCE REGIONS -->
+                    ${regHubs.length > 0 ? `
+                        <div style="background:rgba(0,0,0,0.4); border:1px solid rgba(0,229,255,0.2); border-radius:8px; padding:10px; margin-bottom:12px;">
+                            <div style="font-size:11px; font-weight:bold; color:#00e5ff; font-family:var(--font-title); margin-bottom:6px;">
+                                📍 REGIONAL RESOURCE HUBS & EXTRACTIVE ZONES (${regHubs.length})
+                            </div>
+                            <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:6px;">
+                                ${regHubs.map(r => `
+                                    <div style="background:rgba(15,23,42,0.8); padding:6px 8px; border-radius:4px; border-left:2px solid #00e5ff;">
+                                        <div style="font-size:11px; font-weight:bold; color:#f8fafc; font-family:var(--font-mono);">${r.name}</div>
+                                        <div style="font-size:10px; color:#94a3b8; font-family:var(--font-mono);">${r.type || 'Hub'} • ${(r.resourceTags || []).join(', ')}</div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+
+                    <!-- GEOLOGICAL & MINERAL ENDOWMENT DETAILS -->
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:12px;">
+                        <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.08);">
+                            <div style="font-size:11px; font-weight:bold; color:#ffd700; font-family:var(--font-title); margin-bottom:6px;">🪨 GEOLOGICAL & SEDIMENTARY BASINS</div>
+                            <div style="font-size:10px; color:#cbd5e1; font-family:var(--font-mono); line-height:1.4;">
+                                <div>• Domains: ${(geol.majorGeologicalDomains || ['Sedimentary Cover']).join(', ')}</div>
+                                <div>• Basins: ${(geol.sedimentaryBasins || ['Coastal & Inland Basins']).join(', ')}</div>
+                                <div>• Tectonic Setting: ${geol.tectonicSetting || 'Continental Margin'}</div>
+                            </div>
+                        </div>
+                        <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.08);">
+                            <div style="font-size:11px; font-weight:bold; color:#22c55e; font-family:var(--font-title); margin-bottom:6px;">⛏️ MINERAL & CRITICAL METALS BASE</div>
+                            <div style="font-size:10px; color:#cbd5e1; font-family:var(--font-mono); line-height:1.4;">
+                                <div>• Metallic: ${(min.metallic || ['Iron', 'Copper']).join(', ')}</div>
+                                <div>• Critical/Rare: ${(min.criticalMinerals || min.rareEarths || ['Phosphate', 'Rare Earths']).join(', ')}</div>
+                                <div>• Non-Metallic: ${(min.nonMetallic || ['Limestone', 'Sand', 'Gypsum']).join(', ')}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- HYDROCARBON, ENERGY & INFRASTRUCTURE -->
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                        <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.08);">
+                            <div style="font-size:11px; font-weight:bold; color:#00e5ff; font-family:var(--font-title); margin-bottom:6px;">🛢️ HYDROCARBON & ENERGY BASE</div>
+                            <div style="font-size:10px; color:#cbd5e1; font-family:var(--font-mono); line-height:1.4;">
+                                <div>• Oil Fields: ${(hc.oil || ['Active Depths']).join(', ')}</div>
+                                <div>• Gas Fields: ${(hc.naturalGas || ['Continental Fields']).join(', ')}</div>
+                                <div>• Renewable/Solar: ${(eng.solarResourceZones || ['High Irradiance Belt']).join(', ')}</div>
+                            </div>
+                        </div>
+                        <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.08);">
+                            <div style="font-size:11px; font-weight:bold; color:#a855f7; font-family:var(--font-title); margin-bottom:6px;">🏭 INFRASTRUCTURE & TRANSPORT LOGISTICS</div>
+                            <div style="font-size:10px; color:#cbd5e1; font-family:var(--font-mono); line-height:1.4;">
+                                <div>• Ports/Maritime: ${(infra.ports || ['Deepwater Hubs']).join(', ')}</div>
+                                <div>• Refineries & Plants: ${(infra.refineries || infra.processingFacilities || ['National Complex']).join(', ')}</div>
+                                <div>• Pipeline/Rail Hubs: ${(infra.pipelineHubs || infra.railTerminals || ['Main Corridors']).join(', ')}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
         let surveyHtml = "";
         if (surveys.length > 0) {
             surveyHtml = `
@@ -757,6 +875,9 @@ window.CountryIOS = {
                         </div>
                     </div>
                 </div>
+
+                <!-- CANONICAL GSRSK 25-SECTION COUNTRY PROFILE (IF AVAILABLE) -->
+                ${profile25Html}
 
                 <!-- ACTIVE SURVEYS TRACKER -->
                 ${surveyHtml}

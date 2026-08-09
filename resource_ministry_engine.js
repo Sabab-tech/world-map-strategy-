@@ -403,6 +403,33 @@ window.ResourceMinistryEngine = (() => {
         { name: "Eskişehir Boron & REE Deposit", resId: "rare_earth", country: "TURKEY", lat: 39.77, lng: 30.52, reserve: "694M Tons", status: "Active Mine" },
         { name: "Zohr Gas Field Mediterranean", resId: "natural_gas", country: "EGYPT", lat: 32.50, lng: 31.80, reserve: "30 TCF", status: "Offshore Field" },
 
+        // NORTH AFRICA (ALGERIA, EGYPT, LIBYA, MOROCCO, TUNISIA, SUDAN)
+        { name: "Hassi R'Mel Natural Gas Basin", resId: "natural_gas", country: "ALGERIA", lat: 32.50, lng: 3.25, reserve: "85 TCF", status: "Active Superfield" },
+        { name: "Hassi Messaoud Crude Oil Field", resId: "crude_oil", country: "ALGERIA", lat: 31.86, lng: 6.07, reserve: "12B Barrels", status: "Active Oil Field" },
+        { name: "Gara Djebilet Iron Ore Mine", resId: "iron_ore", country: "ALGERIA", lat: 26.88, lng: -7.02, reserve: "3.5B Tons", status: "Mega Mining Complex" },
+        { name: "Hoggar Shield Gold & Uranium Belt", resId: "gold", country: "ALGERIA", lat: 22.78, lng: 5.52, reserve: "50 Tons Gold / 26K Tons Uranium", status: "Active Pit" },
+
+        { name: "Western Desert Oil Fields", resId: "crude_oil", country: "EGYPT", lat: 29.50, lng: 28.20, reserve: "4.2B Barrels", status: "Active Field" },
+        { name: "Sukari Orogenic Gold Mine", resId: "gold", country: "EGYPT", lat: 24.95, lng: 34.71, reserve: "12M Oz Gold", status: "Active Mine" },
+        { name: "Abu Tartur Phosphate Mine", resId: "bauxite", country: "EGYPT", lat: 25.42, lng: 30.05, reserve: "1.0B Tons Phosphate", status: "Active Surface Mine" },
+
+        { name: "Sirte Crude Oil Superbasin", resId: "crude_oil", country: "LIBYA", lat: 29.20, lng: 19.30, reserve: "48B Barrels (Africa Largest)", status: "Active Field" },
+        { name: "Murzuq Oil Field Zone", resId: "crude_oil", country: "LIBYA", lat: 25.90, lng: 13.90, reserve: "5.2B Barrels", status: "Active Field" },
+        { name: "Greenstream Mellitah Gas Hub", resId: "natural_gas", country: "LIBYA", lat: 32.88, lng: 12.24, reserve: "18 TCF", status: "Active Gas Terminal" },
+        { name: "Wadi Shati Iron Ore Basin", resId: "iron_ore", country: "LIBYA", lat: 27.50, lng: 14.20, reserve: "3.8B Tons", status: "Strategic Reserve" },
+
+        { name: "Oulad Abdoun Khouribga Phosphate Supermine", resId: "bauxite", country: "MOROCCO", lat: 32.88, lng: -6.91, reserve: "50B Tons (70% Global Reserves)", status: "World Leader" },
+        { name: "Anti-Atlas Imiter Silver & Copper Belt", resId: "copper", country: "MOROCCO", lat: 31.35, lng: -5.80, reserve: "8,500 Tons Silver", status: "Active Mine" },
+        { name: "Bou Azzer Cobalt & Polymetallic Mine", resId: "rare_earth", country: "MOROCCO", lat: 30.52, lng: -6.90, reserve: "High Grade Cobalt & REE", status: "Active Mine" },
+        { name: "Noor Ouarzazate Solar Complex", resId: "electricity", country: "MOROCCO", lat: 30.99, lng: -6.86, reserve: "580 MW Solar Grid", status: "Active Solar Complex" },
+
+        { name: "Gafsa Phosphate Basin", resId: "bauxite", country: "TUNISIA", lat: 34.42, lng: 8.78, reserve: "1.2B Tons", status: "Active Mine" },
+        { name: "Pelagian Sfax Offshore Gas & Oil Field", resId: "natural_gas", country: "TUNISIA", lat: 34.73, lng: 11.20, reserve: "2.8 TCF", status: "Offshore Platform" },
+
+        { name: "Hassai Red Sea Gold Belt", resId: "gold", country: "SUDAN", lat: 19.60, lng: 35.80, reserve: "90 Tons/yr Production", status: "Active Mine" },
+        { name: "Muglad Petroleum Rift Basin", resId: "crude_oil", country: "SUDAN", lat: 10.20, lng: 28.50, reserve: "1.5B Barrels", status: "Active Field" },
+        { name: "Khartoum Refinery & Oil Terminal", resId: "crude_oil", country: "SUDAN", lat: 15.65, lng: 32.52, reserve: "100,000 bpd Capacity", status: "Refinery Hub" },
+
         // AUSTRALIA
         { name: "Pilbara Iron Ore Range", resId: "iron_ore", country: "AUSTRALIA", lat: -21.50, lng: 119.00, reserve: "25B Tons", status: "Mega Mining Hub" },
         { name: "Weipa Bauxite Mine", resId: "bauxite", country: "AUSTRALIA", lat: -12.63, lng: 141.87, reserve: "3B Tons", status: "Active Surface Mine" },
@@ -711,9 +738,57 @@ window.ResourceMinistryEngine = (() => {
         resources: STRATEGIC_RESOURCES,
         getResourceDatabase: () => resourceDatabaseCache || window.resourceDatabase,
         loadResourceDatabase,
+        getCountryResourceProfile(countryKey) {
+            if (!countryKey) return null;
+            const normKey = countryKey.replace(/_/g, " ").toUpperCase().trim();
+            const isoMap = {
+                "ALGERIA": "DZA", "EGYPT": "EGY", "LIBYA": "LBY", "MOROCCO": "MAR", "TUNISIA": "TUN", "SUDAN": "SDN",
+                "BANGLADESH": "BGD", "INDIA": "IND", "PAKISTAN": "PAK", "SRI LANKA": "LKA", "NEPAL": "NPL", "BHUTAN": "BTN", "AFGHANISTAN": "AFG", "MALDIVES": "MDV"
+            };
+            const iso3 = isoMap[normKey] || normKey;
+
+            const db = resourceDatabaseCache || window.resourceDatabase;
+            if (!db) return null;
+
+            const sources = [
+                db.GSRSK_NorthAfrica_CountryProfiles_v14?.countryProfiles,
+                db.GSRSK_SouthAsia_CountryProfiles_v14?.countryProfiles,
+                db.GSRSK_BRAIN_FRAMEWORK_PHASE_1?.countryProfiles,
+                db.GSRSK_MASTER_DATASET_PHASE_1B?.countryProfiles
+            ];
+
+            for (let s of sources) {
+                if (!s) continue;
+                if (s[iso3]) return s[iso3];
+                if (s[normKey]) return s[normKey];
+                for (let code in s) {
+                    if (s[code] && s[code].identity) {
+                        const id = s[code].identity;
+                        if ((id.countryId || '').toUpperCase() === iso3 ||
+                            (id.iso3 || '').toUpperCase() === iso3 ||
+                            (id.name || '').toUpperCase() === normKey) {
+                            return s[code];
+                        }
+                    }
+                }
+            }
+            return null;
+        },
         get deposits() {
             const combined = [...GEOGRAPHIC_DEPOSITS];
-            const existingCountries = new Set(GEOGRAPHIC_DEPOSITS.map(d => (d.country || '').replace(/_/g, " ").toUpperCase()));
+            const existingNames = new Set(GEOGRAPHIC_DEPOSITS.map(d => (d.name || '').toLowerCase()));
+            
+            const db = resourceDatabaseCache || window.resourceDatabase;
+            if (db && Array.isArray(db.deposits)) {
+                db.deposits.forEach(dep => {
+                    if (dep && dep.name && !existingNames.has(dep.name.toLowerCase())) {
+                        combined.push(dep);
+                        existingNames.add(dep.name.toLowerCase());
+                    }
+                });
+            }
+
+            const existingCountries = new Set(combined.map(d => (d.country || '').replace(/_/g, " ").toUpperCase()));
             
             if (window.Game && window.Game.locationsRegistry) {
                 const reg = window.Game.locationsRegistry;
