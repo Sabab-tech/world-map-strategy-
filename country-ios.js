@@ -618,6 +618,22 @@ window.CountryIOS = {
 
         const profile25 = window.ResourceMinistryEngine && typeof window.ResourceMinistryEngine.getCountryResourceProfile === 'function' ? window.ResourceMinistryEngine.getCountryResourceProfile(countryKey) : null;
         
+        const launchBannerHtml = `
+            <div style="display:flex; justify-content:space-between; align-items:center; background:linear-gradient(90deg, rgba(0,229,255,0.15), rgba(168,85,247,0.15)); border:1.5px solid #00e5ff; border-radius:10px; padding:12px 16px; margin-bottom:12px; box-shadow:0 0 20px rgba(0,229,255,0.2);">
+                <div>
+                    <div style="font-size:14px; font-weight:bold; color:#00e5ff; font-family:var(--font-title); display:flex; align-items:center; gap:8px;">
+                        <span>🏛️</span><span>GSRSK RESOURCE MINISTRY & GLOBAL INTELLIGENCE HUB</span>
+                    </div>
+                    <div style="font-size:10px; color:#cbd5e1; font-family:var(--font-mono); margin-top:2px;">
+                        Access 62 Global Deposits, 17 Strategic Resource Matrix, Market Benchmarks, & 25-Section Audits.
+                    </div>
+                </div>
+                <button onclick="if(window.ResourceMinistryEngine && typeof window.ResourceMinistryEngine.openModal === 'function') window.ResourceMinistryEngine.openModal('${countryKey}')" style="background:linear-gradient(135deg, #00e5ff, #0066ff); border:none; color:#000; font-weight:bold; font-family:var(--font-mono); padding:8px 16px; border-radius:6px; cursor:pointer; font-size:11px; box-shadow:0 0 10px rgba(0,229,255,0.5);">
+                    ⚡ LAUNCH FULL RESOURCE HUB
+                </button>
+            </div>
+        `;
+        
         let profile25Html = "";
         if (profile25) {
             const id = profile25.identity || {};
@@ -835,6 +851,8 @@ window.CountryIOS = {
 
         return `
             <div style="display:flex; flex-direction:column; gap:16px;">
+                ${launchBannerHtml}
+
                 <!-- MINISTER AI EXECUTIVE BRIEFING HEADER -->
                 <div style="background:linear-gradient(135deg, rgba(11,20,36,0.95), rgba(15,23,42,0.95)); border:1.5px solid #00e5ff; border-radius:12px; padding:16px; box-shadow:0 0 20px rgba(0,229,255,0.15);">
                     <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(0,229,255,0.2); padding-bottom:10px; margin-bottom:12px;">

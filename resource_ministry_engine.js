@@ -743,7 +743,9 @@ window.ResourceMinistryEngine = (() => {
             const normKey = countryKey.replace(/_/g, " ").toUpperCase().trim();
             const isoMap = {
                 "ALGERIA": "DZA", "EGYPT": "EGY", "LIBYA": "LBY", "MOROCCO": "MAR", "TUNISIA": "TUN", "SUDAN": "SDN",
-                "BANGLADESH": "BGD", "INDIA": "IND", "PAKISTAN": "PAK", "SRI LANKA": "LKA", "NEPAL": "NPL", "BHUTAN": "BTN", "AFGHANISTAN": "AFG", "MALDIVES": "MDV"
+                "BANGLADESH": "BGD", "INDIA": "IND", "PAKISTAN": "PAK", "SRI LANKA": "LKA", "NEPAL": "NPL", "BHUTAN": "BTN", "AFGHANISTAN": "AFG", "MALDIVES": "MDV",
+                "MAURITANIA": "MRT", "SENEGAL": "SEN", "THE GAMBIA": "GMB", "GAMBIA": "GMB", "GUINEA-BISSAU": "GNB", "GUINEA BISSAU": "GNB", "GUINEA": "GIN",
+                "SIERRA LEONE": "SLE", "LIBERIA": "LBR", "COTE D'IVOIRE": "CIV", "CÔTE D'IVOIRE": "CIV", "IVORY COAST": "CIV", "GHANA": "GHA", "TOGO": "TGO"
             };
             const iso3 = isoMap[normKey] || normKey;
 
@@ -751,6 +753,7 @@ window.ResourceMinistryEngine = (() => {
             if (!db) return null;
 
             const sources = [
+                db.GSRSK_WestAfrica_Part1_CountryProfiles_v14?.countryProfiles,
                 db.GSRSK_NorthAfrica_CountryProfiles_v14?.countryProfiles,
                 db.GSRSK_SouthAsia_CountryProfiles_v14?.countryProfiles,
                 db.GSRSK_BRAIN_FRAMEWORK_PHASE_1?.countryProfiles,
@@ -1000,6 +1003,304 @@ window.ResourceMinistryEngine = (() => {
                         </div>
                         <div style="display:flex; flex-direction:column; gap:10px;">
                             ${debateHtml}
+                        </div>
+                    </div>
+                </div>
+            `;
+        },
+
+        focusDepositOnMap(lat, lng, name, resId) {
+            const modal = document.getElementById('resource-ministry-modal');
+            if (modal) modal.style.display = 'none';
+
+            if (window.Game && window.Game.Map) {
+                if (typeof window.Game.Map.toggleResourceOverlay === 'function') {
+                    const box = document.getElementById('resource-filter-box');
+                    if (!box || box.classList.contains('hidden') || box.style.display === 'none') {
+                        window.Game.Map.toggleResourceOverlay();
+                    }
+                }
+                if (typeof window.Game.Map.applyResourceMapFilter === 'function') {
+                    window.Game.Map.applyResourceMapFilter('ALL');
+                }
+            }
+
+            const mapInst = window.map || (window.Game && window.Game.Map && window.Game.Map.map);
+            if (mapInst && typeof mapInst.flyTo === 'function') {
+                mapInst.flyTo([lat, lng], 6, { animate: true, duration: 1.5 });
+            }
+
+            if (window.OMEGA_UI_ADAPTER && typeof window.OMEGA_UI_ADAPTER.showAdvisePopup === 'function') {
+                window.OMEGA_UI_ADAPTER.showAdvisePopup("RESOURCE LOCATION LOCKED", `Satellite lock engaged on ${name} (${lat.toFixed(2)}°, ${lng.toFixed(2)}°)`);
+            }
+        },
+
+        openModal(countryKey) {
+            const cKey = countryKey || (window.Game && window.Game.currentActiveCountry) || 'USA';
+            let modal = document.getElementById('resource-ministry-modal');
+
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'resource-ministry-modal';
+                modal.className = 'omega-modal';
+                modal.style.cssText = 'position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); width:95%; max-width:1200px; height:88vh; z-index:10000; background:rgba(2,11,20,0.98); border:1.5px solid #00e5ff; border-radius:14px; box-shadow:0 0 45px rgba(0,229,255,0.35); overflow:hidden; display:flex; flex-direction:column; font-family:var(--font-mono); color:#f8fafc; backdrop-filter:blur(20px);';
+                document.body.appendChild(modal);
+            }
+
+            const db = resourceDatabaseCache || window.resourceDatabase || {};
+
+            modal.innerHTML = `
+                <!-- HEADER -->
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:14px 20px; background:rgba(0,18,28,0.95); border-bottom:1px solid rgba(0,229,255,0.3);">
+                    <div>
+                        <div style="font-family:var(--font-title); font-size:16px; font-weight:bold; color:#00e5ff; display:flex; align-items:center; gap:8px;">
+                            <span>🏛️</span>
+                            <span>GLOBAL STRATEGIC RESOURCE MINISTRY & GSRSK INTELLIGENCE HUB</span>
+                        </div>
+                        <div style="font-size:10px; color:#94a3b8; margin-top:2px;">
+                            Active Nation: <strong style="color:#ffd700;">${cKey}</strong> • Data Connection: <span style="color:#22c55e;">100% ONLINE (62 DEPOSITS & CANONICAL MASTER DATASET)</span>
+                        </div>
+                    </div>
+                    <div style="display:flex; gap:10px; align-items:center;">
+                        <button onclick="window.ResourceMinistryEngine.focusDepositOnMap(23.81, 90.41, 'GLOBAL MAP OVERLAY', 'ALL')" style="background:rgba(0,229,255,0.15); border:1px solid #00e5ff; color:#00e5ff; border-radius:6px; padding:6px 14px; font-weight:bold; cursor:pointer; font-size:11px; display:flex; align-items:center; gap:5px;">
+                            <span>🗺️</span><span>SHOW ALL ON MAP</span>
+                        </button>
+                        <button onclick="document.getElementById('resource-ministry-modal').style.display='none'" style="background:rgba(255,68,68,0.25); border:1px solid #ef4444; color:#fff; border-radius:6px; padding:6px 14px; font-weight:bold; cursor:pointer; font-size:11px;">
+                            ✕ CLOSE
+                        </button>
+                    </div>
+                </div>
+
+                <!-- NAVIGATION TABS -->
+                <div style="display:flex; gap:4px; padding:8px 16px; background:rgba(1,15,28,0.9); border-bottom:1px solid rgba(255,255,255,0.08); overflow-x:auto;" id="rm-modal-tabs">
+                    <button class="rm-tab-btn active" onclick="window.ResourceMinistryEngine.switchTab('matrix')" style="padding:6px 14px; background:rgba(0,229,255,0.2); border:1px solid #00e5ff; color:#00e5ff; border-radius:6px; font-size:11px; font-weight:bold; cursor:pointer; font-family:var(--font-mono);">
+                        💎 17 RESOURCES MATRIX
+                    </button>
+                    <button class="rm-tab-btn" onclick="window.ResourceMinistryEngine.switchTab('deposits')" style="padding:6px 14px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:#94a3b8; border-radius:6px; font-size:11px; font-weight:bold; cursor:pointer; font-family:var(--font-mono);">
+                        🗺️ 62 DEPOSITS MAP BROWSER
+                    </button>
+                    <button class="rm-tab-btn" onclick="window.ResourceMinistryEngine.switchTab('markets')" style="padding:6px 14px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:#94a3b8; border-radius:6px; font-size:11px; font-weight:bold; cursor:pointer; font-family:var(--font-mono);">
+                        📈 GLOBAL MARKETS
+                    </button>
+                    <button class="rm-tab-btn" onclick="window.ResourceMinistryEngine.switchTab('profiles')" style="padding:6px 14px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:#94a3b8; border-radius:6px; font-size:11px; font-weight:bold; cursor:pointer; font-family:var(--font-mono);">
+                        📜 25-SECTION COUNTRY PROFILES
+                    </button>
+                    <button class="rm-tab-btn" onclick="window.ResourceMinistryEngine.switchTab('infra')" style="padding:6px 14px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:#94a3b8; border-radius:6px; font-size:11px; font-weight:bold; cursor:pointer; font-family:var(--font-mono);">
+                        🏭 INFRASTRUCTURE & REFINERIES
+                    </button>
+                </div>
+
+                <!-- MAIN VIEWPORT -->
+                <div style="flex:1; overflow-y:auto; padding:16px;" id="rm-modal-body">
+                    <!-- Default tab content -->
+                </div>
+            `;
+
+            modal.style.display = 'flex';
+            this.switchTab('matrix', cKey);
+        },
+
+        switchTab(tabId, countryKey) {
+            const cKey = countryKey || (window.Game && window.Game.currentActiveCountry) || 'USA';
+            const body = document.getElementById('rm-modal-body');
+            if (!body) return;
+
+            // Update tab button styles
+            const tabs = document.querySelectorAll('.rm-tab-btn');
+            tabs.forEach(t => {
+                t.style.background = 'rgba(255,255,255,0.05)';
+                t.style.borderColor = 'rgba(255,255,255,0.1)';
+                t.style.color = '#94a3b8';
+            });
+
+            if (event && event.target) {
+                event.target.style.background = 'rgba(0,229,255,0.2)';
+                event.target.style.borderColor = '#00e5ff';
+                event.target.style.color = '#00e5ff';
+            }
+
+            const db = resourceDatabaseCache || window.resourceDatabase || {};
+
+            if (tabId === 'matrix') {
+                body.innerHTML = this.renderExecutiveDashboard(cKey);
+            } else if (tabId === 'deposits') {
+                const allDeps = this.deposits || [];
+                body.innerHTML = `
+                    <div style="display:flex; flex-direction:column; gap:12px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(0,0,0,0.4); padding:10px; border-radius:8px; border:1px solid rgba(0,229,255,0.2);">
+                            <div style="font-size:12px; font-weight:bold; color:#00e5ff;">
+                                🌐 ALL ${allDeps.length} GLOBAL MINERAL & HYDROCARBON DEPOSITS
+                            </div>
+                            <input type="text" id="rm-dep-search" placeholder="Search by country, resource, or deposit name..." onkeyup="window.ResourceMinistryEngine.filterDepositCards(this.value)" style="background:rgba(15,23,42,0.9); border:1px solid rgba(0,229,255,0.4); color:#fff; padding:6px 12px; border-radius:6px; font-size:11px; width:300px;" />
+                        </div>
+                        <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); gap:10px;" id="rm-deposits-grid">
+                            ${allDeps.map((d, idx) => `
+                                <div class="dep-card-item" data-search="${(d.name + ' ' + d.country + ' ' + d.resId + ' ' + d.status).toLowerCase()}" style="background:rgba(15,23,42,0.85); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:10px; display:flex; flex-direction:column; justify-content:space-between;">
+                                    <div>
+                                        <div style="font-size:12px; font-weight:bold; color:#ffd700; margin-bottom:4px; display:flex; justify-content:space-between;">
+                                            <span>${d.name}</span>
+                                            <span style="font-size:10px; color:#22c55e;">${d.country}</span>
+                                        </div>
+                                        <div style="font-size:10px; color:#cbd5e1; line-height:1.4; margin-bottom:8px;">
+                                            <div>Type: <strong style="color:#00e5ff;">${(d.resId || 'Mineral').toUpperCase()}</strong></div>
+                                            <div>Reserve: <strong>${d.reserve || 'Unquantified'}</strong></div>
+                                            <div>Status: <span style="color:#a855f7;">${d.status || 'Active'}</span></div>
+                                            <div>Coords: ${Number(d.lat).toFixed(2)}°, ${Number(d.lng).toFixed(2)}°</div>
+                                        </div>
+                                    </div>
+                                    <button onclick="window.ResourceMinistryEngine.focusDepositOnMap(${d.lat}, ${d.lng}, '${d.name.replace(/'/g, "")}', '${d.resId}')" style="background:rgba(0,229,255,0.15); border:1px solid #00e5ff; color:#00e5ff; font-size:10px; font-weight:bold; padding:5px; border-radius:4px; cursor:pointer; text-align:center;">
+                                        📍 FOCUS ON MAP
+                                    </button>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            } else if (tabId === 'markets') {
+                const bMarkets = db.GSRSK_BRAIN_FRAMEWORK_PHASE_1?.marketProfiles || db.GSRSK_MASTER_DATASET_PHASE_1B?.marketProfiles || {};
+                const keys = Object.keys(bMarkets);
+                body.innerHTML = `
+                    <div style="display:flex; flex-direction:column; gap:12px;">
+                        <div style="font-size:13px; font-weight:bold; color:#ffd700;">
+                            📈 CANONICAL COMMODITY MARKET PROFILES & INTERNATIONAL BENCHMARKS (${keys.length})
+                        </div>
+                        <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:12px;">
+                            ${keys.map(k => {
+                                const m = bMarkets[k];
+                                return `
+                                    <div style="background:rgba(15,23,42,0.85); border:1px solid rgba(0,229,255,0.2); border-radius:8px; padding:12px;">
+                                        <div style="font-size:12px; font-weight:bold; color:#00e5ff; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:4px; margin-bottom:8px;">
+                                            ${(m.commodityId || k).replace(/_/g, ' ').toUpperCase()}
+                                        </div>
+                                        <div style="font-size:11px; color:#cbd5e1; line-height:1.5;">
+                                            <div>Benchmark Price: <strong style="color:#22c55e;">$${m.benchmarkPriceUSD?.toLocaleString()} / ${m.pricingUnit || 'unit'}</strong></div>
+                                            <div>Exchange Hub: <strong style="color:#ffd700;">${m.exchangeHub || 'LME'}</strong></div>
+                                            <div>Volatility Index: ${m.priceVolatilityIndex || 0.3}</div>
+                                            <div>Global Stockpile Baseline: ${m.globalStockpileBaseline ? m.globalStockpileBaseline.toLocaleString() : 'N/A'}</div>
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+                `;
+            } else if (tabId === 'profiles') {
+                const availableCountries = [
+                    "BANGLADESH", "INDIA", "PAKISTAN", "SRI LANKA", "NEPAL", "BHUTAN", "AFGHANISTAN", "MALDIVES",
+                    "ALGERIA", "EGYPT", "LIBYA", "MOROCCO", "TUNISIA", "SUDAN",
+                    "MAURITANIA", "SENEGAL", "THE GAMBIA", "GUINEA-BISSAU", "GUINEA", "SIERRA LEONE", "LIBERIA", "COTE D'IVOIRE", "GHANA", "TOGO",
+                    "USA", "CHINA", "RUSSIA"
+                ];
+                body.innerHTML = `
+                    <div style="display:flex; flex-direction:column; gap:12px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(0,0,0,0.4); padding:10px; border-radius:8px; border:1px solid rgba(255,215,0,0.3);">
+                            <div style="font-size:12px; font-weight:bold; color:#ffd700;">
+                                📜 CANONICAL 25-SECTION GSRSK COUNTRY RESOURCE AUDIT
+                            </div>
+                            <select id="rm-profile-select" onchange="window.ResourceMinistryEngine.renderProfileTab(this.value)" style="background:rgba(15,23,42,0.9); border:1px solid #ffd700; color:#fff; padding:6px 12px; border-radius:6px; font-size:11px;">
+                                ${availableCountries.map(c => `<option value="${c}" ${c === cKey ? 'selected' : ''}>${c}</option>`).join('')}
+                            </select>
+                        </div>
+                        <div id="rm-profile-content">
+                            ${this.renderProfileContent(cKey)}
+                        </div>
+                    </div>
+                `;
+            } else if (tabId === 'infra') {
+                const master = db.GSRSK_Master_Resource_Data_v14 || {};
+                const plants = master.processing_plants?.refining_chains || {};
+                const keys = Object.keys(plants);
+                body.innerHTML = `
+                    <div style="display:flex; flex-direction:column; gap:12px;">
+                        <div style="font-size:13px; font-weight:bold; color:#00e5ff;">
+                            🏭 INDUSTRIAL REFINING CHAINS & PROCESSING COMPLEXES
+                        </div>
+                        <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:12px;">
+                            ${keys.map(k => {
+                                const p = plants[k];
+                                return `
+                                    <div style="background:rgba(15,23,42,0.85); border:1px solid rgba(34,197,94,0.3); border-radius:8px; padding:12px;">
+                                        <div style="font-size:12px; font-weight:bold; color:#22c55e; margin-bottom:6px;">
+                                            ${k.replace(/_/g, ' ').toUpperCase()} REFINING CHAIN
+                                        </div>
+                                        <div style="font-size:11px; color:#cbd5e1; line-height:1.4;">
+                                            <div>Stages: ${(p.stages || []).join(' → ')}</div>
+                                            <div>Technology: ${p.technologyLevel || 'Industrial High'}</div>
+                                            <div>CapEx Baseline: $${(p.capexMillionsUSD || 500)} Million</div>
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+        },
+
+        filterDepositCards(query) {
+            const q = (query || '').toLowerCase();
+            const cards = document.querySelectorAll('#rm-deposits-grid .dep-card-item');
+            cards.forEach(c => {
+                const text = c.getAttribute('data-search') || '';
+                if (!q || text.includes(q)) {
+                    c.style.display = 'flex';
+                } else {
+                    c.style.display = 'none';
+                }
+            });
+        },
+
+        renderProfileTab(countryKey) {
+            const container = document.getElementById('rm-profile-content');
+            if (container) {
+                container.innerHTML = this.renderProfileContent(countryKey);
+            }
+        },
+
+        renderProfileContent(countryKey) {
+            const prof = this.getCountryResourceProfile(countryKey);
+            if (!prof) {
+                return `<div style="padding:20px; color:#ef4444;">Canonical 25-section audit data pending or unavailable for ${countryKey}.</div>`;
+            }
+            const id = prof.identity || {};
+            const geo = prof.geography || {};
+            const dom = prof.resource_domain || {};
+            const geol = prof.geological_context || {};
+            const min = prof.mineral_resource_base || {};
+            const hc = prof.hydrocarbon_resource_base || {};
+            const eng = prof.energy_resource_base || {};
+            const infra = prof.resource_infrastructure_context || {};
+            const regHubs = prof.administrative_resource_regions || [];
+            const gov = prof.governance_policy_regulatory || {};
+            const econ = prof.economic_fiscal_trade || {};
+
+            return `
+                <div style="background:rgba(15,23,42,0.9); border:1px solid #ffd700; border-radius:10px; padding:16px;">
+                    <div style="font-size:16px; font-weight:bold; color:#ffd700; border-bottom:1px solid rgba(255,215,0,0.3); padding-bottom:8px; margin-bottom:12px;">
+                        🏛️ ${id.officialName || id.name || countryKey} (25-SECTION AUDIT COMPLETE)
+                    </div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                        <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:6px;">
+                            <div style="color:#00e5ff; font-weight:bold; margin-bottom:4px;">1. GEOGRAPHY & LAND</div>
+                            <div>Capital: ${geo.capital || 'N/A'}</div>
+                            <div>Land Area: ${geo.landAreaKm2 ? geo.landAreaKm2.toLocaleString() + ' km²' : 'N/A'}</div>
+                            <div>EEZ Area: ${geo.eezKm2 ? geo.eezKm2.toLocaleString() + ' km²' : 'N/A'}</div>
+                        </div>
+                        <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:6px;">
+                            <div style="color:#22c55e; font-weight:bold; margin-bottom:4px;">2. RESOURCE RICHNESS</div>
+                            <div>Class: ${dom.resourceRichnessClass || 'High'}</div>
+                            <div>Diversity: ${dom.resourceDiversityClass || 'Extensive'}</div>
+                            <div>Major Resources: ${dom.majorResourceCount || 0}</div>
+                        </div>
+                        <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:6px;">
+                            <div style="color:#a855f7; font-weight:bold; margin-bottom:4px;">3. GEOLOGY & BASINS</div>
+                            <div>Domains: ${(geol.majorGeologicalDomains || []).join(', ')}</div>
+                            <div>Basins: ${(geol.sedimentaryBasins || []).join(', ')}</div>
+                        </div>
+                        <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:6px;">
+                            <div style="color:#f97316; font-weight:bold; margin-bottom:4px;">4. MINERAL & HYDROCARBON</div>
+                            <div>Metallic: ${(min.metallic || []).join(', ')}</div>
+                            <div>Oil/Gas: ${(hc.oil || []).concat(hc.naturalGas || []).join(', ')}</div>
                         </div>
                     </div>
                 </div>
