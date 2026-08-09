@@ -889,12 +889,9 @@ Game.selectCountryByName = function(countryName, layerTarget) {
 
     if (this.Map) {
         this.Map.renderCountryHubs();
-        const resBox = document.getElementById('resource-filter-box');
-        const isResBoxOpen = resBox && !resBox.classList.contains('hidden') && resBox.style.display !== 'none';
-        if (isResBoxOpen) {
-            this.Map.renderResourceDeposits('COUNTRY');
-        } else if (this.Map.resourceDepositsLayer) {
-            this.Map.resourceDepositsLayer.clearLayers();
+        const filterVal = this.Map.activeResourceFilter || 'COUNTRY';
+        if (filterVal !== 'NONE') {
+            this.Map.renderResourceDeposits(filterVal);
         }
     }
 
@@ -935,18 +932,40 @@ Game.Map.renderResourceDeposits = function(filterResourceType) {
     }
     this.resourceDepositsLayer.clearLayers();
 
-    const box = document.getElementById('resource-filter-box') || (Game.dom && Game.dom.resFilterBox);
-    const isBoxVisible = box && !box.classList.contains('hidden') && box.style.display !== 'none';
-
     const selectEl = document.querySelector('#resource-filter-box select') || (Game.dom && Game.dom.resFilterBox ? Game.dom.resFilterBox.querySelector('select') : null);
-    const activeFilter = filterResourceType || (selectEl ? selectEl.value : 'ALL');
+    const activeFilter = filterResourceType || this.activeResourceFilter || (selectEl ? selectEl.value : 'COUNTRY');
+    this.activeResourceFilter = activeFilter;
 
-    if (activeFilter === 'NONE' || !isBoxVisible) return;
+    if (activeFilter === 'NONE') return;
 
     const engine = window.ResourceMinistryEngine;
     const deposits = (engine && engine.deposits) ? engine.deposits : [];
     const resources = (engine && engine.resources) ? engine.resources : {};
-    const activeCountryNorm = (Game.currentActiveCountry || 'BANGLADESH').replace(/_/g, " ").toUpperCase();
+    
+    const normCountry = (c) => {
+        if (!c) return '';
+        let s = c.replace(/_/g, " ").toUpperCase().trim();
+        const map = {
+            'UNITED STATES OF AMERICA': 'USA', 'UNITED STATES': 'USA',
+            'IVORY COAST': "COTE D'IVOIRE", "CÔTE D'IVOIRE": "COTE D'IVOIRE", 'CIV': "COTE D'IVOIRE",
+            'THE GAMBIA': 'GAMBIA', 'GMB': 'GAMBIA',
+            'DEMOCRATIC REPUBLIC OF THE CONGO': 'DR CONGO', 'CONGO (KINSHASA)': 'DR CONGO', 'COD': 'DR CONGO',
+            'ETHIOPIA': 'ETHIOPIA', 'ETH': 'ETHIOPIA',
+            'KENYA': 'KENYA', 'KEN': 'KENYA',
+            'TANZANIA': 'TANZANIA', 'UNITED REPUBLIC OF TANZANIA': 'TANZANIA', 'TZA': 'TANZANIA',
+            'UGANDA': 'UGANDA', 'UGA': 'UGANDA',
+            'RWANDA': 'RWANDA', 'RWA': 'RWANDA',
+            'BURUNDI': 'BURUNDI', 'BDI': 'BURUNDI',
+            'GABON': 'GABON', 'GAB': 'GABON',
+            'EQUATORIAL GUINEA': 'EQUATORIAL GUINEA', 'GNQ': 'EQUATORIAL GUINEA',
+            'SAO TOME AND PRINCIPE': 'SAO TOME AND PRINCIPE', 'SÃO TOMÉ AND PRÍNCIPE': 'SAO TOME AND PRINCIPE', 'STP': 'SAO TOME AND PRINCIPE',
+            'BANGLADESH': 'BANGLADESH', 'BGD': 'BANGLADESH',
+            'INDIA': 'INDIA', 'IND': 'INDIA',
+            'PAKISTAN': 'PAKISTAN', 'PAK': 'PAKISTAN'
+        };
+        return map[s] || s;
+    };
+    const activeCountryNorm = normCountry(Game.currentActiveCountry || 'BANGLADESH');
     const nonMinerals = ['rice', 'wheat', 'water', 'timber', 'cement', 'food_processing'];
 
     deposits.forEach(dep => {
@@ -954,12 +973,14 @@ Game.Map.renderResourceDeposits = function(filterResourceType) {
         // Filter out non-minerals from map rendering
         if (nonMinerals.includes(depResNorm)) return;
 
-        const depCountryNorm = (dep.country || '').replace(/_/g, " ").toUpperCase();
+        const depCountryNorm = normCountry(dep.country || '');
 
         // Single-Country Mode vs Global Specific Resource Filter Mode
         if (activeFilter === 'COUNTRY') {
             // Show ONLY current active country's deposits
-            if (depCountryNorm !== activeCountryNorm) return;
+            const isMatch = (depCountryNorm === activeCountryNorm) ||
+                            (depCountryNorm.length > 3 && activeCountryNorm.length > 3 && (depCountryNorm.includes(activeCountryNorm) || activeCountryNorm.includes(depCountryNorm)));
+            if (!isMatch) return;
         } else if (activeFilter !== 'ALL' && activeFilter !== 'NONE' && activeFilter !== '') {
             // Filter by specific resource type across ALL countries worldwide
             const filterNorm = activeFilter.toLowerCase();
@@ -1087,14 +1108,25 @@ Game.Map.toggleResourceOverlay = function() {
         if (btn) btn.classList.add('active');
         if (relBtn) relBtn.classList.remove('active');
 
-        this.renderResourceDeposits('ALL');
+        const selectEl = document.getElementById('resource-selector');
+        const filterVal = selectEl ? selectEl.value : 'COUNTRY';
+        this.renderResourceDeposits(filterVal);
     }
 };
 
 Game.Map.applyResourceMapFilter = function(resourceType) {
+    this.activeResourceFilter = resourceType;
     if (this.renderResourceDeposits) {
         this.renderResourceDeposits(resourceType);
     }
+
+    // Auto-hide filter box after selection as requested by user
+    const box = document.getElementById('resource-filter-box') || (Game.dom && Game.dom.resFilterBox);
+    if (box) {
+        box.classList.add('hidden');
+        box.style.display = 'none';
+    }
+
     if (!Game.geojsonLayer) return;
     if (resourceType === "NONE") { Game.geojsonLayer.resetStyle(); return; }
 

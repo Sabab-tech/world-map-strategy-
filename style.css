@@ -2027,22 +2027,36 @@ body.ios-active #top-status-bar {
 
 /* 💎 SOVEREIGN RESOURCE MAP FILTER BAR & LEAFLET POPUP STYLING */
 .resource-filter-bar {
-    position: fixed;
-    top: 75px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 99990;
-    background: rgba(8, 15, 28, 0.95);
-    border: 1.5px solid #ffd700;
-    border-radius: 12px;
-    padding: 10px 16px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), 0 0 20px rgba(255, 215, 0, 0.25);
-    backdrop-filter: blur(16px);
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    max-width: 90vw;
-    width: 480px;
+    position: fixed !important;
+    top: 270px !important;
+    right: 16px !important;
+    left: auto !important;
+    transform: none !important;
+    z-index: 100002 !important;
+    background: rgba(8, 15, 28, 0.96) !important;
+    border: 1.5px solid #00e5ff !important;
+    border-radius: 12px !important;
+    padding: 10px 14px !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.9), 0 0 20px rgba(0, 229, 255, 0.3) !important;
+    backdrop-filter: blur(12px) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+    width: 320px !important;
+    max-width: calc(100vw - 32px) !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+}
+
+@media (max-width: 640px) {
+    .resource-filter-bar {
+        top: auto !important;
+        bottom: 90px !important;
+        right: 12px !important;
+        left: 12px !important;
+        width: auto !important;
+        max-width: none !important;
+    }
 }
 
 .resource-filter-bar.hidden {
@@ -2050,70 +2064,102 @@ body.ios-active #top-status-bar {
 }
 
 .res-filter-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom: 1px solid rgba(255, 215, 0, 0.25);
-    padding-bottom: 6px;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    border-bottom: 1px solid rgba(0, 229, 255, 0.3) !important;
+    padding-bottom: 6px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
 }
 
 .res-filter-title {
-    font-size: 11px;
-    font-weight: bold;
-    color: #ffd700;
-    font-family: 'Share Tech Mono', monospace;
-    letter-spacing: 0.5px;
+    font-size: 11px !important;
+    font-weight: bold !important;
+    color: #00e5ff !important;
+    font-family: 'Share Tech Mono', monospace !important;
+    letter-spacing: 0.5px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    max-width: 250px !important;
 }
 
 .res-filter-close {
-    background: transparent;
-    border: none;
-    color: #94a3b8;
-    font-size: 14px;
-    cursor: pointer;
-    padding: 0 4px;
+    background: transparent !important;
+    border: none !important;
+    color: #94a3b8 !important;
+    font-size: 14px !important;
+    cursor: pointer !important;
+    padding: 0 4px !important;
 }
 
 .res-filter-close:hover {
-    color: #ef4444;
+    color: #ef4444 !important;
 }
 
 .res-filter-controls {
-    display: flex;
-    gap: 8px;
-    align-items: center;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+    align-items: stretch !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
 }
 
-.res-filter-controls select {
-    flex: 1;
-    background: rgba(15, 23, 42, 0.9);
-    border: 1px solid rgba(255, 215, 0, 0.5);
-    color: #f8fafc;
-    border-radius: 6px;
-    padding: 6px 10px;
-    font-size: 11px;
-    font-family: 'Share Tech Mono', monospace;
-    outline: none;
-    cursor: pointer;
+.res-filter-controls select, select#resource-selector {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    background: #0f172a !important;
+    border: 1px solid rgba(0, 229, 255, 0.5) !important;
+    color: #ffd700 !important;
+    border-radius: 6px !important;
+    padding: 7px 10px !important;
+    font-size: 11px !important;
+    font-weight: bold !important;
+    font-family: 'Share Tech Mono', monospace !important;
+    outline: none !important;
+    cursor: pointer !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
 }
 
 .res-quick-btn {
-    background: rgba(0, 229, 255, 0.2);
-    border: 1px solid #00e5ff;
-    color: #00e5ff;
-    font-size: 11px;
-    font-weight: bold;
-    font-family: 'Share Tech Mono', monospace;
-    border-radius: 6px;
-    padding: 6px 12px;
-    cursor: pointer;
-    white-space: nowrap;
-    transition: all 0.2s ease;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    background: rgba(0, 229, 255, 0.15) !important;
+    border: 1px solid #00e5ff !important;
+    color: #00e5ff !important;
+    font-size: 11px !important;
+    font-weight: bold !important;
+    padding: 7px 10px !important;
+    border-radius: 6px !important;
+    cursor: pointer !important;
+    text-align: center !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    transition: all 0.2s ease !important;
 }
 
 .res-quick-btn:hover {
-    background: rgba(0, 229, 255, 0.4);
-    box-shadow: 0 0 10px rgba(0, 229, 255, 0.5);
+    background: rgba(0, 229, 255, 0.3) !important;
+    box-shadow: 0 0 10px rgba(0, 229, 255, 0.5) !important;
+}
+
+/* GLOBAL BOX OVERFLOW PREVENTION RULE */
+.country-info-card, .ios-card, .rm-card, .omega-drawer, .dep-card-item, .res-filter-controls, .leaflet-popup-content, .drawer-body, .resource-filter-bar {
+    box-sizing: border-box !important;
+    max-width: 100% !important;
+    overflow-wrap: break-word !important;
+    word-wrap: break-word !important;
+}
+.country-info-card *, .ios-card *, .omega-drawer *, .dep-card-item *, .resource-filter-bar * {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
 }
 
 .dark-theme-popup .leaflet-popup-content-wrapper {
@@ -3808,11 +3854,17 @@ select, select#resource-selector, select#relation-selector, select#resource-type
     pointer-events: none !important;
 }
 
-.ui-right-controls, .ui-right-controls .icon-btn, #btn-resource-overlay, #btn-layer-overlay, #btn-map-search, #btn-govt-mode, #resource-filter-box, #relation-filter-box {
+.ui-right-controls, .ui-right-controls .icon-btn, #btn-resource-overlay, #btn-layer-overlay, #btn-map-search, #btn-govt-mode, #relation-filter-box {
     pointer-events: auto !important;
     cursor: pointer !important;
     z-index: 100000 !important;
     position: relative;
+}
+
+#resource-filter-box {
+    pointer-events: auto !important;
+    z-index: 100002 !important;
+    position: fixed !important;
 }
 
 .ui-right-controls {

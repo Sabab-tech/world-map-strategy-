@@ -187,6 +187,10 @@ window.switchModalTab = function(event, tabId) {
 
 // ৪. ওশেনিয়া বা রিয়েল-টাইম রিসোর্স জেনারেটর ম্যাপ ফিল্টারিং লজিক
 window.toggleResourceOverlay = function() {
+    if (window.Game && window.Game.Map && typeof window.Game.Map.toggleResourceOverlay === 'function') {
+        window.Game.Map.toggleResourceOverlay();
+        return;
+    }
     const filterBox = document.getElementById('resource-filter-box');
     const relationBox = document.getElementById('relation-filter-box');
     const btn = document.getElementById('btn-resource-overlay');
@@ -194,12 +198,14 @@ window.toggleResourceOverlay = function() {
 
     if (!filterBox) return;
 
-    if (filterBox.style.display === 'flex') {
+    if (filterBox.style.display === 'flex' && !filterBox.classList.contains('hidden')) {
         filterBox.style.display = 'none';
+        filterBox.classList.add('hidden');
         if (btn) btn.classList.remove('active');
         if (window.geojsonLayer) window.geojsonLayer.resetStyle();
     } else {
         filterBox.style.display = 'flex';
+        filterBox.classList.remove('hidden');
         if (relationBox) relationBox.style.display = 'none';
         if (btn) btn.classList.add('active');
         if (relBtn) relBtn.classList.remove('active');
@@ -207,6 +213,10 @@ window.toggleResourceOverlay = function() {
 };
 
 window.applyResourceMapFilter = function(resourceType) {
+    if (window.Game && window.Game.Map && typeof window.Game.Map.applyResourceMapFilter === 'function') {
+        window.Game.Map.applyResourceMapFilter(resourceType);
+        return;
+    }
     if (!window.geojsonLayer) return;
     if (resourceType === "NONE") {
         window.geojsonLayer.resetStyle();
