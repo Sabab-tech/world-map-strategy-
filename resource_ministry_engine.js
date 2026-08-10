@@ -774,7 +774,8 @@ window.ResourceMinistryEngine = (() => {
                 "MAURITANIA": "MRT", "SENEGAL": "SEN", "THE GAMBIA": "GMB", "GAMBIA": "GMB", "GUINEA-BISSAU": "GNB", "GUINEA BISSAU": "GNB", "GUINEA": "GIN",
                 "SIERRA LEONE": "SLE", "LIBERIA": "LBR", "COTE D'IVOIRE": "CIV", "CÔTE D'IVOIRE": "CIV", "IVORY COAST": "CIV", "GHANA": "GHA", "TOGO": "TGO",
                 "BENIN": "BEN", "BURKINA FASO": "BFA", "MALI": "MLI", "NIGER": "NER", "NIGERIA": "NGA", "CABO VERDE": "CPV", "CAPE VERDE": "CPV", "CAMEROON": "CMR", "CENTRAL AFRICAN REPUBLIC": "CAF", "CHAD": "TCD", "CONGO": "COG", "REPUBLIC OF THE CONGO": "COG",
-                "DEMOCRATIC REPUBLIC OF THE CONGO": "COD", "DR CONGO": "COD", "CONGO (KINSHASA)": "COD", "GABON": "GAB", "EQUATORIAL GUINEA": "GNQ", "SAO TOME AND PRINCIPE": "STP", "SÃO TOMÉ AND PRÍNCIPE": "STP", "ETHIOPIA": "ETH", "KENYA": "KEN", "TANZANIA": "TZA", "UNITED REPUBLIC OF TANZANIA": "TZA", "UGANDA": "UGA", "RWANDA": "RWA", "BURUNDI": "BDI"
+                "DEMOCRATIC REPUBLIC OF THE CONGO": "COD", "DR CONGO": "COD", "CONGO (KINSHASA)": "COD", "GABON": "GAB", "EQUATORIAL GUINEA": "GNQ", "SAO TOME AND PRINCIPE": "STP", "SÃO TOMÉ AND PRÍNCIPE": "STP", "ETHIOPIA": "ETH", "KENYA": "KEN", "TANZANIA": "TZA", "UNITED REPUBLIC OF TANZANIA": "TZA", "UGANDA": "UGA", "RWANDA": "RWA", "BURUNDI": "BDI",
+                "SOUTH SUDAN": "SSD", "SOMALIA": "SOM", "DJIBOUTI": "DJI", "ERITREA": "ERI", "MALAWI": "MWI", "SEYCHELLES": "SYC", "COMOROS": "COM", "WESTERN SAHARA": "ESH", "YEMEN": "YEM", "OMAN": "OMN"
             };
             const iso3 = isoMap[normKey] || normKey;
 
@@ -787,6 +788,8 @@ window.ResourceMinistryEngine = (() => {
                 db.GSRSK_WestAfrica_Part2_CountryProfiles_v14?.countryProfiles,
                 db.GSRSK_NorthAfrica_CountryProfiles_v14?.countryProfiles,
                 db.GSRSK_SouthernAfrica_CountryProfiles_v14?.countryProfiles,
+                db.GSRSK_FinalAfricaAndRedSea_CountryProfiles_v14?.countryProfiles,
+                db.GSRSK_MiddleEast_CountryProfiles_v14?.countryProfiles,
                 db.GSRSK_SouthAsia_CountryProfiles_v14?.countryProfiles,
                 db.GSRSK_BRAIN_FRAMEWORK_PHASE_1?.countryProfiles,
                 db.GSRSK_MASTER_DATASET_PHASE_1B?.countryProfiles

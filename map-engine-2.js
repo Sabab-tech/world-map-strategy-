@@ -614,6 +614,11 @@ Game.Map = {
         this.hubsGroupLayer.clearLayers(); 
         if (!Game.currentActiveCountry) return; // STRICT REQUIREMENT: Only render cities for selected country!
 
+        // MUTUAL EXCLUSIVITY: When Resource Overlay mode is active, hide city hubs!
+        if (this.activeResourceFilter && this.activeResourceFilter !== 'NONE') {
+            return;
+        }
+
         const countryId = Game.getCountryId(Game.currentActiveCountry);
         const countryData = Game.locationsRegistry ? Game.locationsRegistry[countryId] : null;
         if (!countryData) return;
@@ -936,7 +941,22 @@ Game.Map.renderResourceDeposits = function(filterResourceType) {
     const activeFilter = filterResourceType || this.activeResourceFilter || (selectEl ? selectEl.value : 'COUNTRY');
     this.activeResourceFilter = activeFilter;
 
-    if (activeFilter === 'NONE') return;
+    const btn = document.getElementById('btn-resource-overlay') || (Game.dom && Game.dom.btnResOverlay);
+
+    if (activeFilter === 'NONE') {
+        if (btn) btn.classList.remove('active');
+        // MUTUAL EXCLUSIVITY: When resource filter is NONE, render city hubs!
+        if (this.renderCountryHubs) {
+            this.renderCountryHubs();
+        }
+        return;
+    }
+
+    // MUTUAL EXCLUSIVITY: When resource filter is active, clear city hubs!
+    if (this.hubsGroupLayer) {
+        this.hubsGroupLayer.clearLayers();
+    }
+    if (btn) btn.classList.add('active');
 
     const engine = window.ResourceMinistryEngine;
     const deposits = (engine && engine.deposits) ? engine.deposits : [];
@@ -968,26 +988,51 @@ Game.Map.renderResourceDeposits = function(filterResourceType) {
     const activeCountryNorm = normCountry(Game.currentActiveCountry || 'BANGLADESH');
     const nonMinerals = ['rice', 'wheat', 'water', 'timber', 'cement', 'food_processing'];
 
+    // 1. Collect all matching deposits for active filter
+    const matchingDeposits = [];
     deposits.forEach(dep => {
         const depResNorm = (dep.resId || '').toLowerCase();
-        // Filter out non-minerals from map rendering
         if (nonMinerals.includes(depResNorm)) return;
 
         const depCountryNorm = normCountry(dep.country || '');
 
-        // Single-Country Mode vs Global Specific Resource Filter Mode
         if (activeFilter === 'COUNTRY') {
-            // Show ONLY current active country's deposits
             const isMatch = (depCountryNorm === activeCountryNorm) ||
                             (depCountryNorm.length > 3 && activeCountryNorm.length > 3 && (depCountryNorm.includes(activeCountryNorm) || activeCountryNorm.includes(depCountryNorm)));
             if (!isMatch) return;
         } else if (activeFilter !== 'ALL' && activeFilter !== 'NONE' && activeFilter !== '') {
-            // Filter by specific resource type across ALL countries worldwide
             const filterNorm = activeFilter.toLowerCase();
             const depNameNorm = (dep.name || '').toLowerCase();
             if (depResNorm !== filterNorm && !depNameNorm.includes(filterNorm)) {
-                return; // skip non-matching deposits
+                return;
             }
+        }
+        matchingDeposits.push(dep);
+    });
+
+    // 2. Group by approximate coordinate key to offset overlapping markers
+    const coordGroups = {};
+    matchingDeposits.forEach(dep => {
+        const key = `${dep.lat.toFixed(2)},${dep.lng.toFixed(2)}`;
+        if (!coordGroups[key]) coordGroups[key] = [];
+        coordGroups[key].push(dep);
+    });
+
+    // 3. Render markers with circular constellation offset for overlapping coordinates
+    matchingDeposits.forEach(dep => {
+        const key = `${dep.lat.toFixed(2)},${dep.lng.toFixed(2)}`;
+        const group = coordGroups[key] || [dep];
+        const index = group.indexOf(dep);
+        const total = group.length;
+
+        let renderLat = dep.lat;
+        let renderLng = dep.lng;
+
+        if (total > 1) {
+            const angle = (index * 2 * Math.PI) / total;
+            const radius = 0.28; // ~30km offset radius in degrees so icons do not stack
+            renderLat += radius * Math.sin(angle);
+            renderLng += radius * Math.cos(angle);
         }
 
         const resInfo = resources[dep.resId] || { icon: '⛏️', name: dep.resId, category: 'Minerals' };
@@ -998,7 +1043,6 @@ Game.Map.renderResourceDeposits = function(filterResourceType) {
         const borderColor = isRareEarth ? '#e9d5ff' : (isEnergy ? '#00e5ff' : '#ffd700');
         const glowColor = isRareEarth ? 'rgba(168,85,247,0.8)' : (isEnergy ? 'rgba(0,229,255,0.7)' : 'rgba(255,215,0,0.6)');
 
-        // Compact circular pin marker with icon
         const markerHtml = `
             <div title="${dep.name} (${dep.country})" style="
                 background: ${isRareEarth ? 'radial-gradient(circle, #a855f7 0%, #0f172a 100%)' : 'rgba(15, 23, 42, 0.95)'};
@@ -1025,7 +1069,7 @@ Game.Map.renderResourceDeposits = function(filterResourceType) {
             iconAnchor: [12, 12]
         });
 
-        const marker = L.marker([dep.lat, dep.lng], { icon: customIcon });
+        const marker = L.marker([renderLat, renderLng], { icon: customIcon });
 
         let reDetailsHtml = '';
         if (isRareEarth) {
@@ -1093,9 +1137,12 @@ Game.Map.toggleResourceOverlay = function() {
             box.classList.add('hidden');
             box.style.display = 'none';
         }
-        if (btn) btn.classList.remove('active');
-        if (Game.geojsonLayer) Game.geojsonLayer.resetStyle();
-        if (this.resourceDepositsLayer) this.resourceDepositsLayer.clearLayers();
+        // Button glow matches whether a filter is actually active
+        if (this.activeResourceFilter && this.activeResourceFilter !== 'NONE') {
+            if (btn) btn.classList.add('active');
+        } else {
+            if (btn) btn.classList.remove('active');
+        }
     } else {
         if (box) {
             box.classList.remove('hidden');
@@ -1105,7 +1152,6 @@ Game.Map.toggleResourceOverlay = function() {
             relBox.classList.add('hidden');
             relBox.style.display = 'none';
         }
-        if (btn) btn.classList.add('active');
         if (relBtn) relBtn.classList.remove('active');
 
         const selectEl = document.getElementById('resource-selector');
@@ -1116,8 +1162,17 @@ Game.Map.toggleResourceOverlay = function() {
 
 Game.Map.applyResourceMapFilter = function(resourceType) {
     this.activeResourceFilter = resourceType;
-    if (this.renderResourceDeposits) {
-        this.renderResourceDeposits(resourceType);
+    const btn = document.getElementById('btn-resource-overlay') || (Game.dom && Game.dom.btnResOverlay);
+
+    if (resourceType === 'NONE') {
+        if (btn) btn.classList.remove('active');
+        if (this.resourceDepositsLayer) this.resourceDepositsLayer.clearLayers();
+        if (this.renderCountryHubs) this.renderCountryHubs();
+    } else {
+        if (btn) btn.classList.add('active');
+        if (this.renderResourceDeposits) {
+            this.renderResourceDeposits(resourceType);
+        }
     }
 
     // Auto-hide filter box after selection as requested by user
