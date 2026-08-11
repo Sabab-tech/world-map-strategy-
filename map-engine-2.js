@@ -1028,120 +1028,262 @@ Game.Map.applyMultiResourceFilter = function() {
     this.applyResourceMapFilter(filtersArray);
 };
 
-Game.Map.renderResourceDeposits = function(filterResourceType) {
-    this.map = this.map || window.map;
-    if (!this.map || typeof L === 'undefined') return;
+// ==========================================
+// CENTRAL RESOURCE MAP CONTROLLER & STATE
+// ==========================================
+Game.Map.resourceState = {
+    enabled: false,              // true when resource mode active
+    scope: "NATION",             // "NATION" or "WORLD"
+    selectedResources: new Set(['cobalt', 'lithium', 'rare_earth', 'crude_oil', 'natural_gas', 'gold', 'uranium', 'iron_ore', 'copper', 'bauxite']),
+};
 
+Game.Map.resourceCatalog = [
+    { id: 'crude_oil', name: 'Crude Oil', icon: '🛢️', color: '#f59e0b' },
+    { id: 'natural_gas', name: 'Natural Gas', icon: '🔥', color: '#00e5ff' },
+    { id: 'coal', name: 'Coal', icon: '🪨', color: '#94a3b8' },
+    { id: 'iron_ore', name: 'Iron Ore & Steel', icon: '⛏️', color: '#38bdf8' },
+    { id: 'copper', name: 'Copper', icon: '🔌', color: '#f97316' },
+    { id: 'gold', name: 'Gold', icon: '🥇', color: '#ffd700' },
+    { id: 'uranium', name: 'Uranium', icon: '⚛️', color: '#22c55e' },
+    { id: 'lithium', name: 'Lithium', icon: '🔋', color: '#a855f7' },
+    { id: 'cobalt', name: 'Cobalt', icon: '🔋', color: '#3b82f6' },
+    { id: 'rare_earth', name: 'Rare Earth', icon: '💎', color: '#ec4899' },
+    { id: 'bauxite', name: 'Bauxite / Aluminum', icon: '📦', color: '#fb923c' },
+    { id: 'nickel', name: 'Nickel', icon: '🧪', color: '#10b981' },
+    { id: 'manganese', name: 'Manganese', icon: '⚙️', color: '#cbd5e1' },
+    { id: 'titanium', name: 'Titanium', icon: '🛡️', color: '#e2e8f0' },
+    { id: 'zinc', name: 'Zinc & Lead', icon: '🔩', color: '#64748b' },
+    { id: 'tin', name: 'Tin', icon: '🥫', color: '#94a3b8' },
+    { id: 'potash', name: 'Potash & Salt', icon: '🌾', color: '#eab308' },
+    { id: 'silver', name: 'Silver & Platinum', icon: '🥈', color: '#e2e8f0' },
+    { id: 'diamond', name: 'Diamond & Gems', icon: '💎', color: '#38bdf8' },
+    { id: 'semiconductor', name: 'Silicon / Chips', icon: '🔬', color: '#a855f7' }
+];
+
+Game.Map.setResourceScope = function(scope) {
+    this.resourceState.scope = scope;
+    const btnNation = document.getElementById('btn-scope-nation');
+    const btnWorld = document.getElementById('btn-scope-world');
+    const scopeIndicator = document.getElementById('res-scope-target');
+
+    if (scope === 'NATION') {
+        if (btnNation) {
+            btnNation.style.background = 'rgba(0,229,255,0.2)';
+            btnNation.style.borderColor = '#00e5ff';
+            btnNation.style.color = '#00e5ff';
+        }
+        if (btnWorld) {
+            btnWorld.style.background = 'transparent';
+            btnWorld.style.borderColor = 'transparent';
+            btnWorld.style.color = '#94a3b8';
+        }
+        const activeCountry = Game.currentActiveCountry || 'BANGLADESH';
+        if (scopeIndicator) scopeIndicator.textContent = `${activeCountry.replace(/_/g, " ").toUpperCase()} (SELECTED NATION)`;
+    } else {
+        if (btnWorld) {
+            btnWorld.style.background = 'rgba(0,229,255,0.2)';
+            btnWorld.style.borderColor = '#00e5ff';
+            btnWorld.style.color = '#00e5ff';
+        }
+        if (btnNation) {
+            btnNation.style.background = 'transparent';
+            btnNation.style.borderColor = 'transparent';
+            btnNation.style.color = '#94a3b8';
+        }
+        if (scopeIndicator) scopeIndicator.textContent = `WORLDWIDE (ALL COUNTRIES)`;
+    }
+
+    if (this.resourceState.enabled) {
+        this.renderResourceDeposits();
+    }
+};
+
+Game.Map.toggleResourceFilterMenu = function() {
+    const box = document.getElementById('resource-filter-box');
+    if (!box) return;
+    const isHidden = box.classList.contains('hidden') || box.style.display === 'none';
+    if (isHidden) {
+        box.classList.remove('hidden');
+        box.style.display = 'flex';
+        this.renderResourceCheckboxesInPanel();
+        this.setResourceScope(this.resourceState.scope || 'NATION');
+    } else {
+        box.classList.add('hidden');
+        box.style.display = 'none';
+    }
+};
+
+Game.Map.hideResourceFilterMenu = function() {
+    const box = document.getElementById('resource-filter-box');
+    if (box) {
+        box.classList.add('hidden');
+        box.style.display = 'none';
+    }
+};
+
+Game.Map.renderResourceCheckboxesInPanel = function() {
+    const grid = document.getElementById('resource-chip-grid');
+    if (!grid) return;
+    grid.innerHTML = '';
+
+    this.resourceCatalog.forEach(item => {
+        const isChecked = this.resourceState.selectedResources.has(item.id);
+        const label = document.createElement('label');
+        label.className = 'res-chip-item';
+        label.style.cssText = `display:flex; align-items:center; gap:6px; padding:4px 6px; background:${isChecked ? 'rgba(0,229,255,0.12)' : 'rgba(255,255,255,0.03)'}; border:1px solid ${isChecked ? '#00e5ff' : 'rgba(255,255,255,0.08)'}; border-radius:6px; font-size:10px; color:${isChecked ? '#ffffff' : '#cbd5e1'}; cursor:pointer; font-family:var(--font-mono); transition:all 0.15s ease;`;
+
+        label.innerHTML = `
+            <input type="checkbox" value="${item.id}" ${isChecked ? 'checked' : ''} onchange="Game.Map.handleResourceCheckboxChange('${item.id}', this.checked, this.parentElement)" style="accent-color:#00e5ff; cursor:pointer;">
+            <span>${item.icon} ${item.name}</span>
+        `;
+        grid.appendChild(label);
+    });
+};
+
+Game.Map.handleResourceCheckboxChange = function(resId, isChecked, parentEl) {
+    if (isChecked) {
+        this.resourceState.selectedResources.add(resId);
+        if (parentEl) {
+            parentEl.style.background = 'rgba(0,229,255,0.12)';
+            parentEl.style.borderColor = '#00e5ff';
+            parentEl.style.color = '#ffffff';
+        }
+    } else {
+        this.resourceState.selectedResources.delete(resId);
+        if (parentEl) {
+            parentEl.style.background = 'rgba(255,255,255,0.03)';
+            parentEl.style.borderColor = 'rgba(255,255,255,0.08)';
+            parentEl.style.color = '#cbd5e1';
+        }
+    }
+};
+
+Game.Map.selectAllResourceTypes = function() {
+    this.resourceCatalog.forEach(item => this.resourceState.selectedResources.add(item.id));
+    this.renderResourceCheckboxesInPanel();
+};
+
+Game.Map.deselectAllResourceTypes = function() {
+    this.resourceState.selectedResources.clear();
+    this.renderResourceCheckboxesInPanel();
+};
+
+Game.Map.clearAndResetResourceMode = function() {
+    this.resourceState.enabled = false;
+    this.resourceState.selectedResources.clear();
+    this.hideResourceFilterMenu();
+    
+    // Clear Layer
+    if (this.resourceDepositsLayer) {
+        this.resourceDepositsLayer.clearLayers();
+    }
+
+    // Toggle button visual off
+    const btn = document.getElementById('btn-resource-mode');
+    if (btn) {
+        btn.classList.remove('active');
+        btn.style.borderColor = '';
+        btn.style.boxShadow = '';
+        btn.style.background = '';
+    }
+
+    // Restore Cities
+    if (typeof this.renderGlobalCapitalHubs === 'function') {
+        this.renderGlobalCapitalHubs();
+    } else if (typeof this.renderCountryHubs === 'function') {
+        this.renderCountryHubs();
+    }
+};
+
+Game.Map.applyResourceFilterAndClose = function() {
+    this.resourceState.enabled = true;
+    this.hideResourceFilterMenu();
+
+    // Toggle button visual active
+    const btn = document.getElementById('btn-resource-mode');
+    if (btn) {
+        btn.classList.add('active');
+        btn.style.borderColor = '#00e5ff';
+        btn.style.boxShadow = '0 0 15px rgba(0, 229, 255, 0.8)';
+        btn.style.background = 'rgba(0, 229, 255, 0.3)';
+    }
+
+    this.renderResourceDeposits();
+};
+
+Game.Map.renderResourceDeposits = function() {
+    this.map = this.map || window.map;
+    if (!this.map) return;
+
+    // Initialize SINGLE layer group if needed
     if (!this.resourceDepositsLayer) {
         this.resourceDepositsLayer = L.layerGroup().addTo(this.map);
-    } else if (!this.map.hasLayer(this.resourceDepositsLayer)) {
-        this.resourceDepositsLayer.addTo(this.map);
     }
+
+    // CRITICAL MANDATE 11: ONE LAYER ONLY. Always clear before adding new markers.
     this.resourceDepositsLayer.clearLayers();
 
-    // Determine active filter array
-    let activeFilters = [];
-    if (Array.isArray(filterResourceType)) {
-        activeFilters = filterResourceType;
-    } else if (typeof filterResourceType === 'string') {
-        activeFilters = filterResourceType.includes(',') ? filterResourceType.split(',').map(s => s.trim()) : [filterResourceType];
-    } else if (Array.isArray(this.activeResourceFilter)) {
-        activeFilters = this.activeResourceFilter;
-    } else if (typeof this.activeResourceFilter === 'string') {
-        activeFilters = [this.activeResourceFilter];
-    } else {
-        activeFilters = ['COUNTRY'];
-    }
-
-    this.activeResourceFilter = activeFilters;
-
-    const btn = document.getElementById('btn-resource-overlay') || (Game.dom && Game.dom.btnResOverlay);
-
-    if (activeFilters.length === 1 && activeFilters[0] === 'NONE') {
-        if (btn) btn.classList.remove('active');
+    // Check if mode is active or any resources selected
+    if (!this.resourceState.enabled || this.resourceState.selectedResources.size === 0) {
         const summaryCountElem = document.getElementById('resource-summary-count');
         if (summaryCountElem) summaryCountElem.textContent = '0 deposits';
-        // MUTUAL EXCLUSIVITY: When resource filter is NONE, render city hubs!
-        if (this.renderCountryHubs) {
-            this.renderCountryHubs();
-        }
         return;
     }
 
-    // MUTUAL EXCLUSIVITY: When resource filter is active, clear city hubs!
+    // Hide City Hubs when Resource Mode is Active
     if (this.hubsGroupLayer) {
         this.hubsGroupLayer.clearLayers();
     }
-    if (btn) btn.classList.add('active');
 
     const engine = window.ResourceMinistryEngine;
     const deposits = (engine && engine.deposits) ? engine.deposits : [];
-    const resources = (engine && engine.resources) ? engine.resources : {};
     
     const normCountry = (c) => {
         if (!c) return '';
         let s = c.replace(/_/g, " ").toUpperCase().trim();
         const map = {
             'UNITED STATES OF AMERICA': 'USA', 'UNITED STATES': 'USA',
-            'IVORY COAST': "COTE D'IVOIRE", "CÔTE D'IVOIRE": "COTE D'IVOIRE", 'CIV': "COTE D'IVOIRE",
-            'THE GAMBIA': 'GAMBIA', 'GMB': 'GAMBIA',
-            'DEMOCRATIC REPUBLIC OF THE CONGO': 'DR CONGO', 'CONGO (KINSHASA)': 'DR CONGO', 'COD': 'DR CONGO',
-            'ETHIOPIA': 'ETHIOPIA', 'ETH': 'ETHIOPIA',
-            'KENYA': 'KENYA', 'KEN': 'KENYA',
-            'TANZANIA': 'TANZANIA', 'UNITED REPUBLIC OF TANZANIA': 'TANZANIA', 'TZA': 'TANZANIA',
-            'UGANDA': 'UGANDA', 'UGA': 'UGANDA',
-            'RWANDA': 'RWANDA', 'RWA': 'RWANDA',
-            'BURUNDI': 'BURUNDI', 'BDI': 'BURUNDI',
-            'GABON': 'GABON', 'GAB': 'GABON',
-            'EQUATORIAL GUINEA': 'EQUATORIAL GUINEA', 'GNQ': 'EQUATORIAL GUINEA',
-            'SAO TOME AND PRINCIPE': 'SAO TOME AND PRINCIPE', 'SÃO TOMÉ AND PRÍNCIPE': 'SAO TOME AND PRINCIPE', 'STP': 'SAO TOME AND PRINCIPE',
-            'BANGLADESH': 'BANGLADESH', 'BGD': 'BANGLADESH',
-            'INDIA': 'INDIA', 'IND': 'INDIA',
-            'PAKISTAN': 'PAKISTAN', 'PAK': 'PAKISTAN'
+            'IVORY COAST': "COTE D'IVOIRE", "CÔTE D'IVOIRE": "COTE D'IVOIRE",
+            'DEMOCRATIC REPUBLIC OF THE CONGO': 'DR CONGO', 'CONGO (KINSHASA)': 'DR CONGO',
+            'BANGLADESH': 'BANGLADESH', 'INDIA': 'INDIA', 'PAKISTAN': 'PAKISTAN'
         };
         return map[s] || s;
     };
+
     const activeCountryNorm = normCountry(Game.currentActiveCountry || 'BANGLADESH');
-    const nonMinerals = ['rice', 'wheat', 'water', 'timber', 'cement', 'food_processing'];
+    const scope = this.resourceState.scope || 'NATION';
+    const selectedRes = this.resourceState.selectedResources;
 
-    const filterSet = new Set(activeFilters.map(f => f.toLowerCase().trim()));
-    const isCountryMode = filterSet.has('country');
-    const isAllMode = filterSet.has('all');
-
-    // 1. Collect matching deposits
+    // Deduplication & Safety Validation Loop
+    const seenKeys = new Set();
     const matchingDeposits = [];
+
     deposits.forEach(dep => {
-        const depResNorm = (dep.resId || '').toLowerCase();
-        if (nonMinerals.includes(depResNorm)) return;
-
-        const depCountryNorm = normCountry(dep.country || '');
-
-        if (isAllMode) {
-            matchingDeposits.push(dep);
-            return;
+        // SAFETY GATE: Valid finite coordinates within earth lat/lng range
+        const lat = Number(dep.lat);
+        const lng = Number(dep.lng);
+        if (!Number.isFinite(lat) || !Number.isFinite(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+            return; // Skip garbage / invalid coordinates!
         }
 
-        if (isCountryMode) {
-            const isMatch = (depCountryNorm === activeCountryNorm) ||
-                            (depCountryNorm.length > 3 && activeCountryNorm.length > 3 && (depCountryNorm.includes(activeCountryNorm) || activeCountryNorm.includes(depCountryNorm)));
-            if (isMatch) {
-                matchingDeposits.push(dep);
-                return;
-            }
+        const resId = (dep.resId || '').toLowerCase().trim();
+        if (!selectedRes.has(resId)) return; // Filtered out by resource type
+
+        const cNorm = normCountry(dep.country || '');
+
+        // Scope Filter: NATION vs WORLD
+        if (scope === 'NATION') {
+            const isMatch = (cNorm === activeCountryNorm) ||
+                            (cNorm.length > 3 && activeCountryNorm.length > 3 && (cNorm.includes(activeCountryNorm) || activeCountryNorm.includes(cNorm)));
+            if (!isMatch) return;
         }
 
-        const depNameNorm = (dep.name || '').toLowerCase();
-        let matchesSpecific = false;
-        filterSet.forEach(fKey => {
-            if (fKey === 'country' || fKey === 'all' || fKey === 'none') return;
-            if (depResNorm === fKey || depNameNorm.includes(fKey)) {
-                matchesSpecific = true;
-            }
-        });
+        // Deduplication Key
+        const dedupKey = `${cNorm}|${resId}|${lat.toFixed(3)}|${lng.toFixed(3)}`;
+        if (seenKeys.has(dedupKey)) return;
+        seenKeys.add(dedupKey);
 
-        if (matchesSpecific) {
-            matchingDeposits.push(dep);
-        }
+        matchingDeposits.push({ ...dep, lat, lng, resId });
     });
 
     const summaryCountElem = document.getElementById('resource-summary-count');
@@ -1149,7 +1291,7 @@ Game.Map.renderResourceDeposits = function(filterResourceType) {
         summaryCountElem.textContent = `${matchingDeposits.length} deposit${matchingDeposits.length === 1 ? '' : 's'}`;
     }
 
-    // 2. Spatial Proximity Clustering Mechanism (prevents markers from overlapping)
+    // Spatial Proximity Clustering / Radial Ring Offsets
     const clusters = [];
     matchingDeposits.forEach(dep => {
         let addedToCluster = false;
@@ -1173,7 +1315,7 @@ Game.Map.renderResourceDeposits = function(filterResourceType) {
         }
     });
 
-    // 3. Render markers with multi-ring orbital constellation radial offsets
+    // Render screen-space fixed markers with Leaflet divIcon
     clusters.forEach(cluster => {
         const total = cluster.items.length;
         cluster.items.forEach((dep, index) => {
@@ -1184,18 +1326,18 @@ Game.Map.renderResourceDeposits = function(filterResourceType) {
                 let ringIndex = 0;
                 let positionInRing = index;
                 let ringCapacity = 6;
-                let radius = 0.28; // ~30km offset radius
+                let radius = 0.28;
 
                 if (index >= 6 && index < 14) {
                     ringIndex = 1;
                     positionInRing = index - 6;
                     ringCapacity = 8;
-                    radius = 0.55; // ~60km ring
+                    radius = 0.55;
                 } else if (index >= 14) {
                     ringIndex = 2;
                     positionInRing = index - 14;
                     ringCapacity = 12;
-                    radius = 0.82; // ~90km ring
+                    radius = 0.82;
                 }
 
                 const angleOffset = ringIndex * (Math.PI / 6);
@@ -1205,75 +1347,79 @@ Game.Map.renderResourceDeposits = function(filterResourceType) {
                 renderLng = cluster.centroidLng + radius * Math.cos(angle);
             }
 
-            const resInfo = resources[dep.resId] || { icon: '⛏️', name: dep.resId, category: 'Minerals' };
-            const icon = resInfo.icon || '⛏️';
-            const isRareEarth = (dep.resId === 'rare_earth' || (dep.name && dep.name.toLowerCase().includes('rare earth')));
-            const isEnergy = (dep.resId === 'uranium' || dep.resId === 'crude_oil' || dep.resId === 'natural_gas');
+            const catalogItem = this.resourceCatalog.find(r => r.id === dep.resId) || { icon: '⛏️', color: '#ffd700' };
+            const icon = catalogItem.icon;
+            const color = catalogItem.color;
 
-            const borderColor = isRareEarth ? '#e9d5ff' : (isEnergy ? '#00e5ff' : '#ffd700');
-            const glowColor = isRareEarth ? 'rgba(168,85,247,0.8)' : (isEnergy ? 'rgba(0,229,255,0.7)' : 'rgba(255,215,0,0.6)');
+            // Visual Yield Intensity Rating (Low/Medium/High/Massive)
+            const depStr = `${dep.reserve || ''} ${dep.name || ''} ${dep.status || ''}`.toUpperCase();
+            let quantityTier = 'MEDIUM';
+            if (depStr.includes('WORLD TOP') || depStr.includes('WORLD NO1') || depStr.includes('TOP EXPORTER') || depStr.includes('WORLD LEADER') || depStr.includes('SUPERGIANT') || depStr.includes('MASSIVE') || depStr.includes('TIER 1') || depStr.includes('TCF') || depStr.includes('1.8B') || depStr.includes('8.5B') || depStr.includes('2.4M')) {
+                quantityTier = 'MASSIVE';
+            } else if (depStr.includes('MAJOR') || depStr.includes('STRATEGIC') || depStr.includes('ACTIVE EXTRACTION') || depStr.includes('890,000') || depStr.includes('650M') || depStr.includes('MILLION')) {
+                quantityTier = 'HIGH';
+            }
+
+            let size = 26;
+            let glowStyle = `0 0 8px ${color}`;
+            let auraHtml = '';
+            let badgeHtml = '';
+
+            if (quantityTier === 'MASSIVE') {
+                size = 28;
+                glowStyle = `0 0 12px ${color}, 0 0 22px ${color}`;
+                auraHtml = `<div style="position:absolute; inset:-5px; border-radius:50%; border:1.5px solid ${color}; animation: resMarkerPulse 1.8s infinite ease-in-out; pointer-events:none;"></div>`;
+                badgeHtml = `<span style="position:absolute; top:-4px; right:-4px; background:#ef4444; color:#ffffff; font-size:8px; font-weight:900; line-height:1; width:12px; height:12px; border-radius:50%; display:flex; align-items:center; justify-content:center; box-shadow:0 0 5px #ef4444; z-index:10; border:1px solid #fff;">★</span>`;
+            } else if (quantityTier === 'HIGH') {
+                size = 26;
+                glowStyle = `0 0 10px ${color}`;
+                auraHtml = `<div style="position:absolute; inset:-3px; border-radius:50%; border:1px solid ${color}; animation: resMarkerPulse 2.5s infinite ease-in-out; pointer-events:none;"></div>`;
+                badgeHtml = `<span style="position:absolute; top:-3px; right:-3px; background:#eab308; color:#000; font-size:7px; font-weight:bold; width:10px; height:10px; border-radius:50%; display:flex; align-items:center; justify-content:center;">▲</span>`;
+            }
+
+            const halfSize = Math.round(size / 2);
 
             const markerHtml = `
-                <div title="${dep.name} (${dep.country})" style="
-                    background: ${isRareEarth ? 'radial-gradient(circle, #a855f7 0%, #0f172a 100%)' : 'rgba(15, 23, 42, 0.95)'};
-                    border: 1.5px solid ${borderColor};
+                <div title="${dep.name} (${dep.country}) - ${quantityTier} YIELD" style="
+                    position: relative;
+                    background: rgba(11, 19, 35, 0.95);
+                    border: 1.5px solid ${color};
                     border-radius: 50%;
-                    width: 24px;
-                    height: 24px;
+                    width: ${size}px;
+                    height: ${size}px;
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    box-shadow: 0 0 10px ${glowColor};
-                    font-size: 12px;
+                    box-shadow: ${glowStyle};
+                    font-size: 11px;
                     cursor: pointer;
                     transition: transform 0.2s ease;
                 ">
-                    <span>${icon}</span>
+                    ${auraHtml}
+                    ${badgeHtml}
+                    <span style="z-index:2; line-height:1;">${icon}</span>
                 </div>
             `;
 
             const customIcon = L.divIcon({
                 html: markerHtml,
                 className: 'resource-deposit-compact-icon',
-                iconSize: [24, 24],
-                iconAnchor: [12, 12]
+                iconSize: [size, size],
+                iconAnchor: [halfSize, halfSize]
             });
 
             const marker = L.marker([renderLat, renderLng], { icon: customIcon });
 
-            let reDetailsHtml = '';
-            if (isRareEarth) {
-                const ree = dep.rare_earth_elements || {
-                    "Neodymium (Nd)": "35%",
-                    "Dysprosium (Dy)": "18%",
-                    "Terbium (Tb)": "10%",
-                    "Praseodymium (Pr)": "15%",
-                    "Yttrium (Y)": "12%",
-                    "Lanthanum (La)": "10%"
-                };
-                reDetailsHtml = `
-                    <div style="background:rgba(168,85,247,0.12); border:1px solid rgba(168,85,247,0.4); border-radius:6px; padding:6px; margin-top:6px;">
-                        <div style="font-size:10px; font-weight:bold; color:#e9d5ff; font-family:var(--font-mono); margin-bottom:4px;">
-                            ⚛️ RARE EARTH COMPOSITION BREAKDOWN:
-                        </div>
-                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:3px; font-size:9px; color:#cbd5e1; font-family:var(--font-mono);">
-                            ${Object.entries(ree).map(([el, pct]) => `<div>• ${el}: <strong style="color:#22c55e;">${pct}</strong></div>`).join('')}
-                        </div>
-                    </div>
-                `;
-            }
-
             const popupContent = `
-                <div style="font-family:'Segoe UI', sans-serif; color:#f8fafc; width:250px; padding:6px;">
-                    <div style="font-size:12px; font-weight:bold; color:${borderColor}; border-bottom:1px solid rgba(255,215,0,0.3); padding-bottom:4px; margin-bottom:6px; font-family:var(--font-title); display:flex; align-items:center; gap:6px;">
+                <div style="font-family:'Segoe UI', sans-serif; color:#f8fafc; width:240px; padding:6px;">
+                    <div style="font-size:12px; font-weight:bold; color:${color}; border-bottom:1px solid rgba(0,229,255,0.3); padding-bottom:4px; margin-bottom:6px; font-family:var(--font-title); display:flex; align-items:center; gap:6px;">
                         <span>${icon}</span> <span>${(dep.name || '').toUpperCase()}</span>
                     </div>
                     <div style="font-size:11px; color:#cbd5e1; line-height:1.5; font-family:var(--font-mono); margin-bottom:8px;">
                         <div>Country: <strong style="color:#00e5ff;">${dep.country}</strong></div>
                         <div>Reserves: <strong style="color:#22c55e;">${dep.reserve || 'Unspecified'}</strong></div>
-                        <div>Status: <strong style="color:#a855f7;">${dep.status || 'Active'}</strong></div>
+                        <div>Status: <strong style="color:#a855f7;">${dep.status || 'Active Deposit'}</strong></div>
                     </div>
-                    ${reDetailsHtml}
                     <div style="display:flex; flex-direction:column; gap:5px; margin-top:8px;">
                         <button onclick="if(window.ResourceMinistryEngine) window.ResourceMinistryEngine.executeDirective('expand_facility', '${dep.resId}');" style="padding:5px 10px; background:rgba(34,197,94,0.2); border:1px solid #22c55e; color:#22c55e; font-size:10px; font-weight:bold; border-radius:4px; cursor:pointer;">
                             🏭 EXPAND CAPACITY (+25%)
@@ -1285,10 +1431,7 @@ Game.Map.renderResourceDeposits = function(filterResourceType) {
                 </div>
             `;
 
-            marker.bindPopup(popupContent, {
-                className: 'dark-theme-popup'
-            });
-
+            marker.bindPopup(popupContent, { className: 'dark-theme-popup' });
             this.resourceDepositsLayer.addLayer(marker);
         });
     });

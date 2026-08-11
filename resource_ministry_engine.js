@@ -676,9 +676,22 @@ window.ResourceMinistryEngine = (() => {
             };
             this.state.surveysUnderway.push(surveyItem);
 
-            // Dynamically add a new deposit marker to map
-            const lat = 23.5 + (Math.random() * 2 - 1);
-            const lng = 90.0 + (Math.random() * 2 - 1);
+            // Dynamically resolve target country base coordinates
+            let baseLat = 20, baseLng = 0;
+            const reg = (window.Game && window.Game.locationsRegistry) || {};
+            const cObj = reg[countryKey] || reg[countryKey.toUpperCase()] || {};
+            if (cObj.lat !== undefined && cObj.lng !== undefined) {
+                baseLat = Number(cObj.lat);
+                baseLng = Number(cObj.lng);
+            } else if (window.Game && window.Game.countryLookup && window.Game.countryLookup[countryKey]) {
+                const conf = window.Game.countryLookup[countryKey];
+                if (conf && conf.lat !== undefined && conf.lng !== undefined) {
+                    baseLat = Number(conf.lat);
+                    baseLng = Number(conf.lng);
+                }
+            }
+            const lat = baseLat + (Math.random() * 2 - 1);
+            const lng = baseLng + (Math.random() * 2 - 1);
             GEOGRAPHIC_DEPOSITS.push({
                 name: `${countryKey} New ${res.name} Deposit`,
                 resId: resId,
@@ -847,21 +860,29 @@ window.ResourceMinistryEngine = (() => {
             // Extract deposits from all country profiles in db
             if (db) {
                 const resIdMap = (itemStr) => {
-                    const s = String(itemStr).toLowerCase();
-                    if (s.includes("oil") || s.includes("petroleum") || s.includes("hydrocarbon")) return "crude_oil";
-                    if (s.includes("gas")) return "natural_gas";
-                    if (s.includes("coal") || s.includes("lignite")) return "coal";
+                    const s = String(itemStr).toLowerCase().replace(/_/g, " ");
+                    if (s.includes("oil") || s.includes("petroleum") || s.includes("hydrocarbon") || s.includes("crude")) return "crude_oil";
+                    if (s.includes("gas") || s.includes("lng")) return "natural_gas";
+                    if (s.includes("coal") || s.includes("lignite") || s.includes("anthracite")) return "coal";
                     if (s.includes("uranium") || s.includes("nuclear")) return "uranium";
                     if (s.includes("lithium")) return "lithium";
-                    if (s.includes("rare_earth") || s.includes("ree") || s.includes("monazite") || s.includes("lanthanide")) return "rare_earth";
-                    if (s.includes("gold") || s.includes("precious")) return "gold";
+                    if (s.includes("rare earth") || s.includes("ree") || s.includes("monazite") || s.includes("lanthanide") || s.includes("yttrium") || s.includes("neodymium") || s.includes("scandium")) return "rare_earth";
+                    if (s.includes("gold")) return "gold";
+                    if (s.includes("silver") || s.includes("platinum") || s.includes("palladium")) return "silver";
                     if (s.includes("copper")) return "copper";
                     if (s.includes("iron") || s.includes("steel") || s.includes("magnetite") || s.includes("hematite")) return "iron_ore";
                     if (s.includes("bauxite") || s.includes("aluminum") || s.includes("alumina")) return "bauxite";
                     if (s.includes("titanium")) return "titanium";
                     if (s.includes("cobalt")) return "cobalt";
-                    if (s.includes("potash") || s.includes("salt") || s.includes("limestone") || s.includes("stone")) return "limestone";
-                    return "copper";
+                    if (s.includes("nickel")) return "nickel";
+                    if (s.includes("manganese")) return "manganese";
+                    if (s.includes("zinc") || s.includes("lead")) return "zinc";
+                    if (s.includes("tin")) return "tin";
+                    if (s.includes("potash") || s.includes("salt") || s.includes("phosphate")) return "potash";
+                    if (s.includes("limestone") || s.includes("stone") || s.includes("marble") || s.includes("quarry")) return "limestone";
+                    if (s.includes("diamond") || s.includes("gem")) return "diamond";
+                    if (s.includes("silicon") || s.includes("semiconductor")) return "semiconductor";
+                    return "rare_earth"; // Clean fallback for strategic mineral
                 };
 
                 const reg = (window.Game && window.Game.locationsRegistry) || {};
@@ -876,47 +897,82 @@ window.ResourceMinistryEngine = (() => {
                             const normCName = countryName.replace(/_/g, " ").toUpperCase();
                             const iso = (p.identity && p.identity.iso3) ? p.identity.iso3 : code;
 
-                            // Lookup lat/lng from registry
-                            let loc = reg[iso] || reg[code] || reg[normCName] || {};
-                            if (!loc.lat) {
-                                for (let k in reg) {
-                                    if ((reg[k].name || '').toUpperCase() === normCName) {
-                                        loc = reg[k];
-                                        break;
+                            // 1. PRIORITY 1: Read canonical coordinates from geography profile
+                            let baseLat = null;
+                            let baseLng = null;
+                            if (p.geography && p.geography.coordinates && p.geography.coordinates.lat !== undefined && p.geography.coordinates.lng !== undefined) {
+                                baseLat = Number(p.geography.coordinates.lat);
+                                baseLng = Number(p.geography.coordinates.lng);
+                            }
+
+                            // 2. PRIORITY 2: Fallback to locations registry
+                            if ((baseLat === null || baseLng === null || isNaN(baseLat) || isNaN(baseLng))) {
+                                let loc = reg[iso] || reg[code] || reg[normCName] || {};
+                                if (!loc.lat) {
+                                    for (let k in reg) {
+                                        if ((reg[k].name || '').toUpperCase() === normCName) {
+                                            loc = reg[k];
+                                            break;
+                                        }
                                     }
                                 }
+                                if (loc.lat !== undefined && loc.lng !== undefined) {
+                                    baseLat = Number(loc.lat);
+                                    baseLng = Number(loc.lng);
+                                }
                             }
-                            const baseLat = Number(loc.lat) || 20;
-                            const baseLng = Number(loc.lng) || 0;
+
+                            // If coordinates could not be resolved, DO NOT place at 20, 0! Skip placing invalid map markers.
+                            if (baseLat === null || baseLng === null || isNaN(baseLat) || isNaN(baseLng)) {
+                                console.warn(`[RESOURCE MAP ENGINE] Skipping deposits for ${countryName} (${code}): Missing geographic coordinates.`);
+                                continue;
+                            }
 
                             const mins = p.mineral_resource_base || {};
                             const hyds = p.hydrocarbon_resource_base || {};
                             const strats = p.strategic_resources || [];
+                            const endows = (p.resource_endowment && p.resource_endowment.known) || [];
+                            const energy = p.energy_resource_base || {};
 
                             const items = [
                                 ...(mins.metallic || []),
+                                ...(mins.nonMetallic || []),
+                                ...(mins.industrialMinerals || []),
+                                ...(mins.preciousMetals || []),
                                 ...(mins.criticalMinerals || []),
                                 ...(mins.rareEarths || []),
                                 ...(hyds.oil || []),
                                 ...(hyds.naturalGas || []),
                                 ...(hyds.coal || []),
-                                ...(Array.isArray(strats) ? strats : [])
+                                ...(energy.hydro || []),
+                                ...(energy.nuclear || []),
+                                ...(energy.renewables || []),
+                                ...(Array.isArray(strats) ? strats : []),
+                                ...(Array.isArray(endows) ? endows : [])
                             ];
 
                             items.forEach((rawItem, idx) => {
                                 const rId = resIdMap(rawItem);
-                                const depName = `${countryName} ${String(rawItem).replace(/_/g, " ").toUpperCase()}`;
+                                const rawClean = String(rawItem).replace(/_/g, " ").toUpperCase();
+                                const depName = `${countryName} ${rawClean}`;
                                 if (!existingNames.has(depName.toLowerCase())) {
                                     existingNames.add(depName.toLowerCase());
                                     const offsetLat = ((idx % 3) - 1) * 0.35 + (idx * 0.05);
                                     const offsetLng = (Math.floor(idx / 3) - 1) * 0.45 - (idx * 0.04);
+                                    
+                                    // Reserve description
+                                    let reserveDesc = 'Strategic Sovereign Reserve';
+                                    if (rawClean.includes("WORLD") || rawClean.includes("TOP") || rawClean.includes("NO1") || rawClean.includes("LEADER")) {
+                                        reserveDesc = 'Tier 1 World Leader Field';
+                                    }
+
                                     combined.push({
                                         name: depName,
                                         resId: rId,
                                         country: countryName,
-                                        lat: baseLat + offsetLat,
-                                        lng: baseLng + offsetLng,
-                                        reserve: 'Strategic Reserve',
+                                        lat: parseFloat((baseLat + offsetLat).toFixed(4)),
+                                        lng: parseFloat((baseLng + offsetLng).toFixed(4)),
+                                        reserve: reserveDesc,
                                         status: 'Canonical GSRSK Field'
                                     });
                                 }
@@ -926,60 +982,6 @@ window.ResourceMinistryEngine = (() => {
                 }
             }
 
-            const existingCountries = new Set(combined.map(d => (d.country || '').replace(/_/g, " ").toUpperCase()));
-            
-            if (window.Game && window.Game.locationsRegistry) {
-                const reg = window.Game.locationsRegistry;
-                const keyMinerals = [
-                    { resId: 'natural_gas', nameSuffix: 'Sovereign Gas Basin', reserve: '3.5 TCF', status: 'Active Field' },
-                    { resId: 'crude_oil', nameSuffix: 'Petroleum Field', reserve: '1.2B Barrels', status: 'Active Deposit' },
-                    { resId: 'uranium', nameSuffix: 'Uranium Ore Deposit', reserve: '85,000 Tons', status: 'Strategic Reserve' },
-                    { resId: 'rare_earth', nameSuffix: 'Rare Earth Minerals Deposit', reserve: '2.4M Tons', status: 'Geological Reserve' },
-                    { resId: 'gold', nameSuffix: 'Gold Mine Reserve', reserve: '450 Tons', status: 'Active Mine' },
-                    { resId: 'lithium', nameSuffix: 'Lithium Brine Field', reserve: '890,000 Tons', status: 'Active Extraction' },
-                    { resId: 'iron_ore', nameSuffix: 'Iron Ore Belt', reserve: '1.8B Tons', status: 'Mining Complex' },
-                    { resId: 'copper', nameSuffix: 'Copper-Gold Deposit', reserve: '14M Tons', status: 'Open Pit' },
-                    { resId: 'coal', nameSuffix: 'Coal Basin', reserve: '8.5B Tons', status: 'Active Mine' },
-                    { resId: 'bauxite', nameSuffix: 'Bauxite / Aluminum Reserve', reserve: '650M Tons', status: 'Smelter Hub' }
-                ];
-
-                for (let cId in reg) {
-                    const countryObj = reg[cId];
-                    const cName = (countryObj.name || countryObj.ADMIN || cId).replace(/_/g, " ").toUpperCase();
-                    if (!existingCountries.has(cName) && countryObj.lat !== undefined && countryObj.lng !== undefined) {
-                        const lat = Number(countryObj.lat);
-                        const lng = Number(countryObj.lng);
-                        if (isNaN(lat) || isNaN(lng)) continue;
-                        
-                        let hash = 0;
-                        for (let i = 0; i < cName.length; i++) hash = (hash << 5) - hash + cName.charCodeAt(i);
-                        hash = Math.abs(hash);
-
-                        const min1 = keyMinerals[hash % keyMinerals.length];
-                        const min2 = keyMinerals[(hash + 4) % keyMinerals.length];
-
-                        combined.push({
-                            name: `${cName} ${min1.nameSuffix}`,
-                            resId: min1.resId,
-                            country: cName,
-                            lat: lat + 0.15,
-                            lng: lng + 0.20,
-                            reserve: min1.reserve,
-                            status: min1.status
-                        });
-
-                        combined.push({
-                            name: `${cName} ${min2.nameSuffix}`,
-                            resId: min2.resId,
-                            country: cName,
-                            lat: lat - 0.20,
-                            lng: lng - 0.15,
-                            reserve: min2.reserve,
-                            status: min2.status
-                        });
-                    }
-                }
-            }
             return combined;
         },
         engine: instance,
