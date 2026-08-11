@@ -536,6 +536,7 @@ Game.Map = {
         this.map = window.map;
         this.hubsGroupLayer = window.hubsGroupLayer;
         this.bindMapDOMEvents();
+        this.bindMapUIProtection();
 
         this.map.on('zoomend', function() {
             var currentZoom = window.map.getZoom();
@@ -575,13 +576,38 @@ Game.Map = {
             Game.currentActiveCountry = null;
             if (Game.hubsGroupLayer) Game.hubsGroupLayer.clearLayers();
             Game.Map.closeCityDetailBar();
+            Game.closeCountrySelectionBar();
             Game.Map.renderGlobalCapitalHubs();
         });
 
         // Render global capitals on start
         setTimeout(() => {
             this.renderGlobalCapitalHubs();
+            this.bindMapUIProtection();
         }, 500);
+    },
+
+    bindMapUIProtection() {
+        if (typeof L === 'undefined' || !L.DomEvent) return;
+        const ids = [
+            'resource-filter-box',
+            'relation-filter-box',
+            'top-status-bar',
+            'slim-info-feed-container',
+            'ui-right-controls',
+            'country-selection-bar',
+            'country-info-card',
+            'special-map-controls',
+            'ui-bottom-navigation',
+            'city-detail-bar'
+        ];
+        ids.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                L.DomEvent.disableClickPropagation(el);
+                L.DomEvent.disableScrollPropagation(el);
+            }
+        });
     },
 
     bindMapDOMEvents() {
@@ -913,7 +939,7 @@ Game.selectCountryByName = function(countryName, layerTarget) {
 Game.Map.toggleCommandHub = function(show, initialChapter = 1) {
     if (show) {
         if (window.CountryIOS) {
-            window.CountryIOS.open(Game.currentActiveCountry || "USA", initialChapter);
+            window.CountryIOS.open(Game.currentActiveCountry || "BANGLADESH", initialChapter);
         } else if (Game.dom.hubModal) {
             Game.dom.hubModal.style.display = 'flex';
         }
@@ -923,6 +949,30 @@ Game.Map.toggleCommandHub = function(show, initialChapter = 1) {
         } else if (Game.dom.hubModal) {
             Game.dom.hubModal.style.display = 'none';
         }
+    }
+};
+
+Game.Map.openSelectedCountryDetails = function() {
+    const activeCountry = Game.currentActiveCountry || window.currentActiveCountry || "BANGLADESH";
+    if (window.CountryIOS) {
+        window.CountryIOS.open(activeCountry, 1);
+    } else if (typeof window.toggleCommandHub === 'function') {
+        window.toggleCommandHub(true);
+    } else {
+        const card = document.getElementById('country-info-card');
+        if (card) card.classList.add('active');
+    }
+};
+
+Game.closeCountrySelectionBar = function() {
+    const selBar = document.getElementById('country-selection-bar');
+    if (selBar) {
+        selBar.classList.add('hidden');
+        selBar.style.display = 'none';
+    }
+    if (Game.geojsonLayer && Game.selectedLayer) {
+        Game.geojsonLayer.resetStyle(Game.selectedLayer);
+        Game.selectedLayer = null;
     }
 };
 
@@ -1376,6 +1426,216 @@ Game.Map.applyRelationsMapFilter = function(focusCountry) {
         layer.setStyle({ fillColor: color, fillOpacity: opacity, color: 'rgba(255,255,255,0.1)', weight: 0.5 });
     });
 };
+
+Game.Map.isResourceModeActive = false;
+
+Game.Map.toggleResourceMode = function() {
+    this.isResourceModeActive = !this.isResourceModeActive;
+    const btnMode = document.getElementById('btn-resource-mode') || document.getElementById('btn-resource-overlay');
+    
+    if (this.isResourceModeActive) {
+        // Mode ON: Hide Cities, Show Resources
+        if (this.hubsGroupLayer) {
+            this.hubsGroupLayer.clearLayers();
+        }
+        if (btnMode) {
+            btnMode.classList.add('active');
+            btnMode.style.borderColor = '#00e5ff';
+            btnMode.style.boxShadow = '0 0 15px rgba(0, 229, 255, 0.8)';
+            btnMode.style.background = 'rgba(0, 229, 255, 0.3)';
+        }
+
+        // Determine Mode A (Country First) vs Mode B (Resource/Global First)
+        let filterVal = 'ALL';
+        if (Game.currentActiveCountry) {
+            filterVal = 'COUNTRY';
+        } else if (this.selectedResourceChips && this.selectedResourceChips.size > 0) {
+            filterVal = Array.from(this.selectedResourceChips);
+        }
+        this.renderResourceDeposits(filterVal);
+    } else {
+        // Mode OFF: Hide Resources, Restore Cities
+        if (this.resourceDepositsLayer) {
+            this.resourceDepositsLayer.clearLayers();
+        }
+        if (btnMode) {
+            btnMode.classList.remove('active');
+            btnMode.style.borderColor = '';
+            btnMode.style.boxShadow = '';
+            btnMode.style.background = '';
+        }
+        // Restore cities layer
+        if (typeof this.renderGlobalCapitalHubs === 'function') {
+            this.renderGlobalCapitalHubs();
+        } else if (typeof this.renderCountryHubs === 'function') {
+            this.renderCountryHubs();
+        }
+    }
+};
+
+Game.Map.toggleResourceFilterMenu = function() {
+    const box = document.getElementById('resource-filter-box');
+    if (!box) return;
+    const isHidden = box.classList.contains('hidden') || box.style.display === 'none';
+    if (isHidden) {
+        box.classList.remove('hidden');
+        box.style.display = 'flex';
+    } else {
+        box.classList.add('hidden');
+        box.style.display = 'none';
+    }
+};
+
+Game.Map.toggleMetricDropdown = function(e) {
+    if (e && e.stopPropagation) e.stopPropagation();
+    const drop = document.getElementById('map-metric-dropdown');
+    if (!drop) return;
+    const isHidden = drop.classList.contains('hidden') || drop.style.display === 'none';
+    if (isHidden) {
+        drop.classList.remove('hidden');
+        drop.style.display = 'flex';
+    } else {
+        drop.classList.add('hidden');
+        drop.style.display = 'none';
+    }
+};
+
+Game.Map.hideMetricDropdown = function() {
+    const drop = document.getElementById('map-metric-dropdown');
+    if (drop) {
+        drop.classList.add('hidden');
+        drop.style.display = 'none';
+    }
+};
+
+Game.Map.activeMetric = 'NONE';
+
+Game.Map.setMapMetric = function(metric) {
+    this.activeMetric = metric;
+    this.hideMetricDropdown();
+
+    const labelEl = document.getElementById('active-metric-label');
+    const legendEl = document.getElementById('map-metric-legend');
+    const legendTitle = document.getElementById('legend-metric-title');
+    const minValEl = document.getElementById('legend-min-val');
+    const midValEl = document.getElementById('legend-mid-val');
+    const maxValEl = document.getElementById('legend-max-val');
+
+    if (metric === 'NONE' || !Game.geojsonLayer) {
+        if (labelEl) labelEl.innerText = 'MAP METRIC: NONE';
+        if (legendEl) { legendEl.classList.add('hidden'); legendEl.style.display = 'none'; }
+        if (Game.geojsonLayer) Game.geojsonLayer.resetStyle();
+        return;
+    }
+
+    const metricTitles = {
+        'GDP': 'GLOBAL GDP DISTRIBUTION ($ USD)',
+        'GDP_PER_CAPITA': 'GDP PER CAPITA ($/CAPITA)',
+        'TREASURY': 'SOVEREIGN TREASURY RESERVES',
+        'DEBT': 'NATIONAL DEBT TO GDP RATIO',
+        'POPULATION': 'GLOBAL POPULATION DISTRIBUTION',
+        'EMPLOYMENT': 'NATIONAL EMPLOYMENT RATE (%)',
+        'RESOURCE_WEALTH': 'STRATEGIC RESOURCE WEALTH INDEX',
+        'ENERGY': 'PRIMARY ENERGY GRID CAPACITY (GW)',
+        'MILITARY': 'GLOBAL MILITARY POWER RATING',
+        'STABILITY': 'GOVERNMENT STABILITY INDEX'
+    };
+
+    if (labelEl) labelEl.innerText = `MAP METRIC: ${metric.replace(/_/g, " ")}`;
+    if (legendTitle) legendTitle.innerText = metricTitles[metric] || metric;
+    if (legendEl) { legendEl.classList.remove('hidden'); legendEl.style.display = 'block'; }
+
+    // Collect values for normalization
+    const values = [];
+    Game.geojsonLayer.eachLayer(layer => {
+        const props = layer.feature.properties || {};
+        const cName = props.ADMIN || props.name || props.NAME || '';
+        const val = Game.Map.getCountryMetricValue(cName, metric);
+        values.push(val);
+    });
+
+    const validVals = values.filter(v => typeof v === 'number' && !isNaN(v));
+    const min = validVals.length > 0 ? Math.min(...validVals) : 0;
+    const max = validVals.length > 0 ? Math.max(...validVals) : 100;
+    const range = (max - min) || 1;
+
+    const fmt = (v) => {
+        if (v >= 1e12) return `$${(v/1e12).toFixed(1)}T`;
+        if (v >= 1e9) return `$${(v/1e9).toFixed(1)}B`;
+        if (v >= 1e6) return `${(v/1e6).toFixed(1)}M`;
+        if (v >= 1e3) return `${(v/1e3).toFixed(0)}K`;
+        return `${v.toFixed(0)}`;
+    };
+
+    if (minValEl) minValEl.innerText = fmt(min);
+    if (midValEl) midValEl.innerText = fmt(min + range/2);
+    if (maxValEl) maxValEl.innerText = fmt(max);
+
+    Game.geojsonLayer.eachLayer(layer => {
+        const props = layer.feature.properties || {};
+        const cName = props.ADMIN || props.name || props.NAME || '';
+        const val = Game.Map.getCountryMetricValue(cName, metric);
+        const norm = Math.max(0, Math.min(1, (val - min) / range));
+
+        // Color scale: slate -> blue -> green -> gold -> crimson
+        let color = '#1e293b';
+        if (norm > 0.8) color = '#ef4444';
+        else if (norm > 0.6) color = '#eab308';
+        else if (norm > 0.4) color = '#059669';
+        else if (norm > 0.2) color = '#0284c7';
+        else if (norm > 0.05) color = '#1d4ed8';
+
+        layer.setStyle({
+            fillColor: color,
+            fillOpacity: 0.65,
+            color: 'rgba(255,255,255,0.7)',
+            weight: 1.0
+        });
+    });
+};
+
+Game.Map.getCountryMetricValue = function(countryName, metric) {
+    if (!countryName) return 0;
+    const cId = Game.getCountryId ? Game.getCountryId(countryName) : countryName.toUpperCase();
+    const econ = (Game.state && Game.state.economy && Game.state.economy[cId]) || {};
+    const pop = (Game.state && Game.state.population && Game.state.population[cId]) || {};
+    const loc = (Game.locationsRegistry && Game.locationsRegistry[cId]) || {};
+
+    const gdp = econ.gdp || 50000000000;
+    const popVal = pop.population_2015 || 15000000;
+
+    switch (metric) {
+        case 'GDP': return gdp;
+        case 'GDP_PER_CAPITA': return gdp / (popVal || 1);
+        case 'TREASURY': return econ.treasury || (gdp * 0.08);
+        case 'DEBT': return (econ.debt || (gdp * 0.4)) / (gdp || 1);
+        case 'POPULATION': return popVal;
+        case 'EMPLOYMENT': return econ.employment_rate || 92;
+        case 'RESOURCE_WEALTH': return (loc.resource_count || 5) * 1000 + (gdp * 0.001);
+        case 'ENERGY': return econ.energy_capacity || 15;
+        case 'MILITARY': return (econ.military_power || 65);
+        case 'STABILITY': return (econ.stability || 75);
+        default: return 0;
+    }
+};
+
+// Bind Click Propagation Protections on Leaflet UI
+if (typeof L !== 'undefined' && L.DomEvent) {
+    const protectIds = [
+        'top-status-bar', 'metric-selector-pill', 'map-metric-dropdown', 'map-metric-legend',
+        'ui-right-controls', 'country-selection-bar', 'resource-filter-box', 'ui-bottom-navigation',
+        'search-drawer', 'events-drawer', 'layers-drawer'
+    ];
+    setTimeout(() => {
+        protectIds.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                L.DomEvent.disableClickPropagation(el);
+                L.DomEvent.disableScrollPropagation(el);
+            }
+        });
+    }, 500);
+}
 
 Game.findCountryConfig = function(name) {
     if (!name) return null;

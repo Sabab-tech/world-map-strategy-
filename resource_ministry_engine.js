@@ -783,6 +783,9 @@ window.ResourceMinistryEngine = (() => {
             if (!db) return null;
 
             const sources = [
+                db.GSRSK_EuropeOceania_CountryProfiles_v14?.countryProfiles,
+                db.GSRSK_Americas_CountryProfiles_v14?.countryProfiles,
+                db.GSRSK_Europe_CountryProfiles_v14?.countryProfiles,
                 db.GSRSK_EastAndCentralAsia_CountryProfiles_v14?.countryProfiles,
                 db.GSRSK_CentralEastAfrica_CountryProfiles_v14?.countryProfiles,
                 db.GSRSK_WestAfrica_Part1_CountryProfiles_v14?.countryProfiles,
@@ -839,6 +842,88 @@ window.ResourceMinistryEngine = (() => {
                         existingNames.add(dep.name.toLowerCase());
                     }
                 });
+            }
+
+            // Extract deposits from all country profiles in db
+            if (db) {
+                const resIdMap = (itemStr) => {
+                    const s = String(itemStr).toLowerCase();
+                    if (s.includes("oil") || s.includes("petroleum") || s.includes("hydrocarbon")) return "crude_oil";
+                    if (s.includes("gas")) return "natural_gas";
+                    if (s.includes("coal") || s.includes("lignite")) return "coal";
+                    if (s.includes("uranium") || s.includes("nuclear")) return "uranium";
+                    if (s.includes("lithium")) return "lithium";
+                    if (s.includes("rare_earth") || s.includes("ree") || s.includes("monazite") || s.includes("lanthanide")) return "rare_earth";
+                    if (s.includes("gold") || s.includes("precious")) return "gold";
+                    if (s.includes("copper")) return "copper";
+                    if (s.includes("iron") || s.includes("steel") || s.includes("magnetite") || s.includes("hematite")) return "iron_ore";
+                    if (s.includes("bauxite") || s.includes("aluminum") || s.includes("alumina")) return "bauxite";
+                    if (s.includes("titanium")) return "titanium";
+                    if (s.includes("cobalt")) return "cobalt";
+                    if (s.includes("potash") || s.includes("salt") || s.includes("limestone") || s.includes("stone")) return "limestone";
+                    return "copper";
+                };
+
+                const reg = (window.Game && window.Game.locationsRegistry) || {};
+
+                for (let datasetKey in db) {
+                    if (db[datasetKey] && db[datasetKey].countryProfiles) {
+                        const profiles = db[datasetKey].countryProfiles;
+                        for (let code in profiles) {
+                            const p = profiles[code];
+                            if (!p) continue;
+                            const countryName = (p.identity && p.identity.name) ? p.identity.name : code;
+                            const normCName = countryName.replace(/_/g, " ").toUpperCase();
+                            const iso = (p.identity && p.identity.iso3) ? p.identity.iso3 : code;
+
+                            // Lookup lat/lng from registry
+                            let loc = reg[iso] || reg[code] || reg[normCName] || {};
+                            if (!loc.lat) {
+                                for (let k in reg) {
+                                    if ((reg[k].name || '').toUpperCase() === normCName) {
+                                        loc = reg[k];
+                                        break;
+                                    }
+                                }
+                            }
+                            const baseLat = Number(loc.lat) || 20;
+                            const baseLng = Number(loc.lng) || 0;
+
+                            const mins = p.mineral_resource_base || {};
+                            const hyds = p.hydrocarbon_resource_base || {};
+                            const strats = p.strategic_resources || [];
+
+                            const items = [
+                                ...(mins.metallic || []),
+                                ...(mins.criticalMinerals || []),
+                                ...(mins.rareEarths || []),
+                                ...(hyds.oil || []),
+                                ...(hyds.naturalGas || []),
+                                ...(hyds.coal || []),
+                                ...(Array.isArray(strats) ? strats : [])
+                            ];
+
+                            items.forEach((rawItem, idx) => {
+                                const rId = resIdMap(rawItem);
+                                const depName = `${countryName} ${String(rawItem).replace(/_/g, " ").toUpperCase()}`;
+                                if (!existingNames.has(depName.toLowerCase())) {
+                                    existingNames.add(depName.toLowerCase());
+                                    const offsetLat = ((idx % 3) - 1) * 0.35 + (idx * 0.05);
+                                    const offsetLng = (Math.floor(idx / 3) - 1) * 0.45 - (idx * 0.04);
+                                    combined.push({
+                                        name: depName,
+                                        resId: rId,
+                                        country: countryName,
+                                        lat: baseLat + offsetLat,
+                                        lng: baseLng + offsetLng,
+                                        reserve: 'Strategic Reserve',
+                                        status: 'Canonical GSRSK Field'
+                                    });
+                                }
+                            });
+                        }
+                    }
+                }
             }
 
             const existingCountries = new Set(combined.map(d => (d.country || '').replace(/_/g, " ").toUpperCase()));

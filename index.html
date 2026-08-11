@@ -173,6 +173,13 @@
                 </div>
 
                 <div class="status-group status-resources" role="status">
+                    <!-- 🌐 MAP METRIC SELECTOR DROPDOWN BUTTON -->
+                    <div id="metric-selector-pill" class="res-node metric-pill-btn" onclick="if(window.Game && window.Game.Map && typeof window.Game.Map.toggleMetricDropdown === 'function') window.Game.Map.toggleMetricDropdown(event);" title="Click to Change Global Map Intelligence Layer & Metric Overlay" style="cursor:pointer; background:rgba(0,229,255,0.15); border:1px solid #00e5ff; padding:2px 10px; border-radius:14px; box-shadow:0 0 10px rgba(0,229,255,0.3);">
+                        <span class="res-icon">📊</span>
+                        <span id="active-metric-label" class="res-val" style="color:#00e5ff; font-weight:900;">MAP METRIC: GDP</span>
+                        <span class="res-trend" style="color:#ffd700; margin-left:4px; font-weight:bold;">▼</span>
+                    </div>
+
                     <div class="res-node" title="Treasury Reserve">
                         <span class="res-icon">💵</span>
                         <span id="res-cash" class="res-val">$100M</span>
@@ -198,16 +205,6 @@
                         <span id="res-oil" class="res-val">500K BBL</span>
                         <span class="res-trend positive">▲ +200/s</span>
                     </div>
-                    <div class="res-node" title="Steel Industrial Output">
-                        <span class="res-icon">⚙️</span>
-                        <span id="res-steel" class="res-val">100K T</span>
-                        <span class="res-trend positive">▲ +100/s</span>
-                    </div>
-                    <div class="res-node" title="Uranium & Rare Earth Stockpile">
-                        <span class="res-icon">☢️</span>
-                        <span id="res-uranium" class="res-val">500 KG</span>
-                        <span class="res-trend positive">▲ +5/s</span>
-                    </div>
                 </div>
 
                 <div class="status-group status-right">
@@ -217,17 +214,60 @@
                 </div>
             </div>
 
+            <!-- 📊 MAP METRIC SELECTOR DROPDOWN MENU -->
+            <div id="map-metric-dropdown" class="map-metric-dropdown hidden" style="display:none; position:fixed; top:54px; left:220px; z-index:1000000; background:rgba(11,19,35,0.98); border:1.5px solid #00e5ff; border-radius:10px; width:280px; padding:10px; box-shadow:0 10px 30px rgba(0,0,0,0.9), 0 0 20px rgba(0,229,255,0.4); backdrop-filter:blur(12px);">
+                <div style="font-size:11px; font-weight:bold; color:#00e5ff; font-family:var(--font-mono); border-bottom:1px solid rgba(0,229,255,0.3); padding-bottom:6px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+                    <span>📊 CHOOSE GEOPOLITICAL MAP METRIC</span>
+                    <button onclick="if(window.Game && window.Game.Map) window.Game.Map.hideMetricDropdown();" style="background:none; border:none; color:#ef4444; font-weight:bold; cursor:pointer;">✕</button>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:6px; max-height:360px; overflow-y:auto; font-family:var(--font-mono); font-size:11px;">
+                    <div style="font-size:9px; color:#ffd700; font-weight:bold; letter-spacing:1px; margin-top:2px;">ECONOMY</div>
+                    <button onclick="Game.Map.setMapMetric('GDP')" class="metric-opt-btn" style="text-align:left; padding:6px 8px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); color:#fff; border-radius:4px; cursor:pointer;">💵 Total GDP ($ USD)</button>
+                    <button onclick="Game.Map.setMapMetric('GDP_PER_CAPITA')" class="metric-opt-btn" style="text-align:left; padding:6px 8px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); color:#fff; border-radius:4px; cursor:pointer;">📈 GDP Per Capita ($/person)</button>
+                    <button onclick="Game.Map.setMapMetric('TREASURY')" class="metric-opt-btn" style="text-align:left; padding:6px 8px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); color:#fff; border-radius:4px; cursor:pointer;">🏛️ Sovereign Treasury Reserve</button>
+                    <button onclick="Game.Map.setMapMetric('DEBT')" class="metric-opt-btn" style="text-align:left; padding:6px 8px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); color:#fff; border-radius:4px; cursor:pointer;">💳 National Debt Ratio</button>
+
+                    <div style="font-size:9px; color:#ffd700; font-weight:bold; letter-spacing:1px; margin-top:6px;">POPULATION</div>
+                    <button onclick="Game.Map.setMapMetric('POPULATION')" class="metric-opt-btn" style="text-align:left; padding:6px 8px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); color:#fff; border-radius:4px; cursor:pointer;">👥 Total Population</button>
+                    <button onclick="Game.Map.setMapMetric('EMPLOYMENT')" class="metric-opt-btn" style="text-align:left; padding:6px 8px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); color:#fff; border-radius:4px; cursor:pointer;">💼 Employment Rate (%)</button>
+
+                    <div style="font-size:9px; color:#ffd700; font-weight:bold; letter-spacing:1px; margin-top:6px;">RESOURCES & ENERGY</div>
+                    <button onclick="Game.Map.setMapMetric('RESOURCE_WEALTH')" class="metric-opt-btn" style="text-align:left; padding:6px 8px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); color:#fff; border-radius:4px; cursor:pointer;">💎 Strategic Resource Wealth Index</button>
+                    <button onclick="Game.Map.setMapMetric('ENERGY')" class="metric-opt-btn" style="text-align:left; padding:6px 8px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); color:#fff; border-radius:4px; cursor:pointer;">⚡ Energy Grid Production (GW)</button>
+
+                    <div style="font-size:9px; color:#ffd700; font-weight:bold; letter-spacing:1px; margin-top:6px;">MILITARY & POWER</div>
+                    <button onclick="Game.Map.setMapMetric('MILITARY')" class="metric-opt-btn" style="text-align:left; padding:6px 8px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); color:#fff; border-radius:4px; cursor:pointer;">⚔️ Military Power Rating</button>
+                    <button onclick="Game.Map.setMapMetric('STABILITY')" class="metric-opt-btn" style="text-align:left; padding:6px 8px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); color:#fff; border-radius:4px; cursor:pointer;">🛡️ Government Stability Index</button>
+
+                    <button onclick="Game.Map.setMapMetric('NONE')" class="metric-opt-btn" style="text-align:left; padding:6px 8px; background:rgba(239,68,68,0.2); border:1px solid #ef4444; color:#ef4444; border-radius:4px; cursor:pointer; margin-top:6px; font-weight:bold;">❌ Reset Standard Map Colors</button>
+                </div>
+            </div>
+
+            <!-- 🗺️ DYNAMIC CHOROPLETH MAP LEGEND -->
+            <div id="map-metric-legend" class="map-metric-legend hidden" style="display:none; position:fixed; bottom:80px; left:20px; z-index:999900; background:rgba(11,19,35,0.95); border:1px solid #00e5ff; border-radius:8px; padding:8px 12px; width:220px; box-shadow:0 6px 20px rgba(0,0,0,0.8); backdrop-filter:blur(8px); font-family:var(--font-mono);">
+                <div id="legend-metric-title" style="font-size:10px; font-weight:bold; color:#00e5ff; margin-bottom:4px; text-transform:uppercase;">
+                    GLOBAL GDP DISTRIBUTION
+                </div>
+                <div style="height:10px; width:100%; border-radius:4px; background:linear-gradient(to right, #1e293b 0%, #1d4ed8 25%, #059669 50%, #eab308 75%, #ef4444 100%); margin-bottom:4px;"></div>
+                <div style="display:flex; justify-content:space-between; font-size:8px; color:#cbd5e1;">
+                    <span id="legend-min-val">Low</span>
+                    <span id="legend-mid-val">Med</span>
+                    <span id="legend-max-val">High</span>
+                </div>
+            </div>
+
             <!-- 🔔 TOP RIGHT NOTIFICATION STACK -->
             <div id="notification-stack" class="notification-stack" role="region" aria-label="Notifications">
                 <!-- Notifications dynamically pushed here -->
             </div>
 
-            <!-- 🎛️ RIGHT QUICK DOCK (Search, Events, Layers, Resource Deposits) -->
+            <!-- 🎛️ RIGHT QUICK DOCK (Search, Events, Layers, Resource Mode, Filter Menu) -->
             <div class="ui-right-controls" role="toolbar" aria-label="Quick Tools">
                 <button id="btn-quick-search" class="icon-btn" title="Instant Search (Countries, Cities, Bases)">🔍</button>
-                <button id="btn-quick-events" class="icon-btn" title="Global Events & Directives">⚠</button>
+                <button id="btn-quick-events" class="icon-btn" title="Live Situations & Directives">⚠</button>
                 <button id="btn-quick-layers" class="icon-btn" title="Map Overlays & Layers">🛰</button>
-                <button id="btn-resource-overlay" class="icon-btn" title="Toggle Resource Deposits & Filter Menu Overlay" onclick="if(window.Game && window.Game.Map && typeof window.Game.Map.toggleResourceOverlay === 'function') { window.Game.Map.toggleResourceOverlay(); }">💎↓</button>
+                <button id="btn-resource-mode" class="icon-btn" title="Toggle Resource Intelligence Mode (◆)" onclick="if(window.Game && window.Game.Map) { window.Game.Map.toggleResourceMode(); }">◆</button>
+                <button id="btn-resource-filter" class="icon-btn" title="Open Resource Filter Panel (≡)" onclick="if(window.Game && window.Game.Map) { window.Game.Map.toggleResourceFilterMenu(); }">≡</button>
             </div>
 
             <!-- 🔍 INSTANT SEARCH DRAWER -->
@@ -583,6 +623,23 @@
                         <button class="city-bar-btn upgrade-btn" onclick="Game.Map.actionUpgradeCity()">🔨 UPGRADE INFRASTRUCTURE</button>
                         <button class="city-bar-btn garrison-btn" onclick="Game.Map.actionGarrisonCity()">🛡️ STATION GARRISON</button>
                     </div>
+                </div>
+            </div>
+
+            <div id="country-selection-bar" class="country-selection-bar hidden">
+                <div class="sel-country-left">
+                    <div id="sel-country-flag" class="sel-country-flag">🌐</div>
+                    <div class="sel-country-titles">
+                        <span class="sel-country-label">SELECTED NATION</span>
+                        <h3 id="sel-country-name" class="sel-country-name">BANGLADESH</h3>
+                    </div>
+                </div>
+                <div class="sel-country-actions">
+                    <button id="btn-country-eye" class="sel-country-eye-btn" onclick="if(window.Game && window.Game.Map && typeof window.Game.Map.openSelectedCountryDetails === 'function') { window.Game.Map.openSelectedCountryDetails(); } else { window.toggleCommandHub(true); }" title="Click Eye icon to view details and Command HQ of selected country">
+                        <span class="eye-icon">👁️</span>
+                        <span class="eye-label">VIEW DETAILS</span>
+                    </button>
+                    <button class="sel-country-close-btn" onclick="if(window.Game && typeof window.Game.closeCountrySelectionBar === 'function') window.Game.closeCountrySelectionBar();" title="Deselect Country">✕</button>
                 </div>
             </div>
 

@@ -509,16 +509,29 @@ var Game = window.Game = {
     },
 
     updateCountryInfoCard(countryName) {
-        const card = document.getElementById('country-info-card');
-        if (!card) return;
+        if (!countryName) return;
 
-        const config = Game.findCountryConfig(countryName);
-        const id = Game.getCountryId(countryName);
-        const econ = Game.state.economy[id] || { gdp: 500000000, debt: 100000000 };
-        const pop = Game.state.population[id] || { population_2015: 50000000 };
+        const config = Game.findCountryConfig ? Game.findCountryConfig(countryName) : null;
+        const id = Game.getCountryId ? Game.getCountryId(countryName) : countryName.toUpperCase();
+        const econ = (Game.state && Game.state.economy && Game.state.economy[id]) || { gdp: 500000000, debt: 100000000 };
+        const pop = (Game.state && Game.state.population && Game.state.population[id]) || { population_2015: 50000000 };
 
+        // 1. Update floating country selection pill with Eye icon (👁️) button
+        const selBar = document.getElementById('country-selection-bar');
+        const elSelName = document.getElementById('sel-country-name');
+        const elSelFlag = document.getElementById('sel-country-flag');
+
+        if (elSelName) elSelName.innerText = countryName.replace(/_/g, " ").toUpperCase();
+        if (elSelFlag) elSelFlag.innerText = (config && config.code) ? `🚩 [${config.code}]` : "🌐";
+
+        if (selBar) {
+            selBar.classList.remove('hidden');
+            selBar.style.display = 'flex';
+        }
+
+        // 2. Pre-fill card elements so when Eye button (👁️) is clicked, details are ready
         const elName = document.getElementById('card-country-name');
-        if (elName) elName.innerText = countryName.toUpperCase();
+        if (elName) elName.innerText = countryName.replace(/_/g, " ").toUpperCase();
 
         const elFlag = document.getElementById('card-country-flag');
         if (elFlag) elFlag.innerText = config && config.code ? `🚩 [${config.code}]` : "🌐";
@@ -544,12 +557,25 @@ var Game = window.Game = {
         const elMil = document.getElementById('card-stat-mil');
         if (elMil) elMil.innerText = `PWR 82.4`;
 
-        card.classList.add('active');
+        // Note: Do NOT automatically add 'active' to country-info-card here!
+        // User must click the Eye icon (👁️) on the selection bar to trigger full modal pop-up!
     },
 
     closeCountryInfoCard() {
         const card = document.getElementById('country-info-card');
         if (card) card.classList.remove('active');
+    },
+
+    closeCountrySelectionBar() {
+        const selBar = document.getElementById('country-selection-bar');
+        if (selBar) {
+            selBar.classList.add('hidden');
+            selBar.style.display = 'none';
+        }
+        if (Game.geojsonLayer && Game.selectedLayer) {
+            Game.geojsonLayer.resetStyle(Game.selectedLayer);
+            Game.selectedLayer = null;
+        }
     },
 
     renderSearch(query) {
