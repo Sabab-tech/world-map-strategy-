@@ -926,6 +926,58 @@ Game.Map.toggleCommandHub = function(show, initialChapter = 1) {
     }
 };
 
+Game.Map.selectedResourceChips = new Set();
+
+Game.Map.toggleResourceChip = function(resId, isChecked) {
+    if (!this.selectedResourceChips) this.selectedResourceChips = new Set();
+    if (isChecked) {
+        this.selectedResourceChips.add(resId.toLowerCase());
+    } else {
+        this.selectedResourceChips.delete(resId.toLowerCase());
+    }
+    const countEl = document.getElementById('selected-res-count');
+    if (countEl) {
+        countEl.innerText = `(${this.selectedResourceChips.size} Selected)`;
+    }
+    // Highlight preset buttons if multi-selected
+    const btnCountry = document.getElementById('btn-preset-country');
+    const btnAll = document.getElementById('btn-preset-all');
+    if (btnCountry) btnCountry.style.borderColor = 'rgba(0,229,255,0.3)';
+    if (btnAll) btnAll.style.borderColor = 'rgba(0,229,255,0.3)';
+};
+
+Game.Map.selectResourcePreset = function(preset) {
+    if (!this.selectedResourceChips) this.selectedResourceChips = new Set();
+    this.selectedResourceChips.clear();
+    const countEl = document.getElementById('selected-res-count');
+    if (countEl) countEl.innerText = '(0 Selected)';
+
+    // Uncheck all chip checkboxes in grid
+    const grid = document.getElementById('resource-chip-grid');
+    if (grid) {
+        const checkboxes = grid.querySelectorAll('input[type="checkbox"]');
+        checkboxes.forEach(cb => cb.checked = false);
+    }
+
+    const btnCountry = document.getElementById('btn-preset-country');
+    const btnAll = document.getElementById('btn-preset-all');
+    const btnNone = document.getElementById('btn-preset-none');
+    if (btnCountry) btnCountry.style.borderColor = (preset === 'COUNTRY') ? '#00e5ff' : 'rgba(0,229,255,0.3)';
+    if (btnAll) btnAll.style.borderColor = (preset === 'ALL') ? '#00e5ff' : 'rgba(0,229,255,0.3)';
+
+    this.applyResourceMapFilter(preset);
+};
+
+Game.Map.applyMultiResourceFilter = function() {
+    if (!this.selectedResourceChips) this.selectedResourceChips = new Set();
+    if (this.selectedResourceChips.size === 0) {
+        this.applyResourceMapFilter('COUNTRY');
+        return;
+    }
+    const filtersArray = Array.from(this.selectedResourceChips);
+    this.applyResourceMapFilter(filtersArray);
+};
+
 Game.Map.renderResourceDeposits = function(filterResourceType) {
     this.map = this.map || window.map;
     if (!this.map || typeof L === 'undefined') return;
@@ -937,14 +989,28 @@ Game.Map.renderResourceDeposits = function(filterResourceType) {
     }
     this.resourceDepositsLayer.clearLayers();
 
-    const selectEl = document.querySelector('#resource-filter-box select') || (Game.dom && Game.dom.resFilterBox ? Game.dom.resFilterBox.querySelector('select') : null);
-    const activeFilter = filterResourceType || this.activeResourceFilter || (selectEl ? selectEl.value : 'COUNTRY');
-    this.activeResourceFilter = activeFilter;
+    // Determine active filter array
+    let activeFilters = [];
+    if (Array.isArray(filterResourceType)) {
+        activeFilters = filterResourceType;
+    } else if (typeof filterResourceType === 'string') {
+        activeFilters = filterResourceType.includes(',') ? filterResourceType.split(',').map(s => s.trim()) : [filterResourceType];
+    } else if (Array.isArray(this.activeResourceFilter)) {
+        activeFilters = this.activeResourceFilter;
+    } else if (typeof this.activeResourceFilter === 'string') {
+        activeFilters = [this.activeResourceFilter];
+    } else {
+        activeFilters = ['COUNTRY'];
+    }
+
+    this.activeResourceFilter = activeFilters;
 
     const btn = document.getElementById('btn-resource-overlay') || (Game.dom && Game.dom.btnResOverlay);
 
-    if (activeFilter === 'NONE') {
+    if (activeFilters.length === 1 && activeFilters[0] === 'NONE') {
         if (btn) btn.classList.remove('active');
+        const summaryCountElem = document.getElementById('resource-summary-count');
+        if (summaryCountElem) summaryCountElem.textContent = '0 deposits';
         // MUTUAL EXCLUSIVITY: When resource filter is NONE, render city hubs!
         if (this.renderCountryHubs) {
             this.renderCountryHubs();
@@ -988,7 +1054,11 @@ Game.Map.renderResourceDeposits = function(filterResourceType) {
     const activeCountryNorm = normCountry(Game.currentActiveCountry || 'BANGLADESH');
     const nonMinerals = ['rice', 'wheat', 'water', 'timber', 'cement', 'food_processing'];
 
-    // 1. Collect all matching deposits for active filter
+    const filterSet = new Set(activeFilters.map(f => f.toLowerCase().trim()));
+    const isCountryMode = filterSet.has('country');
+    const isAllMode = filterSet.has('all');
+
+    // 1. Collect matching deposits
     const matchingDeposits = [];
     deposits.forEach(dep => {
         const depResNorm = (dep.resId || '').toLowerCase();
@@ -996,130 +1066,181 @@ Game.Map.renderResourceDeposits = function(filterResourceType) {
 
         const depCountryNorm = normCountry(dep.country || '');
 
-        if (activeFilter === 'COUNTRY') {
+        if (isAllMode) {
+            matchingDeposits.push(dep);
+            return;
+        }
+
+        if (isCountryMode) {
             const isMatch = (depCountryNorm === activeCountryNorm) ||
                             (depCountryNorm.length > 3 && activeCountryNorm.length > 3 && (depCountryNorm.includes(activeCountryNorm) || activeCountryNorm.includes(depCountryNorm)));
-            if (!isMatch) return;
-        } else if (activeFilter !== 'ALL' && activeFilter !== 'NONE' && activeFilter !== '') {
-            const filterNorm = activeFilter.toLowerCase();
-            const depNameNorm = (dep.name || '').toLowerCase();
-            if (depResNorm !== filterNorm && !depNameNorm.includes(filterNorm)) {
+            if (isMatch) {
+                matchingDeposits.push(dep);
                 return;
             }
         }
-        matchingDeposits.push(dep);
-    });
 
-    // 2. Group by approximate coordinate key to offset overlapping markers
-    const coordGroups = {};
-    matchingDeposits.forEach(dep => {
-        const key = `${dep.lat.toFixed(2)},${dep.lng.toFixed(2)}`;
-        if (!coordGroups[key]) coordGroups[key] = [];
-        coordGroups[key].push(dep);
-    });
-
-    // 3. Render markers with circular constellation offset for overlapping coordinates
-    matchingDeposits.forEach(dep => {
-        const key = `${dep.lat.toFixed(2)},${dep.lng.toFixed(2)}`;
-        const group = coordGroups[key] || [dep];
-        const index = group.indexOf(dep);
-        const total = group.length;
-
-        let renderLat = dep.lat;
-        let renderLng = dep.lng;
-
-        if (total > 1) {
-            const angle = (index * 2 * Math.PI) / total;
-            const radius = 0.28; // ~30km offset radius in degrees so icons do not stack
-            renderLat += radius * Math.sin(angle);
-            renderLng += radius * Math.cos(angle);
-        }
-
-        const resInfo = resources[dep.resId] || { icon: '⛏️', name: dep.resId, category: 'Minerals' };
-        const icon = resInfo.icon || '⛏️';
-        const isRareEarth = (dep.resId === 'rare_earth' || (dep.name && dep.name.toLowerCase().includes('rare earth')));
-        const isEnergy = (dep.resId === 'uranium' || dep.resId === 'crude_oil' || dep.resId === 'natural_gas');
-
-        const borderColor = isRareEarth ? '#e9d5ff' : (isEnergy ? '#00e5ff' : '#ffd700');
-        const glowColor = isRareEarth ? 'rgba(168,85,247,0.8)' : (isEnergy ? 'rgba(0,229,255,0.7)' : 'rgba(255,215,0,0.6)');
-
-        const markerHtml = `
-            <div title="${dep.name} (${dep.country})" style="
-                background: ${isRareEarth ? 'radial-gradient(circle, #a855f7 0%, #0f172a 100%)' : 'rgba(15, 23, 42, 0.95)'};
-                border: 1.5px solid ${borderColor};
-                border-radius: 50%;
-                width: 24px;
-                height: 24px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                box-shadow: 0 0 10px ${glowColor};
-                font-size: 12px;
-                cursor: pointer;
-                transition: transform 0.2s ease;
-            ">
-                <span>${icon}</span>
-            </div>
-        `;
-
-        const customIcon = L.divIcon({
-            html: markerHtml,
-            className: 'resource-deposit-compact-icon',
-            iconSize: [24, 24],
-            iconAnchor: [12, 12]
+        const depNameNorm = (dep.name || '').toLowerCase();
+        let matchesSpecific = false;
+        filterSet.forEach(fKey => {
+            if (fKey === 'country' || fKey === 'all' || fKey === 'none') return;
+            if (depResNorm === fKey || depNameNorm.includes(fKey)) {
+                matchesSpecific = true;
+            }
         });
 
-        const marker = L.marker([renderLat, renderLng], { icon: customIcon });
+        if (matchesSpecific) {
+            matchingDeposits.push(dep);
+        }
+    });
 
-        let reDetailsHtml = '';
-        if (isRareEarth) {
-            const ree = dep.rare_earth_elements || {
-                "Neodymium (Nd)": "35%",
-                "Dysprosium (Dy)": "18%",
-                "Terbium (Tb)": "10%",
-                "Praseodymium (Pr)": "15%",
-                "Yttrium (Y)": "12%",
-                "Lanthanum (La)": "10%"
-            };
-            reDetailsHtml = `
-                <div style="background:rgba(168,85,247,0.12); border:1px solid rgba(168,85,247,0.4); border-radius:6px; padding:6px; margin-top:6px;">
-                    <div style="font-size:10px; font-weight:bold; color:#e9d5ff; font-family:var(--font-mono); margin-bottom:4px;">
-                        ⚛️ RARE EARTH COMPOSITION BREAKDOWN:
+    const summaryCountElem = document.getElementById('resource-summary-count');
+    if (summaryCountElem) {
+        summaryCountElem.textContent = `${matchingDeposits.length} deposit${matchingDeposits.length === 1 ? '' : 's'}`;
+    }
+
+    // 2. Spatial Proximity Clustering Mechanism (prevents markers from overlapping)
+    const clusters = [];
+    matchingDeposits.forEach(dep => {
+        let addedToCluster = false;
+        for (let cluster of clusters) {
+            const latDiff = Math.abs(dep.lat - cluster.centroidLat);
+            const lngDiff = Math.abs(dep.lng - cluster.centroidLng);
+            if (latDiff < 0.28 && lngDiff < 0.28) {
+                cluster.items.push(dep);
+                cluster.centroidLat = cluster.items.reduce((sum, d) => sum + d.lat, 0) / cluster.items.length;
+                cluster.centroidLng = cluster.items.reduce((sum, d) => sum + d.lng, 0) / cluster.items.length;
+                addedToCluster = true;
+                break;
+            }
+        }
+        if (!addedToCluster) {
+            clusters.push({
+                centroidLat: dep.lat,
+                centroidLng: dep.lng,
+                items: [dep]
+            });
+        }
+    });
+
+    // 3. Render markers with multi-ring orbital constellation radial offsets
+    clusters.forEach(cluster => {
+        const total = cluster.items.length;
+        cluster.items.forEach((dep, index) => {
+            let renderLat = dep.lat;
+            let renderLng = dep.lng;
+
+            if (total > 1) {
+                let ringIndex = 0;
+                let positionInRing = index;
+                let ringCapacity = 6;
+                let radius = 0.28; // ~30km offset radius
+
+                if (index >= 6 && index < 14) {
+                    ringIndex = 1;
+                    positionInRing = index - 6;
+                    ringCapacity = 8;
+                    radius = 0.55; // ~60km ring
+                } else if (index >= 14) {
+                    ringIndex = 2;
+                    positionInRing = index - 14;
+                    ringCapacity = 12;
+                    radius = 0.82; // ~90km ring
+                }
+
+                const angleOffset = ringIndex * (Math.PI / 6);
+                const angle = angleOffset + (positionInRing * 2 * Math.PI) / ringCapacity;
+
+                renderLat = cluster.centroidLat + radius * Math.sin(angle);
+                renderLng = cluster.centroidLng + radius * Math.cos(angle);
+            }
+
+            const resInfo = resources[dep.resId] || { icon: '⛏️', name: dep.resId, category: 'Minerals' };
+            const icon = resInfo.icon || '⛏️';
+            const isRareEarth = (dep.resId === 'rare_earth' || (dep.name && dep.name.toLowerCase().includes('rare earth')));
+            const isEnergy = (dep.resId === 'uranium' || dep.resId === 'crude_oil' || dep.resId === 'natural_gas');
+
+            const borderColor = isRareEarth ? '#e9d5ff' : (isEnergy ? '#00e5ff' : '#ffd700');
+            const glowColor = isRareEarth ? 'rgba(168,85,247,0.8)' : (isEnergy ? 'rgba(0,229,255,0.7)' : 'rgba(255,215,0,0.6)');
+
+            const markerHtml = `
+                <div title="${dep.name} (${dep.country})" style="
+                    background: ${isRareEarth ? 'radial-gradient(circle, #a855f7 0%, #0f172a 100%)' : 'rgba(15, 23, 42, 0.95)'};
+                    border: 1.5px solid ${borderColor};
+                    border-radius: 50%;
+                    width: 24px;
+                    height: 24px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    box-shadow: 0 0 10px ${glowColor};
+                    font-size: 12px;
+                    cursor: pointer;
+                    transition: transform 0.2s ease;
+                ">
+                    <span>${icon}</span>
+                </div>
+            `;
+
+            const customIcon = L.divIcon({
+                html: markerHtml,
+                className: 'resource-deposit-compact-icon',
+                iconSize: [24, 24],
+                iconAnchor: [12, 12]
+            });
+
+            const marker = L.marker([renderLat, renderLng], { icon: customIcon });
+
+            let reDetailsHtml = '';
+            if (isRareEarth) {
+                const ree = dep.rare_earth_elements || {
+                    "Neodymium (Nd)": "35%",
+                    "Dysprosium (Dy)": "18%",
+                    "Terbium (Tb)": "10%",
+                    "Praseodymium (Pr)": "15%",
+                    "Yttrium (Y)": "12%",
+                    "Lanthanum (La)": "10%"
+                };
+                reDetailsHtml = `
+                    <div style="background:rgba(168,85,247,0.12); border:1px solid rgba(168,85,247,0.4); border-radius:6px; padding:6px; margin-top:6px;">
+                        <div style="font-size:10px; font-weight:bold; color:#e9d5ff; font-family:var(--font-mono); margin-bottom:4px;">
+                            ⚛️ RARE EARTH COMPOSITION BREAKDOWN:
+                        </div>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:3px; font-size:9px; color:#cbd5e1; font-family:var(--font-mono);">
+                            ${Object.entries(ree).map(([el, pct]) => `<div>• ${el}: <strong style="color:#22c55e;">${pct}</strong></div>`).join('')}
+                        </div>
                     </div>
-                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:3px; font-size:9px; color:#cbd5e1; font-family:var(--font-mono);">
-                        ${Object.entries(ree).map(([el, pct]) => `<div>• ${el}: <strong style="color:#22c55e;">${pct}</strong></div>`).join('')}
+                `;
+            }
+
+            const popupContent = `
+                <div style="font-family:'Segoe UI', sans-serif; color:#f8fafc; width:250px; padding:6px;">
+                    <div style="font-size:12px; font-weight:bold; color:${borderColor}; border-bottom:1px solid rgba(255,215,0,0.3); padding-bottom:4px; margin-bottom:6px; font-family:var(--font-title); display:flex; align-items:center; gap:6px;">
+                        <span>${icon}</span> <span>${(dep.name || '').toUpperCase()}</span>
+                    </div>
+                    <div style="font-size:11px; color:#cbd5e1; line-height:1.5; font-family:var(--font-mono); margin-bottom:8px;">
+                        <div>Country: <strong style="color:#00e5ff;">${dep.country}</strong></div>
+                        <div>Reserves: <strong style="color:#22c55e;">${dep.reserve || 'Unspecified'}</strong></div>
+                        <div>Status: <strong style="color:#a855f7;">${dep.status || 'Active'}</strong></div>
+                    </div>
+                    ${reDetailsHtml}
+                    <div style="display:flex; flex-direction:column; gap:5px; margin-top:8px;">
+                        <button onclick="if(window.ResourceMinistryEngine) window.ResourceMinistryEngine.executeDirective('expand_facility', '${dep.resId}');" style="padding:5px 10px; background:rgba(34,197,94,0.2); border:1px solid #22c55e; color:#22c55e; font-size:10px; font-weight:bold; border-radius:4px; cursor:pointer;">
+                            🏭 EXPAND CAPACITY (+25%)
+                        </button>
+                        <button onclick="if(window.CountryIOS) window.CountryIOS.open('${dep.country}', 5);" style="padding:5px 10px; background:rgba(0,229,255,0.2); border:1px solid #00e5ff; color:#00e5ff; font-size:10px; font-weight:bold; border-radius:4px; cursor:pointer;">
+                            🏛️ OPEN RESOURCE MINISTRY
+                        </button>
                     </div>
                 </div>
             `;
-        }
 
-        const popupContent = `
-            <div style="font-family:'Segoe UI', sans-serif; color:#f8fafc; width:250px; padding:6px;">
-                <div style="font-size:12px; font-weight:bold; color:${borderColor}; border-bottom:1px solid rgba(255,215,0,0.3); padding-bottom:4px; margin-bottom:6px; font-family:var(--font-title); display:flex; align-items:center; gap:6px;">
-                    <span>${icon}</span> <span>${dep.name.toUpperCase()}</span>
-                </div>
-                <div style="font-size:11px; color:#cbd5e1; line-height:1.5; font-family:var(--font-mono); margin-bottom:8px;">
-                    <div>Country: <strong style="color:#00e5ff;">${dep.country}</strong></div>
-                    <div>Reserves: <strong style="color:#22c55e;">${dep.reserve}</strong></div>
-                    <div>Status: <strong style="color:#a855f7;">${dep.status}</strong></div>
-                </div>
-                ${reDetailsHtml}
-                <div style="display:flex; flex-direction:column; gap:5px; margin-top:8px;">
-                    <button onclick="if(window.ResourceMinistryEngine) window.ResourceMinistryEngine.executeDirective('expand_facility', '${dep.resId}');" style="padding:5px 10px; background:rgba(34,197,94,0.2); border:1px solid #22c55e; color:#22c55e; font-size:10px; font-weight:bold; border-radius:4px; cursor:pointer;">
-                        🏭 EXPAND CAPACITY (+25%)
-                    </button>
-                    <button onclick="if(window.CountryIOS) window.CountryIOS.open('${dep.country}', 5);" style="padding:5px 10px; background:rgba(0,229,255,0.2); border:1px solid #00e5ff; color:#00e5ff; font-size:10px; font-weight:bold; border-radius:4px; cursor:pointer;">
-                        🏛️ OPEN RESOURCE MINISTRY
-                    </button>
-                </div>
-            </div>
-        `;
+            marker.bindPopup(popupContent, {
+                className: 'dark-theme-popup'
+            });
 
-        marker.bindPopup(popupContent, {
-            className: 'dark-theme-popup'
+            this.resourceDepositsLayer.addLayer(marker);
         });
-
-        this.resourceDepositsLayer.addLayer(marker);
     });
 };
 
@@ -1137,7 +1258,6 @@ Game.Map.toggleResourceOverlay = function() {
             box.classList.add('hidden');
             box.style.display = 'none';
         }
-        // Button glow matches whether a filter is actually active
         if (this.activeResourceFilter && this.activeResourceFilter !== 'NONE') {
             if (btn) btn.classList.add('active');
         } else {
@@ -1154,9 +1274,8 @@ Game.Map.toggleResourceOverlay = function() {
         }
         if (relBtn) relBtn.classList.remove('active');
 
-        const selectEl = document.getElementById('resource-selector');
-        const filterVal = selectEl ? selectEl.value : 'COUNTRY';
-        this.renderResourceDeposits(filterVal);
+        const activeFilter = this.activeResourceFilter || 'COUNTRY';
+        this.renderResourceDeposits(activeFilter);
     }
 };
 
@@ -1164,7 +1283,9 @@ Game.Map.applyResourceMapFilter = function(resourceType) {
     this.activeResourceFilter = resourceType;
     const btn = document.getElementById('btn-resource-overlay') || (Game.dom && Game.dom.btnResOverlay);
 
-    if (resourceType === 'NONE') {
+    const isNone = (resourceType === 'NONE' || (Array.isArray(resourceType) && resourceType.length === 1 && resourceType[0] === 'NONE'));
+
+    if (isNone) {
         if (btn) btn.classList.remove('active');
         if (this.resourceDepositsLayer) this.resourceDepositsLayer.clearLayers();
         if (this.renderCountryHubs) this.renderCountryHubs();

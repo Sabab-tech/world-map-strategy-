@@ -783,6 +783,7 @@ window.ResourceMinistryEngine = (() => {
             if (!db) return null;
 
             const sources = [
+                db.GSRSK_EastAndCentralAsia_CountryProfiles_v14?.countryProfiles,
                 db.GSRSK_CentralEastAfrica_CountryProfiles_v14?.countryProfiles,
                 db.GSRSK_WestAfrica_Part1_CountryProfiles_v14?.countryProfiles,
                 db.GSRSK_WestAfrica_Part2_CountryProfiles_v14?.countryProfiles,
@@ -791,6 +792,7 @@ window.ResourceMinistryEngine = (() => {
                 db.GSRSK_FinalAfricaAndRedSea_CountryProfiles_v14?.countryProfiles,
                 db.GSRSK_MiddleEast_CountryProfiles_v14?.countryProfiles,
                 db.GSRSK_SouthAsia_CountryProfiles_v14?.countryProfiles,
+                db.GSRSK_Missing_15_Countries_v14?.countryProfiles,
                 db.GSRSK_BRAIN_FRAMEWORK_PHASE_1?.countryProfiles,
                 db.GSRSK_MASTER_DATASET_PHASE_1B?.countryProfiles
             ];
