@@ -2,81 +2,16 @@
  * ============================================================================
  * UNIVERSAL RESOURCE ENGINE & AUTONOMOUS RESOURCE MINISTRY AI (v3.0 - GOLD)
  * Subsystem: Sovereign Resource Intelligence System (100% Offline Rule AI)
- * Capabilities: 17 Strategic Resources, Map Deposit Overlays, 9-Step Lifecycle,
+ * Capabilities: 21 Strategic Resources, Canonical Map Deposit Overlays,
  * Inter-Ministry Collaboration, Memory Engine, and Executive Dashboard.
  * ============================================================================
  */
 
 window.ResourceMinistryEngine = (() => {
     // -------------------------------------------------------------------------
-    // 1. THE 17 CORE STRATEGIC RESOURCES DEFINITION REGISTRY
+    // 1. THE 21 CANONICAL STRATEGIC RESOURCES REGISTRY
     // -------------------------------------------------------------------------
     const STRATEGIC_RESOURCES = {
-        iron_ore: {
-            id: 'iron_ore',
-            name: 'Iron Ore',
-            bnName: 'আকরিক লোহা',
-            icon: '⛏️',
-            category: 'Minerals',
-            baseValue: 120, // $ / Ton
-            purityGrades: ['Fe 58%', 'Fe 62% Standard', 'Fe 65% Premium'],
-            inputs: ['heavy_machinery', 'electricity'],
-            outputs: ['steel', 'defense_armor', 'rails'],
-            storageRule: 'Open Pit Bulk Yard (Unlimited loss tolerance)',
-            strategicImportance: 'Critical for heavy manufacturing, shipyards, rail networks, and armored military hardware.'
-        },
-        coal: {
-            id: 'coal',
-            name: 'Coal',
-            bnName: 'কয়লা',
-            icon: '🪨',
-            category: 'Energy & Smelting',
-            baseValue: 140,
-            purityGrades: ['Thermal Coal', 'Coking Metallurgical Coal', 'Anthracite'],
-            inputs: ['mining_rigs'],
-            outputs: ['electricity', 'coke_smelting'],
-            storageRule: 'Covered Bulk Bunkers (Spontaneous combustion risk)',
-            strategicImportance: 'Powers baseload thermal power stations and essential for steel smelting.'
-        },
-        copper: {
-            id: 'copper',
-            name: 'Copper',
-            bnName: 'তামা',
-            icon: '🔌',
-            category: 'Strategic Metals',
-            baseValue: 8500, // $ / Ton
-            purityGrades: ['Concentrate 28%', 'Cathode Grade A 99.99%'],
-            inputs: ['electricity', 'chemical_solvents'],
-            outputs: ['power_grid', 'electronics', 'telecom_cables'],
-            storageRule: 'Secured High-Value Warehouse',
-            strategicImportance: 'Backbone of national electrical grid, motor windings, EV tech, and guided munitions.'
-        },
-        bauxite: {
-            id: 'bauxite',
-            name: 'Bauxite / Aluminum',
-            bnName: 'বক্সাইট (অ্যালুমিনিয়াম)',
-            icon: '📦',
-            category: 'Strategic Metals',
-            baseValue: 320,
-            purityGrades: ['Trihydrate Bauxite', 'Refined Alumina', 'Primary Aluminum Ingot'],
-            inputs: ['electricity', 'caustic_soda'],
-            outputs: ['aircraft_hull', 'automotive', 'structural_alloys'],
-            storageRule: 'Dry Silo Yards',
-            strategicImportance: 'Essential for military aviation, naval superstructures, and light transport alloys.'
-        },
-        limestone: {
-            id: 'limestone',
-            name: 'Limestone',
-            bnName: 'চুনাপাথর',
-            icon: '🧱',
-            category: 'Construction Materials',
-            baseValue: 45,
-            purityGrades: ['Industrial Grade', 'High-Calcium Chemical Grade'],
-            inputs: ['quarry_excavators'],
-            outputs: ['cement', 'quicklime', 'soil_conditioner'],
-            storageRule: 'Quarry Stockpiles',
-            strategicImportance: 'Primary raw input for national cement industry, ports, mega-bridges, and fortifications.'
-        },
         rare_earth: {
             id: 'rare_earth',
             name: 'Rare Earth Minerals',
@@ -88,163 +23,7 @@ window.ResourceMinistryEngine = (() => {
             inputs: ['acid_leaching_plant', 'high_power_grid'],
             outputs: ['semiconductors', 'radar_magnets', 'missile_guidance', 'ev_motors'],
             storageRule: 'Classified Subterranean High-Security Vault',
-            strategicImportance: 'Vital for electronic warfare, precision radar, quantum computing, and missile guidance.'
-        },
-        crude_oil: {
-            id: 'crude_oil',
-            name: 'Crude Oil',
-            bnName: 'অপরিশোধিত তেল',
-            icon: '🛢️',
-            category: 'Hydrocarbons',
-            baseValue: 80, // $ / Barrel
-            purityGrades: ['Light Sweet Crude', 'Medium Sour', 'Heavy Bitumen'],
-            inputs: ['drilling_rigs', 'pipelines'],
-            outputs: ['gasoline', 'diesel', 'jet_fuel', 'petrochemicals'],
-            storageRule: 'Strategic Petroleum Reserve (SPR) Underground Salt Caverns',
-            strategicImportance: 'Fuels mechanized armored forces, naval fleets, logistics trucks, and aviation squadrons.'
-        },
-        natural_gas: {
-            id: 'natural_gas',
-            name: 'Natural Gas',
-            bnName: 'প্রাকৃতিক গ্যাস',
-            icon: '🔥',
-            category: 'Hydrocarbons',
-            baseValue: 3.80, // $ / MMBtu
-            purityGrades: ['Pipeline Methane (PNG)', 'Liquefied Natural Gas (LNG)', 'Compressed Natural Gas (CNG)'],
-            inputs: ['compressor_stations', 'lng_cryo_terminal'],
-            outputs: ['urea_fertilizer', 'peaking_electricity', 'petrochemicals'],
-            storageRule: 'Cryogenic LNG Depots & Pressurized Salt Dome Storage',
-            strategicImportance: 'Primary feedstock for urea fertilizer production and gas turbine electric power.'
-        },
-        uranium: {
-            id: 'uranium',
-            name: 'Uranium',
-            bnName: 'ইউরেনিয়াম',
-            icon: '⚛️',
-            category: 'Nuclear Feedstock',
-            baseValue: 180000, // $ / Ton U3O8
-            purityGrades: ['Yellowcake U3O8', 'Low Enriched LEU 3-5%', 'High Assayed HALEU 19.75%'],
-            inputs: ['centrifuge_cascades', 'heavy_water_reactors'],
-            outputs: ['nuclear_power', 'medical_isotopes', 'strategic_deterrent'],
-            storageRule: 'Radiation-Shielded Underground Bunkers',
-            strategicImportance: 'Provides zero-carbon nuclear electricity baseload and strategic sovereign deterrence.'
-        },
-        electricity: {
-            id: 'electricity',
-            name: 'Electricity & Grid Capacity',
-            bnName: 'বিদ্যুৎ ও জাতীয় গ্রিড',
-            icon: '⚡',
-            category: 'Secondary Energy',
-            baseValue: 0.12, // $ / kWh
-            purityGrades: ['50Hz Synchronous Baseload', 'HVDC Long-Distance Grid'],
-            inputs: ['coal', 'natural_gas', 'uranium', 'hydropower'],
-            outputs: ['factory_operation', 'urban_power', 'radar_stations'],
-            storageRule: 'Pumped Hydro & Utility Battery Storage (Loss over time)',
-            strategicImportance: 'Lifeblood of modern industrial manufacturing, AI data hubs, urban grids, and air defense.'
-        },
-        rice: {
-            id: 'rice',
-            name: 'Rice',
-            bnName: 'ধান/চাল',
-            icon: '🌾',
-            category: 'Staple Food',
-            baseValue: 480, // $ / Ton
-            purityGrades: ['Paddy Rice', 'Milled Non-Basmati', 'Premium Aromatic'],
-            inputs: ['irrigation_water', 'urea_fertilizer', 'arable_land'],
-            outputs: ['food_rations', 'national_caloric_reserve'],
-            storageRule: 'Climate-Controlled Food Silos (Pest monitoring)',
-            strategicImportance: 'Core dietary staple for Asia; guards against national famine and social instability.'
-        },
-        wheat: {
-            id: 'wheat',
-            name: 'Wheat',
-            bnName: 'গম',
-            icon: '🌾',
-            category: 'Staple Food',
-            baseValue: 320,
-            purityGrades: ['Hard Red Winter', 'Soft Red Winter', 'Durum Wheat'],
-            inputs: ['water', 'fertilizer', 'combine_harvesters'],
-            outputs: ['flour', 'bread', 'emergency_military_rations'],
-            storageRule: 'Granary Grain Elevators',
-            strategicImportance: 'Global caloric cornerstone; essential for bakery supplies and strategic food reserves.'
-        },
-        food_processing: {
-            id: 'food_processing',
-            name: 'Food Processing & Rations',
-            bnName: 'খাদ্য প্রক্রিয়াজাতকরণ',
-            icon: '🏭',
-            category: 'Value-Added Food',
-            baseValue: 950,
-            purityGrades: ['Packaged Staples', 'Long-Shelf MRE Military Rations'],
-            inputs: ['rice', 'wheat', 'clean_water', 'packaging_aluminum'],
-            outputs: ['human_stamina', 'emergency_disaster_relief'],
-            storageRule: 'Automated Logistics Distribution Centers',
-            strategicImportance: 'Ensures food shelf-life during wartime blockades, natural floods, and civil supply shocks.'
-        },
-        water: {
-            id: 'water',
-            name: 'Water Resources',
-            bnName: 'জলসম্পদ / মিঠা পানি',
-            icon: '💧',
-            category: 'Natural Essentials',
-            baseValue: 1.50, // $ / m3
-            purityGrades: ['Raw River/Aquifer Water', 'Potable Municipal Water', 'Ultra-Pure Deionized Water'],
-            inputs: ['dams', 'water_treatment_plants', 'aquifers'],
-            outputs: ['crop_irrigation', 'nuclear_cooling', 'municipal_drinking'],
-            storageRule: 'Reservoirs, Lakes & Underground Aquifer Retention',
-            strategicImportance: 'Underpins all agricultural yield, industrial cooling loops, and human survival.'
-        },
-        timber: {
-            id: 'timber',
-            name: 'Timber & Forests',
-            bnName: 'বনজ সম্পদ / কাষ্ঠ',
-            icon: '🪵',
-            category: 'Renewable Resources',
-            baseValue: 210,
-            purityGrades: ['Softwood Construction Lumber', 'Hardwood Teak/Mahogany', 'Pulpwood'],
-            inputs: ['sustainable_forestry', 'sawmills'],
-            outputs: ['housing', 'paper', 'biomass_fuel'],
-            storageRule: 'Open Log Ponds & Seasoning Yards',
-            strategicImportance: 'Essential for construction formwork, paper products, modular housing, and biomass.'
-        },
-        cement: {
-            id: 'cement',
-            name: 'Cement Industry',
-            bnName: 'সিমেন্ট শিল্প',
-            icon: '🏗️',
-            category: 'Industrial Building',
-            baseValue: 110,
-            purityGrades: ['Ordinary Portland Cement (OPC)', 'Portland Pozzolana (PPC)'],
-            inputs: ['limestone', 'gypsum', 'coal_kilns'],
-            outputs: ['bunkers', 'seaports', 'highways', 'dams'],
-            storageRule: 'Moisture-Sealed Dry Cement Silos',
-            strategicImportance: 'Core material for sovereign infrastructure, coastal embankments, and military fortifications.'
-        },
-        sand: {
-            id: 'sand',
-            name: 'Sand & Industrial Silica',
-            bnName: 'শিল্প বালি & সিলিকা',
-            icon: '⏳',
-            category: 'Bulk Aggregate',
-            baseValue: 35,
-            purityGrades: ['River Dredged Fill Sand', 'High-Purity 99.5% Silica Sand'],
-            inputs: ['dredgers', 'washing_screens'],
-            outputs: ['concrete_mix', 'solar_glass', 'silicon_wafer_precursor'],
-            storageRule: 'Open Riverbed Stockpiles',
-            strategicImportance: 'Crucial for land reclamation, concrete mixing, glassmaking, and semiconductor silicon.'
-        },
-        rare_earth: {
-            id: 'rare_earth',
-            name: 'Rare Earth Elements (REE)',
-            bnName: 'বিরল মৃত্তিকা মৌল (রেয়ার আর্থ)',
-            icon: '⚛️',
-            category: 'Critical Minerals',
-            baseValue: 45000,
-            purityGrades: ['Bastnäsite Concentrate', 'Monazite Heavy Fraction', '99.99% Separated Oxides'],
-            inputs: ['acid_leach', 'solvent_extraction'],
-            outputs: ['permanent_magnets', 'guided_missile_guidance', 'radar', 'EV_motors'],
-            storageRule: 'High Security Underground Storage',
-            strategicImportance: 'Indispensable for defense radars, precision guided weapons, EV motors, and jet engines.'
+            strategicImportance: 'Neodymium, Dysprosium, Yttrium essential for permanent magnets, EV motors, wind turbines, and defense technology.'
         },
         lithium: {
             id: 'lithium',
@@ -257,20 +36,163 @@ window.ResourceMinistryEngine = (() => {
             inputs: ['evaporation_ponds', 'hard_rock_crushing'],
             outputs: ['ev_batteries', 'grid_energy_storage', 'submarine_power'],
             storageRule: 'Climate Controlled Sealed Vaults',
-            strategicImportance: 'Powerhouse mineral for energy transition, submarine batteries, and grid storage.'
+            strategicImportance: 'High-grade battery chemical component required for energy storage systems, EVs, and consumer electronics.'
         },
-        cobalt: {
-            id: 'cobalt',
-            name: 'Cobalt',
-            bnName: 'কোবাল্ট',
-            icon: '🔷',
-            category: 'Critical Minerals',
-            baseValue: 34000,
-            purityGrades: ['Cobalt Hydroxide', 'High Purity Cathode Grade'],
-            inputs: ['copper_nickel_tailings'],
-            outputs: ['superalloys', 'jet_turbines', 'battery_cathodes'],
-            storageRule: 'Secured Warehouse',
-            strategicImportance: 'High-temperature superalloys for jet engines and energy dense batteries.'
+        crude_oil: {
+            id: 'crude_oil',
+            name: 'Crude Oil',
+            bnName: 'অপরিশোধিত তেল',
+            icon: '🛢️',
+            category: 'Hydrocarbons',
+            baseValue: 80, // $ / Barrel
+            purityGrades: ['Light Sweet Crude', 'Medium Sour', 'Heavy Bitumen'],
+            inputs: ['drilling_rigs', 'pipelines'],
+            outputs: ['gasoline', 'diesel', 'jet_fuel', 'petrochemicals'],
+            storageRule: 'Strategic Petroleum Reserve (SPR) Underground Salt Caverns',
+            strategicImportance: 'Primary energy resource and petrochemical feedstock supporting global transportation and chemical synthesis.'
+        },
+        natural_gas: {
+            id: 'natural_gas',
+            name: 'Natural Gas',
+            bnName: 'প্রাকৃতিক গ্যাস',
+            icon: '🔥',
+            category: 'Hydrocarbons',
+            baseValue: 3.80, // $ / MMBtu
+            purityGrades: ['Pipeline Methane (PNG)', 'Liquefied Natural Gas (LNG)', 'Compressed Natural Gas (CNG)'],
+            inputs: ['compressor_stations', 'lng_cryo_terminal'],
+            outputs: ['urea_fertilizer', 'peaking_electricity', 'petrochemicals'],
+            storageRule: 'Cryogenic LNG Depots & Pressurized Salt Dome Storage',
+            strategicImportance: 'Clean-burning hydrocarbon for electricity generation, industrial heating, and nitrogen fertilizer production.'
+        },
+        uranium: {
+            id: 'uranium',
+            name: 'Uranium',
+            bnName: 'ইউরেনিয়াম',
+            icon: '⚛️',
+            category: 'Nuclear Feedstock',
+            baseValue: 180000, // $ / Ton U3O8
+            purityGrades: ['Yellowcake U3O8', 'Low Enriched LEU 3-5%', 'High Assayed HALEU 19.75%'],
+            inputs: ['centrifuge_cascades', 'heavy_water_reactors'],
+            outputs: ['nuclear_power', 'medical_isotopes', 'strategic_deterrent'],
+            storageRule: 'Radiation-Shielded Underground Bunkers',
+            strategicImportance: 'Nuclear fuel resource for baseload zero-carbon electrical power generation and naval propulsion.'
+        },
+        gold: {
+            id: 'gold',
+            name: 'Gold',
+            bnName: 'স্বর্ণ সঞ্চয়',
+            icon: '🥇',
+            category: 'Precious Metals',
+            baseValue: 65000000,
+            purityGrades: ['Dore Bar 80%', 'Bullion 99.99%'],
+            inputs: ['deep_shafts', 'cyanide_leaching'],
+            outputs: ['sovereign_reserves', 'microelectronics'],
+            storageRule: 'Central Bank Subterranean Fortress Vault',
+            strategicImportance: 'Monetary reserve metal, high-frequency electronics conductor, and aerospace shielding material.'
+        },
+        copper: {
+            id: 'copper',
+            name: 'Copper',
+            bnName: 'তামা',
+            icon: '🔌',
+            category: 'Strategic Metals',
+            baseValue: 8500, // $ / Ton
+            purityGrades: ['Concentrate 28%', 'Cathode Grade A 99.99%'],
+            inputs: ['electricity', 'chemical_solvents'],
+            outputs: ['power_grid', 'electronics', 'telecom_cables'],
+            storageRule: 'Secured High-Value Warehouse',
+            strategicImportance: 'Essential electrical conductor for power grids, renewable generation, EVs, and telecommunications.'
+        },
+        iron_ore: {
+            id: 'iron_ore',
+            name: 'Iron Ore',
+            bnName: 'আকরিক লোহা',
+            icon: '⛏️',
+            category: 'Minerals',
+            baseValue: 120, // $ / Ton
+            purityGrades: ['Fe 58%', 'Fe 62% Standard', 'Fe 65% Premium'],
+            inputs: ['heavy_machinery', 'electricity'],
+            outputs: ['steel', 'defense_armor', 'rails'],
+            storageRule: 'Open Pit Bulk Yard (Unlimited loss tolerance)',
+            strategicImportance: 'Fundamental raw material for crude steel production and industrial civil infrastructure.'
+        },
+        bauxite: {
+            id: 'bauxite',
+            name: 'Bauxite / Aluminum',
+            bnName: 'বক্সাইট (অ্যালুমিনিয়াম)',
+            icon: '📦',
+            category: 'Strategic Metals',
+            baseValue: 320,
+            purityGrades: ['Trihydrate Bauxite', 'Refined Alumina', 'Primary Aluminum Ingot'],
+            inputs: ['electricity', 'caustic_soda'],
+            outputs: ['aircraft_hull', 'automotive', 'structural_alloys'],
+            storageRule: 'Dry Silo Yards',
+            strategicImportance: 'Primary ore for aluminum smelting used in aerospace, automotive, transmission cables, and packaging.'
+        },
+        coal: {
+            id: 'coal',
+            name: 'Coal',
+            bnName: 'কয়লা',
+            icon: '🪨',
+            category: 'Energy & Smelting',
+            baseValue: 140,
+            purityGrades: ['Thermal Coal', 'Coking Metallurgical Coal', 'Anthracite'],
+            inputs: ['mining_rigs'],
+            outputs: ['electricity', 'coke_smelting'],
+            storageRule: 'Covered Bulk Bunkers (Spontaneous combustion risk)',
+            strategicImportance: 'Coking coal for blast furnace steelmaking and thermal coal for utility electricity generation.'
+        },
+        wheat: {
+            id: 'wheat',
+            name: 'Wheat',
+            bnName: 'গম',
+            icon: '🌾',
+            category: 'Staple Food',
+            baseValue: 320,
+            purityGrades: ['Hard Red Winter', 'Soft Red Winter', 'Durum Wheat'],
+            inputs: ['water', 'fertilizer', 'combine_harvesters'],
+            outputs: ['flour', 'bread', 'emergency_military_rations'],
+            storageRule: 'Granary Grain Elevators',
+            strategicImportance: 'Core global grain staple vital for human caloric nutrition and food security.'
+        },
+        rice: {
+            id: 'rice',
+            name: 'Rice',
+            bnName: 'ধান/চাল',
+            icon: '🌾',
+            category: 'Staple Food',
+            baseValue: 480, // $ / Ton
+            purityGrades: ['Paddy Rice', 'Milled Non-Basmati', 'Premium Aromatic'],
+            inputs: ['irrigation_water', 'urea_fertilizer', 'arable_land'],
+            outputs: ['food_rations', 'national_caloric_reserve'],
+            storageRule: 'Climate-Controlled Food Silos (Pest monitoring)',
+            strategicImportance: 'Primary staple food crop feeding over half of the global population across Asia, Africa, and Americas.'
+        },
+        water: {
+            id: 'water',
+            name: 'Freshwater / Desalination',
+            bnName: 'জলসম্পদ / মিঠা পানি',
+            icon: '💧',
+            category: 'Natural Essentials',
+            baseValue: 1.50, // $ / m3
+            purityGrades: ['Raw River/Aquifer Water', 'Potable Municipal Water', 'Ultra-Pure Deionized Water'],
+            inputs: ['dams', 'water_treatment_plants', 'aquifers'],
+            outputs: ['crop_irrigation', 'nuclear_cooling', 'municipal_drinking'],
+            storageRule: 'Reservoirs, Lakes & Underground Aquifer Retention',
+            strategicImportance: 'Strategic freshwater reserves, aquifer basins, and industrial desalination networks.'
+        },
+        electricity: {
+            id: 'electricity',
+            name: 'Electricity Generation Grid',
+            bnName: 'বিদ্যুৎ ও জাতীয় গ্রিড',
+            icon: '⚡',
+            category: 'Secondary Energy',
+            baseValue: 0.12, // $ / kWh
+            purityGrades: ['50Hz Synchronous Baseload', 'HVDC Long-Distance Grid'],
+            inputs: ['coal', 'natural_gas', 'uranium', 'hydropower'],
+            outputs: ['factory_operation', 'urban_power', 'radar_stations'],
+            storageRule: 'Pumped Hydro & Utility Battery Storage (Loss over time)',
+            strategicImportance: 'National power grid supply capacity spanning thermal, nuclear, hydro, solar, and wind generation.'
         },
         semiconductor: {
             id: 'semiconductor',
@@ -283,46 +205,85 @@ window.ResourceMinistryEngine = (() => {
             inputs: ['ultra_pure_silica', 'rare_earth', 'EUV_lithography'],
             outputs: ['ai_supercomputers', 'radar_arrays', 'guided_missiles', 'cyber_warfare'],
             storageRule: 'Cleanroom Sealed Inert Vault',
-            strategicImportance: 'The ultimate digital and military force multiplier underpinning modern power.'
+            strategicImportance: 'Silicon wafer fabrication, microchip packaging, and lithography supply chains powering digital infrastructure.'
         },
-        gold: {
-            id: 'gold',
-            name: 'Gold Deposits',
-            bnName: 'স্বর্ণ সঞ্চয়',
-            icon: '🥇',
-            category: 'Precious Metals',
-            baseValue: 65000000,
-            purityGrades: ['Dore Bar 80%', 'Bullion 99.99%'],
-            inputs: ['deep_shafts', 'cyanide_leaching'],
-            outputs: ['sovereign_reserves', 'microelectronics'],
-            storageRule: 'Central Bank Subterranean Fortress Vault',
-            strategicImportance: 'Ultimate sovereign monetary reserve asset and inflation hedge.'
+        cobalt: {
+            id: 'cobalt',
+            name: 'Cobalt',
+            bnName: 'কোবাল্ট',
+            icon: '🔷',
+            category: 'Critical Minerals',
+            baseValue: 34000,
+            purityGrades: ['Cobalt Hydroxide', 'High Purity Cathode Grade'],
+            inputs: ['copper_nickel_tailings'],
+            outputs: ['superalloys', 'jet_turbines', 'battery_cathodes'],
+            storageRule: 'Secured Warehouse',
+            strategicImportance: 'Essential cathode material for high-density lithium-ion batteries and heat-resistant superalloys.'
         },
-        titanium: {
-            id: 'titanium',
-            name: 'Titanium Ore',
-            bnName: 'টাইটানিয়াম',
+        limestone: {
+            id: 'limestone',
+            name: 'Limestone & Cement Aggregate',
+            bnName: 'চুনাপাথর ও সিমেন্ট',
+            icon: '🧱',
+            category: 'Construction Materials',
+            baseValue: 45,
+            purityGrades: ['Industrial Grade', 'High-Calcium Chemical Grade'],
+            inputs: ['quarry_excavators'],
+            outputs: ['cement', 'quicklime', 'soil_conditioner'],
+            storageRule: 'Quarry Stockpiles',
+            strategicImportance: 'Calcium carbonate rock for clinker cement production, metallurgy flux, and chemical processing.'
+        },
+        timber: {
+            id: 'timber',
+            name: 'Timber & Forests',
+            bnName: 'বনজ সম্পদ / কাষ্ঠ',
+            icon: '🪵',
+            category: 'Renewable Resources',
+            baseValue: 210,
+            purityGrades: ['Softwood Construction Lumber', 'Hardwood Teak/Mahogany', 'Pulpwood'],
+            inputs: ['sustainable_forestry', 'sawmills'],
+            outputs: ['housing', 'paper', 'biomass_fuel'],
+            storageRule: 'Open Log Ponds & Seasoning Yards',
+            strategicImportance: 'Industrial roundwood, structural lumber, and pulpwood supporting construction and bioenergy.'
+        },
+        steel: {
+            id: 'steel',
+            name: 'Finished Steel',
+            bnName: 'ইস্পাত শিল্প',
+            icon: '🏗️',
+            category: 'Manufactured Materials',
+            baseValue: 750,
+            purityGrades: ['Structural Rebar', 'Hot Rolled Coil', 'Alloy Armor Plate'],
+            inputs: ['iron_ore', 'coal', 'electricity'],
+            outputs: ['infrastructure', 'shipbuilding', 'defense_armor'],
+            storageRule: 'Covered Industrial Stockyard',
+            strategicImportance: 'Structural steel products, rebar, sheet metal, and specialized alloy steel.'
+        },
+        refined_fuel: {
+            id: 'refined_fuel',
+            name: 'Refined Petroleum Products',
+            bnName: 'পরিশোধিত জ্বালানি',
+            icon: '⛽',
+            category: 'Refined Hydrocarbons',
+            baseValue: 125,
+            purityGrades: ['Gasoline RON95', 'Ultra-Low Sulfur Diesel', 'Jet A-1 Fuel'],
+            inputs: ['crude_oil', 'refineries'],
+            outputs: ['transportation', 'aviation_squadrons', 'power_generators'],
+            storageRule: 'Sealed Fuel Storage Depots',
+            strategicImportance: 'Gasoline, diesel, jet fuel, and liquefied petroleum gas produced from oil refining.'
+        },
+        military_armor: {
+            id: 'military_armor',
+            name: 'Strategic Defense Industrial Base',
+            bnName: 'প্রতিরক্ষা শিল্প ভিত্তি',
             icon: '🛡️',
-            category: 'Strategic Metals',
-            baseValue: 18000,
-            purityGrades: ['Ilmenite Ore', 'Titanium Sponge 99.7%'],
-            inputs: ['magnesium_reduction'],
-            outputs: ['stealth_jets', 'submarines', 'missile_casings'],
-            storageRule: 'Dry Inert Depot',
-            strategicImportance: 'High strength-to-weight alloy essential for hypersonic and aerospace engineering.'
-        },
-        diamond: {
-            id: 'diamond',
-            name: 'Industrial & Gem Diamond',
-            bnName: 'হীরা সঞ্চয়',
-            icon: '💎',
-            category: 'Precious & Industrial',
-            baseValue: 8500000,
-            purityGrades: ['Industrial Grit', 'Gem Grade Cut'],
-            inputs: ['kimberlite_mining'],
-            outputs: ['precision_cutting', 'sovereign_treasury'],
-            storageRule: 'Vault Storage',
-            strategicImportance: 'Hardest material for industrial drill bits and liquid sovereign reserve.'
+            category: 'Defense Production',
+            baseValue: 500000,
+            purityGrades: ['Armored Combat Vehicles', 'Aviation Munitions', 'Radar Arrays'],
+            inputs: ['steel', 'semiconductor', 'titanium', 'rare_earth'],
+            outputs: ['national_sovereignty', 'territorial_defense'],
+            storageRule: 'Underground Armory Vaults',
+            strategicImportance: 'Defense manufacturing capacity for heavy armored platforms, munitions, radar, and aerospace systems.'
         }
     };
 
@@ -572,7 +533,43 @@ window.ResourceMinistryEngine = (() => {
             const popM = Math.max(0.5, (popVal || 2e7) / 1e6);
             const gdpB = Math.max(1.0, (gdpVal || 5e10) / 1e9);
 
-            // Formulate outputs per resource
+            // Formulate outputs per resource based on country's JSON profile
+            const profile = window.ResourceMinistryEngine && typeof window.ResourceMinistryEngine.getCountryResourceProfile === 'function' ? window.ResourceMinistryEngine.getCountryResourceProfile(cKey) : null;
+            
+            // Build a set of normalized resource terms from country's JSON profile
+            const profileResourceTerms = new Set();
+            if (profile) {
+                const mins = profile.mineral_resource_base || {};
+                const hyds = profile.hydrocarbon_resource_base || {};
+                const strats = profile.strategic_resources || [];
+                const endows = (profile.resource_endowment && profile.resource_endowment.known) || [];
+                const energy = profile.energy_resource_base || {};
+                const agri = profile.agricultural_resource_base || {};
+
+                const allProfileItems = [
+                    ...(mins.metallic || []),
+                    ...(mins.nonMetallic || []),
+                    ...(mins.industrialMinerals || []),
+                    ...(mins.preciousMetals || []),
+                    ...(mins.criticalMinerals || []),
+                    ...(mins.rareEarths || []),
+                    ...(hyds.oil || []),
+                    ...(hyds.naturalGas || []),
+                    ...(hyds.coal || []),
+                    ...(energy.hydro || []),
+                    ...(energy.nuclear || []),
+                    ...(energy.renewables || []),
+                    ...(agri.stapleCrops || []),
+                    ...(agri.cashCrops || []),
+                    ...(Array.isArray(strats) ? strats : []),
+                    ...(Array.isArray(endows) ? endows : [])
+                ];
+
+                allProfileItems.forEach(item => {
+                    profileResourceTerms.add(String(item).toLowerCase().replace(/_/g, " "));
+                });
+            }
+
             const report = {};
             Object.keys(STRATEGIC_RESOURCES).forEach(resId => {
                 const res = STRATEGIC_RESOURCES[resId];
@@ -581,15 +578,18 @@ window.ResourceMinistryEngine = (() => {
                 let baseProd = Math.floor((gdpB * 0.45) + (popM * 0.8) + (resId.length * 15)) + mod.extraProd;
                 let baseCons = Math.floor((popM * 1.2) + (gdpB * 0.38));
 
-                if (resId === 'rice' && (cKey === 'BANGLADESH' || cKey === 'CHINA' || cKey === 'INDIA' || cKey === 'VIETNAM')) {
-                    baseProd *= 4.5;
-                    baseCons *= 3.8;
-                } else if (resId === 'crude_oil' && (cKey === 'SAUDI ARABIA' || cKey === 'USA' || cKey === 'RUSSIA' || cKey === 'IRAQ' || cKey === 'LIBYA' || cKey === 'QATAR')) {
-                    baseProd *= 6.0;
-                } else if (resId === 'rare_earth' && (cKey === 'CHINA' || cKey === 'USA' || cKey === 'AUSTRALIA' || cKey === 'BURUNDI')) {
-                    baseProd *= 5.0;
-                } else if (resId === 'water' && (cKey === 'BANGLADESH' || cKey === 'BRAZIL' || cKey === 'RUSSIA')) {
-                    baseProd *= 4.0;
+                // Check if profile specifically possesses or emphasizes this resource
+                const resNameLower = res.name.toLowerCase();
+                let hasInProfile = false;
+                profileResourceTerms.forEach(term => {
+                    if (term.includes(resId) || resNameLower.includes(term) || term.includes(resNameLower)) {
+                        hasInProfile = true;
+                    }
+                });
+
+                if (hasInProfile) {
+                    const richnessMultiplier = (profile?.resource_domain?.majorResourceCount || 10) > 12 ? 3.5 : 2.2;
+                    baseProd = Math.round(baseProd * richnessMultiplier);
                 }
 
                 baseProd = Math.round(baseProd);
@@ -699,33 +699,7 @@ window.ResourceMinistryEngine = (() => {
             };
             this.state.surveysUnderway.push(surveyItem);
 
-            // Dynamically resolve target country base coordinates
-            let baseLat = 20, baseLng = 0;
-            const reg = (window.Game && window.Game.locationsRegistry) || {};
-            const cObj = reg[countryKey] || reg[countryKey.toUpperCase()] || {};
-            if (cObj.lat !== undefined && cObj.lng !== undefined) {
-                baseLat = Number(cObj.lat);
-                baseLng = Number(cObj.lng);
-            } else if (window.Game && window.Game.countryLookup && window.Game.countryLookup[countryKey]) {
-                const conf = window.Game.countryLookup[countryKey];
-                if (conf && conf.lat !== undefined && conf.lng !== undefined) {
-                    baseLat = Number(conf.lat);
-                    baseLng = Number(conf.lng);
-                }
-            }
-            const lat = baseLat + (Math.random() * 2 - 1);
-            const lng = baseLng + (Math.random() * 2 - 1);
-            GEOGRAPHIC_DEPOSITS.push({
-                name: `${countryKey} New ${res.name} Deposit`,
-                resId: resId,
-                country: countryKey,
-                lat: parseFloat(lat.toFixed(2)),
-                lng: parseFloat(lng.toFixed(2)),
-                reserve: "New Survey Yield",
-                status: "Active Exploration"
-            });
-
-            this.dispatchUpdate('survey', resId, `Dispatched Geological Survey Bureau team for ${res.name} (${res.bnName || resId}). New deposit discovered on map!`);
+            this.dispatchUpdate('survey', resId, `Dispatched Geological Survey Bureau team for ${res.name} (${res.bnName || resId}). Geological survey initiated!`);
             return surveyItem;
         }
 
@@ -878,23 +852,12 @@ window.ResourceMinistryEngine = (() => {
                 }
             }
 
-            // Synthesize fallback canonical 25-section audit profile
-            const loc = (window.Game && window.Game.locationsRegistry && (window.Game.locationsRegistry[iso3] || window.Game.locationsRegistry[normKey])) || {};
-            return {
-                identity: { name: normKey, iso3: iso3, officialName: `Sovereign Nation of ${normKey}` },
-                geography: { capital: loc.capital || 'National Capital', landAreaKm2: 250000, eezKm2: 120000 },
-                resource_domain: { resourceRichnessClass: "Extensive", resourceDiversityClass: "High-Priority", majorResourceCount: 14 },
-                geological_context: { majorGeologicalDomains: ["Precambrian Shield", "Sedimentary Rift Basin"], sedimentaryBasins: ["Primary Hydrocarbon & Mineral Basin"] },
-                mineral_resource_base: { metallic: ["Gold", "Copper", "Iron Ore", "Rare Earths"], industrial: ["Limestone", "Aggregate"] },
-                hydrocarbon_resource_base: { oil: ["Crude Oil Reserves"], naturalGas: ["Associated Natural Gas"] },
-                energy_resource_base: { renewable: ["Hydroelectric", "Solar PV"], gridCapacityMW: "3,500 MW" },
-                resource_infrastructure_context: { refiningChains: ["Metals Smelter", "Petroleum Storage"], exportTerminals: ["Deepwater Maritime Hub"] },
-                administrative_resource_regions: ["Northern Mining District", "Southern Agricultural & Hydro Basin"]
-            };
+            // Strictly return null if country profile is missing from resources.json
+            return null;
         },
         get deposits() {
-            const combined = [...GEOGRAPHIC_DEPOSITS];
-            const existingNames = new Set(GEOGRAPHIC_DEPOSITS.map(d => (d.name || '').toLowerCase()));
+            const combined = [];
+            const existingNames = new Set();
             
             const db = resourceDatabaseCache || window.resourceDatabase;
             if (db && Array.isArray(db.deposits)) {
@@ -906,125 +869,14 @@ window.ResourceMinistryEngine = (() => {
                 });
             }
 
-            // Extract deposits from deduplicated canonical country profiles in db
-            if (db) {
-                const canonicalProfiles = buildCanonicalCountryProfiles(db);
-                const resIdMap = (itemStr) => {
-                    const s = String(itemStr).toLowerCase().replace(/_/g, " ");
-                    if (s.includes("oil") || s.includes("petroleum") || s.includes("hydrocarbon") || s.includes("crude")) return "crude_oil";
-                    if (s.includes("gas") || s.includes("lng")) return "natural_gas";
-                    if (s.includes("coal") || s.includes("lignite") || s.includes("anthracite")) return "coal";
-                    if (s.includes("uranium") || s.includes("nuclear")) return "uranium";
-                    if (s.includes("lithium")) return "lithium";
-                    if (s.includes("rare earth") || s.includes("ree") || s.includes("monazite") || s.includes("lanthanide") || s.includes("yttrium") || s.includes("neodymium") || s.includes("scandium")) return "rare_earth";
-                    if (s.includes("gold")) return "gold";
-                    if (s.includes("silver") || s.includes("platinum") || s.includes("palladium")) return "silver";
-                    if (s.includes("copper")) return "copper";
-                    if (s.includes("iron") || s.includes("steel") || s.includes("magnetite") || s.includes("hematite")) return "iron_ore";
-                    if (s.includes("bauxite") || s.includes("aluminum") || s.includes("alumina")) return "bauxite";
-                    if (s.includes("titanium")) return "titanium";
-                    if (s.includes("cobalt")) return "cobalt";
-                    if (s.includes("nickel")) return "nickel";
-                    if (s.includes("manganese")) return "manganese";
-                    if (s.includes("zinc") || s.includes("lead")) return "zinc";
-                    if (s.includes("tin")) return "tin";
-                    if (s.includes("potash") || s.includes("salt") || s.includes("phosphate")) return "potash";
-                    if (s.includes("limestone") || s.includes("stone") || s.includes("marble") || s.includes("quarry")) return "limestone";
-                    if (s.includes("diamond") || s.includes("gem")) return "diamond";
-                    if (s.includes("silicon") || s.includes("semiconductor")) return "semiconductor";
-                    return "rare_earth";
-                };
-
-                const reg = (window.Game && window.Game.locationsRegistry) || {};
-
-                for (let iso3 in canonicalProfiles) {
-                    const p = canonicalProfiles[iso3];
-                    if (!p) continue;
-                    const countryName = (p.identity && p.identity.name) ? p.identity.name : iso3;
-                    const normCName = countryName.replace(/_/g, " ").toUpperCase();
-
-                    // Read canonical coordinates from geography profile
-                    let baseLat = null;
-                    let baseLng = null;
-                    if (p.geography && p.geography.coordinates && p.geography.coordinates.lat !== undefined && p.geography.coordinates.lng !== undefined) {
-                        baseLat = Number(p.geography.coordinates.lat);
-                        baseLng = Number(p.geography.coordinates.lng);
+            // Fallback to static catalog if database deposits are not yet loaded
+            if (combined.length === 0) {
+                GEOGRAPHIC_DEPOSITS.forEach(dep => {
+                    if (dep && dep.name && !existingNames.has(dep.name.toLowerCase())) {
+                        combined.push(dep);
+                        existingNames.add(dep.name.toLowerCase());
                     }
-
-                    // Fallback to locations registry if needed
-                    if ((baseLat === null || baseLng === null || !Number.isFinite(baseLat) || !Number.isFinite(baseLng))) {
-                        let loc = reg[iso3] || reg[normCName] || {};
-                        if (!loc.lat) {
-                            for (let k in reg) {
-                                if ((reg[k].name || '').toUpperCase() === normCName) {
-                                    loc = reg[k];
-                                    break;
-                                }
-                            }
-                        }
-                        if (loc.lat !== undefined && loc.lng !== undefined) {
-                            baseLat = Number(loc.lat);
-                            baseLng = Number(loc.lng);
-                        }
-                    }
-
-                    if (baseLat === null || baseLng === null || !Number.isFinite(baseLat) || !Number.isFinite(baseLng)) {
-                        continue;
-                    }
-
-                    const mins = p.mineral_resource_base || {};
-                    const hyds = p.hydrocarbon_resource_base || {};
-                    const strats = p.strategic_resources || [];
-                    const endows = (p.resource_endowment && p.resource_endowment.known) || [];
-                    const energy = p.energy_resource_base || {};
-
-                    const items = [
-                        ...(mins.metallic || []),
-                        ...(mins.nonMetallic || []),
-                        ...(mins.industrialMinerals || []),
-                        ...(mins.preciousMetals || []),
-                        ...(mins.criticalMinerals || []),
-                        ...(mins.rareEarths || []),
-                        ...(hyds.oil || []),
-                        ...(hyds.naturalGas || []),
-                        ...(hyds.coal || []),
-                        ...(energy.hydro || []),
-                        ...(energy.nuclear || []),
-                        ...(energy.renewables || []),
-                        ...(Array.isArray(strats) ? strats : []),
-                        ...(Array.isArray(endows) ? endows : [])
-                    ];
-
-                    items.forEach((rawItem, idx) => {
-                        const rId = resIdMap(rawItem);
-                        const rawClean = String(rawItem).replace(/_/g, " ").toUpperCase();
-                        const depName = `${countryName} ${rawClean}`;
-                        if (!existingNames.has(depName.toLowerCase())) {
-                            existingNames.add(depName.toLowerCase());
-                            // Golden spiral spatial distribution to prevent clumping and linear overlapping
-                            const radius = 0.25 + 0.15 * Math.sqrt(idx);
-                            const angle = idx * 2.399963; // Golden angle in radians
-                            const offsetLat = radius * Math.sin(angle);
-                            const cosLat = Math.max(0.2, Math.cos(baseLat * Math.PI / 180));
-                            const offsetLng = (radius * Math.cos(angle)) / cosLat;
-                            
-                            let reserveDesc = 'Strategic Sovereign Reserve';
-                            if (rawClean.includes("WORLD") || rawClean.includes("TOP") || rawClean.includes("NO1") || rawClean.includes("LEADER")) {
-                                reserveDesc = 'Tier 1 World Leader Field';
-                            }
-
-                            combined.push({
-                                name: depName,
-                                resId: rId,
-                                country: countryName,
-                                lat: parseFloat((baseLat + offsetLat).toFixed(4)),
-                                lng: parseFloat((baseLng + offsetLng).toFixed(4)),
-                                reserve: reserveDesc,
-                                status: 'Canonical GSRSK Field'
-                            });
-                        }
-                    });
-                }
+                });
             }
 
             return combined;

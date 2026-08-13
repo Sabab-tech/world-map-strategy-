@@ -321,7 +321,7 @@
       "country": "USA",
       "lat": 35.48,
       "lng": -115.53,
-      "reserve": "1.5M Tons Bastn\u00e4site",
+      "reserve": "1.5M Tons Bastnäsite",
       "status": "Active Mine",
       "rare_earth_elements": {
         "Neodymium (Nd)": "40%",
@@ -585,7 +585,7 @@
       "countryId": "COD"
     },
     {
-      "name": "Caraj\u00e1s Iron Ore Mine",
+      "name": "Carajás Iron Ore Mine",
       "resId": "iron_ore",
       "country": "BRAZIL",
       "lat": -6.06,
@@ -1070,7 +1070,7 @@
         },
         "ALUMINA_HALL_HEROULT": {
           "id": "ALUMINA_HALL_HEROULT",
-          "name": "Bayer-Hall-H\u00e9roult Aluminium Smelter",
+          "name": "Bayer-Hall-Héroult Aluminium Smelter",
           "inputResId": "bauxite",
           "outputResId": "bauxite",
           "conversionRatio": 0.22,
@@ -1168,7 +1168,7 @@
       "POL_EXPORT_BAN": {
         "id": "POL_EXPORT_BAN",
         "name": "Strategic Commodity Export Ban",
-        "bnName": "\u0995\u09cc\u09b6\u09b2\u0997\u09a4 \u09b0\u09ab\u09a4\u09be\u09a8\u09bf \u09a8\u09bf\u09b7\u09c7\u09a7\u09be\u099c\u09cd\u099e\u09be",
+        "bnName": "কৌশলগত রফতানি নিষেধাজ্ঞা",
         "category": "trade_restriction",
         "effects": {
           "domesticSupplyRatio": 0.4,
@@ -1179,7 +1179,7 @@
       "POL_STRATEGIC_STOCKPILING": {
         "id": "POL_STRATEGIC_STOCKPILING",
         "name": "National Strategic Stockpile Reserve Mandate",
-        "bnName": "\u099c\u09be\u09a4\u09c0\u09af\u09bc \u0995\u09cc\u09b6\u09b2\u0997\u09a4 \u099c\u09b0\u09c1\u09b0\u09bf \u09ae\u099c\u09c1\u09a4 \u09a8\u09c0\u09a4\u09bf",
+        "bnName": "জাতীয় কৌশলগত জরুরি মজুত নীতি",
         "category": "reserve_security",
         "effects": {
           "bufferDurationMonths": 6,
@@ -1189,7 +1189,7 @@
       "POL_MINING_SUBSIDY": {
         "id": "POL_MINING_SUBSIDY",
         "name": "Resource Extraction Technology Subsidy",
-        "bnName": "\u0996\u09a8\u09bf \u0989\u09a4\u09cd\u09a4\u09cb\u09b2\u09a8 \u09aa\u09cd\u09b0\u09af\u09c1\u0995\u09cd\u09a4\u09bf \u09ad\u09b0\u09cd\u09a4\u09c1\u0995\u09bf",
+        "bnName": "খনি উত্তোলন প্রযুক্তি ভর্তুকি",
         "category": "production_incentive",
         "effects": {
           "extractionEfficiencyGain": 0.15,
@@ -1199,7 +1199,7 @@
       "POL_NATIONALIZATION": {
         "id": "POL_NATIONALIZATION",
         "name": "Sovereign Asset Nationalization",
-        "bnName": "\u09b8\u09ae\u09cd\u09aa\u09a6\u09c7\u09b0 \u09b8\u09be\u09b0\u09cd\u09ac\u09ad\u09cc\u09ae \u099c\u09be\u09a4\u09c0\u09af\u09bc\u0995\u09b0\u09a3",
+        "bnName": "সম্পদের সার্বভৌম জাতীয়করণ",
         "category": "sovereignty",
         "effects": {
           "stateSharePercent": 100,
@@ -4414,7 +4414,7 @@
           "resourceSystemId": "RES_MDV"
         },
         "geography": {
-          "capital": "Mal\u00e9",
+          "capital": "Malé",
           "coordinates": {
             "lat": 4.1755,
             "lng": 73.5093
@@ -8711,7 +8711,7 @@
         "administrative_resource_regions": [
           {
             "regionId": "GNB_BOE",
-            "name": "Bo\u00e9 Bauxite Zone",
+            "name": "Boé Bauxite Zone",
             "type": "resource_region",
             "resourceTags": [
               "bauxite"
@@ -9055,7 +9055,7 @@
           "dataConfidence": "moderate",
           "lastVerified": "2026-06-30",
           "coverageNotes": [
-            "Verified with Farim phosphate and Bo\u00e9 bauxite survey reports."
+            "Verified with Farim phosphate and Boé bauxite survey reports."
           ]
         }
       },
@@ -9095,7 +9095,7 @@
         "administrative_resource_regions": [
           {
             "regionId": "GIN_BOKE",
-            "name": "Bok\u00e9 Bauxite Belt",
+            "name": "Boké Bauxite Belt",
             "type": "resource_region",
             "resourceTags": [
               "bauxite"
@@ -10342,8 +10342,8 @@
         "identity": {
           "countryId": "CIV",
           "iso3": "CIV",
-          "name": "C\u00f4te d'Ivoire",
-          "officialName": "Republic of C\u00f4te d'Ivoire",
+          "name": "Côte d'Ivoire",
+          "officialName": "Republic of Côte d'Ivoire",
           "continent": "Africa",
           "subcontinent": "West Africa",
           "region": "Western Africa",
@@ -10391,7 +10391,7 @@
           },
           {
             "regionId": "CIV_SAN_PEDRO",
-            "name": "San P\u00e9dro Timber & Rubber Belt",
+            "name": "San Pédro Timber & Rubber Belt",
             "type": "resource_region",
             "resourceTags": [
               "timber",
@@ -10510,7 +10510,7 @@
         "water_resource_base": {
           "majorRiverSystems": [
             "bandama_river",
-            "como\u00e9_river",
+            "comoé_river",
             "sassandra_river"
           ],
           "groundwaterSystems": [
@@ -10531,7 +10531,7 @@
             "guinean_savanna"
           ],
           "majorForestZones": [
-            "ta\u00ef_national_park"
+            "taï_national_park"
           ],
           "timberResourcePresence": true,
           "nonTimberForestResources": [
@@ -11264,7 +11264,7 @@
           "resourceSystemId": "RES_TGO"
         },
         "geography": {
-          "capital": "Lom\u00e9",
+          "capital": "Lomé",
           "coordinates": {
             "lat": 6.1375,
             "lng": 1.2125
@@ -11287,7 +11287,7 @@
         "administrative_resource_regions": [
           {
             "regionId": "TGO_MARITIME",
-            "name": "Hahoto\u00e9 Phosphate District",
+            "name": "Hahotoé Phosphate District",
             "type": "resource_region",
             "resourceTags": [
               "phosphate"
@@ -11692,7 +11692,7 @@
           },
           {
             "regionId": "BEN_SEME",
-            "name": "S\u00e8m\u00e8 Offshore Field Zone",
+            "name": "Sèmè Offshore Field Zone",
             "type": "resource_region",
             "resourceTags": [
               "crude_oil"
@@ -11794,14 +11794,14 @@
         },
         "water_resource_base": {
           "majorRiverSystems": [
-            "ou\u00e9m\u00e9_river",
+            "ouémé_river",
             "niger_river_border"
           ],
           "groundwaterSystems": [
             "coastal_basin_aquifer"
           ],
           "lakeSystems": [
-            "lake_nokou\u00e9"
+            "lake_nokoué"
           ],
           "freshwaterAvailabilityClass": "seasonal_abundance",
           "waterStressClass": "moderate",
@@ -12194,7 +12194,7 @@
         "water_resource_base": {
           "majorRiverSystems": [
             "mouhoun_black_volta",
-            "nakamb\u00e9_white_volta"
+            "nakambé_white_volta"
           ],
           "groundwaterSystems": [
             "crystalline_basement_aquifer"
@@ -12623,7 +12623,7 @@
             "taoudeni_basin_aquifer"
           ],
           "lakeSystems": [
-            "lake_d\u00e9bo"
+            "lake_débo"
           ],
           "freshwaterAvailabilityClass": "niger_river_dependent",
           "waterStressClass": "high_northern_arid_stress",
@@ -12637,7 +12637,7 @@
             "sudan_woodland_savanna"
           ],
           "majorForestZones": [
-            "boucle_du_baoul\u00e9"
+            "boucle_du_baoulé"
           ],
           "timberResourcePresence": true,
           "nonTimberForestResources": [
@@ -12992,10 +12992,10 @@
             "west_african_craton_eastern_margin"
           ],
           "mountainBelts": [
-            "a\u00efr_mountains"
+            "aïr_mountains"
           ],
           "volcanicZones": [
-            "a\u00efr_ring_complexes"
+            "aïr_ring_complexes"
           ],
           "tectonicSetting": [
             "intracratonic_basin_and_mesozoic_rift"
@@ -13054,7 +13054,7 @@
             "sahara_tenere_solar_belt"
           ],
           "windResourceZones": [
-            "a\u00efr_mountains_wind_corridor"
+            "aïr_mountains_wind_corridor"
           ],
           "geothermalPotential": [],
           "biomassResources": []
@@ -13223,7 +13223,7 @@
             "landlocked_uses_cotonou_and_parakou_rail"
           ],
           "maritimeResourceCorridors": [
-            "landlocked_uses_cotonou_and_lom\u00e9_ports"
+            "landlocked_uses_cotonou_and_lomé_ports"
           ]
         },
         "resource_dependency": {
@@ -14150,7 +14150,7 @@
           "resourceSystemId": "RES_CMR"
         },
         "geography": {
-          "capital": "Yaound\u00e9",
+          "capital": "Yaoundé",
           "coordinates": {
             "lat": 3.848,
             "lng": 11.5021
@@ -14168,7 +14168,7 @@
             "minim_martap_bauxite",
             "mbalam_iron_belt",
             "rio_del_rey_basin",
-            "lomi\u00e9_cobalt_nickel"
+            "lomié_cobalt_nickel"
           ]
         },
         "administrative_resource_regions": [
@@ -14681,7 +14681,7 @@
             "congo_craton_northeast"
           ],
           "mountainBelts": [
-            "yad\u00e9_massif"
+            "yadé_massif"
           ],
           "volcanicZones": [],
           "tectonicSetting": [
@@ -16459,7 +16459,7 @@
         },
         "water_resource_base": {
           "majorRiverSystems": [
-            "ogoou\u00e9_river",
+            "ogooué_river",
             "nyanga_river"
           ],
           "groundwaterSystems": [
@@ -16475,12 +16475,12 @@
             "congo_basin_tropical_rainforest"
           ],
           "majorForestZones": [
-            "mink\u00e9b\u00e9_national_park",
-            "lop\u00e9_national_park"
+            "minkébé_national_park",
+            "lopé_national_park"
           ],
           "timberResourcePresence": true,
           "nonTimberForestResources": [
-            "okoum\u00e9_wood"
+            "okoumé_wood"
           ]
         },
         "agricultural_resource_base": {
@@ -17150,15 +17150,15 @@
         "identity": {
           "countryId": "STP",
           "iso3": "STP",
-          "name": "S\u00e3o Tom\u00e9 and Pr\u00edncipe",
-          "officialName": "Democratic Republic of S\u00e3o Tom\u00e9 and Pr\u00edncipe",
+          "name": "São Tomé and Príncipe",
+          "officialName": "Democratic Republic of São Tomé and Príncipe",
           "continent": "Africa",
           "subcontinent": "Central Africa",
           "region": "Middle Africa",
           "resourceSystemId": "RES_STP"
         },
         "geography": {
-          "capital": "S\u00e3o Tom\u00e9",
+          "capital": "São Tomé",
           "coordinates": {
             "lat": 0.3302,
             "lng": 6.7333
@@ -17180,7 +17180,7 @@
         "administrative_resource_regions": [
           {
             "regionId": "STP_SAO_TOME",
-            "name": "S\u00e3o Tom\u00e9 Island Zone",
+            "name": "São Tomé Island Zone",
             "type": "resource_region",
             "resourceTags": [
               "industrial_stone",
@@ -17229,7 +17229,7 @@
           "shieldOrCratonZones": [],
           "mountainBelts": [],
           "volcanicZones": [
-            "pico_de_s\u00e3o_tom\u00e9_extinct_volcano"
+            "pico_de_são_tomé_extinct_volcano"
           ],
           "tectonicSetting": [
             "intraplate_oceanic_hotspot"
@@ -17274,7 +17274,7 @@
         },
         "water_resource_base": {
           "majorRiverSystems": [
-            "i\u00f4_grande_river"
+            "iô_grande_river"
           ],
           "groundwaterSystems": [
             "volcanic_basalt_aquifer"
@@ -17289,7 +17289,7 @@
             "tropical_volcanic_cloud_forest"
           ],
           "majorForestZones": [
-            "\u00f4bo_natural_park"
+            "ôbo_natural_park"
           ],
           "timberResourcePresence": true,
           "nonTimberForestResources": [
@@ -17378,10 +17378,10 @@
         },
         "resource_transport_context": {
           "majorExportCorridors": [
-            "s\u00e3o_tom\u00e9_maritime_route"
+            "são_tomé_maritime_route"
           ],
           "majorImportCorridors": [
-            "luanda_libreville_s\u00e3o_tom\u00e9_shipping_line"
+            "luanda_libreville_são_tomé_shipping_line"
           ],
           "pipelineCorridors": [],
           "railResourceCorridors": [],
@@ -17428,7 +17428,7 @@
             "electricity"
           ],
           "environmentalConstraints": [
-            "\u00f4bo_park"
+            "ôbo_park"
           ],
           "seasonalConstraints": [
             "monsoon"
@@ -17488,7 +17488,7 @@
           "dataConfidence": "high",
           "lastVerified": "2026-06-30",
           "coverageNotes": [
-            "Verified with Ag\u00eancia Nacional do Petr\u00f3leo de S\u00e3o Tom\u00e9 e Pr\u00edncipe."
+            "Verified with Agência Nacional do Petróleo de São Tomé e Príncipe."
           ]
         }
       },
@@ -19872,7 +19872,7 @@
             "mesoproterozoic_orogenic_belt_and_rift_valley"
           ],
           "resourceFormationContexts": [
-            "bastn\u00e4site_monazite_veins_gakara",
+            "bastnäsite_monazite_veins_gakara",
             "layered_ultramafic_nickel_laterite"
           ]
         },
@@ -20180,7 +20180,7 @@
           "dataConfidence": "high",
           "lastVerified": "2026-06-30",
           "coverageNotes": [
-            "Verified with Rainbow Rare Earths Gakara high-grade bastn\u00e4site baselines."
+            "Verified with Rainbow Rare Earths Gakara high-grade bastnäsite baselines."
           ]
         }
       },
@@ -23078,7 +23078,7 @@
             "electricity"
           ],
           "solarResourceZones": [
-            "tul\u00e9ar_high_solar"
+            "tuléar_high_solar"
           ],
           "windResourceZones": [
             "fort_dauphin_wind_zone"
@@ -23447,7 +23447,7 @@
             "black_river_gorges"
           ],
           "volcanicZones": [
-            "piton_de_la_petite_rivi\u00e8re_noire"
+            "piton_de_la_petite_rivière_noire"
           ],
           "tectonicSetting": [
             "intraplate_oceanic_hotspot"
@@ -23741,7 +23741,7 @@
         "administrative_resource_regions": [
           {
             "regionId": "LSO_MOKHOTLONG",
-            "name": "Let\u0161eng Diamond & LHWP Katse Zone",
+            "name": "Letšeng Diamond & LHWP Katse Zone",
             "type": "resource_region",
             "resourceTags": [
               "industrial_stone",
@@ -24097,7 +24097,7 @@
           "dataConfidence": "high",
           "lastVerified": "2026-06-30",
           "coverageNotes": [
-            "Verified with Lesotho Highlands Development Authority & Let\u0161eng baselines."
+            "Verified with Lesotho Highlands Development Authority & Letšeng baselines."
           ]
         }
       },
@@ -26168,14 +26168,14 @@
           "coastal": true,
           "coastlineKm": 491,
           "majorResourceZones": [
-            "mah\u00e9_granite_zone",
+            "mahé_granite_zone",
             "mascarene_plateau_jma_eez_zone"
           ]
         },
         "administrative_resource_regions": [
           {
             "regionId": "SYC_MAHE",
-            "name": "Mah\u00e9 Granite & Port Victoria Zone",
+            "name": "Mahé Granite & Port Victoria Zone",
             "type": "resource_region",
             "resourceTags": [
               "industrial_stone",
@@ -30604,7 +30604,7 @@
           "countryId": "TUR",
           "iso3": "TUR",
           "name": "Turkey",
-          "officialName": "Republic of T\u00fcrkiye",
+          "officialName": "Republic of Türkiye",
           "continent": "Asia",
           "subcontinent": "Middle East",
           "region": "Western Asia",
@@ -30633,7 +30633,7 @@
         "administrative_resource_regions": [
           {
             "regionId": "TUR_ESKISEHIR",
-            "name": "K\u0131rka Boron Zone",
+            "name": "Kırka Boron Zone",
             "type": "resource_region",
             "resourceTags": [
               "industrial_stone",
@@ -30764,7 +30764,7 @@
         },
         "water_resource_base": {
           "majorRiverSystems": [
-            "euphrates_f\u0131rat_river",
+            "euphrates_fırat_river",
             "tigris_dicle_river"
           ],
           "groundwaterSystems": [
@@ -37752,7 +37752,7 @@
             "lithium"
           ],
           "environmentalConstraints": [
-            "do\u00f1ana_park"
+            "doñana_park"
           ],
           "seasonalConstraints": [
             "monsoon"
@@ -37850,7 +37850,7 @@
         "administrative_resource_regions": [
           {
             "regionId": "SWE_NORRBOTTEN",
-            "name": "Kiruna & G\u00e4llivare Mining District",
+            "name": "Kiruna & Gällivare Mining District",
             "type": "resource_region",
             "resourceTags": [
               "iron_ore",
@@ -37973,8 +37973,8 @@
             "crystalline_fractured_aquifer"
           ],
           "lakeSystems": [
-            "lake_v\u00e4nern",
-            "lake_v\u00e4ttern"
+            "lake_vänern",
+            "lake_vättern"
           ],
           "freshwaterAvailabilityClass": "extremely_abundant",
           "waterStressClass": "low",
@@ -38392,7 +38392,7 @@
         },
         "water_resource_base": {
           "majorRiverSystems": [
-            "vistula_wis\u0142a_river",
+            "vistula_wisła_river",
             "oder_odra_river"
           ],
           "groundwaterSystems": [
@@ -38410,7 +38410,7 @@
             "temperate_mixed_pine_oak"
           ],
           "majorForestZones": [
-            "bia\u0142owie\u017ca_primeval_forest"
+            "białowieża_primeval_forest"
           ],
           "timberResourcePresence": true,
           "nonTimberForestResources": []
@@ -38553,11 +38553,11 @@
         },
         "resource_transport_context": {
           "majorExportCorridors": [
-            "gda\u0144sk_deepwater_container_port",
+            "gdańsk_deepwater_container_port",
             "baltic_pipe_gas_import"
           ],
           "majorImportCorridors": [
-            "\u015bwinouj\u015bcie_lng_terminal"
+            "świnoujście_lng_terminal"
           ],
           "pipelineCorridors": [
             "baltic_pipe_from_norway"
@@ -38673,7 +38673,7 @@
           "dataConfidence": "high",
           "lastVerified": "2026-06-30",
           "coverageNotes": [
-            "Verified with KGHM G\u0142og\u00f3w copper smelter & Orlen baselines."
+            "Verified with KGHM Głogów copper smelter & Orlen baselines."
           ]
         }
       },
@@ -38704,7 +38704,7 @@
           "coastal": true,
           "coastlineKm": 1250,
           "majorResourceZones": [
-            "kittil\u00e4_gold_mine_europe_largest",
+            "kittilä_gold_mine_europe_largest",
             "kevitsa_nickel_copper_mine",
             "terrafame_battery_metals_complex"
           ]
@@ -38712,7 +38712,7 @@
         "administrative_resource_regions": [
           {
             "regionId": "FIN_LAPLAND",
-            "name": "Kittil\u00e4 & Sodankyl\u00e4 Mining District",
+            "name": "Kittilä & Sodankylä Mining District",
             "type": "resource_region",
             "resourceTags": [
               "gold",
@@ -38770,7 +38770,7 @@
             "stable_precambrian_craton_and_greenstone_belt"
           ],
           "resourceFormationContexts": [
-            "palaeoproterozoic_greenstone_orogenic_gold_kittil\u00e4"
+            "palaeoproterozoic_greenstone_orogenic_gold_kittilä"
           ]
         },
         "mineral_resource_base": {
@@ -39099,7 +39099,7 @@
           "dataConfidence": "high",
           "lastVerified": "2026-06-30",
           "coverageNotes": [
-            "Verified with Agnico Eagle Kittil\u00e4 gold & GTK Finland baselines."
+            "Verified with Agnico Eagle Kittilä gold & GTK Finland baselines."
           ]
         }
       },
@@ -40432,7 +40432,7 @@
           "coastlineKm": 225,
           "majorResourceZones": [
             "neptun_deep_black_sea_gas_giant",
-            "ro\u0219ia_montan\u0103_gold_silver_belt",
+            "roșia_montană_gold_silver_belt",
             "prahova_valley_historic_oil"
           ]
         },
@@ -40565,8 +40565,8 @@
         },
         "water_resource_base": {
           "majorRiverSystems": [
-            "danube_dun\u0103rea_river",
-            "mure\u0219_river",
+            "danube_dunărea_river",
+            "mureș_river",
             "olt"
           ],
           "groundwaterSystems": [
@@ -40730,16 +40730,16 @@
         },
         "resource_transport_context": {
           "majorExportCorridors": [
-            "constan\u021ba_deepwater_black_sea_port"
+            "constanța_deepwater_black_sea_port"
           ],
           "majorImportCorridors": [
-            "constan\u021ba_grain_and_container_terminal"
+            "constanța_grain_and_container_terminal"
           ],
           "pipelineCorridors": [
             "brua_gas_pipeline_to_central_europe"
           ],
           "railResourceCorridors": [
-            "cfr_marf\u0103_freight_network"
+            "cfr_marfă_freight_network"
           ],
           "maritimeResourceCorridors": [
             "black_sea_and_bosporus_lanes"
@@ -42288,7 +42288,7 @@
           "resourceSystemId": "RES_BRA"
         },
         "geography": {
-          "capital": "Bras\u00edlia",
+          "capital": "Brasília",
           "coordinates": {
             "lat": -14.235,
             "lng": -51.9253
@@ -42311,7 +42311,7 @@
         "administrative_resource_regions": [
           {
             "regionId": "BRA_PARA",
-            "name": "Caraj\u00e1s Iron Ore Mega District",
+            "name": "Carajás Iron Ore Mega District",
             "type": "resource_region",
             "resourceTags": [
               "iron_ore",
@@ -42371,7 +42371,7 @@
         "geological_context": {
           "majorGeologicalDomains": [
             "amazonian_craton",
-            "s\u00e3o_francisco_craton"
+            "são_francisco_craton"
           ],
           "sedimentaryBasins": [
             "santos_basin",
@@ -42384,7 +42384,7 @@
             "serra_do_mar"
           ],
           "volcanicZones": [
-            "paran\u00e1_basalt_plateau"
+            "paraná_basalt_plateau"
           ],
           "tectonicSetting": [
             "stable_archean_craton_and_passive_presalt_margin"
@@ -42432,7 +42432,7 @@
           ],
           "basins": [
             "tupi_field",
-            "b\u00fazios_presalt_field",
+            "búzios_presalt_field",
             "mero_field"
           ],
           "offshorePotential": true
@@ -42463,10 +42463,10 @@
         "water_resource_base": {
           "majorRiverSystems": [
             "amazon_river_largest",
-            "paran\u00e1_river"
+            "paraná_river"
           ],
           "groundwaterSystems": [
-            "guaran\u00ed_aquifer_shared"
+            "guaraní_aquifer_shared"
           ],
           "lakeSystems": [
             "itaipu_hydro_reservoir"
@@ -42502,7 +42502,7 @@
           ],
           "arableLandClass": "extremely_high_cerrado_soybean",
           "irrigationResourceZones": [
-            "s\u00e3o_francisco_valley"
+            "são_francisco_valley"
           ]
         },
         "strategic_resources": {
@@ -42646,7 +42646,7 @@
             "santos_presalt_gas_pipelines"
           ],
           "railResourceCorridors": [
-            "caraj\u00e1s_heavy_haul_rail"
+            "carajás_heavy_haul_rail"
           ],
           "maritimeResourceCorridors": [
             "atlantic_shipping_lanes"
@@ -42757,7 +42757,7 @@
           "dataConfidence": "high",
           "lastVerified": "2026-06-30",
           "coverageNotes": [
-            "Verified with Vale Caraj\u00e1s iron ore & Petrobras B\u00fazios presalt baselines."
+            "Verified with Vale Carajás iron ore & Petrobras Búzios presalt baselines."
           ]
         }
       },
@@ -43703,11 +43703,11 @@
         },
         "geological_context": {
           "majorGeologicalDomains": [
-            "neuqu\u00e9n_basin",
+            "neuquén_basin",
             "puna_lithium_salars"
           ],
           "sedimentaryBasins": [
-            "neuqu\u00e9n_shale_basin",
+            "neuquén_shale_basin",
             "golfo_san_jorge_basin"
           ],
           "shieldOrCratonZones": [
@@ -43790,14 +43790,14 @@
         },
         "water_resource_base": {
           "majorRiverSystems": [
-            "paran\u00e1_river",
+            "paraná_river",
             "uruguay_river"
           ],
           "groundwaterSystems": [
-            "guaran\u00ed_aquifer_shared"
+            "guaraní_aquifer_shared"
           ],
           "lakeSystems": [
-            "yacyret\u00e1_reservoir"
+            "yacyretá_reservoir"
           ],
           "freshwaterAvailabilityClass": "extremely_abundant",
           "waterStressClass": "low_pampas_high_puna",
@@ -43828,7 +43828,7 @@
           ],
           "arableLandClass": "extremely_high_pampas_granary",
           "irrigationResourceZones": [
-            "r\u00edo_negro_valley"
+            "río_negro_valley"
           ]
         },
         "strategic_resources": {
@@ -43963,13 +43963,13 @@
         "resource_transport_context": {
           "majorExportCorridors": [
             "rosario_up_river_grain_port",
-            "bah\u00eda_blanca_petroleum_port"
+            "bahía_blanca_petroleum_port"
           ],
           "majorImportCorridors": [
             "buenos_aires_container_port"
           ],
           "pipelineCorridors": [
-            "n\u00e9stor_kirchner_gas_pipeline"
+            "néstor_kirchner_gas_pipeline"
           ],
           "railResourceCorridors": [
             "belgrano_carga_railway"
@@ -44067,7 +44067,7 @@
           "mappingCoverage": "very_high",
           "geologicalSurveyCoverage": "very_high",
           "knownUnknownZones": [
-            "josemar\u00eda_copper_gold_porphyry"
+            "josemaría_copper_gold_porphyry"
           ],
           "highPriorityExplorationZones": [
             "lithium"
@@ -45017,7 +45017,7 @@
           "resourceSystemId": "RES_COL"
         },
         "geography": {
-          "capital": "Bogot\u00e1",
+          "capital": "Bogotá",
           "coordinates": {
             "lat": 4.5709,
             "lng": -74.2973
@@ -45040,7 +45040,7 @@
         "administrative_resource_regions": [
           {
             "regionId": "COL_LA_GUAJIRA",
-            "name": "Cerrej\u00f3n Open-Pit Coal Zone",
+            "name": "Cerrejón Open-Pit Coal Zone",
             "type": "resource_region",
             "resourceTags": [
               "coal"
@@ -45173,7 +45173,7 @@
             "llanos_orientales_aquifer"
           ],
           "lakeSystems": [
-            "guatap\u00e9_reservoir"
+            "guatapé_reservoir"
           ],
           "freshwaterAvailabilityClass": "extremely_abundant_top10_globally",
           "waterStressClass": "low_national_high_la_guajira",
@@ -45320,7 +45320,7 @@
             "NODE_PIPE_OCENSA_CRUDE"
           ],
           "storageFacilities": [
-            "STORAGE_OIL_COVE\u00d1AS"
+            "STORAGE_OIL_COVEÑAS"
           ]
         },
         "resource_transport_context": {
@@ -45442,7 +45442,7 @@
           "dataConfidence": "high",
           "lastVerified": "2026-06-30",
           "coverageNotes": [
-            "Verified with Ecopetrol Ocensa pipeline & Cerrej\u00f3n coal baselines."
+            "Verified with Ecopetrol Ocensa pipeline & Cerrejón coal baselines."
           ]
         }
       },
@@ -46632,7 +46632,7 @@
           "fishingResources": [
             "north_sea_and_baltic_marine"
           ],
-          "arableLandClass": "very_high_magdeburg_b\u00f6rde_loess",
+          "arableLandClass": "very_high_magdeburg_börde_loess",
           "irrigationResourceZones": []
         },
         "strategic_resources": {
@@ -46935,7 +46935,7 @@
         "administrative_resource_regions": [
           {
             "regionId": "FRA_AUVERGNE",
-            "name": "\u00c9chassi\u00e8res Emili Lithium Zone",
+            "name": "Échassières Emili Lithium Zone",
             "type": "resource_region",
             "resourceTags": [
               "lithium"
@@ -47001,7 +47001,7 @@
             "pyrenees"
           ],
           "volcanicZones": [
-            "cha\u00eene_des_puys_massif_central"
+            "chaîne_des_puys_massif_central"
           ],
           "tectonicSetting": [
             "variscan_crystalline_basement_and_alpine_foreland"
@@ -47062,7 +47062,7 @@
         },
         "water_resource_base": {
           "majorRiverSystems": [
-            "rh\u00f4ne_river",
+            "rhône_river",
             "seine_river",
             "loire_river",
             "garonne"
@@ -47100,7 +47100,7 @@
           ],
           "arableLandClass": "extremely_high_beauce_wheat_granary",
           "irrigationResourceZones": [
-            "rh\u00f4ne_valley_irrigation"
+            "rhône_valley_irrigation"
           ]
         },
         "strategic_resources": {
@@ -47964,7 +47964,7 @@
           "basins": [
             "johan_sverdrup_field",
             "troll_field",
-            "sn\u00f8hvit_barents_lng"
+            "snøhvit_barents_lng"
           ],
           "offshorePotential": true
         },
@@ -47994,7 +47994,7 @@
             "crystalline_aquifer"
           ],
           "lakeSystems": [
-            "mj\u00f8sa_lake"
+            "mjøsa_lake"
           ],
           "freshwaterAvailabilityClass": "extremely_abundant",
           "waterStressClass": "low",
@@ -48020,7 +48020,7 @@
           "fishingResources": [
             "salmon_aquaculture_and_atlantic_marine_world_top"
           ],
-          "arableLandClass": "moderate_tr\u00f8ndelag_coastal",
+          "arableLandClass": "moderate_trøndelag_coastal",
           "irrigationResourceZones": []
         },
         "strategic_resources": {
@@ -48133,7 +48133,7 @@
         "resource_infrastructure_context": {
           "ports": [
             "NODE_PORT_MONGSTAD_OIL",
-            "NODE_PORT_K\u00c1RST\u00d8_GAS",
+            "NODE_PORT_KÁRSTØ_GAS",
             "NODE_PORT_NARVIK"
           ],
           "railTerminals": [
@@ -48155,7 +48155,7 @@
             "NODE_PIPE_GASSCO_PIPELINE_NETWORK"
           ],
           "storageFacilities": [
-            "STORAGE_GAS_K\u00c1RST\u00d8_PROCESSING"
+            "STORAGE_GAS_KÁRSTØ_PROCESSING"
           ]
         },
         "resource_transport_context": {
@@ -73861,4 +73861,35 @@
           "fishingResources": [
             "tkm_coastal_fisheries"
           ],
-          "arableLandClass": "high_fe
+          "arableLandClass": "high_fertile_soils",
+          "irrigationResourceZones": [
+            "Turkmenistan Valley Irrigation District"
+          ]
+        },
+        "strategic_resources": {
+          "domesticallyAvailable": [
+            "natural_gas",
+            "crude_oil",
+            "electricity"
+          ],
+          "strategicallyImportant": [
+            "natural_gas",
+            "crude_oil",
+            "electricity"
+          ],
+          "importDependent": [
+            "industrial_machinery",
+            "processed_metals"
+          ],
+          "exportCritical": [
+            "iron_ore",
+            "copper",
+            "crude_oil",
+            "rice"
+          ],
+          "dualUseRelevant": [
+            "refined_fuel"
+          ],
+          "knownResourceTypes": [
+            "natural_gas",
+            "crude_
