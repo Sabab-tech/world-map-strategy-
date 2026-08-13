@@ -3038,74 +3038,6 @@
         "international_weight": 0.1
       }
     },
-    "NORTH KOREA": {
-      "country_name": "NORTH KOREA",
-      "country_code": "KP",
-      "category": "Geopolitical Flashpoint / Nuclear Rogue State",
-      "ai_driver": "Geopolitical Flashpoint / Nuclear Rogue State Strategic Autonomy & Sovereignty Preservation",
-      "high_weight_focus": [
-        "Economic Resilience",
-        "Border Sovereignty",
-        "Regional Trade"
-      ],
-      "low_weight_ignore": [
-        "Global Overseas Force Projection"
-      ],
-      "parameters": {
-        "MIL_SECURITY_DEPENDENCY": 70,
-        "REGIONAL_THREAT_FEAR": 60,
-        "DOMESTIC_POLITICAL_STABILITY": 75,
-        "FOREIGN_AID_DEPENDENCY": 65,
-        "ECON_SANCTION_VULNERABILITY": 55,
-        "INTEL_COVERT_ACTIVITY_RISK": 60,
-        "MIL_MOBILIZATION_READINESS": 70
-      },
-      "asymmetrical_salience_rules": {
-        "historical_weight": 0.15,
-        "diplomatic_weight": 0.15,
-        "economic_weight": 0.15,
-        "military_weight": 0.1,
-        "intelligence_weight": 0.05,
-        "cultural_weight": 0.1,
-        "strategic_weight": 0.15,
-        "societal_weight": 0.05,
-        "international_weight": 0.1
-      }
-    },
-    "SOUTH KOREA": {
-      "country_name": "SOUTH KOREA",
-      "country_code": "KR",
-      "category": "Major Global Power (Tier 2) / High-Tech Giant",
-      "ai_driver": "Major Global Power (Tier 2) / High-Tech Giant Strategic Autonomy & Sovereignty Preservation",
-      "high_weight_focus": [
-        "Economic Resilience",
-        "Border Sovereignty",
-        "Regional Trade"
-      ],
-      "low_weight_ignore": [
-        "Global Overseas Force Projection"
-      ],
-      "parameters": {
-        "MIL_SECURITY_DEPENDENCY": 70,
-        "REGIONAL_THREAT_FEAR": 60,
-        "DOMESTIC_POLITICAL_STABILITY": 75,
-        "FOREIGN_AID_DEPENDENCY": 65,
-        "ECON_SANCTION_VULNERABILITY": 55,
-        "INTEL_COVERT_ACTIVITY_RISK": 60,
-        "MIL_MOBILIZATION_READINESS": 70
-      },
-      "asymmetrical_salience_rules": {
-        "historical_weight": 0.15,
-        "diplomatic_weight": 0.15,
-        "economic_weight": 0.15,
-        "military_weight": 0.1,
-        "intelligence_weight": 0.05,
-        "cultural_weight": 0.1,
-        "strategic_weight": 0.15,
-        "societal_weight": 0.05,
-        "international_weight": 0.1
-      }
-    },
     "KOSOVO": {
       "country_name": "KOSOVO",
       "country_code": "XK",
@@ -4398,6 +4330,40 @@
         "international_weight": 0.1
       }
     },
+    "NORTH KOREA": {
+      "country_name": "NORTH KOREA",
+      "country_code": "KP",
+      "category": "Geopolitical Flashpoint / Nuclear Rogue State",
+      "ai_driver": "Geopolitical Flashpoint / Nuclear Rogue State Strategic Autonomy & Sovereignty Preservation",
+      "high_weight_focus": [
+        "Economic Resilience",
+        "Border Sovereignty",
+        "Regional Trade"
+      ],
+      "low_weight_ignore": [
+        "Global Overseas Force Projection"
+      ],
+      "parameters": {
+        "MIL_SECURITY_DEPENDENCY": 70,
+        "REGIONAL_THREAT_FEAR": 60,
+        "DOMESTIC_POLITICAL_STABILITY": 75,
+        "FOREIGN_AID_DEPENDENCY": 65,
+        "ECON_SANCTION_VULNERABILITY": 55,
+        "INTEL_COVERT_ACTIVITY_RISK": 60,
+        "MIL_MOBILIZATION_READINESS": 70
+      },
+      "asymmetrical_salience_rules": {
+        "historical_weight": 0.15,
+        "diplomatic_weight": 0.15,
+        "economic_weight": 0.15,
+        "military_weight": 0.1,
+        "intelligence_weight": 0.05,
+        "cultural_weight": 0.1,
+        "strategic_weight": 0.15,
+        "societal_weight": 0.05,
+        "international_weight": 0.1
+      }
+    },
     "NORTH MACEDONIA": {
       "country_name": "NORTH MACEDONIA",
       "country_code": "MK",
@@ -5525,6 +5491,40 @@
       "country_code": "ZA",
       "category": "Global South / BRICS African Superpower",
       "ai_driver": "Global South / BRICS African Superpower Strategic Autonomy & Sovereignty Preservation",
+      "high_weight_focus": [
+        "Economic Resilience",
+        "Border Sovereignty",
+        "Regional Trade"
+      ],
+      "low_weight_ignore": [
+        "Global Overseas Force Projection"
+      ],
+      "parameters": {
+        "MIL_SECURITY_DEPENDENCY": 70,
+        "REGIONAL_THREAT_FEAR": 60,
+        "DOMESTIC_POLITICAL_STABILITY": 75,
+        "FOREIGN_AID_DEPENDENCY": 65,
+        "ECON_SANCTION_VULNERABILITY": 55,
+        "INTEL_COVERT_ACTIVITY_RISK": 60,
+        "MIL_MOBILIZATION_READINESS": 70
+      },
+      "asymmetrical_salience_rules": {
+        "historical_weight": 0.15,
+        "diplomatic_weight": 0.15,
+        "economic_weight": 0.15,
+        "military_weight": 0.1,
+        "intelligence_weight": 0.05,
+        "cultural_weight": 0.1,
+        "strategic_weight": 0.15,
+        "societal_weight": 0.05,
+        "international_weight": 0.1
+      }
+    },
+    "SOUTH KOREA": {
+      "country_name": "SOUTH KOREA",
+      "country_code": "KR",
+      "category": "Major Global Power (Tier 2) / High-Tech Giant",
+      "ai_driver": "Major Global Power (Tier 2) / High-Tech Giant Strategic Autonomy & Sovereignty Preservation",
       "high_weight_focus": [
         "Economic Resilience",
         "Border Sovereignty",

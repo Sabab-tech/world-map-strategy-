@@ -1111,6 +1111,9 @@ Game.Map.toggleResourceFilterMenu = function() {
         box.classList.add('hidden');
         box.style.display = 'none';
     }
+    if (window.updateGlobalBackButtonVisibility) {
+        window.updateGlobalBackButtonVisibility();
+    }
 };
 
 Game.Map.hideResourceFilterMenu = function() {
@@ -1118,6 +1121,9 @@ Game.Map.hideResourceFilterMenu = function() {
     if (box) {
         box.classList.add('hidden');
         box.style.display = 'none';
+    }
+    if (window.updateGlobalBackButtonVisibility) {
+        window.updateGlobalBackButtonVisibility();
     }
 };
 
@@ -1296,20 +1302,18 @@ Game.Map.renderResourceDeposits = function() {
     matchingDeposits.forEach(dep => {
         let addedToCluster = false;
         for (let cluster of clusters) {
-            const latDiff = Math.abs(dep.lat - cluster.centroidLat);
-            const lngDiff = Math.abs(dep.lng - cluster.centroidLng);
-            if (latDiff < 0.28 && lngDiff < 0.28) {
+            const latDiff = Math.abs(dep.lat - cluster.anchorLat);
+            const lngDiff = Math.abs(dep.lng - cluster.anchorLng);
+            if (latDiff < 0.15 && lngDiff < 0.15) {
                 cluster.items.push(dep);
-                cluster.centroidLat = cluster.items.reduce((sum, d) => sum + d.lat, 0) / cluster.items.length;
-                cluster.centroidLng = cluster.items.reduce((sum, d) => sum + d.lng, 0) / cluster.items.length;
                 addedToCluster = true;
                 break;
             }
         }
         if (!addedToCluster) {
             clusters.push({
-                centroidLat: dep.lat,
-                centroidLng: dep.lng,
+                anchorLat: dep.lat,
+                anchorLng: dep.lng,
                 items: [dep]
             });
         }
@@ -1323,28 +1327,14 @@ Game.Map.renderResourceDeposits = function() {
             let renderLng = dep.lng;
 
             if (total > 1) {
-                let ringIndex = 0;
-                let positionInRing = index;
-                let ringCapacity = 6;
-                let radius = 0.28;
+                const ringIndex = Math.floor(index / 6);
+                const posInRing = index % 6;
+                const radius = 0.22 + ringIndex * 0.25;
+                const angle = (posInRing * (2 * Math.PI / 6)) + (ringIndex * 0.5);
+                const cosLat = Math.max(0.2, Math.cos(cluster.anchorLat * Math.PI / 180));
 
-                if (index >= 6 && index < 14) {
-                    ringIndex = 1;
-                    positionInRing = index - 6;
-                    ringCapacity = 8;
-                    radius = 0.55;
-                } else if (index >= 14) {
-                    ringIndex = 2;
-                    positionInRing = index - 14;
-                    ringCapacity = 12;
-                    radius = 0.82;
-                }
-
-                const angleOffset = ringIndex * (Math.PI / 6);
-                const angle = angleOffset + (positionInRing * 2 * Math.PI) / ringCapacity;
-
-                renderLat = cluster.centroidLat + radius * Math.sin(angle);
-                renderLng = cluster.centroidLng + radius * Math.cos(angle);
+                renderLat = cluster.anchorLat + radius * Math.sin(angle);
+                renderLng = cluster.anchorLng + (radius * Math.cos(angle)) / cosLat;
             }
 
             const catalogItem = this.resourceCatalog.find(r => r.id === dep.resId) || { icon: '⛏️', color: '#ffd700' };
@@ -1637,9 +1627,23 @@ Game.Map.toggleMetricDropdown = function(e) {
     if (isHidden) {
         drop.classList.remove('hidden');
         drop.style.display = 'flex';
+
+        // Sync quick stats inside dropdown from top status bar
+        const cVal = document.getElementById('res-cash')?.textContent || '$100M';
+        const pVal = document.getElementById('res-power')?.textContent || '850 PP';
+        const mVal = document.getElementById('res-manpower')?.textContent || '500K';
+        const eVal = document.getElementById('res-energy')?.textContent || '12.4 GW';
+
+        if (document.getElementById('dropdown-cash-val')) document.getElementById('dropdown-cash-val').textContent = cVal;
+        if (document.getElementById('dropdown-power-val')) document.getElementById('dropdown-power-val').textContent = pVal;
+        if (document.getElementById('dropdown-manpower-val')) document.getElementById('dropdown-manpower-val').textContent = mVal;
+        if (document.getElementById('dropdown-energy-val')) document.getElementById('dropdown-energy-val').textContent = eVal;
     } else {
         drop.classList.add('hidden');
         drop.style.display = 'none';
+    }
+    if (window.updateGlobalBackButtonVisibility) {
+        window.updateGlobalBackButtonVisibility();
     }
 };
 
@@ -1649,7 +1653,23 @@ Game.Map.hideMetricDropdown = function() {
         drop.classList.add('hidden');
         drop.style.display = 'none';
     }
+    if (window.updateGlobalBackButtonVisibility) {
+        window.updateGlobalBackButtonVisibility();
+    }
 };
+
+// Global click-outside listener to dismiss top bar dropdown menu
+document.addEventListener('click', function(e) {
+    const metricDrop = document.getElementById('map-metric-dropdown');
+    const metricTrigger = document.getElementById('top-bar-dropdown-trigger');
+    const statusResources = document.querySelector('.status-resources');
+    
+    if (metricDrop && metricDrop.style.display !== 'none' && !metricDrop.classList.contains('hidden')) {
+        if (!metricDrop.contains(e.target) && (!metricTrigger || !metricTrigger.contains(e.target)) && (!statusResources || !statusResources.contains(e.target))) {
+            Game.Map.hideMetricDropdown();
+        }
+    }
+});
 
 Game.Map.activeMetric = 'NONE';
 

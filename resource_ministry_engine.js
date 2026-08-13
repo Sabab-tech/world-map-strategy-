@@ -501,10 +501,7 @@ window.ResourceMinistryEngine = (() => {
                     miningAccident: null,
                     embargoAlert: null
                 },
-                surveysUnderway: [
-                    { id: 101, resId: 'rare_earth', resName: 'Rare Earth Minerals', country: 'BANGLADESH', stage: 2, stageName: "2. Seismic Deep Core Drilling", progress: 65, estimatedDays: 12 },
-                    { id: 102, resId: 'uranium', resName: 'Uranium', country: 'USA', stage: 1, stageName: "1. Airborne Radiometric Survey", progress: 30, estimatedDays: 24 }
-                ],
+                surveysUnderway: [],
                 resourceModifiers: {},
                 policyVotes: {},
                 constructionProjects: [],
@@ -538,15 +535,42 @@ window.ResourceMinistryEngine = (() => {
         }
 
         /**
-         * Dynamic Calculation of Daily Production
+         * Dynamic Calculation of Daily Production & Consumption
          */
         calculateResourceBalance(countryKey) {
-            const cKey = (countryKey || 'USA').toUpperCase();
-            const econ = (window.Game && window.Game.state && window.Game.state.economy && window.Game.state.economy[cKey]) || { gdp: 1e12 };
-            const pop = (window.Game && window.Game.state && window.Game.state.population && window.Game.state.population[cKey]) || { population_2015: 5e7 };
+            const activeC = countryKey || (window.Game && window.Game.currentActiveCountry) || 'BANGLADESH';
+            const cKey = activeC.replace(/_/g, " ").toUpperCase().trim();
 
-            const popM = (pop.population_2015 || 5e7) / 1e6;
-            const gdpB = (econ.gdp || 1e12) / 1e9;
+            let gdpVal = null;
+            let popVal = null;
+
+            if (window.Game && window.Game.state) {
+                if (window.Game.state.economy && window.Game.state.economy[cKey]) {
+                    gdpVal = window.Game.state.economy[cKey].gdp;
+                }
+                if (window.Game.state.population && window.Game.state.population[cKey]) {
+                    popVal = window.Game.state.population[cKey].population_2015;
+                }
+            }
+
+            if (!gdpVal || !popVal) {
+                const reg = (window.Game && window.Game.locationsRegistry) || {};
+                const loc = reg[cKey] || {};
+                if (loc.gdp) gdpVal = loc.gdp;
+                if (loc.population) popVal = loc.population;
+
+                if (!gdpVal || !popVal) {
+                    const prof = window.ResourceMinistryEngine && typeof window.ResourceMinistryEngine.getCountryResourceProfile === 'function' ? window.ResourceMinistryEngine.getCountryResourceProfile(cKey) : null;
+                    if (prof) {
+                        const area = prof.geography?.landAreaKm2 || 100000;
+                        if (!popVal) popVal = Math.round(area * 150);
+                        if (!gdpVal) gdpVal = Math.round(popVal * 4500);
+                    }
+                }
+            }
+
+            const popM = Math.max(0.5, (popVal || 2e7) / 1e6);
+            const gdpB = Math.max(1.0, (gdpVal || 5e10) / 1e9);
 
             // Formulate outputs per resource
             const report = {};
@@ -554,19 +578,18 @@ window.ResourceMinistryEngine = (() => {
                 const res = STRATEGIC_RESOURCES[resId];
                 const mod = this.getModifier(resId);
                 
-                // Dynamic rule formula
                 let baseProd = Math.floor((gdpB * 0.45) + (popM * 0.8) + (resId.length * 15)) + mod.extraProd;
                 let baseCons = Math.floor((popM * 1.2) + (gdpB * 0.38));
 
-                if (resId === 'rice' && (cKey === 'BANGLADESH' || cKey === 'CHINA' || cKey === 'INDIA')) {
+                if (resId === 'rice' && (cKey === 'BANGLADESH' || cKey === 'CHINA' || cKey === 'INDIA' || cKey === 'VIETNAM')) {
                     baseProd *= 4.5;
                     baseCons *= 3.8;
-                } else if (resId === 'crude_oil' && (cKey === 'SAUDI_ARABIA' || cKey === 'USA' || cKey === 'RUSSIA')) {
+                } else if (resId === 'crude_oil' && (cKey === 'SAUDI ARABIA' || cKey === 'USA' || cKey === 'RUSSIA' || cKey === 'IRAQ' || cKey === 'LIBYA' || cKey === 'QATAR')) {
                     baseProd *= 6.0;
-                } else if (resId === 'rare_earth' && cKey === 'CHINA') {
-                    baseProd *= 8.0;
-                } else if (resId === 'water' && cKey === 'BANGLADESH') {
+                } else if (resId === 'rare_earth' && (cKey === 'CHINA' || cKey === 'USA' || cKey === 'AUSTRALIA' || cKey === 'BURUNDI')) {
                     baseProd *= 5.0;
+                } else if (resId === 'water' && (cKey === 'BANGLADESH' || cKey === 'BRAZIL' || cKey === 'RUSSIA')) {
+                    baseProd *= 4.0;
                 }
 
                 baseProd = Math.round(baseProd);
@@ -718,9 +741,15 @@ window.ResourceMinistryEngine = (() => {
         addStrategicReserve(resId, countryKey) {
             const res = STRATEGIC_RESOURCES[resId] || { name: resId };
             const mod = this.getModifier(resId);
-            mod.extraStock += 50000;
+            
+            const report = this.calculateResourceBalance(countryKey);
+            const resData = report[resId];
+            const dailyCons = resData ? resData.dailyCons : 1000;
+            const dynamicAddition = Math.max(15000, Math.round(dailyCons * 30));
+            
+            mod.extraStock += dynamicAddition;
 
-            this.dispatchUpdate('reserve', resId, `Expanded Strategic Petroleum & Warehouse Reserve for ${res.name}. Stock +50,000 Units.`);
+            this.dispatchUpdate('reserve', resId, `Expanded Strategic Reserve for ${res.name}. Dynamic Stock +${dynamicAddition.toLocaleString()} Units (~${Math.round(dynamicAddition / Math.max(1, dailyCons))} days supply).`);
         }
 
         castCabinetVote(voteId, optionAction) {
@@ -753,9 +782,47 @@ window.ResourceMinistryEngine = (() => {
     const instance = new AutonomousResourceMinistry();
 
     // -------------------------------------------------------------------------
-    // DYNAMIC CONNECTION TO RESOURCES.JSON DATABASE
+    // DYNAMIC CONNECTION & CANONICAL DEDUPLICATION FOR RESOURCES.JSON
     // -------------------------------------------------------------------------
     let resourceDatabaseCache = null;
+    let canonicalCountryProfilesMap = null;
+
+    function buildCanonicalCountryProfiles(database) {
+        if (!database) return {};
+        if (canonicalCountryProfilesMap) return canonicalCountryProfilesMap;
+
+        const profileMap = {};
+        
+        // Prioritize master consolidated profile dataset
+        if (database.GSRSK_Master_CountryProfiles_v14 && database.GSRSK_Master_CountryProfiles_v14.countryProfiles) {
+            const master = database.GSRSK_Master_CountryProfiles_v14.countryProfiles;
+            for (let code in master) {
+                const prof = master[code];
+                if (!prof) continue;
+                const iso3 = ((prof.identity && (prof.identity.iso3 || prof.identity.countryId)) || code).toUpperCase().trim();
+                profileMap[iso3] = prof;
+            }
+        }
+
+        // Also check any other dynamic dataset objects for backwards compatibility
+        for (let dsKey in database) {
+            const ds = database[dsKey];
+            if (ds && ds.countryProfiles) {
+                for (let code in ds.countryProfiles) {
+                    const prof = ds.countryProfiles[code];
+                    if (!prof) continue;
+                    const iso3 = ((prof.identity && (prof.identity.iso3 || prof.identity.countryId)) || code).toUpperCase().trim();
+                    if (!profileMap[iso3]) {
+                        profileMap[iso3] = prof;
+                    }
+                }
+            }
+        }
+
+        canonicalCountryProfilesMap = profileMap;
+        return canonicalCountryProfilesMap;
+    }
+
     async function loadResourceDatabase() {
         if (resourceDatabaseCache) return resourceDatabaseCache;
         try {
@@ -763,6 +830,7 @@ window.ResourceMinistryEngine = (() => {
             if (resp.ok) {
                 resourceDatabaseCache = await resp.json();
                 window.resourceDatabase = resourceDatabaseCache;
+                buildCanonicalCountryProfiles(resourceDatabaseCache);
             }
         } catch (e) {
             console.warn("Could not load resources.json:", e);
@@ -795,36 +863,17 @@ window.ResourceMinistryEngine = (() => {
             const db = resourceDatabaseCache || window.resourceDatabase;
             if (!db) return null;
 
-            const sources = [
-                db.GSRSK_EuropeOceania_CountryProfiles_v14?.countryProfiles,
-                db.GSRSK_Americas_CountryProfiles_v14?.countryProfiles,
-                db.GSRSK_Europe_CountryProfiles_v14?.countryProfiles,
-                db.GSRSK_EastAndCentralAsia_CountryProfiles_v14?.countryProfiles,
-                db.GSRSK_CentralEastAfrica_CountryProfiles_v14?.countryProfiles,
-                db.GSRSK_WestAfrica_Part1_CountryProfiles_v14?.countryProfiles,
-                db.GSRSK_WestAfrica_Part2_CountryProfiles_v14?.countryProfiles,
-                db.GSRSK_NorthAfrica_CountryProfiles_v14?.countryProfiles,
-                db.GSRSK_SouthernAfrica_CountryProfiles_v14?.countryProfiles,
-                db.GSRSK_FinalAfricaAndRedSea_CountryProfiles_v14?.countryProfiles,
-                db.GSRSK_MiddleEast_CountryProfiles_v14?.countryProfiles,
-                db.GSRSK_SouthAsia_CountryProfiles_v14?.countryProfiles,
-                db.GSRSK_Missing_15_Countries_v14?.countryProfiles,
-                db.GSRSK_BRAIN_FRAMEWORK_PHASE_1?.countryProfiles,
-                db.GSRSK_MASTER_DATASET_PHASE_1B?.countryProfiles
-            ];
+            const canonicalMap = buildCanonicalCountryProfiles(db);
+            if (canonicalMap[iso3]) return canonicalMap[iso3];
 
-            for (let s of sources) {
-                if (!s) continue;
-                if (s[iso3]) return s[iso3];
-                if (s[normKey]) return s[normKey];
-                for (let code in s) {
-                    if (s[code] && s[code].identity) {
-                        const id = s[code].identity;
-                        if ((id.countryId || '').toUpperCase() === iso3 ||
-                            (id.iso3 || '').toUpperCase() === iso3 ||
-                            (id.name || '').toUpperCase() === normKey) {
-                            return s[code];
-                        }
+            for (let code in canonicalMap) {
+                const p = canonicalMap[code];
+                if (p && p.identity) {
+                    const id = p.identity;
+                    if ((id.countryId || '').toUpperCase() === iso3 ||
+                        (id.iso3 || '').toUpperCase() === iso3 ||
+                        (id.name || '').toUpperCase() === normKey) {
+                        return p;
                     }
                 }
             }
@@ -857,8 +906,9 @@ window.ResourceMinistryEngine = (() => {
                 });
             }
 
-            // Extract deposits from all country profiles in db
+            // Extract deposits from deduplicated canonical country profiles in db
             if (db) {
+                const canonicalProfiles = buildCanonicalCountryProfiles(db);
                 const resIdMap = (itemStr) => {
                     const s = String(itemStr).toLowerCase().replace(/_/g, " ");
                     if (s.includes("oil") || s.includes("petroleum") || s.includes("hydrocarbon") || s.includes("crude")) return "crude_oil";
@@ -882,103 +932,98 @@ window.ResourceMinistryEngine = (() => {
                     if (s.includes("limestone") || s.includes("stone") || s.includes("marble") || s.includes("quarry")) return "limestone";
                     if (s.includes("diamond") || s.includes("gem")) return "diamond";
                     if (s.includes("silicon") || s.includes("semiconductor")) return "semiconductor";
-                    return "rare_earth"; // Clean fallback for strategic mineral
+                    return "rare_earth";
                 };
 
                 const reg = (window.Game && window.Game.locationsRegistry) || {};
 
-                for (let datasetKey in db) {
-                    if (db[datasetKey] && db[datasetKey].countryProfiles) {
-                        const profiles = db[datasetKey].countryProfiles;
-                        for (let code in profiles) {
-                            const p = profiles[code];
-                            if (!p) continue;
-                            const countryName = (p.identity && p.identity.name) ? p.identity.name : code;
-                            const normCName = countryName.replace(/_/g, " ").toUpperCase();
-                            const iso = (p.identity && p.identity.iso3) ? p.identity.iso3 : code;
+                for (let iso3 in canonicalProfiles) {
+                    const p = canonicalProfiles[iso3];
+                    if (!p) continue;
+                    const countryName = (p.identity && p.identity.name) ? p.identity.name : iso3;
+                    const normCName = countryName.replace(/_/g, " ").toUpperCase();
 
-                            // 1. PRIORITY 1: Read canonical coordinates from geography profile
-                            let baseLat = null;
-                            let baseLng = null;
-                            if (p.geography && p.geography.coordinates && p.geography.coordinates.lat !== undefined && p.geography.coordinates.lng !== undefined) {
-                                baseLat = Number(p.geography.coordinates.lat);
-                                baseLng = Number(p.geography.coordinates.lng);
-                            }
+                    // Read canonical coordinates from geography profile
+                    let baseLat = null;
+                    let baseLng = null;
+                    if (p.geography && p.geography.coordinates && p.geography.coordinates.lat !== undefined && p.geography.coordinates.lng !== undefined) {
+                        baseLat = Number(p.geography.coordinates.lat);
+                        baseLng = Number(p.geography.coordinates.lng);
+                    }
 
-                            // 2. PRIORITY 2: Fallback to locations registry
-                            if ((baseLat === null || baseLng === null || isNaN(baseLat) || isNaN(baseLng))) {
-                                let loc = reg[iso] || reg[code] || reg[normCName] || {};
-                                if (!loc.lat) {
-                                    for (let k in reg) {
-                                        if ((reg[k].name || '').toUpperCase() === normCName) {
-                                            loc = reg[k];
-                                            break;
-                                        }
-                                    }
-                                }
-                                if (loc.lat !== undefined && loc.lng !== undefined) {
-                                    baseLat = Number(loc.lat);
-                                    baseLng = Number(loc.lng);
+                    // Fallback to locations registry if needed
+                    if ((baseLat === null || baseLng === null || !Number.isFinite(baseLat) || !Number.isFinite(baseLng))) {
+                        let loc = reg[iso3] || reg[normCName] || {};
+                        if (!loc.lat) {
+                            for (let k in reg) {
+                                if ((reg[k].name || '').toUpperCase() === normCName) {
+                                    loc = reg[k];
+                                    break;
                                 }
                             }
-
-                            // If coordinates could not be resolved, DO NOT place at 20, 0! Skip placing invalid map markers.
-                            if (baseLat === null || baseLng === null || isNaN(baseLat) || isNaN(baseLng)) {
-                                console.warn(`[RESOURCE MAP ENGINE] Skipping deposits for ${countryName} (${code}): Missing geographic coordinates.`);
-                                continue;
-                            }
-
-                            const mins = p.mineral_resource_base || {};
-                            const hyds = p.hydrocarbon_resource_base || {};
-                            const strats = p.strategic_resources || [];
-                            const endows = (p.resource_endowment && p.resource_endowment.known) || [];
-                            const energy = p.energy_resource_base || {};
-
-                            const items = [
-                                ...(mins.metallic || []),
-                                ...(mins.nonMetallic || []),
-                                ...(mins.industrialMinerals || []),
-                                ...(mins.preciousMetals || []),
-                                ...(mins.criticalMinerals || []),
-                                ...(mins.rareEarths || []),
-                                ...(hyds.oil || []),
-                                ...(hyds.naturalGas || []),
-                                ...(hyds.coal || []),
-                                ...(energy.hydro || []),
-                                ...(energy.nuclear || []),
-                                ...(energy.renewables || []),
-                                ...(Array.isArray(strats) ? strats : []),
-                                ...(Array.isArray(endows) ? endows : [])
-                            ];
-
-                            items.forEach((rawItem, idx) => {
-                                const rId = resIdMap(rawItem);
-                                const rawClean = String(rawItem).replace(/_/g, " ").toUpperCase();
-                                const depName = `${countryName} ${rawClean}`;
-                                if (!existingNames.has(depName.toLowerCase())) {
-                                    existingNames.add(depName.toLowerCase());
-                                    const offsetLat = ((idx % 3) - 1) * 0.35 + (idx * 0.05);
-                                    const offsetLng = (Math.floor(idx / 3) - 1) * 0.45 - (idx * 0.04);
-                                    
-                                    // Reserve description
-                                    let reserveDesc = 'Strategic Sovereign Reserve';
-                                    if (rawClean.includes("WORLD") || rawClean.includes("TOP") || rawClean.includes("NO1") || rawClean.includes("LEADER")) {
-                                        reserveDesc = 'Tier 1 World Leader Field';
-                                    }
-
-                                    combined.push({
-                                        name: depName,
-                                        resId: rId,
-                                        country: countryName,
-                                        lat: parseFloat((baseLat + offsetLat).toFixed(4)),
-                                        lng: parseFloat((baseLng + offsetLng).toFixed(4)),
-                                        reserve: reserveDesc,
-                                        status: 'Canonical GSRSK Field'
-                                    });
-                                }
-                            });
+                        }
+                        if (loc.lat !== undefined && loc.lng !== undefined) {
+                            baseLat = Number(loc.lat);
+                            baseLng = Number(loc.lng);
                         }
                     }
+
+                    if (baseLat === null || baseLng === null || !Number.isFinite(baseLat) || !Number.isFinite(baseLng)) {
+                        continue;
+                    }
+
+                    const mins = p.mineral_resource_base || {};
+                    const hyds = p.hydrocarbon_resource_base || {};
+                    const strats = p.strategic_resources || [];
+                    const endows = (p.resource_endowment && p.resource_endowment.known) || [];
+                    const energy = p.energy_resource_base || {};
+
+                    const items = [
+                        ...(mins.metallic || []),
+                        ...(mins.nonMetallic || []),
+                        ...(mins.industrialMinerals || []),
+                        ...(mins.preciousMetals || []),
+                        ...(mins.criticalMinerals || []),
+                        ...(mins.rareEarths || []),
+                        ...(hyds.oil || []),
+                        ...(hyds.naturalGas || []),
+                        ...(hyds.coal || []),
+                        ...(energy.hydro || []),
+                        ...(energy.nuclear || []),
+                        ...(energy.renewables || []),
+                        ...(Array.isArray(strats) ? strats : []),
+                        ...(Array.isArray(endows) ? endows : [])
+                    ];
+
+                    items.forEach((rawItem, idx) => {
+                        const rId = resIdMap(rawItem);
+                        const rawClean = String(rawItem).replace(/_/g, " ").toUpperCase();
+                        const depName = `${countryName} ${rawClean}`;
+                        if (!existingNames.has(depName.toLowerCase())) {
+                            existingNames.add(depName.toLowerCase());
+                            // Golden spiral spatial distribution to prevent clumping and linear overlapping
+                            const radius = 0.25 + 0.15 * Math.sqrt(idx);
+                            const angle = idx * 2.399963; // Golden angle in radians
+                            const offsetLat = radius * Math.sin(angle);
+                            const cosLat = Math.max(0.2, Math.cos(baseLat * Math.PI / 180));
+                            const offsetLng = (radius * Math.cos(angle)) / cosLat;
+                            
+                            let reserveDesc = 'Strategic Sovereign Reserve';
+                            if (rawClean.includes("WORLD") || rawClean.includes("TOP") || rawClean.includes("NO1") || rawClean.includes("LEADER")) {
+                                reserveDesc = 'Tier 1 World Leader Field';
+                            }
+
+                            combined.push({
+                                name: depName,
+                                resId: rId,
+                                country: countryName,
+                                lat: parseFloat((baseLat + offsetLat).toFixed(4)),
+                                lng: parseFloat((baseLng + offsetLng).toFixed(4)),
+                                reserve: reserveDesc,
+                                status: 'Canonical GSRSK Field'
+                            });
+                        }
+                    });
                 }
             }
 

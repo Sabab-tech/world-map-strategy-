@@ -178,9 +178,9 @@
                     </div>
                 </div>
 
-                <div class="status-group status-resources" role="status">
+                <div class="status-group status-resources" role="status" onclick="if(window.Game && window.Game.Map && typeof window.Game.Map.toggleMetricDropdown === 'function') window.Game.Map.toggleMetricDropdown(event);" title="Click anywhere on Top Bar to open Sovereign Intelligence Dropdown Box">
                     <!-- 🌐 MAP METRIC SELECTOR DROPDOWN BUTTON -->
-                    <div id="metric-selector-pill" class="res-node metric-pill-btn" onclick="if(window.Game && window.Game.Map && typeof window.Game.Map.toggleMetricDropdown === 'function') window.Game.Map.toggleMetricDropdown(event);" title="Click to Change Global Map Intelligence Layer & Metric Overlay" style="cursor:pointer; background:rgba(0,229,255,0.15); border:1px solid #00e5ff; padding:2px 10px; border-radius:14px; box-shadow:0 0 10px rgba(0,229,255,0.3);">
+                    <div id="metric-selector-pill" class="res-node metric-pill-btn" style="cursor:pointer; background:rgba(0,229,255,0.15); border:1px solid #00e5ff; padding:2px 10px; border-radius:14px; box-shadow:0 0 10px rgba(0,229,255,0.3);">
                         <span class="res-icon">📊</span>
                         <span id="active-metric-label" class="res-val" style="color:#00e5ff; font-weight:900;">MAP METRIC: GDP</span>
                         <span class="res-trend" style="color:#ffd700; margin-left:4px; font-weight:bold;">▼</span>
@@ -211,6 +211,12 @@
                         <span id="res-oil" class="res-val">500K BBL</span>
                         <span class="res-trend positive">▲ +200/s</span>
                     </div>
+
+                    <!-- 🔽 TOP BAR DROPDOWN TRIGGER ICON BUTTON -->
+                    <div id="top-bar-dropdown-trigger" class="res-node" style="cursor:pointer; background:rgba(0,229,255,0.25); border:1px solid #00e5ff; border-radius:12px; padding:2px 8px; color:#00e5ff; font-weight:900; font-size:11px; margin-left:auto; display:flex; align-items:center; gap:4px; box-shadow:0 0 8px rgba(0,229,255,0.4);" title="Click to Open Sovereign Intelligence & Resource Dropdown">
+                        <span>MENU</span>
+                        <span style="color:#ffd700;">▼</span>
+                    </div>
                 </div>
 
                 <div class="status-group status-right">
@@ -220,32 +226,89 @@
                 </div>
             </div>
 
-            <!-- 📊 MAP METRIC SELECTOR DROPDOWN MENU -->
-            <div id="map-metric-dropdown" class="map-metric-dropdown hidden" style="display:none; position:fixed; top:54px; left:220px; z-index:1000000; background:rgba(11,19,35,0.98); border:1.5px solid #00e5ff; border-radius:10px; width:280px; padding:10px; box-shadow:0 10px 30px rgba(0,0,0,0.9), 0 0 20px rgba(0,229,255,0.4); backdrop-filter:blur(12px);">
-                <div style="font-size:11px; font-weight:bold; color:#00e5ff; font-family:var(--font-mono); border-bottom:1px solid rgba(0,229,255,0.3); padding-bottom:6px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
-                    <span>📊 CHOOSE GEOPOLITICAL MAP METRIC</span>
-                    <button onclick="if(window.Game && window.Game.Map) window.Game.Map.hideMetricDropdown();" style="background:none; border:none; color:#ef4444; font-weight:bold; cursor:pointer;">✕</button>
+            <!-- 📊 MAP METRIC & SOVEREIGN INTELLIGENCE DROPDOWN DRAWER -->
+            <div id="map-metric-dropdown" class="map-metric-dropdown hidden" style="display:none; position:fixed; top:54px; left:50%; transform:translateX(-50%); z-index:1000000; background:rgba(8,15,26,0.98); border:1.5px solid #00e5ff; border-radius:12px; width:360px; max-width:94vw; padding:12px; box-shadow:0 12px 35px rgba(0,0,0,0.95), 0 0 25px rgba(0,229,255,0.35); backdrop-filter:blur(16px); font-family:var(--font-mono); color:#f8fafc; flex-direction:column; gap:8px;">
+                <div style="font-size:11px; font-weight:900; color:#00e5ff; font-family:var(--font-mono); border-bottom:1px solid rgba(0,229,255,0.3); padding-bottom:6px; display:flex; justify-content:space-between; align-items:center; letter-spacing:0.5px;">
+                    <span style="display:flex; align-items:center; gap:6px;">
+                        <span>📊</span>
+                        <span>SOVEREIGN MAP METRIC & OVERLAY</span>
+                    </span>
+                    <button onclick="if(window.Game && window.Game.Map) window.Game.Map.hideMetricDropdown();" style="background:rgba(239,68,68,0.2); border:1px solid #ef4444; color:#ef4444; border-radius:4px; width:22px; height:22px; display:flex; align-items:center; justify-content:center; font-weight:bold; cursor:pointer;">✕</button>
                 </div>
-                <div style="display:flex; flex-direction:column; gap:6px; max-height:360px; overflow-y:auto; font-family:var(--font-mono); font-size:11px;">
-                    <div style="font-size:9px; color:#ffd700; font-weight:bold; letter-spacing:1px; margin-top:2px;">ECONOMY</div>
-                    <button onclick="Game.Map.setMapMetric('GDP')" class="metric-opt-btn" style="text-align:left; padding:6px 8px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); color:#fff; border-radius:4px; cursor:pointer;">💵 Total GDP ($ USD)</button>
-                    <button onclick="Game.Map.setMapMetric('GDP_PER_CAPITA')" class="metric-opt-btn" style="text-align:left; padding:6px 8px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); color:#fff; border-radius:4px; cursor:pointer;">📈 GDP Per Capita ($/person)</button>
-                    <button onclick="Game.Map.setMapMetric('TREASURY')" class="metric-opt-btn" style="text-align:left; padding:6px 8px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); color:#fff; border-radius:4px; cursor:pointer;">🏛️ Sovereign Treasury Reserve</button>
-                    <button onclick="Game.Map.setMapMetric('DEBT')" class="metric-opt-btn" style="text-align:left; padding:6px 8px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); color:#fff; border-radius:4px; cursor:pointer;">💳 National Debt Ratio</button>
 
-                    <div style="font-size:9px; color:#ffd700; font-weight:bold; letter-spacing:1px; margin-top:6px;">POPULATION</div>
-                    <button onclick="Game.Map.setMapMetric('POPULATION')" class="metric-opt-btn" style="text-align:left; padding:6px 8px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); color:#fff; border-radius:4px; cursor:pointer;">👥 Total Population</button>
-                    <button onclick="Game.Map.setMapMetric('EMPLOYMENT')" class="metric-opt-btn" style="text-align:left; padding:6px 8px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); color:#fff; border-radius:4px; cursor:pointer;">💼 Employment Rate (%)</button>
+                <!-- QUICK REAL-TIME STATS HEADER IN DROPDOWN -->
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; background:rgba(0,229,255,0.06); border:1px solid rgba(0,229,255,0.2); border-radius:8px; padding:8px; font-size:10px;">
+                    <div><span style="color:#94a3b8;">💵 TREASURY:</span> <span id="dropdown-cash-val" style="color:#00e5ff; font-weight:bold;">$100M</span></div>
+                    <div><span style="color:#94a3b8;">🏛️ PP:</span> <span id="dropdown-power-val" style="color:#38bdf8; font-weight:bold;">850 PP</span></div>
+                    <div><span style="color:#94a3b8;">👥 MANPOWER:</span> <span id="dropdown-manpower-val" style="color:#4ade80; font-weight:bold;">500K</span></div>
+                    <div><span style="color:#94a3b8;">⚡ ENERGY:</span> <span id="dropdown-energy-val" style="color:#facc15; font-weight:bold;">12.4 GW</span></div>
+                </div>
 
-                    <div style="font-size:9px; color:#ffd700; font-weight:bold; letter-spacing:1px; margin-top:6px;">RESOURCES & ENERGY</div>
-                    <button onclick="Game.Map.setMapMetric('RESOURCE_WEALTH')" class="metric-opt-btn" style="text-align:left; padding:6px 8px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); color:#fff; border-radius:4px; cursor:pointer;">💎 Strategic Resource Wealth Index</button>
-                    <button onclick="Game.Map.setMapMetric('ENERGY')" class="metric-opt-btn" style="text-align:left; padding:6px 8px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); color:#fff; border-radius:4px; cursor:pointer;">⚡ Energy Grid Production (GW)</button>
+                <div style="display:flex; flex-direction:column; gap:6px; max-height:340px; overflow-y:auto; font-family:var(--font-mono); font-size:11px; padding-right:4px;">
+                    <div style="font-size:9px; color:#ffd700; font-weight:bold; letter-spacing:1px; margin-top:2px;">MACROECONOMICS</div>
+                    <button onclick="Game.Map.setMapMetric('GDP')" class="metric-opt-btn" style="text-align:left; padding:6px 10px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); color:#fff; border-radius:6px; cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
+                        <span>💵 Gross Domestic Product ($ USD)</span>
+                        <span style="color:#00e5ff; font-size:10px;">GLOBAL</span>
+                    </button>
+                    <button onclick="Game.Map.setMapMetric('GDP_PER_CAPITA')" class="metric-opt-btn" style="text-align:left; padding:6px 10px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); color:#fff; border-radius:6px; cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
+                        <span>📈 GDP Per Capita ($/person)</span>
+                        <span style="color:#00e5ff; font-size:10px;">INCOME</span>
+                    </button>
+                    <button onclick="Game.Map.setMapMetric('TREASURY')" class="metric-opt-btn" style="text-align:left; padding:6px 10px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); color:#fff; border-radius:6px; cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
+                        <span>🏛️ Sovereign Treasury Reserves</span>
+                        <span style="color:#00e5ff; font-size:10px;">RESERVE</span>
+                    </button>
+                    <button onclick="Game.Map.setMapMetric('DEBT')" class="metric-opt-btn" style="text-align:left; padding:6px 10px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); color:#fff; border-radius:6px; cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
+                        <span>💳 National Debt Ratio (% GDP)</span>
+                        <span style="color:#ef4444; font-size:10px;">RATIO</span>
+                    </button>
 
-                    <div style="font-size:9px; color:#ffd700; font-weight:bold; letter-spacing:1px; margin-top:6px;">MILITARY & POWER</div>
-                    <button onclick="Game.Map.setMapMetric('MILITARY')" class="metric-opt-btn" style="text-align:left; padding:6px 8px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); color:#fff; border-radius:4px; cursor:pointer;">⚔️ Military Power Rating</button>
-                    <button onclick="Game.Map.setMapMetric('STABILITY')" class="metric-opt-btn" style="text-align:left; padding:6px 8px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); color:#fff; border-radius:4px; cursor:pointer;">🛡️ Government Stability Index</button>
+                    <div style="font-size:9px; color:#ffd700; font-weight:bold; letter-spacing:1px; margin-top:6px;">DEMOGRAPHICS & LABOR</div>
+                    <button onclick="Game.Map.setMapMetric('POPULATION')" class="metric-opt-btn" style="text-align:left; padding:6px 10px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); color:#fff; border-radius:6px; cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
+                        <span>👥 National Population Count</span>
+                        <span style="color:#00e5ff; font-size:10px;">PEOPLE</span>
+                    </button>
+                    <button onclick="Game.Map.setMapMetric('EMPLOYMENT')" class="metric-opt-btn" style="text-align:left; padding:6px 10px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); color:#fff; border-radius:6px; cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
+                        <span>💼 Employment Rate (%)</span>
+                        <span style="color:#00e5ff; font-size:10px;">LABOR</span>
+                    </button>
 
-                    <button onclick="Game.Map.setMapMetric('NONE')" class="metric-opt-btn" style="text-align:left; padding:6px 8px; background:rgba(239,68,68,0.2); border:1px solid #ef4444; color:#ef4444; border-radius:4px; cursor:pointer; margin-top:6px; font-weight:bold;">❌ Reset Standard Map Colors</button>
+                    <div style="font-size:9px; color:#ffd700; font-weight:bold; letter-spacing:1px; margin-top:6px;">NATURAL RESOURCES & POWER</div>
+                    <button onclick="Game.Map.setMapMetric('RESOURCE_WEALTH')" class="metric-opt-btn" style="text-align:left; padding:6px 10px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); color:#fff; border-radius:6px; cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
+                        <span>💎 Strategic Resource Wealth Index</span>
+                        <span style="color:#00e5ff; font-size:10px;">DEPOSITS</span>
+                    </button>
+                    <button onclick="Game.Map.setMapMetric('ENERGY')" class="metric-opt-btn" style="text-align:left; padding:6px 10px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); color:#fff; border-radius:6px; cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
+                        <span>⚡ Energy Grid Production (GW)</span>
+                        <span style="color:#00e5ff; font-size:10px;">GRID</span>
+                    </button>
+
+                    <div style="font-size:9px; color:#ffd700; font-weight:bold; letter-spacing:1px; margin-top:6px;">MILITARY & SECURITY</div>
+                    <button onclick="Game.Map.setMapMetric('MILITARY')" class="metric-opt-btn" style="text-align:left; padding:6px 10px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); color:#fff; border-radius:6px; cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
+                        <span>⚔️ Military Power Rating</span>
+                        <span style="color:#00e5ff; font-size:10px;">POWER</span>
+                    </button>
+                    <button onclick="Game.Map.setMapMetric('STABILITY')" class="metric-opt-btn" style="text-align:left; padding:6px 10px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); color:#fff; border-radius:6px; cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
+                        <span>🛡️ Government Stability Index</span>
+                        <span style="color:#00e5ff; font-size:10px;">ORDER</span>
+                    </button>
+
+                    <!-- DIRECTIVES -->
+                    <div style="font-size:9px; color:#ffd700; font-weight:bold; letter-spacing:1px; margin-top:8px;">QUICK DIRECTIVES & NAVIGATION</div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+                        <button onclick="window.openMainMinistryView(event); Game.Map.hideMetricDropdown();" style="padding:6px 8px; background:rgba(0,229,255,0.15); border:1px solid #00e5ff; color:#00e5ff; border-radius:6px; cursor:pointer; font-size:10px; font-weight:bold;">🏛️ OPEN CABINET</button>
+                        <button onclick="Game.Map.toggleResourceFilterMenu(); Game.Map.hideMetricDropdown();" style="padding:6px 8px; background:rgba(0,229,255,0.15); border:1px solid #00e5ff; color:#00e5ff; border-radius:6px; cursor:pointer; font-size:10px; font-weight:bold;">💎 RESOURCE MAP (◇)</button>
+                    </div>
+
+                    <div style="font-size:9px; color:#ffd700; font-weight:bold; letter-spacing:1px; margin-top:8px;">SOVEREIGN CONTROL & SETTINGS</div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+                        <button onclick="if(window.toggleSettingsModal) window.toggleSettingsModal(); else if(window.Game && window.Game.Map) window.Game.Map.hideMetricDropdown();" style="padding:6px 8px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); color:#e2e8f0; border-radius:6px; cursor:pointer; font-size:10px; font-weight:bold; display:flex; align-items:center; gap:4px; justify-content:center;">⚙️ Quick Settings</button>
+                        <button onclick="Game.Map.setMapMetric('GDP'); Game.Map.hideMetricDropdown();" style="padding:6px 8px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); color:#e2e8f0; border-radius:6px; cursor:pointer; font-size:10px; font-weight:bold; display:flex; align-items:center; gap:4px; justify-content:center;">📊 Global Stats Overview</button>
+                        <button onclick="if(window.openUserProfile) window.openUserProfile(); else if(window.Game && window.Game.Map) window.Game.Map.hideMetricDropdown();" style="padding:6px 8px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); color:#e2e8f0; border-radius:6px; cursor:pointer; font-size:10px; font-weight:bold; display:flex; align-items:center; gap:4px; justify-content:center;">👤 User Profile</button>
+                        <button onclick="if(window.openHelpModal) window.openHelpModal(); else if(window.Game && window.Game.Map) window.Game.Map.hideMetricDropdown();" style="padding:6px 8px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); color:#e2e8f0; border-radius:6px; cursor:pointer; font-size:10px; font-weight:bold; display:flex; align-items:center; gap:4px; justify-content:center;">❓ Help/Tutorials</button>
+                    </div>
+
+                    <button onclick="Game.Map.setMapMetric('NONE')" class="metric-opt-btn" style="text-align:center; padding:8px; background:rgba(239,68,68,0.2); border:1px solid #ef4444; color:#ef4444; border-radius:6px; cursor:pointer; margin-top:8px; font-weight:bold;">❌ RESET MAP COLORS TO DEFAULT</button>
                 </div>
             </div>
 
@@ -661,13 +724,13 @@
         </div>
         
         <!-- 💎 RESOURCE INTELLIGENCE CONTROL PANEL -->
-        <div id="resource-filter-box" class="resource-filter-box hidden" style="display:none; position:fixed; top:60px; right:60px; z-index:1000000; width:340px; max-width:92vw; background:rgba(8, 15, 26, 0.96); border:1.5px solid #00e5ff; border-radius:12px; padding:12px; box-shadow:0 12px 35px rgba(0,0,0,0.95), 0 0 25px rgba(0,229,255,0.25); backdrop-filter:blur(14px); font-family:var(--font-mono); color:#f8fafc; flex-direction:column; gap:10px;">
+        <div id="resource-filter-box" class="resource-filter-box hidden" style="display:none; position:fixed; top:54px; right:20px; z-index:1000000; width:340px; max-width:92vw; max-height:calc(100vh - 65px); background:rgba(8, 15, 26, 0.98); border:1.5px solid #00e5ff; border-radius:12px; padding:12px; box-shadow:0 12px 35px rgba(0,0,0,0.95), 0 0 25px rgba(0,229,255,0.25); backdrop-filter:blur(14px); font-family:var(--font-mono); color:#f8fafc; flex-direction:column; gap:8px; overflow-y:auto;">
             <!-- Panel Header -->
-            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(0,229,255,0.3); padding-bottom:8px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(0,229,255,0.3); padding-bottom:6px; position:sticky; top:0; background:rgba(8,15,26,0.98); z-index:10;">
                 <div style="font-size:12px; font-weight:bold; color:#00e5ff; letter-spacing:0.5px; display:flex; align-items:center; gap:6px;">
                     <span>◆</span> <span>RESOURCE INTELLIGENCE</span>
                 </div>
-                <button onclick="Game.Map.hideResourceFilterMenu()" style="background:none; border:none; color:#ef4444; font-size:14px; font-weight:bold; cursor:pointer; padding:2px 6px;">✕</button>
+                <button onclick="Game.Map.hideResourceFilterMenu()" style="background:rgba(239,68,68,0.2); border:1px solid #ef4444; color:#ef4444; border-radius:4px; width:22px; height:22px; display:flex; align-items:center; justify-content:center; font-weight:bold; cursor:pointer;" title="Exit / Close Filter">✕</button>
             </div>
 
             <!-- Scope Switcher: NATION vs WORLD -->
@@ -695,7 +758,7 @@
             </div>
 
             <!-- Multi-Select Checkbox Grid -->
-            <div id="resource-chip-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:5px; max-height:200px; overflow-y:auto; padding:6px; border:1px solid rgba(0,229,255,0.2); border-radius:8px; background:rgba(15,23,42,0.85);">
+            <div id="resource-chip-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:5px; max-height:160px; overflow-y:auto; padding:6px; border:1px solid rgba(0,229,255,0.2); border-radius:8px; background:rgba(15,23,42,0.85);">
                 <!-- Populated dynamically by Game.Map.renderResourceCheckboxesInPanel() -->
             </div>
 
@@ -705,12 +768,15 @@
                 <strong id="resource-summary-count" style="color:#00e5ff; font-size:11px;">0 deposits</strong>
             </div>
 
-            <!-- Action Buttons -->
-            <div style="display:flex; gap:8px; margin-top:2px;">
-                <button id="btn-clear-res-filter" onclick="Game.Map.clearAndResetResourceMode()" style="flex:1; padding:8px; background:rgba(239,68,68,0.15); border:1px solid #ef4444; color:#ef4444; font-size:11px; font-weight:bold; border-radius:6px; cursor:pointer; font-family:var(--font-mono); display:flex; align-items:center; justify-content:center; gap:4px;">
-                    <span>❌</span> <span>CLEAR & OFF</span>
+            <!-- Action Buttons - Sticky at Bottom -->
+            <div style="display:flex; gap:6px; margin-top:4px; position:sticky; bottom:0; background:rgba(8, 15, 26, 0.98); border-top:1px solid rgba(0,229,255,0.25); padding-top:8px; padding-bottom:2px; z-index:10; flex-shrink:0;">
+                <button id="btn-exit-res-filter" onclick="Game.Map.hideResourceFilterMenu()" style="flex:1; padding:8px 4px; background:rgba(239,68,68,0.2); border:1px solid #ef4444; color:#ef4444; font-size:10px; font-weight:bold; border-radius:6px; cursor:pointer; font-family:var(--font-mono); display:flex; align-items:center; justify-content:center; gap:3px;">
+                    <span>🚪</span> <span>EXIT</span>
                 </button>
-                <button id="btn-apply-res-filter" onclick="Game.Map.applyResourceFilterAndClose()" style="flex:2; padding:8px; background:linear-gradient(135deg, rgba(0,229,255,0.25) 0%, rgba(59,130,246,0.25) 100%); border:1.5px solid #00e5ff; color:#00e5ff; font-size:11px; font-weight:bold; border-radius:6px; cursor:pointer; font-family:var(--font-mono); display:flex; align-items:center; justify-content:center; gap:4px; box-shadow:0 0 12px rgba(0,229,255,0.3);">
+                <button id="btn-clear-res-filter" onclick="Game.Map.clearAndResetResourceMode()" style="flex:1; padding:8px 4px; background:rgba(234,179,8,0.2); border:1px solid #eab308; color:#eab308; font-size:10px; font-weight:bold; border-radius:6px; cursor:pointer; font-family:var(--font-mono); display:flex; align-items:center; justify-content:center; gap:3px;">
+                    <span>🧹</span> <span>CLEAR</span>
+                </button>
+                <button id="btn-apply-res-filter" onclick="Game.Map.applyResourceFilterAndClose()" style="flex:2; padding:8px 6px; background:linear-gradient(135deg, rgba(0,229,255,0.3) 0%, rgba(59,130,246,0.3) 100%); border:1.5px solid #00e5ff; color:#00e5ff; font-size:11px; font-weight:bold; border-radius:6px; cursor:pointer; font-family:var(--font-mono); display:flex; align-items:center; justify-content:center; gap:4px; box-shadow:0 0 12px rgba(0,229,255,0.4);">
                     <span>✅</span> <span>APPLY FILTER</span>
                 </button>
             </div>

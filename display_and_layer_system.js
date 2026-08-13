@@ -511,6 +511,23 @@
         },
 
         popLayer() {
+            // 0. Close active resource-filter-box or map-metric-dropdown if open
+            const resBox = document.getElementById('resource-filter-box');
+            if (resBox && window.getComputedStyle(resBox).display !== 'none' && resBox.style.display !== 'none' && !resBox.classList.contains('hidden')) {
+                resBox.style.display = 'none';
+                resBox.classList.add('hidden');
+                if (window.updateGlobalBackButtonVisibility) window.updateGlobalBackButtonVisibility();
+                return;
+            }
+
+            const dropDown = document.getElementById('map-metric-dropdown');
+            if (dropDown && window.getComputedStyle(dropDown).display !== 'none' && dropDown.style.display !== 'none' && !dropDown.classList.contains('hidden')) {
+                dropDown.style.display = 'none';
+                dropDown.classList.add('hidden');
+                if (window.updateGlobalBackButtonVisibility) window.updateGlobalBackButtonVisibility();
+                return;
+            }
+
             // 1. Close interrogation modal if active
             const interrogModal = document.getElementById('minister-interrogation-modal');
             if (interrogModal && (interrogModal.style.display === 'flex' || interrogModal.style.display === 'block')) {
@@ -660,11 +677,13 @@
         const interrogModal = document.getElementById('minister-interrogation-modal');
         const fullWin = document.getElementById('cabinet-full-window');
         const dashWin = document.getElementById('ministry-dashboard-view');
+        const resBox = document.getElementById('resource-filter-box');
+        const dropDown = document.getElementById('map-metric-dropdown');
 
-        const isModalVisible = (el) => el && window.getComputedStyle(el).display !== 'none' && el.style.display !== 'none';
+        const isModalVisible = (el) => el && window.getComputedStyle(el).display !== 'none' && el.style.display !== 'none' && !el.classList.contains('hidden');
 
         // Show permanent global back button whenever any modal or sublayer is open
-        if (layer > 0 || isModalVisible(fullWin) || isModalVisible(dashWin) || isModalVisible(cmdHub) || isModalVisible(countryCard) || isModalVisible(cityBar) || isModalVisible(interrogModal)) {
+        if (layer > 0 || isModalVisible(fullWin) || isModalVisible(dashWin) || isModalVisible(cmdHub) || isModalVisible(countryCard) || isModalVisible(cityBar) || isModalVisible(interrogModal) || isModalVisible(resBox) || isModalVisible(dropDown)) {
             btn.style.display = 'flex';
         } else {
             btn.style.display = 'none';
