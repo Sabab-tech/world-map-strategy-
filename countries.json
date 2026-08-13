@@ -988,5 +988,17 @@
     "minZoom": 6.5,
     "maxZoom": 10,
     "importance": 1
+  },
+  {
+    "code": "AGO",
+    "name": "Angola",
+    "lat": -8.839,
+    "lng": 13.289
+  },
+  {
+    "code": "PRT",
+    "name": "Portugal",
+    "lat": 38.722,
+    "lng": -9.139
   }
 ]
