@@ -803,11 +803,50 @@ window.ResourceMinistryEngine = (() => {
             const resp = await fetch('resources.json');
             if (resp.ok) {
                 resourceDatabaseCache = await resp.json();
-                window.resourceDatabase = resourceDatabaseCache;
-                buildCanonicalCountryProfiles(resourceDatabaseCache);
             }
         } catch (e) {
             console.warn("Could not load resources.json:", e);
+        }
+
+        // Seamlessly merge resources_2.json if present
+        try {
+            const resp2 = await fetch('resources_2.json');
+            if (resp2.ok) {
+                const db2 = await resp2.json();
+                if (!resourceDatabaseCache) {
+                    resourceDatabaseCache = db2;
+                } else {
+                    // Deep merge country profiles
+                    if (db2.GSRSK_Master_CountryProfiles_v14 && db2.GSRSK_Master_CountryProfiles_v14.countryProfiles) {
+                        if (!resourceDatabaseCache.GSRSK_Master_CountryProfiles_v14) {
+                            resourceDatabaseCache.GSRSK_Master_CountryProfiles_v14 = { countryProfiles: {} };
+                        }
+                        Object.assign(resourceDatabaseCache.GSRSK_Master_CountryProfiles_v14.countryProfiles, db2.GSRSK_Master_CountryProfiles_v14.countryProfiles);
+                    }
+                    // Merge deposits
+                    if (Array.isArray(db2.deposits)) {
+                        resourceDatabaseCache.deposits = (resourceDatabaseCache.deposits || []).concat(db2.deposits);
+                    }
+                    // Merge resource types
+                    if (db2.resource_types) {
+                        resourceDatabaseCache.resource_types = Object.assign(resourceDatabaseCache.resource_types || {}, db2.resource_types);
+                    }
+                    // Merge srie_database
+                    if (db2.srie_database && db2.srie_database.countries) {
+                        if (!resourceDatabaseCache.srie_database) {
+                            resourceDatabaseCache.srie_database = { countries: {} };
+                        }
+                        Object.assign(resourceDatabaseCache.srie_database.countries, db2.srie_database.countries);
+                    }
+                }
+            }
+        } catch (e) {
+            // Optional secondary file not found or failed, standard operation continues
+        }
+
+        if (resourceDatabaseCache) {
+            window.resourceDatabase = resourceDatabaseCache;
+            buildCanonicalCountryProfiles(resourceDatabaseCache);
         }
         return resourceDatabaseCache;
     }
