@@ -1,7 +1,7 @@
 {
   "RELATION_GENERATION_ENGINE": {
     "enabled": true,
-    "database_ref": "srie_database.json",
+    "database_ref": "resources.json",
     "total_countries_loaded": 197,
     "upload_completion": "100% (195/195 Countries Fully Uploaded)",
     "weights": {
