@@ -309,7 +309,11 @@ Game.Diplomacy = {
         if (countries.length === 0) return;
 
         Game.state.relations = Game.state.relations || {};
-        const w = { historical: 0.15, diplomatic: 0.15, economic: 0.15, military: 0.10, strategic: 0.15, cultural: 0.10, intelligence: 0.05, societal: 0.05, international: 0.10 };
+        
+        // RGE Engine Integration (relation_generation_engine.json)
+        const rge = this._rgeEngine || (Game.state.relationEngine && Game.state.relationEngine.RELATION_GENERATION_ENGINE) || null;
+        const weights = (rge && rge.weights) ? rge.weights : { historical: 0.15, diplomatic: 0.15, economic: 0.15, military: 0.10, strategic: 0.15, cultural: 0.10, intelligence: 0.05, societal: 0.05, international: 0.10 };
+        const salience = (rge && rge.srie_v2_asymmetrical_salience) ? rge.srie_v2_asymmetrical_salience : {};
 
         function clamp(v) { return Math.max(-100, Math.min(100, Math.floor(v || 0))); }
         function diff(a, b) {
@@ -319,6 +323,9 @@ Game.Diplomacy = {
 
         countries.forEach(c1 => {
             Game.state.relations[c1] = Game.state.relations[c1] || {};
+            const salienceA = salience[c1] || salience[c1.replace(/_/g, " ")] || null;
+            const paramsA = salienceA ? salienceA.parameters : null;
+
             countries.forEach(c2 => {
                 if (c1 === c2) return;
 
@@ -326,8 +333,10 @@ Game.Diplomacy = {
                 const B = Game.state.economy[c2] || {};
                 const P = Game.state.population[c1] || {};
                 const Q = Game.state.population[c2] || {};
+                const salienceB = salience[c2] || salience[c2.replace(/_/g, " ")] || null;
+                const paramsB = salienceB ? salienceB.parameters : null;
 
-                // জিপিডি এবং জনসংখ্যা বিলিয়ন বা মিলিয়নে থাকায় সেগুলোকে লগারিদমিক স্কেলে আনা হলো
+                // GDP and Population Logarithmic comparison
                 let logA_gdp = Math.log10(A.gdp && A.gdp > 0 ? A.gdp : 1);
                 let logB_gdp = Math.log10(B.gdp && B.gdp > 0 ? B.gdp : 1);
                 let gdpDiff = 100 - Math.min(100, Math.abs(logA_gdp - logB_gdp) * 15);
@@ -339,32 +348,64 @@ Game.Diplomacy = {
                 let historical = diff(A.ideology, B.ideology) * 0.2 + popDiff * 0.02;
                 let diplomatic = diff(A.ideology, B.ideology) * 0.2;
 
-                if (this._legacyRelations[c1] && this._legacyRelations[c1][c2]) {
-                    const legacy = this._legacyRelations[c1][c2];
-                    historical += legacy.hist || 0;
-                    diplomatic += legacy.dipl || 0;
+                // SRIE Parameters Impact
+                if (paramsA && paramsB) {
+                    const secDiff = diff(paramsA.MIL_SECURITY_DEPENDENCY, paramsB.MIL_SECURITY_DEPENDENCY);
+                    const threatDiff = diff(paramsA.REGIONAL_THREAT_FEAR, paramsB.REGIONAL_THREAT_FEAR);
+                    const stabDiff = diff(paramsA.DOMESTIC_POLITICAL_STABILITY, paramsB.DOMESTIC_POLITICAL_STABILITY);
+                    historical = (historical + stabDiff * 0.5) / 1.5;
+                    diplomatic = (diplomatic + (100 - threatDiff) * 0.3 + secDiff * 0.3) / 1.6;
+                }
+
+                // Baseline real-world legacy relations from relations.json
+                if (this._legacyRelations) {
+                    const legA = this._legacyRelations[c1] || this._legacyRelations[c1.replace(/_/g, " ")];
+                    if (legA && legA[c2]) {
+                        const legacy = legA[c2];
+                        historical += (legacy.hist || legacy.historical || 0) * 0.5;
+                        diplomatic += (legacy.dipl || legacy.diplomatic || 0) * 0.5;
+                    }
                 }
 
                 let economic = gdpDiff; 
                 let military = diff(A.military_power, B.military_power) * 0.25;
+                if (paramsA && paramsB) {
+                    military += (100 - Math.abs(paramsA.MIL_MOBILIZATION_READINESS - paramsB.MIL_MOBILIZATION_READINESS)) * 0.2;
+                }
+
                 let intelligence = 50;
+                if (paramsA && paramsB) {
+                    intelligence = 100 - (paramsA.INTEL_COVERT_ACTIVITY_RISK + paramsB.INTEL_COVERT_ACTIVITY_RISK) * 0.5;
+                }
+
                 let cultural = diff(A.cultural_similarity, B.cultural_similarity) * 0.6;
                 let strategic = diff(A.strategic_value, B.strategic_value) * 0.5;
                 let societal = diff(A.stability, B.stability) * 0.2;
                 let international = diff(A.alliance_score, B.alliance_score);
 
-                let overall = historical * w.historical + diplomatic * w.diplomatic + economic * w.economic + military * w.military + intelligence * w.intelligence + cultural * w.cultural + strategic * w.strategic + societal * w.societal + international * w.international;
+                let overall = (historical * weights.historical) + 
+                              (diplomatic * weights.diplomatic) + 
+                              (economic * weights.economic) + 
+                              (military * weights.military) + 
+                              (intelligence * weights.intelligence) + 
+                              (cultural * weights.cultural) + 
+                              (strategic * weights.strategic) + 
+                              (societal * weights.societal) + 
+                              (international * weights.international);
+                
                 const finalScore = clamp(overall);
 
                 Game.state.relations[c1][c2] = {
                     overall: finalScore,
                     border_tension: clamp(50 - finalScore * 0.5),
                     military_threat: clamp(40 - finalScore * 0.4),
-                    status: finalScore > 60 ? "Ally" : (finalScore < -60 ? "Hostile" : "Neutral")
+                    status: finalScore > 40 ? "Ally" : (finalScore < -30 ? "Hostile" : "Neutral"),
+                    asymmetrical_salience: salienceA ? salienceA.ai_driver : "Bilateral Sovereign Balance"
                 };
             });
         });
-        console.log("✅ Decoupled Relations Matrix Simulated.");
+        window.GameRelationsDatabase = Game.state.relations;
+        console.log(`✅ [RGE Engine] Generated Bilateral Relations for ${countries.length} nations using relation_generation_engine.json & relations.json.`);
     }
 };
 
@@ -384,6 +425,30 @@ Game.DataLoader = {
             const econData = await fetcher('economy.json');
             if (econData && typeof econData === 'object') {
                 Game.state.economy = econData;
+            }
+
+            // Load relation generation engine and baseline relations
+            const [rgeData, relData, minData] = await Promise.all([
+                fetcher('relation_generation_engine.json'),
+                fetcher('relations.json'),
+                fetcher('ministers.json')
+            ]);
+
+            if (rgeData && rgeData.RELATION_GENERATION_ENGINE) {
+                Game.state.relationEngine = rgeData;
+                if (Game.Diplomacy) Game.Diplomacy._rgeEngine = rgeData.RELATION_GENERATION_ENGINE;
+            }
+
+            if (relData && typeof relData === 'object') {
+                if (Game.Diplomacy) Game.Diplomacy._legacyRelations = relData;
+            }
+
+            if (minData && minData.ministers_database) {
+                window.OmegaMinistersDB = minData.ministers_database;
+                Game.state.ministersDB = minData.ministers_database;
+                if (window.OmegaCabinetUI && typeof window.OmegaCabinetUI.syncMinistersDatabase === 'function') {
+                    window.OmegaCabinetUI.syncMinistersDatabase(minData.ministers_database);
+                }
             }
 
             if (Game.Diplomacy && typeof Game.Diplomacy.generateAllBilateralRelations === 'function') {
@@ -588,25 +653,99 @@ Game.Map = {
     },
 
     bindMapUIProtection() {
-        if (typeof L === 'undefined' || !L.DomEvent) return;
-        const ids = [
+        const protectIds = [
+            'top-status-bar',
+            'metric-selector-pill',
+            'top-bar-dropdown-trigger',
+            'map-metric-dropdown',
+            'map-metric-legend',
             'resource-filter-box',
             'relation-filter-box',
-            'top-status-bar',
             'slim-info-feed-container',
             'ui-right-controls',
             'country-selection-bar',
             'country-info-card',
             'special-map-controls',
             'ui-bottom-navigation',
-            'city-detail-bar'
+            'city-detail-bar',
+            'global-back-btn',
+            'search-drawer',
+            'events-drawer',
+            'layers-drawer'
         ];
-        ids.forEach(id => {
+        protectIds.forEach(id => {
             const el = document.getElementById(id);
             if (el) {
-                L.DomEvent.disableClickPropagation(el);
-                L.DomEvent.disableScrollPropagation(el);
+                if (typeof L !== 'undefined' && L.DomEvent) {
+                    L.DomEvent.disableClickPropagation(el);
+                    L.DomEvent.disableScrollPropagation(el);
+                }
+                ['touchstart', 'touchmove', 'touchend', 'pointerdown', 'mousedown'].forEach(evtType => {
+                    el.addEventListener(evtType, function(e) {
+                        e.stopPropagation();
+                    }, { passive: true });
+                });
             }
+        });
+        this.setupHorizontalScrollDrag();
+    },
+
+    setupHorizontalScrollDrag() {
+        const scrollContainers = [
+            document.querySelector('.status-resources'),
+            document.getElementById('top-status-bar'),
+            document.getElementById('ios-chapter-nav')
+        ];
+
+        scrollContainers.forEach(container => {
+            if (!container || container._hasScrollDrag) return;
+            container._hasScrollDrag = true;
+
+            let isDown = false;
+            let startX = 0;
+            let scrollLeft = 0;
+
+            container.addEventListener('pointerdown', (e) => {
+                isDown = true;
+                container.style.cursor = 'grabbing';
+                startX = e.pageX - container.offsetLeft;
+                scrollLeft = container.scrollLeft;
+            });
+
+            const onPointerMove = (e) => {
+                if (!isDown) return;
+                e.preventDefault();
+                const x = e.pageX - container.offsetLeft;
+                const walk = (x - startX) * 1.5;
+                container.scrollLeft = scrollLeft - walk;
+            };
+
+            const onPointerUp = () => {
+                isDown = false;
+                if (container) container.style.cursor = '';
+            };
+
+            container.addEventListener('pointermove', onPointerMove);
+            container.addEventListener('pointerup', onPointerUp);
+            container.addEventListener('pointerleave', onPointerUp);
+            container.addEventListener('pointercancel', onPointerUp);
+
+            let touchStartX = 0;
+            let touchScrollLeft = 0;
+            container.addEventListener('touchstart', (e) => {
+                if (e.touches && e.touches[0]) {
+                    touchStartX = e.touches[0].pageX;
+                    touchScrollLeft = container.scrollLeft;
+                }
+            }, { passive: true });
+
+            container.addEventListener('touchmove', (e) => {
+                if (e.touches && e.touches[0]) {
+                    const currentX = e.touches[0].pageX;
+                    const diff = touchStartX - currentX;
+                    container.scrollLeft = touchScrollLeft + diff;
+                }
+            }, { passive: true });
         });
     },
 
@@ -789,7 +928,12 @@ Game.Map = {
         bar.style.boxShadow = `0 20px 60px rgba(0,0,0,0.92), 0 0 35px ${themeColor}40`;
         bar.classList.add('active');
 
-        // Automatically vanish all other buttons & navigation overlays while city detail card is open
+        // Automatically vanish all other buttons, selection bar & navigation overlays while city detail card is open
+        const selBar = document.getElementById('country-selection-bar');
+        if (selBar) {
+            selBar.classList.add('hidden');
+            selBar.style.display = 'none';
+        }
         document.body.classList.add('city-focus-active');
     },
 

@@ -178,9 +178,9 @@
                     </div>
                 </div>
 
-                <div class="status-group status-resources" role="status" onclick="if(window.Game && window.Game.Map && typeof window.Game.Map.toggleMetricDropdown === 'function') window.Game.Map.toggleMetricDropdown(event);" title="Click anywhere on Top Bar to open Sovereign Intelligence Dropdown Box">
+                <div class="status-group status-resources" role="status" title="Click or slide anywhere on Top Bar to view Resources & Dropdown Menu">
                     <!-- 🌐 MAP METRIC SELECTOR DROPDOWN BUTTON -->
-                    <div id="metric-selector-pill" class="res-node metric-pill-btn" style="cursor:pointer; background:rgba(0,229,255,0.15); border:1px solid #00e5ff; padding:2px 10px; border-radius:14px; box-shadow:0 0 10px rgba(0,229,255,0.3);">
+                    <div id="metric-selector-pill" class="res-node metric-pill-btn" onclick="if(window.Game && window.Game.Map && typeof window.Game.Map.toggleMetricDropdown === 'function') { window.Game.Map.toggleMetricDropdown(event); }" style="cursor:pointer; background:rgba(0,229,255,0.18); border:1.5px solid #00e5ff; padding:3px 12px; border-radius:14px; box-shadow:0 0 12px rgba(0,229,255,0.35); user-select:none;">
                         <span class="res-icon">📊</span>
                         <span id="active-metric-label" class="res-val" style="color:#00e5ff; font-weight:900;">MAP METRIC: GDP</span>
                         <span class="res-trend" style="color:#ffd700; margin-left:4px; font-weight:bold;">▼</span>
@@ -213,7 +213,7 @@
                     </div>
 
                     <!-- 🔽 TOP BAR DROPDOWN TRIGGER ICON BUTTON -->
-                    <div id="top-bar-dropdown-trigger" class="res-node" style="cursor:pointer; background:rgba(0,229,255,0.25); border:1px solid #00e5ff; border-radius:12px; padding:2px 8px; color:#00e5ff; font-weight:900; font-size:11px; margin-left:auto; display:flex; align-items:center; gap:4px; box-shadow:0 0 8px rgba(0,229,255,0.4);" title="Click to Open Sovereign Intelligence & Resource Dropdown">
+                    <div id="top-bar-dropdown-trigger" class="res-node" onclick="if(window.Game && window.Game.Map && typeof window.Game.Map.toggleMetricDropdown === 'function') { window.Game.Map.toggleMetricDropdown(event); }" style="cursor:pointer; background:rgba(0,229,255,0.25); border:1px solid #00e5ff; border-radius:12px; padding:3px 10px; color:#00e5ff; font-weight:900; font-size:11px; margin-left:auto; display:flex; align-items:center; gap:4px; box-shadow:0 0 8px rgba(0,229,255,0.4); user-select:none;" title="Click to Open Sovereign Intelligence & Resource Dropdown">
                         <span>MENU</span>
                         <span style="color:#ffd700;">▼</span>
                     </div>
@@ -928,6 +928,51 @@
                 let lastTime = performance.now();
                 let tick = 0;
 
+                // --- Event-Driven Update Architecture ---
+                const dirtyMinistries = new Set(["economy", "defense"]);
+                let activeMinistryId = "economy";
+                let lastSimTickTime = performance.now();
+                const SIMULATION_TICK_INTERVAL = 1000; // 1s interval for macro simulation ticks
+
+                const markMinistryDirty = (id) => {
+                    if (id) dirtyMinistries.add(id);
+                };
+
+                const setActiveMinistry = (id) => {
+                    if (id) {
+                        activeMinistryId = id;
+                        dirtyMinistries.add(id);
+                    }
+                };
+
+                // Expose event-driven hooks to Omega & Window
+                window.Omega.markMinistryDirty = markMinistryDirty;
+                window.Omega.setActiveMinistry = setActiveMinistry;
+                window.Omega.requestMinistryUpdate = markMinistryDirty;
+
+                // Event Listeners for reactive updates
+                window.addEventListener("MINISTRY_STATE_CHANGED", (e) => {
+                    const id = e.detail && (e.detail.ministryId || e.detail.id);
+                    if (id) markMinistryDirty(id);
+                });
+                window.addEventListener("MINISTRY_SELECTED", (e) => {
+                    const id = e.detail && (e.detail.ministryId || e.detail.id);
+                    if (id) setActiveMinistry(id);
+                });
+                window.addEventListener("RESOURCE_STATE_UPDATED", () => {
+                    markMinistryDirty("economy");
+                    markMinistryDirty("defense");
+                });
+                window.addEventListener("POLICY_VOTE_CAST", (e) => {
+                    const id = e.detail && e.detail.ministryId;
+                    if (id) markMinistryDirty(id);
+                    else MINISTRIES.forEach(m => markMinistryDirty(m));
+                });
+                window.addEventListener("DECISION_ENACTED", (e) => {
+                    const id = e.detail && e.detail.ministryId;
+                    if (id) markMinistryDirty(id);
+                });
+
                 document.addEventListener("visibilitychange", () => {
                     isPaused = document.hidden;
                     window.__LOG_EVENT__(isPaused ? "CORE_SLEEP" : "CORE_WAKE");
@@ -938,11 +983,28 @@
                     const dt = now - lastTime; lastTime = now; tick++;
                     window.__OMEGA_DIAG__.metrics.tick = tick;
 
-                    MINISTRIES.forEach(id => {
+                    const isSimTick = (now - lastSimTickTime) >= SIMULATION_TICK_INTERVAL;
+                    if (isSimTick) {
+                        lastSimTickTime = now;
+                    }
+
+                    // Event-Driven: Process only active, dirty, or periodic background macro ticks
+                    const ministriesToProcess = new Set();
+                    if (activeMinistryId) ministriesToProcess.add(activeMinistryId);
+                    dirtyMinistries.forEach(id => ministriesToProcess.add(id));
+
+                    if (isSimTick) {
+                        MINISTRIES.forEach(id => ministriesToProcess.add(id));
+                    }
+
+                    ministriesToProcess.forEach(id => {
                         if (typeof kernel.pumpOrchestratedPipelineTick === "function") {
                             kernel.pumpOrchestratedPipelineTick(id, dt, tick, { onMessage: () => {} });
                         }
                     });
+
+                    // Reset dirty set after processing
+                    dirtyMinistries.clear();
 
                     if (tick === 1) {
                         setTimeout(() => {

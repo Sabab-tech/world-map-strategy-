@@ -376,6 +376,79 @@ window.OmegaCabinetUI = {
     activeCategoryFilter: "ALL",
     cabinetViewMode: typeof localStorage !== 'undefined' ? (localStorage.getItem('omega_cabinet_view_mode') || 'carousel') : 'carousel',
     activeDashboardTab: 'interrogate',
+    ministersDB: null,
+    appointedMinisterIndex: {},
+
+    syncMinistersDatabase(db) {
+        if (!db) return;
+        this.ministersDB = db;
+        window.OmegaMinistersDB = db;
+        console.log("🏛️ [OmegaCabinetUI] ministers.json synchronized successfully. Departments:", Object.keys(db).length);
+    },
+
+    getRegionForCountry(countryKey) {
+        const c = (countryKey || (window.Game && window.Game.currentActiveCountry) || "USA").toString().toUpperCase().replace(/\s+/g, "_");
+        if (["BANGLADESH", "INDIA", "PAKISTAN", "SRI_LANKA", "NEPAL", "BHUTAN", "MALDIVES"].includes(c)) return "south_asia";
+        if (["SAUDI_ARABIA", "UAE", "IRAN", "IRAQ", "EGYPT", "TURKEY", "QATAR", "KUWAIT", "OMAN", "JORDAN", "LEBANON", "SYRIA", "YEMEN", "ALGERIA", "MOROCCO", "TUNISIA", "LIBYA", "SUDAN"].includes(c)) return "islamic";
+        if (["CHINA", "JAPAN", "SOUTH_KOREA", "NORTH_KOREA", "TAIWAN", "MONGOLIA"].includes(c)) return "east_asia";
+        if (["INDONESIA", "MALAYSIA", "SINGAPORE", "THAILAND", "VIETNAM", "PHILIPPINES", "MYANMAR", "CAMBODIA", "LAOS"].includes(c)) return "south_east_asia";
+        if (["RUSSIA", "UKRAINE", "BELARUS", "POLAND", "CZECH_REPUBLIC", "SLOVAKIA", "BULGARIA", "SERBIA", "CROATIA", "ROMANIA", "HUNGARY", "KAZAKHSTAN"].includes(c)) return "slavic";
+        if (["BRAZIL", "MEXICO", "ARGENTINA", "COLOMBIA", "CHILE", "PERU", "VENEZUELA", "ECUADOR", "BOLIVIA", "CUBA"].includes(c)) return "latin_america";
+        if (["NIGERIA", "SOUTH_AFRICA", "KENYA", "ETHIOPIA", "GHANA", "TANZANIA", "UGANDA", "ANGOLA", "ZIMBABWE", "ZAMBIA"].includes(c)) return "sub_saharan";
+        return "western";
+    },
+
+    getDepartmentMapping(ministryId) {
+        const map = {
+            'defense': 'Defense',
+            'foreign_affairs': 'Foreign_Affairs',
+            'treasury_finance': 'Finance',
+            'trade': 'Economy_Commerce',
+            'production': 'Economy_Commerce',
+            'taxes': 'Finance',
+            'central_bank': 'Finance',
+            'interior_security': 'Home_Affairs',
+            'laws': 'Justice',
+            'intelligence_cyber': 'Intelligence',
+            'energy_mining': 'Energy_Infrastructure',
+            'mega_projects': 'Energy_Infrastructure',
+            'infrastructure': 'Energy_Infrastructure',
+            'science_research': 'Science_Technology',
+            'education': 'Science_Technology',
+            'health_welfare': 'Public_Welfare',
+            'agriculture_food': 'Agriculture_Food',
+            'environment': 'Environment_Climate',
+            'media': 'Information_Media',
+            'labor': 'Labor_Immigration',
+            'religion': 'Culture_Religion'
+        };
+        return map[ministryId] || 'Home_Affairs';
+    },
+
+    getMinisterProfile(ministryId, countryKey) {
+        const db = this.ministersDB || window.OmegaMinistersDB || (window.Game && window.Game.state && window.Game.state.ministersDB);
+        const region = this.getRegionForCountry(countryKey);
+        const dept = this.getDepartmentMapping(ministryId);
+        const indexKey = `${(countryKey || 'USA')}_${ministryId}`;
+        const candidateIdx = this.appointedMinisterIndex[indexKey] || 0;
+        
+        if (db && db[dept] && db[dept].length > 0) {
+            const candidate = db[dept][candidateIdx % db[dept].length];
+            const name = (candidate.regional_names && candidate.regional_names[region]) || candidate.regional_names?.western || "Hon. State Minister";
+            return {
+                id: candidate.id,
+                name: name,
+                age: candidate.age,
+                background: candidate.background,
+                gender: candidate.gender,
+                stats: candidate.stats,
+                efficiency: candidate.efficiency,
+                ideology: candidate.ideology?.type || "technocrat",
+                candidates: db[dept]
+            };
+        }
+        return null;
+    },
 
     // Country Intelligence & Specifications Lookup Core (No hardcoded countries)
     getCountryDetails(countryKey) {
@@ -520,20 +593,30 @@ window.OmegaCabinetUI = {
             }
         };
 
-        if (lookup[norm]) return lookup[norm];
-        if (lookup[raw]) return lookup[raw];
-
-        // Format generic fallback cleanly
-        const cleanName = norm.toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
-        return {
-            code: raw.substring(0, 2), flag: "🌐", name: cleanName,
-            govtName: `${cleanName} Executive Cabinet`,
+        const resObj = lookup[norm] || lookup[raw] || {
+            code: raw.substring(0, 2), flag: "🌐", name: norm.toLowerCase().replace(/\b\w/g, l => l.toUpperCase()),
+            govtName: `${norm.toLowerCase().replace(/\b\w/g, l => l.toUpperCase())} Executive Cabinet`,
             capital: "State Capital", govtSystem: "Sovereign Republic",
             population: "50.0 Million", gdp: "$150.0 Billion",
             militaryRank: "#25 Worldwide", economicRank: "#28 Worldwide",
             hdi: "0.780 (High)", stability: "85% Stable",
             leader: "Head of State", currency: "National Currency", language: "Official Language"
         };
+
+        resObj.ministers = resObj.ministers || {};
+        const minKeys = ['defense', 'foreign_affairs', 'treasury_finance', 'interior_security', 'laws', 'intelligence_cyber', 'energy_mining', 'mega_projects', 'trade', 'production', 'taxes', 'central_bank', 'infrastructure', 'science_research', 'education', 'health_welfare', 'agriculture_food', 'environment', 'media', 'labor', 'religion'];
+        minKeys.forEach(mId => {
+            const prof = this.getMinisterProfile(mId, raw);
+            if (prof) {
+                resObj.ministers[mId] = {
+                    name: prof.name,
+                    role: `Minister of ${mId.replace(/_/g, " ").toUpperCase()}`,
+                    profile: prof
+                };
+            }
+        });
+
+        return resObj;
     },
 
     // 18 Strategic State Ministries with 3D/Isometric Visual Identities
@@ -3136,6 +3219,25 @@ if (document.readyState === 'complete' || document.readyState === 'interactive')
 
 window.OmegaCognitiveEngine = window.OmegaMinistry;
 window.OmegaCognitiveRuntime = window.OmegaMinistry;
+
+// Auto-load ministers.json on boot to ensure 100% data availability
+(async function initMinisters() {
+    try {
+        if (!window.OmegaMinistersDB) {
+            const fetcher = window.fetchResilient || (async (f) => {
+                const res = await fetch(f + '?v=' + Date.now());
+                return res.ok ? await res.json() : null;
+            });
+            const data = await fetcher('ministers.json');
+            if (data && data.ministers_database) {
+                window.OmegaCabinetUI.syncMinistersDatabase(data.ministers_database);
+            }
+        }
+    } catch (e) {
+        console.warn("[OmegaCabinetUI] Auto-fetch ministers.json:", e);
+    }
+})();
+
 console.log("[OMEGA UNIFIED ENGINE] Cognitive Engine, Orientation System & Ministry Engine 100% Unified in ministry_engine.js!");
 
 

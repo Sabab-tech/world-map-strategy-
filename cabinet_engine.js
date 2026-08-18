@@ -958,15 +958,20 @@ window.OmegaCabinetEngine = {
 
             const badgeColor = vote === 'YES' ? '#22c55e' : (vote === 'NO' ? '#ef4444' : '#ffd700');
             const lossTag = (!isTarget && lossPercent > 0) ? `<span style="color:#ef4444; font-size:10px; margin-left:4px;">[Cut: -${lossPercent.toFixed(1)}%]</span>` : '';
+            const prof = window.OmegaCabinetUI ? window.OmegaCabinetUI.getMinisterProfile(key, window.OmegaCabinetUI.activeCountry) : null;
+            const minDisplayName = prof ? prof.name : (m.ministerName || m.title);
 
             breakdownHTML += `
                 <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.04); padding:6px 10px; border-radius:6px; font-size:11px; margin-bottom:4px;">
-                    <div style="display:flex; align-items:center; gap:6px; max-width:40%;">
+                    <div style="display:flex; align-items:center; gap:6px; max-width:42%;">
                         <span>${p.icon || m.avatar}</span>
-                        <strong style="color:#f8fafc; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${m.title}</strong>
+                        <div style="display:flex; flex-direction:column; overflow:hidden;">
+                            <strong style="color:#f8fafc; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:11px;">${minDisplayName}</strong>
+                            <span style="color:#94a3b8; font-size:9px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${m.title}</span>
+                        </div>
                         ${lossTag}
                     </div>
-                    <div style="display:flex; align-items:center; gap:8px; max-width:60%;">
+                    <div style="display:flex; align-items:center; gap:8px; max-width:58%;">
                         <span style="color:#cbd5e1; font-size:10px; text-align:right;">"${reason}"</span>
                         <span style="background:${badgeColor}22; border:1px solid ${badgeColor}; color:${badgeColor}; padding:2px 8px; border-radius:4px; font-weight:bold; font-size:10px; white-space:nowrap;">${vote === 'YES' ? 'YES' : 'NO'}</span>
                     </div>
