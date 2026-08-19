@@ -4698,9 +4698,20 @@ _globalScope.GSRSK_DataFoundation = (() => {
             // 5. Hydrate Reference Catalog (Tier-B References)
             // MANDATE: Reference != Canonical Asset != Operational Asset
             // Preserved strictly as UNVERIFIED references, NOT promoted to active factual physical assets!
-            const referencesList = (knowledgeModel.refCatalog && Array.isArray(knowledgeModel.refCatalog.allReferences))
-                ? knowledgeModel.refCatalog.allReferences
-                : (Array.isArray(knowledgeModel.references) ? knowledgeModel.references : (Array.isArray(knowledgeModel.deposits) ? knowledgeModel.deposits : []));
+            const refCatalog = knowledgeModel.referenceCatalog || knowledgeModel.refCatalog;
+            let referencesList = [];
+
+            if (refCatalog && typeof refCatalog.getAllReferences === 'function') {
+                referencesList = refCatalog.getAllReferences();
+            } else if (refCatalog && refCatalog.references instanceof Map) {
+                referencesList = Array.from(refCatalog.references.values());
+            } else if (refCatalog && Array.isArray(refCatalog.allReferences)) {
+                referencesList = refCatalog.allReferences;
+            } else if (Array.isArray(knowledgeModel.references)) {
+                referencesList = knowledgeModel.references;
+            } else if (Array.isArray(knowledgeModel.deposits)) {
+                referencesList = knowledgeModel.deposits;
+            }
 
             if (referencesList.length > 0) {
                 referencesList.forEach(ref => {
@@ -4974,21 +4985,21 @@ _globalScope.GSRSK_DataFoundation = (() => {
 
             // 3. Compile Knowledge or normalize input
             let knowledgeModel = null;
-            if (inputData && inputData.sovereignEntities && (inputData.refCatalog || inputData.deposits || inputData.references)) {
+            if (inputData && (inputData.sovereignEntities || inputData.canonicalCountries || inputData.countries || inputData.sovereigns) && (inputData.refCatalog || inputData.referenceCatalog || inputData.deposits || inputData.references)) {
                 // Direct WorldKnowledgeModel passed
                 knowledgeModel = inputData;
             } else if (this.compiler && typeof this.compiler.compileWorldKnowledge === 'function' && inputData && inputData.isPart1Registry) {
                 knowledgeModel = this.compiler.compileWorldKnowledge(inputData, []);
-            } else {
+            } else if (inputData) {
                 // Construct standard knowledge model envelope
                 knowledgeModel = {
                     sovereignEntities: {
-                        countries: inputData.countries || [],
-                        resourceTypes: inputData.resources || []
+                        countries: inputData.countries || inputData.sovereigns || inputData.canonicalCountries || [],
+                        resourceTypes: inputData.resources || inputData.resourceTypes || inputData.canonicalResources || []
                     },
                     facilities: inputData.facilities || [],
                     infrastructures: inputData.infrastructures || [],
-                    refCatalog: {
+                    refCatalog: inputData.referenceCatalog || inputData.refCatalog || {
                         allReferences: inputData.deposits || inputData.references || []
                     }
                 };
@@ -5012,7 +5023,9 @@ _globalScope.GSRSK_DataFoundation = (() => {
                     this.stateEngine.registry,
                     this.dataFoundation && this.dataFoundation.masterRegistry ? this.dataFoundation.masterRegistry : null
                 );
-                this.resourceIdentityRegistry = identityCompilationResult.identityRegistry;
+                if (identityCompilationResult) {
+                    this.resourceIdentityRegistry = identityCompilationResult.registry || identityCompilationResult.identityRegistry || null;
+                }
             }
 
             this.isReady = true;
@@ -5048,7 +5061,9 @@ _globalScope.GSRSK_DataFoundation = (() => {
                 this.stateEngine.registry,
                 this.dataFoundation && this.dataFoundation.masterRegistry ? this.dataFoundation.masterRegistry : null
             );
-            this.resourceIdentityRegistry = res.identityRegistry;
+            if (res) {
+                this.resourceIdentityRegistry = res.registry || res.identityRegistry || null;
+            }
             return res;
         }
 
@@ -5311,14 +5326,15 @@ _globalScope.GSRSK_DataFoundation = (() => {
      */
     class ComponentResolutionMatrix {
         constructor(initial = {}) {
-            this.resourceType = initial.resourceType || IdentityResolutionStatus.UNRESOLVED;
-            this.deposit = initial.deposit || IdentityResolutionStatus.UNRESOLVED;
-            this.origin = initial.origin || IdentityResolutionStatus.UNRESOLVED;
-            this.owner = initial.owner || IdentityResolutionStatus.UNRESOLVED;
-            this.operator = initial.operator || IdentityResolutionStatus.UNRESOLVED;
-            this.location = initial.location || IdentityResolutionStatus.UNRESOLVED;
-            this.variant = initial.variant || IdentityResolutionStatus.UNRESOLVED;
-            this.grade = initial.grade || IdentityResolutionStatus.UNRESOLVED;
+            const comps = (initial && initial.components) ? initial.components : (initial || {});
+            this.resourceType = comps.resourceType || IdentityResolutionStatus.UNRESOLVED;
+            this.deposit = comps.deposit || IdentityResolutionStatus.UNRESOLVED;
+            this.origin = comps.origin || IdentityResolutionStatus.UNRESOLVED;
+            this.owner = comps.owner || IdentityResolutionStatus.UNRESOLVED;
+            this.operator = comps.operator || IdentityResolutionStatus.UNRESOLVED;
+            this.location = comps.location || IdentityResolutionStatus.UNRESOLVED;
+            this.variant = comps.variant || IdentityResolutionStatus.UNRESOLVED;
+            this.grade = comps.grade || IdentityResolutionStatus.UNRESOLVED;
         }
 
         computeOverallStatus() {
@@ -5925,7 +5941,7 @@ _globalScope.GSRSK_DataFoundation = (() => {
                 isDeepCrustalTarget: this.isDeepCrustalTarget,
                 isOffshoreSeabedTarget: this.isOffshoreSeabedTarget,
                 confidenceScore: this.confidenceScore,
-                resolutionMatrix: this.resolutionMatrix.toJSON(),
+                resolutionMatrix: this.resolutionMatrix ? this.resolutionMatrix.toJSON().components : undefined,
                 provenance: JSON.parse(JSON.stringify(this.provenance))
             });
         }
@@ -7403,7 +7419,10 @@ _globalScope.GSRSK_DataFoundation = (() => {
             // 4. Audit Relationships (Cycles & Self-References)
             const allRels = Array.from(registry.relationships.values());
             const selfRefs = RelationshipIntegrityEngine.detectSelfReferences(allRels);
-            const locationCycles = RelationshipIntegrityEngine.detectCycles(allRels, 'CONTAINS_LOCATION');
+            const locationCycles = [
+                ...RelationshipIntegrityEngine.detectCycles(allRels, 'CONTAINS_LOCATION'),
+                ...RelationshipIntegrityEngine.detectCycles(allRels, 'LOCATED_AT')
+            ];
 
             const collisionReport = registry.collisionArbiter.getReport();
 
@@ -7724,12 +7743,13 @@ _globalScope.GSRSK_DataFoundation = (() => {
 
             const rawResources = knowledgeModel.canonicalResources || 
                                  (knowledgeModel.sovereignEntities && knowledgeModel.sovereignEntities.resourceTypes) ||
-                                 knowledgeModel.resources;
+                                 knowledgeModel.resources ||
+                                 knowledgeModel.resourceTypes;
 
             const entries = this._toEntries(rawResources);
             entries.forEach(([id, res]) => {
                 if (!res) return;
-                const rawId = res.resourceId || res.id || res.code || id;
+                const rawId = res.resourceTypeId || res.resourceId || res.id || res.code || id;
                 const declaredUnit = res.unit || res.standardUnit || 'UNKNOWN_UNIT';
                 const declaredDim = res.dimension || (declaredUnit !== 'UNKNOWN_UNIT' ? 'DECLARED' : 'UNKNOWN');
 
@@ -7755,7 +7775,8 @@ _globalScope.GSRSK_DataFoundation = (() => {
 
             const rawCountries = knowledgeModel.canonicalCountries || 
                                  (knowledgeModel.sovereignEntities && knowledgeModel.sovereignEntities.countries) ||
-                                 knowledgeModel.countries;
+                                 knowledgeModel.countries ||
+                                 knowledgeModel.sovereigns;
 
             const entries = this._toEntries(rawCountries);
             entries.forEach(([countryId, country]) => {
@@ -7789,7 +7810,8 @@ _globalScope.GSRSK_DataFoundation = (() => {
 
             const rawCountries = knowledgeModel.canonicalCountries || 
                                  (knowledgeModel.sovereignEntities && knowledgeModel.sovereignEntities.countries) ||
-                                 knowledgeModel.countries;
+                                 knowledgeModel.countries ||
+                                 knowledgeModel.sovereigns;
 
             const entries = this._toEntries(rawCountries);
             entries.forEach(([countryId, country]) => {
@@ -7817,7 +7839,8 @@ _globalScope.GSRSK_DataFoundation = (() => {
 
             const rawCountries = knowledgeModel.canonicalCountries || 
                                  (knowledgeModel.sovereignEntities && knowledgeModel.sovereignEntities.countries) ||
-                                 knowledgeModel.countries;
+                                 knowledgeModel.countries ||
+                                 knowledgeModel.sovereigns;
 
             // 1. Ingest Canonical Sovereign Endowments
             const countryEntries = this._toEntries(rawCountries);
@@ -7932,75 +7955,109 @@ _globalScope.GSRSK_DataFoundation = (() => {
                 const cIso3 = (ref.countryIso3 || ref.parentCountryId || ref.countryId || ref.hostCountry || 'GLOBAL').toUpperCase();
                 const rawName = ref.name || ref.depositRawName || ref.rawReferenceString || ref.id || ref.referenceId;
                 const normRef = DeterministicKeyEngine.normalizeToken(rawName);
-                const depositKey = DeterministicKeyEngine.generateDepositKey(cIso3, normRef, ref.geologicalType || 'REF_PHYSICAL');
+                const subType = (ref.metadata && ref.metadata.subType) || ref.subType || '';
+                const category = ref.category || '';
 
-                if (!scratch.deposits.has(depositKey)) {
-                    const locKey = DeterministicKeyEngine.generateLocationKey(cIso3, 'LOCALITY', normRef);
-                    const location = new HierarchicalLocationIdentity({
-                        locationNodeKey: locKey,
-                        countryIso3: cIso3,
-                        adminStateProvince: 'LOCALITY',
-                        siteSpecificLocality: rawName,
-                        lat: typeof ref.lat === 'number' ? ref.lat : (ref.coordinates ? ref.coordinates.lat : null),
-                        lng: typeof ref.lng === 'number' ? ref.lng : (ref.coordinates ? ref.coordinates.lng : null),
-                        provenance: ProvenanceBridgeEngine.bridgeToIdentityProvenance(ref, 'TIER_B_LOCATION')
-                    });
-                    scratch.registerLocation(location);
+                // 1. Only mines, deposits, and geological sites become Geological Deposits
+                const isGeologicalSite = (
+                    subType === 'mineSites' ||
+                    category === 'GEOLOGICAL_SITE' ||
+                    category === 'DEPOSIT' ||
+                    Boolean(ref.geologicalType)
+                );
 
-                    const deposit = new GeologicalDepositIdentity({
-                        depositKey,
-                        depositRawName: rawName,
-                        hostCountryIso3: cIso3,
-                        locationNodeKey: location.locationNodeKey,
-                        geologicalType: ref.geologicalType || DepositTypeClassification.UNKNOWN_GEOLOGICAL,
-                        resolutionStatus: IdentityResolutionStatus.RESOLVED,
-                        provenance: ProvenanceBridgeEngine.bridgeToIdentityProvenance(ref, 'TIER_B_DEPOSIT')
-                    });
-                    scratch.registerDeposit(deposit);
+                if (isGeologicalSite) {
+                    const depositKey = DeterministicKeyEngine.generateDepositKey(cIso3, normRef, 'MINE_SITE');
+                    if (!scratch.deposits.has(depositKey)) {
+                        const locKey = DeterministicKeyEngine.generateLocationKey(cIso3, 'LOCALITY', normRef);
+                        const location = new HierarchicalLocationIdentity({
+                            locationNodeKey: locKey,
+                            countryIso3: cIso3,
+                            adminStateProvince: 'LOCALITY',
+                            siteSpecificLocality: rawName,
+                            lat: typeof ref.lat === 'number' ? ref.lat : (ref.coordinates ? ref.coordinates.lat : null),
+                            lng: typeof ref.lng === 'number' ? ref.lng : (ref.coordinates ? ref.coordinates.lng : null),
+                            provenance: ProvenanceBridgeEngine.bridgeToIdentityProvenance(ref, 'TIER_B_MINE_LOCATION')
+                        });
+                        scratch.registerLocation(location);
 
-                    const origin = new ResourceOriginIdentity({
-                        depositKey: deposit.depositKey,
-                        hostCountryIso3: cIso3,
-                        genesisStatus: OriginGenesisStatus.NATURAL_CRUSTAL_IN_SITU,
-                        provenance: deposit.provenance
-                    });
-                    scratch.registerOrigin(origin);
+                        const deposit = new GeologicalDepositIdentity({
+                            depositKey,
+                            depositRawName: rawName,
+                            hostCountryIso3: cIso3,
+                            locationNodeKey: location.locationNodeKey,
+                            geologicalType: ref.geologicalType || DepositTypeClassification.UNKNOWN_GEOLOGICAL,
+                            resolutionStatus: IdentityResolutionStatus.RESOLVED,
+                            provenance: ProvenanceBridgeEngine.bridgeToIdentityProvenance(ref, 'TIER_B_MINE_DEPOSIT')
+                        });
+                        scratch.registerDeposit(deposit);
 
-                    // If reference specifies a resource type, create Occurrence
-                    const resTypeRaw = ref.resourceType || ref.resourceTypeCode || ref.resourceId;
-                    if (resTypeRaw) {
-                        const resKey = DeterministicKeyEngine.generateResourceTypeKey(resTypeRaw);
-                        if (!scratch.resourceTypes.has(resKey)) {
-                            const resType = new ResourceTypeIdentity({
-                                resourceTypeId: resTypeRaw,
-                                canonicalName: resTypeRaw,
-                                provenance: ProvenanceBridgeEngine.bridgeToIdentityProvenance(ref, 'DEPOSIT_REF_RESOURCE')
-                            });
-                            scratch.registerResourceType(resType);
-                        }
-
-                        const occ = new ResourceOccurrenceIdentity({
-                            resourceTypeId: resTypeRaw,
+                        const origin = new ResourceOriginIdentity({
                             depositKey: deposit.depositKey,
-                            originKey: origin.originKey,
-                            occurrenceTier: ResourceOccurrenceTier.TIER_A_PRIMARY_KNOWN,
-                            isPrimaryEndowment: true,
-                            ownerKey: DeterministicKeyEngine.generateOwnershipKey(`SOVEREIGN_STATE_${cIso3}`, cIso3, OwnershipControlModel.SOVEREIGN_EXCLUSIVE_STATE),
-                            operatorKey: DeterministicKeyEngine.generateOperatorKey(`OPERATOR_AUTHORITY_${cIso3}`, cIso3),
-                            locationNodeKey: deposit.locationNodeKey,
-                            confidenceScore: 1.0,
+                            hostCountryIso3: cIso3,
+                            genesisStatus: OriginGenesisStatus.NATURAL_CRUSTAL_IN_SITU,
                             provenance: deposit.provenance
                         });
-                        deposit.addOccurrence(occ.occurrenceKey);
-                        scratch.registerOccurrence(occ, cIso3);
-                    }
+                        scratch.registerOrigin(origin);
 
-                    scratch.dispositionLedger.recordDisposition(
-                        ref.id || ref.referenceId || rawName,
-                        CandidateDispositionState.ACCEPTED_NEW,
-                        deposit.depositKey,
-                        'TIER_B_PHYSICAL_ASSET'
-                    );
+                        // If reference specifies a resource type, create Occurrence
+                        const resTypeRaw = ref.resourceType || ref.resourceTypeCode || ref.resourceId;
+                        if (resTypeRaw) {
+                            const resKey = DeterministicKeyEngine.generateResourceTypeKey(resTypeRaw);
+                            if (!scratch.resourceTypes.has(resKey)) {
+                                const resType = new ResourceTypeIdentity({
+                                    resourceTypeId: resTypeRaw,
+                                    canonicalName: resTypeRaw,
+                                    provenance: ProvenanceBridgeEngine.bridgeToIdentityProvenance(ref, 'DEPOSIT_REF_RESOURCE')
+                                });
+                                scratch.registerResourceType(resType);
+                            }
+
+                            const occ = new ResourceOccurrenceIdentity({
+                                resourceTypeId: resTypeRaw,
+                                depositKey: deposit.depositKey,
+                                originKey: origin.originKey,
+                                occurrenceTier: ResourceOccurrenceTier.TIER_A_PRIMARY_KNOWN,
+                                isPrimaryEndowment: true,
+                                ownerKey: DeterministicKeyEngine.generateOwnershipKey(`SOVEREIGN_STATE_${cIso3}`, cIso3, OwnershipControlModel.SOVEREIGN_EXCLUSIVE_STATE),
+                                operatorKey: DeterministicKeyEngine.generateOperatorKey(`OPERATOR_AUTHORITY_${cIso3}`, cIso3),
+                                locationNodeKey: deposit.locationNodeKey,
+                                confidenceScore: 1.0,
+                                provenance: deposit.provenance
+                            });
+                            deposit.addOccurrence(occ.occurrenceKey);
+                            scratch.registerOccurrence(occ, cIso3);
+                        }
+
+                        scratch.dispositionLedger.recordDisposition(
+                            ref.id || ref.referenceId || rawName,
+                            CandidateDispositionState.ACCEPTED_NEW,
+                            deposit.depositKey,
+                            'TIER_B_MINE_ASSET'
+                        );
+                    }
+                } else {
+                    // 2. Ports, refineries, pipelines, power plants, and industrial logistics hubs are registered as Hierarchical Locations (NOT Geological Deposits!)
+                    const locKey = DeterministicKeyEngine.generateLocationKey(cIso3, 'FACILITY', normRef);
+                    if (!scratch.locations.has(locKey)) {
+                        const location = new HierarchicalLocationIdentity({
+                            locationNodeKey: locKey,
+                            countryIso3: cIso3,
+                            adminStateProvince: 'FACILITY',
+                            siteSpecificLocality: rawName,
+                            lat: typeof ref.lat === 'number' ? ref.lat : (ref.coordinates ? ref.coordinates.lat : null),
+                            lng: typeof ref.lng === 'number' ? ref.lng : (ref.coordinates ? ref.coordinates.lng : null),
+                            provenance: ProvenanceBridgeEngine.bridgeToIdentityProvenance(ref, 'TIER_B_INFRA_LOCATION')
+                        });
+                        scratch.registerLocation(location);
+
+                        scratch.dispositionLedger.recordDisposition(
+                            ref.id || ref.referenceId || rawName,
+                            CandidateDispositionState.ACCEPTED_NEW,
+                            location.locationNodeKey,
+                            'TIER_B_INFRA_FACILITY'
+                        );
+                    }
                 }
             });
         }
