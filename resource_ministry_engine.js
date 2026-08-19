@@ -22,7 +22,8 @@
  * ============================================================================
  */
 
-window.GSRSK_DataFoundation = (() => {
+const _globalScope = typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : global);
+_globalScope.GSRSK_DataFoundation = (() => {
     'use strict';
 
     // =========================================================================
@@ -2583,11 +2584,8 @@ window.GSRSK_DataFoundation = (() => {
         }
     });
 
-    if (typeof module !== 'undefined' && module.exports) {
-        module.exports = PublicCompilerAdapter;
-    } else {
-        global.GSRSK_WorldKnowledgeCompiler = PublicCompilerAdapter;
-    }
+    global.GSRSK_WorldKnowledgeCompiler = PublicCompilerAdapter;
+    if (typeof globalThis !== 'undefined') globalThis.GSRSK_WorldKnowledgeCompiler = PublicCompilerAdapter;
 
 })(typeof window !== 'undefined' ? window : globalThis);
 
@@ -2595,32 +2593,34 @@ window.GSRSK_DataFoundation = (() => {
  * ============================================================================
  * GSRSK — PART 03: AUTHORITATIVE WORLD STATE ENGINE & MUTATION CORE
  * ============================================================================
- * Architecture Phase: 03 of 16 (Unified Authoritative State Engine)
+ * Architecture Phase: 03 of 16 (Unified Authoritative State Engine & Resource Bridge)
  * Constitutional Role: Universal Mutable State Standards, Multi-Dimensional
  *                      Quantity Engine, Location & Spatial Contracts, Multi-Layer
  *                      Ownership Model, Temporal Engine, Base State Envelopes,
  *                      Sovereign Entities, Physical Asset Containers, Command-Driven
  *                      Mutation Pipeline, Invariant Verification, Multi-Index Store,
- *                      Adler32 Checkpoints, Knowledge Hydrator & Master Orchestrator.
+ *                      Adler32 Checkpoints, Telemetry Schema Validation & Decompression,
+ *                      Resource Identity Bridge (Formal Bridge to Part 04),
+ *                      Knowledge Hydrator & Master Orchestrator.
  * 
  * STRICT CONSTITUTIONAL BOUNDARIES & USER MANDATES:
  * 1. Reference ≠ Canonical Asset ≠ Operational Asset:
- *    - References from Part 02 refCatalog are indexed as UNVERIFIED_REFERENCE entities.
- *    - They are NOT promoted to factual canonical operational assets.
- *    - isReferenceOnly: true, factualPromotionBlocked: true.
- * 2. Strict Unit/Dimension Enforcement:
- *    - Source declares unit -> use declared unit.
+ *    - Triad distinction enforced across every physical and abstract entity.
+ *    - Reference: pointer/unverified catalog record (isReferenceOnly: true, factualPromotionBlocked: true).
+ *    - Canonical Asset: raw identity, immutable geological/structural constraints, nominal capacity.
+ *    - Operational Asset: live active runtime state container, failure modes, telemetry, health index.
+ * 2. Strict Unit & Dimensionality Governance:
+ *    - Source declares unit -> use declared unit and verified dimension.
  *    - Source does NOT declare unit -> unit: 'UNKNOWN_UNIT', dimension: UNKNOWN.
- *    - NEVER guess or hardcode (Iron -> MASS, Oil -> VOLUME, Gas -> VOLUME).
- * 3. Operational Status Separation & Provenance:
- *    - sourceDeclaredOperationalStatus and engineLiveOperationalStatus are strictly separated.
- *    - ZERO assumption of ACTIVE/OPERATIONAL by default (default is UNKNOWN / UNVERIFIED).
- * 4. Zero Simulation Math in Part 03:
- *    - Part 03 defines, validates, indexes, and stores mutable state envelopes.
- *    - No extraction yields, trade pricing math, or market clearance formulas.
- * 5. Full Pipeline Integration:
- *    - Seamless connectivity across Part 01 (Data Foundation), Part 02 (Knowledge Compiler),
- *      and Part 03 (World State Engine & Mutation Core).
+ *    - ZERO guesswork / assumptions (Iron -> MASS, Oil -> VOLUME, etc.).
+ * 3. Explicit Operational Status & Provenance Distinction:
+ *    - sourceDeclaredOperationalStatus and engineLiveOperationalStatus / engineInferredOperationalStatus
+ *      are strictly separated. Engine inference NEVER overwrites raw source-declared status.
+ * 4. Lossless Telemetry Decompression & Schema Validation:
+ *    - Ingests compressed and irregular incoming telemetry into robust FacilityState and
+ *      InfrastructureState containers without data loss.
+ * 5. Zero Simulation Math in Part 03:
+ *    - Part 03 provides authoritative state envelopes, schemas, indexes, and bridge contracts.
  * ============================================================================
  */
 
@@ -2630,6 +2630,12 @@ window.GSRSK_DataFoundation = (() => {
     // =========================================================================
     // 03.01: EPISTEMIC, LIFECYCLE, OPERATIONAL & STATE CLASSIFICATION ENUMS
     // =========================================================================
+
+    const AssetEpistemicClassification = Object.freeze({
+        REFERENCE: 'REFERENCE',
+        CANONICAL_ASSET: 'CANONICAL_ASSET',
+        OPERATIONAL_ASSET: 'OPERATIONAL_ASSET'
+    });
 
     const LifecycleStatus = Object.freeze({
         PLANNED: 'PLANNED',
@@ -3085,11 +3091,12 @@ window.GSRSK_DataFoundation = (() => {
             locationState = null,
             temporalState = null,
             metadata = {},
-            // RULE: Explicit Separation of Reference vs Canonical vs Operational
+            // RULE: Strict Separation of Reference vs Canonical Asset vs Operational Asset
             isReferenceOnly = false,
             referenceStatus = ReferenceStatus.CANONICAL_PROVEN,
             sourceDeclaredOperationalStatus = null,
-            engineLiveOperationalStatus = OperationalStatus.UNKNOWN,
+            engineInferredOperationalStatus = null,
+            engineLiveOperationalStatus = null,
             statusProvenance = null
         } = {}) {
             if (!entityId || typeof entityId !== 'string') {
@@ -3111,12 +3118,17 @@ window.GSRSK_DataFoundation = (() => {
             // RULE: Reference Distinction & Provenance Tracking
             this.isReferenceOnly = Boolean(isReferenceOnly);
             this.referenceStatus = referenceStatus;
-            this.sourceDeclaredOperationalStatus = sourceDeclaredOperationalStatus;
-            this.engineLiveOperationalStatus = engineLiveOperationalStatus;
+            this.sourceDeclaredOperationalStatus = sourceDeclaredOperationalStatus || null;
+            this.engineInferredOperationalStatus = engineInferredOperationalStatus || null;
+            this.engineLiveOperationalStatus = engineLiveOperationalStatus || operationalStatus || OperationalStatus.UNKNOWN;
+            
             this.statusProvenance = statusProvenance || {
                 sourceDeclared: Boolean(sourceDeclaredOperationalStatus),
-                declaredStatus: sourceDeclaredOperationalStatus || null,
-                engineDerived: !Boolean(sourceDeclaredOperationalStatus)
+                sourceDeclaredStatus: sourceDeclaredOperationalStatus || null,
+                engineInferredStatus: engineInferredOperationalStatus || null,
+                inferredReason: null,
+                factualPromotionBlocked: Boolean(isReferenceOnly),
+                provenanceHistory: []
             };
 
             this.ownership = ownershipState instanceof OwnershipState ? ownershipState : new OwnershipState(ownershipState || {});
@@ -3130,6 +3142,48 @@ window.GSRSK_DataFoundation = (() => {
             this.relationships = new Map();
             this.provenanceChain = [];
             this.metadata = JSON.parse(JSON.stringify(metadata || {}));
+        }
+
+        getEpistemicClassification() {
+            if (this.isReferenceOnly || this.referenceStatus === ReferenceStatus.UNVERIFIED_REFERENCE) {
+                return AssetEpistemicClassification.REFERENCE;
+            }
+            if (this.stateTier === StateTier.TIER_A_SOVEREIGN_CANONICAL || this.operationalStatus === OperationalStatus.UNKNOWN) {
+                return AssetEpistemicClassification.CANONICAL_ASSET;
+            }
+            return AssetEpistemicClassification.OPERATIONAL_ASSET;
+        }
+
+        recordInferredStatus(inferredStatus, reason = 'ENGINE_INFERENCE', tick = 0, calendarDate = '') {
+            const prevStatus = this.engineLiveOperationalStatus;
+            this.engineInferredOperationalStatus = inferredStatus;
+            this.engineLiveOperationalStatus = inferredStatus;
+            this.operationalStatus = inferredStatus;
+
+            if (!this.statusProvenance) {
+                this.statusProvenance = {
+                    sourceDeclared: Boolean(this.sourceDeclaredOperationalStatus),
+                    sourceDeclaredStatus: this.sourceDeclaredOperationalStatus,
+                    engineInferredStatus: inferredStatus,
+                    inferredReason: reason,
+                    factualPromotionBlocked: Boolean(this.isReferenceOnly),
+                    provenanceHistory: []
+                };
+            } else {
+                this.statusProvenance.engineInferredStatus = inferredStatus;
+                this.statusProvenance.inferredReason = reason;
+                if (!Array.isArray(this.statusProvenance.provenanceHistory)) {
+                    this.statusProvenance.provenanceHistory = [];
+                }
+                this.statusProvenance.provenanceHistory.push({
+                    tick,
+                    calendarDate,
+                    prevStatus,
+                    newStatus: inferredStatus,
+                    reason,
+                    timestamp: Date.now()
+                });
+            }
         }
 
         setQuantity(key, quantityRecord) {
@@ -3207,6 +3261,7 @@ window.GSRSK_DataFoundation = (() => {
                 isReferenceOnly: this.isReferenceOnly,
                 referenceStatus: this.referenceStatus,
                 sourceDeclaredOperationalStatus: this.sourceDeclaredOperationalStatus,
+                engineInferredOperationalStatus: this.engineInferredOperationalStatus,
                 engineLiveOperationalStatus: this.engineLiveOperationalStatus,
                 statusProvenance: JSON.parse(JSON.stringify(this.statusProvenance))
             });
@@ -3246,7 +3301,9 @@ window.GSRSK_DataFoundation = (() => {
                 failureMode: this.failureMode,
                 isReferenceOnly: this.isReferenceOnly,
                 referenceStatus: this.referenceStatus,
+                epistemicClassification: this.getEpistemicClassification(),
                 sourceDeclaredOperationalStatus: this.sourceDeclaredOperationalStatus,
+                engineInferredOperationalStatus: this.engineInferredOperationalStatus,
                 engineLiveOperationalStatus: this.engineLiveOperationalStatus,
                 statusProvenance: this.statusProvenance,
                 ownership: this.ownership.toJSON(),
@@ -3430,6 +3487,7 @@ window.GSRSK_DataFoundation = (() => {
                 isReferenceOnly: this.isReferenceOnly,
                 referenceStatus: this.referenceStatus,
                 sourceDeclaredOperationalStatus: this.sourceDeclaredOperationalStatus,
+                engineInferredOperationalStatus: this.engineInferredOperationalStatus,
                 engineLiveOperationalStatus: this.engineLiveOperationalStatus,
                 statusProvenance: JSON.parse(JSON.stringify(this.statusProvenance))
             });
@@ -3484,6 +3542,7 @@ window.GSRSK_DataFoundation = (() => {
                 isReferenceOnly: this.isReferenceOnly,
                 referenceStatus: this.referenceStatus,
                 sourceDeclaredOperationalStatus: this.sourceDeclaredOperationalStatus,
+                engineInferredOperationalStatus: this.engineInferredOperationalStatus,
                 engineLiveOperationalStatus: this.engineLiveOperationalStatus,
                 statusProvenance: JSON.parse(JSON.stringify(this.statusProvenance))
             });
@@ -3512,8 +3571,14 @@ window.GSRSK_DataFoundation = (() => {
 
             this.facilityCategory = params.facilityCategory || 'PROCESSING';
             this.primaryProcessType = params.primaryProcessType || 'REFINING';
-            this.assetHealthIndex = typeof params.assetHealthIndex === 'number' ? params.assetHealthIndex : 1.0;
-            this.conversionEfficiencyRatio = typeof params.conversionEfficiencyRatio === 'number' ? params.conversionEfficiencyRatio : 0.95;
+            this.assetHealthIndex = typeof params.assetHealthIndex === 'number' ? Math.max(0, Math.min(1, params.assetHealthIndex)) : 1.0;
+            this.conversionEfficiencyRatio = typeof params.conversionEfficiencyRatio === 'number' ? Math.max(0, Math.min(1, params.conversionEfficiencyRatio)) : 0.95;
+            
+            // Bridge Attributes for Part 04 (Resource Identity Engine)
+            this.inputResourceIds = Array.isArray(params.inputResourceIds) ? [...params.inputResourceIds] : [];
+            this.outputResourceIds = Array.isArray(params.outputResourceIds) ? [...params.outputResourceIds] : [];
+            this.nominalCapacity = params.nominalCapacity instanceof QuantityRecord ? params.nominalCapacity : (params.nominalCapacity ? new QuantityRecord(params.nominalCapacity) : null);
+            this.currentThroughput = params.currentThroughput instanceof QuantityRecord ? params.currentThroughput : (params.currentThroughput ? new QuantityRecord(params.currentThroughput) : null);
         }
 
         clone() {
@@ -3532,10 +3597,15 @@ window.GSRSK_DataFoundation = (() => {
                 primaryProcessType: this.primaryProcessType,
                 assetHealthIndex: this.assetHealthIndex,
                 conversionEfficiencyRatio: this.conversionEfficiencyRatio,
+                inputResourceIds: [...this.inputResourceIds],
+                outputResourceIds: [...this.outputResourceIds],
+                nominalCapacity: this.nominalCapacity ? this.nominalCapacity.clone() : null,
+                currentThroughput: this.currentThroughput ? this.currentThroughput.clone() : null,
                 metadata: this.metadata,
                 isReferenceOnly: this.isReferenceOnly,
                 referenceStatus: this.referenceStatus,
                 sourceDeclaredOperationalStatus: this.sourceDeclaredOperationalStatus,
+                engineInferredOperationalStatus: this.engineInferredOperationalStatus,
                 engineLiveOperationalStatus: this.engineLiveOperationalStatus,
                 statusProvenance: JSON.parse(JSON.stringify(this.statusProvenance))
             });
@@ -3550,6 +3620,21 @@ window.GSRSK_DataFoundation = (() => {
 
             return cloned;
         }
+
+        toJSON() {
+            const base = super.toJSON();
+            return {
+                ...base,
+                facilityCategory: this.facilityCategory,
+                primaryProcessType: this.primaryProcessType,
+                assetHealthIndex: this.assetHealthIndex,
+                conversionEfficiencyRatio: this.conversionEfficiencyRatio,
+                inputResourceIds: this.inputResourceIds,
+                outputResourceIds: this.outputResourceIds,
+                nominalCapacity: this.nominalCapacity ? this.nominalCapacity.toJSON() : null,
+                currentThroughput: this.currentThroughput ? this.currentThroughput.toJSON() : null
+            };
+        }
     }
 
     class InfrastructureState extends BaseStateEntity {
@@ -3563,9 +3648,12 @@ window.GSRSK_DataFoundation = (() => {
             });
 
             this.infrastructureType = params.infrastructureType || 'TRANSPORT_CORRIDOR';
-            this.throughputCapacityPerDay = params.throughputCapacityPerDay || null;
-            this.congestionRatio = typeof params.congestionRatio === 'number' ? params.congestionRatio : 0.0;
+            this.throughputCapacityPerDay = params.throughputCapacityPerDay instanceof QuantityRecord 
+                ? params.throughputCapacityPerDay 
+                : (params.throughputCapacityPerDay ? new QuantityRecord(params.throughputCapacityPerDay) : null);
+            this.congestionRatio = typeof params.congestionRatio === 'number' ? Math.max(0, Math.min(1, params.congestionRatio)) : 0.0;
             this.corridorConnectedNodes = Array.isArray(params.corridorConnectedNodes) ? [...params.corridorConnectedNodes] : [];
+            this.transportedResourceIds = Array.isArray(params.transportedResourceIds) ? [...params.transportedResourceIds] : [];
         }
 
         clone() {
@@ -3584,10 +3672,12 @@ window.GSRSK_DataFoundation = (() => {
                 throughputCapacityPerDay: this.throughputCapacityPerDay ? this.throughputCapacityPerDay.clone() : null,
                 congestionRatio: this.congestionRatio,
                 corridorConnectedNodes: [...this.corridorConnectedNodes],
+                transportedResourceIds: [...this.transportedResourceIds],
                 metadata: this.metadata,
                 isReferenceOnly: this.isReferenceOnly,
                 referenceStatus: this.referenceStatus,
                 sourceDeclaredOperationalStatus: this.sourceDeclaredOperationalStatus,
+                engineInferredOperationalStatus: this.engineInferredOperationalStatus,
                 engineLiveOperationalStatus: this.engineLiveOperationalStatus,
                 statusProvenance: JSON.parse(JSON.stringify(this.statusProvenance))
             });
@@ -3601,6 +3691,18 @@ window.GSRSK_DataFoundation = (() => {
             cloned.provenanceChain = JSON.parse(JSON.stringify(this.provenanceChain));
 
             return cloned;
+        }
+
+        toJSON() {
+            const base = super.toJSON();
+            return {
+                ...base,
+                infrastructureType: this.infrastructureType,
+                throughputCapacityPerDay: this.throughputCapacityPerDay ? this.throughputCapacityPerDay.toJSON() : null,
+                congestionRatio: this.congestionRatio,
+                corridorConnectedNodes: this.corridorConnectedNodes,
+                transportedResourceIds: this.transportedResourceIds
+            };
         }
     }
 
@@ -3640,6 +3742,7 @@ window.GSRSK_DataFoundation = (() => {
                 isReferenceOnly: this.isReferenceOnly,
                 referenceStatus: this.referenceStatus,
                 sourceDeclaredOperationalStatus: this.sourceDeclaredOperationalStatus,
+                engineInferredOperationalStatus: this.engineInferredOperationalStatus,
                 engineLiveOperationalStatus: this.engineLiveOperationalStatus,
                 statusProvenance: JSON.parse(JSON.stringify(this.statusProvenance))
             });
@@ -3802,7 +3905,393 @@ window.GSRSK_DataFoundation = (() => {
     }
 
     // =========================================================================
-    // 03.10: MUTATION PIPELINE, COMMANDS & INVARIANT VALIDATORS
+    // 03.10: ROBUST SCHEMA VALIDATION & COMPRESSED TELEMETRY LAYER
+    // =========================================================================
+
+    class TelemetrySchemaValidator {
+        /**
+         * Decompresses and validates raw incoming telemetry for Facility entities
+         */
+        static decompressAndValidateFacility(raw) {
+            if (!raw || typeof raw !== 'object') {
+                throw new Error('[TelemetrySchemaValidator]: Invalid facility payload (must be an object)');
+            }
+
+            const id = raw.id || raw.entityId || raw.eid || ('FAC_' + Math.random().toString(36).substring(2, 9));
+            const category = raw.facilityCategory || raw.category || raw.cat || raw.fc || 'PROCESSING';
+            const processType = raw.primaryProcessType || raw.processType || raw.proc || raw.pt || 'REFINING';
+            const countryId = raw.countryId || raw.country || raw.hostCountry || raw.cid || 'GLOBAL';
+            
+            // Health & efficiency (sanitized & bounded)
+            const rawHealth = raw.assetHealthIndex ?? raw.health ?? raw.hlth ?? raw.ahi ?? 1.0;
+            const assetHealthIndex = (typeof rawHealth === 'number' && !isNaN(rawHealth)) ? Math.max(0, Math.min(1, rawHealth)) : 1.0;
+
+            const rawEff = raw.conversionEfficiencyRatio ?? raw.efficiency ?? raw.eff ?? raw.cer ?? 0.95;
+            const conversionEfficiencyRatio = (typeof rawEff === 'number' && !isNaN(rawEff)) ? Math.max(0, Math.min(1, rawEff)) : 0.95;
+
+            // Operational status distinction
+            const declaredOpStatus = raw.sourceOperationalStatus || raw.sourceDeclaredStatus || raw.opStatus || raw.status || raw.st || null;
+            const isDeclared = Boolean(declaredOpStatus && OperationalStatus[declaredOpStatus]);
+            const operationalStatus = isDeclared ? OperationalStatus[declaredOpStatus] : OperationalStatus.UNKNOWN;
+
+            // Resource couplings (strict array normalization)
+            const inputResourceIds = Array.isArray(raw.inputResourceIds) ? raw.inputResourceIds : (raw.inRes ? [raw.inRes].flat() : (raw.inputs ? [raw.inputs].flat() : []));
+            const outputResourceIds = Array.isArray(raw.outputResourceIds) ? raw.outputResourceIds : (raw.outRes ? [raw.outRes].flat() : (raw.outputs ? [raw.outputs].flat() : []));
+
+            // Coordinates
+            const lat = typeof raw.lat === 'number' ? raw.lat : (raw.coordinates ? raw.coordinates.lat : (raw.loc ? raw.loc.lat : null));
+            const lng = typeof raw.lng === 'number' ? raw.lng : (raw.coordinates ? raw.coordinates.lng : (raw.loc ? raw.loc.lng : null));
+
+            // Capacity & Throughput with strict dimension governance
+            const capVal = raw.nominalCapacity?.value ?? raw.capacity ?? raw.cap ?? null;
+            const capUnit = raw.nominalCapacity?.unit ?? raw.capacityUnit ?? raw.u ?? 'UNKNOWN_UNIT';
+            const capDim = (capUnit !== 'UNKNOWN_UNIT' && (raw.nominalCapacity?.dimension || raw.dimension || raw.dim))
+                ? (raw.nominalCapacity?.dimension || raw.dimension || raw.dim)
+                : QuantityDimension.UNKNOWN;
+
+            const nominalCapacity = (capVal !== null) ? new QuantityRecord({
+                value: Number(capVal),
+                unit: capUnit,
+                dimension: capDim,
+                semanticType: QuantitySemanticType.CAPACITY,
+                isSourceDeclared: Boolean(capUnit !== 'UNKNOWN_UNIT')
+            }) : null;
+
+            return new FacilityState({
+                entityId: String(id),
+                facilityCategory: String(category),
+                primaryProcessType: String(processType),
+                assetHealthIndex,
+                conversionEfficiencyRatio,
+                inputResourceIds,
+                outputResourceIds,
+                nominalCapacity,
+                lifecycleStatus: isDeclared ? LifecycleStatus.ACTIVE : LifecycleStatus.UNVERIFIED,
+                operationalStatus,
+                sourceDeclaredOperationalStatus: isDeclared ? operationalStatus : null,
+                engineLiveOperationalStatus: operationalStatus,
+                statusProvenance: {
+                    sourceDeclared: isDeclared,
+                    sourceDeclaredStatus: isDeclared ? operationalStatus : null,
+                    engineInferredStatus: null,
+                    inferredReason: null,
+                    factualPromotionBlocked: !isDeclared,
+                    provenanceHistory: []
+                },
+                locationState: new LocationState({
+                    countryId,
+                    locationType: LocationType.FACILITY_POINT,
+                    coordinates: new SpatialCoordinates({ lat, lng })
+                }),
+                ownershipState: new OwnershipState({
+                    hostCountryId: countryId,
+                    legalOwnerId: raw.legalOwnerId || raw.owner || raw.own || 'UNKNOWN_OWNER',
+                    operatingEntityId: raw.operatingEntityId || raw.operator || raw.op || 'UNKNOWN_OPERATOR'
+                }),
+                metadata: {
+                    rawTelemetry: raw,
+                    decompressedAt: Date.now()
+                }
+            });
+        }
+
+        /**
+         * Decompresses and validates raw incoming telemetry for Infrastructure entities
+         */
+        static decompressAndValidateInfrastructure(raw) {
+            if (!raw || typeof raw !== 'object') {
+                throw new Error('[TelemetrySchemaValidator]: Invalid infrastructure payload (must be an object)');
+            }
+
+            const id = raw.id || raw.entityId || raw.eid || ('INFRA_' + Math.random().toString(36).substring(2, 9));
+            const infraType = raw.infrastructureType || raw.type || raw.infraType || raw.it || 'TRANSPORT_CORRIDOR';
+            const countryId = raw.countryId || raw.country || raw.hostCountry || raw.cid || 'GLOBAL';
+
+            const rawCg = raw.congestionRatio ?? raw.congestion ?? raw.cg ?? 0.0;
+            const congestionRatio = (typeof rawCg === 'number' && !isNaN(rawCg)) ? Math.max(0, Math.min(1, rawCg)) : 0.0;
+
+            const connectedNodes = Array.isArray(raw.corridorConnectedNodes) 
+                ? raw.corridorConnectedNodes 
+                : (raw.connectedNodes ? [raw.connectedNodes].flat() : (raw.nodes ? [raw.nodes].flat() : (raw.cn ? [raw.cn].flat() : [])));
+
+            const transportedResources = Array.isArray(raw.transportedResourceIds)
+                ? raw.transportedResourceIds
+                : (raw.transportedResources ? [raw.transportedResources].flat() : (raw.res ? [raw.res].flat() : []));
+
+            // Operational status
+            const declaredOpStatus = raw.sourceOperationalStatus || raw.sourceDeclaredStatus || raw.opStatus || raw.status || raw.st || null;
+            const isDeclared = Boolean(declaredOpStatus && OperationalStatus[declaredOpStatus]);
+            const operationalStatus = isDeclared ? OperationalStatus[declaredOpStatus] : OperationalStatus.UNKNOWN;
+
+            // Throughput Capacity
+            const thVal = raw.throughputCapacityPerDay?.value ?? raw.throughputCapacity ?? raw.throughput ?? raw.th ?? raw.cap ?? null;
+            const thUnit = raw.throughputCapacityPerDay?.unit ?? raw.throughputUnit ?? raw.u ?? 'UNKNOWN_UNIT';
+            const thDim = (thUnit !== 'UNKNOWN_UNIT' && (raw.throughputCapacityPerDay?.dimension || raw.dimension || raw.dim))
+                ? (raw.throughputCapacityPerDay?.dimension || raw.dimension || raw.dim)
+                : QuantityDimension.UNKNOWN;
+
+            const throughputCapacityPerDay = (thVal !== null) ? new QuantityRecord({
+                value: Number(thVal),
+                unit: thUnit,
+                dimension: thDim,
+                semanticType: QuantitySemanticType.THROUGHPUT,
+                isSourceDeclared: Boolean(thUnit !== 'UNKNOWN_UNIT')
+            }) : null;
+
+            return new InfrastructureState({
+                entityId: String(id),
+                infrastructureType: String(infraType),
+                congestionRatio,
+                corridorConnectedNodes: connectedNodes,
+                transportedResourceIds: transportedResources,
+                throughputCapacityPerDay,
+                lifecycleStatus: isDeclared ? LifecycleStatus.ACTIVE : LifecycleStatus.UNVERIFIED,
+                operationalStatus,
+                sourceDeclaredOperationalStatus: isDeclared ? operationalStatus : null,
+                engineLiveOperationalStatus: operationalStatus,
+                statusProvenance: {
+                    sourceDeclared: isDeclared,
+                    sourceDeclaredStatus: isDeclared ? operationalStatus : null,
+                    engineInferredStatus: null,
+                    inferredReason: null,
+                    factualPromotionBlocked: !isDeclared,
+                    provenanceHistory: []
+                },
+                locationState: new LocationState({
+                    countryId,
+                    locationType: LocationType.TRANSIT_CORRIDOR
+                }),
+                ownershipState: new OwnershipState({
+                    hostCountryId: countryId,
+                    legalOwnerId: raw.legalOwnerId || raw.owner || raw.own || 'UNKNOWN_OWNER',
+                    operatingEntityId: raw.operatingEntityId || raw.operator || raw.op || 'UNKNOWN_OPERATOR'
+                }),
+                metadata: {
+                    rawTelemetry: raw,
+                    decompressedAt: Date.now()
+                }
+            });
+        }
+    }
+
+    // =========================================================================
+    // 03.11: FORMAL RESOURCE IDENTITY BRIDGE (PART 03 -> PART 04 INTERFACE)
+    // =========================================================================
+
+    /**
+     * Formal Bridge Contract between Physical State Entities (InfrastructureState & FacilityState)
+     * and the Resource Identity Engine (Part 04).
+     * Strictly enforces Epistemic Triad (Reference vs Canonical Asset vs Operational Asset)
+     * and Explicit Provenance Separation.
+     */
+    class Part03ToPart04ResourceBridge {
+        constructor(worldStateEngine = null) {
+            this.engine = worldStateEngine;
+        }
+
+        bindEngine(worldStateEngine) {
+            this.engine = worldStateEngine;
+        }
+
+        /**
+         * Epistemic Classification Inspector:
+         * Classifies any entity into REFERENCE (pointer), CANONICAL_ASSET (raw identity), or OPERATIONAL_ASSET (active).
+         */
+        classifyAsset(entity) {
+            if (!entity) return null;
+            if (typeof entity.getEpistemicClassification === 'function') {
+                return entity.getEpistemicClassification();
+            }
+            if (entity.isReferenceOnly || entity.referenceStatus === ReferenceStatus.UNVERIFIED_REFERENCE) {
+                return AssetEpistemicClassification.REFERENCE;
+            }
+            if (entity.stateTier === StateTier.TIER_A_SOVEREIGN_CANONICAL) {
+                return AssetEpistemicClassification.CANONICAL_ASSET;
+            }
+            return AssetEpistemicClassification.OPERATIONAL_ASSET;
+        }
+
+        /**
+         * Creates a formal Resource Transformation Contract for FacilityState
+         * Consumed by Part 04 (Resource Identity Engine)
+         */
+        bridgeFacilityToResourceIdentity(facilityState) {
+            if (!(facilityState instanceof FacilityState)) {
+                throw new Error('[ResourceIdentityBridge]: Invalid FacilityState instance provided.');
+            }
+
+            const epistemicTier = this.classifyAsset(facilityState);
+
+            return {
+                bridgeContractVersion: '1.0.0',
+                entityId: facilityState.entityId,
+                epistemicTier,
+                isReferenceOnly: facilityState.isReferenceOnly,
+                // Canonical Identity Specification
+                canonicalIdentity: {
+                    facilityCategory: facilityState.facilityCategory,
+                    primaryProcessType: facilityState.primaryProcessType,
+                    conversionEfficiencyRatio: facilityState.conversionEfficiencyRatio,
+                    inputResourceIds: [...facilityState.inputResourceIds],
+                    outputResourceIds: [...facilityState.outputResourceIds],
+                    nominalCapacity: facilityState.nominalCapacity ? facilityState.nominalCapacity.toJSON() : null
+                },
+                // Live Operational Profile
+                operationalProfile: {
+                    operationalStatus: facilityState.operationalStatus,
+                    engineLiveStatus: facilityState.engineLiveOperationalStatus,
+                    assetHealthIndex: facilityState.assetHealthIndex,
+                    currentThroughput: facilityState.currentThroughput ? facilityState.currentThroughput.toJSON() : null,
+                    failureMode: facilityState.failureMode
+                },
+                // Explicit Provenance & Audit Trail
+                provenanceProfile: {
+                    sourceDeclaredOperationalStatus: facilityState.sourceDeclaredOperationalStatus,
+                    engineInferredOperationalStatus: facilityState.engineInferredOperationalStatus,
+                    statusProvenance: JSON.parse(JSON.stringify(facilityState.statusProvenance || {}))
+                },
+                // Host Geography & Ownership
+                spatialContext: {
+                    hostCountryId: facilityState.location.countryId,
+                    coordinates: { ...facilityState.location.coordinates }
+                }
+            };
+        }
+
+        /**
+         * Creates a formal Logistics Corridor Contract for InfrastructureState
+         * Consumed by Part 04 (Resource Identity Engine)
+         */
+        bridgeInfrastructureToResourceIdentity(infrastructureState) {
+            if (!(infrastructureState instanceof InfrastructureState)) {
+                throw new Error('[ResourceIdentityBridge]: Invalid InfrastructureState instance provided.');
+            }
+
+            const epistemicTier = this.classifyAsset(infrastructureState);
+
+            return {
+                bridgeContractVersion: '1.0.0',
+                entityId: infrastructureState.entityId,
+                epistemicTier,
+                isReferenceOnly: infrastructureState.isReferenceOnly,
+                // Canonical Identity Specification
+                canonicalIdentity: {
+                    infrastructureType: infrastructureState.infrastructureType,
+                    corridorConnectedNodes: [...infrastructureState.corridorConnectedNodes],
+                    transportedResourceIds: [...infrastructureState.transportedResourceIds],
+                    throughputCapacityPerDay: infrastructureState.throughputCapacityPerDay ? infrastructureState.throughputCapacityPerDay.toJSON() : null
+                },
+                // Live Operational Profile
+                operationalProfile: {
+                    operationalStatus: infrastructureState.operationalStatus,
+                    engineLiveStatus: infrastructureState.engineLiveOperationalStatus,
+                    congestionRatio: infrastructureState.congestionRatio,
+                    failureMode: infrastructureState.failureMode
+                },
+                // Explicit Provenance & Audit Trail
+                provenanceProfile: {
+                    sourceDeclaredOperationalStatus: infrastructureState.sourceDeclaredOperationalStatus,
+                    engineInferredOperationalStatus: infrastructureState.engineInferredOperationalStatus,
+                    statusProvenance: JSON.parse(JSON.stringify(infrastructureState.statusProvenance || {}))
+                },
+                // Spatial Context
+                spatialContext: {
+                    hostCountryId: infrastructureState.location.countryId
+                }
+            };
+        }
+
+        /**
+         * Lossless Telemetry Hydration:
+         * Ingests a batch of raw or compressed facility and infrastructure telemetry,
+         * validates schemas, registers entities, and links them to the state registry.
+         */
+        hydratePhysicalTelemetry(batch = {}, targetRegistry = null) {
+            const reg = targetRegistry || (this.engine ? this.engine.registry : null);
+            if (!reg) throw new Error('[ResourceIdentityBridge]: No target WorldStateRegistry available.');
+
+            const results = {
+                facilitiesHydrated: 0,
+                infrastructuresHydrated: 0,
+                errors: []
+            };
+
+            // Ingest Facilities
+            const rawFacilities = Array.isArray(batch.facilities) ? batch.facilities : [];
+            for (const rawFac of rawFacilities) {
+                try {
+                    const facState = TelemetrySchemaValidator.decompressAndValidateFacility(rawFac);
+                    reg.register(facState);
+                    results.facilitiesHydrated++;
+                } catch (err) {
+                    results.errors.push({ type: 'FACILITY_ERROR', payload: rawFac, error: err.message });
+                }
+            }
+
+            // Ingest Infrastructures
+            const rawInfras = Array.isArray(batch.infrastructures) ? batch.infrastructures : [];
+            for (const rawInfra of rawInfras) {
+                try {
+                    const infraState = TelemetrySchemaValidator.decompressAndValidateInfrastructure(rawInfra);
+                    reg.register(infraState);
+                    results.infrastructuresHydrated++;
+                } catch (err) {
+                    results.errors.push({ type: 'INFRASTRUCTURE_ERROR', payload: rawInfra, error: err.message });
+                }
+            }
+
+            return results;
+        }
+
+        /**
+         * Returns Bridge Health and Ingestion Summary
+         */
+        getBridgeHealthSummary() {
+            const reg = this.engine ? this.engine.registry : null;
+            const facilityCount = reg ? reg.getByType(EntityStateType.FACILITY_STATE).length : 0;
+            const infraCount = reg ? reg.getByType(EntityStateType.INFRASTRUCTURE_STATE).length : 0;
+            const referenceCount = reg ? reg.getReferencesOnly().length : 0;
+
+            return {
+                status: 'HEALTHY',
+                bridgeVersion: '1.0.0',
+                totalBridgedFacilities: facilityCount,
+                totalBridgedInfrastructures: infraCount,
+                totalBridgedReferences: referenceCount,
+                isEngineConnected: Boolean(this.engine)
+            };
+        }
+
+        /**
+         * Synchronizes World State Engine with WorldEcosystemEngine
+         */
+        synchronizeWithWorldEcosystem(ecosystemEngine) {
+            if (!ecosystemEngine || typeof ecosystemEngine.getAllSovereignStates !== 'function') {
+                return { synchronized: false, reason: 'Invalid or missing WorldEcosystemEngine instance.' };
+            }
+
+            const sovereignStates = ecosystemEngine.getAllSovereignStates();
+            let syncCount = 0;
+
+            if (this.engine && this.engine.registry) {
+                Object.values(sovereignStates).forEach(sov => {
+                    const existing = this.engine.registry.get(sov.id);
+                    if (existing && existing.entityType === EntityStateType.COUNTRY_STATE) {
+                        existing.setCondition('ECOSYSTEM_PROFILE', sov);
+                        syncCount++;
+                    }
+                });
+            }
+
+            return {
+                synchronized: true,
+                syncedCountries: syncCount
+            };
+        }
+    }
+
+    // =========================================================================
+    // 03.12: MUTATION PIPELINE, COMMANDS & INVARIANT VALIDATORS
     // =========================================================================
 
     class StateTransitionCommand {
@@ -3887,7 +4376,7 @@ window.GSRSK_DataFoundation = (() => {
     }
 
     // =========================================================================
-    // 03.11: HIGH-SPEED WORLD STATE REGISTRY & MULTI-INDEX STORE
+    // 03.13: HIGH-SPEED WORLD STATE REGISTRY & MULTI-INDEX STORE
     // =========================================================================
 
     class WorldStateRegistry {
@@ -3948,39 +4437,36 @@ window.GSRSK_DataFoundation = (() => {
 
         _addToIndexes(entity) {
             // Type index
-            if (!this.typeIndex.has(entity.entityType)) this.typeIndex.set(entity.entityType, new Set());
+            if (!this.typeIndex.has(entity.entityType)) {
+                this.typeIndex.set(entity.entityType, new Set());
+            }
             this.typeIndex.get(entity.entityType).add(entity.entityId);
 
             // Country index
-            const countryId = entity.location?.countryId || 'GLOBAL';
-            if (!this.countryIndex.has(countryId)) this.countryIndex.set(countryId, new Set());
-            this.countryIndex.get(countryId).add(entity.entityId);
+            const cid = entity.location?.countryId || 'GLOBAL';
+            if (!this.countryIndex.has(cid)) {
+                this.countryIndex.set(cid, new Set());
+            }
+            this.countryIndex.get(cid).add(entity.entityId);
 
             // Operational status index
             const opStatus = entity.operationalStatus || OperationalStatus.UNKNOWN;
-            if (!this.operationalStatusIndex.has(opStatus)) this.operationalStatusIndex.set(opStatus, new Set());
+            if (!this.operationalStatusIndex.has(opStatus)) {
+                this.operationalStatusIndex.set(opStatus, new Set());
+            }
             this.operationalStatusIndex.get(opStatus).add(entity.entityId);
 
             // Lifecycle status index
-            const lifeStatus = entity.lifecycleStatus || LifecycleStatus.UNKNOWN;
-            if (!this.lifecycleStatusIndex.has(lifeStatus)) this.lifecycleStatusIndex.set(lifeStatus, new Set());
-            this.lifecycleStatusIndex.get(lifeStatus).add(entity.entityId);
+            const lcStatus = entity.lifecycleStatus || LifecycleStatus.UNKNOWN;
+            if (!this.lifecycleStatusIndex.has(lcStatus)) {
+                this.lifecycleStatusIndex.set(lcStatus, new Set());
+            }
+            this.lifecycleStatusIndex.get(lcStatus).add(entity.entityId);
 
-            // Reference index
+            // Reference index (Pointer Only)
             if (entity.isReferenceOnly) {
                 this.referenceIndex.set(entity.entityId, entity);
             }
-        }
-
-        _removeFromIndexes(entity) {
-            if (this.typeIndex.has(entity.entityType)) this.typeIndex.get(entity.entityType).delete(entity.entityId);
-            const countryId = entity.location?.countryId || 'GLOBAL';
-            if (this.countryIndex.has(countryId)) this.countryIndex.get(countryId).delete(entity.entityId);
-            const opStatus = entity.operationalStatus || OperationalStatus.UNKNOWN;
-            if (this.operationalStatusIndex.has(opStatus)) this.operationalStatusIndex.get(opStatus).delete(entity.entityId);
-            const lifeStatus = entity.lifecycleStatus || LifecycleStatus.UNKNOWN;
-            if (this.lifecycleStatusIndex.has(lifeStatus)) this.lifecycleStatusIndex.get(lifeStatus).delete(entity.entityId);
-            if (this.referenceIndex.has(entity.entityId)) this.referenceIndex.delete(entity.entityId);
         }
 
         clear() {
@@ -3995,11 +4481,11 @@ window.GSRSK_DataFoundation = (() => {
     }
 
     // =========================================================================
-    // 03.12: DETERMINISTIC CHECKPOINT & ADLER-32 SNAPSHOT ENGINE
+    // 03.14: DETERMINISTIC ADLER-32 CHECKPOINT SNAPSHOT ENGINE
     // =========================================================================
 
     class WorldStateSnapshotEngine {
-        static calculateAdler32(str) {
+        static computeAdler32(str) {
             let a = 1, b = 0;
             const MOD_ADLER = 65521;
             for (let i = 0; i < str.length; i++) {
@@ -4009,104 +4495,94 @@ window.GSRSK_DataFoundation = (() => {
             return ((b << 16) | a) >>> 0;
         }
 
-        static createSnapshot(registry, tick = 0, calendarDate = '2030-01-01') {
+        static createSnapshot(registry, tick, calendarDate) {
             const entitiesArray = registry.getAll().map(e => e.toJSON());
-            const serialized = JSON.stringify(entitiesArray);
-            const checksum = this.calculateAdler32(serialized);
-
-            return {
-                timestamp: Date.now(),
+            const serialized = JSON.stringify({
                 tick,
                 calendarDate,
-                entityCount: entitiesArray.length,
+                entities: entitiesArray
+            });
+
+            const checksum = this.computeAdler32(serialized);
+
+            return {
+                tick,
+                calendarDate,
                 checksum,
-                data: serialized
+                entityCount: entitiesArray.length,
+                payload: serialized
             };
         }
 
         static restoreSnapshot(registry, snapshot) {
-            if (!snapshot || !snapshot.data || typeof snapshot.checksum !== 'number') {
-                throw new Error('[WorldStateSnapshotEngine]: Invalid snapshot payload.');
+            if (!snapshot || !snapshot.payload) {
+                throw new Error('[WorldStateSnapshotEngine]: Invalid Snapshot Payload.');
             }
 
-            const calculatedChecksum = this.calculateAdler32(snapshot.data);
-            if (calculatedChecksum !== snapshot.checksum) {
-                throw new Error('[WorldStateSnapshotEngine]: Adler-32 Checksum mismatch! Corrupt snapshot detected.');
+            const currentChecksum = this.computeAdler32(snapshot.payload);
+            if (currentChecksum !== snapshot.checksum) {
+                throw new Error('[WorldStateSnapshotEngine]: Checksum mismatch! Corrupted snapshot.');
             }
 
+            const parsed = JSON.parse(snapshot.payload);
             registry.clear();
-            const entitiesRaw = JSON.parse(snapshot.data);
 
-            for (const item of entitiesRaw) {
+            parsed.entities.forEach(rawObj => {
                 let entity;
-                switch (item.entityType) {
+                switch (rawObj.entityType) {
                     case EntityStateType.COUNTRY_STATE:
-                        entity = new CountryState(item);
+                        entity = new CountryState(rawObj);
                         break;
                     case EntityStateType.RESOURCE_TYPE_STATE:
-                        entity = new ResourceTypeState(item);
+                        entity = new ResourceTypeState(rawObj);
                         break;
                     case EntityStateType.DEPOSIT_STATE:
-                        entity = new DepositState(item);
+                        entity = new DepositState(rawObj);
                         break;
                     case EntityStateType.EXTRACTION_ASSET_STATE:
-                        entity = new ExtractionAssetState(item);
+                        entity = new ExtractionAssetState(rawObj);
                         break;
                     case EntityStateType.FACILITY_STATE:
-                        entity = new FacilityState(item);
+                        entity = new FacilityState(rawObj);
                         break;
                     case EntityStateType.INFRASTRUCTURE_STATE:
-                        entity = new InfrastructureState(item);
+                        entity = new InfrastructureState(rawObj);
                         break;
                     case EntityStateType.STORAGE_FACILITY_STATE:
-                        entity = new StorageFacilityState(item);
+                        entity = new StorageFacilityState(rawObj);
                         break;
                     case EntityStateType.ORGANIZATION_STATE:
-                        entity = new OrganizationState(item);
+                        entity = new OrganizationState(rawObj);
                         break;
                     case EntityStateType.MARKET_STATE:
-                        entity = new MarketState(item);
+                        entity = new MarketState(rawObj);
                         break;
-                    case TradeState:
                     case EntityStateType.TRADE_STATE:
-                        entity = new TradeState(item);
+                        entity = new TradeState(rawObj);
                         break;
                     default:
-                        entity = new BaseStateEntity(item);
-                        break;
+                        entity = new BaseStateEntity(rawObj);
                 }
 
-                // Restore dynamic sub-containers
-                if (item.quantities) {
-                    Object.entries(item.quantities).forEach(([k, v]) => entity.setQuantity(k, new QuantityRecord(v)));
-                }
-                if (item.capabilities) {
-                    Object.entries(item.capabilities).forEach(([k, v]) => entity.registerCapability(k, v));
-                }
-                if (item.conditions) {
-                    Object.entries(item.conditions).forEach(([k, v]) => entity.setCondition(k, v));
-                }
-                if (item.relationships) {
-                    Object.entries(item.relationships).forEach(([k, arr]) => {
-                        if (Array.isArray(arr)) arr.forEach(target => entity.addRelationship(k, target));
+                if (rawObj.quantities) {
+                    Object.entries(rawObj.quantities).forEach(([k, v]) => {
+                        entity.setQuantity(k, new QuantityRecord(v));
                     });
                 }
-                entity.provenanceChain = Array.isArray(item.provenanceChain) ? item.provenanceChain : [];
-
                 registry.register(entity);
-            }
+            });
 
             return {
-                restoredCount: registry.getAll().length,
-                tick: snapshot.tick,
-                calendarDate: snapshot.calendarDate,
+                restoredCount: parsed.entities.length,
+                tick: parsed.tick,
+                calendarDate: parsed.calendarDate,
                 checksum: snapshot.checksum
             };
         }
     }
 
     // =========================================================================
-    // 03.13: MASTER WORLD STATE ENGINE & KNOWLEDGE HYDRATOR
+    // 03.15: AUTHORITATIVE WORLD STATE ENGINE
     // =========================================================================
 
     class WorldStateEngine {
@@ -4114,36 +4590,39 @@ window.GSRSK_DataFoundation = (() => {
             this.registry = new WorldStateRegistry();
             this.currentTick = 0;
             this.calendarDate = '2030-01-01';
-            this.isHydrated = false;
             this.snapshots = new Map();
+            this.isHydrated = false;
+            this.resourceBridge = new Part03ToPart04ResourceBridge(this);
+            this.bridge = this.resourceBridge;
         }
 
-        /**
-         * Hydrates WorldStateEngine from Part 02 WorldKnowledgeModel
-         * STRICT ARCHITECTURAL RULES:
-         * 1. Sovereign canonical entities are hydrated directly.
-         * 2. References (refCatalog) are registered strictly as UNVERIFIED_REFERENCE
-         *    entities (isReferenceOnly: true, factualPromotionBlocked: true).
-         * 3. Source units are preserved as-is. Undefined units -> 'UNKNOWN_UNIT', QuantityDimension.UNKNOWN.
-         * 4. Operational status from Part 03 vs Source-declared operational status are separated.
-         *    No assumption of ACTIVE/OPERATIONAL by default.
-         */
-        hydrateFromKnowledgeModel(knowledgeModel) {
-            if (!knowledgeModel) {
-                throw new Error('[WorldStateEngine]: knowledgeModel is required for hydration.');
-            }
+        _extractEntries(collection) {
+            if (!collection) return [];
+            if (collection instanceof Map) return Array.from(collection.values());
+            if (Array.isArray(collection)) return collection;
+            if (typeof collection === 'object') return Object.values(collection);
+            return [];
+        }
 
+        hydrateFromKnowledgeModel(knowledgeModel = {}) {
             this.registry.clear();
 
-            // 1. Hydrate Sovereign Countries (Canonical Tier-A)
-            if (knowledgeModel.sovereignEntities && knowledgeModel.sovereignEntities.countries) {
-                knowledgeModel.sovereignEntities.countries.forEach(country => {
+            // 1. Hydrate Countries (Canonical Tier-A)
+            const rawCountries = (knowledgeModel.sovereignEntities && knowledgeModel.sovereignEntities.countries) ||
+                                 knowledgeModel.canonicalCountries ||
+                                 knowledgeModel.countries;
+
+            const countriesList = this._extractEntries(rawCountries);
+            if (countriesList.length > 0) {
+                countriesList.forEach(country => {
+                    const countryId = country.isoCode || country.iso3 || country.id || country.code;
+                    if (!countryId) return;
                     const countryState = new CountryState({
-                        entityId: country.id || country.isoCode,
-                        isoCode: country.isoCode || country.id,
-                        canonicalName: country.name || country.canonicalName || country.id,
+                        entityId: countryId,
+                        isoCode: countryId,
+                        canonicalName: country.name || country.canonicalName || country.sovereignName || countryId,
                         locationState: new LocationState({
-                            countryId: country.id || country.isoCode,
+                            countryId: countryId,
                             locationType: LocationType.SOVEREIGN_TERRITORY
                         }),
                         lifecycleStatus: LifecycleStatus.ACTIVE,
@@ -4152,9 +4631,9 @@ window.GSRSK_DataFoundation = (() => {
                     });
 
                     // Set reserves if source declared
-                    if (country.gdp || country.gdpTreasury) {
+                    if (country.gdp || country.gdpTreasury || country.nominalGdpUsd) {
                         countryState.setQuantity('TREASURY_GDP', new QuantityRecord({
-                            value: Number(country.gdp || country.gdpTreasury),
+                            value: Number(country.gdp || country.gdpTreasury || country.nominalGdpUsd),
                             unit: 'USD',
                             dimension: QuantityDimension.CURRENCY,
                             semanticType: QuantitySemanticType.STOCK,
@@ -4176,17 +4655,24 @@ window.GSRSK_DataFoundation = (() => {
             }
 
             // 2. Hydrate Resource Types (Canonical Tier-A) - RULE: Zero dimension guessing
-            if (knowledgeModel.sovereignEntities && knowledgeModel.sovereignEntities.resourceTypes) {
-                knowledgeModel.sovereignEntities.resourceTypes.forEach(res => {
+            const rawResources = (knowledgeModel.sovereignEntities && knowledgeModel.sovereignEntities.resourceTypes) ||
+                                 knowledgeModel.canonicalResources ||
+                                 knowledgeModel.resources;
+
+            const resourcesList = this._extractEntries(rawResources);
+            if (resourcesList.length > 0) {
+                resourcesList.forEach(res => {
+                    const resId = res.id || res.code || res.resourceId || res.resourceTypeCode;
+                    if (!resId) return;
                     const declaredUnit = res.unit || res.standardUnit || 'UNKNOWN_UNIT';
                     const declaredDimension = (declaredUnit !== 'UNKNOWN_UNIT' && res.dimension) 
                         ? res.dimension 
                         : QuantityDimension.UNKNOWN;
 
                     const resState = new ResourceTypeState({
-                        entityId: res.id || res.resourceId,
-                        resourceId: res.id || res.resourceId,
-                        standardSymbol: res.symbol || res.id,
+                        entityId: resId,
+                        resourceId: resId,
+                        standardSymbol: res.symbol || res.code || resId,
                         standardUnit: declaredUnit,
                         primaryDimension: declaredDimension,
                         strategicClassification: {
@@ -4199,11 +4685,25 @@ window.GSRSK_DataFoundation = (() => {
                 });
             }
 
-            // 3. Hydrate Reference Catalog (Tier-B References)
+            // 3. Hydrate Facilities (Tier-B Physical Assets / Lossless Telemetry Decompression)
+            if (Array.isArray(knowledgeModel.facilities)) {
+                this.resourceBridge.hydratePhysicalTelemetry({ facilities: knowledgeModel.facilities }, this.registry);
+            }
+
+            // 4. Hydrate Infrastructures (Tier-B Physical Assets / Lossless Telemetry Decompression)
+            if (Array.isArray(knowledgeModel.infrastructures)) {
+                this.resourceBridge.hydratePhysicalTelemetry({ infrastructures: knowledgeModel.infrastructures }, this.registry);
+            }
+
+            // 5. Hydrate Reference Catalog (Tier-B References)
             // MANDATE: Reference != Canonical Asset != Operational Asset
             // Preserved strictly as UNVERIFIED references, NOT promoted to active factual physical assets!
-            if (knowledgeModel.refCatalog && Array.isArray(knowledgeModel.refCatalog.allReferences)) {
-                knowledgeModel.refCatalog.allReferences.forEach(ref => {
+            const referencesList = (knowledgeModel.refCatalog && Array.isArray(knowledgeModel.refCatalog.allReferences))
+                ? knowledgeModel.refCatalog.allReferences
+                : (Array.isArray(knowledgeModel.references) ? knowledgeModel.references : (Array.isArray(knowledgeModel.deposits) ? knowledgeModel.deposits : []));
+
+            if (referencesList.length > 0) {
+                referencesList.forEach(ref => {
                     const sourceUnit = ref.unit || ref.quantityUnit || 'UNKNOWN_UNIT';
                     const sourceDimension = (sourceUnit !== 'UNKNOWN_UNIT' && ref.dimension) 
                         ? ref.dimension 
@@ -4224,11 +4724,15 @@ window.GSRSK_DataFoundation = (() => {
                         isReferenceOnly: true,
                         referenceStatus: ReferenceStatus.UNVERIFIED_REFERENCE,
                         sourceDeclaredOperationalStatus: sourceDeclaredStatus,
+                        engineInferredOperationalStatus: null,
                         engineLiveOperationalStatus: OperationalStatus.UNKNOWN,
                         statusProvenance: {
                             sourceDeclared: isSourceDeclared,
-                            declaredStatus: sourceDeclaredStatus,
-                            factualPromotionBlocked: true
+                            sourceDeclaredStatus: sourceDeclaredStatus,
+                            engineInferredStatus: null,
+                            inferredReason: null,
+                            factualPromotionBlocked: true,
+                            provenanceHistory: []
                         },
                         locationState: new LocationState({
                             countryId: ref.countryId || ref.hostCountry || 'GLOBAL',
@@ -4265,6 +4769,8 @@ window.GSRSK_DataFoundation = (() => {
                 totalEntities: this.registry.getAll().length,
                 countryCount: this.registry.getByType(EntityStateType.COUNTRY_STATE).length,
                 resourceTypeCount: this.registry.getByType(EntityStateType.RESOURCE_TYPE_STATE).length,
+                facilityCount: this.registry.getByType(EntityStateType.FACILITY_STATE).length,
+                infrastructureCount: this.registry.getByType(EntityStateType.INFRASTRUCTURE_STATE).length,
                 referenceCount: this.registry.getReferencesOnly().length
             };
         }
@@ -4282,11 +4788,15 @@ window.GSRSK_DataFoundation = (() => {
 
             const previousVersion = currentEntity ? currentEntity.temporal.stateVersion : 0;
             
-            // Execute state mutation
+            // Execute state mutation with Explicit Provenance Preservation
             if (currentEntity) {
                 if (command.payload.operationalStatus) {
-                    currentEntity.operationalStatus = command.payload.operationalStatus;
-                    currentEntity.engineLiveOperationalStatus = command.payload.operationalStatus;
+                    currentEntity.recordInferredStatus(
+                        command.payload.operationalStatus,
+                        command.payload.reason || ('COMMAND_' + command.commandType),
+                        this.currentTick,
+                        this.calendarDate
+                    );
                 }
                 if (command.payload.lifecycleStatus) {
                     currentEntity.lifecycleStatus = command.payload.lifecycleStatus;
@@ -4362,7 +4872,7 @@ window.GSRSK_DataFoundation = (() => {
     }
 
     // =========================================================================
-    // 03.14: UNIFIED PUBLIC ADAPTER & MASTER GSRSK PIPELINE
+    // 03.16: UNIFIED PUBLIC ADAPTER & MASTER GSRSK PIPELINE
     // =========================================================================
 
     function deepFreeze(obj, seen = new WeakSet()) {
@@ -4378,6 +4888,7 @@ window.GSRSK_DataFoundation = (() => {
 
     const WorldStateEngineAdapter = Object.freeze({
         // Enums
+        AssetEpistemicClassification,
         LifecycleStatus,
         OperationalStatus,
         StateClass,
@@ -4412,6 +4923,10 @@ window.GSRSK_DataFoundation = (() => {
         MarketState,
         TradeState,
 
+        // Telemetry & Bridge
+        TelemetrySchemaValidator,
+        Part03ToPart04ResourceBridge,
+
         // Mutation & Validation Engines
         StateTransitionCommand,
         MutationEvent,
@@ -4424,18 +4939,25 @@ window.GSRSK_DataFoundation = (() => {
 
         createEngine() {
             return new WorldStateEngine();
+        },
+
+        createResourceBridge(engine) {
+            return new Part03ToPart04ResourceBridge(engine);
         }
     });
 
     /**
      * Master GSRSK Engine: Seamless End-to-End Orchestrator
-     * Unifies Part 01 (Foundation), Part 02 (Knowledge Compiler), and Part 03 (World State Engine)
+     * Unifies Part 01 (Foundation), Part 02 (Knowledge Compiler), Part 03 (World State Engine), and Part 04 (Resource Identity Engine)
      */
     class MasterGSRSKEngine {
         constructor() {
-            this.dataFoundation = global.GSRSK_DataFoundation || null;
+            this.dataFoundation = global.GSRSK_DataFoundation || (typeof _globalScope !== 'undefined' ? _globalScope.GSRSK_DataFoundation : null);
             this.compiler = global.GSRSK_WorldKnowledgeCompiler || null;
             this.stateEngine = new WorldStateEngine();
+            this.part04 = global.GSRSK_Part04 || null;
+            this.lastKnowledgeModel = null;
+            this.resourceIdentityRegistry = null;
             this.isReady = false;
         }
 
@@ -4445,9 +4967,14 @@ window.GSRSK_DataFoundation = (() => {
                 this.dataFoundation = global.GSRSK_DataFoundation;
             }
 
-            // 2. Compile Knowledge or normalize input
+            // 2. Part 02 Compiler
+            if (!this.compiler && global.GSRSK_WorldKnowledgeCompiler) {
+                this.compiler = global.GSRSK_WorldKnowledgeCompiler;
+            }
+
+            // 3. Compile Knowledge or normalize input
             let knowledgeModel = null;
-            if (inputData && inputData.sovereignEntities && inputData.refCatalog) {
+            if (inputData && inputData.sovereignEntities && (inputData.refCatalog || inputData.deposits || inputData.references)) {
                 // Direct WorldKnowledgeModel passed
                 knowledgeModel = inputData;
             } else if (this.compiler && typeof this.compiler.compileWorldKnowledge === 'function' && inputData && inputData.isPart1Registry) {
@@ -4459,18 +4986,41 @@ window.GSRSK_DataFoundation = (() => {
                         countries: inputData.countries || [],
                         resourceTypes: inputData.resources || []
                     },
+                    facilities: inputData.facilities || [],
+                    infrastructures: inputData.infrastructures || [],
                     refCatalog: {
                         allReferences: inputData.deposits || inputData.references || []
                     }
                 };
             }
+            this.lastKnowledgeModel = knowledgeModel;
 
-            // 3. Hydrate World State
+            // 4. Hydrate World State (Part 03)
             const hydrationResult = this.stateEngine.hydrateFromKnowledgeModel(knowledgeModel);
+
+            // 5. Connect to WorldEcosystemEngine if available in environment
+            if (global.WorldEcosystemEngine) {
+                this.stateEngine.resourceBridge.synchronizeWithWorldEcosystem(global.WorldEcosystemEngine);
+            }
+
+            // 6. Automatically compile Part 04 Resource Identities if Part 04 is loaded
+            const p4 = global.GSRSK_Part04 || this.part04;
+            let identityCompilationResult = null;
+            if (p4 && typeof p4.compileIdentities === 'function') {
+                identityCompilationResult = p4.compileIdentities(
+                    knowledgeModel,
+                    this.stateEngine.registry,
+                    this.dataFoundation && this.dataFoundation.masterRegistry ? this.dataFoundation.masterRegistry : null
+                );
+                this.resourceIdentityRegistry = identityCompilationResult.identityRegistry;
+            }
+
             this.isReady = true;
             return {
                 status: 'READY',
                 hydration: hydrationResult,
+                identityCompilation: identityCompilationResult,
+                identityRegistry: this.resourceIdentityRegistry,
                 tick: this.stateEngine.currentTick,
                 calendarDate: this.stateEngine.calendarDate
             };
@@ -4478,6 +5028,28 @@ window.GSRSK_DataFoundation = (() => {
 
         getStateEngine() {
             return this.stateEngine;
+        }
+
+        getResourceBridge() {
+            return this.stateEngine.resourceBridge;
+        }
+
+        getResourceIdentityRegistry() {
+            return this.resourceIdentityRegistry;
+        }
+
+        compileResourceIdentities() {
+            const p4 = global.GSRSK_Part04 || this.part04;
+            if (!p4 || typeof p4.compileIdentities !== 'function') {
+                throw new Error('Part 04 Resource Identity Engine is not loaded');
+            }
+            const res = p4.compileIdentities(
+                this.lastKnowledgeModel,
+                this.stateEngine.registry,
+                this.dataFoundation && this.dataFoundation.masterRegistry ? this.dataFoundation.masterRegistry : null
+            );
+            this.resourceIdentityRegistry = res.identityRegistry;
+            return res;
         }
 
         queryEntities(filterFn) {
@@ -4488,17 +5060,3109 @@ window.GSRSK_DataFoundation = (() => {
 
     const MasterEngineSingleton = new MasterGSRSKEngine();
 
+    global.GSRSK_Part03 = WorldStateEngineAdapter;
+    global.GSRSK_WorldStateEngine = WorldStateEngineAdapter;
+    global.GSRSK_MasterEngine = MasterEngineSingleton;
+    global.GSRSK_Engine = MasterEngineSingleton;
+    global.Part03ToPart04ResourceBridge = Part03ToPart04ResourceBridge;
+    global.TelemetrySchemaValidator = TelemetrySchemaValidator;
+
     if (typeof module !== 'undefined' && module.exports) {
         module.exports = {
+            DataFoundation: global.GSRSK_DataFoundation || (typeof _globalScope !== 'undefined' ? _globalScope.GSRSK_DataFoundation : null),
+            WorldKnowledgeCompiler: global.GSRSK_WorldKnowledgeCompiler || null,
             WorldStateEngineAdapter,
+            Part03ToPart04ResourceBridge,
+            TelemetrySchemaValidator,
             MasterGSRSKEngine,
-            MasterEngineSingleton
+            MasterEngineSingleton,
+            ...WorldStateEngineAdapter
         };
-    } else {
-        global.GSRSK_Part03 = WorldStateEngineAdapter;
-        global.GSRSK_WorldStateEngine = WorldStateEngineAdapter;
-        global.GSRSK_MasterEngine = MasterEngineSingleton;
-        global.GSRSK_Engine = MasterEngineSingleton;
     }
 
-})(typeof window !== 'undefined' ? window : globalThis);
+})(typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : global));
+
+/**
+ * ============================================================================
+ * GSRSK — PART 04: RESOURCE IDENTITY ENGINE (MODULE 1 OF 2)
+ * ============================================================================
+ * Architecture Phase: 04 of 16
+ * Production Standard: GSRSK Canonical Identity Authority
+ *
+ * SUBSYSTEMS INCLUDED IN MODULE 1:
+ *   04.01 Identity Schema, Domain Vocabularies, Unknown Semantics & Error Taxonomy
+ *   04.02 Canonical Identity Serialization & Unicode-Aware Key Engine (Murmur64 Unsigned)
+ *   04.03 Identity Basis Contracts & Field Mutability Classifiers
+ *   04.04 Canonical Resource Type Identity Engine
+ *   04.05 Geological Deposit Identity Engine
+ *   04.06 Physical Origin & Genesis Anchor Engine
+ *   04.07 Resource Occurrence Identity Engine
+ *   04.08 Multi-Layer Ownership Identity & Stakeholder Engine
+ *   04.09 Industrial Operator & Concession Tenancy Engine
+ *   04.10 Hierarchical Spatial & Location Node Engine (Geospatial Bounds & Containment)
+ *   04.11 Resource Variant, Grade & Metallurgical Assay Specifier
+ * ============================================================================
+ */
+
+(function(global) {
+    'use strict';
+
+    // =========================================================================
+    // 04.01: ENUMS, UNKNOWN SEMANTICS, RESOLUTION MATRIX & ERROR TAXONOMY
+    // =========================================================================
+
+    /**
+     * Component and Overall Identity Resolution States
+     */
+    const IdentityResolutionStatus = Object.freeze({
+        RESOLVED: 'RESOLVED',
+        PARTIALLY_RESOLVED: 'PARTIALLY_RESOLVED',
+        UNRESOLVED: 'UNRESOLVED',
+        CONFLICTED: 'CONFLICTED',
+        AMBIGUOUS: 'AMBIGUOUS',
+        INVALID: 'INVALID'
+    });
+
+    /**
+     * Strict Unknown State Taxonomy (Prevents ambiguous null/undefined handling)
+     */
+    const UnknownSemanticState = Object.freeze({
+        DECLARED_UNKNOWN: 'DECLARED_UNKNOWN',       // Source explicitly stated it is unknown
+        UNRESOLVED_REFERENCE: 'UNRESOLVED_REFERENCE', // Reference exists but target could not be bound
+        MISSING_FROM_SOURCE: 'MISSING_FROM_SOURCE',   // Field entirely absent in source record
+        NOT_APPLICABLE: 'NOT_APPLICABLE',           // Property does not apply to this entity class
+        CONFLICTED_EVIDENCE: 'CONFLICTED_EVIDENCE'   // Multiple sources provided irreconcilable claims
+    });
+
+    /**
+     * Epistemic Confidence Tier for Resource Occurrences
+     */
+    const ResourceOccurrenceTier = Object.freeze({
+        TIER_A_PRIMARY_KNOWN: 'TIER_A_PRIMARY_KNOWN',
+        TIER_B_SECONDARY_ASSOCIATED: 'TIER_B_SECONDARY_ASSOCIATED',
+        TIER_C_INFERRED_OCCURRENCE: 'TIER_C_INFERRED_OCCURRENCE',
+        TIER_D_UNVERIFIED_OCCURRENCE: 'TIER_D_UNVERIFIED_OCCURRENCE',
+        TIER_E_TRACE_OCCURRENCE: 'TIER_E_TRACE_OCCURRENCE'
+    });
+
+    /**
+     * Comprehensive Geological Classifications (16 Deposit Genesis Types)
+     */
+    const DepositTypeClassification = Object.freeze({
+        MAGMATIC_SEGREGATION: 'MAGMATIC_SEGREGATION',
+        HYDROTHERMAL_VEIN: 'HYDROTHERMAL_VEIN',
+        PORPHYRY_SYSTEM: 'PORPHYRY_SYSTEM',
+        SEDIMENTARY_BEDDED: 'SEDIMENTARY_BEDDED',
+        BANDED_IRON_FORMATION: 'BANDED_IRON_FORMATION',
+        PLACER_ALLUVIAL: 'PLACER_ALLUVIAL',
+        EVAPORITE_BASIN: 'EVAPORITE_BASIN',
+        METAMORPHIC_SKARN: 'METAMORPHIC_SKARN',
+        REGOLITH_LATERITE: 'REGOLITH_LATERITE',
+        HYDROCARBON_STRATIGRAPHIC: 'HYDROCARBON_STRATIGRAPHIC',
+        HYDROCARBON_STRUCTURAL: 'HYDROCARBON_STRUCTURAL',
+        UNCONVENTIONAL_SHALE: 'UNCONVENTIONAL_SHALE',
+        GEOTHERMAL_BRINE: 'GEOTHERMAL_BRINE',
+        POLYMETALLIC_NODULE_ABYSSAL: 'POLYMETALLIC_NODULE_ABYSSAL',
+        SEAFLOOR_MASSIVE_SULFIDE: 'SEAFLOOR_MASSIVE_SULFIDE',
+        UNKNOWN_GEOLOGICAL: 'UNKNOWN_GEOLOGICAL'
+    });
+
+    /**
+     * Physical Genesis & Provenance Anchor Status
+     */
+    const OriginGenesisStatus = Object.freeze({
+        NATURAL_CRUSTAL_IN_SITU: 'NATURAL_CRUSTAL_IN_SITU',
+        DEEP_CONTINENTAL_BASEMENT: 'DEEP_CONTINENTAL_BASEMENT',
+        OFFSHORE_CONTINENTAL_SHELF: 'OFFSHORE_CONTINENTAL_SHELF',
+        ABYSSAL_OCEANIC_FLOOR: 'ABYSSAL_OCEANIC_FLOOR',
+        SURFACE_ALLUVIAL_ELUVIAL: 'SURFACE_ALLUVIAL_ELUVIAL',
+        TAILINGS_REPROCESSED: 'TAILINGS_REPROCESSED',
+        SYNTHETIC_INDUSTRIAL_DERIVED: 'SYNTHETIC_INDUSTRIAL_DERIVED',
+        SECONDARY_RECYCLED_STOCK: 'SECONDARY_RECYCLED_STOCK',
+        UNKNOWN_ORIGIN: 'UNKNOWN_ORIGIN'
+    });
+
+    /**
+     * Ownership & Concession Legal Control Models
+     */
+    const OwnershipControlModel = Object.freeze({
+        SOVEREIGN_EXCLUSIVE_STATE: 'SOVEREIGN_EXCLUSIVE_STATE',
+        STATE_OWNED_ENTERPRISE: 'STATE_OWNED_ENTERPRISE',
+        MAJORITY_STATE_JOINT_VENTURE: 'MAJORITY_STATE_JOINT_VENTURE',
+        PRIVATE_CONCESSION_LEASE: 'PRIVATE_CONCESSION_LEASE',
+        PUBLIC_PRIVATE_CONSORTIUM: 'PUBLIC_PRIVATE_CONSORTIUM',
+        COMMUNAL_ARTISANAL_CUSTOMARY: 'COMMUNAL_ARTISANAL_CUSTOMARY',
+        INTERNATIONAL_COMMONS_REGIME: 'INTERNATIONAL_COMMONS_REGIME',
+        UNREGISTERED_INFORMAL_CLAIM: 'UNREGISTERED_INFORMAL_CLAIM',
+        DISPUTED_CONTESTED_SOVEREIGNTY: 'DISPUTED_CONTESTED_SOVEREIGNTY',
+        UNKNOWN_CONTROL: 'UNKNOWN_CONTROL'
+    });
+
+    /**
+     * Physical & Chemical Categories of Raw Materials
+     */
+    const ResourcePhysicalCategory = Object.freeze({
+        FERROUS_METAL: 'FERROUS_METAL',
+        NON_FERROUS_BASE_METAL: 'NON_FERROUS_BASE_METAL',
+        PRECIOUS_METAL: 'PRECIOUS_METAL',
+        CRITICAL_ENERGY_TRANSITION_MINERAL: 'CRITICAL_ENERGY_TRANSITION_MINERAL',
+        RARE_EARTH_ELEMENT_LIGHT: 'RARE_EARTH_ELEMENT_LIGHT',
+        RARE_EARTH_ELEMENT_HEAVY: 'RARE_EARTH_ELEMENT_HEAVY',
+        FOSSIL_HYDROCARBON_LIQUID: 'FOSSIL_HYDROCARBON_LIQUID',
+        FOSSIL_HYDROCARBON_GAS: 'FOSSIL_HYDROCARBON_GAS',
+        SOLID_CARBONACEOUS_FUEL: 'SOLID_CARBONACEOUS_FUEL',
+        NUCLEAR_FISSILE_FERTILE: 'NUCLEAR_FISSILE_FERTILE',
+        INDUSTRIAL_MINERAL_CHEMICAL: 'INDUSTRIAL_MINERAL_CHEMICAL',
+        CONSTRUCTION_AGGREGATE: 'CONSTRUCTION_AGGREGATE',
+        AGRICULTURAL_NUTRIENT_MINERAL: 'AGRICULTURAL_NUTRIENT_MINERAL',
+        UNKNOWN_PHYSICAL_CATEGORY: 'UNKNOWN_PHYSICAL_CATEGORY'
+    });
+
+    /**
+     * Grade & Concentration Tiers
+     */
+    const GradeClassificationTier = Object.freeze({
+        ULTRA_HIGH_PURITY: 'ULTRA_HIGH_PURITY',
+        HIGH_GRADE_DIRECT_SHIPPING: 'HIGH_GRADE_DIRECT_SHIPPING',
+        STANDARD_COMMERCIAL_GRADE: 'STANDARD_COMMERCIAL_GRADE',
+        MEDIUM_GRADE_BENEFICIATION_REQ: 'MEDIUM_GRADE_BENEFICIATION_REQ',
+        LOW_GRADE_MARGINAL: 'LOW_GRADE_MARGINAL',
+        SUB_ECONOMIC_REFRACTORY: 'SUB_ECONOMIC_REFRACTORY',
+        UNKNOWN_GRADE_TIER: 'UNKNOWN_GRADE_TIER'
+    });
+
+    /**
+     * 14-Phase Resource Lifecycle Finite State Machine
+     */
+    const ResourceLifecyclePhase = Object.freeze({
+        UNDISCOVERED_THEORETICAL: 'UNDISCOVERED_THEORETICAL',
+        DISCOVERED_UNASSESSED: 'DISCOVERED_UNASSESSED',
+        EXPLORATION_DELINEATED: 'EXPLORATION_DELINEATED',
+        RESOURCE_ASSESSED: 'RESOURCE_ASSESSED',
+        FEASIBILITY_PERMITTED: 'FEASIBILITY_PERMITTED',
+        CAPEX_CONSTRUCTION: 'CAPEX_CONSTRUCTION',
+        COMMISSIONED_OPERATIONAL: 'COMMISSIONED_OPERATIONAL',
+        COMMERCIAL_EXTRACTION_ACTIVE: 'COMMERCIAL_EXTRACTION_ACTIVE',
+        PRODUCTION_CURTAILED_SUSPENDED: 'PRODUCTION_CURTAILED_SUSPENDED',
+        RESERVE_DEPLETING: 'RESERVE_DEPLETING',
+        EXHAUSTED_DEPLETED: 'EXHAUSTED_DEPLETED',
+        DECOMMISSIONED_RECLAIMED: 'DECOMMISSIONED_RECLAIMED',
+        ABANDONED_UNREMEDIATED: 'ABANDONED_UNREMEDIATED',
+        UNKNOWN_LIFECYCLE: 'UNKNOWN_LIFECYCLE'
+    });
+
+    /**
+     * Candidate Ingestion Disposition Status
+     */
+    const CandidateDispositionState = Object.freeze({
+        ACCEPTED_NEW: 'ACCEPTED_NEW',
+        ACCEPTED_EQUIVALENT_MERGED: 'ACCEPTED_EQUIVALENT_MERGED',
+        RESOLVED_TO_EXISTING: 'RESOLVED_TO_EXISTING',
+        REJECTED_COLLISION: 'REJECTED_COLLISION',
+        REJECTED_CORRUPT_SCHEMA: 'REJECTED_CORRUPT_SCHEMA',
+        DEFERRED_UNRESOLVED: 'DEFERRED_UNRESOLVED',
+        IGNORED_POLICY: 'IGNORED_POLICY'
+    });
+
+    /**
+     * Severity Levels for Diagnostics
+     */
+    const CollisionSeverity = Object.freeze({
+        INFO: 'INFO',
+        WARNING: 'WARNING',
+        ERROR: 'ERROR',
+        FATAL: 'FATAL'
+    });
+
+    /**
+     * Systemic Identity Health Status
+     */
+    const IdentityHealthStatus = Object.freeze({
+        HEALTHY: 'HEALTHY',
+        HEALTHY_WITH_WARNINGS: 'HEALTHY_WITH_WARNINGS',
+        DEGRADED: 'DEGRADED',
+        CRITICAL_FAILURE: 'CRITICAL_FAILURE'
+    });
+
+    /**
+     * Formal GSRSK Diagnostic Error Taxonomy
+     */
+    const ErrorTaxonomy = Object.freeze({
+        ID_001_INVALID_IDENTITY: 'ID_001_INVALID_IDENTITY',
+        ID_002_DUPLICATE_IDENTITY: 'ID_002_DUPLICATE_IDENTITY',
+        ID_003_IDENTITY_COLLISION: 'ID_003_IDENTITY_COLLISION',
+        ID_004_UNRESOLVED_REFERENCE: 'ID_004_UNRESOLVED_REFERENCE',
+        ID_005_ALIAS_COLLISION: 'ID_005_ALIAS_COLLISION',
+        ID_006_PROVENANCE_MISSING: 'ID_006_PROVENANCE_MISSING',
+        ID_007_LINEAGE_ROOT_MISSING: 'ID_007_LINEAGE_ROOT_MISSING',
+        ID_008_INVALID_RELATIONSHIP: 'ID_008_INVALID_RELATIONSHIP',
+        ID_009_INVALID_LIFECYCLE_STATE: 'ID_009_INVALID_LIFECYCLE_STATE',
+        ID_010_IMMUTABILITY_VIOLATION: 'ID_010_IMMUTABILITY_VIOLATION',
+        ID_011_CIRCULAR_CONTAINMENT: 'ID_011_CIRCULAR_CONTAINMENT',
+        ID_012_SELF_REFERENCE: 'ID_012_SELF_REFERENCE',
+        ID_013_ORPHAN_ENTITY: 'ID_013_ORPHAN_ENTITY',
+        ID_014_REFERENTIAL_CLOSURE_VIOLATION: 'ID_014_REFERENTIAL_CLOSURE_VIOLATION',
+        ID_015_SILENT_DATA_LOSS: 'ID_015_SILENT_DATA_LOSS',
+        ID_016_FIREWALL_BREACH: 'ID_016_FIREWALL_BREACH'
+    });
+
+    /**
+     * Granular Component-Wise Resolution Tracker
+     */
+    class ComponentResolutionMatrix {
+        constructor(initial = {}) {
+            this.resourceType = initial.resourceType || IdentityResolutionStatus.UNRESOLVED;
+            this.deposit = initial.deposit || IdentityResolutionStatus.UNRESOLVED;
+            this.origin = initial.origin || IdentityResolutionStatus.UNRESOLVED;
+            this.owner = initial.owner || IdentityResolutionStatus.UNRESOLVED;
+            this.operator = initial.operator || IdentityResolutionStatus.UNRESOLVED;
+            this.location = initial.location || IdentityResolutionStatus.UNRESOLVED;
+            this.variant = initial.variant || IdentityResolutionStatus.UNRESOLVED;
+            this.grade = initial.grade || IdentityResolutionStatus.UNRESOLVED;
+        }
+
+        computeOverallStatus() {
+            const values = Object.values(this);
+            if (values.every(v => v === IdentityResolutionStatus.RESOLVED)) {
+                return IdentityResolutionStatus.RESOLVED;
+            }
+            if (values.some(v => v === IdentityResolutionStatus.CONFLICTED)) {
+                return IdentityResolutionStatus.CONFLICTED;
+            }
+            if (values.some(v => v === IdentityResolutionStatus.INVALID)) {
+                return IdentityResolutionStatus.INVALID;
+            }
+            if (values.some(v => v === IdentityResolutionStatus.RESOLVED || v === IdentityResolutionStatus.PARTIALLY_RESOLVED)) {
+                return IdentityResolutionStatus.PARTIALLY_RESOLVED;
+            }
+            return IdentityResolutionStatus.UNRESOLVED;
+        }
+
+        toJSON() {
+            return {
+                overall: this.computeOverallStatus(),
+                components: {
+                    resourceType: this.resourceType,
+                    deposit: this.deposit,
+                    origin: this.origin,
+                    owner: this.owner,
+                    operator: this.operator,
+                    location: this.location,
+                    variant: this.variant,
+                    grade: this.grade
+                }
+            };
+        }
+    }
+
+    // =========================================================================
+    // 04.02: CANONICAL SERIALIZATION & UNICODE-AWARE KEY ENGINE
+    // =========================================================================
+
+    class CanonicalIdentitySerializer {
+        /**
+         * Deterministically serializes values with fixed casing, sorted keys, and strict escaping.
+         */
+        static serializeValue(val) {
+            if (val === null || val === undefined) return '__NULL__';
+            if (typeof val === 'boolean') return val ? '__TRUE__' : '__FALSE__';
+            if (typeof val === 'number') {
+                if (!Number.isFinite(val)) return '__NON_FINITE_NUM__';
+                return Number(val.toFixed(8)).toString(); // Normalizes floating point representations
+            }
+            if (typeof val === 'string') {
+                return DeterministicKeyEngine.normalizeToken(val);
+            }
+            if (Array.isArray(val)) {
+                const serializedItems = val.map(item => this.serializeValue(item));
+                return `[${serializedItems.sort().join(',')}]`; // Always canonical sorted array
+            }
+            if (typeof val === 'object') {
+                const keys = Object.keys(val).sort();
+                const pairs = keys.map(k => `${this.serializeValue(k)}:${this.serializeValue(val[k])}`);
+                return `{${pairs.join(';')}}`;
+            }
+            return String(val);
+        }
+
+        static serializeIdentityPayload(orderedFieldPairs) {
+            return orderedFieldPairs
+                .map(([field, val]) => `${field}=${this.serializeValue(val)}`)
+                .join('|');
+        }
+    }
+
+    class DeterministicKeyEngine {
+        /**
+         * 64-bit MurmurHash3-inspired string hash with unsigned overflow protection.
+         */
+        static compute64BitHash(inputData) {
+            const str = typeof inputData === 'string' ? inputData : JSON.stringify(inputData);
+            let h1 = (0xdeadbeef ^ str.length) >>> 0;
+            let h2 = (0x41c6ce57 ^ str.length) >>> 0;
+
+            for (let i = 0; i < str.length; i++) {
+                const ch = str.charCodeAt(i);
+                h1 = (Math.imul(h1 ^ ch, 2654435761) >>> 0);
+                h2 = (Math.imul(h2 ^ ch, 1597334677) >>> 0);
+            }
+
+            h1 = ((Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909)) >>> 0);
+            h2 = ((Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909)) >>> 0);
+
+            const hex1 = (h1 >>> 0).toString(16).padStart(8, '0');
+            const hex2 = (h2 >>> 0).toString(16).padStart(8, '0');
+            return (hex1 + hex2).toLowerCase();
+        }
+
+        /**
+         * Unicode-Aware Token Normalizer.
+         * Retains Unicode letters, numbers, and underscores across all world scripts.
+         */
+        static normalizeToken(str) {
+            if (!str || typeof str !== 'string') return 'UNKNOWN';
+            const normalized = str
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '') // Strip combining diacritics
+                .toLowerCase()
+                .trim()
+                .replace(/[\s\-_/.\\]+/g, '_')
+                .replace(/[^\p{L}\p{N}_]/gu, '') // Retain all international letters and digits
+                .replace(/^_+|_+$/g, '');
+
+            return normalized.length > 0 ? normalized : 'UNKNOWN';
+        }
+
+        static generateResourceTypeKey(resourceTypeId) {
+            const norm = this.normalizeToken(resourceTypeId).toUpperCase();
+            return `RES_TYPE:${norm}`;
+        }
+
+        static generateDepositKey(hostCountryIso3, depositName, secondaryDisambiguator = '') {
+            const normCountry = this.normalizeToken(hostCountryIso3).toUpperCase();
+            const normDeposit = this.normalizeToken(depositName);
+            const payload = CanonicalIdentitySerializer.serializeIdentityPayload([
+                ['country', normCountry],
+                ['deposit', normDeposit],
+                ['disambig', secondaryDisambiguator]
+            ]);
+            const hash = this.compute64BitHash(payload).substring(0, 10);
+            return `DEP:${normCountry}:${normDeposit.substring(0, 24)}_${hash}`;
+        }
+
+        static generateOccurrenceKey(resourceTypeId, depositKey, tierOrQualifier = 'PRIMARY') {
+            const normRes = this.normalizeToken(resourceTypeId).toUpperCase();
+            const payload = CanonicalIdentitySerializer.serializeIdentityPayload([
+                ['resourceType', normRes],
+                ['depositKey', depositKey],
+                ['qualifier', tierOrQualifier]
+            ]);
+            const hash = this.compute64BitHash(payload).substring(0, 10);
+            return `OCC:${normRes}:${hash}`;
+        }
+
+        static generateOriginKey(depositKey, genesisStatus) {
+            const payload = CanonicalIdentitySerializer.serializeIdentityPayload([
+                ['depositKey', depositKey],
+                ['genesis', genesisStatus]
+            ]);
+            const hash = this.compute64BitHash(payload).substring(0, 10);
+            return `ORG:${hash}`;
+        }
+
+        static generateOwnershipKey(legalOwnerId, jurisdictionIso3, controlModel) {
+            const normOwner = this.normalizeToken(legalOwnerId).toUpperCase();
+            const normJuris = this.normalizeToken(jurisdictionIso3).toUpperCase();
+            const payload = CanonicalIdentitySerializer.serializeIdentityPayload([
+                ['owner', normOwner],
+                ['jurisdiction', normJuris],
+                ['model', controlModel]
+            ]);
+            const hash = this.compute64BitHash(payload).substring(0, 10);
+            return `OWN:${normOwner.substring(0, 20)}_${hash}`;
+        }
+
+        static generateOperatorKey(operatorCompanyId, operatingSiteOrCountry) {
+            const normOpr = this.normalizeToken(operatorCompanyId).toUpperCase();
+            const normSite = this.normalizeToken(operatingSiteOrCountry).toUpperCase();
+            const payload = CanonicalIdentitySerializer.serializeIdentityPayload([
+                ['operator', normOpr],
+                ['site', normSite]
+            ]);
+            const hash = this.compute64BitHash(payload).substring(0, 10);
+            return `OPR:${normOpr.substring(0, 20)}_${hash}`;
+        }
+
+        static generateLocationKey(countryIso3, adminDivision, siteName, lat = null, lng = null) {
+            const normCountry = this.normalizeToken(countryIso3).toUpperCase();
+            const normAdmin = this.normalizeToken(adminDivision);
+            const normSite = this.normalizeToken(siteName);
+            const payload = CanonicalIdentitySerializer.serializeIdentityPayload([
+                ['country', normCountry],
+                ['admin', normAdmin],
+                ['site', normSite],
+                ['lat', lat],
+                ['lng', lng]
+            ]);
+            const hash = this.compute64BitHash(payload).substring(0, 10);
+            return `LOC:${normCountry}:${hash}`;
+        }
+
+        static generateVariantGradeSpecKey(resourceTypeId, variantName, gradeTier) {
+            const normRes = this.normalizeToken(resourceTypeId).toUpperCase();
+            const payload = CanonicalIdentitySerializer.serializeIdentityPayload([
+                ['resourceType', normRes],
+                ['variant', variantName],
+                ['grade', gradeTier]
+            ]);
+            const hash = this.compute64BitHash(payload).substring(0, 10);
+            return `SPEC:${normRes}_${hash}`;
+        }
+
+        static generateLineageRootKey(occurrenceKey, originKey) {
+            const payload = CanonicalIdentitySerializer.serializeIdentityPayload([
+                ['occurrenceKey', occurrenceKey],
+                ['originKey', originKey]
+            ]);
+            const hash = this.compute64BitHash(payload).substring(0, 12);
+            return `LIN_ROOT:${hash}`;
+        }
+
+        static generateRelationshipKey(relType, subjectKey, objectKey) {
+            const payload = CanonicalIdentitySerializer.serializeIdentityPayload([
+                ['type', relType],
+                ['subject', subjectKey],
+                ['object', objectKey]
+            ]);
+            const hash = this.compute64BitHash(payload).substring(0, 10);
+            return `REL:${relType}:${hash}`;
+        }
+    }
+
+    // =========================================================================
+    // 04.03: IDENTITY BASIS CONTRACTS & FIELD MUTABILITY CLASSIFIERS
+    // =========================================================================
+
+    class IdentityBasisContract {
+        static get OCCURRENCE_BASIS() {
+            return Object.freeze({
+                identityDefining: ['resourceTypeId', 'depositKey', 'originKey', 'occurrenceTier'],
+                relationships: ['ownerKey', 'operatorKey', 'locationNodeKey'],
+                mutableState: ['lifecyclePhase', 'resolutionMatrix'],
+                metadata: ['provenance', 'confidenceScore']
+            });
+        }
+
+        static get DEPOSIT_BASIS() {
+            return Object.freeze({
+                identityDefining: ['hostCountryIso3', 'depositRawName', 'geologicalType'],
+                relationships: ['locationNodeKey', 'containedOccurrenceKeys', 'associatedInfrastructureKeys'],
+                mutableState: ['resolutionStatus'],
+                metadata: ['provenance', 'depthProfileMinMeters', 'depthProfileMaxMeters', 'isOffshore']
+            });
+        }
+
+        static get ORIGIN_BASIS() {
+            return Object.freeze({
+                identityDefining: ['depositKey', 'genesisStatus', 'hostCountryIso3'],
+                relationships: [],
+                mutableState: [],
+                metadata: ['provenance', 'geologicalAgeEonEra', 'crustalTectonicTerrane', 'seismicZoneRiskIndex']
+            });
+        }
+
+        static isIdentityDefiningField(entityType, fieldName) {
+            const basis = this[`${entityType.toUpperCase()}_BASIS`];
+            return basis ? basis.identityDefining.includes(fieldName) : false;
+        }
+    }
+
+    // =========================================================================
+    // 04.04: CANONICAL RESOURCE TYPE IDENTITY ENGINE
+    // =========================================================================
+
+    class ResourceTypeIdentity {
+        constructor(params = {}) {
+            const rawId = params.resourceTypeId || params.resourceId || params.rawResourceId;
+            if (!rawId) {
+                throw new Error('[ResourceTypeIdentity Violation]: resourceTypeId is strictly required.');
+            }
+
+            // IMMUTABLE IDENTITY CORE
+            this.resourceTypeId = DeterministicKeyEngine.normalizeToken(rawId).toUpperCase();
+            this.identityKey = params.identityKey || DeterministicKeyEngine.generateResourceTypeKey(this.resourceTypeId);
+            this.canonicalName = params.canonicalName || params.name || this.resourceTypeId;
+            this.standardSymbol = params.standardSymbol || params.symbol || this.canonicalName;
+            
+            // STRICT DIMENSIONAL CONTRACT (Zero Unit Guessing)
+            this.declaredDimension = params.declaredDimension || params.dimension || 'UNKNOWN';
+            this.declaredStandardUnit = params.declaredStandardUnit || params.unit || 'UNKNOWN_UNIT';
+            
+            this.physicalCategory = params.physicalCategory || params.category || ResourcePhysicalCategory.UNKNOWN_PHYSICAL_CATEGORY;
+            this.casRegistryNumber = params.casRegistryNumber || null;
+            this.unHarmonizedSystemCode = params.unHarmonizedSystemCode || null;
+            this.criticalityClassification = params.criticalityClassification || params.strategicImportance || 'UNKNOWN';
+            this.substitutabilityIndex = typeof params.substitutabilityIndex === 'number' ? params.substitutabilityIndex : null;
+            this.recyclabilityPotentialTier = params.recyclabilityPotentialTier || 'UNKNOWN';
+            
+            const rawAliases = Array.isArray(params.aliases) ? params.aliases : [];
+            this.aliases = Array.from(new Set([
+                this.resourceTypeId.toLowerCase(),
+                this.canonicalName.toLowerCase(),
+                ...rawAliases.map(a => DeterministicKeyEngine.normalizeToken(a))
+            ])).sort();
+            
+            this.provenance = params.provenance || { sourceSubsystem: 'WORLD_KNOWLEDGE_COMPILER', timestamp: 0 };
+            this.isCanonical = true;
+        }
+
+        matchesIdentifier(candidateStr) {
+            if (!candidateStr || typeof candidateStr !== 'string') return false;
+            const norm = DeterministicKeyEngine.normalizeToken(candidateStr);
+            return this.resourceTypeId.toLowerCase() === norm ||
+                   this.standardSymbol.toLowerCase() === norm ||
+                   this.aliases.includes(norm);
+        }
+
+        clone() {
+            return new ResourceTypeIdentity({
+                identityKey: this.identityKey,
+                resourceTypeId: this.resourceTypeId,
+                canonicalName: this.canonicalName,
+                standardSymbol: this.standardSymbol,
+                declaredDimension: this.declaredDimension,
+                declaredStandardUnit: this.declaredStandardUnit,
+                physicalCategory: this.physicalCategory,
+                casRegistryNumber: this.casRegistryNumber,
+                unHarmonizedSystemCode: this.unHarmonizedSystemCode,
+                criticalityClassification: this.criticalityClassification,
+                substitutabilityIndex: this.substitutabilityIndex,
+                recyclabilityPotentialTier: this.recyclabilityPotentialTier,
+                aliases: [...this.aliases],
+                provenance: JSON.parse(JSON.stringify(this.provenance))
+            });
+        }
+
+        toJSON() {
+            return {
+                identityKey: this.identityKey,
+                resourceTypeId: this.resourceTypeId,
+                canonicalName: this.canonicalName,
+                standardSymbol: this.standardSymbol,
+                declaredDimension: this.declaredDimension,
+                declaredStandardUnit: this.declaredStandardUnit,
+                physicalCategory: this.physicalCategory,
+                casRegistryNumber: this.casRegistryNumber,
+                unHarmonizedSystemCode: this.unHarmonizedSystemCode,
+                criticalityClassification: this.criticalityClassification,
+                substitutabilityIndex: this.substitutabilityIndex,
+                recyclabilityPotentialTier: this.recyclabilityPotentialTier,
+                aliases: this.aliases,
+                provenance: this.provenance
+            };
+        }
+    }
+
+    // =========================================================================
+    // 04.05: GEOLOGICAL DEPOSIT IDENTITY ENGINE
+    // =========================================================================
+
+    class GeologicalDepositIdentity {
+        constructor(params = {}) {
+            this.hostCountryIso3 = DeterministicKeyEngine.normalizeToken(params.hostCountryIso3 || params.hostCountryId || 'GLOBAL').toUpperCase();
+            this.depositRawName = params.depositRawName || params.canonicalName || 'UNNAMED_GEOLOGICAL_DEPOSIT';
+            this.geologicalType = params.geologicalType || DepositTypeClassification.UNKNOWN_GEOLOGICAL;
+
+            // IMMUTABLE IDENTITY CORE
+            this.depositKey = params.depositKey || DeterministicKeyEngine.generateDepositKey(
+                this.hostCountryIso3, 
+                this.depositRawName, 
+                params.disambiguator || ''
+            );
+
+            this.canonicalName = params.canonicalName || this.depositRawName;
+            
+            // RELATIONSHIPS
+            this.locationNodeKey = params.locationNodeKey || params.locationIdentityKey || null;
+            this.containedOccurrenceKeys = new Set(Array.isArray(params.containedOccurrenceKeys) ? params.containedOccurrenceKeys : []);
+            this.associatedInfrastructureKeys = new Set(Array.isArray(params.associatedInfrastructureKeys) ? params.associatedInfrastructureKeys : []);
+            
+            // DESCRIPTIVE METADATA
+            this.depthProfileMinMeters = typeof params.depthProfileMinMeters === 'number' ? params.depthProfileMinMeters : null;
+            this.depthProfileMaxMeters = typeof params.depthProfileMaxMeters === 'number' ? params.depthProfileMaxMeters : null;
+            this.isOffshore = Boolean(params.isOffshore);
+            this.bathymetryDepthMeters = typeof params.bathymetryDepthMeters === 'number' ? params.bathymetryDepthMeters : null;
+            
+            // RESOLUTION STATE
+            this.resolutionStatus = params.resolutionStatus || IdentityResolutionStatus.UNRESOLVED;
+            this.provenance = params.provenance || { sourceSubsystem: 'GEOLOGICAL_CADASTRAL_REGISTRY', timestamp: 0 };
+        }
+
+        addOccurrence(occurrenceKey) {
+            if (occurrenceKey && typeof occurrenceKey === 'string') {
+                this.containedOccurrenceKeys.add(occurrenceKey);
+            }
+        }
+
+        addInfrastructureRef(infraKey) {
+            if (infraKey && typeof infraKey === 'string') {
+                this.associatedInfrastructureKeys.add(infraKey);
+            }
+        }
+
+        bindLocation(locationKey) {
+            this.locationNodeKey = locationKey;
+        }
+
+        clone() {
+            return new GeologicalDepositIdentity({
+                depositKey: this.depositKey,
+                hostCountryIso3: this.hostCountryIso3,
+                depositRawName: this.depositRawName,
+                canonicalName: this.canonicalName,
+                geologicalType: this.geologicalType,
+                locationNodeKey: this.locationNodeKey,
+                depthProfileMinMeters: this.depthProfileMinMeters,
+                depthProfileMaxMeters: this.depthProfileMaxMeters,
+                isOffshore: this.isOffshore,
+                bathymetryDepthMeters: this.bathymetryDepthMeters,
+                containedOccurrenceKeys: Array.from(this.containedOccurrenceKeys),
+                associatedInfrastructureKeys: Array.from(this.associatedInfrastructureKeys),
+                resolutionStatus: this.resolutionStatus,
+                provenance: JSON.parse(JSON.stringify(this.provenance))
+            });
+        }
+
+        toJSON() {
+            return {
+                depositKey: this.depositKey,
+                hostCountryIso3: this.hostCountryIso3,
+                depositRawName: this.depositRawName,
+                canonicalName: this.canonicalName,
+                geologicalType: this.geologicalType,
+                locationNodeKey: this.locationNodeKey,
+                depthProfileMinMeters: this.depthProfileMinMeters,
+                depthProfileMaxMeters: this.depthProfileMaxMeters,
+                isOffshore: this.isOffshore,
+                bathymetryDepthMeters: this.bathymetryDepthMeters,
+                containedOccurrenceKeys: Array.from(this.containedOccurrenceKeys).sort(),
+                associatedInfrastructureKeys: Array.from(this.associatedInfrastructureKeys).sort(),
+                resolutionStatus: this.resolutionStatus,
+                provenance: this.provenance
+            };
+        }
+    }
+
+    // =========================================================================
+    // 04.06: PHYSICAL ORIGIN & GENESIS ANCHOR ENGINE
+    // =========================================================================
+
+    class ResourceOriginIdentity {
+        constructor(params = {}) {
+            if (!params.depositKey) {
+                throw new Error('[ResourceOriginIdentity Violation]: depositKey is strictly required.');
+            }
+
+            this.depositKey = params.depositKey;
+            this.genesisStatus = params.genesisStatus || OriginGenesisStatus.NATURAL_CRUSTAL_IN_SITU;
+            this.hostCountryIso3 = DeterministicKeyEngine.normalizeToken(params.hostCountryIso3 || params.hostCountryId || 'GLOBAL').toUpperCase();
+
+            // IMMUTABLE IDENTITY CORE
+            this.originKey = params.originKey || DeterministicKeyEngine.generateOriginKey(this.depositKey, this.genesisStatus);
+            
+            // GEOLOGICAL CONTEXT METADATA
+            this.geologicalAgeEonEra = params.geologicalAgeEonEra || 'UNKNOWN_AGE';
+            this.crustalTectonicTerrane = params.crustalTectonicTerrane || 'UNKNOWN_TERRANE';
+            this.environmentalBiomeContext = params.environmentalBiomeContext || 'UNKNOWN_BIOME';
+            this.seismicZoneRiskIndex = typeof params.seismicZoneRiskIndex === 'number' ? params.seismicZoneRiskIndex : null;
+            this.watershedBasinIdentifier = params.watershedBasinIdentifier || null;
+
+            this.provenanceAnchorHash = DeterministicKeyEngine.compute64BitHash(JSON.stringify({
+                depositKey: this.depositKey,
+                genesisStatus: this.genesisStatus,
+                hostCountryIso3: this.hostCountryIso3,
+                terrane: this.crustalTectonicTerrane
+            }));
+
+            this.provenance = params.provenance || { sourceSubsystem: 'ORIGIN_GENESIS_RESOLVER', timestamp: 0 };
+        }
+
+        clone() {
+            return new ResourceOriginIdentity({
+                originKey: this.originKey,
+                depositKey: this.depositKey,
+                genesisStatus: this.genesisStatus,
+                hostCountryIso3: this.hostCountryIso3,
+                geologicalAgeEonEra: this.geologicalAgeEonEra,
+                crustalTectonicTerrane: this.crustalTectonicTerrane,
+                environmentalBiomeContext: this.environmentalBiomeContext,
+                seismicZoneRiskIndex: this.seismicZoneRiskIndex,
+                watershedBasinIdentifier: this.watershedBasinIdentifier,
+                provenance: JSON.parse(JSON.stringify(this.provenance))
+            });
+        }
+
+        toJSON() {
+            return {
+                originKey: this.originKey,
+                depositKey: this.depositKey,
+                genesisStatus: this.genesisStatus,
+                hostCountryIso3: this.hostCountryIso3,
+                geologicalAgeEonEra: this.geologicalAgeEonEra,
+                crustalTectonicTerrane: this.crustalTectonicTerrane,
+                environmentalBiomeContext: this.environmentalBiomeContext,
+                seismicZoneRiskIndex: this.seismicZoneRiskIndex,
+                watershedBasinIdentifier: this.watershedBasinIdentifier,
+                provenanceAnchorHash: this.provenanceAnchorHash,
+                provenance: this.provenance
+            };
+        }
+    }
+
+    // =========================================================================
+    // 04.07: RESOURCE OCCURRENCE IDENTITY ENGINE
+    // =========================================================================
+
+    class ResourceOccurrenceIdentity {
+        constructor(params = {}) {
+            if (!params.resourceTypeId || !params.depositKey) {
+                throw new Error('[ResourceOccurrenceIdentity Violation]: resourceTypeId and depositKey are mandatory.');
+            }
+
+            // IMMUTABLE IDENTITY CORE
+            this.resourceTypeId = DeterministicKeyEngine.normalizeToken(params.resourceTypeId).toUpperCase();
+            this.resourceTypeKey = DeterministicKeyEngine.generateResourceTypeKey(this.resourceTypeId);
+            this.depositKey = params.depositKey;
+            this.occurrenceTier = params.occurrenceTier || ResourceOccurrenceTier.TIER_D_UNVERIFIED_OCCURRENCE;
+            this.originKey = params.originKey || null;
+
+            this.occurrenceKey = params.occurrenceKey || DeterministicKeyEngine.generateOccurrenceKey(
+                this.resourceTypeId, 
+                this.depositKey, 
+                params.qualifier || this.occurrenceTier
+            );
+
+            // SPECIFICATION & LINEAGE BINDINGS
+            this.variantSpecKey = params.variantSpecKey || null;
+            this.gradeSpecKey = params.gradeSpecKey || null;
+            this.lineageRootKey = params.lineageRootKey || null;
+
+            // RELATIONSHIPS
+            this.ownerKey = params.ownerKey || null;
+            this.operatorKey = params.operatorKey || null;
+            this.locationNodeKey = params.locationNodeKey || null;
+            
+            // CO-PRODUCT ASSOCIATIONS
+            this.associatedCoProducts = Array.isArray(params.associatedCoProducts) 
+                ? params.associatedCoProducts.map(c => DeterministicKeyEngine.normalizeToken(c).toUpperCase()).sort()
+                : [];
+            this.associatedByProducts = Array.isArray(params.associatedByProducts)
+                ? params.associatedByProducts.map(b => DeterministicKeyEngine.normalizeToken(b).toUpperCase()).sort()
+                : [];
+
+            // STATE & FORENSIC VIEWS
+            this.isPrimaryEndowment = Boolean(params.isPrimaryEndowment);
+            this.isDeepCrustalTarget = Boolean(params.isDeepCrustalTarget);
+            this.isOffshoreSeabedTarget = Boolean(params.isOffshoreSeabedTarget);
+            this.confidenceScore = typeof params.confidenceScore === 'number' ? params.confidenceScore : 0.5;
+            
+            this.resolutionMatrix = params.resolutionMatrix instanceof ComponentResolutionMatrix 
+                ? params.resolutionMatrix 
+                : new ComponentResolutionMatrix(params.resolutionMatrix || {
+                    resourceType: IdentityResolutionStatus.RESOLVED,
+                    deposit: IdentityResolutionStatus.RESOLVED,
+                    origin: this.originKey ? IdentityResolutionStatus.RESOLVED : IdentityResolutionStatus.UNRESOLVED
+                });
+
+            this.provenance = params.provenance || { sourceSubsystem: 'OCCURRENCE_RESOLVER', timestamp: 0 };
+        }
+
+        bindLineageRoot(rootKey) {
+            this.lineageRootKey = rootKey;
+        }
+
+        bindOrigin(originKey) {
+            this.originKey = originKey;
+            this.resolutionMatrix.origin = IdentityResolutionStatus.RESOLVED;
+        }
+
+        bindVariantSpec(specKey) {
+            this.variantSpecKey = specKey;
+            this.resolutionMatrix.variant = IdentityResolutionStatus.RESOLVED;
+        }
+
+        bindOwner(ownerKey) {
+            this.ownerKey = ownerKey;
+            this.resolutionMatrix.owner = IdentityResolutionStatus.RESOLVED;
+        }
+
+        bindOperator(operatorKey) {
+            this.operatorKey = operatorKey;
+            this.resolutionMatrix.operator = IdentityResolutionStatus.RESOLVED;
+        }
+
+        bindLocation(locationKey) {
+            this.locationNodeKey = locationKey;
+            this.resolutionMatrix.location = IdentityResolutionStatus.RESOLVED;
+        }
+
+        clone() {
+            return new ResourceOccurrenceIdentity({
+                occurrenceKey: this.occurrenceKey,
+                resourceTypeId: this.resourceTypeId,
+                depositKey: this.depositKey,
+                originKey: this.originKey,
+                occurrenceTier: this.occurrenceTier,
+                variantSpecKey: this.variantSpecKey,
+                gradeSpecKey: this.gradeSpecKey,
+                lineageRootKey: this.lineageRootKey,
+                ownerKey: this.ownerKey,
+                operatorKey: this.operatorKey,
+                locationNodeKey: this.locationNodeKey,
+                associatedCoProducts: [...this.associatedCoProducts],
+                associatedByProducts: [...this.associatedByProducts],
+                isPrimaryEndowment: this.isPrimaryEndowment,
+                isDeepCrustalTarget: this.isDeepCrustalTarget,
+                isOffshoreSeabedTarget: this.isOffshoreSeabedTarget,
+                confidenceScore: this.confidenceScore,
+                resolutionMatrix: this.resolutionMatrix.toJSON(),
+                provenance: JSON.parse(JSON.stringify(this.provenance))
+            });
+        }
+
+        toJSON() {
+            return {
+                occurrenceKey: this.occurrenceKey,
+                resourceTypeKey: this.resourceTypeKey,
+                resourceTypeId: this.resourceTypeId,
+                depositKey: this.depositKey,
+                originKey: this.originKey,
+                occurrenceTier: this.occurrenceTier,
+                variantSpecKey: this.variantSpecKey,
+                gradeSpecKey: this.gradeSpecKey,
+                lineageRootKey: this.lineageRootKey,
+                ownerKey: this.ownerKey,
+                operatorKey: this.operatorKey,
+                locationNodeKey: this.locationNodeKey,
+                associatedCoProducts: this.associatedCoProducts,
+                associatedByProducts: this.associatedByProducts,
+                isPrimaryEndowment: this.isPrimaryEndowment,
+                isDeepCrustalTarget: this.isDeepCrustalTarget,
+                isOffshoreSeabedTarget: this.isOffshoreSeabedTarget,
+                confidenceScore: this.confidenceScore,
+                resolution: this.resolutionMatrix.toJSON(),
+                provenance: this.provenance
+            };
+        }
+    }
+
+    // =========================================================================
+    // 04.08: MULTI-LAYER OWNERSHIP IDENTITY & STAKEHOLDER ENGINE
+    // =========================================================================
+
+    class OwnershipStakeHolder {
+        constructor(params = {}) {
+            this.holderEntityId = DeterministicKeyEngine.normalizeToken(params.holderEntityId || 'UNKNOWN_HOLDER').toUpperCase();
+            this.holderCanonicalName = params.holderCanonicalName || this.holderEntityId;
+            this.equityPercentage = typeof params.equityPercentage === 'number' ? Math.max(0, Math.min(100, params.equityPercentage)) : 100.0;
+            this.isStateEntity = Boolean(params.isStateEntity);
+            this.isForeignEntity = Boolean(params.isForeignEntity);
+            this.domicileCountryIso3 = DeterministicKeyEngine.normalizeToken(params.domicileCountryIso3 || 'GLOBAL').toUpperCase();
+        }
+
+        toJSON() {
+            return {
+                holderEntityId: this.holderEntityId,
+                holderCanonicalName: this.holderCanonicalName,
+                equityPercentage: this.equityPercentage,
+                isStateEntity: this.isStateEntity,
+                isForeignEntity: this.isForeignEntity,
+                domicileCountryIso3: this.domicileCountryIso3
+            };
+        }
+    }
+
+    class OwnershipIdentity {
+        constructor(params = {}) {
+            this.legalOwnerId = DeterministicKeyEngine.normalizeToken(params.legalOwnerId || 'UNKNOWN_LEGAL_OWNER').toUpperCase();
+            this.sovereignJurisdictionIso3 = DeterministicKeyEngine.normalizeToken(params.sovereignJurisdictionIso3 || params.jurisdiction || 'GLOBAL').toUpperCase();
+            this.controlModel = params.controlModel || OwnershipControlModel.UNKNOWN_CONTROL;
+            
+            // IMMUTABLE IDENTITY CORE
+            this.ownershipKey = params.ownershipKey || DeterministicKeyEngine.generateOwnershipKey(
+                this.legalOwnerId, 
+                this.sovereignJurisdictionIso3, 
+                this.controlModel
+            );
+
+            this.stateParticipationRatio = typeof params.stateParticipationRatio === 'number' 
+                ? Math.max(0, Math.min(1, params.stateParticipationRatio)) 
+                : (this.controlModel === OwnershipControlModel.SOVEREIGN_EXCLUSIVE_STATE ? 1.0 : 0.0);
+
+            this.equityHolders = Array.isArray(params.equityHolders) 
+                ? params.equityHolders.map(h => h instanceof OwnershipStakeHolder ? h : new OwnershipStakeHolder(h))
+                : [new OwnershipStakeHolder({ holderEntityId: this.legalOwnerId, equityPercentage: 100.0 })];
+
+            this.concessionAgreementExpiryTick = typeof params.concessionAgreementExpiryTick === 'number' ? params.concessionAgreementExpiryTick : null;
+            this.isDisputedSovereignty = Boolean(params.isDisputedSovereignty);
+            this.disputeContextSummary = params.disputeContextSummary || null;
+            this.provenance = params.provenance || { sourceSubsystem: 'MINISTRY_OF_MINES_CADASTRAL', timestamp: 0 };
+        }
+
+        clone() {
+            return new OwnershipIdentity({
+                ownershipKey: this.ownershipKey,
+                legalOwnerId: this.legalOwnerId,
+                sovereignJurisdictionIso3: this.sovereignJurisdictionIso3,
+                controlModel: this.controlModel,
+                stateParticipationRatio: this.stateParticipationRatio,
+                equityHolders: this.equityHolders.map(h => new OwnershipStakeHolder(h)),
+                concessionAgreementExpiryTick: this.concessionAgreementExpiryTick,
+                isDisputedSovereignty: this.isDisputedSovereignty,
+                disputeContextSummary: this.disputeContextSummary,
+                provenance: JSON.parse(JSON.stringify(this.provenance))
+            });
+        }
+
+        toJSON() {
+            return {
+                ownershipKey: this.ownershipKey,
+                legalOwnerId: this.legalOwnerId,
+                sovereignJurisdictionIso3: this.sovereignJurisdictionIso3,
+                controlModel: this.controlModel,
+                stateParticipationRatio: this.stateParticipationRatio,
+                equityHolders: this.equityHolders.map(h => h.toJSON()),
+                concessionAgreementExpiryTick: this.concessionAgreementExpiryTick,
+                isDisputedSovereignty: this.isDisputedSovereignty,
+                disputeContextSummary: this.disputeContextSummary,
+                provenance: this.provenance
+            };
+        }
+    }
+
+    // =========================================================================
+    // 04.09: INDUSTRIAL OPERATOR & CONCESSION TENANCY ENGINE
+    // =========================================================================
+
+    class OperatorIdentity {
+        constructor(params = {}) {
+            this.operatingCompanyId = DeterministicKeyEngine.normalizeToken(params.operatingCompanyId || 'UNKNOWN_OPERATOR').toUpperCase();
+            this.operatingSiteOrCountry = DeterministicKeyEngine.normalizeToken(params.operatingSiteOrCountry || params.operatingCountry || 'GLOBAL').toUpperCase();
+            
+            // IMMUTABLE IDENTITY CORE
+            this.operatorKey = params.operatorKey || DeterministicKeyEngine.generateOperatorKey(
+                this.operatingCompanyId, 
+                this.operatingSiteOrCountry
+            );
+
+            this.canonicalOperatorName = params.canonicalOperatorName || this.operatingCompanyId;
+            this.domicileCountryIso3 = DeterministicKeyEngine.normalizeToken(params.domicileCountryIso3 || 'GLOBAL').toUpperCase();
+            this.operationalScope = params.operationalScope || 'SURFACE_AND_UNDERGROUND_MINING';
+            this.miningLeaseLicenseCode = params.miningLeaseLicenseCode || 'UNVERIFIED_LICENSE_CODE';
+            this.environmentalPermitStatus = params.environmentalPermitStatus || 'UNKNOWN';
+            this.lastSafetyComplianceAuditTick = typeof params.lastSafetyComplianceAuditTick === 'number' ? params.lastSafetyComplianceAuditTick : null;
+            this.provenance = params.provenance || { sourceSubsystem: 'INDUSTRIAL_OPERATOR_CADASTRAL', timestamp: 0 };
+        }
+
+        clone() {
+            return new OperatorIdentity({
+                operatorKey: this.operatorKey,
+                operatingCompanyId: this.operatingCompanyId,
+                operatingSiteOrCountry: this.operatingSiteOrCountry,
+                canonicalOperatorName: this.canonicalOperatorName,
+                domicileCountryIso3: this.domicileCountryIso3,
+                operationalScope: this.operationalScope,
+                miningLeaseLicenseCode: this.miningLeaseLicenseCode,
+                environmentalPermitStatus: this.environmentalPermitStatus,
+                lastSafetyComplianceAuditTick: this.lastSafetyComplianceAuditTick,
+                provenance: JSON.parse(JSON.stringify(this.provenance))
+            });
+        }
+
+        toJSON() {
+            return {
+                operatorKey: this.operatorKey,
+                operatingCompanyId: this.operatingCompanyId,
+                operatingSiteOrCountry: this.operatingSiteOrCountry,
+                canonicalOperatorName: this.canonicalOperatorName,
+                domicileCountryIso3: this.domicileCountryIso3,
+                operationalScope: this.operationalScope,
+                miningLeaseLicenseCode: this.miningLeaseLicenseCode,
+                environmentalPermitStatus: this.environmentalPermitStatus,
+                lastSafetyComplianceAuditTick: this.lastSafetyComplianceAuditTick,
+                provenance: this.provenance
+            };
+        }
+    }
+
+    // =========================================================================
+    // 04.10: HIERARCHICAL SPATIAL & LOCATION NODE ENGINE
+    // =========================================================================
+
+    class HierarchicalLocationIdentity {
+        constructor(params = {}) {
+            this.countryIso3 = DeterministicKeyEngine.normalizeToken(params.countryIso3 || params.countryId || 'GLOBAL').toUpperCase();
+            this.worldContinent = params.worldContinent || 'GLOBAL';
+            this.worldMacroRegion = params.worldMacroRegion || 'GLOBAL';
+            this.adminStateProvince = params.adminStateProvince || 'UNSPECIFIED_PROVINCE';
+            this.adminCountyDistrict = params.adminCountyDistrict || 'UNSPECIFIED_DISTRICT';
+            this.siteSpecificLocality = params.siteSpecificLocality || params.siteName || 'UNSPECIFIED_LOCALITY';
+
+            this.coordinates = {
+                lat: (typeof params.lat === 'number' && params.lat >= -90 && params.lat <= 90) ? params.lat : null,
+                lng: (typeof params.lng === 'number' && params.lng >= -180 && params.lng <= 180) ? params.lng : null
+            };
+
+            // IMMUTABLE IDENTITY CORE
+            this.locationNodeKey = params.locationNodeKey || params.locationIdentityKey || DeterministicKeyEngine.generateLocationKey(
+                this.countryIso3, 
+                this.adminStateProvince, 
+                this.siteSpecificLocality,
+                this.coordinates.lat,
+                this.coordinates.lng
+            );
+
+            this.elevationMetersAboveSea = typeof params.elevationMetersAboveSea === 'number' ? params.elevationMetersAboveSea : null;
+            this.spatialPrecisionRadiusKm = typeof params.spatialPrecisionRadiusKm === 'number' ? params.spatialPrecisionRadiusKm : null;
+            this.cadastralParcelBoundary = Array.isArray(params.cadastralParcelBoundary) ? [...params.cadastralParcelBoundary] : [];
+            this.parentLocationNodeKey = params.parentLocationNodeKey || null; // For hierarchical containment
+            this.provenance = params.provenance || { sourceSubsystem: 'GIS_GEODETIC_SURVEY', timestamp: 0 };
+        }
+
+        hasPointCoordinates() {
+            return this.coordinates.lat !== null && this.coordinates.lng !== null;
+        }
+
+        calculateBoundingBox() {
+            if (!this.cadastralParcelBoundary || this.cadastralParcelBoundary.length === 0) {
+                if (this.hasPointCoordinates()) {
+                    return {
+                        minLat: this.coordinates.lat,
+                        maxLat: this.coordinates.lat,
+                        minLng: this.coordinates.lng,
+                        maxLng: this.coordinates.lng
+                    };
+                }
+                return null;
+            }
+
+            let minLat = Infinity, maxLat = -Infinity, minLng = Infinity, maxLng = -Infinity;
+            this.cadastralParcelBoundary.forEach(pt => {
+                if (typeof pt.lat === 'number' && typeof pt.lng === 'number') {
+                    if (pt.lat < minLat) minLat = pt.lat;
+                    if (pt.lat > maxLat) maxLat = pt.lat;
+                    if (pt.lng < minLng) minLng = pt.lng;
+                    if (pt.lng > maxLng) maxLng = pt.lng;
+                }
+            });
+
+            return (minLat === Infinity) ? null : { minLat, maxLat, minLng, maxLng };
+        }
+
+        containsPoint(lat, lng) {
+            const bbox = this.calculateBoundingBox();
+            if (!bbox) return false;
+            return lat >= bbox.minLat && lat <= bbox.maxLat && lng >= bbox.minLng && lng <= bbox.maxLng;
+        }
+
+        clone() {
+            return new HierarchicalLocationIdentity({
+                locationNodeKey: this.locationNodeKey,
+                countryIso3: this.countryIso3,
+                worldContinent: this.worldContinent,
+                worldMacroRegion: this.worldMacroRegion,
+                adminStateProvince: this.adminStateProvince,
+                adminCountyDistrict: this.adminCountyDistrict,
+                siteSpecificLocality: this.siteSpecificLocality,
+                lat: this.coordinates.lat,
+                lng: this.coordinates.lng,
+                elevationMetersAboveSea: this.elevationMetersAboveSea,
+                spatialPrecisionRadiusKm: this.spatialPrecisionRadiusKm,
+                cadastralParcelBoundary: [...this.cadastralParcelBoundary],
+                parentLocationNodeKey: this.parentLocationNodeKey,
+                provenance: JSON.parse(JSON.stringify(this.provenance))
+            });
+        }
+
+        toJSON() {
+            return {
+                locationNodeKey: this.locationNodeKey,
+                countryIso3: this.countryIso3,
+                worldContinent: this.worldContinent,
+                worldMacroRegion: this.worldMacroRegion,
+                adminStateProvince: this.adminStateProvince,
+                adminCountyDistrict: this.adminCountyDistrict,
+                siteSpecificLocality: this.siteSpecificLocality,
+                coordinates: this.coordinates,
+                elevationMetersAboveSea: this.elevationMetersAboveSea,
+                spatialPrecisionRadiusKm: this.spatialPrecisionRadiusKm,
+                cadastralParcelBoundary: this.cadastralParcelBoundary,
+                parentLocationNodeKey: this.parentLocationNodeKey,
+                provenance: this.provenance
+            };
+        }
+    }
+
+    // =========================================================================
+    // 04.11: RESOURCE VARIANT, GRADE & METALLURGICAL ASSAY SPECIFIER
+    // =========================================================================
+
+    class ResourceVariantGradeSpec {
+        constructor(params = {}) {
+            if (!params.resourceTypeId) {
+                throw new Error('[ResourceVariantGradeSpec Violation]: resourceTypeId is required.');
+            }
+
+            this.resourceTypeId = DeterministicKeyEngine.normalizeToken(params.resourceTypeId).toUpperCase();
+            this.variantName = params.variantName || 'STANDARD_RUN_OF_MINE';
+            this.gradeTier = params.gradeTier || GradeClassificationTier.STANDARD_COMMERCIAL_GRADE;
+            
+            // IMMUTABLE IDENTITY CORE
+            this.specKey = params.specKey || DeterministicKeyEngine.generateVariantGradeSpecKey(
+                this.resourceTypeId, 
+                this.variantName, 
+                this.gradeTier
+            );
+
+            this.nominalConcentrationPurityRatio = typeof params.nominalConcentrationPurityRatio === 'number' 
+                ? Math.max(0, Math.min(1, params.nominalConcentrationPurityRatio)) 
+                : null;
+            
+            this.cutoffGradeRatio = typeof params.cutoffGradeRatio === 'number' ? params.cutoffGradeRatio : null;
+            this.moistureContentPercent = typeof params.moistureContentPercent === 'number' ? params.moistureContentPercent : null;
+            this.finesDistributionRatio = typeof params.finesDistributionRatio === 'number' ? params.finesDistributionRatio : null;
+            
+            // Deleterious penalty assays (e.g. As, P, S, Hg in ore assays)
+            this.deleteriousImpurityAssays = Array.isArray(params.deleteriousImpurityAssays) 
+                ? [...params.deleteriousImpurityAssays] 
+                : [];
+
+            this.metallurgicalRefractoryIndex = typeof params.metallurgicalRefractoryIndex === 'number' ? params.metallurgicalRefractoryIndex : 0.0;
+            this.provenance = params.provenance || { sourceSubsystem: 'LABORATORY_ASSAY_REGISTRY', timestamp: 0 };
+        }
+
+        clone() {
+            return new ResourceVariantGradeSpec({
+                specKey: this.specKey,
+                resourceTypeId: this.resourceTypeId,
+                variantName: this.variantName,
+                gradeTier: this.gradeTier,
+                nominalConcentrationPurityRatio: this.nominalConcentrationPurityRatio,
+                cutoffGradeRatio: this.cutoffGradeRatio,
+                moistureContentPercent: this.moistureContentPercent,
+                finesDistributionRatio: this.finesDistributionRatio,
+                deleteriousImpurityAssays: JSON.parse(JSON.stringify(this.deleteriousImpurityAssays)),
+                metallurgicalRefractoryIndex: this.metallurgicalRefractoryIndex,
+                provenance: JSON.parse(JSON.stringify(this.provenance))
+            });
+        }
+
+        toJSON() {
+            return {
+                specKey: this.specKey,
+                resourceTypeId: this.resourceTypeId,
+                variantName: this.variantName,
+                gradeTier: this.gradeTier,
+                nominalConcentrationPurityRatio: this.nominalConcentrationPurityRatio,
+                cutoffGradeRatio: this.cutoffGradeRatio,
+                moistureContentPercent: this.moistureContentPercent,
+                finesDistributionRatio: this.finesDistributionRatio,
+                deleteriousImpurityAssays: this.deleteriousImpurityAssays,
+                metallurgicalRefractoryIndex: this.metallurgicalRefractoryIndex,
+                provenance: this.provenance
+            };
+        }
+    }
+
+    // =========================================================================
+    // EXPORT MODULE 1 SCOPE
+    // =========================================================================
+
+    const Module1Scope = Object.freeze({
+        IdentityResolutionStatus,
+        UnknownSemanticState,
+        ResourceOccurrenceTier,
+        DepositTypeClassification,
+        OriginGenesisStatus,
+        OwnershipControlModel,
+        ResourcePhysicalCategory,
+        GradeClassificationTier,
+        ResourceLifecyclePhase,
+        CandidateDispositionState,
+        CollisionSeverity,
+        IdentityHealthStatus,
+        ErrorTaxonomy,
+        ComponentResolutionMatrix,
+        CanonicalIdentitySerializer,
+        DeterministicKeyEngine,
+        IdentityBasisContract,
+        ResourceTypeIdentity,
+        GeologicalDepositIdentity,
+        ResourceOriginIdentity,
+        ResourceOccurrenceIdentity,
+        OwnershipStakeHolder,
+        OwnershipIdentity,
+        OperatorIdentity,
+        HierarchicalLocationIdentity,
+        ResourceVariantGradeSpec
+    });
+
+    global.__GSRSK_P04_PART1__ = Module1Scope;
+
+})(typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : global));
+
+/**
+ * ============================================================================
+ * GSRSK — PART 04: RESOURCE IDENTITY ENGINE (MODULE 2 OF 2)
+ * ============================================================================
+ * Architecture Phase: 04 of 16
+ * Production Standard: GSRSK Canonical Identity Authority
+ *
+ * SUBSYSTEMS INCLUDED IN MODULE 2:
+ *   04.12 Resource Lifecycle Identity & FSM Transition Engine
+ *   04.13 Dual Identity Fingerprint Engine (Identity vs Resolution)
+ *   04.14 Hard Collision Arbiter & Conflict Logger (Bounded Ring Buffer)
+ *   04.15 Identity Alias Registry & Equivalence Ledger (Pure-Read DSU) [ERR-03 Fixed]
+ *   04.16 First-Class Identity Relationship Engine (Circular & Self-Ref Detector)
+ *   04.17 Lineage Root & Forward Traceability Tree
+ *   04.18 Data Foundation (Part 01) Provenance Bridge Engine
+ *   04.19 Candidate Resolution Trace & Disposition Ledger (Zero Silent Data Loss)
+ *   04.20 Master Resource Identity Registry (Three-Tier Storage & Semantic Digest)
+ *   04.21 Multi-Dimensional Inverted Identity Index Hub
+ *   04.22 Forensic Identity Diagnostics & Integrity Audit Engine
+ *   04.23 Systemic Identity Health Monitor & Quantitative Metrics Hub
+ *   04.24 State Checkpoint, Snapshot & Delta Serialization Engine
+ *   04.25 Boundary Hardcoding Firewall & Simulation Guard (Deep Map/Set Scan)
+ *   04.26 Master Atomic Identity Compiler Pipeline [ERR-01, ERR-02, RSK-02 Fixed]
+ *   04.27 Public Adapter, Deep Freeze & Master Assembly
+ * ============================================================================
+ */
+
+(function(global) {
+    'use strict';
+
+    // Ingest Module 1 Scope
+    const Part1 = global.__GSRSK_P04_PART1__;
+    if (!Part1) {
+        throw new Error('[GSRSK PART 04 FATAL]: Module 1 must be loaded before Module 2.');
+    }
+
+    const {
+        IdentityResolutionStatus,
+        UnknownSemanticState,
+        ResourceOccurrenceTier,
+        DepositTypeClassification,
+        OriginGenesisStatus,
+        OwnershipControlModel,
+        ResourcePhysicalCategory,
+        GradeClassificationTier,
+        ResourceLifecyclePhase,
+        CandidateDispositionState,
+        CollisionSeverity,
+        IdentityHealthStatus,
+        ErrorTaxonomy,
+        ComponentResolutionMatrix,
+        CanonicalIdentitySerializer,
+        DeterministicKeyEngine,
+        IdentityBasisContract,
+        ResourceTypeIdentity,
+        GeologicalDepositIdentity,
+        ResourceOriginIdentity,
+        ResourceOccurrenceIdentity,
+        OwnershipStakeHolder,
+        OwnershipIdentity,
+        OperatorIdentity,
+        HierarchicalLocationIdentity,
+        ResourceVariantGradeSpec
+    } = Part1;
+
+    // =========================================================================
+    // 04.12: RESOURCE LIFECYCLE IDENTITY & FSM TRANSITION ENGINE
+    // =========================================================================
+
+    class LifecycleTransitionGuard {
+        static get VALID_TRANSITIONS() {
+            return Object.freeze({
+                [ResourceLifecyclePhase.UNDISCOVERED_THEORETICAL]: [
+                    ResourceLifecyclePhase.DISCOVERED_UNASSESSED,
+                    ResourceLifecyclePhase.UNKNOWN_LIFECYCLE
+                ],
+                [ResourceLifecyclePhase.DISCOVERED_UNASSESSED]: [
+                    ResourceLifecyclePhase.EXPLORATION_DELINEATED,
+                    ResourceLifecyclePhase.RESOURCE_ASSESSED,
+                    ResourceLifecyclePhase.ABANDONED_UNREMEDIATED
+                ],
+                [ResourceLifecyclePhase.EXPLORATION_DELINEATED]: [
+                    ResourceLifecyclePhase.RESOURCE_ASSESSED,
+                    ResourceLifecyclePhase.FEASIBILITY_PERMITTED,
+                    ResourceLifecyclePhase.ABANDONED_UNREMEDIATED
+                ],
+                [ResourceLifecyclePhase.RESOURCE_ASSESSED]: [
+                    ResourceLifecyclePhase.FEASIBILITY_PERMITTED,
+                    ResourceLifecyclePhase.CAPEX_CONSTRUCTION,
+                    ResourceLifecyclePhase.ABANDONED_UNREMEDIATED
+                ],
+                [ResourceLifecyclePhase.FEASIBILITY_PERMITTED]: [
+                    ResourceLifecyclePhase.CAPEX_CONSTRUCTION,
+                    ResourceLifecyclePhase.COMMISSIONED_OPERATIONAL,
+                    ResourceLifecyclePhase.PRODUCTION_CURTAILED_SUSPENDED,
+                    ResourceLifecyclePhase.ABANDONED_UNREMEDIATED
+                ],
+                [ResourceLifecyclePhase.CAPEX_CONSTRUCTION]: [
+                    ResourceLifecyclePhase.COMMISSIONED_OPERATIONAL,
+                    ResourceLifecyclePhase.COMMERCIAL_EXTRACTION_ACTIVE,
+                    ResourceLifecyclePhase.PRODUCTION_CURTAILED_SUSPENDED,
+                    ResourceLifecyclePhase.ABANDONED_UNREMEDIATED
+                ],
+                [ResourceLifecyclePhase.COMMISSIONED_OPERATIONAL]: [
+                    ResourceLifecyclePhase.COMMERCIAL_EXTRACTION_ACTIVE,
+                    ResourceLifecyclePhase.PRODUCTION_CURTAILED_SUSPENDED,
+                    ResourceLifecyclePhase.RESERVE_DEPLETING
+                ],
+                [ResourceLifecyclePhase.COMMERCIAL_EXTRACTION_ACTIVE]: [
+                    ResourceLifecyclePhase.PRODUCTION_CURTAILED_SUSPENDED,
+                    ResourceLifecyclePhase.RESERVE_DEPLETING,
+                    ResourceLifecyclePhase.EXHAUSTED_DEPLETED
+                ],
+                [ResourceLifecyclePhase.PRODUCTION_CURTAILED_SUSPENDED]: [
+                    ResourceLifecyclePhase.COMMERCIAL_EXTRACTION_ACTIVE,
+                    ResourceLifecyclePhase.RESERVE_DEPLETING,
+                    ResourceLifecyclePhase.DECOMMISSIONED_RECLAIMED,
+                    ResourceLifecyclePhase.ABANDONED_UNREMEDIATED
+                ],
+                [ResourceLifecyclePhase.RESERVE_DEPLETING]: [
+                    ResourceLifecyclePhase.PRODUCTION_CURTAILED_SUSPENDED,
+                    ResourceLifecyclePhase.EXHAUSTED_DEPLETED,
+                    ResourceLifecyclePhase.DECOMMISSIONED_RECLAIMED
+                ],
+                [ResourceLifecyclePhase.EXHAUSTED_DEPLETED]: [
+                    ResourceLifecyclePhase.DECOMMISSIONED_RECLAIMED,
+                    ResourceLifecyclePhase.ABANDONED_UNREMEDIATED
+                ],
+                [ResourceLifecyclePhase.DECOMMISSIONED_RECLAIMED]: [],
+                [ResourceLifecyclePhase.ABANDONED_UNREMEDIATED]: [
+                    ResourceLifecyclePhase.EXPLORATION_DELINEATED,
+                    ResourceLifecyclePhase.DECOMMISSIONED_RECLAIMED
+                ],
+                [ResourceLifecyclePhase.UNKNOWN_LIFECYCLE]: Object.values(ResourceLifecyclePhase)
+            });
+        }
+
+        static canTransition(fromPhase, toPhase) {
+            if (fromPhase === toPhase) return true;
+            const allowed = this.VALID_TRANSITIONS[fromPhase];
+            return Array.isArray(allowed) && allowed.includes(toPhase);
+        }
+    }
+
+    class ResourceLifecycleRecord {
+        constructor(params = {}) {
+            this.occurrenceKey = params.occurrenceKey;
+            if (!this.occurrenceKey) {
+                throw new Error('[ResourceLifecycleRecord Violation]: occurrenceKey is required.');
+            }
+
+            this.currentPhase = params.currentPhase || ResourceLifecyclePhase.UNKNOWN_LIFECYCLE;
+            this.phaseAssignedTick = typeof params.phaseAssignedTick === 'number' ? params.phaseAssignedTick : 0;
+            this.isCurrentlyExtractable = [
+                ResourceLifecyclePhase.COMMISSIONED_OPERATIONAL,
+                ResourceLifecyclePhase.COMMERCIAL_EXTRACTION_ACTIVE,
+                ResourceLifecyclePhase.RESERVE_DEPLETING
+            ].includes(this.currentPhase);
+
+            this.history = Array.isArray(params.history) ? [...params.history] : [{
+                fromPhase: null,
+                phase: this.currentPhase,
+                tick: this.phaseAssignedTick,
+                rationale: params.initialRationale || 'INITIAL_REGISTRATION',
+                timestamp: 0
+            }];
+
+            this.provenance = params.provenance || { sourceSubsystem: 'LIFECYCLE_FSM_ENGINE', timestamp: 0 };
+        }
+
+        transitionTo(newPhase, tick = 0, rationale = 'OPERATIONAL_AUDIT') {
+            if (!LifecycleTransitionGuard.canTransition(this.currentPhase, newPhase)) {
+                throw new Error(`[LifecycleTransition Violation]: Invalid transition from ${this.currentPhase} to ${newPhase} for occurrence ${this.occurrenceKey}`);
+            }
+
+            this.history.push({
+                fromPhase: this.currentPhase,
+                phase: newPhase,
+                tick: tick,
+                rationale: rationale,
+                timestamp: 0
+            });
+
+            this.currentPhase = newPhase;
+            this.phaseAssignedTick = tick;
+            this.isCurrentlyExtractable = [
+                ResourceLifecyclePhase.COMMISSIONED_OPERATIONAL,
+                ResourceLifecyclePhase.COMMERCIAL_EXTRACTION_ACTIVE,
+                ResourceLifecyclePhase.RESERVE_DEPLETING
+            ].includes(newPhase);
+        }
+
+        clone() {
+            return new ResourceLifecycleRecord({
+                occurrenceKey: this.occurrenceKey,
+                currentPhase: this.currentPhase,
+                phaseAssignedTick: this.phaseAssignedTick,
+                history: JSON.parse(JSON.stringify(this.history)),
+                provenance: JSON.parse(JSON.stringify(this.provenance))
+            });
+        }
+
+        toJSON() {
+            return {
+                occurrenceKey: this.occurrenceKey,
+                currentPhase: this.currentPhase,
+                phaseAssignedTick: this.phaseAssignedTick,
+                isCurrentlyExtractable: this.isCurrentlyExtractable,
+                history: this.history,
+                provenance: this.provenance
+            };
+        }
+    }
+
+    // =========================================================================
+    // 04.13: DUAL IDENTITY FINGERPRINT ENGINE
+    // =========================================================================
+
+    class IdentityFingerprintEngine {
+        /**
+         * Pure Immutable Identity Basis Fingerprint (Determines physical uniqueness)
+         */
+        static computeOccurrenceIdentityFingerprint(occurrence) {
+            const signature = {
+                res: occurrence.resourceTypeKey,
+                dep: occurrence.depositKey,
+                org: occurrence.originKey,
+                tier: occurrence.occurrenceTier
+            };
+            const serialized = CanonicalIdentitySerializer.serializeValue(signature);
+            return `FP_ID_OCC_${DeterministicKeyEngine.compute64BitHash(serialized)}`;
+        }
+
+        /**
+         * Contextual Resolution Fingerprint (Used for matching aliases/candidates across fragmented records)
+         */
+        static computeOccurrenceResolutionFingerprint(occurrence) {
+            const signature = {
+                res: occurrence.resourceTypeKey,
+                dep: occurrence.depositKey,
+                owner: occurrence.ownerKey || '__NULL__',
+                operator: occurrence.operatorKey || '__NULL__',
+                loc: occurrence.locationNodeKey || '__NULL__'
+            };
+            const serialized = CanonicalIdentitySerializer.serializeValue(signature);
+            return `FP_RES_OCC_${DeterministicKeyEngine.compute64BitHash(serialized)}`;
+        }
+
+        static computeDepositFingerprint(deposit) {
+            const signature = {
+                country: deposit.hostCountryIso3,
+                name: DeterministicKeyEngine.normalizeToken(deposit.depositRawName),
+                geo: deposit.geologicalType
+            };
+            const serialized = CanonicalIdentitySerializer.serializeValue(signature);
+            return `FP_ID_DEP_${DeterministicKeyEngine.compute64BitHash(serialized)}`;
+        }
+
+        static computeOwnershipFingerprint(ownership) {
+            const signature = {
+                owner: ownership.legalOwnerId,
+                juris: ownership.sovereignJurisdictionIso3,
+                model: ownership.controlModel
+            };
+            const serialized = CanonicalIdentitySerializer.serializeValue(signature);
+            return `FP_ID_OWN_${DeterministicKeyEngine.compute64BitHash(serialized)}`;
+        }
+    }
+
+    // =========================================================================
+    // 04.14: HARD COLLISION ARBITER & CONFLICT LOGGER
+    // =========================================================================
+
+    class IdentityCollisionArbiter {
+        constructor(maxLogCapacity = 5000) {
+            this.registeredKeyMap = new Map(); // Key -> { entityType, fingerprint, source }
+            this.collisionAuditLogs = [];
+            this.maxLogCapacity = maxLogCapacity;
+        }
+
+        assertRegistration(key, entityType, fingerprint, source = 'PIPELINE') {
+            if (!key || typeof key !== 'string') {
+                this._log(CollisionSeverity.FATAL, key, ErrorTaxonomy.ID_001_INVALID_IDENTITY, 'Identity key must be a valid non-empty string.', source);
+                return false;
+            }
+
+            if (this.registeredKeyMap.has(key)) {
+                const existing = this.registeredKeyMap.get(key);
+                if (existing.fingerprint !== fingerprint || existing.entityType !== entityType) {
+                    this._log(
+                        CollisionSeverity.ERROR,
+                        key,
+                        ErrorTaxonomy.ID_003_IDENTITY_COLLISION,
+                        `Key collision: Existing (${existing.entityType}, FP:${existing.fingerprint}) vs Incoming (${entityType}, FP:${fingerprint})`,
+                        source
+                    );
+                    return false;
+                }
+                return true; // Idempotent re-registration
+            }
+
+            this.registeredKeyMap.set(key, { entityType, fingerprint, source, registeredAt: 0 });
+            return true;
+        }
+
+        _log(severity, key, violationCode, details, source) {
+            if (this.collisionAuditLogs.length >= this.maxLogCapacity) {
+                this.collisionAuditLogs.shift(); // Bounded sliding ring buffer
+            }
+            this.collisionAuditLogs.push({
+                severity,
+                key,
+                violationCode,
+                details,
+                source,
+                timestamp: 0
+            });
+        }
+
+        hasFatalCollisions() {
+            return this.collisionAuditLogs.some(l => l.severity === CollisionSeverity.FATAL || l.severity === CollisionSeverity.ERROR);
+        }
+
+        getReport() {
+            // Deterministic sorting of collision audit logs
+            const sortedLogs = [...this.collisionAuditLogs].sort((a, b) => {
+                if (a.severity !== b.severity) return a.severity.localeCompare(b.severity);
+                if (a.violationCode !== b.violationCode) return a.violationCode.localeCompare(b.violationCode);
+                return a.key.localeCompare(b.key);
+            });
+
+            return {
+                totalCollisionsLogged: sortedLogs.length,
+                fatalCount: sortedLogs.filter(l => l.severity === CollisionSeverity.FATAL).length,
+                errorCount: sortedLogs.filter(l => l.severity === CollisionSeverity.ERROR).length,
+                warningCount: sortedLogs.filter(l => l.severity === CollisionSeverity.WARNING).length,
+                logs: sortedLogs
+            };
+        }
+
+        clear() {
+            this.registeredKeyMap.clear();
+            this.collisionAuditLogs = [];
+        }
+    }
+
+    // =========================================================================
+    // 04.15: IDENTITY ALIAS REGISTRY & NON-DESTRUCTIVE EQUIVALENCE LEDGER (PURE-READ DSU)
+    // =========================================================================
+
+    class IdentityAliasRegistry {
+        constructor() {
+            this.parentMap = new Map();
+            this.rankMap = new Map();
+            this.aliasLedger = new Map(); // Canonical Key -> Set of Raw Aliases with Source Metadata
+        }
+
+        /**
+         * PURE READ: Returns canonical root without mutating internal maps.
+         * Safe to call on deep-frozen registries. [ERR-03 Fixed]
+         */
+        _findRoot(key) {
+            if (!this.parentMap.has(key)) {
+                return key;
+            }
+
+            let root = key;
+            let guard = 0;
+            while (this.parentMap.has(root) && this.parentMap.get(root) !== root && guard < 1000) {
+                root = this.parentMap.get(root);
+                guard++;
+            }
+            return root;
+        }
+
+        _compressPath(key, root) {
+            let curr = key;
+            while (curr !== root && this.parentMap.has(curr)) {
+                const next = this.parentMap.get(curr);
+                this.parentMap.set(curr, root);
+                curr = next;
+            }
+        }
+
+        registerEquivalence(primaryKey, aliasKey, sourceContext = 'SYSTEM') {
+            if (!primaryKey || !aliasKey || primaryKey === aliasKey) return;
+
+            if (!this.parentMap.has(primaryKey)) {
+                this.parentMap.set(primaryKey, primaryKey);
+                this.rankMap.set(primaryKey, 0);
+            }
+
+            if (!this.parentMap.has(aliasKey)) {
+                this.parentMap.set(aliasKey, aliasKey);
+                this.rankMap.set(aliasKey, 0);
+            }
+
+            const rootA = this._findRoot(primaryKey);
+            const rootB = this._findRoot(aliasKey);
+
+            if (rootA !== rootB) {
+                const rankA = this.rankMap.get(rootA) || 0;
+                const rankB = this.rankMap.get(rootB) || 0;
+
+                if (rankA < rankB) {
+                    this.parentMap.set(rootA, rootB);
+                    this._compressPath(primaryKey, rootB);
+                    this._recordInLedger(rootB, aliasKey, sourceContext);
+                } else if (rankA > rankB) {
+                    this.parentMap.set(rootB, rootA);
+                    this._compressPath(aliasKey, rootA);
+                    this._recordInLedger(rootA, aliasKey, sourceContext);
+                } else {
+                    this.parentMap.set(rootB, rootA);
+                    this.rankMap.set(rootA, rankA + 1);
+                    this._compressPath(aliasKey, rootA);
+                    this._recordInLedger(rootA, aliasKey, sourceContext);
+                }
+            } else {
+                this._recordInLedger(rootA, aliasKey, sourceContext);
+            }
+        }
+
+        _recordInLedger(canonicalKey, alias, sourceContext) {
+            if (!this.aliasLedger.has(canonicalKey)) {
+                this.aliasLedger.set(canonicalKey, new Map());
+            }
+            this.aliasLedger.get(canonicalKey).set(alias, { sourceContext, registeredAt: 0 });
+        }
+
+        resolveCanonicalKey(candidateKey) {
+            if (!candidateKey) return null;
+            return this._findRoot(candidateKey);
+        }
+
+        getAliasesFor(canonicalKey) {
+            const root = this.resolveCanonicalKey(canonicalKey);
+            const map = this.aliasLedger.get(root);
+            return map ? Array.from(map.keys()).sort() : [];
+        }
+
+        clear() {
+            this.parentMap.clear();
+            this.rankMap.clear();
+            this.aliasLedger.clear();
+        }
+    }
+
+    // =========================================================================
+    // 04.16: FIRST-CLASS IDENTITY RELATIONSHIP ENGINE
+    // =========================================================================
+
+    class IdentityRelationship {
+        constructor(params = {}) {
+            if (!params.relationshipType || !params.subjectKey || !params.objectKey) {
+                throw new Error('[IdentityRelationship Violation]: relationshipType, subjectKey, and objectKey are required.');
+            }
+
+            this.relationshipType = params.relationshipType;
+            this.subjectKey = params.subjectKey;
+            this.objectKey = params.objectKey;
+            this.relationshipKey = params.relationshipKey || DeterministicKeyEngine.generateRelationshipKey(
+                this.relationshipType,
+                this.subjectKey,
+                this.objectKey
+            );
+
+            this.version = typeof params.version === 'number' ? params.version : 1;
+            this.resolutionStatus = params.resolutionStatus || IdentityResolutionStatus.RESOLVED;
+            this.provenance = params.provenance || { sourceSubsystem: 'RELATIONSHIP_ENGINE', timestamp: 0 };
+        }
+
+        toJSON() {
+            return {
+                relationshipKey: this.relationshipKey,
+                relationshipType: this.relationshipType,
+                subjectKey: this.subjectKey,
+                objectKey: this.objectKey,
+                version: this.version,
+                resolutionStatus: this.resolutionStatus,
+                provenance: this.provenance
+            };
+        }
+    }
+
+    class RelationshipIntegrityEngine {
+        /**
+         * Detects circular dependencies (e.g. Location A contains B, B contains A)
+         */
+        static detectCycles(relationships, targetRelType) {
+            const adj = new Map();
+            relationships.forEach(rel => {
+                if (rel.relationshipType === targetRelType) {
+                    if (!adj.has(rel.subjectKey)) adj.set(rel.subjectKey, []);
+                    adj.get(rel.subjectKey).push(rel.objectKey);
+                }
+            });
+
+            const visited = new Set();
+            const inStack = new Set();
+            const cycles = [];
+
+            const dfs = (node, path) => {
+                visited.add(node);
+                inStack.add(node);
+                path.push(node);
+
+                const neighbors = adj.get(node) || [];
+                for (const neighbor of neighbors) {
+                    if (!visited.has(neighbor)) {
+                        dfs(neighbor, path);
+                    } else if (inStack.has(neighbor)) {
+                        const cyclePath = path.slice(path.indexOf(neighbor));
+                        cyclePath.push(neighbor);
+                        cycles.push(cyclePath);
+                    }
+                }
+
+                inStack.delete(node);
+                path.pop();
+            };
+
+            adj.forEach((_, node) => {
+                if (!visited.has(node)) {
+                    dfs(node, []);
+                }
+            });
+
+            return cycles;
+        }
+
+        /**
+         * Detects self-references (e.g. Entity A owns Entity A)
+         */
+        static detectSelfReferences(relationships) {
+            return relationships
+                .filter(rel => rel.subjectKey === rel.objectKey)
+                .map(rel => ({
+                    relationshipKey: rel.relationshipKey,
+                    type: rel.relationshipType,
+                    node: rel.subjectKey
+                }));
+        }
+    }
+
+    // =========================================================================
+    // 04.17: LINEAGE ROOT & FORWARD TRACEABILITY TREE
+    // =========================================================================
+
+    class LineageRootNode {
+        constructor(params = {}) {
+            if (!params.occurrenceKey || !params.depositKey || !params.resourceTypeKey) {
+                throw new Error('[LineageRootNode Violation]: occurrenceKey, depositKey, and resourceTypeKey are mandatory.');
+            }
+
+            this.occurrenceKey = params.occurrenceKey;
+            this.depositKey = params.depositKey;
+            this.originKey = params.originKey || 'UNKNOWN_ORIGIN';
+            this.resourceTypeKey = params.resourceTypeKey;
+            this.hostCountryIso3 = DeterministicKeyEngine.normalizeToken(params.hostCountryIso3 || 'GLOBAL').toUpperCase();
+
+            this.rootKey = params.rootKey || DeterministicKeyEngine.generateLineageRootKey(this.occurrenceKey, this.originKey);
+            this.childBatchSequence = typeof params.childBatchSequence === 'number' ? params.childBatchSequence : 0;
+            this.downstreamExtractionSites = new Set(Array.isArray(params.downstreamExtractionSites) ? params.downstreamExtractionSites : []);
+            this.provenance = params.provenance || { sourceSubsystem: 'LINEAGE_ROOT_RESOLVER', timestamp: 0 };
+        }
+
+        generateNextBatchKey() {
+            this.childBatchSequence += 1;
+            const seqHex = this.childBatchSequence.toString(16).padStart(6, '0');
+            return `BATCH:${this.rootKey}_${seqHex}`;
+        }
+
+        registerExtractionSite(siteKey) {
+            if (siteKey && typeof siteKey === 'string') {
+                this.downstreamExtractionSites.add(siteKey);
+            }
+        }
+
+        clone() {
+            return new LineageRootNode({
+                rootKey: this.rootKey,
+                occurrenceKey: this.occurrenceKey,
+                depositKey: this.depositKey,
+                originKey: this.originKey,
+                resourceTypeKey: this.resourceTypeKey,
+                hostCountryIso3: this.hostCountryIso3,
+                childBatchSequence: this.childBatchSequence,
+                downstreamExtractionSites: Array.from(this.downstreamExtractionSites),
+                provenance: JSON.parse(JSON.stringify(this.provenance))
+            });
+        }
+
+        toJSON() {
+            return {
+                rootKey: this.rootKey,
+                occurrenceKey: this.occurrenceKey,
+                depositKey: this.depositKey,
+                originKey: this.originKey,
+                resourceTypeKey: this.resourceTypeKey,
+                hostCountryIso3: this.hostCountryIso3,
+                childBatchSequence: this.childBatchSequence,
+                downstreamExtractionSites: Array.from(this.downstreamExtractionSites).sort(),
+                provenance: this.provenance
+            };
+        }
+    }
+
+    // =========================================================================
+    // 04.18: DATA FOUNDATION (PART 01) PROVENANCE BRIDGE ENGINE
+    // =========================================================================
+
+    class ProvenanceBridgeEngine {
+        static bridgeToIdentityProvenance(rawClaim, subsystemContext = 'UNKNOWN_SUBSYSTEM') {
+            if (!rawClaim) {
+                const syntheticHash = DeterministicKeyEngine.compute64BitHash(`SYNTHETIC_PROVENANCE:${subsystemContext}`).substring(0, 10);
+                return {
+                    provenanceId: `PRV_SYNTHETIC_${syntheticHash}`,
+                    sourceSubsystem: subsystemContext,
+                    confidenceScore: 0.0,
+                    evidenceState: 'UNVERIFIED_SYNTHETIC',
+                    sourceContext: 'NO_RAW_CLAIM_ATTACHED',
+                    timestamp: 0
+                };
+            }
+
+            const rawPayload = typeof rawClaim === 'string' ? rawClaim : JSON.stringify(rawClaim);
+            const provHash = DeterministicKeyEngine.compute64BitHash(rawPayload).substring(0, 10);
+
+            return {
+                provenanceId: `PRV_${provHash}`,
+                sourceSubsystem: subsystemContext,
+                sourceId: rawClaim.sourceId || 'PRIMARY_DATA_FOUNDATION',
+                rawNodeId: rawClaim.rawNodeId || null,
+                confidenceScore: typeof rawClaim.confidence === 'number' ? rawClaim.confidence : 1.0,
+                evidenceState: rawClaim.evidenceState || 'DECLARED',
+                timestamp: 0
+            };
+        }
+    }
+
+    // =========================================================================
+    // 04.19: CANDIDATE RESOLUTION TRACE & DISPOSITION LEDGER
+    // =========================================================================
+
+    class ResolutionDispositionLedger {
+        constructor() {
+            this.dispositions = new Map(); // Raw Candidate Ref -> Record
+        }
+
+        recordDisposition(rawCandidateId, dispositionState, canonicalKey = null, rationale = '') {
+            this.dispositions.set(rawCandidateId, {
+                rawCandidateId,
+                dispositionState,
+                canonicalKey,
+                rationale,
+                recordedAtTick: 0
+            });
+        }
+
+        getSummary() {
+            const summary = {
+                totalCandidatesIngested: this.dispositions.size,
+                acceptedNew: 0,
+                merged: 0,
+                resolvedExisting: 0,
+                rejectedCollision: 0,
+                rejectedCorrupt: 0,
+                deferred: 0,
+                ignored: 0
+            };
+
+            this.dispositions.forEach(d => {
+                if (d.dispositionState === CandidateDispositionState.ACCEPTED_NEW) summary.acceptedNew++;
+                else if (d.dispositionState === CandidateDispositionState.ACCEPTED_EQUIVALENT_MERGED) summary.merged++;
+                else if (d.dispositionState === CandidateDispositionState.RESOLVED_TO_EXISTING) summary.resolvedExisting++;
+                else if (d.dispositionState === CandidateDispositionState.REJECTED_COLLISION) summary.rejectedCollision++;
+                else if (d.dispositionState === CandidateDispositionState.REJECTED_CORRUPT_SCHEMA) summary.rejectedCorrupt++;
+                else if (d.dispositionState === CandidateDispositionState.DEFERRED_UNRESOLVED) summary.deferred++;
+                else if (d.dispositionState === CandidateDispositionState.IGNORED_POLICY) summary.ignored++;
+            });
+
+            return summary;
+        }
+
+        clear() {
+            this.dispositions.clear();
+        }
+    }
+
+    // =========================================================================
+    // 04.20 & 04.21: MASTER IDENTITY REGISTRY & INVERTED INDEX HUB
+    // =========================================================================
+
+    class IdentityIndexHub {
+        constructor() {
+            // Occurrence Inverted Indexes
+            this.occurrencesByType = new Map();
+            this.occurrencesByDeposit = new Map();
+            this.occurrencesByCountry = new Map();
+            this.occurrencesByStatus = new Map();
+            this.occurrencesByTier = new Map();
+
+            // Deposit & Location Inverted Indexes
+            this.depositsByCountry = new Map();
+            this.depositsByLocation = new Map();
+            this.depositsByGeologicalType = new Map();
+
+            // Origin & Cadastral Inverted Indexes
+            this.originsByDeposit = new Map();
+            this.originsByCountry = new Map();
+            this.ownershipsByOwner = new Map();
+            this.ownershipsByJurisdiction = new Map();
+            this.operatorsByCompany = new Map();
+            this.operatorsByCountry = new Map();
+
+            // Spec & Lineage Indexes
+            this.variantSpecsByType = new Map();
+            this.lineageRootsByOccurrence = new Map();
+            this.lineageRootsByDeposit = new Map();
+            this.fingerprintsToKeys = new Map();
+        }
+
+        indexOccurrence(occurrence, hostCountryIso3) {
+            const key = occurrence.occurrenceKey;
+            const cIso3 = hostCountryIso3 || 'GLOBAL';
+
+            this._addToMultiMap(this.occurrencesByType, occurrence.resourceTypeKey, key);
+            this._addToMultiMap(this.occurrencesByDeposit, occurrence.depositKey, key);
+            this._addToMultiMap(this.occurrencesByCountry, cIso3, key);
+            this._addToMultiMap(this.occurrencesByStatus, occurrence.resolutionMatrix.computeOverallStatus(), key);
+            this._addToMultiMap(this.occurrencesByTier, occurrence.occurrenceTier, key);
+        }
+
+        indexDeposit(deposit) {
+            this._addToMultiMap(this.depositsByCountry, deposit.hostCountryIso3, deposit.depositKey);
+            this._addToMultiMap(this.depositsByGeologicalType, deposit.geologicalType, deposit.depositKey);
+            if (deposit.locationNodeKey) {
+                this._addToMultiMap(this.depositsByLocation, deposit.locationNodeKey, deposit.depositKey);
+            }
+        }
+
+        indexOrigin(origin) {
+            this._addToMultiMap(this.originsByDeposit, origin.depositKey, origin.originKey);
+            this._addToMultiMap(this.originsByCountry, origin.hostCountryIso3, origin.originKey);
+        }
+
+        indexOwnership(ownership) {
+            this._addToMultiMap(this.ownershipsByOwner, ownership.legalOwnerId, ownership.ownershipKey);
+            this._addToMultiMap(this.ownershipsByJurisdiction, ownership.sovereignJurisdictionIso3, ownership.ownershipKey);
+        }
+
+        indexOperator(operator) {
+            this._addToMultiMap(this.operatorsByCompany, operator.operatingCompanyId, operator.operatorKey);
+            this._addToMultiMap(this.operatorsByCountry, operator.operatingSiteOrCountry, operator.operatorKey);
+        }
+
+        indexVariantSpec(spec) {
+            this._addToMultiMap(this.variantSpecsByType, spec.resourceTypeId, spec.specKey);
+        }
+
+        indexLineageRoot(rootNode) {
+            this._addToMultiMap(this.lineageRootsByOccurrence, rootNode.occurrenceKey, rootNode.rootKey);
+            this._addToMultiMap(this.lineageRootsByDeposit, rootNode.depositKey, rootNode.rootKey);
+        }
+
+        registerFingerprint(fingerprint, targetKey) {
+            if (fingerprint && targetKey) {
+                this.fingerprintsToKeys.set(fingerprint, targetKey);
+            }
+        }
+
+        _addToMultiMap(map, indexKey, value) {
+            if (!indexKey) return;
+            if (!map.has(indexKey)) {
+                map.set(indexKey, new Set());
+            }
+            map.get(indexKey).add(value);
+        }
+
+        clear() {
+            this.occurrencesByType.clear();
+            this.occurrencesByDeposit.clear();
+            this.occurrencesByCountry.clear();
+            this.occurrencesByStatus.clear();
+            this.occurrencesByTier.clear();
+            this.depositsByCountry.clear();
+            this.depositsByLocation.clear();
+            this.depositsByGeologicalType.clear();
+            this.originsByDeposit.clear();
+            this.originsByCountry.clear();
+            this.ownershipsByOwner.clear();
+            this.ownershipsByJurisdiction.clear();
+            this.operatorsByCompany.clear();
+            this.operatorsByCountry.clear();
+            this.variantSpecsByType.clear();
+            this.lineageRootsByOccurrence.clear();
+            this.lineageRootsByDeposit.clear();
+            this.fingerprintsToKeys.clear();
+        }
+    }
+
+    class ResourceIdentityRegistry {
+        constructor() {
+            // Three-Tier Storage Catalogs
+            this.resourceTypes = new Map();
+            this.deposits = new Map();
+            this.occurrences = new Map();
+            this.origins = new Map();
+            this.ownerships = new Map();
+            this.operators = new Map();
+            this.locations = new Map();
+            this.variantSpecs = new Map();
+            this.lifecycles = new Map();
+            this.lineageRoots = new Map();
+            this.relationships = new Map();
+
+            // Subsystem Engines
+            this.indexes = new IdentityIndexHub();
+            this.collisionArbiter = new IdentityCollisionArbiter();
+            this.aliasRegistry = new IdentityAliasRegistry();
+            this.dispositionLedger = new ResolutionDispositionLedger();
+
+            // Registry Traceability Metadata
+            this.registryBuildId = 'UNCOMPILED';
+            this.identitySchemaVersion = 1;
+            this.identityRuleVersion = '1.0.0-PROD';
+            this.normalizationPolicyVersion = 'UNICODE_NFD_V1';
+            this.lastCompiledTimestamp = 0;
+        }
+
+        registerResourceType(resType) {
+            if (!(resType instanceof ResourceTypeIdentity)) throw new Error('Expected ResourceTypeIdentity.');
+            const fp = `FP_ID_TYPE_${resType.resourceTypeId}`;
+            if (this.collisionArbiter.assertRegistration(resType.identityKey, 'RESOURCE_TYPE', fp)) {
+                this.resourceTypes.set(resType.identityKey, resType);
+                this.indexes.registerFingerprint(fp, resType.identityKey);
+            }
+            return resType;
+        }
+
+        registerLocation(location) {
+            if (!(location instanceof HierarchicalLocationIdentity)) throw new Error('Expected HierarchicalLocationIdentity.');
+            const fp = `FP_ID_LOC_${location.locationNodeKey}`;
+            if (this.collisionArbiter.assertRegistration(location.locationNodeKey, 'LOCATION', fp)) {
+                this.locations.set(location.locationNodeKey, location);
+                this.indexes.registerFingerprint(fp, location.locationNodeKey);
+            }
+            return location;
+        }
+
+        registerVariantSpec(spec) {
+            if (!(spec instanceof ResourceVariantGradeSpec)) throw new Error('Expected ResourceVariantGradeSpec.');
+            const fp = `FP_ID_SPEC_${spec.specKey}`;
+            if (this.collisionArbiter.assertRegistration(spec.specKey, 'VARIANT_SPEC', fp)) {
+                this.variantSpecs.set(spec.specKey, spec);
+                this.indexes.indexVariantSpec(spec);
+                this.indexes.registerFingerprint(fp, spec.specKey);
+            }
+            return spec;
+        }
+
+        registerDeposit(deposit) {
+            if (!(deposit instanceof GeologicalDepositIdentity)) throw new Error('Expected GeologicalDepositIdentity.');
+            const fp = IdentityFingerprintEngine.computeDepositFingerprint(deposit);
+            if (this.collisionArbiter.assertRegistration(deposit.depositKey, 'GEOLOGICAL_DEPOSIT', fp)) {
+                this.deposits.set(deposit.depositKey, deposit);
+                this.indexes.indexDeposit(deposit);
+                this.indexes.registerFingerprint(fp, deposit.depositKey);
+            }
+            return deposit;
+        }
+
+        registerOrigin(origin) {
+            if (!(origin instanceof ResourceOriginIdentity)) throw new Error('Expected ResourceOriginIdentity.');
+            const fp = `FP_ID_ORG_${origin.provenanceAnchorHash}`;
+            if (this.collisionArbiter.assertRegistration(origin.originKey, 'RESOURCE_ORIGIN', fp)) {
+                this.origins.set(origin.originKey, origin);
+                this.indexes.indexOrigin(origin);
+                this.indexes.registerFingerprint(fp, origin.originKey);
+            }
+            return origin;
+        }
+
+        registerOwnership(ownership) {
+            if (!(ownership instanceof OwnershipIdentity)) throw new Error('Expected OwnershipIdentity.');
+            const fp = IdentityFingerprintEngine.computeOwnershipFingerprint(ownership);
+            if (this.collisionArbiter.assertRegistration(ownership.ownershipKey, 'OWNERSHIP', fp)) {
+                this.ownerships.set(ownership.ownershipKey, ownership);
+                this.indexes.indexOwnership(ownership);
+                this.indexes.registerFingerprint(fp, ownership.ownershipKey);
+            }
+            return ownership;
+        }
+
+        registerOperator(operator) {
+            if (!(operator instanceof OperatorIdentity)) throw new Error('Expected OperatorIdentity.');
+            const fp = `FP_ID_OPR_${operator.operatingCompanyId}_${operator.operatingSiteOrCountry}`;
+            if (this.collisionArbiter.assertRegistration(operator.operatorKey, 'OPERATOR', fp)) {
+                this.operators.set(operator.operatorKey, operator);
+                this.indexes.indexOperator(operator);
+                this.indexes.registerFingerprint(fp, operator.operatorKey);
+            }
+            return operator;
+        }
+
+        registerOccurrence(occurrence, hostCountryIso3 = 'GLOBAL') {
+            if (!(occurrence instanceof ResourceOccurrenceIdentity)) throw new Error('Expected ResourceOccurrenceIdentity.');
+            const idFp = IdentityFingerprintEngine.computeOccurrenceIdentityFingerprint(occurrence);
+            const resFp = IdentityFingerprintEngine.computeOccurrenceResolutionFingerprint(occurrence);
+
+            if (this.collisionArbiter.assertRegistration(occurrence.occurrenceKey, 'RESOURCE_OCCURRENCE', idFp)) {
+                this.occurrences.set(occurrence.occurrenceKey, occurrence);
+                this.indexes.indexOccurrence(occurrence, hostCountryIso3);
+                this.indexes.registerFingerprint(idFp, occurrence.occurrenceKey);
+                this.indexes.registerFingerprint(resFp, occurrence.occurrenceKey);
+            }
+            return occurrence;
+        }
+
+        registerLifecycle(lifecycle) {
+            if (!(lifecycle instanceof ResourceLifecycleRecord)) throw new Error('Expected ResourceLifecycleRecord.');
+            this.lifecycles.set(lifecycle.occurrenceKey, lifecycle);
+            return lifecycle;
+        }
+
+        registerLineageRoot(rootNode) {
+            if (!(rootNode instanceof LineageRootNode)) throw new Error('Expected LineageRootNode.');
+            const fp = `FP_ID_LIN_${rootNode.rootKey}`;
+            if (this.collisionArbiter.assertRegistration(rootNode.rootKey, 'LINEAGE_ROOT', fp)) {
+                this.lineageRoots.set(rootNode.rootKey, rootNode);
+                this.indexes.indexLineageRoot(rootNode);
+                this.indexes.registerFingerprint(fp, rootNode.rootKey);
+            }
+            return rootNode;
+        }
+
+        registerRelationship(relationship) {
+            if (!(relationship instanceof IdentityRelationship)) throw new Error('Expected IdentityRelationship.');
+            this.relationships.set(relationship.relationshipKey, relationship);
+            return relationship;
+        }
+
+        getOccurrence(key) {
+            const canonical = this.aliasRegistry.resolveCanonicalKey(key);
+            return this.occurrences.get(canonical) || null;
+        }
+
+        getDeposit(key) {
+            const canonical = this.aliasRegistry.resolveCanonicalKey(key);
+            return this.deposits.get(canonical) || null;
+        }
+
+        getResourceType(key) {
+            const canonical = this.aliasRegistry.resolveCanonicalKey(key);
+            return this.resourceTypes.get(canonical) || null;
+        }
+
+        getOrigin(key) {
+            return this.origins.get(key) || null;
+        }
+
+        getLocation(key) {
+            return this.locations.get(key) || null;
+        }
+
+        getOwnership(key) {
+            return this.ownerships.get(key) || null;
+        }
+
+        getOperator(key) {
+            return this.operators.get(key) || null;
+        }
+
+        getLifecycle(occurrenceKey) {
+            const canonical = this.aliasRegistry.resolveCanonicalKey(occurrenceKey);
+            return this.lifecycles.get(canonical) || null;
+        }
+
+        getLineageRoot(rootKey) {
+            return this.lineageRoots.get(rootKey) || null;
+        }
+
+        getOccurrencesByCountry(countryIso3) {
+            const norm = DeterministicKeyEngine.normalizeToken(countryIso3).toUpperCase();
+            const keys = this.indexes.occurrencesByCountry.get(norm);
+            if (!keys) return [];
+            return Array.from(keys).sort().map(k => this.occurrences.get(k)).filter(Boolean);
+        }
+
+        getOccurrencesByResourceType(resourceTypeId) {
+            const typeKey = DeterministicKeyEngine.generateResourceTypeKey(resourceTypeId);
+            const keys = this.indexes.occurrencesByType.get(typeKey);
+            if (!keys) return [];
+            return Array.from(keys).sort().map(k => this.occurrences.get(k)).filter(Boolean);
+        }
+
+        getDepositsByCountry(countryIso3) {
+            const norm = DeterministicKeyEngine.normalizeToken(countryIso3).toUpperCase();
+            const keys = this.indexes.depositsByCountry.get(norm);
+            if (!keys) return [];
+            return Array.from(keys).sort().map(k => this.deposits.get(k)).filter(Boolean);
+        }
+
+        /**
+         * Calculates live deterministic semantic digest for registry equivalence testing.
+         */
+        calculateSemanticDigest() {
+            const sortedOccKeys = Array.from(this.occurrences.keys()).sort();
+            const sortedDepKeys = Array.from(this.deposits.keys()).sort();
+            const sortedRelKeys = Array.from(this.relationships.keys()).sort();
+            const sortedLinKeys = Array.from(this.lineageRoots.keys()).sort();
+
+            const digestPayload = [
+                `OCC_COUNT=${sortedOccKeys.length}`,
+                `DEP_COUNT=${sortedDepKeys.length}`,
+                `OCC_HASH=${DeterministicKeyEngine.compute64BitHash(sortedOccKeys.join(','))}`,
+                `DEP_HASH=${DeterministicKeyEngine.compute64BitHash(sortedDepKeys.join(','))}`,
+                `REL_HASH=${DeterministicKeyEngine.compute64BitHash(sortedRelKeys.join(','))}`,
+                `LIN_HASH=${DeterministicKeyEngine.compute64BitHash(sortedLinKeys.join(','))}`
+            ].join('|');
+
+            return `DIGEST_${DeterministicKeyEngine.compute64BitHash(digestPayload)}`;
+        }
+
+        clear() {
+            this.resourceTypes.clear();
+            this.deposits.clear();
+            this.occurrences.clear();
+            this.origins.clear();
+            this.ownerships.clear();
+            this.operators.clear();
+            this.locations.clear();
+            this.variantSpecs.clear();
+            this.lifecycles.clear();
+            this.lineageRoots.clear();
+            this.relationships.clear();
+            this.indexes.clear();
+            this.collisionArbiter.clear();
+            this.aliasRegistry.clear();
+            this.dispositionLedger.clear();
+            this.registryBuildId = 'UNCOMPILED';
+            this.lastCompiledTimestamp = 0;
+        }
+    }
+
+    // =========================================================================
+    // 04.22 & 04.23: FORENSIC DIAGNOSTICS & SYSTEMIC HEALTH MONITOR
+    // =========================================================================
+
+    class IdentityDiagnosticsEngine {
+        static runComprehensiveAudit(registry) {
+            const brokenPointers = [];
+            const orphanOccurrences = [];
+            const ungroundedOrigins = [];
+            const unrootedOccurrences = [];
+            const missingLifecycles = [];
+            const missingLocations = [];
+
+            // 1. Audit Occurrences
+            registry.occurrences.forEach((occ, key) => {
+                if (!registry.resourceTypes.has(occ.resourceTypeKey)) {
+                    brokenPointers.push({ key, target: occ.resourceTypeKey, field: 'resourceTypeKey', code: ErrorTaxonomy.ID_004_UNRESOLVED_REFERENCE });
+                }
+                if (!registry.deposits.has(occ.depositKey)) {
+                    orphanOccurrences.push({ occurrenceKey: key, targetDepositKey: occ.depositKey, code: ErrorTaxonomy.ID_013_ORPHAN_ENTITY });
+                }
+                if (!occ.lineageRootKey || !registry.lineageRoots.has(occ.lineageRootKey)) {
+                    unrootedOccurrences.push({ occurrenceKey: key, missingLineageRoot: occ.lineageRootKey, code: ErrorTaxonomy.ID_007_LINEAGE_ROOT_MISSING });
+                }
+                if (!registry.lifecycles.has(key)) {
+                    missingLifecycles.push({ occurrenceKey: key, code: ErrorTaxonomy.ID_009_INVALID_LIFECYCLE_STATE });
+                }
+            });
+
+            // 2. Audit Deposits
+            registry.deposits.forEach((dep, key) => {
+                if (dep.locationNodeKey && !registry.locations.has(dep.locationNodeKey)) {
+                    missingLocations.push({ depositKey: key, locationKey: dep.locationNodeKey, code: ErrorTaxonomy.ID_004_UNRESOLVED_REFERENCE });
+                }
+            });
+
+            // 3. Audit Origins
+            registry.origins.forEach((org, key) => {
+                if (!registry.deposits.has(org.depositKey)) {
+                    ungroundedOrigins.push({ originKey: key, depositKey: org.depositKey, code: ErrorTaxonomy.ID_013_ORPHAN_ENTITY });
+                }
+            });
+
+            // 4. Audit Relationships (Cycles & Self-References)
+            const allRels = Array.from(registry.relationships.values());
+            const selfRefs = RelationshipIntegrityEngine.detectSelfReferences(allRels);
+            const locationCycles = RelationshipIntegrityEngine.detectCycles(allRels, 'CONTAINS_LOCATION');
+
+            const collisionReport = registry.collisionArbiter.getReport();
+
+            let healthStatus = IdentityHealthStatus.HEALTHY;
+            if (collisionReport.fatalCount > 0 || brokenPointers.length > 0 || locationCycles.length > 0) {
+                healthStatus = IdentityHealthStatus.CRITICAL_FAILURE;
+            } else if (collisionReport.errorCount > 0 || orphanOccurrences.length > 0 || unrootedOccurrences.length > 0) {
+                healthStatus = IdentityHealthStatus.DEGRADED;
+            } else if (collisionReport.warningCount > 0 || missingLifecycles.length > 0 || missingLocations.length > 0 || selfRefs.length > 0) {
+                healthStatus = IdentityHealthStatus.HEALTHY_WITH_WARNINGS;
+            }
+
+            // Deterministic sorting of diagnostic issues
+            brokenPointers.sort((a, b) => a.key.localeCompare(b.key));
+            orphanOccurrences.sort((a, b) => a.occurrenceKey.localeCompare(b.occurrenceKey));
+            ungroundedOrigins.sort((a, b) => a.originKey.localeCompare(b.originKey));
+            unrootedOccurrences.sort((a, b) => a.occurrenceKey.localeCompare(b.occurrenceKey));
+
+            return {
+                auditTimestamp: 0,
+                healthStatus,
+                metrics: {
+                    resourceTypesCount: registry.resourceTypes.size,
+                    depositsCount: registry.deposits.size,
+                    occurrencesCount: registry.occurrences.size,
+                    originsCount: registry.origins.size,
+                    ownershipsCount: registry.ownerships.size,
+                    operatorsCount: registry.operators.size,
+                    locationsCount: registry.locations.size,
+                    lifecyclesCount: registry.lifecycles.size,
+                    lineageRootsCount: registry.lineageRoots.size,
+                    relationshipsCount: registry.relationships.size
+                },
+                diagnostics: {
+                    brokenPointersCount: brokenPointers.length,
+                    brokenPointers,
+                    orphanOccurrencesCount: orphanOccurrences.length,
+                    orphanOccurrences,
+                    ungroundedOriginsCount: ungroundedOrigins.length,
+                    ungroundedOrigins,
+                    unrootedOccurrencesCount: unrootedOccurrences.length,
+                    unrootedOccurrences,
+                    missingLifecyclesCount: missingLifecycles.length,
+                    missingLocationsCount: missingLocations.length,
+                    selfReferencesCount: selfRefs.length,
+                    selfReferences: selfRefs,
+                    locationCyclesCount: locationCycles.length,
+                    locationCycles: locationCycles,
+                    collisionReport
+                }
+            };
+        }
+    }
+
+    // =========================================================================
+    // 04.24: STATE CHECKPOINT, SNAPSHOT & DELTA SERIALIZATION ENGINE
+    // =========================================================================
+
+    class IdentitySnapshotAdapter {
+        static calculateAdler32(str) {
+            let a = 1, b = 0;
+            const MOD = 65521;
+            for (let i = 0; i < str.length; i++) {
+                a = (a + str.charCodeAt(i)) % MOD;
+                b = (b + a) % MOD;
+            }
+            return ((b << 16) | a) >>> 0;
+        }
+
+        static createSnapshot(registry) {
+            const payloadObject = {
+                registryBuildId: registry.registryBuildId,
+                identitySchemaVersion: registry.identitySchemaVersion,
+                locations: Array.from(registry.locations.values()).map(e => e.toJSON()).sort((a, b) => a.locationNodeKey.localeCompare(b.locationNodeKey)),
+                variantSpecs: Array.from(registry.variantSpecs.values()).map(e => e.toJSON()).sort((a, b) => a.specKey.localeCompare(b.specKey)),
+                resourceTypes: Array.from(registry.resourceTypes.values()).map(e => e.toJSON()).sort((a, b) => a.identityKey.localeCompare(b.identityKey)),
+                deposits: Array.from(registry.deposits.values()).map(e => e.toJSON()).sort((a, b) => a.depositKey.localeCompare(b.depositKey)),
+                origins: Array.from(registry.origins.values()).map(e => e.toJSON()).sort((a, b) => a.originKey.localeCompare(b.originKey)),
+                ownerships: Array.from(registry.ownerships.values()).map(e => e.toJSON()).sort((a, b) => a.ownershipKey.localeCompare(b.ownershipKey)),
+                operators: Array.from(registry.operators.values()).map(e => e.toJSON()).sort((a, b) => a.operatorKey.localeCompare(b.operatorKey)),
+                occurrences: Array.from(registry.occurrences.values()).map(e => e.toJSON()).sort((a, b) => a.occurrenceKey.localeCompare(b.occurrenceKey)),
+                lifecycles: Array.from(registry.lifecycles.values()).map(e => e.toJSON()).sort((a, b) => a.occurrenceKey.localeCompare(b.occurrenceKey)),
+                lineageRoots: Array.from(registry.lineageRoots.values()).map(e => e.toJSON()).sort((a, b) => a.rootKey.localeCompare(b.rootKey)),
+                relationships: Array.from(registry.relationships.values()).map(e => e.toJSON()).sort((a, b) => a.relationshipKey.localeCompare(b.relationshipKey))
+            };
+
+            const serialized = JSON.stringify(payloadObject);
+            const checksum = this.calculateAdler32(serialized);
+
+            return {
+                registryBuildId: payloadObject.registryBuildId,
+                identitySchemaVersion: payloadObject.identitySchemaVersion,
+                checksum,
+                payload: serialized
+            };
+        }
+
+        /**
+         * Restores entities in strict topological dependency order.
+         */
+        static restoreSnapshot(registry, snapshot) {
+            if (!snapshot || !snapshot.payload || typeof snapshot.checksum !== 'number') {
+                throw new Error('[IdentitySnapshotAdapter]: Corrupt snapshot envelope.');
+            }
+
+            const computedChecksum = this.calculateAdler32(snapshot.payload);
+            if (computedChecksum !== snapshot.checksum) {
+                throw new Error('[IdentitySnapshotAdapter]: Checksum validation failure! Snapshot data corrupt.');
+            }
+
+            const data = JSON.parse(snapshot.payload);
+            registry.clear();
+
+            // 1. Locations
+            data.locations.forEach(l => registry.registerLocation(new HierarchicalLocationIdentity(l)));
+            // 2. Variant Specs
+            data.variantSpecs.forEach(v => registry.registerVariantSpec(new ResourceVariantGradeSpec(v)));
+            // 3. Resource Types
+            data.resourceTypes.forEach(t => registry.registerResourceType(new ResourceTypeIdentity(t)));
+            // 4. Deposits
+            data.deposits.forEach(d => registry.registerDeposit(new GeologicalDepositIdentity(d)));
+            // 5. Origins
+            data.origins.forEach(o => registry.registerOrigin(new ResourceOriginIdentity(o)));
+            // 6. Ownerships
+            data.ownerships.forEach(w => registry.registerOwnership(new OwnershipIdentity(w)));
+            // 7. Operators
+            data.operators.forEach(p => registry.registerOperator(new OperatorIdentity(p)));
+            // 8. Occurrences
+            data.occurrences.forEach(c => registry.registerOccurrence(new ResourceOccurrenceIdentity(c), c.hostCountryIso3));
+            // 9. Lifecycles
+            data.lifecycles.forEach(f => registry.registerLifecycle(new ResourceLifecycleRecord(f)));
+            // 10. Lineage Roots
+            data.lineageRoots.forEach(r => registry.registerLineageRoot(new LineageRootNode(r)));
+            // 11. Relationships
+            data.relationships.forEach(rel => registry.registerRelationship(new IdentityRelationship(rel)));
+
+            registry.registryBuildId = data.registryBuildId;
+            registry.identitySchemaVersion = data.identitySchemaVersion;
+            registry.lastCompiledTimestamp = 0;
+
+            return {
+                restoredSuccessfully: true,
+                entityCount: registry.occurrences.size,
+                checksum: snapshot.checksum
+            };
+        }
+    }
+
+    // =========================================================================
+    // 04.25: BOUNDARY HARDCODING FIREWALL & SIMULATION GUARD
+    // =========================================================================
+
+    class BoundaryHardcodingFirewall {
+        static get FORBIDDEN_SIMULATION_KEYS() {
+            return [
+                'depletionrate',
+                'extractionyield',
+                'marketprice',
+                'spotprice',
+                'productionrate',
+                'profitmargin',
+                'tradetariff',
+                'operatingcostperton',
+                'discountrate',
+                'extractioncost',
+                'processingyield'
+            ];
+        }
+
+        static auditRegistry(registry) {
+            const violations = [];
+
+            const inspectDeep = (target, currentPath) => {
+                if (!target || typeof target !== 'object') return;
+
+                if (target instanceof Map) {
+                    target.forEach((val, key) => {
+                        const normKey = String(key).toLowerCase().replace(/[^a-z]/g, '');
+                        if (this.FORBIDDEN_SIMULATION_KEYS.some(forbidden => normKey.includes(forbidden))) {
+                            violations.push({ path: `${currentPath}.Map<${key}>`, forbiddenKey: String(key) });
+                        }
+                        inspectDeep(val, `${currentPath}.Map<${key}>`);
+                    });
+                    return;
+                }
+
+                if (target instanceof Set) {
+                    let idx = 0;
+                    target.forEach(val => {
+                        inspectDeep(val, `${currentPath}.Set[${idx++}]`);
+                    });
+                    return;
+                }
+
+                if (Array.isArray(target)) {
+                    target.forEach((val, idx) => {
+                        inspectDeep(val, `${currentPath}[${idx}]`);
+                    });
+                    return;
+                }
+
+                Object.keys(target).forEach(key => {
+                    const normKey = key.toLowerCase().replace(/[^a-z]/g, '');
+                    if (this.FORBIDDEN_SIMULATION_KEYS.some(forbidden => normKey.includes(forbidden))) {
+                        violations.push({ path: `${currentPath}.${key}`, forbiddenKey: key });
+                    }
+                    inspectDeep(target[key], `${currentPath}.${key}`);
+                });
+            };
+
+            inspectDeep(registry.occurrences, 'Registry.Occurrences');
+            inspectDeep(registry.deposits, 'Registry.Deposits');
+            inspectDeep(registry.resourceTypes, 'Registry.ResourceTypes');
+            inspectDeep(registry.origins, 'Registry.Origins');
+            inspectDeep(registry.ownerships, 'Registry.Ownerships');
+            inspectDeep(registry.operators, 'Registry.Operators');
+            inspectDeep(registry.relationships, 'Registry.Relationships');
+
+            return {
+                isCompliant: violations.length === 0,
+                violationsCount: violations.length,
+                violations
+            };
+        }
+    }
+
+    // =========================================================================
+    // 04.26: MASTER ATOMIC IDENTITY COMPILER PIPELINE
+    // =========================================================================
+
+    class ResourceIdentityCompilerPipeline {
+        constructor() {
+            this.authoritativeRegistry = new ResourceIdentityRegistry();
+        }
+
+        /**
+         * Atomic Compilation: Builds in scratch space; on error/firewall breach,
+         * prevents partial registry publication.
+         */
+        compile(knowledgeModel, worldStateRegistry = null, dataFoundationRegistry = null) {
+            const scratch = new ResourceIdentityRegistry();
+
+            try {
+                // 1. Ingest Canonical Resource Types
+                this._compileResourceTypes(scratch, knowledgeModel);
+
+                // 2. Ingest Sovereign Ownership & Concessions
+                this._compileOwnerships(scratch, knowledgeModel);
+
+                // 3. Ingest Industrial Operators & Mining Authorities [RSK-02 Fixed]
+                this._compileOperators(scratch, knowledgeModel);
+
+                // 4. Ingest Deposits, Origins & Occurrences (Tier-B Ingest) [ERR-02 Fixed]
+                this._compileDepositsAndOccurrences(scratch, knowledgeModel);
+
+                // 5. Build Lineage Roots & Lifecycles
+                this._compileLineageAndLifecycles(scratch, knowledgeModel);
+
+                // 6. Diagnostics & Firewall Audit
+                const diagnostics = IdentityDiagnosticsEngine.runComprehensiveAudit(scratch);
+                const firewallAudit = BoundaryHardcodingFirewall.auditRegistry(scratch);
+
+                if (diagnostics.healthStatus === IdentityHealthStatus.CRITICAL_FAILURE || !firewallAudit.isCompliant) {
+                    return {
+                        status: 'COMPILATION_FAILED',
+                        compiledTimestamp: 0,
+                        registry: null,
+                        diagnostics,
+                        firewallAudit,
+                        isAuthoritative: false
+                    };
+                }
+
+                // Compute Stable Build ID & Commit Scratch Registry Atomically
+                scratch.registryBuildId = `BLD_${DeterministicKeyEngine.compute64BitHash(scratch.calculateSemanticDigest()).substring(0, 12)}`;
+                scratch.lastCompiledTimestamp = 0;
+
+                this.authoritativeRegistry = scratch;
+
+                return {
+                    status: 'COMPILATION_SUCCESSFUL',
+                    registryBuildId: scratch.registryBuildId,
+                    semanticDigest: scratch.calculateSemanticDigest(),
+                    compiledTimestamp: scratch.lastCompiledTimestamp,
+                    registry: this.authoritativeRegistry,
+                    dispositionSummary: scratch.dispositionLedger.getSummary(),
+                    diagnostics,
+                    firewallAudit,
+                    isAuthoritative: true
+                };
+
+            } catch (err) {
+                return {
+                    status: 'COMPILATION_EXCEPTION',
+                    error: err.message,
+                    registry: null,
+                    isAuthoritative: false
+                };
+            }
+        }
+
+        _toEntries(collection) {
+            if (!collection) return [];
+            if (collection instanceof Map) {
+                return Array.from(collection.entries());
+            }
+            if (Array.isArray(collection)) {
+                return collection.map((item, idx) => [item.id || item.iso3 || item.isoCode || item.code || item.resourceId || String(idx), item]);
+            }
+            if (typeof collection === 'object') {
+                return Object.entries(collection);
+            }
+            return [];
+        }
+
+        _compileResourceTypes(scratch, knowledgeModel) {
+            if (!knowledgeModel) return;
+
+            const rawResources = knowledgeModel.canonicalResources || 
+                                 (knowledgeModel.sovereignEntities && knowledgeModel.sovereignEntities.resourceTypes) ||
+                                 knowledgeModel.resources;
+
+            const entries = this._toEntries(rawResources);
+            entries.forEach(([id, res]) => {
+                if (!res) return;
+                const rawId = res.resourceId || res.id || res.code || id;
+                const declaredUnit = res.unit || res.standardUnit || 'UNKNOWN_UNIT';
+                const declaredDim = res.dimension || (declaredUnit !== 'UNKNOWN_UNIT' ? 'DECLARED' : 'UNKNOWN');
+
+                const resType = new ResourceTypeIdentity({
+                    resourceTypeId: rawId,
+                    canonicalName: res.name || res.canonicalName || rawId,
+                    standardSymbol: res.symbol || res.code || res.name || rawId,
+                    declaredDimension: declaredDim,
+                    declaredStandardUnit: declaredUnit,
+                    physicalCategory: res.category || res.physicalCategory || ResourcePhysicalCategory.UNKNOWN_PHYSICAL_CATEGORY,
+                    criticalityClassification: res.strategicImportance || res.strategicTier || 'UNKNOWN',
+                    aliases: Array.isArray(res.aliases) ? res.aliases : [rawId, res.name || rawId],
+                    provenance: ProvenanceBridgeEngine.bridgeToIdentityProvenance(res.provenance, 'PART_02_ONTOLOGY')
+                });
+
+                scratch.registerResourceType(resType);
+                scratch.dispositionLedger.recordDisposition(rawId, CandidateDispositionState.ACCEPTED_NEW, resType.identityKey, 'CANONICAL_RESOURCE_TYPE');
+            });
+        }
+
+        _compileOwnerships(scratch, knowledgeModel) {
+            if (!knowledgeModel) return;
+
+            const rawCountries = knowledgeModel.canonicalCountries || 
+                                 (knowledgeModel.sovereignEntities && knowledgeModel.sovereignEntities.countries) ||
+                                 knowledgeModel.countries;
+
+            const entries = this._toEntries(rawCountries);
+            entries.forEach(([countryId, country]) => {
+                if (!country) return;
+                const cIso3 = (country.iso3 || country.isoCode || country.countryId || country.id || countryId).toUpperCase();
+                const sovereignOwnerId = `SOVEREIGN_STATE_${cIso3}`;
+
+                const ownership = new OwnershipIdentity({
+                    legalOwnerId: sovereignOwnerId,
+                    sovereignJurisdictionIso3: cIso3,
+                    controlModel: OwnershipControlModel.SOVEREIGN_EXCLUSIVE_STATE,
+                    stateParticipationRatio: 1.0,
+                    equityHolders: [
+                        new OwnershipStakeHolder({
+                            holderEntityId: sovereignOwnerId,
+                            holderCanonicalName: `State Treasury & Mineral Cadastre of ${country.name || country.sovereignName || cIso3}`,
+                            equityPercentage: 100.0,
+                            isStateEntity: true,
+                            domicileCountryIso3: cIso3
+                        })
+                    ],
+                    provenance: ProvenanceBridgeEngine.bridgeToIdentityProvenance(country.provenance, 'SOVEREIGN_CADASTRE')
+                });
+
+                scratch.registerOwnership(ownership);
+            });
+        }
+
+        _compileOperators(scratch, knowledgeModel) {
+            if (!knowledgeModel) return;
+
+            const rawCountries = knowledgeModel.canonicalCountries || 
+                                 (knowledgeModel.sovereignEntities && knowledgeModel.sovereignEntities.countries) ||
+                                 knowledgeModel.countries;
+
+            const entries = this._toEntries(rawCountries);
+            entries.forEach(([countryId, country]) => {
+                if (!country) return;
+                const cIso3 = (country.iso3 || country.isoCode || country.countryId || country.id || countryId).toUpperCase();
+                const operatorId = `OPERATOR_AUTHORITY_${cIso3}`;
+
+                const operator = new OperatorIdentity({
+                    operatingCompanyId: operatorId,
+                    operatingSiteOrCountry: cIso3,
+                    canonicalOperatorName: `National Mineral & Energy Authority of ${country.name || country.sovereignName || cIso3}`,
+                    domicileCountryIso3: cIso3,
+                    operationalScope: 'SURFACE_AND_UNDERGROUND_MINING',
+                    miningLeaseLicenseCode: `SOV_AUTH_LEASE_${cIso3}`,
+                    environmentalPermitStatus: 'SOVEREIGN_AUTHORIZED',
+                    provenance: ProvenanceBridgeEngine.bridgeToIdentityProvenance(country.provenance, 'NATIONAL_OPERATOR_CADASTRE')
+                });
+
+                scratch.registerOperator(operator);
+            });
+        }
+
+        _compileDepositsAndOccurrences(scratch, knowledgeModel) {
+            if (!knowledgeModel) return;
+
+            const rawCountries = knowledgeModel.canonicalCountries || 
+                                 (knowledgeModel.sovereignEntities && knowledgeModel.sovereignEntities.countries) ||
+                                 knowledgeModel.countries;
+
+            // 1. Ingest Canonical Sovereign Endowments
+            const countryEntries = this._toEntries(rawCountries);
+            countryEntries.forEach(([countryId, country]) => {
+                if (!country) return;
+                const cIso3 = (country.iso3 || country.isoCode || country.countryId || country.id || countryId).toUpperCase();
+
+                if (Array.isArray(country.endowmentProfiles)) {
+                    country.endowmentProfiles.forEach(endow => {
+                        const rawItem = endow.resolvedResourceId || endow.rawItem || 'UNKNOWN_RESOURCE';
+                        const resKey = DeterministicKeyEngine.generateResourceTypeKey(rawItem);
+
+                        // Ensure ResourceType
+                        if (!scratch.resourceTypes.has(resKey)) {
+                            const resType = new ResourceTypeIdentity({
+                                resourceTypeId: rawItem,
+                                canonicalName: rawItem,
+                                provenance: ProvenanceBridgeEngine.bridgeToIdentityProvenance(endow, 'ENDOWMENT_INFERRED')
+                            });
+                            scratch.registerResourceType(resType);
+                        }
+
+                        // Content-Based Invariant Deposit Key
+                        const epistemicTag = endow.epistemicState || 'KNOWN';
+                        const normResource = DeterministicKeyEngine.normalizeToken(rawItem);
+                        const depositName = `${cIso3}_DEP_${normResource}_${epistemicTag}`;
+                        const depositKey = DeterministicKeyEngine.generateDepositKey(cIso3, depositName);
+
+                        if (!scratch.deposits.has(depositKey)) {
+                            const locKey = DeterministicKeyEngine.generateLocationKey(cIso3, 'PRIMARY_PROVINCE', depositName);
+                            const location = new HierarchicalLocationIdentity({
+                                locationNodeKey: locKey,
+                                countryIso3: cIso3,
+                                adminStateProvince: 'PRIMARY_PROVINCE',
+                                siteSpecificLocality: depositName,
+                                lat: country.geography?.coordinates?.lat || null,
+                                lng: country.geography?.coordinates?.lng || null,
+                                provenance: ProvenanceBridgeEngine.bridgeToIdentityProvenance(endow, 'GEOGRAPHIC_ANCHOR')
+                            });
+                            scratch.registerLocation(location);
+
+                            const deposit = new GeologicalDepositIdentity({
+                                depositKey,
+                                depositRawName: depositName,
+                                hostCountryIso3: cIso3,
+                                locationNodeKey: location.locationNodeKey,
+                                resolutionStatus: IdentityResolutionStatus.RESOLVED,
+                                provenance: ProvenanceBridgeEngine.bridgeToIdentityProvenance(endow, 'ENDOWMENT_DEPOSIT')
+                            });
+                            scratch.registerDeposit(deposit);
+
+                            const origin = new ResourceOriginIdentity({
+                                depositKey: deposit.depositKey,
+                                hostCountryIso3: cIso3,
+                                genesisStatus: OriginGenesisStatus.NATURAL_CRUSTAL_IN_SITU,
+                                provenance: deposit.provenance
+                            });
+                            scratch.registerOrigin(origin);
+                        }
+
+                        const deposit = scratch.deposits.get(depositKey);
+                        const origin = scratch.origins.get(DeterministicKeyEngine.generateOriginKey(depositKey, OriginGenesisStatus.NATURAL_CRUSTAL_IN_SITU));
+
+                        let tier = ResourceOccurrenceTier.TIER_D_UNVERIFIED_OCCURRENCE;
+                        if (endow.epistemicState === 'KNOWN') tier = ResourceOccurrenceTier.TIER_A_PRIMARY_KNOWN;
+                        else if (endow.epistemicState === 'PROBABLE') tier = ResourceOccurrenceTier.TIER_B_SECONDARY_ASSOCIATED;
+                        else if (endow.epistemicState === 'POTENTIAL') tier = ResourceOccurrenceTier.TIER_C_INFERRED_OCCURRENCE;
+
+                        const occurrence = new ResourceOccurrenceIdentity({
+                            resourceTypeId: rawItem,
+                            depositKey: deposit.depositKey,
+                            originKey: origin ? origin.originKey : null,
+                            occurrenceTier: tier,
+                            isPrimaryEndowment: true,
+                            ownerKey: DeterministicKeyEngine.generateOwnershipKey(`SOVEREIGN_STATE_${cIso3}`, cIso3, OwnershipControlModel.SOVEREIGN_EXCLUSIVE_STATE),
+                            operatorKey: DeterministicKeyEngine.generateOperatorKey(`OPERATOR_AUTHORITY_${cIso3}`, cIso3),
+                            locationNodeKey: deposit.locationNodeKey,
+                            confidenceScore: typeof endow.confidence === 'number' ? endow.confidence : 1.0,
+                            provenance: ProvenanceBridgeEngine.bridgeToIdentityProvenance(endow, 'ENDOWMENT_OCCURRENCE')
+                        });
+
+                        deposit.addOccurrence(occurrence.occurrenceKey);
+                        scratch.registerOccurrence(occurrence, cIso3);
+
+                        scratch.dispositionLedger.recordDisposition(
+                            `${cIso3}_${rawItem}`,
+                            CandidateDispositionState.ACCEPTED_NEW,
+                            occurrence.occurrenceKey,
+                            'CANONICAL_ENDOWMENT'
+                        );
+                    });
+                }
+            });
+
+            // 2. Ingest Reference Catalog / Deposits / Physical Assets
+            const refCatalog = knowledgeModel.referenceCatalog || knowledgeModel.refCatalog;
+            let allRefs = [];
+            if (refCatalog && typeof refCatalog.getAllReferences === 'function') {
+                allRefs = refCatalog.getAllReferences();
+            } else if (refCatalog && refCatalog.allReferences && Array.isArray(refCatalog.allReferences)) {
+                allRefs = refCatalog.allReferences;
+            } else if (refCatalog && refCatalog.references instanceof Map) {
+                allRefs = Array.from(refCatalog.references.values());
+            } else if (Array.isArray(knowledgeModel.deposits)) {
+                allRefs = knowledgeModel.deposits;
+            } else if (Array.isArray(knowledgeModel.references)) {
+                allRefs = knowledgeModel.references;
+            }
+
+            allRefs.forEach(ref => {
+                if (!ref) return;
+                const cIso3 = (ref.countryIso3 || ref.parentCountryId || ref.countryId || ref.hostCountry || 'GLOBAL').toUpperCase();
+                const rawName = ref.name || ref.depositRawName || ref.rawReferenceString || ref.id || ref.referenceId;
+                const normRef = DeterministicKeyEngine.normalizeToken(rawName);
+                const depositKey = DeterministicKeyEngine.generateDepositKey(cIso3, normRef, ref.geologicalType || 'REF_PHYSICAL');
+
+                if (!scratch.deposits.has(depositKey)) {
+                    const locKey = DeterministicKeyEngine.generateLocationKey(cIso3, 'LOCALITY', normRef);
+                    const location = new HierarchicalLocationIdentity({
+                        locationNodeKey: locKey,
+                        countryIso3: cIso3,
+                        adminStateProvince: 'LOCALITY',
+                        siteSpecificLocality: rawName,
+                        lat: typeof ref.lat === 'number' ? ref.lat : (ref.coordinates ? ref.coordinates.lat : null),
+                        lng: typeof ref.lng === 'number' ? ref.lng : (ref.coordinates ? ref.coordinates.lng : null),
+                        provenance: ProvenanceBridgeEngine.bridgeToIdentityProvenance(ref, 'TIER_B_LOCATION')
+                    });
+                    scratch.registerLocation(location);
+
+                    const deposit = new GeologicalDepositIdentity({
+                        depositKey,
+                        depositRawName: rawName,
+                        hostCountryIso3: cIso3,
+                        locationNodeKey: location.locationNodeKey,
+                        geologicalType: ref.geologicalType || DepositTypeClassification.UNKNOWN_GEOLOGICAL,
+                        resolutionStatus: IdentityResolutionStatus.RESOLVED,
+                        provenance: ProvenanceBridgeEngine.bridgeToIdentityProvenance(ref, 'TIER_B_DEPOSIT')
+                    });
+                    scratch.registerDeposit(deposit);
+
+                    const origin = new ResourceOriginIdentity({
+                        depositKey: deposit.depositKey,
+                        hostCountryIso3: cIso3,
+                        genesisStatus: OriginGenesisStatus.NATURAL_CRUSTAL_IN_SITU,
+                        provenance: deposit.provenance
+                    });
+                    scratch.registerOrigin(origin);
+
+                    // If reference specifies a resource type, create Occurrence
+                    const resTypeRaw = ref.resourceType || ref.resourceTypeCode || ref.resourceId;
+                    if (resTypeRaw) {
+                        const resKey = DeterministicKeyEngine.generateResourceTypeKey(resTypeRaw);
+                        if (!scratch.resourceTypes.has(resKey)) {
+                            const resType = new ResourceTypeIdentity({
+                                resourceTypeId: resTypeRaw,
+                                canonicalName: resTypeRaw,
+                                provenance: ProvenanceBridgeEngine.bridgeToIdentityProvenance(ref, 'DEPOSIT_REF_RESOURCE')
+                            });
+                            scratch.registerResourceType(resType);
+                        }
+
+                        const occ = new ResourceOccurrenceIdentity({
+                            resourceTypeId: resTypeRaw,
+                            depositKey: deposit.depositKey,
+                            originKey: origin.originKey,
+                            occurrenceTier: ResourceOccurrenceTier.TIER_A_PRIMARY_KNOWN,
+                            isPrimaryEndowment: true,
+                            ownerKey: DeterministicKeyEngine.generateOwnershipKey(`SOVEREIGN_STATE_${cIso3}`, cIso3, OwnershipControlModel.SOVEREIGN_EXCLUSIVE_STATE),
+                            operatorKey: DeterministicKeyEngine.generateOperatorKey(`OPERATOR_AUTHORITY_${cIso3}`, cIso3),
+                            locationNodeKey: deposit.locationNodeKey,
+                            confidenceScore: 1.0,
+                            provenance: deposit.provenance
+                        });
+                        deposit.addOccurrence(occ.occurrenceKey);
+                        scratch.registerOccurrence(occ, cIso3);
+                    }
+
+                    scratch.dispositionLedger.recordDisposition(
+                        ref.id || ref.referenceId || rawName,
+                        CandidateDispositionState.ACCEPTED_NEW,
+                        deposit.depositKey,
+                        'TIER_B_PHYSICAL_ASSET'
+                    );
+                }
+            });
+        }
+
+        _compileLineageAndLifecycles(scratch, knowledgeModel) {
+            scratch.occurrences.forEach((occ) => {
+                const deposit = scratch.deposits.get(occ.depositKey);
+                const hostCountry = deposit ? deposit.hostCountryIso3 : 'GLOBAL';
+
+                // Lineage Root
+                const root = new LineageRootNode({
+                    occurrenceKey: occ.occurrenceKey,
+                    depositKey: occ.depositKey,
+                    originKey: occ.originKey || 'UNKNOWN_ORIGIN',
+                    resourceTypeKey: occ.resourceTypeKey,
+                    hostCountryIso3: hostCountry,
+                    provenance: occ.provenance
+                });
+                scratch.registerLineageRoot(root);
+                occ.bindLineageRoot(root.rootKey);
+
+                // Lifecycle Assignment
+                let initialPhase = ResourceLifecyclePhase.UNKNOWN_LIFECYCLE;
+                if (occ.occurrenceTier === ResourceOccurrenceTier.TIER_A_PRIMARY_KNOWN) {
+                    initialPhase = ResourceLifecyclePhase.RESOURCE_ASSESSED;
+                } else if (occ.occurrenceTier === ResourceOccurrenceTier.TIER_B_SECONDARY_ASSOCIATED) {
+                    initialPhase = ResourceLifecyclePhase.EXPLORATION_DELINEATED;
+                } else if (occ.occurrenceTier === ResourceOccurrenceTier.TIER_C_INFERRED_OCCURRENCE) {
+                    initialPhase = ResourceLifecyclePhase.DISCOVERED_UNASSESSED;
+                }
+
+                const lifecycle = new ResourceLifecycleRecord({
+                    occurrenceKey: occ.occurrenceKey,
+                    currentPhase: initialPhase,
+                    phaseAssignedTick: 0,
+                    initialRationale: 'DATA_FOUNDATION_EPISTEMIC_INIT',
+                    provenance: occ.provenance
+                });
+                scratch.registerLifecycle(lifecycle);
+
+                // Register Relationships
+                if (occ.ownerKey) {
+                    scratch.registerRelationship(new IdentityRelationship({
+                        relationshipType: 'OWNS_OCCURRENCE',
+                        subjectKey: occ.ownerKey,
+                        objectKey: occ.occurrenceKey,
+                        provenance: occ.provenance
+                    }));
+                }
+
+                if (occ.operatorKey) {
+                    scratch.registerRelationship(new IdentityRelationship({
+                        relationshipType: 'OPERATES_OCCURRENCE',
+                        subjectKey: occ.operatorKey,
+                        objectKey: occ.occurrenceKey,
+                        provenance: occ.provenance
+                    }));
+                }
+
+                if (deposit && deposit.locationNodeKey) {
+                    scratch.registerRelationship(new IdentityRelationship({
+                        relationshipType: 'LOCATED_AT',
+                        subjectKey: occ.occurrenceKey,
+                        objectKey: deposit.locationNodeKey,
+                        provenance: occ.provenance
+                    }));
+                }
+            });
+        }
+    }
+
+    // =========================================================================
+    // 04.27: PUBLIC ADAPTER, DEEP FREEZE & UNIFIED ENGINE ASSEMBLY
+    // =========================================================================
+
+    function deepFreeze(obj, seen = new WeakSet()) {
+        if (obj === null || typeof obj !== 'object' || seen.has(obj)) return obj;
+        seen.add(obj);
+        if (obj instanceof Map || obj instanceof Set) return obj;
+        const propNames = Object.getOwnPropertyNames(obj);
+        for (const name of propNames) {
+            deepFreeze(obj[name], seen);
+        }
+        return Object.freeze(obj);
+    }
+
+    const ResourceIdentityEngineAdapter = Object.freeze({
+        // Module 1 Enums & Basis Contracts
+        IdentityResolutionStatus,
+        UnknownSemanticState,
+        ResourceOccurrenceTier,
+        DepositTypeClassification,
+        OriginGenesisStatus,
+        OwnershipControlModel,
+        ResourcePhysicalCategory,
+        GradeClassificationTier,
+        ResourceLifecyclePhase,
+        CandidateDispositionState,
+        CollisionSeverity,
+        IdentityHealthStatus,
+        ErrorTaxonomy,
+        ComponentResolutionMatrix,
+        CanonicalIdentitySerializer,
+        DeterministicKeyEngine,
+        IdentityBasisContract,
+        ResourceTypeIdentity,
+        GeologicalDepositIdentity,
+        ResourceOriginIdentity,
+        ResourceOccurrenceIdentity,
+        OwnershipStakeHolder,
+        OwnershipIdentity,
+        OperatorIdentity,
+        HierarchicalLocationIdentity,
+        ResourceVariantGradeSpec,
+
+        // Module 2 Engines & Systems
+        LifecycleTransitionGuard,
+        ResourceLifecycleRecord,
+        IdentityFingerprintEngine,
+        IdentityCollisionArbiter,
+        IdentityAliasRegistry,
+        IdentityRelationship,
+        RelationshipIntegrityEngine,
+        LineageRootNode,
+        ProvenanceBridgeEngine,
+        ResolutionDispositionLedger,
+        IdentityIndexHub,
+        ResourceIdentityRegistry,
+        IdentityDiagnosticsEngine,
+        IdentitySnapshotAdapter,
+        BoundaryHardcodingFirewall,
+        ResourceIdentityCompilerPipeline,
+
+        deepFreeze,
+
+        /**
+         * Primary Entrypoint: Atomically compiles knowledge and world state into Part 04 Identities.
+         */
+        compileIdentities(knowledgeModel, worldStateRegistry = null, dataFoundationRegistry = null) {
+            const compiler = new ResourceIdentityCompilerPipeline();
+            return compiler.compile(knowledgeModel, worldStateRegistry, dataFoundationRegistry);
+        }
+    });
+
+    global.GSRSK_Part04 = ResourceIdentityEngineAdapter;
+    global.GSRSK_ResourceIdentityEngine = ResourceIdentityEngineAdapter;
+
+    if (typeof module !== 'undefined' && module.exports) {
+        module.exports = {
+            DataFoundation: global.GSRSK_DataFoundation || (typeof _globalScope !== 'undefined' ? _globalScope.GSRSK_DataFoundation : null),
+            WorldKnowledgeCompiler: global.GSRSK_WorldKnowledgeCompiler || null,
+            WorldStateEngineAdapter: global.GSRSK_Part03 || null,
+            WorldStateEngine: global.GSRSK_WorldStateEngine || null,
+            ResourceIdentityEngine: ResourceIdentityEngineAdapter,
+            MasterGSRSKEngine: global.GSRSK_MasterEngine ? global.GSRSK_MasterEngine.constructor : null,
+            MasterEngineSingleton: global.GSRSK_MasterEngine || null,
+            Part01: global.GSRSK_DataFoundation || null,
+            Part02: global.GSRSK_WorldKnowledgeCompiler || null,
+            Part03: global.GSRSK_Part03 || null,
+            Part04: ResourceIdentityEngineAdapter,
+            ...ResourceIdentityEngineAdapter
+        };
+    }
+
+})(typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : global));
