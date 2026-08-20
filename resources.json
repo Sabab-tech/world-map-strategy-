@@ -66248,4 +66248,26 @@
       "ZIMBABWE": {
         "country_name": "ZIMBABWE",
         "country_code": "ZW",
-        "category": "Developing Industrial Economy & Sovereign Resource Exporter"
+        "category": "Developing Industrial Economy & Sovereign Resource Exporter",
+        "ai_driver": "Resource Industrialization, Foreign Direct Investment & Trade Logistics",
+        "high_weight_focus": [
+          "Export Infrastructure",
+          "Mining Concessions",
+          "Currency Stabilization"
+        ],
+        "low_weight_ignore": [
+          "Global Interventionism"
+        ],
+        "parameters": {
+          "MIL_SECURITY_DEPENDENCY": 55,
+          "REGIONAL_THREAT_FEAR": 50,
+          "DOMESTIC_POLITICAL_STABILITY": 65,
+          "FOREIGN_AID_DEPENDENCY": 45,
+          "ECON_SANCTION_VULNERABILITY": 50,
+          "INTEL_COVERT_ACTIVITY_RISK": 40,
+          "MIL_MOBILIZATION_READINESS": 55
+        }
+      }
+    }
+  }
+}

@@ -64,6 +64,11 @@ window.initializeWorldGameDatabase = async function() {
             console.log("Economy Engine Database Sync Ready.");
         }
 
+        if (window.ResourceMinistryEngine && typeof window.ResourceMinistryEngine.init === 'function') {
+            await window.ResourceMinistryEngine.init();
+            console.log("Resource Ministry Engine GSRSK Database Sync Ready.");
+        }
+
         // রিলেশন সিলেকশন বক্স ডাটা দিয়ে পূর্ণ করা
         const relSelector = document.getElementById('relation-selector');
         if (relSelector && window.gameState.economy) {

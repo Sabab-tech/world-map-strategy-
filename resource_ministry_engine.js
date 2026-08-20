@@ -8205,21 +8205,3568 @@ _globalScope.GSRSK_DataFoundation = (() => {
     global.GSRSK_Part04 = ResourceIdentityEngineAdapter;
     global.GSRSK_ResourceIdentityEngine = ResourceIdentityEngineAdapter;
 
+    // =========================================================================
+    // PART 05: UNIFIED AUTONOMOUS RESOURCE MINISTRY ENGINE RUNTIME FACADE
+    // Authoritative bridge connecting Part 01, 02, 03, 04, Country Profiles,
+    // Deposits Catalog, 17 Commodities, and Interactive Command Hubs
+    // =========================================================================
+
+    const CANONICAL_RESOURCE_TYPES = [
+        { id: 'crude_oil', name: 'Crude Petroleum', bnName: 'অপরিশোধিত তেল', icon: '🛢️', category: 'hydrocarbons', color: '#eab308', unit: 'BBL', basePrice: 82.5, dailyOutput: 18500, dailyDemand: 16200, strategicImportance: 'critical', processChain: 'Drilling ➔ Distillation ➔ Petrochem Refineries ➔ Strategic Reserves' },
+        { id: 'natural_gas', name: 'Natural Gas / LNG', bnName: 'প্রাকৃতিক গ্যাস', icon: '🔥', category: 'hydrocarbons', color: '#38bdf8', unit: 'MCF', basePrice: 3.4, dailyOutput: 32000, dailyDemand: 28500, strategicImportance: 'critical', processChain: 'Wellhead Extraction ➔ Dehydration ➔ LNG Cryogenic Liquefaction ➔ Baseload Power' },
+        { id: 'uranium', name: 'Uranium Yellowcake', bnName: 'ইউরেনিয়াম', icon: '⚛️', category: 'nuclear_energy', color: '#a855f7', unit: 'KG', basePrice: 85.0, dailyOutput: 120, dailyDemand: 95, strategicImportance: 'critical', processChain: 'In-situ Leaching ➔ Centrifuge Enrichment (3-5% / 90%) ➔ Fuel Bundles ➔ Baseload Reactor' },
+        { id: 'iron_ore', name: 'Iron Ore / Steel', bnName: 'লোহা ও ইস্পাত', icon: '⚙️', category: 'industrial_metals', color: '#cbd5e1', unit: 'TONS', basePrice: 120.0, dailyOutput: 45000, dailyDemand: 41000, strategicImportance: 'high', processChain: 'Open-Pit Beneficiation ➔ Blast Furnace Smelting ➔ Hot Rolled Coil ➔ Heavy Industry' },
+        { id: 'rare_earth', name: 'Rare Earth Elements', bnName: 'বিরল মৃত্তিকা মৌল', icon: '🔬', category: 'critical_minerals', color: '#ec4899', unit: 'TONS', basePrice: 48000.0, dailyOutput: 350, dailyDemand: 320, strategicImportance: 'critical', processChain: 'Solvent Extraction ➔ Chromatographic Refining ➔ Permanent NdFeB Magnets ➔ Defense & EV' },
+        { id: 'lithium', name: 'Lithium Carbonate', bnName: 'লিথিয়াম', icon: '🔋', category: 'battery_metals', color: '#00e5ff', unit: 'TONS', basePrice: 18500.0, dailyOutput: 850, dailyDemand: 780, strategicImportance: 'critical', processChain: 'Brine Evaporation / Spodumene Calcination ➔ Hydroxide Conversion ➔ LFP/NMC Battery Cells' },
+        { id: 'phosphate', name: 'Phosphate Rock', bnName: 'ফসফেট ও সার', icon: '🌾', category: 'agricultural_chemicals', color: '#84cc16', unit: 'TONS', basePrice: 155.0, dailyOutput: 22000, dailyDemand: 19500, strategicImportance: 'high', processChain: 'Phosphorite Mining ➔ Sulfuric Acid Digestion ➔ DAP/MAP Fertilizer ➔ Agrarian Security' },
+        { id: 'copper', name: 'Refined Copper', bnName: 'তামা', icon: '⚡', category: 'strategic_metals', color: '#f97316', unit: 'TONS', basePrice: 8900.0, dailyOutput: 14200, dailyDemand: 13500, strategicImportance: 'critical', processChain: 'Flotation Concentration ➔ Flash Smelting ➔ Electrolytic Refining ➔ Power Grid & HVDC' },
+        { id: 'bauxite', name: 'Bauxite / Aluminum', bnName: 'বক্সাইট ও অ্যালুমিনিয়াম', icon: '✈️', category: 'strategic_metals', color: '#94a3b8', unit: 'TONS', basePrice: 2400.0, dailyOutput: 18000, dailyDemand: 16500, strategicImportance: 'high', processChain: 'Bayer Process Digestion ➔ Hall-Héroult Reduction ➔ Aerospace Grade Ingots ➔ Defense Hull' },
+        { id: 'nickel', name: 'Class 1 Nickel', bnName: 'নিকেল', icon: '🛡️', category: 'critical_minerals', color: '#10b981', unit: 'TONS', basePrice: 16800.0, dailyOutput: 1900, dailyDemand: 1750, strategicImportance: 'high', processChain: 'HPAL Autoclave Leaching ➔ Matte Refining ➔ Superalloy & High-Nickel Cathodes' },
+        { id: 'cobalt', name: 'Cobalt Hydroxide', bnName: 'কোবাল্ট', icon: '🔋', category: 'battery_metals', color: '#6366f1', unit: 'TONS', basePrice: 32000.0, dailyOutput: 420, dailyDemand: 390, strategicImportance: 'critical', processChain: 'Heterogenite Leaching ➔ Organic Solvent Separation ➔ Cobalt Sulfate Crystals ➔ Energy Cells' },
+        { id: 'gold', name: 'Monetary Gold Bullion', bnName: 'স্বর্ণ রিজার্ভ', icon: '💰', category: 'monetary_strategic', color: '#ffd700', unit: 'OZT', basePrice: 2350.0, dailyOutput: 8500, dailyDemand: 6200, strategicImportance: 'high', processChain: 'Underground/Placer Cyanidation ➔ Merrill-Crowe / CIP ➔ Doré Smelting ➔ Central Bank Vaults' },
+        { id: 'potash', name: 'Potash / Potassium', bnName: 'পটাশ সার', icon: '🌱', category: 'agricultural_chemicals', color: '#14b8a6', unit: 'TONS', basePrice: 320.0, dailyOutput: 16500, dailyDemand: 15000, strategicImportance: 'high', processChain: 'Deep Shaft Evaporite Mining ➔ Flotation Crystallization ➔ MOP Granulation ➔ Food Crops' },
+        { id: 'silicon', name: 'Polysilicon Wafers', bnName: 'সিলিকন ওয়েফার', icon: '💻', category: 'high_tech_materials', color: '#3b82f6', unit: 'TONS', basePrice: 18000.0, dailyOutput: 920, dailyDemand: 860, strategicImportance: 'critical', processChain: 'Quartzite Reduction ➔ Siemens Trichlorosilane ➔ Czochralski Ingot Pulling ➔ EUV Fab' },
+        { id: 'timber', name: 'Strategic Hardwood', bnName: 'কাঠ ও বনজ সম্পদ', icon: '🌲', category: 'natural_infrastructure', color: '#78716c', unit: 'M3', basePrice: 450.0, dailyOutput: 28000, dailyDemand: 25000, strategicImportance: 'medium', processChain: 'Sustainable Forestry ➔ Kiln Drying ➔ Structural Engineered Timber ➔ Defense/Logistics' },
+        { id: 'fresh_water', name: 'Potable Aquifer Water', bnName: 'মিঠা পানি ও সেচ', icon: '💧', category: 'sovereign_life_support', color: '#06b6d4', unit: 'ML', basePrice: 12.0, dailyOutput: 95000, dailyDemand: 91000, strategicImportance: 'critical', processChain: 'Deep Confined Aquifers ➔ Reverse Osmosis Desalination ➔ Pressurized Canals ➔ National Grid' },
+        { id: 'wheat', name: 'Strategic Food Grain', bnName: 'খাদ্য শস্য ও গম', icon: '🍞', category: 'food_security', color: '#f59e0b', unit: 'TONS', basePrice: 280.0, dailyOutput: 65000, dailyDemand: 59000, strategicImportance: 'critical', processChain: 'Precision Irrigation ➔ Automated Harvesting ➔ Grain Silo Hermetic Storage ➔ Food Reserve' }
+    ];
+
+    const CANONICAL_GLOBAL_DEPOSITS = [
+        { id: 'dep-ghawar-oil', name: 'Ghawar Oil Super-Giant', country: 'SAUDI ARABIA', countryCode: 'SAU', lat: 25.4, lng: 49.6, resId: 'crude_oil', category: 'hydrocarbons', reserves: '48.2 Billion BBL', grade: '34° API Arab Light', status: 'ACTIVE_PRODUCING', owner: 'Saudi Aramco', operator: 'Aramco Upstream' },
+        { id: 'dep-permian-oil', name: 'Permian Basin Super-Play', country: 'USA', countryCode: 'USA', lat: 31.8, lng: -102.3, resId: 'crude_oil', category: 'hydrocarbons', reserves: '60.5 Billion BBL', grade: '40° API WTI Midland', status: 'ACTIVE_PRODUCING', owner: 'Multi-Operator Joint Basin', operator: 'Pioneer & Chevron' },
+        { id: 'dep-escondida-cu', name: 'Escondida Copper Mine', country: 'CHILE', countryCode: 'CHL', lat: -24.26, lng: -69.07, resId: 'copper', category: 'strategic_metals', reserves: '32.6 Million Tons', grade: '0.85% Cu Sulfide', status: 'ACTIVE_PRODUCING', owner: 'BHP & Rio Tinto', operator: 'Minera Escondida' },
+        { id: 'dep-grasberg-au-cu', name: 'Grasberg Mine Complex', country: 'INDONESIA', countryCode: 'IDN', lat: -4.05, lng: 137.11, resId: 'gold', category: 'monetary_strategic', reserves: '30.2 Million Oz Au / 15Mt Cu', grade: '0.98 g/t Au, 0.72% Cu', status: 'ACTIVE_PRODUCING', owner: 'PT Inalum / Freeport', operator: 'PT Freeport Indonesia' },
+        { id: 'dep-bayan-obo-ree', name: 'Bayan Obo Rare Earth Mine', country: 'CHINA', countryCode: 'CHN', lat: 41.77, lng: 109.96, resId: 'rare_earth', category: 'critical_minerals', reserves: '40.0 Million Tons REO', grade: '5.7% Bastnäsite / Monazite', status: 'ACTIVE_PRODUCING', owner: 'China Northern Rare Earth', operator: 'Baogang Group' },
+        { id: 'dep-greenbushes-li', name: 'Greenbushes Hard-Rock Lithium', country: 'AUSTRALIA', countryCode: 'AUS', lat: -33.86, lng: 116.01, resId: 'lithium', category: 'battery_metals', reserves: '8.4 Million Tons LCE', grade: '2.1% Li2O Spodumene', status: 'ACTIVE_PRODUCING', owner: 'Tianqi Lithium & IGO', operator: 'Talison Lithium' },
+        { id: 'dep-salar-atacama-li', name: 'Salar de Atacama Brine Field', country: 'CHILE', countryCode: 'CHL', lat: -23.5, lng: -68.3, resId: 'lithium', category: 'battery_metals', reserves: '9.2 Million Tons LCE', grade: '1,400 mg/L Li Brine', status: 'ACTIVE_PRODUCING', owner: 'SQM & Albemarle', operator: 'SQM Salar' },
+        { id: 'dep-norilsk-ni', name: 'Norilsk Talnakh Ore Belt', country: 'RUSSIA', countryCode: 'RUS', lat: 69.35, lng: 88.2, resId: 'nickel', category: 'critical_minerals', reserves: '18.4 Million Tons Ni', grade: '1.75% Ni, 2.5% Cu, 8g/t PGM', status: 'ACTIVE_PRODUCING', owner: 'Nornickel Group', operator: 'Polar Division' },
+        { id: 'dep-olympic-dam-u', name: 'Olympic Dam Orebody', country: 'AUSTRALIA', countryCode: 'AUS', lat: -30.43, lng: 136.88, resId: 'uranium', category: 'nuclear_energy', reserves: '2.1 Million Tons U3O8', grade: '0.05% U3O8, 0.8% Cu', status: 'ACTIVE_PRODUCING', owner: 'BHP', operator: 'Olympic Dam Corp' },
+        { id: 'dep-tenke-fung-co', name: 'Tenke Fungurume Belt', country: 'DR CONGO', countryCode: 'COD', lat: -10.57, lng: 26.18, resId: 'cobalt', category: 'battery_metals', reserves: '2.8 Million Tons Co', grade: '0.35% Co, 2.8% Cu', status: 'ACTIVE_PRODUCING', owner: 'CMOC Group', operator: 'TFM SARL' },
+        { id: 'dep-carajas-fe', name: 'Carajás Iron Ore Province', country: 'BRAZIL', countryCode: 'BRA', lat: -6.06, lng: -50.18, resId: 'iron_ore', category: 'industrial_metals', reserves: '7.2 Billion Tons Fe', grade: '66.5% Fe Premium Fines', status: 'ACTIVE_PRODUCING', owner: 'Vale S.A.', operator: 'Vale Carajás' },
+        { id: 'dep-pilbara-fe', name: 'Pilbara Hamersley Province', country: 'AUSTRALIA', countryCode: 'AUS', lat: -22.5, lng: 118.0, resId: 'iron_ore', category: 'industrial_metals', reserves: '24.0 Billion Tons Fe', grade: '62.0% Fe Brockman Ore', status: 'ACTIVE_PRODUCING', owner: 'Rio Tinto & BHP', operator: 'Pilbara Iron Ops' },
+        { id: 'dep-cigar-lake-u', name: 'Cigar Lake High-Grade Mine', country: 'CANADA', countryCode: 'CAN', lat: 58.06, lng: -104.53, resId: 'uranium', category: 'nuclear_energy', reserves: '165,000 Tons U3O8', grade: '15.9% U3O8 Ultra-Rich', status: 'ACTIVE_PRODUCING', owner: 'Cameco & Orano', operator: 'Cameco Corporation' },
+        { id: 'dep-bou-craa-p', name: 'Bou Craa Phosphate Open-Cast', country: 'MOROCCO', countryCode: 'MAR', lat: 26.32, lng: -12.85, resId: 'phosphate', category: 'agricultural_chemicals', reserves: '1.2 Billion Tons P2O5', grade: '72% BPL Sedimentary', status: 'ACTIVE_PRODUCING', owner: 'OCP Group', operator: 'Phosboucraa' },
+        { id: 'dep-weipa-al', name: 'Weipa Bauxite Plateau', country: 'AUSTRALIA', countryCode: 'AUS', lat: -12.63, lng: 141.87, resId: 'bauxite', category: 'strategic_metals', reserves: '1.4 Billion Tons Bauxite', grade: '52.5% Al2O3 Pisolitic', status: 'ACTIVE_PRODUCING', owner: 'Rio Tinto', operator: 'Weipa Operations' },
+        { id: 'dep-bibiyana-gas', name: 'Bibiyana Natural Gas Field', country: 'BANGLADESH', countryCode: 'BGD', lat: 24.63, lng: 91.65, resId: 'natural_gas', category: 'hydrocarbons', reserves: '4.5 TCF Gas', grade: 'High Methane Sweet Gas', status: 'ACTIVE_PRODUCING', owner: 'Petrobangla / Chevron', operator: 'Chevron Bangladesh' },
+        { id: 'dep-barapukuria-coal', name: 'Barapukuria Coal Basin', country: 'BANGLADESH', countryCode: 'BGD', lat: 25.55, lng: 88.96, resId: 'iron_ore', category: 'industrial_metals', reserves: '390 Million Tons Bituminous', grade: 'Low Ash High Energy Coal', status: 'ACTIVE_PRODUCING', owner: 'Petrobangla', operator: 'BCMCL' },
+        { id: 'dep-titas-gas', name: 'Titas Gas Field Reservoir', country: 'BANGLADESH', countryCode: 'BGD', lat: 23.98, lng: 91.13, resId: 'natural_gas', category: 'hydrocarbons', reserves: '2.8 TCF Natural Gas', grade: '96.2% Pure Methane Gas', status: 'ACTIVE_PRODUCING', owner: 'BGFCL', operator: 'Titas Gas T&D' },
+        { id: 'dep-kailashtila-cond', name: 'Kailashtila Field & NGL Plant', country: 'BANGLADESH', countryCode: 'BGD', lat: 24.87, lng: 92.01, resId: 'natural_gas', category: 'hydrocarbons', reserves: '1.9 TCF Gas / 18M BBL Condensate', grade: 'High Hydrocarbon Condensate', status: 'ACTIVE_PRODUCING', owner: 'Sylhet Gas Fields Ltd', operator: 'SGFL' },
+        { id: 'dep-burgan-oil', name: 'Greater Burgan Oilfield', country: 'KUWAIT', countryCode: 'KWT', lat: 29.07, lng: 47.96, resId: 'crude_oil', category: 'hydrocarbons', reserves: '66.0 Billion BBL', grade: '31.9° API Medium Crude', status: 'ACTIVE_PRODUCING', owner: 'Kuwait Oil Company', operator: 'KOC Exploration' },
+        { id: 'dep-south-pars-gas', name: 'South Pars / North Dome Gas', country: 'QATAR', countryCode: 'QAT', lat: 27.2, lng: 52.0, resId: 'natural_gas', category: 'hydrocarbons', reserves: '1,800 TCF Non-Associated Gas', grade: 'Super-Giant Gas Field', status: 'ACTIVE_PRODUCING', owner: 'QatarEnergy & NIOC', operator: 'Qatargas & POGC' },
+        { id: 'dep-safaniya-oil', name: 'Safaniya Offshore Oilfield', country: 'SAUDI ARABIA', countryCode: 'SAU', lat: 28.05, lng: 48.77, resId: 'crude_oil', category: 'hydrocarbons', reserves: '37.0 Billion BBL', grade: '27° API Heavy Offshore', status: 'ACTIVE_PRODUCING', owner: 'Saudi Aramco', operator: 'Aramco Offshore' },
+        { id: 'dep-daqing-oil', name: 'Daqing Complex Oil Basin', country: 'CHINA', countryCode: 'CHN', lat: 46.59, lng: 125.0, resId: 'crude_oil', category: 'hydrocarbons', reserves: '16.0 Billion BBL', grade: 'Waxy Sweet Crude', status: 'ACTIVE_PRODUCING', owner: 'PetroChina', operator: 'Daqing Oilfield Co' },
+        { id: 'dep-samotlor-oil', name: 'Samotlor West Siberian Field', country: 'RUSSIA', countryCode: 'RUS', lat: 61.12, lng: 76.71, resId: 'crude_oil', category: 'hydrocarbons', reserves: '20.5 Billion BBL', grade: '32° API Siberian Light', status: 'ACTIVE_PRODUCING', owner: 'Rosneft', operator: 'Samotlorneftegaz' },
+        { id: 'dep-vaca-muerta-shale', name: 'Vaca Muerta Shale Basin', country: 'ARGENTINA', countryCode: 'ARG', lat: -38.5, lng: -69.0, resId: 'crude_oil', category: 'hydrocarbons', reserves: '16.2 Billion BBL / 308 TCF', grade: 'Unconventional Tight Oil/Gas', status: 'ACTIVE_PRODUCING', owner: 'YPF & Chevron', operator: 'YPF S.A.' },
+        { id: 'dep-marcellus-gas', name: 'Marcellus Shale Gas Basin', country: 'USA', countryCode: 'USA', lat: 41.0, lng: -77.5, resId: 'natural_gas', category: 'hydrocarbons', reserves: '84.0 TCF Proved Gas', grade: 'Dry Sweet Natural Gas', status: 'ACTIVE_PRODUCING', owner: 'EQT & Chesapeake', operator: 'EQT Production' },
+        { id: 'dep-athabasca-oil', name: 'Athabasca Bitumen Sands', country: 'CANADA', countryCode: 'CAN', lat: 57.0, lng: -111.5, resId: 'crude_oil', category: 'hydrocarbons', reserves: '165 Billion BBL Bitumen', grade: '8-10° API Heavy Bitumen', status: 'ACTIVE_PRODUCING', owner: 'Suncor & CNRL', operator: 'Canadian Natural' },
+        { id: 'dep-muruntau-au', name: 'Muruntau Open-Pit Gold Mine', country: 'UZBEKISTAN', countryCode: 'UZB', lat: 41.5, lng: 64.57, resId: 'gold', category: 'monetary_strategic', reserves: '4,500 Tons Gold (145M Oz)', grade: '2.4 g/t Quartz Vein Gold', status: 'ACTIVE_PRODUCING', owner: 'Navoi Mining & Metal', operator: 'NMMC State Enterprise' },
+        { id: 'dep-carlin-au', name: 'Carlin Trend Gold Province', country: 'USA', countryCode: 'USA', lat: 40.71, lng: -116.3, resId: 'gold', category: 'monetary_strategic', reserves: '84 Million Oz Gold', grade: '3.1 g/t Disseminated Au', status: 'ACTIVE_PRODUCING', owner: 'Nevada Gold Mines / Barrick', operator: 'NGM Joint Venture' },
+        { id: 'dep-collahuasi-cu', name: 'Collahuasi Porphyry Copper', country: 'CHILE', countryCode: 'CHL', lat: -20.97, lng: -68.65, resId: 'copper', category: 'strategic_metals', reserves: '28.5 Million Tons Cu', grade: '0.82% Cu Porphyry', status: 'ACTIVE_PRODUCING', owner: 'Anglo American & Glencore', operator: 'Doña Inés de Collahuasi' },
+        { id: 'dep-el-teniente-cu', name: 'El Teniente Underground Mine', country: 'CHILE', countryCode: 'CHL', lat: -34.09, lng: -70.35, resId: 'copper', category: 'strategic_metals', reserves: '34.0 Million Tons Cu', grade: '0.62% Cu Breccia Pipe', status: 'ACTIVE_PRODUCING', owner: 'Codelco State Corporation', operator: 'División El Teniente' },
+        { id: 'dep-kiruna-fe', name: 'Kiruna Magnetite Orebody', country: 'SWEDEN', countryCode: 'SWE', lat: 67.85, lng: 20.22, resId: 'iron_ore', category: 'industrial_metals', reserves: '1.2 Billion Tons Fe', grade: '60.0% Fe Dense Magnetite', status: 'ACTIVE_PRODUCING', owner: 'LKAB State Mining', operator: 'LKAB Kiruna' },
+        { id: 'dep-sudbury-ni-cu', name: 'Sudbury Impact Basin', country: 'CANADA', countryCode: 'CAN', lat: 46.6, lng: -81.2, resId: 'nickel', category: 'critical_minerals', reserves: '8.5 Million Tons Ni / 6Mt Cu', grade: '1.2% Ni, 1.4% Cu, PGM', status: 'ACTIVE_PRODUCING', owner: 'Vale Base Metals & Glencore', operator: 'Vale Sudbury Ops' },
+        { id: 'dep-jinchuan-ni', name: 'Jinchuan Ultramafic Nickel', country: 'CHINA', countryCode: 'CHN', lat: 38.5, lng: 102.18, resId: 'nickel', category: 'critical_minerals', reserves: '5.2 Million Tons Ni', grade: '1.06% Ni, 0.7% Cu', status: 'ACTIVE_PRODUCING', owner: 'Jinchuan Group', operator: 'Jinchuan Mining Co' },
+        { id: 'dep-mountain-pass-ree', name: 'Mountain Pass Carbonatite', country: 'USA', countryCode: 'USA', lat: 35.48, lng: -115.53, resId: 'rare_earth', category: 'critical_minerals', reserves: '2.1 Million Tons REO', grade: '6.3% Bastnäsite REO', status: 'ACTIVE_PRODUCING', owner: 'MP Materials Corp', operator: 'MP Materials Ops' },
+        { id: 'dep-mount-weld-ree', name: 'Mount Weld Carbonatite Pipe', country: 'AUSTRALIA', countryCode: 'AUS', lat: -28.87, lng: 122.18, resId: 'rare_earth', category: 'critical_minerals', reserves: '3.2 Million Tons REO', grade: '5.4% NdPr Enriched REO', status: 'ACTIVE_PRODUCING', owner: 'Lynas Rare Earths', operator: 'Lynas Mt Weld' },
+        { id: 'dep-uyuni-li', name: 'Salar de Uyuni Giant Basin', country: 'BOLIVIA', countryCode: 'BOL', lat: -20.13, lng: -67.48, resId: 'lithium', category: 'battery_metals', reserves: '21.0 Million Tons LCE', grade: '500-900 mg/L Li Brine', status: 'ACTIVE_PRODUCING', owner: 'YLB (Yacimientos de Litio)', operator: 'YLB State Corp' },
+        { id: 'dep-pilgangoora-li', name: 'Pilgangoora Spodumene Mine', country: 'AUSTRALIA', countryCode: 'AUS', lat: -21.03, lng: 118.91, resId: 'lithium', category: 'battery_metals', reserves: '5.8 Million Tons LCE', grade: '1.25% Li2O Pegmatite', status: 'ACTIVE_PRODUCING', owner: 'Pilbara Minerals', operator: 'Pilbara Minerals Ltd' },
+        { id: 'dep-sangaredi-al', name: 'Sangaredi High-Grade Bauxite', country: 'GUINEA', countryCode: 'GIN', lat: 11.09, lng: -13.9, resId: 'bauxite', category: 'strategic_metals', reserves: '1.8 Billion Tons Bauxite', grade: '58.0% Al2O3 High Quality', status: 'ACTIVE_PRODUCING', owner: 'CBG (Compagnie des Bauxites)', operator: 'CBG Guinea' },
+        { id: 'dep-khouribga-p', name: 'Khouribga Phosphate Plateau', country: 'MOROCCO', countryCode: 'MAR', lat: 32.88, lng: -6.91, resId: 'phosphate', category: 'agricultural_chemicals', reserves: '35.0 Billion Tons Phosphate', grade: '70% BPL Premium Rock', status: 'ACTIVE_PRODUCING', owner: 'OCP Group', operator: 'OCP Khouribga' },
+        { id: 'dep-uralkali-potash', name: 'Berezniki Potash Basin', country: 'RUSSIA', countryCode: 'RUS', lat: 59.41, lng: 56.81, resId: 'potash', category: 'agricultural_chemicals', reserves: '3.8 Billion Tons KCl', grade: '28% K2O Sylvinite', status: 'ACTIVE_PRODUCING', owner: 'Uralkali JSC', operator: 'Berezniki Mining Mine 4' },
+        { id: 'dep-sask-potash', name: 'Saskatchewan Potash Basin', country: 'CANADA', countryCode: 'CAN', lat: 52.0, lng: -106.0, resId: 'potash', category: 'agricultural_chemicals', reserves: '9.5 Billion Tons KCl', grade: '25-30% K2O Evaporite', status: 'ACTIVE_PRODUCING', owner: 'Nutrien & Mosaic', operator: 'Nutrien Allan & Rocanville' },
+        { id: 'dep-dead-sea-potash', name: 'Dead Sea Minerals & Bromine', country: 'JORDAN', countryCode: 'JOR', lat: 31.05, lng: 35.36, resId: 'potash', category: 'agricultural_chemicals', reserves: '1.5 Billion Tons Carnallite', grade: 'High Purity Potash/Bromine', status: 'ACTIVE_PRODUCING', owner: 'Arab Potash Company & ICL', operator: 'APC Industrial Plant' }
+    ];
+
+    /**
+     * Unified Autonomous Resource Ministry Engine
+     */
+    class AutonomousResourceMinistryEngine {
+        constructor() {
+            this.resourceTypes = CANONICAL_RESOURCE_TYPES;
+            this.deposits = CANONICAL_GLOBAL_DEPOSITS;
+            this.countryProfiles = {};
+            this.isReady = false;
+            this.isLoading = false;
+            this.activeSurveys = new Set(['lithium', 'rare_earth']);
+            this.facilityUpgrades = {};
+            this.strategicReserves = {};
+            this.cabinetVotes = {};
+
+            // Synchronize on startup
+            this.init();
+        }
+
+        async init() {
+            if (this.isReady || this.isLoading) return;
+            this.isLoading = true;
+
+            try {
+                const fetcher = (typeof window !== 'undefined' && window.fetchResilient) || (async (file) => {
+                    if (typeof fetch === 'undefined') return null;
+                    const res = await fetch(file + '?v=' + Date.now());
+                    return res.ok ? await res.json() : null;
+                });
+
+                const [res1, res2] = await Promise.all([
+                    fetcher('resources.json').catch(() => null),
+                    fetcher('resources_2.json').catch(() => null)
+                ]);
+
+                if (res1) {
+                    const profiles1 = res1.GSRSK_Master_CountryProfiles_v14?.countryProfiles || res1.countryProfiles || {};
+                    Object.assign(this.countryProfiles, profiles1);
+                    if (res1.resource_types) {
+                        this._mergeResourceTypes(res1.resource_types);
+                    }
+                }
+
+                if (res2) {
+                    const profiles2 = res2.GSRSK_Master_CountryProfiles_v14?.countryProfiles || res2.countryProfiles || {};
+                    Object.assign(this.countryProfiles, profiles2);
+                    if (res2.resource_types) {
+                        this._mergeResourceTypes(res2.resource_types);
+                    }
+                }
+
+                // Hydrate into MasterGSRSKEngine if present
+                if (global.GSRSK_MasterEngine && typeof global.GSRSK_MasterEngine.bootstrap === 'function') {
+                    global.GSRSK_MasterEngine.bootstrap({
+                        countries: Object.keys(this.countryProfiles),
+                        resourceTypes: this.resourceTypes,
+                        deposits: this.deposits
+                    });
+                }
+
+                this.isReady = true;
+                console.log(`[GSRSK] Resource Ministry Engine Fully Ready: ${Object.keys(this.countryProfiles).length} sovereign country profiles, ${this.deposits.length} strategic deposits, ${this.resourceTypes.length} commodities.`);
+
+                if (typeof window !== 'undefined') {
+                    window.dispatchEvent(new CustomEvent('RESOURCE_STATE_UPDATED', { detail: { engine: this } }));
+                }
+            } catch (err) {
+                console.warn("[GSRSK] Resource initialization notice (using verified fallback data):", err);
+                this.isReady = true;
+            } finally {
+                this.isLoading = false;
+            }
+        }
+
+        _mergeResourceTypes(typesObj) {
+            if (!typesObj) return;
+            const existingIds = new Set(this.resourceTypes.map(r => r.id));
+            Object.keys(typesObj).forEach(k => {
+                if (!existingIds.has(k)) {
+                    const t = typesObj[k];
+                    this.resourceTypes.push({
+                        id: k,
+                        name: t.name || k.replace(/_/g, ' ').toUpperCase(),
+                        bnName: t.bnName || k,
+                        icon: t.icon || '💎',
+                        category: t.category || 'strategic_minerals',
+                        color: t.color || '#00e5ff',
+                        unit: t.unit || 'TONS',
+                        basePrice: t.basePrice || 1000,
+                        dailyOutput: t.dailyOutput || 5000,
+                        dailyDemand: t.dailyDemand || 4500,
+                        strategicImportance: t.strategicImportance || 'high',
+                        processChain: t.description || 'Extraction ➔ Refining ➔ National Stockpile'
+                    });
+                }
+            });
+        }
+
+        normalizeCountryCode(countryKey) {
+            if (!countryKey) return 'BGD';
+            const k = String(countryKey).trim().toUpperCase();
+            const aliasMap = {
+                'BANGLADESH': 'BGD', 'BD': 'BGD',
+                'UNITED STATES': 'USA', 'UNITED STATES OF AMERICA': 'USA', 'US': 'USA',
+                'INDIA': 'IND', 'IN': 'IND',
+                'CHINA': 'CHN', 'CN': 'CHN',
+                'RUSSIA': 'RUS', 'RU': 'RUS',
+                'SAUDI ARABIA': 'SAU', 'SAUDI_ARABIA': 'SAU', 'SA': 'SAU',
+                'GERMANY': 'DEU', 'DE': 'DEU',
+                'UNITED KINGDOM': 'GBR', 'UK': 'GBR', 'GREAT BRITAIN': 'GBR',
+                'JAPAN': 'JPN', 'JP': 'JPN',
+                'FRANCE': 'FRA', 'FR': 'FRA',
+                'BRAZIL': 'BRA', 'BR': 'BRA',
+                'AUSTRALIA': 'AUS', 'AU': 'AUS',
+                'CANADA': 'CAN', 'CA': 'CAN',
+                'INDONESIA': 'IDN', 'ID': 'IDN',
+                'CHILE': 'CHL', 'CL': 'CHL',
+                'DR CONGO': 'COD', 'DEMOCRATIC REPUBLIC OF THE CONGO': 'COD', 'CONGO': 'COD',
+                'MOROCCO': 'MAR', 'MA': 'MAR',
+                'IRAN': 'IRN', 'QATAR': 'QAT', 'KUWAIT': 'KWT',
+                'PAKISTAN': 'PAK', 'PK': 'PAK',
+                'TURKEY': 'TUR', 'TR': 'TUR', 'EGYPT': 'EGY', 'EG': 'EGY'
+            };
+            return aliasMap[k] || k;
+        }
+
+        getCountryResourceProfile(countryKey) {
+            const iso = this.normalizeCountryCode(countryKey);
+            if (this.countryProfiles[iso]) {
+                return this.countryProfiles[iso];
+            }
+
+            // Direct key match
+            const directKey = String(countryKey || '').toUpperCase().replace(/\s+/g, '_');
+            if (this.countryProfiles[directKey]) {
+                return this.countryProfiles[directKey];
+            }
+
+            // Fuzzy match across country profiles
+            const allKeys = Object.keys(this.countryProfiles);
+            for (let i = 0; i < allKeys.length; i++) {
+                const k = allKeys[i];
+                const prof = this.countryProfiles[k];
+                if (prof && prof.identity) {
+                    if (prof.identity.countryCode === iso || (prof.identity.name && prof.identity.name.toUpperCase() === String(countryKey).toUpperCase())) {
+                        return prof;
+                    }
+                }
+            }
+
+            // Return synthesized fallback 25-section sovereign profile
+            const countryName = String(countryKey || 'SOVEREIGN NATION').replace(/_/g, ' ').toUpperCase();
+            return {
+                identity: {
+                    resourceSystemId: `GSRSK-SYS-${iso}-2026`,
+                    name: countryName,
+                    officialName: `People's Democratic Republic of ${countryName}`,
+                    countryCode: iso,
+                    region: 'Asia / Pacific / Trans-Eurasian',
+                    sovereigntyType: 'Sovereign Republic & Geopolitical Powerhouse'
+                },
+                geography: {
+                    capital: 'National Administrative Center',
+                    landAreaKm2: 147570,
+                    exclusiveEconomicZoneKm2: 118813,
+                    coastlineKm: 710,
+                    topographyClasses: ['Alluvial Plain', 'Deltaic Basins', 'Coastal Belt', 'Highland Mineral Formations']
+                },
+                administrative_resource_regions: [
+                    { name: 'Northern Industrial Belt', type: 'Manufacturing & Heavy Coal Hub', resourceTags: ['Energy', 'Coal', 'Limestone'] },
+                    { name: 'Eastern Hydrocarbon Basin', type: 'Natural Gas & Condensate Corridor', resourceTags: ['Natural Gas', 'LNG', 'Helium'] },
+                    { name: 'Southern Maritime EEZ', type: 'Offshore Deepwater Hydrocarbon & Blue Economy', resourceTags: ['Crude Oil', 'Offshore Wind', 'Silica'] },
+                    { name: 'Western Agrarian Granary', type: 'Agricultural Food Security Hub', resourceTags: ['Rice', 'Wheat', 'Freshwater Aquifers'] }
+                ],
+                resource_domain: {
+                    resourceRichnessClass: 'Extensive & Stratified',
+                    resourceDiversityClass: 'High-Purity Industrial Matrix',
+                    majorResourceCount: 17,
+                    strategicResourceCount: 8
+                },
+                geological_context: {
+                    majorGeologicalDomains: ['Bengal Foredeep Basin', 'Precambrian Basement Complex', 'Tertiary Fold Belt'],
+                    sedimentaryBasins: ['Surma Basin', 'Hatía Trough', 'Faridpur Trough', 'Offshore Bengal Fan'],
+                    tectonicSetting: 'Indian Plate Continental Convergence Zone'
+                },
+                mineral_resource_base: {
+                    metallic: ['Titanium Placer Sands', 'Zircon', 'Rutile', 'Magnetite Heavy Sands'],
+                    criticalMinerals: ['Monazite (Thorium/REE)', 'Ilmenite', 'Silica Quartz'],
+                    nonMetallic: ['High-Purity Limestone', 'White Clay (Kaolin)', 'Gravel/Hard Rock', 'Glass Sand']
+                },
+                hydrocarbon_resource_base: {
+                    oil: ['Haripur Oilfield Complex', 'Kailashtila Deep Oil Rim', 'Offshore Block 11/12'],
+                    naturalGas: ['Bibiyana Field (4.5 TCF)', 'Titas Reservoir (2.8 TCF)', 'Rashidpur Basin', 'Jalalabad Field'],
+                    gasHydrates: ['Offshore Bay of Bengal Methane Hydrate Belt (Est. 17-25 TCF)']
+                },
+                energy_resource_base: {
+                    solarResourceZones: ['Chittagong Coastal Solar Park (1.8 GW/yr irradiance)', 'Barind Tract Solar Zone'],
+                    windZones: ['Kutubdia Offshore Wind Corridor', 'Kuakata Coastal Wind Farm'],
+                    nuclearStatus: ['Rooppur VVER-1200 Dual Reactor (2,400 MWe Baseload Grid)']
+                },
+                water_resource_base: {
+                    groundwaterAquifers: ['Deep Plio-Pleistocene Confined Aquifer Grid (Ultra-Pure)'],
+                    riverSystems: ['Padma-Meghna-Jamuna Transboundary System (1.2 Trillion m3/yr runoff)'],
+                    desalinationPlants: ['Chittagong Port Industrial RO Facility', 'Matarbari Mega Energy RO Hub']
+                },
+                forest_resource_base: {
+                    mangroveEcosystem: ['Sundarbans World Biosphere Reserve (6,017 km2 Carbon Sink)'],
+                    commercialTimber: ['Chittagong Hill Tracts Teak & Bamboo Industrial Reserves']
+                },
+                agricultural_resource_base: {
+                    grains: ['Triple-Crop Rice Production (38.5M Tons/yr)', 'Wheat & Maize Corridors'],
+                    commercialCrops: ['Golden Fiber Jute (World Dominance)', 'Sylhet Organic Tea Estates']
+                },
+                strategic_resources: {
+                    primaryEndowments: ['High-Methane Sweet Natural Gas', 'Deep Barapukuria Bituminous Coal', 'Heavy Mineral Sands'],
+                    sovereignAutonomyRating: '88.4 / 100 (Autonomous Core)'
+                },
+                resource_dependency: {
+                    vulnerabilityIndex: 'Low (Diversified Strategic Energy & Agrarian Base)',
+                    keyImports: ['Petroleum Refined Products', 'Class 1 Lithium Battery Grade', 'Potash Crop Fertilizers']
+                },
+                resource_quality_context: {
+                    gasMethanePurity: '96.5% Ultra-Clean Pipeline Quality',
+                    coalCalorificValue: '6,400 kcal/kg Low-Sulfur Thermal Coal'
+                },
+                extraction_context: {
+                    activeWells: 114,
+                    activeMines: 12,
+                    extractionEfficiency: '94.2% Automated SCADA Extraction'
+                },
+                processing_resource_context: {
+                    refineries: ['Eastern Refinery Expansion (3.0M MT/yr)', 'Bibiyana Molecular NGL Fractionation'],
+                    fertilizerComplexes: ['Shahjalal & Ghorashal-Polash Urea Super-Complexes (1.8M MT/yr)']
+                },
+                resource_industrial_context: {
+                    steelMills: ['BSRM & Abul Khair Electric Arc Furnace Megamills (4.2M MT/yr Steel)'],
+                    shipbreakingRecycling: ['Sitakunda Green Certified Maritime Ship Recycling Zone']
+                },
+                resource_infrastructure_context: {
+                    ports: ['Matarbari Deep Sea Port (18.5m draft)', 'Chittagong Port Gateway', 'Mongla Port Hub'],
+                    pipelines: ['National Gas Grid 30-inch Looplines', 'Deepwater Single Point Mooring (SPM) Pipeline'],
+                    refineries: ['Eastern Refinery Ltd (ERL-2)', 'Ashuganj Petrochemical Complex']
+                },
+                resource_transport_context: {
+                    railFreight: ['Dhaka-Chittagong High-Speed Rail Freight Corridor', 'Padma Rail Link'],
+                    inlandWaterways: ['BIWTA Class-1 Navigational Riverine Cargo System']
+                },
+                resource_constraints: {
+                    environmentalSafeguards: ['Zero-Discharge Industrial Effluent Treatment Mandate'],
+                    gridInterconnection: ['Cross-Border High-Voltage Direct Current (HVDC 500kV) Links']
+                },
+                resource_risks: {
+                    monsoonFlooding: 'Mitigated by Automated Polder Embankments & Sluice Gates',
+                    globalCommodityPriceShocks: 'Hedging via Long-Term Bilateral Sovereign Accords'
+                },
+                resource_potential: {
+                    undiscoveredGasProspects: '12.4 TCF High-Probability Deep Prospects in Southern Blocks',
+                    criticalMineralsReserveValue: 'Estimated $42 Billion in Coastal Heavy Mineral Deposits'
+                },
+                discovery_context: {
+                    geologicalSurveys: '3D Seismic Marine Survey 2024-2026 Completed',
+                    provenReservesConfidence: '99.4% Epistemic Confidence'
+                },
+                provenance: {
+                    dataConfidence: '100% Cryptographically Verified',
+                    lastVerified: 'Current Simulation Cycle 2026',
+                    auditedBy: 'GSRSK Sovereign World Knowledge Compiler & Geospatial AI'
+                },
+                srie_asymmetrical_salience: {
+                    geopoliticalLeverage: 'High (Control of Trans-Bay Energy Corridor & Maritime Silk Route)',
+                    foodSovereigntyScore: '96.2 / 100'
+                }
+            };
+        }
+
+        getDepositsForCountry(countryKey) {
+            const iso = this.normalizeCountryCode(countryKey);
+            return this.deposits.filter(d => d.countryCode === iso || d.country.toUpperCase() === String(countryKey).toUpperCase());
+        }
+
+        getSummary(countryKey) {
+            const activeIso = this.normalizeCountryCode(countryKey || (typeof window !== 'undefined' && window.currentActiveCountry) || 'BGD');
+            const countryProf = this.getCountryResourceProfile(activeIso);
+            const countryName = countryProf.identity?.name || activeIso;
+
+            // Generate 17 commodities status with active multipliers
+            const resourcesList = this.resourceTypes.map(res => {
+                const upgradeMul = this.facilityUpgrades[res.id] || 1.0;
+                const bonusSPR = this.strategicReserves[res.id] || 0;
+                const prod = Math.round(res.dailyOutput * upgradeMul);
+                const demand = res.dailyDemand;
+                const net = prod - demand;
+                const selfSuff = Math.min(250, Math.round((prod / (demand || 1)) * 100));
+                const stockDays = Math.max(15, Math.round((bonusSPR + (prod * 45)) / (demand || 1)));
+                const warehouseStock = Math.round(bonusSPR + (prod * 60));
+                const activeFac = Math.round(3 + (upgradeMul * 4));
+
+                return {
+                    id: res.id,
+                    name: res.name,
+                    bnName: res.bnName,
+                    icon: res.icon,
+                    category: res.category,
+                    color: res.color,
+                    unit: res.unit,
+                    basePrice: res.basePrice,
+                    dailyProduction: prod,
+                    dailyConsumption: demand,
+                    netBalance: net,
+                    selfSufficiencyRatio: selfSuff,
+                    stockDays: stockDays,
+                    activeFacilities: activeFac,
+                    warehouseStock: warehouseStock,
+                    processChain: res.processChain
+                };
+            });
+
+            // Global Metrics
+            const totalStockDays = Math.round(resourcesList.reduce((acc, r) => acc + r.stockDays, 0) / resourcesList.length);
+            const avgSufficiency = Math.round(resourcesList.reduce((acc, r) => acc + r.selfSufficiencyRatio, 0) / resourcesList.length);
+            const activeSurveysList = Array.from(this.activeSurveys);
+
+            const globalMetrics = {
+                autonomyIndex: avgSufficiency,
+                strategicReservesTotalDays: totalStockDays,
+                activeFacilitiesTotal: resourcesList.reduce((acc, r) => acc + r.activeFacilities, 0),
+                surveysUnderway: activeSurveysList.map(id => {
+                    const r = this.resourceTypes.find(x => x.id === id) || { name: id, icon: '⛏️' };
+                    return { id, name: r.name, icon: r.icon, progress: 68, yieldPotential: 'High (+18.4%)' };
+                })
+            };
+
+            const briefing = `Sovereign resource grid for ${countryName} is operating in full geopolitical equilibrium. 17 strategic commodities are monitored with continuous multi-facility SCADA telemetry. Strategic Autonomy Index is ${avgSufficiency}% with ${totalStockDays} days of aggregate sovereign emergency reserves.`;
+
+            const debates = [
+                {
+                    id: 'deb-lng-expansion',
+                    avatar: '🛢️',
+                    speaker: 'Dr. Tariqul Islam',
+                    role: 'Secretary of Energy & Hydrocarbons',
+                    text: `We recommend authorizing a $500M Sovereign Expansion into deepwater LNG liquefaction and offshore gas storage to guarantee continuous baseload grid power during winter peak demand.`,
+                    options: [
+                        { label: '✅ AUTHORIZE DECREE (+$25M/s Gas)', action: 'expand_gas' },
+                        { label: '❌ POSTPONE FOR SPR BUFFER', action: 'buffer_spr' }
+                    ]
+                },
+                {
+                    id: 'deb-critical-lithium',
+                    avatar: '🔋',
+                    speaker: 'Engr. Sarah Chen',
+                    role: 'Chief of Critical Minerals Council',
+                    text: `Global lithium and rare earth markets face escalating trade friction. Fast-tracking domestic geological survey radar will uncover local pegmatite and heavy mineral sand reserves.`,
+                    options: [
+                        { label: '⛏️ LAUNCH NATIONAL SURVEY', action: 'survey_lithium' },
+                        { label: '🤝 SIGN IMPORT TREATY', action: 'treaty_lithium' }
+                    ]
+                },
+                {
+                    id: 'deb-grain-mandate',
+                    avatar: '🌾',
+                    speaker: 'Director Mahmudur Rahman',
+                    role: 'Food & Strategic Grain Reserve Board',
+                    text: `Enforcing a 100% Hermetic Food Grain Mandate across national silos will insulate the population from trans-boundary fertilizer and wheat inflation shocks.`,
+                    options: [
+                        { label: '📦 ENFORCE GRAIN MANDATE', action: 'mandate_grain' },
+                        { label: '💵 ALLOCATE AGRI SUBSIDY', action: 'subsidy_agri' }
+                    ]
+                }
+            ];
+
+            return {
+                briefing,
+                globalMetrics,
+                resourcesList,
+                debates
+            };
+        }
+
+        executeDirective(action, resId, opt) {
+            const resObj = this.resourceTypes.find(r => r.id === resId) || { name: resId, icon: '💎' };
+            const countryName = (typeof window !== 'undefined' && window.currentActiveCountry) || 'BANGLADESH';
+
+            if (action === 'survey') {
+                this.activeSurveys.add(resId);
+                if (typeof window !== 'undefined' && window.showOmegaNotification) {
+                    window.showOmegaNotification('⛏️ GEOLOGICAL SURVEY DISPATCHED', `Autonomous deep-earth exploration initiated for ${resObj.name}! Discovered reserve confidence increased.`, 'success');
+                }
+            } else if (action === 'expand_facility') {
+                const cur = this.facilityUpgrades[resId] || 1.0;
+                this.facilityUpgrades[resId] = +(cur + 0.25).toFixed(2);
+
+                if (typeof window !== 'undefined') {
+                    if (window.resources && window.resources.cash) {
+                        window.resources.cash = Math.max(0, window.resources.cash - 10000000);
+                    }
+                    if (window.resourceRates) {
+                        if (resId === 'crude_oil') window.resourceRates.oil += 250;
+                        if (resId === 'iron_ore') window.resourceRates.steel += 150;
+                        if (resId === 'uranium') window.resourceRates.uranium += 5;
+                    }
+                    if (window.showOmegaNotification) {
+                        window.showOmegaNotification('🏭 FACILITY EXPANSION AUTHORIZED', `Industrial processing throughput for ${resObj.name} boosted to ${(this.facilityUpgrades[resId] * 100)}%!`, 'success');
+                    }
+                }
+            } else if (action === 'add_reserve') {
+                const cur = this.strategicReserves[resId] || 0;
+                this.strategicReserves[resId] = cur + 50000;
+
+                if (typeof window !== 'undefined') {
+                    if (window.resources) {
+                        if (resId === 'crude_oil') window.resources.oil += 50000;
+                        if (resId === 'iron_ore') window.resources.steel += 20000;
+                        if (resId === 'uranium') window.resources.uranium += 100;
+                    }
+                    if (window.showOmegaNotification) {
+                        window.showOmegaNotification('📦 STRATEGIC RESERVE STOCKPILED', `+50,000 units of ${resObj.name} transferred to sovereign emergency bunkers!`, 'success');
+                    }
+                }
+            } else if (action === 'focus_map') {
+                if (typeof window !== 'undefined' && window.Game && window.Game.Map) {
+                    if (typeof window.Game.Map.activateResourceMode === 'function') {
+                        window.Game.Map.activateResourceMode([resId]);
+                    } else if (typeof window.Game.Map.applyResourceMapFilter === 'function') {
+                        window.Game.Map.applyResourceMapFilter(resId);
+                    }
+                    if (window.showOmegaNotification) {
+                        window.showOmegaNotification('🗺️ MAP SENSORS ENGAGED', `World map targeted on global ${resObj.name} deposits and logistic corridors!`, 'info');
+                    }
+                }
+            } else if (action === 'cabinet_vote') {
+                this.cabinetVotes[resId] = opt;
+                if (typeof window !== 'undefined') {
+                    if (window.resources && window.resourceRates) {
+                        window.resourceRates.cash += 1000;
+                    }
+                    if (window.showOmegaNotification) {
+                        window.showOmegaNotification('🏛️ EXECUTIVE DECREE ENACTED', `Cabinet policy decree for ${resId} successfully passed into law!`, 'success');
+                    }
+                }
+            }
+
+            // Fire reactive event
+            if (typeof window !== 'undefined') {
+                window.dispatchEvent(new CustomEvent('RESOURCE_STATE_UPDATED', { detail: { action, resId, opt } }));
+                window.dispatchEvent(new CustomEvent('MINISTRY_STATE_CHANGED', { detail: { ministryId: 'economy' } }));
+            }
+        }
+
+        openModal(countryKey) {
+            if (typeof document === 'undefined') return;
+            const targetCountry = countryKey || (typeof window !== 'undefined' && (window.CountryIOS?.activeCountry || window.currentActiveCountry)) || 'BGD';
+            let modal = document.getElementById('gsrsk-intelligence-modal');
+
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'gsrsk-intelligence-modal';
+                modal.style.cssText = 'display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(2,11,20,0.95); backdrop-filter:blur(10px); z-index:999999; justify-content:center; align-items:center; font-family:var(--font-mono, monospace);';
+                document.body.appendChild(modal);
+            }
+
+            modal.style.display = 'flex';
+            this.renderModalContent(modal, targetCountry, 'matrix');
+        }
+
+        closeModal() {
+            const modal = document.getElementById('gsrsk-intelligence-modal');
+            if (modal) modal.style.display = 'none';
+        }
+
+        renderModalContent(modalEl, countryKey, activeTab = 'matrix') {
+            const summary = this.getSummary(countryKey);
+            const profile = this.getCountryResourceProfile(countryKey);
+            const countryName = profile.identity?.name || countryKey;
+            const countryDeposits = this.getDepositsForCountry(countryKey);
+
+            modalEl.innerHTML = `
+                <div style="background:rgba(15,23,42,0.98); border:2px solid #00e5ff; border-radius:16px; width:95vw; max-width:1300px; height:90vh; max-height:850px; display:flex; flex-direction:column; box-shadow:0 0 50px rgba(0,229,255,0.3); overflow:hidden;">
+                    <!-- MODAL HEADER -->
+                    <div style="padding:16px 24px; background:linear-gradient(90deg, rgba(0,229,255,0.15), rgba(168,85,247,0.15)); border-bottom:1px solid rgba(0,229,255,0.3); display:flex; justify-content:space-between; align-items:center; flex-shrink:0;">
+                        <div style="display:flex; align-items:center; gap:12px;">
+                            <span style="font-size:28px;">💎</span>
+                            <div>
+                                <div style="font-size:18px; font-weight:bold; color:#00e5ff; font-family:var(--font-title, sans-serif); letter-spacing:1px; display:flex; align-items:center; gap:8px;">
+                                    <span>GSRSK RESOURCE INTELLIGENCE HUB</span>
+                                    <span style="font-size:11px; padding:2px 8px; border-radius:12px; background:rgba(34,197,94,0.2); border:1px solid #22c55e; color:#22c55e;">v14.0 ACTIVE</span>
+                                </div>
+                                <div style="font-size:11px; color:#cbd5e1; margin-top:2px;">
+                                    Sovereign Focus: <strong style="color:#ffd700;">${countryName}</strong> • Autonomy Rating: <strong style="color:#22c55e;">${summary.globalMetrics.autonomyIndex}%</strong> • Emergency Stock: <strong style="color:#00e5ff;">${summary.globalMetrics.strategicReservesTotalDays} Days</strong>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- NAVIGATION TABS -->
+                        <div style="display:flex; gap:8px; align-items:center;">
+                            <button onclick="window.ResourceMinistryEngine.renderModalContent(document.getElementById('gsrsk-intelligence-modal'), '${countryKey}', 'matrix')" style="padding:8px 14px; background:${activeTab === 'matrix' ? 'linear-gradient(135deg,#00e5ff,#0066ff)' : 'rgba(0,0,0,0.5)'}; border:1px solid ${activeTab === 'matrix' ? '#00e5ff' : 'rgba(255,255,255,0.1)'}; color:${activeTab === 'matrix' ? '#000' : '#cbd5e1'}; font-weight:bold; font-size:11px; border-radius:6px; cursor:pointer;">
+                                📊 17 COMMODITIES MATRIX
+                            </button>
+                            <button onclick="window.ResourceMinistryEngine.renderModalContent(document.getElementById('gsrsk-intelligence-modal'), '${countryKey}', 'deposits')" style="padding:8px 14px; background:${activeTab === 'deposits' ? 'linear-gradient(135deg,#00e5ff,#0066ff)' : 'rgba(0,0,0,0.5)'}; border:1px solid ${activeTab === 'deposits' ? '#00e5ff' : 'rgba(255,255,255,0.1)'}; color:${activeTab === 'deposits' ? '#000' : '#cbd5e1'}; font-weight:bold; font-size:11px; border-radius:6px; cursor:pointer;">
+                                🗺️ 62+ STRATEGIC DEPOSITS
+                            </button>
+                            <button onclick="window.ResourceMinistryEngine.renderModalContent(document.getElementById('gsrsk-intelligence-modal'), '${countryKey}', 'profile')" style="padding:8px 14px; background:${activeTab === 'profile' ? 'linear-gradient(135deg,#00e5ff,#0066ff)' : 'rgba(0,0,0,0.5)'}; border:1px solid ${activeTab === 'profile' ? '#00e5ff' : 'rgba(255,255,255,0.1)'}; color:${activeTab === 'profile' ? '#000' : '#cbd5e1'}; font-weight:bold; font-size:11px; border-radius:6px; cursor:pointer;">
+                                📜 25-SECTION AUDIT
+                            </button>
+                            <button onclick="window.ResourceMinistryEngine.closeModal()" style="padding:8px 14px; background:rgba(239,68,68,0.2); border:1px solid #ef4444; color:#ef4444; font-weight:bold; font-size:11px; border-radius:6px; cursor:pointer;">
+                                ✕ CLOSE
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- MODAL BODY VIEWPORT -->
+                    <div style="flex:1; overflow-y:auto; padding:20px; display:flex; flex-direction:column; gap:16px;">
+                        ${activeTab === 'matrix' ? this._renderMatrixTab(summary, countryKey) : ''}
+                        ${activeTab === 'deposits' ? this._renderDepositsTab(countryDeposits, countryKey) : ''}
+                        ${activeTab === 'profile' ? this._renderProfileTab(profile, countryKey) : ''}
+                    </div>
+                </div>
+            `;
+        }
+
+        _renderMatrixTab(summary, countryKey) {
+            return `
+                <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:12px;">
+                    ${summary.resourcesList.map(r => `
+                        <div style="background:rgba(8,15,26,0.9); border:1px solid ${r.color || 'rgba(0,229,255,0.3)'}; border-radius:10px; padding:12px; display:flex; flex-direction:column; gap:8px;">
+                            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                                <div style="display:flex; align-items:center; gap:8px;">
+                                    <span style="font-size:22px;">${r.icon}</span>
+                                    <div>
+                                        <div style="font-size:12px; font-weight:bold; color:#f8fafc;">${r.name}</div>
+                                        <div style="font-size:10px; color:#94a3b8;">${r.bnName || ''} • ${r.category}</div>
+                                    </div>
+                                </div>
+                                <span style="font-size:10px; padding:2px 6px; border-radius:4px; background:rgba(0,229,255,0.1); color:#00e5ff; font-weight:bold;">${r.unit}</span>
+                            </div>
+
+                            <!-- SELF-SUFFICIENCY BAR -->
+                            <div>
+                                <div style="display:flex; justify-content:space-between; font-size:10px; margin-bottom:3px;">
+                                    <span style="color:#94a3b8;">Self-Sufficiency:</span>
+                                    <strong style="color:${r.selfSufficiencyRatio >= 100 ? '#22c55e' : '#ffd700'};">${r.selfSufficiencyRatio}%</strong>
+                                </div>
+                                <div style="width:100%; height:6px; background:rgba(255,255,255,0.1); border-radius:3px; overflow:hidden;">
+                                    <div style="width:${Math.min(100, r.selfSufficiencyRatio)}%; height:100%; background:${r.selfSufficiencyRatio >= 100 ? '#22c55e' : '#ffd700'};"></div>
+                                </div>
+                            </div>
+
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; font-size:10px; background:rgba(0,0,0,0.3); padding:6px 8px; border-radius:6px;">
+                                <div>Output: <strong style="color:#22c55e;">+${r.dailyProduction.toLocaleString()}</strong></div>
+                                <div>Demand: <strong style="color:#f87171;">-${r.dailyConsumption.toLocaleString()}</strong></div>
+                                <div>Net: <strong style="color:${r.netBalance >= 0 ? '#22c55e' : '#f87171'};">${r.netBalance >= 0 ? '+' : ''}${r.netBalance.toLocaleString()}</strong></div>
+                                <div>Stock Days: <strong style="color:#ffd700;">${r.stockDays} D</strong></div>
+                            </div>
+
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:4px; margin-top:2px;">
+                                <button onclick="window.ResourceMinistryEngine.executeDirective('survey', '${r.id}'); window.ResourceMinistryEngine.renderModalContent(document.getElementById('gsrsk-intelligence-modal'), '${countryKey}', 'matrix');" style="padding:6px 4px; background:rgba(0,229,255,0.15); border:1px solid #00e5ff; color:#00e5ff; font-size:10px; font-weight:bold; border-radius:4px; cursor:pointer;">
+                                    ⛏️ SURVEY
+                                </button>
+                                <button onclick="window.ResourceMinistryEngine.executeDirective('expand_facility', '${r.id}'); window.ResourceMinistryEngine.renderModalContent(document.getElementById('gsrsk-intelligence-modal'), '${countryKey}', 'matrix');" style="padding:6px 4px; background:rgba(34,197,94,0.15); border:1px solid #22c55e; color:#22c55e; font-size:10px; font-weight:bold; border-radius:4px; cursor:pointer;">
+                                    🏭 EXPAND (+25%)
+                                </button>
+                                <button onclick="window.ResourceMinistryEngine.executeDirective('add_reserve', '${r.id}'); window.ResourceMinistryEngine.renderModalContent(document.getElementById('gsrsk-intelligence-modal'), '${countryKey}', 'matrix');" style="padding:6px 4px; background:rgba(255,215,0,0.15); border:1px solid #ffd700; color:#ffd700; font-size:10px; font-weight:bold; border-radius:4px; cursor:pointer;">
+                                    📦 SPR BUFFER
+                                </button>
+                                <button onclick="window.ResourceMinistryEngine.executeDirective('focus_map', '${r.id}'); window.ResourceMinistryEngine.closeModal();" style="padding:6px 4px; background:rgba(168,85,247,0.15); border:1px solid #a855f7; color:#a855f7; font-size:10px; font-weight:bold; border-radius:4px; cursor:pointer;">
+                                    🗺️ FOCUS MAP
+                                </button>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        _renderDepositsTab(countryDeposits, countryKey) {
+            const allDeps = this.deposits;
+            return `
+                <div style="display:flex; flex-direction:column; gap:12px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(0,0,0,0.4); padding:10px 14px; border-radius:8px; border:1px solid rgba(0,229,255,0.2);">
+                        <span style="color:#00e5ff; font-size:12px; font-weight:bold;">CANONICAL GLOBAL STRATEGIC DEPOSIT CATALOG (${allDeps.length} WORLD DEPOSITS)</span>
+                        <span style="color:#94a3b8; font-size:11px;">Real-World Geological Coordinates & Reserve Grades</span>
+                    </div>
+
+                    <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(350px, 1fr)); gap:10px;">
+                        ${allDeps.map(dep => `
+                            <div style="background:rgba(8,15,26,0.9); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:12px; display:flex; flex-direction:column; gap:6px;">
+                                <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                                    <div>
+                                        <div style="color:#ffd700; font-size:12px; font-weight:bold;">${dep.name}</div>
+                                        <div style="color:#94a3b8; font-size:10px;">🌐 ${dep.country} (${dep.countryCode}) • [${dep.lat.toFixed(2)}°, ${dep.lng.toFixed(2)}°]</div>
+                                    </div>
+                                    <span style="font-size:9px; padding:2px 6px; border-radius:4px; background:rgba(34,197,94,0.15); color:#22c55e; font-weight:bold;">${dep.status}</span>
+                                </div>
+                                <div style="font-size:11px; color:#cbd5e1; background:rgba(0,0,0,0.3); padding:6px 8px; border-radius:4px;">
+                                    <div>Reserves: <strong style="color:#00e5ff;">${dep.reserves}</strong></div>
+                                    <div>Grade: <strong style="color:#a855f7;">${dep.grade}</strong></div>
+                                    <div>Operator: <strong style="color:#f8fafc;">${dep.operator || dep.owner}</strong></div>
+                                </div>
+                                <button onclick="if(window.Game && window.Game.Map) { window.Game.Map.map.flyTo([${dep.lat}, ${dep.lng}], 6); window.ResourceMinistryEngine.closeModal(); }" style="padding:6px; background:rgba(0,229,255,0.15); border:1px solid #00e5ff; color:#00e5ff; font-weight:bold; font-size:10px; border-radius:4px; cursor:pointer; text-align:center;">
+                                    📍 FLY MAP TO DEPOSIT
+                                </button>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        _renderProfileTab(profile, countryKey) {
+            const id = profile.identity || {};
+            const geo = profile.geography || {};
+            const dom = profile.resource_domain || {};
+            const min = profile.mineral_resource_base || {};
+            const hc = profile.hydrocarbon_resource_base || {};
+            const eng = profile.energy_resource_base || {};
+            const infra = profile.resource_infrastructure_context || {};
+
+            return `
+                <div style="display:flex; flex-direction:column; gap:14px;">
+                    <div style="background:linear-gradient(135deg, rgba(0,229,255,0.1), rgba(15,23,42,0.9)); border:1.5px solid #00e5ff; border-radius:10px; padding:14px;">
+                        <div style="font-size:16px; font-weight:bold; color:#00e5ff;">${id.name ? id.name.toUpperCase() : countryKey} CANONICAL 25-SECTION DOSSIER</div>
+                        <div style="font-size:11px; color:#94a3b8; margin-top:2px;">Official ID: ${id.resourceSystemId || 'GSRSK-SYS'} • Capital: ${geo.capital || 'National HQ'} • Area: ${geo.landAreaKm2 ? geo.landAreaKm2.toLocaleString() + ' km²' : 'Sovereign'}</div>
+                    </div>
+
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                        <div style="background:rgba(8,15,26,0.9); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:12px;">
+                            <div style="color:#ffd700; font-weight:bold; font-size:12px; margin-bottom:6px;">⛏️ MINERALS & CRITICAL METALS</div>
+                            <div style="font-size:11px; color:#cbd5e1; line-height:1.5;">
+                                <div>• Metallic: ${(min.metallic || ['Iron Ore', 'Copper', 'Titanium Sands']).join(', ')}</div>
+                                <div>• Critical: ${(min.criticalMinerals || ['Monazite Rare Earths', 'Zircon']).join(', ')}</div>
+                                <div>• Non-Metallic: ${(min.nonMetallic || ['Limestone', 'Kaolin White Clay', 'Silica Quartz']).join(', ')}</div>
+                            </div>
+                        </div>
+
+                        <div style="background:rgba(8,15,26,0.9); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:12px;">
+                            <div style="color:#00e5ff; font-weight:bold; font-size:12px; margin-bottom:6px;">🛢️ HYDROCARBON & ENERGY BASE</div>
+                            <div style="font-size:11px; color:#cbd5e1; line-height:1.5;">
+                                <div>• Gas Fields: ${(hc.naturalGas || ['Bibiyana Mega Field', 'Titas Reservoir', 'Rashidpur Basin']).join(', ')}</div>
+                                <div>• Deepwater / Marine: ${(hc.gasHydrates || ['Bay of Bengal Methane Hydrates (17-25 TCF)']).join(', ')}</div>
+                                <div>• Nuclear / Grid: ${(eng.nuclearStatus || ['Rooppur VVER-1200 Dual Baseload Reactor (2.4 GW)']).join(', ')}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+    }
+
+    const ResourceMinistryEngineInstance = new AutonomousResourceMinistryEngine();
+    global.ResourceMinistryEngine = ResourceMinistryEngineInstance;
+
+    if (typeof window !== 'undefined') {
+        window.ResourceMinistryEngine = ResourceMinistryEngineInstance;
+    }
+
+    // =========================================================================
+    // GSRSK — PART 05: RESOURCE RESERVE & EXTRACTION ENGINE (VOLUME 1 OF 2)
+    // =========================================================================
+    // Architecture Phase: 05 of 16
+    // Production Standard: 100% Comprehensive Constitutional Invariant Engine
+    //
+    // SUBSYSTEMS INCLUDED IN VOLUME 1:
+    //   05.01 Reserve Schema, Enums, Dimensions, Epistemic States & Error Taxonomy
+    //   05.02 Reserve Basis Model & Deterministic Provenance Anchor Engine
+    //   05.03 Reserve Classification Engine (CRIRSCO/PRMS Multi-Dimensional Matrix)
+    //   05.04 Multi-Layer Reserve State Vector Engine (9-Dimensional Quantities)
+    //   05.05 Resource Identity -> Reserve Anchor Binding Engine
+    //   05.06 Recoverability Model, Mining Loss & Dilution Segregation Engine
+    //   05.07 Physical Accessibility & Infrastructure Limit Assessment Engine
+    //   05.08 Technical & Economic Extractability Assessment Engine
+    //   05.09 Extraction Asset Link & Mining Concession Tenancy Engine
+    //   05.10 Extraction Capacity & Production Rate Modeler (Temporal Windows)
+    //   05.11 Multi-Dimensional Extraction Constraint Algebra Engine [S2 High Fixed]
+    //   05.12 Mining Method Profiles & Technology Capability Adapter
+    //   05.13 Energy & Labor Requirement Evaluator Engines
+    //   05.14 Extraction Cost Model & Cut-off Grade Viability Engine
+    //   05.15 Rule Definition, Validation & AST Schema Engine
+    //   05.16 Safe AST-Based Deterministic Formula Interpreter (Strict No-Eval Guard)
+    //   05.17 Execution Intent, Scheduling, Transitions & ExtractionResult [S0 Blocker Fixed]
+    // =========================================================================
+
+    (function(global) {
+        'use strict';
+
+        // 05.01: SCHEMA, ENUMS, DIMENSIONS, POLICIES & ERROR TAXONOMY
+        const QuantityDimension = Object.freeze({
+            MASS: 'MASS',
+            VOLUME: 'VOLUME',
+            ENERGY: 'ENERGY',
+            AREA: 'AREA',
+            LENGTH: 'LENGTH',
+            DIMENSIONLESS: 'DIMENSIONLESS',
+            UNKNOWN: 'UNKNOWN'
+        });
+
+        const ReserveClassificationEnum = Object.freeze({
+            GEOLOGICAL_MEASURED: 'GEOLOGICAL_MEASURED',
+            GEOLOGICAL_INDICATED: 'GEOLOGICAL_INDICATED',
+            GEOLOGICAL_INFERRED: 'GEOLOGICAL_INFERRED',
+            MINERAL_PROVED_RESERVE: 'MINERAL_PROVED_RESERVE',
+            MINERAL_PROBABLE_RESERVE: 'MINERAL_PROBABLE_RESERVE',
+            UNCONVENTIONAL_CONTINGENT: 'UNCONVENTIONAL_CONTINGENT',
+            UNCLASSIFIED_RESOURCE: 'UNCLASSIFIED_RESOURCE',
+            UNKNOWN_CLASSIFICATION: 'UNKNOWN_CLASSIFICATION'
+        });
+
+        const ReserveDerivedStateEnum = Object.freeze({
+            RECOVERABLE: 'RECOVERABLE',
+            ACCESSIBLE: 'ACCESSIBLE',
+            TECHNICALLY_EXTRACTABLE: 'TECHNICALLY_EXTRACTABLE',
+            ECONOMICALLY_EXTRACTABLE: 'ECONOMICALLY_EXTRACTABLE',
+            CURRENTLY_EXTRACTABLE: 'CURRENTLY_EXTRACTABLE'
+        });
+
+        const ReserveOperationalStatus = Object.freeze({
+            UNASSESSED: 'UNASSESSED',
+            ASSESSED_DORMANT: 'ASSESSED_DORMANT',
+            PERMITTED_UNDEVELOPED: 'PERMITTED_UNDEVELOPED',
+            ACTIVE_EXTRACTION: 'ACTIVE_EXTRACTION',
+            EXTRACTION_SUSPENDED: 'EXTRACTION_SUSPENDED',
+            DEPLETING_MARGINAL: 'DEPLETING_MARGINAL',
+            EXHAUSTED_DEPLETED: 'EXHAUSTED_DEPLETED',
+            TEMPORARILY_BLOCKED: 'TEMPORARILY_BLOCKED',
+            ABANDONED: 'ABANDONED',
+            UNKNOWN_OPERATIONAL_STATE: 'UNKNOWN_OPERATIONAL_STATE'
+        });
+
+        const ExtractionMethodEnum = Object.freeze({
+            OPEN_PIT: 'OPEN_PIT',
+            UNDERGROUND: 'UNDERGROUND',
+            IN_SITU: 'IN_SITU',
+            OFFSHORE: 'OFFSHORE',
+            SURFACE_STRIP_MINING: 'SURFACE_STRIP_MINING',
+            UNDERGROUND_BLOCK_CAVING: 'UNDERGROUND_BLOCK_CAVING',
+            PLACER_DREDGING: 'PLACER_DREDGING',
+            TAILINGS_REPROCESSING: 'TAILINGS_REPROCESSING',
+            BOREHOLE_CONVENTIONAL: 'BOREHOLE_CONVENTIONAL',
+            BOREHOLE_UNCONVENTIONAL: 'BOREHOLE_UNCONVENTIONAL',
+            GEOTHERMAL_BRINE: 'GEOTHERMAL_BRINE',
+            OTHER: 'OTHER',
+            UNKNOWN: 'UNKNOWN'
+        });
+
+        const AccessibilityStatusEnum = Object.freeze({
+            ACCESSIBLE: 'ACCESSIBLE',
+            PARTIALLY_ACCESSIBLE: 'PARTIALLY_ACCESSIBLE',
+            INACCESSIBLE: 'INACCESSIBLE',
+            UNKNOWN: 'UNKNOWN'
+        });
+
+        const AccessibilityReasonCodeEnum = Object.freeze({
+            INFRASTRUCTURE_LIMIT: 'INFRASTRUCTURE_LIMIT',
+            DEPTH_LIMIT: 'DEPTH_LIMIT',
+            TECHNOLOGY_LIMIT: 'TECHNOLOGY_LIMIT',
+            GEOGRAPHIC_LIMIT: 'GEOGRAPHIC_LIMIT',
+            OPERATIONAL_LIMIT: 'OPERATIONAL_LIMIT',
+            DATA_UNKNOWN: 'DATA_UNKNOWN'
+        });
+
+        const ExtractabilityStatusEnum = Object.freeze({
+            ECONOMICALLY_EXTRACTABLE: 'ECONOMICALLY_EXTRACTABLE',
+            NOT_ECONOMICALLY_EXTRACTABLE: 'NOT_ECONOMICALLY_EXTRACTABLE',
+            TECHNICALLY_EXTRACTABLE: 'TECHNICALLY_EXTRACTABLE',
+            NOT_TECHNICALLY_EXTRACTABLE: 'NOT_TECHNICALLY_EXTRACTABLE',
+            MARGINALLY_EXTRACTABLE: 'MARGINALLY_EXTRACTABLE',
+            BLOCKED_REGULATORY: 'BLOCKED_REGULATORY',
+            UNKNOWN: 'UNKNOWN'
+        });
+
+        const ConstraintDimensionEnum = Object.freeze({
+            QUANTITY: 'QUANTITY',
+            RATE: 'RATE',
+            TIME: 'TIME',
+            ENERGY: 'ENERGY',
+            LABOR: 'LABOR',
+            BOOLEAN: 'BOOLEAN',
+            ENVIRONMENTAL: 'ENVIRONMENTAL'
+        });
+
+        const ConstraintSeverityEnum = Object.freeze({
+            BLOCKING: 'BLOCKING',
+            LIMITING: 'LIMITING',
+            WARNING: 'WARNING',
+            INFORMATIONAL: 'INFORMATIONAL'
+        });
+
+        const ConstraintEvaluationStatus = Object.freeze({
+            PASS: 'PASS',
+            LIMITED: 'LIMITED',
+            BLOCKED: 'BLOCKED',
+            UNKNOWN: 'UNKNOWN',
+            INVALID: 'INVALID'
+        });
+
+        const UnknownPolicyEnum = Object.freeze({
+            BLOCK: 'BLOCK',
+            PASS_THROUGH: 'PASS_THROUGH',
+            CONSERVATIVE: 'CONSERVATIVE',
+            DEFER: 'DEFER'
+        });
+
+        const OverdrawPolicyEnum = Object.freeze({
+            CAP: 'CAP',
+            REJECT: 'REJECT',
+            PARTIAL_ACCEPT: 'PARTIAL_ACCEPT'
+        });
+
+        const ReserveAccountingDepletionLayer = Object.freeze({
+            RECOVERABLE: 'RECOVERABLE',
+            ACCESSIBLE: 'ACCESSIBLE',
+            ECONOMIC: 'ECONOMIC'
+        });
+
+        const TemporalWindowUnit = Object.freeze({
+            PER_SECOND: 'PER_SECOND',
+            PER_HOUR: 'PER_HOUR',
+            PER_DAY: 'PER_DAY',
+            PER_MONTH: 'PER_MONTH',
+            PER_YEAR: 'PER_YEAR',
+            PER_TICK: 'PER_TICK'
+        });
+
+        const ExtractionResultStatus = Object.freeze({
+            APPROVED: 'APPROVED',
+            PARTIALLY_APPROVED: 'PARTIALLY_APPROVED',
+            BLOCKED: 'BLOCKED',
+            REJECTED: 'REJECTED',
+            UNKNOWN: 'UNKNOWN',
+            INVALID: 'INVALID'
+        });
+
+        const SourceVerificationStatus = Object.freeze({
+            VERIFIED_OFFICIAL: 'VERIFIED_OFFICIAL',
+            REPORTED_UNAUDITED: 'REPORTED_UNAUDITED',
+            INFERRED_GEOLOGICAL: 'INFERRED_GEOLOGICAL',
+            SYNTHETIC_INTERPOLATED: 'SYNTHETIC_INTERPOLATED',
+            UNKNOWN_VERIFICATION: 'UNKNOWN_VERIFICATION'
+        });
+
+        const RoundingModeEnum = Object.freeze({
+            ROUND_HALF_UP: 'ROUND_HALF_UP',
+            ROUND_DOWN: 'ROUND_DOWN',
+            ROUND_NEAREST: 'ROUND_NEAREST'
+        });
+
+        const ErrorTaxonomy = Object.freeze({
+            R5_001_INVALID_OCCURRENCE_REFERENCE: 'R5_001_INVALID_OCCURRENCE_REFERENCE',
+            R5_002_UNKNOWN_RESERVE_UNIT: 'R5_002_UNKNOWN_RESERVE_UNIT',
+            R5_003_NEGATIVE_RESERVE: 'R5_003_NEGATIVE_RESERVE',
+            R5_004_NEGATIVE_EXTRACTION: 'R5_004_NEGATIVE_EXTRACTION',
+            R5_005_RESERVE_OVERDRAW: 'R5_005_RESERVE_OVERDRAW',
+            R5_006_CAPACITY_INVALID: 'R5_006_CAPACITY_INVALID',
+            R5_007_RULE_NOT_FOUND: 'R5_007_RULE_NOT_FOUND',
+            R5_008_RULE_VERSION_INVALID: 'R5_008_RULE_VERSION_INVALID',
+            R5_009_DIMENSION_MISMATCH: 'R5_009_DIMENSION_MISMATCH',
+            R5_010_UNKNOWN_CONSTRAINT: 'R5_010_UNKNOWN_CONSTRAINT',
+            R5_011_EXTRACTION_BLOCKED: 'R5_011_EXTRACTION_BLOCKED',
+            R5_012_UNKNOWN_EXTRACTABILITY: 'R5_012_UNKNOWN_EXTRACTABILITY',
+            R5_013_DEPLETION_INCONSISTENCY: 'R5_013_DEPLETION_INCONSISTENCY',
+            R5_014_CALCULATION_NONDETERMINISM: 'R5_014_CALCULATION_NONDETERMINISM',
+            R5_015_DUPLICATE_RESERVE_STATE: 'R5_015_DUPLICATE_RESERVE_STATE',
+            R5_016_ORPHAN_RESERVE_STATE: 'R5_016_ORPHAN_RESERVE_STATE',
+            R5_017_CONFIG_CONFLICT: 'R5_017_CONFIG_CONFLICT',
+            R5_018_SNAPSHOT_INTEGRITY_FAILURE: 'R5_018_SNAPSHOT_INTEGRITY_FAILURE',
+            R5_019_RESERVE_ACCOUNTING_DRIFT: 'R5_019_RESERVE_ACCOUNTING_DRIFT',
+            R5_020_INVALID_TEMPORAL_WINDOW: 'R5_020_INVALID_TEMPORAL_WINDOW'
+        });
+
+        // DETERMINISTIC HASHING ENGINE (NO RUNTIME DATE.NOW)
+        class DeterministicHashEngine {
+            static computeHash(inputStr) {
+                const str = typeof inputStr === 'string' ? inputStr : JSON.stringify(inputStr);
+                let h1 = 0xdeadbeef ^ str.length;
+                let h2 = 0x41c6ce57 ^ str.length;
+                for (let i = 0; i < str.length; i++) {
+                    const ch = str.charCodeAt(i);
+                    h1 = (Math.imul(h1 ^ ch, 2654435761) >>> 0);
+                    h2 = (Math.imul(h2 ^ ch, 1597334677) >>> 0);
+                }
+                h1 = ((Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909)) >>> 0);
+                h2 = ((Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909)) >>> 0);
+                return ((h1 >>> 0).toString(16).padStart(8, '0') + (h2 >>> 0).toString(16).padStart(8, '0')).toLowerCase();
+            }
+        }
+
+        // 05.02: RESERVE BASIS MODEL & PROVENANCE ANCHOR ENGINE
+        class ReserveBasis {
+            constructor(params = {}) {
+                if (!params.occurrenceKey) {
+                    throw new Error('[ReserveBasis Violation]: occurrenceKey is strictly required.');
+                }
+                if (typeof params.quantity !== 'number' || !Number.isFinite(params.quantity) || params.quantity < 0) {
+                    throw new Error('[ReserveBasis Violation]: quantity must be a non-negative finite number.');
+                }
+
+                this.occurrenceKey = params.occurrenceKey;
+                this.quantity = params.quantity;
+                this.unit = params.unit || 'UNKNOWN_UNIT';
+                this.dimension = params.dimension || QuantityDimension.UNKNOWN;
+                this.reserveClass = params.reserveClass || ReserveClassificationEnum.UNKNOWN_CLASSIFICATION;
+                this.sourceStatus = params.sourceStatus || SourceVerificationStatus.UNKNOWN_VERIFICATION;
+                this.confidence = typeof params.confidence === 'number' ? Math.max(0, Math.min(1, params.confidence)) : 0.5;
+                this.evidenceState = params.evidenceState || 'DECLARED_FACT';
+                this.effectiveDate = params.effectiveDate || 'SIMULATION_GENESIS';
+
+                this.provenance = params.provenance || {
+                    sourceSubsystem: 'RESERVE_BASIS_RESOLVER',
+                    sourceId: 'DATA_FOUNDATION_PART_01',
+                    timestamp: 0
+                };
+
+                const hashPayload = `${this.occurrenceKey}|${this.quantity}|${this.unit}|${this.reserveClass}|${this.effectiveDate}`;
+                this.basisId = params.basisId || `BASIS:${this.occurrenceKey}:${DeterministicHashEngine.computeHash(hashPayload).substring(0, 10)}`;
+            }
+
+            clone() {
+                return new ReserveBasis({
+                    basisId: this.basisId,
+                    occurrenceKey: this.occurrenceKey,
+                    quantity: this.quantity,
+                    unit: this.unit,
+                    dimension: this.dimension,
+                    reserveClass: this.reserveClass,
+                    sourceStatus: this.sourceStatus,
+                    confidence: this.confidence,
+                    evidenceState: this.evidenceState,
+                    effectiveDate: this.effectiveDate,
+                    provenance: JSON.parse(JSON.stringify(this.provenance))
+                });
+            }
+
+            toJSON() {
+                return {
+                    basisId: this.basisId,
+                    occurrenceKey: this.occurrenceKey,
+                    quantity: this.quantity,
+                    unit: this.unit,
+                    dimension: this.dimension,
+                    reserveClass: this.reserveClass,
+                    sourceStatus: this.sourceStatus,
+                    confidence: this.confidence,
+                    evidenceState: this.evidenceState,
+                    effectiveDate: this.effectiveDate,
+                    provenance: this.provenance
+                };
+            }
+        }
+
+        // 05.03: RESERVE CLASSIFICATION ENGINE
+        class ReserveClassificationEngine {
+            static classifyReserve(rawCategory, epistemicTier, confidenceScore = 1.0) {
+                if (!rawCategory && !epistemicTier) {
+                    return ReserveClassificationEnum.UNKNOWN_CLASSIFICATION;
+                }
+
+                const cat = String(rawCategory || '').toUpperCase().trim();
+                const tier = String(epistemicTier || '').toUpperCase().trim();
+
+                if (cat.includes('PROVED') || cat.includes('PROVEN') || tier === 'TIER_A_PRIMARY_KNOWN') {
+                    return confidenceScore >= 0.8 
+                        ? ReserveClassificationEnum.MINERAL_PROVED_RESERVE 
+                        : ReserveClassificationEnum.MINERAL_PROBABLE_RESERVE;
+                }
+                if (cat.includes('PROBABLE') || tier === 'TIER_B_SECONDARY_ASSOCIATED') {
+                    return ReserveClassificationEnum.MINERAL_PROBABLE_RESERVE;
+                }
+                if (cat.includes('MEASURED')) {
+                    return ReserveClassificationEnum.GEOLOGICAL_MEASURED;
+                }
+                if (cat.includes('INDICATED')) {
+                    return ReserveClassificationEnum.GEOLOGICAL_INDICATED;
+                }
+                if (cat.includes('INFERRED') || tier === 'TIER_C_INFERRED_OCCURRENCE') {
+                    return ReserveClassificationEnum.GEOLOGICAL_INFERRED;
+                }
+                if (cat.includes('CONTINGENT') || cat.includes('UNCONVENTIONAL')) {
+                    return ReserveClassificationEnum.UNCONVENTIONAL_CONTINGENT;
+                }
+
+                return ReserveClassificationEnum.UNCLASSIFIED_RESOURCE;
+            }
+
+            static isCommercialReserve(reserveClass) {
+                return reserveClass === ReserveClassificationEnum.MINERAL_PROVED_RESERVE ||
+                       reserveClass === ReserveClassificationEnum.MINERAL_PROBABLE_RESERVE;
+            }
+        }
+
+        // 05.04: MULTI-LAYER RESERVE STATE VECTOR ENGINE (9-D QUANTITIES)
+        class ReserveState {
+            constructor(params = {}) {
+                if (!params.occurrenceKey) {
+                    throw new Error('[ReserveState Violation]: occurrenceKey is mandatory.');
+                }
+
+                this.occurrenceKey = params.occurrenceKey;
+                this.stateVersion = typeof params.stateVersion === 'number' ? params.stateVersion : 1;
+                this.unit = params.unit || 'UNKNOWN_UNIT';
+                this.dimension = params.dimension || QuantityDimension.UNKNOWN;
+
+                // 9-Dimensional Quantities
+                this.geologicalQuantity = this._assertValidQuantity(params.geologicalQuantity, 'geologicalQuantity');
+                this.classifiedReserveQuantity = this._assertValidQuantity(params.classifiedReserveQuantity, 'classifiedReserveQuantity');
+                this.recoverableQuantity = this._assertValidQuantity(params.recoverableQuantity, 'recoverableQuantity');
+                this.accessibleQuantity = this._assertValidQuantity(params.accessibleQuantity, 'accessibleQuantity');
+                this.technicallyExtractableQuantity = this._assertValidQuantity(params.technicallyExtractableQuantity, 'technicallyExtractableQuantity');
+                this.economicallyExtractableQuantity = this._assertValidQuantity(params.economicallyExtractableQuantity, 'economicallyExtractableQuantity');
+                this.currentlyAvailableQuantity = this._assertValidQuantity(params.currentlyAvailableQuantity, 'currentlyAvailableQuantity');
+                this.cumulativeDepletedQuantity = this._assertValidQuantity(params.cumulativeDepletedQuantity, 'cumulativeDepletedQuantity', 0);
+                this.residualQuantity = this._assertValidQuantity(params.residualQuantity, 'residualQuantity', this.economicallyExtractableQuantity);
+
+                this.operationalStatus = params.operationalStatus || ReserveOperationalStatus.UNASSESSED;
+                this.lastUpdatedTick = typeof params.lastUpdatedTick === 'number' ? params.lastUpdatedTick : 0;
+                this.calculationTraceHash = params.calculationTraceHash || 'GENESIS_INIT';
+                this.transitionHistory = Array.isArray(params.transitionHistory) ? [...params.transitionHistory] : [];
+
+                this.assertConservationInvariants();
+            }
+
+            _assertValidQuantity(val, fieldName, fallback = 0) {
+                const num = (typeof val === 'number' && Number.isFinite(val)) ? val : fallback;
+                if (num < 0) {
+                    throw new Error(`[ReserveState Invariant Breach]: Negative quantity forbidden in field ${fieldName} (${num}).`);
+                }
+                return num;
+            }
+
+            assertConservationInvariants() {
+                if (this.residualQuantity < 0) {
+                    throw new Error(`[ReserveState Invariant Breach]: Residual quantity cannot be negative (${this.residualQuantity})`);
+                }
+                if (this.cumulativeDepletedQuantity < 0) {
+                    throw new Error(`[ReserveState Invariant Breach]: Cumulative depleted quantity cannot be negative (${this.cumulativeDepletedQuantity})`);
+                }
+                if (this.residualQuantity > (this.geologicalQuantity + 1e-6) && this.geologicalQuantity > 0) {
+                    throw new Error(`[ReserveState Invariant Breach]: Residual quantity (${this.residualQuantity}) exceeds geological endowment (${this.geologicalQuantity})`);
+                }
+                return true;
+            }
+
+            applyDepletion(approvedQuantity, miningLossQuantity, tick = 0, traceHash = 'MUTATION_TRACE', accountingLayer = ReserveAccountingDepletionLayer.ECONOMIC) {
+                if (typeof approvedQuantity !== 'number' || approvedQuantity < 0 || !Number.isFinite(approvedQuantity)) {
+                    throw new Error('[ReserveState Depletion Error]: approvedQuantity must be a finite non-negative number.');
+                }
+                const loss = (typeof miningLossQuantity === 'number' && Number.isFinite(miningLossQuantity) && miningLossQuantity >= 0) ? miningLossQuantity : 0;
+                const totalDeduction = approvedQuantity + loss;
+
+                if (totalDeduction > (this.residualQuantity + 1e-9)) {
+                    throw new Error(`[ReserveState Overdraw Error]: Attempted to deplete ${totalDeduction} ${this.unit}, but residual reserve is only ${this.residualQuantity} ${this.unit}`);
+                }
+
+                const newResidual = Math.max(0, this.residualQuantity - totalDeduction);
+                const newCumulative = this.cumulativeDepletedQuantity + approvedQuantity;
+                const newAvailable = Math.max(0, this.currentlyAvailableQuantity - approvedQuantity);
+
+                let newStatus = this.operationalStatus;
+                if (newResidual === 0) {
+                    newStatus = ReserveOperationalStatus.EXHAUSTED_DEPLETED;
+                } else if (newResidual < (this.classifiedReserveQuantity * 0.05)) {
+                    newStatus = ReserveOperationalStatus.DEPLETING_MARGINAL;
+                }
+
+                const transitionRecord = {
+                    fromVersion: this.stateVersion,
+                    toVersion: this.stateVersion + 1,
+                    approvedQuantity,
+                    miningLossQuantity: loss,
+                    residualBefore: this.residualQuantity,
+                    residualAfter: newResidual,
+                    tick,
+                    traceHash
+                };
+
+                return new ReserveState({
+                    occurrenceKey: this.occurrenceKey,
+                    stateVersion: this.stateVersion + 1,
+                    unit: this.unit,
+                    dimension: this.dimension,
+                    geologicalQuantity: this.geologicalQuantity,
+                    classifiedReserveQuantity: this.classifiedReserveQuantity,
+                    recoverableQuantity: Math.max(0, this.recoverableQuantity - totalDeduction),
+                    accessibleQuantity: Math.max(0, this.accessibleQuantity - totalDeduction),
+                    technicallyExtractableQuantity: Math.max(0, this.technicallyExtractableQuantity - totalDeduction),
+                    economicallyExtractableQuantity: Math.max(0, this.economicallyExtractableQuantity - totalDeduction),
+                    currentlyAvailableQuantity: newAvailable,
+                    cumulativeDepletedQuantity: newCumulative,
+                    residualQuantity: newResidual,
+                    operationalStatus: newStatus,
+                    lastUpdatedTick: tick,
+                    calculationTraceHash: traceHash,
+                    transitionHistory: [...this.transitionHistory, transitionRecord]
+                });
+            }
+
+            clone() {
+                return new ReserveState({
+                    occurrenceKey: this.occurrenceKey,
+                    stateVersion: this.stateVersion,
+                    unit: this.unit,
+                    dimension: this.dimension,
+                    geologicalQuantity: this.geologicalQuantity,
+                    classifiedReserveQuantity: this.classifiedReserveQuantity,
+                    recoverableQuantity: this.recoverableQuantity,
+                    accessibleQuantity: this.accessibleQuantity,
+                    technicallyExtractableQuantity: this.technicallyExtractableQuantity,
+                    economicallyExtractableQuantity: this.economicallyExtractableQuantity,
+                    currentlyAvailableQuantity: this.currentlyAvailableQuantity,
+                    cumulativeDepletedQuantity: this.cumulativeDepletedQuantity,
+                    residualQuantity: this.residualQuantity,
+                    operationalStatus: this.operationalStatus,
+                    lastUpdatedTick: this.lastUpdatedTick,
+                    calculationTraceHash: this.calculationTraceHash,
+                    transitionHistory: JSON.parse(JSON.stringify(this.transitionHistory))
+                });
+            }
+
+            toJSON() {
+                return {
+                    occurrenceKey: this.occurrenceKey,
+                    stateVersion: this.stateVersion,
+                    unit: this.unit,
+                    dimension: this.dimension,
+                    geologicalQuantity: this.geologicalQuantity,
+                    classifiedReserveQuantity: this.classifiedReserveQuantity,
+                    recoverableQuantity: this.recoverableQuantity,
+                    accessibleQuantity: this.accessibleQuantity,
+                    technicallyExtractableQuantity: this.technicallyExtractableQuantity,
+                    economicallyExtractableQuantity: this.economicallyExtractableQuantity,
+                    currentlyAvailableQuantity: this.currentlyAvailableQuantity,
+                    cumulativeDepletedQuantity: this.cumulativeDepletedQuantity,
+                    residualQuantity: this.residualQuantity,
+                    operationalStatus: this.operationalStatus,
+                    lastUpdatedTick: this.lastUpdatedTick,
+                    calculationTraceHash: this.calculationTraceHash,
+                    transitionHistory: this.transitionHistory
+                };
+            }
+        }
+
+        // 05.05: RESOURCE IDENTITY -> RESERVE ANCHOR BINDING ENGINE
+        class ReserveAnchor {
+            constructor(params = {}) {
+                if (!params.occurrenceKey || !params.depositKey || !params.resourceTypeKey) {
+                    throw new Error('[ReserveAnchor Violation]: occurrenceKey, depositKey, and resourceTypeKey are mandatory.');
+                }
+
+                this.occurrenceKey = params.occurrenceKey;
+                this.depositKey = params.depositKey;
+                this.originKey = params.originKey || 'UNKNOWN_ORIGIN';
+                this.resourceTypeKey = params.resourceTypeKey;
+                this.identityFingerprint = params.identityFingerprint || 'UNSPECIFIED_FINGERPRINT';
+                this.ownerKey = params.ownerKey || null;
+                this.operatorKey = params.operatorKey || null;
+                this.locationNodeKey = params.locationNodeKey || null;
+                this.gradeReference = params.gradeReference || null;
+            }
+
+            toJSON() {
+                return {
+                    occurrenceKey: this.occurrenceKey,
+                    depositKey: this.depositKey,
+                    originKey: this.originKey,
+                    resourceTypeKey: this.resourceTypeKey,
+                    identityFingerprint: this.identityFingerprint,
+                    ownerKey: this.ownerKey,
+                    operatorKey: this.operatorKey,
+                    locationNodeKey: this.locationNodeKey,
+                    gradeReference: this.gradeReference
+                };
+            }
+        }
+
+        // 05.06: RECOVERABILITY MODEL & MINING LOSS SEGREGATION ENGINE
+        class RecoverabilityModel {
+            constructor(params = {}) {
+                if (!params.recoveryModelId || !params.resourceTypeKey) {
+                    throw new Error('[RecoverabilityModel Violation]: recoveryModelId and resourceTypeKey are mandatory.');
+                }
+
+                this.recoveryModelId = params.recoveryModelId;
+                this.resourceTypeKey = params.resourceTypeKey;
+                this.method = params.method || ExtractionMethodEnum.UNKNOWN;
+                
+                // Factor Decomposition (Mining vs Processing)
+                this.factor = this._clamp(params.factor, 0.85);
+                this.geologicalRecovery = this._clamp(params.geologicalRecovery, 0.95);
+                this.miningRecovery = this._clamp(params.miningRecovery, this.factor);
+                this.lossFactor = this._clamp(params.lossFactor, 1.0 - this.factor);
+                this.processLoss = this._clamp(params.processLoss, 0.0); // Separated for Part 06
+                this.operationalLoss = this._clamp(params.operationalLoss, 0.02);
+                this.unavailability = this._clamp(params.unavailability, 0.03);
+
+                this.minimumApplicableGrade = typeof params.minimumApplicableGrade === 'number' ? Math.max(0, params.minimumApplicableGrade) : 0.0;
+                this.technologyModifier = typeof params.technologyModifier === 'number' ? Math.max(0, params.technologyModifier) : 1.0;
+                this.constraintReferences = Array.isArray(params.constraintReferences) ? [...params.constraintReferences] : [];
+                this.ruleVersion = params.ruleVersion || '1.0.0';
+                this.provenance = params.provenance || { sourceSubsystem: 'RECOVERABILITY_ENGINE', timestamp: 0 };
+
+                this.validate();
+            }
+
+            _clamp(val, defaultVal) {
+                if (typeof val !== 'number' || !Number.isFinite(val)) return defaultVal;
+                return Math.max(0, Math.min(1.0, val));
+            }
+
+            validate() {
+                if ((this.miningRecovery + this.lossFactor) > 1.000001) {
+                    throw new Error(`[RecoverabilityModel Invariant Violation]: Mining recovery (${this.miningRecovery}) + Loss factor (${this.lossFactor}) exceeds 1.0`);
+                }
+                return true;
+            }
+
+            computeRecoverable(baseQuantity, gradeAssay = 1.0, techReadinessFactor = 1.0) {
+                if (typeof baseQuantity !== 'number' || baseQuantity <= 0) {
+                    return { recoverableQuantity: 0, lossQuantity: 0, effectiveRecoveryRate: 0 };
+                }
+
+                if (gradeAssay < this.minimumApplicableGrade) {
+                    return {
+                        recoverableQuantity: 0,
+                        lossQuantity: baseQuantity,
+                        effectiveRecoveryRate: 0,
+                        rejectionReason: 'GRADE_BELOW_MINIMUM_CUTOFF'
+                    };
+                }
+
+                const effectiveRate = Math.min(1.0, this.miningRecovery * this.technologyModifier * techReadinessFactor);
+                const recoverable = baseQuantity * effectiveRate;
+                const loss = baseQuantity - recoverable;
+
+                return {
+                    recoverableQuantity: recoverable,
+                    lossQuantity: loss,
+                    effectiveRecoveryRate: effectiveRate
+                };
+            }
+
+            toJSON() {
+                return {
+                    recoveryModelId: this.recoveryModelId,
+                    resourceTypeKey: this.resourceTypeKey,
+                    method: this.method,
+                    factor: this.factor,
+                    geologicalRecovery: this.geologicalRecovery,
+                    miningRecovery: this.miningRecovery,
+                    lossFactor: this.lossFactor,
+                    processLoss: this.processLoss,
+                    operationalLoss: this.operationalLoss,
+                    unavailability: this.unavailability,
+                    minimumApplicableGrade: this.minimumApplicableGrade,
+                    technologyModifier: this.technologyModifier,
+                    constraintReferences: this.constraintReferences,
+                    ruleVersion: this.ruleVersion,
+                    provenance: this.provenance
+                };
+            }
+        }
+
+        // 05.07: PHYSICAL ACCESSIBILITY & INFRASTRUCTURE ASSESSMENT ENGINE
+        class AccessibilityState {
+            constructor(params = {}) {
+                if (!params.occurrenceKey) {
+                    throw new Error('[AccessibilityState Violation]: occurrenceKey is mandatory.');
+                }
+
+                this.occurrenceKey = params.occurrenceKey;
+                this.status = params.status || AccessibilityStatusEnum.UNKNOWN;
+                this.accessibilityRatio = typeof params.accessibilityRatio === 'number' ? Math.max(0, Math.min(1, params.accessibilityRatio)) : 1.0;
+                this.reasonCode = params.reasonCode || AccessibilityReasonCodeEnum.DATA_UNKNOWN;
+                this.depthMeters = typeof params.depthMeters === 'number' ? params.depthMeters : 0;
+                this.isOffshore = Boolean(params.isOffshore);
+                this.bathymetryDepthMeters = typeof params.bathymetryDepthMeters === 'number' ? params.bathymetryDepthMeters : 0;
+                this.blockingConstraints = Array.isArray(params.blockingConstraints) ? [...params.blockingConstraints] : [];
+                this.provenance = params.provenance || { sourceSubsystem: 'ACCESSIBILITY_ENGINE', timestamp: 0 };
+            }
+
+            isAccessible() {
+                return this.status === AccessibilityStatusEnum.ACCESSIBLE || this.status === AccessibilityStatusEnum.PARTIALLY_ACCESSIBLE;
+            }
+
+            toJSON() {
+                return {
+                    occurrenceKey: this.occurrenceKey,
+                    status: this.status,
+                    accessibilityRatio: this.accessibilityRatio,
+                    reasonCode: this.reasonCode,
+                    depthMeters: this.depthMeters,
+                    isOffshore: this.isOffshore,
+                    bathymetryDepthMeters: this.bathymetryDepthMeters,
+                    blockingConstraints: this.blockingConstraints,
+                    provenance: this.provenance
+                };
+            }
+        }
+
+        // 05.08: TECHNICAL & ECONOMIC EXTRACTABILITY ASSESSMENT ENGINE
+        class ExtractabilityAssessment {
+            constructor(params = {}) {
+                if (!params.occurrenceKey) {
+                    throw new Error('[ExtractabilityAssessment Violation]: occurrenceKey is mandatory.');
+                }
+
+                this.assessmentId = params.assessmentId || `ASSESS:${params.occurrenceKey}:${DeterministicHashEngine.computeHash(params.occurrenceKey).substring(0, 8)}`;
+                this.occurrenceKey = params.occurrenceKey;
+                this.recoverableQuantity = typeof params.recoverableQuantity === 'number' ? Math.max(0, params.recoverableQuantity) : 0;
+                this.accessibleQuantity = typeof params.accessibleQuantity === 'number' ? Math.max(0, params.accessibleQuantity) : 0;
+                this.technicalStatus = params.technicalStatus || ExtractabilityStatusEnum.UNKNOWN;
+                this.economicStatus = params.economicStatus || ExtractabilityStatusEnum.UNKNOWN;
+                this.effectiveExtractableQuantity = typeof params.effectiveExtractableQuantity === 'number' ? Math.max(0, params.effectiveExtractableQuantity) : 0;
+                
+                this.blockingConstraints = Array.isArray(params.blockingConstraints) ? [...params.blockingConstraints] : [];
+                this.warnings = Array.isArray(params.warnings) ? [...params.warnings] : [];
+                this.ruleVersion = params.ruleVersion || '1.0.0';
+                this.calculationTrace = params.calculationTrace || {};
+                this.provenance = params.provenance || { sourceSubsystem: 'EXTRACTABILITY_ENGINE', timestamp: 0 };
+            }
+
+            isPermitted() {
+                return this.technicalStatus === ExtractabilityStatusEnum.TECHNICALLY_EXTRACTABLE &&
+                       (this.economicStatus === ExtractabilityStatusEnum.ECONOMICALLY_EXTRACTABLE || this.economicStatus === ExtractabilityStatusEnum.MARGINALLY_EXTRACTABLE);
+            }
+
+            toJSON() {
+                return {
+                    assessmentId: this.assessmentId,
+                    occurrenceKey: this.occurrenceKey,
+                    recoverableQuantity: this.recoverableQuantity,
+                    accessibleQuantity: this.accessibleQuantity,
+                    technicalStatus: this.technicalStatus,
+                    economicStatus: this.economicStatus,
+                    effectiveExtractableQuantity: this.effectiveExtractableQuantity,
+                    blockingConstraints: this.blockingConstraints,
+                    warnings: this.warnings,
+                    ruleVersion: this.ruleVersion,
+                    calculationTrace: this.calculationTrace,
+                    provenance: this.provenance
+                };
+            }
+        }
+
+        // 05.09: EXTRACTION ASSET LINK & MINING TENANCY ENGINE
+        class ExtractionAssetLink {
+            constructor(params = {}) {
+                if (!params.assetReference || !params.occurrenceKey) {
+                    throw new Error('[ExtractionAssetLink Violation]: assetReference and occurrenceKey are mandatory.');
+                }
+
+                this.linkKey = params.linkKey || `ASSET_LINK:${params.assetReference}:${params.occurrenceKey}`;
+                this.assetReference = params.assetReference;
+                this.occurrenceKey = params.occurrenceKey;
+                this.operatorKey = params.operatorKey || 'UNASSIGNED_OPERATOR';
+                this.concessionLicenseCode = params.concessionLicenseCode || 'STANDARD_CONCESSION';
+                this.extractionMethod = params.extractionMethod || ExtractionMethodEnum.UNKNOWN;
+                this.isActiveOperationalTenancy = params.isActiveOperationalTenancy !== undefined ? Boolean(params.isActiveOperationalTenancy) : true;
+                this.commissionedTick = typeof params.commissionedTick === 'number' ? params.commissionedTick : 0;
+                this.decommissionPlannedTick = typeof params.decommissionPlannedTick === 'number' ? params.decommissionPlannedTick : null;
+                this.provenance = params.provenance || { sourceSubsystem: 'ASSET_LINK_ENGINE', timestamp: 0 };
+            }
+
+            toJSON() {
+                return {
+                    linkKey: this.linkKey,
+                    assetReference: this.assetReference,
+                    occurrenceKey: this.occurrenceKey,
+                    operatorKey: this.operatorKey,
+                    concessionLicenseCode: this.concessionLicenseCode,
+                    extractionMethod: this.extractionMethod,
+                    isActiveOperationalTenancy: this.isActiveOperationalTenancy,
+                    commissionedTick: this.commissionedTick,
+                    decommissionPlannedTick: this.decommissionPlannedTick,
+                    provenance: this.provenance
+                };
+            }
+        }
+
+        // 05.10: EXTRACTION CAPACITY & PRODUCTION RATE MODELER
+        class ExtractionCapacity {
+            constructor(params = {}) {
+                if (!params.assetReference || !params.occurrenceKey) {
+                    throw new Error('[ExtractionCapacity Violation]: assetReference and occurrenceKey are mandatory.');
+                }
+                if (typeof params.nominalRate !== 'number' || params.nominalRate < 0 || !Number.isFinite(params.nominalRate)) {
+                    throw new Error('[ExtractionCapacity Violation]: nominalRate must be a finite non-negative number.');
+                }
+
+                this.capacityId = params.capacityId || `CAP:${params.assetReference}:${params.occurrenceKey}`;
+                this.occurrenceKey = params.occurrenceKey;
+                this.assetReference = params.assetReference;
+                this.nominalRate = params.nominalRate;
+                this.effectiveRate = typeof params.effectiveRate === 'number' ? params.effectiveRate : this.nominalRate;
+                this.unit = params.unit || 'TONNES';
+                this.period = params.period || TemporalWindowUnit.PER_DAY;
+                
+                // Operational derating factors
+                this.availabilityFactor = this._clamp(params.availabilityFactor, 0.90);
+                this.maintenanceFactor = this._clamp(params.maintenanceFactor, 0.95);
+                this.technologyFactor = this._clamp(params.technologyFactor, 1.00);
+                this.constraintAdjustedRate = typeof params.constraintAdjustedRate === 'number' ? params.constraintAdjustedRate : this.nominalRate;
+                this.statutoryQuotaRateLimit = typeof params.statutoryQuotaRateLimit === 'number' ? Math.max(0, params.statutoryQuotaRateLimit) : null;
+                this.provenance = params.provenance || { sourceSubsystem: 'CAPACITY_ENGINE', timestamp: 0 };
+            }
+
+            _clamp(val, defaultVal) {
+                if (typeof val !== 'number' || !Number.isFinite(val)) return defaultVal;
+                return Math.max(0, Math.min(1.0, val));
+            }
+
+            computeWindowCapacity(windowDurationHours = 24.0) {
+                let hourlyRate = this.nominalRate;
+                if (this.period === TemporalWindowUnit.PER_DAY) hourlyRate = this.nominalRate / 24.0;
+                else if (this.period === TemporalWindowUnit.PER_MONTH) hourlyRate = this.nominalRate / (24.0 * 30.0);
+                else if (this.period === TemporalWindowUnit.PER_YEAR) hourlyRate = this.nominalRate / (24.0 * 365.0);
+
+                const effectiveHourly = hourlyRate * this.availabilityFactor * this.maintenanceFactor * this.technologyFactor;
+                let windowCapacity = effectiveHourly * windowDurationHours;
+
+                if (this.statutoryQuotaRateLimit !== null) {
+                    let statutoryHourly = this.statutoryQuotaRateLimit;
+                    if (this.period === TemporalWindowUnit.PER_DAY) statutoryHourly = this.statutoryQuotaRateLimit / 24.0;
+                    windowCapacity = Math.min(windowCapacity, statutoryHourly * windowDurationHours);
+                }
+
+                return {
+                    windowCapacity: Math.max(0, windowCapacity),
+                    hourlyRate: effectiveHourly,
+                    unit: this.unit,
+                    windowHours: windowDurationHours
+                };
+            }
+
+            toJSON() {
+                return {
+                    capacityId: this.capacityId,
+                    occurrenceKey: this.occurrenceKey,
+                    assetReference: this.assetReference,
+                    nominalRate: this.nominalRate,
+                    effectiveRate: this.effectiveRate,
+                    unit: this.unit,
+                    period: this.period,
+                    availabilityFactor: this.availabilityFactor,
+                    maintenanceFactor: this.maintenanceFactor,
+                    technologyFactor: this.technologyFactor,
+                    constraintAdjustedRate: this.constraintAdjustedRate,
+                    statutoryQuotaRateLimit: this.statutoryQuotaRateLimit,
+                    provenance: this.provenance
+                };
+            }
+        }
+
+        // 05.11: MULTI-DIMENSIONAL EXTRACTION CONSTRAINT ALGEBRA ENGINE [S2 HIGH FIXED]
+        class ExtractionConstraint {
+            constructor(params = {}) {
+                if (!params.constraintId || !params.type) {
+                    throw new Error('[ExtractionConstraint Violation]: constraintId and type are mandatory.');
+                }
+
+                this.constraintId = params.constraintId;
+                this.type = params.type;
+                // Explicit targetMetricPath mapping (S2 High Fix)
+                this.targetMetricPath = params.targetMetricPath || params.type || 'context.genericMetric';
+                this.dimension = params.dimension || ConstraintDimensionEnum.QUANTITY;
+                this.severity = params.severity || ConstraintSeverityEnum.LIMITING;
+                this.value = params.value !== undefined ? params.value : null;
+                this.unit = params.unit || 'UNKNOWN_UNIT';
+                this.operator = params.operator || 'LTE'; // LTE, GTE, EQ, RANGE, BOOLEAN_FLAG
+                this.condition = params.condition || 'TRUE';
+                this.source = params.source || 'SYSTEM_POLICY';
+                this.limitingFactorCode = params.limitingFactorCode || `LIMIT:${params.type}`;
+                this.unknownPolicy = params.unknownPolicy || UnknownPolicyEnum.BLOCK;
+                this.provenance = params.provenance || { sourceSubsystem: 'CONSTRAINT_ENGINE', timestamp: 0 };
+            }
+
+            evaluate(contextValue) {
+                if (contextValue === undefined || contextValue === null) {
+                    if (this.unknownPolicy === UnknownPolicyEnum.BLOCK) {
+                        return {
+                            status: ConstraintEvaluationStatus.BLOCKED,
+                            limitingFactorCode: this.limitingFactorCode,
+                            maxAllowed: 0,
+                            unit: this.unit,
+                            rationale: `CONSTRAINT_BLOCKED_ON_UNKNOWN: ${this.constraintId}`
+                        };
+                    }
+                    if (this.unknownPolicy === UnknownPolicyEnum.PASS_THROUGH) {
+                        return {
+                            status: ConstraintEvaluationStatus.PASS,
+                            maxAllowed: Infinity,
+                            unit: this.unit,
+                            rationale: `CONSTRAINT_PASSED_ON_UNKNOWN: ${this.constraintId}`
+                        };
+                    }
+                    return {
+                        status: ConstraintEvaluationStatus.UNKNOWN,
+                        limitingFactorCode: this.limitingFactorCode,
+                        maxAllowed: 0,
+                        unit: this.unit,
+                        rationale: `CONSTRAINT_DEFERRED_ON_UNKNOWN: ${this.constraintId}`
+                    };
+                }
+
+                if (this.operator === 'BOOLEAN_FLAG') {
+                    const isPassed = Boolean(contextValue) === Boolean(this.value);
+                    return {
+                        status: isPassed ? ConstraintEvaluationStatus.PASS : ConstraintEvaluationStatus.BLOCKED,
+                        limitingFactorCode: isPassed ? null : this.limitingFactorCode,
+                        maxAllowed: isPassed ? Infinity : 0,
+                        unit: this.unit,
+                        rationale: isPassed ? 'BOOLEAN_FLAG_PASSED' : 'BOOLEAN_FLAG_BLOCKED'
+                    };
+                }
+
+                if (typeof contextValue === 'number' && typeof this.value === 'number') {
+                    if (this.operator === 'LTE') {
+                        const isLimiting = contextValue < this.value;
+                        return {
+                            status: isLimiting ? ConstraintEvaluationStatus.LIMITED : ConstraintEvaluationStatus.PASS,
+                            limitingFactorCode: isLimiting ? this.limitingFactorCode : null,
+                            maxAllowed: contextValue,
+                            unit: this.unit,
+                            rationale: isLimiting ? `CAPPED_BY_METRIC: ${contextValue} < ${this.value}` : 'THRESHOLD_SATISFIED'
+                        };
+                    }
+                }
+
+                return {
+                    status: ConstraintEvaluationStatus.PASS,
+                    maxAllowed: Infinity,
+                    unit: this.unit,
+                    rationale: 'GENERIC_EVALUATION_PASSED'
+                };
+            }
+
+            toJSON() {
+                return {
+                    constraintId: this.constraintId,
+                    type: this.type,
+                    targetMetricPath: this.targetMetricPath,
+                    dimension: this.dimension,
+                    severity: this.severity,
+                    value: this.value,
+                    unit: this.unit,
+                    operator: this.operator,
+                    condition: this.condition,
+                    source: this.source,
+                    limitingFactorCode: this.limitingFactorCode,
+                    unknownPolicy: this.unknownPolicy,
+                    provenance: this.provenance
+                };
+            }
+        }
+
+        class ExtractionConstraintSet {
+            constructor(params = {}) {
+                this.setKey = params.setKey || `CSET:${DeterministicHashEngine.computeHash(String(Date.now())).substring(0, 8)}`;
+                this.occurrenceKey = params.occurrenceKey || null;
+                this.constraints = new Map();
+
+                if (Array.isArray(params.constraints)) {
+                    params.constraints.forEach(c => {
+                        const inst = c instanceof ExtractionConstraint ? c : new ExtractionConstraint(c);
+                        this.constraints.set(inst.constraintId, inst);
+                    });
+                }
+            }
+
+            addConstraint(constraint) {
+                const inst = constraint instanceof ExtractionConstraint ? constraint : new ExtractionConstraint(constraint);
+                this.constraints.set(inst.constraintId, inst);
+            }
+
+            getAll() {
+                return Array.from(this.constraints.values());
+            }
+
+            toJSON() {
+                return {
+                    setKey: this.setKey,
+                    occurrenceKey: this.occurrenceKey,
+                    constraints: Array.from(this.constraints.values()).map(c => c.toJSON())
+                };
+            }
+        }
+
+        // 05.12: MINING METHOD PROFILES & TECHNOLOGY CAPABILITY ADAPTER
+        class ExtractionMethodProfile {
+            constructor(params = {}) {
+                this.methodCode = params.methodCode || ExtractionMethodEnum.UNKNOWN;
+                this.maximumDepthMeters = typeof params.maximumDepthMeters === 'number' ? params.maximumDepthMeters : 1000;
+                this.baseCostModifier = typeof params.baseCostModifier === 'number' ? params.baseCostModifier : 1.0;
+                this.baseSpecificEnergyConsumptionKWhPerTonne = typeof params.baseSpecificEnergyConsumptionKWhPerTonne === 'number' ? params.baseSpecificEnergyConsumptionKWhPerTonne : 25.0;
+                this.baseLaborIntensityHoursPerTonne = typeof params.baseLaborIntensityHoursPerTonne === 'number' ? params.baseLaborIntensityHoursPerTonne : 0.15;
+                this.recoveryModifier = typeof params.recoveryModifier === 'number' ? params.recoveryModifier : 1.0;
+                this.isOffshoreCapable = Boolean(params.isOffshoreCapable);
+                this.provenance = params.provenance || { sourceSubsystem: 'METHOD_PROFILE_ENGINE', timestamp: 0 };
+            }
+
+            toJSON() {
+                return {
+                    methodCode: this.methodCode,
+                    maximumDepthMeters: this.maximumDepthMeters,
+                    baseCostModifier: this.baseCostModifier,
+                    baseSpecificEnergyConsumptionKWhPerTonne: this.baseSpecificEnergyConsumptionKWhPerTonne,
+                    baseLaborIntensityHoursPerTonne: this.baseLaborIntensityHoursPerTonne,
+                    recoveryModifier: this.recoveryModifier,
+                    isOffshoreCapable: this.isOffshoreCapable,
+                    provenance: this.provenance
+                };
+            }
+        }
+
+        class TechnologyCapabilityRef {
+            constructor(params = {}) {
+                this.technologyKey = params.technologyKey || 'TECH:CONVENTIONAL';
+                this.requiredLevel = typeof params.requiredLevel === 'number' ? params.requiredLevel : 1;
+                this.supportedMethods = Array.isArray(params.supportedMethods) ? [...params.supportedMethods] : [ExtractionMethodEnum.OPEN_PIT];
+                this.maxDepthMeters = typeof params.maxDepthMeters === 'number' ? params.maxDepthMeters : 500;
+                this.offshoreCapable = Boolean(params.offshoreCapable);
+                this.readinessLevel = typeof params.readinessLevel === 'number' ? Math.max(1, Math.min(9, params.readinessLevel)) : 9;
+                this.automationFactor = typeof params.automationFactor === 'number' ? Math.max(0.2, Math.min(3.0, params.automationFactor)) : 1.0;
+                this.provenance = params.provenance || { sourceSubsystem: 'TECHNOLOGY_ADAPTER', timestamp: 0 };
+            }
+
+            isCapable(method, depthMeters = 0, isOffshore = false) {
+                if (!this.supportedMethods.includes(method)) return false;
+                if (depthMeters > this.maxDepthMeters) return false;
+                if (isOffshore && !this.offshoreCapable) return false;
+                return true;
+            }
+
+            toJSON() {
+                return {
+                    technologyKey: this.technologyKey,
+                    requiredLevel: this.requiredLevel,
+                    supportedMethods: this.supportedMethods,
+                    maxDepthMeters: this.maxDepthMeters,
+                    offshoreCapable: this.offshoreCapable,
+                    readinessLevel: this.readinessLevel,
+                    automationFactor: this.automationFactor,
+                    provenance: this.provenance
+                };
+            }
+        }
+
+        // 05.13: ENERGY & LABOR REQUIREMENT EVALUATORS
+        class EnergyRequirementEvaluator {
+            static computeEnergy(quantity, specificEnergyKWhPerUnit = 25.0, depthMeters = 0) {
+                if (typeof quantity !== 'number' || quantity <= 0) {
+                    return { totalEnergyKWh: 0, effectiveSEC: 0 };
+                }
+
+                let depthMultiplier = 1.0;
+                if (depthMeters > 200) {
+                    depthMultiplier += ((depthMeters - 200) / 500.0) * 0.05;
+                }
+
+                const effectiveSEC = specificEnergyKWhPerUnit * depthMultiplier;
+                const total = quantity * effectiveSEC;
+
+                return {
+                    totalEnergyKWh: total,
+                    effectiveSEC: effectiveSEC,
+                    depthMultiplier: depthMultiplier
+                };
+            }
+
+            static clampByEnergy(requestedQty, availableEnergyKWh, specificEnergyKWhPerUnit) {
+                if (availableEnergyKWh === undefined || availableEnergyKWh === null || availableEnergyKWh === Infinity) {
+                    return { allowableQuantity: requestedQty, isEnergyLimited: false };
+                }
+                if (specificEnergyKWhPerUnit <= 0) {
+                    return { allowableQuantity: requestedQty, isEnergyLimited: false };
+                }
+
+                const maxSupported = availableEnergyKWh / specificEnergyKWhPerUnit;
+                if (maxSupported < requestedQty) {
+                    return {
+                        allowableQuantity: Math.max(0, maxSupported),
+                        isEnergyLimited: true,
+                        shortfallEnergyKWh: (requestedQty - maxSupported) * specificEnergyKWhPerUnit
+                    };
+                }
+
+                return { allowableQuantity: requestedQty, isEnergyLimited: false };
+            }
+        }
+
+        class LaborRequirementEvaluator {
+            static computeLabor(quantity, laborHoursPerUnit = 0.15, automationFactor = 1.0) {
+                if (typeof quantity !== 'number' || quantity <= 0) {
+                    return { totalLaborHours: 0, effectiveIntensity: 0 };
+                }
+
+                const effectiveIntensity = laborHoursPerUnit / Math.max(0.2, automationFactor);
+                const total = quantity * effectiveIntensity;
+
+                return {
+                    totalLaborHours: total,
+                    effectiveIntensity: effectiveIntensity
+                };
+            }
+
+            static clampByLabor(requestedQty, availableLaborHours, laborHoursPerUnit) {
+                if (availableLaborHours === undefined || availableLaborHours === null || availableLaborHours === Infinity) {
+                    return { allowableQuantity: requestedQty, isLaborLimited: false };
+                }
+                if (laborHoursPerUnit <= 0) {
+                    return { allowableQuantity: requestedQty, isLaborLimited: false };
+                }
+
+                const maxSupported = availableLaborHours / laborHoursPerUnit;
+                if (maxSupported < requestedQty) {
+                    return {
+                        allowableQuantity: Math.max(0, maxSupported),
+                        isLaborLimited: true,
+                        shortfallLaborHours: (requestedQty - maxSupported) * laborHoursPerUnit
+                    };
+                }
+
+                return { allowableQuantity: requestedQty, isLaborLimited: false };
+            }
+        }
+
+        // 05.14: EXTRACTION COST MODEL & YIELD MODEL
+        class ExtractionCostModel {
+            constructor(params = {}) {
+                if (!params.costModelId || !params.baseCost) {
+                    throw new Error('[ExtractionCostModel Violation]: costModelId and baseCost are mandatory.');
+                }
+
+                this.costModelId = params.costModelId;
+                this.baseCost = params.baseCost;
+                this.unit = params.unit || 'USD_PER_TONNE';
+                this.costDimension = params.costDimension || QuantityDimension.DIMENSIONLESS;
+                this.costBasis = params.costBasis || 'RUN_OF_MINE_ORE';
+                
+                // Modifier Curves
+                this.technologyAdjustment = typeof params.technologyAdjustment === 'number' ? params.technologyAdjustment : 1.0;
+                this.depthAdjustment = typeof params.depthAdjustment === 'number' ? params.depthAdjustment : 0.02; // Per 100m past 100m
+                this.infrastructureAdjustment = typeof params.infrastructureAdjustment === 'number' ? params.infrastructureAdjustment : 1.0;
+                this.energyAdjustment = typeof params.energyAdjustment === 'number' ? params.energyAdjustment : 0.0;
+                this.laborAdjustment = typeof params.laborAdjustment === 'number' ? params.laborAdjustment : 0.0;
+                this.economicThreshold = typeof params.economicThreshold === 'number' ? params.economicThreshold : Infinity;
+                
+                this.ruleVersion = params.ruleVersion || '1.0.0';
+                this.provenance = params.provenance || { sourceSubsystem: 'COST_MODEL_ENGINE', timestamp: 0 };
+            }
+
+            evaluateCost(depthMeters = 0, isOffshore = false, energyCostAddition = 0, laborCostAddition = 0) {
+                let unitCost = this.baseCost * this.technologyAdjustment * this.infrastructureAdjustment;
+
+                if (depthMeters > 100) {
+                    const depthBlocks = (depthMeters - 100) / 100.0;
+                    unitCost += (this.baseCost * depthBlocks * this.depthAdjustment);
+                }
+
+                if (isOffshore) {
+                    unitCost *= 2.5;
+                }
+
+                unitCost += (energyCostAddition + laborCostAddition + this.energyAdjustment + this.laborAdjustment);
+                const isViable = unitCost <= this.economicThreshold;
+
+                return {
+                    unitCost,
+                    isViable,
+                    economicStatus: isViable ? ExtractabilityStatusEnum.ECONOMICALLY_EXTRACTABLE : ExtractabilityStatusEnum.NOT_ECONOMICALLY_EXTRACTABLE,
+                    unit: this.unit
+                };
+            }
+
+            toJSON() {
+                return {
+                    costModelId: this.costModelId,
+                    baseCost: this.baseCost,
+                    unit: this.unit,
+                    costDimension: this.costDimension,
+                    costBasis: this.costBasis,
+                    technologyAdjustment: this.technologyAdjustment,
+                    depthAdjustment: this.depthAdjustment,
+                    infrastructureAdjustment: this.infrastructureAdjustment,
+                    energyAdjustment: this.energyAdjustment,
+                    laborAdjustment: this.laborAdjustment,
+                    economicThreshold: this.economicThreshold,
+                    ruleVersion: this.ruleVersion,
+                    provenance: this.provenance
+                };
+            }
+        }
+
+        class ExtractionYieldModel {
+            constructor(params = {}) {
+                this.yieldModelId = params.yieldModelId || `YIELD:${params.resourceTypeKey || 'GENERIC'}`;
+                this.resourceTypeKey = params.resourceTypeKey || 'UNKNOWN_RESOURCE';
+                this.nominalRunOfMineGrade = typeof params.nominalRunOfMineGrade === 'number' ? params.nominalRunOfMineGrade : 1.0;
+                this.tailingsWasteRatio = typeof params.tailingsWasteRatio === 'number' ? params.tailingsWasteRatio : 0.05;
+                this.byproductAssociations = Array.isArray(params.byproductAssociations) ? [...params.byproductAssociations] : [];
+                this.provenance = params.provenance || { sourceSubsystem: 'YIELD_MODEL_ENGINE', timestamp: 0 };
+            }
+
+            toJSON() {
+                return {
+                    yieldModelId: this.yieldModelId,
+                    resourceTypeKey: this.resourceTypeKey,
+                    nominalRunOfMineGrade: this.nominalRunOfMineGrade,
+                    tailingsWasteRatio: this.tailingsWasteRatio,
+                    byproductAssociations: this.byproductAssociations,
+                    provenance: this.provenance
+                };
+            }
+        }
+
+        // 05.15: RULE DEFINITION & VALIDATION ENGINE
+        class RuleDefinition {
+            constructor(params = {}) {
+                if (!params.ruleId || !params.formula) {
+                    throw new Error('[RuleDefinition Violation]: ruleId and formula AST are mandatory.');
+                }
+
+                this.ruleId = params.ruleId;
+                this.ruleVersion = params.ruleVersion || '1.0.0';
+                this.name = params.name || this.ruleId;
+                this.domain = params.domain || 'RESOURCE_RESERVE_EXTRACTION';
+                this.inputs = Array.isArray(params.inputs) ? [...params.inputs] : [];
+                this.conditions = Array.isArray(params.conditions) ? [...params.conditions] : [];
+                this.formula = params.formula; // AST Root Node
+                this.constraints = Array.isArray(params.constraints) ? [...params.constraints] : [];
+                this.outputs = Array.isArray(params.outputs) ? [...params.outputs] : ['resultQuantity'];
+                this.unit = params.unit || 'UNKNOWN_UNIT';
+                this.roundingPolicy = params.roundingPolicy || { precision: 4, mode: RoundingModeEnum.ROUND_HALF_UP };
+                this.nullPolicy = params.nullPolicy || 'DEFAULT_ZERO';
+                this.unknownPolicy = params.unknownPolicy || UnknownPolicyEnum.BLOCK;
+                this.provenance = params.provenance || { sourceSubsystem: 'RULE_ENGINE', timestamp: 0 };
+            }
+
+            toJSON() {
+                return {
+                    ruleId: this.ruleId,
+                    ruleVersion: this.ruleVersion,
+                    name: this.name,
+                    domain: this.domain,
+                    inputs: this.inputs,
+                    conditions: this.conditions,
+                    formula: this.formula,
+                    constraints: this.constraints,
+                    outputs: this.outputs,
+                    unit: this.unit,
+                    roundingPolicy: this.roundingPolicy,
+                    nullPolicy: this.nullPolicy,
+                    unknownPolicy: this.unknownPolicy,
+                    provenance: this.provenance
+                };
+            }
+        }
+
+        // 05.16: SAFE AST-BASED DETERMINISTIC FORMULA INTERPRETER (NO-EVAL)
+        class DeterministicFormulaInterpreter {
+            static evaluateAST(node, scopeContext = {}, unknownPolicy = UnknownPolicyEnum.BLOCK) {
+                if (!node || typeof node !== 'object') {
+                    throw new Error('[AST Evaluator Error]: Invalid AST Node.');
+                }
+
+                switch (node.type) {
+                    case 'LITERAL_NUMERIC':
+                        if (typeof node.value !== 'number' || !Number.isFinite(node.value)) {
+                            throw new Error('[AST Evaluator Error]: LITERAL_NUMERIC must be a finite number.');
+                        }
+                        return node.value;
+
+                    case 'LITERAL_BOOLEAN':
+                        return Boolean(node.value);
+
+                    case 'LITERAL_STRING':
+                        return String(node.value);
+
+                    case 'IDENTIFIER_LOOKUP': {
+                        const resolved = this._resolvePath(scopeContext, node.path);
+                        if (resolved === undefined || resolved === null) {
+                            if (unknownPolicy === UnknownPolicyEnum.BLOCK) {
+                                throw new Error(`[AST Evaluator Error]: Variable '${node.path}' unresolved under BLOCK policy.`);
+                            }
+                            return 0; // Conservative default
+                        }
+                        return resolved;
+                    }
+
+                    case 'UNARY_OP': {
+                        const argVal = this.evaluateAST(node.argument, scopeContext, unknownPolicy);
+                        if (node.operator === 'NOT') return !argVal;
+                        if (node.operator === 'NEG') return -argVal;
+                        throw new Error(`[AST Evaluator Error]: Unknown UNARY_OP '${node.operator}'`);
+                    }
+
+                    case 'BINARY_OP': {
+                        const left = this.evaluateAST(node.left, scopeContext, unknownPolicy);
+                        const right = this.evaluateAST(node.right, scopeContext, unknownPolicy);
+
+                        if (typeof left !== 'number' || typeof right !== 'number') {
+                            throw new Error(`[AST Evaluator Error]: Arithmetic requires numeric operands. Left: ${left}, Right: ${right}`);
+                        }
+
+                        switch (node.operator) {
+                            case 'ADD': return left + right;
+                            case 'SUB': return left - right;
+                            case 'MUL': return left * right;
+                            case 'DIV':
+                                if (right === 0) throw new Error('[AST Evaluator Error]: Division by zero.');
+                                return left / right;
+                            case 'MOD': return left % right;
+                            case 'POW': return Math.pow(left, right);
+                            default:
+                                throw new Error(`[AST Evaluator Error]: Unknown BINARY_OP '${node.operator}'`);
+                        }
+                    }
+
+                    case 'COMPARISON_OP': {
+                        const left = this.evaluateAST(node.left, scopeContext, unknownPolicy);
+                        const right = this.evaluateAST(node.right, scopeContext, unknownPolicy);
+
+                        switch (node.operator) {
+                            case 'GT': return left > right;
+                            case 'GTE': return left >= right;
+                            case 'LT': return left < right;
+                            case 'LTE': return left <= right;
+                            case 'EQ': return left === right;
+                            case 'NEQ': return left !== right;
+                            default:
+                                throw new Error(`[AST Evaluator Error]: Unknown COMPARISON_OP '${node.operator}'`);
+                        }
+                    }
+
+                    case 'LOGICAL_OP': {
+                        const left = this.evaluateAST(node.left, scopeContext, unknownPolicy);
+                        if (node.operator === 'AND') {
+                            if (!left) return false;
+                            return Boolean(this.evaluateAST(node.right, scopeContext, unknownPolicy));
+                        }
+                        if (node.operator === 'OR') {
+                            if (left) return true;
+                            return Boolean(this.evaluateAST(node.right, scopeContext, unknownPolicy));
+                        }
+                        throw new Error(`[AST Evaluator Error]: Unknown LOGICAL_OP '${node.operator}'`);
+                    }
+
+                    case 'FUNCTION_CALL': {
+                        const evalArgs = (node.args || []).map(a => this.evaluateAST(a, scopeContext, unknownPolicy));
+                        switch (node.functionName) {
+                            case 'MIN': return Math.min(...evalArgs);
+                            case 'MAX': return Math.max(...evalArgs);
+                            case 'CLAMP': {
+                                const [val, min, max] = evalArgs;
+                                return Math.max(min, Math.min(max, val));
+                            }
+                            case 'ROUND': return Math.round(evalArgs[0]);
+                            case 'FLOOR': return Math.floor(evalArgs[0]);
+                            case 'CEIL': return Math.ceil(evalArgs[0]);
+                            case 'ABS': return Math.abs(evalArgs[0]);
+                            default:
+                                throw new Error(`[AST Evaluator Error]: Unknown function '${node.functionName}'`);
+                        }
+                    }
+
+                    case 'CONDITIONAL_IF': {
+                        const cond = this.evaluateAST(node.condition, scopeContext, unknownPolicy);
+                        return cond
+                            ? this.evaluateAST(node.thenBranch, scopeContext, unknownPolicy)
+                            : this.evaluateAST(node.elseBranch, scopeContext, unknownPolicy);
+                    }
+
+                    default:
+                        throw new Error(`[AST Evaluator Error]: Unhandled AST Node Type '${node.type}'`);
+                }
+            }
+
+            static _resolvePath(obj, path) {
+                if (!obj || !path) return undefined;
+                const segments = path.split('.');
+                let curr = obj;
+                for (const seg of segments) {
+                    if (curr === undefined || curr === null) return undefined;
+                    curr = curr[seg];
+                }
+                return curr;
+            }
+
+            static applyRounding(value, precision = 4, mode = RoundingModeEnum.ROUND_HALF_UP) {
+                if (typeof value !== 'number' || !Number.isFinite(value)) return value;
+                const factor = Math.pow(10, precision);
+                if (mode === RoundingModeEnum.ROUND_DOWN) {
+                    return Math.floor(value * factor) / factor;
+                }
+                if (mode === RoundingModeEnum.ROUND_NEAREST || mode === RoundingModeEnum.ROUND_HALF_UP) {
+                    return Math.round(value * factor) / factor;
+                }
+                return value;
+            }
+        }
+
+        // 05.17: SCHEDULING, REQUESTS, RESULTS, TRANSITIONS & MUTATIONS [S0 BLOCKER FIXED]
+        class ExtractionSchedule {
+            constructor(params = {}) {
+                if (!params.scheduleId || !params.occurrenceKey) {
+                    throw new Error('[ExtractionSchedule Violation]: scheduleId and occurrenceKey are mandatory.');
+                }
+
+                this.scheduleId = params.scheduleId;
+                this.occurrenceKey = params.occurrenceKey;
+                this.startTick = typeof params.startTick === 'number' ? params.startTick : 0;
+                this.endTick = typeof params.endTick === 'number' ? params.endTick : Infinity;
+                this.targetRate = typeof params.targetRate === 'number' ? Math.max(0, params.targetRate) : 0;
+                this.priority = typeof params.priority === 'number' ? params.priority : 1;
+                this.constraintProfileKey = params.constraintProfileKey || null;
+                this.ruleSetVersion = params.ruleSetVersion || '1.0.0';
+                this.status = params.status || 'SCHEDULED';
+            }
+
+            isActiveAtTick(tick) {
+                return tick >= this.startTick && tick <= this.endTick && this.status === 'SCHEDULED';
+            }
+
+            toJSON() {
+                return {
+                    scheduleId: this.scheduleId,
+                    occurrenceKey: this.occurrenceKey,
+                    startTick: this.startTick,
+                    endTick: this.endTick,
+                    targetRate: this.targetRate,
+                    priority: this.priority,
+                    constraintProfileKey: this.constraintProfileKey,
+                    ruleSetVersion: this.ruleSetVersion,
+                    status: this.status
+                };
+            }
+        }
+
+        class ExtractionRequest {
+            constructor(params = {}) {
+                if (!params.occurrenceKey || typeof params.requestedQuantity !== 'number') {
+                    throw new Error('[ExtractionRequest Violation]: occurrenceKey and requestedQuantity are mandatory.');
+                }
+
+                const deterministicSeed = `${params.occurrenceKey}:${params.requestedQuantity}:${params.simulationTick || 0}`;
+                this.requestId = params.requestId || `REQ:${params.occurrenceKey}:${DeterministicHashEngine.computeHash(deterministicSeed).substring(0, 8)}`;
+                this.occurrenceKey = params.occurrenceKey;
+                this.requestedQuantity = Math.max(0, params.requestedQuantity);
+                this.requestedUnit = params.requestedUnit || 'TONNES';
+                this.requestedPeriod = params.requestedPeriod || TemporalWindowUnit.PER_DAY;
+                this.extractionMethod = params.extractionMethod || ExtractionMethodEnum.UNKNOWN;
+                this.assetReference = params.assetReference || null;
+                this.scheduleReference = params.scheduleReference || null;
+                this.ruleSetVersion = params.ruleSetVersion || '1.0.0';
+                this.expectedStateVersion = typeof params.expectedStateVersion === 'number' ? params.expectedStateVersion : 1;
+                this.simulationTick = typeof params.simulationTick === 'number' ? params.simulationTick : 0;
+                this.timeWindowDurationHours = typeof params.timeWindowDurationHours === 'number' ? params.timeWindowDurationHours : 24.0;
+                this.contextOverrides = params.contextOverrides || {};
+                this.provenance = params.provenance || { sourceSubsystem: 'EXTRACTION_REQUEST_GATEWAY', timestamp: 0 };
+            }
+
+            toJSON() {
+                return {
+                    requestId: this.requestId,
+                    occurrenceKey: this.occurrenceKey,
+                    requestedQuantity: this.requestedQuantity,
+                    requestedUnit: this.requestedUnit,
+                    requestedPeriod: this.requestedPeriod,
+                    extractionMethod: this.extractionMethod,
+                    assetReference: this.assetReference,
+                    scheduleReference: this.scheduleReference,
+                    ruleSetVersion: this.ruleSetVersion,
+                    expectedStateVersion: this.expectedStateVersion,
+                    simulationTick: this.simulationTick,
+                    timeWindowDurationHours: this.timeWindowDurationHours,
+                    contextOverrides: this.contextOverrides,
+                    provenance: this.provenance
+                };
+            }
+        }
+
+        class CalculationTrace {
+            constructor(params = {}) {
+                this.ruleId = params.ruleId || 'N/A';
+                this.ruleVersion = params.ruleVersion || '1.0.0';
+                this.inputs = params.inputs || {};
+                this.intermediateValues = params.intermediateValues || {};
+                this.constraintsEvaluated = Array.isArray(params.constraintsEvaluated) ? [...params.constraintsEvaluated] : [];
+                this.rejectedConstraints = Array.isArray(params.rejectedConstraints) ? [...params.rejectedConstraints] : [];
+                this.output = params.output !== undefined ? params.output : null;
+                this.diagnosticCodes = Array.isArray(params.diagnosticCodes) ? [...params.diagnosticCodes] : [];
+            }
+
+            toJSON() {
+                return {
+                    ruleId: this.ruleId,
+                    ruleVersion: this.ruleVersion,
+                    inputs: this.inputs,
+                    intermediateValues: this.intermediateValues,
+                    constraintsEvaluated: this.constraintsEvaluated,
+                    rejectedConstraints: this.rejectedConstraints,
+                    output: this.output,
+                    diagnosticCodes: this.diagnosticCodes
+                };
+            }
+        }
+
+        class ReserveTransition {
+            constructor(params = {}) {
+                const seed = `${params.occurrenceKey}:${params.tick || 0}:${params.deltaQuantity || 0}`;
+                this.transitionId = params.transitionId || `TRANS:${params.occurrenceKey}:${DeterministicHashEngine.computeHash(seed).substring(0, 8)}`;
+                this.occurrenceKey = params.occurrenceKey;
+                this.beforeState = params.beforeState ? params.beforeState.clone() : null;
+                this.afterState = params.afterState ? params.afterState.clone() : null;
+                this.deltaQuantity = typeof params.deltaQuantity === 'number' ? params.deltaQuantity : 0;
+                this.extractedQuantity = typeof params.extractedQuantity === 'number' ? params.extractedQuantity : 0;
+                this.lossQuantity = typeof params.lossQuantity === 'number' ? params.lossQuantity : 0;
+                this.reason = params.reason || 'EXTRACTION_DEPLETION';
+                this.tick = typeof params.tick === 'number' ? params.tick : 0;
+                this.calculationTraceHash = params.calculationTraceHash || 'TRACE_NIL';
+            }
+
+            toJSON() {
+                return {
+                    transitionId: this.transitionId,
+                    occurrenceKey: this.occurrenceKey,
+                    beforeState: this.beforeState ? this.beforeState.toJSON() : null,
+                    afterState: this.afterState ? this.afterState.toJSON() : null,
+                    deltaQuantity: this.deltaQuantity,
+                    extractedQuantity: this.extractedQuantity,
+                    lossQuantity: this.lossQuantity,
+                    reason: this.reason,
+                    tick: this.tick,
+                    calculationTraceHash: this.calculationTraceHash
+                };
+            }
+        }
+
+        class ReserveMutationCommand {
+            constructor(params = {}) {
+                const seed = `${params.occurrenceKey}:${params.tick || 0}:${params.approvedExtractedQuantity || 0}`;
+                this.commandId = params.commandId || `MUT_CMD:${params.occurrenceKey}:${DeterministicHashEngine.computeHash(seed).substring(0, 8)}`;
+                this.occurrenceKey = params.occurrenceKey;
+                this.approvedExtractedQuantity = params.approvedExtractedQuantity || 0;
+                this.miningLossQuantity = params.miningLossQuantity || 0;
+                this.residualQuantityAfter = params.residualQuantityAfter || 0;
+                this.unit = params.unit || 'TONNES';
+                this.dimension = params.dimension || QuantityDimension.MASS;
+                this.tick = typeof params.tick === 'number' ? params.tick : 0;
+                this.stateVersionAfter = params.stateVersionAfter || 1;
+                this.traceHash = params.traceHash || 'NIL';
+                this.provenance = params.provenance || { sourceSubsystem: 'DEPLETION_ENGINE', timestamp: 0 };
+            }
+
+            toJSON() {
+                return {
+                    commandId: this.commandId,
+                    occurrenceKey: this.occurrenceKey,
+                    approvedExtractedQuantity: this.approvedExtractedQuantity,
+                    miningLossQuantity: this.miningLossQuantity,
+                    residualQuantityAfter: this.residualQuantityAfter,
+                    unit: this.unit,
+                    dimension: this.dimension,
+                    tick: this.tick,
+                    stateVersionAfter: this.stateVersionAfter,
+                    traceHash: this.traceHash,
+                    provenance: this.provenance
+                };
+            }
+        }
+
+        /**
+         * [S0 BLOCKER FIX]: 18th Authoritative Core Domain Entity
+         */
+        class ExtractionResult {
+            constructor(params = {}) {
+                const seed = `${params.requestId || 'REQ'}:${params.occurrenceKey || 'OCC'}:${params.status || 'STATUS'}`;
+                this.resultId = params.resultId || `RES:${DeterministicHashEngine.computeHash(seed).substring(0, 10)}`;
+                this.requestId = params.requestId || 'UNKNOWN_REQ';
+                this.occurrenceKey = params.occurrenceKey || 'UNKNOWN_OCC';
+                this.status = params.status || ExtractionResultStatus.UNKNOWN;
+                this.requestedQuantity = typeof params.requestedQuantity === 'number' ? params.requestedQuantity : 0;
+                this.approvedQuantity = typeof params.approvedQuantity === 'number' ? params.approvedQuantity : 0;
+                this.actualCalculatedQuantity = typeof params.actualCalculatedQuantity === 'number' ? params.actualCalculatedQuantity : 0;
+                this.reserveBefore = params.reserveBefore ? params.reserveBefore.clone() : null;
+                this.reserveAfter = params.reserveAfter ? params.reserveAfter.clone() : null;
+                this.rate = typeof params.rate === 'number' ? params.rate : 0;
+                this.period = params.period || TemporalWindowUnit.PER_DAY;
+                this.yield = typeof params.yield === 'number' ? params.yield : 1.0;
+                this.loss = typeof params.loss === 'number' ? params.loss : 0;
+                this.constraints = Array.isArray(params.constraints) ? [...params.constraints] : [];
+                this.calculationTrace = params.calculationTrace ? (params.calculationTrace instanceof CalculationTrace ? params.calculationTrace : new CalculationTrace(params.calculationTrace)) : null;
+                this.diagnostics = Array.isArray(params.diagnostics) ? [...params.diagnostics] : [];
+                this.provenance = params.provenance || { sourceSubsystem: 'EXTRACTION_CALCULATION_ENGINE', timestamp: 0 };
+            }
+
+            toJSON() {
+                return {
+                    resultId: this.resultId,
+                    requestId: this.requestId,
+                    occurrenceKey: this.occurrenceKey,
+                    status: this.status,
+                    requestedQuantity: this.requestedQuantity,
+                    approvedQuantity: this.approvedQuantity,
+                    actualCalculatedQuantity: this.actualCalculatedQuantity,
+                    reserveBefore: this.reserveBefore ? this.reserveBefore.toJSON() : null,
+                    reserveAfter: this.reserveAfter ? this.reserveAfter.toJSON() : null,
+                    rate: this.rate,
+                    period: this.period,
+                    yield: this.yield,
+                    loss: this.loss,
+                    constraints: this.constraints,
+                    calculationTrace: this.calculationTrace ? this.calculationTrace.toJSON() : null,
+                    diagnostics: this.diagnostics,
+                    provenance: this.provenance
+                };
+            }
+        }
+
+        const Volume5_1_Scope = Object.freeze({
+            QuantityDimension,
+            ReserveClassificationEnum,
+            ReserveDerivedStateEnum,
+            ReserveOperationalStatus,
+            ExtractionMethodEnum,
+            AccessibilityStatusEnum,
+            AccessibilityReasonCodeEnum,
+            ExtractabilityStatusEnum,
+            ConstraintDimensionEnum,
+            ConstraintSeverityEnum,
+            ConstraintEvaluationStatus,
+            UnknownPolicyEnum,
+            OverdrawPolicyEnum,
+            ReserveAccountingDepletionLayer,
+            TemporalWindowUnit,
+            ExtractionResultStatus,
+            SourceVerificationStatus,
+            RoundingModeEnum,
+            ErrorTaxonomy,
+
+            DeterministicHashEngine,
+            ReserveBasis,
+            ReserveClassificationEngine,
+            ReserveState,
+            ReserveAnchor,
+            RecoverabilityModel,
+            AccessibilityState,
+            ExtractabilityAssessment,
+            ExtractionAssetLink,
+            ExtractionCapacity,
+            ExtractionConstraint,
+            ExtractionConstraintSet,
+            ExtractionMethodProfile,
+            TechnologyCapabilityRef,
+            EnergyRequirementEvaluator,
+            LaborRequirementEvaluator,
+            ExtractionCostModel,
+            ExtractionYieldModel,
+            RuleDefinition,
+            DeterministicFormulaInterpreter,
+            ExtractionSchedule,
+            ExtractionRequest,
+            CalculationTrace,
+            ReserveTransition,
+            ReserveMutationCommand,
+            ExtractionResult
+        });
+
+        global.__GSRSK_P05_VOL1__ = Volume5_1_Scope;
+
+    })(typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : global));
+
+    // =========================================================================
+    // GSRSK — PART 05: RESOURCE RESERVE & EXTRACTION ENGINE (VOLUME 2 OF 2)
+    // =========================================================================
+    // Architecture Phase: 05 of 16
+    // Production Standard: 100% Comprehensive Constitutional Invariant Engine
+    //
+    // SUBSYSTEMS INCLUDED IN VOLUME 2:
+    //   05.18 Extraction Request Validator & Concurrency Guard (OCC State Versioning)
+    //   05.19 Core Deterministic Extraction Calculation & Multi-Constraint Aggregator Engine [S2 High Fixed]
+    //   05.20 Depletion Accounting Engine (Multi-Layer Subtraction & State Transitions)
+    //   05.21 Extraction Result Registry & Decision Store
+    //   05.22 Reserve Accounting Integrity & Universal Conservation Auditor
+    //   05.23 Extraction Diagnostics Engine & Bounded Ring Buffer Log (R5_001 - R5_020)
+    //   05.24 Systemic Reserve Health Monitor & Quantitative Metrics Hub
+    //   05.25 State Checkpoint, Snapshot & Semantic Digest Engine [S1 Critical Fixed]
+    //   05.26 Boundary Hardcoding Firewall & Simulation Guard (Deep Recursive Scan)
+    //   05.27 Master Atomic Extraction Compiler Pipeline & Inverted Index Hub [S1 Critical Fixed]
+    //   + Public Adapter, Deep Freeze & Master Engine Assembly
+    // =========================================================================
+
+    (function(global) {
+        'use strict';
+
+        const Vol1 = global.__GSRSK_P05_VOL1__;
+        if (!Vol1) {
+            throw new Error('[GSRSK PART 05 FATAL]: Volume 5.1 must be loaded before Volume 5.2.');
+        }
+
+        const {
+            QuantityDimension,
+            ReserveClassificationEnum,
+            ReserveDerivedStateEnum,
+            ReserveOperationalStatus,
+            ExtractionMethodEnum,
+            AccessibilityStatusEnum,
+            AccessibilityReasonCodeEnum,
+            ExtractabilityStatusEnum,
+            ConstraintDimensionEnum,
+            ConstraintSeverityEnum,
+            ConstraintEvaluationStatus,
+            UnknownPolicyEnum,
+            OverdrawPolicyEnum,
+            ReserveAccountingDepletionLayer,
+            TemporalWindowUnit,
+            ExtractionResultStatus,
+            SourceVerificationStatus,
+            RoundingModeEnum,
+            ErrorTaxonomy,
+            DeterministicHashEngine,
+            ReserveBasis,
+            ReserveClassificationEngine,
+            ReserveState,
+            ReserveAnchor,
+            RecoverabilityModel,
+            AccessibilityState,
+            ExtractabilityAssessment,
+            ExtractionAssetLink,
+            ExtractionCapacity,
+            ExtractionConstraint,
+            ExtractionConstraintSet,
+            ExtractionMethodProfile,
+            TechnologyCapabilityRef,
+            EnergyRequirementEvaluator,
+            LaborRequirementEvaluator,
+            ExtractionCostModel,
+            ExtractionYieldModel,
+            RuleDefinition,
+            DeterministicFormulaInterpreter,
+            ExtractionSchedule,
+            ExtractionRequest,
+            CalculationTrace,
+            ReserveTransition,
+            ReserveMutationCommand,
+            ExtractionResult
+        } = Vol1;
+
+        // Canonical Cross-Engine Enums from Part 04
+        const CollisionSeverity = (global.GSRSK_Part04 && global.GSRSK_Part04.CollisionSeverity) || Object.freeze({
+            INFO: 'INFO',
+            WARNING: 'WARNING',
+            ERROR: 'ERROR',
+            FATAL: 'FATAL'
+        });
+
+        const IdentityHealthStatus = (global.GSRSK_Part04 && global.GSRSK_Part04.IdentityHealthStatus) || Object.freeze({
+            HEALTHY: 'HEALTHY',
+            HEALTHY_WITH_WARNINGS: 'HEALTHY_WITH_WARNINGS',
+            DEGRADED: 'DEGRADED',
+            CRITICAL_FAILURE: 'CRITICAL_FAILURE'
+        });
+
+        // 05.18: EXTRACTION REQUEST VALIDATOR & CONCURRENCY GUARD
+        class ExtractionRequestValidator {
+            static validateRequest(request, currentState, identityRegistry = null) {
+                if (!request || !(request instanceof ExtractionRequest)) {
+                    return {
+                        isValid: false,
+                        errorCode: ErrorTaxonomy.R5_004_NEGATIVE_EXTRACTION,
+                        rationale: 'Malformed or missing ExtractionRequest object.'
+                    };
+                }
+
+                if (request.requestedQuantity < 0) {
+                    return {
+                        isValid: false,
+                        errorCode: ErrorTaxonomy.R5_004_NEGATIVE_EXTRACTION,
+                        rationale: `Requested quantity cannot be negative (${request.requestedQuantity}).`
+                    };
+                }
+
+                if (request.timeWindowDurationHours <= 0) {
+                    return {
+                        isValid: false,
+                        errorCode: ErrorTaxonomy.R5_020_INVALID_TEMPORAL_WINDOW,
+                        rationale: `Time window duration must be strictly positive (${request.timeWindowDurationHours} hours).`
+                    };
+                }
+
+                if (!currentState || !(currentState instanceof ReserveState)) {
+                    return {
+                        isValid: false,
+                        errorCode: ErrorTaxonomy.R5_016_ORPHAN_RESERVE_STATE,
+                        rationale: `No valid ReserveState found for occurrence ${request.occurrenceKey}.`
+                    };
+                }
+
+                // Concurrency Lock Check (Optimistic Concurrency Control)
+                if (request.expectedStateVersion !== currentState.stateVersion) {
+                    return {
+                        isValid: false,
+                        errorCode: ErrorTaxonomy.R5_017_CONFIG_CONFLICT,
+                        rationale: `Concurrency mismatch: Expected version ${request.expectedStateVersion}, but current state is version ${currentState.stateVersion}.`
+                    };
+                }
+
+                // Unit and Dimension Compatibility Check
+                if (request.requestedUnit !== currentState.unit && currentState.unit !== 'UNKNOWN_UNIT') {
+                    return {
+                        isValid: false,
+                        errorCode: ErrorTaxonomy.R5_009_DIMENSION_MISMATCH,
+                        rationale: `Unit mismatch: Request asks for ${request.requestedUnit}, but ReserveState is in ${currentState.unit}.`
+                    };
+                }
+
+                // Part 04 Read-Only Identity Verification (if registry supplied)
+                if (identityRegistry && typeof identityRegistry.getOccurrence === 'function') {
+                    const occ = identityRegistry.getOccurrence(request.occurrenceKey);
+                    if (!occ) {
+                        return {
+                            isValid: false,
+                            errorCode: ErrorTaxonomy.R5_001_INVALID_OCCURRENCE_REFERENCE,
+                            rationale: `Part 04 Occurrence Key '${request.occurrenceKey}' does not exist in Canonical Identity Authority.`
+                        };
+                    }
+                }
+
+                return { isValid: true, errorCode: null, rationale: 'REQUEST_VALIDATED' };
+            }
+        }
+
+        // 05.19: CORE DETERMINISTIC EXTRACTION CALCULATION ENGINE [S2 HIGH FIXED]
+        class ExtractionCalculationEngine {
+            static calculate(request, reserveState, options = {}) {
+                const validation = ExtractionRequestValidator.validateRequest(request, reserveState, options.identityRegistry);
+                if (!validation.isValid) {
+                    return this._buildRejectionResult(request, reserveState, validation.errorCode, validation.rationale);
+                }
+
+                const trace = new CalculationTrace({
+                    ruleId: options.ruleId || 'CANONICAL_ALLOCATION_RULE',
+                    ruleVersion: options.ruleVersion || '1.0.0',
+                    inputs: {
+                        requestedQuantity: request.requestedQuantity,
+                        unit: request.requestedUnit,
+                        residualReserve: reserveState.residualQuantity,
+                        timeWindowHours: request.timeWindowDurationHours
+                    }
+                });
+
+                // Zero Request Shortcut
+                if (request.requestedQuantity === 0) {
+                    return new ExtractionResult({
+                        requestId: request.requestId,
+                        occurrenceKey: request.occurrenceKey,
+                        status: ExtractionResultStatus.APPROVED,
+                        requestedQuantity: 0,
+                        approvedQuantity: 0,
+                        actualCalculatedQuantity: 0,
+                        reserveBefore: reserveState.clone(),
+                        reserveAfter: reserveState.clone(),
+                        rate: 0,
+                        period: request.requestedPeriod,
+                        yield: 1.0,
+                        loss: 0,
+                        calculationTrace: trace,
+                        provenance: request.provenance
+                    });
+                }
+
+                let candidateQuantity = request.requestedQuantity;
+                let limitingConstraintCode = null;
+                const constraintsEvaluated = [];
+                const rejectedConstraints = [];
+
+                // 1. Evaluate Residual Reserve Ceiling (Overdraw Protection)
+                if (candidateQuantity > reserveState.residualQuantity) {
+                    const overdrawPolicy = options.overdrawPolicy || OverdrawPolicyEnum.CAP;
+                    if (overdrawPolicy === OverdrawPolicyEnum.REJECT) {
+                        return this._buildRejectionResult(
+                            request,
+                            reserveState,
+                            ErrorTaxonomy.R5_005_RESERVE_OVERDRAW,
+                            `Overdraw rejected: Request ${candidateQuantity} exceeds residual ${reserveState.residualQuantity}`
+                        );
+                    }
+                    candidateQuantity = reserveState.residualQuantity;
+                    limitingConstraintCode = 'RESERVE:RESIDUAL_DEPLETION_LIMIT';
+                    constraintsEvaluated.push({ factor: 'RESIDUAL_RESERVE', limit: reserveState.residualQuantity, clamped: true });
+                }
+
+                // 2. Evaluate Extraction Capacity Throughput
+                const capacity = options.capacity;
+                if (capacity && capacity instanceof ExtractionCapacity) {
+                    const windowCap = capacity.computeWindowCapacity(request.timeWindowDurationHours);
+                    if (candidateQuantity > windowCap.windowCapacity) {
+                        candidateQuantity = windowCap.windowCapacity;
+                        limitingConstraintCode = 'CAPACITY:THROUGHPUT_LIMIT';
+                        constraintsEvaluated.push({ factor: 'MINE_ASSET_CAPACITY', limit: windowCap.windowCapacity, clamped: true });
+                    }
+                }
+
+                // 3. Evaluate Physical Accessibility
+                const accessibility = options.accessibilityState;
+                if (accessibility && accessibility instanceof AccessibilityState) {
+                    if (!accessibility.isAccessible()) {
+                        return this._buildBlockedResult(request, reserveState, `ACCESSIBILITY_BLOCKED: ${accessibility.reasonCode}`, trace);
+                    }
+                    if (accessibility.accessibilityRatio < 1.0) {
+                        const accessibleLimit = reserveState.residualQuantity * accessibility.accessibilityRatio;
+                        if (candidateQuantity > accessibleLimit) {
+                            candidateQuantity = accessibleLimit;
+                            limitingConstraintCode = 'ACCESSIBILITY:PHYSICAL_LIMIT';
+                            constraintsEvaluated.push({ factor: 'ACCESSIBILITY_RATIO', limit: accessibleLimit, clamped: true });
+                        }
+                    }
+                }
+
+                // 4. Evaluate Energy Grid / Fuel Constraints
+                if (options.availableEnergyKWh !== undefined && options.specificEnergyKWhPerUnit !== undefined) {
+                    const energyClamp = EnergyRequirementEvaluator.clampByEnergy(
+                        candidateQuantity,
+                        options.availableEnergyKWh,
+                        options.specificEnergyKWhPerUnit
+                    );
+                    if (energyClamp.isEnergyLimited) {
+                        candidateQuantity = energyClamp.allowableQuantity;
+                        limitingConstraintCode = 'ENERGY:GRID_SUPPLY_LIMIT';
+                        constraintsEvaluated.push({ factor: 'ENERGY_LIMIT', limit: candidateQuantity, clamped: true });
+                    }
+                }
+
+                // 5. Evaluate Labor Workforce Constraints
+                if (options.availableLaborHours !== undefined && options.laborHoursPerUnit !== undefined) {
+                    const laborClamp = LaborRequirementEvaluator.clampByLabor(
+                        candidateQuantity,
+                        options.availableLaborHours,
+                        options.laborHoursPerUnit
+                    );
+                    if (laborClamp.isLaborLimited) {
+                        candidateQuantity = laborClamp.allowableQuantity;
+                        limitingConstraintCode = 'LABOR:WORKFORCE_SUPPLY_LIMIT';
+                        constraintsEvaluated.push({ factor: 'LABOR_LIMIT', limit: candidateQuantity, clamped: true });
+                    }
+                }
+
+                // 6. Evaluate Arbitrary ExtractionConstraintSet
+                const constraintSet = options.constraintSet;
+                if (constraintSet && constraintSet instanceof ExtractionConstraintSet) {
+                    const allConstraints = constraintSet.getAll();
+                    for (const c of allConstraints) {
+                        const contextVal = request.contextOverrides[c.targetMetricPath] !== undefined 
+                            ? request.contextOverrides[c.targetMetricPath] 
+                            : (options.contextPayload ? options.contextPayload[c.targetMetricPath] : null);
+
+                        const evalRes = c.evaluate(contextVal);
+                        if (evalRes.status === ConstraintEvaluationStatus.BLOCKED) {
+                            rejectedConstraints.push(c.toJSON());
+                            return this._buildBlockedResult(request, reserveState, evalRes.rationale, trace);
+                        }
+                        if (evalRes.status === ConstraintEvaluationStatus.LIMITED && evalRes.maxAllowed < candidateQuantity) {
+                            candidateQuantity = evalRes.maxAllowed;
+                            limitingConstraintCode = c.limitingFactorCode;
+                            constraintsEvaluated.push({ factor: c.type, limit: candidateQuantity, clamped: true });
+                        }
+                    }
+                }
+
+                // 7. Recoverability & Mining Loss Assessment
+                const recoverability = options.recoverabilityModel;
+                let approvedQty = Math.max(0, candidateQuantity);
+                let miningLossQty = 0;
+                let effectiveRecovery = 1.0;
+
+                if (recoverability && recoverability instanceof RecoverabilityModel) {
+                    if (options.gradeAssay !== undefined && options.gradeAssay < recoverability.minimumApplicableGrade) {
+                        return this._buildBlockedResult(request, reserveState, 'RECOVERABILITY_REJECTION: GRADE_BELOW_MINIMUM_CUTOFF', trace);
+                    }
+                    effectiveRecovery = recoverability.miningRecovery;
+                    miningLossQty = approvedQty * (recoverability.lossFactor / Math.max(0.01, recoverability.miningRecovery));
+                }
+
+                // Determine Decision Status
+                let resultStatus = ExtractionResultStatus.APPROVED;
+                if (approvedQty === 0) {
+                    resultStatus = ExtractionResultStatus.BLOCKED;
+                } else if (approvedQty < request.requestedQuantity) {
+                    resultStatus = ExtractionResultStatus.PARTIALLY_APPROVED;
+                }
+
+                // Compute Trace & Reserve Mutation
+                trace.intermediateValues = {
+                    candidateQuantity,
+                    approvedQuantity: approvedQty,
+                    miningLossQuantity: miningLossQty,
+                    effectiveRecoveryRate: effectiveRecovery,
+                    limitingConstraintCode
+                };
+                trace.constraintsEvaluated = constraintsEvaluated;
+                trace.rejectedConstraints = rejectedConstraints;
+                trace.output = approvedQty;
+
+                const traceSeed = `${request.requestId}:${approvedQty}:${miningLossQty}:${request.simulationTick}`;
+                const traceHash = `TRC_${DeterministicHashEngine.computeHash(traceSeed).substring(0, 10)}`;
+
+                const mutatedReserve = reserveState.applyDepletion(
+                    approvedQty,
+                    miningLossQty,
+                    request.simulationTick,
+                    traceHash,
+                    options.accountingLayer || ReserveAccountingDepletionLayer.ECONOMIC
+                );
+
+                return new ExtractionResult({
+                    requestId: request.requestId,
+                    occurrenceKey: request.occurrenceKey,
+                    status: resultStatus,
+                    requestedQuantity: request.requestedQuantity,
+                    approvedQuantity: approvedQty,
+                    actualCalculatedQuantity: approvedQty,
+                    reserveBefore: reserveState.clone(),
+                    reserveAfter: mutatedReserve,
+                    rate: approvedQty / request.timeWindowDurationHours,
+                    period: request.requestedPeriod,
+                    yield: effectiveRecovery,
+                    loss: miningLossQty,
+                    constraints: constraintsEvaluated,
+                    calculationTrace: trace,
+                    provenance: request.provenance
+                });
+            }
+
+            static _buildRejectionResult(request, reserveState, errorCode, message) {
+                return new ExtractionResult({
+                    requestId: request ? request.requestId : 'UNKNOWN_REQ',
+                    occurrenceKey: request ? request.occurrenceKey : 'UNKNOWN_OCC',
+                    status: ExtractionResultStatus.REJECTED,
+                    requestedQuantity: request ? request.requestedQuantity : 0,
+                    approvedQuantity: 0,
+                    actualCalculatedQuantity: 0,
+                    reserveBefore: reserveState ? reserveState.clone() : null,
+                    reserveAfter: reserveState ? reserveState.clone() : null,
+                    rate: 0,
+                    period: request ? request.requestedPeriod : TemporalWindowUnit.PER_DAY,
+                    yield: 0,
+                    loss: 0,
+                    diagnostics: [{ code: errorCode, message, severity: CollisionSeverity.ERROR }]
+                });
+            }
+
+            static _buildBlockedResult(request, reserveState, rationale, trace) {
+                trace.diagnosticCodes.push(ErrorTaxonomy.R5_011_EXTRACTION_BLOCKED);
+                trace.output = 0;
+
+                return new ExtractionResult({
+                    requestId: request.requestId,
+                    occurrenceKey: request.occurrenceKey,
+                    status: ExtractionResultStatus.BLOCKED,
+                    requestedQuantity: request.requestedQuantity,
+                    approvedQuantity: 0,
+                    actualCalculatedQuantity: 0,
+                    reserveBefore: reserveState.clone(),
+                    reserveAfter: reserveState.clone(),
+                    rate: 0,
+                    period: request.requestedPeriod,
+                    yield: 0,
+                    loss: 0,
+                    calculationTrace: trace,
+                    diagnostics: [{ code: ErrorTaxonomy.R5_011_EXTRACTION_BLOCKED, message: rationale, severity: CollisionSeverity.INFO }]
+                });
+            }
+        }
+
+        // 05.20: DEPLETION ACCOUNTING ENGINE & CONSERVATION ENFORCER
+        class DepletionAccountingEngine {
+            static executeDepletion(currentState, approvedQuantity, miningLossQuantity, tick = 0, traceHash = 'MUTATION') {
+                if (approvedQuantity < 0) {
+                    throw new Error('[DepletionAccounting Violation]: Approved quantity cannot be negative.');
+                }
+                if (miningLossQuantity < 0) {
+                    throw new Error('[DepletionAccounting Violation]: Mining loss cannot be negative.');
+                }
+
+                const newState = currentState.applyDepletion(approvedQuantity, miningLossQuantity, tick, traceHash);
+
+                const transition = new ReserveTransition({
+                    occurrenceKey: currentState.occurrenceKey,
+                    beforeState: currentState.clone(),
+                    afterState: newState.clone(),
+                    deltaQuantity: approvedQuantity + miningLossQuantity,
+                    extractedQuantity: approvedQuantity,
+                    lossQuantity: miningLossQuantity,
+                    tick,
+                    calculationTraceHash: traceHash
+                });
+
+                const command = new ReserveMutationCommand({
+                    occurrenceKey: currentState.occurrenceKey,
+                    approvedExtractedQuantity: approvedQuantity,
+                    miningLossQuantity: miningLossQuantity,
+                    residualQuantityAfter: newState.residualQuantity,
+                    unit: newState.unit,
+                    dimension: newState.dimension,
+                    tick,
+                    stateVersionAfter: newState.stateVersion,
+                    traceHash
+                });
+
+                return {
+                    newState,
+                    transition,
+                    command
+                };
+            }
+        }
+
+        // 05.21: EXTRACTION RESULT REGISTRY & DECISION STORE
+        class ExtractionResultRegistry {
+            constructor(maxCapacity = 10000) {
+                this.results = new Map(); // ResultId -> ExtractionResult
+                this.resultsByOccurrence = new Map(); // OccurrenceKey -> Set<ResultId>
+                this.maxCapacity = maxCapacity;
+            }
+
+            registerResult(result) {
+                if (!result || !(result instanceof ExtractionResult)) {
+                    throw new Error('[ExtractionResultRegistry]: Expected ExtractionResult instance.');
+                }
+
+                if (this.results.size >= this.maxCapacity) {
+                    const oldestKey = this.results.keys().next().value;
+                    const oldestResult = this.results.get(oldestKey);
+                    if (oldestResult) {
+                        const occSet = this.resultsByOccurrence.get(oldestResult.occurrenceKey);
+                        if (occSet) occSet.delete(oldestKey);
+                    }
+                    this.results.delete(oldestKey);
+                }
+
+                this.results.set(result.resultId, result);
+
+                if (!this.resultsByOccurrence.has(result.occurrenceKey)) {
+                    this.resultsByOccurrence.set(result.occurrenceKey, new Set());
+                }
+                this.resultsByOccurrence.get(result.occurrenceKey).add(result.resultId);
+
+                return result;
+            }
+
+            getResult(resultId) {
+                return this.results.get(resultId) || null;
+            }
+
+            getResultsForOccurrence(occurrenceKey) {
+                const set = this.resultsByOccurrence.get(occurrenceKey);
+                if (!set) return [];
+                return Array.from(set).map(id => this.results.get(id)).filter(Boolean);
+            }
+
+            clear() {
+                this.results.clear();
+                this.resultsByOccurrence.clear();
+            }
+        }
+
+        // 05.22: RESERVE ACCOUNTING INTEGRITY & CONSERVATION AUDITOR
+        class ReserveAccountingIntegrityAuditor {
+            static auditRegistryIntegrity(registry) {
+                const auditTimestamp = 0;
+                const overdrawnStates = [];
+                const conservationDriftViolations = [];
+                const negativeQuantities = [];
+                const unitMismatches = [];
+
+                registry.reserveStates.forEach((state, occKey) => {
+                    // Invariant 1: Non-Negativity
+                    if (state.residualQuantity < 0 || state.cumulativeDepletedQuantity < 0 || state.geologicalQuantity < 0) {
+                        negativeQuantities.push({ occurrenceKey: occKey, state: state.toJSON() });
+                    }
+
+                    // Invariant 2: Overdraw Detection
+                    if (state.residualQuantity > (state.geologicalQuantity + 1e-6) && state.geologicalQuantity > 0) {
+                        overdrawnStates.push({
+                            occurrenceKey: occKey,
+                            residual: state.residualQuantity,
+                            geological: state.geologicalQuantity
+                        });
+                    }
+
+                    // Invariant 3: Universal Mass Conservation
+                    if (state.classifiedReserveQuantity > 0) {
+                        const totalAccounted = state.residualQuantity + state.cumulativeDepletedQuantity;
+                        if (totalAccounted > (state.classifiedReserveQuantity + 1e-6)) {
+                            conservationDriftViolations.push({
+                                occurrenceKey: occKey,
+                                classified: state.classifiedReserveQuantity,
+                                accountedTotal: totalAccounted,
+                                drift: totalAccounted - state.classifiedReserveQuantity
+                            });
+                        }
+                    }
+                });
+
+                const isClean = negativeQuantities.length === 0 && overdrawnStates.length === 0 && conservationDriftViolations.length === 0;
+
+                return {
+                    auditTimestamp,
+                    isClean,
+                    totalStatesAudited: registry.reserveStates.size,
+                    violations: {
+                        negativeQuantitiesCount: negativeQuantities.length,
+                        negativeQuantities,
+                        overdrawnStatesCount: overdrawnStates.length,
+                        overdrawnStates,
+                        conservationDriftCount: conservationDriftViolations.length,
+                        conservationDriftViolations,
+                        unitMismatchesCount: unitMismatches.length,
+                        unitMismatches
+                    }
+                };
+            }
+        }
+
+        // 05.23: EXTRACTION DIAGNOSTICS & BOUNDED RING BUFFER LOG
+        class DiagnosticRingBuffer {
+            constructor(capacity = 5000) {
+                this.capacity = capacity;
+                this.buffer = new Array(capacity);
+                this.head = 0;
+                this.size = 0;
+            }
+
+            push(entry) {
+                this.buffer[this.head] = {
+                    tick: entry.tick || 0,
+                    entry
+                };
+                this.head = (this.head + 1) % this.capacity;
+                if (this.size < this.capacity) this.size++;
+            }
+
+            getAllSorted() {
+                const result = [];
+                for (let i = 0; i < this.size; i++) {
+                    const idx = (this.head - this.size + i + this.capacity) % this.capacity;
+                    result.push(this.buffer[idx]);
+                }
+                return result.sort((a, b) => {
+                    if (a.entry.severity !== b.entry.severity) {
+                        return String(a.entry.severity).localeCompare(String(b.entry.severity));
+                    }
+                    return String(a.entry.code).localeCompare(String(b.entry.code));
+                });
+            }
+
+            clear() {
+                this.buffer = new Array(this.capacity);
+                this.head = 0;
+                this.size = 0;
+            }
+        }
+
+        class ExtractionDiagnosticsEngine {
+            constructor(maxLogCapacity = 5000) {
+                this.ringBuffer = new DiagnosticRingBuffer(maxLogCapacity);
+            }
+
+            logDiagnostic(code, message, severity = CollisionSeverity.WARNING, context = {}) {
+                this.ringBuffer.push({
+                    code,
+                    message,
+                    severity,
+                    context
+                });
+            }
+
+            getReport() {
+                const logs = this.ringBuffer.getAllSorted();
+                return {
+                    totalLogs: logs.length,
+                    fatalCount: logs.filter(l => l.entry.severity === CollisionSeverity.FATAL).length,
+                    errorCount: logs.filter(l => l.entry.severity === CollisionSeverity.ERROR).length,
+                    warningCount: logs.filter(l => l.entry.severity === CollisionSeverity.WARNING).length,
+                    logs
+                };
+            }
+
+            clear() {
+                this.ringBuffer.clear();
+            }
+        }
+
+        // 05.24: SYSTEMIC RESERVE HEALTH MONITOR & METRICS HUB
+        class SystemicReserveHealthMonitor {
+            static evaluateHealth(registry, diagnosticsEngine = null) {
+                const integrity = ReserveAccountingIntegrityAuditor.auditRegistryIntegrity(registry);
+                const diagReport = diagnosticsEngine ? diagnosticsEngine.getReport() : { fatalCount: 0, errorCount: 0, warningCount: 0 };
+
+                let healthStatus = IdentityHealthStatus.HEALTHY;
+                if (integrity.violations.negativeQuantitiesCount > 0 || diagReport.fatalCount > 0) {
+                    healthStatus = IdentityHealthStatus.CRITICAL_FAILURE;
+                } else if (integrity.violations.overdrawnStatesCount > 0 || integrity.violations.conservationDriftCount > 0 || diagReport.errorCount > 0) {
+                    healthStatus = IdentityHealthStatus.DEGRADED;
+                } else if (diagReport.warningCount > 0) {
+                    healthStatus = IdentityHealthStatus.HEALTHY_WITH_WARNINGS;
+                }
+
+                return {
+                    timestamp: 0,
+                    healthStatus,
+                    metrics: {
+                        totalReserveAnchors: registry.reserveAnchors ? registry.reserveAnchors.size : 0,
+                        totalReserveStates: registry.reserveStates.size,
+                        totalCapacities: registry.extractionCapacities.size,
+                        totalRecoverabilityModels: registry.recoverabilityModels.size,
+                        totalExtractionResults: registry.extractionResults.results ? registry.extractionResults.results.size : 0
+                    },
+                    integrityAudit: integrity,
+                    diagnosticsSummary: {
+                        fatalErrors: diagReport.fatalCount,
+                        errors: diagReport.errorCount,
+                        warnings: diagReport.warningCount
+                    }
+                };
+            }
+        }
+
+        // 05.25: STATE CHECKPOINT, SNAPSHOT & SEMANTIC DIGEST ENGINE [S1 CRITICAL FIXED]
+        class StateCheckpointSnapshotAdapter {
+            static calculateAdler32(str) {
+                let a = 1, b = 0;
+                const MOD = 65521;
+                for (let i = 0; i < str.length; i++) {
+                    a = (a + str.charCodeAt(i)) % MOD;
+                    b = (b + a) % MOD;
+                }
+                return ((b << 16) | a) >>> 0;
+            }
+
+            static createSnapshot(registry, tick = 0) {
+                const payloadObject = {
+                    schemaVersion: registry.schemaVersion || 1,
+                    tick,
+                    reserveBases: Array.from(registry.reserveBases.values()).map(e => e.toJSON()).sort((a, b) => a.basisId.localeCompare(b.basisId)),
+                    reserveStates: Array.from(registry.reserveStates.values()).map(e => e.toJSON()).sort((a, b) => a.occurrenceKey.localeCompare(b.occurrenceKey)),
+                    recoverabilityModels: Array.from(registry.recoverabilityModels.values()).map(e => e.toJSON()).sort((a, b) => a.recoveryModelId.localeCompare(b.recoveryModelId)),
+                    accessibilityStates: Array.from(registry.accessibilityStates.values()).map(e => e.toJSON()).sort((a, b) => a.occurrenceKey.localeCompare(b.occurrenceKey)),
+                    extractionCapacities: Array.from(registry.extractionCapacities.values()).map(e => e.toJSON()).sort((a, b) => a.capacityId.localeCompare(b.capacityId)),
+                    costModels: Array.from(registry.costModels.values()).map(e => e.toJSON()).sort((a, b) => a.costModelId.localeCompare(b.costModelId)),
+                    ruleDefinitions: Array.from(registry.ruleDefinitions.values()).map(e => e.toJSON()).sort((a, b) => a.ruleId.localeCompare(b.ruleId))
+                };
+
+                const serialized = JSON.stringify(payloadObject);
+                const checksum = this.calculateAdler32(serialized);
+                const semanticDigest = `DIGEST_P05_${checksum}_${tick}`;
+
+                return {
+                    schemaVersion: payloadObject.schemaVersion,
+                    tick,
+                    checksum,
+                    semanticDigest,
+                    payload: serialized
+                };
+            }
+
+            static restoreSnapshot(registry, snapshot) {
+                if (!snapshot || !snapshot.payload || typeof snapshot.checksum !== 'number') {
+                    throw new Error('[SnapshotAdapter]: Corrupt snapshot envelope.');
+                }
+
+                const computedChecksum = this.calculateAdler32(snapshot.payload);
+                if (computedChecksum !== snapshot.checksum) {
+                    throw new Error('[SnapshotAdapter]: Checksum mismatch! Snapshot data is corrupted.');
+                }
+
+                const data = JSON.parse(snapshot.payload);
+                registry.clear();
+
+                data.ruleDefinitions.forEach(r => registry.registerRuleDefinition(new RuleDefinition(r)));
+                data.costModels.forEach(c => registry.registerCostModel(new ExtractionCostModel(c)));
+                data.recoverabilityModels.forEach(m => registry.registerRecoverabilityModel(new RecoverabilityModel(m)));
+
+                data.reserveBases.forEach(b => registry.registerReserveBasis(new ReserveBasis(b)));
+                data.extractionCapacities.forEach(c => registry.registerCapacity(new ExtractionCapacity(c)));
+
+                data.accessibilityStates.forEach(a => registry.registerAccessibilityState(new AccessibilityState(a)));
+                data.reserveStates.forEach(s => registry.registerReserveState(new ReserveState(s)));
+
+                registry.lastCompiledTimestamp = 0;
+                return {
+                    restored: true,
+                    entityCount: registry.reserveStates.size,
+                    checksum: snapshot.checksum
+                };
+            }
+        }
+
+        // 05.26: BOUNDARY HARDCODING FIREWALL & SIMULATION GUARD
+        class BoundaryHardcodingFirewall {
+            static get FORBIDDEN_SIMULATION_KEYS() {
+                return [
+                    'marketprice',
+                    'spotprice',
+                    'clearingprice',
+                    'tradetariff',
+                    'processingyield',
+                    'smeltingrecovery',
+                    'slagloss',
+                    'inventorybatch',
+                    'countrybehavior',
+                    'speculativemultiplier'
+                ];
+            }
+
+            static auditObjectDeep(target, currentPath = 'Root', violations = []) {
+                if (!target || typeof target !== 'object') return violations;
+
+                if (target instanceof Map) {
+                    target.forEach((val, key) => {
+                        const normKey = String(key).toLowerCase().replace(/[^a-z]/g, '');
+                        if (this.FORBIDDEN_SIMULATION_KEYS.some(forbidden => normKey.includes(forbidden))) {
+                            violations.push({ path: `${currentPath}.Map<${key}>`, forbiddenKey: String(key) });
+                        }
+                        this.auditObjectDeep(val, `${currentPath}.Map<${key}>`, violations);
+                    });
+                    return violations;
+                }
+
+                if (target instanceof Set || Array.isArray(target)) {
+                    let idx = 0;
+                    target.forEach(val => {
+                        this.auditObjectDeep(val, `${currentPath}[${idx++}]`, violations);
+                    });
+                    return violations;
+                }
+
+                Object.keys(target).forEach(key => {
+                    const normKey = key.toLowerCase().replace(/[^a-z]/g, '');
+                    if (this.FORBIDDEN_SIMULATION_KEYS.some(forbidden => normKey.includes(forbidden))) {
+                        violations.push({ path: `${currentPath}.${key}`, forbiddenKey: key });
+                    }
+                    this.auditObjectDeep(target[key], `${currentPath}.${key}`, violations);
+                });
+
+                return violations;
+            }
+
+            static auditRegistry(registry) {
+                const violations = [];
+                this.auditObjectDeep(registry.reserveStates, 'Registry.ReserveStates', violations);
+                this.auditObjectDeep(registry.extractionCapacities, 'Registry.Capacities', violations);
+                this.auditObjectDeep(registry.costModels, 'Registry.CostModels', violations);
+                this.auditObjectDeep(registry.ruleDefinitions, 'Registry.Rules', violations);
+
+                return {
+                    isCompliant: violations.length === 0,
+                    violationsCount: violations.length,
+                    violations
+                };
+            }
+        }
+
+        // 05.27: MASTER ATOMIC COMPILER PIPELINE & INVERTED INDEX HUB
+        class ReserveIndexHub {
+            constructor() {
+                this.byDeposit = new Map();
+                this.byResourceType = new Map();
+                this.byReserveClass = new Map();
+                this.byOperationalStatus = new Map();
+                this.byAsset = new Map();
+            }
+
+            indexReserveState(state, anchor = null) {
+                const occKey = state.occurrenceKey;
+
+                if (!this.byOperationalStatus.has(state.operationalStatus)) {
+                    this.byOperationalStatus.set(state.operationalStatus, new Set());
+                }
+                this.byOperationalStatus.get(state.operationalStatus).add(occKey);
+
+                if (anchor) {
+                    if (anchor.depositKey) {
+                        if (!this.byDeposit.has(anchor.depositKey)) this.byDeposit.set(anchor.depositKey, new Set());
+                        this.byDeposit.get(anchor.depositKey).add(occKey);
+                    }
+                    if (anchor.resourceTypeKey) {
+                        if (!this.byResourceType.has(anchor.resourceTypeKey)) this.byResourceType.set(anchor.resourceTypeKey, new Set());
+                        this.byResourceType.get(anchor.resourceTypeKey).add(occKey);
+                    }
+                }
+            }
+
+            indexCapacity(capacity) {
+                if (capacity.assetReference) {
+                    if (!this.byAsset.has(capacity.assetReference)) this.byAsset.set(capacity.assetReference, new Set());
+                    this.byAsset.get(capacity.assetReference).add(capacity.occurrenceKey);
+                }
+            }
+
+            clear() {
+                this.byDeposit.clear();
+                this.byResourceType.clear();
+                this.byReserveClass.clear();
+                this.byOperationalStatus.clear();
+                this.byAsset.clear();
+            }
+        }
+
+        class ResourceReserveRegistry {
+            constructor() {
+                this.reserveBases = new Map();
+                this.reserveStates = new Map();
+                this.reserveAnchors = new Map();
+                this.recoverabilityModels = new Map();
+                this.accessibilityStates = new Map();
+                this.extractabilityAssessments = new Map();
+                this.extractionAssets = new Map();
+                this.extractionCapacities = new Map();
+                this.constraintSets = new Map();
+                this.costModels = new Map();
+                this.ruleDefinitions = new Map();
+                this.extractionSchedules = new Map();
+                this.extractionResults = new ExtractionResultRegistry();
+
+                this.indexes = new ReserveIndexHub();
+                this.diagnostics = new ExtractionDiagnosticsEngine();
+                this.schemaVersion = 1;
+                this.lastCompiledTimestamp = 0;
+            }
+
+            registerReserveBasis(basis) {
+                if (!(basis instanceof ReserveBasis)) throw new Error('Expected ReserveBasis instance.');
+                this.reserveBases.set(basis.basisId, basis);
+                return basis;
+            }
+
+            registerReserveState(state) {
+                if (!(state instanceof ReserveState)) throw new Error('Expected ReserveState instance.');
+                this.reserveStates.set(state.occurrenceKey, state);
+                const anchor = this.reserveAnchors.get(state.occurrenceKey) || null;
+                this.indexes.indexReserveState(state, anchor);
+                return state;
+            }
+
+            registerReserveAnchor(anchor) {
+                if (!(anchor instanceof ReserveAnchor)) throw new Error('Expected ReserveAnchor instance.');
+                this.reserveAnchors.set(anchor.occurrenceKey, anchor);
+                const state = this.reserveStates.get(anchor.occurrenceKey);
+                if (state) this.indexes.indexReserveState(state, anchor);
+                return anchor;
+            }
+
+            registerRecoverabilityModel(model) {
+                if (!(model instanceof RecoverabilityModel)) throw new Error('Expected RecoverabilityModel instance.');
+                this.recoverabilityModels.set(model.recoveryModelId, model);
+                return model;
+            }
+
+            registerAccessibilityState(state) {
+                if (!(state instanceof AccessibilityState)) throw new Error('Expected AccessibilityState instance.');
+                this.accessibilityStates.set(state.occurrenceKey, state);
+                return state;
+            }
+
+            registerCapacity(capacity) {
+                if (!(capacity instanceof ExtractionCapacity)) throw new Error('Expected ExtractionCapacity instance.');
+                this.extractionCapacities.set(capacity.capacityId, capacity);
+                this.indexes.indexCapacity(capacity);
+                return capacity;
+            }
+
+            registerCostModel(model) {
+                if (!(model instanceof ExtractionCostModel)) throw new Error('Expected ExtractionCostModel instance.');
+                this.costModels.set(model.costModelId, model);
+                return model;
+            }
+
+            registerRuleDefinition(rule) {
+                if (!(rule instanceof RuleDefinition)) throw new Error('Expected RuleDefinition instance.');
+                this.ruleDefinitions.set(rule.ruleId, rule);
+                return rule;
+            }
+
+            getReserveState(occurrenceKey) {
+                return this.reserveStates.get(occurrenceKey) || null;
+            }
+
+            getCapacityForOccurrence(occurrenceKey) {
+                for (const cap of this.extractionCapacities.values()) {
+                    if (cap.occurrenceKey === occurrenceKey) return cap;
+                }
+                return null;
+            }
+
+            getRecoverabilityModelForResource(resourceTypeKey) {
+                for (const mod of this.recoverabilityModels.values()) {
+                    if (mod.resourceTypeKey === resourceTypeKey) return mod;
+                }
+                return null;
+            }
+
+            clear() {
+                this.reserveBases.clear();
+                this.reserveStates.clear();
+                this.reserveAnchors.clear();
+                this.recoverabilityModels.clear();
+                this.accessibilityStates.clear();
+                this.extractabilityAssessments.clear();
+                this.extractionAssets.clear();
+                this.extractionCapacities.clear();
+                this.constraintSets.clear();
+                this.costModels.clear();
+                this.ruleDefinitions.clear();
+                this.extractionSchedules.clear();
+                this.extractionResults.clear();
+                this.indexes.clear();
+                this.diagnostics.clear();
+                this.lastCompiledTimestamp = 0;
+            }
+        }
+
+        class ResourceReserveCompilerPipeline {
+            constructor() {
+                this.authoritativeRegistry = new ResourceReserveRegistry();
+            }
+
+            compile(identityRegistry, worldStateRegistry = null, knowledgeModel = null, config = {}) {
+                const scratch = new ResourceReserveRegistry();
+
+                try {
+                    this._compileBenchmarkModels(scratch, config);
+
+                    if (identityRegistry && identityRegistry.occurrences instanceof Map) {
+                        identityRegistry.occurrences.forEach((occ, occKey) => {
+                            const deposit = identityRegistry.getDeposit ? identityRegistry.getDeposit(occ.depositKey) : null;
+                            const resType = identityRegistry.getResourceType ? identityRegistry.getResourceType(occ.resourceTypeKey) : null;
+
+                            const anchor = new ReserveAnchor({
+                                occurrenceKey: occKey,
+                                depositKey: occ.depositKey,
+                                originKey: occ.originKey || 'UNKNOWN_ORIGIN',
+                                resourceTypeKey: occ.resourceTypeKey,
+                                ownerKey: occ.ownerKey || null,
+                                operatorKey: occ.operatorKey || null,
+                                locationNodeKey: occ.locationNodeKey || null
+                            });
+                            scratch.registerReserveAnchor(anchor);
+
+                            const declaredEndowment = this._resolveDeclaredQuantity(occ, deposit, knowledgeModel, config);
+                            const unit = resType ? (resType.declaredStandardUnit || 'TONNES') : 'TONNES';
+                            const dimension = resType ? (resType.declaredDimension || QuantityDimension.MASS) : QuantityDimension.MASS;
+
+                            const basis = new ReserveBasis({
+                                occurrenceKey: occKey,
+                                quantity: declaredEndowment,
+                                unit: unit,
+                                dimension: dimension,
+                                reserveClass: occ.occurrenceTier === 'TIER_A_PRIMARY_KNOWN' ? ReserveClassificationEnum.MINERAL_PROVED_RESERVE : ReserveClassificationEnum.GEOLOGICAL_INFERRED,
+                                confidence: typeof occ.confidenceScore === 'number' ? occ.confidenceScore : 0.8
+                            });
+                            scratch.registerReserveBasis(basis);
+
+                            const recModel = scratch.getRecoverabilityModelForResource(occ.resourceTypeKey);
+                            const recFactor = recModel ? recModel.miningRecovery : 0.85;
+
+                            const state = new ReserveState({
+                                occurrenceKey: occKey,
+                                unit: unit,
+                                dimension: dimension,
+                                geologicalQuantity: declaredEndowment,
+                                classifiedReserveQuantity: declaredEndowment,
+                                recoverableQuantity: declaredEndowment * recFactor,
+                                accessibleQuantity: declaredEndowment * recFactor,
+                                technicallyExtractableQuantity: declaredEndowment * recFactor,
+                                economicallyExtractableQuantity: declaredEndowment * recFactor,
+                                currentlyAvailableQuantity: declaredEndowment * recFactor * 0.1,
+                                cumulativeDepletedQuantity: 0,
+                                residualQuantity: declaredEndowment * recFactor,
+                                operationalStatus: occ.occurrenceTier === 'TIER_A_PRIMARY_KNOWN' ? ReserveOperationalStatus.ACTIVE_EXTRACTION : ReserveOperationalStatus.UNASSESSED
+                            });
+                            scratch.registerReserveState(state);
+
+                            const accessibility = new AccessibilityState({
+                                occurrenceKey: occKey,
+                                status: AccessibilityStatusEnum.ACCESSIBLE,
+                                accessibilityRatio: 1.0,
+                                depthMeters: deposit ? (deposit.depthProfileMinMeters || 0) : 0,
+                                isOffshore: deposit ? Boolean(deposit.isOffshore) : false
+                            });
+                            scratch.registerAccessibilityState(accessibility);
+
+                            const nominalCapacityRate = this._resolveNominalCapacityRate(declaredEndowment, config);
+                            const capacity = new ExtractionCapacity({
+                                assetReference: `ASSET_${occKey}`,
+                                occurrenceKey: occKey,
+                                nominalRate: nominalCapacityRate,
+                                rateUnit: unit,
+                                period: TemporalWindowUnit.PER_DAY,
+                                availabilityFactor: 0.92,
+                                maintenanceFactor: 0.95
+                            });
+                            scratch.registerCapacity(capacity);
+                        });
+                    }
+
+                    const healthReport = SystemicReserveHealthMonitor.evaluateHealth(scratch, scratch.diagnostics);
+                    const firewallAudit = BoundaryHardcodingFirewall.auditRegistry(scratch);
+
+                    if (healthReport.healthStatus === IdentityHealthStatus.CRITICAL_FAILURE || !firewallAudit.isCompliant) {
+                        return {
+                            status: 'COMPILATION_FAILED',
+                            registry: null,
+                            healthReport,
+                            firewallAudit,
+                            isAuthoritative: false
+                        };
+                    }
+
+                    scratch.lastCompiledTimestamp = 0;
+                    this.authoritativeRegistry = scratch;
+
+                    return {
+                        status: 'COMPILATION_SUCCESSFUL',
+                        registry: this.authoritativeRegistry,
+                        healthReport,
+                        firewallAudit,
+                        isAuthoritative: true
+                    };
+
+                } catch (err) {
+                    return {
+                        status: 'COMPILATION_EXCEPTION',
+                        error: err.message,
+                        registry: null,
+                        isAuthoritative: false
+                    };
+                }
+            }
+
+            _resolveDeclaredQuantity(occ, deposit, knowledgeModel, config) {
+                if (config.defaultQuantityPerTier && config.defaultQuantityPerTier[occ.occurrenceTier]) {
+                    return config.defaultQuantityPerTier[occ.occurrenceTier];
+                }
+                if (typeof occ.declaredQuantity === 'number' && occ.declaredQuantity > 0) {
+                    return occ.declaredQuantity;
+                }
+                const confidence = typeof occ.confidenceScore === 'number' ? occ.confidenceScore : 0.8;
+                return confidence * 5000000;
+            }
+
+            _resolveNominalCapacityRate(declaredQuantity, config) {
+                if (typeof config.nominalRateDaily === 'number') {
+                    return config.nominalRateDaily;
+                }
+                return Math.max(100, Math.round(declaredQuantity / 3650.0));
+            }
+
+            _compileBenchmarkModels(scratch, config = {}) {
+                const defaultModel = new RecoverabilityModel({
+                    recoveryModelId: 'REC_MOD:GENERIC_CONVENTIONAL',
+                    resourceTypeKey: 'RES_TYPE:GENERIC',
+                    method: ExtractionMethodEnum.OPEN_PIT,
+                    factor: config.defaultRecoveryFactor || 0.88,
+                    geologicalRecovery: 0.95,
+                    miningRecovery: config.defaultRecoveryFactor || 0.88,
+                    lossFactor: 1.0 - (config.defaultRecoveryFactor || 0.88)
+                });
+                scratch.registerRecoverabilityModel(defaultModel);
+
+                const defaultCost = new ExtractionCostModel({
+                    costModelId: 'COST_MOD:BENCHMARK',
+                    baseCost: config.defaultBaseCost || 15.0,
+                    unit: 'USD_PER_TONNE'
+                });
+                scratch.registerCostModel(defaultCost);
+            }
+        }
+
+        function deepFreeze(obj, seen = new WeakSet()) {
+            if (obj === null || typeof obj !== 'object' || seen.has(obj)) return obj;
+            seen.add(obj);
+            if (obj instanceof Map || obj instanceof Set) return obj;
+            const propNames = Object.getOwnPropertyNames(obj);
+            for (const name of propNames) {
+                deepFreeze(obj[name], seen);
+            }
+            return Object.freeze(obj);
+        }
+
+        const ResourceReserveExtractionEngineAdapter = Object.freeze({
+            QuantityDimension,
+            ReserveClassificationEnum,
+            ReserveDerivedStateEnum,
+            ReserveOperationalStatus,
+            ExtractionMethodEnum,
+            AccessibilityStatusEnum,
+            AccessibilityReasonCodeEnum,
+            ExtractabilityStatusEnum,
+            ConstraintDimensionEnum,
+            ConstraintSeverityEnum,
+            ConstraintEvaluationStatus,
+            UnknownPolicyEnum,
+            OverdrawPolicyEnum,
+            ReserveAccountingDepletionLayer,
+            TemporalWindowUnit,
+            ExtractionResultStatus,
+            SourceVerificationStatus,
+            RoundingModeEnum,
+            ErrorTaxonomy,
+
+            DeterministicHashEngine,
+            ReserveBasis,
+            ReserveClassificationEngine,
+            ReserveState,
+            ReserveAnchor,
+            RecoverabilityModel,
+            AccessibilityState,
+            ExtractabilityAssessment,
+            ExtractionAssetLink,
+            ExtractionCapacity,
+            ExtractionConstraint,
+            ExtractionConstraintSet,
+            ExtractionMethodProfile,
+            TechnologyCapabilityRef,
+            EnergyRequirementEvaluator,
+            LaborRequirementEvaluator,
+            ExtractionCostModel,
+            ExtractionYieldModel,
+            RuleDefinition,
+            DeterministicFormulaInterpreter,
+            ExtractionSchedule,
+            ExtractionRequest,
+            CalculationTrace,
+            ReserveTransition,
+            ReserveMutationCommand,
+            ExtractionResult,
+
+            ExtractionRequestValidator,
+            ExtractionCalculationEngine,
+            DepletionAccountingEngine,
+            ExtractionResultRegistry,
+            ReserveAccountingIntegrityAuditor,
+            DiagnosticRingBuffer,
+            ExtractionDiagnosticsEngine,
+            SystemicReserveHealthMonitor,
+            StateCheckpointSnapshotAdapter,
+            BoundaryHardcodingFirewall,
+            ReserveIndexHub,
+            ResourceReserveRegistry,
+            ResourceReserveCompilerPipeline,
+
+            deepFreeze,
+
+            compileReserves(identityRegistry, worldStateRegistry = null, knowledgeModel = null, config = {}) {
+                const compiler = new ResourceReserveCompilerPipeline();
+                return compiler.compile(identityRegistry, worldStateRegistry, knowledgeModel, config);
+            },
+
+            executeExtraction(request, reserveState, options = {}) {
+                return ExtractionCalculationEngine.calculate(request, reserveState, options);
+            }
+        });
+
+        global.GSRSK_Part05 = ResourceReserveExtractionEngineAdapter;
+        global.GSRSK_ResourceReserveExtractionEngine = ResourceReserveExtractionEngineAdapter;
+
+        if (typeof window !== 'undefined') {
+            window.GSRSK_Part05 = ResourceReserveExtractionEngineAdapter;
+            window.GSRSK_ResourceReserveExtractionEngine = ResourceReserveExtractionEngineAdapter;
+        }
+
+    })(typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : global));
+
     if (typeof module !== 'undefined' && module.exports) {
         module.exports = {
             DataFoundation: global.GSRSK_DataFoundation || (typeof _globalScope !== 'undefined' ? _globalScope.GSRSK_DataFoundation : null),
             WorldKnowledgeCompiler: global.GSRSK_WorldKnowledgeCompiler || null,
             WorldStateEngineAdapter: global.GSRSK_Part03 || null,
             WorldStateEngine: global.GSRSK_WorldStateEngine || null,
-            ResourceIdentityEngine: ResourceIdentityEngineAdapter,
+            ResourceIdentityEngine: global.GSRSK_ResourceIdentityEngine || null,
+            ResourceReserveExtractionEngine: global.GSRSK_ResourceReserveExtractionEngine || null,
+            ResourceMinistryEngine: ResourceMinistryEngineInstance,
             MasterGSRSKEngine: global.GSRSK_MasterEngine ? global.GSRSK_MasterEngine.constructor : null,
             MasterEngineSingleton: global.GSRSK_MasterEngine || null,
             Part01: global.GSRSK_DataFoundation || null,
             Part02: global.GSRSK_WorldKnowledgeCompiler || null,
             Part03: global.GSRSK_Part03 || null,
-            Part04: ResourceIdentityEngineAdapter,
-            ...ResourceIdentityEngineAdapter
+            Part04: global.GSRSK_ResourceIdentityEngine || null,
+            Part05: global.GSRSK_ResourceReserveExtractionEngine || null,
+            ...(global.GSRSK_ResourceIdentityEngine || {})
         };
     }
 
 })(typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : global));
+
+
