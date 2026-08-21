@@ -11747,23 +11747,2628 @@ _globalScope.GSRSK_DataFoundation = (() => {
 
     })(typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : global));
 
+    // =========================================================================
+    // GSRSK — PART 06: RESOURCE PROCESSING & TRANSFORMATION ENGINE (VOLUME 1 OF 2)
+    // =========================================================================
+    // Architecture Phase: 06 of 16
+    // Production Standard: 100% Comprehensive Constitutional Invariant Engine
+    //
+    // SUBSYSTEMS INCLUDED IN VOLUME 1:
+    //   06.01 Processing Registry & Process Definition Schema
+    //   06.02 Material Intake Gateway & ProcessingInput Adapter (Part 05 Ingestion)
+    //   06.03 Process Eligibility Engine (Quality, Technology, Condition Filters)
+    //   06.04 Recipe & Rule Resolver (Hierarchy & Safe AST Expression Engine)
+    //   06.05 Process Planning Engine (Plan != Result Separation) [BUG-02 Fixed]
+    //   06.06 Constraint Resolution Engine (Capacity, Energy, Water, Material Limits)
+    //   06.07 Transformation Calculation Engine (6-Layer Mass Balance, Yield & Losses)
+    //   + Safe AST Formula Interpreter & Deterministic Hashing Infrastructure
+    // =========================================================================
+
+    (function(global) {
+        'use strict';
+
+        // =========================================================================
+        // 06.00: DOMAIN ENUMS, TAXONOMY, STATUSES & ERROR CODES
+        // =========================================================================
+
+        const ProcessClassTaxonomy = Object.freeze({
+            SEPARATION: 'SEPARATION',
+            CONCENTRATION: 'CONCENTRATION',
+            PURIFICATION: 'PURIFICATION',
+            REFINING: 'REFINING',
+            UPGRADING: 'UPGRADING',
+            CONVERSION: 'CONVERSION',
+            CHEMICAL_TRANSFORMATION: 'CHEMICAL_TRANSFORMATION',
+            PHYSICAL_TRANSFORMATION: 'PHYSICAL_TRANSFORMATION',
+            BLENDING: 'BLENDING',
+            MIXING: 'MIXING',
+            ASSEMBLY_COMBINATION: 'ASSEMBLY_COMBINATION',
+            RECYCLING_RECOVERY: 'RECYCLING_RECOVERY',
+            REPROCESSING: 'REPROCESSING',
+            GENERIC_TRANSFORMATION: 'GENERIC_TRANSFORMATION'
+        });
+
+        const ProcessingEligibilityStatus = Object.freeze({
+            ELIGIBLE: 'ELIGIBLE',
+            INELIGIBLE: 'INELIGIBLE',
+            CONDITIONALLY_ELIGIBLE: 'CONDITIONALLY_ELIGIBLE',
+            UNKNOWN_ELIGIBILITY: 'UNKNOWN_ELIGIBILITY'
+        });
+
+        const ProcessingOperationLifecycle = Object.freeze({
+            REQUESTED: 'REQUESTED',
+            VALIDATING: 'VALIDATING',
+            ELIGIBLE: 'ELIGIBLE',
+            PLANNED: 'PLANNED',
+            READY: 'READY',
+            EXECUTING: 'EXECUTING',
+            COMPLETED: 'COMPLETED',
+            PARTIAL: 'PARTIAL',
+            DEFERRED: 'DEFERRED',
+            BLOCKED: 'BLOCKED',
+            INELIGIBLE: 'INELIGIBLE',
+            FAILED: 'FAILED',
+            CANCELLED: 'CANCELLED'
+        });
+
+        const OutputMaterialClass = Object.freeze({
+            PRIMARY_OUTPUT: 'PRIMARY_OUTPUT',
+            SECONDARY_OUTPUT: 'SECONDARY_OUTPUT',
+            BYPRODUCT: 'BYPRODUCT',
+            RECOVERABLE_INTERMEDIATE: 'RECOVERABLE_INTERMEDIATE',
+            WASTE_TAILINGS: 'WASTE_TAILINGS',
+            PROCESS_LOSS: 'PROCESS_LOSS'
+        });
+
+        const MaterialPhysicalState = Object.freeze({
+            SOLID_RUN_OF_MINE: 'SOLID_RUN_OF_MINE',
+            SOLID_CRUSHED_ORE: 'SOLID_CRUSHED_ORE',
+            SOLID_CONCENTRATE: 'SOLID_CONCENTRATE',
+            SOLID_INGOT_SLAB: 'SOLID_INGOT_SLAB',
+            SOLID_POWDER_PELLETS: 'SOLID_POWDER_PELLETS',
+            LIQUID_CRUDE: 'LIQUID_CRUDE',
+            LIQUID_AQUEOUS_SOLUTION: 'LIQUID_AQUEOUS_SOLUTION',
+            LIQUID_CHEMICAL_SLURRY: 'LIQUID_CHEMICAL_SLURRY',
+            LIQUID_REFINED: 'LIQUID_REFINED',
+            GAS_RAW: 'GAS_RAW',
+            GAS_PURIFIED: 'GAS_PURIFIED',
+            GAS_COMPRESSED_LNG: 'GAS_COMPRESSED_LNG',
+            MOLTEN_LIQUID: 'MOLTEN_LIQUID',
+            PLASMA_STATE: 'PLASMA_STATE',
+            UNKNOWN_STATE: 'UNKNOWN_STATE'
+        });
+
+        const ConstraintSeverity = Object.freeze({
+            BLOCKING: 'BLOCKING',
+            LIMITING: 'LIMITING',
+            WARNING: 'WARNING',
+            INFORMATIONAL: 'INFORMATIONAL'
+        });
+
+        const ConstraintEvaluationResultStatus = Object.freeze({
+            FULL: 'FULL',
+            PARTIAL: 'PARTIAL',
+            DEFERRED: 'DEFERRED',
+            BLOCKED: 'BLOCKED',
+            FAILED: 'FAILED'
+        });
+
+        const ProcessingResourceConsumptionType = Object.freeze({
+            ENERGY_ELECTRIC: 'ENERGY_ELECTRIC',
+            ENERGY_THERMAL_FUEL: 'ENERGY_THERMAL_FUEL',
+            WATER_INDUSTRIAL: 'WATER_INDUSTRIAL',
+            WATER_PROCESS_REAGENT: 'WATER_PROCESS_REAGENT',
+            CHEMICAL_REAGENT: 'CHEMICAL_REAGENT',
+            COMPRESSED_AIR_GAS: 'COMPRESSED_AIR_GAS',
+            CATALYST_CONSUMABLE: 'CATALYST_CONSUMABLE',
+            GENERIC_UTILITY: 'GENERIC_UTILITY'
+        });
+
+        const UnknownPolicyEnum = Object.freeze({
+            BLOCK: 'BLOCK',
+            PASS_THROUGH: 'PASS_THROUGH',
+            CONSERVATIVE: 'CONSERVATIVE',
+            DEFER: 'DEFER'
+        });
+
+        const RoundingModeEnum = Object.freeze({
+            ROUND_HALF_UP: 'ROUND_HALF_UP',
+            ROUND_DOWN: 'ROUND_DOWN',
+            ROUND_NEAREST: 'ROUND_NEAREST'
+        });
+
+        const ErrorTaxonomy = Object.freeze({
+            P6_001_DATA_ERROR: 'P6_001_DATA_ERROR',
+            P6_002_REFERENCE_ERROR: 'P6_002_REFERENCE_ERROR',
+            P6_003_UNIT_ERROR: 'P6_003_UNIT_ERROR',
+            P6_004_RULE_ERROR: 'P6_004_RULE_ERROR',
+            P6_005_INPUT_ERROR: 'P6_005_INPUT_ERROR',
+            P6_006_ELIGIBILITY_ERROR: 'P6_006_ELIGIBILITY_ERROR',
+            P6_007_CONSTRAINT_ERROR: 'P6_007_CONSTRAINT_ERROR',
+            P6_008_CALCULATION_ERROR: 'P6_008_CALCULATION_ERROR',
+            P6_009_BALANCE_ERROR: 'P6_009_BALANCE_ERROR',
+            P6_010_STATE_ERROR: 'P6_010_STATE_ERROR',
+            P6_011_EXECUTION_ERROR: 'P6_011_EXECUTION_ERROR',
+            P6_012_STAGE_FAILURE: 'P6_012_STAGE_FAILURE',
+            P6_013_CAPACITY_EXCEEDED: 'P6_013_CAPACITY_EXCEEDED',
+            P6_014_UTILITY_SHORTFALL: 'P6_014_UTILITY_SHORTFALL',
+            P6_015_QUALITY_DEFECT: 'P6_015_QUALITY_DEFECT',
+            P6_016_FIREWALL_BREACH: 'P6_016_FIREWALL_BREACH',
+            P6_017_REPLAY_DIVERGENCE: 'P6_017_REPLAY_DIVERGENCE',
+            P6_018_SNAPSHOT_CORRUPTION: 'P6_018_SNAPSHOT_CORRUPTION',
+            P6_019_STOCHASTIC_SEED_MISSING: 'P6_019_STOCHASTIC_SEED_MISSING',
+            P6_020_UNRESOLVED_BYPRODUCT: 'P6_020_UNRESOLVED_BYPRODUCT'
+        });
+
+        const ProcessingHealthStatus = Object.freeze({
+            ONLINE: 'ONLINE',
+            DEGRADED: 'DEGRADED',
+            BLOCKED: 'BLOCKED',
+            FAILED: 'FAILED'
+        });
+
+        // =========================================================================
+        // DETERMINISTIC HASHING ENGINE (NO RUNTIME DATE.NOW)
+        // =========================================================================
+
+        class DeterministicHashEngine {
+            static computeHash(inputStr) {
+                const str = typeof inputStr === 'string' ? inputStr : JSON.stringify(inputStr);
+                let h1 = 0xdeadbeef ^ str.length;
+                let h2 = 0x41c6ce57 ^ str.length;
+                for (let i = 0; i < str.length; i++) {
+                    const ch = str.charCodeAt(i);
+                    h1 = (Math.imul(h1 ^ ch, 2654435761) >>> 0);
+                    h2 = (Math.imul(h2 ^ ch, 1597334677) >>> 0);
+                }
+                h1 = ((Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909)) >>> 0);
+                h2 = ((Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909)) >>> 0);
+                return ((h1 >>> 0).toString(16).padStart(8, '0') + (h2 >>> 0).toString(16).padStart(8, '0')).toLowerCase();
+            }
+        }
+
+        // =========================================================================
+        // 06.01: PROCESSING REGISTRY & PROCESS DEFINITION SCHEMAS
+        // =========================================================================
+
+        class ProcessInputDefinition {
+            constructor(params = {}) {
+                if (!params.materialIdentity) {
+                    throw new Error('[ProcessInputDefinition Violation]: materialIdentity is mandatory.');
+                }
+                this.materialIdentity = params.materialIdentity; // e.g. "RES_TYPE:COPPER_ORE"
+                this.requiredQuantity = typeof params.requiredQuantity === 'number' && Number.isFinite(params.requiredQuantity) ? params.requiredQuantity : 1.0;
+                this.unit = params.unit || 'TONNES';
+                this.minimumQuality = typeof params.minimumQuality === 'number' ? Math.max(0, Math.min(1, params.minimumQuality)) : 0.0;
+                this.minimumGrade = typeof params.minimumGrade === 'number' ? Math.max(0, params.minimumGrade) : 0.0;
+                this.minimumPurity = typeof params.minimumPurity === 'number' ? Math.max(0, Math.min(1, params.minimumPurity)) : 0.0;
+                this.allowedPhysicalStates = Array.isArray(params.allowedPhysicalStates) 
+                    ? [...params.allowedPhysicalStates] 
+                    : [MaterialPhysicalState.SOLID_RUN_OF_MINE, MaterialPhysicalState.SOLID_CRUSHED_ORE];
+                this.isOptional = Boolean(params.isOptional);
+            }
+
+            clone() {
+                return new ProcessInputDefinition({
+                    materialIdentity: this.materialIdentity,
+                    requiredQuantity: this.requiredQuantity,
+                    unit: this.unit,
+                    minimumQuality: this.minimumQuality,
+                    minimumGrade: this.minimumGrade,
+                    minimumPurity: this.minimumPurity,
+                    allowedPhysicalStates: [...this.allowedPhysicalStates],
+                    isOptional: this.isOptional
+                });
+            }
+
+            toJSON() {
+                return {
+                    materialIdentity: this.materialIdentity,
+                    requiredQuantity: this.requiredQuantity,
+                    unit: this.unit,
+                    minimumQuality: this.minimumQuality,
+                    minimumGrade: this.minimumGrade,
+                    minimumPurity: this.minimumPurity,
+                    allowedPhysicalStates: this.allowedPhysicalStates,
+                    isOptional: this.isOptional
+                };
+            }
+        }
+
+        class ProcessOutputDefinition {
+            constructor(params = {}) {
+                if (!params.materialIdentity) {
+                    throw new Error('[ProcessOutputDefinition Violation]: materialIdentity is mandatory.');
+                }
+                this.materialIdentity = params.materialIdentity; // e.g. "RES_TYPE:COPPER_CONCENTRATE"
+                this.outputClass = params.outputClass || OutputMaterialClass.PRIMARY_OUTPUT;
+                this.baseYieldRatio = typeof params.baseYieldRatio === 'number' && Number.isFinite(params.baseYieldRatio) ? Math.max(0, Math.min(1, params.baseYieldRatio)) : 1.0;
+                this.unit = params.unit || 'TONNES';
+                this.targetPhysicalState = params.targetPhysicalState || MaterialPhysicalState.SOLID_CONCENTRATE;
+                this.expectedGrade = typeof params.expectedGrade === 'number' ? params.expectedGrade : 1.0;
+                this.expectedPurity = typeof params.expectedPurity === 'number' ? params.expectedPurity : 1.0;
+                this.isRecoverable = params.isRecoverable !== undefined ? Boolean(params.isRecoverable) : true;
+            }
+
+            clone() {
+                return new ProcessOutputDefinition({
+                    materialIdentity: this.materialIdentity,
+                    outputClass: this.outputClass,
+                    baseYieldRatio: this.baseYieldRatio,
+                    unit: this.unit,
+                    targetPhysicalState: this.targetPhysicalState,
+                    expectedGrade: this.expectedGrade,
+                    expectedPurity: this.expectedPurity,
+                    isRecoverable: this.isRecoverable
+                });
+            }
+
+            toJSON() {
+                return {
+                    materialIdentity: this.materialIdentity,
+                    outputClass: this.outputClass,
+                    baseYieldRatio: this.baseYieldRatio,
+                    unit: this.unit,
+                    targetPhysicalState: this.targetPhysicalState,
+                    expectedGrade: this.expectedGrade,
+                    expectedPurity: this.expectedPurity,
+                    isRecoverable: this.isRecoverable
+                };
+            }
+        }
+
+        class ProcessDefinition {
+            constructor(params = {}) {
+                if (!params.processId || !params.processType) {
+                    throw new Error('[ProcessDefinition Violation]: processId and processType are mandatory.');
+                }
+
+                this.processId = params.processId;
+                this.name = params.name || this.processId;
+                this.processType = params.processType;
+                this.version = params.version || '1.0.0';
+
+                this.inputs = Array.isArray(params.inputs) 
+                    ? params.inputs.map(i => i instanceof ProcessInputDefinition ? i : new ProcessInputDefinition(i)) 
+                    : [];
+                this.outputs = Array.isArray(params.outputs) 
+                    ? params.outputs.map(o => o instanceof ProcessOutputDefinition ? o : new ProcessOutputDefinition(o)) 
+                    : [];
+
+                this.technologyRequirements = Array.isArray(params.technologyRequirements) ? [...params.technologyRequirements] : [];
+                this.operatingConditions = params.operatingConditions || { nominalTemperatureC: 25, nominalPressureBar: 1.0 };
+                
+                this.baseEfficiency = typeof params.baseEfficiency === 'number' && Number.isFinite(params.baseEfficiency) ? Math.max(0, Math.min(1, params.baseEfficiency)) : 0.95;
+                this.baseLossRatio = typeof params.baseLossRatio === 'number' && Number.isFinite(params.baseLossRatio) ? Math.max(0, Math.min(1, params.baseLossRatio)) : 0.05;
+                this.baseWasteRatio = typeof params.baseWasteRatio === 'number' && Number.isFinite(params.baseWasteRatio) ? Math.max(0, Math.min(1, params.baseWasteRatio)) : 0.0;
+
+                this.consumptionRules = Array.isArray(params.consumptionRules) ? [...params.consumptionRules] : [];
+                this.capacityLimitPerDay = typeof params.capacityLimitPerDay === 'number' && Number.isFinite(params.capacityLimitPerDay) ? params.capacityLimitPerDay : Infinity;
+                this.processingTimeHours = typeof params.processingTimeHours === 'number' && Number.isFinite(params.processingTimeHours) ? params.processingTimeHours : 1.0;
+                
+                this.yieldRuleRef = params.yieldRuleRef || 'CANONICAL_YIELD_RULE';
+                this.qualityRuleRef = params.qualityRuleRef || 'CANONICAL_QUALITY_RULE';
+                this.costRuleRef = params.costRuleRef || 'CANONICAL_COST_RULE';
+
+                this.validity = params.validity || { active: true, effectiveFromTick: 0, effectiveToTick: Infinity };
+                this.provenance = params.provenance || { sourceSubsystem: 'PROCESS_REGISTRY', timestamp: 0 };
+            }
+
+            clone() {
+                return new ProcessDefinition({
+                    processId: this.processId,
+                    name: this.name,
+                    processType: this.processType,
+                    version: this.version,
+                    inputs: this.inputs.map(i => i.clone()),
+                    outputs: this.outputs.map(o => o.clone()),
+                    technologyRequirements: [...this.technologyRequirements],
+                    operatingConditions: JSON.parse(JSON.stringify(this.operatingConditions)),
+                    baseEfficiency: this.baseEfficiency,
+                    baseLossRatio: this.baseLossRatio,
+                    baseWasteRatio: this.baseWasteRatio,
+                    consumptionRules: JSON.parse(JSON.stringify(this.consumptionRules)),
+                    capacityLimitPerDay: this.capacityLimitPerDay,
+                    processingTimeHours: this.processingTimeHours,
+                    yieldRuleRef: this.yieldRuleRef,
+                    qualityRuleRef: this.qualityRuleRef,
+                    costRuleRef: this.costRuleRef,
+                    validity: JSON.parse(JSON.stringify(this.validity)),
+                    provenance: JSON.parse(JSON.stringify(this.provenance))
+                });
+            }
+
+            toJSON() {
+                return {
+                    processId: this.processId,
+                    name: this.name,
+                    processType: this.processType,
+                    version: this.version,
+                    inputs: this.inputs.map(i => i.toJSON()),
+                    outputs: this.outputs.map(o => o.toJSON()),
+                    technologyRequirements: this.technologyRequirements,
+                    operatingConditions: this.operatingConditions,
+                    baseEfficiency: this.baseEfficiency,
+                    baseLossRatio: this.baseLossRatio,
+                    baseWasteRatio: this.baseWasteRatio,
+                    consumptionRules: this.consumptionRules,
+                    capacityLimitPerDay: this.capacityLimitPerDay,
+                    processingTimeHours: this.processingTimeHours,
+                    yieldRuleRef: this.yieldRuleRef,
+                    qualityRuleRef: this.qualityRuleRef,
+                    costRuleRef: this.costRuleRef,
+                    validity: this.validity,
+                    provenance: this.provenance
+                };
+            }
+        }
+
+        class ProcessRecipe {
+            constructor(params = {}) {
+                if (!params.recipeId || !params.processId) {
+                    throw new Error('[ProcessRecipe Violation]: recipeId and processId are mandatory.');
+                }
+                this.recipeId = params.recipeId;
+                this.processId = params.processId;
+                this.recipeVersion = params.recipeVersion || '1.0.0';
+                this.inputRatios = params.inputRatios || {}; // MaterialIdentity -> Ratio
+                this.expectedPrimaryOutputRatio = typeof params.expectedPrimaryOutputRatio === 'number' ? params.expectedPrimaryOutputRatio : 1.0;
+                this.operatingParameters = params.operatingParameters || {};
+                this.provenance = params.provenance || { sourceSubsystem: 'RECIPE_REGISTRY', timestamp: 0 };
+            }
+
+            clone() {
+                return new ProcessRecipe({
+                    recipeId: this.recipeId,
+                    processId: this.processId,
+                    recipeVersion: this.recipeVersion,
+                    inputRatios: JSON.parse(JSON.stringify(this.inputRatios)),
+                    expectedPrimaryOutputRatio: this.expectedPrimaryOutputRatio,
+                    operatingParameters: JSON.parse(JSON.stringify(this.operatingParameters)),
+                    provenance: JSON.parse(JSON.stringify(this.provenance))
+                });
+            }
+
+            toJSON() {
+                return {
+                    recipeId: this.recipeId,
+                    processId: this.processId,
+                    recipeVersion: this.recipeVersion,
+                    inputRatios: this.inputRatios,
+                    expectedPrimaryOutputRatio: this.expectedPrimaryOutputRatio,
+                    operatingParameters: this.operatingParameters,
+                    provenance: this.provenance
+                };
+            }
+        }
+
+        class ProcessRegistry {
+            constructor() {
+                this.processDefinitions = new Map(); // processId -> ProcessDefinition
+                this.recipes = new Map();            // recipeId -> ProcessRecipe
+            }
+
+            registerProcess(definition) {
+                if (!(definition instanceof ProcessDefinition)) {
+                    throw new Error('[ProcessRegistry]: Expected ProcessDefinition instance.');
+                }
+                this.processDefinitions.set(definition.processId, definition);
+                return definition;
+            }
+
+            registerRecipe(recipe) {
+                if (!(recipe instanceof ProcessRecipe)) {
+                    throw new Error('[ProcessRegistry]: Expected ProcessRecipe instance.');
+                }
+                this.recipes.set(recipe.recipeId, recipe);
+                return recipe;
+            }
+
+            getProcess(processId) {
+                return this.processDefinitions.get(processId) || null;
+            }
+
+            getRecipe(recipeId) {
+                return this.recipes.get(recipeId) || null;
+            }
+
+            clear() {
+                this.processDefinitions.clear();
+                this.recipes.clear();
+            }
+        }
+
+        // =========================================================================
+        // 06.02: MATERIAL INTAKE GATEWAY & PROCESSING INPUT ADAPTER
+        // =========================================================================
+
+        class ProcessingInput {
+            constructor(params = {}) {
+                if (!params.materialIdentity || typeof params.quantity !== 'number') {
+                    throw new Error('[ProcessingInput Violation]: materialIdentity and quantity are mandatory.');
+                }
+                if (params.quantity < 0 || !Number.isFinite(params.quantity)) {
+                    throw new Error('[ProcessingInput Violation]: Quantity must be a finite non-negative number.');
+                }
+
+                const seed = `${params.materialIdentity}:${params.quantity}:${params.sourceIdentity || 'SRC'}`;
+                this.inputId = params.inputId || `INP:${params.materialIdentity}:${DeterministicHashEngine.computeHash(seed).substring(0, 8)}`;
+                this.materialIdentity = params.materialIdentity;
+                this.sourceIdentity = params.sourceIdentity || 'UNKNOWN_SOURCE';
+                this.quantity = params.quantity;
+                this.unit = params.unit || 'TONNES';
+                
+                // Material Quality Specification
+                this.quality = typeof params.quality === 'number' ? Math.max(0, Math.min(1, params.quality)) : 1.0;
+                this.grade = typeof params.grade === 'number' ? Math.max(0, params.grade) : 1.0;
+                this.purity = typeof params.purity === 'number' ? Math.max(0, Math.min(1, params.purity)) : 1.0;
+                this.physicalState = params.physicalState || MaterialPhysicalState.SOLID_RUN_OF_MINE;
+                this.chemicalState = params.chemicalState || 'RAW_UNPROCESSED';
+                
+                this.origin = params.origin || 'UNKNOWN_ORIGIN';
+                this.extractionReference = params.extractionReference || null;
+                this.availableConditions = params.availableConditions || {};
+                this.provenance = params.provenance || { sourceSubsystem: 'MATERIAL_INTAKE_GATEWAY', timestamp: 0 };
+            }
+
+            clone() {
+                return new ProcessingInput({
+                    inputId: this.inputId,
+                    materialIdentity: this.materialIdentity,
+                    sourceIdentity: this.sourceIdentity,
+                    quantity: this.quantity,
+                    unit: this.unit,
+                    quality: this.quality,
+                    grade: this.grade,
+                    purity: this.purity,
+                    physicalState: this.physicalState,
+                    chemicalState: this.chemicalState,
+                    origin: this.origin,
+                    extractionReference: this.extractionReference,
+                    availableConditions: JSON.parse(JSON.stringify(this.availableConditions)),
+                    provenance: JSON.parse(JSON.stringify(this.provenance))
+                });
+            }
+
+            toJSON() {
+                return {
+                    inputId: this.inputId,
+                    materialIdentity: this.materialIdentity,
+                    sourceIdentity: this.sourceIdentity,
+                    quantity: this.quantity,
+                    unit: this.unit,
+                    quality: this.quality,
+                    grade: this.grade,
+                    purity: this.purity,
+                    physicalState: this.physicalState,
+                    chemicalState: this.chemicalState,
+                    origin: this.origin,
+                    extractionReference: this.extractionReference,
+                    availableConditions: this.availableConditions,
+                    provenance: this.provenance
+                };
+            }
+        }
+
+        class MaterialIntakeAdapter {
+            /**
+             * Consumes Part 05 ExtractionResult and adapts it to standard ProcessingInput
+             */
+            static adaptExtractionResult(extractionResult, identityRegistry = null) {
+                if (!extractionResult || typeof extractionResult !== 'object') {
+                    throw new Error('[MaterialIntakeAdapter Error]: Invalid ExtractionResult payload.');
+                }
+
+                const approvedQuantity = typeof extractionResult.approvedQuantity === 'number' ? extractionResult.approvedQuantity : 0;
+                if (approvedQuantity <= 0) {
+                    throw new Error('[MaterialIntakeAdapter Error]: Cannot adapt zero or negative extraction quantity.');
+                }
+
+                let resTypeId = 'RES_TYPE:UNKNOWN';
+                let originId = 'ORIGIN:UNKNOWN';
+                let gradeVal = 1.0;
+
+                if (identityRegistry && typeof identityRegistry.getOccurrence === 'function') {
+                    const occ = identityRegistry.getOccurrence(extractionResult.occurrenceKey);
+                    if (occ) {
+                        resTypeId = occ.resourceTypeKey || occ.resourceTypeId;
+                        originId = occ.originKey || 'ORIGIN:UNKNOWN';
+                    }
+                }
+
+                return new ProcessingInput({
+                    materialIdentity: resTypeId,
+                    sourceIdentity: extractionResult.occurrenceKey || 'UNKNOWN_OCCURRENCE',
+                    quantity: approvedQuantity,
+                    unit: extractionResult.unit || 'TONNES',
+                    quality: 1.0,
+                    grade: gradeVal,
+                    purity: typeof extractionResult.yield === 'number' ? extractionResult.yield : 1.0,
+                    physicalState: MaterialPhysicalState.SOLID_RUN_OF_MINE,
+                    origin: originId,
+                    extractionReference: extractionResult.resultId || 'NIL_EXTRACTION_REF',
+                    provenance: {
+                        sourceSubsystem: 'PART_05_EXTRACTION_RESULT',
+                        sourceId: extractionResult.resultId || 'UNKNOWN_RESULT',
+                        timestamp: 0
+                    }
+                });
+            }
+
+            /**
+             * Creates a normalized ProcessingInput directly from intake parameters
+             */
+            static fromRawIntake(params = {}) {
+                if (params instanceof ProcessingInput) return params;
+                return new ProcessingInput({
+                    materialIdentity: params.materialIdentity || 'RAW:GENERIC_MATERIAL',
+                    sourceIdentity: params.sourceIdentity || 'DIRECT_INTAKE',
+                    quantity: typeof params.quantity === 'number' ? params.quantity : 0,
+                    unit: params.unit || 'TONS',
+                    quality: params.qualityState && typeof params.qualityState.purity === 'number' ? params.qualityState.purity : (typeof params.quality === 'number' ? params.quality : 1.0),
+                    grade: params.qualityState && typeof params.qualityState.grade === 'number' ? params.qualityState.grade : (typeof params.grade === 'number' ? params.grade : 1.0),
+                    purity: params.qualityState && typeof params.qualityState.purity === 'number' ? params.qualityState.purity : (typeof params.purity === 'number' ? params.purity : 1.0),
+                    physicalState: (params.qualityState && params.qualityState.physicalState) || params.physicalState || MaterialPhysicalState.SOLID_RUN_OF_MINE,
+                    chemicalState: params.chemicalState || 'RAW_UNPROCESSED',
+                    origin: params.origin || 'DIRECT_ORIGIN',
+                    availableConditions: params.availableConditions || {},
+                    provenance: params.provenance || { sourceSubsystem: 'MATERIAL_INTAKE_GATEWAY', timestamp: 0 }
+                });
+            }
+        }
+
+        // =========================================================================
+        // 06.03: PROCESS ELIGIBILITY ENGINE
+        // =========================================================================
+
+        class EligibilityAssessment {
+            constructor(params = {}) {
+                this.status = params.status || ProcessingEligibilityStatus.UNKNOWN_ELIGIBILITY;
+                this.isEligible = this.status === ProcessingEligibilityStatus.ELIGIBLE;
+                this.rejectionReasons = Array.isArray(params.rejectionReasons) ? [...params.rejectionReasons] : [];
+                this.evaluatedConditions = params.evaluatedConditions || {};
+                this.provenance = params.provenance || { sourceSubsystem: 'ELIGIBILITY_ENGINE', timestamp: 0 };
+            }
+
+            toJSON() {
+                return {
+                    status: this.status,
+                    isEligible: this.isEligible,
+                    rejectionReasons: this.rejectionReasons,
+                    evaluatedConditions: this.evaluatedConditions,
+                    provenance: this.provenance
+                };
+            }
+        }
+
+        class ProcessEligibilityEngine {
+            static evaluateEligibility(input, processDefinition, technologyProfile = null) {
+                if (!input || !(input instanceof ProcessingInput)) {
+                    return new EligibilityAssessment({
+                        status: ProcessingEligibilityStatus.INELIGIBLE,
+                        rejectionReasons: ['MALFORMED_OR_MISSING_INPUT']
+                    });
+                }
+                if (!processDefinition || !(processDefinition instanceof ProcessDefinition)) {
+                    return new EligibilityAssessment({
+                        status: ProcessingEligibilityStatus.INELIGIBLE,
+                        rejectionReasons: ['MALFORMED_OR_MISSING_PROCESS_DEFINITION']
+                    });
+                }
+
+                const reasons = [];
+
+                // 1. Validate Input Material Identity Match
+                const matchingInputDef = processDefinition.inputs.find(i => i.materialIdentity === input.materialIdentity || i.materialIdentity === 'RES_TYPE:ANY');
+                if (!matchingInputDef) {
+                    reasons.push(`INPUT_IDENTITY_MISMATCH: Process requires [${processDefinition.inputs.map(i => i.materialIdentity).join(', ')}] but received ${input.materialIdentity}`);
+                } else {
+                    // 2. Validate Physical State
+                    if (!matchingInputDef.allowedPhysicalStates.includes(input.physicalState)) {
+                        reasons.push(`PHYSICAL_STATE_INCOMPATIBLE: Required one of [${matchingInputDef.allowedPhysicalStates.join(', ')}] but received ${input.physicalState}`);
+                    }
+                    // 3. Validate Minimum Quality / Grade / Purity
+                    if (input.quality < matchingInputDef.minimumQuality) {
+                        reasons.push(`QUALITY_BELOW_MINIMUM: Received ${input.quality} < Required ${matchingInputDef.minimumQuality}`);
+                    }
+                    if (input.grade < matchingInputDef.minimumGrade) {
+                        reasons.push(`GRADE_BELOW_MINIMUM: Received ${input.grade} < Required ${matchingInputDef.minimumGrade}`);
+                    }
+                    if (input.purity < matchingInputDef.minimumPurity) {
+                        reasons.push(`PURITY_BELOW_MINIMUM: Received ${input.purity} < Required ${matchingInputDef.minimumPurity}`);
+                    }
+                }
+
+                // 4. Validate Technology Requirement
+                if (processDefinition.technologyRequirements.length > 0 && technologyProfile) {
+                    for (const req of processDefinition.technologyRequirements) {
+                        if (typeof technologyProfile.isCapable === 'function' && !technologyProfile.isCapable(req)) {
+                            reasons.push(`TECHNOLOGY_UNSUPPORTED: Missing required capability [${req}]`);
+                        }
+                    }
+                }
+
+                const status = reasons.length === 0 
+                    ? ProcessingEligibilityStatus.ELIGIBLE 
+                    : ProcessingEligibilityStatus.INELIGIBLE;
+
+                return new EligibilityAssessment({
+                    status,
+                    rejectionReasons: reasons,
+                    evaluatedConditions: {
+                        inputQuantity: input.quantity,
+                        inputQuality: input.quality,
+                        inputGrade: input.grade,
+                        physicalState: input.physicalState
+                    }
+                });
+            }
+        }
+
+        // =========================================================================
+        // 06.04: RECIPE & RULE RESOLVER & SAFE AST FORMULA INTERPRETER
+        // =========================================================================
+
+        class ProcessRuleDefinition {
+            constructor(params = {}) {
+                if (!params.ruleId || !params.formula) {
+                    throw new Error('[ProcessRuleDefinition Violation]: ruleId and formula AST are mandatory.');
+                }
+
+                this.ruleId = params.ruleId;
+                this.ruleVersion = params.ruleVersion || '1.0.0';
+                this.name = params.name || this.ruleId;
+                this.domain = params.domain || 'RESOURCE_PROCESSING';
+                this.inputs = Array.isArray(params.inputs) ? [...params.inputs] : [];
+                this.conditions = Array.isArray(params.conditions) ? [...params.conditions] : [];
+                this.formula = params.formula; // AST Root Node
+                this.constraints = Array.isArray(params.constraints) ? [...params.constraints] : [];
+                this.outputs = Array.isArray(params.outputs) ? [...params.outputs] : ['resultQuantity'];
+                this.unit = params.unit || 'TONNES';
+                this.roundingPolicy = params.roundingPolicy || { precision: 4, mode: RoundingModeEnum.ROUND_HALF_UP };
+                this.nullPolicy = params.nullPolicy || 'DEFAULT_ZERO';
+                this.unknownPolicy = params.unknownPolicy || UnknownPolicyEnum.BLOCK;
+                this.provenance = params.provenance || { sourceSubsystem: 'RULE_ENGINE', timestamp: 0 };
+            }
+
+            toJSON() {
+                return {
+                    ruleId: this.ruleId,
+                    ruleVersion: this.ruleVersion,
+                    name: this.name,
+                    domain: this.domain,
+                    inputs: this.inputs,
+                    conditions: this.conditions,
+                    formula: this.formula,
+                    constraints: this.constraints,
+                    outputs: this.outputs,
+                    unit: this.unit,
+                    roundingPolicy: this.roundingPolicy,
+                    nullPolicy: this.nullPolicy,
+                    unknownPolicy: this.unknownPolicy,
+                    provenance: this.provenance
+                };
+            }
+        }
+
+        class DeterministicFormulaInterpreter {
+            static evaluateAST(node, scopeContext = {}, unknownPolicy = UnknownPolicyEnum.BLOCK) {
+                if (!node || typeof node !== 'object') {
+                    throw new Error('[AST Evaluator Error]: Invalid AST Node.');
+                }
+
+                switch (node.type) {
+                    case 'LITERAL_NUMERIC':
+                        if (typeof node.value !== 'number' || !Number.isFinite(node.value)) {
+                            throw new Error('[AST Evaluator Error]: LITERAL_NUMERIC must be a finite number.');
+                        }
+                        return node.value;
+
+                    case 'LITERAL_BOOLEAN':
+                        return Boolean(node.value);
+
+                    case 'LITERAL_STRING':
+                        return String(node.value);
+
+                    case 'IDENTIFIER_LOOKUP': {
+                        const resolved = this._resolvePath(scopeContext, node.path);
+                        if (resolved === undefined || resolved === null) {
+                            if (unknownPolicy === UnknownPolicyEnum.BLOCK) {
+                                throw new Error(`[AST Evaluator Error]: Variable '${node.path}' unresolved under BLOCK policy.`);
+                            }
+                            return 0;
+                        }
+                        return resolved;
+                    }
+
+                    case 'UNARY_OP': {
+                        const argVal = this.evaluateAST(node.argument, scopeContext, unknownPolicy);
+                        if (node.operator === 'NOT') return !argVal;
+                        if (node.operator === 'NEG') return -argVal;
+                        throw new Error(`[AST Evaluator Error]: Unknown UNARY_OP '${node.operator}'`);
+                    }
+
+                    case 'BINARY_OP': {
+                        const left = this.evaluateAST(node.left, scopeContext, unknownPolicy);
+                        const right = this.evaluateAST(node.right, scopeContext, unknownPolicy);
+
+                        if (typeof left !== 'number' || typeof right !== 'number') {
+                            throw new Error(`[AST Evaluator Error]: Arithmetic requires numeric operands. Left: ${left}, Right: ${right}`);
+                        }
+
+                        switch (node.operator) {
+                            case 'ADD': return left + right;
+                            case 'SUB': return left - right;
+                            case 'MUL': return left * right;
+                            case 'DIV':
+                                if (right === 0) throw new Error('[AST Evaluator Error]: Division by zero.');
+                                return left / right;
+                            case 'MOD': return left % right;
+                            case 'POW': return Math.pow(left, right);
+                            default:
+                                throw new Error(`[AST Evaluator Error]: Unknown BINARY_OP '${node.operator}'`);
+                        }
+                    }
+
+                    case 'COMPARISON_OP': {
+                        const left = this.evaluateAST(node.left, scopeContext, unknownPolicy);
+                        const right = this.evaluateAST(node.right, scopeContext, unknownPolicy);
+
+                        switch (node.operator) {
+                            case 'GT': return left > right;
+                            case 'GTE': return left >= right;
+                            case 'LT': return left < right;
+                            case 'LTE': return left <= right;
+                            case 'EQ': return left === right;
+                            case 'NEQ': return left !== right;
+                            default:
+                                throw new Error(`[AST Evaluator Error]: Unknown COMPARISON_OP '${node.operator}'`);
+                        }
+                    }
+
+                    case 'LOGICAL_OP': {
+                        const left = this.evaluateAST(node.left, scopeContext, unknownPolicy);
+                        if (node.operator === 'AND') {
+                            if (!left) return false;
+                            return Boolean(this.evaluateAST(node.right, scopeContext, unknownPolicy));
+                        }
+                        if (node.operator === 'OR') {
+                            if (left) return true;
+                            return Boolean(this.evaluateAST(node.right, scopeContext, unknownPolicy));
+                        }
+                        throw new Error(`[AST Evaluator Error]: Unknown LOGICAL_OP '${node.operator}'`);
+                    }
+
+                    case 'FUNCTION_CALL': {
+                        const evalArgs = (node.args || []).map(a => this.evaluateAST(a, scopeContext, unknownPolicy));
+                        switch (node.functionName) {
+                            case 'MIN': return Math.min(...evalArgs);
+                            case 'MAX': return Math.max(...evalArgs);
+                            case 'CLAMP': {
+                                const [val, min, max] = evalArgs;
+                                return Math.max(min, Math.min(max, val));
+                            }
+                            case 'ROUND': return Math.round(evalArgs[0]);
+                            case 'FLOOR': return Math.floor(evalArgs[0]);
+                            case 'CEIL': return Math.ceil(evalArgs[0]);
+                            case 'ABS': return Math.abs(evalArgs[0]);
+                            default:
+                                throw new Error(`[AST Evaluator Error]: Unknown function '${node.functionName}'`);
+                        }
+                    }
+
+                    case 'CONDITIONAL_IF': {
+                        const cond = this.evaluateAST(node.condition, scopeContext, unknownPolicy);
+                        return cond
+                            ? this.evaluateAST(node.thenBranch, scopeContext, unknownPolicy)
+                            : this.evaluateAST(node.elseBranch, scopeContext, unknownPolicy);
+                    }
+
+                    default:
+                        throw new Error(`[AST Evaluator Error]: Unhandled AST Node Type '${node.type}'`);
+                }
+            }
+
+            static _resolvePath(obj, path) {
+                if (!obj || !path) return undefined;
+                const segments = path.split('.');
+                let curr = obj;
+                for (const seg of segments) {
+                    if (curr === undefined || curr === null) return undefined;
+                    curr = curr[seg];
+                }
+                return curr;
+            }
+
+            static applyRounding(value, precision = 4, mode = RoundingModeEnum.ROUND_HALF_UP) {
+                if (typeof value !== 'number' || !Number.isFinite(value)) return value;
+                const factor = Math.pow(10, precision);
+                if (mode === RoundingModeEnum.ROUND_DOWN) {
+                    return Math.floor(value * factor) / factor;
+                }
+                if (mode === RoundingModeEnum.ROUND_NEAREST || mode === RoundingModeEnum.ROUND_HALF_UP) {
+                    return Math.round(value * factor) / factor;
+                }
+                return value;
+            }
+        }
+
+        class RecipeRuleResolver {
+            constructor() {
+                this.processRules = new Map(); // RuleId -> ProcessRuleDefinition
+                this.recipes = new Map();      // RecipeId -> ProcessRecipe
+            }
+
+            registerRule(rule) {
+                if (!rule || !rule.ruleId) throw new Error('[RecipeRuleResolver]: Invalid rule object.');
+                this.processRules.set(rule.ruleId, rule);
+                return rule;
+            }
+
+            registerRecipe(recipe) {
+                if (!recipe || !recipe.recipeId) throw new Error('[RecipeRuleResolver]: Invalid recipe object.');
+                this.recipes.set(recipe.recipeId, recipe);
+                return recipe;
+            }
+
+            resolveApplicableRule(processDefinition, recipeId = null) {
+                if (recipeId && this.recipes.has(recipeId)) {
+                    return this.recipes.get(recipeId);
+                }
+                if (processDefinition.yieldRuleRef && this.processRules.has(processDefinition.yieldRuleRef)) {
+                    return this.processRules.get(processDefinition.yieldRuleRef);
+                }
+                return null;
+            }
+
+            clear() {
+                this.processRules.clear();
+                this.recipes.clear();
+            }
+        }
+
+        // =========================================================================
+        // 06.05: PROCESS PLANNING ENGINE [BUG-02 FIXED: DETERMINISTIC SEEDING]
+        // =========================================================================
+
+        class ProcessPlan {
+            constructor(params = {}) {
+                // [BUG-02 FIX]: Deterministic seeding without Date.now()
+                const seed = `${params.processId}:${params.selectedRuleId}:${params.expectedPrimaryOutputQuantity || 0}`;
+                this.planId = params.planId || `PLAN:${params.processId}:${DeterministicHashEngine.computeHash(seed).substring(0, 8)}`;
+                this.processId = params.processId;
+                this.selectedRuleId = params.selectedRuleId || 'CANONICAL_DEFAULT';
+                this.inputAllocation = params.inputAllocation || {}; // MaterialId -> Allocated Quantity
+                this.expectedPrimaryOutputQuantity = typeof params.expectedPrimaryOutputQuantity === 'number' ? params.expectedPrimaryOutputQuantity : 0;
+                this.expectedByproductQuantity = typeof params.expectedByproductQuantity === 'number' ? params.expectedByproductQuantity : 0;
+                this.expectedWasteQuantity = typeof params.expectedWasteQuantity === 'number' ? params.expectedWasteQuantity : 0;
+                this.expectedLossQuantity = typeof params.expectedLossQuantity === 'number' ? params.expectedLossQuantity : 0;
+                this.requiredUtilities = Array.isArray(params.requiredUtilities) ? [...params.requiredUtilities] : [];
+                this.expectedDurationHours = typeof params.expectedDurationHours === 'number' ? params.expectedDurationHours : 1.0;
+                this.identifiedConstraints = Array.isArray(params.identifiedConstraints) ? [...params.identifiedConstraints] : [];
+                this.isFeasible = params.isFeasible !== undefined ? Boolean(params.isFeasible) : true;
+                this.provenance = params.provenance || { sourceSubsystem: 'PROCESS_PLANNING_ENGINE', timestamp: 0 };
+            }
+
+            toJSON() {
+                return {
+                    planId: this.planId,
+                    processId: this.processId,
+                    selectedRuleId: this.selectedRuleId,
+                    inputAllocation: this.inputAllocation,
+                    expectedPrimaryOutputQuantity: this.expectedPrimaryOutputQuantity,
+                    expectedByproductQuantity: this.expectedByproductQuantity,
+                    expectedWasteQuantity: this.expectedWasteQuantity,
+                    expectedLossQuantity: this.expectedLossQuantity,
+                    requiredUtilities: this.requiredUtilities,
+                    expectedDurationHours: this.expectedDurationHours,
+                    identifiedConstraints: this.identifiedConstraints,
+                    isFeasible: this.isFeasible,
+                    provenance: this.provenance
+                };
+            }
+        }
+
+        class ProcessPlanner {
+            static createPlan(input, processDefinition, options = {}) {
+                const eligibility = ProcessEligibilityEngine.evaluateEligibility(input, processDefinition, options.technologyProfile);
+                if (!eligibility.isEligible) {
+                    return new ProcessPlan({
+                        processId: processDefinition.processId,
+                        isFeasible: false,
+                        identifiedConstraints: eligibility.rejectionReasons
+                    });
+                }
+
+                const inputQty = input.quantity;
+                const eff = processDefinition.baseEfficiency;
+                const primaryDef = processDefinition.outputs.find(o => o.outputClass === OutputMaterialClass.PRIMARY_OUTPUT);
+                const baseYield = primaryDef ? primaryDef.baseYieldRatio : 0.8;
+
+                const expectedPrimary = inputQty * baseYield * eff;
+                const expectedWaste = inputQty * processDefinition.baseWasteRatio;
+                const expectedLoss = inputQty * (1.0 - (baseYield * eff) - processDefinition.baseWasteRatio);
+
+                const utilityRequirements = processDefinition.consumptionRules.map(cr => ({
+                    resourceType: cr.resourceType || ProcessingResourceConsumptionType.ENERGY_ELECTRIC,
+                    demandQuantity: (cr.consumptionPerUnit || 10.0) * inputQty,
+                    unit: cr.unit || 'KWH'
+                }));
+
+                return new ProcessPlan({
+                    processId: processDefinition.processId,
+                    selectedRuleId: processDefinition.yieldRuleRef,
+                    inputAllocation: { [input.materialIdentity]: inputQty },
+                    expectedPrimaryOutputQuantity: Math.max(0, expectedPrimary),
+                    expectedByproductQuantity: 0,
+                    expectedWasteQuantity: Math.max(0, expectedWaste),
+                    expectedLossQuantity: Math.max(0, expectedLoss),
+                    requiredUtilities: utilityRequirements,
+                    expectedDurationHours: processDefinition.processingTimeHours,
+                    isFeasible: true
+                });
+            }
+        }
+
+        // =========================================================================
+        // 06.06: CONSTRAINT RESOLUTION ENGINE
+        // =========================================================================
+
+        class ProcessingConstraint {
+            constructor(params = {}) {
+                if (!params.constraintId || !params.type) {
+                    throw new Error('[ProcessingConstraint Violation]: constraintId and type are mandatory.');
+                }
+                this.constraintId = params.constraintId;
+                this.type = params.type;
+                this.severity = params.severity || ConstraintSeverity.LIMITING;
+                this.targetMetricPath = params.targetMetricPath || params.type;
+                this.thresholdValue = params.thresholdValue !== undefined ? params.thresholdValue : null;
+                this.unit = params.unit || 'UNKNOWN_UNIT';
+                this.operator = params.operator || 'LTE'; // LTE, GTE, EQ, BOOLEAN_FLAG
+                this.unknownPolicy = params.unknownPolicy || UnknownPolicyEnum.BLOCK;
+            }
+
+            evaluate(contextValue) {
+                if (contextValue === undefined || contextValue === null) {
+                    if (this.unknownPolicy === UnknownPolicyEnum.BLOCK) {
+                        return { status: ConstraintEvaluationResultStatus.BLOCKED, maxAllowed: 0, reason: `BLOCKED_ON_UNKNOWN: ${this.constraintId}` };
+                    }
+                    if (this.unknownPolicy === UnknownPolicyEnum.PASS_THROUGH) {
+                        return { status: ConstraintEvaluationResultStatus.FULL, maxAllowed: Infinity, reason: `PASSED_ON_UNKNOWN: ${this.constraintId}` };
+                    }
+                    return { status: ConstraintEvaluationResultStatus.DEFERRED, maxAllowed: 0, reason: `DEFERRED_ON_UNKNOWN: ${this.constraintId}` };
+                }
+
+                if (this.operator === 'BOOLEAN_FLAG') {
+                    const passed = Boolean(contextValue) === Boolean(this.thresholdValue);
+                    return {
+                        status: passed ? ConstraintEvaluationResultStatus.FULL : ConstraintEvaluationResultStatus.BLOCKED,
+                        maxAllowed: passed ? Infinity : 0,
+                        reason: passed ? 'BOOLEAN_CHECK_PASSED' : 'BOOLEAN_CHECK_BLOCKED'
+                    };
+                }
+
+                if (typeof contextValue === 'number' && typeof this.thresholdValue === 'number') {
+                    if (this.operator === 'LTE') {
+                        const isLimiting = contextValue < this.thresholdValue;
+                        return {
+                            status: isLimiting ? ConstraintEvaluationResultStatus.PARTIAL : ConstraintEvaluationResultStatus.FULL,
+                            maxAllowed: contextValue,
+                            reason: isLimiting ? `CAPPED_BY_METRIC: ${contextValue} < ${this.thresholdValue}` : 'METRIC_SATISFIED'
+                        };
+                    }
+                }
+
+                return { status: ConstraintEvaluationResultStatus.FULL, maxAllowed: Infinity, reason: 'GENERIC_PASSED' };
+            }
+
+            toJSON() {
+                return {
+                    constraintId: this.constraintId,
+                    type: this.type,
+                    severity: this.severity,
+                    targetMetricPath: this.targetMetricPath,
+                    thresholdValue: this.thresholdValue,
+                    unit: this.unit,
+                    operator: this.operator,
+                    unknownPolicy: this.unknownPolicy
+                };
+            }
+        }
+
+        class ProcessingConstraintSet {
+            constructor(params = {}) {
+                this.maxCapacityQuantity = typeof params.maxCapacityQuantity === 'number' ? params.maxCapacityQuantity : Infinity;
+                this.availableEnergyKWh = typeof params.availableEnergyKWh === 'number' ? params.availableEnergyKWh : Infinity;
+                this.availableWaterCubicMeters = typeof params.availableWaterCubicMeters === 'number' ? params.availableWaterCubicMeters : Infinity;
+                this.operatingWindowHours = typeof params.operatingWindowHours === 'number' ? params.operatingWindowHours : 24.0;
+                this.arbitraryLimits = params.arbitraryLimits || {};
+                this.customConstraints = Array.isArray(params.customConstraints) ? [...params.customConstraints] : [];
+            }
+        }
+
+        class ProcessingConstraintEvaluator {
+            static evaluateConstraints(plan, constraintSet) {
+                if (!plan || !plan.isFeasible) {
+                    return {
+                        status: ConstraintEvaluationResultStatus.BLOCKED,
+                        allowableInputQuantity: 0,
+                        clampingReasons: ['PLAN_INFEASIBLE']
+                    };
+                }
+
+                const inputKeys = Object.keys(plan.inputAllocation);
+                const primaryInputQty = inputKeys.length > 0 ? plan.inputAllocation[inputKeys[0]] : 0;
+                let allowableQty = primaryInputQty;
+                const reasons = [];
+
+                // 1. Capacity Constraint
+                if (allowableQty > constraintSet.maxCapacityQuantity) {
+                    allowableQty = constraintSet.maxCapacityQuantity;
+                    reasons.push(`CAPPED_BY_CAPACITY: ${primaryInputQty} > ${constraintSet.maxCapacityQuantity}`);
+                }
+
+                // 2. Utility / Energy Constraints
+                const energyReq = plan.requiredUtilities.find(u => u.resourceType === ProcessingResourceConsumptionType.ENERGY_ELECTRIC);
+                if (energyReq && energyReq.demandQuantity > 0 && Number.isFinite(constraintSet.availableEnergyKWh)) {
+                    const energyPerUnit = energyReq.demandQuantity / primaryInputQty;
+                    const maxSupportedByEnergy = constraintSet.availableEnergyKWh / energyPerUnit;
+                    if (allowableQty > maxSupportedByEnergy) {
+                        allowableQty = maxSupportedByEnergy;
+                        reasons.push(`CAPPED_BY_ENERGY: Supported ${maxSupportedByEnergy} < Requested ${allowableQty}`);
+                    }
+                }
+
+                // 3. Water Utility Constraints
+                const waterReq = plan.requiredUtilities.find(u => u.resourceType === ProcessingResourceConsumptionType.WATER_INDUSTRIAL);
+                if (waterReq && waterReq.demandQuantity > 0 && Number.isFinite(constraintSet.availableWaterCubicMeters)) {
+                    const waterPerUnit = waterReq.demandQuantity / primaryInputQty;
+                    const maxSupportedByWater = constraintSet.availableWaterCubicMeters / waterPerUnit;
+                    if (allowableQty > maxSupportedByWater) {
+                        allowableQty = maxSupportedByWater;
+                        reasons.push(`CAPPED_BY_WATER: Supported ${maxSupportedByWater} < Requested ${allowableQty}`);
+                    }
+                }
+
+                // 4. Custom Processing Constraints
+                if (constraintSet.customConstraints && constraintSet.customConstraints.length > 0) {
+                    for (const c of constraintSet.customConstraints) {
+                        const evalRes = c.evaluate(constraintSet.arbitraryLimits[c.targetMetricPath]);
+                        if (evalRes.status === ConstraintEvaluationResultStatus.BLOCKED) {
+                            return {
+                                status: ConstraintEvaluationResultStatus.BLOCKED,
+                                allowableInputQuantity: 0,
+                                clampingReasons: [evalRes.reason]
+                            };
+                        }
+                        if (evalRes.status === ConstraintEvaluationResultStatus.PARTIAL && evalRes.maxAllowed < allowableQty) {
+                            allowableQty = evalRes.maxAllowed;
+                            reasons.push(evalRes.reason);
+                        }
+                    }
+                }
+
+                let status = ConstraintEvaluationResultStatus.FULL;
+                if (allowableQty <= 0) {
+                    status = ConstraintEvaluationResultStatus.BLOCKED;
+                } else if (allowableQty < primaryInputQty) {
+                    status = ConstraintEvaluationResultStatus.PARTIAL;
+                }
+
+                return {
+                    status,
+                    allowableInputQuantity: Math.max(0, allowableQty),
+                    clampingReasons: reasons
+                };
+            }
+        }
+
+        // =========================================================================
+        // 06.07: TRANSFORMATION CALCULATION ENGINE (6-LAYER MASS BALANCE MATH)
+        // =========================================================================
+
+        class TransformationCalculator {
+            /**
+             * Core Mass Balance Equation:
+             * Total Input == Primary Output + Secondary Outputs + Byproducts + Intermediate + Waste + Loss
+             */
+            static calculateTransformation(inputQuantity, processDefinition, effectiveEfficiencyModifier = 1.0, qualityFactor = 1.0) {
+                if (typeof inputQuantity !== 'number' || inputQuantity <= 0 || !Number.isFinite(inputQuantity)) {
+                    return {
+                        primaryOutputQuantity: 0,
+                        secondaryOutputQuantity: 0,
+                        byproductQuantity: 0,
+                        recoverableIntermediateQuantity: 0,
+                        wasteQuantity: 0,
+                        lossQuantity: 0,
+                        totalInputAccounted: 0,
+                        effectiveEfficiency: 0,
+                        isValidBalance: true
+                    };
+                }
+
+                const totalInput = inputQuantity;
+                const eff = Math.max(0, Math.min(1.0, processDefinition.baseEfficiency * effectiveEfficiencyModifier));
+                
+                // Primary Output
+                const primaryDef = processDefinition.outputs.find(o => o.outputClass === OutputMaterialClass.PRIMARY_OUTPUT);
+                const basePrimaryYield = primaryDef ? primaryDef.baseYieldRatio : 0.8;
+                const primaryOutput = totalInput * basePrimaryYield * eff * qualityFactor;
+
+                // Secondary Outputs
+                const secondaryDef = processDefinition.outputs.find(o => o.outputClass === OutputMaterialClass.SECONDARY_OUTPUT);
+                const secondaryOutput = secondaryDef ? (totalInput * secondaryDef.baseYieldRatio * eff) : 0.0;
+
+                // Byproducts
+                const byproductDef = processDefinition.outputs.find(o => o.outputClass === OutputMaterialClass.BYPRODUCT);
+                const byproductOutput = byproductDef ? (totalInput * byproductDef.baseYieldRatio * eff) : 0.0;
+
+                // Recoverable Intermediate
+                const intermediateDef = processDefinition.outputs.find(o => o.outputClass === OutputMaterialClass.RECOVERABLE_INTERMEDIATE);
+                const intermediateOutput = intermediateDef ? (totalInput * intermediateDef.baseYieldRatio * eff) : 0.0;
+
+                // Waste & Tailings
+                const wasteRatio = processDefinition.baseWasteRatio;
+                const wasteOutput = totalInput * wasteRatio;
+
+                // Process Losses (Deductive Remainder ensures Universal Mass Balance Invariant)
+                let lossOutput = totalInput - (primaryOutput + secondaryOutput + byproductOutput + intermediateOutput + wasteOutput);
+                if (lossOutput < 0) {
+                    lossOutput = 0; // Precision boundary clamp
+                }
+
+                const totalAccounted = primaryOutput + secondaryOutput + byproductOutput + intermediateOutput + wasteOutput + lossOutput;
+                const isValidBalance = Math.abs(totalInput - totalAccounted) < 1e-6;
+
+                return {
+                    primaryOutputQuantity: primaryOutput,
+                    secondaryOutputQuantity: secondaryOutput,
+                    byproductQuantity: byproductOutput,
+                    recoverableIntermediateQuantity: intermediateOutput,
+                    wasteQuantity: wasteOutput,
+                    lossQuantity: lossOutput,
+                    totalInputAccounted: totalAccounted,
+                    effectiveEfficiency: eff,
+                    isValidBalance
+                };
+            }
+        }
+
+        // =========================================================================
+        // EXPORT VOLUME 6.1 INTERNAL SCOPE
+        // =========================================================================
+
+        const Volume6_1_Scope = Object.freeze({
+            // Enums & Constants
+            ProcessClassTaxonomy,
+            ProcessingEligibilityStatus,
+            ProcessingOperationLifecycle,
+            OutputMaterialClass,
+            MaterialPhysicalState,
+            ConstraintSeverity,
+            ConstraintEvaluationResultStatus,
+            ProcessingResourceConsumptionType,
+            UnknownPolicyEnum,
+            RoundingModeEnum,
+            ErrorTaxonomy,
+            ProcessingHealthStatus,
+
+            // Infrastructure
+            DeterministicHashEngine,
+
+            // Subsystems 06.01 - 06.07 Classes
+            ProcessInputDefinition,
+            ProcessOutputDefinition,
+            ProcessDefinition,
+            ProcessRecipe,
+            ProcessRegistry,
+            ProcessingInput,
+            MaterialIntakeAdapter,
+            EligibilityAssessment,
+            ProcessEligibilityEngine,
+            ProcessRuleDefinition,
+            DeterministicFormulaInterpreter,
+            RecipeRuleResolver,
+            ProcessPlan,
+            ProcessPlanner,
+            ProcessingConstraint,
+            ProcessingConstraintSet,
+            ProcessingConstraintEvaluator,
+            TransformationCalculator
+        });
+
+        global.__GSRSK_P06_VOL1__ = Volume6_1_Scope;
+
+    })(typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : global));
+
+    // =========================================================================
+    // GSRSK — PART 06: RESOURCE PROCESSING & TRANSFORMATION ENGINE (VOLUME 2 OF 2)
+    // =========================================================================
+    // Architecture Phase: 06 of 16
+    // Production Standard: 100% Comprehensive Constitutional Invariant Engine
+    //
+    // SUBSYSTEMS INCLUDED IN VOLUME 2:
+    //   06.08 Quality Transformation & Metal Mass Conservation Engine [BUG-01 Fixed]
+    //   06.09 Byproduct, Secondary Output & Waste Accounting Engine
+    //   06.10 Resource Consumption Engine (Utilities, Energy & Internal Cost Components)
+    //   06.11 Capacity & Scheduling Feasibility Engine
+    //   06.12 Multi-Stage Process Orchestrator (Multi-Input Blending Support) [BUG-03 Fixed]
+    //   06.13 Output Material Compiler & ProcessingResult Contract [BUG-02 Fixed]
+    //   06.14 Processing Validation, Diagnostics & Systemic Health Monitor
+    //   + State Checkpoint Snapshot Adapter (Adler-32 Integrity), Hardcoding Firewall,
+    //     Master Processing Registry, Inverted Index Hub [BUG-04 Fixed] & Public Adapter API
+    // =========================================================================
+
+    (function(global) {
+        'use strict';
+
+        // Ingest Volume 6.1 Scope
+        const Vol1 = global.__GSRSK_P06_VOL1__;
+        if (!Vol1) {
+            throw new Error('[GSRSK PART 06 FATAL]: Volume 6.1 must be loaded before Volume 6.2.');
+        }
+
+        const {
+            ProcessClassTaxonomy,
+            ProcessingEligibilityStatus,
+            ProcessingOperationLifecycle,
+            OutputMaterialClass,
+            MaterialPhysicalState,
+            ConstraintSeverity,
+            ConstraintEvaluationResultStatus,
+            ProcessingResourceConsumptionType,
+            UnknownPolicyEnum,
+            RoundingModeEnum,
+            ErrorTaxonomy,
+            ProcessingHealthStatus,
+            DeterministicHashEngine,
+            ProcessInputDefinition,
+            ProcessOutputDefinition,
+            ProcessDefinition,
+            ProcessRecipe,
+            ProcessRegistry,
+            ProcessingInput,
+            MaterialIntakeAdapter,
+            EligibilityAssessment,
+            ProcessEligibilityEngine,
+            ProcessRuleDefinition,
+            DeterministicFormulaInterpreter,
+            RecipeRuleResolver,
+            ProcessPlan,
+            ProcessPlanner,
+            ProcessingConstraint,
+            ProcessingConstraintSet,
+            ProcessingConstraintEvaluator,
+            TransformationCalculator
+        } = Vol1;
+
+        // =========================================================================
+        // 06.08: QUALITY TRANSFORMATION & METAL MASS CONSERVATION ENGINE
+        // =========================================================================
+
+        class MaterialQualityState {
+            constructor(params = {}) {
+                this.grade = typeof params.grade === 'number' && Number.isFinite(params.grade) ? Math.max(0, params.grade) : 1.0;
+                this.purity = typeof params.purity === 'number' && Number.isFinite(params.purity) ? Math.max(0, Math.min(1.0, params.purity)) : 1.0;
+                this.concentrationRatio = typeof params.concentrationRatio === 'number' ? Math.max(0, params.concentrationRatio) : 1.0;
+                this.moisturePercentage = typeof params.moisturePercentage === 'number' ? Math.max(0, Math.min(100, params.moisturePercentage)) : 0.0;
+                this.deleteriousContaminants = params.deleteriousContaminants || {}; // ContaminantCode -> Ratio
+                this.physicalState = params.physicalState || MaterialPhysicalState.SOLID_RUN_OF_MINE;
+                this.chemicalState = params.chemicalState || 'RAW_UNPROCESSED';
+            }
+
+            clone() {
+                return new MaterialQualityState({
+                    grade: this.grade,
+                    purity: this.purity,
+                    concentrationRatio: this.concentrationRatio,
+                    moisturePercentage: this.moisturePercentage,
+                    deleteriousContaminants: JSON.parse(JSON.stringify(this.deleteriousContaminants)),
+                    physicalState: this.physicalState,
+                    chemicalState: this.chemicalState
+                });
+            }
+
+            toJSON() {
+                return {
+                    grade: this.grade,
+                    purity: this.purity,
+                    concentrationRatio: this.concentrationRatio,
+                    moisturePercentage: this.moisturePercentage,
+                    deleteriousContaminants: this.deleteriousContaminants,
+                    physicalState: this.physicalState,
+                    chemicalState: this.chemicalState
+                };
+            }
+        }
+
+        class QualityTransformer {
+            /**
+             * Enforces Multi-Dimensional Quality Transformation and Metal Mass Conservation:
+             * Input Metal Mass == Output Metal Mass + Tailings Metal Mass + Loss Metal Mass
+             */
+            static transformQuality(inputQualityState, inputQuantity, outputDefinition, processDefinition, transformationResult) {
+                if (!inputQualityState || !(inputQualityState instanceof MaterialQualityState)) {
+                    inputQualityState = new MaterialQualityState(inputQualityState || {});
+                }
+
+                const inGrade = inputQualityState.grade;
+                const inPurity = inputQualityState.purity;
+                const totalInputMetalMass = inputQuantity * inGrade * inPurity;
+
+                // Target quality parameters from output definition
+                let outGrade = outputDefinition.expectedGrade !== undefined ? outputDefinition.expectedGrade : inGrade;
+                let outPurity = outputDefinition.expectedPurity !== undefined ? outputDefinition.expectedPurity : inPurity;
+                let outPhysicalState = outputDefinition.targetPhysicalState || inputQualityState.physicalState;
+                let outChemicalState = processDefinition.processType === ProcessClassTaxonomy.REFINING ? 'REFINED_METALLIC' : inputQualityState.chemicalState;
+
+                // Upgrading & Concentration Adjustment
+                if (processDefinition.processType === ProcessClassTaxonomy.CONCENTRATION || processDefinition.processType === ProcessClassTaxonomy.UPGRADING) {
+                    const primaryQty = transformationResult.primaryOutputQuantity;
+                    if (primaryQty > 0) {
+                        const upgradedMetal = totalInputMetalMass * transformationResult.effectiveEfficiency;
+                        outGrade = Math.min(1.0, upgradedMetal / primaryQty);
+                    }
+                } else if (processDefinition.processType === ProcessClassTaxonomy.PURIFICATION || processDefinition.processType === ProcessClassTaxonomy.REFINING) {
+                    outPurity = Math.max(inPurity, outputDefinition.expectedPurity);
+                }
+
+                // Deleterious Contaminant Reduction
+                const outContaminants = {};
+                if (inputQualityState.deleteriousContaminants) {
+                    Object.keys(inputQualityState.deleteriousContaminants).forEach(contaminant => {
+                        const inContamRatio = inputQualityState.deleteriousContaminants[contaminant];
+                        outContaminants[contaminant] = inContamRatio * (1.0 - (processDefinition.baseEfficiency * 0.85));
+                    });
+                }
+
+                const outputQualityState = new MaterialQualityState({
+                    grade: outGrade,
+                    purity: outPurity,
+                    concentrationRatio: inGrade > 0 ? (outGrade / inGrade) : 1.0,
+                    moisturePercentage: Math.max(0, inputQualityState.moisturePercentage * 0.2), // Drying derating
+                    deleteriousContaminants: outContaminants,
+                    physicalState: outPhysicalState,
+                    chemicalState: outChemicalState
+                });
+
+                // Metal Mass Conservation Invariant Verification
+                const primaryMetalMass = transformationResult.primaryOutputQuantity * outGrade * outPurity;
+                const isMetalConserved = primaryMetalMass <= (totalInputMetalMass + 1e-6);
+
+                return {
+                    outputQualityState,
+                    totalInputMetalMass,
+                    primaryMetalMass,
+                    isMetalConserved
+                };
+            }
+        }
+
+        // =========================================================================
+        // 06.09: BYPRODUCT, SECONDARY OUTPUT & WASTE ACCOUNTING ENGINE
+        // =========================================================================
+
+        class ByproductOutputRecord {
+            constructor(params = {}) {
+                if (!params.materialIdentity || typeof params.quantity !== 'number') {
+                    throw new Error('[ByproductOutputRecord Violation]: materialIdentity and quantity are mandatory.');
+                }
+                this.materialIdentity = params.materialIdentity;
+                this.quantity = Math.max(0, params.quantity);
+                this.unit = params.unit || 'TONNES';
+                this.outputClass = params.outputClass || OutputMaterialClass.BYPRODUCT;
+                this.qualityState = params.qualityState ? (params.qualityState instanceof MaterialQualityState ? params.qualityState : new MaterialQualityState(params.qualityState)) : new MaterialQualityState();
+                this.isRecoverable = params.isRecoverable !== undefined ? Boolean(params.isRecoverable) : true;
+                this.provenance = params.provenance || { sourceSubsystem: 'BYPRODUCT_WASTE_ENGINE', timestamp: 0 };
+            }
+
+            toJSON() {
+                return {
+                    materialIdentity: this.materialIdentity,
+                    quantity: this.quantity,
+                    unit: this.unit,
+                    outputClass: this.outputClass,
+                    qualityState: this.qualityState.toJSON(),
+                    isRecoverable: this.isRecoverable,
+                    provenance: this.provenance
+                };
+            }
+        }
+
+        class ByproductWasteAccountant {
+            static segregateOutputs(processDefinition, transformationResult, primaryInput, qualityTransformation) {
+                const outputs = {
+                    primaryOutputs: [],
+                    secondaryOutputs: [],
+                    byproducts: [],
+                    recoverableIntermediates: [],
+                    wasteTailings: [],
+                    processLosses: []
+                };
+
+                // 1. Primary Output Allocation
+                const primaryDef = processDefinition.outputs.find(o => o.outputClass === OutputMaterialClass.PRIMARY_OUTPUT);
+                if (primaryDef && transformationResult.primaryOutputQuantity > 0) {
+                    outputs.primaryOutputs.push(new ByproductOutputRecord({
+                        materialIdentity: primaryDef.materialIdentity,
+                        quantity: transformationResult.primaryOutputQuantity,
+                        unit: primaryDef.unit,
+                        outputClass: OutputMaterialClass.PRIMARY_OUTPUT,
+                        qualityState: qualityTransformation.outputQualityState,
+                        isRecoverable: true
+                    }));
+                }
+
+                // 2. Secondary Outputs Allocation
+                const secondaryDef = processDefinition.outputs.find(o => o.outputClass === OutputMaterialClass.SECONDARY_OUTPUT);
+                if (secondaryDef && transformationResult.secondaryOutputQuantity > 0) {
+                    outputs.secondaryOutputs.push(new ByproductOutputRecord({
+                        materialIdentity: secondaryDef.materialIdentity,
+                        quantity: transformationResult.secondaryOutputQuantity,
+                        unit: secondaryDef.unit,
+                        outputClass: OutputMaterialClass.SECONDARY_OUTPUT,
+                        qualityState: new MaterialQualityState({ grade: secondaryDef.expectedGrade, purity: secondaryDef.expectedPurity }),
+                        isRecoverable: true
+                    }));
+                }
+
+                // 3. Byproducts Allocation
+                const byproductDef = processDefinition.outputs.find(o => o.outputClass === OutputMaterialClass.BYPRODUCT);
+                if (byproductDef && transformationResult.byproductQuantity > 0) {
+                    outputs.byproducts.push(new ByproductOutputRecord({
+                        materialIdentity: byproductDef.materialIdentity,
+                        quantity: transformationResult.byproductQuantity,
+                        unit: byproductDef.unit,
+                        outputClass: OutputMaterialClass.BYPRODUCT,
+                        qualityState: new MaterialQualityState({ grade: byproductDef.expectedGrade, purity: byproductDef.expectedPurity }),
+                        isRecoverable: byproductDef.isRecoverable
+                    }));
+                }
+
+                // 4. Recoverable Intermediates Allocation
+                const intermediateDef = processDefinition.outputs.find(o => o.outputClass === OutputMaterialClass.RECOVERABLE_INTERMEDIATE);
+                if (intermediateDef && transformationResult.recoverableIntermediateQuantity > 0) {
+                    outputs.recoverableIntermediates.push(new ByproductOutputRecord({
+                        materialIdentity: intermediateDef.materialIdentity,
+                        quantity: transformationResult.recoverableIntermediateQuantity,
+                        unit: intermediateDef.unit,
+                        outputClass: OutputMaterialClass.RECOVERABLE_INTERMEDIATE,
+                        qualityState: new MaterialQualityState({ physicalState: intermediateDef.targetPhysicalState }),
+                        isRecoverable: true
+                    }));
+                }
+
+                // 5. Waste & Tailings (Physical Mass Exit)
+                if (transformationResult.wasteQuantity > 0) {
+                    outputs.wasteTailings.push(new ByproductOutputRecord({
+                        materialIdentity: `WASTE:${primaryInput.materialIdentity}_TAILINGS`,
+                        quantity: transformationResult.wasteQuantity,
+                        unit: primaryInput.unit,
+                        outputClass: OutputMaterialClass.WASTE_TAILINGS,
+                        qualityState: new MaterialQualityState({ grade: 0.001, purity: 0.0 }),
+                        isRecoverable: false
+                    }));
+                }
+
+                // 6. Process Losses (Accounting Mass Deficit)
+                if (transformationResult.lossQuantity > 0) {
+                    outputs.processLosses.push(new ByproductOutputRecord({
+                        materialIdentity: `LOSS:${primaryInput.materialIdentity}_TRANSFORMATION_DEFICIT`,
+                        quantity: transformationResult.lossQuantity,
+                        unit: primaryInput.unit,
+                        outputClass: OutputMaterialClass.PROCESS_LOSS,
+                        qualityState: new MaterialQualityState({ grade: 0, purity: 0 }),
+                        isRecoverable: false
+                    }));
+                }
+
+                return outputs;
+            }
+        }
+
+        // =========================================================================
+        // 06.10: RESOURCE CONSUMPTION ENGINE (INTERNAL UTILITY & COST BREAKDOWN)
+        // =========================================================================
+
+        class UtilityConsumptionRecord {
+            constructor(params = {}) {
+                this.resourceType = params.resourceType || ProcessingResourceConsumptionType.GENERIC_UTILITY;
+                this.demandQuantity = typeof params.demandQuantity === 'number' ? Math.max(0, params.demandQuantity) : 0;
+                this.unit = params.unit || 'UNITS';
+                this.specificConsumptionPerInputUnit = typeof params.specificConsumptionPerInputUnit === 'number' ? params.specificConsumptionPerInputUnit : 0;
+            }
+
+            toJSON() {
+                return {
+                    resourceType: this.resourceType,
+                    demandQuantity: this.demandQuantity,
+                    unit: this.unit,
+                    specificConsumptionPerInputUnit: this.specificConsumptionPerInputUnit
+                };
+            }
+        }
+
+        class ProcessingCostBreakdown {
+            constructor(params = {}) {
+                // Strictly internal consumption and depreciation component costs (NOT market prices)
+                this.electricityCost = typeof params.electricityCost === 'number' ? params.electricityCost : 0;
+                this.thermalFuelCost = typeof params.thermalFuelCost === 'number' ? params.thermalFuelCost : 0;
+                this.waterCost = typeof params.waterCost === 'number' ? params.waterCost : 0;
+                this.reagentsCost = typeof params.reagentsCost === 'number' ? params.reagentsCost : 0;
+                this.laborCost = typeof params.laborCost === 'number' ? params.laborCost : 0;
+                this.depreciationOverheadCost = typeof params.depreciationOverheadCost === 'number' ? params.depreciationOverheadCost : 0;
+                this.totalInternalProcessingCost = this.electricityCost + this.thermalFuelCost + this.waterCost + this.reagentsCost + this.laborCost + this.depreciationOverheadCost;
+                this.currencyCode = params.currencyCode || 'USD_INTERNAL_ACC';
+            }
+
+            toJSON() {
+                return {
+                    electricityCost: this.electricityCost,
+                    thermalFuelCost: this.thermalFuelCost,
+                    waterCost: this.waterCost,
+                    reagentsCost: this.reagentsCost,
+                    laborCost: this.laborCost,
+                    depreciationOverheadCost: this.depreciationOverheadCost,
+                    totalInternalProcessingCost: this.totalInternalProcessingCost,
+                    currencyCode: this.currencyCode
+                };
+            }
+        }
+
+        class ConsumptionEvaluator {
+            static evaluateConsumption(inputQuantity, processDefinition, costModel = null) {
+                const consumptions = [];
+                let elecCost = 0, waterCost = 0, fuelCost = 0, reagentCost = 0;
+
+                processDefinition.consumptionRules.forEach(rule => {
+                    const sec = rule.consumptionPerUnit || 15.0; // Specific consumption
+                    const demand = inputQuantity * sec;
+
+                    consumptions.push(new UtilityConsumptionRecord({
+                        resourceType: rule.resourceType || ProcessingResourceConsumptionType.ENERGY_ELECTRIC,
+                        demandQuantity: demand,
+                        unit: rule.unit || 'KWH',
+                        specificConsumptionPerInputUnit: sec
+                    }));
+
+                    // Internal Component Cost Accumulation
+                    if (rule.resourceType === ProcessingResourceConsumptionType.ENERGY_ELECTRIC) {
+                        elecCost += demand * (rule.unitCost || 0.08);
+                    } else if (rule.resourceType === ProcessingResourceConsumptionType.WATER_INDUSTRIAL) {
+                        waterCost += demand * (rule.unitCost || 1.20);
+                    } else if (rule.resourceType === ProcessingResourceConsumptionType.ENERGY_THERMAL_FUEL) {
+                        fuelCost += demand * (rule.unitCost || 0.05);
+                    } else if (rule.resourceType === ProcessingResourceConsumptionType.CHEMICAL_REAGENT) {
+                        reagentCost += demand * (rule.unitCost || 2.50);
+                    }
+                });
+
+                const laborCost = inputQuantity * (processDefinition.laborHoursPerUnit || 0.10) * 25.0;
+                const overhead = inputQuantity * (costModel ? costModel.baseCost : 5.0);
+
+                const costBreakdown = new ProcessingCostBreakdown({
+                    electricityCost: elecCost,
+                    thermalFuelCost: fuelCost,
+                    waterCost: waterCost,
+                    reagentsCost: reagentCost,
+                    laborCost: laborCost,
+                    depreciationOverheadCost: overhead
+                });
+
+                return {
+                    consumptions,
+                    costBreakdown
+                };
+            }
+        }
+
+        // =========================================================================
+        // 06.11: CAPACITY & SCHEDULING FEASIBILITY ENGINE
+        // =========================================================================
+
+        class ProcessingFacilityCapacity {
+            constructor(params = {}) {
+                if (!params.facilityKey) {
+                    throw new Error('[ProcessingFacilityCapacity Violation]: facilityKey is mandatory.');
+                }
+                this.facilityKey = params.facilityKey;
+                this.processId = params.processId || 'GENERIC_PROCESS';
+                this.nominalDailyRate = typeof params.nominalDailyRate === 'number' ? Math.max(0, params.nominalDailyRate) : 1000.0;
+                this.rateUnit = params.rateUnit || 'TONNES';
+                this.availabilityFactor = typeof params.availabilityFactor === 'number' ? Math.max(0, Math.min(1, params.availabilityFactor)) : 0.95;
+                this.currentLoadQuantity = typeof params.currentLoadQuantity === 'number' ? Math.max(0, params.currentLoadQuantity) : 0.0;
+                this.provenance = params.provenance || { sourceSubsystem: 'CAPACITY_SCHEDULING_ENGINE', timestamp: 0 };
+            }
+
+            getAvailableCapacity(windowDurationHours = 24.0) {
+                const effectiveHourly = (this.nominalDailyRate / 24.0) * this.availabilityFactor;
+                const maxWindowCap = effectiveHourly * windowDurationHours;
+                const remaining = Math.max(0, maxWindowCap - this.currentLoadQuantity);
+                return {
+                    maxWindowCapacity: maxWindowCap,
+                    availableCapacity: remaining,
+                    isFull: remaining <= 0
+                };
+            }
+
+            toJSON() {
+                return {
+                    facilityKey: this.facilityKey,
+                    processId: this.processId,
+                    nominalDailyRate: this.nominalDailyRate,
+                    rateUnit: this.rateUnit,
+                    availabilityFactor: this.availabilityFactor,
+                    currentLoadQuantity: this.currentLoadQuantity,
+                    provenance: this.provenance
+                };
+            }
+        }
+
+        class CapacityScheduler {
+            static allocateThroughput(requestedQuantity, facilityCapacity, windowDurationHours = 24.0) {
+                if (!facilityCapacity) {
+                    return {
+                        allocatedQuantity: requestedQuantity,
+                        deferredQuantity: 0,
+                        isDeferred: false
+                    };
+                }
+
+                const avail = facilityCapacity.getAvailableCapacity(windowDurationHours);
+                if (requestedQuantity <= avail.availableCapacity) {
+                    return {
+                        allocatedQuantity: requestedQuantity,
+                        deferredQuantity: 0,
+                        isDeferred: false
+                    };
+                }
+
+                const allocated = avail.availableCapacity;
+                const deferred = requestedQuantity - allocated;
+
+                return {
+                    allocatedQuantity: allocated,
+                    deferredQuantity: deferred,
+                    isDeferred: deferred > 0
+                };
+            }
+        }
+
+        // =========================================================================
+        // 06.12: MULTI-STAGE PROCESS ORCHESTRATOR [BUG-03 FIXED: MULTI-INPUT BLENDING]
+        // =========================================================================
+
+        class PipelineStageDefinition {
+            constructor(params = {}) {
+                if (typeof params.stageNumber !== 'number' || !params.processDefinition) {
+                    throw new Error('[PipelineStageDefinition Violation]: stageNumber and processDefinition are mandatory.');
+                }
+                this.stageNumber = params.stageNumber;
+                this.stageName = params.stageName || `STAGE_${params.stageNumber}`;
+                this.processDefinition = params.processDefinition instanceof ProcessDefinition ? params.processDefinition : new ProcessDefinition(params.processDefinition);
+                this.isTerminalStage = Boolean(params.isTerminalStage);
+                this.requiredAuxiliaryInputIds = Array.isArray(params.requiredAuxiliaryInputIds) ? [...params.requiredAuxiliaryInputIds] : [];
+            }
+
+            toJSON() {
+                return {
+                    stageNumber: this.stageNumber,
+                    stageName: this.stageName,
+                    processDefinition: this.processDefinition.toJSON(),
+                    isTerminalStage: this.isTerminalStage,
+                    requiredAuxiliaryInputIds: this.requiredAuxiliaryInputIds
+                };
+            }
+        }
+
+        class MultiStagePipelineDefinition {
+            constructor(params = {}) {
+                if (!params.pipelineId) {
+                    throw new Error('[MultiStagePipelineDefinition Violation]: pipelineId is mandatory.');
+                }
+                this.pipelineId = params.pipelineId;
+                this.stages = Array.isArray(params.stages) 
+                    ? params.stages.map(s => s instanceof PipelineStageDefinition ? s : new PipelineStageDefinition(s)).sort((a, b) => a.stageNumber - b.stageNumber) 
+                    : [];
+            }
+
+            addStage(stage) {
+                const inst = stage instanceof PipelineStageDefinition ? stage : new PipelineStageDefinition(stage);
+                this.stages.push(inst);
+                this.stages.sort((a, b) => a.stageNumber - b.stageNumber);
+            }
+
+            toJSON() {
+                return {
+                    pipelineId: this.pipelineId,
+                    stages: this.stages.map(s => s.toJSON())
+                };
+            }
+        }
+
+        class MultiStagePipelineOrchestrator {
+            /**
+             * [BUG-03 FIX]: Executes sequential stages supporting auxiliary input blending,
+             * preserving intermediate states and isolating stage failures.
+             */
+            static executePipeline(initialInput, pipelineDefinition, constraintSet, facilityRegistry = null, auxiliaryInputsMap = {}) {
+                if (!pipelineDefinition || pipelineDefinition.stages.length === 0) {
+                    throw new Error('[PipelineOrchestrator]: Pipeline has no valid stages.');
+                }
+
+                let currentInput = initialInput;
+                const stageExecutionTraces = [];
+                const compiledResults = [];
+
+                for (const stage of pipelineDefinition.stages) {
+                    // Support multi-input blending / auxiliary additives per stage (BUG-03 Fix)
+                    const stageAuxInputs = auxiliaryInputsMap[stage.stageNumber] || auxiliaryInputsMap[stage.stageName] || [];
+                    const combinedStageInputs = [currentInput, ...stageAuxInputs];
+
+                    // Calculate composite mass and composite grade/purity for blended streams
+                    let totalStageInputMass = 0;
+                    let totalStageRawGradeMass = 0;
+                    let totalStagePureMetalMass = 0;
+                    combinedStageInputs.forEach(inp => {
+                        const inQty = typeof inp.quantity === 'number' ? inp.quantity : 0;
+                        const inGrade = typeof inp.grade === 'number' ? inp.grade : 1.0;
+                        const inPurity = typeof inp.purity === 'number' ? inp.purity : 1.0;
+                        totalStageInputMass += inQty;
+                        totalStageRawGradeMass += inQty * inGrade;
+                        totalStagePureMetalMass += inQty * inGrade * inPurity;
+                    });
+
+                    const compositeGrade = totalStageInputMass > 0 ? (totalStageRawGradeMass / totalStageInputMass) : currentInput.grade;
+                    const compositePurity = totalStageRawGradeMass > 0 ? (totalStagePureMetalMass / totalStageRawGradeMass) : currentInput.purity;
+
+                    const blendedInput = new ProcessingInput({
+                        materialIdentity: currentInput.materialIdentity,
+                        sourceIdentity: currentInput.sourceIdentity,
+                        quantity: totalStageInputMass,
+                        unit: currentInput.unit,
+                        grade: compositeGrade,
+                        purity: compositePurity,
+                        physicalState: currentInput.physicalState,
+                        origin: currentInput.origin,
+                        extractionReference: currentInput.extractionReference
+                    });
+
+                    const plan = ProcessPlanner.createPlan(blendedInput, stage.processDefinition);
+
+                    if (!plan.isFeasible) {
+                        return {
+                            pipelineId: pipelineDefinition.pipelineId,
+                            isComplete: false,
+                            failedStage: stage.stageNumber,
+                            failureReason: plan.identifiedConstraints.join(', '),
+                            completedStageResults: compiledResults,
+                            lastIntermediateInput: currentInput
+                        };
+                    }
+
+                    const constraintEval = ProcessingConstraintEvaluator.evaluateConstraints(plan, constraintSet);
+                    if (constraintEval.status === ConstraintEvaluationResultStatus.BLOCKED) {
+                        return {
+                            pipelineId: pipelineDefinition.pipelineId,
+                            isComplete: false,
+                            failedStage: stage.stageNumber,
+                            failureReason: `STAGE_BLOCKED: ${constraintEval.clampingReasons.join(', ')}`,
+                            completedStageResults: compiledResults,
+                            lastIntermediateInput: currentInput
+                        };
+                    }
+
+                    // Execute Transformation on Stage
+                    const transformRes = TransformationCalculator.calculateTransformation(
+                        constraintEval.allowableInputQuantity,
+                        stage.processDefinition
+                    );
+
+                    const primaryDef = stage.processDefinition.outputs.find(o => o.outputClass === OutputMaterialClass.PRIMARY_OUTPUT);
+                    const qualityTrans = QualityTransformer.transformQuality(
+                        new MaterialQualityState({ grade: blendedInput.grade, purity: blendedInput.purity, physicalState: blendedInput.physicalState }),
+                        constraintEval.allowableInputQuantity,
+                        primaryDef || new ProcessOutputDefinition({ materialIdentity: 'INTERMEDIATE' }),
+                        stage.processDefinition,
+                        transformRes
+                    );
+
+                    // Metal Conservation Gate on Pipeline Stage
+                    if (!qualityTrans.isMetalConserved) {
+                        return {
+                            pipelineId: pipelineDefinition.pipelineId,
+                            isComplete: false,
+                            failedStage: stage.stageNumber,
+                            failureReason: 'METAL_MASS_CONSERVATION_BREACHED',
+                            completedStageResults: compiledResults,
+                            lastIntermediateInput: currentInput
+                        };
+                    }
+
+                    const stageOutputs = ByproductWasteAccountant.segregateOutputs(
+                        stage.processDefinition,
+                        transformRes,
+                        blendedInput,
+                        qualityTrans
+                    );
+
+                    const consumption = ConsumptionEvaluator.evaluateConsumption(
+                        constraintEval.allowableInputQuantity,
+                        stage.processDefinition
+                    );
+
+                    const stageResult = OutputMaterialCompiler.compileResult(
+                        stage.processDefinition.processId,
+                        combinedStageInputs,
+                        stageOutputs,
+                        consumption,
+                        transformRes,
+                        qualityTrans
+                    );
+
+                    compiledResults.push(stageResult);
+                    stageExecutionTraces.push({ stageNumber: stage.stageNumber, stageName: stage.stageName, result: stageResult });
+
+                    // Construct Intermediate Input for next stage
+                    const nextPrimary = stageOutputs.primaryOutputs[0];
+                    if (!nextPrimary || nextPrimary.quantity <= 0) {
+                        return {
+                            pipelineId: pipelineDefinition.pipelineId,
+                            isComplete: false,
+                            failedStage: stage.stageNumber,
+                            failureReason: 'INTERMEDIATE_OUTPUT_DEPLETED',
+                            completedStageResults: compiledResults,
+                            lastIntermediateInput: currentInput
+                        };
+                    }
+
+                    currentInput = new ProcessingInput({
+                        materialIdentity: nextPrimary.materialIdentity,
+                        sourceIdentity: `STAGE_${stage.stageNumber}_OUTPUT`,
+                        quantity: nextPrimary.quantity,
+                        unit: nextPrimary.unit,
+                        grade: nextPrimary.qualityState.grade,
+                        purity: nextPrimary.qualityState.purity,
+                        physicalState: nextPrimary.qualityState.physicalState,
+                        origin: currentInput.origin,
+                        extractionReference: currentInput.extractionReference
+                    });
+                }
+
+                return {
+                    pipelineId: pipelineDefinition.pipelineId,
+                    isComplete: true,
+                    failedStage: null,
+                    completedStageResults: compiledResults,
+                    finalOutputInput: currentInput
+                };
+            }
+        }
+
+        // =========================================================================
+        // 06.13: OUTPUT MATERIAL COMPILER & PROCESSING RESULT CONTRACT [BUG-02 FIXED]
+        // =========================================================================
+
+        class ProcessingResult {
+            constructor(params = {}) {
+                // [BUG-02 FIX]: Deterministic Operation ID without Date.now()
+                const seed = `${params.processId || 'PRC'}:${params.lifecycleStatus || 'ST'}:${DeterministicHashEngine.computeHash(JSON.stringify(params.primaryOutputs || []))}:${params.inputConsumptions ? params.inputConsumptions.length : 0}`;
+                this.operationId = params.operationId || `PROC_RES:${DeterministicHashEngine.computeHash(seed).substring(0, 10)}`;
+                this.processId = params.processId || 'UNKNOWN_PROCESS';
+                this.lifecycleStatus = params.lifecycleStatus || ProcessingOperationLifecycle.COMPLETED;
+                
+                this.inputConsumptions = Array.isArray(params.inputConsumptions) ? [...params.inputConsumptions] : [];
+                this.primaryOutputs = Array.isArray(params.primaryOutputs) ? [...params.primaryOutputs] : [];
+                this.secondaryOutputs = Array.isArray(params.secondaryOutputs) ? [...params.secondaryOutputs] : [];
+                this.byproducts = Array.isArray(params.byproducts) ? [...params.byproducts] : [];
+                this.wasteTailings = Array.isArray(params.wasteTailings) ? [...params.wasteTailings] : [];
+                this.processLosses = Array.isArray(params.processLosses) ? [...params.processLosses] : [];
+                
+                this.qualityTransformations = Array.isArray(params.qualityTransformations) ? [...params.qualityTransformations] : [];
+                this.utilityConsumptions = Array.isArray(params.utilityConsumptions) ? [...params.utilityConsumptions] : [];
+                this.costBreakdown = params.costBreakdown instanceof ProcessingCostBreakdown ? params.costBreakdown : new ProcessingCostBreakdown(params.costBreakdown || {});
+                
+                this.explanationTree = params.explanationTree || {};
+                this.calculationTrace = params.calculationTrace || {};
+                this.isBalanced = Boolean(params.isBalanced);
+                this.provenance = params.provenance || { sourceSubsystem: 'OUTPUT_MATERIAL_COMPILER', timestamp: 0 };
+            }
+
+            toJSON() {
+                return {
+                    operationId: this.operationId,
+                    processId: this.processId,
+                    lifecycleStatus: this.lifecycleStatus,
+                    inputConsumptions: this.inputConsumptions.map(i => typeof i.toJSON === 'function' ? i.toJSON() : i),
+                    primaryOutputs: this.primaryOutputs.map(o => typeof o.toJSON === 'function' ? o.toJSON() : o),
+                    secondaryOutputs: this.secondaryOutputs.map(o => typeof o.toJSON === 'function' ? o.toJSON() : o),
+                    byproducts: this.byproducts.map(b => typeof b.toJSON === 'function' ? b.toJSON() : b),
+                    wasteTailings: this.wasteTailings.map(w => typeof w.toJSON === 'function' ? w.toJSON() : w),
+                    processLosses: this.processLosses.map(l => typeof l.toJSON === 'function' ? l.toJSON() : l),
+                    qualityTransformations: this.qualityTransformations,
+                    utilityConsumptions: this.utilityConsumptions.map(u => typeof u.toJSON === 'function' ? u.toJSON() : u),
+                    costBreakdown: this.costBreakdown.toJSON(),
+                    explanationTree: this.explanationTree,
+                    calculationTrace: this.calculationTrace,
+                    isBalanced: this.isBalanced,
+                    provenance: this.provenance
+                };
+            }
+        }
+
+        class OutputMaterialCompiler {
+            static compileResult(processId, inputConsumptions, segregatedOutputs, consumptionEvaluation, transformationResult, qualityTransformation) {
+                return new ProcessingResult({
+                    processId,
+                    lifecycleStatus: transformationResult.isValidBalance ? ProcessingOperationLifecycle.COMPLETED : ProcessingOperationLifecycle.FAILED,
+                    inputConsumptions,
+                    primaryOutputs: segregatedOutputs.primaryOutputs,
+                    secondaryOutputs: segregatedOutputs.secondaryOutputs,
+                    byproducts: segregatedOutputs.byproducts,
+                    wasteTailings: segregatedOutputs.wasteTailings,
+                    processLosses: segregatedOutputs.processLosses,
+                    qualityTransformations: [qualityTransformation],
+                    utilityConsumptions: consumptionEvaluation.consumptions,
+                    costBreakdown: consumptionEvaluation.costBreakdown,
+                    explanationTree: {
+                        transformationEfficiency: transformationResult.effectiveEfficiency,
+                        massBalanceVerified: transformationResult.isValidBalance
+                    },
+                    calculationTrace: {
+                        totalInput: transformationResult.totalInputAccounted,
+                        primaryYieldRatio: segregatedOutputs.primaryOutputs.length > 0 ? (segregatedOutputs.primaryOutputs[0].quantity / transformationResult.totalInputAccounted) : 0
+                    },
+                    isBalanced: transformationResult.isValidBalance
+                });
+            }
+        }
+
+        // =========================================================================
+        // 06.14: PROCESSING VALIDATION, DIAGNOSTICS & SYSTEMIC HEALTH MONITOR
+        // =========================================================================
+
+        class MassBalanceAuditor {
+            static auditResult(processingResult) {
+                if (!processingResult || !(processingResult instanceof ProcessingResult)) {
+                    return { isValid: false, driftError: Infinity, reason: 'INVALID_RESULT_OBJECT' };
+                }
+
+                const totalInput = processingResult.inputConsumptions.reduce((sum, inp) => sum + (inp.quantity || 0), 0);
+                
+                const totalPrimary = processingResult.primaryOutputs.reduce((sum, o) => sum + o.quantity, 0);
+                const totalSecondary = processingResult.secondaryOutputs.reduce((sum, o) => sum + o.quantity, 0);
+                const totalByproduct = processingResult.byproducts.reduce((sum, o) => sum + o.quantity, 0);
+                const totalWaste = processingResult.wasteTailings.reduce((sum, o) => sum + o.quantity, 0);
+                const totalLoss = processingResult.processLosses.reduce((sum, o) => sum + o.quantity, 0);
+
+                const totalAccountedOutputs = totalPrimary + totalSecondary + totalByproduct + totalWaste + totalLoss;
+                const deltaDrift = Math.abs(totalInput - totalAccountedOutputs);
+                const isValid = deltaDrift < 1e-6;
+
+                return {
+                    isValid,
+                    totalInput,
+                    totalAccountedOutputs,
+                    deltaDrift,
+                    breakdown: {
+                        primary: totalPrimary,
+                        secondary: totalSecondary,
+                        byproduct: totalByproduct,
+                        waste: totalWaste,
+                        loss: totalLoss
+                    }
+                };
+            }
+        }
+
+        class DiagnosticRingBuffer {
+            constructor(capacity = 5000) {
+                this.capacity = capacity;
+                this.buffer = new Array(capacity);
+                this.head = 0;
+                this.size = 0;
+            }
+
+            push(entry) {
+                this.buffer[this.head] = {
+                    tick: entry.tick || 0,
+                    entry
+                };
+                this.head = (this.head + 1) % this.capacity;
+                if (this.size < this.capacity) this.size++;
+            }
+
+            getAllSorted() {
+                const result = [];
+                for (let i = 0; i < this.size; i++) {
+                    const idx = (this.head - this.size + i + this.capacity) % this.capacity;
+                    result.push(this.buffer[idx]);
+                }
+                return result.sort((a, b) => {
+                    if (a.entry.severity !== b.entry.severity) {
+                        return String(a.entry.severity).localeCompare(String(b.entry.severity));
+                    }
+                    return String(a.entry.code).localeCompare(String(b.entry.code));
+                });
+            }
+
+            clear() {
+                this.buffer = new Array(this.capacity);
+                this.head = 0;
+                this.size = 0;
+            }
+        }
+
+        class ProcessingDiagnosticsEngine {
+            constructor(maxLogCapacity = 5000) {
+                this.ringBuffer = new DiagnosticRingBuffer(maxLogCapacity);
+            }
+
+            logDiagnostic(code, message, severity = ConstraintSeverity.WARNING, context = {}) {
+                this.ringBuffer.push({
+                    code,
+                    message,
+                    severity,
+                    context
+                });
+            }
+
+            getReport() {
+                const logs = this.ringBuffer.getAllSorted();
+                return {
+                    totalLogs: logs.length,
+                    fatalCount: logs.filter(l => l.entry.severity === ConstraintSeverity.BLOCKING).length,
+                    warningCount: logs.filter(l => l.entry.severity === ConstraintSeverity.WARNING).length,
+                    logs
+                };
+            }
+
+            clear() {
+                this.ringBuffer.clear();
+            }
+        }
+
+        class SystemicProcessingHealthMonitor {
+            static evaluateHealth(registry, diagnosticsEngine = null) {
+                const diagReport = diagnosticsEngine ? diagnosticsEngine.getReport() : { fatalCount: 0, warningCount: 0 };
+
+                let healthStatus = ProcessingHealthStatus.ONLINE;
+                if (diagReport.fatalCount > 0) {
+                    healthStatus = ProcessingHealthStatus.FAILED;
+                } else if (diagReport.warningCount > 0) {
+                    healthStatus = ProcessingHealthStatus.DEGRADED;
+                }
+
+                return {
+                    healthStatus,
+                    metrics: {
+                        totalRegisteredProcesses: registry.processDefinitions.size,
+                        totalRegisteredRecipes: registry.recipes.size,
+                        totalRegisteredRules: registry.processRules ? registry.processRules.size : 0,
+                        totalFacilities: registry.facilityCapacities ? registry.facilityCapacities.size : 0
+                    },
+                    diagnosticsSummary: {
+                        blockingErrors: diagReport.fatalCount,
+                        warnings: diagReport.warningCount
+                    }
+                };
+            }
+        }
+
+        // =========================================================================
+        // CHECKPOINT SNAPSHOT ADAPTER & HARDCODING FIREWALL
+        // =========================================================================
+
+        class StateCheckpointSnapshotAdapter {
+            static calculateAdler32(str) {
+                let a = 1, b = 0;
+                const MOD = 65521;
+                for (let i = 0; i < str.length; i++) {
+                    a = (a + str.charCodeAt(i)) % MOD;
+                    b = (b + a) % MOD;
+                }
+                return ((b << 16) | a) >>> 0;
+            }
+
+            static createSnapshot(registry, tick = 0) {
+                const payloadObject = {
+                    schemaVersion: 1,
+                    tick,
+                    processDefinitions: Array.from(registry.processDefinitions.values()).map(e => e.toJSON()).sort((a, b) => a.processId.localeCompare(b.processId)),
+                    recipes: Array.from(registry.recipes.values()).map(e => e.toJSON()).sort((a, b) => a.recipeId.localeCompare(b.recipeId)),
+                    processRules: Array.from(registry.processRules.values()).map(e => e.toJSON()).sort((a, b) => a.ruleId.localeCompare(b.ruleId))
+                };
+
+                const serialized = JSON.stringify(payloadObject);
+                const checksum = this.calculateAdler32(serialized);
+                const semanticDigest = `DIGEST_P06_${checksum}_${tick}`;
+
+                return {
+                    schemaVersion: payloadObject.schemaVersion,
+                    tick,
+                    checksum,
+                    semanticDigest,
+                    payload: serialized
+                };
+            }
+
+            static restoreSnapshot(registry, snapshot) {
+                if (!snapshot || !snapshot.payload || typeof snapshot.checksum !== 'number') {
+                    throw new Error('[ProcessingSnapshotAdapter]: Corrupt snapshot envelope.');
+                }
+
+                const computedChecksum = this.calculateAdler32(snapshot.payload);
+                if (computedChecksum !== snapshot.checksum) {
+                    throw new Error('[ProcessingSnapshotAdapter]: Checksum mismatch! Corrupted snapshot.');
+                }
+
+                const data = JSON.parse(snapshot.payload);
+                registry.clear();
+
+                data.processDefinitions.forEach(p => registry.registerProcess(new ProcessDefinition(p)));
+                data.recipes.forEach(r => registry.registerRecipe(new ProcessRecipe(r)));
+                if (data.processRules) {
+                    data.processRules.forEach(u => registry.registerRule(new ProcessRuleDefinition(u)));
+                }
+
+                return {
+                    restored: true,
+                    processCount: registry.processDefinitions.size,
+                    checksum: snapshot.checksum
+                };
+            }
+        }
+
+        class BoundaryHardcodingFirewall {
+            static get FORBIDDEN_SIMULATION_KEYS() {
+                return [
+                    'marketprice',
+                    'spotprice',
+                    'clearingprice',
+                    'tradetariff',
+                    'arbitragediscount',
+                    'warehouseinventory',
+                    'strategicscoring',
+                    'speculativemultiplier'
+                ];
+            }
+
+            static auditObjectDeep(target, currentPath = 'Root', violations = []) {
+                if (!target || typeof target !== 'object') return violations;
+
+                if (target instanceof Map) {
+                    target.forEach((val, key) => {
+                        const normKey = String(key).toLowerCase().replace(/[^a-z]/g, '');
+                        if (this.FORBIDDEN_SIMULATION_KEYS.some(forbidden => normKey.includes(forbidden))) {
+                            violations.push({ path: `${currentPath}.Map<${key}>`, forbiddenKey: String(key) });
+                        }
+                        this.auditObjectDeep(val, `${currentPath}.Map<${key}>`, violations);
+                    });
+                    return violations;
+                }
+
+                if (target instanceof Set || Array.isArray(target)) {
+                    let idx = 0;
+                    target.forEach(val => {
+                        this.auditObjectDeep(val, `${currentPath}[${idx++}]`, violations);
+                    });
+                    return violations;
+                }
+
+                Object.keys(target).forEach(key => {
+                    const normKey = key.toLowerCase().replace(/[^a-z]/g, '');
+                    if (this.FORBIDDEN_SIMULATION_KEYS.some(forbidden => normKey.includes(forbidden))) {
+                        violations.push({ path: `${currentPath}.${key}`, forbiddenKey: key });
+                    }
+                    this.auditObjectDeep(target[key], `${currentPath}.${key}`, violations);
+                });
+
+                return violations;
+            }
+
+            static auditRegistry(registry) {
+                const violations = [];
+                this.auditObjectDeep(registry.processDefinitions, 'Registry.ProcessDefinitions', violations);
+                this.auditObjectDeep(registry.recipes, 'Registry.Recipes', violations);
+                this.auditObjectDeep(registry.processRules, 'Registry.ProcessRules', violations);
+
+                return {
+                    isCompliant: violations.length === 0,
+                    violationsCount: violations.length,
+                    violations
+                };
+            }
+        }
+
+        // =========================================================================
+        // MASTER REGISTRY, INVERTED INDEX HUB [BUG-04 FIXED] & PUBLIC PIPELINE
+        // =========================================================================
+
+        class ProcessingInvertedIndexHub {
+            constructor() {
+                this.byProcessType = new Map();
+                this.byInputMaterial = new Map();
+                this.byOutputMaterial = new Map();
+            }
+
+            indexProcessDefinition(definition) {
+                const pId = definition.processId;
+
+                // Process Type Index
+                if (!this.byProcessType.has(definition.processType)) {
+                    this.byProcessType.set(definition.processType, new Set());
+                }
+                this.byProcessType.get(definition.processType).add(pId);
+
+                // Input Materials Index
+                definition.inputs.forEach(inp => {
+                    if (!this.byInputMaterial.has(inp.materialIdentity)) {
+                        this.byInputMaterial.set(inp.materialIdentity, new Set());
+                    }
+                    this.byInputMaterial.get(inp.materialIdentity).add(pId);
+                });
+
+                // Output Materials Index
+                definition.outputs.forEach(out => {
+                    if (!this.byOutputMaterial.has(out.materialIdentity)) {
+                        this.byOutputMaterial.set(out.materialIdentity, new Set());
+                    }
+                    this.byOutputMaterial.get(out.materialIdentity).add(pId);
+                });
+            }
+
+            // [BUG-04 FIX]: Public Inverted Index Query Getters
+            getProcessesForInput(materialIdentity) {
+                return this.byInputMaterial.get(materialIdentity) || new Set();
+            }
+
+            getProcessesForOutput(materialIdentity) {
+                return this.byOutputMaterial.get(materialIdentity) || new Set();
+            }
+
+            getProcessesByType(processType) {
+                return this.byProcessType.get(processType) || new Set();
+            }
+
+            clear() {
+                this.byProcessType.clear();
+                this.byInputMaterial.clear();
+                this.byOutputMaterial.clear();
+            }
+        }
+
+        class MasterResourceProcessingRegistry {
+            constructor() {
+                this.processDefinitions = new Map();
+                this.recipes = new Map();
+                this.processRules = new Map();
+                this.facilityCapacities = new Map();
+                this.pipelines = new Map();
+                this.results = new Map();
+
+                this.indexes = new ProcessingInvertedIndexHub();
+                this.diagnostics = new ProcessingDiagnosticsEngine();
+                this.schemaVersion = 1;
+            }
+
+            registerProcess(definition) {
+                if (!(definition instanceof ProcessDefinition)) throw new Error('Expected ProcessDefinition instance.');
+                this.processDefinitions.set(definition.processId, definition);
+                this.indexes.indexProcessDefinition(definition);
+                return definition;
+            }
+
+            registerRecipe(recipe) {
+                if (!(recipe instanceof ProcessRecipe)) throw new Error('Expected ProcessRecipe instance.');
+                this.recipes.set(recipe.recipeId, recipe);
+                return recipe;
+            }
+
+            registerRule(rule) {
+                if (!(rule instanceof ProcessRuleDefinition)) throw new Error('Expected ProcessRuleDefinition instance.');
+                this.processRules.set(rule.ruleId, rule);
+                return rule;
+            }
+
+            registerFacilityCapacity(capacity) {
+                if (!(capacity instanceof ProcessingFacilityCapacity)) throw new Error('Expected ProcessingFacilityCapacity instance.');
+                this.facilityCapacities.set(capacity.facilityKey, capacity);
+                return capacity;
+            }
+
+            registerPipeline(pipeline) {
+                if (!(pipeline instanceof MultiStagePipelineDefinition)) throw new Error('Expected MultiStagePipelineDefinition instance.');
+                this.pipelines.set(pipeline.pipelineId, pipeline);
+                return pipeline;
+            }
+
+            // [BUG-04 FIX]: Delegated Public Query Getters
+            getProcessesForInput(materialIdentity) {
+                const pIds = this.indexes.getProcessesForInput(materialIdentity);
+                return Array.from(pIds).map(id => this.processDefinitions.get(id)).filter(Boolean);
+            }
+
+            getProcessesForOutput(materialIdentity) {
+                const pIds = this.indexes.getProcessesForOutput(materialIdentity);
+                return Array.from(pIds).map(id => this.processDefinitions.get(id)).filter(Boolean);
+            }
+
+            getProcessesByType(processType) {
+                const pIds = this.indexes.getProcessesByType(processType);
+                return Array.from(pIds).map(id => this.processDefinitions.get(id)).filter(Boolean);
+            }
+
+            clear() {
+                this.processDefinitions.clear();
+                this.recipes.clear();
+                this.processRules.clear();
+                this.facilityCapacities.clear();
+                this.pipelines.clear();
+                this.results.clear();
+                this.indexes.clear();
+                this.diagnostics.clear();
+            }
+        }
+
+        class ResourceProcessingCompilerPipeline {
+            constructor() {
+                this.registry = new MasterResourceProcessingRegistry();
+            }
+
+            /**
+             * Primary Orchestration Endpoint: Executes single process transformation on input.
+             */
+            executeProcess(input, processId, constraintSet = new ProcessingConstraintSet(), options = {}) {
+                const processDef = this.registry.processDefinitions.get(processId);
+                if (!processDef) {
+                    this.registry.diagnostics.logDiagnostic(ErrorTaxonomy.P6_001_DATA_ERROR, `Process '${processId}' not registered.`, ConstraintSeverity.BLOCKING);
+                    return new ProcessingResult({
+                        processId,
+                        lifecycleStatus: ProcessingOperationLifecycle.FAILED,
+                        isBalanced: false
+                    });
+                }
+
+                // 1. Plan Processing Operation
+                const plan = ProcessPlanner.createPlan(input, processDef, options);
+                if (!plan.isFeasible) {
+                    this.registry.diagnostics.logDiagnostic(ErrorTaxonomy.P6_006_ELIGIBILITY_ERROR, `Input ineligible for process '${processId}'.`, ConstraintSeverity.BLOCKING);
+                    return new ProcessingResult({
+                        processId,
+                        lifecycleStatus: ProcessingOperationLifecycle.INELIGIBLE,
+                        isBalanced: false
+                    });
+                }
+
+                // 2. Evaluate Constraints
+                const constraintEval = ProcessingConstraintEvaluator.evaluateConstraints(plan, constraintSet);
+                if (constraintEval.status === ConstraintEvaluationResultStatus.BLOCKED) {
+                    this.registry.diagnostics.logDiagnostic(ErrorTaxonomy.P6_007_CONSTRAINT_ERROR, `Processing blocked: ${constraintEval.clampingReasons.join(', ')}`, ConstraintSeverity.BLOCKING);
+                    return new ProcessingResult({
+                        processId,
+                        lifecycleStatus: ProcessingOperationLifecycle.BLOCKED,
+                        isBalanced: false
+                    });
+                }
+
+                // 3. Transformation Calculation
+                const transformRes = TransformationCalculator.calculateTransformation(
+                    constraintEval.allowableInputQuantity,
+                    processDef,
+                    options.efficiencyModifier || 1.0,
+                    options.qualityFactor || 1.0
+                );
+
+                // 4. Quality Transformation
+                const primaryDef = processDef.outputs.find(o => o.outputClass === OutputMaterialClass.PRIMARY_OUTPUT);
+                const qualityTrans = QualityTransformer.transformQuality(
+                    new MaterialQualityState({ grade: input.grade, purity: input.purity, physicalState: input.physicalState }),
+                    constraintEval.allowableInputQuantity,
+                    primaryDef || new ProcessOutputDefinition({ materialIdentity: 'PRIMARY' }),
+                    processDef,
+                    transformRes
+                );
+
+                // [BUG-01 FIX]: Metal Mass Conservation Enforcement Guard
+                if (!qualityTrans.isMetalConserved) {
+                    this.registry.diagnostics.logDiagnostic(
+                        ErrorTaxonomy.P6_009_BALANCE_ERROR, 
+                        `Metal Mass Conservation Breached: Output metal (${qualityTrans.primaryMetalMass}) exceeds Input metal (${qualityTrans.totalInputMetalMass})`, 
+                        ConstraintSeverity.BLOCKING
+                    );
+                    return new ProcessingResult({
+                        processId,
+                        lifecycleStatus: ProcessingOperationLifecycle.FAILED,
+                        isBalanced: false,
+                        explanationTree: {
+                            error: 'METAL_MASS_CONSERVATION_BREACHED',
+                            inputMetalMass: qualityTrans.totalInputMetalMass,
+                            primaryMetalMass: qualityTrans.primaryMetalMass
+                        }
+                    });
+                }
+
+                // 5. Output Segregation (Byproducts, Waste, Losses)
+                const segregatedOutputs = ByproductWasteAccountant.segregateOutputs(
+                    processDef,
+                    transformRes,
+                    input,
+                    qualityTrans
+                );
+
+                // 6. Utility Consumption & Cost Component Breakdown
+                const consumption = ConsumptionEvaluator.evaluateConsumption(
+                    constraintEval.allowableInputQuantity,
+                    processDef,
+                    options.costModel || null
+                );
+
+                // 7. Compile Final Processing Result
+                const finalResult = OutputMaterialCompiler.compileResult(
+                    processId,
+                    [input],
+                    segregatedOutputs,
+                    consumption,
+                    transformRes,
+                    qualityTrans
+                );
+
+                // 8. Validate Universal Mass Balance
+                const audit = MassBalanceAuditor.auditResult(finalResult);
+                if (!audit.isValid) {
+                    this.registry.diagnostics.logDiagnostic(ErrorTaxonomy.P6_009_BALANCE_ERROR, `Mass balance broken: Delta ${audit.deltaDrift}`, ConstraintSeverity.BLOCKING);
+                    finalResult.lifecycleStatus = ProcessingOperationLifecycle.FAILED;
+                    finalResult.isBalanced = false;
+                }
+
+                this.registry.results.set(finalResult.operationId, finalResult);
+                return finalResult;
+            }
+
+            /**
+             * [BUG-03 FIX]: Orchestration Endpoint executing multi-stage pipeline with auxiliary inputs.
+             */
+            executePipeline(initialInput, pipelineId, constraintSet = new ProcessingConstraintSet(), auxiliaryInputsMap = {}) {
+                const pipeline = this.registry.pipelines.get(pipelineId);
+                if (!pipeline) {
+                    throw new Error(`[PipelineCompiler]: Pipeline '${pipelineId}' not found in registry.`);
+                }
+                return MultiStagePipelineOrchestrator.executePipeline(
+                    initialInput, 
+                    pipeline, 
+                    constraintSet, 
+                    this.registry.facilityCapacities, 
+                    auxiliaryInputsMap
+                );
+            }
+        }
+
+        // =========================================================================
+        // PUBLIC ADAPTER & INTEGRATED ENGINE ASSEMBLY
+        // =========================================================================
+
+        function deepFreeze(obj, seen = new WeakSet()) {
+            if (obj === null || typeof obj !== 'object' || seen.has(obj)) return obj;
+            seen.add(obj);
+            if (obj instanceof Map || obj instanceof Set) return obj;
+            const propNames = Object.getOwnPropertyNames(obj);
+            for (const name of propNames) {
+                deepFreeze(obj[name], seen);
+            }
+            return Object.freeze(obj);
+        }
+
+        const ResourceProcessingTransformationEngineAdapter = Object.freeze({
+            // Enums & Taxonomy from Volume 6.1
+            ProcessClassTaxonomy,
+            ProcessingEligibilityStatus,
+            ProcessingOperationLifecycle,
+            OutputMaterialClass,
+            MaterialPhysicalState,
+            ConstraintSeverity,
+            ConstraintEvaluationResultStatus,
+            ProcessingResourceConsumptionType,
+            UnknownPolicyEnum,
+            RoundingModeEnum,
+            ErrorTaxonomy,
+            ProcessingHealthStatus,
+
+            // Domain Models from Volume 6.1
+            DeterministicHashEngine,
+            ProcessInputDefinition,
+            ProcessOutputDefinition,
+            ProcessDefinition,
+            ProcessRecipe,
+            ProcessRegistry,
+            ProcessingInput,
+            MaterialIntakeAdapter,
+            EligibilityAssessment,
+            ProcessEligibilityEngine,
+            ProcessRuleDefinition,
+            DeterministicFormulaInterpreter,
+            RecipeRuleResolver,
+            ProcessPlan,
+            ProcessPlanner,
+            ProcessingConstraint,
+            ProcessingConstraintSet,
+            ProcessingConstraintEvaluator,
+            TransformationCalculator,
+
+            // Domain Models & Engines from Volume 6.2
+            MaterialQualityState,
+            QualityTransformer,
+            ByproductOutputRecord,
+            ByproductWasteAccountant,
+            UtilityConsumptionRecord,
+            ProcessingCostBreakdown,
+            ConsumptionEvaluator,
+            ProcessingFacilityCapacity,
+            CapacityScheduler,
+            PipelineStageDefinition,
+            MultiStagePipelineDefinition,
+            MultiStagePipelineOrchestrator,
+            ProcessingResult,
+            OutputMaterialCompiler,
+            MassBalanceAuditor,
+            DiagnosticRingBuffer,
+            ProcessingDiagnosticsEngine,
+            SystemicProcessingHealthMonitor,
+            StateCheckpointSnapshotAdapter,
+            BoundaryHardcodingFirewall,
+            ProcessingInvertedIndexHub,
+            MasterResourceProcessingRegistry,
+            ResourceProcessingCompilerPipeline,
+
+            deepFreeze,
+
+            /**
+             * Factory: Creates and returns a fully initialized Part 06 Processing Engine instance.
+             */
+            createEngine() {
+                return new ResourceProcessingCompilerPipeline();
+            }
+        });
+
+        global.GSRSK_Part06 = ResourceProcessingTransformationEngineAdapter;
+        global.GSRSK_ResourceProcessingTransformationEngine = ResourceProcessingTransformationEngineAdapter;
+
+        if (typeof window !== 'undefined') {
+            window.GSRSK_Part06 = ResourceProcessingTransformationEngineAdapter;
+            window.GSRSK_ResourceProcessingTransformationEngine = ResourceProcessingTransformationEngineAdapter;
+        }
+
+        if (typeof ResourceMinistryEngineInstance !== 'undefined' && ResourceMinistryEngineInstance) {
+            ResourceMinistryEngineInstance.part06 = ResourceProcessingTransformationEngineAdapter;
+            ResourceMinistryEngineInstance.processingEngine = ResourceProcessingTransformationEngineAdapter.createEngine();
+        }
+
+    })(typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : global));
+
+    const _targetGlobal = typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : global);
+
     if (typeof module !== 'undefined' && module.exports) {
         module.exports = {
-            DataFoundation: global.GSRSK_DataFoundation || (typeof _globalScope !== 'undefined' ? _globalScope.GSRSK_DataFoundation : null),
-            WorldKnowledgeCompiler: global.GSRSK_WorldKnowledgeCompiler || null,
-            WorldStateEngineAdapter: global.GSRSK_Part03 || null,
-            WorldStateEngine: global.GSRSK_WorldStateEngine || null,
-            ResourceIdentityEngine: global.GSRSK_ResourceIdentityEngine || null,
-            ResourceReserveExtractionEngine: global.GSRSK_ResourceReserveExtractionEngine || null,
-            ResourceMinistryEngine: ResourceMinistryEngineInstance,
-            MasterGSRSKEngine: global.GSRSK_MasterEngine ? global.GSRSK_MasterEngine.constructor : null,
-            MasterEngineSingleton: global.GSRSK_MasterEngine || null,
-            Part01: global.GSRSK_DataFoundation || null,
-            Part02: global.GSRSK_WorldKnowledgeCompiler || null,
-            Part03: global.GSRSK_Part03 || null,
-            Part04: global.GSRSK_ResourceIdentityEngine || null,
-            Part05: global.GSRSK_ResourceReserveExtractionEngine || null,
-            ...(global.GSRSK_ResourceIdentityEngine || {})
+            DataFoundation: _targetGlobal.GSRSK_DataFoundation || (typeof _globalScope !== 'undefined' ? _globalScope.GSRSK_DataFoundation : null),
+            WorldKnowledgeCompiler: _targetGlobal.GSRSK_WorldKnowledgeCompiler || null,
+            WorldStateEngineAdapter: _targetGlobal.GSRSK_Part03 || null,
+            WorldStateEngine: _targetGlobal.GSRSK_WorldStateEngine || null,
+            ResourceIdentityEngine: _targetGlobal.GSRSK_ResourceIdentityEngine || null,
+            ResourceReserveExtractionEngine: _targetGlobal.GSRSK_ResourceReserveExtractionEngine || null,
+            ResourceProcessingTransformationEngine: _targetGlobal.GSRSK_ResourceProcessingTransformationEngine || null,
+            ResourceMinistryEngine: typeof ResourceMinistryEngineInstance !== 'undefined' ? ResourceMinistryEngineInstance : (_targetGlobal.ResourceMinistryEngine || null),
+            MasterGSRSKEngine: _targetGlobal.GSRSK_MasterEngine ? _targetGlobal.GSRSK_MasterEngine.constructor : null,
+            MasterEngineSingleton: _targetGlobal.GSRSK_MasterEngine || null,
+            Part01: _targetGlobal.GSRSK_DataFoundation || null,
+            Part02: _targetGlobal.GSRSK_WorldKnowledgeCompiler || null,
+            Part03: _targetGlobal.GSRSK_Part03 || null,
+            Part04: _targetGlobal.GSRSK_ResourceIdentityEngine || null,
+            Part05: _targetGlobal.GSRSK_ResourceReserveExtractionEngine || null,
+            Part06: _targetGlobal.GSRSK_ResourceProcessingTransformationEngine || null,
+            ...(_targetGlobal.GSRSK_ResourceIdentityEngine || {}),
+            ...(_targetGlobal.GSRSK_ResourceReserveExtractionEngine || {}),
+            ...(_targetGlobal.GSRSK_ResourceProcessingTransformationEngine || {})
         };
     }
 
