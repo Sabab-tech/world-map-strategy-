@@ -38,6 +38,184 @@ _globalScope.GSRSK_DataFoundation = (() => {
         NOT_APPLICABLE: 'NOT_APPLICABLE'
     });
 
+    const EpistemicValueState = Object.freeze({
+        VERIFIED_FACT: 'VERIFIED_FACT',
+        DECLARED: 'DECLARED',
+        ESTIMATED: 'ESTIMATED',
+        ZERO: 'ZERO',
+        UNKNOWN: 'UNKNOWN',
+        MISSING: 'MISSING',
+        INVALID: 'INVALID',
+        NOT_APPLICABLE: 'NOT_APPLICABLE'
+    });
+
+    class DeterministicHashEngine {
+        static computeHash(inputStr) {
+            const str = typeof inputStr === 'string' ? inputStr : JSON.stringify(inputStr);
+            let h1 = 0xdeadbeef ^ str.length;
+            let h2 = 0x41c6ce57 ^ str.length;
+            for (let i = 0; i < str.length; i++) {
+                const ch = str.charCodeAt(i);
+                h1 = (Math.imul(h1 ^ ch, 2654435761) >>> 0);
+                h2 = (Math.imul(h2 ^ ch, 1597334677) >>> 0);
+            }
+            h1 = ((Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909)) >>> 0);
+            h2 = ((Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909)) >>> 0);
+            return ((h1 >>> 0).toString(16).padStart(8, '0') + (h2 >>> 0).toString(16).padStart(8, '0')).toLowerCase();
+        }
+    }
+
+    class CanonicalUnitResolver {
+        static get UNIT_DEFINITIONS() {
+            return {
+                // MASS (Base: TONNES)
+                TONNES: { dimension: 'MASS', baseMultiplier: 1.0, aliases: ['TONNES', 'TONNE', 'TONS', 'TON', 'METRIC_TON', 'METRIC_TONS', 'MT', 'T'] },
+                KG: { dimension: 'MASS', baseMultiplier: 0.001, aliases: ['KG', 'KGS', 'KILOGRAM', 'KILOGRAMS'] },
+                GRAMS: { dimension: 'MASS', baseMultiplier: 0.000001, aliases: ['G', 'GM', 'GMS', 'GRAM', 'GRAMS'] },
+                TROY_OZ: { dimension: 'MASS', baseMultiplier: 0.0000311034768, aliases: ['OZ', 'OZT', 'TROY_OZ', 'TROY_OUNCE', 'TROY_OUNCES'] },
+                LBS: { dimension: 'MASS', baseMultiplier: 0.00045359237, aliases: ['LB', 'LBS', 'POUND', 'POUNDS'] },
+
+                // VOLUME (Base: CUBIC_METERS)
+                CUBIC_METERS: { dimension: 'VOLUME', baseMultiplier: 1.0, aliases: ['M3', 'CUBIC_METER', 'CUBIC_METERS', 'M^3'] },
+                LITERS: { dimension: 'VOLUME', baseMultiplier: 0.001, aliases: ['L', 'LT', 'LITER', 'LITERS', 'LITRE', 'LITRES'] },
+                BARRELS: { dimension: 'VOLUME', baseMultiplier: 0.1589873, aliases: ['BBL', 'BBLS', 'BARREL', 'BARRELS', 'BOE'] },
+                BCM: { dimension: 'VOLUME', baseMultiplier: 1000000000.0, aliases: ['BCM', 'BILLION_CUBIC_METERS'] },
+
+                // ENERGY (Base: GIGAWATT_HOURS)
+                GIGAWATT_HOURS: { dimension: 'ENERGY', baseMultiplier: 1.0, aliases: ['GWH', 'GIGAWATT_HOUR', 'GIGAWATT_HOURS'] },
+                MEGAWATT_HOURS: { dimension: 'ENERGY', baseMultiplier: 0.001, aliases: ['MWH', 'MEGAWATT_HOUR', 'MEGAWATT_HOURS'] },
+                KILOWATT_HOURS: { dimension: 'ENERGY', baseMultiplier: 0.000001, aliases: ['KWH', 'KILOWATT_HOUR', 'KILOWATT_HOURS'] },
+                JOULES: { dimension: 'ENERGY', baseMultiplier: 2.77777778e-13, aliases: ['J', 'JOULE', 'JOULES', 'GJ', 'EJ'] },
+                BTU: { dimension: 'ENERGY', baseMultiplier: 2.9307107e-10, aliases: ['BTU', 'MMBTU'] },
+
+                // COUNT / DISCRETE
+                UNITS: { dimension: 'COUNT', baseMultiplier: 1.0, aliases: ['UNIT', 'UNITS', 'ITEM', 'ITEMS', 'PIECE', 'PIECES'] }
+            };
+        }
+
+        static resolveUnit(unitCandidate, resourceTypeOrConcept = null) {
+            if (!unitCandidate || unitCandidate === 'UNKNOWN_UNIT') {
+                if (resourceTypeOrConcept && (resourceTypeOrConcept.declaredStandardUnit || resourceTypeOrConcept.unit)) {
+                    return this.resolveUnit(resourceTypeOrConcept.declaredStandardUnit || resourceTypeOrConcept.unit);
+                }
+                return { isValid: false, unit: 'UNRESOLVED_UNIT', dimension: 'UNKNOWN', status: DataState.UNKNOWN };
+            }
+
+            const raw = String(unitCandidate).trim().toUpperCase();
+            const defs = this.UNIT_DEFINITIONS;
+
+            // Direct key match
+            if (defs[raw]) {
+                return { isValid: true, unit: raw, dimension: defs[raw].dimension, status: DataState.PRESENT };
+            }
+
+            // Alias match
+            for (const [canonKey, def] of Object.entries(defs)) {
+                if (def.aliases.includes(raw)) {
+                    return { isValid: true, unit: canonKey, dimension: def.dimension, status: DataState.PRESENT };
+                }
+            }
+
+            return { isValid: false, unit: 'UNRESOLVED_UNIT', dimension: 'UNKNOWN', status: DataState.INVALID };
+        }
+
+        static convert(value, fromUnit, toUnit) {
+            if (typeof value !== 'number' || isNaN(value)) return 0;
+            const fromRes = this.resolveUnit(fromUnit);
+            const toRes = this.resolveUnit(toUnit);
+
+            if (!fromRes.isValid || !toRes.isValid) {
+                throw new Error(`[CanonicalUnitResolver Error]: Cannot convert invalid units: ${fromUnit} -> ${toUnit}`);
+            }
+            if (fromRes.dimension !== toRes.dimension) {
+                throw new Error(`[CanonicalUnitResolver Error]: Dimension mismatch in unit conversion (${fromRes.dimension} !== ${toRes.dimension})`);
+            }
+
+            const defs = this.UNIT_DEFINITIONS;
+            const fromMultiplier = defs[fromRes.unit].baseMultiplier;
+            const toMultiplier = defs[toRes.unit].baseMultiplier;
+
+            const baseValue = value * fromMultiplier;
+            return baseValue / toMultiplier;
+        }
+    }
+
+    class CanonicalResourceBatch {
+        constructor(params = {}) {
+            if (!params.materialIdentity || params.quantity === undefined) {
+                throw new Error('[CanonicalResourceBatch Violation]: materialIdentity and quantity are mandatory.');
+            }
+            const sourceKeys = Array.isArray(params.sourceBatchIds) ? params.sourceBatchIds.join(',') : (params.originKey || 'SRC');
+            const seed = params.batchId || `${params.materialIdentity}:${params.quantity}:${sourceKeys}:${params.transformReference || params.extractionReference || 'NIL'}:${params.timestampTick || 0}`;
+            this.batchId = params.batchId || `BATCH_${DeterministicHashEngine.computeHash(seed).substring(0, 12)}`;
+            this.materialIdentity = String(params.materialIdentity);
+            this.resourceId = params.resourceId || this.materialIdentity;
+            this.quantity = typeof params.quantity === 'number' && Number.isFinite(params.quantity) ? Math.max(0, params.quantity) : 0;
+            this.unit = params.unit || 'TONNES';
+            
+            this.epistemicState = params.epistemicState || (this.quantity === 0 ? EpistemicValueState.ZERO : EpistemicValueState.VERIFIED_FACT);
+            this.qualityState = params.qualityState ? (typeof params.qualityState.clone === 'function' ? params.qualityState.clone() : JSON.parse(JSON.stringify(params.qualityState))) : { grade: 1.0, purity: 1.0, physicalState: 'SOLID_RUN_OF_MINE' };
+            
+            this.ownerCountryCode = params.ownerCountryCode || params.hostCountryIso3 || 'GLOBAL';
+            this.locationKey = params.locationKey || params.originKey || 'GLOBAL_LOCATION';
+            this.facilityKey = params.facilityKey || null;
+            
+            this.sourceBatchIds = Array.isArray(params.sourceBatchIds) ? [...params.sourceBatchIds] : [];
+            this.extractionReference = params.extractionReference || null;
+            this.transformReference = params.transformReference || null;
+            this.processId = params.processId || null;
+            this.timestampTick = typeof params.timestampTick === 'number' ? params.timestampTick : 0;
+            
+            this.provenance = params.provenance || {
+                sourceSubsystem: 'CANONICAL_BATCH_ENGINE',
+                timestamp: 0,
+                calculationTraceHash: params.calculationTraceHash || 'GENESIS'
+            };
+        }
+
+        clone() {
+            return new CanonicalResourceBatch({
+                batchId: this.batchId,
+                materialIdentity: this.materialIdentity,
+                resourceId: this.resourceId,
+                quantity: this.quantity,
+                unit: this.unit,
+                epistemicState: this.epistemicState,
+                qualityState: JSON.parse(JSON.stringify(this.qualityState)),
+                ownerCountryCode: this.ownerCountryCode,
+                locationKey: this.locationKey,
+                facilityKey: this.facilityKey,
+                sourceBatchIds: [...this.sourceBatchIds],
+                extractionReference: this.extractionReference,
+                transformReference: this.transformReference,
+                processId: this.processId,
+                timestampTick: this.timestampTick,
+                provenance: JSON.parse(JSON.stringify(this.provenance))
+            });
+        }
+
+        toJSON() {
+            return {
+                batchId: this.batchId,
+                materialIdentity: this.materialIdentity,
+                resourceId: this.resourceId,
+                quantity: this.quantity,
+                unit: this.unit,
+                epistemicState: this.epistemicState,
+                qualityState: this.qualityState,
+                ownerCountryCode: this.ownerCountryCode,
+                locationKey: this.locationKey,
+                facilityKey: this.facilityKey,
+                sourceBatchIds: this.sourceBatchIds,
+                extractionReference: this.extractionReference,
+                transformReference: this.transformReference,
+                processId: this.processId,
+                timestampTick: this.timestampTick,
+                provenance: this.provenance
+            };
+        }
+    }
+
     const IntegrityStatus = Object.freeze({
         CRYPTOGRAPHIC: 'CRYPTOGRAPHIC',
         NON_CRYPTOGRAPHIC: 'NON_CRYPTOGRAPHIC',
@@ -141,7 +319,8 @@ _globalScope.GSRSK_DataFoundation = (() => {
     class ImportSession {
         constructor(sourceName, customMachineUuid = null) {
             const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-            const machineUuid = customMachineUuid || (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 10));
+            const seed = `${sourceName || 'DEFAULT'}:${customMachineUuid || 'SYS'}:001`;
+            const machineUuid = customMachineUuid || DeterministicHashEngine.computeHash(seed).substring(0, 10);
             
             this.sessionId = `IMPORT-${dateStr}-001-${machineUuid}`;
             this.sessionNumber = 1;
@@ -1129,6 +1308,7 @@ _globalScope.GSRSK_DataFoundation = (() => {
     // =========================================================================
     const PublicEngineAdapter = {
         DataState,
+        EpistemicValueState,
         IntegrityStatus,
         RawNodeType,
         ValidationSeverity,
@@ -1136,6 +1316,9 @@ _globalScope.GSRSK_DataFoundation = (() => {
         CanonicalValueStatus,
         FoundationHealthStatus,
         HonestHashEngine,
+        DeterministicHashEngine,
+        CanonicalUnitResolver,
+        CanonicalResourceBatch,
         ImportSession,
         RawDataNode,
         RawDataTreeRegistry,
@@ -2627,6 +2810,24 @@ _globalScope.GSRSK_DataFoundation = (() => {
 (function(global) {
     'use strict';
 
+    const DF = global.GSRSK_DataFoundation || (typeof _globalScope !== 'undefined' ? _globalScope.GSRSK_DataFoundation : {});
+    const DeterministicHashEngine = DF.DeterministicHashEngine || class {
+        static computeHash(str) {
+            let h1 = 0xdeadbeef ^ (str ? str.length : 0);
+            let h2 = 0x41c6ce57 ^ (str ? str.length : 0);
+            const s = String(str || '');
+            for (let i = 0; i < s.length; i++) {
+                const ch = s.charCodeAt(i);
+                h1 = (Math.imul(h1 ^ ch, 2654435761) >>> 0);
+                h2 = (Math.imul(h2 ^ ch, 1597334677) >>> 0);
+            }
+            return ((h1 >>> 0).toString(16).padStart(8, '0') + (h2 >>> 0).toString(16).padStart(8, '0')).toLowerCase();
+        }
+    };
+    const EpistemicValueState = DF.EpistemicValueState;
+    const CanonicalUnitResolver = DF.CanonicalUnitResolver;
+    const CanonicalResourceBatch = DF.CanonicalResourceBatch;
+
     // =========================================================================
     // 03.01: EPISTEMIC, LIFECYCLE, OPERATIONAL & STATE CLASSIFICATION ENUMS
     // =========================================================================
@@ -3917,10 +4118,11 @@ _globalScope.GSRSK_DataFoundation = (() => {
                 throw new Error('[TelemetrySchemaValidator]: Invalid facility payload (must be an object)');
             }
 
-            const id = raw.id || raw.entityId || raw.eid || ('FAC_' + Math.random().toString(36).substring(2, 9));
             const category = raw.facilityCategory || raw.category || raw.cat || raw.fc || 'PROCESSING';
             const processType = raw.primaryProcessType || raw.processType || raw.proc || raw.pt || 'REFINING';
             const countryId = raw.countryId || raw.country || raw.hostCountry || raw.cid || 'GLOBAL';
+            const seed = `${raw.name || 'FAC'}:${countryId}:${category}:${processType}:${raw.lat || (raw.coordinates ? raw.coordinates.lat : 0)}:${raw.lng || (raw.coordinates ? raw.coordinates.lng : 0)}`;
+            const id = raw.id || raw.entityId || raw.eid || ('FAC_' + DeterministicHashEngine.computeHash(seed).substring(0, 10));
             
             // Health & efficiency (sanitized & bounded)
             const rawHealth = raw.assetHealthIndex ?? raw.health ?? raw.hlth ?? raw.ahi ?? 1.0;
@@ -4003,16 +4205,16 @@ _globalScope.GSRSK_DataFoundation = (() => {
                 throw new Error('[TelemetrySchemaValidator]: Invalid infrastructure payload (must be an object)');
             }
 
-            const id = raw.id || raw.entityId || raw.eid || ('INFRA_' + Math.random().toString(36).substring(2, 9));
             const infraType = raw.infrastructureType || raw.type || raw.infraType || raw.it || 'TRANSPORT_CORRIDOR';
             const countryId = raw.countryId || raw.country || raw.hostCountry || raw.cid || 'GLOBAL';
-
-            const rawCg = raw.congestionRatio ?? raw.congestion ?? raw.cg ?? 0.0;
-            const congestionRatio = (typeof rawCg === 'number' && !isNaN(rawCg)) ? Math.max(0, Math.min(1, rawCg)) : 0.0;
-
             const connectedNodes = Array.isArray(raw.corridorConnectedNodes) 
                 ? raw.corridorConnectedNodes 
                 : (raw.connectedNodes ? [raw.connectedNodes].flat() : (raw.nodes ? [raw.nodes].flat() : (raw.cn ? [raw.cn].flat() : [])));
+            const seed = `${raw.name || 'INFRA'}:${countryId}:${infraType}:${connectedNodes.join('-')}`;
+            const id = raw.id || raw.entityId || raw.eid || ('INFRA_' + DeterministicHashEngine.computeHash(seed).substring(0, 10));
+
+            const rawCg = raw.congestionRatio ?? raw.congestion ?? raw.cg ?? 0.0;
+            const congestionRatio = (typeof rawCg === 'number' && !isNaN(rawCg)) ? Math.max(0, Math.min(1, rawCg)) : 0.0;
 
             const transportedResources = Array.isArray(raw.transportedResourceIds)
                 ? raw.transportedResourceIds
@@ -4296,7 +4498,7 @@ _globalScope.GSRSK_DataFoundation = (() => {
 
     class StateTransitionCommand {
         constructor({
-            commandId = ('CMD_' + Math.random().toString(36).substring(2, 10)),
+            commandId,
             commandType = 'UPDATE_ENTITY_STATE',
             targetEntityId,
             payload = {},
@@ -4305,7 +4507,8 @@ _globalScope.GSRSK_DataFoundation = (() => {
             calendarDate = '2030-01-01'
         } = {}) {
             if (!targetEntityId) throw new Error('[StateTransitionCommand]: targetEntityId is required.');
-            this.commandId = commandId;
+            const seed = `${commandType}:${targetEntityId}:${tick}:${calendarDate}`;
+            this.commandId = commandId || ('CMD_' + DeterministicHashEngine.computeHash(seed).substring(0, 12));
             this.commandType = commandType;
             this.targetEntityId = targetEntityId;
             this.payload = payload;
@@ -4318,18 +4521,19 @@ _globalScope.GSRSK_DataFoundation = (() => {
 
     class MutationEvent {
         constructor({
-            eventId = ('EVT_' + Math.random().toString(36).substring(2, 10)),
-            commandId,
+            eventId,
+            commandId = 'CMD_ROOT',
             entityId,
             entityType,
-            previousVersion,
-            newVersion,
+            previousVersion = 1,
+            newVersion = 2,
             diff = {},
             sourceModule = 'MUTATION_PIPELINE',
             tick = 0,
             calendarDate = '2030-01-01'
         } = {}) {
-            this.eventId = eventId;
+            const seed = `${commandId}:${entityId}:${newVersion}:${tick}`;
+            this.eventId = eventId || ('EVT_' + DeterministicHashEngine.computeHash(seed).substring(0, 12));
             this.commandId = commandId;
             this.entityId = entityId;
             this.entityType = entityType;
@@ -4357,6 +4561,9 @@ _globalScope.GSRSK_DataFoundation = (() => {
                 if (!qRecord.isValid()) {
                     return { isValid: false, reason: 'QuantityRecord ' + qKey + ' violates boundary bounds.' };
                 }
+                if (typeof qRecord.value === 'number' && qRecord.value < 0 && (qRecord.minBound === null || qRecord.minBound >= 0)) {
+                    return { isValid: false, reason: 'QuantityRecord ' + qKey + ' cannot be negative (' + qRecord.value + ').' };
+                }
             }
 
             return { isValid: true };
@@ -4372,6 +4579,114 @@ _globalScope.GSRSK_DataFoundation = (() => {
                 }
             }
             return { isValid: true };
+        }
+    }
+
+    /**
+     * ATOMIC STATE TRANSITION MANAGER (Gate 05 / 06 Pipeline Enforcement)
+     * Executes: Command -> Validate -> Calculate / Clone -> Invariant Checks -> Atomic Commit -> Event Log
+     */
+    class AtomicStateTransitionManager {
+        constructor(registry) {
+            this.registry = registry;
+            this.listeners = [];
+        }
+
+        subscribe(listener) {
+            if (typeof listener === 'function') {
+                this.listeners.push(listener);
+            }
+            return () => {
+                this.listeners = this.listeners.filter(l => l !== listener);
+            };
+        }
+
+        execute(command) {
+            if (!(command instanceof StateTransitionCommand)) {
+                command = new StateTransitionCommand(command);
+            }
+
+            const currentEntity = this.registry.get(command.targetEntityId);
+            const cmdValidation = StateTransitionValidator.validateCommand(command, currentEntity);
+            if (!cmdValidation.isValid) {
+                return {
+                    success: false,
+                    committed: false,
+                    reason: cmdValidation.reason,
+                    commandId: command.commandId
+                };
+            }
+
+            let candidateEntity = null;
+            let previousVersion = 1;
+
+            if (command.commandType === 'REGISTER_NEW_ENTITY') {
+                candidateEntity = command.payload.entity;
+                previousVersion = 0;
+            } else if (currentEntity) {
+                previousVersion = currentEntity.version || 1;
+                candidateEntity = currentEntity.clone();
+                candidateEntity.version = previousVersion + 1;
+                candidateEntity.lastMutatedTick = command.tick;
+
+                // Apply mutation payload
+                if (command.payload.operationalStatus) {
+                    candidateEntity.operationalStatus = command.payload.operationalStatus;
+                    candidateEntity.engineLiveOperationalStatus = command.payload.operationalStatus;
+                }
+                if (command.payload.quantities && typeof command.payload.quantities === 'object') {
+                    Object.entries(command.payload.quantities).forEach(([k, v]) => {
+                        if (candidateEntity.quantities.has(k)) {
+                            const rec = candidateEntity.quantities.get(k);
+                            rec.value = typeof v === 'number' ? v : (v.value ?? rec.value);
+                            if (v.epistemicState) rec.epistemicState = v.epistemicState;
+                        }
+                    });
+                }
+                if (command.payload.customMutator && typeof command.payload.customMutator === 'function') {
+                    command.payload.customMutator(candidateEntity);
+                }
+            }
+
+            // Invariant validation
+            const entityValidation = StateTransitionValidator.validateEntity(candidateEntity);
+            if (!entityValidation.isValid) {
+                return {
+                    success: false,
+                    committed: false,
+                    reason: `Invariant Violation: ${entityValidation.reason}`,
+                    commandId: command.commandId
+                };
+            }
+
+            // Atomic Commit
+            this.registry.register(candidateEntity);
+
+            const event = new MutationEvent({
+                commandId: command.commandId,
+                entityId: candidateEntity.entityId,
+                entityType: candidateEntity.entityType,
+                previousVersion,
+                newVersion: candidateEntity.version,
+                diff: command.payload,
+                sourceModule: command.issuedBy,
+                tick: command.tick,
+                calendarDate: command.calendarDate
+            });
+
+            this.registry.eventLog.push(event);
+
+            // Notify listeners
+            this.listeners.forEach(fn => {
+                try { fn(event, candidateEntity); } catch (e) { /* ignore listener errors */ }
+            });
+
+            return {
+                success: true,
+                committed: true,
+                event,
+                entity: candidateEntity
+            };
         }
     }
 
@@ -4724,8 +5039,9 @@ _globalScope.GSRSK_DataFoundation = (() => {
                     const sourceDeclaredStatus = ref.sourceOperationalStatus || ref.declaredStatus || null;
                     const isSourceDeclared = Boolean(sourceDeclaredStatus);
 
+                    const seed = `${ref.name || ref.title || 'REF'}:${sourceUnit}:${sourceDeclaredStatus || 'RAW'}`;
                     const refEntity = new BaseStateEntity({
-                        entityId: ref.id || ('REF_' + Math.random().toString(36).substring(2, 9)),
+                        entityId: ref.id || ('REF_' + DeterministicHashEngine.computeHash(seed).substring(0, 10)),
                         entityType: EntityStateType.REFERENCE_ENTITY_STATE,
                         stateTier: StateTier.TIER_B_PHYSICAL_ASSET,
                         stateClass: StateClass.CURRENT,
@@ -4942,6 +5258,7 @@ _globalScope.GSRSK_DataFoundation = (() => {
         StateTransitionCommand,
         MutationEvent,
         StateTransitionValidator,
+        AtomicStateTransitionManager,
         WorldStateRegistry,
         WorldStateSnapshotEngine,
         WorldStateEngine,
@@ -4950,6 +5267,10 @@ _globalScope.GSRSK_DataFoundation = (() => {
 
         createEngine() {
             return new WorldStateEngine();
+        },
+
+        createTransactionManager(registry) {
+            return new AtomicStateTransitionManager(registry);
         },
 
         createResourceBridge(engine) {
@@ -5082,18 +5403,7 @@ _globalScope.GSRSK_DataFoundation = (() => {
     global.Part03ToPart04ResourceBridge = Part03ToPart04ResourceBridge;
     global.TelemetrySchemaValidator = TelemetrySchemaValidator;
 
-    if (typeof module !== 'undefined' && module.exports) {
-        module.exports = {
-            DataFoundation: global.GSRSK_DataFoundation || (typeof _globalScope !== 'undefined' ? _globalScope.GSRSK_DataFoundation : null),
-            WorldKnowledgeCompiler: global.GSRSK_WorldKnowledgeCompiler || null,
-            WorldStateEngineAdapter,
-            Part03ToPart04ResourceBridge,
-            TelemetrySchemaValidator,
-            MasterGSRSKEngine,
-            MasterEngineSingleton,
-            ...WorldStateEngineAdapter
-        };
-    }
+
 
 })(typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : global));
 
@@ -8960,6 +9270,11 @@ _globalScope.GSRSK_DataFoundation = (() => {
     (function(global) {
         'use strict';
 
+        const DF = global.GSRSK_DataFoundation || (typeof _globalScope !== 'undefined' ? _globalScope.GSRSK_DataFoundation : {});
+        const EpistemicValueState = DF.EpistemicValueState;
+        const CanonicalUnitResolver = DF.CanonicalUnitResolver;
+        const CanonicalResourceBatch = DF.CanonicalResourceBatch;
+
         // 05.01: SCHEMA, ENUMS, DIMENSIONS, POLICIES & ERROR TAXONOMY
         const QuantityDimension = Object.freeze({
             MASS: 'MASS',
@@ -9830,7 +10145,8 @@ _globalScope.GSRSK_DataFoundation = (() => {
 
         class ExtractionConstraintSet {
             constructor(params = {}) {
-                this.setKey = params.setKey || `CSET:${DeterministicHashEngine.computeHash(String(Date.now())).substring(0, 8)}`;
+                const seed = `${params.occurrenceKey || 'OCC'}:${params.name || 'CSET'}:${params.constraints ? params.constraints.length : 0}`;
+                this.setKey = params.setKey || `CSET:${DeterministicHashEngine.computeHash(seed).substring(0, 8)}`;
                 this.occurrenceKey = params.occurrenceKey || null;
                 this.constraints = new Map();
 
@@ -10457,6 +10773,7 @@ _globalScope.GSRSK_DataFoundation = (() => {
                 this.requestedQuantity = typeof params.requestedQuantity === 'number' ? params.requestedQuantity : 0;
                 this.approvedQuantity = typeof params.approvedQuantity === 'number' ? params.approvedQuantity : 0;
                 this.actualCalculatedQuantity = typeof params.actualCalculatedQuantity === 'number' ? params.actualCalculatedQuantity : 0;
+                this.unit = params.unit || params.requestedUnit || 'TONNES';
                 this.reserveBefore = params.reserveBefore ? params.reserveBefore.clone() : null;
                 this.reserveAfter = params.reserveAfter ? params.reserveAfter.clone() : null;
                 this.rate = typeof params.rate === 'number' ? params.rate : 0;
@@ -10467,6 +10784,45 @@ _globalScope.GSRSK_DataFoundation = (() => {
                 this.calculationTrace = params.calculationTrace ? (params.calculationTrace instanceof CalculationTrace ? params.calculationTrace : new CalculationTrace(params.calculationTrace)) : null;
                 this.diagnostics = Array.isArray(params.diagnostics) ? [...params.diagnostics] : [];
                 this.provenance = params.provenance || { sourceSubsystem: 'EXTRACTION_CALCULATION_ENGINE', timestamp: 0 };
+                this.producedBatch = (params.producedBatch instanceof CanonicalResourceBatch)
+                    ? params.producedBatch
+                    : (params.producedBatch ? new CanonicalResourceBatch(params.producedBatch) : this.toCanonicalBatch(params));
+            }
+
+            toCanonicalBatch(options = {}) {
+                if (this.status !== ExtractionResultStatus.APPROVED && this.status !== ExtractionResultStatus.PARTIALLY_APPROVED) {
+                    return null;
+                }
+                const occurrenceKey = this.occurrenceKey || 'UNKNOWN_OCCURRENCE';
+                const traceHash = this.calculationTrace?.intermediateValues?.limitingConstraintCode || 'TRC_ALLOC';
+                const seed = `${this.resultId}:${occurrenceKey}:${this.approvedQuantity}:${this.period}`;
+                const batchId = options.batchId || `BATCH_EXT_${DeterministicHashEngine.computeHash(seed).substring(0, 10)}`;
+
+                return new CanonicalResourceBatch({
+                    batchId,
+                    materialIdentity: options.materialIdentity || occurrenceKey,
+                    resourceId: options.resourceId || occurrenceKey,
+                    quantity: this.approvedQuantity,
+                    unit: this.unit || options.unit || 'TONNES',
+                    epistemicState: this.approvedQuantity > 0 ? EpistemicValueState.VERIFIED_FACT : EpistemicValueState.ZERO,
+                    qualityState: {
+                        grade: typeof options.grade === 'number' ? options.grade : 1.0,
+                        purity: typeof this.yield === 'number' ? this.yield : 1.0,
+                        physicalState: options.physicalState || 'SOLID_RUN_OF_MINE',
+                        chemicalState: 'RAW_EXTRACTED_ORE'
+                    },
+                    ownerCountryCode: options.ownerCountryCode || 'GLOBAL',
+                    locationKey: occurrenceKey,
+                    facilityKey: options.facilityKey || null,
+                    extractionReference: this.resultId,
+                    sourceBatchIds: [],
+                    timestampTick: options.timestampTick || 0,
+                    provenance: {
+                        sourceSubsystem: 'EXTRACTION_CALCULATION_ENGINE',
+                        timestamp: 0,
+                        calculationTraceHash: traceHash
+                    }
+                });
             }
 
             toJSON() {
@@ -10478,6 +10834,7 @@ _globalScope.GSRSK_DataFoundation = (() => {
                     requestedQuantity: this.requestedQuantity,
                     approvedQuantity: this.approvedQuantity,
                     actualCalculatedQuantity: this.actualCalculatedQuantity,
+                    unit: this.unit,
                     reserveBefore: this.reserveBefore ? this.reserveBefore.toJSON() : null,
                     reserveAfter: this.reserveAfter ? this.reserveAfter.toJSON() : null,
                     rate: this.rate,
@@ -10487,6 +10844,7 @@ _globalScope.GSRSK_DataFoundation = (() => {
                     constraints: this.constraints,
                     calculationTrace: this.calculationTrace ? this.calculationTrace.toJSON() : null,
                     diagnostics: this.diagnostics,
+                    producedBatch: this.producedBatch ? (typeof this.producedBatch.toJSON === 'function' ? this.producedBatch.toJSON() : this.producedBatch) : null,
                     provenance: this.provenance
                 };
             }
@@ -11767,6 +12125,11 @@ _globalScope.GSRSK_DataFoundation = (() => {
     (function(global) {
         'use strict';
 
+        const DF = global.GSRSK_DataFoundation || (typeof _globalScope !== 'undefined' ? _globalScope.GSRSK_DataFoundation : {});
+        const EpistemicValueState = DF.EpistemicValueState;
+        const CanonicalUnitResolver = DF.CanonicalUnitResolver;
+        const CanonicalResourceBatch = DF.CanonicalResourceBatch;
+
         // =========================================================================
         // 06.00: DOMAIN ENUMS, TAXONOMY, STATUSES & ERROR CODES
         // =========================================================================
@@ -12252,11 +12615,53 @@ _globalScope.GSRSK_DataFoundation = (() => {
 
         class MaterialIntakeAdapter {
             /**
+             * [GATE 01]: Consumes a first-class CanonicalResourceBatch from Part 05 or storage directly
+             */
+            static fromCanonicalBatch(canonicalBatch, options = {}) {
+                if (!canonicalBatch || typeof canonicalBatch !== 'object') {
+                    throw new Error('[MaterialIntakeAdapter Error]: Invalid CanonicalResourceBatch.');
+                }
+                const qty = typeof canonicalBatch.quantity === 'number' ? canonicalBatch.quantity : 0;
+                if (qty <= 0) {
+                    throw new Error('[MaterialIntakeAdapter Error]: Cannot adapt zero or negative batch quantity.');
+                }
+
+                const qualityState = canonicalBatch.qualityState || {};
+                const grade = typeof qualityState.grade === 'number' ? qualityState.grade : 1.0;
+                const purity = typeof qualityState.purity === 'number' ? qualityState.purity : 1.0;
+                const physicalState = qualityState.physicalState || MaterialPhysicalState.SOLID_RUN_OF_MINE;
+                const unit = CanonicalUnitResolver.resolveUnit(canonicalBatch.unit).unit;
+
+                return new ProcessingInput({
+                    materialIdentity: canonicalBatch.materialIdentity || canonicalBatch.resourceId || 'RAW_MATERIAL',
+                    sourceIdentity: canonicalBatch.batchId || 'CANONICAL_BATCH',
+                    quantity: qty,
+                    unit: unit !== 'UNRESOLVED_UNIT' ? unit : 'TONNES',
+                    quality: purity,
+                    grade: grade,
+                    purity: purity,
+                    physicalState: physicalState,
+                    origin: canonicalBatch.locationKey || 'ORIGIN_LOCATION',
+                    extractionReference: canonicalBatch.extractionReference || canonicalBatch.batchId,
+                    sourceBatchId: canonicalBatch.batchId,
+                    provenance: {
+                        sourceSubsystem: 'CANONICAL_BATCH_INTAKE',
+                        sourceId: canonicalBatch.batchId,
+                        timestamp: 0
+                    }
+                });
+            }
+
+            /**
              * Consumes Part 05 ExtractionResult and adapts it to standard ProcessingInput
              */
             static adaptExtractionResult(extractionResult, identityRegistry = null) {
                 if (!extractionResult || typeof extractionResult !== 'object') {
                     throw new Error('[MaterialIntakeAdapter Error]: Invalid ExtractionResult payload.');
+                }
+
+                if (extractionResult.producedBatch instanceof CanonicalResourceBatch) {
+                    return MaterialIntakeAdapter.fromCanonicalBatch(extractionResult.producedBatch);
                 }
 
                 const approvedQuantity = typeof extractionResult.approvedQuantity === 'number' ? extractionResult.approvedQuantity : 0;
@@ -12274,13 +12679,17 @@ _globalScope.GSRSK_DataFoundation = (() => {
                         resTypeId = occ.resourceTypeKey || occ.resourceTypeId;
                         originId = occ.originKey || 'ORIGIN:UNKNOWN';
                     }
+                } else if (extractionResult.occurrenceKey) {
+                    resTypeId = extractionResult.occurrenceKey;
                 }
+
+                const unit = CanonicalUnitResolver.resolveUnit(extractionResult.unit).unit;
 
                 return new ProcessingInput({
                     materialIdentity: resTypeId,
                     sourceIdentity: extractionResult.occurrenceKey || 'UNKNOWN_OCCURRENCE',
                     quantity: approvedQuantity,
-                    unit: extractionResult.unit || 'TONNES',
+                    unit: unit !== 'UNRESOLVED_UNIT' ? unit : 'TONNES',
                     quality: 1.0,
                     grade: gradeVal,
                     purity: typeof extractionResult.yield === 'number' ? extractionResult.yield : 1.0,
@@ -12300,11 +12709,12 @@ _globalScope.GSRSK_DataFoundation = (() => {
              */
             static fromRawIntake(params = {}) {
                 if (params instanceof ProcessingInput) return params;
+                const unit = CanonicalUnitResolver.resolveUnit(params.unit).unit;
                 return new ProcessingInput({
                     materialIdentity: params.materialIdentity || 'RAW:GENERIC_MATERIAL',
                     sourceIdentity: params.sourceIdentity || 'DIRECT_INTAKE',
                     quantity: typeof params.quantity === 'number' ? params.quantity : 0,
-                    unit: params.unit || 'TONS',
+                    unit: unit !== 'UNRESOLVED_UNIT' ? unit : 'TONNES',
                     quality: params.qualityState && typeof params.qualityState.purity === 'number' ? params.qualityState.purity : (typeof params.quality === 'number' ? params.quality : 1.0),
                     grade: params.qualityState && typeof params.qualityState.grade === 'number' ? params.qualityState.grade : (typeof params.grade === 'number' ? params.grade : 1.0),
                     purity: params.qualityState && typeof params.qualityState.purity === 'number' ? params.qualityState.purity : (typeof params.purity === 'number' ? params.purity : 1.0),
@@ -13009,6 +13419,11 @@ _globalScope.GSRSK_DataFoundation = (() => {
             throw new Error('[GSRSK PART 06 FATAL]: Volume 6.1 must be loaded before Volume 6.2.');
         }
 
+        const DF = global.GSRSK_DataFoundation || (typeof _globalScope !== 'undefined' ? _globalScope.GSRSK_DataFoundation : {});
+        const CanonicalResourceBatch = DF.CanonicalResourceBatch;
+        const EpistemicValueState = DF.EpistemicValueState;
+        const CanonicalUnitResolver = DF.CanonicalUnitResolver;
+
         const {
             ProcessClassTaxonomy,
             ProcessingEligibilityStatus,
@@ -13674,6 +14089,97 @@ _globalScope.GSRSK_DataFoundation = (() => {
                 this.calculationTrace = params.calculationTrace || {};
                 this.isBalanced = Boolean(params.isBalanced);
                 this.provenance = params.provenance || { sourceSubsystem: 'OUTPUT_MATERIAL_COMPILER', timestamp: 0 };
+                this.outputBatches = (params.outputBatches && Array.isArray(params.outputBatches))
+                    ? params.outputBatches.map(b => b instanceof CanonicalResourceBatch ? b : new CanonicalResourceBatch(b))
+                    : this.getOutputBatches(params);
+            }
+
+            getOutputBatches(options = {}) {
+                const batches = [];
+                const sourceBatchIds = this.inputConsumptions.map(i => i.sourceBatchId || i.sourceIdentity || i.materialIdentity);
+                
+                // Primary Outputs
+                this.primaryOutputs.forEach((out, idx) => {
+                    const seed = `${this.operationId}:PRIMARY:${out.materialIdentity}:${idx}:${out.quantity}`;
+                    batches.push(new CanonicalResourceBatch({
+                        batchId: `BATCH_PROC_${DeterministicHashEngine.computeHash(seed).substring(0, 10)}`,
+                        materialIdentity: out.materialIdentity,
+                        resourceId: out.materialIdentity,
+                        quantity: out.quantity,
+                        unit: out.unit,
+                        epistemicState: EpistemicValueState.VERIFIED_FACT,
+                        qualityState: out.qualityState,
+                        ownerCountryCode: options.ownerCountryCode || 'GLOBAL',
+                        locationKey: options.locationKey || 'PROCESSING_FACILITY',
+                        facilityKey: options.facilityKey || null,
+                        sourceBatchIds,
+                        transformReference: this.operationId,
+                        processId: this.processId,
+                        timestampTick: options.timestampTick || 0,
+                        provenance: {
+                            sourceSubsystem: 'OUTPUT_MATERIAL_COMPILER_PRIMARY',
+                            timestamp: 0,
+                            operationId: this.operationId,
+                            processId: this.processId
+                        }
+                    }));
+                });
+
+                // Secondary Outputs
+                this.secondaryOutputs.forEach((out, idx) => {
+                    const seed = `${this.operationId}:SECONDARY:${out.materialIdentity}:${idx}:${out.quantity}`;
+                    batches.push(new CanonicalResourceBatch({
+                        batchId: `BATCH_SEC_${DeterministicHashEngine.computeHash(seed).substring(0, 10)}`,
+                        materialIdentity: out.materialIdentity,
+                        resourceId: out.materialIdentity,
+                        quantity: out.quantity,
+                        unit: out.unit,
+                        epistemicState: EpistemicValueState.VERIFIED_FACT,
+                        qualityState: out.qualityState,
+                        ownerCountryCode: options.ownerCountryCode || 'GLOBAL',
+                        locationKey: options.locationKey || 'PROCESSING_FACILITY',
+                        facilityKey: options.facilityKey || null,
+                        sourceBatchIds,
+                        transformReference: this.operationId,
+                        processId: this.processId,
+                        timestampTick: options.timestampTick || 0,
+                        provenance: {
+                            sourceSubsystem: 'OUTPUT_MATERIAL_COMPILER_SECONDARY',
+                            timestamp: 0,
+                            operationId: this.operationId,
+                            processId: this.processId
+                        }
+                    }));
+                });
+
+                // Byproducts (Recoverable only)
+                this.byproducts.filter(b => b.isRecoverable).forEach((out, idx) => {
+                    const seed = `${this.operationId}:BYPRODUCT:${out.materialIdentity}:${idx}:${out.quantity}`;
+                    batches.push(new CanonicalResourceBatch({
+                        batchId: `BATCH_BYP_${DeterministicHashEngine.computeHash(seed).substring(0, 10)}`,
+                        materialIdentity: out.materialIdentity,
+                        resourceId: out.materialIdentity,
+                        quantity: out.quantity,
+                        unit: out.unit,
+                        epistemicState: EpistemicValueState.VERIFIED_FACT,
+                        qualityState: out.qualityState,
+                        ownerCountryCode: options.ownerCountryCode || 'GLOBAL',
+                        locationKey: options.locationKey || 'PROCESSING_FACILITY',
+                        facilityKey: options.facilityKey || null,
+                        sourceBatchIds,
+                        transformReference: this.operationId,
+                        processId: this.processId,
+                        timestampTick: options.timestampTick || 0,
+                        provenance: {
+                            sourceSubsystem: 'OUTPUT_MATERIAL_COMPILER_BYPRODUCT',
+                            timestamp: 0,
+                            operationId: this.operationId,
+                            processId: this.processId
+                        }
+                    }));
+                });
+
+                return batches;
             }
 
             toJSON() {
@@ -13690,6 +14196,7 @@ _globalScope.GSRSK_DataFoundation = (() => {
                     qualityTransformations: this.qualityTransformations,
                     utilityConsumptions: this.utilityConsumptions.map(u => typeof u.toJSON === 'function' ? u.toJSON() : u),
                     costBreakdown: this.costBreakdown.toJSON(),
+                    outputBatches: this.outputBatches ? this.outputBatches.map(b => typeof b.toJSON === 'function' ? b.toJSON() : b) : [],
                     explanationTree: this.explanationTree,
                     calculationTrace: this.calculationTrace,
                     isBalanced: this.isBalanced,
@@ -14360,6 +14867,15 @@ _globalScope.GSRSK_DataFoundation = (() => {
             ResourceMinistryEngine: typeof ResourceMinistryEngineInstance !== 'undefined' ? ResourceMinistryEngineInstance : (_targetGlobal.ResourceMinistryEngine || null),
             MasterGSRSKEngine: _targetGlobal.GSRSK_MasterEngine ? _targetGlobal.GSRSK_MasterEngine.constructor : null,
             MasterEngineSingleton: _targetGlobal.GSRSK_MasterEngine || null,
+            GSRSK_DataFoundation: _targetGlobal.GSRSK_DataFoundation || null,
+            GSRSK_WorldKnowledgeCompiler: _targetGlobal.GSRSK_WorldKnowledgeCompiler || null,
+            GSRSK_Part03: _targetGlobal.GSRSK_Part03 || null,
+            GSRSK_ResourceIdentityEngine: _targetGlobal.GSRSK_ResourceIdentityEngine || null,
+            GSRSK_Part04: _targetGlobal.GSRSK_ResourceIdentityEngine || null,
+            GSRSK_ResourceReserveExtractionEngine: _targetGlobal.GSRSK_ResourceReserveExtractionEngine || null,
+            GSRSK_Part05: _targetGlobal.GSRSK_ResourceReserveExtractionEngine || null,
+            GSRSK_ResourceProcessingTransformationEngine: _targetGlobal.GSRSK_ResourceProcessingTransformationEngine || null,
+            GSRSK_Part06: _targetGlobal.GSRSK_ResourceProcessingTransformationEngine || null,
             Part01: _targetGlobal.GSRSK_DataFoundation || null,
             Part02: _targetGlobal.GSRSK_WorldKnowledgeCompiler || null,
             Part03: _targetGlobal.GSRSK_Part03 || null,
