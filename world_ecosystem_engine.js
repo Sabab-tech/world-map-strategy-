@@ -24,7 +24,8 @@
  * ============================================================================
  */
 
-window.WorldEcosystemEngine = (() => {
+const _globalTarget = (typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : global));
+_globalTarget.WorldEcosystemEngine = (() => {
     // -------------------------------------------------------------------------
     // 1. ALLIANCES, STRATEGIC BLOCS & INFLUENCE SPHERES
     // -------------------------------------------------------------------------
@@ -107,24 +108,24 @@ window.WorldEcosystemEngine = (() => {
         const normKey = id.replace(/[-\s]/g, '_');
         const h = getDeterministicHash(id);
 
-        const popState = (window.gameState && window.gameState.population && (window.gameState.population[normKey] || window.gameState.population[id])) || null;
-        const econState = (window.gameState && window.gameState.economy && (window.gameState.economy[normKey] || window.gameState.economy[id])) || null;
+        const gameState = _globalTarget.gameState || null;
+        const popState = (gameState && gameState.population && (gameState.population[normKey] || gameState.population[id])) || null;
+        const econState = (gameState && gameState.economy && (gameState.economy[normKey] || gameState.economy[id])) || null;
 
-        let crudeOilReserve = 50000000;
-        let steelInventory = 100000;
-        let uraniumStockpile = 500;
-
-        if (window.ResourceMinistryEngine && typeof window.ResourceMinistryEngine.getIntegratedResourceState === 'function') {
-            const res = window.ResourceMinistryEngine.getIntegratedResourceState(normKey);
-            if (res && res.inventory) {
-                if (res.inventory.crude_oil !== undefined) crudeOilReserve = res.inventory.crude_oil;
-                if (res.inventory.refined_steel !== undefined) steelInventory = res.inventory.refined_steel;
-                if (res.inventory.enriched_uranium !== undefined) uraniumStockpile = res.inventory.enriched_uranium;
-            }
+        let resState = null;
+        const ministryEngine = _globalTarget.ResourceMinistryEngine || null;
+        if (ministryEngine && typeof ministryEngine.getIntegratedResourceState === 'function') {
+            resState = ministryEngine.getIntegratedResourceState(normKey);
         }
 
-        const totalPopulation = popState && popState.population_2015 ? popState.population_2015 : 35000000;
-        const gdpVal = econState && econState.gdp ? econState.gdp : 150000000000;
+        const inv = (resState && resState.inventory) || {};
+        const prod = (resState && resState.production) || {};
+        const cons = (resState && resState.consumption) || {};
+        const resv = (resState && resState.reserves) || {};
+
+        const totalPopulation = popState && popState.population_2015 ? popState.population_2015 : (popState && popState.total ? popState.total : null);
+        const gdpVal = econState && econState.gdp ? econState.gdp : (econState && econState.nominal_gdp ? econState.nominal_gdp : null);
+        const urbanization = popState && popState.urbanization_rate !== undefined ? popState.urbanization_rate : null;
 
         const defaultAi = {
             aggressiveExpansion: 20 + (h % 30),
@@ -154,21 +155,66 @@ window.WorldEcosystemEngine = (() => {
                 chokepointControl: [],
                 terrainDifficulty: 20 + ((h >> 4) % 70)
             },
-            // 2. Resource Stockpiles & Supply Chains (Connected with GSRSK & Sovereign state)
+            // 2. Resource Stockpiles & Supply Chains (Connected strictly with GSRSK & Sovereign state)
             resources: {
-                crude_oil: { reserveBbl: crudeOilReserve, domesticProd: Math.floor(crudeOilReserve * 0.002), industrialReq: Math.floor(crudeOilReserve * 0.003), importNeed: 0 },
-                natural_gas: { reserveMcf: 30000000, domesticProd: 80000, industrialReq: 95000, importNeed: 15000 },
-                rare_earth: { reserveTon: 50000, domesticProd: 500, industrialReq: 4000, importNeed: 3500 },
-                lithium: { reserveTon: 120000, domesticProd: 1200, industrialReq: 8000, importNeed: 6800 },
-                semiconductors: { reserveUnits: 5000000, domesticProd: 200000, industrialReq: 3000000, importNeed: 2800000 },
-                food_grains: { reserveTon: 15000000, domesticProd: 18000000, industrialReq: 16000000, importNeed: 0 },
-                fresh_water: { reserveM3: 800000000, stressLevel: 25 + (h % 50) },
-                uranium: { reserveKg: uraniumStockpile, domesticProd: 2000, industrialReq: 5000, importNeed: 3000 }
+                crude_oil: {
+                    reserveBbl: resv.crude_oil || 0,
+                    inventoryBbl: inv.crude_oil || 0,
+                    domesticProd: prod.crude_oil || 0,
+                    industrialReq: cons.crude_oil || 0,
+                    importNeed: Math.max(0, (cons.crude_oil || 0) - (prod.crude_oil || 0))
+                },
+                natural_gas: {
+                    reserveMcf: resv.natural_gas || 0,
+                    inventoryMcf: inv.natural_gas || 0,
+                    domesticProd: prod.natural_gas || 0,
+                    industrialReq: cons.natural_gas || 0,
+                    importNeed: Math.max(0, (cons.natural_gas || 0) - (prod.natural_gas || 0))
+                },
+                rare_earth: {
+                    reserveTon: resv.rare_earths || 0,
+                    inventoryTon: inv.rare_earths || 0,
+                    domesticProd: prod.rare_earths || 0,
+                    industrialReq: cons.rare_earths || 0,
+                    importNeed: Math.max(0, (cons.rare_earths || 0) - (prod.rare_earths || 0))
+                },
+                lithium: {
+                    reserveTon: resv.lithium || 0,
+                    inventoryTon: inv.lithium || 0,
+                    domesticProd: prod.lithium || 0,
+                    industrialReq: cons.lithium || 0,
+                    importNeed: Math.max(0, (cons.lithium || 0) - (prod.lithium || 0))
+                },
+                semiconductors: {
+                    reserveUnits: resv.semiconductors || 0,
+                    inventoryUnits: inv.semiconductors || 0,
+                    domesticProd: prod.semiconductors || 0,
+                    industrialReq: cons.semiconductors || 0,
+                    importNeed: Math.max(0, (cons.semiconductors || 0) - (prod.semiconductors || 0))
+                },
+                food_grains: {
+                    reserveTon: resv.food_grains || 0,
+                    inventoryTon: inv.food_grains || 0,
+                    domesticProd: prod.food_grains || 0,
+                    industrialReq: cons.food_grains || 0,
+                    importNeed: Math.max(0, (cons.food_grains || 0) - (prod.food_grains || 0))
+                },
+                fresh_water: {
+                    reserveM3: resv.fresh_water || 0,
+                    stressLevel: 25 + (h % 50)
+                },
+                uranium: {
+                    reserveKg: resv.uranium || 0,
+                    inventoryKg: inv.uranium || 0,
+                    domesticProd: prod.uranium || 0,
+                    industrialReq: cons.uranium || 0,
+                    importNeed: Math.max(0, (cons.uranium || 0) - (prod.uranium || 0))
+                }
             },
-            // 3. Demographics & Social Classes (Derived from Population state)
+            // 3. Demographics & Social Classes (Derived strictly from Population state)
             population: {
                 total: totalPopulation,
-                urbanizationRate: 65 + (h % 30),
+                urbanizationRate: urbanization !== null ? urbanization : (65 + (h % 30)),
                 educationIndex: 75 + (h % 20),
                 healthcareIndex: 72 + ((h >> 1) % 22),
                 happinessScore: 68 + ((h >> 2) % 25),
@@ -393,7 +439,9 @@ window.WorldEcosystemEngine = (() => {
         if (causalEventLog.length > 50) causalEventLog.pop();
 
         // Dispatch system-wide event for UI updates
-        window.dispatchEvent(new CustomEvent("CAUSAL_CASCADE_EXECUTED", { detail: logEntry }));
+        if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
+            window.dispatchEvent(new CustomEvent("CAUSAL_CASCADE_EXECUTED", { detail: logEntry }));
+        }
 
         return logEntry;
     }

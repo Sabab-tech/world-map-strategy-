@@ -8965,6 +8965,42 @@ _globalScope.GSRSK_DataFoundation = (() => {
             };
         }
 
+        getIntegratedResourceState(countryKey) {
+            const summary = this.getSummary(countryKey);
+            const inventory = {};
+            const reserves = {};
+            const production = {};
+            const consumption = {};
+
+            if (summary && summary.resourcesList) {
+                summary.resourcesList.forEach(r => {
+                    inventory[r.id] = r.warehouseStock;
+                    reserves[r.id] = this.strategicReserves[r.id] || 0;
+                    production[r.id] = r.dailyProduction;
+                    consumption[r.id] = r.dailyConsumption;
+                });
+            }
+
+            // Standard mapped keys for sovereign HUD & ecosystem consumers
+            if (inventory.iron_ore !== undefined && inventory.refined_steel === undefined) {
+                inventory.refined_steel = inventory.iron_ore;
+            }
+            if (inventory.uranium !== undefined && inventory.enriched_uranium === undefined) {
+                inventory.enriched_uranium = inventory.uranium;
+            }
+
+            return {
+                countryKey: this.normalizeCountryCode(countryKey),
+                inventory,
+                reserves,
+                production,
+                consumption,
+                autonomyIndex: summary ? summary.globalMetrics.autonomyIndex : 0,
+                strategicReservesTotalDays: summary ? summary.globalMetrics.strategicReservesTotalDays : 0,
+                activeFacilitiesTotal: summary ? summary.globalMetrics.activeFacilitiesTotal : 0
+            };
+        }
+
         executeDirective(action, resId, opt) {
             const resObj = this.resourceTypes.find(r => r.id === resId) || { name: resId, icon: '💎' };
             const countryName = (typeof window !== 'undefined' && window.currentActiveCountry) || 'BANGLADESH';
