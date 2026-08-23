@@ -40,7 +40,7 @@ var Game = window.Game = {
         }
     ],
 
-    renderDailyQuests() {
+    renderStrategicDirectives() {
         const container = document.getElementById('quest-list-container');
         if (!container) return;
         container.innerHTML = '';
@@ -71,6 +71,10 @@ var Game = window.Game = {
 
             container.appendChild(item);
         });
+    },
+
+    renderDailyQuests() {
+        this.renderStrategicDirectives();
     },
 
     locationsRegistry: {},

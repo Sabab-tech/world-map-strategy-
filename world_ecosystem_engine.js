@@ -66,121 +66,173 @@ window.WorldEcosystemEngine = (() => {
         copper: { price: 8900, trend: "UP", demandRatio: 1.18, supplyChainRisk: 38 }
     };
 
+    // Helper for deterministic geographic and trait hashing (replaces Math.random)
+    function getDeterministicHash(id) {
+        let hash = 0;
+        const str = String(id || "DEFAULT");
+        for (let i = 0; i < str.length; i++) {
+            hash = (hash << 5) - hash + str.charCodeAt(i);
+            hash |= 0;
+        }
+        return Math.abs(hash);
+    }
+
     // -------------------------------------------------------------------------
     // 2. SOVEREIGN COUNTRY WORLD STATE REGISTRY
     // -------------------------------------------------------------------------
     const stateRegistry = {};
 
+    // Deterministic Sovereign AI Personality Archetypes
+    const STRATEGIC_AI_PROFILES = {
+        USA: { aggressiveExpansion: 35, strategicIsolation: 20, pragmaticRealism: 80, ideologicalIdealism: 65, economicImperialism: 75, religiousZeal: 15, riskTolerance: 50, strategicVision: 85, memoryRetention: 95, emotionalVolatility: 20 },
+        CHN: { aggressiveExpansion: 45, strategicIsolation: 25, pragmaticRealism: 90, ideologicalIdealism: 55, economicImperialism: 85, religiousZeal: 10, riskTolerance: 40, strategicVision: 92, memoryRetention: 98, emotionalVolatility: 15 },
+        RUS: { aggressiveExpansion: 70, strategicIsolation: 40, pragmaticRealism: 75, ideologicalIdealism: 45, economicImperialism: 60, religiousZeal: 30, riskTolerance: 75, strategicVision: 78, memoryRetention: 92, emotionalVolatility: 35 },
+        BGD: { aggressiveExpansion: 10, strategicIsolation: 20, pragmaticRealism: 85, ideologicalIdealism: 50, economicImperialism: 25, religiousZeal: 35, riskTolerance: 30, strategicVision: 70, memoryRetention: 90, emotionalVolatility: 20 },
+        IND: { aggressiveExpansion: 30, strategicIsolation: 25, pragmaticRealism: 82, ideologicalIdealism: 60, economicImperialism: 55, religiousZeal: 40, riskTolerance: 45, strategicVision: 80, memoryRetention: 92, emotionalVolatility: 25 },
+        GBR: { aggressiveExpansion: 25, strategicIsolation: 30, pragmaticRealism: 85, ideologicalIdealism: 60, economicImperialism: 65, religiousZeal: 10, riskTolerance: 40, strategicVision: 82, memoryRetention: 95, emotionalVolatility: 20 },
+        DEU: { aggressiveExpansion: 15, strategicIsolation: 15, pragmaticRealism: 90, ideologicalIdealism: 70, economicImperialism: 70, religiousZeal: 10, riskTolerance: 30, strategicVision: 85, memoryRetention: 96, emotionalVolatility: 15 },
+        FRA: { aggressiveExpansion: 25, strategicIsolation: 20, pragmaticRealism: 84, ideologicalIdealism: 65, economicImperialism: 65, religiousZeal: 10, riskTolerance: 45, strategicVision: 84, memoryRetention: 94, emotionalVolatility: 25 },
+        JPN: { aggressiveExpansion: 10, strategicIsolation: 35, pragmaticRealism: 92, ideologicalIdealism: 55, economicImperialism: 60, religiousZeal: 10, riskTolerance: 25, strategicVision: 88, memoryRetention: 96, emotionalVolatility: 15 }
+    };
+
+    let causalLogCounter = 1;
+
     /**
-     * Initializes default full-spectrum state profiles for countries
+     * Initializes sovereign state profiles for countries with deterministic data derivation
      */
     function initCountryProfile(countryId) {
         const id = (countryId || "USA").toUpperCase();
         if (stateRegistry[id]) return stateRegistry[id];
 
+        const normKey = id.replace(/[-\s]/g, '_');
+        const h = getDeterministicHash(id);
+
+        const popState = (window.gameState && window.gameState.population && (window.gameState.population[normKey] || window.gameState.population[id])) || null;
+        const econState = (window.gameState && window.gameState.economy && (window.gameState.economy[normKey] || window.gameState.economy[id])) || null;
+
+        let crudeOilReserve = 50000000;
+        let steelInventory = 100000;
+        let uraniumStockpile = 500;
+
+        if (window.ResourceMinistryEngine && typeof window.ResourceMinistryEngine.getIntegratedResourceState === 'function') {
+            const res = window.ResourceMinistryEngine.getIntegratedResourceState(normKey);
+            if (res && res.inventory) {
+                if (res.inventory.crude_oil !== undefined) crudeOilReserve = res.inventory.crude_oil;
+                if (res.inventory.refined_steel !== undefined) steelInventory = res.inventory.refined_steel;
+                if (res.inventory.enriched_uranium !== undefined) uraniumStockpile = res.inventory.enriched_uranium;
+            }
+        }
+
+        const totalPopulation = popState && popState.population_2015 ? popState.population_2015 : 35000000;
+        const gdpVal = econState && econState.gdp ? econState.gdp : 150000000000;
+
+        const defaultAi = {
+            aggressiveExpansion: 20 + (h % 30),
+            strategicIsolation: 20 + ((h >> 1) % 30),
+            pragmaticRealism: 60 + ((h >> 2) % 30),
+            ideologicalIdealism: 40 + ((h >> 3) % 30),
+            economicImperialism: 20 + ((h >> 4) % 35),
+            religiousZeal: 15 + ((h >> 5) % 30),
+            riskTolerance: 30 + ((h >> 6) % 30),
+            strategicVision: 60 + ((h >> 7) % 25),
+            memoryRetention: 90,
+            emotionalVolatility: 20 + ((h >> 8) % 20)
+        };
+
+        const aiPersonality = STRATEGIC_AI_PROFILES[id] || defaultAi;
+
         stateRegistry[id] = {
             id,
-            // 1. Geography
+            // 1. Geography (Deterministic)
             geography: {
-                borderLengthKm: Math.floor(1000 + Math.random() * 8000),
-                borderShapeComplexity: (0.3 + Math.random() * 0.6).toFixed(2),
-                mountainBarrierRating: Math.floor(10 + Math.random() * 80),
-                riverBarrierDefense: Math.floor(10 + Math.random() * 70),
+                borderLengthKm: 1200 + (h % 8000),
+                borderShapeComplexity: (0.3 + ((h % 50) / 100)).toFixed(2),
+                mountainBarrierRating: 20 + (h % 70),
+                riverBarrierDefense: 20 + ((h >> 2) % 65),
                 isLandlocked: ["BOL", "PRY", "AUT", "CHE", "AFG", "ETH", "ZWE", "BFA", "NER", "MLI", "KAZ", "UZB"].includes(id),
-                deepSeaPortQuality: Math.floor(20 + Math.random() * 80),
+                deepSeaPortQuality: 30 + ((h >> 3) % 65),
                 chokepointControl: [],
-                terrainDifficulty: Math.floor(10 + Math.random() * 80)
+                terrainDifficulty: 20 + ((h >> 4) % 70)
             },
-            // 2. Resource Stockpiles & Supply Chains
+            // 2. Resource Stockpiles & Supply Chains (Connected with GSRSK & Sovereign state)
             resources: {
-                crude_oil: { reserveBbl: 50000000, domesticProd: 120000, industrialReq: 250000, importNeed: 130000 },
+                crude_oil: { reserveBbl: crudeOilReserve, domesticProd: Math.floor(crudeOilReserve * 0.002), industrialReq: Math.floor(crudeOilReserve * 0.003), importNeed: 0 },
                 natural_gas: { reserveMcf: 30000000, domesticProd: 80000, industrialReq: 95000, importNeed: 15000 },
                 rare_earth: { reserveTon: 50000, domesticProd: 500, industrialReq: 4000, importNeed: 3500 },
                 lithium: { reserveTon: 120000, domesticProd: 1200, industrialReq: 8000, importNeed: 6800 },
                 semiconductors: { reserveUnits: 5000000, domesticProd: 200000, industrialReq: 3000000, importNeed: 2800000 },
                 food_grains: { reserveTon: 15000000, domesticProd: 18000000, industrialReq: 16000000, importNeed: 0 },
-                fresh_water: { reserveM3: 800000000, stressLevel: Math.floor(10 + Math.random() * 70) },
-                uranium: { reserveKg: 100000, domesticProd: 2000, industrialReq: 5000, importNeed: 3000 }
+                fresh_water: { reserveM3: 800000000, stressLevel: 25 + (h % 50) },
+                uranium: { reserveKg: uraniumStockpile, domesticProd: 2000, industrialReq: 5000, importNeed: 3000 }
             },
-            // 3. Demographics & Social Classes
+            // 3. Demographics & Social Classes (Derived from Population state)
             population: {
-                total: 350000000,
-                urbanizationRate: 82,
-                educationIndex: 88,
-                healthcareIndex: 85,
-                happinessScore: 72,
-                radicalizationIndex: 22,
-                nationalismIndex: 68,
-                povertyRate: 12.5,
-                middleClassShare: 58,
+                total: totalPopulation,
+                urbanizationRate: 65 + (h % 30),
+                educationIndex: 75 + (h % 20),
+                healthcareIndex: 72 + ((h >> 1) % 22),
+                happinessScore: 68 + ((h >> 2) % 25),
+                radicalizationIndex: 15 + ((h >> 3) % 25),
+                nationalismIndex: 50 + ((h >> 4) % 35),
+                povertyRate: 10 + (h % 20),
+                middleClassShare: 50 + (h % 25),
                 eliteClassShare: 1.5,
-                refugeeInflowAnnual: 45000,
-                youthBulgeRatio: 24,
-                veteransCount: 14000000
+                refugeeInflowAnnual: 15000,
+                youthBulgeRatio: 22,
+                veteransCount: Math.floor(totalPopulation * 0.01)
             },
             // 4. Executive Government & Ministries
             government: {
                 headOfState: "Executive Leadership",
-                cabinetStability: 85,
-                parliamentMajorityShare: 54,
-                oppositionPressure: 42,
-                electionCountdownMonths: 28,
-                bureaucracyEfficiency: 78,
-                judiciaryIndependence: 82,
-                corruptionIndex: 24,
+                cabinetStability: 80 + (h % 18),
+                parliamentMajorityShare: 52 + (h % 15),
+                oppositionPressure: 35 + ((h >> 1) % 25),
+                electionCountdownMonths: 24,
+                bureaucracyEfficiency: 75 + ((h >> 2) % 20),
+                judiciaryIndependence: 78 + ((h >> 3) % 18),
+                corruptionIndex: 20 + (h % 30),
                 emergencyPowerActive: false,
                 juntaControl: 0
             },
-            // 5. AI Cognitive Sovereign Personality (10 Dimensions)
-            aiPersonality: {
-                aggressiveExpansion: Math.floor(10 + Math.random() * 60),
-                strategicIsolation: Math.floor(10 + Math.random() * 50),
-                pragmaticRealism: Math.floor(50 + Math.random() * 45),
-                ideologicalIdealism: Math.floor(30 + Math.random() * 50),
-                economicImperialism: Math.floor(20 + Math.random() * 70),
-                religiousZeal: Math.floor(5 + Math.random() * 50),
-                riskTolerance: Math.floor(20 + Math.random() * 60),
-                strategicVision: Math.floor(60 + Math.random() * 35),
-                memoryRetention: 95,
-                emotionalVolatility: Math.floor(10 + Math.random() * 40)
-            },
+            // 5. AI Cognitive Sovereign Personality (10 Dimensions - Deterministic)
+            aiPersonality,
             // 6. Media & Propaganda Information Sphere
             media: {
-                pressFreedomIndex: 78,
-                stateMediaControl: 25,
-                socialMediaDisinfoPressure: 48,
-                internationalReputation: 82,
-                narrativeControlDominance: 65
+                pressFreedomIndex: 60 + (h % 35),
+                stateMediaControl: 20 + ((h >> 1) % 40),
+                socialMediaDisinfoPressure: 35 + ((h >> 2) % 30),
+                internationalReputation: 70 + ((h >> 3) % 25),
+                narrativeControlDominance: 55 + ((h >> 4) % 30)
             },
             // 7. Corporate, Mega-Corp & PMCs
             corporate: {
-                megaCorpsCount: 18,
-                defenseContractors: ["Lockheed-G", "Raytheon-X", "BAE-Sys"],
+                megaCorpsCount: 12 + (h % 15),
+                defenseContractors: ["Sovereign Aerospace", "National Defense Dynamics", "Apex Industrial"],
                 pmcContractors: ["Global Shield Sec", "Apex Tactical"],
-                foreignNgoPressure: 35,
-                lobbyGroupPower: 72
+                foreignNgoPressure: 25 + (h % 30),
+                lobbyGroupPower: 50 + (h % 35)
             },
             // 8. Scientific, Tech & Cyber Sovereignty
             tech: {
-                researchOutputGdpShare: 2.8,
-                aiSingularityRating: 88,
-                quantumCryptoShield: 74,
-                spaceDefenseAssets: 42,
-                semiconductorFabDominance: 65,
-                cyberAttackPower: 92,
-                cyberShieldPower: 88
+                researchOutputGdpShare: 2.2,
+                aiSingularityRating: 75 + (h % 20),
+                quantumCryptoShield: 68 + ((h >> 1) % 25),
+                spaceDefenseAssets: 35 + ((h >> 2) % 30),
+                semiconductorFabDominance: 50 + ((h >> 3) % 40),
+                cyberAttackPower: 75 + ((h >> 4) % 22),
+                cyberShieldPower: 75 + ((h >> 5) % 20)
             },
             // 9. Climate & Environment Disasters
             environment: {
-                carbonFootprintMt: 4800,
-                climateDisasterRisk: 38,
-                droughtRiskIndex: 32,
-                floodVulnerability: 28,
-                freshwaterScarcityRisk: 22
+                carbonFootprintMt: 3500 + (h % 3000),
+                climateDisasterRisk: 30 + (h % 40),
+                droughtRiskIndex: 25 + ((h >> 1) % 35),
+                floodVulnerability: 25 + ((h >> 2) % 40),
+                freshwaterScarcityRisk: 20 + ((h >> 3) % 35)
             },
             // 10. Active Blocs & Spheres
-            blocs: ["NATO", "AUKUS"],
-            influenceSphere: "Western / Transatlantic"
+            blocs: ["UN"],
+            influenceSphere: "Sovereign Independent"
         };
 
         return stateRegistry[id];
@@ -328,7 +380,7 @@ window.WorldEcosystemEngine = (() => {
         }
 
         const logEntry = {
-            id: `CAUSAL_LOG_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+            id: `CAUSAL_LOG_${Date.now()}_${causalLogCounter++}`,
             timestamp: new Date().toISOString(),
             origin,
             target,
@@ -449,16 +501,6 @@ window.WorldEcosystemEngine = (() => {
 
     function processSimulationTick(dt) {
         currentSimulationTick++;
-
-        // Every 10 Ticks (Daily Operations)
-        if (currentSimulationTick % 10 === 0) {
-            // Update Global Commodity Prices slightly based on demand
-            Object.keys(GLOBAL_MARKET).forEach(k => {
-                const item = GLOBAL_MARKET[k];
-                const delta = (Math.random() - 0.48) * (item.price * 0.005);
-                item.price = Math.max(1, +(item.price + delta).toFixed(2));
-            });
-        }
 
         // Every 50 Ticks (Monthly Economic & Resource Cycle)
         if (currentSimulationTick % 50 === 0) {

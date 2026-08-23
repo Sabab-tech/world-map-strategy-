@@ -21,12 +21,15 @@ window.updateGlobalResourceHUD = function(countryKey) {
 
     if (window.gameState && window.gameState.economy && window.gameState.economy[normKey]) {
         const econ = window.gameState.economy[normKey];
-        if (econ.treasury !== undefined) sovereignCash = econ.treasury;
-        else if (econ.gdp !== undefined) sovereignCash = econ.gdp * 0.08;
+        if (econ.treasury !== undefined && econ.treasury !== null) {
+            sovereignCash = econ.treasury;
+        }
     }
     if (window.gameState && window.gameState.population && window.gameState.population[normKey]) {
         const pop = window.gameState.population[normKey];
-        if (pop.population_2015) sovereignManpower = Math.floor(pop.population_2015 * 0.02);
+        if (pop.active_manpower !== undefined && pop.active_manpower !== null) {
+            sovereignManpower = pop.active_manpower;
+        }
     }
 
     if (window.ResourceMinistryEngine && typeof window.ResourceMinistryEngine.getIntegratedResourceState === 'function') {
@@ -46,20 +49,20 @@ window.updateGlobalResourceHUD = function(countryKey) {
     const powerEl = document.getElementById('res-power');
     const energyEl = document.getElementById('res-energy');
 
-    if (cashEl && sovereignCash !== null) {
-        cashEl.innerText = formatGameNumber(sovereignCash).replace("$", "💵");
+    if (cashEl) {
+        cashEl.innerText = sovereignCash !== null ? formatGameNumber(sovereignCash).replace("$", "💵") : "N/A";
     }
-    if (manpowerEl && sovereignManpower !== null) {
-        manpowerEl.innerText = formatPopulationNumber(sovereignManpower);
+    if (manpowerEl) {
+        manpowerEl.innerText = sovereignManpower !== null ? formatPopulationNumber(sovereignManpower) : "N/A";
     }
-    if (oilEl && sovereignOil !== null) {
-        oilEl.innerText = formatPopulationNumber(sovereignOil) + " BBL";
+    if (oilEl) {
+        oilEl.innerText = sovereignOil !== null ? formatPopulationNumber(sovereignOil) + " BBL" : "N/A";
     }
-    if (steelEl && sovereignSteel !== null) {
-        steelEl.innerText = formatPopulationNumber(sovereignSteel) + " T";
+    if (steelEl) {
+        steelEl.innerText = sovereignSteel !== null ? formatPopulationNumber(sovereignSteel) + " T" : "N/A";
     }
-    if (uraniumEl && sovereignUranium !== null) {
-        uraniumEl.innerText = sovereignUranium.toString() + " KG";
+    if (uraniumEl) {
+        uraniumEl.innerText = sovereignUranium !== null ? sovereignUranium.toString() + " KG" : "N/A";
     }
 };
 

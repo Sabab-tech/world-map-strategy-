@@ -60,33 +60,43 @@ window.OmegaCognitiveEngine = (() => {
 
         // STAGES 11-15: KNOWLEDGE & MEMORY
         { id: 11, name: "Knowledge Graph Query & Router", execute: (ctx) => { ctx.knowledgeBaseLoaded = true; return ctx; } },
-        { id: 12, name: "Historical Diplomatic State Retrieval", execute: (ctx) => { ctx.treatyHistoryCount = 12; return ctx; } },
-        { id: 13, name: "Memory Matrix Access & Episodic Recall", execute: (ctx) => { ctx.episodicRecallScore = 0.94; return ctx; } },
+        { id: 12, name: "Historical Diplomatic State Retrieval", execute: (ctx) => { ctx.treatyHistoryCount = ctx.treatyHistoryCount || 0; return ctx; } },
+        { id: 13, name: "Memory Matrix Access & Episodic Recall", execute: (ctx) => { ctx.episodicRecallScore = 0.90; ctx._scaffolding = true; return ctx; } },
         { id: 14, name: "Temporal Sequence Tracking", execute: (ctx) => { ctx.timeDelta = "CURRENT_TICK"; return ctx; } },
-        { id: 15, name: "Relationship Matrix Evaluation", execute: (ctx) => { ctx.relationshipScore = 78; return ctx; } },
+        { id: 15, name: "Relationship Matrix Evaluation", execute: (ctx) => { 
+            let rel = 50;
+            if (window.WorldEcosystemEngine && typeof window.WorldEcosystemEngine.computeEmergentRelation === 'function') {
+                rel = window.WorldEcosystemEngine.computeEmergentRelation(ctx.activeCountry, ctx.targetCountry);
+            }
+            ctx.relationshipScore = rel;
+            return ctx; 
+        } },
 
-        // STAGES 16-20: VALIDATION & SANITY
+        // STAGES 16-20: VALIDATION & SANITY (Analytical Scaffolding)
         { id: 16, name: "Fact & Integrity Verification", execute: (ctx) => { ctx.factCheckPassed = true; return ctx; } },
-        { id: 17, name: "Logic & Consistency Checking", execute: (ctx) => { ctx.logicalConsistency = 0.98; return ctx; } },
-        { id: 18, name: "Evidence Weighting & Triangulation", execute: (ctx) => { ctx.evidenceConfidence = 0.92; return ctx; } },
-        { id: 19, name: "Confidence Scoring Engine", execute: (ctx) => { ctx.confidenceScore = 95; return ctx; } },
+        { id: 17, name: "Logic & Consistency Checking", execute: (ctx) => { ctx.logicalConsistency = 0.95; ctx._scaffolding = true; return ctx; } },
+        { id: 18, name: "Evidence Weighting & Triangulation", execute: (ctx) => { ctx.evidenceConfidence = 0.85; ctx._scaffolding = true; return ctx; } },
+        { id: 19, name: "Confidence Scoring Engine", execute: (ctx) => { 
+            ctx.confidenceScore = ctx.relationshipScore ? Math.min(95, Math.max(50, ctx.relationshipScore + 20)) : 75; 
+            return ctx; 
+        } },
         { id: 20, name: "Uncertainty & Ambiguity Resolution", execute: (ctx) => { ctx.ambiguityResolved = true; return ctx; } },
 
         // STAGES 21-30: REASONING & POLICY
         { id: 21, name: "Symbolic Rule Enforcement", execute: (ctx) => { ctx.rulesEnforced = ["NO_UNILATERAL_AGGRESSION", "PROMOTING_SOVEREIGNTY"]; return ctx; } },
         { id: 22, name: "Geopolitical Constraint Verification", execute: (ctx) => { ctx.constraintsPassed = true; return ctx; } },
-        { id: 23, name: "SRIE Policy Alignment Scoring", execute: (ctx) => { ctx.srieAlignment = 88; return ctx; } },
-        { id: 24, name: "Strategic Goal Maximization", execute: (ctx) => { ctx.strategicPayoff = "+14% Prestige"; return ctx; } },
-        { id: 25, name: "Counterfactual & Scenario Simulation", execute: (ctx) => { ctx.simulatedRisk = "Low (4.2%)"; return ctx; } },
-        { id: 26, name: "Risk & Threat Exposure Assessment", execute: (ctx) => { ctx.threatLevel = "STABLE"; return ctx; } },
-        { id: 27, name: "Opportunity & Leverage Calculation", execute: (ctx) => { ctx.diplomaticLeverage = "HIGH"; return ctx; } },
-        { id: 28, name: "Multi-Criteria Trade-off Matrix", execute: (ctx) => { ctx.tradeoffMatrix = { benefit: 85, cost: 15 }; return ctx; } },
+        { id: 23, name: "SRIE Policy Alignment Scoring", execute: (ctx) => { ctx.srieAlignment = 80; ctx._scaffolding = true; return ctx; } },
+        { id: 24, name: "Strategic Goal Maximization", execute: (ctx) => { ctx.strategicPayoff = "Diplomatic Alignment"; return ctx; } },
+        { id: 25, name: "Counterfactual & Scenario Simulation", execute: (ctx) => { ctx.simulatedRisk = ctx.relationshipScore < 40 ? "Elevated" : "Moderate"; return ctx; } },
+        { id: 26, name: "Risk & Threat Exposure Assessment", execute: (ctx) => { ctx.threatLevel = ctx.relationshipScore < 30 ? "CRITICAL" : ctx.relationshipScore < 50 ? "TENSION" : "STABLE"; return ctx; } },
+        { id: 27, name: "Opportunity & Leverage Calculation", execute: (ctx) => { ctx.diplomaticLeverage = ctx.relationshipScore > 70 ? "HIGH" : "STANDARD"; return ctx; } },
+        { id: 28, name: "Multi-Criteria Trade-off Matrix", execute: (ctx) => { ctx.tradeoffMatrix = { calculated: true, nonAuthoritative: true }; return ctx; } },
         { id: 29, name: "Decision Tree Branching & Selection", execute: (ctx) => { ctx.selectedPath = "BILATERAL_DIPLOMATIC_COMMUNIQUE"; return ctx; } },
         { id: 30, name: "Policy Audit & Ethical Compliance Review", execute: (ctx) => { ctx.ethicalApproval = true; return ctx; } },
 
         // STAGES 31-35: LEARNING & ADAPTATION
         { id: 31, name: "Dynamic Feedback Processing", execute: (ctx) => { ctx.feedbackProcessed = true; return ctx; } },
-        { id: 32, name: "Historical Experience Weighting", execute: (ctx) => { ctx.historicalWeight = 0.88; return ctx; } },
+        { id: 32, name: "Historical Experience Weighting", execute: (ctx) => { ctx.historicalWeight = 0.80; ctx._scaffolding = true; return ctx; } },
         { id: 33, name: "Pattern Recognition & Anomaly Detection", execute: (ctx) => { ctx.anomalyDetected = false; return ctx; } },
         { id: 34, name: "Model & Parameter Self-Adaptation", execute: (ctx) => { ctx.parameterUpdated = true; return ctx; } },
         { id: 35, name: "Knowledge Base Incremental Update", execute: (ctx) => { ctx.kbUpdated = true; return ctx; } },
@@ -96,7 +106,7 @@ window.OmegaCognitiveEngine = (() => {
         { id: 37, name: "Diplomatic Tone & Persona Synthesis", execute: (ctx) => { ctx.synthesizedTone = "Formal, Authoritative, Peaceful"; return ctx; } },
         { id: 38, name: "Response Generation & Language Translation", execute: (ctx) => {
             const template = LEXICON_ENGINE.diplomaticPhrases.find(p => p.intent === ctx.intent) || LEXICON_ENGINE.diplomaticPhrases[0];
-            ctx.finalResponseText = `[FOREIGN MINISTER COGNITIVE ADVICE]: ${template.text} (Confidence: ${ctx.confidenceScore}%, Strategic Payoff: ${ctx.strategicPayoff})`;
+            ctx.finalResponseText = `[FOREIGN MINISTER STRATEGIC ADVICE]: ${template.text} (Assessment: ${ctx.threatLevel}, Alignment: ${ctx.relationshipScore}/100)`;
             return ctx;
         } },
         { id: 39, name: "Output Verification & Protocol Safety Filter", execute: (ctx) => { ctx.safetyFilterPassed = true; return ctx; } },
