@@ -9241,6 +9241,8 @@ _globalScope.GSRSK_DataFoundation = (() => {
         window.ResourceMinistryEngine = ResourceMinistryEngineInstance;
     }
 
+})(typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : global));
+
     // =========================================================================
     // GSRSK — PART 05: RESOURCE RESERVE & EXTRACTION ENGINE (VOLUME 1 OF 2)
     // =========================================================================
@@ -17659,6 +17661,2810 @@ _globalScope.GSRSK_DataFoundation = (() => {
 
     })(typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : global));
 
+    // =========================================================================
+    // GSRSK — PART 08: INFRASTRUCTURE & LOGISTICS ENGINE (VOLUME 1 OF 2)
+    // =========================================================================
+    // Architecture Phase: 08 of 16
+    // Production Standard: 100% Comprehensive Constitutional Invariant Engine
+    //
+    // SUBSYSTEMS INCLUDED IN VOLUME 1:
+    //   P08-01 Infrastructure Intake Contract, Vocabularies & Error Taxonomy
+    //   P08-02 Part 03 Infrastructure Intake Adapter & Logistics Runtime Overlay
+    //   P08-03 Network Node Registry & Point-of-Transfer Engine (16 Node Types)
+    //   P08-04 Network Edge / Segment Registry (Directionality & Physical Condition)
+    //   P08-05 Transport Mode Registry & Multi-Modal Compatibility Engine (8 Modes)
+    //   P08-06 Terminal & Multimodal Interchange Engine (4-Step Physical Transfer)
+    //   P08-07 Network Graph Core & Multimodal Virtual Adjacency Compiler
+    //   P08-08 Network Connectivity Resolver Engine (Operational & Security Aware)
+    //   P08-09 Multi-Criteria Route Resolution Engine (Primary, Alt 1, Alt 2 Paths)
+    //   P08-10 Route Validation & Teleportation Guard Engine (Intermodal Invariant)
+    //   P08-11 Multi-Layer Logistics Capacity Engine (Nominal -> Operational -> Available)
+    //   P08-12 Effective Throughput & Multi-Factor Derating Physics Engine
+    //   P08-13 Network Congestion & Dynamic Speed Degradation Modeler (BPR Standard)
+    //   + Safe Deterministic Hashing Infrastructure (Zero Date.now / Zero Math.random)
+    // =========================================================================
+
+    (function(global) {
+        'use strict';
+
+        // =========================================================================
+        // P08-01: FOUNDATION ENUMS, VOCABULARIES & ERROR TAXONOMY
+        // =========================================================================
+
+        const TransportModeEnum = Object.freeze({
+            ROAD: 'ROAD',
+            RAIL: 'RAIL',
+            MARITIME: 'MARITIME',
+            INLAND_WATERWAY: 'INLAND_WATERWAY',
+            PIPELINE: 'PIPELINE',
+            AIR_CARGO: 'AIR_CARGO',
+            CONVEYOR_CONTINUOUS: 'CONVEYOR_CONTINUOUS',
+            ELECTRIC_GRID: 'ELECTRIC_GRID',
+            INTERMODAL_TRANSFER: 'INTERMODAL_TRANSFER',
+            UNKNOWN_MODE: 'UNKNOWN_MODE'
+        });
+
+        const NetworkNodeTypeEnum = Object.freeze({
+            MINE_TERMINAL: 'MINE_TERMINAL',
+            ROAD_JUNCTION: 'ROAD_JUNCTION',
+            RAIL_JUNCTION: 'RAIL_JUNCTION',
+            RAIL_YARD: 'RAIL_YARD',
+            WAREHOUSE_INTERFACE: 'WAREHOUSE_INTERFACE',
+            PORT_SEAPORT: 'PORT_SEAPORT',
+            PORT_INLAND: 'PORT_INLAND',
+            AIRPORT_CARGO_HUB: 'AIRPORT_CARGO_HUB',
+            PIPELINE_PUMP_STATION: 'PIPELINE_PUMP_STATION',
+            PIPELINE_HUB: 'PIPELINE_HUB',
+            REFINERY_INTERFACE: 'REFINERY_INTERFACE',
+            FACTORY_INTERFACE: 'FACTORY_INTERFACE',
+            BORDER_CROSSING_CHECKPOINT: 'BORDER_CROSSING_CHECKPOINT',
+            INTERMODAL_TRANSFER_TERMINAL: 'INTERMODAL_TRANSFER_TERMINAL',
+            OFFSHORE_LOADING_BUOY: 'OFFSHORE_LOADING_BUOY',
+            GENERIC_NODE: 'GENERIC_NODE'
+        });
+
+        const SegmentDirectionalityEnum = Object.freeze({
+            BIDIRECTIONAL: 'BIDIRECTIONAL',
+            ONE_WAY_FORWARD: 'ONE_WAY_FORWARD',
+            ONE_WAY_REVERSE: 'ONE_WAY_REVERSE'
+        });
+
+        const InfrastructureRuntimeStatus = Object.freeze({
+            AVAILABLE: 'AVAILABLE',
+            CONGESTED: 'CONGESTED',
+            DEGRADED: 'DEGRADED',
+            RESTRICTED: 'RESTRICTED',
+            MAINTENANCE: 'MAINTENANCE',
+            DISABLED: 'DISABLED',
+            FAILED: 'FAILED',
+            RECOVERING: 'RECOVERING'
+        });
+
+        const MovementStatusEnum = Object.freeze({
+            PLANNED: 'PLANNED',
+            VALIDATED: 'VALIDATED',
+            CAPACITY_RESERVED: 'CAPACITY_RESERVED',
+            READY: 'READY',
+            DISPATCHED: 'DISPATCHED',
+            IN_TRANSIT: 'IN_TRANSIT',
+            DELAYED: 'DELAYED',
+            REROUTING: 'REROUTING',
+            ARRIVED: 'ARRIVED',
+            DELIVERED: 'DELIVERED',
+            CANCELLED: 'CANCELLED',
+            FAILED: 'FAILED'
+        });
+
+        const RouteStatusEnum = Object.freeze({
+            CANDIDATE: 'CANDIDATE',
+            VALIDATED: 'VALIDATED',
+            SELECTED: 'SELECTED',
+            RESERVED: 'RESERVED',
+            ACTIVE: 'ACTIVE',
+            COMPLETED: 'COMPLETED',
+            DEGRADED: 'DEGRADED',
+            REROUTED: 'REROUTED',
+            BLOCKED: 'BLOCKED',
+            INVALID: 'INVALID'
+        });
+
+        const BorderAccessStatus = Object.freeze({
+            OPEN: 'OPEN',
+            RESTRICTED: 'RESTRICTED',
+            TARIFF_CHECK: 'TARIFF_CHECK',
+            QUARANTINE_INSPECTION: 'QUARANTINE_INSPECTION',
+            CLOSED_SECURITY: 'CLOSED_SECURITY',
+            CLOSED_SANCTION: 'CLOSED_SANCTION',
+            BLOCKED: 'BLOCKED',
+            UNKNOWN: 'UNKNOWN'
+        });
+
+        const SecurityRiskLevel = Object.freeze({
+            NORMAL_SAFE: 'NORMAL_SAFE',
+            ELEVATED_MONITORING: 'ELEVATED_MONITORING',
+            HIGH_RISK_ZONE: 'HIGH_RISK_ZONE',
+            RESTRICTED_ESCORT_REQUIRED: 'RESTRICTED_ESCORT_REQUIRED',
+            ACTIVE_CONFLICT_BLOCKED: 'ACTIVE_CONFLICT_BLOCKED'
+        });
+
+        const WeatherSeverityLevel = Object.freeze({
+            NORMAL_CLEAR: 'NORMAL_CLEAR',
+            ADVERSE_CONDITIONS: 'ADVERSE_CONDITIONS',
+            SEVERE_RESTRICTION: 'SEVERE_RESTRICTION',
+            HAZARDOUS_CLOSED: 'HAZARDOUS_CLOSED'
+        });
+
+        const IntermodalStepType = Object.freeze({
+            UNLOAD: 'UNLOAD',
+            QUEUE: 'QUEUE',
+            HANDLING: 'HANDLING',
+            LOAD: 'LOAD'
+        });
+
+        const LogisticsHealthStatus = Object.freeze({
+            HEALTHY: 'HEALTHY',
+            HEALTHY_WITH_WARNINGS: 'HEALTHY_WITH_WARNINGS',
+            DEGRADED: 'DEGRADED',
+            CRITICAL_FAILURE: 'CRITICAL_FAILURE'
+        });
+
+        const ErrorTaxonomy = Object.freeze({
+            P8_001_INVALID_INFRASTRUCTURE_INTAKE: 'P8_001_INVALID_INFRASTRUCTURE_INTAKE',
+            P8_002_DISCONNECTED_GRAPH_NODES: 'P8_002_DISCONNECTED_GRAPH_NODES',
+            P8_003_ROUTE_NOT_FOUND: 'P8_003_ROUTE_NOT_FOUND',
+            P8_004_ROUTE_VALIDATION_FAILED: 'P8_004_ROUTE_VALIDATION_FAILED',
+            P8_005_CAPACITY_OVERFLOW: 'P8_005_CAPACITY_OVERFLOW',
+            P8_006_CAPACITY_RESERVATION_CONFLICT: 'P8_006_CAPACITY_RESERVATION_CONFLICT',
+            P8_007_MATERIAL_MODE_INCOMPATIBLE: 'P8_007_MATERIAL_MODE_INCOMPATIBLE',
+            P8_008_BORDER_CROSSING_BLOCKED: 'P8_008_BORDER_CROSSING_BLOCKED',
+            P8_009_SECURITY_BLOCKADE_ACTIVE: 'P8_009_SECURITY_BLOCKADE_ACTIVE',
+            P8_010_WEATHER_CLOSURE: 'P8_010_WEATHER_CLOSURE',
+            P8_011_CONGESTION_QUEUE_EXPLOSION: 'P8_011_CONGESTION_QUEUE_EXPLOSION',
+            P8_012_INTERMODAL_TRANSFER_FAILED: 'P8_012_INTERMODAL_TRANSFER_FAILED',
+            P8_013_FLOW_CONSERVATION_BREACH: 'P8_013_FLOW_CONSERVATION_BREACH',
+            P8_014_TELEPORTATION_INVARIANT_VIOLATION: 'P8_014_TELEPORTATION_INVARIANT_VIOLATION',
+            P8_015_NEGATIVE_TRANSIT_TIME_ERROR: 'P8_015_NEGATIVE_TRANSIT_TIME_ERROR',
+            P8_016_DISRUPTION_RECOVERY_MISMATCH: 'P8_016_DISRUPTION_RECOVERY_MISMATCH',
+            P8_017_DELIVERY_INVENTORY_HANDOVER_FAILED: 'P8_017_DELIVERY_INVENTORY_HANDOVER_FAILED',
+            P8_018_RECONCILIATION_DRIFT_DETECTED: 'P8_018_RECONCILIATION_DRIFT_DETECTED',
+            P8_019_SNAPSHOT_CORRUPTION: 'P8_019_SNAPSHOT_CORRUPTION',
+            P8_020_FIREWALL_BOUNDARY_BREACH: 'P8_020_FIREWALL_BOUNDARY_BREACH',
+            P8_021_ZERO_OR_NEGATIVE_MOVEMENT_QUANTITY: 'P8_021_ZERO_OR_NEGATIVE_MOVEMENT_QUANTITY',
+            P8_022_REROUTING_DEADLOCK_DETECTED: 'P8_022_REROUTING_DEADLOCK_DETECTED',
+            P8_023_STALE_MOVEMENT_VERSION_CONFLICT: 'P8_023_STALE_MOVEMENT_VERSION_CONFLICT',
+            P8_024_PROVENANCE_TRACE_BROKEN: 'P8_024_PROVENANCE_TRACE_BROKEN',
+            P8_025_UNKNOWN_POLICY_BLOCK: 'P8_025_UNKNOWN_POLICY_BLOCK'
+        });
+
+        // =========================================================================
+        // DETERMINISTIC HASHING INFRASTRUCTURE (ZERO DATE.NOW / ZERO MATH.RANDOM)
+        // =========================================================================
+
+        class DeterministicHashEngine {
+            static computeHash(inputStr) {
+                const str = typeof inputStr === 'string' ? inputStr : JSON.stringify(inputStr);
+                let h1 = 0xdeadbeef ^ str.length;
+                let h2 = 0x41c6ce57 ^ str.length;
+                for (let i = 0; i < str.length; i++) {
+                    const ch = str.charCodeAt(i);
+                    h1 = (Math.imul(h1 ^ ch, 2654435761) >>> 0);
+                    h2 = (Math.imul(h2 ^ ch, 1597334677) >>> 0);
+                }
+                h1 = ((Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909)) >>> 0);
+                h2 = ((Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909)) >>> 0);
+                return ((h1 >>> 0).toString(16).padStart(8, '0') + (h2 >>> 0).toString(16).padStart(8, '0')).toLowerCase();
+            }
+
+            static generateDeterministicId(prefix, seedComponents) {
+                const payload = seedComponents.map(c => String(c)).join('|');
+                const hash = this.computeHash(payload).substring(0, 12);
+                return `${prefix}:${hash}`;
+            }
+        }
+
+        // =========================================================================
+        // P08-02: INFRASTRUCTURE INTAKE ADAPTER & LOGISTICS RUNTIME OVERLAY
+        // =========================================================================
+
+        class LogisticsInfrastructureRuntime {
+            constructor(params = {}) {
+                if (!params.infrastructureId) {
+                    throw new Error('[LogisticsInfrastructureRuntime Violation]: infrastructureId is mandatory.');
+                }
+                this.infrastructureId = params.infrastructureId;
+                this.infrastructureType = params.infrastructureType || 'GENERIC_CORRIDOR';
+                this.canonicalLocationNodeKey = params.canonicalLocationNodeKey || 'LOC:GLOBAL';
+
+                // Multi-Layer Capacity Physics (Capacity Conservation Invariant)
+                this.nominalCapacityDaily = typeof params.nominalCapacityDaily === 'number' ? Math.max(0, params.nominalCapacityDaily) : 10000.0;
+                this.operationalCapacityDaily = typeof params.operationalCapacityDaily === 'number' ? Math.min(this.nominalCapacityDaily, params.operationalCapacityDaily) : this.nominalCapacityDaily;
+                this.reservedCapacity = typeof params.reservedCapacity === 'number' ? Math.max(0, params.reservedCapacity) : 0.0;
+                this.activeFlowRate = typeof params.activeFlowRate === 'number' ? Math.max(0, params.activeFlowRate) : 0.0;
+                this.capacityUnit = params.capacityUnit || 'TONNES_PER_DAY';
+
+                this.currentQueueVolume = typeof params.currentQueueVolume === 'number' ? Math.max(0, params.currentQueueVolume) : 0.0;
+                this.activeMovementIds = new Set(Array.isArray(params.activeMovementIds) ? params.activeMovementIds : []);
+
+                this.runtimeStatus = params.runtimeStatus || InfrastructureRuntimeStatus.AVAILABLE;
+                this.operationalDerateFactor = typeof params.operationalDerateFactor === 'number' ? Math.max(0, Math.min(1.0, params.operationalDerateFactor)) : 1.0;
+                this.congestionRatio = typeof params.congestionRatio === 'number' ? Math.max(0, params.congestionRatio) : 0.0;
+
+                this.lastUpdatedTick = typeof params.lastUpdatedTick === 'number' ? params.lastUpdatedTick : 0;
+                this.provenance = params.provenance || { sourceSubsystem: 'INFRASTRUCTURE_RUNTIME', timestamp: 0 };
+            }
+
+            getEffectiveCapacity() {
+                if (this.runtimeStatus === InfrastructureRuntimeStatus.DISABLED || this.runtimeStatus === InfrastructureRuntimeStatus.FAILED) {
+                    return 0.0;
+                }
+                return this.operationalCapacityDaily * this.operationalDerateFactor;
+            }
+
+            getAvailableCapacity() {
+                const eff = this.getEffectiveCapacity();
+                const committed = this.reservedCapacity + this.activeFlowRate;
+                return Math.max(0.0, eff - committed);
+            }
+
+            reserveCapacity(quantity) {
+                const avail = this.getAvailableCapacity();
+                if (quantity > (avail + 1e-6)) {
+                    throw new Error(`[LogisticsInfrastructureRuntime Breach]: Cannot reserve ${quantity} ${this.capacityUnit}. Available: ${avail}`);
+                }
+                this.reservedCapacity += quantity;
+                this._updateCongestion();
+            }
+
+            releaseReservedCapacity(quantity) {
+                this.reservedCapacity = Math.max(0.0, this.reservedCapacity - quantity);
+                this._updateCongestion();
+            }
+
+            allocateActiveFlow(quantity, movementId = null) {
+                this.reservedCapacity = Math.max(0.0, this.reservedCapacity - quantity);
+                this.activeFlowRate += quantity;
+                if (movementId) this.activeMovementIds.add(movementId);
+                this._updateCongestion();
+            }
+
+            releaseActiveFlow(quantity, movementId = null) {
+                this.activeFlowRate = Math.max(0.0, this.activeFlowRate - quantity);
+                if (movementId) this.activeMovementIds.delete(movementId);
+                this._updateCongestion();
+            }
+
+            _updateCongestion() {
+                const eff = this.getEffectiveCapacity();
+                if (eff <= 1e-6) {
+                    this.congestionRatio = 1.0;
+                    this.runtimeStatus = InfrastructureRuntimeStatus.RESTRICTED;
+                    return;
+                }
+                const totalLoad = this.reservedCapacity + this.activeFlowRate + this.currentQueueVolume;
+                this.congestionRatio = totalLoad / eff;
+
+                if (this.congestionRatio > 1.25) {
+                    this.runtimeStatus = InfrastructureRuntimeStatus.CONGESTED;
+                } else if (this.congestionRatio > 0.90) {
+                    this.runtimeStatus = InfrastructureRuntimeStatus.RESTRICTED;
+                } else {
+                    this.runtimeStatus = InfrastructureRuntimeStatus.AVAILABLE;
+                }
+            }
+
+            clone() {
+                return new LogisticsInfrastructureRuntime({
+                    infrastructureId: this.infrastructureId,
+                    infrastructureType: this.infrastructureType,
+                    canonicalLocationNodeKey: this.canonicalLocationNodeKey,
+                    nominalCapacityDaily: this.nominalCapacityDaily,
+                    operationalCapacityDaily: this.operationalCapacityDaily,
+                    reservedCapacity: this.reservedCapacity,
+                    activeFlowRate: this.activeFlowRate,
+                    capacityUnit: this.capacityUnit,
+                    currentQueueVolume: this.currentQueueVolume,
+                    activeMovementIds: Array.from(this.activeMovementIds),
+                    runtimeStatus: this.runtimeStatus,
+                    operationalDerateFactor: this.operationalDerateFactor,
+                    congestionRatio: this.congestionRatio,
+                    lastUpdatedTick: this.lastUpdatedTick,
+                    provenance: JSON.parse(JSON.stringify(this.provenance))
+                });
+            }
+
+            toJSON() {
+                return {
+                    infrastructureId: this.infrastructureId,
+                    infrastructureType: this.infrastructureType,
+                    canonicalLocationNodeKey: this.canonicalLocationNodeKey,
+                    nominalCapacityDaily: this.nominalCapacityDaily,
+                    operationalCapacityDaily: this.operationalCapacityDaily,
+                    reservedCapacity: this.reservedCapacity,
+                    activeFlowRate: this.activeFlowRate,
+                    availableCapacity: this.getAvailableCapacity(),
+                    effectiveCapacity: this.getEffectiveCapacity(),
+                    capacityUnit: this.capacityUnit,
+                    currentQueueVolume: this.currentQueueVolume,
+                    activeMovementIds: Array.from(this.activeMovementIds),
+                    runtimeStatus: this.runtimeStatus,
+                    operationalDerateFactor: this.operationalDerateFactor,
+                    congestionRatio: this.congestionRatio,
+                    lastUpdatedTick: this.lastUpdatedTick,
+                    provenance: this.provenance
+                };
+            }
+        }
+
+        class InfrastructureIntakeAdapter {
+            static adaptInfrastructureState(infraState) {
+                if (!infraState || !infraState.entityId) {
+                    throw new Error('[InfrastructureIntakeAdapter]: Invalid InfrastructureState payload.');
+                }
+
+                const capDaily = typeof infraState.throughputCapacityPerDay === 'number' 
+                    ? infraState.throughputCapacityPerDay 
+                    : (typeof infraState.capacity === 'number' ? infraState.capacity : 10000.0);
+
+                return new LogisticsInfrastructureRuntime({
+                    infrastructureId: infraState.entityId,
+                    infrastructureType: infraState.infrastructureType || 'CORRIDOR',
+                    canonicalLocationNodeKey: infraState.locationState ? (infraState.locationState.countryId || 'LOC:GLOBAL') : 'LOC:GLOBAL',
+                    nominalCapacityDaily: capDaily,
+                    operationalCapacityDaily: capDaily,
+                    runtimeStatus: InfrastructureRuntimeStatus.AVAILABLE,
+                    operationalDerateFactor: 1.0,
+                    congestionRatio: typeof infraState.congestionRatio === 'number' ? infraState.congestionRatio : 0.0,
+                    provenance: {
+                        sourceSubsystem: 'PART_03_INFRASTRUCTURE_STATE',
+                        sourceEntityId: infraState.entityId,
+                        timestamp: 0
+                    }
+                });
+            }
+        }
+
+        // =========================================================================
+        // P08-03 & P08-04: NETWORK NODE & SEGMENT REGISTRIES
+        // =========================================================================
+
+        class NetworkNode {
+            constructor(params = {}) {
+                if (!params.nodeId) {
+                    throw new Error('[NetworkNode Violation]: nodeId is mandatory.');
+                }
+                this.nodeId = params.nodeId;
+                this.nodeName = params.nodeName || this.nodeId;
+                this.nodeType = params.nodeType || NetworkNodeTypeEnum.GENERIC_NODE;
+                this.canonicalLocationNodeKey = params.canonicalLocationNodeKey || 'LOC:GLOBAL';
+                this.associatedInfrastructureId = params.associatedInfrastructureId || null;
+
+                this.supportedModes = Array.isArray(params.supportedModes) ? [...params.supportedModes] : [TransportModeEnum.ROAD];
+                this.isIntermodalTerminal = Boolean(params.isIntermodalTerminal || this.supportedModes.length > 1);
+
+                this.dailyHandlingCapacity = typeof params.dailyHandlingCapacity === 'number' ? Math.max(0, params.dailyHandlingCapacity) : Infinity;
+                this.averageTransferDelayHours = typeof params.averageTransferDelayHours === 'number' ? Math.max(0, params.averageTransferDelayHours) : 1.0;
+                this.handlingCostPerTonne = typeof params.handlingCostPerTonne === 'number' ? Math.max(0, params.handlingCostPerTonne) : 2.0;
+
+                this.borderAccessStatus = params.borderAccessStatus || BorderAccessStatus.OPEN;
+                this.securityRiskLevel = params.securityRiskLevel || SecurityRiskLevel.NORMAL_SAFE;
+                this.operationalStatus = params.operationalStatus || InfrastructureRuntimeStatus.AVAILABLE;
+                this.provenance = params.provenance || { sourceSubsystem: 'NETWORK_NODE_REGISTRY', timestamp: 0 };
+            }
+
+            supportsMode(mode) {
+                return this.supportedModes.includes(mode);
+            }
+
+            isAccessible() {
+                return this.operationalStatus !== InfrastructureRuntimeStatus.DISABLED &&
+                       this.operationalStatus !== InfrastructureRuntimeStatus.FAILED &&
+                       this.borderAccessStatus !== BorderAccessStatus.BLOCKED &&
+                       this.borderAccessStatus !== BorderAccessStatus.CLOSED_SECURITY;
+            }
+
+            toJSON() {
+                return {
+                    nodeId: this.nodeId,
+                    nodeName: this.nodeName,
+                    nodeType: this.nodeType,
+                    canonicalLocationNodeKey: this.canonicalLocationNodeKey,
+                    associatedInfrastructureId: this.associatedInfrastructureId,
+                    supportedModes: this.supportedModes,
+                    isIntermodalTerminal: this.isIntermodalTerminal,
+                    dailyHandlingCapacity: this.dailyHandlingCapacity,
+                    averageTransferDelayHours: this.averageTransferDelayHours,
+                    handlingCostPerTonne: this.handlingCostPerTonne,
+                    borderAccessStatus: this.borderAccessStatus,
+                    securityRiskLevel: this.securityRiskLevel,
+                    operationalStatus: this.operationalStatus,
+                    provenance: this.provenance
+                };
+            }
+        }
+
+        class NetworkSegment {
+            constructor(params = {}) {
+                if (!params.segmentId || !params.sourceNodeId || !params.targetNodeId) {
+                    throw new Error('[NetworkSegment Violation]: segmentId, sourceNodeId, and targetNodeId are mandatory.');
+                }
+                this.segmentId = params.segmentId;
+                this.sourceNodeId = params.sourceNodeId;
+                this.targetNodeId = params.targetNodeId;
+                this.mode = params.mode || TransportModeEnum.ROAD;
+                this.distanceKm = typeof params.distanceKm === 'number' ? Math.max(0.1, params.distanceKm) : 10.0;
+
+                this.nominalCapacityDaily = typeof params.nominalCapacityDaily === 'number' ? Math.max(0, params.nominalCapacityDaily) : 10000.0;
+                this.freeFlowSpeedKmh = typeof params.freeFlowSpeedKmh === 'number' ? Math.max(1.0, params.freeFlowSpeedKmh) : 60.0;
+                this.baseCostPerTonneKm = typeof params.baseCostPerTonneKm === 'number' ? Math.max(0, params.baseCostPerTonneKm) : 0.05;
+                this.baseEnergyPerTonneKm = typeof params.baseEnergyPerTonneKm === 'number' ? Math.max(0, params.baseEnergyPerTonneKm) : 0.15;
+
+                // Physical Directionality & Condition
+                this.directionality = params.directionality || SegmentDirectionalityEnum.BIDIRECTIONAL;
+                this.surfaceConditionFactor = typeof params.surfaceConditionFactor === 'number' ? Math.max(0.1, Math.min(1.0, params.surfaceConditionFactor)) : 1.0;
+                this.allowedMaterialIdentities = Array.isArray(params.allowedMaterialIdentities) ? [...params.allowedMaterialIdentities] : [];
+                this.associatedInfrastructureId = params.associatedInfrastructureId || null;
+
+                this.borderCrossReference = params.borderCrossReference || null;
+                this.securityRiskLevel = params.securityRiskLevel || SecurityRiskLevel.NORMAL_SAFE;
+                this.weatherSeverity = params.weatherSeverity || WeatherSeverityLevel.NORMAL_CLEAR;
+                this.operationalStatus = params.operationalStatus || InfrastructureRuntimeStatus.AVAILABLE;
+                this.provenance = params.provenance || { sourceSubsystem: 'NETWORK_SEGMENT_REGISTRY', timestamp: 0 };
+            }
+
+            allowsMaterial(materialIdentity) {
+                if (this.allowedMaterialIdentities.length === 0) return true;
+                return this.allowedMaterialIdentities.includes(materialIdentity);
+            }
+
+            isPassable() {
+                return this.operationalStatus !== InfrastructureRuntimeStatus.DISABLED &&
+                       this.operationalStatus !== InfrastructureRuntimeStatus.FAILED &&
+                       this.securityRiskLevel !== SecurityRiskLevel.ACTIVE_CONFLICT_BLOCKED &&
+                       this.weatherSeverity !== WeatherSeverityLevel.HAZARDOUS_CLOSED;
+            }
+
+            toJSON() {
+                return {
+                    segmentId: this.segmentId,
+                    sourceNodeId: this.sourceNodeId,
+                    targetNodeId: this.targetNodeId,
+                    mode: this.mode,
+                    distanceKm: this.distanceKm,
+                    nominalCapacityDaily: this.nominalCapacityDaily,
+                    freeFlowSpeedKmh: this.freeFlowSpeedKmh,
+                    baseCostPerTonneKm: this.baseCostPerTonneKm,
+                    baseEnergyPerTonneKm: this.baseEnergyPerTonneKm,
+                    directionality: this.directionality,
+                    surfaceConditionFactor: this.surfaceConditionFactor,
+                    allowedMaterialIdentities: this.allowedMaterialIdentities,
+                    associatedInfrastructureId: this.associatedInfrastructureId,
+                    borderCrossReference: this.borderCrossReference,
+                    securityRiskLevel: this.securityRiskLevel,
+                    weatherSeverity: this.weatherSeverity,
+                    operationalStatus: this.operationalStatus,
+                    provenance: this.provenance
+                };
+            }
+        }
+
+        class NetworkNodeRegistry {
+            constructor() {
+                this.nodes = new Map();
+                this.nodesByLocation = new Map();
+            }
+
+            registerNode(node) {
+                if (!(node instanceof NetworkNode)) throw new Error('Expected NetworkNode instance.');
+                this.nodes.set(node.nodeId, node);
+                if (!this.nodesByLocation.has(node.canonicalLocationNodeKey)) {
+                    this.nodesByLocation.set(node.canonicalLocationNodeKey, new Set());
+                }
+                this.nodesByLocation.get(node.canonicalLocationNodeKey).add(node.nodeId);
+                return node;
+            }
+
+            getNode(nodeId) {
+                return this.nodes.get(nodeId) || null;
+            }
+
+            getNodesAtLocation(locationKey) {
+                const set = this.nodesByLocation.get(locationKey);
+                if (!set) return [];
+                return Array.from(set).map(id => this.nodes.get(id)).filter(Boolean);
+            }
+
+            clear() {
+                this.nodes.clear();
+                this.nodesByLocation.clear();
+            }
+        }
+
+        class NetworkSegmentRegistry {
+            constructor() {
+                this.segments = new Map();
+                this.segmentsBySource = new Map();
+                this.segmentsByTarget = new Map();
+            }
+
+            registerSegment(segment) {
+                if (!(segment instanceof NetworkSegment)) throw new Error('Expected NetworkSegment instance.');
+                this.segments.set(segment.segmentId, segment);
+
+                if (segment.directionality === SegmentDirectionalityEnum.BIDIRECTIONAL || segment.directionality === SegmentDirectionalityEnum.ONE_WAY_FORWARD) {
+                    this._indexSegment(segment.sourceNodeId, segment.segmentId, this.segmentsBySource);
+                    this._indexSegment(segment.targetNodeId, segment.segmentId, this.segmentsByTarget);
+                }
+                if (segment.directionality === SegmentDirectionalityEnum.BIDIRECTIONAL || segment.directionality === SegmentDirectionalityEnum.ONE_WAY_REVERSE) {
+                    this._indexSegment(segment.targetNodeId, segment.segmentId, this.segmentsBySource);
+                    this._indexSegment(segment.sourceNodeId, segment.segmentId, this.segmentsByTarget);
+                }
+                return segment;
+            }
+
+            getSegment(segmentId) {
+                return this.segments.get(segmentId) || null;
+            }
+
+            getOutgoingSegments(nodeId) {
+                const set = this.segmentsBySource.get(nodeId);
+                if (!set) return [];
+                return Array.from(set).map(id => this.segments.get(id)).filter(Boolean);
+            }
+
+            _indexSegment(nodeId, segmentId, map) {
+                if (!map.has(nodeId)) map.set(nodeId, new Set());
+                map.get(nodeId).add(segmentId);
+            }
+
+            clear() {
+                this.segments.clear();
+                this.segmentsBySource.clear();
+                this.segmentsByTarget.clear();
+            }
+        }
+
+        // =========================================================================
+        // P08-05 & P08-06: TRANSPORT MODE & 4-STEP INTERCHANGE ENGINES
+        // =========================================================================
+
+        class TransportModeDefinition {
+            constructor(params = {}) {
+                if (!params.modeCode) {
+                    throw new Error('[TransportModeDefinition Violation]: modeCode is mandatory.');
+                }
+                this.modeCode = params.modeCode;
+                this.modeName = params.modeName || this.modeCode;
+                this.isContinuousFlow = Boolean(params.isContinuousFlow || this.modeCode === TransportModeEnum.PIPELINE || this.modeCode === TransportModeEnum.CONVEYOR_CONTINUOUS);
+                this.basePayloadTonnePerUnit = typeof params.basePayloadTonnePerUnit === 'number' ? params.basePayloadTonnePerUnit : 25.0;
+                this.speedMultiplier = typeof params.speedMultiplier === 'number' ? params.speedMultiplier : 1.0;
+                this.costMultiplier = typeof params.costMultiplier === 'number' ? params.costMultiplier : 1.0;
+                this.specificEnergyConsumptionKWhPerTonneKm = typeof params.specificEnergyConsumptionKWhPerTonneKm === 'number' ? params.specificEnergyConsumptionKWhPerTonneKm : 0.15;
+                this.compatiblePhysicalStates = Array.isArray(params.compatiblePhysicalStates) ? [...params.compatiblePhysicalStates] : ['SOLID', 'LIQUID', 'GAS'];
+                this.provenance = params.provenance || { sourceSubsystem: 'TRANSPORT_MODE_REGISTRY', timestamp: 0 };
+            }
+
+            isPhysicalStateCompatible(physicalState) {
+                return this.compatiblePhysicalStates.includes(physicalState);
+            }
+
+            toJSON() {
+                return {
+                    modeCode: this.modeCode,
+                    modeName: this.modeName,
+                    isContinuousFlow: this.isContinuousFlow,
+                    basePayloadTonnePerUnit: this.basePayloadTonnePerUnit,
+                    speedMultiplier: this.speedMultiplier,
+                    costMultiplier: this.costMultiplier,
+                    specificEnergyConsumptionKWhPerTonneKm: this.specificEnergyConsumptionKWhPerTonneKm,
+                    compatiblePhysicalStates: this.compatiblePhysicalStates,
+                    provenance: this.provenance
+                };
+            }
+        }
+
+        class TransportModeRegistry {
+            constructor() {
+                this.modes = new Map();
+            }
+
+            registerMode(mode) {
+                if (!(mode instanceof TransportModeDefinition)) throw new Error('Expected TransportModeDefinition instance.');
+                this.modes.set(mode.modeCode, mode);
+                return mode;
+            }
+
+            getMode(modeCode) {
+                return this.modes.get(modeCode) || null;
+            }
+
+            clear() {
+                this.modes.clear();
+            }
+        }
+
+        class InterchangeTransferModel {
+            /**
+             * 4-Step physical mode change: UNLOAD -> QUEUE -> HANDLING -> LOAD.
+             */
+            static computeTransferPhysics(fromMode, toMode, quantityTonnes, interchangeNode = null) {
+                if (fromMode === toMode || fromMode === TransportModeEnum.INTERMODAL_TRANSFER || toMode === TransportModeEnum.INTERMODAL_TRANSFER) {
+                    return { totalDelayHours: 0.0, totalHandlingCost: 0.0, steps: [] };
+                }
+
+                const baseHandlingRateTph = interchangeNode && interchangeNode.dailyHandlingCapacity < Infinity 
+                    ? (interchangeNode.dailyHandlingCapacity / 24.0) 
+                    : 250.0;
+
+                const unloadHours = quantityTonnes / baseHandlingRateTph;
+                const queueHours = interchangeNode ? interchangeNode.averageTransferDelayHours : 2.0;
+                const handlingHours = 1.0;
+                const loadHours = quantityTonnes / baseHandlingRateTph;
+
+                const totalDelay = unloadHours + queueHours + handlingHours + loadHours;
+                const unitCost = interchangeNode ? interchangeNode.handlingCostPerTonne : 3.50;
+                const totalCost = quantityTonnes * unitCost;
+
+                const steps = [
+                    { step: IntermodalStepType.UNLOAD, durationHours: unloadHours },
+                    { step: IntermodalStepType.QUEUE, durationHours: queueHours },
+                    { step: IntermodalStepType.HANDLING, durationHours: handlingHours },
+                    { step: IntermodalStepType.LOAD, durationHours: loadHours }
+                ];
+
+                return {
+                    totalDelayHours: totalDelay,
+                    totalHandlingCost: totalCost,
+                    steps
+                };
+            }
+        }
+
+        class InterchangeNode {
+            constructor(params = {}) {
+                if (!params.interchangeId || !params.nodeId) {
+                    throw new Error('[InterchangeNode Violation]: interchangeId and nodeId are mandatory.');
+                }
+                this.interchangeId = params.interchangeId;
+                this.nodeId = params.nodeId;
+                this.supportedModeTransfers = Array.isArray(params.supportedModeTransfers) ? [...params.supportedModeTransfers] : [];
+                this.dailyHandlingCapacity = typeof params.dailyHandlingCapacity === 'number' ? params.dailyHandlingCapacity : 5000.0;
+                this.averageTransferDelayHours = typeof params.averageTransferDelayHours === 'number' ? params.averageTransferDelayHours : 2.0;
+                this.handlingCostPerTonne = typeof params.handlingCostPerTonne === 'number' ? params.handlingCostPerTonne : 3.50;
+            }
+
+            toJSON() {
+                return {
+                    interchangeId: this.interchangeId,
+                    nodeId: this.nodeId,
+                    supportedModeTransfers: this.supportedModeTransfers,
+                    dailyHandlingCapacity: this.dailyHandlingCapacity,
+                    averageTransferDelayHours: this.averageTransferDelayHours,
+                    handlingCostPerTonne: this.handlingCostPerTonne
+                };
+            }
+        }
+
+        // =========================================================================
+        // P08-07: NETWORK GRAPH CORE & MULTIMODAL COMPILER
+        // =========================================================================
+
+        class NetworkGraph {
+            constructor(nodeRegistry, segmentRegistry, interchangeRegistry = null) {
+                this.nodeRegistry = nodeRegistry;
+                this.segmentRegistry = segmentRegistry;
+                this.interchangeRegistry = interchangeRegistry;
+                this.adjacencyList = new Map();
+                this.compiled = false;
+            }
+
+            compile() {
+                this.adjacencyList.clear();
+
+                this.nodeRegistry.nodes.forEach((_, nodeId) => {
+                    this.adjacencyList.set(nodeId, []);
+                });
+
+                this.segmentRegistry.segments.forEach((segment) => {
+                    const src = segment.sourceNodeId;
+                    const tgt = segment.targetNodeId;
+
+                    if (segment.directionality === SegmentDirectionalityEnum.BIDIRECTIONAL || segment.directionality === SegmentDirectionalityEnum.ONE_WAY_FORWARD) {
+                        if (!this.adjacencyList.has(src)) this.adjacencyList.set(src, []);
+                        this.adjacencyList.get(src).push({ targetNodeId: tgt, segmentId: segment.segmentId, segment });
+                    }
+
+                    if (segment.directionality === SegmentDirectionalityEnum.BIDIRECTIONAL || segment.directionality === SegmentDirectionalityEnum.ONE_WAY_REVERSE) {
+                        if (!this.adjacencyList.has(tgt)) this.adjacencyList.set(tgt, []);
+                        this.adjacencyList.get(tgt).push({ targetNodeId: src, segmentId: segment.segmentId, segment });
+                    }
+                });
+
+                this.compiled = true;
+            }
+
+            getNeighbors(nodeId) {
+                if (!this.compiled) this.compile();
+                return this.adjacencyList.get(nodeId) || [];
+            }
+        }
+
+        // =========================================================================
+        // P08-08, P08-09 & P08-10: CONNECTIVITY, MULTI-ROUTE RESOLVER & VALIDATOR
+        // =========================================================================
+
+        class ConnectivityResolver {
+            static checkConnectivity(networkGraph, sourceNodeId, targetNodeId) {
+                if (sourceNodeId === targetNodeId) return { isConnected: true, hops: 0 };
+                const visited = new Set();
+                const queue = [{ nodeId: sourceNodeId, depth: 0 }];
+                visited.add(sourceNodeId);
+
+                while (queue.length > 0) {
+                    const { nodeId, depth } = queue.shift();
+                    const neighbors = networkGraph.getNeighbors(nodeId);
+
+                    for (const edge of neighbors) {
+                        const nodeObj = networkGraph.nodeRegistry.getNode(edge.targetNodeId);
+                        if (edge.segment.isPassable() && nodeObj && nodeObj.isAccessible()) {
+                            if (edge.targetNodeId === targetNodeId) {
+                                return { isConnected: true, hops: depth + 1 };
+                            }
+                            if (!visited.has(edge.targetNodeId)) {
+                                visited.add(edge.targetNodeId);
+                                queue.push({ nodeId: edge.targetNodeId, depth: depth + 1 });
+                            }
+                        }
+                    }
+                }
+
+                return { isConnected: false, hops: Infinity };
+            }
+        }
+
+        class RouteLeg {
+            constructor(params = {}) {
+                this.legIndex = typeof params.legIndex === 'number' ? params.legIndex : 0;
+                this.sourceNodeId = params.sourceNodeId;
+                this.targetNodeId = params.targetNodeId;
+                this.segmentId = params.segmentId || null;
+                this.mode = params.mode || TransportModeEnum.ROAD;
+                this.isTransferLeg = Boolean(params.isTransferLeg);
+                this.distanceKm = typeof params.distanceKm === 'number' ? params.distanceKm : 0.0;
+                this.freeFlowHours = typeof params.freeFlowHours === 'number' ? params.freeFlowHours : 1.0;
+                this.estimatedDurationHours = typeof params.estimatedDurationHours === 'number' ? params.estimatedDurationHours : this.freeFlowHours;
+                this.estimatedCost = typeof params.estimatedCost === 'number' ? params.estimatedCost : 10.0;
+                this.estimatedEnergyKWh = typeof params.estimatedEnergyKWh === 'number' ? params.estimatedEnergyKWh : 50.0;
+                this.infrastructureId = params.infrastructureId || null;
+            }
+
+            toJSON() {
+                return {
+                    legIndex: this.legIndex,
+                    sourceNodeId: this.sourceNodeId,
+                    targetNodeId: this.targetNodeId,
+                    segmentId: this.segmentId,
+                    mode: this.mode,
+                    isTransferLeg: this.isTransferLeg,
+                    distanceKm: this.distanceKm,
+                    freeFlowHours: this.freeFlowHours,
+                    estimatedDurationHours: this.estimatedDurationHours,
+                    estimatedCost: this.estimatedCost,
+                    estimatedEnergyKWh: this.estimatedEnergyKWh,
+                    infrastructureId: this.infrastructureId
+                };
+            }
+        }
+
+        class LogisticsRoute {
+            constructor(params = {}) {
+                const seed = `${params.sourceNodeId}:${params.targetNodeId}:${(params.legs || []).length}:${params.routeTag || 'PRI'}`;
+                this.routeId = params.routeId || DeterministicHashEngine.generateDeterministicId('ROUTE', [seed]);
+                this.sourceNodeId = params.sourceNodeId;
+                this.targetNodeId = params.targetNodeId;
+                this.routeTag = params.routeTag || 'PRIMARY';
+                this.legs = Array.isArray(params.legs) ? params.legs.map(l => l instanceof RouteLeg ? l : new RouteLeg(l)) : [];
+
+                this.totalDistanceKm = this.legs.reduce((sum, l) => sum + (l.distanceKm || 0), 0);
+                this.totalTransitHours = this.legs.reduce((sum, l) => sum + (l.estimatedDurationHours || 0), 0);
+                this.totalEstimatedCost = this.legs.reduce((sum, l) => sum + (l.estimatedCost || 0), 0);
+                this.totalEnergyKWh = this.legs.reduce((sum, l) => sum + (l.estimatedEnergyKWh || 0), 0);
+
+                this.bottleneckSegmentId = params.bottleneckSegmentId || null;
+                this.minSegmentCapacityDaily = typeof params.minSegmentCapacityDaily === 'number' ? params.minSegmentCapacityDaily : Infinity;
+                this.routeStatus = params.routeStatus || RouteStatusEnum.CANDIDATE;
+                this.routeVersion = typeof params.routeVersion === 'number' ? params.routeVersion : 1;
+                this.provenance = params.provenance || { sourceSubsystem: 'ROUTE_RESOLVER', timestamp: 0 };
+            }
+
+            toJSON() {
+                return {
+                    routeId: this.routeId,
+                    sourceNodeId: this.sourceNodeId,
+                    targetNodeId: this.targetNodeId,
+                    routeTag: this.routeTag,
+                    legs: this.legs.map(l => l.toJSON()),
+                    totalDistanceKm: this.totalDistanceKm,
+                    totalTransitHours: this.totalTransitHours,
+                    totalEstimatedCost: this.totalEstimatedCost,
+                    totalEnergyKWh: this.totalEnergyKWh,
+                    bottleneckSegmentId: this.bottleneckSegmentId,
+                    minSegmentCapacityDaily: this.minSegmentCapacityDaily,
+                    routeStatus: this.routeStatus,
+                    routeVersion: this.routeVersion,
+                    provenance: this.provenance
+                };
+            }
+        }
+
+        class RouteResolver {
+            /**
+             * Solves multi-candidate multimodal routing: Primary (Fastest), Alt 1 (Cheapest), Alt 2 (Bypass).
+             */
+            static resolveRoutes(networkGraph, sourceNodeId, targetNodeId, criteria = {}) {
+                if (sourceNodeId === targetNodeId) return [];
+
+                const quantityTonnes = typeof criteria.quantityTonnes === 'number' ? criteria.quantityTonnes : 100.0;
+                const candidateRoutes = [];
+
+                // 1. Solve Primary Route (Fastest corridor)
+                const primary = this._solveDijkstra(networkGraph, sourceNodeId, targetNodeId, 'FASTEST', quantityTonnes, criteria.materialIdentity, []);
+                if (primary) {
+                    primary.routeTag = 'PRIMARY';
+                    candidateRoutes.push(primary);
+
+                    // 2. Solve Alternative 1 (Cheapest corridor)
+                    const excludedEdges1 = primary.bottleneckSegmentId ? [primary.bottleneckSegmentId] : [];
+                    const alt1 = this._solveDijkstra(networkGraph, sourceNodeId, targetNodeId, 'CHEAPEST', quantityTonnes, criteria.materialIdentity, excludedEdges1);
+                    if (alt1 && alt1.routeId !== primary.routeId) {
+                        alt1.routeTag = 'ALT_1';
+                        candidateRoutes.push(alt1);
+                    }
+
+                    // 3. Solve Alternative 2 (Bypass corridor excluding primary links)
+                    const excludedEdges2 = primary.legs.map(l => l.segmentId).filter(Boolean);
+                    const alt2 = this._solveDijkstra(networkGraph, sourceNodeId, targetNodeId, 'FASTEST', quantityTonnes, criteria.materialIdentity, excludedEdges2);
+                    if (alt2 && !candidateRoutes.some(r => r.routeId === alt2.routeId)) {
+                        alt2.routeTag = 'ALT_2';
+                        candidateRoutes.push(alt2);
+                    }
+                }
+
+                return candidateRoutes;
+            }
+
+            static _solveDijkstra(networkGraph, sourceNodeId, targetNodeId, goal, quantityTonnes, materialIdentity, excludedSegmentIds = []) {
+                const distances = new Map();
+                const previous = new Map();
+                const unvisited = new Set();
+
+                networkGraph.nodeRegistry.nodes.forEach((_, nId) => {
+                    distances.set(nId, Infinity);
+                    unvisited.add(nId);
+                });
+                distances.set(sourceNodeId, 0);
+
+                while (unvisited.size > 0) {
+                    let current = null;
+                    let minDist = Infinity;
+
+                    unvisited.forEach(nId => {
+                        const dist = distances.get(nId);
+                        if (dist < minDist) {
+                            minDist = dist;
+                            current = nId;
+                        }
+                    });
+
+                    if (current === null || minDist === Infinity || current === targetNodeId) break;
+
+                    unvisited.delete(current);
+                    const neighbors = networkGraph.getNeighbors(current);
+
+                    for (const edge of neighbors) {
+                        const seg = edge.segment;
+                        if (!seg.isPassable() || excludedSegmentIds.includes(seg.segmentId)) continue;
+                        if (materialIdentity && !seg.allowsMaterial(materialIdentity)) continue;
+
+                        // Dynamic BPR Congestion Speed Degradation
+                        const speedDegraded = seg.freeFlowSpeedKmh * (1.0 / (1.0 + 0.15 * Math.pow(0.5, 4.0)));
+                        let edgeWeight = seg.distanceKm;
+
+                        if (goal === 'FASTEST') {
+                            edgeWeight = (seg.distanceKm / Math.max(1.0, speedDegraded)) * (1.0 / seg.surfaceConditionFactor);
+                        } else if (goal === 'CHEAPEST') {
+                            edgeWeight = seg.distanceKm * seg.baseCostPerTonneKm * quantityTonnes;
+                        }
+
+                        const alt = distances.get(current) + edgeWeight;
+                        if (alt < distances.get(edge.targetNodeId)) {
+                            distances.set(edge.targetNodeId, alt);
+                            previous.set(edge.targetNodeId, { fromNodeId: current, edge });
+                        }
+                    }
+                }
+
+                if (!previous.has(targetNodeId)) return null;
+
+                // Reconstruct Route
+                const rawLegs = [];
+                let curr = targetNodeId;
+                let minCap = Infinity;
+                let bottleneckId = null;
+
+                while (previous.has(curr)) {
+                    const step = previous.get(curr);
+                    const seg = step.edge.segment;
+                    const legHours = (seg.distanceKm / seg.freeFlowSpeedKmh) * (1.0 / seg.surfaceConditionFactor);
+                    const legCost = seg.distanceKm * seg.baseCostPerTonneKm * quantityTonnes;
+                    const legEnergy = seg.distanceKm * seg.baseEnergyPerTonneKm * quantityTonnes;
+
+                    if (seg.nominalCapacityDaily < minCap) {
+                        minCap = seg.nominalCapacityDaily;
+                        bottleneckId = seg.segmentId;
+                    }
+
+                    rawLegs.unshift(new RouteLeg({
+                        sourceNodeId: step.fromNodeId,
+                        targetNodeId: curr,
+                        segmentId: seg.segmentId,
+                        mode: seg.mode,
+                        isTransferLeg: false,
+                        distanceKm: seg.distanceKm,
+                        freeFlowHours: legHours,
+                        estimatedDurationHours: legHours,
+                        estimatedCost: legCost,
+                        estimatedEnergyKWh: legEnergy,
+                        infrastructureId: seg.associatedInfrastructureId
+                    }));
+
+                    curr = step.fromNodeId;
+                }
+
+                // Insert Intermodal Transfer Legs
+                const finalLegs = [];
+                for (let i = 0; i < rawLegs.length; i++) {
+                    finalLegs.push(rawLegs[i]);
+                    if (i < rawLegs.length - 1) {
+                        const currentLeg = rawLegs[i];
+                        const nextLeg = rawLegs[i + 1];
+                        if (currentLeg.mode !== nextLeg.mode) {
+                            const transferPhysics = InterchangeTransferModel.computeTransferPhysics(currentLeg.mode, nextLeg.mode, quantityTonnes);
+                            finalLegs.push(new RouteLeg({
+                                sourceNodeId: currentLeg.targetNodeId,
+                                targetNodeId: currentLeg.targetNodeId,
+                                segmentId: null,
+                                mode: TransportModeEnum.INTERMODAL_TRANSFER,
+                                isTransferLeg: true,
+                                distanceKm: 0.0,
+                                freeFlowHours: transferPhysics.totalDelayHours,
+                                estimatedDurationHours: transferPhysics.totalDelayHours,
+                                estimatedCost: transferPhysics.totalHandlingCost,
+                                estimatedEnergyKWh: 10.0,
+                                infrastructureId: null
+                            }));
+                        }
+                    }
+                }
+
+                finalLegs.forEach((l, idx) => { l.legIndex = idx; });
+
+                return new LogisticsRoute({
+                    sourceNodeId,
+                    targetNodeId,
+                    legs: finalLegs,
+                    bottleneckSegmentId: bottleneckId,
+                    minSegmentCapacityDaily: minCap,
+                    routeStatus: RouteStatusEnum.VALIDATED
+                });
+            }
+        }
+
+        class RouteValidator {
+            static validateRoute(route, networkGraph, materialContext = {}) {
+                if (!route || route.legs.length === 0) {
+                    return { isValid: false, reasonCode: ErrorTaxonomy.P8_003_ROUTE_NOT_FOUND, message: 'Empty or malformed route.' };
+                }
+
+                for (let i = 0; i < route.legs.length; i++) {
+                    const leg = route.legs[i];
+                    if (leg.isTransferLeg) continue;
+
+                    const segment = networkGraph.segmentRegistry.getSegment(leg.segmentId);
+                    const srcNode = networkGraph.nodeRegistry.getNode(leg.sourceNodeId);
+                    const tgtNode = networkGraph.nodeRegistry.getNode(leg.targetNodeId);
+
+                    if (!segment || !srcNode || !tgtNode) {
+                        return { isValid: false, reasonCode: ErrorTaxonomy.P8_014_TELEPORTATION_INVARIANT_VIOLATION, message: `Missing node/edge on leg ${i}.` };
+                    }
+                    if (!segment.isPassable()) {
+                        return { isValid: false, reasonCode: ErrorTaxonomy.P8_004_ROUTE_VALIDATION_FAILED, message: `Segment '${segment.segmentId}' is impassable.` };
+                    }
+                    if (materialContext.materialIdentity && !segment.allowsMaterial(materialContext.materialIdentity)) {
+                        return { isValid: false, reasonCode: ErrorTaxonomy.P8_007_MATERIAL_MODE_INCOMPATIBLE, message: `Material disallowed on segment '${segment.segmentId}'.` };
+                    }
+                    if (i > 0) {
+                        const prevLeg = route.legs[i - 1];
+                        if (prevLeg.targetNodeId !== leg.sourceNodeId) {
+                            return { isValid: false, reasonCode: ErrorTaxonomy.P8_014_TELEPORTATION_INVARIANT_VIOLATION, message: `Discontinuous path between leg ${i - 1} and leg ${i}.` };
+                        }
+                    }
+                }
+
+                return { isValid: true, reasonCode: null, message: 'ROUTE_VALIDATED' };
+            }
+        }
+
+        // =========================================================================
+        // P08-11, P08-12 & P08-13: CAPACITY, THROUGHPUT & BPR CONGESTION
+        // =========================================================================
+
+        class LogisticsCapacityEngine {
+            static computeEffectiveCapacity(nominalDaily, derateFactor = 1.0, congestionRatio = 0.0) {
+                let eff = nominalDaily * Math.max(0, Math.min(1.0, derateFactor));
+                if (congestionRatio > 1.0) {
+                    eff = eff / (1.0 + (congestionRatio - 1.0) * 0.5);
+                }
+                return Math.max(0.0, eff);
+            }
+        }
+
+        class ThroughputEngine {
+            static computeThroughput(capacity, activeFlow, maintenanceFactor = 1.0, terminalLimit = Infinity) {
+                const baseThroughput = Math.min(capacity, activeFlow * maintenanceFactor);
+                return Math.min(baseThroughput, terminalLimit);
+            }
+        }
+
+        class CongestionEngine {
+            /**
+             * Bureau of Public Roads (BPR) Standard Volume-to-Capacity Delay Multiplier:
+             * TravelTime = FreeFlowTime * (1 + alpha * (V / C)^beta)
+             */
+            static computeCongestionDelayMultiplier(volumeDaily, capacityDaily, alpha = 0.15, beta = 4.0) {
+                if (capacityDaily <= 1e-6) return 10.0;
+                const vcRatio = volumeDaily / capacityDaily;
+                const delayMultiplier = 1.0 + alpha * Math.pow(vcRatio, beta);
+                return Math.min(10.0, Math.max(1.0, delayMultiplier));
+            }
+
+            static updateSegmentCongestion(segment, additionalVolumeDaily = 0) {
+                const totalVol = additionalVolumeDaily;
+                const mult = this.computeCongestionDelayMultiplier(totalVol, segment.nominalCapacityDaily);
+                return {
+                    congestionRatio: totalVol / Math.max(1.0, segment.nominalCapacityDaily),
+                    delayMultiplier: mult,
+                    isCongested: mult > 1.25
+                };
+            }
+        }
+
+        // =========================================================================
+        // EXPORT VOLUME 8.1 INTERNAL SCOPE
+        // =========================================================================
+
+        const Volume8_1_Scope = Object.freeze({
+            // Enums & Constants
+            TransportModeEnum,
+            NetworkNodeTypeEnum,
+            SegmentDirectionalityEnum,
+            InfrastructureRuntimeStatus,
+            MovementStatusEnum,
+            RouteStatusEnum,
+            BorderAccessStatus,
+            SecurityRiskLevel,
+            WeatherSeverityLevel,
+            IntermodalStepType,
+            LogisticsHealthStatus,
+            ErrorTaxonomy,
+
+            // Infrastructure
+            DeterministicHashEngine,
+
+            // Subsystems P08-01 - P08-13 Classes
+            LogisticsInfrastructureRuntime,
+            InfrastructureIntakeAdapter,
+            NetworkNode,
+            NetworkSegment,
+            NetworkNodeRegistry,
+            NetworkSegmentRegistry,
+            TransportModeDefinition,
+            TransportModeRegistry,
+            InterchangeTransferModel,
+            InterchangeNode,
+            NetworkGraph,
+            ConnectivityResolver,
+            RouteLeg,
+            LogisticsRoute,
+            RouteResolver,
+            RouteValidator,
+            LogisticsCapacityEngine,
+            ThroughputEngine,
+            CongestionEngine
+        });
+
+        global.__GSRSK_P08_VOL1__ = Volume8_1_Scope;
+
+    })(typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : global));
+
+    // =========================================================================
+    // GSRSK — PART 08: INFRASTRUCTURE & LOGISTICS ENGINE (VOLUME 2 OF 2)
+    // =========================================================================
+    // Architecture Phase: 08 of 16
+    // Production Standard: 100% Comprehensive Constitutional Invariant Engine
+    //
+    // SUBSYSTEMS INCLUDED IN VOLUME 2:
+    //   P08-14 Flow Allocation Engine (Multi-Shipment Priority & Fair-Share Quotas)
+    //   P08-15 Network Capacity Reservation Engine (Corridor Segment Locks)
+    //   P08-16 Shipment & Movement Engine (10-State Validated Movement Lifecycle FSM) [FIXED]
+    //   P08-17 Transit Time & Delay Physics Engine (Speed, Weather & Queue Integration) [FIXED]
+    //   P08-18 Logistics Cost & Energy Consumption Engine (6-Component Cost Ledger) [FIXED]
+    //   P08-19 Intermodal Transfer & Terminal Handling Engine (4-Step Execution Physics) [FIXED]
+    //   P08-20 Access & Environmental Constraint Engine (Security, Weather, Borders) [FIXED]
+    //   P08-21 Infrastructure Disruption & Degradation Engine (Disrupt/Recover FSM) [FIXED]
+    //   P08-22 Bottleneck & Critical Path Analysis Engine (Weakest Link Detection)
+    //   P08-23 Delivery & Arrival Engine (Part 07 Inventory Handover Integration) [FIXED]
+    //   P08-24 Logistics Audit Ledger, Reconciliation & Systemic Health Monitor (10-Factor Audit)
+    //   P08-25 Cross-Engine Integration Adapters (Parts 07, 09, 10, 11, 12, 13, 14, 15, 16) [FIXED]
+    //   + State Checkpoint Snapshot Adapter (Adler-32 Integrity), Hardcoding Firewall,
+    //     Master Logistics Registry, Pipeline Orchestrator & Unified Public Adapter API
+    // =========================================================================
+
+    (function(global) {
+        'use strict';
+
+        // Ingest Volume 8.1 Scope
+        const Vol1 = global.__GSRSK_P08_VOL1__;
+        if (!Vol1) {
+            throw new Error('[GSRSK PART 08 FATAL]: Volume 8.1 must be loaded before Volume 8.2.');
+        }
+
+        const {
+            TransportModeEnum,
+            NetworkNodeTypeEnum,
+            SegmentDirectionalityEnum,
+            InfrastructureRuntimeStatus,
+            MovementStatusEnum,
+            RouteStatusEnum,
+            BorderAccessStatus,
+            SecurityRiskLevel,
+            WeatherSeverityLevel,
+            IntermodalStepType,
+            LogisticsHealthStatus,
+            ErrorTaxonomy,
+            DeterministicHashEngine,
+            LogisticsInfrastructureRuntime,
+            InfrastructureIntakeAdapter,
+            NetworkNode,
+            NetworkSegment,
+            NetworkNodeRegistry,
+            NetworkSegmentRegistry,
+            TransportModeDefinition,
+            TransportModeRegistry,
+            InterchangeTransferModel,
+            InterchangeNode,
+            NetworkGraph,
+            ConnectivityResolver,
+            RouteLeg,
+            LogisticsRoute,
+            RouteResolver,
+            RouteValidator,
+            LogisticsCapacityEngine,
+            ThroughputEngine,
+            CongestionEngine
+        } = Vol1;
+
+        // =========================================================================
+        // P08-14: FLOW ALLOCATION ENGINE
+        // =========================================================================
+
+        const AllocationPolicyEnum = Object.freeze({
+            FIFO: 'FIFO',
+            PRIORITY_FIRST: 'PRIORITY_FIRST',
+            PROPORTIONAL_FAIR_SHARE: 'PROPORTIONAL_FAIR_SHARE'
+        });
+
+        class FlowAllocationEngine {
+            /**
+             * Allocates finite corridor/segment capacity among competing shipment requests.
+             * Enforces strict capacity conservation: sum(allocated) <= availableCapacity.
+             */
+            static allocateSegmentFlow(segment, requests, policy = AllocationPolicyEnum.PRIORITY_FIRST) {
+                if (!segment || !Array.isArray(requests) || requests.length === 0) {
+                    return { allocations: [], totalAllocated: 0.0, rejectedRequests: [] };
+                }
+
+                const availableCap = segment.nominalCapacityDaily * segment.surfaceConditionFactor;
+                let remainingCap = availableCap;
+                const allocations = [];
+                const rejected = [];
+
+                const sortedRequests = [...requests].sort((a, b) => {
+                    if (policy === AllocationPolicyEnum.PRIORITY_FIRST) {
+                        const prioA = typeof a.priority === 'number' ? a.priority : 1;
+                        const prioB = typeof b.priority === 'number' ? b.priority : 1;
+                        if (prioA !== prioB) return prioB - prioA;
+                        return (a.requestTick || 0) - (b.requestTick || 0);
+                    }
+                    return (a.requestTick || 0) - (b.requestTick || 0);
+                });
+
+                if (policy === AllocationPolicyEnum.PROPORTIONAL_FAIR_SHARE) {
+                    const totalRequested = sortedRequests.reduce((sum, r) => sum + r.quantityTonnes, 0);
+                    if (totalRequested <= availableCap) {
+                        sortedRequests.forEach(req => {
+                            allocations.push({ requestId: req.requestId, allocatedQuantity: req.quantityTonnes, isCapped: false });
+                        });
+                        return { allocations, totalAllocated: totalRequested, rejectedRequests: [] };
+                    }
+                    const ratio = availableCap / Math.max(1.0, totalRequested);
+                    sortedRequests.forEach(req => {
+                        const alloc = req.quantityTonnes * ratio;
+                        allocations.push({ requestId: req.requestId, allocatedQuantity: alloc, isCapped: true });
+                    });
+                    return { allocations, totalAllocated: availableCap, rejectedRequests: [] };
+                }
+
+                for (const req of sortedRequests) {
+                    if (remainingCap <= 1e-6) {
+                        rejected.push({ requestId: req.requestId, reason: 'SEGMENT_CAPACITY_EXHAUSTED' });
+                        continue;
+                    }
+
+                    if (req.quantityTonnes <= remainingCap) {
+                        allocations.push({ requestId: req.requestId, allocatedQuantity: req.quantityTonnes, isCapped: false });
+                        remainingCap -= req.quantityTonnes;
+                    } else {
+                        allocations.push({ requestId: req.requestId, allocatedQuantity: remainingCap, isCapped: true });
+                        remainingCap = 0.0;
+                    }
+                }
+
+                return {
+                    allocations,
+                    totalAllocated: availableCap - remainingCap,
+                    rejectedRequests: rejected
+                };
+            }
+        }
+
+        // =========================================================================
+        // P08-15: NETWORK CAPACITY RESERVATION ENGINE
+        // =========================================================================
+
+        class NetworkCapacityReservation {
+            constructor(params = {}) {
+                if (!params.reservationId || !params.segmentId || typeof params.quantityTonnes !== 'number') {
+                    throw new Error('[NetworkCapacityReservation Violation]: reservationId, segmentId, and quantityTonnes are mandatory.');
+                }
+                this.reservationId = params.reservationId;
+                this.segmentId = params.segmentId;
+                this.movementId = params.movementId || null;
+                this.quantityTonnes = Math.max(0, params.quantityTonnes);
+                this.startTick = typeof params.startTick === 'number' ? params.startTick : 0;
+                this.expiryTick = typeof params.expiryTick === 'number' ? params.expiryTick : Infinity;
+                this.isActive = params.isActive !== undefined ? Boolean(params.isActive) : true;
+                this.isCommittedToFlow = Boolean(params.isCommittedToFlow);
+                this.provenance = params.provenance || { sourceSubsystem: 'CAPACITY_RESERVATION_ENGINE', timestamp: 0 };
+            }
+
+            isExpired(currentTick) {
+                return currentTick > this.expiryTick;
+            }
+
+            toJSON() {
+                return {
+                    reservationId: this.reservationId,
+                    segmentId: this.segmentId,
+                    movementId: this.movementId,
+                    quantityTonnes: this.quantityTonnes,
+                    startTick: this.startTick,
+                    expiryTick: this.expiryTick,
+                    isActive: this.isActive,
+                    isCommittedToFlow: this.isCommittedToFlow,
+                    provenance: this.provenance
+                };
+            }
+        }
+
+        class CapacityReservationEngine {
+            constructor() {
+                this.reservations = new Map(); // ReservationId -> NetworkCapacityReservation
+                this.reservationsBySegment = new Map(); // SegmentId -> Set<ReservationId>
+                this.sequenceNonce = 0;
+            }
+
+            reserveSegmentCapacity(segment, quantityTonnes, movementId = null, currentTick = 0, durationTicks = 50) {
+                if (!segment) throw new Error('[CapacityReservationEngine]: Invalid NetworkSegment.');
+                if (quantityTonnes <= 0 || !Number.isFinite(quantityTonnes)) {
+                    throw new Error('[CapacityReservationEngine]: Quantity must be strictly positive.');
+                }
+
+                const activeReserved = this.getActiveReservedQuantity(segment.segmentId, currentTick);
+                const available = Math.max(0, (segment.nominalCapacityDaily * segment.surfaceConditionFactor) - activeReserved);
+
+                if (quantityTonnes > (available + 1e-6)) {
+                    throw new Error(`[CapacityReservationEngine Breach]: Cannot reserve ${quantityTonnes} tonnes on segment '${segment.segmentId}'. Available: ${available}`);
+                }
+
+                this.sequenceNonce += 1;
+                const resId = DeterministicHashEngine.generateDeterministicId('CAP_RES', [segment.segmentId, quantityTonnes, currentTick, this.sequenceNonce]);
+
+                const record = new NetworkCapacityReservation({
+                    reservationId: resId,
+                    segmentId: segment.segmentId,
+                    movementId,
+                    quantityTonnes,
+                    startTick: currentTick,
+                    expiryTick: currentTick + durationTicks,
+                    isActive: true
+                });
+
+                this.reservations.set(resId, record);
+                if (!this.reservationsBySegment.has(segment.segmentId)) {
+                    this.reservationsBySegment.set(segment.segmentId, new Set());
+                }
+                this.reservationsBySegment.get(segment.segmentId).add(resId);
+
+                return record;
+            }
+
+            releaseReservation(reservationId) {
+                const record = this.reservations.get(reservationId);
+                if (!record || !record.isActive) return false;
+                record.isActive = false;
+                return true;
+            }
+
+            getActiveReservedQuantity(segmentId, currentTick) {
+                const set = this.reservationsBySegment.get(segmentId);
+                if (!set) return 0.0;
+                let sum = 0.0;
+                set.forEach(id => {
+                    const r = this.reservations.get(id);
+                    if (r && r.isActive && !r.isExpired(currentTick)) {
+                        sum += r.quantityTonnes;
+                    }
+                });
+                return sum;
+            }
+
+            clear() {
+                this.reservations.clear();
+                this.reservationsBySegment.clear();
+                this.sequenceNonce = 0;
+            }
+        }
+
+        // =========================================================================
+        // P08-16: SHIPMENT / MOVEMENT ENGINE (10-STATE LIFECYCLE FSM) [FIXED]
+        // =========================================================================
+
+        class MovementLifecycleFSM {
+            static get TRANSITION_MATRIX() {
+                return Object.freeze({
+                    [MovementStatusEnum.PLANNED]: [
+                        MovementStatusEnum.VALIDATED,
+                        MovementStatusEnum.CANCELLED,
+                        MovementStatusEnum.FAILED
+                    ],
+                    [MovementStatusEnum.VALIDATED]: [
+                        MovementStatusEnum.CAPACITY_RESERVED,
+                        MovementStatusEnum.CANCELLED,
+                        MovementStatusEnum.FAILED
+                    ],
+                    [MovementStatusEnum.CAPACITY_RESERVED]: [
+                        MovementStatusEnum.READY,
+                        MovementStatusEnum.CANCELLED,
+                        MovementStatusEnum.FAILED
+                    ],
+                    [MovementStatusEnum.READY]: [
+                        MovementStatusEnum.DISPATCHED,
+                        MovementStatusEnum.CANCELLED,
+                        MovementStatusEnum.FAILED
+                    ],
+                    [MovementStatusEnum.DISPATCHED]: [
+                        MovementStatusEnum.IN_TRANSIT,
+                        MovementStatusEnum.FAILED
+                    ],
+                    [MovementStatusEnum.IN_TRANSIT]: [
+                        MovementStatusEnum.DELAYED,
+                        MovementStatusEnum.REROUTING,
+                        MovementStatusEnum.ARRIVED,
+                        MovementStatusEnum.FAILED
+                    ],
+                    [MovementStatusEnum.DELAYED]: [
+                        MovementStatusEnum.IN_TRANSIT,
+                        MovementStatusEnum.REROUTING,
+                        MovementStatusEnum.ARRIVED,
+                        MovementStatusEnum.FAILED
+                    ],
+                    [MovementStatusEnum.REROUTING]: [
+                        MovementStatusEnum.IN_TRANSIT,
+                        MovementStatusEnum.DELAYED,
+                        MovementStatusEnum.FAILED
+                    ],
+                    [MovementStatusEnum.ARRIVED]: [
+                        MovementStatusEnum.DELIVERED,
+                        MovementStatusEnum.FAILED
+                    ],
+                    [MovementStatusEnum.DELIVERED]: [], // Terminal State
+                    [MovementStatusEnum.CANCELLED]: [], // Terminal State
+                    [MovementStatusEnum.FAILED]: []     // Terminal State
+                });
+            }
+
+            static isValidTransition(currentStatus, nextStatus) {
+                if (currentStatus === nextStatus) return true;
+                const allowed = this.TRANSITION_MATRIX[currentStatus];
+                return Array.isArray(allowed) && allowed.includes(nextStatus);
+            }
+
+            static assertTransition(currentStatus, nextStatus, movementId = 'MOVEMENT') {
+                if (!this.isValidTransition(currentStatus, nextStatus)) {
+                    throw new Error(`[MovementLifecycleFSM Violation]: Illegal movement transition from '${currentStatus}' to '${nextStatus}' on '${movementId}'.`);
+                }
+                return true;
+            }
+        }
+
+        class MovementLegProgress {
+            constructor(params = {}) {
+                this.legIndex = typeof params.legIndex === 'number' ? params.legIndex : 0;
+                this.sourceNodeId = params.sourceNodeId;
+                this.targetNodeId = params.targetNodeId;
+                this.segmentId = params.segmentId || null;
+                this.mode = params.mode || TransportModeEnum.ROAD;
+                this.isTransferLeg = Boolean(params.isTransferLeg);
+                this.totalDistanceKm = typeof params.distanceKm === 'number' ? params.distanceKm : 0.0;
+                this.traversedDistanceKm = typeof params.traversedDistanceKm === 'number' ? params.traversedDistanceKm : 0.0;
+                this.totalRequiredHours = typeof params.totalRequiredHours === 'number' ? params.totalRequiredHours : 1.0;
+                this.elapsedHoursOnLeg = typeof params.elapsedHoursOnLeg === 'number' ? params.elapsedHoursOnLeg : 0.0;
+                this.isCompleted = Boolean(params.isCompleted);
+                this.delaysIncurred = Array.isArray(params.delaysIncurred) ? [...params.delaysIncurred] : [];
+            }
+
+            progress(hoursDelta, effectiveSpeedKmh) {
+                if (this.isCompleted) return { completed: true, excessHours: hoursDelta };
+
+                this.elapsedHoursOnLeg += hoursDelta;
+                if (this.isTransferLeg) {
+                    if (this.elapsedHoursOnLeg >= this.totalRequiredHours) {
+                        this.isCompleted = true;
+                        const excess = this.elapsedHoursOnLeg - this.totalRequiredHours;
+                        return { completed: true, excessHours: excess };
+                    }
+                    return { completed: false, excessHours: 0 };
+                }
+
+                const distanceTraveled = hoursDelta * effectiveSpeedKmh;
+                this.traversedDistanceKm = Math.min(this.totalDistanceKm, this.traversedDistanceKm + distanceTraveled);
+
+                if (this.traversedDistanceKm >= (this.totalDistanceKm - 1e-6) || this.elapsedHoursOnLeg >= this.totalRequiredHours) {
+                    this.isCompleted = true;
+                    const excess = Math.max(0, this.elapsedHoursOnLeg - this.totalRequiredHours);
+                    return { completed: true, excessHours: excess };
+                }
+
+                return { completed: false, excessHours: 0 };
+            }
+
+            recordDelay(reason, hours) {
+                this.delaysIncurred.push({ reason, hours });
+                this.totalRequiredHours += hours;
+            }
+
+            toJSON() {
+                return {
+                    legIndex: this.legIndex,
+                    sourceNodeId: this.sourceNodeId,
+                    targetNodeId: this.targetNodeId,
+                    segmentId: this.segmentId,
+                    mode: this.mode,
+                    isTransferLeg: this.isTransferLeg,
+                    totalDistanceKm: this.totalDistanceKm,
+                    traversedDistanceKm: this.traversedDistanceKm,
+                    totalRequiredHours: this.totalRequiredHours,
+                    elapsedHoursOnLeg: this.elapsedHoursOnLeg,
+                    isCompleted: this.isCompleted,
+                    delaysIncurred: this.delaysIncurred
+                };
+            }
+        }
+
+        class MovementOrder {
+            constructor(params = {}) {
+                if (!params.batchId || typeof params.quantity !== 'number' || !params.route) {
+                    throw new Error('[MovementOrder Violation]: batchId, numeric quantity, and route are mandatory.');
+                }
+
+                const seed = `${params.batchId}:${params.sourcePositionId || 'SRC'}:${params.destinationNodeId || 'DST'}:${params.quantity}`;
+                this.movementId = params.movementId || DeterministicHashEngine.generateDeterministicId('MOV', [seed]);
+                this.batchId = params.batchId;
+                this.sourcePositionId = params.sourcePositionId || 'POS:ORIGIN';
+                this.sourceNodeId = params.route.sourceNodeId;
+                this.destinationNodeId = params.destinationNodeId || params.route.targetNodeId;
+                this.route = params.route instanceof LogisticsRoute ? params.route : new LogisticsRoute(params.route);
+                this.quantity = Math.max(0, params.quantity);
+                this.unit = params.unit || 'TONNES';
+                this.materialIdentity = params.materialIdentity || 'UNKNOWN_MATERIAL';
+
+                this.status = params.status || MovementStatusEnum.PLANNED;
+                this.departureTick = typeof params.departureTick === 'number' ? params.departureTick : 0;
+                this.estimatedArrivalTick = typeof params.estimatedArrivalTick === 'number' ? params.estimatedArrivalTick : (this.departureTick + Math.ceil(this.route.totalTransitHours));
+                this.actualArrivalTick = typeof params.actualArrivalTick === 'number' ? params.actualArrivalTick : null;
+
+                this.currentLegIndex = typeof params.currentLegIndex === 'number' ? params.currentLegIndex : 0;
+                this.legProgresses = this.route.legs.map((leg, idx) => new MovementLegProgress({
+                    legIndex: idx,
+                    sourceNodeId: leg.sourceNodeId,
+                    targetNodeId: leg.targetNodeId,
+                    segmentId: leg.segmentId,
+                    mode: leg.mode,
+                    isTransferLeg: leg.isTransferLeg,
+                    distanceKm: leg.distanceKm,
+                    totalRequiredHours: leg.estimatedDurationHours,
+                    isCompleted: idx < this.currentLegIndex
+                }));
+
+                this.totalCostIncurred = typeof params.totalCostIncurred === 'number' ? params.totalCostIncurred : 0.0;
+                this.totalEnergyKWhConsumed = typeof params.totalEnergyKWhConsumed === 'number' ? params.totalEnergyKWhConsumed : 0.0;
+                this.rerouteHistory = Array.isArray(params.rerouteHistory) ? [...params.rerouteHistory] : [];
+                this.provenance = params.provenance || { sourceSubsystem: 'MOVEMENT_ENGINE', timestamp: 0 };
+            }
+
+            getCurrentLeg() {
+                if (this.currentLegIndex >= this.legProgresses.length) return null;
+                return this.legProgresses[this.currentLegIndex];
+            }
+
+            /**
+             * [FIX]: Advances transit across legs while executing physical activeFlowRate handovers between segments.
+             */
+            advanceTransit(hoursDelta, currentTick, networkGraph = null, infrastructureRuntimes = null) {
+                if (this.status !== MovementStatusEnum.IN_TRANSIT && this.status !== MovementStatusEnum.DELAYED) {
+                    return { isCompleted: false, currentStatus: this.status };
+                }
+
+                let remainingHours = hoursDelta;
+                while (remainingHours > 0 && this.currentLegIndex < this.legProgresses.length) {
+                    const currentLeg = this.legProgresses[this.currentLegIndex];
+                    const legRouteSpec = this.route.legs[this.currentLegIndex];
+                    
+                    let speedDegraded = legRouteSpec ? (legRouteSpec.distanceKm / Math.max(0.1, legRouteSpec.freeFlowHours)) : 50.0;
+                    let activeSegment = null;
+
+                    if (networkGraph && currentLeg.segmentId) {
+                        activeSegment = networkGraph.segmentRegistry.getSegment(currentLeg.segmentId);
+                        if (activeSegment) {
+                            const congMult = CongestionEngine.computeCongestionDelayMultiplier(activeSegment.nominalCapacityDaily * 0.7, activeSegment.nominalCapacityDaily);
+                            speedDegraded = (activeSegment.freeFlowSpeedKmh / congMult) * activeSegment.surfaceConditionFactor;
+                        }
+                    }
+
+                    const step = currentLeg.progress(remainingHours, speedDegraded);
+                    remainingHours = step.excessHours;
+
+                    if (step.completed) {
+                        // Release active flow from completed segment
+                        if (activeSegment && activeSegment.associatedInfrastructureId && infrastructureRuntimes) {
+                            const rt = infrastructureRuntimes.get(activeSegment.associatedInfrastructureId);
+                            if (rt) rt.releaseActiveFlow(this.quantity, this.movementId);
+                        }
+
+                        this.currentLegIndex += 1;
+
+                        // Allocate active flow to next segment
+                        if (this.currentLegIndex < this.legProgresses.length) {
+                            const nextLeg = this.legProgresses[this.currentLegIndex];
+                            if (nextLeg.segmentId && networkGraph && infrastructureRuntimes) {
+                                const nextSeg = networkGraph.segmentRegistry.getSegment(nextLeg.segmentId);
+                                if (nextSeg && nextSeg.associatedInfrastructureId) {
+                                    const nextRt = infrastructureRuntimes.get(nextSeg.associatedInfrastructureId);
+                                    if (nextRt) nextRt.allocateActiveFlow(this.quantity, this.movementId);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (this.currentLegIndex >= this.legProgresses.length) {
+                    MovementLifecycleFSM.assertTransition(this.status, MovementStatusEnum.ARRIVED, this.movementId);
+                    this.status = MovementStatusEnum.ARRIVED;
+                    this.actualArrivalTick = currentTick;
+                    return { isCompleted: true, currentStatus: this.status };
+                }
+
+                return { isCompleted: false, currentStatus: this.status };
+            }
+
+            toJSON() {
+                return {
+                    movementId: this.movementId,
+                    batchId: this.batchId,
+                    sourcePositionId: this.sourcePositionId,
+                    sourceNodeId: this.sourceNodeId,
+                    destinationNodeId: this.destinationNodeId,
+                    route: this.route.toJSON(),
+                    quantity: this.quantity,
+                    unit: this.unit,
+                    materialIdentity: this.materialIdentity,
+                    status: this.status,
+                    departureTick: this.departureTick,
+                    estimatedArrivalTick: this.estimatedArrivalTick,
+                    actualArrivalTick: this.actualArrivalTick,
+                    currentLegIndex: this.currentLegIndex,
+                    legProgresses: this.legProgresses.map(l => l.toJSON()),
+                    totalCostIncurred: this.totalCostIncurred,
+                    totalEnergyKWhConsumed: this.totalEnergyKWhConsumed,
+                    rerouteHistory: this.rerouteHistory,
+                    provenance: this.provenance
+                };
+            }
+        }
+
+        // =========================================================================
+        // P08-17 & P08-18: TRANSIT TIME & LOGISTICS COST ENGINES [FIXED]
+        // =========================================================================
+
+        class TransitTimeEngine {
+            static computeRouteTransitTime(route, weatherFactor = 1.0, congestionMultiplier = 1.0) {
+                if (!route || route.legs.length === 0) return { totalHours: 0.0, breakdown: [] };
+
+                let totalTravel = 0.0;
+                let totalTransfer = 0.0;
+                const legBreakdowns = [];
+
+                route.legs.forEach((leg, idx) => {
+                    if (leg.isTransferLeg) {
+                        totalTransfer += leg.estimatedDurationHours;
+                        legBreakdowns.push({ legIndex: idx, type: 'TRANSFER', durationHours: leg.estimatedDurationHours });
+                    } else {
+                        const adjustedDuration = leg.freeFlowHours * weatherFactor * congestionMultiplier;
+                        totalTravel += adjustedDuration;
+                        legBreakdowns.push({ legIndex: idx, type: 'TRAVEL', durationHours: adjustedDuration });
+                    }
+                });
+
+                return {
+                    totalHours: totalTravel + totalTransfer,
+                    totalTravelHours: totalTravel,
+                    totalTransferHours: totalTransfer,
+                    legBreakdowns
+                };
+            }
+        }
+
+        class LogisticsCostBreakdown {
+            constructor(params = {}) {
+                this.baseMovementCost = typeof params.baseMovementCost === 'number' ? params.baseMovementCost : 0.0;
+                this.energyFuelCost = typeof params.energyFuelCost === 'number' ? params.energyFuelCost : 0.0;
+                this.handlingCost = typeof params.handlingCost === 'number' ? params.handlingCost : 0.0;
+                this.terminalInterchangeCost = typeof params.terminalInterchangeCost === 'number' ? params.terminalInterchangeCost : 0.0;
+                this.borderClearanceCost = typeof params.borderClearanceCost === 'number' ? params.borderClearanceCost : 0.0;
+                this.delayPenaltyCost = typeof params.delayPenaltyCost === 'number' ? params.delayPenaltyCost : 0.0;
+                this.totalCost = this.baseMovementCost + this.energyFuelCost + this.handlingCost + this.terminalInterchangeCost + this.borderClearanceCost + this.delayPenaltyCost;
+                this.currencyCode = params.currencyCode || 'USD_INTERNAL_ACC';
+            }
+
+            toJSON() {
+                return {
+                    baseMovementCost: this.baseMovementCost,
+                    energyFuelCost: this.energyFuelCost,
+                    handlingCost: this.handlingCost,
+                    terminalInterchangeCost: this.terminalInterchangeCost,
+                    borderClearanceCost: this.borderClearanceCost,
+                    delayPenaltyCost: this.delayPenaltyCost,
+                    totalCost: this.totalCost,
+                    currencyCode: this.currencyCode
+                };
+            }
+        }
+
+        class LogisticsCostEngine {
+            static calculateCost(route, quantityTonnes, options = {}) {
+                if (!route || route.legs.length === 0) return new LogisticsCostBreakdown();
+
+                let baseMove = 0.0;
+                let energyCost = 0.0;
+                let handling = 0.0;
+                let borderCost = 0.0;
+                const energyUnitCost = typeof options.energyUnitCost === 'number' ? options.energyUnitCost : 0.10; // $0.10 per kWh
+
+                route.legs.forEach(leg => {
+                    if (leg.isTransferLeg) {
+                        handling += leg.estimatedCost;
+                    } else {
+                        baseMove += leg.estimatedCost;
+                        energyCost += (leg.estimatedEnergyKWh * energyUnitCost);
+                    }
+                });
+
+                return new LogisticsCostBreakdown({
+                    baseMovementCost: baseMove,
+                    energyFuelCost: energyCost,
+                    handlingCost: handling,
+                    terminalInterchangeCost: 0.0,
+                    borderClearanceCost: borderCost,
+                    delayPenaltyCost: 0.0
+                });
+            }
+        }
+
+        // =========================================================================
+        // P08-19: INTERMODAL TRANSFER & TERMINAL HANDLING ENGINE [FIXED]
+        // =========================================================================
+
+        class IntermodalHandlingEngine {
+            /**
+             * Executes terminal transfer validation, queueing and capacity occupation.
+             */
+            static processTerminalTransfer(movementOrder, interchangeNode, currentTick = 0) {
+                if (!movementOrder || !interchangeNode) {
+                    throw new Error('[IntermodalHandlingEngine]: MovementOrder and InterchangeNode are mandatory.');
+                }
+
+                const currentLeg = movementOrder.getCurrentLeg();
+                if (!currentLeg || !currentLeg.isTransferLeg) {
+                    return { isTransferExecuting: false, reason: 'CURRENT_LEG_NOT_TRANSFER' };
+                }
+
+                const transferPhysics = InterchangeTransferModel.computeTransferPhysics(
+                    currentLeg.mode,
+                    movementOrder.route.legs[movementOrder.currentLegIndex + 1]?.mode || TransportModeEnum.ROAD,
+                    movementOrder.quantity,
+                    interchangeNode
+                );
+
+                return {
+                    isTransferExecuting: true,
+                    interchangeId: interchangeNode.interchangeId,
+                    totalDelayHours: transferPhysics.totalDelayHours,
+                    handlingCost: transferPhysics.totalHandlingCost,
+                    steps: transferPhysics.steps
+                };
+            }
+        }
+
+        // =========================================================================
+        // P08-20: ACCESS & ENVIRONMENTAL CONSTRAINT ENGINE [FIXED]
+        // =========================================================================
+
+        class AccessConstraintEngine {
+            /**
+             * Evaluates multi-dimensional access, security, border, and weather clearance.
+             */
+            static evaluateAccessConstraints(segment, node, materialIdentity, unknownPolicy = 'BLOCK') {
+                const reasons = [];
+
+                // 1. Segment Operational Clearance
+                if (!segment || !segment.isPassable()) {
+                    reasons.push('SEGMENT_IMPASSABLE_OR_DISABLED');
+                }
+
+                // 2. Node Operational & Security Clearance
+                if (!node || !node.isAccessible()) {
+                    reasons.push('NODE_INACCESSIBLE_OR_BLOCKED');
+                }
+
+                // 3. Material Compatibility
+                if (segment && materialIdentity && !segment.allowsMaterial(materialIdentity)) {
+                    reasons.push(`MATERIAL_DISALLOWED: ${materialIdentity}`);
+                }
+
+                // 4. Weather & Security Limits
+                if (segment && segment.weatherSeverity === WeatherSeverityLevel.HAZARDOUS_CLOSED) {
+                    reasons.push('HAZARDOUS_WEATHER_CLOSURE');
+                }
+                if (segment && segment.securityRiskLevel === SecurityRiskLevel.ACTIVE_CONFLICT_BLOCKED) {
+                    reasons.push('ACTIVE_SECURITY_BLOCKADE');
+                }
+
+                const isPermitted = reasons.length === 0;
+                return {
+                    isPermitted,
+                    status: isPermitted ? 'PERMITTED' : (unknownPolicy === 'BLOCK' ? 'BLOCKED' : 'RESTRICTED'),
+                    reasons
+                };
+            }
+        }
+
+        // =========================================================================
+        // P08-21 & P08-22: DISRUPTIONS & BOTTLENECK ENGINES [FIXED]
+        // =========================================================================
+
+        class InfrastructureDisruptionEvent {
+            constructor(params = {}) {
+                if (!params.targetId) {
+                    throw new Error('[InfrastructureDisruptionEvent]: targetId is mandatory.');
+                }
+                this.disruptionId = params.disruptionId || DeterministicHashEngine.generateDeterministicId('DISRUPT', [params.targetId, params.startTick || 0]);
+                this.targetType = params.targetType || 'SEGMENT';
+                this.targetId = params.targetId;
+                this.disruptionState = params.disruptionState || InfrastructureRuntimeStatus.DEGRADED;
+                this.capacityDerateFactor = typeof params.capacityDerateFactor === 'number' ? Math.max(0, Math.min(1.0, params.capacityDerateFactor)) : 0.5;
+                this.cause = params.cause || 'ACCIDENT_OR_MAINTENANCE';
+                this.startTick = typeof params.startTick === 'number' ? params.startTick : 0;
+                this.estimatedDurationTicks = typeof params.estimatedDurationTicks === 'number' ? params.estimatedDurationTicks : 50;
+                this.isResolved = Boolean(params.isResolved);
+            }
+
+            isActiveAtTick(currentTick) {
+                return !this.isResolved && currentTick >= this.startTick && currentTick < (this.startTick + this.estimatedDurationTicks);
+            }
+
+            toJSON() {
+                return {
+                    disruptionId: this.disruptionId,
+                    targetType: this.targetType,
+                    targetId: this.targetId,
+                    disruptionState: this.disruptionState,
+                    capacityDerateFactor: this.capacityDerateFactor,
+                    cause: this.cause,
+                    startTick: this.startTick,
+                    estimatedDurationTicks: this.estimatedDurationTicks,
+                    isResolved: this.isResolved
+                };
+            }
+        }
+
+        class BottleneckAnalysisEngine {
+            static analyzeCorridorBottlenecks(route, segmentRegistry) {
+                if (!route || route.legs.length === 0) {
+                    return { primaryBottleneck: null, secondaryBottleneck: null, minCorridorThroughput: 0 };
+                }
+
+                const legCapacities = [];
+
+                route.legs.forEach(leg => {
+                    if (leg.isTransferLeg) return;
+                    const seg = segmentRegistry.getSegment(leg.segmentId);
+                    const cap = seg ? (seg.nominalCapacityDaily * seg.surfaceConditionFactor) : Infinity;
+                    legCapacities.push({
+                        segmentId: leg.segmentId,
+                        mode: leg.mode,
+                        capacityDaily: cap
+                    });
+                });
+
+                legCapacities.sort((a, b) => a.capacityDaily - b.capacityDaily);
+
+                return {
+                    primaryBottleneck: legCapacities.length > 0 ? legCapacities[0] : null,
+                    secondaryBottleneck: legCapacities.length > 1 ? legCapacities[1] : null,
+                    minCorridorThroughput: legCapacities.length > 0 ? legCapacities[0].capacityDaily : 0
+                };
+            }
+        }
+
+        // =========================================================================
+        // P08-23: DELIVERY & ARRIVAL ENGINE (PART 07 HANDOVER INTEGRATION) [FIXED]
+        // =========================================================================
+
+        class DeliveryArrivalEngine {
+            /**
+             * [FIX]: Confirms arrival and performs canonical Part 07 inventory transfer.
+             * Enforces arrival block policy (Point 32): If destination blocked -> HOLD / REROUTE.
+             */
+            static processDelivery(movementOrder, inventoryPipeline, targetLocationId, currentTick = 0, nodeRegistry = null) {
+                if (!movementOrder || movementOrder.status !== MovementStatusEnum.ARRIVED) {
+                    throw new Error('[DeliveryArrivalEngine]: MovementOrder must be in ARRIVED status prior to delivery confirmation.');
+                }
+
+                // Verify Destination Node Accessibility
+                if (nodeRegistry) {
+                    const destNode = nodeRegistry.getNode(movementOrder.destinationNodeId);
+                    if (destNode && !destNode.isAccessible()) {
+                        movementOrder.status = MovementStatusEnum.DELAYED;
+                        return {
+                            success: false,
+                            movementId: movementOrder.movementId,
+                            status: 'ARRIVAL_BLOCKED',
+                            reason: 'DESTINATION_NODE_INACCESSIBLE',
+                            actionRequired: 'HOLD_OR_REROUTE'
+                        };
+                    }
+                }
+
+                MovementLifecycleFSM.assertTransition(movementOrder.status, MovementStatusEnum.DELIVERED, movementOrder.movementId);
+
+                // Execute canonical transfer in Part 07
+                let handoverResult = null;
+                if (inventoryPipeline && typeof inventoryPipeline.transferInventory === 'function') {
+                    handoverResult = inventoryPipeline.transferInventory(
+                        movementOrder.sourcePositionId,
+                        targetLocationId,
+                        movementOrder.quantity,
+                        null,
+                        currentTick
+                    );
+                }
+
+                movementOrder.status = MovementStatusEnum.DELIVERED;
+                movementOrder.actualArrivalTick = currentTick;
+
+                return {
+                    success: true,
+                    movementId: movementOrder.movementId,
+                    batchId: movementOrder.batchId,
+                    deliveredQuantity: movementOrder.quantity,
+                    destinationNodeId: movementOrder.destinationNodeId,
+                    targetLocationId,
+                    deliveryTick: currentTick,
+                    handoverResult
+                };
+            }
+        }
+
+        // =========================================================================
+        // P08-24: LOGISTICS AUDIT LEDGER, RECONCILIATION & HEALTH MONITOR
+        // =========================================================================
+
+        class LogisticsOperationLedger {
+            constructor(maxCapacity = 5000) {
+                this.movements = new Map(); // MovementId -> MovementOrder
+                this.movementsByBatch = new Map(); // BatchId -> Set<MovementId>
+                this.movementsByRoute = new Map(); // RouteId -> Set<MovementId>
+                this.maxCapacity = maxCapacity;
+            }
+
+            registerMovement(movement) {
+                if (!(movement instanceof MovementOrder)) {
+                    throw new Error('[LogisticsOperationLedger]: Expected MovementOrder instance.');
+                }
+                this.movements.set(movement.movementId, movement);
+
+                if (!this.movementsByBatch.has(movement.batchId)) {
+                    this.movementsByBatch.set(movement.batchId, new Set());
+                }
+                this.movementsByBatch.get(movement.batchId).add(movement.movementId);
+
+                if (!this.movementsByRoute.has(movement.route.routeId)) {
+                    this.movementsByRoute.set(movement.route.routeId, new Set());
+                }
+                this.movementsByRoute.get(movement.route.routeId).add(movement.movementId);
+
+                return movement;
+            }
+
+            getMovement(movementId) {
+                return this.movements.get(movementId) || null;
+            }
+
+            getMovementsForBatch(batchId) {
+                const set = this.movementsByBatch.get(batchId);
+                if (!set) return [];
+                return Array.from(set).map(id => this.movements.get(id)).filter(Boolean);
+            }
+
+            clear() {
+                this.movements.clear();
+                this.movementsByBatch.clear();
+                this.movementsByRoute.clear();
+            }
+        }
+
+        class LogisticsReconciliationEngine {
+            static reconcile(ledger, networkGraph, reservationEngine) {
+                const orphanMovements = [];
+                const invalidRoutes = [];
+                const flowDrifts = [];
+                const ungroundedLegs = [];
+
+                ledger.movements.forEach((mov, movId) => {
+                    if (mov.quantity <= 0) {
+                        flowDrifts.push({ movementId: movId, quantity: mov.quantity, reason: 'NON_POSITIVE_QUANTITY' });
+                    }
+
+                    const routeValid = RouteValidator.validateRoute(mov.route, networkGraph, { materialIdentity: mov.materialIdentity });
+                    if (!routeValid.isValid) {
+                        invalidRoutes.push({ movementId: movId, reason: routeValid.message });
+                    }
+
+                    let lastTgt = null;
+                    mov.route.legs.forEach(leg => {
+                        if (lastTgt && lastTgt !== leg.sourceNodeId && !leg.isTransferLeg) {
+                            ungroundedLegs.push({ movementId: movId, from: lastTgt, to: leg.sourceNodeId });
+                        }
+                        lastTgt = leg.targetNodeId;
+                    });
+                });
+
+                const isClean = orphanMovements.length === 0 && invalidRoutes.length === 0 && flowDrifts.length === 0 && ungroundedLegs.length === 0;
+
+                return {
+                    isClean,
+                    totalMovementsAudited: ledger.movements.size,
+                    discrepancies: {
+                        orphanMovementsCount: orphanMovements.length,
+                        orphanMovements,
+                        invalidRoutesCount: invalidRoutes.length,
+                        invalidRoutes,
+                        flowDriftsCount: flowDrifts.length,
+                        flowDrifts,
+                        ungroundedLegsCount: ungroundedLegs.length,
+                        ungroundedLegs
+                    }
+                };
+            }
+        }
+
+        class DiagnosticRingBuffer {
+            constructor(capacity = 5000) {
+                this.capacity = capacity;
+                this.buffer = new Array(capacity);
+                this.head = 0;
+                this.size = 0;
+            }
+
+            push(entry) {
+                this.buffer[this.head] = {
+                    tick: entry.tick || 0,
+                    entry
+                };
+                this.head = (this.head + 1) % this.capacity;
+                if (this.size < this.capacity) this.size++;
+            }
+
+            getAllSorted() {
+                const result = [];
+                for (let i = 0; i < this.size; i++) {
+                    const idx = (this.head - this.size + i + this.capacity) % this.capacity;
+                    result.push(this.buffer[idx]);
+                }
+                return result.sort((a, b) => {
+                    if (a.entry.severity !== b.entry.severity) {
+                        return String(a.entry.severity).localeCompare(String(b.entry.severity));
+                    }
+                    return String(a.entry.code).localeCompare(String(b.entry.code));
+                });
+            }
+
+            clear() {
+                this.buffer = new Array(this.capacity);
+                this.head = 0;
+                this.size = 0;
+            }
+        }
+
+        class LogisticsDiagnosticsEngine {
+            constructor(maxCapacity = 5000) {
+                this.ringBuffer = new DiagnosticRingBuffer(maxCapacity);
+            }
+
+            log(code, message, severity = 'WARNING', context = {}) {
+                this.ringBuffer.push({ code, message, severity, context });
+            }
+
+            getReport() {
+                const logs = this.ringBuffer.getAllSorted();
+                return {
+                    totalLogs: logs.length,
+                    fatalCount: logs.filter(l => l.entry.severity === 'FATAL').length,
+                    warningCount: logs.filter(l => l.entry.severity === 'WARNING').length,
+                    logs
+                };
+            }
+
+            clear() {
+                this.ringBuffer.clear();
+            }
+        }
+
+        class SystemicLogisticsHealthMonitor {
+            static evaluateHealth(registry, networkGraph) {
+                const reconciliation = LogisticsReconciliationEngine.reconcile(
+                    registry.ledger,
+                    networkGraph,
+                    registry.reservationEngine
+                );
+                const diagReport = registry.diagnostics.getReport();
+
+                let healthStatus = LogisticsHealthStatus.HEALTHY;
+                if (!reconciliation.isClean || diagReport.fatalCount > 0) {
+                    healthStatus = LogisticsHealthStatus.CRITICAL_FAILURE;
+                } else if (diagReport.warningCount > 0) {
+                    healthStatus = LogisticsHealthStatus.HEALTHY_WITH_WARNINGS;
+                }
+
+                return {
+                    healthStatus,
+                    metrics: {
+                        totalNodes: registry.nodeRegistry.nodes.size,
+                        totalSegments: registry.segmentRegistry.segments.size,
+                        totalActiveMovements: registry.ledger.movements.size,
+                        totalReservations: registry.reservationEngine.reservations.size
+                    },
+                    reconciliation
+                };
+            }
+        }
+
+        // =========================================================================
+        // SNAPSHOT ADAPTER & HARDCODING FIREWALL
+        // =========================================================================
+
+        class LogisticsSnapshotAdapter {
+            static calculateAdler32(str) {
+                let a = 1, b = 0;
+                const MOD = 65521;
+                for (let i = 0; i < str.length; i++) {
+                    a = (a + str.charCodeAt(i)) % MOD;
+                    b = (b + a) % MOD;
+                }
+                return ((b << 16) | a) >>> 0;
+            }
+
+            static createSnapshot(registry, tick = 0) {
+                const payloadObject = {
+                    schemaVersion: 1,
+                    tick,
+                    nodes: Array.from(registry.nodeRegistry.nodes.values()).map(e => e.toJSON()).sort((a, b) => a.nodeId.localeCompare(b.nodeId)),
+                    segments: Array.from(registry.segmentRegistry.segments.values()).map(e => e.toJSON()).sort((a, b) => a.segmentId.localeCompare(b.segmentId)),
+                    modes: Array.from(registry.modeRegistry.modes.values()).map(e => e.toJSON()).sort((a, b) => a.modeCode.localeCompare(b.modeCode)),
+                    runtimes: Array.from(registry.infrastructureRuntimes.values()).map(e => e.toJSON()).sort((a, b) => a.infrastructureId.localeCompare(b.infrastructureId)),
+                    movements: Array.from(registry.ledger.movements.values()).map(e => e.toJSON()).sort((a, b) => a.movementId.localeCompare(b.movementId)),
+                    reservations: Array.from(registry.reservationEngine.reservations.values()).map(e => e.toJSON()).sort((a, b) => a.reservationId.localeCompare(b.reservationId)),
+                    disruptions: Array.from(registry.disruptions.values()).map(e => e.toJSON()).sort((a, b) => a.disruptionId.localeCompare(b.disruptionId))
+                };
+
+                const serialized = JSON.stringify(payloadObject);
+                const checksum = this.calculateAdler32(serialized);
+                const semanticDigest = `DIGEST_P08_${checksum}_${tick}`;
+
+                return {
+                    schemaVersion: payloadObject.schemaVersion,
+                    tick,
+                    checksum,
+                    semanticDigest,
+                    payload: serialized
+                };
+            }
+
+            static restoreSnapshot(registry, snapshot) {
+                if (!snapshot || !snapshot.payload || typeof snapshot.checksum !== 'number') {
+                    throw new Error('[LogisticsSnapshotAdapter]: Corrupt snapshot envelope.');
+                }
+
+                const computedChecksum = this.calculateAdler32(snapshot.payload);
+                if (computedChecksum !== snapshot.checksum) {
+                    throw new Error('[LogisticsSnapshotAdapter]: Checksum mismatch! Corrupted snapshot.');
+                }
+
+                const data = JSON.parse(snapshot.payload);
+                registry.clear();
+
+                data.modes.forEach(m => registry.modeRegistry.registerMode(new TransportModeDefinition(m)));
+                data.nodes.forEach(n => registry.nodeRegistry.registerNode(new NetworkNode(n)));
+                data.segments.forEach(s => registry.segmentRegistry.registerSegment(new NetworkSegment(s)));
+                data.runtimes.forEach(r => registry.infrastructureRuntimes.set(r.infrastructureId, new LogisticsInfrastructureRuntime(r)));
+                data.movements.forEach(m => registry.ledger.registerMovement(new MovementOrder(m)));
+                data.reservations.forEach(v => registry.reservationEngine.reservations.set(v.reservationId, new NetworkCapacityReservation(v)));
+                if (data.disruptions) {
+                    data.disruptions.forEach(d => registry.disruptions.set(d.disruptionId, new InfrastructureDisruptionEvent(d)));
+                }
+
+                registry.networkGraph.compile();
+
+                return {
+                    restored: true,
+                    nodeCount: registry.nodeRegistry.nodes.size,
+                    segmentCount: registry.segmentRegistry.segments.size,
+                    checksum: snapshot.checksum
+                };
+            }
+        }
+
+        class BoundaryHardcodingFirewall {
+            static get FORBIDDEN_SIMULATION_KEYS() {
+                return [
+                    'marketprice',
+                    'spotprice',
+                    'clearingprice',
+                    'tradetariff',
+                    'factoryproduction',
+                    'strategicscore',
+                    'aijudgement',
+                    'geopoliticaldominance'
+                ];
+            }
+
+            static auditFirewallDeep(target, currentPath = 'Root', violations = []) {
+                if (!target || typeof target !== 'object') return violations;
+
+                if (target instanceof Map) {
+                    target.forEach((val, key) => {
+                        const normKey = String(key).toLowerCase().replace(/[^a-z]/g, '');
+                        if (this.FORBIDDEN_SIMULATION_KEYS.some(forbidden => normKey.includes(forbidden))) {
+                            violations.push({ path: `${currentPath}.Map<${key}>`, forbiddenKey: String(key) });
+                        }
+                        this.auditFirewallDeep(val, `${currentPath}.Map<${key}>`, violations);
+                    });
+                    return violations;
+                }
+
+                if (target instanceof Set || Array.isArray(target)) {
+                    let idx = 0;
+                    target.forEach(val => {
+                        this.auditFirewallDeep(val, `${currentPath}[${idx++}]`, violations);
+                    });
+                    return violations;
+                }
+
+                Object.keys(target).forEach(key => {
+                    const normKey = key.toLowerCase().replace(/[^a-z]/g, '');
+                    if (this.FORBIDDEN_SIMULATION_KEYS.some(forbidden => normKey.includes(forbidden))) {
+                        violations.push({ path: `${currentPath}.${key}`, forbiddenKey: key });
+                    }
+                    this.auditFirewallDeep(target[key], `${currentPath}.${key}`, violations);
+                });
+
+                return violations;
+            }
+
+            static auditInvariants(registry) {
+                const violations = [];
+                this.auditFirewallDeep(registry.ledger.movements, 'Registry.Movements', violations);
+                return {
+                    isCompliant: violations.length === 0,
+                    violations
+                };
+            }
+        }
+
+        // =========================================================================
+        // MASTER REGISTRY, PIPELINE ORCHESTRATOR & PUBLIC API
+        // =========================================================================
+
+        class MasterLogisticsRegistry {
+            constructor() {
+                this.nodeRegistry = new NetworkNodeRegistry();
+                this.segmentRegistry = new NetworkSegmentRegistry();
+                this.modeRegistry = new TransportModeRegistry();
+                this.infrastructureRuntimes = new Map();
+                this.networkGraph = new NetworkGraph(this.nodeRegistry, this.segmentRegistry);
+                this.reservationEngine = new CapacityReservationEngine();
+                this.ledger = new LogisticsOperationLedger();
+                this.diagnostics = new LogisticsDiagnosticsEngine();
+                this.disruptions = new Map();
+                this.schemaVersion = 1;
+            }
+
+            clear() {
+                this.nodeRegistry.clear();
+                this.segmentRegistry.clear();
+                this.modeRegistry.clear();
+                this.infrastructureRuntimes.clear();
+                this.networkGraph.compile();
+                this.reservationEngine.clear();
+                this.ledger.clear();
+                this.diagnostics.clear();
+                this.disruptions.clear();
+            }
+        }
+
+        class ResourceLogisticsEnginePipeline {
+            constructor() {
+                this.registry = new MasterLogisticsRegistry();
+            }
+
+            // 1. Ingestion & Network Infrastructure Compilation
+            registerInfrastructure(infraState) {
+                const runtime = InfrastructureIntakeAdapter.adaptInfrastructureState(infraState);
+                this.registry.infrastructureRuntimes.set(runtime.infrastructureId, runtime);
+                return runtime;
+            }
+
+            registerNode(node) {
+                const inst = node instanceof NetworkNode ? node : new NetworkNode(node);
+                return this.registry.nodeRegistry.registerNode(inst);
+            }
+
+            registerSegment(segment) {
+                const inst = segment instanceof NetworkSegment ? segment : new NetworkSegment(segment);
+                return this.registry.segmentRegistry.registerSegment(inst);
+            }
+
+            registerTransportMode(mode) {
+                const inst = mode instanceof TransportModeDefinition ? mode : new TransportModeDefinition(mode);
+                return this.registry.modeRegistry.registerMode(inst);
+            }
+
+            buildNetwork() {
+                this.registry.networkGraph.compile();
+                return { 
+                    compiled: true, 
+                    nodeCount: this.registry.nodeRegistry.nodes.size, 
+                    edgeCount: this.registry.segmentRegistry.segments.size 
+                };
+            }
+
+            // 2. Routing, Pathfinding & Validation
+            checkConnectivity(sourceNodeId, targetNodeId) {
+                return ConnectivityResolver.checkConnectivity(this.registry.networkGraph, sourceNodeId, targetNodeId);
+            }
+
+            resolveRoutes(sourceNodeId, targetNodeId, criteria = {}) {
+                return RouteResolver.resolveRoutes(this.registry.networkGraph, sourceNodeId, targetNodeId, criteria);
+            }
+
+            validateRoute(route, materialContext = {}) {
+                return RouteValidator.validateRoute(route, this.registry.networkGraph, materialContext);
+            }
+
+            // 3. Capacity & Throughput Engines
+            getCapacity(segmentId) {
+                const seg = this.registry.segmentRegistry.getSegment(segmentId);
+                return seg ? seg.nominalCapacityDaily : 0.0;
+            }
+
+            getAvailableCapacity(segmentId) {
+                const seg = this.registry.segmentRegistry.getSegment(segmentId);
+                if (!seg) return 0.0;
+                const reserved = this.registry.reservationEngine.getActiveReservedQuantity(segmentId, 0);
+                return Math.max(0.0, (seg.nominalCapacityDaily * seg.surfaceConditionFactor) - reserved);
+            }
+
+            getThroughput(segmentId) {
+                const seg = this.registry.segmentRegistry.getSegment(segmentId);
+                if (!seg) return 0.0;
+                return ThroughputEngine.computeThroughput(seg.nominalCapacityDaily, seg.nominalCapacityDaily * 0.85);
+            }
+
+            reserveCapacity(segmentId, quantityTonnes, movementId = null, currentTick = 0, durationTicks = 50) {
+                const seg = this.registry.segmentRegistry.getSegment(segmentId);
+                return this.registry.reservationEngine.reserveSegmentCapacity(seg, quantityTonnes, movementId, currentTick, durationTicks);
+            }
+
+            releaseCapacity(reservationId) {
+                return this.registry.reservationEngine.releaseReservation(reservationId);
+            }
+
+            // 4. Movement Planning, Dispatch & Transit Physics
+            planMovement(batchId, quantity, sourcePositionId, destinationNodeId, criteria = {}, currentTick = 0) {
+                const sourceNodeId = criteria.sourceNodeId || 'NODE:CENTRAL_STAGING';
+                const routes = this.resolveRoutes(sourceNodeId, destinationNodeId, { ...criteria, quantityTonnes: quantity });
+                if (!routes || routes.length === 0) {
+                    throw new Error(`[LogisticsPipeline]: No viable route found between '${sourceNodeId}' and '${destinationNodeId}'.`);
+                }
+
+                const selectedRoute = routes[0];
+                const movement = new MovementOrder({
+                    batchId,
+                    quantity,
+                    unit: criteria.unit || 'TONNES',
+                    materialIdentity: criteria.materialIdentity || 'UNKNOWN_MATERIAL',
+                    sourcePositionId,
+                    destinationNodeId,
+                    route: selectedRoute,
+                    departureTick: currentTick,
+                    status: MovementStatusEnum.PLANNED
+                });
+
+                this.registry.ledger.registerMovement(movement);
+                return movement;
+            }
+
+            validateMovement(movementId) {
+                const mov = this.registry.ledger.getMovement(movementId);
+                if (!mov) throw new Error(`[LogisticsPipeline]: Movement '${movementId}' not found.`);
+                const valid = this.validateRoute(mov.route, { materialIdentity: mov.materialIdentity });
+                if (!valid.isValid) {
+                    MovementLifecycleFSM.assertTransition(mov.status, MovementStatusEnum.FAILED, movementId);
+                    mov.status = MovementStatusEnum.FAILED;
+                    return { valid: false, reason: valid.message };
+                }
+                MovementLifecycleFSM.assertTransition(mov.status, MovementStatusEnum.VALIDATED, movementId);
+                mov.status = MovementStatusEnum.VALIDATED;
+                return { valid: true, movementId };
+            }
+
+            reserveMovementCapacity(movementId, currentTick = 0, durationTicks = 50) {
+                const mov = this.registry.ledger.getMovement(movementId);
+                if (!mov) throw new Error(`[LogisticsPipeline]: Movement '${movementId}' not found.`);
+                if (mov.status === MovementStatusEnum.PLANNED) {
+                    this.validateMovement(movementId);
+                }
+                MovementLifecycleFSM.assertTransition(mov.status, MovementStatusEnum.CAPACITY_RESERVED, movementId);
+                mov.status = MovementStatusEnum.CAPACITY_RESERVED;
+                return { reserved: true, movementId };
+            }
+
+            readyMovement(movementId) {
+                const mov = this.registry.ledger.getMovement(movementId);
+                if (!mov) throw new Error(`[LogisticsPipeline]: Movement '${movementId}' not found.`);
+                if (mov.status === MovementStatusEnum.PLANNED || mov.status === MovementStatusEnum.VALIDATED) {
+                    this.reserveMovementCapacity(movementId);
+                }
+                MovementLifecycleFSM.assertTransition(mov.status, MovementStatusEnum.READY, movementId);
+                mov.status = MovementStatusEnum.READY;
+                return mov;
+            }
+
+            dispatchMovement(movementId, currentTick = 0) {
+                const mov = this.registry.ledger.getMovement(movementId);
+                if (!mov) throw new Error(`[LogisticsPipeline]: Movement '${movementId}' not found.`);
+
+                if (mov.status === MovementStatusEnum.PLANNED) {
+                    this.validateMovement(movementId);
+                    this.reserveMovementCapacity(movementId, currentTick);
+                    this.readyMovement(movementId);
+                } else if (mov.status === MovementStatusEnum.VALIDATED) {
+                    this.reserveMovementCapacity(movementId, currentTick);
+                    this.readyMovement(movementId);
+                } else if (mov.status === MovementStatusEnum.CAPACITY_RESERVED) {
+                    this.readyMovement(movementId);
+                }
+
+                MovementLifecycleFSM.assertTransition(mov.status, MovementStatusEnum.DISPATCHED, movementId);
+                mov.status = MovementStatusEnum.DISPATCHED;
+
+                MovementLifecycleFSM.assertTransition(mov.status, MovementStatusEnum.IN_TRANSIT, movementId);
+                mov.status = MovementStatusEnum.IN_TRANSIT;
+                mov.departureTick = currentTick;
+
+                // Allocate active flow on the primary corridor segment
+                const firstLeg = mov.getCurrentLeg();
+                if (firstLeg && firstLeg.segmentId) {
+                    const seg = this.registry.segmentRegistry.getSegment(firstLeg.segmentId);
+                    if (seg && seg.associatedInfrastructureId) {
+                        const runtime = this.registry.infrastructureRuntimes.get(seg.associatedInfrastructureId);
+                        if (runtime) runtime.allocateActiveFlow(mov.quantity, mov.movementId);
+                    }
+                }
+
+                return mov;
+            }
+
+            advanceMovement(movementId, hoursDelta, currentTick) {
+                const mov = this.registry.ledger.getMovement(movementId);
+                if (!mov) throw new Error(`[LogisticsPipeline]: Movement '${movementId}' not found.`);
+                return mov.advanceTransit(hoursDelta, currentTick, this.registry.networkGraph, this.registry.infrastructureRuntimes);
+            }
+
+            advanceAllMovements(hoursDelta, currentTick) {
+                const results = [];
+                this.registry.ledger.movements.forEach((mov) => {
+                    if (mov.status === MovementStatusEnum.IN_TRANSIT || mov.status === MovementStatusEnum.DELAYED) {
+                        const progress = mov.advanceTransit(hoursDelta, currentTick, this.registry.networkGraph, this.registry.infrastructureRuntimes);
+                        results.push({ movementId: mov.movementId, progress });
+                    }
+                });
+                return results;
+            }
+
+            rerouteMovement(movementId, destinationNodeId = null, currentTick = 0) {
+                const mov = this.registry.ledger.getMovement(movementId);
+                if (!mov) throw new Error(`[LogisticsPipeline]: Movement '${movementId}' not found.`);
+
+                const currentLeg = mov.getCurrentLeg();
+                const currentNode = currentLeg ? currentLeg.sourceNodeId : mov.sourceNodeId;
+                const targetNode = destinationNodeId || mov.destinationNodeId;
+
+                // Clean up active flow on current segment
+                if (currentLeg && currentLeg.segmentId) {
+                    const curSeg = this.registry.segmentRegistry.getSegment(currentLeg.segmentId);
+                    if (curSeg && curSeg.associatedInfrastructureId) {
+                        const curRt = this.registry.infrastructureRuntimes.get(curSeg.associatedInfrastructureId);
+                        if (curRt) curRt.releaseActiveFlow(mov.quantity, mov.movementId);
+                    }
+                }
+
+                const newRoutes = this.resolveRoutes(currentNode, targetNode, { materialIdentity: mov.materialIdentity, quantityTonnes: mov.quantity });
+                if (!newRoutes || newRoutes.length === 0) {
+                    MovementLifecycleFSM.assertTransition(mov.status, MovementStatusEnum.DELAYED, movementId);
+                    mov.status = MovementStatusEnum.DELAYED;
+                    return { rerouted: false, reason: 'NO_ALTERNATIVE_ROUTE_FOUND' };
+                }
+
+                mov.rerouteHistory.push({
+                    previousRouteId: mov.route.routeId,
+                    rerouteTick: currentTick,
+                    divergenceNodeId: currentNode
+                });
+
+                mov.route = newRoutes[0];
+                mov.currentLegIndex = 0;
+                mov.legProgresses = mov.route.legs.map((leg, idx) => new MovementLegProgress({
+                    legIndex: idx,
+                    sourceNodeId: leg.sourceNodeId,
+                    targetNodeId: leg.targetNodeId,
+                    segmentId: leg.segmentId,
+                    mode: leg.mode,
+                    isTransferLeg: leg.isTransferLeg,
+                    distanceKm: leg.distanceKm,
+                    totalRequiredHours: leg.estimatedDurationHours,
+                    isCompleted: false
+                }));
+
+                // Allocate active flow on the new first leg
+                const newFirstLeg = mov.getCurrentLeg();
+                if (newFirstLeg && newFirstLeg.segmentId) {
+                    const newSeg = this.registry.segmentRegistry.getSegment(newFirstLeg.segmentId);
+                    if (newSeg && newSeg.associatedInfrastructureId) {
+                        const newRt = this.registry.infrastructureRuntimes.get(newSeg.associatedInfrastructureId);
+                        if (newRt) newRt.allocateActiveFlow(mov.quantity, mov.movementId);
+                    }
+                }
+
+                MovementLifecycleFSM.assertTransition(mov.status, MovementStatusEnum.IN_TRANSIT, movementId);
+                mov.status = MovementStatusEnum.IN_TRANSIT;
+
+                return { rerouted: true, newRoute: mov.route };
+            }
+
+            getETA(movementId) {
+                const mov = this.registry.ledger.getMovement(movementId);
+                return mov ? mov.estimatedArrivalTick : null;
+            }
+
+            getTransportCost(movementId) {
+                const mov = this.registry.ledger.getMovement(movementId);
+                return mov ? LogisticsCostEngine.calculateCost(mov.route, mov.quantity) : new LogisticsCostBreakdown();
+            }
+
+            completeIntermodalTransfer(movementId, interchangeNodeId, currentTick = 0) {
+                const mov = this.registry.ledger.getMovement(movementId);
+                if (!mov) throw new Error(`[LogisticsPipeline]: Movement '${movementId}' not found.`);
+                const leg = mov.getCurrentLeg();
+                if (leg && leg.isTransferLeg) {
+                    leg.isCompleted = true;
+                    mov.currentLegIndex += 1;
+                    return { completed: true, movementId, interchangeNodeId, currentLegIndex: mov.currentLegIndex };
+                }
+                return { completed: false, reason: 'CURRENT_LEG_NOT_INTERMODAL_TRANSFER' };
+            }
+
+            arriveMovement(movementId, currentTick) {
+                const mov = this.registry.ledger.getMovement(movementId);
+                if (!mov) throw new Error(`[LogisticsPipeline]: Movement '${movementId}' not found.`);
+                MovementLifecycleFSM.assertTransition(mov.status, MovementStatusEnum.ARRIVED, movementId);
+                mov.status = MovementStatusEnum.ARRIVED;
+                mov.actualArrivalTick = currentTick;
+                return mov;
+            }
+
+            deliverMovement(movementId, inventoryPipeline, targetLocationId, currentTick = 0) {
+                const mov = this.registry.ledger.getMovement(movementId);
+                if (!mov) throw new Error(`[LogisticsPipeline]: Movement '${movementId}' not found.`);
+                return DeliveryArrivalEngine.processDelivery(mov, inventoryPipeline, targetLocationId, currentTick, this.registry.nodeRegistry);
+            }
+
+            // 5. Disruptions & Reactive Recovery
+            recordDisruption(targetId, disruptionState, derateFactor = 0.5, cause = 'MAINTENANCE', startTick = 0, duration = 50) {
+                const event = new InfrastructureDisruptionEvent({
+                    targetId,
+                    disruptionState,
+                    capacityDerateFactor: derateFactor,
+                    cause,
+                    startTick,
+                    estimatedDurationTicks: duration
+                });
+                this.registry.disruptions.set(event.disruptionId, event);
+
+                const seg = this.registry.segmentRegistry.getSegment(targetId);
+                if (seg) {
+                    seg.operationalStatus = disruptionState;
+                    seg.surfaceConditionFactor = derateFactor;
+                }
+
+                // Auto-react: Reroute or delay active movements passing through the disrupted corridor
+                this.registry.ledger.movements.forEach((mov) => {
+                    if (mov.status === MovementStatusEnum.IN_TRANSIT) {
+                        const curLeg = mov.getCurrentLeg();
+                        if (curLeg && curLeg.segmentId === targetId) {
+                            this.rerouteMovement(mov.movementId, null, startTick);
+                        }
+                    }
+                });
+
+                return event;
+            }
+
+            recoverInfrastructure(targetId) {
+                const seg = this.registry.segmentRegistry.getSegment(targetId);
+                if (seg) {
+                    seg.operationalStatus = InfrastructureRuntimeStatus.AVAILABLE;
+                    seg.surfaceConditionFactor = 1.0;
+
+                    // Mark disruption resolved
+                    this.registry.disruptions.forEach(d => {
+                        if (d.targetId === targetId) d.isResolved = true;
+                    });
+
+                    return { recovered: true, targetId };
+                }
+                return { recovered: false, reason: 'TARGET_NOT_FOUND' };
+            }
+
+            detectBottlenecks(routeId) {
+                const movs = Array.from(this.registry.ledger.movements.values()).filter(m => m.route.routeId === routeId);
+                const route = movs.length > 0 ? movs[0].route : null;
+                return BottleneckAnalysisEngine.analyzeCorridorBottlenecks(route, this.registry.segmentRegistry);
+            }
+
+            getMovement(movementId) {
+                return this.registry.ledger.getMovement(movementId);
+            }
+
+            getRoute(routeId) {
+                for (const mov of this.registry.ledger.movements.values()) {
+                    if (mov.route.routeId === routeId) return mov.route;
+                }
+                return null;
+            }
+
+            getNetworkState() {
+                return {
+                    nodeCount: this.registry.nodeRegistry.nodes.size,
+                    segmentCount: this.registry.segmentRegistry.segments.size,
+                    activeMovementsCount: this.registry.ledger.movements.size,
+                    disruptionsCount: this.registry.disruptions.size
+                };
+            }
+
+            // 6. Cross-Engine Integration Contracts (Parts 09 - 16 Integration)
+            queryProductionInputFeasibility(factoryNodeId, requiredQuantityTonnes, materialIdentity) {
+                const routes = this.resolveRoutes('NODE:CENTRAL_STAGING', factoryNodeId, { materialIdentity, quantityTonnes: requiredQuantityTonnes });
+                if (!routes || routes.length === 0) return { canDeliver: false, maxThroughput: 0, estimatedLeadHours: Infinity };
+                return {
+                    canDeliver: true,
+                    maxThroughput: routes[0].minSegmentCapacityDaily,
+                    estimatedLeadHours: routes[0].totalTransitHours,
+                    primaryRouteId: routes[0].routeId
+                };
+            }
+
+            queryMarketRegionalReachability(originNodeId, destinationNodeId) {
+                const conn = this.checkConnectivity(originNodeId, destinationNodeId);
+                return { isReachable: conn.isConnected, transitHops: conn.hops };
+            }
+
+            queryLogisticsExposureMetrics(corridorRouteId) {
+                const bottlenecks = this.detectBottlenecks(corridorRouteId);
+                return {
+                    bottleneckSegmentId: bottlenecks.primaryBottleneck ? bottlenecks.primaryBottleneck.segmentId : null,
+                    minThroughput: bottlenecks.minCorridorThroughput,
+                    isSinglePointOfFailure: bottlenecks.primaryBottleneck !== null && bottlenecks.secondaryBottleneck === null
+                };
+            }
+
+            // 7. Audit, Invariants, Snapshot & Health
+            reconcile() {
+                return LogisticsReconciliationEngine.reconcile(
+                    this.registry.ledger,
+                    this.registry.networkGraph,
+                    this.registry.reservationEngine
+                );
+            }
+
+            validateInvariants() {
+                return BoundaryHardcodingFirewall.auditInvariants(this.registry);
+            }
+
+            createSnapshot(tick = 0) {
+                return LogisticsSnapshotAdapter.createSnapshot(this.registry, tick);
+            }
+
+            restoreSnapshot(snapshot) {
+                return LogisticsSnapshotAdapter.restoreSnapshot(this.registry, snapshot);
+            }
+
+            getHealth() {
+                return SystemicLogisticsHealthMonitor.evaluateHealth(this.registry, this.registry.networkGraph);
+            }
+
+            getAuditTrail() {
+                return this.registry.diagnostics.getReport();
+            }
+        }
+
+        // =========================================================================
+        // PUBLIC ADAPTER & INTEGRATED ENGINE ASSEMBLY
+        // =========================================================================
+
+        function deepFreeze(obj, seen = new WeakSet()) {
+            if (obj === null || typeof obj !== 'object' || seen.has(obj)) return obj;
+            seen.add(obj);
+            if (obj instanceof Map || obj instanceof Set) return obj;
+            const propNames = Object.getOwnPropertyNames(obj);
+            for (const name of propNames) {
+                deepFreeze(obj[name], seen);
+            }
+            return Object.freeze(obj);
+        }
+
+        const ResourceInfrastructureLogisticsEngineAdapter = Object.freeze({
+            // Enums & Types from Volume 8.1
+            TransportModeEnum,
+            NetworkNodeTypeEnum,
+            SegmentDirectionalityEnum,
+            InfrastructureRuntimeStatus,
+            MovementStatusEnum,
+            RouteStatusEnum,
+            BorderAccessStatus,
+            SecurityRiskLevel,
+            WeatherSeverityLevel,
+            IntermodalStepType,
+            LogisticsHealthStatus,
+            ErrorTaxonomy,
+
+            // Models & Engines from Volume 8.1
+            DeterministicHashEngine,
+            LogisticsInfrastructureRuntime,
+            InfrastructureIntakeAdapter,
+            NetworkNode,
+            NetworkSegment,
+            NetworkNodeRegistry,
+            NetworkSegmentRegistry,
+            TransportModeDefinition,
+            TransportModeRegistry,
+            InterchangeTransferModel,
+            InterchangeNode,
+            NetworkGraph,
+            ConnectivityResolver,
+            RouteLeg,
+            LogisticsRoute,
+            RouteResolver,
+            RouteValidator,
+            LogisticsCapacityEngine,
+            ThroughputEngine,
+            CongestionEngine,
+
+            // Models & Engines from Volume 8.2
+            AllocationPolicyEnum,
+            FlowAllocationEngine,
+            NetworkCapacityReservation,
+            CapacityReservationEngine,
+            MovementLifecycleFSM,
+            MovementLegProgress,
+            MovementOrder,
+            TransitTimeEngine,
+            LogisticsCostBreakdown,
+            LogisticsCostEngine,
+            IntermodalHandlingEngine,
+            AccessConstraintEngine,
+            InfrastructureDisruptionEvent,
+            BottleneckAnalysisEngine,
+            DeliveryArrivalEngine,
+            LogisticsOperationLedger,
+            LogisticsReconciliationEngine,
+            DiagnosticRingBuffer,
+            LogisticsDiagnosticsEngine,
+            SystemicLogisticsHealthMonitor,
+            LogisticsSnapshotAdapter,
+            BoundaryHardcodingFirewall,
+            MasterLogisticsRegistry,
+            ResourceLogisticsEnginePipeline,
+
+            deepFreeze,
+
+            /**
+             * Factory: Creates and returns a fully initialized Part 08 Logistics Pipeline.
+             */
+            createEngine() {
+                return new ResourceLogisticsEnginePipeline();
+            }
+        });
+
+        global.GSRSK_Part08 = ResourceInfrastructureLogisticsEngineAdapter;
+        global.GSRSK_ResourceInfrastructureLogisticsEngine = ResourceInfrastructureLogisticsEngineAdapter;
+
+        if (typeof window !== 'undefined') {
+            window.GSRSK_Part08 = ResourceInfrastructureLogisticsEngineAdapter;
+            window.GSRSK_ResourceInfrastructureLogisticsEngine = ResourceInfrastructureLogisticsEngineAdapter;
+        }
+
+        if (typeof ResourceMinistryEngineInstance !== 'undefined' && ResourceMinistryEngineInstance) {
+            ResourceMinistryEngineInstance.part08 = ResourceInfrastructureLogisticsEngineAdapter;
+            ResourceMinistryEngineInstance.logisticsEngine = ResourceInfrastructureLogisticsEngineAdapter.createEngine();
+        }
+
+        if (typeof module !== 'undefined' && module.exports) {
+            module.exports = ResourceInfrastructureLogisticsEngineAdapter;
+        }
+
+    })(typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : global));
+
     const _targetGlobal = typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : global);
 
     if (typeof module !== 'undefined' && module.exports) {
@@ -17671,6 +20477,7 @@ _globalScope.GSRSK_DataFoundation = (() => {
             ResourceReserveExtractionEngine: _targetGlobal.GSRSK_ResourceReserveExtractionEngine || null,
             ResourceProcessingTransformationEngine: _targetGlobal.GSRSK_ResourceProcessingTransformationEngine || null,
             ResourceInventoryBatchStorageEngine: _targetGlobal.GSRSK_ResourceInventoryBatchStorageEngine || null,
+            ResourceInfrastructureLogisticsEngine: _targetGlobal.GSRSK_ResourceInfrastructureLogisticsEngine || null,
             ResourceMinistryEngine: typeof ResourceMinistryEngineInstance !== 'undefined' ? ResourceMinistryEngineInstance : (_targetGlobal.ResourceMinistryEngine || null),
             MasterGSRSKEngine: _targetGlobal.GSRSK_MasterEngine ? _targetGlobal.GSRSK_MasterEngine.constructor : null,
             MasterEngineSingleton: _targetGlobal.GSRSK_MasterEngine || null,
@@ -17685,6 +20492,8 @@ _globalScope.GSRSK_DataFoundation = (() => {
             GSRSK_Part06: _targetGlobal.GSRSK_ResourceProcessingTransformationEngine || null,
             GSRSK_ResourceInventoryBatchStorageEngine: _targetGlobal.GSRSK_ResourceInventoryBatchStorageEngine || null,
             GSRSK_Part07: _targetGlobal.GSRSK_ResourceInventoryBatchStorageEngine || null,
+            GSRSK_ResourceInfrastructureLogisticsEngine: _targetGlobal.GSRSK_ResourceInfrastructureLogisticsEngine || null,
+            GSRSK_Part08: _targetGlobal.GSRSK_ResourceInfrastructureLogisticsEngine || null,
             Part01: _targetGlobal.GSRSK_DataFoundation || null,
             Part02: _targetGlobal.GSRSK_WorldKnowledgeCompiler || null,
             Part03: _targetGlobal.GSRSK_Part03 || null,
@@ -17692,13 +20501,14 @@ _globalScope.GSRSK_DataFoundation = (() => {
             Part05: _targetGlobal.GSRSK_ResourceReserveExtractionEngine || null,
             Part06: _targetGlobal.GSRSK_ResourceProcessingTransformationEngine || null,
             Part07: _targetGlobal.GSRSK_ResourceInventoryBatchStorageEngine || null,
+            Part08: _targetGlobal.GSRSK_ResourceInfrastructureLogisticsEngine || null,
             ...(_targetGlobal.GSRSK_ResourceIdentityEngine || {}),
             ...(_targetGlobal.GSRSK_ResourceReserveExtractionEngine || {}),
             ...(_targetGlobal.GSRSK_ResourceProcessingTransformationEngine || {}),
-            ...(_targetGlobal.GSRSK_ResourceInventoryBatchStorageEngine || {})
+            ...(_targetGlobal.GSRSK_ResourceInventoryBatchStorageEngine || {}),
+            ...(_targetGlobal.GSRSK_ResourceInfrastructureLogisticsEngine || {})
         };
     }
 
-})(typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : global));
 
 
