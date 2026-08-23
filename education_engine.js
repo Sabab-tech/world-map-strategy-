@@ -20,8 +20,15 @@ window.EducationEngine = (() => {
         dataByCountry: {}
     };
 
-    // Default template state generator for any country
+    // Sovereign state generator derived from real country statistics
     function getDefaultCountryState(countryKey) {
+        const normKey = (countryKey || 'BANGLADESH').toUpperCase().replace(/[-\s]/g, '_');
+        const econ = (window.gameState && window.gameState.economy && window.gameState.economy[normKey]) || null;
+        const pop = (window.gameState && window.gameState.population && window.gameState.population[normKey]) || null;
+
+        const popScale = pop && pop.population_2015 ? (pop.population_2015 / 160000000) : 1.0;
+        const gdpBudget = econ && econ.gdp ? Number((econ.gdp * 0.035 / 1e9).toFixed(1)) : 18.5;
+
         return {
             nationalPowerScore: 78,
             humanCapital: 74,
@@ -31,16 +38,16 @@ window.EducationEngine = (() => {
             brainDrainRate: -1.4, // net % migration flow
             softPower: 43,
             techIndependence: 64, // % technological sovereignty
-            annualBudget: 18.5, // $B
+            annualBudget: gdpBudget, // $B
             
             // 1. NETWORK (INSTITUTIONS)
             institutions: [
-                { id: 'univ_1', name: 'National University of Science & Tech', type: 'Elite University', capacity: 45000, graduates: 9200, spec: 'AI & Engineering Hub', level: 4, researchScore: 88, status: 'Active' },
-                { id: 'univ_2', name: 'Central Medical Research Varsity', type: 'Public University', capacity: 28000, graduates: 5100, spec: 'Medical Science Center', level: 3, researchScore: 82, status: 'Active' },
-                { id: 'univ_3', name: 'Defense & Aerospace Academy', type: 'Specialized Varsity', capacity: 12000, graduates: 2400, spec: 'Military Tech Partner', level: 4, researchScore: 91, status: 'Active' },
-                { id: 'inst_1', name: 'National Polytech & Vocational Institute', type: 'Technical Institute', capacity: 85000, graduates: 21000, spec: 'Industrial Trade', level: 3, researchScore: 64, status: 'Active' },
-                { id: 'lab_1', name: 'Advanced Quantum & Semiconductor Lab', type: 'National Lab', capacity: 3500, graduates: 800, spec: 'Frontier Tech', level: 5, researchScore: 96, status: 'Active' },
-                { id: 'cluster_1', name: 'Chittagong-Dhaka Knowledge-Industrial Cluster', type: 'Education Cluster', capacity: 120000, graduates: 32000, spec: 'Tech & Manufacturing', level: 4, researchScore: 89, status: 'Active' }
+                { id: 'univ_1', name: `${countryKey} National University of Science & Tech`, type: 'Elite University', capacity: Math.floor(45000 * popScale), graduates: Math.floor(9200 * popScale), spec: 'AI & Engineering Hub', level: 4, researchScore: 88, status: 'Active' },
+                { id: 'univ_2', name: `${countryKey} Central Medical Research Institute`, type: 'Public University', capacity: Math.floor(28000 * popScale), graduates: Math.floor(5100 * popScale), spec: 'Medical Science Center', level: 3, researchScore: 82, status: 'Active' },
+                { id: 'univ_3', name: `${countryKey} Strategic Defense & Aerospace Academy`, type: 'Specialized Varsity', capacity: Math.floor(12000 * popScale), graduates: Math.floor(2400 * popScale), spec: 'Military Tech Partner', level: 4, researchScore: 91, status: 'Active' },
+                { id: 'inst_1', name: `${countryKey} National Polytech Institute`, type: 'Technical Institute', capacity: Math.floor(85000 * popScale), graduates: Math.floor(21000 * popScale), spec: 'Industrial Trade', level: 3, researchScore: 64, status: 'Active' },
+                { id: 'lab_1', name: `${countryKey} Frontier Quantum & Semiconductor Lab`, type: 'National Lab', capacity: Math.floor(3500 * popScale), graduates: Math.floor(800 * popScale), spec: 'Frontier Tech', level: 5, researchScore: 96, status: 'Active' },
+                { id: 'cluster_1', name: `${countryKey} Knowledge-Industrial Cluster`, type: 'Education Cluster', capacity: Math.floor(120000 * popScale), graduates: Math.floor(32000 * popScale), spec: 'Tech & Manufacturing', level: 4, researchScore: 89, status: 'Active' }
             ],
 
             // 2. RESEARCH PROGRAMS

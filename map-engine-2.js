@@ -1773,10 +1773,10 @@ Game.Map.toggleMetricDropdown = function(e) {
         drop.style.display = 'flex';
 
         // Sync quick stats inside dropdown from top status bar
-        const cVal = document.getElementById('res-cash')?.textContent || '$100M';
-        const pVal = document.getElementById('res-power')?.textContent || '850 PP';
-        const mVal = document.getElementById('res-manpower')?.textContent || '500K';
-        const eVal = document.getElementById('res-energy')?.textContent || '12.4 GW';
+        const cVal = document.getElementById('res-cash')?.textContent || '—';
+        const pVal = document.getElementById('res-power')?.textContent || '—';
+        const mVal = document.getElementById('res-manpower')?.textContent || '—';
+        const eVal = document.getElementById('res-energy')?.textContent || '—';
 
         if (document.getElementById('dropdown-cash-val')) document.getElementById('dropdown-cash-val').textContent = cVal;
         if (document.getElementById('dropdown-power-val')) document.getElementById('dropdown-power-val').textContent = pVal;
@@ -2004,14 +2004,6 @@ window.loadGameCities = async function() {
 function safeAppEngineBootstrap() {
     if (window.map && Game.init && typeof window.loadGameCities === 'function') {
         window.loadGameCities();
-        
-        // গেম সাকসেসফুলি বুটস্ট্র্যাপ হওয়ার পর প্রতি ১০ সেকেন্ড পর পর এআই সিমুলেশন চলবে
-        setInterval(() => {
-            if (Game.Simulation && typeof Game.Simulation.tick === 'function') {
-                Game.Simulation.tick();
-            }
-        }, 10000); 
-        
     } else {
         setTimeout(safeAppEngineBootstrap, 100);
     }

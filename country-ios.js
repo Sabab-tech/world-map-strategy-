@@ -166,9 +166,10 @@ window.CountryIOS = {
         if (!stage) return;
 
         const countryKey = this.activeCountry;
-        const econ = (window.Game && window.Game.state && window.Game.state.economy && window.Game.state.economy[countryKey]) || { gdp: 21400000000000, debt: 28000000000000, gdp_growth: 2.1, unemployment_rate: 3.8 };
-        const pop = (window.Game && window.Game.state && window.Game.state.population && window.Game.state.population[countryKey]) || { population_2015: 331000000, annual_growth_rate: 0.5, birth_rate: 11, death_rate: 8, male_percent: 49.5, female_percent: 50.5 };
-        const rel = (window.Game && window.Game.state && window.Game.state.relations && window.Game.state.relations[countryKey]) || {};
+        const normKey = (countryKey || '').toUpperCase().replace(/[-\s]/g, '_');
+        const econ = (window.Game && window.Game.state && window.Game.state.economy && (window.Game.state.economy[normKey] || window.Game.state.economy[countryKey])) || (window.gameState && window.gameState.economy && (window.gameState.economy[normKey] || window.gameState.economy[countryKey])) || null;
+        const pop = (window.Game && window.Game.state && window.Game.state.population && (window.Game.state.population[normKey] || window.Game.state.population[countryKey])) || (window.gameState && window.gameState.population && (window.gameState.population[normKey] || window.gameState.population[countryKey])) || null;
+        const rel = (window.Game && window.Game.state && window.Game.state.relations && (window.Game.state.relations[normKey] || window.Game.state.relations[countryKey])) || {};
 
         switch(chNum) {
             case 1:
@@ -232,10 +233,10 @@ window.CountryIOS = {
         };
         const capital = capitalMap[countryKey.toUpperCase()] || "Capital HQ";
 
-        const cashVal = econ.gdp ? (econ.gdp / 1e8).toFixed(1) + "k" : "244.8k";
-        const influenceVal = (pop.population_2015 ? (pop.population_2015 / 6e5).toFixed(1) : "502.8") + "k";
-        const popVal = pop.population_2015 ? (pop.population_2015 / 1e6).toFixed(1) + "M" : "66.6M";
-        const relationVal = rel.standing || "friendship (65)";
+        const cashVal = (econ && econ.gdp) ? (econ.gdp / 1e8).toFixed(1) + "k" : "—";
+        const influenceVal = (pop && pop.population_2015) ? (pop.population_2015 / 6e5).toFixed(1) + "k" : "—";
+        const popVal = (pop && pop.population_2015) ? (pop.population_2015 / 1e6).toFixed(1) + "M" : "—";
+        const relationVal = (rel && rel.standing) ? rel.standing : "NEUTRAL";
 
         // Country flag icon mapping
         const flagMap = {
@@ -497,23 +498,23 @@ window.CountryIOS = {
                 <div class="ios-grid-4">
                     <div class="ios-card" style="border-left:3px solid #00e5ff;">
                         <div class="ios-card-title">GROSS DOMESTIC PRODUCT (GDP)</div>
-                        <div class="ios-card-val" style="color:#00e5ff;">${fmtNum(econ.gdp || 21e12)}</div>
-                        <div class="ios-card-sub">Annual Growth: <strong style="color:#22c55e;">+${econ.gdp_growth || 2.4}% / yr</strong></div>
+                        <div class="ios-card-val" style="color:#00e5ff;">${(econ && econ.gdp) ? fmtNum(econ.gdp) : "DATA PENDING"}</div>
+                        <div class="ios-card-sub">Annual Growth: <strong style="color:#22c55e;">${(econ && econ.gdp_growth !== undefined) ? '+' + econ.gdp_growth + '% / yr' : '—'}</strong></div>
                     </div>
                     <div class="ios-card" style="border-left:3px solid #ef4444;">
                         <div class="ios-card-title">SOVEREIGN NATIONAL DEBT</div>
-                        <div class="ios-card-val" style="color:#ef4444;">${fmtNum(econ.debt || 28e12)}</div>
-                        <div class="ios-card-sub">Debt-to-GDP Ratio: <strong style="color:#ffd700;">118%</strong></div>
+                        <div class="ios-card-val" style="color:#ef4444;">${(econ && econ.debt) ? fmtNum(econ.debt) : "DATA PENDING"}</div>
+                        <div class="ios-card-sub">Debt-to-GDP Ratio: <strong style="color:#ffd700;">${(econ && econ.gdp && econ.debt) ? ((econ.debt / econ.gdp) * 100).toFixed(1) + '%' : '—'}</strong></div>
                     </div>
                     <div class="ios-card" style="border-left:3px solid #ffd700;">
                         <div class="ios-card-title">UNEMPLOYMENT & INFLATION</div>
-                        <div class="ios-card-val" style="color:#ffd700;">${econ.unemployment_rate || 3.8}% / 2.2%</div>
-                        <div class="ios-card-sub">Labor Force: 164M Workers</div>
+                        <div class="ios-card-val" style="color:#ffd700;">${(econ && econ.unemployment_rate !== undefined) ? econ.unemployment_rate + '%' : '—'} / ${(econ && econ.inflation_rate !== undefined) ? econ.inflation_rate + '%' : '—'}</div>
+                        <div class="ios-card-sub">Labor Index: ${(econ && econ.unemployment_rate !== undefined) ? (100 - econ.unemployment_rate).toFixed(1) + '% Active' : '—'}</div>
                     </div>
                     <div class="ios-card" style="border-left:3px solid #22c55e;">
                         <div class="ios-card-title">FOREIGN TRADE BALANCE</div>
-                        <div class="ios-card-val" style="color:#22c55e;">+$48.5 Billion</div>
-                        <div class="ios-card-sub">Reserves: $142 Billion</div>
+                        <div class="ios-card-val" style="color:#22c55e;">${(econ && econ.trade_balance !== undefined) ? fmtNum(econ.trade_balance) : 'SOVEREIGN LEDGER'}</div>
+                        <div class="ios-card-sub">Forex Reserves: ${(econ && econ.forex_reserves) ? fmtNum(econ.forex_reserves) : '—'}</div>
                     </div>
                 </div>
 

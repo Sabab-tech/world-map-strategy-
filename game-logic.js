@@ -2,13 +2,65 @@
    GLOBAL GEOPOLITICAL SIMULATOR - gameplay-logic master file (game-logic.js)
    ============================================================================ */
 
-window.resources = { cash: 100000000, oil: 500000, steel: 100000, uranium: 500, manpower: 500000 };
-window.resourceRates = { cash: 5000, oil: 200, steel: 100, uranium: 2, manpower: 150 };
-
-// গেম ডেটা কন্টেনার
+// Global Geopolitical State Container (Real Sovereign & Epistemic State)
 window.gameState = {
     population: {},
     economy: {}
+};
+
+// Canonical State Resource Accessor (Safe, non-authoritative HUD bridge)
+window.updateGlobalResourceHUD = function(countryKey) {
+    const activeKey = countryKey || (window.CountryIOS && window.CountryIOS.activeCountry) || window.currentActiveCountry || 'USA';
+    const normKey = (activeKey || '').toUpperCase().replace(/[-\s]/g, '_');
+    
+    let sovereignCash = null;
+    let sovereignOil = null;
+    let sovereignSteel = null;
+    let sovereignUranium = null;
+    let sovereignManpower = null;
+
+    if (window.gameState && window.gameState.economy && window.gameState.economy[normKey]) {
+        const econ = window.gameState.economy[normKey];
+        if (econ.treasury !== undefined) sovereignCash = econ.treasury;
+        else if (econ.gdp !== undefined) sovereignCash = econ.gdp * 0.08;
+    }
+    if (window.gameState && window.gameState.population && window.gameState.population[normKey]) {
+        const pop = window.gameState.population[normKey];
+        if (pop.population_2015) sovereignManpower = Math.floor(pop.population_2015 * 0.02);
+    }
+
+    if (window.ResourceMinistryEngine && typeof window.ResourceMinistryEngine.getIntegratedResourceState === 'function') {
+        const resState = window.ResourceMinistryEngine.getIntegratedResourceState(normKey);
+        if (resState && resState.inventory) {
+            if (resState.inventory.crude_oil !== undefined) sovereignOil = resState.inventory.crude_oil;
+            if (resState.inventory.refined_steel !== undefined) sovereignSteel = resState.inventory.refined_steel;
+            if (resState.inventory.enriched_uranium !== undefined) sovereignUranium = resState.inventory.enriched_uranium;
+        }
+    }
+
+    const cashEl = document.getElementById('res-cash');
+    const oilEl = document.getElementById('res-oil');
+    const steelEl = document.getElementById('res-steel');
+    const uraniumEl = document.getElementById('res-uranium');
+    const manpowerEl = document.getElementById('res-manpower');
+    const powerEl = document.getElementById('res-power');
+    const energyEl = document.getElementById('res-energy');
+
+    if (cashEl && sovereignCash !== null) {
+        cashEl.innerText = formatGameNumber(sovereignCash).replace("$", "💵");
+    }
+    if (manpowerEl && sovereignManpower !== null) {
+        manpowerEl.innerText = formatPopulationNumber(sovereignManpower);
+    }
+    if (oilEl && sovereignOil !== null) {
+        oilEl.innerText = formatPopulationNumber(sovereignOil) + " BBL";
+    }
+    if (steelEl && sovereignSteel !== null) {
+        steelEl.innerText = formatPopulationNumber(sovereignSteel) + " T";
+    }
+    if (uraniumEl && sovereignUranium !== null) {
+        uraniumEl.innerText = sovereignUranium.toString() + " KG";
+    }
 };
 
 // সংখ্যাকে সংক্ষেপ করার অত্যন্ত শক্তিশালী ও দৃষ্টিনন্দন ফরম্যাটার
@@ -80,59 +132,13 @@ window.initializeWorldGameDatabase = async function() {
                 relSelector.appendChild(opt);
             });
         }
+        if (window.updateGlobalResourceHUD) {
+            window.updateGlobalResourceHUD();
+        }
     } catch (err) {
         console.warn("Database load notice (handled):", err);
     }
 };
-
-// ২. রিয়েল-টাইম আয়ের লুপ (প্রতি সেকেন্ডে একবার চলবে)
-setInterval(function() {
-    window.resources.cash += window.resourceRates.cash;
-    window.resources.oil += window.resourceRates.oil;
-    window.resources.steel += window.resourceRates.steel;
-    window.resources.uranium += window.resourceRates.uranium;
-    window.resources.manpower += window.resourceRates.manpower;
-
-    const cashEl = document.getElementById('res-cash');
-    const oilEl = document.getElementById('res-oil');
-    const steelEl = document.getElementById('res-steel');
-    const uraniumEl = document.getElementById('res-uranium');
-    const manpowerEl = document.getElementById('res-manpower');
-    const powerEl = document.getElementById('res-power');
-    const energyEl = document.getElementById('res-energy');
-
-    if (cashEl) {
-        cashEl.innerText = formatGameNumber(window.resources.cash).replace("$", "💵");
-        const trend = cashEl.closest('.res-node')?.querySelector('.res-trend');
-        if (trend) trend.innerText = `▲ +${formatGameNumber(window.resourceRates.cash)}/s`;
-    }
-    if (powerEl) {
-        powerEl.innerText = "850 PP";
-    }
-    if (manpowerEl) {
-        manpowerEl.innerText = formatPopulationNumber(window.resources.manpower);
-        const trend = manpowerEl.closest('.res-node')?.querySelector('.res-trend');
-        if (trend) trend.innerText = `▲ +${window.resourceRates.manpower}/s`;
-    }
-    if (energyEl) {
-        energyEl.innerText = "14.8 GW";
-    }
-    if (oilEl) {
-        oilEl.innerText = formatPopulationNumber(window.resources.oil) + " BBL";
-        const trend = oilEl.closest('.res-node')?.querySelector('.res-trend');
-        if (trend) trend.innerText = `▲ +${window.resourceRates.oil}/s`;
-    }
-    if (steelEl) {
-        steelEl.innerText = formatPopulationNumber(window.resources.steel) + " T";
-        const trend = steelEl.closest('.res-node')?.querySelector('.res-trend');
-        if (trend) trend.innerText = `▲ +${window.resourceRates.steel}/s`;
-    }
-    if (uraniumEl) {
-        uraniumEl.innerText = window.resources.uranium.toString() + " KG";
-        const trend = uraniumEl.closest('.res-node')?.querySelector('.res-trend');
-        if (trend) trend.innerText = `▲ +${window.resourceRates.uranium}/s`;
-    }
-}, 1000);
 
 // ৩. কমান্ড হাব মোডাল ৩-লেয়ার কন্ট্রোল
 window.toggleCommandHub = function(show) {

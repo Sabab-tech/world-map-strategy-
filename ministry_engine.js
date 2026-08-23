@@ -2543,6 +2543,7 @@ window.OmegaCabinetUI = {
 
     renderResourceMinistryDashboard(m, container) {
         const countryDetails = this.getCountryDetails(this.activeCountry);
+        const normKey = (this.activeCountry || 'BANGLADESH').toUpperCase().replace(/[-\s]/g, '_');
         this.activeResourceSub = this.activeResourceSub || 'power_grid';
 
         if (window._resourceChartTimer) {
@@ -2550,13 +2551,28 @@ window.OmegaCabinetUI = {
             window._resourceChartTimer = null;
         }
 
-        const cash = window.resources && window.resources.cash !== undefined ? window.resources.cash : 100000000;
-        const oil = window.resources && window.resources.oil !== undefined ? window.resources.oil : 500000;
-        const steel = window.resources && window.resources.steel !== undefined ? window.resources.steel : 100000;
-        const uranium = window.resources && window.resources.uranium !== undefined ? window.resources.uranium : 500;
+        let cash = null;
+        let oil = null;
+        let steel = null;
+        let uranium = null;
+
+        if (window.gameState && window.gameState.economy && window.gameState.economy[normKey]) {
+            const econ = window.gameState.economy[normKey];
+            if (econ.treasury !== undefined) cash = econ.treasury;
+            else if (econ.gdp !== undefined) cash = econ.gdp * 0.08;
+        }
+
+        if (window.ResourceMinistryEngine && typeof window.ResourceMinistryEngine.getIntegratedResourceState === 'function') {
+            const resState = window.ResourceMinistryEngine.getIntegratedResourceState(normKey);
+            if (resState && resState.inventory) {
+                if (resState.inventory.crude_oil !== undefined) oil = resState.inventory.crude_oil;
+                if (resState.inventory.refined_steel !== undefined) steel = resState.inventory.refined_steel;
+                if (resState.inventory.enriched_uranium !== undefined) uranium = resState.inventory.enriched_uranium;
+            }
+        }
         
-        const formatNum = (num) => window.formatPopulationNumber ? window.formatPopulationNumber(num) : num.toLocaleString();
-        const formatCash = (num) => window.formatGameNumber ? window.formatGameNumber(num) : '$' + (num / 1000000).toFixed(1) + 'M';
+        const formatNum = (num) => (num !== null && num !== undefined) ? (window.formatPopulationNumber ? window.formatPopulationNumber(num) : num.toLocaleString()) : 'N/A';
+        const formatCash = (num) => (num !== null && num !== undefined) ? (window.formatGameNumber ? window.formatGameNumber(num) : '$' + (num / 1000000).toFixed(1) + 'M') : 'N/A';
 
         let html = `
             <!-- AAA HERO HEADER -->
@@ -2842,69 +2858,29 @@ window.OmegaCabinetUI = {
             data.shift();
             data.push(nextVal);
             renderFrame();
-
-            const cashEl = document.getElementById('res-min-cash');
-            const oilEl = document.getElementById('res-min-oil');
-            const steelEl = document.getElementById('res-min-steel');
-            const uraniumEl = document.getElementById('res-min-uranium');
-            const energyEl = document.getElementById('res-min-energy');
-
-            if (cashEl && window.resources && window.resources.cash !== undefined) {
-                cashEl.innerText = window.formatGameNumber ? window.formatGameNumber(window.resources.cash) : '$' + (window.resources.cash / 1000000).toFixed(1) + 'M';
-            }
-            if (oilEl && window.resources && window.resources.oil !== undefined) {
-                oilEl.innerText = (window.formatPopulationNumber ? window.formatPopulationNumber(window.resources.oil) : window.resources.oil) + ' BBL';
-            }
-            if (steelEl && window.resources && window.resources.steel !== undefined) {
-                steelEl.innerText = (window.formatPopulationNumber ? window.formatPopulationNumber(window.resources.steel) : window.resources.steel) + ' T';
-            }
-            if (uraniumEl && window.resources && window.resources.uranium !== undefined) {
-                uraniumEl.innerText = window.resources.uranium + ' KG';
-            }
-        }, 1000);
+        }, 3000);
     },
 
     executeResourceDirective(directiveType) {
-        if (!window.resources) window.resources = { cash: 100000000, oil: 500000, steel: 100000, uranium: 500, manpower: 500000 };
+        const countryKey = (this.activeCountry || 'BANGLADESH').toUpperCase().replace(/[-\s]/g, '_');
 
-        if (directiveType === 'drill_oil') {
-            if (window.resources.cash < 800000000) {
-                if (window.showOmegaNotification) window.showOmegaNotification("INSUFFICIENT FUNDS", "❌ $800M needed for Deepwater Offshore Oil Rig Drilling!", "error");
-                return;
+        if (window.ResourceMinistryEngine && typeof window.ResourceMinistryEngine.executeDirective === 'function') {
+            window.ResourceMinistryEngine.executeDirective(directiveType, countryKey);
+        } else {
+            if (directiveType === 'drill_oil') {
+                if (window.showOmegaNotification) window.showOmegaNotification("OFFSHORE OIL RIG DIRECTIVE", "🛢️ Offshore Crude Exploration directive logged in sovereign reserve ledger.", "success");
+            } else if (directiveType === 'build_nuclear') {
+                if (window.showOmegaNotification) window.showOmegaNotification("NUCLEAR REACTOR DIRECTIVE", "⚛️ Baseload Nuclear Capacity expansion directive issued.", "success");
+            } else if (directiveType === 'expand_mining') {
+                if (window.showOmegaNotification) window.showOmegaNotification("MINING EXPANSION DIRECTIVE", "⛏️ Strategic Mineral Concession operationalized.", "success");
+            } else if (directiveType === 'build_solar') {
+                if (window.showOmegaNotification) window.showOmegaNotification("RENEWABLE ENERGY DIRECTIVE", "☀️ Coastal Wind and Solar Infrastructure commissioned.", "success");
             }
-            window.resources.cash -= 800000000;
-            window.resources.oil += 50000;
-            if (window.resourceRates) window.resourceRates.oil += 500;
-            if (window.showOmegaNotification) window.showOmegaNotification("OFFSHORE OIL RIG ACTIVE", "🛢️ Deepwater Crude Well Online! +50,000 BBL added to Stockpiles. Extraction yield +500 BBL/s!", "success");
-        } else if (directiveType === 'build_nuclear') {
-            if (window.resources.cash < 2000000000) {
-                if (window.showOmegaNotification) window.showOmegaNotification("INSUFFICIENT FUNDS", "❌ $2.0B needed to build Nuclear Reactor!", "error");
-                return;
-            }
-            window.resources.cash -= 2000000000;
-            window.resources.uranium += 100;
-            if (window.showOmegaNotification) window.showOmegaNotification("NUCLEAR REACTOR COMMISSIONED", "⚛️ 2,400MW Dual Reactor commissioned! National Grid Baseload secured +2.4 GW!", "success");
-        } else if (directiveType === 'expand_mining') {
-            if (window.resources.cash < 1200000000) {
-                if (window.showOmegaNotification) window.showOmegaNotification("INSUFFICIENT FUNDS", "❌ $1.2B needed for Mining Expansion!", "error");
-                return;
-            }
-            window.resources.cash -= 1200000000;
-            window.resources.steel += 10000;
-            window.resources.uranium += 250;
-            if (window.showOmegaNotification) window.showOmegaNotification("RARE EARTH MINES EXPANDED", "⛏️ Lithium & Uranium Extraction operational! +10,000 T Steel & +250 KG Uranium added!", "success");
-        } else if (directiveType === 'build_solar') {
-            if (window.resources.cash < 600000000) {
-                if (window.showOmegaNotification) window.showOmegaNotification("INSUFFICIENT FUNDS", "❌ $600M needed for Offshore Wind Grid!", "error");
-                return;
-            }
-            window.resources.cash -= 600000000;
-            if (window.showOmegaNotification) window.showOmegaNotification("OFFSHORE WIND GRID ONLINE", "☀️ 1,000 MW Coastal Wind Turbines active! National grid green energy ratio +12%!", "success");
         }
 
         if (window._resourceGraphHistory) {
             const last = window._resourceGraphHistory[window._resourceGraphHistory.length - 1];
-            window._resourceGraphHistory[window._resourceGraphHistory.length - 1] = Number((last * 1.25).toFixed(2));
+            window._resourceGraphHistory[window._resourceGraphHistory.length - 1] = Number((last * 1.05).toFixed(2));
         }
 
         const m = this.ministriesDatabase['energy_mining'] || this.ministriesDatabase['resource'];

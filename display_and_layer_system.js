@@ -123,21 +123,27 @@
      * ============================================================================ */
     window.OmegaDataBinding = {
         getEconomyMetrics() {
-            const hasGame = window.Game && window.resources;
-            const cash = hasGame && window.resources.cash !== undefined ? window.resources.cash : 51780572;
-            const formattedCash = window.formatGameNumber ? window.formatGameNumber(cash) : '$51.78M';
+            const activeKey = (window.CountryIOS && window.CountryIOS.activeCountry) || window.currentActiveCountry || 'USA';
+            const normKey = (activeKey || '').toUpperCase().replace(/[-\s]/g, '_');
+            const econ = (window.gameState && window.gameState.economy && window.gameState.economy[normKey]) || null;
+            const pop = (window.gameState && window.gameState.population && window.gameState.population[normKey]) || null;
+
+            const gdpStr = econ && econ.gdp ? (window.formatGameNumber ? window.formatGameNumber(econ.gdp) : '$' + (econ.gdp/1e9).toFixed(1) + 'B') : '—';
+            const debtStr = econ && econ.debt ? (window.formatGameNumber ? window.formatGameNumber(econ.debt) : '$' + (econ.debt/1e9).toFixed(1) + 'B') : '—';
+            const growthStr = econ && econ.gdp_growth !== undefined ? `+${econ.gdp_growth}% YoY` : '—';
+            const treasuryStr = econ && econ.treasury !== undefined ? (window.formatGameNumber ? window.formatGameNumber(econ.treasury) : '$' + (econ.treasury/1e6).toFixed(1) + 'M') : (econ && econ.gdp ? window.formatGameNumber(econ.gdp * 0.08) : '—');
 
             return {
-                isLive: !!hasGame,
-                gdp: '$1.42 Trillion',
-                budget: '$120.5 Billion',
-                treasury: formattedCash,
-                income: '+$4.20B / mo',
-                expense: '-$3.15B / mo',
-                inflation: '2.1% Annual',
-                growth: '+5.8% GDP YoY',
-                debt: '$320.5B (22.5% GDP)',
-                reserve: '$42.8B Gold & FX'
+                isLive: !!econ,
+                gdp: gdpStr,
+                budget: econ && econ.gdp ? window.formatGameNumber(econ.gdp * 0.22) : '—',
+                treasury: treasuryStr,
+                income: econ && econ.gdp ? `+${window.formatGameNumber(econ.gdp * 0.02)} / mo` : '—',
+                expense: econ && econ.gdp ? `-${window.formatGameNumber(econ.gdp * 0.018)} / mo` : '—',
+                inflation: econ && econ.inflation_rate !== undefined ? `${econ.inflation_rate}% Annual` : '—',
+                growth: growthStr,
+                debt: debtStr,
+                reserve: econ && econ.forex_reserves ? window.formatGameNumber(econ.forex_reserves) : '—'
             };
         },
 
