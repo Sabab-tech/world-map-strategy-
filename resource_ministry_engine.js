@@ -14853,6 +14853,2812 @@ _globalScope.GSRSK_DataFoundation = (() => {
 
     })(typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : global));
 
+    // =========================================================================
+    // GSRSK — PART 07: RESOURCE INVENTORY, BATCH & STORAGE ENGINE (VOLUME 1 OF 2)
+    // =========================================================================
+    // Architecture Phase: 07 of 16
+    // Production Standard: 100% Comprehensive Constitutional Invariant Engine
+    //
+    // SUBSYSTEMS INCLUDED IN VOLUME 1:
+    //   P07-01 Inventory Foundation Contract, Vocabularies & Error Taxonomy
+    //   P07-02 Canonical Batch Model & Registry Engine
+    //   P07-03 Inventory Ledger & Multi-Index Stock Position Engine
+    //   P07-04 Storage Location Registry & Acceptance Constraint Schema
+    //   P07-05 Storage Capacity & Occupancy Physics Engine (Zero Double-Count)
+    //   P07-06 Batch Lifecycle Finite State Machine (10 States with FSM Guard)
+    //   P07-07 Multi-Layer Quantity State Manager (7-Dimensional Accounting)
+    //   P07-08 Stock Availability & Usability Resolver Engine (Operational Guard)
+    //   P07-09 Reservation Engine (Non-Destructive Claim Locks + Expiry Check)
+    //   P07-10 Allocation Engine (Operational Downstream Assignment + Nonce IDs)
+    //   P07-11 Physical Consumption & Storage Occupancy Release Engine
+    //   + Safe Deterministic Hashing Infrastructure (Zero Date.now / Zero Math.random)
+    // =========================================================================
+
+    (function(global) {
+        'use strict';
+
+        // =========================================================================
+        // P07-01: INVENTORY FOUNDATION CONTRACT, ENUMS, VOCABULARIES & TAXONOMY
+        // =========================================================================
+
+        const QuantityDimension = Object.freeze({
+            MASS: 'MASS',
+            VOLUME: 'VOLUME',
+            ENERGY: 'ENERGY',
+            AREA: 'AREA',
+            LENGTH: 'LENGTH',
+            PIECES: 'PIECES',
+            DIMENSIONLESS: 'DIMENSIONLESS',
+            UNKNOWN: 'UNKNOWN'
+        });
+
+        const BatchLifecycleStatus = Object.freeze({
+            CREATED: 'CREATED',
+            REGISTERED: 'REGISTERED',
+            STORED: 'STORED',
+            AVAILABLE: 'AVAILABLE',
+            RESERVED: 'RESERVED',
+            ALLOCATED: 'ALLOCATED',
+            CONSUMED: 'CONSUMED',
+            QUARANTINED: 'QUARANTINED',
+            DAMAGED: 'DAMAGED',
+            EXPIRED: 'EXPIRED'
+        });
+
+        const StorageLocationType = Object.freeze({
+            WAREHOUSE: 'WAREHOUSE',
+            TANK_FARM: 'TANK_FARM',
+            SILO: 'SILO',
+            OPEN_STOCKPILE: 'OPEN_STOCKPILE',
+            STORAGE_YARD: 'STORAGE_YARD',
+            COLD_STORAGE: 'COLD_STORAGE',
+            HAZARDOUS_CONTAINMENT: 'HAZARDOUS_CONTAINMENT',
+            UNDERGROUND_CAVERN: 'UNDERGROUND_CAVERN',
+            PORT_TERMINAL_STORAGE: 'PORT_TERMINAL_STORAGE',
+            TEMPORARY_STAGING: 'TEMPORARY_STAGING',
+            IN_TRANSIT_CONTAINMENT: 'IN_TRANSIT_CONTAINMENT',
+            SPECIALIZED_SECURE: 'SPECIALIZED_SECURE'
+        });
+
+        const StorageOperationalStatus = Object.freeze({
+            OPERATIONAL: 'OPERATIONAL',
+            MAINTENANCE: 'MAINTENANCE',
+            DEGRADED: 'DEGRADED',
+            FULL_OCCUPANCY: 'FULL_OCCUPANCY',
+            QUARANTINED_AREA: 'QUARANTINED_AREA',
+            DECOMMISSIONED: 'DECOMMISSIONED'
+        });
+
+        const InventoryTransactionType = Object.freeze({
+            INTAKE_REGISTRATION: 'INTAKE_REGISTRATION',
+            LOCATION_TRANSFER: 'LOCATION_TRANSFER',
+            CUSTODY_TRANSFER: 'CUSTODY_TRANSFER',
+            RESERVATION_LOCK: 'RESERVATION_LOCK',
+            RESERVATION_RELEASE: 'RESERVATION_RELEASE',
+            ALLOCATION_ASSIGN: 'ALLOCATION_ASSIGN',
+            ALLOCATION_RELEASE: 'ALLOCATION_RELEASE',
+            PHYSICAL_CONSUMPTION: 'PHYSICAL_CONSUMPTION',
+            BATCH_SPLIT: 'BATCH_SPLIT',
+            BATCH_MERGE: 'BATCH_MERGE',
+            STATUS_TRANSITION: 'STATUS_TRANSITION',
+            PHYSICAL_ADJUSTMENT: 'PHYSICAL_ADJUSTMENT',
+            RECONCILIATION_CORRECTION: 'RECONCILIATION_CORRECTION'
+        });
+
+        const InventoryAdjustmentReason = Object.freeze({
+            PHYSICAL_COUNT_DISCREPANCY: 'PHYSICAL_COUNT_DISCREPANCY',
+            SPOILAGE_OR_EVAPORATION: 'SPOILAGE_OR_EVAPORATION',
+            CONTAMINATION_DERATING: 'CONTAMINATION_DERATING',
+            SAMPLE_EXTRACTION: 'SAMPLE_EXTRACTION',
+            AUDIT_CALIBRATION: 'AUDIT_CALIBRATION',
+            FORCE_MAJEURE_LOSS: 'FORCE_MAJEURE_LOSS'
+        });
+
+        const InventoryHealthStatus = Object.freeze({
+            HEALTHY: 'HEALTHY',
+            DEGRADED: 'DEGRADED',
+            CRITICAL_FAILURE: 'CRITICAL_FAILURE'
+        });
+
+        const ErrorTaxonomy = Object.freeze({
+            P7_001_INVALID_BATCH_IDENTIFIER: 'P7_001_INVALID_BATCH_IDENTIFIER',
+            P7_002_DUPLICATE_BATCH_REGISTRATION: 'P7_002_DUPLICATE_BATCH_REGISTRATION',
+            P7_003_NEGATIVE_STOCK_VIOLATION: 'P7_003_NEGATIVE_STOCK_VIOLATION',
+            P7_004_OVERDRAW_ALLOCATION_ATTEMPT: 'P7_004_OVERDRAW_ALLOCATION_ATTEMPT',
+            P7_005_LOCATION_CAPACITY_EXCEEDED: 'P7_005_LOCATION_CAPACITY_EXCEEDED',
+            P7_006_INCOMPATIBLE_STORAGE_MATERIAL: 'P7_006_INCOMPATIBLE_STORAGE_MATERIAL',
+            P7_007_INVALID_LIFECYCLE_TRANSITION: 'P7_007_INVALID_LIFECYCLE_TRANSITION',
+            P7_008_DOUBLE_CONSUMPTION_REJECTED: 'P7_008_DOUBLE_CONSUMPTION_REJECTED',
+            P7_009_QUANTITY_ACCOUNTING_MISMATCH: 'P7_009_QUANTITY_ACCOUNTING_MISMATCH',
+            P7_010_PARENT_CHILD_SPLIT_EXCEEDED: 'P7_010_PARENT_CHILD_SPLIT_EXCEEDED',
+            P7_011_MERGE_COMPATIBILITY_BREACH: 'P7_011_MERGE_COMPATIBILITY_BREACH',
+            P7_012_UNIT_DIMENSION_MISMATCH: 'P7_012_UNIT_DIMENSION_MISMATCH',
+            P7_013_UNRESOLVED_STORAGE_LOCATION: 'P7_013_UNRESOLVED_STORAGE_LOCATION',
+            P7_014_RESERVATION_NOT_FOUND: 'P7_014_RESERVATION_NOT_FOUND',
+            P7_015_ALLOCATION_NOT_FOUND: 'P7_015_ALLOCATION_NOT_FOUND',
+            P7_016_ORPHAN_INVENTORY_POSITION: 'P7_016_ORPHAN_INVENTORY_POSITION',
+            P7_017_RECONCILIATION_DRIFT_DETECTED: 'P7_017_RECONCILIATION_DRIFT_DETECTED',
+            P7_018_SNAPSHOT_INTEGRITY_FAILURE: 'P7_018_SNAPSHOT_INTEGRITY_FAILURE',
+            P7_019_FIREWALL_BOUNDARY_VIOLATION: 'P7_019_FIREWALL_BOUNDARY_VIOLATION',
+            P7_020_ATOMIC_TRANSACTION_ABORTED: 'P7_020_ATOMIC_TRANSACTION_ABORTED',
+            P7_021_CUSTODY_TRANSFER_REJECTED: 'P7_021_CUSTODY_TRANSFER_REJECTED',
+            P7_022_EXPIRED_RESERVATION_ACCESS: 'P7_022_EXPIRED_RESERVATION_ACCESS',
+            P7_023_LINEAGE_INTEGRITY_BREACH: 'P7_023_LINEAGE_INTEGRITY_BREACH',
+            P7_024_ADJUSTMENT_AUTHORIZATION_FAILED: 'P7_024_ADJUSTMENT_AUTHORIZATION_FAILED',
+            P7_025_ZERO_QUANTITY_TRANSACTION: 'P7_025_ZERO_QUANTITY_TRANSACTION'
+        });
+
+        // =========================================================================
+        // DETERMINISTIC HASHING INFRASTRUCTURE (NO DATE.NOW / NO MATH.RANDOM)
+        // =========================================================================
+
+        class DeterministicHashEngine {
+            static computeHash(inputStr) {
+                const str = typeof inputStr === 'string' ? inputStr : JSON.stringify(inputStr);
+                let h1 = 0xdeadbeef ^ str.length;
+                let h2 = 0x41c6ce57 ^ str.length;
+                for (let i = 0; i < str.length; i++) {
+                    const ch = str.charCodeAt(i);
+                    h1 = (Math.imul(h1 ^ ch, 2654435761) >>> 0);
+                    h2 = (Math.imul(h2 ^ ch, 1597334677) >>> 0);
+                }
+                h1 = ((Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909)) >>> 0);
+                h2 = ((Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909)) >>> 0);
+                return ((h1 >>> 0).toString(16).padStart(8, '0') + (h2 >>> 0).toString(16).padStart(8, '0')).toLowerCase();
+            }
+
+            static generateDeterministicId(prefix, seedComponents) {
+                const payload = seedComponents.map(c => String(c)).join('|');
+                const hash = this.computeHash(payload).substring(0, 12);
+                return `${prefix}:${hash}`;
+            }
+        }
+
+        // =========================================================================
+        // P07-02: CANONICAL BATCH MODEL & REGISTRY ENGINE
+        // =========================================================================
+
+        class CanonicalResourceBatch {
+            constructor(params = {}) {
+                if (!params.batchId || !params.materialIdentity || typeof params.quantity !== 'number') {
+                    throw new Error('[CanonicalResourceBatch Violation]: batchId, materialIdentity, and numeric quantity are mandatory.');
+                }
+                if (params.quantity < 0 || !Number.isFinite(params.quantity)) {
+                    throw new Error(`[CanonicalResourceBatch Invariant Breach]: Quantity must be a finite non-negative number (${params.quantity}).`);
+                }
+
+                this.batchId = params.batchId;
+                this.materialIdentity = params.materialIdentity; // Part 04 Canonical Resource Type Key
+                this.resourceIdentityKey = params.resourceIdentityKey || params.materialIdentity;
+                this.quantity = params.quantity;
+                this.unit = params.unit || 'TONNES';
+                this.dimension = params.dimension || QuantityDimension.MASS;
+                this.epistemicState = params.epistemicState || 'DECLARED_CANONICAL';
+
+                // Quality & Physical Specifications
+                this.quality = typeof params.quality === 'number' ? Math.max(0, Math.min(1.0, params.quality)) : 1.0;
+                this.grade = typeof params.grade === 'number' ? Math.max(0, params.grade) : 1.0;
+                this.purity = typeof params.purity === 'number' ? Math.max(0, Math.min(1.0, params.purity)) : 1.0;
+                this.physicalState = params.physicalState || 'SOLID';
+                this.chemicalState = params.chemicalState || 'UNSPECIFIED';
+
+                // Ownership, Tenancy & Geospatial Anchors
+                this.ownerKey = params.ownerKey || 'SOVEREIGN_UNASSIGNED';
+                this.custodianKey = params.custodianKey || this.ownerKey;
+                this.locationNodeKey = params.locationNodeKey || 'LOC:GENESIS_STAGING';
+                this.facilityKey = params.facilityKey || null;
+                this.originKey = params.originKey || 'ORIGIN:UNKNOWN';
+
+                // Lineage & Provenance References
+                this.extractionReference = params.extractionReference || null;
+                this.transformationReference = params.transformationReference || null;
+                this.sourceBatchIds = Array.isArray(params.sourceBatchIds) ? [...params.sourceBatchIds].sort() : [];
+                this.parentBatchId = params.parentBatchId || null;
+
+                this.lifecycleStatus = params.lifecycleStatus || BatchLifecycleStatus.CREATED;
+                this.registeredTick = typeof params.registeredTick === 'number' ? params.registeredTick : 0;
+                this.provenance = params.provenance || { sourceSubsystem: 'BATCH_REGISTRY', timestamp: 0 };
+            }
+
+            clone() {
+                return new CanonicalResourceBatch({
+                    batchId: this.batchId,
+                    materialIdentity: this.materialIdentity,
+                    resourceIdentityKey: this.resourceIdentityKey,
+                    quantity: this.quantity,
+                    unit: this.unit,
+                    dimension: this.dimension,
+                    epistemicState: this.epistemicState,
+                    quality: this.quality,
+                    grade: this.grade,
+                    purity: this.purity,
+                    physicalState: this.physicalState,
+                    chemicalState: this.chemicalState,
+                    ownerKey: this.ownerKey,
+                    custodianKey: this.custodianKey,
+                    locationNodeKey: this.locationNodeKey,
+                    facilityKey: this.facilityKey,
+                    originKey: this.originKey,
+                    extractionReference: this.extractionReference,
+                    transformationReference: this.transformationReference,
+                    sourceBatchIds: [...this.sourceBatchIds],
+                    parentBatchId: this.parentBatchId,
+                    lifecycleStatus: this.lifecycleStatus,
+                    registeredTick: this.registeredTick,
+                    provenance: JSON.parse(JSON.stringify(this.provenance))
+                });
+            }
+
+            toJSON() {
+                return {
+                    batchId: this.batchId,
+                    materialIdentity: this.materialIdentity,
+                    resourceIdentityKey: this.resourceIdentityKey,
+                    quantity: this.quantity,
+                    unit: this.unit,
+                    dimension: this.dimension,
+                    epistemicState: this.epistemicState,
+                    quality: this.quality,
+                    grade: this.grade,
+                    purity: this.purity,
+                    physicalState: this.physicalState,
+                    chemicalState: this.chemicalState,
+                    ownerKey: this.ownerKey,
+                    custodianKey: this.custodianKey,
+                    locationNodeKey: this.locationNodeKey,
+                    facilityKey: this.facilityKey,
+                    originKey: this.originKey,
+                    extractionReference: this.extractionReference,
+                    transformationReference: this.transformationReference,
+                    sourceBatchIds: this.sourceBatchIds,
+                    parentBatchId: this.parentBatchId,
+                    lifecycleStatus: this.lifecycleStatus,
+                    registeredTick: this.registeredTick,
+                    provenance: this.provenance
+                };
+            }
+        }
+
+        class BatchRegistry {
+            constructor() {
+                this.batches = new Map(); // BatchId -> CanonicalResourceBatch
+            }
+
+            registerBatch(batch) {
+                if (!(batch instanceof CanonicalResourceBatch)) {
+                    throw new Error('[BatchRegistry]: Expected CanonicalResourceBatch instance.');
+                }
+                if (this.batches.has(batch.batchId)) {
+                    throw new Error(`[BatchRegistry Violation]: Duplicate registration of batch '${batch.batchId}' rejected.`);
+                }
+                this.batches.set(batch.batchId, batch);
+                return batch;
+            }
+
+            getBatch(batchId) {
+                return this.batches.get(batchId) || null;
+            }
+
+            hasBatch(batchId) {
+                return this.batches.has(batchId);
+            }
+
+            getAllBatches() {
+                return Array.from(this.batches.values());
+            }
+
+            clear() {
+                this.batches.clear();
+            }
+        }
+
+        // =========================================================================
+        // P07-06: BATCH LIFECYCLE FINITE STATE MACHINE (10 STATES WITH GUARD)
+        // =========================================================================
+
+        class BatchLifecycleFSM {
+            static get TRANSITION_MATRIX() {
+                return Object.freeze({
+                    [BatchLifecycleStatus.CREATED]: [
+                        BatchLifecycleStatus.REGISTERED,
+                        BatchLifecycleStatus.STORED,
+                        BatchLifecycleStatus.AVAILABLE,
+                        BatchLifecycleStatus.QUARANTINED
+                    ],
+                    [BatchLifecycleStatus.REGISTERED]: [
+                        BatchLifecycleStatus.STORED,
+                        BatchLifecycleStatus.AVAILABLE,
+                        BatchLifecycleStatus.QUARANTINED
+                    ],
+                    [BatchLifecycleStatus.STORED]: [
+                        BatchLifecycleStatus.AVAILABLE,
+                        BatchLifecycleStatus.QUARANTINED,
+                        BatchLifecycleStatus.DAMAGED,
+                        BatchLifecycleStatus.EXPIRED
+                    ],
+                    [BatchLifecycleStatus.AVAILABLE]: [
+                        BatchLifecycleStatus.RESERVED,
+                        BatchLifecycleStatus.ALLOCATED,
+                        BatchLifecycleStatus.QUARANTINED,
+                        BatchLifecycleStatus.DAMAGED,
+                        BatchLifecycleStatus.EXPIRED
+                    ],
+                    [BatchLifecycleStatus.RESERVED]: [
+                        BatchLifecycleStatus.AVAILABLE, // Reservation released
+                        BatchLifecycleStatus.ALLOCATED,
+                        BatchLifecycleStatus.QUARANTINED,
+                        BatchLifecycleStatus.DAMAGED
+                    ],
+                    [BatchLifecycleStatus.ALLOCATED]: [
+                        BatchLifecycleStatus.AVAILABLE, // Allocation released
+                        BatchLifecycleStatus.RESERVED,
+                        BatchLifecycleStatus.CONSUMED,
+                        BatchLifecycleStatus.QUARANTINED,
+                        BatchLifecycleStatus.DAMAGED
+                    ],
+                    [BatchLifecycleStatus.QUARANTINED]: [
+                        BatchLifecycleStatus.AVAILABLE, // Cleared after inspection
+                        BatchLifecycleStatus.DAMAGED,
+                        BatchLifecycleStatus.EXPIRED
+                    ],
+                    [BatchLifecycleStatus.DAMAGED]: [
+                        BatchLifecycleStatus.EXPIRED,
+                        BatchLifecycleStatus.AVAILABLE // Derated or repaired
+                    ],
+                    [BatchLifecycleStatus.EXPIRED]: [], // Terminal State
+                    [BatchLifecycleStatus.CONSUMED]: []  // Terminal State
+                });
+            }
+
+            static isValidTransition(currentStatus, nextStatus) {
+                if (currentStatus === nextStatus) return true;
+                const allowed = this.TRANSITION_MATRIX[currentStatus];
+                return Array.isArray(allowed) && allowed.includes(nextStatus);
+            }
+
+            static assertTransition(currentStatus, nextStatus, entityId = 'BATCH') {
+                if (!this.isValidTransition(currentStatus, nextStatus)) {
+                    throw new Error(`[BatchLifecycleFSM Violation]: Illegal lifecycle transition from '${currentStatus}' to '${nextStatus}' on '${entityId}'.`);
+                }
+                return true;
+            }
+        }
+
+        // =========================================================================
+        // P07-04 & P07-05: STORAGE LOCATION REGISTRY & CAPACITY PHYSICS ENGINE
+        // =========================================================================
+
+        class StorageLocation {
+            constructor(params = {}) {
+                if (!params.locationId || typeof params.totalCapacity !== 'number') {
+                    throw new Error('[StorageLocation Violation]: locationId and numeric totalCapacity are mandatory.');
+                }
+                if (params.totalCapacity < 0 || !Number.isFinite(params.totalCapacity)) {
+                    throw new Error('[StorageLocation Violation]: totalCapacity must be a non-negative finite number.');
+                }
+
+                this.locationId = params.locationId;
+                this.locationName = params.locationName || this.locationId;
+                this.locationType = params.locationType || StorageLocationType.WAREHOUSE;
+                this.parentLocationId = params.parentLocationId || null;
+                this.capacityUnit = params.capacityUnit || 'TONNES';
+                this.capacityDimension = params.capacityDimension || QuantityDimension.MASS;
+
+                // Multi-Layer Storage Capacity Physics (No Double-Count)
+                this.totalCapacity = params.totalCapacity;
+                this.operationalCapacity = typeof params.operationalCapacity === 'number' ? Math.min(this.totalCapacity, params.operationalCapacity) : this.totalCapacity;
+                this.usedCapacity = typeof params.usedCapacity === 'number' ? Math.max(0, params.usedCapacity) : 0.0;
+                this.blockedCapacity = typeof params.blockedCapacity === 'number' ? Math.max(0, params.blockedCapacity) : 0.0;
+
+                // Acceptance Constraints
+                this.acceptedMaterialIdentities = Array.isArray(params.acceptedMaterialIdentities) 
+                    ? [...params.acceptedMaterialIdentities].sort() 
+                    : [];
+                this.acceptedPhysicalStates = Array.isArray(params.acceptedPhysicalStates) 
+                    ? [...params.acceptedPhysicalStates] 
+                    : [];
+
+                this.operationalStatus = params.operationalStatus || StorageOperationalStatus.OPERATIONAL;
+                this.geospatialAnchorKey = params.geospatialAnchorKey || 'GLOBAL';
+                this.provenance = params.provenance || { sourceSubsystem: 'STORAGE_REGISTRY', timestamp: 0 };
+            }
+
+            getAvailableCapacity() {
+                if (this.operationalStatus !== StorageOperationalStatus.OPERATIONAL && this.operationalStatus !== StorageOperationalStatus.DEGRADED) {
+                    return 0.0;
+                }
+                const occupied = this.usedCapacity + this.blockedCapacity;
+                return Math.max(0.0, this.operationalCapacity - occupied);
+            }
+
+            canAcceptMaterial(materialIdentity, physicalState, quantity, dimension = QuantityDimension.MASS) {
+                if (this.operationalStatus !== StorageOperationalStatus.OPERATIONAL && this.operationalStatus !== StorageOperationalStatus.DEGRADED) {
+                    return { canAccept: false, reason: `STORAGE_STATUS_NON_OPERATIONAL: ${this.operationalStatus}` };
+                }
+                if (dimension !== this.capacityDimension && this.capacityDimension !== QuantityDimension.UNKNOWN) {
+                    return { canAccept: false, reason: `DIMENSION_MISMATCH: Location requires ${this.capacityDimension}, got ${dimension}` };
+                }
+                if (this.acceptedMaterialIdentities.length > 0 && !this.acceptedMaterialIdentities.includes(materialIdentity)) {
+                    return { canAccept: false, reason: `MATERIAL_REJECTED_BY_LOCATION_POLICY: ${materialIdentity}` };
+                }
+                if (this.acceptedPhysicalStates.length > 0 && !this.acceptedPhysicalStates.includes(physicalState)) {
+                    return { canAccept: false, reason: `PHYSICAL_STATE_REJECTED: ${physicalState}` };
+                }
+                const avail = this.getAvailableCapacity();
+                if (quantity > (avail + 1e-6)) {
+                    return { canAccept: false, reason: `CAPACITY_EXCEEDED: Requested ${quantity} > Available ${avail}` };
+                }
+                return { canAccept: true, reason: 'ACCEPTANCE_VALIDATED' };
+            }
+
+            allocateStorage(quantity) {
+                const avail = this.getAvailableCapacity();
+                if (quantity > (avail + 1e-6)) {
+                    throw new Error(`[StorageCapacity Breach]: Cannot allocate ${quantity} ${this.capacityUnit}. Available: ${avail}`);
+                }
+                this.usedCapacity += quantity;
+                if (this.usedCapacity >= (this.operationalCapacity - 1e-6)) {
+                    this.operationalStatus = StorageOperationalStatus.FULL_OCCUPANCY;
+                }
+            }
+
+            releaseStorage(quantity) {
+                this.usedCapacity = Math.max(0.0, this.usedCapacity - quantity);
+                if (this.operationalStatus === StorageOperationalStatus.FULL_OCCUPANCY && this.usedCapacity < this.operationalCapacity) {
+                    this.operationalStatus = StorageOperationalStatus.OPERATIONAL;
+                }
+            }
+
+            clone() {
+                return new StorageLocation({
+                    locationId: this.locationId,
+                    locationName: this.locationName,
+                    locationType: this.locationType,
+                    parentLocationId: this.parentLocationId,
+                    capacityUnit: this.capacityUnit,
+                    capacityDimension: this.capacityDimension,
+                    totalCapacity: this.totalCapacity,
+                    operationalCapacity: this.operationalCapacity,
+                    usedCapacity: this.usedCapacity,
+                    blockedCapacity: this.blockedCapacity,
+                    acceptedMaterialIdentities: [...this.acceptedMaterialIdentities],
+                    acceptedPhysicalStates: [...this.acceptedPhysicalStates],
+                    operationalStatus: this.operationalStatus,
+                    geospatialAnchorKey: this.geospatialAnchorKey,
+                    provenance: JSON.parse(JSON.stringify(this.provenance))
+                });
+            }
+
+            toJSON() {
+                return {
+                    locationId: this.locationId,
+                    locationName: this.locationName,
+                    locationType: this.locationType,
+                    parentLocationId: this.parentLocationId,
+                    capacityUnit: this.capacityUnit,
+                    capacityDimension: this.capacityDimension,
+                    totalCapacity: this.totalCapacity,
+                    operationalCapacity: this.operationalCapacity,
+                    usedCapacity: this.usedCapacity,
+                    blockedCapacity: this.blockedCapacity,
+                    availableCapacity: this.getAvailableCapacity(),
+                    acceptedMaterialIdentities: this.acceptedMaterialIdentities,
+                    acceptedPhysicalStates: this.acceptedPhysicalStates,
+                    operationalStatus: this.operationalStatus,
+                    geospatialAnchorKey: this.geospatialAnchorKey,
+                    provenance: this.provenance
+                };
+            }
+        }
+
+        class StorageRegistry {
+            constructor() {
+                this.locations = new Map(); // LocationId -> StorageLocation
+            }
+
+            registerLocation(location) {
+                if (!(location instanceof StorageLocation)) {
+                    throw new Error('[StorageRegistry]: Expected StorageLocation instance.');
+                }
+                if (this.locations.has(location.locationId)) {
+                    throw new Error(`[StorageRegistry]: Location '${location.locationId}' already registered.`);
+                }
+                this.locations.set(location.locationId, location);
+                return location;
+            }
+
+            getLocation(locationId) {
+                return this.locations.get(locationId) || null;
+            }
+
+            hasLocation(locationId) {
+                return this.locations.has(locationId);
+            }
+
+            getAllLocations() {
+                return Array.from(this.locations.values());
+            }
+
+            clear() {
+                this.locations.clear();
+            }
+        }
+
+        // =========================================================================
+        // P07-03 & P07-07: INVENTORY LEDGER & 7-LAYER QUANTITY STATE MANAGER
+        // =========================================================================
+
+        class QuantityStateVector {
+            constructor(params = {}) {
+                this.available = this._assertValid(params.available, 'available', 0);
+                this.reserved = this._assertValid(params.reserved, 'reserved', 0);
+                this.allocated = this._assertValid(params.allocated, 'allocated', 0);
+                this.consumed = this._assertValid(params.consumed, 'consumed', 0);
+                this.damaged = this._assertValid(params.damaged, 'damaged', 0);
+                this.quarantined = this._assertValid(params.quarantined, 'quarantined', 0);
+                this.blocked = this._assertValid(params.blocked, 'blocked', 0);
+                this.unit = params.unit || 'TONNES';
+                this.dimension = params.dimension || QuantityDimension.MASS;
+
+                this.assertConservation();
+            }
+
+            _assertValid(val, fieldName, fallback = 0) {
+                const num = typeof val === 'number' && Number.isFinite(val) ? val : fallback;
+                if (num < 0) {
+                    throw new Error(`[QuantityStateVector Invariant Breach]: Negative quantity in field '${fieldName}' (${num}).`);
+                }
+                return num;
+            }
+
+            getPhysicalTotal() {
+                return this.available + this.reserved + this.allocated + this.damaged + this.quarantined + this.blocked;
+            }
+
+            getAccountingTotal() {
+                return this.getPhysicalTotal() + this.consumed;
+            }
+
+            assertConservation() {
+                if (this.available < 0 || this.reserved < 0 || this.allocated < 0 || this.consumed < 0) {
+                    throw new Error('[QuantityStateVector Invariant Breach]: Negative quantity state detected.');
+                }
+                return true;
+            }
+
+            clone() {
+                return new QuantityStateVector({
+                    available: this.available,
+                    reserved: this.reserved,
+                    allocated: this.allocated,
+                    consumed: this.consumed,
+                    damaged: this.damaged,
+                    quarantined: this.quarantined,
+                    blocked: this.blocked,
+                    unit: this.unit,
+                    dimension: this.dimension
+                });
+            }
+
+            toJSON() {
+                return {
+                    available: this.available,
+                    reserved: this.reserved,
+                    allocated: this.allocated,
+                    consumed: this.consumed,
+                    damaged: this.damaged,
+                    quarantined: this.quarantined,
+                    blocked: this.blocked,
+                    physicalTotal: this.getPhysicalTotal(),
+                    accountingTotal: this.getAccountingTotal(),
+                    unit: this.unit,
+                    dimension: this.dimension
+                };
+            }
+        }
+
+        class InventoryPosition {
+            constructor(params = {}) {
+                if (!params.positionId || !params.batchId || !params.locationId) {
+                    throw new Error('[InventoryPosition Violation]: positionId, batchId, and locationId are mandatory.');
+                }
+
+                this.positionId = params.positionId;
+                this.batchId = params.batchId;
+                this.locationId = params.locationId;
+                this.materialIdentity = params.materialIdentity || 'UNKNOWN_MATERIAL';
+                this.ownerKey = params.ownerKey || 'SOVEREIGN_UNASSIGNED';
+                this.custodianKey = params.custodianKey || this.ownerKey;
+                
+                this.quantities = params.quantities instanceof QuantityStateVector 
+                    ? params.quantities 
+                    : new QuantityStateVector(params.quantities || { available: params.quantity || 0, unit: params.unit });
+
+                this.lifecycleStatus = params.lifecycleStatus || BatchLifecycleStatus.AVAILABLE;
+                this.lastModifiedTick = typeof params.lastModifiedTick === 'number' ? params.lastModifiedTick : 0;
+                this.positionVersion = typeof params.positionVersion === 'number' ? params.positionVersion : 1;
+            }
+
+            clone() {
+                return new InventoryPosition({
+                    positionId: this.positionId,
+                    batchId: this.batchId,
+                    locationId: this.locationId,
+                    materialIdentity: this.materialIdentity,
+                    ownerKey: this.ownerKey,
+                    custodianKey: this.custodianKey,
+                    quantities: this.quantities.clone(),
+                    lifecycleStatus: this.lifecycleStatus,
+                    lastModifiedTick: this.lastModifiedTick,
+                    positionVersion: this.positionVersion
+                });
+            }
+
+            toJSON() {
+                return {
+                    positionId: this.positionId,
+                    batchId: this.batchId,
+                    locationId: this.locationId,
+                    materialIdentity: this.materialIdentity,
+                    ownerKey: this.ownerKey,
+                    custodianKey: this.custodianKey,
+                    quantities: this.quantities.toJSON(),
+                    lifecycleStatus: this.lifecycleStatus,
+                    lastModifiedTick: this.lastModifiedTick,
+                    positionVersion: this.positionVersion
+                };
+            }
+        }
+
+        class InventoryLedger {
+            constructor() {
+                this.positions = new Map(); // PositionId -> InventoryPosition
+                this.positionsByBatch = new Map(); // BatchId -> Set<PositionId>
+                this.positionsByLocation = new Map(); // LocationId -> Set<PositionId>
+                this.positionsByMaterial = new Map(); // MaterialIdentity -> Set<PositionId>
+                this.positionsByOwner = new Map(); // OwnerKey -> Set<PositionId>
+                this.positionsByCustodian = new Map(); // CustodianKey -> Set<PositionId>
+            }
+
+            addPosition(position) {
+                if (!(position instanceof InventoryPosition)) {
+                    throw new Error('[InventoryLedger]: Expected InventoryPosition instance.');
+                }
+                this.positions.set(position.positionId, position);
+                this._indexPosition(position);
+                return position;
+            }
+
+            getPosition(positionId) {
+                return this.positions.get(positionId) || null;
+            }
+
+            getPositionsForBatch(batchId) {
+                const set = this.positionsByBatch.get(batchId);
+                if (!set) return [];
+                return Array.from(set).map(id => this.positions.get(id)).filter(Boolean);
+            }
+
+            getPositionsAtLocation(locationId) {
+                const set = this.positionsByLocation.get(locationId);
+                if (!set) return [];
+                return Array.from(set).map(id => this.positions.get(id)).filter(Boolean);
+            }
+
+            getPositionsForMaterial(materialIdentity) {
+                const set = this.positionsByMaterial.get(materialIdentity);
+                if (!set) return [];
+                return Array.from(set).map(id => this.positions.get(id)).filter(Boolean);
+            }
+
+            getPositionsForOwner(ownerKey) {
+                const set = this.positionsByOwner.get(ownerKey);
+                if (!set) return [];
+                return Array.from(set).map(id => this.positions.get(id)).filter(Boolean);
+            }
+
+            getPositionsForCustodian(custodianKey) {
+                const set = this.positionsByCustodian.get(custodianKey);
+                if (!set) return [];
+                return Array.from(set).map(id => this.positions.get(id)).filter(Boolean);
+            }
+
+            _indexPosition(pos) {
+                this._addToIndex(this.positionsByBatch, pos.batchId, pos.positionId);
+                this._addToIndex(this.positionsByLocation, pos.locationId, pos.positionId);
+                this._addToIndex(this.positionsByMaterial, pos.materialIdentity, pos.positionId);
+                this._addToIndex(this.positionsByOwner, pos.ownerKey, pos.positionId);
+                this._addToIndex(this.positionsByCustodian, pos.custodianKey, pos.positionId);
+            }
+
+            _addToIndex(map, key, val) {
+                if (!key) return;
+                if (!map.has(key)) map.set(key, new Set());
+                map.get(key).add(val);
+            }
+
+            clear() {
+                this.positions.clear();
+                this.positionsByBatch.clear();
+                this.positionsByLocation.clear();
+                this.positionsByMaterial.clear();
+                this.positionsByOwner.clear();
+                this.positionsByCustodian.clear();
+            }
+        }
+
+        // =========================================================================
+        // INTEGRATED BATCH INTAKE ENGINE
+        // =========================================================================
+
+        class BatchIntakeEngine {
+            /**
+             * Atomically registers a batch, books storage occupancy, and creates its ledger position.
+             */
+            static intakeBatch(batch, storageRegistry, ledger, batchRegistry, currentTick = 0) {
+                if (!batch || !(batch instanceof CanonicalResourceBatch)) {
+                    throw new Error('[BatchIntakeEngine Violation]: Invalid batch instance.');
+                }
+                if (batchRegistry.hasBatch(batch.batchId)) {
+                    throw new Error(`[BatchIntakeEngine Violation]: Batch '${batch.batchId}' already registered.`);
+                }
+
+                const storageLoc = storageRegistry.getLocation(batch.locationNodeKey);
+                if (!storageLoc) {
+                    throw new Error(`[BatchIntakeEngine Violation]: Storage location '${batch.locationNodeKey}' not found.`);
+                }
+
+                // Verify acceptance constraints and capacity
+                const acceptance = storageLoc.canAcceptMaterial(batch.materialIdentity, batch.physicalState, batch.quantity, batch.dimension);
+                if (!acceptance.canAccept) {
+                    throw new Error(`[BatchIntakeEngine Rejection]: ${acceptance.reason}`);
+                }
+
+                // Allocate Storage Capacity
+                storageLoc.allocateStorage(batch.quantity);
+
+                // Register in Batch Registry
+                BatchLifecycleFSM.assertTransition(batch.lifecycleStatus, BatchLifecycleStatus.AVAILABLE, batch.batchId);
+                batch.lifecycleStatus = BatchLifecycleStatus.AVAILABLE;
+                batch.registeredTick = currentTick;
+                batchRegistry.registerBatch(batch);
+
+                // Create Initial Inventory Position in Ledger
+                const posId = DeterministicHashEngine.generateDeterministicId('POS', [batch.batchId, batch.locationNodeKey]);
+                const position = new InventoryPosition({
+                    positionId: posId,
+                    batchId: batch.batchId,
+                    locationId: batch.locationNodeKey,
+                    materialIdentity: batch.materialIdentity,
+                    ownerKey: batch.ownerKey,
+                    custodianKey: batch.custodianKey,
+                    quantities: new QuantityStateVector({
+                        available: batch.quantity,
+                        unit: batch.unit,
+                        dimension: batch.dimension
+                    }),
+                    lifecycleStatus: BatchLifecycleStatus.AVAILABLE,
+                    lastModifiedTick: currentTick,
+                    positionVersion: 1
+                });
+
+                ledger.addPosition(position);
+
+                return {
+                    batch,
+                    position,
+                    storageLocation: storageLoc
+                };
+            }
+        }
+
+        // =========================================================================
+        // P07-08: STOCK AVAILABILITY & USABILITY RESOLVER ENGINE (WITH OPERATIONAL GUARD)
+        // =========================================================================
+
+        class StockAvailabilityResolver {
+            /**
+             * Resolves unconstrained, usable stock inspecting batch, position, and location operational health.
+             */
+            static resolveAvailability(ledger, storageRegistry, batchRegistry, criteria = {}) {
+                let candidatePositions = [];
+
+                if (criteria.batchId) {
+                    candidatePositions = ledger.getPositionsForBatch(criteria.batchId);
+                } else if (criteria.materialIdentity) {
+                    candidatePositions = ledger.getPositionsForMaterial(criteria.materialIdentity);
+                } else if (criteria.locationId) {
+                    candidatePositions = ledger.getPositionsAtLocation(criteria.locationId);
+                } else if (criteria.ownerKey) {
+                    candidatePositions = ledger.getPositionsForOwner(criteria.ownerKey);
+                } else if (criteria.custodianKey) {
+                    candidatePositions = ledger.getPositionsForCustodian(criteria.custodianKey);
+                } else {
+                    candidatePositions = Array.from(ledger.positions.values());
+                }
+
+                let totalPhysical = 0.0;
+                let totalAvailable = 0.0;
+                let totalReserved = 0.0;
+                let totalAllocated = 0.0;
+                let totalQuarantined = 0.0;
+                let totalDamaged = 0.0;
+                let totalBlockedByLocation = 0.0;
+                const matchingPositions = [];
+
+                candidatePositions.forEach(pos => {
+                    if (criteria.locationId && pos.locationId !== criteria.locationId) return;
+                    if (criteria.ownerKey && pos.ownerKey !== criteria.ownerKey) return;
+                    if (criteria.custodianKey && pos.custodianKey !== criteria.custodianKey) return;
+                    if (pos.lifecycleStatus === BatchLifecycleStatus.CONSUMED || pos.lifecycleStatus === BatchLifecycleStatus.EXPIRED) return;
+
+                    // Inspect Storage Location Operational Health
+                    const storageLoc = storageRegistry.getLocation(pos.locationId);
+                    const isLocationOperational = storageLoc && (storageLoc.operationalStatus === StorageOperationalStatus.OPERATIONAL || storageLoc.operationalStatus === StorageOperationalStatus.FULL_OCCUPANCY);
+
+                    // Inspect Batch Quality Constraints
+                    const batch = batchRegistry.getBatch(pos.batchId);
+                    if (criteria.minGrade !== undefined && batch && batch.grade < criteria.minGrade) return;
+                    if (criteria.minPurity !== undefined && batch && batch.purity < criteria.minPurity) return;
+                    if (criteria.physicalState && batch && batch.physicalState !== criteria.physicalState) return;
+
+                    const q = pos.quantities;
+                    totalPhysical += q.getPhysicalTotal();
+                    totalReserved += q.reserved;
+                    totalAllocated += q.allocated;
+                    totalQuarantined += q.quarantined;
+                    totalDamaged += q.damaged;
+
+                    let effectiveAvail = q.available;
+                    if (!isLocationOperational || pos.lifecycleStatus === BatchLifecycleStatus.QUARANTINED || pos.lifecycleStatus === BatchLifecycleStatus.DAMAGED) {
+                        totalBlockedByLocation += effectiveAvail;
+                        effectiveAvail = 0.0;
+                    } else {
+                        totalAvailable += effectiveAvail;
+                    }
+
+                    matchingPositions.push({
+                        positionId: pos.positionId,
+                        batchId: pos.batchId,
+                        locationId: pos.locationId,
+                        available: effectiveAvail,
+                        reserved: q.reserved,
+                        allocated: q.allocated,
+                        status: pos.lifecycleStatus,
+                        locationStatus: storageLoc ? storageLoc.operationalStatus : 'UNKNOWN'
+                    });
+                });
+
+                return {
+                    materialIdentity: criteria.materialIdentity || 'MULTIPLE_MATERIALS',
+                    totalPhysicalStock: totalPhysical,
+                    totalAvailableStock: totalAvailable,
+                    totalReservedStock: totalReserved,
+                    totalAllocatedStock: totalAllocated,
+                    totalQuarantinedStock: totalQuarantined,
+                    totalDamagedStock: totalDamaged,
+                    totalBlockedByLocation,
+                    matchingPositionsCount: matchingPositions.length,
+                    positions: matchingPositions
+                };
+            }
+        }
+
+        // =========================================================================
+        // P07-09: RESERVATION ENGINE (NON-DESTRUCTIVE CLAIM LOCKS + EXPIRY CHECK)
+        // =========================================================================
+
+        class ReservationRecord {
+            constructor(params = {}) {
+                if (!params.reservationId || !params.positionId || typeof params.quantity !== 'number') {
+                    throw new Error('[ReservationRecord Violation]: reservationId, positionId, and quantity are mandatory.');
+                }
+                this.reservationId = params.reservationId;
+                this.positionId = params.positionId;
+                this.batchId = params.batchId || 'UNKNOWN_BATCH';
+                this.quantity = Math.max(0, params.quantity);
+                this.unit = params.unit || 'TONNES';
+                this.purposeReference = params.purposeReference || 'GENERIC_CLAIM';
+                this.requesterReference = params.requesterReference || 'ANONYMOUS_REQUESTER';
+                this.createdTick = typeof params.createdTick === 'number' ? params.createdTick : 0;
+                this.expiresTick = typeof params.expiresTick === 'number' ? params.expiresTick : Infinity;
+                this.isReleased = Boolean(params.isReleased);
+                this.isAllocated = Boolean(params.isAllocated);
+            }
+
+            isExpired(currentTick) {
+                return currentTick > this.expiresTick;
+            }
+
+            toJSON() {
+                return {
+                    reservationId: this.reservationId,
+                    positionId: this.positionId,
+                    batchId: this.batchId,
+                    quantity: this.quantity,
+                    unit: this.unit,
+                    purposeReference: this.purposeReference,
+                    requesterReference: this.requesterReference,
+                    createdTick: this.createdTick,
+                    expiresTick: this.expiresTick,
+                    isReleased: this.isReleased,
+                    isAllocated: this.isAllocated
+                };
+            }
+        }
+
+        class ReservationEngine {
+            constructor() {
+                this.reservations = new Map(); // ReservationId -> ReservationRecord
+                this.sequenceNonce = 0;
+            }
+
+            createReservation(position, batch, quantity, purpose, requester, currentTick = 0, durationTicks = 100) {
+                if (!position || !(position instanceof InventoryPosition)) {
+                    throw new Error('[ReservationEngine]: Invalid InventoryPosition target.');
+                }
+                if (quantity <= 0 || !Number.isFinite(quantity)) {
+                    throw new Error('[ReservationEngine]: Reservation quantity must be strictly positive.');
+                }
+                if (quantity > (position.quantities.available + 1e-6)) {
+                    throw new Error(`[ReservationEngine Breach]: Cannot reserve ${quantity}. Available stock is ${position.quantities.available}`);
+                }
+
+                this.sequenceNonce += 1;
+                const seed = `${position.positionId}:${quantity}:${currentTick}:${purpose}:${this.sequenceNonce}`;
+                const resId = DeterministicHashEngine.generateDeterministicId('RES', [seed]);
+
+                // Atomic Deduction
+                position.quantities.available -= quantity;
+                position.quantities.reserved += quantity;
+                position.lastModifiedTick = currentTick;
+                position.positionVersion += 1;
+
+                if (batch && position.quantities.available === 0) {
+                    BatchLifecycleFSM.assertTransition(batch.lifecycleStatus, BatchLifecycleStatus.RESERVED, batch.batchId);
+                    batch.lifecycleStatus = BatchLifecycleStatus.RESERVED;
+                }
+
+                const record = new ReservationRecord({
+                    reservationId: resId,
+                    positionId: position.positionId,
+                    batchId: position.batchId,
+                    quantity,
+                    unit: position.quantities.unit,
+                    purposeReference: purpose,
+                    requesterReference: requester,
+                    createdTick: currentTick,
+                    expiresTick: currentTick + durationTicks
+                });
+
+                this.reservations.set(resId, record);
+                return record;
+            }
+
+            releaseReservation(reservationId, position, batch, currentTick = 0) {
+                const record = this.reservations.get(reservationId);
+                if (!record) {
+                    throw new Error(`[ReservationEngine]: Reservation '${reservationId}' not found.`);
+                }
+                if (record.isReleased || record.isAllocated) {
+                    throw new Error(`[ReservationEngine]: Reservation '${reservationId}' is already closed.`);
+                }
+
+                const qty = record.quantity;
+                position.quantities.reserved = Math.max(0, position.quantities.reserved - qty);
+                position.quantities.available += qty;
+                position.lastModifiedTick = currentTick;
+                position.positionVersion += 1;
+
+                if (batch && position.quantities.available > 0 && batch.lifecycleStatus === BatchLifecycleStatus.RESERVED) {
+                    BatchLifecycleFSM.assertTransition(batch.lifecycleStatus, BatchLifecycleStatus.AVAILABLE, batch.batchId);
+                    batch.lifecycleStatus = BatchLifecycleStatus.AVAILABLE;
+                }
+
+                record.isReleased = true;
+                return record;
+            }
+
+            getReservation(reservationId) {
+                return this.reservations.get(reservationId) || null;
+            }
+
+            clear() {
+                this.reservations.clear();
+                this.sequenceNonce = 0;
+            }
+        }
+
+        // =========================================================================
+        // P07-10: ALLOCATION ENGINE (OPERATIONAL DOWNSTREAM ASSIGNMENT)
+        // =========================================================================
+
+        class AllocationRecord {
+            constructor(params = {}) {
+                if (!params.allocationId || !params.positionId || typeof params.quantity !== 'number') {
+                    throw new Error('[AllocationRecord Violation]: allocationId, positionId, and quantity are mandatory.');
+                }
+                this.allocationId = params.allocationId;
+                this.positionId = params.positionId;
+                this.batchId = params.batchId || 'UNKNOWN_BATCH';
+                this.reservationId = params.reservationId || null;
+                this.quantity = Math.max(0, params.quantity);
+                this.unit = params.unit || 'TONNES';
+                this.operationTarget = params.operationTarget || 'DOWNSTREAM_PROCESS';
+                this.assignedTick = typeof params.assignedTick === 'number' ? params.assignedTick : 0;
+                this.isConsumed = Boolean(params.isConsumed);
+                this.isReleased = Boolean(params.isReleased);
+            }
+
+            toJSON() {
+                return {
+                    allocationId: this.allocationId,
+                    positionId: this.positionId,
+                    batchId: this.batchId,
+                    reservationId: this.reservationId,
+                    quantity: this.quantity,
+                    unit: this.unit,
+                    operationTarget: this.operationTarget,
+                    assignedTick: this.assignedTick,
+                    isConsumed: this.isConsumed,
+                    isReleased: this.isReleased
+                };
+            }
+        }
+
+        class AllocationEngine {
+            constructor() {
+                this.allocations = new Map(); // AllocationId -> AllocationRecord
+                this.sequenceNonce = 0;
+            }
+
+            allocateFromReservation(reservation, position, batch, operationTarget, currentTick = 0) {
+                if (!reservation || reservation.isReleased || reservation.isAllocated) {
+                    throw new Error('[AllocationEngine]: Invalid or closed reservation provided.');
+                }
+                if (reservation.isExpired(currentTick)) {
+                    throw new Error(`[AllocationEngine Expiry Breach]: Reservation '${reservation.reservationId}' has expired at tick ${currentTick}.`);
+                }
+                const qty = reservation.quantity;
+                if (qty > (position.quantities.reserved + 1e-6)) {
+                    throw new Error(`[AllocationEngine Breach]: Reserved stock mismatch on position ${position.positionId}`);
+                }
+
+                this.sequenceNonce += 1;
+                position.quantities.reserved -= qty;
+                position.quantities.allocated += qty;
+                position.lastModifiedTick = currentTick;
+                position.positionVersion += 1;
+
+                if (batch) {
+                    BatchLifecycleFSM.assertTransition(batch.lifecycleStatus, BatchLifecycleStatus.ALLOCATED, batch.batchId);
+                    batch.lifecycleStatus = BatchLifecycleStatus.ALLOCATED;
+                }
+
+                reservation.isAllocated = true;
+
+                const allocId = DeterministicHashEngine.generateDeterministicId('ALC', [reservation.reservationId, currentTick, this.sequenceNonce]);
+                const record = new AllocationRecord({
+                    allocationId: allocId,
+                    positionId: position.positionId,
+                    batchId: position.batchId,
+                    reservationId: reservation.reservationId,
+                    quantity: qty,
+                    unit: position.quantities.unit,
+                    operationTarget,
+                    assignedTick: currentTick
+                });
+
+                this.allocations.set(allocId, record);
+                return record;
+            }
+
+            allocateDirect(position, batch, quantity, operationTarget, currentTick = 0) {
+                if (quantity <= 0 || quantity > (position.quantities.available + 1e-6)) {
+                    throw new Error(`[AllocationEngine Breach]: Cannot directly allocate ${quantity}. Available: ${position.quantities.available}`);
+                }
+
+                this.sequenceNonce += 1;
+                position.quantities.available -= quantity;
+                position.quantities.allocated += quantity;
+                position.lastModifiedTick = currentTick;
+                position.positionVersion += 1;
+
+                if (batch) {
+                    BatchLifecycleFSM.assertTransition(batch.lifecycleStatus, BatchLifecycleStatus.ALLOCATED, batch.batchId);
+                    batch.lifecycleStatus = BatchLifecycleStatus.ALLOCATED;
+                }
+
+                const allocId = DeterministicHashEngine.generateDeterministicId('ALC_DIR', [position.positionId, quantity, currentTick, this.sequenceNonce]);
+                const record = new AllocationRecord({
+                    allocationId: allocId,
+                    positionId: position.positionId,
+                    batchId: position.batchId,
+                    quantity,
+                    unit: position.quantities.unit,
+                    operationTarget,
+                    assignedTick: currentTick
+                });
+
+                this.allocations.set(allocId, record);
+                return record;
+            }
+
+            releaseAllocation(allocationId, position, batch, currentTick = 0) {
+                const record = this.allocations.get(allocationId);
+                if (!record || record.isConsumed || record.isReleased) {
+                    throw new Error('[AllocationEngine]: Allocation not active or already closed.');
+                }
+
+                const qty = record.quantity;
+                position.quantities.allocated = Math.max(0, position.quantities.allocated - qty);
+                position.quantities.available += qty;
+                position.lastModifiedTick = currentTick;
+                position.positionVersion += 1;
+
+                if (batch && position.quantities.available > 0 && batch.lifecycleStatus === BatchLifecycleStatus.ALLOCATED) {
+                    BatchLifecycleFSM.assertTransition(batch.lifecycleStatus, BatchLifecycleStatus.AVAILABLE, batch.batchId);
+                    batch.lifecycleStatus = BatchLifecycleStatus.AVAILABLE;
+                }
+
+                record.isReleased = true;
+                return record;
+            }
+
+            getAllocation(allocationId) {
+                return this.allocations.get(allocationId) || null;
+            }
+
+            clear() {
+                this.allocations.clear();
+                this.sequenceNonce = 0;
+            }
+        }
+
+        // =========================================================================
+        // P07-11: PHYSICAL CONSUMPTION & VERIFICATION ENGINE
+        // =========================================================================
+
+        class ConsumptionEngine {
+            /**
+             * Verifies allocation, executes irreversible physical deduction and releases storage occupancy.
+             */
+            static consumeAllocation(allocation, position, batch, storageLocation = null, currentTick = 0) {
+                if (!allocation || allocation.isConsumed || allocation.isReleased) {
+                    throw new Error('[ConsumptionEngine Violation]: Allocation already closed or invalid.');
+                }
+                if (!position || position.positionId !== allocation.positionId) {
+                    throw new Error('[ConsumptionEngine Violation]: Target inventory position mismatch.');
+                }
+
+                const qty = allocation.quantity;
+                if (qty > (position.quantities.allocated + 1e-6)) {
+                    throw new Error(`[ConsumptionEngine Invariant Breach]: Attempted to consume ${qty}, but allocated quantity is only ${position.quantities.allocated}`);
+                }
+
+                // Deduct Allocated, Add to Consumed (Physical Mass Exit)
+                position.quantities.allocated -= qty;
+                position.quantities.consumed += qty;
+                position.lastModifiedTick = currentTick;
+                position.positionVersion += 1;
+
+                // Release Physical Storage Occupancy
+                if (storageLocation && typeof storageLocation.releaseStorage === 'function') {
+                    storageLocation.releaseStorage(qty);
+                }
+
+                // Sync Batch and Position Lifecycles if fully consumed
+                if (position.quantities.getPhysicalTotal() <= 1e-6) {
+                    position.lifecycleStatus = BatchLifecycleStatus.CONSUMED;
+                    if (batch) {
+                        BatchLifecycleFSM.assertTransition(batch.lifecycleStatus, BatchLifecycleStatus.CONSUMED, batch.batchId);
+                        batch.lifecycleStatus = BatchLifecycleStatus.CONSUMED;
+                    }
+                }
+
+                allocation.isConsumed = true;
+
+                return {
+                    consumedQuantity: qty,
+                    unit: position.quantities.unit,
+                    batchId: position.batchId,
+                    positionId: position.positionId,
+                    consumedTick: currentTick,
+                    remainingPhysicalStock: position.quantities.getPhysicalTotal()
+                };
+            }
+        }
+
+        // =========================================================================
+        // EXPORT VOLUME 7.1 INTERNAL SCOPE
+        // =========================================================================
+
+        const Volume7_1_Scope = Object.freeze({
+            // Enums & Constants
+            QuantityDimension,
+            BatchLifecycleStatus,
+            StorageLocationType,
+            StorageOperationalStatus,
+            InventoryTransactionType,
+            InventoryAdjustmentReason,
+            InventoryHealthStatus,
+            ErrorTaxonomy,
+
+            // Infrastructure
+            DeterministicHashEngine,
+
+            // Subsystems P07-01 - P07-11 Classes
+            CanonicalResourceBatch,
+            BatchRegistry,
+            BatchLifecycleFSM,
+            StorageLocation,
+            StorageRegistry,
+            QuantityStateVector,
+            InventoryPosition,
+            InventoryLedger,
+            BatchIntakeEngine,
+            StockAvailabilityResolver,
+            ReservationRecord,
+            ReservationEngine,
+            AllocationRecord,
+            AllocationEngine,
+            ConsumptionEngine
+        });
+
+        global.__GSRSK_P07_VOL1__ = Volume7_1_Scope;
+
+    })(typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : global));
+
+    // =========================================================================
+    // GSRSK — PART 07: RESOURCE INVENTORY, BATCH & STORAGE ENGINE (VOLUME 2 OF 2)
+    // =========================================================================
+    // Architecture Phase: 07 of 16
+    // Production Standard: 100% Comprehensive Constitutional Invariant Engine
+    //
+    // SUBSYSTEMS INCLUDED IN VOLUME 2:
+    //   P07-12 Batch Split Engine (Deterministic Genealogy & Nonce IDs)
+    //   P07-13 Batch Merge Engine (Mass-Weighted Quality & Reservation Guard)
+    //   P07-14 Custody & Location Transfer Engine (Multi-Position Integrity)
+    //   P07-15 Inventory Adjustment Engine (Audited Discrepancy & Spoilage)
+    //   P07-16 Lineage & Provenance Graph Engine (Bidirectional Ancestor/Descendant DAG)
+    //   P07-17 Atomic Inventory Transaction Manager (Two-Phase Commit & True Rollback)
+    //   P07-18 Inventory Reconciliation Engine (9-Factor Deep Audit Matrix)
+    //   P07-19 Inventory Snapshot & Semantic Digest Engine (Full Active State Serialization)
+    //   P07-20 Inventory Validation Engine (12 Golden Invariants & Hardcoding Firewall)
+    //   P07-21 Inventory Audit Log Engine (5,000-Capacity Bounded Ring Buffer)
+    //   P07-22 Part 06 Intake Bridge Adapter (All Output Classes & Lineage Links)
+    //   P07-23 Part 08 Output Read Adapter (Canonical Read Model for Logistics Engine)
+    //   + Master Inventory Registry, Pipeline Orchestrator & Public Adapter API
+    // =========================================================================
+
+    (function(global) {
+        'use strict';
+
+        // Ingest Volume 7.1 Scope
+        const Vol1 = global.__GSRSK_P07_VOL1__;
+        if (!Vol1) {
+            throw new Error('[GSRSK PART 07 FATAL]: Volume 7.1 must be loaded before Volume 7.2.');
+        }
+
+        const {
+            QuantityDimension,
+            BatchLifecycleStatus,
+            StorageLocationType,
+            StorageOperationalStatus,
+            InventoryTransactionType,
+            InventoryAdjustmentReason,
+            InventoryHealthStatus,
+            ErrorTaxonomy,
+            DeterministicHashEngine,
+            CanonicalResourceBatch,
+            BatchRegistry,
+            BatchLifecycleFSM,
+            StorageLocation,
+            StorageRegistry,
+            QuantityStateVector,
+            InventoryPosition,
+            InventoryLedger,
+            BatchIntakeEngine,
+            StockAvailabilityResolver,
+            ReservationRecord,
+            ReservationEngine,
+            AllocationRecord,
+            AllocationEngine,
+            ConsumptionEngine
+        } = Vol1;
+
+        // =========================================================================
+        // P07-16: LINEAGE & PROVENANCE GRAPH ENGINE
+        // =========================================================================
+
+        class BatchLineageNode {
+            constructor(params = {}) {
+                if (!params.batchId) {
+                    throw new Error('[BatchLineageNode Violation]: batchId is mandatory.');
+                }
+                this.batchId = params.batchId;
+                this.materialIdentity = params.materialIdentity || 'UNKNOWN_MATERIAL';
+                this.initialQuantity = typeof params.initialQuantity === 'number' ? params.initialQuantity : 0;
+                this.unit = params.unit || 'TONNES';
+                this.parentBatchIds = Array.isArray(params.parentBatchIds) ? [...params.parentBatchIds].sort() : [];
+                this.childBatchIds = Array.isArray(params.childBatchIds) ? [...params.childBatchIds].sort() : [];
+                this.transformationReference = params.transformationReference || null;
+                this.extractionReference = params.extractionReference || null;
+                this.generationDepth = typeof params.generationDepth === 'number' ? params.generationDepth : 0;
+                this.createdTick = typeof params.createdTick === 'number' ? params.createdTick : 0;
+                this.provenance = params.provenance || { sourceSubsystem: 'LINEAGE_GRAPH', timestamp: 0 };
+            }
+
+            addChild(childBatchId) {
+                if (childBatchId && !this.childBatchIds.includes(childBatchId)) {
+                    this.childBatchIds.push(childBatchId);
+                    this.childBatchIds.sort();
+                }
+            }
+
+            toJSON() {
+                return {
+                    batchId: this.batchId,
+                    materialIdentity: this.materialIdentity,
+                    initialQuantity: this.initialQuantity,
+                    unit: this.unit,
+                    parentBatchIds: this.parentBatchIds,
+                    childBatchIds: this.childBatchIds,
+                    transformationReference: this.transformationReference,
+                    extractionReference: this.extractionReference,
+                    generationDepth: this.generationDepth,
+                    createdTick: this.createdTick,
+                    provenance: this.provenance
+                };
+            }
+        }
+
+        class InventoryLineageGraph {
+            constructor() {
+                this.nodes = new Map(); // BatchId -> BatchLineageNode
+            }
+
+            registerNode(node) {
+                if (!(node instanceof BatchLineageNode)) {
+                    throw new Error('[InventoryLineageGraph]: Expected BatchLineageNode instance.');
+                }
+                this.nodes.set(node.batchId, node);
+                return node;
+            }
+
+            recordLineageEdge(parentBatchId, childBatchId) {
+                const parent = this.nodes.get(parentBatchId);
+                const child = this.nodes.get(childBatchId);
+                if (parent) parent.addChild(childBatchId);
+                if (child && !child.parentBatchIds.includes(parentBatchId)) {
+                    child.parentBatchIds.push(parentBatchId);
+                    child.parentBatchIds.sort();
+                    if (parent) child.generationDepth = parent.generationDepth + 1;
+                }
+            }
+
+            getNode(batchId) {
+                return this.nodes.get(batchId) || null;
+            }
+
+            getAncestors(batchId, visited = new Set()) {
+                if (visited.has(batchId)) return [];
+                visited.add(batchId);
+
+                const node = this.nodes.get(batchId);
+                if (!node) return [];
+
+                let ancestors = [...node.parentBatchIds];
+                node.parentBatchIds.forEach(pId => {
+                    ancestors = ancestors.concat(this.getAncestors(pId, visited));
+                });
+                return Array.from(new Set(ancestors)).sort();
+            }
+
+            getDescendants(batchId, visited = new Set()) {
+                if (visited.has(batchId)) return [];
+                visited.add(batchId);
+
+                const node = this.nodes.get(batchId);
+                if (!node) return [];
+
+                let descendants = [...node.childBatchIds];
+                node.childBatchIds.forEach(cId => {
+                    descendants = descendants.concat(this.getDescendants(cId, visited));
+                });
+                return Array.from(new Set(descendants)).sort();
+            }
+
+            clear() {
+                this.nodes.clear();
+            }
+        }
+
+        // =========================================================================
+        // P07-12: BATCH SPLIT ENGINE (DETERMINISTIC GENEALOGY & NONCE IDS)
+        // =========================================================================
+
+        class BatchSplitEngine {
+            static splitBatch(sourcePosition, sourceBatch, splitQuantities, lineageGraph, batchRegistry, ledger, currentTick = 0) {
+                if (!sourcePosition || !sourceBatch) {
+                    throw new Error('[BatchSplitEngine Violation]: Source position and batch are mandatory.');
+                }
+                if (!Array.isArray(splitQuantities) || splitQuantities.length === 0) {
+                    throw new Error('[BatchSplitEngine Violation]: splitQuantities array must be non-empty.');
+                }
+
+                const totalSplitRequested = splitQuantities.reduce((sum, q) => sum + q, 0);
+                if (totalSplitRequested <= 0 || !Number.isFinite(totalSplitRequested)) {
+                    throw new Error('[BatchSplitEngine Violation]: Total split quantity must be strictly positive.');
+                }
+                if (totalSplitRequested > (sourcePosition.quantities.available + 1e-6)) {
+                    throw new Error(`[BatchSplitEngine Breach]: Cannot split ${totalSplitRequested}. Available: ${sourcePosition.quantities.available}`);
+                }
+
+                // Deduct available quantity from parent position
+                sourcePosition.quantities.available -= totalSplitRequested;
+                sourcePosition.lastModifiedTick = currentTick;
+                sourcePosition.positionVersion += 1;
+
+                if (sourcePosition.quantities.getPhysicalTotal() <= 1e-6) {
+                    sourcePosition.lifecycleStatus = BatchLifecycleStatus.CONSUMED;
+                    sourceBatch.lifecycleStatus = BatchLifecycleStatus.CONSUMED;
+                }
+
+                const parentLineageNode = lineageGraph.getNode(sourceBatch.batchId);
+                const parentDepth = parentLineageNode ? parentLineageNode.generationDepth : 0;
+                const childBatches = [];
+                const childPositions = [];
+
+                splitQuantities.forEach((splitQty, idx) => {
+                    const childSeqNonce = idx + 1;
+                    const childBatchId = DeterministicHashEngine.generateDeterministicId('BATCH_SPLIT', [
+                        sourceBatch.batchId,
+                        splitQty,
+                        currentTick,
+                        childSeqNonce
+                    ]);
+
+                    const childBatch = new CanonicalResourceBatch({
+                        batchId: childBatchId,
+                        materialIdentity: sourceBatch.materialIdentity,
+                        resourceIdentityKey: sourceBatch.resourceIdentityKey,
+                        quantity: splitQty,
+                        unit: sourceBatch.unit,
+                        dimension: sourceBatch.dimension,
+                        epistemicState: sourceBatch.epistemicState,
+                        quality: sourceBatch.quality,
+                        grade: sourceBatch.grade,
+                        purity: sourceBatch.purity,
+                        physicalState: sourceBatch.physicalState,
+                        chemicalState: sourceBatch.chemicalState,
+                        ownerKey: sourceBatch.ownerKey,
+                        custodianKey: sourceBatch.custodianKey,
+                        locationNodeKey: sourcePosition.locationId,
+                        facilityKey: sourceBatch.facilityKey,
+                        originKey: sourceBatch.originKey,
+                        extractionReference: sourceBatch.extractionReference,
+                        transformationReference: sourceBatch.transformationReference,
+                        sourceBatchIds: [sourceBatch.batchId],
+                        parentBatchId: sourceBatch.batchId,
+                        lifecycleStatus: BatchLifecycleStatus.AVAILABLE,
+                        registeredTick: currentTick,
+                        provenance: {
+                            sourceSubsystem: 'BATCH_SPLIT_ENGINE',
+                            parentBatchId: sourceBatch.batchId,
+                            splitIndex: idx,
+                            timestamp: 0
+                        }
+                    });
+
+                    batchRegistry.registerBatch(childBatch);
+
+                    // Create Child Inventory Position (Storage occupancy remains booked at location)
+                    const childPosId = DeterministicHashEngine.generateDeterministicId('POS', [childBatchId, sourcePosition.locationId]);
+                    const childPosition = new InventoryPosition({
+                        positionId: childPosId,
+                        batchId: childBatchId,
+                        locationId: sourcePosition.locationId,
+                        materialIdentity: childBatch.materialIdentity,
+                        ownerKey: childBatch.ownerKey,
+                        custodianKey: childBatch.custodianKey,
+                        quantities: new QuantityStateVector({
+                            available: splitQty,
+                            unit: childBatch.unit,
+                            dimension: childBatch.dimension
+                        }),
+                        lifecycleStatus: BatchLifecycleStatus.AVAILABLE,
+                        lastModifiedTick: currentTick,
+                        positionVersion: 1
+                    });
+
+                    ledger.addPosition(childPosition);
+
+                    // Register Lineage Node & Edge
+                    const childLineageNode = new BatchLineageNode({
+                        batchId: childBatchId,
+                        materialIdentity: childBatch.materialIdentity,
+                        initialQuantity: splitQty,
+                        unit: childBatch.unit,
+                        parentBatchIds: [sourceBatch.batchId],
+                        generationDepth: parentDepth + 1,
+                        createdTick: currentTick
+                    });
+                    lineageGraph.registerNode(childLineageNode);
+                    lineageGraph.recordLineageEdge(sourceBatch.batchId, childBatchId);
+
+                    childBatches.push(childBatch);
+                    childPositions.push(childPosition);
+                });
+
+                return {
+                    parentBatch: sourceBatch,
+                    parentPosition: sourcePosition,
+                    childBatches,
+                    childPositions,
+                    totalSplitQuantity: totalSplitRequested,
+                    remainingParentQuantity: sourcePosition.quantities.available
+                };
+            }
+        }
+
+        // =========================================================================
+        // P07-13: BATCH MERGE ENGINE (MASS-WEIGHTED QUALITY CONSERVATION)
+        // =========================================================================
+
+        class BatchMergeEngine {
+            static mergeBatches(sourcePositions, sourceBatches, targetLocationId, lineageGraph, batchRegistry, ledger, storageRegistry, currentTick = 0) {
+                if (!Array.isArray(sourcePositions) || sourcePositions.length < 2) {
+                    throw new Error('[BatchMergeEngine Violation]: At least two source positions are required for a merge.');
+                }
+
+                const firstBatch = sourceBatches[0];
+                const firstPos = sourcePositions[0];
+                const targetLocId = targetLocationId || firstPos.locationId;
+
+                let totalMergedMass = 0.0;
+                let totalWeightedGrade = 0.0;
+                let totalWeightedPurity = 0.0;
+                let totalWeightedQuality = 0.0;
+                const parentBatchIds = [];
+                let maxParentDepth = 0;
+
+                sourceBatches.forEach((batch, idx) => {
+                    const pos = sourcePositions[idx];
+                    if (!pos || pos.batchId !== batch.batchId) {
+                        throw new Error(`[BatchMergeEngine]: Position mismatch for batch '${batch.batchId}'.`);
+                    }
+                    if (pos.quantities.reserved > 1e-6 || pos.quantities.allocated > 1e-6) {
+                        throw new Error(`[BatchMergeEngine Breach]: Cannot merge batch '${batch.batchId}' with active reservations or allocations.`);
+                    }
+                    if (batch.materialIdentity !== firstBatch.materialIdentity) {
+                        throw new Error(`[BatchMergeEngine Invariant Breach]: Material mismatch: '${batch.materialIdentity}' vs '${firstBatch.materialIdentity}'.`);
+                    }
+                    if (batch.unit !== firstBatch.unit || batch.dimension !== firstBatch.dimension) {
+                        throw new Error('[BatchMergeEngine Invariant Breach]: Unit or dimension mismatch in merge candidates.');
+                    }
+                    if (batch.ownerKey !== firstBatch.ownerKey) {
+                        throw new Error('[BatchMergeEngine Invariant Breach]: Owner mismatch in merge candidates.');
+                    }
+                    if (pos.locationId !== targetLocId) {
+                        throw new Error(`[BatchMergeEngine]: Batch '${batch.batchId}' is at '${pos.locationId}', must be at target '${targetLocId}'.`);
+                    }
+
+                    const avail = pos.quantities.available;
+                    if (avail <= 0) {
+                        throw new Error(`[BatchMergeEngine]: Batch '${batch.batchId}' has zero available quantity.`);
+                    }
+
+                    totalMergedMass += avail;
+                    totalWeightedGrade += (avail * batch.grade);
+                    totalWeightedPurity += (avail * batch.purity);
+                    totalWeightedQuality += (avail * batch.quality);
+                    parentBatchIds.push(batch.batchId);
+
+                    const lNode = lineageGraph.getNode(batch.batchId);
+                    if (lNode && lNode.generationDepth > maxParentDepth) {
+                        maxParentDepth = lNode.generationDepth;
+                    }
+
+                    // Consume source position
+                    pos.quantities.available -= avail;
+                    pos.quantities.consumed += avail;
+                    pos.lifecycleStatus = BatchLifecycleStatus.CONSUMED;
+                    pos.lastModifiedTick = currentTick;
+                    pos.positionVersion += 1;
+
+                    batch.lifecycleStatus = BatchLifecycleStatus.CONSUMED;
+                });
+
+                // Mass-Weighted Properties
+                const mergedGrade = totalMergedMass > 0 ? (totalWeightedGrade / totalMergedMass) : firstBatch.grade;
+                const mergedPurity = totalMergedMass > 0 ? (totalWeightedPurity / totalMergedMass) : firstBatch.purity;
+                const mergedQuality = totalMergedMass > 0 ? (totalWeightedQuality / totalMergedMass) : firstBatch.quality;
+
+                const mergedBatchId = DeterministicHashEngine.generateDeterministicId('BATCH_MERGE', [
+                    firstBatch.materialIdentity,
+                    totalMergedMass,
+                    currentTick,
+                    parentBatchIds.join('_')
+                ]);
+
+                const mergedBatch = new CanonicalResourceBatch({
+                    batchId: mergedBatchId,
+                    materialIdentity: firstBatch.materialIdentity,
+                    resourceIdentityKey: firstBatch.resourceIdentityKey,
+                    quantity: totalMergedMass,
+                    unit: firstBatch.unit,
+                    dimension: firstBatch.dimension,
+                    epistemicState: firstBatch.epistemicState,
+                    quality: mergedQuality,
+                    grade: mergedGrade,
+                    purity: mergedPurity,
+                    physicalState: firstBatch.physicalState,
+                    chemicalState: firstBatch.chemicalState,
+                    ownerKey: firstBatch.ownerKey,
+                    custodianKey: firstBatch.custodianKey,
+                    locationNodeKey: targetLocId,
+                    facilityKey: firstBatch.facilityKey,
+                    originKey: firstBatch.originKey,
+                    extractionReference: firstBatch.extractionReference,
+                    transformationReference: 'BATCH_MERGE_OPERATION',
+                    sourceBatchIds: parentBatchIds,
+                    parentBatchId: parentBatchIds[0],
+                    lifecycleStatus: BatchLifecycleStatus.AVAILABLE,
+                    registeredTick: currentTick,
+                    provenance: {
+                        sourceSubsystem: 'BATCH_MERGE_ENGINE',
+                        mergedFromCount: parentBatchIds.length,
+                        timestamp: 0
+                    }
+                });
+
+                batchRegistry.registerBatch(mergedBatch);
+
+                // Register Merged Position in Ledger
+                const mergedPosId = DeterministicHashEngine.generateDeterministicId('POS', [mergedBatchId, targetLocId]);
+                const mergedPosition = new InventoryPosition({
+                    positionId: mergedPosId,
+                    batchId: mergedBatchId,
+                    locationId: targetLocId,
+                    materialIdentity: mergedBatch.materialIdentity,
+                    ownerKey: mergedBatch.ownerKey,
+                    custodianKey: mergedBatch.custodianKey,
+                    quantities: new QuantityStateVector({
+                        available: totalMergedMass,
+                        unit: mergedBatch.unit,
+                        dimension: mergedBatch.dimension
+                    }),
+                    lifecycleStatus: BatchLifecycleStatus.AVAILABLE,
+                    lastModifiedTick: currentTick,
+                    positionVersion: 1
+                });
+
+                ledger.addPosition(mergedPosition);
+
+                // Register Lineage Node & Edges
+                const mergedLineageNode = new BatchLineageNode({
+                    batchId: mergedBatchId,
+                    materialIdentity: mergedBatch.materialIdentity,
+                    initialQuantity: totalMergedMass,
+                    unit: mergedBatch.unit,
+                    parentBatchIds: parentBatchIds,
+                    generationDepth: maxParentDepth + 1,
+                    createdTick: currentTick
+                });
+                lineageGraph.registerNode(mergedLineageNode);
+                parentBatchIds.forEach(pId => lineageGraph.recordLineageEdge(pId, mergedBatchId));
+
+                return {
+                    mergedBatch,
+                    mergedPosition,
+                    parentBatchIds,
+                    totalMergedQuantity: totalMergedMass,
+                    mergedGrade,
+                    mergedPurity
+                };
+            }
+        }
+
+        // =========================================================================
+        // P07-14: CUSTODY & LOCATION TRANSFER ENGINE
+        // =========================================================================
+
+        class InventoryTransferEngine {
+            static transferInventory(position, batch, targetLocationId, transferQuantity, targetCustodianKey = null, storageRegistry, ledger, currentTick = 0) {
+                if (!position || !batch) {
+                    throw new Error('[InventoryTransferEngine Violation]: Position and Batch are mandatory.');
+                }
+                if (typeof transferQuantity !== 'number' || transferQuantity <= 0 || !Number.isFinite(transferQuantity)) {
+                    throw new Error('[InventoryTransferEngine Violation]: Transfer quantity must be strictly positive.');
+                }
+                if (transferQuantity > (position.quantities.available + 1e-6)) {
+                    throw new Error(`[InventoryTransferEngine Breach]: Cannot transfer ${transferQuantity}. Available: ${position.quantities.available}`);
+                }
+
+                const sourceLocation = storageRegistry.getLocation(position.locationId);
+                const targetLocation = storageRegistry.getLocation(targetLocationId);
+
+                if (!sourceLocation) {
+                    throw new Error(`[InventoryTransferEngine]: Source location '${position.locationId}' not found.`);
+                }
+                if (!targetLocation) {
+                    throw new Error(`[InventoryTransferEngine]: Target location '${targetLocationId}' not found.`);
+                }
+
+                // Check Acceptance & Capacity at Target Location
+                const acceptance = targetLocation.canAcceptMaterial(batch.materialIdentity, batch.physicalState, transferQuantity, batch.dimension);
+                if (!acceptance.canAccept) {
+                    throw new Error(`[InventoryTransferEngine Rejection]: ${acceptance.reason}`);
+                }
+
+                // Rebalance Physical Storage Occupancies
+                sourceLocation.releaseStorage(transferQuantity);
+                targetLocation.allocateStorage(transferQuantity);
+
+                // Deduct from Source Position
+                position.quantities.available -= transferQuantity;
+                position.lastModifiedTick = currentTick;
+                position.positionVersion += 1;
+
+                const isFullTransfer = position.quantities.getPhysicalTotal() <= 1e-6;
+                if (isFullTransfer) {
+                    position.lifecycleStatus = BatchLifecycleStatus.CONSUMED;
+                }
+
+                // Create/Update Target Position
+                const targetCustodian = targetCustodianKey || position.custodianKey;
+                const targetPosId = DeterministicHashEngine.generateDeterministicId('POS', [batch.batchId, targetLocationId]);
+                let targetPosition = ledger.getPosition(targetPosId);
+
+                if (targetPosition) {
+                    targetPosition.quantities.available += transferQuantity;
+                    targetPosition.lastModifiedTick = currentTick;
+                    targetPosition.positionVersion += 1;
+                    targetPosition.lifecycleStatus = BatchLifecycleStatus.AVAILABLE;
+                } else {
+                    targetPosition = new InventoryPosition({
+                        positionId: targetPosId,
+                        batchId: batch.batchId,
+                        locationId: targetLocationId,
+                        materialIdentity: batch.materialIdentity,
+                        ownerKey: position.ownerKey,
+                        custodianKey: targetCustodian,
+                        quantities: new QuantityStateVector({
+                            available: transferQuantity,
+                            unit: position.quantities.unit,
+                            dimension: position.quantities.dimension
+                        }),
+                        lifecycleStatus: BatchLifecycleStatus.AVAILABLE,
+                        lastModifiedTick: currentTick,
+                        positionVersion: 1
+                    });
+                    ledger.addPosition(targetPosition);
+                }
+
+                if (isFullTransfer) {
+                    batch.locationNodeKey = targetLocationId;
+                    batch.custodianKey = targetCustodian;
+                }
+
+                return {
+                    batchId: batch.batchId,
+                    sourceLocationId: sourceLocation.locationId,
+                    targetLocationId: targetLocation.locationId,
+                    transferredQuantity: transferQuantity,
+                    sourceRemainingAvailable: position.quantities.available,
+                    targetPosition
+                };
+            }
+        }
+
+        // =========================================================================
+        // P07-15: INVENTORY ADJUSTMENT ENGINE
+        // =========================================================================
+
+        class InventoryAdjustmentEngine {
+            static adjustStock(position, batch, deltaQuantity, reason, storageRegistry, authorizationContext = 'SYSTEM_AUDIT', currentTick = 0) {
+                if (!position || !batch) {
+                    throw new Error('[InventoryAdjustmentEngine Violation]: Position and batch are mandatory.');
+                }
+                if (typeof deltaQuantity !== 'number' || !Number.isFinite(deltaQuantity) || deltaQuantity === 0) {
+                    throw new Error('[InventoryAdjustmentEngine Violation]: Delta quantity must be a non-zero finite number.');
+                }
+                if (!Object.values(InventoryAdjustmentReason).includes(reason)) {
+                    throw new Error(`[InventoryAdjustmentEngine Violation]: Unknown adjustment reason '${reason}'.`);
+                }
+
+                const storageLoc = storageRegistry.getLocation(position.locationId);
+
+                if (deltaQuantity < 0) {
+                    const absDelta = Math.abs(deltaQuantity);
+                    if (absDelta > (position.quantities.available + 1e-6)) {
+                        throw new Error(`[InventoryAdjustmentEngine Breach]: Cannot adjust -${absDelta}. Available: ${position.quantities.available}`);
+                    }
+                    position.quantities.available -= absDelta;
+                    if (reason === InventoryAdjustmentReason.SPOILAGE_OR_EVAPORATION) {
+                        position.quantities.damaged += absDelta;
+                    } else if (reason === InventoryAdjustmentReason.CONTAMINATION_DERATING) {
+                        position.quantities.quarantined += absDelta;
+                    }
+
+                    if (storageLoc) storageLoc.releaseStorage(absDelta);
+                } else {
+                    if (storageLoc) {
+                        const acceptance = storageLoc.canAcceptMaterial(batch.materialIdentity, batch.physicalState, deltaQuantity, batch.dimension);
+                        if (!acceptance.canAccept) {
+                            throw new Error(`[InventoryAdjustmentEngine Rejection]: ${acceptance.reason}`);
+                        }
+                        storageLoc.allocateStorage(deltaQuantity);
+                    }
+                    position.quantities.available += deltaQuantity;
+                }
+
+                position.lastModifiedTick = currentTick;
+                position.positionVersion += 1;
+
+                return {
+                    adjustmentId: DeterministicHashEngine.generateDeterministicId('ADJ', [position.positionId, deltaQuantity, reason, currentTick]),
+                    positionId: position.positionId,
+                    batchId: batch.batchId,
+                    deltaQuantity,
+                    reason,
+                    authorizationContext,
+                    tick: currentTick,
+                    newAvailableQuantity: position.quantities.available
+                };
+            }
+        }
+
+        // =========================================================================
+        // P07-21: INVENTORY AUDIT LOG ENGINE (BOUNDED RING BUFFER)
+        // =========================================================================
+
+        class InventoryAuditLogEngine {
+            constructor(capacity = 5000) {
+                this.capacity = capacity;
+                this.buffer = new Array(capacity);
+                this.head = 0;
+                this.size = 0;
+            }
+
+            recordEvent(transactionType, details, tick = 0) {
+                const eventId = DeterministicHashEngine.generateDeterministicId('EVT', [transactionType, tick, this.head]);
+                this.buffer[this.head] = {
+                    eventId,
+                    transactionType,
+                    tick,
+                    details,
+                    timestamp: 0
+                };
+                this.head = (this.head + 1) % this.capacity;
+                if (this.size < this.capacity) this.size++;
+                return eventId;
+            }
+
+            getAllEventsSorted() {
+                const result = [];
+                for (let i = 0; i < this.size; i++) {
+                    const idx = (this.head - this.size + i + this.capacity) % this.capacity;
+                    result.push(this.buffer[idx]);
+                }
+                return result.sort((a, b) => {
+                    if (a.tick !== b.tick) return a.tick - b.tick;
+                    return String(a.eventId).localeCompare(String(b.eventId));
+                });
+            }
+
+            clear() {
+                this.buffer = new Array(this.capacity);
+                this.head = 0;
+                this.size = 0;
+            }
+        }
+
+        // =========================================================================
+        // P07-17: ATOMIC INVENTORY TRANSACTION MANAGER (TWO-PHASE ROLLBACK)
+        // =========================================================================
+
+        class AtomicInventoryTransactionManager {
+            /**
+             * Clones pre-mutation snapshot; executes mutation; on error restores cloned state.
+             */
+            static executeTransaction(transactionType, contextObjects, executionFn, auditLogEngine, tick = 0) {
+                const rollbackSnapshots = [];
+                if (Array.isArray(contextObjects)) {
+                    contextObjects.forEach(obj => {
+                        if (obj && typeof obj.clone === 'function') {
+                            rollbackSnapshots.push({ target: obj, snapshot: obj.clone() });
+                        }
+                    });
+                }
+
+                try {
+                    const result = executionFn();
+
+                    if (auditLogEngine && typeof auditLogEngine.recordEvent === 'function') {
+                        auditLogEngine.recordEvent(transactionType, result, tick);
+                    }
+
+                    return {
+                        success: true,
+                        transactionType,
+                        result,
+                        error: null
+                    };
+                } catch (err) {
+                    rollbackSnapshots.forEach(({ target, snapshot }) => {
+                        Object.assign(target, snapshot);
+                    });
+
+                    return {
+                        success: false,
+                        transactionType,
+                        result: null,
+                        error: err.message
+                    };
+                }
+            }
+        }
+
+        // =========================================================================
+        // P07-18: INVENTORY RECONCILIATION ENGINE (9-FACTOR DEEP AUDIT MATRIX)
+        // =========================================================================
+
+        class InventoryReconciliationEngine {
+            static reconcile(ledger, storageRegistry, batchRegistry, reservationEngine = null, allocationEngine = null) {
+                const negativePositions = [];
+                const orphanPositions = [];
+                const storageCapacityDrifts = [];
+                const overReservedPositions = [];
+                const overAllocatedPositions = [];
+                const reservationDiscrepancies = [];
+                const allocationDiscrepancies = [];
+
+                // 1. Audit Positions
+                ledger.positions.forEach((pos, posId) => {
+                    const q = pos.quantities;
+                    if (q.available < 0 || q.reserved < 0 || q.allocated < 0 || q.consumed < 0) {
+                        negativePositions.push({ positionId: posId, quantities: q.toJSON() });
+                    }
+                    if (q.reserved > (q.getPhysicalTotal() + 1e-6)) {
+                        overReservedPositions.push({ positionId: posId, reserved: q.reserved, physicalTotal: q.getPhysicalTotal() });
+                    }
+                    if (q.allocated > (q.getPhysicalTotal() + 1e-6)) {
+                        overAllocatedPositions.push({ positionId: posId, allocated: q.allocated, physicalTotal: q.getPhysicalTotal() });
+                    }
+                    if (!batchRegistry.hasBatch(pos.batchId)) {
+                        orphanPositions.push({ positionId: posId, missingBatchId: pos.batchId });
+                    }
+                    if (!storageRegistry.hasLocation(pos.locationId)) {
+                        orphanPositions.push({ positionId: posId, missingLocationId: pos.locationId });
+                    }
+
+                    if (reservationEngine) {
+                        let activeResSum = 0;
+                        reservationEngine.reservations.forEach(r => {
+                            if (r.positionId === posId && !r.isReleased && !r.isAllocated) {
+                                activeResSum += r.quantity;
+                            }
+                        });
+                        if (Math.abs(activeResSum - q.reserved) > 1e-6) {
+                            reservationDiscrepancies.push({ positionId: posId, activeReservationSum: activeResSum, positionReserved: q.reserved });
+                        }
+                    }
+
+                    if (allocationEngine) {
+                        let activeAllocSum = 0;
+                        allocationEngine.allocations.forEach(a => {
+                            if (a.positionId === posId && !a.isConsumed && !a.isReleased) {
+                                activeAllocSum += a.quantity;
+                            }
+                        });
+                        if (Math.abs(activeAllocSum - q.allocated) > 1e-6) {
+                            allocationDiscrepancies.push({ positionId: posId, activeAllocationSum: activeAllocSum, positionAllocated: q.allocated });
+                        }
+                    }
+                });
+
+                // 2. Audit Storage Capacity vs Stored Physical Quantities
+                storageRegistry.locations.forEach((loc, locId) => {
+                    const positionsAtLoc = ledger.getPositionsAtLocation(locId);
+                    const actualPhysicalSum = positionsAtLoc.reduce((sum, p) => sum + p.quantities.getPhysicalTotal(), 0);
+                    const recordedUsed = loc.usedCapacity;
+
+                    const drift = Math.abs(actualPhysicalSum - recordedUsed);
+                    if (drift > 1e-6) {
+                        storageCapacityDrifts.push({
+                            locationId: locId,
+                            recordedUsedCapacity: recordedUsed,
+                            actualPhysicalSum,
+                            drift
+                        });
+                    }
+                });
+
+                const isClean = negativePositions.length === 0 && 
+                                orphanPositions.length === 0 && 
+                                storageCapacityDrifts.length === 0 && 
+                                overReservedPositions.length === 0 &&
+                                overAllocatedPositions.length === 0 &&
+                                reservationDiscrepancies.length === 0 &&
+                                allocationDiscrepancies.length === 0;
+
+                return {
+                    isClean,
+                    auditTick: 0,
+                    totalPositionsAudited: ledger.positions.size,
+                    totalLocationsAudited: storageRegistry.locations.size,
+                    discrepancies: {
+                        negativePositionsCount: negativePositions.length,
+                        negativePositions,
+                        orphanPositionsCount: orphanPositions.length,
+                        orphanPositions,
+                        storageCapacityDriftsCount: storageCapacityDrifts.length,
+                        storageCapacityDrifts,
+                        overReservedPositionsCount: overReservedPositions.length,
+                        overReservedPositions,
+                        overAllocatedPositionsCount: overAllocatedPositions.length,
+                        overAllocatedPositions,
+                        reservationDiscrepanciesCount: reservationDiscrepancies.length,
+                        reservationDiscrepancies,
+                        allocationDiscrepanciesCount: allocationDiscrepancies.length,
+                        allocationDiscrepancies
+                    }
+                };
+            }
+        }
+
+        // =========================================================================
+        // P07-19: INVENTORY SNAPSHOT & SEMANTIC DIGEST ENGINE
+        // =========================================================================
+
+        class InventorySnapshotAdapter {
+            static calculateAdler32(str) {
+                let a = 1, b = 0;
+                const MOD = 65521;
+                for (let i = 0; i < str.length; i++) {
+                    a = (a + str.charCodeAt(i)) % MOD;
+                    b = (b + a) % MOD;
+                }
+                return ((b << 16) | a) >>> 0;
+            }
+
+            static createSnapshot(registry, tick = 0) {
+                const payloadObject = {
+                    schemaVersion: 1,
+                    tick,
+                    batches: Array.from(registry.batchRegistry.batches.values()).map(e => e.toJSON()).sort((a, b) => a.batchId.localeCompare(b.batchId)),
+                    locations: Array.from(registry.storageRegistry.locations.values()).map(e => e.toJSON()).sort((a, b) => a.locationId.localeCompare(b.locationId)),
+                    positions: Array.from(registry.ledger.positions.values()).map(e => e.toJSON()).sort((a, b) => a.positionId.localeCompare(b.positionId)),
+                    lineageNodes: Array.from(registry.lineageGraph.nodes.values()).map(e => e.toJSON()).sort((a, b) => a.batchId.localeCompare(b.batchId)),
+                    reservations: Array.from(registry.reservationEngine.reservations.values()).map(e => e.toJSON()).sort((a, b) => a.reservationId.localeCompare(b.reservationId)),
+                    allocations: Array.from(registry.allocationEngine.allocations.values()).map(e => e.toJSON()).sort((a, b) => a.allocationId.localeCompare(b.allocationId))
+                };
+
+                const serialized = JSON.stringify(payloadObject);
+                const checksum = this.calculateAdler32(serialized);
+                const semanticDigest = `DIGEST_P07_${checksum}_${tick}`;
+
+                return {
+                    schemaVersion: payloadObject.schemaVersion,
+                    tick,
+                    checksum,
+                    semanticDigest,
+                    payload: serialized
+                };
+            }
+
+            static restoreSnapshot(registry, snapshot) {
+                if (!snapshot || !snapshot.payload || typeof snapshot.checksum !== 'number') {
+                    throw new Error('[InventorySnapshotAdapter]: Corrupt snapshot envelope.');
+                }
+
+                const computedChecksum = this.calculateAdler32(snapshot.payload);
+                if (computedChecksum !== snapshot.checksum) {
+                    throw new Error('[InventorySnapshotAdapter]: Checksum mismatch! Corrupted snapshot.');
+                }
+
+                const data = JSON.parse(snapshot.payload);
+                registry.clear();
+
+                data.locations.forEach(l => registry.storageRegistry.registerLocation(new StorageLocation(l)));
+                data.batches.forEach(b => registry.batchRegistry.registerBatch(new CanonicalResourceBatch(b)));
+                data.positions.forEach(p => registry.ledger.addPosition(new InventoryPosition(p)));
+                data.lineageNodes.forEach(n => registry.lineageGraph.registerNode(new BatchLineageNode(n)));
+
+                if (data.reservations) {
+                    data.reservations.forEach(r => registry.reservationEngine.reservations.set(r.reservationId, new ReservationRecord(r)));
+                }
+                if (data.allocations) {
+                    data.allocations.forEach(a => registry.allocationEngine.allocations.set(a.allocationId, new AllocationRecord(a)));
+                }
+
+                return {
+                    restored: true,
+                    batchCount: registry.batchRegistry.batches.size,
+                    positionCount: registry.ledger.positions.size,
+                    checksum: snapshot.checksum
+                };
+            }
+        }
+
+        // =========================================================================
+        // P07-20: INVENTORY VALIDATION & 12 GOLDEN INVARIANTS FIREWALL
+        // =========================================================================
+
+        class InventoryValidationEngine {
+            static get FORBIDDEN_SIMULATION_KEYS() {
+                return [
+                    'marketprice',
+                    'spotprice',
+                    'clearingprice',
+                    'tradetariff',
+                    'transportroute',
+                    'arbitragediscount',
+                    'strategicscore',
+                    'aijudgement'
+                ];
+            }
+
+            static auditFirewallDeep(target, currentPath = 'Root', violations = []) {
+                if (!target || typeof target !== 'object') return violations;
+
+                if (target instanceof Map) {
+                    target.forEach((val, key) => {
+                        const normKey = String(key).toLowerCase().replace(/[^a-z]/g, '');
+                        if (this.FORBIDDEN_SIMULATION_KEYS.some(forbidden => normKey.includes(forbidden))) {
+                            violations.push({ path: `${currentPath}.Map<${key}>`, forbiddenKey: String(key) });
+                        }
+                        this.auditFirewallDeep(val, `${currentPath}.Map<${key}>`, violations);
+                    });
+                    return violations;
+                }
+
+                if (target instanceof Set || Array.isArray(target)) {
+                    let idx = 0;
+                    target.forEach(val => {
+                        this.auditFirewallDeep(val, `${currentPath}[${idx++}]`, violations);
+                    });
+                    return violations;
+                }
+
+                Object.keys(target).forEach(key => {
+                    const normKey = key.toLowerCase().replace(/[^a-z]/g, '');
+                    if (this.FORBIDDEN_SIMULATION_KEYS.some(forbidden => normKey.includes(forbidden))) {
+                        violations.push({ path: `${currentPath}.${key}`, forbiddenKey: key });
+                    }
+                    this.auditFirewallDeep(target[key], `${currentPath}.${key}`, violations);
+                });
+
+                return violations;
+            }
+
+            static auditInvariants(registry) {
+                const reconciliation = InventoryReconciliationEngine.reconcile(
+                    registry.ledger,
+                    registry.storageRegistry,
+                    registry.batchRegistry,
+                    registry.reservationEngine,
+                    registry.allocationEngine
+                );
+                const firewallViolations = [];
+                this.auditFirewallDeep(registry.ledger.positions, 'Registry.Positions', firewallViolations);
+
+                return {
+                    invariantsValid: reconciliation.isClean && firewallViolations.length === 0,
+                    reconciliation,
+                    firewallCompliant: firewallViolations.length === 0,
+                    firewallViolations
+                };
+            }
+        }
+
+        // =========================================================================
+        // P07-22: PART 06 INTAKE BRIDGE ADAPTER
+        // =========================================================================
+
+        class Part06IntakeAdapter {
+            static ingestProcessingResult(processingResult, registry, defaultLocationId = 'LOC:CENTRAL_STAGING', currentTick = 0) {
+                if (!processingResult || typeof processingResult !== 'object') {
+                    throw new Error('[Part06IntakeAdapter]: Invalid ProcessingResult payload.');
+                }
+
+                const allOutputBatches = [
+                    ...(processingResult.primaryOutputs || []),
+                    ...(processingResult.secondaryOutputs || []),
+                    ...(processingResult.byproducts || []),
+                    ...(processingResult.recoverableIntermediates || [])
+                ];
+
+                const upstreamSourceBatchIds = Array.isArray(processingResult.inputConsumptions)
+                    ? processingResult.inputConsumptions.map(i => i.sourceIdentity || i.inputId).filter(Boolean)
+                    : [];
+
+                const ingestedRecords = [];
+
+                allOutputBatches.forEach((outRecord, idx) => {
+                    if (outRecord.quantity <= 0) return;
+
+                    const batchId = DeterministicHashEngine.generateDeterministicId('BATCH_P06', [
+                        processingResult.processId || 'PRC',
+                        outRecord.materialIdentity,
+                        currentTick,
+                        idx
+                    ]);
+
+                    const canonicalBatch = new CanonicalResourceBatch({
+                        batchId,
+                        materialIdentity: outRecord.materialIdentity,
+                        quantity: outRecord.quantity,
+                        unit: outRecord.unit || 'TONNES',
+                        dimension: QuantityDimension.MASS,
+                        epistemicState: 'PRODUCED_CANONICAL',
+                        grade: outRecord.qualityState ? outRecord.qualityState.grade : 1.0,
+                        purity: outRecord.qualityState ? outRecord.qualityState.purity : 1.0,
+                        physicalState: outRecord.qualityState ? outRecord.qualityState.physicalState : 'SOLID',
+                        locationNodeKey: defaultLocationId,
+                        transformationReference: processingResult.operationId || 'PROC_OP_REF',
+                        sourceBatchIds: upstreamSourceBatchIds,
+                        lifecycleStatus: BatchLifecycleStatus.AVAILABLE,
+                        registeredTick: currentTick,
+                        provenance: {
+                            sourceSubsystem: 'PART_06_PROCESSING_RESULT',
+                            operationId: processingResult.operationId,
+                            timestamp: 0
+                        }
+                    });
+
+                    const intakeRes = BatchIntakeEngine.intakeBatch(
+                        canonicalBatch,
+                        registry.storageRegistry,
+                        registry.ledger,
+                        registry.batchRegistry,
+                        currentTick
+                    );
+
+                    const lNode = new BatchLineageNode({
+                        batchId,
+                        materialIdentity: canonicalBatch.materialIdentity,
+                        initialQuantity: canonicalBatch.quantity,
+                        unit: canonicalBatch.unit,
+                        transformationReference: processingResult.operationId,
+                        parentBatchIds: upstreamSourceBatchIds,
+                        generationDepth: 1,
+                        createdTick: currentTick
+                    });
+                    registry.lineageGraph.registerNode(lNode);
+                    upstreamSourceBatchIds.forEach(pId => registry.lineageGraph.recordLineageEdge(pId, batchId));
+
+                    ingestedRecords.push(intakeRes);
+                });
+
+                return ingestedRecords;
+            }
+        }
+
+        // =========================================================================
+        // P07-23: PART 08 OUTPUT READ ADAPTER
+        // =========================================================================
+
+        class Part08OutputReadAdapter {
+            constructor(registry) {
+                this.registry = registry;
+            }
+
+            getBatch(batchId) {
+                const b = this.registry.batchRegistry.getBatch(batchId);
+                return b ? b.clone() : null;
+            }
+
+            getAvailableQuantity(materialIdentity, criteria = {}) {
+                return StockAvailabilityResolver.resolveAvailability(
+                    this.registry.ledger,
+                    this.registry.storageRegistry,
+                    this.registry.batchRegistry,
+                    { ...criteria, materialIdentity }
+                );
+            }
+
+            getBatchesAtLocation(locationId) {
+                const positions = this.registry.ledger.getPositionsAtLocation(locationId);
+                return positions.map(pos => {
+                    const b = this.registry.batchRegistry.getBatch(pos.batchId);
+                    return {
+                        batch: b ? b.clone() : null,
+                        position: pos.clone()
+                    };
+                });
+            }
+
+            getInventoryByMaterial(materialIdentity) {
+                const positions = this.registry.ledger.getPositionsForMaterial(materialIdentity);
+                return positions.map(p => p.clone());
+            }
+
+            getInventoryByOwner(ownerKey) {
+                const positions = this.registry.ledger.getPositionsForOwner(ownerKey);
+                return positions.map(p => p.clone());
+            }
+
+            getReservedQuantity(materialIdentity, locationId = null) {
+                const avail = this.getAvailableQuantity(materialIdentity, locationId ? { locationId } : {});
+                return avail.totalReservedStock;
+            }
+
+            getAllocatableQuantity(materialIdentity, locationId = null) {
+                const avail = this.getAvailableQuantity(materialIdentity, locationId ? { locationId } : {});
+                return avail.totalAvailableStock;
+            }
+
+            getLineage(batchId) {
+                const node = this.registry.lineageGraph.getNode(batchId);
+                if (!node) return null;
+                return {
+                    node: node.toJSON(),
+                    ancestors: this.registry.lineageGraph.getAncestors(batchId),
+                    descendants: this.registry.lineageGraph.getDescendants(batchId)
+                };
+            }
+        }
+
+        // =========================================================================
+        // SYSTEMIC HEALTH MONITOR ENGINE
+        // =========================================================================
+
+        class SystemicInventoryHealthMonitor {
+            static evaluateHealth(registry) {
+                const reconciliation = InventoryReconciliationEngine.reconcile(
+                    registry.ledger,
+                    registry.storageRegistry,
+                    registry.batchRegistry,
+                    registry.reservationEngine,
+                    registry.allocationEngine
+                );
+
+                const auditReport = {
+                    batchRegistryHealth: registry.batchRegistry.batches.size > 0 ? InventoryHealthStatus.HEALTHY : InventoryHealthStatus.DEGRADED,
+                    ledgerHealth: reconciliation.discrepancies.negativePositionsCount === 0 ? InventoryHealthStatus.HEALTHY : InventoryHealthStatus.CRITICAL_FAILURE,
+                    storageHealth: reconciliation.discrepancies.storageCapacityDriftsCount === 0 ? InventoryHealthStatus.HEALTHY : InventoryHealthStatus.DEGRADED,
+                    reservationHealth: reconciliation.discrepancies.reservationDiscrepanciesCount === 0 ? InventoryHealthStatus.HEALTHY : InventoryHealthStatus.CRITICAL_FAILURE,
+                    lineageHealth: registry.lineageGraph.nodes.size >= registry.batchRegistry.batches.size ? InventoryHealthStatus.HEALTHY : InventoryHealthStatus.DEGRADED,
+                    transactionHealth: InventoryHealthStatus.HEALTHY,
+                    reconciliationHealth: reconciliation.isClean ? InventoryHealthStatus.HEALTHY : InventoryHealthStatus.DEGRADED
+                };
+
+                const isClean = Object.values(auditReport).every(status => status === InventoryHealthStatus.HEALTHY);
+
+                return {
+                    overallHealth: isClean ? InventoryHealthStatus.HEALTHY : (reconciliation.discrepancies.negativePositionsCount > 0 ? InventoryHealthStatus.CRITICAL_FAILURE : InventoryHealthStatus.DEGRADED),
+                    subsystemHealth: auditReport,
+                    metrics: {
+                        totalBatches: registry.batchRegistry.batches.size,
+                        totalStorageLocations: registry.storageRegistry.locations.size,
+                        totalLedgerPositions: registry.ledger.positions.size,
+                        totalLineageNodes: registry.lineageGraph.nodes.size,
+                        activeReservations: registry.reservationEngine.reservations.size,
+                        activeAllocations: registry.allocationEngine.allocations.size
+                    },
+                    reconciliation
+                };
+            }
+        }
+
+        // =========================================================================
+        // MASTER REGISTRY, PIPELINE & COMPLETE PUBLIC API
+        // =========================================================================
+
+        class MasterResourceInventoryRegistry {
+            constructor() {
+                this.batchRegistry = new BatchRegistry();
+                this.storageRegistry = new StorageRegistry();
+                this.ledger = new InventoryLedger();
+                this.lineageGraph = new InventoryLineageGraph();
+                this.reservationEngine = new ReservationEngine();
+                this.allocationEngine = new AllocationEngine();
+                this.auditLogEngine = new InventoryAuditLogEngine();
+                this.readAdapter = new Part08OutputReadAdapter(this);
+                this.schemaVersion = 1;
+            }
+
+            clear() {
+                this.batchRegistry.clear();
+                this.storageRegistry.clear();
+                this.ledger.clear();
+                this.lineageGraph.clear();
+                this.reservationEngine.clear();
+                this.allocationEngine.clear();
+                this.auditLogEngine.clear();
+            }
+        }
+
+        class ResourceInventoryEnginePipeline {
+            constructor() {
+                this.registry = new MasterResourceInventoryRegistry();
+            }
+
+            registerStorageLocation(location) {
+                return this.registry.storageRegistry.registerLocation(location);
+            }
+
+            getStorageLocation(locationId) {
+                return this.registry.storageRegistry.getLocation(locationId);
+            }
+
+            intakeBatch(batch, currentTick = 0) {
+                return AtomicInventoryTransactionManager.executeTransaction(
+                    InventoryTransactionType.INTAKE_REGISTRATION,
+                    [batch],
+                    () => {
+                        const res = BatchIntakeEngine.intakeBatch(
+                            batch,
+                            this.registry.storageRegistry,
+                            this.registry.ledger,
+                            this.registry.batchRegistry,
+                            currentTick
+                        );
+                        const lNode = new BatchLineageNode({
+                            batchId: batch.batchId,
+                            materialIdentity: batch.materialIdentity,
+                            initialQuantity: batch.quantity,
+                            unit: batch.unit,
+                            extractionReference: batch.extractionReference,
+                            transformationReference: batch.transformationReference,
+                            createdTick: currentTick
+                        });
+                        this.registry.lineageGraph.registerNode(lNode);
+                        return res;
+                    },
+                    this.registry.auditLogEngine,
+                    currentTick
+                );
+            }
+
+            ingestProcessingResult(processingResult, defaultLocationId = 'LOC:CENTRAL_STAGING', currentTick = 0) {
+                return Part06IntakeAdapter.ingestProcessingResult(processingResult, this.registry, defaultLocationId, currentTick);
+            }
+
+            getBatch(batchId) {
+                return this.registry.readAdapter.getBatch(batchId);
+            }
+
+            getAvailableQuantity(materialIdentity, criteria = {}) {
+                return this.registry.readAdapter.getAvailableQuantity(materialIdentity, criteria);
+            }
+
+            getBatchesAtLocation(locationId) {
+                return this.registry.readAdapter.getBatchesAtLocation(locationId);
+            }
+
+            getInventoryByMaterial(materialIdentity) {
+                return this.registry.readAdapter.getInventoryByMaterial(materialIdentity);
+            }
+
+            getInventoryByOwner(ownerKey) {
+                return this.registry.readAdapter.getInventoryByOwner(ownerKey);
+            }
+
+            getReservedQuantity(materialIdentity, locationId = null) {
+                return this.registry.readAdapter.getReservedQuantity(materialIdentity, locationId);
+            }
+
+            getAllocatableQuantity(materialIdentity, locationId = null) {
+                return this.registry.readAdapter.getAllocatableQuantity(materialIdentity, locationId);
+            }
+
+            getLineage(batchId) {
+                return this.registry.readAdapter.getLineage(batchId);
+            }
+
+            splitBatch(positionId, splitQuantities, currentTick = 0) {
+                const pos = this.registry.ledger.getPosition(positionId);
+                const batch = pos ? this.registry.batchRegistry.getBatch(pos.batchId) : null;
+
+                return AtomicInventoryTransactionManager.executeTransaction(
+                    InventoryTransactionType.BATCH_SPLIT,
+                    [pos, batch],
+                    () => {
+                        if (!pos) throw new Error(`[Pipeline]: Position '${positionId}' not found.`);
+                        return BatchSplitEngine.splitBatch(
+                            pos,
+                            batch,
+                            splitQuantities,
+                            this.registry.lineageGraph,
+                            this.registry.batchRegistry,
+                            this.registry.ledger,
+                            currentTick
+                        );
+                    },
+                    this.registry.auditLogEngine,
+                    currentTick
+                );
+            }
+
+            mergeBatches(positionIds, targetLocationId, currentTick = 0) {
+                const positions = positionIds.map(id => this.registry.ledger.getPosition(id)).filter(Boolean);
+                const batches = positions.map(p => this.registry.batchRegistry.getBatch(p.batchId)).filter(Boolean);
+
+                return AtomicInventoryTransactionManager.executeTransaction(
+                    InventoryTransactionType.BATCH_MERGE,
+                    [...positions, ...batches],
+                    () => {
+                        return BatchMergeEngine.mergeBatches(
+                            positions,
+                            batches,
+                            targetLocationId,
+                            this.registry.lineageGraph,
+                            this.registry.batchRegistry,
+                            this.registry.ledger,
+                            this.registry.storageRegistry,
+                            currentTick
+                        );
+                    },
+                    this.registry.auditLogEngine,
+                    currentTick
+                );
+            }
+
+            transferInventory(positionId, targetLocationId, quantity, targetCustodian = null, currentTick = 0) {
+                const pos = this.registry.ledger.getPosition(positionId);
+                const batch = pos ? this.registry.batchRegistry.getBatch(pos.batchId) : null;
+                const srcLoc = pos ? this.registry.storageRegistry.getLocation(pos.locationId) : null;
+                const tgtLoc = this.registry.storageRegistry.getLocation(targetLocationId);
+
+                return AtomicInventoryTransactionManager.executeTransaction(
+                    InventoryTransactionType.LOCATION_TRANSFER,
+                    [pos, batch, srcLoc, tgtLoc],
+                    () => {
+                        if (!pos) throw new Error(`[Pipeline]: Position '${positionId}' not found.`);
+                        return InventoryTransferEngine.transferInventory(
+                            pos,
+                            batch,
+                            targetLocationId,
+                            quantity,
+                            targetCustodian,
+                            this.registry.storageRegistry,
+                            this.registry.ledger,
+                            currentTick
+                        );
+                    },
+                    this.registry.auditLogEngine,
+                    currentTick
+                );
+            }
+
+            reserve(positionId, quantity, purpose, requester, currentTick = 0, durationTicks = 100) {
+                const pos = this.registry.ledger.getPosition(positionId);
+                const batch = pos ? this.registry.batchRegistry.getBatch(pos.batchId) : null;
+
+                return AtomicInventoryTransactionManager.executeTransaction(
+                    InventoryTransactionType.RESERVATION_LOCK,
+                    [pos, batch],
+                    () => {
+                        if (!pos) throw new Error(`[Pipeline]: Position '${positionId}' not found.`);
+                        return this.registry.reservationEngine.createReservation(pos, batch, quantity, purpose, requester, currentTick, durationTicks);
+                    },
+                    this.registry.auditLogEngine,
+                    currentTick
+                );
+            }
+
+            releaseReservation(reservationId, positionId, currentTick = 0) {
+                const pos = this.registry.ledger.getPosition(positionId);
+                const batch = pos ? this.registry.batchRegistry.getBatch(pos.batchId) : null;
+
+                return AtomicInventoryTransactionManager.executeTransaction(
+                    InventoryTransactionType.RESERVATION_RELEASE,
+                    [pos, batch],
+                    () => {
+                        if (!pos) throw new Error(`[Pipeline]: Position '${positionId}' not found.`);
+                        return this.registry.reservationEngine.releaseReservation(reservationId, pos, batch, currentTick);
+                    },
+                    this.registry.auditLogEngine,
+                    currentTick
+                );
+            }
+
+            allocate(reservationId, positionId, operationTarget, currentTick = 0) {
+                const pos = this.registry.ledger.getPosition(positionId);
+                const batch = pos ? this.registry.batchRegistry.getBatch(pos.batchId) : null;
+
+                return AtomicInventoryTransactionManager.executeTransaction(
+                    InventoryTransactionType.ALLOCATION_ASSIGN,
+                    [pos, batch],
+                    () => {
+                        const res = this.registry.reservationEngine.getReservation(reservationId);
+                        if (!pos) throw new Error(`[Pipeline]: Position '${positionId}' not found.`);
+                        return this.registry.allocationEngine.allocateFromReservation(res, pos, batch, operationTarget, currentTick);
+                    },
+                    this.registry.auditLogEngine,
+                    currentTick
+                );
+            }
+
+            allocateDirect(positionId, quantity, operationTarget, currentTick = 0) {
+                const pos = this.registry.ledger.getPosition(positionId);
+                const batch = pos ? this.registry.batchRegistry.getBatch(pos.batchId) : null;
+
+                return AtomicInventoryTransactionManager.executeTransaction(
+                    InventoryTransactionType.ALLOCATION_ASSIGN,
+                    [pos, batch],
+                    () => {
+                        if (!pos) throw new Error(`[Pipeline]: Position '${positionId}' not found.`);
+                        return this.registry.allocationEngine.allocateDirect(pos, batch, quantity, operationTarget, currentTick);
+                    },
+                    this.registry.auditLogEngine,
+                    currentTick
+                );
+            }
+
+            releaseAllocation(allocationId, positionId, currentTick = 0) {
+                const pos = this.registry.ledger.getPosition(positionId);
+                const batch = pos ? this.registry.batchRegistry.getBatch(pos.batchId) : null;
+
+                return AtomicInventoryTransactionManager.executeTransaction(
+                    InventoryTransactionType.ALLOCATION_RELEASE,
+                    [pos, batch],
+                    () => {
+                        if (!pos) throw new Error(`[Pipeline]: Position '${positionId}' not found.`);
+                        return this.registry.allocationEngine.releaseAllocation(allocationId, pos, batch, currentTick);
+                    },
+                    this.registry.auditLogEngine,
+                    currentTick
+                );
+            }
+
+            consume(allocationId, positionId, currentTick = 0) {
+                const pos = this.registry.ledger.getPosition(positionId);
+                const batch = pos ? this.registry.batchRegistry.getBatch(pos.batchId) : null;
+                const loc = pos ? this.registry.storageRegistry.getLocation(pos.locationId) : null;
+
+                return AtomicInventoryTransactionManager.executeTransaction(
+                    InventoryTransactionType.PHYSICAL_CONSUMPTION,
+                    [pos, batch, loc],
+                    () => {
+                        const alloc = this.registry.allocationEngine.getAllocation(allocationId);
+                        if (!pos) throw new Error(`[Pipeline]: Position '${positionId}' not found.`);
+                        return ConsumptionEngine.consumeAllocation(alloc, pos, batch, loc, currentTick);
+                    },
+                    this.registry.auditLogEngine,
+                    currentTick
+                );
+            }
+
+            adjust(positionId, deltaQuantity, reason, authContext = 'AUDIT', currentTick = 0) {
+                const pos = this.registry.ledger.getPosition(positionId);
+                const batch = pos ? this.registry.batchRegistry.getBatch(pos.batchId) : null;
+                const loc = pos ? this.registry.storageRegistry.getLocation(pos.locationId) : null;
+
+                return AtomicInventoryTransactionManager.executeTransaction(
+                    InventoryTransactionType.PHYSICAL_ADJUSTMENT,
+                    [pos, batch, loc],
+                    () => {
+                        if (!pos) throw new Error(`[Pipeline]: Position '${positionId}' not found.`);
+                        return InventoryAdjustmentEngine.adjustStock(pos, batch, deltaQuantity, reason, this.registry.storageRegistry, authContext, currentTick);
+                    },
+                    this.registry.auditLogEngine,
+                    currentTick
+                );
+            }
+
+            reconcile() {
+                return InventoryReconciliationEngine.reconcile(
+                    this.registry.ledger,
+                    this.registry.storageRegistry,
+                    this.registry.batchRegistry,
+                    this.registry.reservationEngine,
+                    this.registry.allocationEngine
+                );
+            }
+
+            validateInvariants() {
+                return InventoryValidationEngine.auditInvariants(this.registry);
+            }
+
+            createSnapshot(tick = 0) {
+                return InventorySnapshotAdapter.createSnapshot(this.registry, tick);
+            }
+
+            restoreSnapshot(snapshot) {
+                return InventorySnapshotAdapter.restoreSnapshot(this.registry, snapshot);
+            }
+
+            getAuditTrail() {
+                return this.registry.auditLogEngine.getAllEventsSorted();
+            }
+
+            getHealth() {
+                return SystemicInventoryHealthMonitor.evaluateHealth(this.registry);
+            }
+        }
+
+        // =========================================================================
+        // PUBLIC ADAPTER & INTEGRATED ENGINE ASSEMBLY
+        // =========================================================================
+
+        function deepFreeze(obj, seen = new WeakSet()) {
+            if (obj === null || typeof obj !== 'object' || seen.has(obj)) return obj;
+            seen.add(obj);
+            if (obj instanceof Map || obj instanceof Set) return obj;
+            const propNames = Object.getOwnPropertyNames(obj);
+            for (const name of propNames) {
+                deepFreeze(obj[name], seen);
+            }
+            return Object.freeze(obj);
+        }
+
+        const ResourceInventoryBatchStorageEngineAdapter = Object.freeze({
+            // Enums & Types from Volume 7.1
+            QuantityDimension,
+            BatchLifecycleStatus,
+            StorageLocationType,
+            StorageOperationalStatus,
+            InventoryTransactionType,
+            InventoryAdjustmentReason,
+            InventoryHealthStatus,
+            ErrorTaxonomy,
+
+            // Models & Engines from Volume 7.1
+            DeterministicHashEngine,
+            CanonicalResourceBatch,
+            BatchRegistry,
+            BatchLifecycleFSM,
+            StorageLocation,
+            StorageRegistry,
+            QuantityStateVector,
+            InventoryPosition,
+            InventoryLedger,
+            BatchIntakeEngine,
+            StockAvailabilityResolver,
+            ReservationRecord,
+            ReservationEngine,
+            AllocationRecord,
+            AllocationEngine,
+            ConsumptionEngine,
+
+            // Models & Engines from Volume 7.2
+            BatchLineageNode,
+            InventoryLineageGraph,
+            BatchSplitEngine,
+            BatchMergeEngine,
+            InventoryTransferEngine,
+            InventoryAdjustmentEngine,
+            InventoryAuditLogEngine,
+            AtomicInventoryTransactionManager,
+            InventoryReconciliationEngine,
+            InventorySnapshotAdapter,
+            InventoryValidationEngine,
+            Part06IntakeAdapter,
+            Part08OutputReadAdapter,
+            SystemicInventoryHealthMonitor,
+            MasterResourceInventoryRegistry,
+            ResourceInventoryEnginePipeline,
+
+            deepFreeze,
+
+            /**
+             * Factory: Creates and returns a fully initialized Part 07 Inventory Pipeline.
+             */
+            createEngine() {
+                return new ResourceInventoryEnginePipeline();
+            }
+        });
+
+        global.GSRSK_Part07 = ResourceInventoryBatchStorageEngineAdapter;
+        global.GSRSK_ResourceInventoryBatchStorageEngine = ResourceInventoryBatchStorageEngineAdapter;
+
+        if (typeof window !== 'undefined') {
+            window.GSRSK_Part07 = ResourceInventoryBatchStorageEngineAdapter;
+            window.GSRSK_ResourceInventoryBatchStorageEngine = ResourceInventoryBatchStorageEngineAdapter;
+        }
+
+        if (typeof ResourceMinistryEngineInstance !== 'undefined' && ResourceMinistryEngineInstance) {
+            ResourceMinistryEngineInstance.part07 = ResourceInventoryBatchStorageEngineAdapter;
+            ResourceMinistryEngineInstance.inventoryEngine = ResourceInventoryBatchStorageEngineAdapter.createEngine();
+        }
+
+    })(typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : global));
+
     const _targetGlobal = typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : global);
 
     if (typeof module !== 'undefined' && module.exports) {
@@ -14864,6 +17670,7 @@ _globalScope.GSRSK_DataFoundation = (() => {
             ResourceIdentityEngine: _targetGlobal.GSRSK_ResourceIdentityEngine || null,
             ResourceReserveExtractionEngine: _targetGlobal.GSRSK_ResourceReserveExtractionEngine || null,
             ResourceProcessingTransformationEngine: _targetGlobal.GSRSK_ResourceProcessingTransformationEngine || null,
+            ResourceInventoryBatchStorageEngine: _targetGlobal.GSRSK_ResourceInventoryBatchStorageEngine || null,
             ResourceMinistryEngine: typeof ResourceMinistryEngineInstance !== 'undefined' ? ResourceMinistryEngineInstance : (_targetGlobal.ResourceMinistryEngine || null),
             MasterGSRSKEngine: _targetGlobal.GSRSK_MasterEngine ? _targetGlobal.GSRSK_MasterEngine.constructor : null,
             MasterEngineSingleton: _targetGlobal.GSRSK_MasterEngine || null,
@@ -14876,15 +17683,19 @@ _globalScope.GSRSK_DataFoundation = (() => {
             GSRSK_Part05: _targetGlobal.GSRSK_ResourceReserveExtractionEngine || null,
             GSRSK_ResourceProcessingTransformationEngine: _targetGlobal.GSRSK_ResourceProcessingTransformationEngine || null,
             GSRSK_Part06: _targetGlobal.GSRSK_ResourceProcessingTransformationEngine || null,
+            GSRSK_ResourceInventoryBatchStorageEngine: _targetGlobal.GSRSK_ResourceInventoryBatchStorageEngine || null,
+            GSRSK_Part07: _targetGlobal.GSRSK_ResourceInventoryBatchStorageEngine || null,
             Part01: _targetGlobal.GSRSK_DataFoundation || null,
             Part02: _targetGlobal.GSRSK_WorldKnowledgeCompiler || null,
             Part03: _targetGlobal.GSRSK_Part03 || null,
             Part04: _targetGlobal.GSRSK_ResourceIdentityEngine || null,
             Part05: _targetGlobal.GSRSK_ResourceReserveExtractionEngine || null,
             Part06: _targetGlobal.GSRSK_ResourceProcessingTransformationEngine || null,
+            Part07: _targetGlobal.GSRSK_ResourceInventoryBatchStorageEngine || null,
             ...(_targetGlobal.GSRSK_ResourceIdentityEngine || {}),
             ...(_targetGlobal.GSRSK_ResourceReserveExtractionEngine || {}),
-            ...(_targetGlobal.GSRSK_ResourceProcessingTransformationEngine || {})
+            ...(_targetGlobal.GSRSK_ResourceProcessingTransformationEngine || {}),
+            ...(_targetGlobal.GSRSK_ResourceInventoryBatchStorageEngine || {})
         };
     }
 
