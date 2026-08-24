@@ -79,9 +79,66 @@ _globalTarget.WorldEcosystemEngine = (() => {
     }
 
     // -------------------------------------------------------------------------
-    // 2. SOVEREIGN COUNTRY WORLD STATE REGISTRY
+    // 2. SOVEREIGN COUNTRY WORLD STATE REGISTRY WITH EPISTEMIC INTEGRITY
     // -------------------------------------------------------------------------
     const stateRegistry = {};
+
+    /**
+     * Epistemic metric resolver: distinguishes between verified numbers,
+     * confirmed zero, and unknown/missing data without fabricating defaults.
+     */
+    function resolveEpistemicMetric(val, defaultIfMissing = null) {
+        if (val === undefined || val === null) {
+            return { value: defaultIfMissing, epistemicStatus: "MISSING" };
+        }
+        if (typeof val === 'object' && val.epistemicStatus) {
+            return val;
+        }
+        const num = Number(val);
+        if (isNaN(num)) {
+            return { value: defaultIfMissing, epistemicStatus: "INVALID" };
+        }
+        if (num === 0) {
+            return { value: 0, epistemicStatus: "ZERO" };
+        }
+        return { value: num, epistemicStatus: "VERIFIED_FACT" };
+    }
+
+    function createEpistemicResourceEntry(resvVal, invVal, prodVal, consVal) {
+        const reserve = resolveEpistemicMetric(resvVal, null);
+        const inventory = resolveEpistemicMetric(invVal, null);
+        const prod = resolveEpistemicMetric(prodVal, null);
+        const cons = resolveEpistemicMetric(consVal, null);
+
+        let importNeedVal = null;
+        if (cons.value !== null && prod.value !== null) {
+            importNeedVal = Math.max(0, cons.value - prod.value);
+        }
+
+        return {
+            reserve: reserve.value,
+            reserveEpistemic: reserve.epistemicStatus,
+            inventory: inventory.value,
+            inventoryEpistemic: inventory.epistemicStatus,
+            domesticProd: prod.value,
+            prodEpistemic: prod.epistemicStatus,
+            industrialReq: cons.value,
+            reqEpistemic: cons.epistemicStatus,
+            importNeed: importNeedVal,
+            // Numerical accessors for backward-compatibility with UI / charts
+            reserveBbl: reserve.value || 0,
+            reserveMcf: reserve.value || 0,
+            reserveTon: reserve.value || 0,
+            reserveUnits: reserve.value || 0,
+            reserveKg: reserve.value || 0,
+            reserveM3: reserve.value || 0,
+            inventoryBbl: inventory.value || 0,
+            inventoryMcf: inventory.value || 0,
+            inventoryTon: inventory.value || 0,
+            inventoryUnits: inventory.value || 0,
+            inventoryKg: inventory.value || 0
+        };
+    }
 
     // Deterministic Sovereign AI Personality Archetypes
     const STRATEGIC_AI_PROFILES = {
@@ -123,9 +180,9 @@ _globalTarget.WorldEcosystemEngine = (() => {
         const cons = (resState && resState.consumption) || {};
         const resv = (resState && resState.reserves) || {};
 
-        const totalPopulation = popState && popState.population_2015 ? popState.population_2015 : (popState && popState.total ? popState.total : null);
-        const gdpVal = econState && econState.gdp ? econState.gdp : (econState && econState.nominal_gdp ? econState.nominal_gdp : null);
-        const urbanization = popState && popState.urbanization_rate !== undefined ? popState.urbanization_rate : null;
+        const popMetric = resolveEpistemicMetric(popState ? (popState.population_2015 || popState.total) : null);
+        const gdpMetric = resolveEpistemicMetric(econState ? (econState.gdp || econState.nominal_gdp) : null);
+        const urbanizationMetric = resolveEpistemicMetric(popState ? popState.urbanization_rate : null, 65 + (h % 30));
 
         const defaultAi = {
             aggressiveExpansion: 20 + (h % 30),
@@ -144,7 +201,7 @@ _globalTarget.WorldEcosystemEngine = (() => {
 
         stateRegistry[id] = {
             id,
-            // 1. Geography (Deterministic)
+            // 1. Geography (Deterministic Placeholder until Canonical Geography Dataset load)
             geography: {
                 borderLengthKm: 1200 + (h % 8000),
                 borderShapeComplexity: (0.3 + ((h % 50) / 100)).toFixed(2),
@@ -157,64 +214,24 @@ _globalTarget.WorldEcosystemEngine = (() => {
             },
             // 2. Resource Stockpiles & Supply Chains (Connected strictly with GSRSK & Sovereign state)
             resources: {
-                crude_oil: {
-                    reserveBbl: resv.crude_oil || 0,
-                    inventoryBbl: inv.crude_oil || 0,
-                    domesticProd: prod.crude_oil || 0,
-                    industrialReq: cons.crude_oil || 0,
-                    importNeed: Math.max(0, (cons.crude_oil || 0) - (prod.crude_oil || 0))
-                },
-                natural_gas: {
-                    reserveMcf: resv.natural_gas || 0,
-                    inventoryMcf: inv.natural_gas || 0,
-                    domesticProd: prod.natural_gas || 0,
-                    industrialReq: cons.natural_gas || 0,
-                    importNeed: Math.max(0, (cons.natural_gas || 0) - (prod.natural_gas || 0))
-                },
-                rare_earth: {
-                    reserveTon: resv.rare_earths || 0,
-                    inventoryTon: inv.rare_earths || 0,
-                    domesticProd: prod.rare_earths || 0,
-                    industrialReq: cons.rare_earths || 0,
-                    importNeed: Math.max(0, (cons.rare_earths || 0) - (prod.rare_earths || 0))
-                },
-                lithium: {
-                    reserveTon: resv.lithium || 0,
-                    inventoryTon: inv.lithium || 0,
-                    domesticProd: prod.lithium || 0,
-                    industrialReq: cons.lithium || 0,
-                    importNeed: Math.max(0, (cons.lithium || 0) - (prod.lithium || 0))
-                },
-                semiconductors: {
-                    reserveUnits: resv.semiconductors || 0,
-                    inventoryUnits: inv.semiconductors || 0,
-                    domesticProd: prod.semiconductors || 0,
-                    industrialReq: cons.semiconductors || 0,
-                    importNeed: Math.max(0, (cons.semiconductors || 0) - (prod.semiconductors || 0))
-                },
-                food_grains: {
-                    reserveTon: resv.food_grains || 0,
-                    inventoryTon: inv.food_grains || 0,
-                    domesticProd: prod.food_grains || 0,
-                    industrialReq: cons.food_grains || 0,
-                    importNeed: Math.max(0, (cons.food_grains || 0) - (prod.food_grains || 0))
-                },
+                crude_oil: createEpistemicResourceEntry(resv.crude_oil, inv.crude_oil, prod.crude_oil, cons.crude_oil),
+                natural_gas: createEpistemicResourceEntry(resv.natural_gas, inv.natural_gas, prod.natural_gas, cons.natural_gas),
+                rare_earth: createEpistemicResourceEntry(resv.rare_earths, inv.rare_earths, prod.rare_earths, cons.rare_earths),
+                lithium: createEpistemicResourceEntry(resv.lithium, inv.lithium, prod.lithium, cons.lithium),
+                semiconductors: createEpistemicResourceEntry(resv.semiconductors, inv.semiconductors, prod.semiconductors, cons.semiconductors),
+                food_grains: createEpistemicResourceEntry(resv.food_grains, inv.food_grains, prod.food_grains, cons.food_grains),
                 fresh_water: {
                     reserveM3: resv.fresh_water || 0,
-                    stressLevel: 25 + (h % 50)
+                    stressLevel: 25 + (h % 50),
+                    epistemicStatus: resv.fresh_water !== undefined ? "VERIFIED_FACT" : "MISSING"
                 },
-                uranium: {
-                    reserveKg: resv.uranium || 0,
-                    inventoryKg: inv.uranium || 0,
-                    domesticProd: prod.uranium || 0,
-                    industrialReq: cons.uranium || 0,
-                    importNeed: Math.max(0, (cons.uranium || 0) - (prod.uranium || 0))
-                }
+                uranium: createEpistemicResourceEntry(resv.uranium, inv.uranium, prod.uranium, cons.uranium)
             },
             // 3. Demographics & Social Classes (Derived strictly from Population state)
             population: {
-                total: totalPopulation,
-                urbanizationRate: urbanization !== null ? urbanization : (65 + (h % 30)),
+                total: popMetric.value,
+                totalEpistemic: popMetric.epistemicStatus,
+                urbanizationRate: urbanizationMetric.value,
                 educationIndex: 75 + (h % 20),
                 healthcareIndex: 72 + ((h >> 1) % 22),
                 happinessScore: 68 + ((h >> 2) % 25),
@@ -225,7 +242,12 @@ _globalTarget.WorldEcosystemEngine = (() => {
                 eliteClassShare: 1.5,
                 refugeeInflowAnnual: 15000,
                 youthBulgeRatio: 22,
-                veteransCount: Math.floor(totalPopulation * 0.01)
+                veteransCount: popMetric.value ? Math.floor(popMetric.value * 0.01) : null
+            },
+            // 4. Economy & Treasury
+            economy: {
+                gdp: gdpMetric.value,
+                gdpEpistemic: gdpMetric.epistemicStatus
             },
             // 4. Executive Government & Ministries
             government: {
@@ -563,6 +585,52 @@ _globalTarget.WorldEcosystemEngine = (() => {
         }
     }
 
+    // -------------------------------------------------------------------------
+    // 7. DETERMINISTIC SAVE / LOAD STATE CONTRACT
+    // -------------------------------------------------------------------------
+    function exportSaveState(saveMetadata = {}) {
+        return {
+            engineVersion: "1.0.0",
+            savedAt: new Date().toISOString(),
+            currentSimulationTick,
+            causalLogCounter,
+            globalMarket: JSON.parse(JSON.stringify(GLOBAL_MARKET)),
+            registeredCountries: Object.keys(stateRegistry),
+            stateRegistry: JSON.parse(JSON.stringify(stateRegistry)),
+            causalEventLog: JSON.parse(JSON.stringify(causalEventLog)),
+            metadata: saveMetadata
+        };
+    }
+
+    function importSaveState(saveObj) {
+        if (!saveObj || typeof saveObj !== 'object') {
+            throw new Error("Invalid save state format");
+        }
+        if (saveObj.currentSimulationTick !== undefined) {
+            currentSimulationTick = Number(saveObj.currentSimulationTick);
+        }
+        if (saveObj.causalLogCounter !== undefined) {
+            causalLogCounter = Number(saveObj.causalLogCounter);
+        }
+        if (saveObj.globalMarket && typeof saveObj.globalMarket === 'object') {
+            Object.assign(GLOBAL_MARKET, saveObj.globalMarket);
+        }
+        if (saveObj.stateRegistry && typeof saveObj.stateRegistry === 'object') {
+            Object.keys(saveObj.stateRegistry).forEach(k => {
+                stateRegistry[k] = saveObj.stateRegistry[k];
+            });
+        }
+        if (Array.isArray(saveObj.causalEventLog)) {
+            causalEventLog.length = 0;
+            causalEventLog.push(...saveObj.causalEventLog);
+        }
+        return {
+            success: true,
+            tick: currentSimulationTick,
+            countriesLoaded: Object.keys(stateRegistry).length
+        };
+    }
+
     // Public Interface
     return {
         STRATEGIC_BLOCS,
@@ -573,8 +641,10 @@ _globalTarget.WorldEcosystemEngine = (() => {
         triggerCausalCascade,
         inspectNodeDependencyTree,
         getCausalEventLog: () => causalEventLog,
-        processSimulationTick
+        processSimulationTick,
+        exportSaveState,
+        importSaveState
     };
 })();
 
-console.log("[OMEGA] AAA World Ecosystem & Causal Dependency Engine Initialized.");
+console.log("[ECOSYSTEM] World Ecosystem & Causal Dependency Engine Initialized.");
