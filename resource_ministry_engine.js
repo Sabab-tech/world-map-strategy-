@@ -8611,7 +8611,7 @@ _globalScope.GSRSK_DataFoundation = (() => {
         { id: 'dep-bou-craa-p', name: 'Bou Craa Phosphate Open-Cast', country: 'MOROCCO', countryCode: 'MAR', lat: 26.32, lng: -12.85, resId: 'phosphate', category: 'agricultural_chemicals', reserves: '1.2 Billion Tons P2O5', grade: '72% BPL Sedimentary', status: 'ACTIVE_PRODUCING', owner: 'OCP Group', operator: 'Phosboucraa' },
         { id: 'dep-weipa-al', name: 'Weipa Bauxite Plateau', country: 'AUSTRALIA', countryCode: 'AUS', lat: -12.63, lng: 141.87, resId: 'bauxite', category: 'strategic_metals', reserves: '1.4 Billion Tons Bauxite', grade: '52.5% Al2O3 Pisolitic', status: 'ACTIVE_PRODUCING', owner: 'Rio Tinto', operator: 'Weipa Operations' },
         { id: 'dep-bibiyana-gas', name: 'Bibiyana Natural Gas Field', country: 'BANGLADESH', countryCode: 'BGD', lat: 24.63, lng: 91.65, resId: 'natural_gas', category: 'hydrocarbons', reserves: '4.5 TCF Gas', grade: 'High Methane Sweet Gas', status: 'ACTIVE_PRODUCING', owner: 'Petrobangla / Chevron', operator: 'Chevron Bangladesh' },
-        { id: 'dep-barapukuria-coal', name: 'Barapukuria Coal Basin', country: 'BANGLADESH', countryCode: 'BGD', lat: 25.55, lng: 88.96, resId: 'iron_ore', category: 'industrial_metals', reserves: '390 Million Tons Bituminous', grade: 'Low Ash High Energy Coal', status: 'ACTIVE_PRODUCING', owner: 'Petrobangla', operator: 'BCMCL' },
+        { id: 'dep-barapukuria-coal', name: 'Barapukuria Coal Basin', country: 'BANGLADESH', countryCode: 'BGD', lat: 25.55, lng: 88.96, resId: 'natural_gas', category: 'hydrocarbons', reserves: '390 Million Tons Bituminous Coal / Methane', grade: 'Low Ash High Energy Coal & CBM', status: 'ACTIVE_PRODUCING', owner: 'Petrobangla', operator: 'BCMCL' },
         { id: 'dep-titas-gas', name: 'Titas Gas Field Reservoir', country: 'BANGLADESH', countryCode: 'BGD', lat: 23.98, lng: 91.13, resId: 'natural_gas', category: 'hydrocarbons', reserves: '2.8 TCF Natural Gas', grade: '96.2% Pure Methane Gas', status: 'ACTIVE_PRODUCING', owner: 'BGFCL', operator: 'Titas Gas T&D' },
         { id: 'dep-kailashtila-cond', name: 'Kailashtila Field & NGL Plant', country: 'BANGLADESH', countryCode: 'BGD', lat: 24.87, lng: 92.01, resId: 'natural_gas', category: 'hydrocarbons', reserves: '1.9 TCF Gas / 18M BBL Condensate', grade: 'High Hydrocarbon Condensate', status: 'ACTIVE_PRODUCING', owner: 'Sylhet Gas Fields Ltd', operator: 'SGFL' },
         { id: 'dep-burgan-oil', name: 'Greater Burgan Oilfield', country: 'KUWAIT', countryCode: 'KWT', lat: 29.07, lng: 47.96, resId: 'crude_oil', category: 'hydrocarbons', reserves: '66.0 Billion BBL', grade: '31.9° API Medium Crude', status: 'ACTIVE_PRODUCING', owner: 'Kuwait Oil Company', operator: 'KOC Exploration' },
@@ -8654,6 +8654,7 @@ _globalScope.GSRSK_DataFoundation = (() => {
             this.facilityUpgrades = {};
             this.strategicReserves = {};
             this.cabinetVotes = {};
+            this.manifestStatus = null;
 
             // Synchronize on startup
             this.initPromise = this.init();
@@ -8676,14 +8677,16 @@ _globalScope.GSRSK_DataFoundation = (() => {
                                 if (res.ok) return await res.json();
                             } catch (e) {}
                         }
-                        if (typeof require !== 'undefined') {
+                        const reqFn = typeof require === 'function' ? require : (typeof globalThis !== 'undefined' && typeof globalThis.require === 'function' ? globalThis.require : null);
+                        if (reqFn) {
                             try {
-                                const fs = require('fs');
-                                const path = require('path');
+                                const fs = reqFn('fs');
+                                const path = reqFn('path');
+                                const cwd = (typeof process !== 'undefined' && typeof process.cwd === 'function') ? process.cwd() : '.';
                                 const candidates = [
-                                    path.resolve(process.cwd(), file),
-                                    path.resolve(__dirname || '.', file),
-                                    path.resolve(process.cwd(), 'public', file)
+                                    path.resolve(cwd, file),
+                                    path.resolve(cwd, 'public', file),
+                                    path.resolve('.', file)
                                 ];
                                 for (const c of candidates) {
                                     if (fs.existsSync(c)) {
@@ -8702,21 +8705,37 @@ _globalScope.GSRSK_DataFoundation = (() => {
                         fetcher('resources_2.json').catch(() => null)
                     ]);
 
+                    // Manifest Validation: Both JSON sources are authoritative and required
+                    const loadedSources = [];
                     if (res1) {
+                        loadedSources.push('resources.json');
                         const profiles1 = res1.GSRSK_Master_CountryProfiles_v14?.countryProfiles || res1.countryProfiles || {};
                         Object.assign(this.countryProfiles, profiles1);
                         if (res1.resource_types) {
                             this._mergeResourceTypes(res1.resource_types);
                         }
+                    } else {
+                        console.warn('[GSRSK Source Manifest Warning] resources.json (Part 1) could not be loaded via primary fetcher.');
                     }
 
                     if (res2) {
+                        loadedSources.push('resources_2.json');
                         const profiles2 = res2.GSRSK_Master_CountryProfiles_v14?.countryProfiles || res2.countryProfiles || {};
                         Object.assign(this.countryProfiles, profiles2);
                         if (res2.resource_types) {
                             this._mergeResourceTypes(res2.resource_types);
                         }
+                    } else {
+                        console.warn('[GSRSK Source Manifest Warning] resources_2.json (Part 2) could not be loaded via primary fetcher.');
                     }
+
+                    this.manifestStatus = {
+                        dataset: 'GLOBAL_RESOURCE_KNOWLEDGE',
+                        expectedSources: ['resources.json', 'resources_2.json'],
+                        loadedSources: loadedSources,
+                        totalCountriesIngested: Object.keys(this.countryProfiles).length,
+                        integrity: loadedSources.length === 2 ? 'CANONICAL_DUAL_INGESTION_VALIDATED' : 'PARTIAL_INGESTION'
+                    };
 
                     // Ingest into Knowledge Compiler (Part 02) and Master Engine
                     const rawSources = [res1, res2].filter(Boolean);
@@ -8755,9 +8774,9 @@ _globalScope.GSRSK_DataFoundation = (() => {
 
                     this.isReady = true;
                     const countryCount = Object.keys(this.countryProfiles).length;
-                    console.log(`[GSRSK] Resource Ministry Engine Fully Ready: ${countryCount} sovereign country profiles, ${this.deposits.length} strategic deposits, ${this.resourceTypes.length} commodities.`);
+                    console.log(`[GSRSK] Resource Ministry Engine Fully Ready: ${countryCount} sovereign country profiles, ${this.deposits.length} strategic deposits, ${this.resourceTypes.length} commodities. [Manifest: ${this.manifestStatus.integrity}]`);
 
-                    if (typeof window !== 'undefined') {
+                    if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function' && typeof CustomEvent !== 'undefined') {
                         window.dispatchEvent(new CustomEvent('RESOURCE_STATE_UPDATED', { detail: { engine: this } }));
                     }
                 } catch (err) {
@@ -8843,134 +8862,26 @@ _globalScope.GSRSK_DataFoundation = (() => {
                 const k = allKeys[i];
                 const prof = this.countryProfiles[k];
                 if (prof && prof.identity) {
-                    if (prof.identity.countryCode === iso || (prof.identity.name && prof.identity.name.toUpperCase() === String(countryKey).toUpperCase())) {
+                    if (prof.identity.countryCode === iso || prof.identity.iso3 === iso || (prof.identity.name && prof.identity.name.toUpperCase() === String(countryKey).toUpperCase())) {
                         return prof;
                     }
                 }
             }
 
-            // Return synthesized fallback 25-section sovereign profile
-            const countryName = String(countryKey || 'SOVEREIGN NATION').replace(/_/g, ' ').toUpperCase();
+            // Return strictly honest profile with unknown state according to epistemic standards
+            const countryName = String(countryKey || 'UNKNOWN_COUNTRY').replace(/_/g, ' ').toUpperCase();
             return {
                 identity: {
-                    resourceSystemId: `GSRSK-SYS-${iso}-2026`,
+                    countryId: iso,
+                    iso3: iso,
                     name: countryName,
-                    officialName: `People's Democratic Republic of ${countryName}`,
-                    countryCode: iso,
-                    region: 'Asia / Pacific / Trans-Eurasian',
-                    sovereigntyType: 'Sovereign Republic & Geopolitical Powerhouse'
+                    officialName: countryName,
+                    status: 'UNKNOWN'
                 },
-                geography: {
-                    capital: 'National Administrative Center',
-                    landAreaKm2: 147570,
-                    exclusiveEconomicZoneKm2: 118813,
-                    coastlineKm: 710,
-                    topographyClasses: ['Alluvial Plain', 'Deltaic Basins', 'Coastal Belt', 'Highland Mineral Formations']
-                },
-                administrative_resource_regions: [
-                    { name: 'Northern Industrial Belt', type: 'Manufacturing & Heavy Coal Hub', resourceTags: ['Energy', 'Coal', 'Limestone'] },
-                    { name: 'Eastern Hydrocarbon Basin', type: 'Natural Gas & Condensate Corridor', resourceTags: ['Natural Gas', 'LNG', 'Helium'] },
-                    { name: 'Southern Maritime EEZ', type: 'Offshore Deepwater Hydrocarbon & Blue Economy', resourceTags: ['Crude Oil', 'Offshore Wind', 'Silica'] },
-                    { name: 'Western Agrarian Granary', type: 'Agricultural Food Security Hub', resourceTags: ['Rice', 'Wheat', 'Freshwater Aquifers'] }
-                ],
-                resource_domain: {
-                    resourceRichnessClass: 'Extensive & Stratified',
-                    resourceDiversityClass: 'High-Purity Industrial Matrix',
-                    majorResourceCount: 17,
-                    strategicResourceCount: 8
-                },
-                geological_context: {
-                    majorGeologicalDomains: ['Bengal Foredeep Basin', 'Precambrian Basement Complex', 'Tertiary Fold Belt'],
-                    sedimentaryBasins: ['Surma Basin', 'Hatía Trough', 'Faridpur Trough', 'Offshore Bengal Fan'],
-                    tectonicSetting: 'Indian Plate Continental Convergence Zone'
-                },
-                mineral_resource_base: {
-                    metallic: ['Titanium Placer Sands', 'Zircon', 'Rutile', 'Magnetite Heavy Sands'],
-                    criticalMinerals: ['Monazite (Thorium/REE)', 'Ilmenite', 'Silica Quartz'],
-                    nonMetallic: ['High-Purity Limestone', 'White Clay (Kaolin)', 'Gravel/Hard Rock', 'Glass Sand']
-                },
-                hydrocarbon_resource_base: {
-                    oil: ['Haripur Oilfield Complex', 'Kailashtila Deep Oil Rim', 'Offshore Block 11/12'],
-                    naturalGas: ['Bibiyana Field (4.5 TCF)', 'Titas Reservoir (2.8 TCF)', 'Rashidpur Basin', 'Jalalabad Field'],
-                    gasHydrates: ['Offshore Bay of Bengal Methane Hydrate Belt (Est. 17-25 TCF)']
-                },
-                energy_resource_base: {
-                    solarResourceZones: ['Chittagong Coastal Solar Park (1.8 GW/yr irradiance)', 'Barind Tract Solar Zone'],
-                    windZones: ['Kutubdia Offshore Wind Corridor', 'Kuakata Coastal Wind Farm'],
-                    nuclearStatus: ['Rooppur VVER-1200 Dual Reactor (2,400 MWe Baseload Grid)']
-                },
-                water_resource_base: {
-                    groundwaterAquifers: ['Deep Plio-Pleistocene Confined Aquifer Grid (Ultra-Pure)'],
-                    riverSystems: ['Padma-Meghna-Jamuna Transboundary System (1.2 Trillion m3/yr runoff)'],
-                    desalinationPlants: ['Chittagong Port Industrial RO Facility', 'Matarbari Mega Energy RO Hub']
-                },
-                forest_resource_base: {
-                    mangroveEcosystem: ['Sundarbans World Biosphere Reserve (6,017 km2 Carbon Sink)'],
-                    commercialTimber: ['Chittagong Hill Tracts Teak & Bamboo Industrial Reserves']
-                },
-                agricultural_resource_base: {
-                    grains: ['Triple-Crop Rice Production (38.5M Tons/yr)', 'Wheat & Maize Corridors'],
-                    commercialCrops: ['Golden Fiber Jute (World Dominance)', 'Sylhet Organic Tea Estates']
-                },
-                strategic_resources: {
-                    primaryEndowments: ['High-Methane Sweet Natural Gas', 'Deep Barapukuria Bituminous Coal', 'Heavy Mineral Sands'],
-                    sovereignAutonomyRating: '88.4 / 100 (Autonomous Core)'
-                },
-                resource_dependency: {
-                    vulnerabilityIndex: 'Low (Diversified Strategic Energy & Agrarian Base)',
-                    keyImports: ['Petroleum Refined Products', 'Class 1 Lithium Battery Grade', 'Potash Crop Fertilizers']
-                },
-                resource_quality_context: {
-                    gasMethanePurity: '96.5% Ultra-Clean Pipeline Quality',
-                    coalCalorificValue: '6,400 kcal/kg Low-Sulfur Thermal Coal'
-                },
-                extraction_context: {
-                    activeWells: 114,
-                    activeMines: 12,
-                    extractionEfficiency: '94.2% Automated SCADA Extraction'
-                },
-                processing_resource_context: {
-                    refineries: ['Eastern Refinery Expansion (3.0M MT/yr)', 'Bibiyana Molecular NGL Fractionation'],
-                    fertilizerComplexes: ['Shahjalal & Ghorashal-Polash Urea Super-Complexes (1.8M MT/yr)']
-                },
-                resource_industrial_context: {
-                    steelMills: ['BSRM & Abul Khair Electric Arc Furnace Megamills (4.2M MT/yr Steel)'],
-                    shipbreakingRecycling: ['Sitakunda Green Certified Maritime Ship Recycling Zone']
-                },
-                resource_infrastructure_context: {
-                    ports: ['Matarbari Deep Sea Port (18.5m draft)', 'Chittagong Port Gateway', 'Mongla Port Hub'],
-                    pipelines: ['National Gas Grid 30-inch Looplines', 'Deepwater Single Point Mooring (SPM) Pipeline'],
-                    refineries: ['Eastern Refinery Ltd (ERL-2)', 'Ashuganj Petrochemical Complex']
-                },
-                resource_transport_context: {
-                    railFreight: ['Dhaka-Chittagong High-Speed Rail Freight Corridor', 'Padma Rail Link'],
-                    inlandWaterways: ['BIWTA Class-1 Navigational Riverine Cargo System']
-                },
-                resource_constraints: {
-                    environmentalSafeguards: ['Zero-Discharge Industrial Effluent Treatment Mandate'],
-                    gridInterconnection: ['Cross-Border High-Voltage Direct Current (HVDC 500kV) Links']
-                },
-                resource_risks: {
-                    monsoonFlooding: 'Mitigated by Automated Polder Embankments & Sluice Gates',
-                    globalCommodityPriceShocks: 'Hedging via Long-Term Bilateral Sovereign Accords'
-                },
-                resource_potential: {
-                    undiscoveredGasProspects: '12.4 TCF High-Probability Deep Prospects in Southern Blocks',
-                    criticalMineralsReserveValue: 'Estimated $42 Billion in Coastal Heavy Mineral Deposits'
-                },
-                discovery_context: {
-                    geologicalSurveys: '3D Seismic Marine Survey 2024-2026 Completed',
-                    provenReservesConfidence: '99.4% Epistemic Confidence'
-                },
-                provenance: {
-                    dataConfidence: '100% Cryptographically Verified',
-                    lastVerified: 'Current Simulation Cycle 2026',
-                    auditedBy: 'GSRSK Sovereign World Knowledge Compiler & Geospatial AI'
-                },
-                srie_asymmetrical_salience: {
-                    geopoliticalLeverage: 'High (Control of Trans-Bay Energy Corridor & Maritime Silk Route)',
-                    foodSovereigntyScore: '96.2 / 100'
-                }
+                status: 'NOT_FOUND_IN_CANONICAL_DATASET',
+                resource_domain: { knownResourceTypes: [] },
+                resource_endowment: { known: [], probable: [], potential: [], absentOrNegligible: [] },
+                strategic_resources: { domesticallyAvailable: [], importDependent: [] }
             };
         }
 
@@ -8980,21 +8891,42 @@ _globalScope.GSRSK_DataFoundation = (() => {
         }
 
         getSummary(countryKey) {
-            const activeIso = this.normalizeCountryCode(countryKey || (typeof window !== 'undefined' && window.currentActiveCountry) || 'BGD');
+            const activeIso = this.normalizeCountryCode(countryKey || (typeof window !== 'undefined' && (window.CountryIOS?.activeCountry || window.currentActiveCountry)) || 'BGD');
             const countryProf = this.getCountryResourceProfile(activeIso);
             const countryName = countryProf.identity?.name || activeIso;
+            const countryDeposits = this.getDepositsForCountry(activeIso);
 
-            // Generate 17 commodities status with active multipliers
+            // Extract known/endowed resource IDs for this country
+            const knownTags = new Set();
+            if (countryProf.resource_domain?.knownResourceTypes) {
+                countryProf.resource_domain.knownResourceTypes.forEach(t => knownTags.add(String(t).toLowerCase()));
+            }
+            if (countryProf.strategic_resources?.domesticallyAvailable) {
+                countryProf.strategic_resources.domesticallyAvailable.forEach(t => knownTags.add(String(t).toLowerCase()));
+            }
+            if (countryProf.resource_endowment?.known) {
+                countryProf.resource_endowment.known.forEach(t => knownTags.add(String(t).toLowerCase()));
+            }
+            countryDeposits.forEach(d => {
+                if (d.resId) knownTags.add(String(d.resId).toLowerCase());
+            });
+
+            // Generate commodities status dynamically modeled from actual country endowment & deposits
             const resourcesList = this.resourceTypes.map(res => {
                 const upgradeMul = this.facilityUpgrades[res.id] || 1.0;
                 const bonusSPR = this.strategicReserves[res.id] || 0;
-                const prod = Math.round(res.dailyOutput * upgradeMul);
+                const isEndowed = knownTags.has(res.id.toLowerCase()) || 
+                                  knownTags.has(res.name.toLowerCase()) || 
+                                  countryDeposits.some(d => d.resId === res.id);
+                
+                const prodMultiplier = isEndowed ? 1.0 : 0.08;
+                const prod = Math.round(res.dailyOutput * prodMultiplier * upgradeMul);
                 const demand = res.dailyDemand;
                 const net = prod - demand;
-                const selfSuff = Math.min(250, Math.round((prod / (demand || 1)) * 100));
-                const stockDays = Math.max(15, Math.round((bonusSPR + (prod * 45)) / (demand || 1)));
-                const warehouseStock = Math.round(bonusSPR + (prod * 60));
-                const activeFac = Math.round(3 + (upgradeMul * 4));
+                const selfSuff = Math.min(300, Math.round((prod / (demand || 1)) * 100));
+                const stockDays = Math.max(8, Math.round((bonusSPR + (prod * 35)) / (demand || 1)));
+                const warehouseStock = Math.round(bonusSPR + (prod * 50));
+                const activeFac = isEndowed ? Math.round(2 + (upgradeMul * 3)) : 0;
 
                 return {
                     id: res.id,
@@ -9016,55 +8948,45 @@ _globalScope.GSRSK_DataFoundation = (() => {
                 };
             });
 
-            // Global Metrics
+            // Global Metrics dynamically calculated for this country
             const totalStockDays = Math.round(resourcesList.reduce((acc, r) => acc + r.stockDays, 0) / resourcesList.length);
             const avgSufficiency = Math.round(resourcesList.reduce((acc, r) => acc + r.selfSufficiencyRatio, 0) / resourcesList.length);
+            const totalFacilities = resourcesList.reduce((acc, r) => acc + r.activeFacilities, 0);
             const activeSurveysList = Array.from(this.activeSurveys);
 
             const globalMetrics = {
                 autonomyIndex: avgSufficiency,
                 strategicReservesTotalDays: totalStockDays,
-                activeFacilitiesTotal: resourcesList.reduce((acc, r) => acc + r.activeFacilities, 0),
+                activeFacilitiesTotal: totalFacilities,
                 surveysUnderway: activeSurveysList.map(id => {
                     const r = this.resourceTypes.find(x => x.id === id) || { name: id, icon: '⛏️' };
-                    return { id, name: r.name, icon: r.icon, progress: 68, yieldPotential: 'High (+18.4%)' };
+                    return { id, name: r.name, icon: r.icon, progress: 74, yieldPotential: 'High (+22.5%)' };
                 })
             };
 
-            const briefing = `Sovereign resource grid for ${countryName} is operating in full geopolitical equilibrium. 17 strategic commodities are monitored with continuous multi-facility SCADA telemetry. Strategic Autonomy Index is ${avgSufficiency}% with ${totalStockDays} days of aggregate sovereign emergency reserves.`;
+            const briefing = `Sovereign resource grid for ${countryName} (${activeIso}) is operating under autonomous multi-echelon oversight. ${resourcesList.length} strategic commodities are tracked against sovereign endowment. Strategic Autonomy Index is ${avgSufficiency}% with ${totalStockDays} days of aggregate sovereign emergency reserves.`;
 
             const debates = [
                 {
-                    id: 'deb-lng-expansion',
-                    avatar: '🛢️',
+                    id: 'deb-energy-expansion',
+                    avatar: '⚡',
                     speaker: 'Dr. Tariqul Islam',
                     role: 'Secretary of Energy & Hydrocarbons',
-                    text: `We recommend authorizing a $500M Sovereign Expansion into deepwater LNG liquefaction and offshore gas storage to guarantee continuous baseload grid power during winter peak demand.`,
+                    text: `We recommend authorizing a strategic expansion into domestic natural gas extraction, refinery upgrading, and baseload grid storage to guarantee sovereign industrial resilience.`,
                     options: [
-                        { label: '✅ AUTHORIZE DECREE (+$25M/s Gas)', action: 'expand_gas' },
-                        { label: '❌ POSTPONE FOR SPR BUFFER', action: 'buffer_spr' }
+                        { label: '✅ AUTHORIZE UPGRADE (+25% Output)', action: 'expand_facility' },
+                        { label: '📦 EXPAND SPR (+50K Units)', action: 'add_reserve' }
                     ]
                 },
                 {
-                    id: 'deb-critical-lithium',
-                    avatar: '🔋',
+                    id: 'deb-critical-minerals',
+                    avatar: '🔬',
                     speaker: 'Engr. Sarah Chen',
                     role: 'Chief of Critical Minerals Council',
-                    text: `Global lithium and rare earth markets face escalating trade friction. Fast-tracking domestic geological survey radar will uncover local pegmatite and heavy mineral sand reserves.`,
+                    text: `Global critical mineral supply chains require domestic geological survey deployment and strategic bilateral trade agreements to safeguard industrial supply security.`,
                     options: [
-                        { label: '⛏️ LAUNCH NATIONAL SURVEY', action: 'survey_lithium' },
-                        { label: '🤝 SIGN IMPORT TREATY', action: 'treaty_lithium' }
-                    ]
-                },
-                {
-                    id: 'deb-grain-mandate',
-                    avatar: '🌾',
-                    speaker: 'Director Mahmudur Rahman',
-                    role: 'Food & Strategic Grain Reserve Board',
-                    text: `Enforcing a 100% Hermetic Food Grain Mandate across national silos will insulate the population from trans-boundary fertilizer and wheat inflation shocks.`,
-                    options: [
-                        { label: '📦 ENFORCE GRAIN MANDATE', action: 'mandate_grain' },
-                        { label: '💵 ALLOCATE AGRI SUBSIDY', action: 'subsidy_agri' }
+                        { label: '⛏️ LAUNCH GEOLOGICAL SURVEY', action: 'survey' },
+                        { label: '🗺️ ENGAGE MAP SENSORS', action: 'focus_map' }
                     ]
                 }
             ];
@@ -9115,10 +9037,14 @@ _globalScope.GSRSK_DataFoundation = (() => {
 
         executeDirective(action, resId, opt) {
             const resObj = this.resourceTypes.find(r => r.id === resId) || { name: resId, icon: '💎' };
-            const countryName = (typeof window !== 'undefined' && window.currentActiveCountry) || 'BANGLADESH';
+            const countryName = (typeof window !== 'undefined' && (window.CountryIOS?.activeCountry || window.currentActiveCountry)) || 'BANGLADESH';
 
             if (action === 'survey') {
                 this.activeSurveys.add(resId);
+                // Interlock with Part 04 / Part 05 if master engine is active
+                if (this.masterEngine && typeof this.masterEngine.scheduleSimulationCycle === 'function') {
+                    this.masterEngine.scheduleSimulationCycle();
+                }
                 if (typeof window !== 'undefined' && window.showOmegaNotification) {
                     window.showOmegaNotification('⛏️ GEOLOGICAL SURVEY DISPATCHED', `Autonomous deep-earth exploration initiated for ${resObj.name}! Discovered reserve confidence increased.`, 'success');
                 }
@@ -9126,28 +9052,39 @@ _globalScope.GSRSK_DataFoundation = (() => {
                 const cur = this.facilityUpgrades[resId] || 1.0;
                 this.facilityUpgrades[resId] = +(cur + 0.25).toFixed(2);
 
+                // Interlock with Part 09 / Part 06 production capacity
+                if (this.part09 && typeof this.part09.expandFacilityCapacity === 'function') {
+                    try { this.part09.expandFacilityCapacity(resId, 0.25); } catch (e) {}
+                }
+
                 if (typeof window !== 'undefined') {
                     if (window.resources && window.resources.cash) {
                         window.resources.cash = Math.max(0, window.resources.cash - 10000000);
                     }
                     if (window.resourceRates) {
-                        if (resId === 'crude_oil') window.resourceRates.oil += 250;
-                        if (resId === 'iron_ore') window.resourceRates.steel += 150;
-                        if (resId === 'uranium') window.resourceRates.uranium += 5;
+                        if (resId === 'crude_oil') window.resourceRates.oil = (window.resourceRates.oil || 0) + 250;
+                        if (resId === 'natural_gas') window.resourceRates.energy = (window.resourceRates.energy || 0) + 200;
+                        if (resId === 'iron_ore') window.resourceRates.steel = (window.resourceRates.steel || 0) + 150;
+                        if (resId === 'uranium') window.resourceRates.uranium = (window.resourceRates.uranium || 0) + 5;
                     }
                     if (window.showOmegaNotification) {
-                        window.showOmegaNotification('🏭 FACILITY EXPANSION AUTHORIZED', `Industrial processing throughput for ${resObj.name} boosted to ${(this.facilityUpgrades[resId] * 100)}%!`, 'success');
+                        window.showOmegaNotification('🏭 FACILITY EXPANSION AUTHORIZED', `Industrial processing throughput for ${resObj.name} boosted to ${Math.round(this.facilityUpgrades[resId] * 100)}%!`, 'success');
                     }
                 }
             } else if (action === 'add_reserve') {
                 const cur = this.strategicReserves[resId] || 0;
                 this.strategicReserves[resId] = cur + 50000;
 
+                // Interlock with Part 07 inventory batch storage
+                if (this.part07 && typeof this.part07.adjustInventoryBalance === 'function') {
+                    try { this.part07.adjustInventoryBalance(resId, 50000, 'STRATEGIC_PETROLEUM_RESERVE_INJECTION'); } catch (e) {}
+                }
+
                 if (typeof window !== 'undefined') {
                     if (window.resources) {
-                        if (resId === 'crude_oil') window.resources.oil += 50000;
-                        if (resId === 'iron_ore') window.resources.steel += 20000;
-                        if (resId === 'uranium') window.resources.uranium += 100;
+                        if (resId === 'crude_oil') window.resources.oil = (window.resources.oil || 0) + 50000;
+                        if (resId === 'iron_ore') window.resources.steel = (window.resources.steel || 0) + 20000;
+                        if (resId === 'uranium') window.resources.uranium = (window.resources.uranium || 0) + 100;
                     }
                     if (window.showOmegaNotification) {
                         window.showOmegaNotification('📦 STRATEGIC RESERVE STOCKPILED', `+50,000 units of ${resObj.name} transferred to sovereign emergency bunkers!`, 'success');
@@ -9168,7 +9105,7 @@ _globalScope.GSRSK_DataFoundation = (() => {
                 this.cabinetVotes[resId] = opt;
                 if (typeof window !== 'undefined') {
                     if (window.resources && window.resourceRates) {
-                        window.resourceRates.cash += 1000;
+                        window.resourceRates.cash = (window.resourceRates.cash || 0) + 1000;
                     }
                     if (window.showOmegaNotification) {
                         window.showOmegaNotification('🏛️ EXECUTIVE DECREE ENACTED', `Cabinet policy decree for ${resId} successfully passed into law!`, 'success');
@@ -9176,8 +9113,8 @@ _globalScope.GSRSK_DataFoundation = (() => {
                 }
             }
 
-            // Fire reactive event
-            if (typeof window !== 'undefined') {
+            // Fire reactive events
+            if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function' && typeof CustomEvent !== 'undefined') {
                 window.dispatchEvent(new CustomEvent('RESOURCE_STATE_UPDATED', { detail: { action, resId, opt } }));
                 window.dispatchEvent(new CustomEvent('MINISTRY_STATE_CHANGED', { detail: { ministryId: 'economy' } }));
             }
