@@ -8574,7 +8574,7 @@ _globalScope.GSRSK_DataFoundation = (() => {
     // Deposits Catalog, 17 Commodities, and Interactive Command Hubs
     // =========================================================================
 
-    const CANONICAL_RESOURCE_TYPES = [
+    const SCHEMA_CATALOG_RESOURCE_TYPES = [
         { id: 'crude_oil', name: 'Crude Petroleum', bnName: 'অপরিশোধিত তেল', icon: '🛢️', category: 'hydrocarbons', color: '#eab308', unit: 'BBL', basePrice: 82.5, dailyOutput: 18500, dailyDemand: 16200, strategicImportance: 'critical', processChain: 'Drilling ➔ Distillation ➔ Petrochem Refineries ➔ Strategic Reserves' },
         { id: 'natural_gas', name: 'Natural Gas / LNG', bnName: 'প্রাকৃতিক গ্যাস', icon: '🔥', category: 'hydrocarbons', color: '#38bdf8', unit: 'MCF', basePrice: 3.4, dailyOutput: 32000, dailyDemand: 28500, strategicImportance: 'critical', processChain: 'Wellhead Extraction ➔ Dehydration ➔ LNG Cryogenic Liquefaction ➔ Baseload Power' },
         { id: 'uranium', name: 'Uranium Yellowcake', bnName: 'ইউরেনিয়াম', icon: '⚛️', category: 'nuclear_energy', color: '#a855f7', unit: 'KG', basePrice: 85.0, dailyOutput: 120, dailyDemand: 95, strategicImportance: 'critical', processChain: 'In-situ Leaching ➔ Centrifuge Enrichment (3-5% / 90%) ➔ Fuel Bundles ➔ Baseload Reactor' },
@@ -8594,7 +8594,9 @@ _globalScope.GSRSK_DataFoundation = (() => {
         { id: 'wheat', name: 'Strategic Food Grain', bnName: 'খাদ্য শস্য ও গম', icon: '🍞', category: 'food_security', color: '#f59e0b', unit: 'TONS', basePrice: 280.0, dailyOutput: 65000, dailyDemand: 59000, strategicImportance: 'critical', processChain: 'Precision Irrigation ➔ Automated Harvesting ➔ Grain Silo Hermetic Storage ➔ Food Reserve' }
     ];
 
-    const CANONICAL_GLOBAL_DEPOSITS = [
+    const CANONICAL_RESOURCE_TYPES = SCHEMA_CATALOG_RESOURCE_TYPES;
+
+    const SCHEMA_CATALOG_GLOBAL_DEPOSITS = [
         { id: 'dep-ghawar-oil', name: 'Ghawar Oil Super-Giant', country: 'SAUDI ARABIA', countryCode: 'SAU', lat: 25.4, lng: 49.6, resId: 'crude_oil', category: 'hydrocarbons', reserves: '48.2 Billion BBL', grade: '34° API Arab Light', status: 'ACTIVE_PRODUCING', owner: 'Saudi Aramco', operator: 'Aramco Upstream' },
         { id: 'dep-permian-oil', name: 'Permian Basin Super-Play', country: 'USA', countryCode: 'USA', lat: 31.8, lng: -102.3, resId: 'crude_oil', category: 'hydrocarbons', reserves: '60.5 Billion BBL', grade: '40° API WTI Midland', status: 'ACTIVE_PRODUCING', owner: 'Multi-Operator Joint Basin', operator: 'Pioneer & Chevron' },
         { id: 'dep-escondida-cu', name: 'Escondida Copper Mine', country: 'CHILE', countryCode: 'CHL', lat: -24.26, lng: -69.07, resId: 'copper', category: 'strategic_metals', reserves: '32.6 Million Tons', grade: '0.85% Cu Sulfide', status: 'ACTIVE_PRODUCING', owner: 'BHP & Rio Tinto', operator: 'Minera Escondida' },
@@ -8640,16 +8642,19 @@ _globalScope.GSRSK_DataFoundation = (() => {
         { id: 'dep-dead-sea-potash', name: 'Dead Sea Minerals & Bromine', country: 'JORDAN', countryCode: 'JOR', lat: 31.05, lng: 35.36, resId: 'potash', category: 'agricultural_chemicals', reserves: '1.5 Billion Tons Carnallite', grade: 'High Purity Potash/Bromine', status: 'ACTIVE_PRODUCING', owner: 'Arab Potash Company & ICL', operator: 'APC Industrial Plant' }
     ];
 
+    const CANONICAL_GLOBAL_DEPOSITS = SCHEMA_CATALOG_GLOBAL_DEPOSITS;
+
     /**
      * Unified Autonomous Resource Ministry Engine
      */
     class AutonomousResourceMinistryEngine {
         constructor() {
-            this.resourceTypes = CANONICAL_RESOURCE_TYPES;
-            this.deposits = CANONICAL_GLOBAL_DEPOSITS;
+            this.resourceTypes = SCHEMA_CATALOG_RESOURCE_TYPES.map(r => Object.assign({}, r));
+            this.deposits = SCHEMA_CATALOG_GLOBAL_DEPOSITS.map(d => Object.assign({}, d));
             this.countryProfiles = {};
             this.isReady = false;
             this.isLoading = false;
+            this.status = 'UNINITIALIZED';
             this.activeSurveys = new Set(['lithium', 'rare_earth']);
             this.facilityUpgrades = {};
             this.strategicReserves = {};
@@ -8664,6 +8669,7 @@ _globalScope.GSRSK_DataFoundation = (() => {
             if (this.isReady) return this;
             if (this.isLoading && this.initPromise) return this.initPromise;
             this.isLoading = true;
+            this.status = 'INITIALIZING';
 
             const initWork = async () => {
                 try {
@@ -8705,40 +8711,133 @@ _globalScope.GSRSK_DataFoundation = (() => {
                         fetcher('resources_2.json').catch(() => null)
                     ]);
 
-                    // Manifest Validation: Both JSON sources are authoritative and required
+                    // FIX 01 & FIX 03: STRICT TWO-SOURCE ATOMIC INITIALIZATION
+                    // Both JSON sources are authoritative and strictly required.
+                    // If Part 1 missing OR Part 2 missing -> NOT READY -> NO SIMULATION.
                     const loadedSources = [];
-                    if (res1) {
-                        loadedSources.push('resources.json');
-                        const profiles1 = res1.GSRSK_Master_CountryProfiles_v14?.countryProfiles || res1.countryProfiles || {};
-                        Object.assign(this.countryProfiles, profiles1);
-                        if (res1.resource_types) {
-                            this._mergeResourceTypes(res1.resource_types);
-                        }
-                    } else {
-                        console.warn('[GSRSK Source Manifest Warning] resources.json (Part 1) could not be loaded via primary fetcher.');
+                    if (res1) loadedSources.push('resources.json');
+                    if (res2) loadedSources.push('resources_2.json');
+
+                    if (!res1 || !res2) {
+                        const missingSource = !res1 && !res2 ? 'Both resources.json and resources_2.json' : (!res1 ? 'resources.json (Part 1)' : 'resources_2.json (Part 2)');
+                        this.isReady = false;
+                        this.status = 'BLOCKED_MISSING_MANDATORY_SOURCE';
+                        this.manifestStatus = {
+                            dataset: 'GLOBAL_RESOURCE_KNOWLEDGE',
+                            expectedSources: ['resources.json', 'resources_2.json'],
+                            loadedSources: loadedSources,
+                            expectedCountries: 197,
+                            totalCountriesIngested: 0,
+                            duplicateConflicts: 0,
+                            integrity: 'BLOCKED_MISSING_MANDATORY_SOURCE',
+                            error: `Two-source atomic requirement violated. Missing mandatory source: ${missingSource}. Simulation blocked.`
+                        };
+                        console.error(`[GSRSK CRITICAL DATA INTEGRITY ERROR] Atomic two-source initialization failed: ${missingSource} missing. Engine status set to BLOCKED (isReady = false).`);
+                        return this;
                     }
 
-                    if (res2) {
-                        loadedSources.push('resources_2.json');
-                        const profiles2 = res2.GSRSK_Master_CountryProfiles_v14?.countryProfiles || res2.countryProfiles || {};
-                        Object.assign(this.countryProfiles, profiles2);
-                        if (res2.resource_types) {
-                            this._mergeResourceTypes(res2.resource_types);
-                        }
-                    } else {
-                        console.warn('[GSRSK Source Manifest Warning] resources_2.json (Part 2) could not be loaded via primary fetcher.');
+                    // Strict Source Manifest Extraction
+                    const profiles1 = res1.GSRSK_Master_CountryProfiles_v14?.countryProfiles || res1.countryProfiles || {};
+                    const profiles2 = res2.GSRSK_Master_CountryProfiles_v14?.countryProfiles || res2.countryProfiles || {};
+
+                    const p1Count = Object.keys(profiles1).length;
+                    const p2Count = Object.keys(profiles2).length;
+                    const expectedTotal = 197;
+
+                    // Duplicate Detection between Part 1 and Part 2 (No silent overwrites)
+                    const duplicateKeys = Object.keys(profiles1).filter(k => Object.prototype.hasOwnProperty.call(profiles2, k));
+                    if (duplicateKeys.length > 0) {
+                        this.isReady = false;
+                        this.status = 'BLOCKED_CRITICAL_DATA_CONFLICT_DUPLICATE_COUNTRY';
+                        this.manifestStatus = {
+                            dataset: 'GLOBAL_RESOURCE_KNOWLEDGE',
+                            expectedSources: ['resources.json', 'resources_2.json'],
+                            loadedSources: loadedSources,
+                            expectedCountries: expectedTotal,
+                            part1Countries: p1Count,
+                            part2Countries: p2Count,
+                            totalCountriesIngested: 0,
+                            duplicateConflicts: duplicateKeys.length,
+                            duplicateKeys: duplicateKeys,
+                            integrity: 'INTEGRITY_VIOLATION_DUPLICATE_ENTITIES',
+                            error: `Duplicate country keys detected across Part 1 and Part 2: [${duplicateKeys.join(', ')}]. Atomic merge rejected.`
+                        };
+                        console.error(`[GSRSK CRITICAL DATA CONFLICT] Duplicate country keys detected:`, duplicateKeys);
+                        return this;
                     }
+
+                    // Annotate strict Provenance metadata per profile
+                    Object.keys(profiles1).forEach(k => {
+                        if (profiles1[k] && typeof profiles1[k] === 'object') {
+                            profiles1[k]._sourceProvenance = {
+                                file: 'resources.json',
+                                part: 1,
+                                declaredGlobalTotal: expectedTotal,
+                                declaredPartTotal: res1.total_countries_in_file || p1Count,
+                                version: res1.VERSION || '14.0'
+                            };
+                        }
+                    });
+
+                    Object.keys(profiles2).forEach(k => {
+                        if (profiles2[k] && typeof profiles2[k] === 'object') {
+                            profiles2[k]._sourceProvenance = {
+                                file: 'resources_2.json',
+                                part: 2,
+                                declaredGlobalTotal: expectedTotal,
+                                declaredPartTotal: res2.total_countries_in_file || p2Count,
+                                version: res2.VERSION || '14.0'
+                            };
+                        }
+                    });
+
+                    // Merge Canonical Country Profiles atomically
+                    this.countryProfiles = Object.assign({}, profiles1, profiles2);
+                    const totalCountriesIngested = Object.keys(this.countryProfiles).length;
+
+                    // Verification of Ingested Country Count against Sovereign Baseline
+                    if (totalCountriesIngested !== expectedTotal) {
+                        this.isReady = false;
+                        this.status = 'BLOCKED_INVALID_COUNTRY_COUNT';
+                        this.manifestStatus = {
+                            dataset: 'GLOBAL_RESOURCE_KNOWLEDGE',
+                            expectedSources: ['resources.json', 'resources_2.json'],
+                            loadedSources: loadedSources,
+                            expectedCountries: expectedTotal,
+                            part1Countries: p1Count,
+                            part2Countries: p2Count,
+                            totalCountriesIngested: totalCountriesIngested,
+                            duplicateConflicts: 0,
+                            integrity: 'INTEGRITY_VIOLATION_INVALID_COUNTRY_COUNT',
+                            error: `Sovereign country count mismatch: Ingested ${totalCountriesIngested}, expected strictly ${expectedTotal}.`
+                        };
+                        console.error(`[GSRSK CRITICAL ERROR] Sovereign country count mismatch: ${totalCountriesIngested} != ${expectedTotal}`);
+                        return this;
+                    }
+
+                    // Resource Types Validation & Data-Driven Commodity Merging
+                    const rConflicts = [];
+                    if (res1.resource_types) this._mergeResourceTypes(res1.resource_types, 'resources.json');
+                    if (res2.resource_types) this._mergeResourceTypes(res2.resource_types, 'resources_2.json', rConflicts);
+
+                    // Dynamic Deposit Extraction from JSON Country Profiles
+                    this._extractDepositsFromCountryProfiles();
 
                     this.manifestStatus = {
                         dataset: 'GLOBAL_RESOURCE_KNOWLEDGE',
                         expectedSources: ['resources.json', 'resources_2.json'],
                         loadedSources: loadedSources,
-                        totalCountriesIngested: Object.keys(this.countryProfiles).length,
-                        integrity: loadedSources.length === 2 ? 'CANONICAL_DUAL_INGESTION_VALIDATED' : 'PARTIAL_INGESTION'
+                        expectedCountries: expectedTotal,
+                        part1Countries: p1Count,
+                        part2Countries: p2Count,
+                        totalCountriesIngested: totalCountriesIngested,
+                        duplicateConflicts: 0,
+                        resourceTypeConflicts: rConflicts.length,
+                        integrity: 'CANONICAL_DUAL_INGESTION_VALIDATED'
                     };
 
                     // Ingest into Knowledge Compiler (Part 02) and Master Engine
-                    const rawSources = [res1, res2].filter(Boolean);
+                    const rawSources = [res1, res2];
                     let compiledModel = null;
                     const gScope = typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : global);
                     const compiler = gScope.GSRSK_WorldKnowledgeCompiler;
@@ -8772,16 +8871,27 @@ _globalScope.GSRSK_DataFoundation = (() => {
                     this.part08 = gScope.GSRSK_ResourceInfrastructureLogisticsEngine || null;
                     this.part09 = gScope.GSRSK_ResourceProductionIndustrialChainEngine || null;
 
+                    this.status = 'ACTIVE_READY';
                     this.isReady = true;
-                    const countryCount = Object.keys(this.countryProfiles).length;
-                    console.log(`[GSRSK] Resource Ministry Engine Fully Ready: ${countryCount} sovereign country profiles, ${this.deposits.length} strategic deposits, ${this.resourceTypes.length} commodities. [Manifest: ${this.manifestStatus.integrity}]`);
+                    console.log(`[GSRSK] Resource Ministry Engine Fully Ready: ${totalCountriesIngested} sovereign country profiles (Part 1: ${p1Count}, Part 2: ${p2Count}), ${this.deposits.length} strategic deposits, ${this.resourceTypes.length} commodities. [Manifest: ${this.manifestStatus.integrity}]`);
 
                     if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function' && typeof CustomEvent !== 'undefined') {
                         window.dispatchEvent(new CustomEvent('RESOURCE_STATE_UPDATED', { detail: { engine: this } }));
                     }
                 } catch (err) {
-                    console.warn("[GSRSK] Resource initialization notice (using verified fallback data):", err);
-                    this.isReady = true;
+                    this.isReady = false;
+                    this.status = 'BLOCKED_INITIALIZATION_ERROR';
+                    this.manifestStatus = {
+                        dataset: 'GLOBAL_RESOURCE_KNOWLEDGE',
+                        expectedSources: ['resources.json', 'resources_2.json'],
+                        loadedSources: [],
+                        expectedCountries: 197,
+                        totalCountriesIngested: 0,
+                        duplicateConflicts: 0,
+                        integrity: 'FAILED_INITIALIZATION_EXCEPTION',
+                        error: String(err && err.message ? err.message : err)
+                    };
+                    console.error("[GSRSK] Resource initialization critical failure (engine blocked):", err);
                 } finally {
                     this.isLoading = false;
                 }
@@ -8792,13 +8902,34 @@ _globalScope.GSRSK_DataFoundation = (() => {
             return this.initPromise;
         }
 
-        _mergeResourceTypes(typesObj) {
-            if (!typesObj) return;
-            const existingIds = new Set(this.resourceTypes.map(r => r.id));
+        _mergeResourceTypes(typesObj, sourceFile = 'UNKNOWN', conflictsList = null) {
+            if (!typesObj || typeof typesObj !== 'object') return;
+            const existingMap = new Map(this.resourceTypes.map(r => [r.id, r]));
+
             Object.keys(typesObj).forEach(k => {
-                if (!existingIds.has(k)) {
-                    const t = typesObj[k];
-                    this.resourceTypes.push({
+                const t = typesObj[k];
+                if (existingMap.has(k)) {
+                    const existing = existingMap.get(k);
+                    // Check for definition conflict
+                    if (t.category && existing.category && t.category !== existing.category) {
+                        if (conflictsList) conflictsList.push({ resourceId: k, field: 'category', fileA: existing._sourceFile || 'SCHEMA_CATALOG', valA: existing.category, fileB: sourceFile, valB: t.category });
+                    }
+                    if (t.unit && existing.unit && t.unit !== existing.unit) {
+                        if (conflictsList) conflictsList.push({ resourceId: k, field: 'unit', fieldA: existing.unit, fieldB: t.unit });
+                    }
+                    // Enrich schema catalog definition with JSON data authority
+                    if (t.name) existing.name = t.name;
+                    if (t.bnName) existing.bnName = t.bnName;
+                    if (t.category) existing.category = t.category;
+                    if (t.unit) existing.unit = t.unit;
+                    if (t.strategicImportance) existing.strategicImportance = t.strategicImportance;
+                    if (t.description) existing.processChain = t.description;
+                    if (t.basePrice) existing.basePrice = t.basePrice;
+                    if (t.dailyOutput) existing.dailyOutput = t.dailyOutput;
+                    if (t.dailyDemand) existing.dailyDemand = t.dailyDemand;
+                    existing._sourceFile = sourceFile;
+                } else {
+                    const newRes = {
                         id: k,
                         name: t.name || k.replace(/_/g, ' ').toUpperCase(),
                         bnName: t.bnName || k,
@@ -8810,7 +8941,51 @@ _globalScope.GSRSK_DataFoundation = (() => {
                         dailyOutput: t.dailyOutput || 5000,
                         dailyDemand: t.dailyDemand || 4500,
                         strategicImportance: t.strategicImportance || 'high',
-                        processChain: t.description || 'Extraction ➔ Refining ➔ National Stockpile'
+                        processChain: t.description || 'Extraction ➔ Refining ➔ National Stockpile',
+                        _sourceFile: sourceFile
+                    };
+                    this.resourceTypes.push(newRes);
+                    existingMap.set(k, newRes);
+                }
+            });
+        }
+
+        _extractDepositsFromCountryProfiles() {
+            const existingDepIds = new Set(this.deposits.map(d => d.id));
+            
+            Object.entries(this.countryProfiles).forEach(([cKey, prof]) => {
+                if (!prof || typeof prof !== 'object') return;
+                const iso = prof.identity?.iso3 || prof.identity?.countryCode || cKey;
+                const countryName = prof.identity?.name || cKey;
+
+                // Extract administrative resource regions
+                const regions = prof.administrative_resource_regions || prof.resource_regions || [];
+                if (Array.isArray(regions)) {
+                    regions.forEach((reg, idx) => {
+                        const regName = reg.name || reg.regionName || (typeof reg === 'string' ? reg : null);
+                        if (!regName) return;
+                        const depId = `dep-${iso.toLowerCase()}-${regName.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+                        if (!existingDepIds.has(depId)) {
+                            const primaryRes = reg.primaryResource || (Array.isArray(reg.resources) ? reg.resources[0] : 'natural_gas');
+                            const depRecord = {
+                                id: depId,
+                                name: `${regName} Province`,
+                                country: countryName.toUpperCase(),
+                                countryCode: iso.toUpperCase(),
+                                lat: reg.coordinates?.lat || (prof.geography?.coordinates?.lat || 20.0),
+                                lng: reg.coordinates?.lng || (prof.geography?.coordinates?.lng || 0.0),
+                                resId: String(primaryRes).toLowerCase().replace(/\s+/g, '_'),
+                                category: reg.category || 'geological_region',
+                                reserves: reg.estimatedReserves || 'Authoritative In-situ Assessment',
+                                grade: reg.grade || 'Standard Sovereign Grade',
+                                status: 'ACTIVE_PRODUCING',
+                                owner: `${countryName} National Mineral Resource Authority`,
+                                operator: `${countryName} State Extraction Co.`,
+                                _derivedFromJson: true
+                            };
+                            this.deposits.push(depRecord);
+                            existingDepIds.add(depId);
+                        }
                     });
                 }
             });
@@ -9321,9 +9496,11 @@ _globalScope.GSRSK_DataFoundation = (() => {
 
     const ResourceMinistryEngineInstance = new AutonomousResourceMinistryEngine();
     global.ResourceMinistryEngine = ResourceMinistryEngineInstance;
+    global.AutonomousResourceMinistryEngine = AutonomousResourceMinistryEngine;
 
     if (typeof window !== 'undefined') {
         window.ResourceMinistryEngine = ResourceMinistryEngineInstance;
+        window.AutonomousResourceMinistryEngine = AutonomousResourceMinistryEngine;
     }
 
 })(typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : global));
