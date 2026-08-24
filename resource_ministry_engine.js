@@ -69,22 +69,24 @@ _globalScope.GSRSK_DataFoundation = (() => {
         static get UNIT_DEFINITIONS() {
             return {
                 // MASS (Base: TONNES)
-                TONNES: { dimension: 'MASS', baseMultiplier: 1.0, aliases: ['TONNES', 'TONNE', 'TONS', 'TON', 'METRIC_TON', 'METRIC_TONS', 'MT', 'T'] },
+                TONNES: { dimension: 'MASS', baseMultiplier: 1.0, aliases: ['TONNES', 'TONNE', 'TONS', 'TON', 'METRIC_TON', 'METRIC_TONS', 'METRIC_TONS_LCE', 'METRIC_TONS_U', 'MT', 'T', 'METRIC TONS'] },
                 KG: { dimension: 'MASS', baseMultiplier: 0.001, aliases: ['KG', 'KGS', 'KILOGRAM', 'KILOGRAMS'] },
                 GRAMS: { dimension: 'MASS', baseMultiplier: 0.000001, aliases: ['G', 'GM', 'GMS', 'GRAM', 'GRAMS'] },
-                TROY_OZ: { dimension: 'MASS', baseMultiplier: 0.0000311034768, aliases: ['OZ', 'OZT', 'TROY_OZ', 'TROY_OUNCE', 'TROY_OUNCES'] },
+                TROY_OZ: { dimension: 'MASS', baseMultiplier: 0.0000311034768, aliases: ['OZ', 'OZT', 'TROY_OZ', 'TROY_OUNCE', 'TROY_OUNCES', 'TROY OUNCES'] },
                 LBS: { dimension: 'MASS', baseMultiplier: 0.00045359237, aliases: ['LB', 'LBS', 'POUND', 'POUNDS'] },
 
                 // VOLUME (Base: CUBIC_METERS)
-                CUBIC_METERS: { dimension: 'VOLUME', baseMultiplier: 1.0, aliases: ['M3', 'CUBIC_METER', 'CUBIC_METERS', 'M^3'] },
+                CUBIC_METERS: { dimension: 'VOLUME', baseMultiplier: 1.0, aliases: ['M3', 'CUBIC_METER', 'CUBIC_METERS', 'CUBIC METERS', 'M^3'] },
                 LITERS: { dimension: 'VOLUME', baseMultiplier: 0.001, aliases: ['L', 'LT', 'LITER', 'LITERS', 'LITRE', 'LITRES'] },
-                BARRELS: { dimension: 'VOLUME', baseMultiplier: 0.1589873, aliases: ['BBL', 'BBLS', 'BARREL', 'BARRELS', 'BOE'] },
-                BCM: { dimension: 'VOLUME', baseMultiplier: 1000000000.0, aliases: ['BCM', 'BILLION_CUBIC_METERS'] },
+                BARRELS: { dimension: 'VOLUME', baseMultiplier: 0.1589873, aliases: ['BBL', 'BBLS', 'BARREL', 'BARRELS', 'BARRELS_PER_DAY', 'BARRELS PER DAY', 'BPD', 'BOE'] },
+                BCM: { dimension: 'VOLUME', baseMultiplier: 1000000000.0, aliases: ['BCM', 'BILLION_CUBIC_METERS', 'BILLION CUBIC METERS', 'BCM/YEAR', 'BCM_PER_YEAR'] },
+                MCF: { dimension: 'VOLUME', baseMultiplier: 28.3168466, aliases: ['MCF', 'MILLION_CUBIC_FEET', 'THOUSAND_CUBIC_FEET'] },
+                TCF: { dimension: 'VOLUME', baseMultiplier: 28316846600.0, aliases: ['TCF', 'TRILLION_CUBIC_FEET'] },
 
                 // ENERGY (Base: GIGAWATT_HOURS)
-                GIGAWATT_HOURS: { dimension: 'ENERGY', baseMultiplier: 1.0, aliases: ['GWH', 'GIGAWATT_HOUR', 'GIGAWATT_HOURS'] },
-                MEGAWATT_HOURS: { dimension: 'ENERGY', baseMultiplier: 0.001, aliases: ['MWH', 'MEGAWATT_HOUR', 'MEGAWATT_HOURS'] },
-                KILOWATT_HOURS: { dimension: 'ENERGY', baseMultiplier: 0.000001, aliases: ['KWH', 'KILOWATT_HOUR', 'KILOWATT_HOURS'] },
+                GIGAWATT_HOURS: { dimension: 'ENERGY', baseMultiplier: 1.0, aliases: ['GWH', 'GIGAWATT_HOUR', 'GIGAWATT_HOURS', 'GW'] },
+                MEGAWATT_HOURS: { dimension: 'ENERGY', baseMultiplier: 0.001, aliases: ['MWH', 'MEGAWATT_HOUR', 'MEGAWATT_HOURS', 'MW'] },
+                KILOWATT_HOURS: { dimension: 'ENERGY', baseMultiplier: 0.000001, aliases: ['KWH', 'KILOWATT_HOUR', 'KILOWATT_HOURS', 'KW'] },
                 JOULES: { dimension: 'ENERGY', baseMultiplier: 2.77777778e-13, aliases: ['J', 'JOULE', 'JOULES', 'GJ', 'EJ'] },
                 BTU: { dimension: 'ENERGY', baseMultiplier: 2.9307107e-10, aliases: ['BTU', 'MMBTU'] },
 
@@ -1667,9 +1669,18 @@ _globalScope.GSRSK_DataFoundation = (() => {
         }
 
         resolve(conceptType, rawTerm) {
-            if (!rawTerm || typeof rawTerm !== 'string') return null;
-            const cType = conceptType.toUpperCase();
-            const norm = normalizeToken(rawTerm);
+            if (!rawTerm) {
+                return {
+                    canonicalId: null,
+                    normalizedToken: '',
+                    derivationType: DerivationType.UNKNOWN,
+                    confidence: 0.0,
+                    status: KnowledgeState.UNRESOLVED
+                };
+            }
+            const termStr = typeof rawTerm === 'string' ? rawTerm : (rawTerm.name || rawTerm.id || rawTerm.code || rawTerm.resource || String(rawTerm));
+            const cType = String(conceptType || 'GENERAL_CONCEPT').toUpperCase();
+            const norm = normalizeToken(termStr);
             const lookupKey = `${cType}:${norm}`;
 
             if (this.aliasLookup.has(lookupKey)) {
@@ -2676,17 +2687,29 @@ _globalScope.GSRSK_DataFoundation = (() => {
                 }
             }
 
-            // Check Raw Trees safely via defined nodes
+            // Check Raw Trees or direct raw object payloads safely
             if (Array.isArray(sourceTrees)) {
                 sourceTrees.forEach(tree => {
-                    if (tree && Array.isArray(tree.nodes)) {
+                    if (!tree) return;
+                    if (Array.isArray(tree.nodes)) {
                         tree.nodes.forEach(node => {
-                            if (node.nodeType === 'OBJECT_NODE' && node.parsedValue && node.parsedValue.resource_types) {
-                                Object.entries(node.parsedValue.resource_types).forEach(([rKey, rMeta]) => {
-                                    list.push({ resId: rKey, payload: rMeta, sourceId: node.sourceId });
-                                });
+                            if (node.nodeType === 'OBJECT_NODE' && node.parsedValue) {
+                                const val = node.parsedValue;
+                                const rTypes = val.resource_types || (val.GSRSK_Master_CountryProfiles_v14 && val.GSRSK_Master_CountryProfiles_v14.resource_types);
+                                if (rTypes && typeof rTypes === 'object') {
+                                    Object.entries(rTypes).forEach(([rKey, rMeta]) => {
+                                        list.push({ resId: rKey, payload: rMeta, sourceId: node.sourceId || 'SOURCE_TREE' });
+                                    });
+                                }
                             }
                         });
+                    } else if (typeof tree === 'object') {
+                        const rTypes = tree.resource_types || (tree.GSRSK_Master_CountryProfiles_v14 && tree.GSRSK_Master_CountryProfiles_v14.resource_types);
+                        if (rTypes && typeof rTypes === 'object') {
+                            Object.entries(rTypes).forEach(([rKey, rMeta]) => {
+                                list.push({ resId: rKey, payload: rMeta, sourceId: 'SOURCE_RAW' });
+                            });
+                        }
                     }
                 });
             }
@@ -2710,15 +2733,36 @@ _globalScope.GSRSK_DataFoundation = (() => {
 
             if (Array.isArray(sourceTrees)) {
                 sourceTrees.forEach(tree => {
-                    if (tree && Array.isArray(tree.nodes)) {
+                    if (!tree) return;
+                    if (Array.isArray(tree.nodes)) {
                         tree.nodes.forEach(node => {
                             if (node.nodeType === 'OBJECT_NODE' && node.parsedValue) {
                                 const val = node.parsedValue;
-                                if (val.countryId || val.iso3 || val.iso2 || val.resource_endowment || val.strategic_resources) {
-                                    list.push({ payload: val, sourceId: node.sourceId });
+                                const profiles = val.countryProfiles || (val.GSRSK_Master_CountryProfiles_v14 && val.GSRSK_Master_CountryProfiles_v14.countryProfiles);
+                                if (profiles && typeof profiles === 'object') {
+                                    Object.entries(profiles).forEach(([cKey, cProf]) => {
+                                        if (cProf && typeof cProf === 'object') {
+                                            const payloadWithKey = Object.assign({ countryId: cKey }, cProf);
+                                            list.push({ payload: payloadWithKey, sourceId: node.sourceId || 'SOURCE_TREE' });
+                                        }
+                                    });
+                                } else if (val.countryId || val.iso3 || val.iso2 || val.resource_endowment || val.strategic_resources) {
+                                    list.push({ payload: val, sourceId: node.sourceId || 'SOURCE_TREE' });
                                 }
                             }
                         });
+                    } else if (typeof tree === 'object') {
+                        const profiles = tree.countryProfiles || (tree.GSRSK_Master_CountryProfiles_v14 && tree.GSRSK_Master_CountryProfiles_v14.countryProfiles);
+                        if (profiles && typeof profiles === 'object') {
+                            Object.entries(profiles).forEach(([cKey, cProf]) => {
+                                if (cProf && typeof cProf === 'object') {
+                                    const payloadWithKey = Object.assign({ countryId: cKey }, cProf);
+                                    list.push({ payload: payloadWithKey, sourceId: 'SOURCE_RAW' });
+                                }
+                            });
+                        } else if (tree.countryId || tree.iso3 || tree.iso2 || tree.resource_endowment || tree.strategic_resources) {
+                            list.push({ payload: tree, sourceId: 'SOURCE_RAW' });
+                        }
                     }
                 });
             }
@@ -4930,12 +4974,19 @@ _globalScope.GSRSK_DataFoundation = (() => {
             const countriesList = this._extractEntries(rawCountries);
             if (countriesList.length > 0) {
                 countriesList.forEach(country => {
-                    const countryId = country.isoCode || country.iso3 || country.id || country.code;
+                    if (!country) return;
+                    const countryId = typeof country === 'string' 
+                        ? country.toUpperCase() 
+                        : (country.countryId || country.iso3 || country.isoCode || country.iso2 || country.id || country.code || (country.identity && (country.identity.countryCode || country.identity.iso3)) || country.name);
                     if (!countryId) return;
+                    const canonicalName = typeof country === 'string'
+                        ? countryId
+                        : (country.name || country.canonicalName || country.sovereignName || (country.identity && country.identity.name) || countryId);
+
                     const countryState = new CountryState({
                         entityId: countryId,
                         isoCode: countryId,
-                        canonicalName: country.name || country.canonicalName || country.sovereignName || countryId,
+                        canonicalName: canonicalName,
                         locationState: new LocationState({
                             countryId: countryId,
                             locationType: LocationType.SOVEREIGN_TERRITORY
@@ -4969,7 +5020,7 @@ _globalScope.GSRSK_DataFoundation = (() => {
                 });
             }
 
-            // 2. Hydrate Resource Types (Canonical Tier-A) - RULE: Zero dimension guessing
+            // 2. Hydrate Resource Types (Canonical Tier-A) - RULE: Zero dimension guessing, use CanonicalUnitResolver
             const rawResources = (knowledgeModel.sovereignEntities && knowledgeModel.sovereignEntities.resourceTypes) ||
                                  knowledgeModel.canonicalResources ||
                                  knowledgeModel.resources;
@@ -4977,12 +5028,14 @@ _globalScope.GSRSK_DataFoundation = (() => {
             const resourcesList = this._extractEntries(rawResources);
             if (resourcesList.length > 0) {
                 resourcesList.forEach(res => {
-                    const resId = res.id || res.code || res.resourceId || res.resourceTypeCode;
+                    if (!res) return;
+                    const resId = typeof res === 'string' ? res : (res.id || res.code || res.resourceId || res.resourceTypeCode || res.key);
                     if (!resId) return;
                     const declaredUnit = res.unit || res.standardUnit || 'UNKNOWN_UNIT';
-                    const declaredDimension = (declaredUnit !== 'UNKNOWN_UNIT' && res.dimension) 
-                        ? res.dimension 
-                        : QuantityDimension.UNKNOWN;
+                    const resolvedUnit = CanonicalUnitResolver.resolveUnit(declaredUnit);
+                    const declaredDimension = (resolvedUnit.isValid && resolvedUnit.dimension !== 'UNKNOWN')
+                        ? resolvedUnit.dimension
+                        : ((declaredUnit !== 'UNKNOWN_UNIT' && res.dimension) ? res.dimension : QuantityDimension.UNKNOWN);
 
                     const resState = new ResourceTypeState({
                         entityId: resId,
@@ -4991,7 +5044,7 @@ _globalScope.GSRSK_DataFoundation = (() => {
                         standardUnit: declaredUnit,
                         primaryDimension: declaredDimension,
                         strategicClassification: {
-                            criticalityIndex: typeof res.criticality === 'number' ? res.criticality : 0.5,
+                            criticalityIndex: typeof res.criticality === 'number' ? res.criticality : (res.strategicImportance === 'critical' ? 0.9 : 0.5),
                             substitutabilityRating: typeof res.substitutability === 'number' ? res.substitutability : 0.5
                         },
                         metadata: { source: 'WORLD_KNOWLEDGE_COMPILER_CANONICAL' }
@@ -8603,62 +8656,121 @@ _globalScope.GSRSK_DataFoundation = (() => {
             this.cabinetVotes = {};
 
             // Synchronize on startup
-            this.init();
+            this.initPromise = this.init();
         }
 
         async init() {
-            if (this.isReady || this.isLoading) return;
+            if (this.isReady) return this;
+            if (this.isLoading && this.initPromise) return this.initPromise;
             this.isLoading = true;
 
-            try {
-                const fetcher = (typeof window !== 'undefined' && window.fetchResilient) || (async (file) => {
-                    if (typeof fetch === 'undefined') return null;
-                    const res = await fetch(file + '?v=' + Date.now());
-                    return res.ok ? await res.json() : null;
-                });
+            const initWork = async () => {
+                try {
+                    const fetcher = async (file) => {
+                        if (typeof window !== 'undefined' && typeof window.fetchResilient === 'function') {
+                            return await window.fetchResilient(file);
+                        }
+                        if (typeof fetch !== 'undefined') {
+                            try {
+                                const res = await fetch(file + '?v=' + Date.now());
+                                if (res.ok) return await res.json();
+                            } catch (e) {}
+                        }
+                        if (typeof require !== 'undefined') {
+                            try {
+                                const fs = require('fs');
+                                const path = require('path');
+                                const candidates = [
+                                    path.resolve(process.cwd(), file),
+                                    path.resolve(__dirname || '.', file),
+                                    path.resolve(process.cwd(), 'public', file)
+                                ];
+                                for (const c of candidates) {
+                                    if (fs.existsSync(c)) {
+                                        return JSON.parse(fs.readFileSync(c, 'utf8'));
+                                    }
+                                }
+                            } catch (e) {
+                                return null;
+                            }
+                        }
+                        return null;
+                    };
 
-                const [res1, res2] = await Promise.all([
-                    fetcher('resources.json').catch(() => null),
-                    fetcher('resources_2.json').catch(() => null)
-                ]);
+                    const [res1, res2] = await Promise.all([
+                        fetcher('resources.json').catch(() => null),
+                        fetcher('resources_2.json').catch(() => null)
+                    ]);
 
-                if (res1) {
-                    const profiles1 = res1.GSRSK_Master_CountryProfiles_v14?.countryProfiles || res1.countryProfiles || {};
-                    Object.assign(this.countryProfiles, profiles1);
-                    if (res1.resource_types) {
-                        this._mergeResourceTypes(res1.resource_types);
+                    if (res1) {
+                        const profiles1 = res1.GSRSK_Master_CountryProfiles_v14?.countryProfiles || res1.countryProfiles || {};
+                        Object.assign(this.countryProfiles, profiles1);
+                        if (res1.resource_types) {
+                            this._mergeResourceTypes(res1.resource_types);
+                        }
                     }
-                }
 
-                if (res2) {
-                    const profiles2 = res2.GSRSK_Master_CountryProfiles_v14?.countryProfiles || res2.countryProfiles || {};
-                    Object.assign(this.countryProfiles, profiles2);
-                    if (res2.resource_types) {
-                        this._mergeResourceTypes(res2.resource_types);
+                    if (res2) {
+                        const profiles2 = res2.GSRSK_Master_CountryProfiles_v14?.countryProfiles || res2.countryProfiles || {};
+                        Object.assign(this.countryProfiles, profiles2);
+                        if (res2.resource_types) {
+                            this._mergeResourceTypes(res2.resource_types);
+                        }
                     }
-                }
 
-                // Hydrate into MasterGSRSKEngine if present
-                if (global.GSRSK_MasterEngine && typeof global.GSRSK_MasterEngine.bootstrap === 'function') {
-                    global.GSRSK_MasterEngine.bootstrap({
-                        countries: Object.keys(this.countryProfiles),
-                        resourceTypes: this.resourceTypes,
-                        deposits: this.deposits
-                    });
-                }
+                    // Ingest into Knowledge Compiler (Part 02) and Master Engine
+                    const rawSources = [res1, res2].filter(Boolean);
+                    let compiledModel = null;
+                    const gScope = typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : global);
+                    const compiler = gScope.GSRSK_WorldKnowledgeCompiler;
+                    if (compiler && typeof compiler.compileWorldKnowledge === 'function') {
+                        compiledModel = compiler.compileWorldKnowledge(gScope.GSRSK_DataFoundation ? gScope.GSRSK_DataFoundation.masterRegistry : null, rawSources);
+                    }
 
-                this.isReady = true;
-                console.log(`[GSRSK] Resource Ministry Engine Fully Ready: ${Object.keys(this.countryProfiles).length} sovereign country profiles, ${this.deposits.length} strategic deposits, ${this.resourceTypes.length} commodities.`);
+                    // Hydrate into MasterGSRSKEngine (Part 03 - Part 09)
+                    const master = gScope.GSRSK_MasterEngine;
+                    if (master && typeof master.bootstrap === 'function') {
+                        if (compiledModel) {
+                            master.bootstrap(compiledModel);
+                        } else {
+                            master.bootstrap({
+                                countries: this.countryProfiles,
+                                resourceTypes: this.resourceTypes,
+                                deposits: this.deposits
+                            });
+                        }
+                    }
 
-                if (typeof window !== 'undefined') {
-                    window.dispatchEvent(new CustomEvent('RESOURCE_STATE_UPDATED', { detail: { engine: this } }));
+                    // Attach references to all unified parts
+                    this.masterEngine = gScope.GSRSK_MasterEngine || null;
+                    this.part01 = gScope.GSRSK_DataFoundation || null;
+                    this.part02 = gScope.GSRSK_WorldKnowledgeCompiler || null;
+                    this.part03 = gScope.GSRSK_WorldStateEngine || null;
+                    this.part04 = gScope.GSRSK_ResourceIdentityEngine || null;
+                    this.part05 = gScope.GSRSK_ResourceReserveExtractionEngine || null;
+                    this.part06 = gScope.GSRSK_ResourceProcessingTransformationEngine || null;
+                    this.part07 = gScope.GSRSK_ResourceInventoryBatchStorageEngine || null;
+                    this.part08 = gScope.GSRSK_ResourceInfrastructureLogisticsEngine || null;
+                    this.part09 = gScope.GSRSK_ResourceProductionIndustrialChainEngine || null;
+
+                    this.isReady = true;
+                    const countryCount = Object.keys(this.countryProfiles).length;
+                    console.log(`[GSRSK] Resource Ministry Engine Fully Ready: ${countryCount} sovereign country profiles, ${this.deposits.length} strategic deposits, ${this.resourceTypes.length} commodities.`);
+
+                    if (typeof window !== 'undefined') {
+                        window.dispatchEvent(new CustomEvent('RESOURCE_STATE_UPDATED', { detail: { engine: this } }));
+                    }
+                } catch (err) {
+                    console.warn("[GSRSK] Resource initialization notice (using verified fallback data):", err);
+                    this.isReady = true;
+                } finally {
+                    this.isLoading = false;
                 }
-            } catch (err) {
-                console.warn("[GSRSK] Resource initialization notice (using verified fallback data):", err);
-                this.isReady = true;
-            } finally {
-                this.isLoading = false;
-            }
+                return this;
+            };
+
+            this.initPromise = initWork();
+            return this.initPromise;
         }
 
         _mergeResourceTypes(typesObj) {
@@ -20495,8 +20607,2442 @@ _globalScope.GSRSK_DataFoundation = (() => {
             ResourceMinistryEngineInstance.logisticsEngine = ResourceInfrastructureLogisticsEngineAdapter.createEngine();
         }
 
+    })(typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : global));
+
+    // ============================================================================
+    // GSRSK — PART 09: PRODUCTION & INDUSTRIAL CHAIN ENGINE (VOLUME 1 OF 2)
+    // ============================================================================
+    (function(global) {
+        'use strict';
+
+        // =========================================================================
+        // 09.00: DOMAIN ENUMS, TAXONOMY, STATUSES & ERROR TAXONOMY
+        // =========================================================================
+
+        const QuantityDimension = Object.freeze({
+            MASS: 'MASS',
+            VOLUME: 'VOLUME',
+            ENERGY: 'ENERGY',
+            AREA: 'AREA',
+            LENGTH: 'LENGTH',
+            PIECES: 'PIECES',
+            DIMENSIONLESS: 'DIMENSIONLESS',
+            UNKNOWN: 'UNKNOWN'
+        });
+
+        const IndustrialSectorEnum = Object.freeze({
+            METALLURGY_FERROUS: 'METALLURGY_FERROUS',
+            METALLURGY_NON_FERROUS: 'METALLURGY_NON_FERROUS',
+            PRECISION_CHEMICALS: 'PRECISION_CHEMICALS',
+            PETROCHEMICALS_REFINING: 'PETROCHEMICALS_REFINING',
+            HEAVY_MACHINERY: 'HEAVY_MACHINERY',
+            AEROSPACE_DEFENSE: 'AEROSPACE_DEFENSE',
+            ELECTRONICS_SEMICONDUCTORS: 'ELECTRONICS_SEMICONDUCTORS',
+            ENERGY_SYSTEMS_BATTERIES: 'ENERGY_SYSTEMS_BATTERIES',
+            CONSTRUCTION_MATERIALS: 'CONSTRUCTION_MATERIALS',
+            PHARMACEUTICALS_BIOTECH: 'PHARMACEUTICALS_BIOTECH',
+            AUTOMOTIVE_TRANSPORT: 'AUTOMOTIVE_TRANSPORT',
+            AGRICULTURAL_PROCESSING: 'AGRICULTURAL_PROCESSING',
+            TEXTILES_ADVANCED_MATERIALS: 'TEXTILES_ADVANCED_MATERIALS',
+            GENERIC_INDUSTRIAL: 'GENERIC_INDUSTRIAL'
+        });
+
+        const FacilityOperationalLifecycle = Object.freeze({
+            PLANNED: 'PLANNED',
+            UNDER_CONSTRUCTION: 'UNDER_CONSTRUCTION',
+            COMMISSIONING: 'COMMISSIONING',
+            OPERATIONAL: 'OPERATIONAL',
+            DEGRADED: 'DEGRADED',
+            MAINTENANCE_SCHEDULED: 'MAINTENANCE_SCHEDULED',
+            MAINTENANCE_UNPLANNED: 'MAINTENANCE_UNPLANNED',
+            STANDBY_IDLE: 'STANDBY_IDLE',
+            SUSPENDED: 'SUSPENDED',
+            CLOSED: 'CLOSED',
+            DECOMMISSIONED: 'DECOMMISSIONED'
+        });
+
+        const ProductionLineOperationalStatus = Object.freeze({
+            READY: 'READY',
+            STARTING: 'STARTING',
+            RUNNING: 'RUNNING',
+            PAUSED_STARVED: 'PAUSED_STARVED',     // Missing raw materials
+            PAUSED_BLOCKED: 'PAUSED_BLOCKED',     // Outbound buffer full
+            DEGRADED_SPEED: 'DEGRADED_SPEED',
+            MAINTENANCE: 'MAINTENANCE',
+            OFFLINE: 'OFFLINE'
+        });
+
+        const ProductionSchedulingMode = Object.freeze({
+            CONTINUOUS: 'CONTINUOUS',
+            BATCH: 'BATCH',
+            CAMPAIGN: 'CAMPAIGN',
+            ON_DEMAND: 'ON_DEMAND',
+            SCHEDULED_PUSH: 'SCHEDULED_PUSH',
+            DEMAND_PULL: 'DEMAND_PULL',
+            EMERGENCY_PRIORITY: 'EMERGENCY_PRIORITY'
+        });
+
+        const ProductionConstraintCategory = Object.freeze({
+            HARD_PREREQUISITE: 'HARD_PREREQUISITE',
+            SOFT_CAPACITY_LIMIT: 'SOFT_CAPACITY_LIMIT',
+            TEMPORAL_DELAY: 'TEMPORAL_DELAY',
+            QUALITY_DERATING: 'QUALITY_DERATING',
+            EXTERNAL_LOGISTICS: 'EXTERNAL_LOGISTICS'
+        });
+
+        const SkillTierEnum = Object.freeze({
+            UNSKILLED_MANUAL: 'UNSKILLED_MANUAL',
+            OPERATOR_BASIC: 'OPERATOR_BASIC',
+            TECHNICIAN_CERTIFIED: 'TECHNICIAN_CERTIFIED',
+            SPECIALIST_ENGINEER: 'SPECIALIST_ENGINEER',
+            METALLURGIST_SCIENTIST: 'METALLURGIST_SCIENTIST'
+        });
+
+        const ProductionOrderStatusEnum = Object.freeze({
+            CREATED: 'CREATED',
+            VALIDATING: 'VALIDATING',
+            QUEUED: 'QUEUED',
+            RESERVED: 'RESERVED',
+            READY: 'READY',
+            RUNNING: 'RUNNING',
+            PAUSED: 'PAUSED',
+            DEGRADED: 'DEGRADED',
+            COMPLETED: 'COMPLETED',
+            PARTIALLY_COMPLETED: 'PARTIALLY_COMPLETED',
+            BLOCKED: 'BLOCKED',
+            CANCELLED: 'CANCELLED',
+            FAILED: 'FAILED'
+        });
+
+        const ProductionHealthStatus = Object.freeze({
+            ONLINE_OPTIMAL: 'ONLINE_OPTIMAL',
+            DEGRADED_OPERATION: 'DEGRADED_OPERATION',
+            THROTTLED_BOTTLENECK: 'THROTTLED_BOTTLENECK',
+            BLOCKED_CRITICAL: 'BLOCKED_CRITICAL',
+            FAILED_SHUTDOWN: 'FAILED_SHUTDOWN'
+        });
+
+        const UnknownPolicyEnum = Object.freeze({
+            BLOCK: 'BLOCK',
+            PASS_THROUGH: 'PASS_THROUGH',
+            CONSERVATIVE: 'CONSERVATIVE',
+            DEFER: 'DEFER'
+        });
+
+        const RoundingModeEnum = Object.freeze({
+            ROUND_HALF_UP: 'ROUND_HALF_UP',
+            ROUND_DOWN: 'ROUND_DOWN',
+            ROUND_NEAREST: 'ROUND_NEAREST'
+        });
+
+        const ErrorTaxonomy = Object.freeze({
+            P9_001_INVALID_FACILITY_SPEC: 'P9_001_INVALID_FACILITY_SPEC',
+            P9_002_PRODUCTION_LINE_NOT_FOUND: 'P9_002_PRODUCTION_LINE_NOT_FOUND',
+            P9_003_RECIPE_NOT_FOUND: 'P9_003_RECIPE_NOT_FOUND',
+            P9_004_INPUT_REQUIREMENT_UNMET: 'P9_004_INPUT_REQUIREMENT_UNMET',
+            P9_005_INSUFFICIENT_INVENTORY_STOCK: 'P9_005_INSUFFICIENT_INVENTORY_STOCK',
+            P9_006_GRADE_QUALITY_MISMATCH: 'P9_006_GRADE_QUALITY_MISMATCH',
+            P9_007_SUBSTITUTION_UNAUTHORIZED: 'P9_007_SUBSTITUTION_UNAUTHORIZED',
+            P9_008_WORKFORCE_SKILL_SHORTAGE: 'P9_008_WORKFORCE_SKILL_SHORTAGE',
+            P9_009_UTILITY_POWER_SHORTAGE: 'P9_009_UTILITY_POWER_SHORTAGE',
+            P9_010_UTILITY_WATER_SHORTAGE: 'P9_010_UTILITY_WATER_SHORTAGE',
+            P9_011_TECHNOLOGY_TRL_INSUFFICIENT: 'P9_011_TECHNOLOGY_TRL_INSUFFICIENT',
+            P9_012_MAINTENANCE_LOCKOUT: 'P9_012_MAINTENANCE_LOCKOUT',
+            P9_013_CIRCULAR_CHAIN_DEPENDENCY: 'P9_013_CIRCULAR_CHAIN_DEPENDENCY',
+            P9_014_MASS_BALANCE_CONSERVATION_BREACH: 'P9_014_MASS_BALANCE_CONSERVATION_BREACH',
+            P9_015_NEGATIVE_PRODUCTION_QUANTITY: 'P9_015_NEGATIVE_PRODUCTION_QUANTITY',
+            P9_016_OVERDRAW_CAPACITY_VIOLATION: 'P9_016_OVERDRAW_CAPACITY_VIOLATION',
+            P9_017_ORDER_LIFECYCLE_ILLEGAL_TRANSITION: 'P9_017_ORDER_LIFECYCLE_ILLEGAL_TRANSITION',
+            P9_018_SNAPSHOT_CORRUPTION: 'P9_018_SNAPSHOT_CORRUPTION',
+            P9_019_FIREWALL_BOUNDARY_BREACH: 'P9_019_FIREWALL_BOUNDARY_BREACH',
+            P9_020_TELEMETRY_RECORD_OVERFLOW: 'P9_020_TELEMETRY_RECORD_OVERFLOW'
+        });
+
+        // =========================================================================
+        // DETERMINISTIC HASHING INFRASTRUCTURE (ZERO DATE.NOW / ZERO MATH.RANDOM)
+        // =========================================================================
+
+        class DeterministicHashEngine {
+            static computeHash(inputStr) {
+                const str = typeof inputStr === 'string' ? inputStr : JSON.stringify(inputStr);
+                let h1 = 0xdeadbeef ^ str.length;
+                let h2 = 0x41c6ce57 ^ str.length;
+                for (let i = 0; i < str.length; i++) {
+                    const ch = str.charCodeAt(i);
+                    h1 = (Math.imul(h1 ^ ch, 2654435761) >>> 0);
+                    h2 = (Math.imul(h2 ^ ch, 1597334677) >>> 0);
+                }
+                h1 = ((Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909)) >>> 0);
+                h2 = ((Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909)) >>> 0);
+                return ((h1 >>> 0).toString(16).padStart(8, '0') + (h2 >>> 0).toString(16).padStart(8, '0')).toLowerCase();
+            }
+
+            static generateDeterministicId(prefix, seedComponents) {
+                const payload = seedComponents.map(c => String(c)).join('|');
+                const hash = this.computeHash(payload).substring(0, 12);
+                return `${prefix}:${hash}`;
+            }
+        }
+
+        // =========================================================================
+        // SAFE AST-BASED FORMULA INTERPRETER (NO-EVAL MANDATE)
+        // =========================================================================
+
+        class DeterministicFormulaInterpreter {
+            static evaluateAST(node, scopeContext = {}, unknownPolicy = UnknownPolicyEnum.BLOCK) {
+                if (!node || typeof node !== 'object') {
+                    throw new Error('[AST Evaluator Error]: Invalid AST Node.');
+                }
+
+                switch (node.type) {
+                    case 'LITERAL_NUMERIC':
+                        if (typeof node.value !== 'number' || !Number.isFinite(node.value)) {
+                            throw new Error('[AST Evaluator Error]: LITERAL_NUMERIC must be a finite number.');
+                        }
+                        return node.value;
+
+                    case 'LITERAL_BOOLEAN':
+                        return Boolean(node.value);
+
+                    case 'LITERAL_STRING':
+                        return String(node.value);
+
+                    case 'IDENTIFIER_LOOKUP': {
+                        const resolved = this._resolvePath(scopeContext, node.path);
+                        if (resolved === undefined || resolved === null) {
+                            if (unknownPolicy === UnknownPolicyEnum.BLOCK) {
+                                throw new Error(`[AST Evaluator Error]: Variable '${node.path}' unresolved under BLOCK policy.`);
+                            }
+                            return 0.0;
+                        }
+                        return resolved;
+                    }
+
+                    case 'UNARY_OP': {
+                        const argVal = this.evaluateAST(node.argument, scopeContext, unknownPolicy);
+                        if (node.operator === 'NOT') return !argVal;
+                        if (node.operator === 'NEG') return -argVal;
+                        throw new Error(`[AST Evaluator Error]: Unknown UNARY_OP '${node.operator}'`);
+                    }
+
+                    case 'BINARY_OP': {
+                        const left = this.evaluateAST(node.left, scopeContext, unknownPolicy);
+                        const right = this.evaluateAST(node.right, scopeContext, unknownPolicy);
+
+                        if (typeof left !== 'number' || typeof right !== 'number') {
+                            throw new Error(`[AST Evaluator Error]: Arithmetic requires numeric operands. Left: ${left}, Right: ${right}`);
+                        }
+
+                        switch (node.operator) {
+                            case 'ADD': return left + right;
+                            case 'SUB': return left - right;
+                            case 'MUL': return left * right;
+                            case 'DIV':
+                                if (right === 0) throw new Error('[AST Evaluator Error]: Division by zero.');
+                                return left / right;
+                            case 'MOD': return left % right;
+                            case 'POW': return Math.pow(left, right);
+                            default:
+                                throw new Error(`[AST Evaluator Error]: Unknown BINARY_OP '${node.operator}'`);
+                        }
+                    }
+
+                    case 'COMPARISON_OP': {
+                        const left = this.evaluateAST(node.left, scopeContext, unknownPolicy);
+                        const right = this.evaluateAST(node.right, scopeContext, unknownPolicy);
+
+                        switch (node.operator) {
+                            case 'GT': return left > right;
+                            case 'GTE': return left >= right;
+                            case 'LT': return left < right;
+                            case 'LTE': return left <= right;
+                            case 'EQ': return left === right;
+                            case 'NEQ': return left !== right;
+                            default:
+                                throw new Error(`[AST Evaluator Error]: Unknown COMPARISON_OP '${node.operator}'`);
+                        }
+                    }
+
+                    case 'LOGICAL_OP': {
+                        const left = this.evaluateAST(node.left, scopeContext, unknownPolicy);
+                        if (node.operator === 'AND') {
+                            if (!left) return false;
+                            return Boolean(this.evaluateAST(node.right, scopeContext, unknownPolicy));
+                        }
+                        if (node.operator === 'OR') {
+                            if (left) return true;
+                            return Boolean(this.evaluateAST(node.right, scopeContext, unknownPolicy));
+                        }
+                        throw new Error(`[AST Evaluator Error]: Unknown LOGICAL_OP '${node.operator}'`);
+                    }
+
+                    case 'FUNCTION_CALL': {
+                        const evalArgs = (node.args || []).map(a => this.evaluateAST(a, scopeContext, unknownPolicy));
+                        switch (node.functionName) {
+                            case 'MIN': return Math.min(...evalArgs);
+                            case 'MAX': return Math.max(...evalArgs);
+                            case 'CLAMP': {
+                                const [val, min, max] = evalArgs;
+                                return Math.max(min, Math.min(max, val));
+                            }
+                            case 'ROUND': return Math.round(evalArgs[0]);
+                            case 'FLOOR': return Math.floor(evalArgs[0]);
+                            case 'CEIL': return Math.ceil(evalArgs[0]);
+                            case 'ABS': return Math.abs(evalArgs[0]);
+                            default:
+                                throw new Error(`[AST Evaluator Error]: Unknown function '${node.functionName}'`);
+                        }
+                    }
+
+                    case 'CONDITIONAL_IF': {
+                        const cond = this.evaluateAST(node.condition, scopeContext, unknownPolicy);
+                        return cond
+                            ? this.evaluateAST(node.thenBranch, scopeContext, unknownPolicy)
+                            : this.evaluateAST(node.elseBranch, scopeContext, unknownPolicy);
+                    }
+
+                    default:
+                        throw new Error(`[AST Evaluator Error]: Unhandled AST Node Type '${node.type}'`);
+                }
+            }
+
+            static _resolvePath(obj, path) {
+                if (!obj || !path) return undefined;
+                const segments = path.split('.');
+                let curr = obj;
+                for (const seg of segments) {
+                    if (curr === undefined || curr === null) return undefined;
+                    curr = curr[seg];
+                }
+                return curr;
+            }
+
+            static applyRounding(value, precision = 4, mode = RoundingModeEnum.ROUND_HALF_UP) {
+                if (typeof value !== 'number' || !Number.isFinite(value)) return value;
+                const factor = Math.pow(10, precision);
+                if (mode === RoundingModeEnum.ROUND_DOWN) {
+                    return Math.floor(value * factor) / factor;
+                }
+                if (mode === RoundingModeEnum.ROUND_NEAREST || mode === RoundingModeEnum.ROUND_HALF_UP) {
+                    return Math.round(value * factor) / factor;
+                }
+                return value;
+            }
+        }
+
+        // =========================================================================
+        // 09.01: INDUSTRIAL ENTITY & SECTOR AGGREGATION REGISTRY
+        // =========================================================================
+
+        class IndustrialEntity {
+            constructor(params = {}) {
+                if (!params.entityId || !params.sector) {
+                    throw new Error('[IndustrialEntity Violation]: entityId and sector are mandatory.');
+                }
+                this.entityId = params.entityId;
+                this.name = params.name || this.entityId;
+                this.sector = params.sector;
+                this.ownerKey = params.ownerKey || 'SOVEREIGN_UNASSIGNED';
+                this.parentOrganizationId = params.parentOrganizationId || null;
+                this.countryIso3 = params.countryIso3 ? String(params.countryIso3).toUpperCase() : 'GLOBAL';
+                this.provenance = params.provenance || { sourceSubsystem: 'INDUSTRIAL_ENTITY_REGISTRY', timestamp: 0 };
+            }
+
+            toJSON() {
+                return {
+                    entityId: this.entityId,
+                    name: this.name,
+                    sector: this.sector,
+                    ownerKey: this.ownerKey,
+                    parentOrganizationId: this.parentOrganizationId,
+                    countryIso3: this.countryIso3,
+                    provenance: this.provenance
+                };
+            }
+        }
+
+        class IndustrialEntityRegistry {
+            constructor() {
+                this.entities = new Map();
+                this.bySector = new Map();
+                this.byCountry = new Map();
+            }
+
+            registerEntity(entity) {
+                if (!(entity instanceof IndustrialEntity)) throw new Error('Expected IndustrialEntity instance.');
+                this.entities.set(entity.entityId, entity);
+
+                if (!this.bySector.has(entity.sector)) this.bySector.set(entity.sector, new Set());
+                this.bySector.get(entity.sector).add(entity.entityId);
+
+                if (!this.byCountry.has(entity.countryIso3)) this.byCountry.set(entity.countryIso3, new Set());
+                this.byCountry.get(entity.countryIso3).add(entity.entityId);
+
+                return entity;
+            }
+
+            getEntity(entityId) {
+                return this.entities.get(entityId) || null;
+            }
+
+            getEntitiesBySector(sector) {
+                const set = this.bySector.get(sector);
+                return set ? Array.from(set).map(id => this.entities.get(id)).filter(Boolean) : [];
+            }
+
+            getEntitiesByCountry(countryIso3) {
+                const norm = String(countryIso3).toUpperCase();
+                const set = this.byCountry.get(norm);
+                return set ? Array.from(set).map(id => this.entities.get(id)).filter(Boolean) : [];
+            }
+
+            clear() {
+                this.entities.clear();
+                this.bySector.clear();
+                this.byCountry.clear();
+            }
+        }
+
+        // =========================================================================
+        // 09.02 & 09.03: FACILITY REGISTRY, LIFECYCLE FSM & PRODUCTION LINE REGISTRY [FIXED]
+        // =========================================================================
+
+        class FacilityLifecycleFSM {
+            static get TRANSITION_MATRIX() {
+                return Object.freeze({
+                    [FacilityOperationalLifecycle.PLANNED]: [
+                        FacilityOperationalLifecycle.UNDER_CONSTRUCTION,
+                        FacilityOperationalLifecycle.DECOMMISSIONED
+                    ],
+                    [FacilityOperationalLifecycle.UNDER_CONSTRUCTION]: [
+                        FacilityOperationalLifecycle.COMMISSIONING,
+                        FacilityOperationalLifecycle.SUSPENDED,
+                        FacilityOperationalLifecycle.DECOMMISSIONED
+                    ],
+                    [FacilityOperationalLifecycle.COMMISSIONING]: [
+                        FacilityOperationalLifecycle.OPERATIONAL,
+                        FacilityOperationalLifecycle.DEGRADED,
+                        FacilityOperationalLifecycle.SUSPENDED
+                    ],
+                    [FacilityOperationalLifecycle.OPERATIONAL]: [
+                        FacilityOperationalLifecycle.DEGRADED,
+                        FacilityOperationalLifecycle.MAINTENANCE_SCHEDULED,
+                        FacilityOperationalLifecycle.MAINTENANCE_UNPLANNED,
+                        FacilityOperationalLifecycle.STANDBY_IDLE,
+                        FacilityOperationalLifecycle.SUSPENDED,
+                        FacilityOperationalLifecycle.CLOSED
+                    ],
+                    [FacilityOperationalLifecycle.DEGRADED]: [
+                        FacilityOperationalLifecycle.OPERATIONAL,
+                        FacilityOperationalLifecycle.MAINTENANCE_SCHEDULED,
+                        FacilityOperationalLifecycle.MAINTENANCE_UNPLANNED,
+                        FacilityOperationalLifecycle.SUSPENDED,
+                        FacilityOperationalLifecycle.CLOSED
+                    ],
+                    [FacilityOperationalLifecycle.MAINTENANCE_SCHEDULED]: [
+                        FacilityOperationalLifecycle.COMMISSIONING,
+                        FacilityOperationalLifecycle.OPERATIONAL,
+                        FacilityOperationalLifecycle.DEGRADED
+                    ],
+                    [FacilityOperationalLifecycle.MAINTENANCE_UNPLANNED]: [
+                        FacilityOperationalLifecycle.COMMISSIONING,
+                        FacilityOperationalLifecycle.OPERATIONAL,
+                        FacilityOperationalLifecycle.DEGRADED,
+                        FacilityOperationalLifecycle.CLOSED
+                    ],
+                    [FacilityOperationalLifecycle.STANDBY_IDLE]: [
+                        FacilityOperationalLifecycle.OPERATIONAL,
+                        FacilityOperationalLifecycle.MAINTENANCE_SCHEDULED,
+                        FacilityOperationalLifecycle.CLOSED
+                    ],
+                    [FacilityOperationalLifecycle.SUSPENDED]: [
+                        FacilityOperationalLifecycle.COMMISSIONING,
+                        FacilityOperationalLifecycle.STANDBY_IDLE,
+                        FacilityOperationalLifecycle.CLOSED,
+                        FacilityOperationalLifecycle.DECOMMISSIONED
+                    ],
+                    [FacilityOperationalLifecycle.CLOSED]: [
+                        FacilityOperationalLifecycle.COMMISSIONING,
+                        FacilityOperationalLifecycle.DECOMMISSIONED
+                    ],
+                    [FacilityOperationalLifecycle.DECOMMISSIONED]: []
+                });
+            }
+
+            static isValidTransition(currentLifecycle, nextLifecycle) {
+                if (currentLifecycle === nextLifecycle) return true;
+                const allowed = this.TRANSITION_MATRIX[currentLifecycle];
+                return Array.isArray(allowed) && allowed.includes(nextLifecycle);
+            }
+
+            static assertTransition(currentLifecycle, nextLifecycle, facilityId = 'FACILITY') {
+                if (!this.isValidTransition(currentLifecycle, nextLifecycle)) {
+                    throw new Error(`[FacilityLifecycleFSM Violation]: Illegal transition from '${currentLifecycle}' to '${nextLifecycle}' on facility '${facilityId}'.`);
+                }
+                return true;
+            }
+        }
+
+        class ProductionLine {
+            constructor(params = {}) {
+                if (!params.lineId || !params.facilityId) {
+                    throw new Error('[ProductionLine Violation]: lineId and facilityId are mandatory.');
+                }
+                this.lineId = params.lineId;
+                this.facilityId = params.facilityId;
+                this.name = params.name || this.lineId;
+                this.supportedRecipeIds = Array.isArray(params.supportedRecipeIds) ? [...params.supportedRecipeIds] : [];
+                this.installedThroughputDaily = typeof params.installedThroughputDaily === 'number' ? Math.max(0, params.installedThroughputDaily) : 1000.0;
+                this.nominalSpeedMultiplier = typeof params.nominalSpeedMultiplier === 'number' ? Math.max(0.1, params.nominalSpeedMultiplier) : 1.0;
+                this.technologyKey = params.technologyKey || 'TECH:STANDARD_AUTOMATION';
+                this.operationalStatus = params.operationalStatus || ProductionLineOperationalStatus.READY;
+                this.currentRecipeId = params.currentRecipeId || null;
+                this.currentOrderId = params.currentOrderId || null;
+                this.maintenanceWearPercentage = typeof params.maintenanceWearPercentage === 'number' ? Math.max(0, Math.min(100, params.maintenanceWearPercentage)) : 0.0;
+                this.provenance = params.provenance || { sourceSubsystem: 'PRODUCTION_LINE_REGISTRY', timestamp: 0 };
+            }
+
+            isAvailableForRecipe(recipeId) {
+                return this.supportedRecipeIds.includes(recipeId) && 
+                       (this.operationalStatus === ProductionLineOperationalStatus.READY || this.operationalStatus === ProductionLineOperationalStatus.PAUSED_STARVED);
+            }
+
+            clone() {
+                return new ProductionLine({
+                    lineId: this.lineId,
+                    facilityId: this.facilityId,
+                    name: this.name,
+                    supportedRecipeIds: [...this.supportedRecipeIds],
+                    installedThroughputDaily: this.installedThroughputDaily,
+                    nominalSpeedMultiplier: this.nominalSpeedMultiplier,
+                    technologyKey: this.technologyKey,
+                    operationalStatus: this.operationalStatus,
+                    currentRecipeId: this.currentRecipeId,
+                    currentOrderId: this.currentOrderId,
+                    maintenanceWearPercentage: this.maintenanceWearPercentage,
+                    provenance: JSON.parse(JSON.stringify(this.provenance))
+                });
+            }
+
+            toJSON() {
+                return {
+                    lineId: this.lineId,
+                    facilityId: this.facilityId,
+                    name: this.name,
+                    supportedRecipeIds: this.supportedRecipeIds,
+                    installedThroughputDaily: this.installedThroughputDaily,
+                    nominalSpeedMultiplier: this.nominalSpeedMultiplier,
+                    technologyKey: this.technologyKey,
+                    operationalStatus: this.operationalStatus,
+                    currentRecipeId: this.currentRecipeId,
+                    currentOrderId: this.currentOrderId,
+                    maintenanceWearPercentage: this.maintenanceWearPercentage,
+                    provenance: this.provenance
+                };
+            }
+        }
+
+        class IndustrialFacility {
+            constructor(params = {}) {
+                if (!params.facilityId || !params.sector) {
+                    throw new Error('[IndustrialFacility Violation]: facilityId and sector are mandatory.');
+                }
+                this.facilityId = params.facilityId;
+                this.name = params.name || this.facilityId;
+                this.facilityType = params.facilityType || 'MANUFACTURING_PLANT';
+                this.sector = params.sector;
+                this.ownerKey = params.ownerKey || 'SOVEREIGN_UNASSIGNED';
+                this.operatorKey = params.operatorKey || this.ownerKey;
+                this.locationNodeKey = params.locationNodeKey || 'LOC:GLOBAL';
+                this.countryIso3 = params.countryIso3 ? String(params.countryIso3).toUpperCase() : 'GLOBAL';
+                this.productionLines = new Map();
+
+                if (Array.isArray(params.productionLines)) {
+                    params.productionLines.forEach(line => {
+                        const inst = line instanceof ProductionLine ? line : new ProductionLine(line);
+                        this.productionLines.set(inst.lineId, inst);
+                    });
+                }
+
+                this.installedCapacityDaily = typeof params.installedCapacityDaily === 'number' ? Math.max(0, params.installedCapacityDaily) : 5000.0;
+                this.technologyReadinessLevel = typeof params.technologyReadinessLevel === 'number' ? Math.max(1, Math.min(9, params.technologyReadinessLevel)) : 9;
+                this.operationalLifecycle = params.operationalLifecycle || FacilityOperationalLifecycle.OPERATIONAL;
+                this.baseEnergyDemandKWhPerDay = typeof params.baseEnergyDemandKWhPerDay === 'number' ? params.baseEnergyDemandKWhPerDay : 25000.0;
+                this.baseWaterDemandM3PerDay = typeof params.baseWaterDemandM3PerDay === 'number' ? params.baseWaterDemandM3PerDay : 500.0;
+                this.workforceHeadcountRequired = typeof params.workforceHeadcountRequired === 'number' ? params.workforceHeadcountRequired : 150;
+                this.provenance = params.provenance || { sourceSubsystem: 'FACILITY_REGISTRY', timestamp: 0 };
+            }
+
+            registerLine(line) {
+                const inst = line instanceof ProductionLine ? line : new ProductionLine(line);
+                this.productionLines.set(inst.lineId, inst);
+                return inst;
+            }
+
+            getLine(lineId) {
+                return this.productionLines.get(lineId) || null;
+            }
+
+            getTotalInstalledThroughput() {
+                let total = 0;
+                this.productionLines.forEach(l => { total += l.installedThroughputDaily; });
+                return total > 0 ? total : this.installedCapacityDaily;
+            }
+
+            isOperational() {
+                return this.operationalLifecycle === FacilityOperationalLifecycle.OPERATIONAL || 
+                       this.operationalLifecycle === FacilityOperationalLifecycle.DEGRADED;
+            }
+
+            setLifecycleStatus(nextLifecycle) {
+                FacilityLifecycleFSM.assertTransition(this.operationalLifecycle, nextLifecycle, this.facilityId);
+                this.operationalLifecycle = nextLifecycle;
+            }
+
+            clone() {
+                return new IndustrialFacility({
+                    facilityId: this.facilityId,
+                    name: this.name,
+                    facilityType: this.facilityType,
+                    sector: this.sector,
+                    ownerKey: this.ownerKey,
+                    operatorKey: this.operatorKey,
+                    locationNodeKey: this.locationNodeKey,
+                    countryIso3: this.countryIso3,
+                    productionLines: Array.from(this.productionLines.values()).map(l => l.clone()),
+                    installedCapacityDaily: this.installedCapacityDaily,
+                    technologyReadinessLevel: this.technologyReadinessLevel,
+                    operationalLifecycle: this.operationalLifecycle,
+                    baseEnergyDemandKWhPerDay: this.baseEnergyDemandKWhPerDay,
+                    baseWaterDemandM3PerDay: this.baseWaterDemandM3PerDay,
+                    workforceHeadcountRequired: this.workforceHeadcountRequired,
+                    provenance: JSON.parse(JSON.stringify(this.provenance))
+                });
+            }
+
+            toJSON() {
+                return {
+                    facilityId: this.facilityId,
+                    name: this.name,
+                    facilityType: this.facilityType,
+                    sector: this.sector,
+                    ownerKey: this.ownerKey,
+                    operatorKey: this.operatorKey,
+                    locationNodeKey: this.locationNodeKey,
+                    countryIso3: this.countryIso3,
+                    productionLines: Array.from(this.productionLines.values()).map(l => l.toJSON()),
+                    installedCapacityDaily: this.installedCapacityDaily,
+                    totalThroughputCapacity: this.getTotalInstalledThroughput(),
+                    technologyReadinessLevel: this.technologyReadinessLevel,
+                    operationalLifecycle: this.operationalLifecycle,
+                    baseEnergyDemandKWhPerDay: this.baseEnergyDemandKWhPerDay,
+                    baseWaterDemandM3PerDay: this.baseWaterDemandM3PerDay,
+                    workforceHeadcountRequired: this.workforceHeadcountRequired,
+                    provenance: this.provenance
+                };
+            }
+        }
+
+        class FacilityRegistry {
+            constructor() {
+                this.facilities = new Map();
+                this.bySector = new Map();
+                this.byCountry = new Map();
+                this.byLocation = new Map();
+            }
+
+            registerFacility(facility) {
+                if (!(facility instanceof IndustrialFacility)) throw new Error('Expected IndustrialFacility instance.');
+                this.facilities.set(facility.facilityId, facility);
+
+                if (!this.bySector.has(facility.sector)) this.bySector.set(facility.sector, new Set());
+                this.bySector.get(facility.sector).add(facility.facilityId);
+
+                if (!this.byCountry.has(facility.countryIso3)) this.byCountry.set(facility.countryIso3, new Set());
+                this.byCountry.get(facility.countryIso3).add(facility.facilityId);
+
+                if (!this.byLocation.has(facility.locationNodeKey)) this.byLocation.set(facility.locationNodeKey, new Set());
+                this.byLocation.get(facility.locationNodeKey).add(facility.facilityId);
+
+                return facility;
+            }
+
+            getFacility(facilityId) {
+                return this.facilities.get(facilityId) || null;
+            }
+
+            getFacilitiesBySector(sector) {
+                const set = this.bySector.get(sector);
+                return set ? Array.from(set).map(id => this.facilities.get(id)).filter(Boolean) : [];
+            }
+
+            getFacilitiesByCountry(countryIso3) {
+                const norm = String(countryIso3).toUpperCase();
+                const set = this.byCountry.get(norm);
+                return set ? Array.from(set).map(id => this.facilities.get(id)).filter(Boolean) : [];
+            }
+
+            clear() {
+                this.facilities.clear();
+                this.bySector.clear();
+                this.byCountry.clear();
+                this.byLocation.clear();
+            }
+        }
+
+        // =========================================================================
+        // 09.04: PRODUCTION RECIPE REGISTRY (MULTI-INPUT BILL OF MATERIALS)
+        // =========================================================================
+
+        class RecipeMaterialInput {
+            constructor(params = {}) {
+                if (!params.materialIdentity || typeof params.quantityPerOutputUnit !== 'number') {
+                    throw new Error('[RecipeMaterialInput Violation]: materialIdentity and quantityPerOutputUnit are mandatory.');
+                }
+                this.materialIdentity = params.materialIdentity;
+                this.quantityPerOutputUnit = Math.max(0, params.quantityPerOutputUnit);
+                this.unit = params.unit || 'TONNES';
+                this.dimension = params.dimension || QuantityDimension.MASS;
+                this.minimumGrade = typeof params.minimumGrade === 'number' ? params.minimumGrade : 0.0;
+                this.minimumPurity = typeof params.minimumPurity === 'number' ? params.minimumPurity : 0.0;
+                this.allowedSubstituteMaterialIds = Array.isArray(params.allowedSubstituteMaterialIds) ? [...params.allowedSubstituteMaterialIds] : [];
+                this.substitutionPenaltyMultiplier = typeof params.substitutionPenaltyMultiplier === 'number' ? Math.max(1.0, params.substitutionPenaltyMultiplier) : 1.15;
+                this.isOptional = Boolean(params.isOptional);
+            }
+
+            toJSON() {
+                return {
+                    materialIdentity: this.materialIdentity,
+                    quantityPerOutputUnit: this.quantityPerOutputUnit,
+                    unit: this.unit,
+                    dimension: this.dimension,
+                    minimumGrade: this.minimumGrade,
+                    minimumPurity: this.minimumPurity,
+                    allowedSubstituteMaterialIds: this.allowedSubstituteMaterialIds,
+                    substitutionPenaltyMultiplier: this.substitutionPenaltyMultiplier,
+                    isOptional: this.isOptional
+                };
+            }
+        }
+
+        class RecipeOutputDefinition {
+            constructor(params = {}) {
+                if (!params.outputMaterialIdentity) {
+                    throw new Error('[RecipeOutputDefinition Violation]: outputMaterialIdentity is mandatory.');
+                }
+                this.outputMaterialIdentity = params.outputMaterialIdentity;
+                this.nominalYieldRatio = typeof params.nominalYieldRatio === 'number' ? Math.max(0, Math.min(1.0, params.nominalYieldRatio)) : 1.0;
+                this.unit = params.unit || 'UNITS';
+                this.dimension = params.dimension || QuantityDimension.PIECES;
+                this.targetGrade = typeof params.targetGrade === 'number' ? params.targetGrade : 1.0;
+                this.targetPurity = typeof params.targetPurity === 'number' ? params.targetPurity : 1.0;
+                this.isPrimary = params.isPrimary !== undefined ? Boolean(params.isPrimary) : true;
+            }
+
+            toJSON() {
+                return {
+                    outputMaterialIdentity: this.outputMaterialIdentity,
+                    nominalYieldRatio: this.nominalYieldRatio,
+                    unit: this.unit,
+                    dimension: this.dimension,
+                    targetGrade: this.targetGrade,
+                    targetPurity: this.targetPurity,
+                    isPrimary: this.isPrimary
+                };
+            }
+        }
+
+        class ProductionRecipe {
+            constructor(params = {}) {
+                if (!params.recipeId || !params.sector) {
+                    throw new Error('[ProductionRecipe Violation]: recipeId and sector are mandatory.');
+                }
+                this.recipeId = params.recipeId;
+                this.name = params.name || this.recipeId;
+                this.sector = params.sector;
+                this.version = params.version || '1.0.0';
+
+                this.inputs = Array.isArray(params.inputs) 
+                    ? params.inputs.map(i => i instanceof RecipeMaterialInput ? i : new RecipeMaterialInput(i)) 
+                    : [];
+                this.outputs = Array.isArray(params.outputs) 
+                    ? params.outputs.map(o => o instanceof RecipeOutputDefinition ? o : new RecipeOutputDefinition(o)) 
+                    : [];
+
+                this.nominalCycleDurationHours = typeof params.nominalCycleDurationHours === 'number' ? Math.max(0.1, params.nominalCycleDurationHours) : 1.0;
+                this.baseEnergyKWhPerOutputUnit = typeof params.baseEnergyKWhPerOutputUnit === 'number' ? Math.max(0, params.baseEnergyKWhPerOutputUnit) : 50.0;
+                this.baseWaterM3PerOutputUnit = typeof params.baseWaterM3PerOutputUnit === 'number' ? Math.max(0, params.baseWaterM3PerOutputUnit) : 0.5;
+                this.laborHoursPerOutputUnit = typeof params.laborHoursPerOutputUnit === 'number' ? Math.max(0, params.laborHoursPerOutputUnit) : 0.25;
+                this.minimumSkillTier = params.minimumSkillTier || SkillTierEnum.TECHNICIAN_CERTIFIED;
+                this.baseScrapWasteRatio = typeof params.baseScrapWasteRatio === 'number' ? Math.max(0, Math.min(1.0, params.baseScrapWasteRatio)) : 0.03;
+                
+                this.provenance = params.provenance || { sourceSubsystem: 'RECIPE_REGISTRY', timestamp: 0 };
+            }
+
+            getPrimaryOutput() {
+                return this.outputs.find(o => o.isPrimary) || this.outputs[0] || null;
+            }
+
+            toJSON() {
+                return {
+                    recipeId: this.recipeId,
+                    name: this.name,
+                    sector: this.sector,
+                    version: this.version,
+                    inputs: this.inputs.map(i => i.toJSON()),
+                    outputs: this.outputs.map(o => o.toJSON()),
+                    nominalCycleDurationHours: this.nominalCycleDurationHours,
+                    baseEnergyKWhPerOutputUnit: this.baseEnergyKWhPerOutputUnit,
+                    baseWaterM3PerOutputUnit: this.baseWaterM3PerOutputUnit,
+                    laborHoursPerOutputUnit: this.laborHoursPerOutputUnit,
+                    minimumSkillTier: this.minimumSkillTier,
+                    baseScrapWasteRatio: this.baseScrapWasteRatio,
+                    provenance: this.provenance
+                };
+            }
+        }
+
+        class RecipeRegistry {
+            constructor() {
+                this.recipes = new Map();
+                this.bySector = new Map();
+            }
+
+            registerRecipe(recipe) {
+                if (!(recipe instanceof ProductionRecipe)) throw new Error('Expected ProductionRecipe instance.');
+                this.recipes.set(recipe.recipeId, recipe);
+
+                if (!this.bySector.has(recipe.sector)) this.bySector.set(recipe.sector, new Set());
+                this.bySector.get(recipe.sector).add(recipe.recipeId);
+
+                return recipe;
+            }
+
+            getRecipe(recipeId) {
+                return this.recipes.get(recipeId) || null;
+            }
+
+            getRecipesBySector(sector) {
+                const set = this.bySector.get(sector);
+                return set ? Array.from(set).map(id => this.recipes.get(id)).filter(Boolean) : [];
+            }
+
+            clear() {
+                this.recipes.clear();
+                this.bySector.clear();
+            }
+        }
+
+        // =========================================================================
+        // 09.05: INPUT REQUIREMENT & MATERIAL SUBSTITUTION RESOLVER ENGINE [FIXED]
+        // =========================================================================
+
+        class InputRequirementResolver {
+            /**
+             * Resolves BoM requirements against inventory positions.
+             * Enforces strict mass balance tracking for substitutes and handles Array/Map/Object batch feeds.
+             */
+            static resolveRequirements(recipe, targetOutputUnits, inventoryBatches) {
+                const requirementManifest = [];
+                let isCompletelySatisfied = true;
+                const reasons = [];
+
+                // Multi-Type Collection Adapter
+                const batchList = Array.isArray(inventoryBatches) 
+                    ? inventoryBatches 
+                    : (inventoryBatches instanceof Map ? Array.from(inventoryBatches.values()) : Object.values(inventoryBatches || {}));
+
+                for (const reqInput of recipe.inputs) {
+                    const totalBaseQtyNeeded = reqInput.quantityPerOutputUnit * targetOutputUnits;
+                    let fulfilledQtyEquivalent = 0.0;
+                    let physicalMassToDeduct = 0.0;
+                    const matchedBatches = [];
+                    let isSubstituted = false;
+
+                    // 1. Direct Material Match
+                    for (const batch of batchList) {
+                        if (batch.materialIdentity === reqInput.materialIdentity && batch.quantity > 0) {
+                            const batchGrade = typeof batch.grade === 'number' ? batch.grade : 1.0;
+                            const batchPurity = typeof batch.purity === 'number' ? batch.purity : 1.0;
+
+                            if (batchGrade >= reqInput.minimumGrade && batchPurity >= reqInput.minimumPurity) {
+                                const neededEq = totalBaseQtyNeeded - fulfilledQtyEquivalent;
+                                const allocatable = Math.min(batch.quantity, neededEq);
+                                
+                                fulfilledQtyEquivalent += allocatable;
+                                physicalMassToDeduct += allocatable;
+                                matchedBatches.push({ batchId: batch.batchId, physicalQuantityToDeduct: allocatable, isSubstitute: false });
+                                
+                                if (fulfilledQtyEquivalent >= (totalBaseQtyNeeded - 1e-6)) break;
+                            }
+                        }
+                    }
+
+                    // 2. Authorized Substitute Fallback (With Exact Penalty Calculation)
+                    if (fulfilledQtyEquivalent < (totalBaseQtyNeeded - 1e-6) && reqInput.allowedSubstituteMaterialIds.length > 0) {
+                        const penalty = reqInput.substitutionPenaltyMultiplier;
+
+                        for (const subId of reqInput.allowedSubstituteMaterialIds) {
+                            for (const batch of batchList) {
+                                if (batch.materialIdentity === subId && batch.quantity > 0) {
+                                    const neededEq = totalBaseQtyNeeded - fulfilledQtyEquivalent;
+                                    const physicalNeeded = neededEq * penalty;
+                                    const allocatablePhysical = Math.min(batch.quantity, physicalNeeded);
+                                    const effectiveEqProvided = allocatablePhysical / penalty;
+
+                                    fulfilledQtyEquivalent += effectiveEqProvided;
+                                    physicalMassToDeduct += allocatablePhysical;
+                                    isSubstituted = true;
+                                    
+                                    matchedBatches.push({ 
+                                        batchId: batch.batchId, 
+                                        physicalQuantityToDeduct: allocatablePhysical, 
+                                        isSubstitute: true, 
+                                        substituteMaterialId: subId,
+                                        penaltyMultiplierApplied: penalty 
+                                    });
+
+                                    if (fulfilledQtyEquivalent >= (totalBaseQtyNeeded - 1e-6)) break;
+                                }
+                            }
+                            if (fulfilledQtyEquivalent >= (totalBaseQtyNeeded - 1e-6)) break;
+                        }
+                    }
+
+                    const fulfilled = fulfilledQtyEquivalent >= (totalBaseQtyNeeded - 1e-6);
+                    if (!fulfilled && !reqInput.isOptional) {
+                        isCompletelySatisfied = false;
+                        reasons.push(`DEFICIT: Required ${totalBaseQtyNeeded} ${reqInput.unit} of ${reqInput.materialIdentity}, resolved ${fulfilledQtyEquivalent.toFixed(2)}.`);
+                    }
+
+                    requirementManifest.push({
+                        materialIdentity: reqInput.materialIdentity,
+                        totalBaseQtyNeeded,
+                        fulfilledQtyEquivalent,
+                        physicalMassToDeduct,
+                        unit: reqInput.unit,
+                        dimension: reqInput.dimension,
+                        isSatisfied: fulfilled,
+                        isSubstituted,
+                        matchedBatches
+                    });
+                }
+
+                return {
+                    isSatisfied: isCompletelySatisfied,
+                    targetOutputUnits,
+                    requirementManifest,
+                    rejectionReasons: reasons
+                };
+            }
+        }
+
+        // =========================================================================
+        // 09.06 & 09.07: CAPACITY, UTILIZATION & OEE ENGINES
+        // =========================================================================
+
+        class CapacityEngine {
+            /**
+             * Multi-Tier Capacity Derivation: Installed -> Technical -> Operational -> Effective
+             */
+            static computeEffectiveCapacity(facility, line, recipe, durationHours = 24.0, techModifier = 1.0, oeeFactor = 0.85) {
+                const lineThroughputDaily = line ? line.installedThroughputDaily : facility.installedCapacityDaily;
+                const hourlyRate = lineThroughputDaily / 24.0;
+                const cycleDuration = recipe ? recipe.nominalCycleDurationHours : 1.0;
+
+                const technicalMaxUnits = (hourlyRate * durationHours) / cycleDuration;
+                const facilityLifecycleDerate = facility.operationalLifecycle === FacilityOperationalLifecycle.DEGRADED ? 0.65 : 1.0;
+                const lineSpeedDerate = line ? line.nominalSpeedMultiplier : 1.0;
+
+                const operationalCapacityUnits = technicalMaxUnits * facilityLifecycleDerate * lineSpeedDerate * techModifier;
+                const effectiveCapacityUnits = operationalCapacityUnits * oeeFactor;
+
+                return {
+                    installedThroughputDaily: lineThroughputDaily,
+                    durationHours,
+                    technicalMaxUnits,
+                    operationalCapacityUnits,
+                    effectiveCapacityUnits: Math.max(0, effectiveCapacityUnits)
+                };
+            }
+        }
+
+        class OverallEquipmentEffectiveness {
+            static computeOEE(availabilityRatio, performanceRatio, qualityYieldRatio) {
+                const A = Math.max(0, Math.min(1.0, typeof availabilityRatio === 'number' ? availabilityRatio : 0.90));
+                const P = Math.max(0, Math.min(1.0, typeof performanceRatio === 'number' ? performanceRatio : 0.95));
+                const Q = Math.max(0, Math.min(1.0, typeof qualityYieldRatio === 'number' ? qualityYieldRatio : 0.98));
+
+                const oeeScore = A * P * Q;
+
+                return {
+                    oeeScore,
+                    availability: A,
+                    performance: P,
+                    quality: Q,
+                    isWorldClass: oeeScore >= 0.85
+                };
+            }
+        }
+
+        // =========================================================================
+        // 09.08: WORKFORCE & MULTI-TIER SKILL CAPABILITY ENGINE [FIXED]
+        // =========================================================================
+
+        class WorkforceCapabilityEvaluator {
+            static evaluateWorkforce(requiredHeadcount, requiredSkillTier, availableWorkers = []) {
+                if (requiredHeadcount <= 0) {
+                    return { isSatisfied: true, qualifiedCount: 0, skillMatchRatio: 1.0, laborEfficiencyFactor: 1.0 };
+                }
+
+                const tierHierarchy = [
+                    SkillTierEnum.UNSKILLED_MANUAL,
+                    SkillTierEnum.OPERATOR_BASIC,
+                    SkillTierEnum.TECHNICIAN_CERTIFIED,
+                    SkillTierEnum.SPECIALIST_ENGINEER,
+                    SkillTierEnum.METALLURGIST_SCIENTIST
+                ];
+
+                const requiredTierRank = tierHierarchy.indexOf(requiredSkillTier);
+                let qualifiedCount = 0;
+
+                // Multi-Type Collection Adapter
+                const workerList = Array.isArray(availableWorkers) 
+                    ? availableWorkers 
+                    : (availableWorkers instanceof Map ? Array.from(availableWorkers.values()) : Object.values(availableWorkers || {}));
+
+                workerList.forEach(w => {
+                    const workerTierRank = tierHierarchy.indexOf(w.skillTier);
+                    if (workerTierRank >= requiredTierRank && w.isAvailable !== false) {
+                        qualifiedCount += 1;
+                    }
+                });
+
+                const isSatisfied = qualifiedCount >= requiredHeadcount;
+                const skillMatchRatio = Math.min(1.0, qualifiedCount / requiredHeadcount);
+                const laborEfficiencyFactor = isSatisfied ? 1.0 : Math.max(0.2, skillMatchRatio);
+
+                return {
+                    isSatisfied,
+                    requiredHeadcount,
+                    qualifiedCount,
+                    skillMatchRatio,
+                    laborEfficiencyFactor,
+                    shortfall: Math.max(0, requiredHeadcount - qualifiedCount)
+                };
+            }
+        }
+
+        // =========================================================================
+        // 09.09: INDUSTRIAL UTILITY & ENERGY CONSTRAINT EVALUATOR
+        // =========================================================================
+
+        class UtilityConstraintEvaluator {
+            static evaluateUtilities(plannedUnits, recipe, availableGridPowerKWh = Infinity, availableWaterM3 = Infinity) {
+                const totalPowerRequiredKWh = plannedUnits * recipe.baseEnergyKWhPerOutputUnit;
+                const totalWaterRequiredM3 = plannedUnits * recipe.baseWaterM3PerOutputUnit;
+
+                let powerCappedUnits = plannedUnits;
+                let waterCappedUnits = plannedUnits;
+                const constraints = [];
+
+                if (totalPowerRequiredKWh > availableGridPowerKWh && recipe.baseEnergyKWhPerOutputUnit > 0) {
+                    powerCappedUnits = availableGridPowerKWh / recipe.baseEnergyKWhPerOutputUnit;
+                    constraints.push({ type: 'POWER_SHORTAGE', required: totalPowerRequiredKWh, available: availableGridPowerKWh });
+                }
+
+                if (totalWaterRequiredM3 > availableWaterM3 && recipe.baseWaterM3PerOutputUnit > 0) {
+                    waterCappedUnits = availableWaterM3 / recipe.baseWaterM3PerOutputUnit;
+                    constraints.push({ type: 'WATER_SHORTAGE', required: totalWaterRequiredM3, available: availableWaterM3 });
+                }
+
+                const allowableUnits = Math.min(plannedUnits, powerCappedUnits, waterCappedUnits);
+
+                return {
+                    isConstrained: allowableUnits < plannedUnits,
+                    plannedUnits,
+                    allowableUnits: Math.max(0, allowableUnits),
+                    powerRequiredKWh: totalPowerRequiredKWh,
+                    waterRequiredM3: totalWaterRequiredM3,
+                    activeConstraints: constraints
+                };
+            }
+        }
+
+        // =========================================================================
+        // 09.10: TECHNOLOGY CAPABILITY & AUTOMATION READINESS MATRIX
+        // =========================================================================
+
+        class TechnologyCapabilityMatrix {
+            constructor(params = {}) {
+                this.technologyKey = params.technologyKey || 'TECH:STANDARD';
+                this.technologyReadinessLevel = typeof params.technologyReadinessLevel === 'number' ? Math.max(1, Math.min(9, params.technologyReadinessLevel)) : 9;
+                this.automationFactor = typeof params.automationFactor === 'number' ? Math.max(0.2, Math.min(3.0, params.automationFactor)) : 1.0;
+                this.precisionYieldBonus = typeof params.precisionYieldBonus === 'number' ? Math.max(0, params.precisionYieldBonus) : 0.0;
+                this.energyEfficiencyMultiplier = typeof params.energyEfficiencyMultiplier === 'number' ? Math.max(0.5, params.energyEfficiencyMultiplier) : 1.0;
+                this.provenance = params.provenance || { sourceSubsystem: 'TECHNOLOGY_ENGINE', timestamp: 0 };
+            }
+
+            isCapable(minimumTRL = 7) {
+                return this.technologyReadinessLevel >= minimumTRL;
+            }
+
+            toJSON() {
+                return {
+                    technologyKey: this.technologyKey,
+                    technologyReadinessLevel: this.technologyReadinessLevel,
+                    automationFactor: this.automationFactor,
+                    precisionYieldBonus: this.precisionYieldBonus,
+                    energyEfficiencyMultiplier: this.energyEfficiencyMultiplier,
+                    provenance: this.provenance
+                };
+            }
+        }
+
+        // =========================================================================
+        // 09.11: MAINTENANCE DEGRADATION & AVAILABILITY ENGINE
+        // =========================================================================
+
+        class MaintenanceDegradationEngine {
+            static computeWearIncrement(currentWearPercentage, executedUnits, maintenanceIntervalUnits = 100000) {
+                const wearIncrement = (executedUnits / Math.max(1, maintenanceIntervalUnits)) * 100.0;
+                const updatedWear = Math.min(100.0, currentWearPercentage + wearIncrement);
+
+                let operationalDerate = 1.0;
+                if (updatedWear > 80.0) {
+                    operationalDerate = 0.70;
+                } else if (updatedWear > 50.0) {
+                    operationalDerate = 0.90;
+                }
+
+                return {
+                    previousWearPercentage: currentWearPercentage,
+                    updatedWearPercentage: updatedWear,
+                    operationalDerate,
+                    requiresImmediateMaintenance: updatedWear >= 95.0
+                };
+            }
+        }
+
+        // =========================================================================
+        // 09.12: PRODUCTION SCHEDULING & PRIORITY QUEUEING ENGINE
+        // =========================================================================
+
+        class ProductionOrder {
+            constructor(params = {}) {
+                if (!params.recipeId || !params.facilityId || typeof params.targetUnits !== 'number') {
+                    throw new Error('[ProductionOrder Violation]: recipeId, facilityId, and targetUnits are mandatory.');
+                }
+
+                const seed = `${params.facilityId}:${params.recipeId}:${params.targetUnits}:${params.createdTick || 0}`;
+                this.orderId = params.orderId || DeterministicHashEngine.generateDeterministicId('ORDER', [seed]);
+                this.recipeId = params.recipeId;
+                this.facilityId = params.facilityId;
+                this.lineId = params.lineId || null;
+                this.targetUnits = Math.max(0, params.targetUnits);
+                this.priority = typeof params.priority === 'number' ? params.priority : 1;
+                this.schedulingMode = params.schedulingMode || ProductionSchedulingMode.BATCH;
+                this.createdTick = typeof params.createdTick === 'number' ? params.createdTick : 0;
+                this.scheduledStartTick = typeof params.scheduledStartTick === 'number' ? params.scheduledStartTick : this.createdTick;
+                this.status = params.status || ProductionOrderStatusEnum.CREATED;
+                this.provenance = params.provenance || { sourceSubsystem: 'PRODUCTION_SCHEDULER', timestamp: 0 };
+            }
+
+            toJSON() {
+                return {
+                    orderId: this.orderId,
+                    recipeId: this.recipeId,
+                    facilityId: this.facilityId,
+                    lineId: this.lineId,
+                    targetUnits: this.targetUnits,
+                    priority: this.priority,
+                    schedulingMode: this.schedulingMode,
+                    createdTick: this.createdTick,
+                    scheduledStartTick: this.scheduledStartTick,
+                    status: this.status,
+                    provenance: this.provenance
+                };
+            }
+        }
+
+        class ProductionScheduleQueue {
+            constructor() {
+                this.queue = [];
+            }
+
+            enqueue(order) {
+                const inst = order instanceof ProductionOrder ? order : new ProductionOrder(order);
+                this.queue.push(inst);
+                this.queue.sort((a, b) => {
+                    if (a.priority !== b.priority) return b.priority - a.priority; // Higher priority first
+                    return a.scheduledStartTick - b.scheduledStartTick;
+                });
+            }
+
+            dequeue() {
+                return this.queue.shift() || null;
+            }
+
+            peek() {
+                return this.queue[0] || null;
+            }
+
+            size() {
+                return this.queue.length;
+            }
+
+            clear() {
+                this.queue = [];
+            }
+        }
+
+        // =========================================================================
+        // 09.13: MATERIAL ALLOCATION & PART 07 REAL INVENTORY LEDGER BRIDGE [FIXED]
+        // =========================================================================
+
+        class InventoryAllocationBridge {
+            /**
+             * [FIX]: Dynamically queries real inventory positions at facility's location
+             * and reserves batches atomically via Part 07 pipeline.
+             */
+            static executeInventoryReserveAndAllocate(inventoryPipeline, requirementManifest, facility, operationTargetId, currentTick = 0) {
+                if (!inventoryPipeline || typeof inventoryPipeline.reserve !== 'function') {
+                    throw new Error('[InventoryAllocationBridge]: Valid Part 07 Inventory Pipeline is required.');
+                }
+
+                const transactions = [];
+
+                for (const req of requirementManifest) {
+                    for (const match of req.matchedBatches) {
+                        // Query real positions for batch from Part 07 Ledger
+                        let positions = [];
+                        if (inventoryPipeline.registry && inventoryPipeline.registry.ledger) {
+                            positions = inventoryPipeline.registry.ledger.getPositionsForBatch(match.batchId);
+                        }
+
+                        // Fallback to facility location position if direct batch index is empty
+                        let targetPosition = null;
+                        if (positions && positions.length > 0) {
+                            targetPosition = positions.find(p => p.locationId === facility.locationNodeKey) || positions[0];
+                        }
+
+                        const posId = targetPosition ? targetPosition.positionId : `POS:${match.batchId}:${facility.locationNodeKey}`;
+
+                        const resTx = inventoryPipeline.reserve(
+                            posId,
+                            match.physicalQuantityToDeduct,
+                            'INDUSTRIAL_PRODUCTION_BOM_INPUT',
+                            operationTargetId,
+                            currentTick,
+                            500
+                        );
+
+                        if (!resTx || !resTx.success) {
+                            throw new Error(`[InventoryAllocationBridge Failure]: Reservation failed for batch '${match.batchId}': ${resTx ? resTx.error : 'Unknown'}`);
+                        }
+
+                        const allocTx = inventoryPipeline.allocate(
+                            resTx.result.reservationId,
+                            posId,
+                            operationTargetId,
+                            currentTick
+                        );
+
+                        if (!allocTx || !allocTx.success) {
+                            throw new Error(`[InventoryAllocationBridge Failure]: Allocation failed for reservation '${resTx.result.reservationId}'.`);
+                        }
+
+                        transactions.push({
+                            batchId: match.batchId,
+                            positionId: posId,
+                            physicalQuantityDeducted: match.physicalQuantityToDeduct,
+                            reservationId: resTx.result.reservationId,
+                            allocationId: allocTx.result.allocationId,
+                            isSubstitute: match.isSubstitute
+                        });
+                    }
+                }
+
+                return transactions;
+            }
+        }
+
+        // =========================================================================
+        // EXPORT VOLUME 9.1 INTERNAL SCOPE
+        // =========================================================================
+
+        const Volume9_1_Scope = Object.freeze({
+            // Enums & Constants
+            QuantityDimension,
+            IndustrialSectorEnum,
+            FacilityOperationalLifecycle,
+            ProductionLineOperationalStatus,
+            ProductionSchedulingMode,
+            ProductionConstraintCategory,
+            SkillTierEnum,
+            ProductionOrderStatusEnum,
+            ProductionHealthStatus,
+            UnknownPolicyEnum,
+            RoundingModeEnum,
+            ErrorTaxonomy,
+
+            // Infrastructure
+            DeterministicHashEngine,
+            DeterministicFormulaInterpreter,
+
+            // Subsystems 09.01 - 09.13 Classes
+            IndustrialEntity,
+            IndustrialEntityRegistry,
+            ProductionLine,
+            IndustrialFacility,
+            FacilityLifecycleFSM,
+            FacilityRegistry,
+            RecipeMaterialInput,
+            RecipeOutputDefinition,
+            ProductionRecipe,
+            RecipeRegistry,
+            InputRequirementResolver,
+            CapacityEngine,
+            OverallEquipmentEffectiveness,
+            WorkforceCapabilityEvaluator,
+            UtilityConstraintEvaluator,
+            TechnologyCapabilityMatrix,
+            MaintenanceDegradationEngine,
+            ProductionOrder,
+            ProductionScheduleQueue,
+            InventoryAllocationBridge
+        });
+
+        global.__GSRSK_P09_VOL1__ = Volume9_1_Scope;
+
+    })(typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : global));
+
+    // ============================================================================
+    // GSRSK — PART 09: PRODUCTION & INDUSTRIAL CHAIN ENGINE (VOLUME 2 OF 2)
+    // ============================================================================
+    (function(global) {
+        'use strict';
+
+        // Ingest Volume 9.1 Scope
+        const Vol1 = global.__GSRSK_P09_VOL1__;
+        if (!Vol1) {
+            throw new Error('[GSRSK PART 09 FATAL]: Volume 9.1 must be loaded before Volume 9.2.');
+        }
+
+        const {
+            QuantityDimension,
+            IndustrialSectorEnum,
+            FacilityOperationalLifecycle,
+            ProductionLineOperationalStatus,
+            ProductionSchedulingMode,
+            ProductionConstraintCategory,
+            SkillTierEnum,
+            ProductionOrderStatusEnum,
+            ProductionHealthStatus,
+            UnknownPolicyEnum,
+            RoundingModeEnum,
+            ErrorTaxonomy,
+            DeterministicHashEngine,
+            DeterministicFormulaInterpreter,
+            IndustrialEntity,
+            IndustrialEntityRegistry,
+            ProductionLine,
+            IndustrialFacility,
+            FacilityLifecycleFSM,
+            FacilityRegistry,
+            RecipeMaterialInput,
+            RecipeOutputDefinition,
+            ProductionRecipe,
+            RecipeRegistry,
+            InputRequirementResolver,
+            CapacityEngine,
+            OverallEquipmentEffectiveness,
+            WorkforceCapabilityEvaluator,
+            UtilityConstraintEvaluator,
+            TechnologyCapabilityMatrix,
+            MaintenanceDegradationEngine,
+            ProductionOrder,
+            ProductionScheduleQueue,
+            InventoryAllocationBridge
+        } = Vol1;
+
+        // Resolve CanonicalResourceBatch from Part 07 Scope if available
+        const Part7Scope = global.__GSRSK_P07_VOL1__ || (global.GSRSK_Part07 ? global.GSRSK_Part07 : null);
+        const CanonicalResourceBatchClass = Part7Scope && Part7Scope.CanonicalResourceBatch 
+            ? Part7Scope.CanonicalResourceBatch 
+            : class CanonicalResourceBatchFallback {
+                constructor(params = {}) {
+                    Object.assign(this, params);
+                }
+                clone() { return new CanonicalResourceBatchClass(this); }
+                toJSON() { return { ...this }; }
+            };
+
+        // =========================================================================
+        // 09.15 & 09.16: YIELD, LOSS, WASTE & BYPRODUCT ENGINES (MASS BALANCE MATH) [FIXED]
+        // =========================================================================
+
+        class YieldLossCalculationEngine {
+            /**
+             * Core Mass Balance Equation:
+             * Total Input Mass == Primary Output Mass + Secondary Outputs + Byproducts + Waste (Scrap) + Process Loss
+             * [FIX]: Enforces strict mass fraction partitioning preventing over-allocation.
+             */
+            static computeYieldAndLoss(totalPhysicalInputMass, recipe, targetUnitsToProduce, techModifier = 1.0, oeeFactor = 1.0) {
+                if (totalPhysicalInputMass <= 0 || targetUnitsToProduce <= 0) {
+                    return {
+                        primaryOutputMass: 0,
+                        byproductMass: 0,
+                        wasteScrapMass: 0,
+                        processLossMass: 0,
+                        totalAccountedMass: 0,
+                        isBalanced: true
+                    };
+                }
+
+                const primaryDef = recipe.getPrimaryOutput();
+                const scrapRatio = Math.max(0, Math.min(0.5, recipe.baseScrapWasteRatio));
+                
+                // Calculate secondary byproduct ratios (capped to prevent sum > 1.0)
+                const secondaryDefs = recipe.outputs.filter(o => !o.isPrimary);
+                let rawByproductRatio = 0;
+                secondaryDefs.forEach(sec => {
+                    rawByproductRatio += (sec.nominalYieldRatio * 0.05);
+                });
+                const byproductRatio = Math.min(0.2, rawByproductRatio);
+
+                // Compute Base Usable Primary Ratio
+                const maxAllowablePrimaryRatio = Math.max(0.1, 1.0 - scrapRatio - byproductRatio);
+                const nominalYieldRatio = primaryDef ? primaryDef.nominalYieldRatio : 1.0;
+                const effectiveYieldMultiplier = Math.min(1.0, nominalYieldRatio * techModifier * oeeFactor);
+                
+                // Primary Mass Allocation
+                const primaryOutputMass = totalPhysicalInputMass * maxAllowablePrimaryRatio * effectiveYieldMultiplier;
+                
+                // Waste Scrap Allocation
+                const wasteScrapMass = totalPhysicalInputMass * scrapRatio;
+
+                // Byproduct Mass Allocation
+                const byproductMass = totalPhysicalInputMass * byproductRatio;
+
+                // Process Loss (Deductive Remainder ensures exact 100% mass balance)
+                let processLossMass = totalPhysicalInputMass - (primaryOutputMass + byproductMass + wasteScrapMass);
+                if (processLossMass < 0) {
+                    processLossMass = 0;
+                }
+
+                const totalAccountedMass = primaryOutputMass + byproductMass + wasteScrapMass + processLossMass;
+                const isBalanced = Math.abs(totalPhysicalInputMass - totalAccountedMass) < 1e-6;
+
+                return {
+                    primaryOutputMass,
+                    byproductMass,
+                    wasteScrapMass,
+                    processLossMass,
+                    totalAccountedMass,
+                    effectiveYield: effectiveYieldMultiplier,
+                    isBalanced
+                };
+            }
+        }
+
+        // =========================================================================
+        // 09.17: QUALITY & GRADE TRANSFORMATION ENGINE
+        // =========================================================================
+
+        class ProductionQualityEngine {
+            static computeQualityTransform(recipe, inputManifest, techPrecisionBonus = 0.0) {
+                let totalInputMetalMass = 0.0;
+                let totalInputPhysicalMass = 0.0;
+
+                inputManifest.forEach(req => {
+                    totalInputPhysicalMass += req.physicalMassToDeduct;
+                    totalInputMetalMass += (req.physicalMassToDeduct * (req.minimumGrade || 1.0) * (req.minimumPurity || 1.0));
+                });
+
+                const primaryDef = recipe.getPrimaryOutput();
+                const baseGrade = primaryDef ? primaryDef.targetGrade : 1.0;
+                const basePurity = primaryDef ? primaryDef.targetPurity : 1.0;
+
+                const effectivePurity = Math.min(1.0, basePurity + techPrecisionBonus);
+                const effectiveGrade = Math.min(1.0, baseGrade);
+
+                return {
+                    targetGrade: effectiveGrade,
+                    targetPurity: effectivePurity,
+                    totalInputMetalMass,
+                    totalInputPhysicalMass,
+                    specificationComplianceRating: 1.0
+                };
+            }
+        }
+
+        // =========================================================================
+        // 09.18: MULTI-COMPONENT COST ATTRIBUTION ENGINE (INTERNAL LEDGER) [FIXED]
+        // =========================================================================
+
+        class ProductionCostLedger {
+            constructor(params = {}) {
+                this.rawMaterialCost = typeof params.rawMaterialCost === 'number' ? params.rawMaterialCost : 0.0;
+                this.energyCost = typeof params.energyCost === 'number' ? params.energyCost : 0.0;
+                this.waterCost = typeof params.waterCost === 'number' ? params.waterCost : 0.0;
+                this.laborCost = typeof params.laborCost === 'number' ? params.laborCost : 0.0;
+                this.maintenanceCost = typeof params.maintenanceCost === 'number' ? params.maintenanceCost : 0.0;
+                this.technologyRoyaltyCost = typeof params.technologyRoyaltyCost === 'number' ? params.technologyRoyaltyCost : 0.0;
+                this.allocatedOverheadCost = typeof params.allocatedOverheadCost === 'number' ? params.allocatedOverheadCost : 0.0;
+                this.depreciationCost = typeof params.depreciationCost === 'number' ? params.depreciationCost : 0.0;
+
+                this.totalProductionCost = this.rawMaterialCost + this.energyCost + this.waterCost + 
+                                           this.laborCost + this.maintenanceCost + this.technologyRoyaltyCost + 
+                                           this.allocatedOverheadCost + this.depreciationCost;
+                this.currencyCode = params.currencyCode || 'USD_INTERNAL_ACC';
+            }
+
+            toJSON() {
+                return {
+                    rawMaterialCost: this.rawMaterialCost,
+                    energyCost: this.energyCost,
+                    waterCost: this.waterCost,
+                    laborCost: this.laborCost,
+                    maintenanceCost: this.maintenanceCost,
+                    technologyRoyaltyCost: this.technologyRoyaltyCost,
+                    allocatedOverheadCost: this.allocatedOverheadCost,
+                    depreciationCost: this.depreciationCost,
+                    totalProductionCost: this.totalProductionCost,
+                    currencyCode: this.currencyCode
+                };
+            }
+        }
+
+        class CostAttributionEngine {
+            static computeProductionCost(producedUnits, recipe, utilityEval, workforceEval, options = {}) {
+                const rawMatCost = producedUnits * (typeof options.inputCostBaseline === 'number' ? options.inputCostBaseline : 100.0);
+                const energyRate = typeof options.energyRatePerKWh === 'number' ? options.energyRatePerKWh : 0.08;
+                const waterRate = typeof options.waterRatePerM3 === 'number' ? options.waterRatePerM3 : 1.20;
+                const laborRatePerHour = typeof options.laborRatePerHour === 'number' ? options.laborRatePerHour : 25.0;
+
+                const energyCost = (utilityEval ? utilityEval.powerRequiredKWh : 0) * energyRate;
+                const waterCost = (utilityEval ? utilityEval.waterRequiredM3 : 0) * waterRate;
+                const laborCost = (workforceEval ? workforceEval.qualifiedCount : 10) * 8 * laborRatePerHour;
+                const maintCost = producedUnits * (typeof options.maintenanceCostPerUnit === 'number' ? options.maintenanceCostPerUnit : 2.50);
+                const overhead = producedUnits * (typeof options.overheadPerUnit === 'number' ? options.overheadPerUnit : 5.00);
+
+                return new ProductionCostLedger({
+                    rawMaterialCost: rawMatCost,
+                    energyCost: energyCost,
+                    waterCost: waterCost,
+                    laborCost: laborCost,
+                    maintenanceCost: maintCost,
+                    allocatedOverheadCost: overhead
+                });
+            }
+        }
+
+        // =========================================================================
+        // 09.19 & 09.20: PRODUCTION STATE & OUTPUT BATCH GENERATOR [FIXED]
+        // =========================================================================
+
+        class ProductionStateSnapshot {
+            constructor(params = {}) {
+                this.facilityId = params.facilityId;
+                this.lineId = params.lineId || 'PRIMARY_LINE';
+                this.recipeId = params.recipeId;
+                this.executedUnits = typeof params.executedUnits === 'number' ? params.executedUnits : 0;
+                this.producedOutputMass = typeof params.producedOutputMass === 'number' ? params.producedOutputMass : 0;
+                this.utilizationPercentage = typeof params.utilizationPercentage === 'number' ? params.utilizationPercentage : 0;
+                this.currentOEE = typeof params.currentOEE === 'number' ? params.currentOEE : 0.85;
+                this.costBreakdown = params.costBreakdown instanceof ProductionCostLedger ? params.costBreakdown : new ProductionCostLedger(params.costBreakdown || {});
+                this.recordedTick = typeof params.recordedTick === 'number' ? params.recordedTick : 0;
+                this.provenance = params.provenance || { sourceSubsystem: 'PRODUCTION_STATE_ENGINE', timestamp: 0 };
+            }
+
+            toJSON() {
+                return {
+                    facilityId: this.facilityId,
+                    lineId: this.lineId,
+                    recipeId: this.recipeId,
+                    executedUnits: this.executedUnits,
+                    producedOutputMass: this.producedOutputMass,
+                    utilizationPercentage: this.utilizationPercentage,
+                    currentOEE: this.currentOEE,
+                    costBreakdown: this.costBreakdown.toJSON(),
+                    recordedTick: this.recordedTick,
+                    provenance: this.provenance
+                };
+            }
+        }
+
+        class OutputBatchGenerator {
+            /**
+             * [FIX]: Synthesizes compliant CanonicalResourceBatch instances for Part 07 intake.
+             */
+            static generateOutputBatches(recipe, targetUnits, yieldMath, qualityResult, facility, upstreamBatchIds = [], currentTick = 0) {
+                const primaryDef = recipe.getPrimaryOutput();
+                const outputBatches = [];
+
+                if (primaryDef && yieldMath.primaryOutputMass > 0) {
+                    const batchSeed = `${facility.facilityId}:${recipe.recipeId}:${primaryDef.outputMaterialIdentity}:${currentTick}:PRI`;
+                    const batchId = DeterministicHashEngine.generateDeterministicId('BATCH_PROD', [batchSeed]);
+
+                    const batchPayload = {
+                        batchId,
+                        materialIdentity: primaryDef.outputMaterialIdentity,
+                        quantity: yieldMath.primaryOutputMass,
+                        unit: primaryDef.unit,
+                        dimension: primaryDef.dimension || QuantityDimension.MASS,
+                        epistemicState: 'MANUFACTURED_FINISHED_PRODUCT',
+                        quality: qualityResult.specificationComplianceRating,
+                        grade: qualityResult.targetGrade,
+                        purity: qualityResult.targetPurity,
+                        physicalState: 'SOLID',
+                        chemicalState: 'FINISHED_PRODUCT',
+                        ownerKey: facility.ownerKey,
+                        custodianKey: facility.operatorKey,
+                        locationNodeKey: facility.locationNodeKey,
+                        facilityKey: facility.facilityId,
+                        originKey: 'MANUFACTURED_ORIGIN',
+                        transformationReference: `RECIPE:${recipe.recipeId}`,
+                        sourceBatchIds: [...upstreamBatchIds].sort(),
+                        lifecycleStatus: 'AVAILABLE',
+                        registeredTick: currentTick,
+                        provenance: {
+                            sourceSubsystem: 'OUTPUT_BATCH_GENERATOR',
+                            facilityId: facility.facilityId,
+                            recipeId: recipe.recipeId,
+                            timestamp: 0
+                        }
+                    };
+
+                    outputBatches.push(new CanonicalResourceBatchClass(batchPayload));
+                }
+
+                return outputBatches;
+            }
+        }
+
+        // =========================================================================
+        // 09.21 & 09.22: INDUSTRIAL CHAIN DAG, TOPOLOGICAL SORT & BOTTLENECK ENGINE [FIXED]
+        // =========================================================================
+
+        class IndustrialChainNode {
+            constructor(params = {}) {
+                if (!params.nodeId || !params.materialIdentity) {
+                    throw new Error('[IndustrialChainNode Violation]: nodeId and materialIdentity are mandatory.');
+                }
+                this.nodeId = params.nodeId;
+                this.materialIdentity = params.materialIdentity;
+                this.facilityId = params.facilityId || null;
+                this.recipeId = params.recipeId || null;
+                this.upstreamMaterialIds = Array.isArray(params.upstreamMaterialIds) ? [...params.upstreamMaterialIds] : [];
+                this.downstreamMaterialIds = Array.isArray(params.downstreamMaterialIds) ? [...params.downstreamMaterialIds] : [];
+            }
+
+            toJSON() {
+                return {
+                    nodeId: this.nodeId,
+                    materialIdentity: this.materialIdentity,
+                    facilityId: this.facilityId,
+                    recipeId: this.recipeId,
+                    upstreamMaterialIds: this.upstreamMaterialIds,
+                    downstreamMaterialIds: this.downstreamMaterialIds
+                };
+            }
+        }
+
+        class IndustrialChainResolver {
+            constructor() {
+                this.chainNodes = new Map();
+            }
+
+            registerChainNode(node) {
+                const inst = node instanceof IndustrialChainNode ? node : new IndustrialChainNode(node);
+                this.chainNodes.set(inst.materialIdentity, inst);
+                return inst;
+            }
+
+            detectCircularDependencies() {
+                const visited = new Set();
+                const recursionStack = new Set();
+                const detectedCycles = [];
+
+                const dfs = (currMaterial, path) => {
+                    visited.add(currMaterial);
+                    recursionStack.add(currMaterial);
+                    path.push(currMaterial);
+
+                    const node = this.chainNodes.get(currMaterial);
+                    if (node && node.upstreamMaterialIds) {
+                        for (const upstream of node.upstreamMaterialIds) {
+                            if (!visited.has(upstream)) {
+                                dfs(upstream, path);
+                            } else if (recursionStack.has(upstream)) {
+                                const cyclePath = path.slice(path.indexOf(upstream));
+                                cyclePath.push(upstream);
+                                detectedCycles.push(cyclePath);
+                            }
+                        }
+                    }
+
+                    recursionStack.delete(currMaterial);
+                    path.pop();
+                };
+
+                this.chainNodes.forEach((_, matId) => {
+                    if (!visited.has(matId)) {
+                        dfs(matId, []);
+                    }
+                });
+
+                return {
+                    hasCycle: detectedCycles.length > 0,
+                    detectedCycles
+                };
+            }
+
+            /**
+             * [FIX]: Resolves exact execution order of multi-stage assembly chains (Topological Sort).
+             */
+            resolveExecutionOrder(targetMaterialIdentity) {
+                const cycleCheck = this.detectCircularDependencies();
+                if (cycleCheck.hasCycle) {
+                    throw new Error(`[IndustrialChainResolver]: Cannot resolve execution order. Circular dependency detected: ${JSON.stringify(cycleCheck.detectedCycles)}`);
+                }
+
+                const executionOrder = [];
+                const visited = new Set();
+
+                const traverse = (matId) => {
+                    if (visited.has(matId)) return;
+                    visited.add(matId);
+
+                    const node = this.chainNodes.get(matId);
+                    if (node && node.upstreamMaterialIds && node.upstreamMaterialIds.length > 0) {
+                        node.upstreamMaterialIds.forEach(upstream => traverse(upstream));
+                    }
+                    executionOrder.push(matId);
+                };
+
+                traverse(targetMaterialIdentity);
+                return executionOrder;
+            }
+
+            clear() {
+                this.chainNodes.clear();
+            }
+        }
+
+        class BottleneckResolver {
+            static resolveBottlenecks(capacityEval, utilityEval, workforceEval, inputManifest) {
+                const bottlenecks = [];
+
+                // 1. Raw Material Shortage
+                inputManifest.forEach(req => {
+                    if (!req.isSatisfied) {
+                        bottlenecks.push({
+                            axis: 'RAW_MATERIAL_INPUT',
+                            materialIdentity: req.materialIdentity,
+                            severity: 'BLOCKING',
+                            deficitQuantity: req.totalBaseQtyNeeded - req.fulfilledQtyEquivalent
+                        });
+                    }
+                });
+
+                // 2. Utility Power/Water Shortage
+                if (utilityEval && utilityEval.isConstrained) {
+                    utilityEval.activeConstraints.forEach(c => {
+                        bottlenecks.push({
+                            axis: c.type === 'POWER_SHORTAGE' ? 'ENERGY_ELECTRIC' : 'WATER_INDUSTRIAL',
+                            severity: 'THROTTLING',
+                            details: c
+                        });
+                    });
+                }
+
+                // 3. Labor Skill Shortage
+                if (workforceEval && !workforceEval.isSatisfied) {
+                    bottlenecks.push({
+                        axis: 'WORKFORCE_LABOR',
+                        severity: 'DERATING',
+                        shortfallHeadcount: workforceEval.shortfall,
+                        skillMatchRatio: workforceEval.skillMatchRatio
+                    });
+                }
+
+                return {
+                    hasBottleneck: bottlenecks.length > 0,
+                    primaryBottleneck: bottlenecks.length > 0 ? bottlenecks[0] : null,
+                    allBottlenecks: bottlenecks
+                };
+            }
+        }
+
+        // =========================================================================
+        // 09.23 & 09.24: PRODUCTION CONSTRAINT RESOLVER & DOMAIN EVENT GENERATOR
+        // =========================================================================
+
+        class ProductionConstraintResolver {
+            static evaluateConstraints(capacityUnits, utilityUnits, inputResolvedUnits, workforceEfficiency) {
+                const rawCap = Math.min(capacityUnits, utilityUnits, inputResolvedUnits);
+                const effectiveUnits = rawCap * workforceEfficiency;
+
+                let bindingAxis = 'INSTALLED_CAPACITY';
+                if (effectiveUnits === inputResolvedUnits) bindingAxis = 'INPUT_MATERIAL';
+                else if (effectiveUnits === utilityUnits) bindingAxis = 'UTILITY_RESOURCE';
+                else if (workforceEfficiency < 1.0) bindingAxis = 'WORKFORCE_SKILL';
+
+                return {
+                    allowableUnits: Math.max(0, effectiveUnits),
+                    bindingConstraintAxis: bindingAxis
+                };
+            }
+        }
+
+        class ProductionEventGenerator {
+            static createEvent(eventType, orderId, facilityId, details = {}, currentTick = 0) {
+                const seed = `${eventType}:${orderId}:${facilityId}:${currentTick}`;
+                return {
+                    eventId: DeterministicHashEngine.generateDeterministicId('EVT_PROD', [seed]),
+                    eventType,
+                    orderId,
+                    facilityId,
+                    tick: currentTick,
+                    details,
+                    timestamp: 0
+                };
+            }
+        }
+
+        // =========================================================================
+        // 09.25: PRODUCTION TELEMETRY & METRICS HUB
+        // =========================================================================
+
+        class ProductionTelemetryHub {
+            constructor(maxCapacity = 5000) {
+                this.records = [];
+                this.maxCapacity = maxCapacity;
+            }
+
+            recordRun(runRecord) {
+                if (this.records.length >= this.maxCapacity) {
+                    this.records.shift();
+                }
+                this.records.push(runRecord);
+            }
+
+            getMetrics() {
+                let totalProduced = 0;
+                let totalScrap = 0;
+                this.records.forEach(r => {
+                    totalProduced += r.executedUnits || 0;
+                    totalScrap += r.scrapMass || 0;
+                });
+
+                return {
+                    totalRunsTracked: this.records.length,
+                    totalProducedUnits: totalProduced,
+                    totalScrapMass: totalScrap,
+                    scrapRatio: totalProduced > 0 ? (totalScrap / totalProduced) : 0.0
+                };
+            }
+
+            clear() {
+                this.records = [];
+            }
+        }
+
+        // =========================================================================
+        // 09.26: DIAGNOSTICS, SYSTEMIC HEALTH MONITOR, SNAPSHOT & MASTER PIPELINE
+        // =========================================================================
+
+        class DiagnosticRingBuffer {
+            constructor(capacity = 5000) {
+                this.capacity = capacity;
+                this.buffer = new Array(capacity);
+                this.head = 0;
+                this.size = 0;
+            }
+
+            push(entry) {
+                this.buffer[this.head] = {
+                    tick: entry.tick || 0,
+                    entry
+                };
+                this.head = (this.head + 1) % this.capacity;
+                if (this.size < this.capacity) this.size++;
+            }
+
+            getAllSorted() {
+                const result = [];
+                for (let i = 0; i < this.size; i++) {
+                    const idx = (this.head - this.size + i + this.capacity) % this.capacity;
+                    const item = this.buffer[idx];
+                    if (item && item.entry) result.push(item);
+                }
+                return result.sort((a, b) => {
+                    if (a.entry.severity !== b.entry.severity) {
+                        return String(a.entry.severity).localeCompare(String(b.entry.severity));
+                    }
+                    return String(a.entry.code).localeCompare(String(b.entry.code));
+                });
+            }
+
+            clear() {
+                this.buffer = new Array(this.capacity);
+                this.head = 0;
+                this.size = 0;
+            }
+        }
+
+        class ProductionDiagnosticsEngine {
+            constructor(maxCapacity = 5000) {
+                this.ringBuffer = new DiagnosticRingBuffer(maxCapacity);
+            }
+
+            log(code, message, severity = 'WARNING', context = {}) {
+                this.ringBuffer.push({ code, message, severity, context });
+            }
+
+            getReport() {
+                const logs = this.ringBuffer.getAllSorted();
+                return {
+                    totalLogs: logs.length,
+                    fatalCount: logs.filter(l => l.entry.severity === 'FATAL').length,
+                    warningCount: logs.filter(l => l.entry.severity === 'WARNING').length,
+                    logs
+                };
+            }
+
+            clear() {
+                this.ringBuffer.clear();
+            }
+        }
+
+        class SystemicProductionHealthMonitor {
+            static evaluateHealth(registry) {
+                const diagReport = registry.diagnostics.getReport();
+                const chainCycles = registry.chainResolver.detectCircularDependencies();
+
+                let healthStatus = ProductionHealthStatus.ONLINE_OPTIMAL;
+                if (diagReport.fatalCount > 0 || chainCycles.hasCycle) {
+                    healthStatus = ProductionHealthStatus.FAILED_SHUTDOWN;
+                } else if (diagReport.warningCount > 0) {
+                    healthStatus = ProductionHealthStatus.DEGRADED_OPERATION;
+                }
+
+                return {
+                    healthStatus,
+                    metrics: {
+                        totalFacilities: registry.facilityRegistry.facilities.size,
+                        totalRecipes: registry.recipeRegistry.recipes.size,
+                        totalEntities: registry.entityRegistry.entities.size,
+                        totalOrdersInQueue: registry.scheduleQueue.size()
+                    },
+                    chainIntegrity: chainCycles,
+                    diagnosticsSummary: diagReport
+                };
+            }
+        }
+
+        class ProductionSnapshotAdapter {
+            static calculateAdler32(str) {
+                let a = 1, b = 0;
+                const MOD = 65521;
+                for (let i = 0; i < str.length; i++) {
+                    a = (a + str.charCodeAt(i)) % MOD;
+                    b = (b + a) % MOD;
+                }
+                return ((b << 16) | a) >>> 0;
+            }
+
+            static createSnapshot(registry, tick = 0) {
+                const payloadObject = {
+                    schemaVersion: 1,
+                    tick,
+                    entities: Array.from(registry.entityRegistry.entities.values()).map(e => e.toJSON()).sort((a, b) => a.entityId.localeCompare(b.entityId)),
+                    facilities: Array.from(registry.facilityRegistry.facilities.values()).map(e => e.toJSON()).sort((a, b) => a.facilityId.localeCompare(b.facilityId)),
+                    recipes: Array.from(registry.recipeRegistry.recipes.values()).map(e => e.toJSON()).sort((a, b) => a.recipeId.localeCompare(b.recipeId))
+                };
+
+                const serialized = JSON.stringify(payloadObject);
+                const checksum = this.calculateAdler32(serialized);
+                const semanticDigest = `DIGEST_P09_${checksum}_${tick}`;
+
+                return {
+                    schemaVersion: payloadObject.schemaVersion,
+                    tick,
+                    checksum,
+                    semanticDigest,
+                    payload: serialized
+                };
+            }
+
+            static restoreSnapshot(registry, snapshot) {
+                if (!snapshot || !snapshot.payload || typeof snapshot.checksum !== 'number') {
+                    throw new Error('[ProductionSnapshotAdapter]: Corrupt snapshot envelope.');
+                }
+
+                const computedChecksum = this.calculateAdler32(snapshot.payload);
+                if (computedChecksum !== snapshot.checksum) {
+                    throw new Error('[ProductionSnapshotAdapter]: Checksum mismatch! Corrupted snapshot.');
+                }
+
+                const data = JSON.parse(snapshot.payload);
+                registry.clear();
+
+                data.entities.forEach(e => registry.entityRegistry.registerEntity(new IndustrialEntity(e)));
+                data.facilities.forEach(f => registry.facilityRegistry.registerFacility(new IndustrialFacility(f)));
+                data.recipes.forEach(r => registry.recipeRegistry.registerRecipe(new ProductionRecipe(r)));
+
+                return {
+                    restored: true,
+                    facilityCount: registry.facilityRegistry.facilities.size,
+                    recipeCount: registry.recipeRegistry.recipes.size,
+                    checksum: snapshot.checksum
+                };
+            }
+        }
+
+        class BoundaryHardcodingFirewall {
+            static get FORBIDDEN_SIMULATION_KEYS() {
+                return [
+                    'marketprice',
+                    'spotprice',
+                    'clearingprice',
+                    'tradetariff',
+                    'strategicscore',
+                    'aijudgement',
+                    'ministermood'
+                ];
+            }
+
+            static auditFirewallDeep(target, currentPath = 'Root', violations = []) {
+                if (!target || typeof target !== 'object') return violations;
+
+                if (target instanceof Map) {
+                    target.forEach((val, key) => {
+                        const normKey = String(key).toLowerCase().replace(/[^a-z]/g, '');
+                        if (this.FORBIDDEN_SIMULATION_KEYS.some(forbidden => normKey.includes(forbidden))) {
+                            violations.push({ path: `${currentPath}.Map<${key}>`, forbiddenKey: String(key) });
+                        }
+                        this.auditFirewallDeep(val, `${currentPath}.Map<${key}>`, violations);
+                    });
+                    return violations;
+                }
+
+                if (target instanceof Set || Array.isArray(target)) {
+                    let idx = 0;
+                    target.forEach(val => {
+                        this.auditFirewallDeep(val, `${currentPath}[${idx++}]`, violations);
+                    });
+                    return violations;
+                }
+
+                Object.keys(target).forEach(key => {
+                    const normKey = key.toLowerCase().replace(/[^a-z]/g, '');
+                    if (this.FORBIDDEN_SIMULATION_KEYS.some(forbidden => normKey.includes(forbidden))) {
+                        violations.push({ path: `${currentPath}.${key}`, forbiddenKey: key });
+                    }
+                    this.auditFirewallDeep(target[key], `${currentPath}.${key}`, violations);
+                });
+
+                return violations;
+            }
+
+            static auditRegistry(registry) {
+                const violations = [];
+                this.auditFirewallDeep(registry.facilityRegistry.facilities, 'Registry.Facilities', violations);
+                this.auditFirewallDeep(registry.recipeRegistry.recipes, 'Registry.Recipes', violations);
+                return {
+                    isCompliant: violations.length === 0,
+                    violations
+                };
+            }
+        }
+
+        class MasterProductionRegistry {
+            constructor() {
+                this.entityRegistry = new IndustrialEntityRegistry();
+                this.facilityRegistry = new FacilityRegistry();
+                this.recipeRegistry = new RecipeRegistry();
+                this.scheduleQueue = new ProductionScheduleQueue();
+                this.chainResolver = new IndustrialChainResolver();
+                this.telemetryHub = new ProductionTelemetryHub();
+                this.diagnostics = new ProductionDiagnosticsEngine();
+                this.schemaVersion = 1;
+            }
+
+            clear() {
+                this.entityRegistry.clear();
+                this.facilityRegistry.clear();
+                this.recipeRegistry.clear();
+                this.scheduleQueue.clear();
+                this.chainResolver.clear();
+                this.telemetryHub.clear();
+                this.diagnostics.clear();
+            }
+        }
+
+        // =========================================================================
+        // MASTER PRODUCTION PIPELINE & PUBLIC ENGINE ORCHESTRATOR [FIXED]
+        // =========================================================================
+
+        class ResourceProductionEnginePipeline {
+            constructor() {
+                this.registry = new MasterProductionRegistry();
+            }
+
+            registerEntity(entity) {
+                return this.registry.entityRegistry.registerEntity(entity);
+            }
+
+            registerFacility(facility) {
+                return this.registry.facilityRegistry.registerFacility(facility);
+            }
+
+            registerRecipe(recipe) {
+                return this.registry.recipeRegistry.registerRecipe(recipe);
+            }
+
+            scheduleOrder(order) {
+                const inst = order instanceof ProductionOrder ? order : new ProductionOrder(order);
+                this.registry.scheduleQueue.enqueue(inst);
+                return inst;
+            }
+
+            getFacility(facilityId) {
+                return this.registry.facilityRegistry.getFacility(facilityId);
+            }
+
+            getRecipe(recipeId) {
+                return this.registry.recipeRegistry.getRecipe(recipeId);
+            }
+
+            /**
+             * [FIX]: Complete Execution Core with Full Inventory Consumption, Batch Ingestion and Order FSM Sync.
+             */
+            executeProduction(orderId, inventoryPipeline = null, options = {}) {
+                let order = null;
+                if (typeof orderId === 'string') {
+                    if (this.registry.scheduleQueue.peek()?.orderId === orderId) {
+                        order = this.registry.scheduleQueue.dequeue();
+                    } else {
+                        order = new ProductionOrder({
+                            recipeId: options.recipeId || 'DEFAULT_RECIPE',
+                            facilityId: options.facilityId || 'DEFAULT_FACILITY',
+                            targetUnits: options.targetUnits || 100,
+                            createdTick: options.currentTick || 0
+                        });
+                    }
+                } else if (orderId instanceof ProductionOrder) {
+                    order = orderId;
+                }
+
+                if (!order) {
+                    this.registry.diagnostics.log(ErrorTaxonomy.P9_003_RECIPE_NOT_FOUND, 'Order not found or invalid.', 'FATAL');
+                    return { success: false, reason: 'ORDER_NOT_FOUND' };
+                }
+
+                const facility = this.registry.facilityRegistry.getFacility(order.facilityId);
+                const recipe = this.registry.recipeRegistry.getRecipe(order.recipeId);
+                const line = order.lineId ? facility?.getLine(order.lineId) : facility?.productionLines.values().next().value;
+
+                if (!facility || !facility.isOperational()) {
+                    order.status = ProductionOrderStatusEnum.FAILED;
+                    this.registry.diagnostics.log(ErrorTaxonomy.P9_001_INVALID_FACILITY_SPEC, `Facility '${order.facilityId}' non-operational.`, 'FATAL');
+                    return { success: false, reason: 'FACILITY_NON_OPERATIONAL' };
+                }
+                if (!recipe) {
+                    order.status = ProductionOrderStatusEnum.FAILED;
+                    this.registry.diagnostics.log(ErrorTaxonomy.P9_003_RECIPE_NOT_FOUND, `Recipe '${order.recipeId}' not registered.`, 'FATAL');
+                    return { success: false, reason: 'RECIPE_NOT_REGISTERED' };
+                }
+
+                order.status = ProductionOrderStatusEnum.VALIDATING;
+
+                // 1. Resolve Raw Material Inventory Requirements
+                let availableBatches = [];
+                if (inventoryPipeline && inventoryPipeline.registry && inventoryPipeline.registry.batchRegistry) {
+                    availableBatches = inventoryPipeline.registry.batchRegistry.getAllBatches();
+                }
+
+                const inputResolution = InputRequirementResolver.resolveRequirements(recipe, order.targetUnits, availableBatches);
+                if (!inputResolution.isSatisfied) {
+                    order.status = ProductionOrderStatusEnum.BLOCKED;
+                    if (line) line.operationalStatus = ProductionLineOperationalStatus.PAUSED_STARVED;
+                    this.registry.diagnostics.log(ErrorTaxonomy.P9_004_INPUT_REQUIREMENT_UNMET, `BoM Deficit: ${inputResolution.rejectionReasons.join(', ')}`, 'BLOCKING');
+                    return { success: false, reason: 'MATERIAL_DEFICIT', details: inputResolution };
+                }
+
+                // 2. Evaluate Capacity & Operational Derating
+                const capacityEval = CapacityEngine.computeEffectiveCapacity(facility, line, recipe, options.durationHours || 24.0);
+                
+                // 3. Evaluate Utilities (Energy & Water)
+                const utilityEval = UtilityConstraintEvaluator.evaluateUtilities(order.targetUnits, recipe, options.availablePowerKWh, options.availableWaterM3);
+
+                // 4. Evaluate Workforce Capability
+                const workforceEval = WorkforceCapabilityEvaluator.evaluateWorkforce(recipe.laborHoursPerOutputUnit * order.targetUnits, recipe.minimumSkillTier, options.availableWorkers);
+
+                // 5. Compute Constraint Clamping
+                const constraintEval = ProductionConstraintResolver.evaluateConstraints(
+                    capacityEval.effectiveCapacityUnits,
+                    utilityEval.allowableUnits,
+                    order.targetUnits,
+                    workforceEval.laborEfficiencyFactor
+                );
+
+                const actualUnitsToProduce = constraintEval.allowableUnits;
+                if (actualUnitsToProduce <= 0) {
+                    order.status = ProductionOrderStatusEnum.BLOCKED;
+                    return { success: false, reason: 'BLOCKED_BY_CONSTRAINTS', bindingAxis: constraintEval.bindingConstraintAxis };
+                }
+
+                if (line) line.operationalStatus = ProductionLineOperationalStatus.RUNNING;
+                order.status = ProductionOrderStatusEnum.RUNNING;
+
+                // 6. [FIX]: Atomic Inventory Allocation & Consumption
+                let inventoryTx = [];
+                if (inventoryPipeline) {
+                    try {
+                        inventoryTx = InventoryAllocationBridge.executeInventoryReserveAndAllocate(
+                            inventoryPipeline,
+                            inputResolution.requirementManifest,
+                            facility,
+                            order.orderId,
+                            options.currentTick || 0
+                        );
+
+                        // Execute Physical Consumption of Allocated Batches in Part 07
+                        inventoryTx.forEach(tx => {
+                            if (typeof inventoryPipeline.consume === 'function') {
+                                inventoryPipeline.consume(tx.allocationId, tx.positionId, options.currentTick || 0);
+                            }
+                        });
+                    } catch (invErr) {
+                        order.status = ProductionOrderStatusEnum.FAILED;
+                        if (line) line.operationalStatus = ProductionLineOperationalStatus.READY;
+                        this.registry.diagnostics.log(ErrorTaxonomy.P9_005_INSUFFICIENT_INVENTORY_STOCK, `Inventory transaction failed: ${invErr.message}`, 'FATAL');
+                        return { success: false, reason: 'INVENTORY_TRANSACTION_FAILED', error: invErr.message };
+                    }
+                }
+
+                // 7. [FIX]: Compute Mass-Partitioned Yield, Scrap & Losses (Strict Conservation Guaranteed)
+                let totalInputMass = 0;
+                inputResolution.requirementManifest.forEach(m => { totalInputMass += m.physicalMassToDeduct; });
+
+                const yieldMath = YieldLossCalculationEngine.computeYieldAndLoss(totalInputMass, recipe, actualUnitsToProduce);
+                const qualityResult = ProductionQualityEngine.computeQualityTransform(recipe, inputResolution.requirementManifest);
+                const costLedger = CostAttributionEngine.computeProductionCost(actualUnitsToProduce, recipe, utilityEval, workforceEval, options);
+
+                // 8. [FIX]: Generate Output Batches and Ingest into Part 07 Inventory
+                const upstreamBatchIds = [];
+                inputResolution.requirementManifest.forEach(r => r.matchedBatches.forEach(m => upstreamBatchIds.push(m.batchId)));
+
+                const outputBatches = OutputBatchGenerator.generateOutputBatches(
+                    recipe,
+                    actualUnitsToProduce,
+                    yieldMath,
+                    qualityResult,
+                    facility,
+                    upstreamBatchIds,
+                    options.currentTick || 0
+                );
+
+                let ingestedBatchRecords = [];
+                if (inventoryPipeline && typeof inventoryPipeline.intakeBatch === 'function') {
+                    outputBatches.forEach(outBatch => {
+                        const intakeResult = inventoryPipeline.intakeBatch(outBatch, options.currentTick || 0);
+                        ingestedBatchRecords.push(intakeResult);
+                    });
+                }
+
+                // 9. Update Line Wear and Maintenance Status
+                if (line) {
+                    const wearResult = MaintenanceDegradationEngine.computeWearIncrement(line.maintenanceWearPercentage, actualUnitsToProduce);
+                    line.maintenanceWearPercentage = wearResult.updatedWearPercentage;
+                    if (wearResult.requiresImmediateMaintenance) {
+                        line.operationalStatus = ProductionLineOperationalStatus.MAINTENANCE;
+                    } else {
+                        line.operationalStatus = ProductionLineOperationalStatus.READY;
+                    }
+                }
+
+                // 10. Sync Order FSM Status
+                order.status = actualUnitsToProduce >= (order.targetUnits - 1e-6) 
+                    ? ProductionOrderStatusEnum.COMPLETED 
+                    : ProductionOrderStatusEnum.PARTIALLY_COMPLETED;
+
+                // 11. Record State Snapshot & Telemetry
+                const stateSnapshot = new ProductionStateSnapshot({
+                    facilityId: facility.facilityId,
+                    lineId: line ? line.lineId : 'PRIMARY_LINE',
+                    recipeId: recipe.recipeId,
+                    executedUnits: actualUnitsToProduce,
+                    producedOutputMass: yieldMath.primaryOutputMass,
+                    costBreakdown: costLedger,
+                    recordedTick: options.currentTick || 0
+                });
+
+                this.registry.telemetryHub.recordRun({
+                    executedUnits: actualUnitsToProduce,
+                    scrapMass: yieldMath.wasteScrapMass
+                });
+
+                return {
+                    success: true,
+                    orderId: order.orderId,
+                    status: order.status,
+                    actualUnitsToProduce,
+                    yieldMath,
+                    qualityResult,
+                    costLedger: costLedger.toJSON(),
+                    outputBatches: outputBatches.map(b => typeof b.toJSON === 'function' ? b.toJSON() : b),
+                    ingestedBatchRecords,
+                    stateSnapshot: stateSnapshot.toJSON(),
+                    inventoryTransactions: inventoryTx
+                };
+            }
+
+            // Cross-Engine Integration Endpoints
+            queryTransportFeasibility(facilityId, requiredQuantityTonnes, materialIdentity, logisticsPipeline) {
+                const fac = this.registry.facilityRegistry.getFacility(facilityId);
+                if (!fac || !logisticsPipeline) return { canDeliver: false, reason: 'INVALID_FACILITY_OR_PIPELINE' };
+                return logisticsPipeline.queryProductionInputFeasibility(fac.locationNodeKey, requiredQuantityTonnes, materialIdentity);
+            }
+
+            queryProductionSupplyOutput(facilityId) {
+                const fac = this.registry.facilityRegistry.getFacility(facilityId);
+                return fac ? { facilityId, availableThroughput: fac.getTotalInstalledThroughput(), operationalStatus: fac.operationalLifecycle } : null;
+            }
+
+            processSimulationTick(tick) {
+                return {
+                    tick,
+                    telemetry: this.registry.telemetryHub.getMetrics(),
+                    health: SystemicProductionHealthMonitor.evaluateHealth(this.registry)
+                };
+            }
+
+            reconcile() {
+                return SystemicProductionHealthMonitor.evaluateHealth(this.registry);
+            }
+
+            createSnapshot(tick = 0) {
+                return ProductionSnapshotAdapter.createSnapshot(this.registry, tick);
+            }
+
+            restoreSnapshot(snapshot) {
+                return ProductionSnapshotAdapter.restoreSnapshot(this.registry, snapshot);
+            }
+
+            validateInvariants() {
+                return BoundaryHardcodingFirewall.auditRegistry(this.registry);
+            }
+
+            getHealth() {
+                return SystemicProductionHealthMonitor.evaluateHealth(this.registry);
+            }
+        }
+
+        // =========================================================================
+        // PUBLIC ADAPTER & INTEGRATED ENGINE ASSEMBLY
+        // =========================================================================
+
+        function deepFreeze(obj, seen = new WeakSet()) {
+            if (obj === null || typeof obj !== 'object' || seen.has(obj)) return obj;
+            seen.add(obj);
+            if (obj instanceof Map || obj instanceof Set) return obj;
+            const propNames = Object.getOwnPropertyNames(obj);
+            for (const name of propNames) {
+                deepFreeze(obj[name], seen);
+            }
+            return Object.freeze(obj);
+        }
+
+        const ResourceProductionIndustrialChainEngineAdapter = Object.freeze({
+            // Enums & Constants from Volume 9.1
+            QuantityDimension,
+            IndustrialSectorEnum,
+            FacilityOperationalLifecycle,
+            ProductionLineOperationalStatus,
+            ProductionSchedulingMode,
+            ProductionConstraintCategory,
+            SkillTierEnum,
+            ProductionOrderStatusEnum,
+            ProductionHealthStatus,
+            UnknownPolicyEnum,
+            RoundingModeEnum,
+            ErrorTaxonomy,
+
+            // Models from Volume 9.1
+            DeterministicHashEngine,
+            DeterministicFormulaInterpreter,
+            IndustrialEntity,
+            IndustrialEntityRegistry,
+            ProductionLine,
+            IndustrialFacility,
+            FacilityLifecycleFSM,
+            FacilityRegistry,
+            RecipeMaterialInput,
+            RecipeOutputDefinition,
+            ProductionRecipe,
+            RecipeRegistry,
+            InputRequirementResolver,
+            CapacityEngine,
+            OverallEquipmentEffectiveness,
+            WorkforceCapabilityEvaluator,
+            UtilityConstraintEvaluator,
+            TechnologyCapabilityMatrix,
+            MaintenanceDegradationEngine,
+            ProductionOrder,
+            ProductionScheduleQueue,
+            InventoryAllocationBridge,
+
+            // Models & Engines from Volume 9.2
+            YieldLossCalculationEngine,
+            ProductionQualityEngine,
+            ProductionCostLedger,
+            CostAttributionEngine,
+            ProductionStateSnapshot,
+            OutputBatchGenerator,
+            IndustrialChainNode,
+            IndustrialChainResolver,
+            BottleneckResolver,
+            ProductionConstraintResolver,
+            ProductionEventGenerator,
+            ProductionTelemetryHub,
+            DiagnosticRingBuffer,
+            ProductionDiagnosticsEngine,
+            SystemicProductionHealthMonitor,
+            ProductionSnapshotAdapter,
+            BoundaryHardcodingFirewall,
+            MasterProductionRegistry,
+            ResourceProductionEnginePipeline,
+
+            deepFreeze,
+
+            /**
+             * Factory: Creates and returns a fully initialized Part 09 Production Pipeline.
+             */
+            createEngine() {
+                return new ResourceProductionEnginePipeline();
+            }
+        });
+
+        global.GSRSK_Part09 = ResourceProductionIndustrialChainEngineAdapter;
+        global.GSRSK_ResourceProductionIndustrialChainEngine = ResourceProductionIndustrialChainEngineAdapter;
+
+        if (typeof window !== 'undefined') {
+            window.GSRSK_Part09 = ResourceProductionIndustrialChainEngineAdapter;
+            window.GSRSK_ResourceProductionIndustrialChainEngine = ResourceProductionIndustrialChainEngineAdapter;
+        }
+
+        if (typeof ResourceMinistryEngineInstance !== 'undefined' && ResourceMinistryEngineInstance) {
+            ResourceMinistryEngineInstance.part09 = ResourceProductionIndustrialChainEngineAdapter;
+            ResourceMinistryEngineInstance.productionEngine = ResourceProductionIndustrialChainEngineAdapter.createEngine();
+        }
+
         if (typeof module !== 'undefined' && module.exports) {
-            module.exports = ResourceInfrastructureLogisticsEngineAdapter;
+            module.exports = ResourceProductionIndustrialChainEngineAdapter;
         }
 
     })(typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : global));
@@ -20514,6 +23060,7 @@ _globalScope.GSRSK_DataFoundation = (() => {
             ResourceProcessingTransformationEngine: _targetGlobal.GSRSK_ResourceProcessingTransformationEngine || null,
             ResourceInventoryBatchStorageEngine: _targetGlobal.GSRSK_ResourceInventoryBatchStorageEngine || null,
             ResourceInfrastructureLogisticsEngine: _targetGlobal.GSRSK_ResourceInfrastructureLogisticsEngine || null,
+            ResourceProductionIndustrialChainEngine: _targetGlobal.GSRSK_ResourceProductionIndustrialChainEngine || null,
             ResourceMinistryEngine: typeof ResourceMinistryEngineInstance !== 'undefined' ? ResourceMinistryEngineInstance : (_targetGlobal.ResourceMinistryEngine || null),
             MasterGSRSKEngine: _targetGlobal.GSRSK_MasterEngine ? _targetGlobal.GSRSK_MasterEngine.constructor : null,
             MasterEngineSingleton: _targetGlobal.GSRSK_MasterEngine || null,
@@ -20530,6 +23077,8 @@ _globalScope.GSRSK_DataFoundation = (() => {
             GSRSK_Part07: _targetGlobal.GSRSK_ResourceInventoryBatchStorageEngine || null,
             GSRSK_ResourceInfrastructureLogisticsEngine: _targetGlobal.GSRSK_ResourceInfrastructureLogisticsEngine || null,
             GSRSK_Part08: _targetGlobal.GSRSK_ResourceInfrastructureLogisticsEngine || null,
+            GSRSK_ResourceProductionIndustrialChainEngine: _targetGlobal.GSRSK_ResourceProductionIndustrialChainEngine || null,
+            GSRSK_Part09: _targetGlobal.GSRSK_ResourceProductionIndustrialChainEngine || null,
             Part01: _targetGlobal.GSRSK_DataFoundation || null,
             Part02: _targetGlobal.GSRSK_WorldKnowledgeCompiler || null,
             Part03: _targetGlobal.GSRSK_Part03 || null,
@@ -20538,11 +23087,13 @@ _globalScope.GSRSK_DataFoundation = (() => {
             Part06: _targetGlobal.GSRSK_ResourceProcessingTransformationEngine || null,
             Part07: _targetGlobal.GSRSK_ResourceInventoryBatchStorageEngine || null,
             Part08: _targetGlobal.GSRSK_ResourceInfrastructureLogisticsEngine || null,
+            Part09: _targetGlobal.GSRSK_ResourceProductionIndustrialChainEngine || null,
             ...(_targetGlobal.GSRSK_ResourceIdentityEngine || {}),
             ...(_targetGlobal.GSRSK_ResourceReserveExtractionEngine || {}),
             ...(_targetGlobal.GSRSK_ResourceProcessingTransformationEngine || {}),
             ...(_targetGlobal.GSRSK_ResourceInventoryBatchStorageEngine || {}),
-            ...(_targetGlobal.GSRSK_ResourceInfrastructureLogisticsEngine || {})
+            ...(_targetGlobal.GSRSK_ResourceInfrastructureLogisticsEngine || {}),
+            ...(_targetGlobal.GSRSK_ResourceProductionIndustrialChainEngine || {})
         };
     }
 
