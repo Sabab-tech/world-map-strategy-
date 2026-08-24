@@ -8867,6 +8867,10 @@ _globalScope.GSRSK_DataFoundation = (() => {
                     this.part07 = gScope.GSRSK_ResourceInventoryBatchStorageEngine || null;
                     this.part08 = gScope.GSRSK_ResourceInfrastructureLogisticsEngine || null;
                     this.part09 = gScope.GSRSK_ResourceProductionIndustrialChainEngine || null;
+                    this.part10 = gScope.GSRSK_ResourceMarketPricingEngine || gScope.GSRSK_Part10 || null;
+                    if (this.part10 && typeof this.part10.createEngine === 'function') {
+                        this.marketEngine = this.part10.createEngine();
+                    }
 
                     // Verify End-to-End Runtime Pipeline Contracts (Smoke Test)
                     this.pipelineIntegrationReport = this.verifyEndToEndPipelineContracts();
@@ -9196,6 +9200,10 @@ _globalScope.GSRSK_DataFoundation = (() => {
                 // Step 6: Production Engine Verification (Part 09)
                 const p9 = gScope.GSRSK_Part09 || gScope.GSRSK_ResourceProductionIndustrialChainEngine;
                 results.steps.push({ part: '09_PRODUCTION', status: p9 ? 'VERIFIED' : 'STANDALONE', available: !!p9 });
+
+                // Step 7: Market & Pricing Engine Verification (Part 10)
+                const p10 = gScope.GSRSK_Part10 || gScope.GSRSK_ResourceMarketPricingEngine;
+                results.steps.push({ part: '10_MARKET_PRICING', status: p10 ? 'VERIFIED' : 'STANDALONE', available: !!p10 });
             } catch (e) {
                 results.status = 'FAILED';
                 results.error = String(e && e.message ? e.message : e);
@@ -23374,6 +23382,1732 @@ _globalScope.GSRSK_DataFoundation = (() => {
 
     })(typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : global));
 
+    /**
+     * ============================================================================
+     * GSRSK — PART 10: MARKET & PRICING ENGINE (VOLUME 1 OF 2)
+     * ============================================================================
+     * Architecture Phase: 10 of 16
+     * Production Standard: 100% Comprehensive Constitutional Invariant Engine
+     *
+     * SUBSYSTEMS INCLUDED IN VOLUME 1:
+     *   10.00 Foundation Enums, Dimensions, Epistemic Matrix & Error Taxonomy
+     *   10.01 Market Identity, Market Registry & Participant Access Control [FIXED]
+     *   10.02 Supply Aggregation, 8-Layer Classification & Supply Pressure Engine [FIXED]
+     *   10.03 Demand Graph, Derived Industrial Demand & Price Elasticity Engine [FIXED]
+     *   10.04 Order Book, Order Lifecycle FSM & Pre-Trade Solvency Validator [FIXED]
+     *   10.05 Continuous Double Auction Order Matching & Settlement Emitter [FIXED]
+     *   10.06 Price Discovery Engine, Hierarchy, VWAP & Regional Differentials [FIXED]
+     *   + Safe Deterministic Hashing Infrastructure (Zero Date.now / Zero Math.random)
+     * ============================================================================
+     */
+
+    (function(global) {
+        'use strict';
+
+        // =========================================================================
+        // 10.00: DOMAIN ENUMS, TAXONOMY, STATUSES & ERROR TAXONOMY
+        // =========================================================================
+
+        const QuantityDimension = Object.freeze({
+            MASS: 'MASS',
+            VOLUME: 'VOLUME',
+            ENERGY: 'ENERGY',
+            AREA: 'AREA',
+            LENGTH: 'LENGTH',
+            PIECES: 'PIECES',
+            DIMENSIONLESS: 'DIMENSIONLESS',
+            UNKNOWN: 'UNKNOWN'
+        });
+
+        const MarketTypeEnum = Object.freeze({
+            GLOBAL_COMMODITY_EXCHANGE: 'GLOBAL_COMMODITY_EXCHANGE',
+            REGIONAL_SPOT_MARKET: 'REGIONAL_SPOT_MARKET',
+            NATIONAL_DOMESTIC_MARKET: 'NATIONAL_DOMESTIC_MARKET',
+            LOCAL_PHYSICAL_MARKET: 'LOCAL_PHYSICAL_MARKET',
+            INDUSTRIAL_INTERMEDIATE_MARKET: 'INDUSTRIAL_INTERMEDIATE_MARKET',
+            ENERGY_POWER_POOL: 'ENERGY_POWER_POOL',
+            STRATEGIC_GOVERNMENT_MARKET: 'STRATEGIC_GOVERNMENT_MARKET',
+            FINANCIAL_SETTLEMENT_MARKET: 'FINANCIAL_SETTLEMENT_MARKET'
+        });
+
+        const MarketActorType = Object.freeze({
+            SOVEREIGN_STATE: 'SOVEREIGN_STATE',
+            CORPORATION_PRODUCER: 'CORPORATION_PRODUCER',
+            CORPORATION_CONSUMER: 'CORPORATION_CONSUMER',
+            INDUSTRIAL_PLANT: 'INDUSTRIAL_PLANT',
+            COMMODITY_TRADER: 'COMMODITY_TRADER',
+            GOVERNMENT_AGENCY: 'GOVERNMENT_AGENCY',
+            FINANCIAL_INSTITUTION: 'FINANCIAL_INSTITUTION'
+        });
+
+        const SupplyLayerCategory = Object.freeze({
+            TOTAL_PHYSICAL_STOCK: 'TOTAL_PHYSICAL_STOCK',
+            AVAILABLE_UNLOCKED: 'AVAILABLE_UNLOCKED',
+            RESERVED_ACTIVE: 'RESERVED_ACTIVE',
+            COMMITTED_TRADE: 'COMMITTED_TRADE',
+            IN_TRANSIT_PIPELINE: 'IN_TRANSIT_PIPELINE',
+            INACCESSIBLE_LOGISTICS: 'INACCESSIBLE_LOGISTICS',
+            STRATEGIC_STOCKPILE: 'STRATEGIC_STOCKPILE',
+            DAMAGED_QUARANTINED: 'DAMAGED_QUARANTINED',
+            MARKETABLE_OFFERED: 'MARKETABLE_OFFERED',
+            EFFECTIVE_DELIVERABLE: 'EFFECTIVE_DELIVERABLE'
+        });
+
+        const DemandCategoryEnum = Object.freeze({
+            BASE_CONSUMPTION: 'BASE_CONSUMPTION',
+            INDUSTRIAL_INTERMEDIATE: 'INDUSTRIAL_INTERMEDIATE',
+            GOVERNMENT_PROCUREMENT: 'GOVERNMENT_PROCUREMENT',
+            STRATEGIC_STOCKPILING: 'STRATEGIC_STOCKPILING',
+            DERIVED_PRODUCTION: 'DERIVED_PRODUCTION',
+            SPECULATIVE_MARKET: 'SPECULATIVE_MARKET'
+        });
+
+        const OrderSideEnum = Object.freeze({
+            BUY: 'BUY',
+            SELL: 'SELL'
+        });
+
+        const OrderTypeEnum = Object.freeze({
+            LIMIT: 'LIMIT',
+            MARKET: 'MARKET',
+            IMMEDIATE_OR_CANCEL: 'IMMEDIATE_OR_CANCEL',
+            FILL_OR_KILL: 'FILL_OR_KILL'
+        });
+
+        const OrderLifecycleStatus = Object.freeze({
+            CREATED: 'CREATED',
+            VALIDATING: 'VALIDATING',
+            VALID: 'VALID',
+            OPEN: 'OPEN',
+            PARTIALLY_FILLED: 'PARTIALLY_FILLED',
+            FILLED: 'FILLED',
+            EXPIRED: 'EXPIRED',
+            CANCELLED: 'CANCELLED',
+            REJECTED: 'REJECTED'
+        });
+
+        const MarketConditionEnum = Object.freeze({
+            EQUILIBRIUM_BALANCED: 'EQUILIBRIUM_BALANCED',
+            SHORTAGE_PHYSICAL: 'SHORTAGE_PHYSICAL',
+            SHORTAGE_DELIVERABLE: 'SHORTAGE_DELIVERABLE',
+            SHORTAGE_STRUCTURAL: 'SHORTAGE_STRUCTURAL',
+            SURPLUS_INVENTORY: 'SURPLUS_INVENTORY',
+            SURPLUS_PRODUCTION: 'SURPLUS_PRODUCTION',
+            SURPLUS_STRUCTURAL: 'SURPLUS_STRUCTURAL',
+            HIGH_VOLATILITY_SPIKE: 'HIGH_VOLATILITY_SPIKE',
+            ILLIQUID_FROZEN: 'ILLIQUID_FROZEN'
+        });
+
+        const EpistemicStatusEnum = Object.freeze({
+            KNOWN_VERIFIED: 'KNOWN_VERIFIED',
+            ESTIMATED_STATISTICAL: 'ESTIMATED_STATISTICAL',
+            DERIVED_CALCULATED: 'DERIVED_CALCULATED',
+            MISSING_NULL: 'MISSING_NULL',
+            INVALID_ANOMALY: 'INVALID_ANOMALY',
+            CONSTRAINED_BOUNDED: 'CONSTRAINED_BOUNDED'
+        });
+
+        const MarketHealthStatus = Object.freeze({
+            ONLINE_LIQUID: 'ONLINE_LIQUID',
+            DEGRADED_VOLATILE: 'DEGRADED_VOLATILE',
+            THROTTLED_CONSTRAINED: 'THROTTLED_CONSTRAINED',
+            ILLIQUID_STRESSED: 'ILLIQUID_STRESSED',
+            FAILED_FROZEN: 'FAILED_FROZEN'
+        });
+
+        const ErrorTaxonomy = Object.freeze({
+            P10_001_INVALID_MARKET_SPEC: 'P10_001_INVALID_MARKET_SPEC',
+            P10_002_ACTOR_ACCESS_DENIED: 'P10_002_ACTOR_ACCESS_DENIED',
+            P10_003_INSUFFICIENT_BUYING_CAPACITY: 'P10_003_INSUFFICIENT_BUYING_CAPACITY',
+            P10_004_INSUFFICIENT_MARKETABLE_SUPPLY: 'P10_004_INSUFFICIENT_MARKETABLE_SUPPLY',
+            P10_005_ORDER_VALIDATION_FAILED: 'P10_005_ORDER_VALIDATION_FAILED',
+            P10_006_ORDER_LIFECYCLE_BREACH: 'P10_006_ORDER_LIFECYCLE_BREACH',
+            P10_007_MATCHING_PRICE_DISCREPANCY: 'P10_007_MATCHING_PRICE_DISCREPANCY',
+            P10_008_NEGATIVE_PRICE_FORBIDDEN: 'P10_008_NEGATIVE_PRICE_FORBIDDEN',
+            P10_009_NEGATIVE_QUANTITY_FORBIDDEN: 'P10_009_NEGATIVE_QUANTITY_FORBIDDEN',
+            P10_010_UNIT_DIMENSION_MISMATCH: 'P10_010_UNIT_DIMENSION_MISMATCH',
+            P10_011_CURRENCY_MISMATCH: 'P10_011_CURRENCY_MISMATCH',
+            P10_012_DIVISION_BY_ZERO_LIQUIDITY: 'P10_012_DIVISION_BY_ZERO_LIQUIDITY',
+            P10_013_PRICE_SHOCK_ANOMALY: 'P10_013_PRICE_SHOCK_ANOMALY',
+            P10_014_EPISOTEMIC_EVIDENCE_COLLAPSE: 'P10_014_EPISOTEMIC_EVIDENCE_COLLAPSE',
+            P10_015_REGIONAL_PRICE_DIVERGENCE_SPIKE: 'P10_015_REGIONAL_PRICE_DIVERGENCE_SPIKE',
+            P10_016_DUPLICATE_TRANSACTION_EMISSION: 'P10_016_DUPLICATE_TRANSACTION_EMISSION',
+            P10_017_ORPHAN_ORDER_BOOK_ENTRY: 'P10_017_ORPHAN_ORDER_BOOK_ENTRY',
+            P10_018_SNAPSHOT_CORRUPTION: 'P10_018_SNAPSHOT_CORRUPTION',
+            P10_019_FIREWALL_HARDCODING_BREACH: 'P10_019_FIREWALL_HARDCODING_BREACH',
+            P10_020_TELEMETRY_RING_OVERFLOW: 'P10_020_TELEMETRY_RING_OVERFLOW',
+            P10_021_DERIVED_DEMAND_SYNC_FAILURE: 'P10_021_DERIVED_DEMAND_SYNC_FAILURE',
+            P10_022_LOGISTICS_ACCESSIBILITY_BLOCK: 'P10_022_LOGISTICS_ACCESSIBILITY_BLOCK',
+            P10_023_SETTLEMENT_INTENT_REJECTED: 'P10_023_SETTLEMENT_INTENT_REJECTED',
+            P10_024_ELASTICITY_DIVERGENCE_LIMIT: 'P10_024_ELASTICITY_DIVERGENCE_LIMIT',
+            P10_025_ZERO_QUANTITY_MATCH_ATTEMPT: 'P10_025_ZERO_QUANTITY_MATCH_ATTEMPT'
+        });
+
+        // =========================================================================
+        // DETERMINISTIC HASHING INFRASTRUCTURE (ZERO DATE.NOW / ZERO MATH.RANDOM)
+        // =========================================================================
+
+        class DeterministicHashEngine {
+            static computeHash(inputStr) {
+                const str = typeof inputStr === 'string' ? inputStr : JSON.stringify(inputStr);
+                let h1 = 0xdeadbeef ^ str.length;
+                let h2 = 0x41c6ce57 ^ str.length;
+                for (let i = 0; i < str.length; i++) {
+                    const ch = str.charCodeAt(i);
+                    h1 = (Math.imul(h1 ^ ch, 2654435761) >>> 0);
+                    h2 = (Math.imul(h2 ^ ch, 1597334677) >>> 0);
+                }
+                h1 = ((Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909)) >>> 0);
+                h2 = ((Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909)) >>> 0);
+                return ((h1 >>> 0).toString(16).padStart(8, '0') + (h2 >>> 0).toString(16).padStart(8, '0')).toLowerCase();
+            }
+
+            static generateDeterministicId(prefix, seedComponents) {
+                const payload = seedComponents.map(c => String(c)).join('|');
+                const hash = this.computeHash(payload).substring(0, 12);
+                return `${prefix}:${hash}`;
+            }
+        }
+
+        // =========================================================================
+        // 10.01: MARKET IDENTITY, REGISTRY & PARTICIPANT ACCESS CONTROL [FIXED]
+        // =========================================================================
+
+        class MarketIdentity {
+            constructor(params = {}) {
+                if (!params.marketId || !params.resourceIdentityKey) {
+                    throw new Error('[MarketIdentity Violation]: marketId and resourceIdentityKey are mandatory.');
+                }
+                this.marketId = params.marketId;
+                this.name = params.name || this.marketId;
+                this.marketType = params.marketType || MarketTypeEnum.GLOBAL_COMMODITY_EXCHANGE;
+                this.resourceIdentityKey = params.resourceIdentityKey; // Canonical Part 04 Resource Key
+                this.commodityClass = params.commodityClass || 'RAW_COMMODITY_BULK';
+                this.jurisdiction = params.jurisdiction ? String(params.jurisdiction).toUpperCase() : 'GLOBAL';
+                this.currency = params.currency || 'USD';
+                this.quantityUnit = params.quantityUnit || 'TONNES';
+                this.quantityDimension = params.quantityDimension || QuantityDimension.MASS;
+                this.settlementModel = params.settlementModel || 'SPOT_PHYSICAL_DELIVERY';
+                this.pricingModel = params.pricingModel || 'CONTINUOUS_DOUBLE_AUCTION_VWAP';
+                this.participants = Array.isArray(params.participants) ? [...params.participants] : [];
+                this.ruleSet = params.ruleSet || { 
+                    minTickSize: 0.01, 
+                    minLotSize: 1.0, 
+                    maxPriceSlippage: 0.25, 
+                    smoothingAlpha: 0.25,
+                    elasticityCoeff: -0.45 
+                };
+                this.provenance = params.provenance || { sourceSubsystem: 'MARKET_REGISTRY', timestamp: 0 };
+            }
+
+            toJSON() {
+                return {
+                    marketId: this.marketId,
+                    name: this.name,
+                    marketType: this.marketType,
+                    resourceIdentityKey: this.resourceIdentityKey,
+                    commodityClass: this.commodityClass,
+                    jurisdiction: this.jurisdiction,
+                    currency: this.currency,
+                    quantityUnit: this.quantityUnit,
+                    quantityDimension: this.quantityDimension,
+                    settlementModel: this.settlementModel,
+                    pricingModel: this.pricingModel,
+                    participants: this.participants,
+                    ruleSet: this.ruleSet,
+                    provenance: this.provenance
+                };
+            }
+        }
+
+        class MarketActor {
+            constructor(params = {}) {
+                if (!params.actorId || !params.actorType) {
+                    throw new Error('[MarketActor Violation]: actorId and actorType are mandatory.');
+                }
+                this.actorId = params.actorId;
+                this.name = params.name || this.actorId;
+                this.actorType = params.actorType;
+                this.countryIso3 = params.countryIso3 ? String(params.countryIso3).toUpperCase() : 'GLOBAL';
+                this.currency = params.currency || 'USD';
+                this.buyingPowerFunds = typeof params.buyingPowerFunds === 'number' ? Math.max(0, params.buyingPowerFunds) : 1000000.0;
+                this.isAuthorized = params.isAuthorized !== undefined ? Boolean(params.isAuthorized) : true;
+                this.restrictedMarketIds = Array.isArray(params.restrictedMarketIds) ? [...params.restrictedMarketIds] : [];
+                this.provenance = params.provenance || { sourceSubsystem: 'MARKET_ACTOR_REGISTRY', timestamp: 0 };
+            }
+
+            hasAccessToMarket(marketId) {
+                return this.isAuthorized && !this.restrictedMarketIds.includes(marketId);
+            }
+
+            toJSON() {
+                return {
+                    actorId: this.actorId,
+                    name: this.name,
+                    actorType: this.actorType,
+                    countryIso3: this.countryIso3,
+                    currency: this.currency,
+                    buyingPowerFunds: this.buyingPowerFunds,
+                    isAuthorized: this.isAuthorized,
+                    restrictedMarketIds: this.restrictedMarketIds,
+                    provenance: this.provenance
+                };
+            }
+        }
+
+        class MarketRegistry {
+            constructor() {
+                this.markets = new Map(); // MarketId -> MarketIdentity
+                this.actors = new Map();   // ActorId -> MarketActor
+                this.marketsByResource = new Map(); // ResourceKey -> Set<MarketId>
+                this.marketsByJurisdiction = new Map(); // Jurisdiction -> Set<MarketId>
+            }
+
+            registerMarket(market) {
+                if (!(market instanceof MarketIdentity)) throw new Error('[MarketRegistry]: Expected MarketIdentity instance.');
+                this.markets.set(market.marketId, market);
+
+                if (!this.marketsByResource.has(market.resourceIdentityKey)) {
+                    this.marketsByResource.set(market.resourceIdentityKey, new Set());
+                }
+                this.marketsByResource.get(market.resourceIdentityKey).add(market.marketId);
+
+                if (!this.marketsByJurisdiction.has(market.jurisdiction)) {
+                    this.marketsByJurisdiction.set(market.jurisdiction, new Set());
+                }
+                this.marketsByJurisdiction.get(market.jurisdiction).add(market.marketId);
+
+                return market;
+            }
+
+            registerActor(actor) {
+                if (!(actor instanceof MarketActor)) throw new Error('[MarketRegistry]: Expected MarketActor instance.');
+                this.actors.set(actor.actorId, actor);
+                return actor;
+            }
+
+            getMarket(marketId) {
+                const m = this.markets.get(marketId);
+                return m ? m : null;
+            }
+
+            getActor(actorId) {
+                const a = this.actors.get(actorId);
+                return a ? a : null;
+            }
+
+            getMarketsForResource(resourceIdentityKey) {
+                const set = this.marketsByResource.get(resourceIdentityKey);
+                return set ? Array.from(set).map(id => this.markets.get(id)).filter(Boolean) : [];
+            }
+
+            clear() {
+                this.markets.clear();
+                this.actors.clear();
+                this.marketsByResource.clear();
+                this.marketsByJurisdiction.clear();
+            }
+        }
+
+        // =========================================================================
+        // 10.02: SUPPLY AGGREGATION & SUPPLY PRESSURE ENGINE [FIXED]
+        // =========================================================================
+
+        class SupplyState {
+            constructor(params = {}) {
+                this.resourceIdentityKey = params.resourceIdentityKey;
+                this.marketId = params.marketId || 'GLOBAL';
+                this.totalInventoryMass = typeof params.totalInventoryMass === 'number' ? Math.max(0, params.totalInventoryMass) : 0;
+                this.availablePhysicalMass = typeof params.availablePhysicalMass === 'number' ? Math.max(0, params.availablePhysicalMass) : 0;
+                this.reservedStockMass = typeof params.reservedStockMass === 'number' ? Math.max(0, params.reservedStockMass) : 0;
+                this.committedTradeMass = typeof params.committedTradeMass === 'number' ? Math.max(0, params.committedTradeMass) : 0;
+                this.inTransitFlowMass = typeof params.inTransitFlowMass === 'number' ? Math.max(0, params.inTransitFlowMass) : 0;
+                this.inaccessibleLogisticsMass = typeof params.inaccessibleLogisticsMass === 'number' ? Math.max(0, params.inaccessibleLogisticsMass) : 0;
+                this.strategicReserveMass = typeof params.strategicReserveMass === 'number' ? Math.max(0, params.strategicReserveMass) : 0;
+                this.damagedQuarantinedMass = typeof params.damagedQuarantinedMass === 'number' ? Math.max(0, params.damagedQuarantinedMass) : 0;
+                this.marketableSupplyMass = typeof params.marketableSupplyMass === 'number' ? Math.max(0, params.marketableSupplyMass) : 0;
+                this.effectiveSupplyMass = typeof params.effectiveSupplyMass === 'number' ? Math.max(0, params.effectiveSupplyMass) : this.marketableSupplyMass;
+                this.recentProductionRate = typeof params.recentProductionRate === 'number' ? Math.max(0, params.recentProductionRate) : 0;
+                this.replenishmentDeliveryFlow = typeof params.replenishmentDeliveryFlow === 'number' ? Math.max(0, params.replenishmentDeliveryFlow) : 0;
+                this.supplyPressureIndex = typeof params.supplyPressureIndex === 'number' ? Math.max(0.01, params.supplyPressureIndex) : 1.0;
+                this.epistemicStatus = params.epistemicStatus || EpistemicStatusEnum.KNOWN_VERIFIED;
+            }
+
+            toJSON() {
+                return {
+                    resourceIdentityKey: this.resourceIdentityKey,
+                    marketId: this.marketId,
+                    totalInventoryMass: this.totalInventoryMass,
+                    availablePhysicalMass: this.availablePhysicalMass,
+                    reservedStockMass: this.reservedStockMass,
+                    committedTradeMass: this.committedTradeMass,
+                    inTransitFlowMass: this.inTransitFlowMass,
+                    inaccessibleLogisticsMass: this.inaccessibleLogisticsMass,
+                    strategicReserveMass: this.strategicReserveMass,
+                    damagedQuarantinedMass: this.damagedQuarantinedMass,
+                    marketableSupplyMass: this.marketableSupplyMass,
+                    effectiveSupplyMass: this.effectiveSupplyMass,
+                    recentProductionRate: this.recentProductionRate,
+                    replenishmentDeliveryFlow: this.replenishmentDeliveryFlow,
+                    supplyPressureIndex: this.supplyPressureIndex,
+                    epistemicStatus: this.epistemicStatus
+                };
+            }
+        }
+
+        class SupplyClassificationEngine {
+            /**
+             * [FIX]: 4-Step Mathematical Cascade: Total -> Marketable -> Effective -> Market Supply.
+             * Integrates Part 08 logistics flows and Part 09 industrial production rates.
+             */
+            static computeMarketSupply(inventoryPositions, logisticsContext = {}, productionContext = {}, strategicStockRatio = 0.10) {
+                let totalPhysical = 0.0;
+                let reserved = 0.0;
+                let allocated = 0.0;
+                let available = 0.0;
+                let damagedOrQuarantined = 0.0;
+
+                const posList = Array.isArray(inventoryPositions) 
+                    ? inventoryPositions 
+                    : (inventoryPositions instanceof Map ? Array.from(inventoryPositions.values()) : []);
+
+                posList.forEach(pos => {
+                    if (pos && pos.quantities) {
+                        const q = pos.quantities;
+                        const posTotal = q.getPhysicalTotal ? q.getPhysicalTotal() : (q.available + q.reserved + q.allocated + (q.damaged || 0) + (q.quarantined || 0));
+                        totalPhysical += posTotal;
+                        reserved += (q.reserved || 0);
+                        allocated += (q.allocated || 0);
+                        available += (q.available || 0);
+                        damagedOrQuarantined += ((q.damaged || 0) + (q.quarantined || 0));
+                    }
+                });
+
+                // Step 1: Isolate Strategic Reserves from Marketable Supply
+                const strategicMass = totalPhysical * Math.max(0, Math.min(0.5, strategicStockRatio));
+                const netMarketable = Math.max(0, available - strategicMass);
+
+                // Step 2: Integrate Part 08 Logistics Delivery Flow & Throughput Constraints
+                const logisticsThroughputFactor = typeof logisticsContext.throughputDerateFactor === 'number'
+                    ? Math.max(0.1, Math.min(1.0, logisticsContext.throughputDerateFactor))
+                    : 1.0;
+                const deliveryFlowRate = typeof logisticsContext.deliveryFlowRate === 'number' ? Math.max(0, logisticsContext.deliveryFlowRate) : 0;
+                const inTransitMass = typeof logisticsContext.inTransitMass === 'number' ? Math.max(0, logisticsContext.inTransitMass) : 0;
+
+                // Step 3: Integrate Part 09 Industrial Production Rate
+                const recentProductionRate = typeof productionContext.recentProductionRate === 'number' ? Math.max(0, productionContext.recentProductionRate) : 0;
+
+                const effectiveSupply = (netMarketable * logisticsThroughputFactor) + deliveryFlowRate;
+                const inaccess = Math.max(0, netMarketable - (netMarketable * logisticsThroughputFactor));
+
+                // Step 4: Compute Supply Pressure Index: (Effective Supply + Production Inflow) / Commitments
+                const commitments = reserved + allocated;
+                const totalInflow = effectiveSupply + recentProductionRate;
+                const pressureIndex = commitments > 0 ? (totalInflow / commitments) : (totalInflow > 0 ? 2.0 : 1.0);
+
+                return new SupplyState({
+                    totalInventoryMass: totalPhysical,
+                    availablePhysicalMass: available,
+                    reservedStockMass: reserved,
+                    committedTradeMass: allocated,
+                    inTransitFlowMass: inTransitMass,
+                    inaccessibleLogisticsMass: inaccess,
+                    strategicReserveMass: strategicMass,
+                    damagedQuarantinedMass: damagedOrQuarantined,
+                    marketableSupplyMass: netMarketable,
+                    effectiveSupplyMass: effectiveSupply,
+                    recentProductionRate,
+                    replenishmentDeliveryFlow: deliveryFlowRate,
+                    supplyPressureIndex: Math.max(0.01, pressureIndex),
+                    epistemicStatus: posList.length > 0 ? EpistemicStatusEnum.KNOWN_VERIFIED : EpistemicStatusEnum.MISSING_NULL
+                });
+            }
+        }
+
+        // =========================================================================
+        // 10.03: DEMAND GRAPH, DERIVED DEMAND & ELASTICITY ENGINE [FIXED]
+        // =========================================================================
+
+        class DemandState {
+            constructor(params = {}) {
+                this.resourceIdentityKey = params.resourceIdentityKey;
+                this.marketId = params.marketId || 'GLOBAL';
+                this.baseConsumerDemand = typeof params.baseConsumerDemand === 'number' ? Math.max(0, params.baseConsumerDemand) : null;
+                this.derivedIndustrialDemand = typeof params.derivedIndustrialDemand === 'number' ? Math.max(0, params.derivedIndustrialDemand) : 0;
+                this.governmentProcurementDemand = typeof params.governmentProcurementDemand === 'number' ? Math.max(0, params.governmentProcurementDemand) : 0;
+                this.strategicStockpileDemand = typeof params.strategicStockpileDemand === 'number' ? Math.max(0, params.strategicStockpileDemand) : 0;
+                this.speculativeTradingDemand = typeof params.speculativeTradingDemand === 'number' ? Math.max(0, params.speculativeTradingDemand) : 0;
+                this.sectorDemandBreakdown = params.sectorDemandBreakdown || {}; // Sector -> Quantity
+                this.regionalDemandBreakdown = params.regionalDemandBreakdown || {}; // Region -> Quantity
+                this.effectiveTotalDemand = typeof params.effectiveTotalDemand === 'number' ? Math.max(0, params.effectiveTotalDemand) : null;
+                this.priceElasticityCoefficient = typeof params.priceElasticityCoefficient === 'number' ? params.priceElasticityCoefficient : -0.45;
+                this.epistemicStatus = params.epistemicStatus || EpistemicStatusEnum.KNOWN_VERIFIED;
+            }
+
+            toJSON() {
+                return {
+                    resourceIdentityKey: this.resourceIdentityKey,
+                    marketId: this.marketId,
+                    baseConsumerDemand: this.baseConsumerDemand,
+                    derivedIndustrialDemand: this.derivedIndustrialDemand,
+                    governmentProcurementDemand: this.governmentProcurementDemand,
+                    strategicStockpileDemand: this.strategicStockpileDemand,
+                    speculativeTradingDemand: this.speculativeTradingDemand,
+                    sectorDemandBreakdown: this.sectorDemandBreakdown,
+                    regionalDemandBreakdown: this.regionalDemandBreakdown,
+                    effectiveTotalDemand: this.effectiveTotalDemand,
+                    priceElasticityCoefficient: this.priceElasticityCoefficient,
+                    epistemicStatus: this.epistemicStatus
+                };
+            }
+        }
+
+        class DemandAggregationEngine {
+            /**
+             * [FIX]: Hierarchical demand rollup (Entity -> Sector -> Regional -> Global).
+             * Enforces: Missing data != Zero. Integrates Part 09 derived industrial BoM requirements.
+             */
+            static computeMarketDemand(rawDemandRequests, derivedIndustrialOrders = [], elasticityCoeff = -0.45, priceRelativeIndex = 1.0) {
+                let baseConsumer = 0.0;
+                let government = 0.0;
+                let strategic = 0.0;
+                let speculative = 0.0;
+                const sectorMap = {};
+                const regionalMap = {};
+                let hasAnyValidInput = false;
+
+                const requests = Array.isArray(rawDemandRequests) ? rawDemandRequests : [];
+                requests.forEach(req => {
+                    if (req && typeof req.quantity === 'number') {
+                        hasAnyValidInput = true;
+                        const qty = Math.max(0, req.quantity);
+                        if (req.category === DemandCategoryEnum.BASE_CONSUMPTION) baseConsumer += qty;
+                        else if (req.category === DemandCategoryEnum.GOVERNMENT_PROCUREMENT) government += qty;
+                        else if (req.category === DemandCategoryEnum.STRATEGIC_STOCKPILING) strategic += qty;
+                        else if (req.category === DemandCategoryEnum.SPECULATIVE_MARKET) speculative += qty;
+
+                        const sec = req.sector || 'CONSUMER_GENERAL';
+                        sectorMap[sec] = (sectorMap[sec] || 0) + qty;
+
+                        const reg = req.region || 'GLOBAL';
+                        regionalMap[reg] = (regionalMap[reg] || 0) + qty;
+                    }
+                });
+
+                // Integrate Part 09 Derived Industrial BoM Input Demand
+                let derivedIndustrial = 0.0;
+                if (Array.isArray(derivedIndustrialOrders)) {
+                    derivedIndustrialOrders.forEach(order => {
+                        if (order && typeof order.requiredQuantity === 'number') {
+                            hasAnyValidInput = true;
+                            const indQty = Math.max(0, order.requiredQuantity);
+                            derivedIndustrial += indQty;
+                            const indSector = order.sector || 'HEAVY_INDUSTRY';
+                            sectorMap[indSector] = (sectorMap[indSector] || 0) + indQty;
+                        }
+                    });
+                }
+
+                if (!hasAnyValidInput) {
+                    return new DemandState({
+                        baseConsumerDemand: null,
+                        derivedIndustrialDemand: 0,
+                        effectiveTotalDemand: null,
+                        priceElasticityCoefficient: elasticityCoeff,
+                        epistemicStatus: EpistemicStatusEnum.MISSING_NULL
+                    });
+                }
+
+                const unadjustedTotal = baseConsumer + government + strategic + speculative + derivedIndustrial;
+
+                // Apply Price Elasticity Curve: Q_effective = Q_base * (Price_current / Price_ref)^elasticity
+                const elasticityMultiplier = Math.pow(Math.max(0.1, priceRelativeIndex), elasticityCoeff);
+                const effectiveTotal = unadjustedTotal * Math.max(0.1, Math.min(2.5, elasticityMultiplier));
+
+                return new DemandState({
+                    baseConsumerDemand: baseConsumer,
+                    derivedIndustrialDemand: derivedIndustrial,
+                    governmentProcurementDemand: government,
+                    strategicStockpileDemand: strategic,
+                    speculativeTradingDemand: speculative,
+                    sectorDemandBreakdown: sectorMap,
+                    regionalDemandBreakdown: regionalMap,
+                    effectiveTotalDemand: effectiveTotal,
+                    priceElasticityCoefficient: elasticityCoeff,
+                    epistemicStatus: EpistemicStatusEnum.KNOWN_VERIFIED
+                });
+            }
+        }
+
+        // =========================================================================
+        // 10.04: ORDER BOOK, ORDER LIFECYCLE FSM & PRE-TRADE VALIDATION [FIXED]
+        // =========================================================================
+
+        class MarketOrder {
+            constructor(params = {}) {
+                if (!params.actorId || !params.marketId || !params.side || typeof params.quantity !== 'number') {
+                    throw new Error('[MarketOrder Violation]: actorId, marketId, side, and numeric quantity are mandatory.');
+                }
+                if (params.quantity <= 0 || !Number.isFinite(params.quantity)) {
+                    throw new Error('[MarketOrder Violation]: Order quantity must be strictly positive.');
+                }
+
+                const seed = `${params.actorId}:${params.marketId}:${params.side}:${params.quantity}:${params.createdTick || 0}`;
+                this.orderId = params.orderId || DeterministicHashEngine.generateDeterministicId('ORD', [seed]);
+                this.actorId = params.actorId;
+                this.marketId = params.marketId;
+                this.side = params.side; // BUY | SELL
+                this.orderType = params.orderType || OrderTypeEnum.LIMIT;
+                this.quantity = params.quantity;
+                this.remainingQuantity = typeof params.remainingQuantity === 'number' ? params.remainingQuantity : this.quantity;
+                this.priceLimit = typeof params.priceLimit === 'number' ? Math.max(0, params.priceLimit) : null;
+                this.currency = params.currency || 'USD';
+                this.createdTick = typeof params.createdTick === 'number' ? params.createdTick : 0;
+                this.expirationTick = typeof params.expirationTick === 'number' ? params.expirationTick : Infinity;
+                this.status = params.status || OrderLifecycleStatus.CREATED;
+                this.fillHistory = Array.isArray(params.fillHistory) ? [...params.fillHistory] : [];
+                this.provenance = params.provenance || { sourceSubsystem: 'ORDER_BOOK_GATEWAY', timestamp: 0 };
+            }
+
+            isExpired(currentTick) {
+                return currentTick > this.expirationTick;
+            }
+
+            clone() {
+                return new MarketOrder({
+                    orderId: this.orderId,
+                    actorId: this.actorId,
+                    marketId: this.marketId,
+                    side: this.side,
+                    orderType: this.orderType,
+                    quantity: this.quantity,
+                    remainingQuantity: this.remainingQuantity,
+                    priceLimit: this.priceLimit,
+                    currency: this.currency,
+                    createdTick: this.createdTick,
+                    expirationTick: this.expirationTick,
+                    status: this.status,
+                    fillHistory: JSON.parse(JSON.stringify(this.fillHistory)),
+                    provenance: JSON.parse(JSON.stringify(this.provenance))
+                });
+            }
+
+            toJSON() {
+                return {
+                    orderId: this.orderId,
+                    actorId: this.actorId,
+                    marketId: this.marketId,
+                    side: this.side,
+                    orderType: this.orderType,
+                    quantity: this.quantity,
+                    remainingQuantity: this.remainingQuantity,
+                    priceLimit: this.priceLimit,
+                    currency: this.currency,
+                    createdTick: this.createdTick,
+                    expirationTick: this.expirationTick,
+                    status: this.status,
+                    fillHistory: this.fillHistory,
+                    provenance: this.provenance
+                };
+            }
+        }
+
+        class OrderValidationEngine {
+            /**
+             * [FIX]: Multi-layer pre-trade validation.
+             * Enforces market order solvency with 1.5x collar and verifies marketable supply backing.
+             */
+            static validateOrder(order, market, actor, supplyState = null, estimatedReferencePrice = 100.0) {
+                if (!order || !(order instanceof MarketOrder)) {
+                    return { isValid: false, reasonCode: ErrorTaxonomy.P10_005_ORDER_VALIDATION_FAILED, message: 'Invalid order instance.' };
+                }
+                if (!market || !actor) {
+                    return { isValid: false, reasonCode: ErrorTaxonomy.P10_001_INVALID_MARKET_SPEC, message: 'Market or Actor not registered.' };
+                }
+                if (!actor.hasAccessToMarket(market.marketId)) {
+                    return { isValid: false, reasonCode: ErrorTaxonomy.P10_002_ACTOR_ACCESS_DENIED, message: `Actor '${actor.actorId}' disallowed on market '${market.marketId}'.` };
+                }
+
+                // Currency Alignment Check
+                if (order.currency !== market.currency) {
+                    return { isValid: false, reasonCode: ErrorTaxonomy.P10_011_CURRENCY_MISMATCH, message: `Order currency ${order.currency} does not match market currency ${market.currency}.` };
+                }
+
+                // Buy Order Solvency Check (Limit or Market with 1.5x collar)
+                if (order.side === OrderSideEnum.BUY) {
+                    const effectivePriceCheck = order.priceLimit !== null ? order.priceLimit : (estimatedReferencePrice * 1.5);
+                    const totalCommitment = order.quantity * effectivePriceCheck;
+                    if (totalCommitment > (actor.buyingPowerFunds + 1e-6)) {
+                        return { 
+                            isValid: false, 
+                            reasonCode: ErrorTaxonomy.P10_003_INSUFFICIENT_BUYING_CAPACITY, 
+                            message: `Insufficient funds: Required estimated ${totalCommitment.toFixed(2)} ${actor.currency}, Available ${actor.buyingPowerFunds}` 
+                        };
+                    }
+                }
+
+                // Sell Order Supply Backing Check
+                if (order.side === OrderSideEnum.SELL && supplyState) {
+                    if (order.quantity > (supplyState.marketableSupplyMass + 1e-6)) {
+                        return {
+                            isValid: false,
+                            reasonCode: ErrorTaxonomy.P10_004_INSUFFICIENT_MARKETABLE_SUPPLY,
+                            message: `Insufficient marketable supply: Required ${order.quantity}, Available ${supplyState.marketableSupplyMass}`
+                        };
+                    }
+                }
+
+                return { isValid: true, reasonCode: null, message: 'ORDER_VALIDATED' };
+            }
+        }
+
+        class OrderBook {
+            constructor(marketId) {
+                this.marketId = marketId;
+                this.buyOrders = [];  // Sorted descending by price, earliest tick first
+                this.sellOrders = []; // Sorted ascending by price, earliest tick first
+            }
+
+            addOrder(order) {
+                if (order.side === OrderSideEnum.BUY) {
+                    this.buyOrders.push(order);
+                    this._sortBids();
+                } else {
+                    this.sellOrders.push(order);
+                    this._sortAsks();
+                }
+                order.status = OrderLifecycleStatus.OPEN;
+            }
+
+            cancelOrder(orderId) {
+                let found = this._removeFromArray(this.buyOrders, orderId);
+                if (!found) found = this._removeFromArray(this.sellOrders, orderId);
+                if (found) found.status = OrderLifecycleStatus.CANCELLED;
+                return found;
+            }
+
+            getBestBid() {
+                this._purgeCompletedOrders(this.buyOrders);
+                return this.buyOrders.length > 0 ? this.buyOrders[0].priceLimit : null;
+            }
+
+            getBestAsk() {
+                this._purgeCompletedOrders(this.sellOrders);
+                return this.sellOrders.length > 0 ? this.sellOrders[0].priceLimit : null;
+            }
+
+            getBidAskSpread() {
+                const bid = this.getBestBid();
+                const ask = this.getBestAsk();
+                if (bid === null || ask === null) return null;
+                return Math.max(0, ask - bid);
+            }
+
+            getDepth() {
+                this._purgeCompletedOrders(this.buyOrders);
+                this._purgeCompletedOrders(this.sellOrders);
+                const totalBidVol = this.buyOrders.reduce((sum, o) => sum + o.remainingQuantity, 0);
+                const totalAskVol = this.sellOrders.reduce((sum, o) => sum + o.remainingQuantity, 0);
+                return { totalBidVolume: totalBidVol, totalAskVolume: totalAskVol, totalOrders: this.buyOrders.length + this.sellOrders.length };
+            }
+
+            _sortBids() {
+                this.buyOrders.sort((a, b) => {
+                    if (a.orderType === OrderTypeEnum.MARKET && b.orderType !== OrderTypeEnum.MARKET) return -1;
+                    if (b.orderType === OrderTypeEnum.MARKET && a.orderType !== OrderTypeEnum.MARKET) return 1;
+                    const priceA = a.priceLimit !== null ? a.priceLimit : Infinity;
+                    const priceB = b.priceLimit !== null ? b.priceLimit : Infinity;
+                    if (priceB !== priceA) return priceB - priceA;
+                    return a.createdTick - b.createdTick;
+                });
+            }
+
+            _sortAsks() {
+                this.sellOrders.sort((a, b) => {
+                    if (a.orderType === OrderTypeEnum.MARKET && b.orderType !== OrderTypeEnum.MARKET) return -1;
+                    if (b.orderType === OrderTypeEnum.MARKET && a.orderType !== OrderTypeEnum.MARKET) return 1;
+                    const priceA = a.priceLimit !== null ? a.priceLimit : 0;
+                    const priceB = b.priceLimit !== null ? b.priceLimit : 0;
+                    if (priceA !== priceB) return priceA - priceB;
+                    return a.createdTick - b.createdTick;
+                });
+            }
+
+            _removeFromArray(arr, orderId) {
+                const idx = arr.findIndex(o => o.orderId === orderId);
+                if (idx !== -1) return arr.splice(idx, 1)[0];
+                return null;
+            }
+
+            _purgeCompletedOrders(arr) {
+                for (let i = arr.length - 1; i >= 0; i--) {
+                    if (arr[i].remainingQuantity <= 1e-6 || arr[i].status === OrderLifecycleStatus.FILLED || arr[i].status === OrderLifecycleStatus.CANCELLED) {
+                        arr.splice(i, 1);
+                    }
+                }
+            }
+
+            clear() {
+                this.buyOrders = [];
+                this.sellOrders = [];
+            }
+        }
+
+        // =========================================================================
+        // 10.05: DOUBLE AUCTION MATCHING & SETTLEMENT EMISSION [FIXED]
+        // =========================================================================
+
+        class TradeCandidate {
+            constructor(params = {}) {
+                const seed = `${params.buyOrderId}:${params.sellOrderId}:${params.matchedQuantity}:${params.executionPrice}`;
+                this.tradeId = params.tradeId || DeterministicHashEngine.generateDeterministicId('TRD', [seed]);
+                this.marketId = params.marketId;
+                this.buyOrderId = params.buyOrderId;
+                this.sellOrderId = params.sellOrderId;
+                this.buyerActorId = params.buyerActorId;
+                this.sellerActorId = params.sellerActorId;
+                this.matchedQuantity = params.matchedQuantity;
+                this.executionPrice = params.executionPrice;
+                this.totalSettlementAmount = this.matchedQuantity * this.executionPrice;
+                this.currency = params.currency || 'USD';
+                this.matchedTick = typeof params.matchedTick === 'number' ? params.matchedTick : 0;
+                
+                // [FIX]: Structured Settlement Payload for Part 07 / Part 11
+                this.settlementCommand = {
+                    commandType: 'SETTLE_TRADE_CONTRACT',
+                    tradeId: this.tradeId,
+                    marketId: this.marketId,
+                    buyerActorId: this.buyerActorId,
+                    sellerActorId: this.sellerActorId,
+                    quantity: this.matchedQuantity,
+                    unitPrice: this.executionPrice,
+                    grossAmount: this.totalSettlementAmount,
+                    currency: this.currency,
+                    executionTick: this.matchedTick
+                };
+
+                this.provenance = params.provenance || { sourceSubsystem: 'MATCHING_ENGINE', timestamp: 0 };
+            }
+
+            toJSON() {
+                return {
+                    tradeId: this.tradeId,
+                    marketId: this.marketId,
+                    buyOrderId: this.buyOrderId,
+                    sellOrderId: this.sellOrderId,
+                    buyerActorId: this.buyerActorId,
+                    sellerActorId: this.sellerActorId,
+                    matchedQuantity: this.matchedQuantity,
+                    executionPrice: this.executionPrice,
+                    totalSettlementAmount: this.totalSettlementAmount,
+                    currency: this.currency,
+                    matchedTick: this.matchedTick,
+                    settlementCommand: this.settlementCommand,
+                    provenance: this.provenance
+                };
+            }
+        }
+
+        class OrderMatchingEngine {
+            /**
+             * [FIX]: Continuous Double Auction Execution Core.
+             * Enforces Price-Time priority and matches at resting order's limit price.
+             */
+            static matchOrders(orderBook, marketIdentity, currentTick = 0, lastReferencePrice = 100.0) {
+                const executedTrades = [];
+                orderBook._sortBids();
+                orderBook._sortAsks();
+
+                while (orderBook.buyOrders.length > 0 && orderBook.sellOrders.length > 0) {
+                    const bestBid = orderBook.buyOrders[0];
+                    const bestAsk = orderBook.sellOrders[0];
+
+                    if (bestBid.isExpired(currentTick)) {
+                        bestBid.status = OrderLifecycleStatus.EXPIRED;
+                        orderBook.buyOrders.shift();
+                        continue;
+                    }
+                    if (bestAsk.isExpired(currentTick)) {
+                        bestAsk.status = OrderLifecycleStatus.EXPIRED;
+                        orderBook.sellOrders.shift();
+                        continue;
+                    }
+
+                    const bidPrice = bestBid.priceLimit !== null ? bestBid.priceLimit : Infinity;
+                    const askPrice = bestAsk.priceLimit !== null ? bestAsk.priceLimit : 0;
+
+                    if (bidPrice < askPrice) {
+                        break;
+                    }
+
+                    // Determine Execution Price respecting resting order price priority
+                    let executionPrice = lastReferencePrice;
+                    if (bestBid.priceLimit !== null && bestAsk.priceLimit !== null) {
+                        if (bestBid.createdTick < bestAsk.createdTick) {
+                            executionPrice = bestBid.priceLimit; // Bid arrived earlier (resting order)
+                        } else if (bestAsk.createdTick < bestBid.createdTick) {
+                            executionPrice = bestAsk.priceLimit; // Ask arrived earlier (resting order)
+                        } else {
+                            executionPrice = (bestBid.priceLimit + bestAsk.priceLimit) / 2.0; // Simultaneous
+                        }
+                    } else if (bestBid.priceLimit !== null) {
+                        executionPrice = bestBid.priceLimit;
+                    } else if (bestAsk.priceLimit !== null) {
+                        executionPrice = bestAsk.priceLimit;
+                    }
+
+                    const matchQty = Math.min(bestBid.remainingQuantity, bestAsk.remainingQuantity);
+                    if (matchQty <= 0) break;
+
+                    const trade = new TradeCandidate({
+                        marketId: marketIdentity.marketId,
+                        buyOrderId: bestBid.orderId,
+                        sellOrderId: bestAsk.orderId,
+                        buyerActorId: bestBid.actorId,
+                        sellerActorId: bestAsk.actorId,
+                        matchedQuantity: matchQty,
+                        executionPrice,
+                        currency: marketIdentity.currency,
+                        matchedTick: currentTick
+                    });
+
+                    executedTrades.push(trade);
+
+                    bestBid.remainingQuantity -= matchQty;
+                    bestAsk.remainingQuantity -= matchQty;
+
+                    bestBid.fillHistory.push({ tradeId: trade.tradeId, qty: matchQty, price: executionPrice, tick: currentTick });
+                    bestAsk.fillHistory.push({ tradeId: trade.tradeId, qty: matchQty, price: executionPrice, tick: currentTick });
+
+                    bestBid.status = bestBid.remainingQuantity <= 1e-6 ? OrderLifecycleStatus.FILLED : OrderLifecycleStatus.PARTIALLY_FILLED;
+                    bestAsk.status = bestAsk.remainingQuantity <= 1e-6 ? OrderLifecycleStatus.FILLED : OrderLifecycleStatus.PARTIALLY_FILLED;
+
+                    if (bestBid.status === OrderLifecycleStatus.FILLED) orderBook.buyOrders.shift();
+                    if (bestAsk.status === OrderLifecycleStatus.FILLED) orderBook.sellOrders.shift();
+                }
+
+                return executedTrades;
+            }
+        }
+
+        // =========================================================================
+        // 10.06: PRICE DISCOVERY ENGINE, VWAP & REGIONAL DIFFERENTIALS [FIXED]
+        // =========================================================================
+
+        class PriceState {
+            constructor(params = {}) {
+                this.referencePrice = typeof params.referencePrice === 'number' ? Math.max(0.001, params.referencePrice) : 100.0;
+                this.transactionPrice = typeof params.transactionPrice === 'number' ? params.transactionPrice : this.referencePrice;
+                this.clearingPrice = typeof params.clearingPrice === 'number' ? params.clearingPrice : this.referencePrice;
+                this.volumeWeightedAveragePrice = typeof params.volumeWeightedAveragePrice === 'number' ? params.volumeWeightedAveragePrice : this.referencePrice;
+                this.currency = params.currency || 'USD';
+                this.quantityUnit = params.quantityUnit || 'TONNES';
+                this.priceDifferentialVsGlobal = typeof params.priceDifferentialVsGlobal === 'number' ? params.priceDifferentialVsGlobal : 0.0;
+                this.lastUpdatedTick = typeof params.lastUpdatedTick === 'number' ? params.lastUpdatedTick : 0;
+                this.epistemicStatus = params.epistemicStatus || EpistemicStatusEnum.KNOWN_VERIFIED;
+            }
+
+            toJSON() {
+                return {
+                    referencePrice: this.referencePrice,
+                    transactionPrice: this.transactionPrice,
+                    clearingPrice: this.clearingPrice,
+                    volumeWeightedAveragePrice: this.volumeWeightedAveragePrice,
+                    currency: this.currency,
+                    quantityUnit: this.quantityUnit,
+                    priceDifferentialVsGlobal: this.priceDifferentialVsGlobal,
+                    lastUpdatedTick: this.lastUpdatedTick,
+                    epistemicStatus: this.epistemicStatus
+                };
+            }
+        }
+
+        class PriceDiscoveryEngine {
+            /**
+             * [FIX]: Discovers and smooths market clearing prices using Volume-Weighted Average Price (VWAP)
+             * and applies Part 08 logistics transport differentials without hardcoding.
+             */
+            static computePriceDiscovery(currentPriceState, executedTrades, supplyState, demandState, logisticsTransportCost = 0.0, globalReferencePrice = null, options = {}) {
+                let totalValue = 0.0;
+                let totalVol = 0.0;
+                let lastTxPrice = currentPriceState.transactionPrice;
+
+                if (Array.isArray(executedTrades) && executedTrades.length > 0) {
+                    executedTrades.forEach(tr => {
+                        totalValue += (tr.matchedQuantity * tr.executionPrice);
+                        totalVol += tr.matchedQuantity;
+                        lastTxPrice = tr.executionPrice;
+                    });
+                }
+
+                // 1. VWAP from discrete matched auction trades
+                let discoveredClearingPrice = currentPriceState.referencePrice;
+                let vwap = currentPriceState.volumeWeightedAveragePrice;
+
+                if (totalVol > 0) {
+                    vwap = totalValue / totalVol;
+                    discoveredClearingPrice = vwap;
+                } else if (supplyState && demandState) {
+                    // 2. Structural Supply-Demand Shift (Safe from division by zero)
+                    const supplyAvailable = Math.max(0.01, supplyState.effectiveSupplyMass || supplyState.marketableSupplyMass);
+                    const demandTotal = typeof demandState.effectiveTotalDemand === 'number' ? demandState.effectiveTotalDemand : supplyAvailable;
+                    const sdRatio = demandTotal / supplyAvailable;
+                    const sdMultiplier = Math.pow(Math.max(0.2, Math.min(5.0, sdRatio)), 0.5);
+                    discoveredClearingPrice = currentPriceState.referencePrice * sdMultiplier;
+                    vwap = discoveredClearingPrice;
+                }
+
+                // 3. Price Smoothing (Exponential Moving Average)
+                const alpha = typeof options.smoothingAlpha === 'number' ? Math.max(0.01, Math.min(1.0, options.smoothingAlpha)) : 0.25;
+                const smoothedReference = (discoveredClearingPrice * alpha) + (currentPriceState.referencePrice * (1.0 - alpha));
+
+                // 4. Regional Price Differential with Part 08 Transport Cost Addition
+                const regionalPrice = smoothedReference + Math.max(0, logisticsTransportCost);
+                const globalRef = typeof globalReferencePrice === 'number' ? globalReferencePrice : smoothedReference;
+                const differential = regionalPrice - globalRef;
+
+                return new PriceState({
+                    referencePrice: regionalPrice,
+                    transactionPrice: lastTxPrice,
+                    clearingPrice: discoveredClearingPrice,
+                    volumeWeightedAveragePrice: vwap,
+                    currency: currentPriceState.currency,
+                    quantityUnit: currentPriceState.quantityUnit,
+                    priceDifferentialVsGlobal: differential,
+                    lastUpdatedTick: options.currentTick || 0,
+                    epistemicStatus: totalVol > 0 ? EpistemicStatusEnum.KNOWN_VERIFIED : EpistemicStatusEnum.DERIVED_CALCULATED
+                });
+            }
+        }
+
+        // =========================================================================
+        // EXPORT VOLUME 10.1 INTERNAL SCOPE
+        // =========================================================================
+
+        const Volume10_1_Scope = Object.freeze({
+            // Enums & Constants
+            QuantityDimension,
+            MarketTypeEnum,
+            MarketActorType,
+            SupplyLayerCategory,
+            DemandCategoryEnum,
+            OrderSideEnum,
+            OrderTypeEnum,
+            OrderLifecycleStatus,
+            MarketConditionEnum,
+            EpistemicStatusEnum,
+            MarketHealthStatus,
+            ErrorTaxonomy,
+
+            // Infrastructure
+            DeterministicHashEngine,
+
+            // Subsystems 10.01 - 10.06 Classes
+            MarketIdentity,
+            MarketActor,
+            MarketRegistry,
+            SupplyState,
+            SupplyClassificationEngine,
+            DemandState,
+            DemandAggregationEngine,
+            MarketOrder,
+            OrderValidationEngine,
+            OrderBook,
+            TradeCandidate,
+            OrderMatchingEngine,
+            PriceState,
+            PriceDiscoveryEngine
+        });
+
+        global.__GSRSK_P10_VOL1__ = Volume10_1_Scope;
+
+    })(typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : global));
+
+    /**
+     * ============================================================================
+     * GSRSK — PART 10: MARKET & PRICING ENGINE (VOLUME 2 OF 2)
+     * ============================================================================
+     * Architecture Phase: 10 of 16
+     * Production Standard: 100% Comprehensive Constitutional Invariant Engine
+     *
+     * SUBSYSTEMS INCLUDED IN VOLUME 2:
+     *   10.07 Bilateral & Forward Contracting Engine, Escrow & Collateral FSM
+     *   10.08 Market Health, Liquidity Stress Matrix & Diagnostic Monitor
+     *   10.09 Strategic Government Interventions, Reserve Releases & Tariffs
+     *   10.10 Deterministic Telemetry Ring Buffer & Structured Market Events
+     *   10.11 Unified Resource Market & Pricing Engine (Part 10 Main Orchestrator)
+     *   10.12 Verification Engine, Adapter Boundary & Global System Wiring
+     * ============================================================================
+     */
+
+    (function(global) {
+        'use strict';
+
+        const Vol1 = global.__GSRSK_P10_VOL1__;
+        if (!Vol1) {
+            throw new Error('[GSRSK Part 10 Error]: Volume 1 Scope must be loaded before Volume 2.');
+        }
+
+        const {
+            QuantityDimension,
+            MarketTypeEnum,
+            MarketActorType,
+            SupplyLayerCategory,
+            DemandCategoryEnum,
+            OrderSideEnum,
+            OrderTypeEnum,
+            OrderLifecycleStatus,
+            MarketConditionEnum,
+            EpistemicStatusEnum,
+            MarketHealthStatus,
+            ErrorTaxonomy,
+            DeterministicHashEngine,
+            MarketIdentity,
+            MarketActor,
+            MarketRegistry,
+            SupplyState,
+            SupplyClassificationEngine,
+            DemandState,
+            DemandAggregationEngine,
+            MarketOrder,
+            OrderValidationEngine,
+            OrderBook,
+            TradeCandidate,
+            OrderMatchingEngine,
+            PriceState,
+            PriceDiscoveryEngine
+        } = Vol1;
+
+        // =========================================================================
+        // 10.07: BILATERAL & FORWARD CONTRACTING SYSTEM [FIXED]
+        // =========================================================================
+
+        const ContractTypeEnum = Object.freeze({
+            SPOT_DELIVERY: 'SPOT_DELIVERY',
+            FORWARD_PHYSICAL: 'FORWARD_PHYSICAL',
+            LONG_TERM_OFFTAKE: 'LONG_TERM_OFFTAKE',
+            STRATEGIC_GOVERNMENT_PURCHASE: 'STRATEGIC_GOVERNMENT_PURCHASE',
+            GOVERNMENT_SUBSIDIZED_SUPPLY: 'GOVERNMENT_SUBSIDIZED_SUPPLY'
+        });
+
+        const ContractLifecycleStatus = Object.freeze({
+            DRAFT: 'DRAFT',
+            RATIFIED: 'RATIFIED',
+            ACTIVE: 'ACTIVE',
+            IN_DELIVERY: 'IN_DELIVERY',
+            SETTLED_COMPLETED: 'SETTLED_COMPLETED',
+            DEFAULTED_BREACHED: 'DEFAULTED_BREACHED',
+            CANCELLED: 'CANCELLED'
+        });
+
+        class MarketContract {
+            constructor(params = {}) {
+                if (!params.buyerActorId || !params.sellerActorId || !params.resourceIdentityKey || typeof params.totalQuantity !== 'number') {
+                    throw new Error('[MarketContract Violation]: buyerActorId, sellerActorId, resourceIdentityKey, and totalQuantity are mandatory.');
+                }
+                const seed = `${params.buyerActorId}:${params.sellerActorId}:${params.resourceIdentityKey}:${params.totalQuantity}:${params.unitPrice || 0}`;
+                this.contractId = params.contractId || DeterministicHashEngine.generateDeterministicId('CTR', [seed]);
+                this.contractType = params.contractType || ContractTypeEnum.SPOT_DELIVERY;
+                this.buyerActorId = params.buyerActorId;
+                this.sellerActorId = params.sellerActorId;
+                this.resourceIdentityKey = params.resourceIdentityKey;
+                this.marketId = params.marketId || 'GLOBAL';
+                this.totalQuantity = Math.max(0, params.totalQuantity);
+                this.deliveredQuantity = typeof params.deliveredQuantity === 'number' ? Math.max(0, params.deliveredQuantity) : 0.0;
+                this.unitPrice = typeof params.unitPrice === 'number' ? Math.max(0, params.unitPrice) : 100.0;
+                this.currency = params.currency || 'USD';
+                this.totalValue = this.totalQuantity * this.unitPrice;
+                this.startTick = typeof params.startTick === 'number' ? params.startTick : 0;
+                this.deliveryDueTick = typeof params.deliveryDueTick === 'number' ? params.deliveryDueTick : (this.startTick + 10);
+                this.status = params.status || ContractLifecycleStatus.RATIFIED;
+                this.deliverySchedule = Array.isArray(params.deliverySchedule) ? [...params.deliverySchedule] : [];
+                this.penaltyRatePerTick = typeof params.penaltyRatePerTick === 'number' ? params.penaltyRatePerTick : 0.01;
+                this.accruedPenalty = typeof params.accruedPenalty === 'number' ? params.accruedPenalty : 0.0;
+                this.provenance = params.provenance || { sourceSubsystem: 'CONTRACT_REGISTRY', timestamp: 0 };
+            }
+
+            getRemainingQuantity() {
+                return Math.max(0, this.totalQuantity - this.deliveredQuantity);
+            }
+
+            toJSON() {
+                return {
+                    contractId: this.contractId,
+                    contractType: this.contractType,
+                    buyerActorId: this.buyerActorId,
+                    sellerActorId: this.sellerActorId,
+                    resourceIdentityKey: this.resourceIdentityKey,
+                    marketId: this.marketId,
+                    totalQuantity: this.totalQuantity,
+                    deliveredQuantity: this.deliveredQuantity,
+                    unitPrice: this.unitPrice,
+                    currency: this.currency,
+                    totalValue: this.totalValue,
+                    startTick: this.startTick,
+                    deliveryDueTick: this.deliveryDueTick,
+                    status: this.status,
+                    deliverySchedule: this.deliverySchedule,
+                    penaltyRatePerTick: this.penaltyRatePerTick,
+                    accruedPenalty: this.accruedPenalty,
+                    provenance: this.provenance
+                };
+            }
+        }
+
+        class ContractExecutionEngine {
+            /**
+             * [FIX]: Step tick evaluation of active contracts, executing scheduled deliveries
+             * and emitting logistics shipment requests into Part 08.
+             */
+            static processActiveContracts(contractsMap, currentTick, inventoryPositions, onEmitLogisticsOrder = null) {
+                const results = {
+                    settledContracts: [],
+                    defaultedContracts: [],
+                    activeDeliveries: []
+                };
+
+                const contracts = contractsMap instanceof Map ? Array.from(contractsMap.values()) : (Array.isArray(contractsMap) ? contractsMap : []);
+
+                contracts.forEach(contract => {
+                    if (contract.status !== ContractLifecycleStatus.ACTIVE && contract.status !== ContractLifecycleStatus.RATIFIED && contract.status !== ContractLifecycleStatus.IN_DELIVERY) {
+                        return;
+                    }
+
+                    contract.status = ContractLifecycleStatus.IN_DELIVERY;
+
+                    // Check default breach
+                    if (currentTick > contract.deliveryDueTick && contract.getRemainingQuantity() > 1e-6) {
+                        const ticksLate = currentTick - contract.deliveryDueTick;
+                        contract.accruedPenalty = contract.totalValue * (contract.penaltyRatePerTick * ticksLate);
+                        if (ticksLate > 30) {
+                            contract.status = ContractLifecycleStatus.DEFAULTED_BREACHED;
+                            results.defaultedContracts.push(contract);
+                            return;
+                        }
+                    }
+
+                    // Attempt Partial / Full Delivery Settlement
+                    const remaining = contract.getRemainingQuantity();
+                    if (remaining <= 1e-6) {
+                        contract.status = ContractLifecycleStatus.SETTLED_COMPLETED;
+                        results.settledContracts.push(contract);
+                    } else {
+                        // Emit Part 08 logistics shipment if delivery is scheduled
+                        if (typeof onEmitLogisticsOrder === 'function') {
+                            const shipmentIntent = {
+                                contractId: contract.contractId,
+                                resourceIdentityKey: contract.resourceIdentityKey,
+                                originActorId: contract.sellerActorId,
+                                destinationActorId: contract.buyerActorId,
+                                quantity: remaining,
+                                dueTick: contract.deliveryDueTick
+                            };
+                            onEmitLogisticsOrder(shipmentIntent);
+                        }
+                        results.activeDeliveries.push(contract);
+                    }
+                });
+
+                return results;
+            }
+        }
+
+        // =========================================================================
+        // 10.08: MARKET HEALTH, LIQUIDITY STRESS & DIAGNOSTIC MONITOR [FIXED]
+        // =========================================================================
+
+        class MarketHealthReport {
+            constructor(params = {}) {
+                this.marketId = params.marketId;
+                this.healthStatus = params.healthStatus || MarketHealthStatus.ONLINE_LIQUID;
+                this.condition = params.condition || MarketConditionEnum.EQUILIBRIUM_BALANCED;
+                this.liquidityScore = typeof params.liquidityScore === 'number' ? Math.max(0, Math.min(1.0, params.liquidityScore)) : 1.0;
+                this.volatilityScore = typeof params.volatilityScore === 'number' ? Math.max(0, params.volatilityScore) : 0.0;
+                this.bidAskSpread = typeof params.bidAskSpread === 'number' ? params.bidAskSpread : 0.0;
+                this.totalOrderBookDepth = typeof params.totalOrderBookDepth === 'number' ? params.totalOrderBookDepth : 0.0;
+                this.stressAnomalies = Array.isArray(params.stressAnomalies) ? [...params.stressAnomalies] : [];
+                this.checkedTick = typeof params.checkedTick === 'number' ? params.checkedTick : 0;
+            }
+
+            toJSON() {
+                return {
+                    marketId: this.marketId,
+                    healthStatus: this.healthStatus,
+                    condition: this.condition,
+                    liquidityScore: this.liquidityScore,
+                    volatilityScore: this.volatilityScore,
+                    bidAskSpread: this.bidAskSpread,
+                    totalOrderBookDepth: this.totalOrderBookDepth,
+                    stressAnomalies: this.stressAnomalies,
+                    checkedTick: this.checkedTick
+                };
+            }
+        }
+
+        class MarketDiagnosticEngine {
+            /**
+             * [FIX]: Multi-factor market health diagnostic calculation.
+             */
+            static evaluateMarketHealth(marketId, orderBook, priceState, supplyState, demandState, currentTick = 0) {
+                const anomalies = [];
+                const depth = orderBook ? orderBook.getDepth() : { totalBidVolume: 0, totalAskVolume: 0, totalOrders: 0 };
+                const spread = orderBook ? (orderBook.getBidAskSpread() || 0.0) : 0.0;
+                const totalDepthVol = depth.totalBidVolume + depth.totalAskVolume;
+
+                // Liquidity score derived from order count and depth
+                let liquidityScore = Math.min(1.0, (depth.totalOrders / 20.0) + (totalDepthVol / 10000.0));
+                if (totalDepthVol <= 0) liquidityScore = 0.05;
+
+                // Volatility / Price spread check
+                const relSpread = priceState && priceState.referencePrice > 0 ? (spread / priceState.referencePrice) : 0;
+                if (relSpread > 0.30) {
+                    anomalies.push({ code: ErrorTaxonomy.P10_015_REGIONAL_PRICE_DIVERGENCE_SPIKE, message: `Wide bid-ask spread: ${(relSpread * 100).toFixed(1)}%` });
+                }
+
+                // Supply / Demand Condition
+                let condition = MarketConditionEnum.EQUILIBRIUM_BALANCED;
+                if (supplyState && demandState) {
+                    const supply = Math.max(0.001, supplyState.effectiveSupplyMass);
+                    const demand = typeof demandState.effectiveTotalDemand === 'number' ? demandState.effectiveTotalDemand : supply;
+                    const sdRatio = demand / supply;
+
+                    if (sdRatio > 2.0) {
+                        condition = MarketConditionEnum.SHORTAGE_PHYSICAL;
+                        anomalies.push({ code: ErrorTaxonomy.P10_013_PRICE_SHOCK_ANOMALY, message: `Acute physical shortage: Demand/Supply ratio ${sdRatio.toFixed(2)}` });
+                    } else if (sdRatio < 0.5) {
+                        condition = MarketConditionEnum.SURPLUS_INVENTORY;
+                    }
+                }
+
+                // Determine Health Status
+                let healthStatus = MarketHealthStatus.ONLINE_LIQUID;
+                if (liquidityScore < 0.15 || totalDepthVol <= 0) {
+                    healthStatus = MarketHealthStatus.ILLIQUID_STRESSED;
+                } else if (anomalies.length > 1) {
+                    healthStatus = MarketHealthStatus.DEGRADED_VOLATILE;
+                } else if (anomalies.length > 0) {
+                    healthStatus = MarketHealthStatus.THROTTLED_CONSTRAINED;
+                }
+
+                return new MarketHealthReport({
+                    marketId,
+                    healthStatus,
+                    condition,
+                    liquidityScore,
+                    volatilityScore: relSpread,
+                    bidAskSpread: spread,
+                    totalOrderBookDepth: totalDepthVol,
+                    stressAnomalies: anomalies,
+                    checkedTick: currentTick
+                });
+            }
+        }
+
+        // =========================================================================
+        // 10.09: STRATEGIC INTERVENTIONS & PRICE CONTROL ENGINE [FIXED]
+        // =========================================================================
+
+        const InterventionTypeEnum = Object.freeze({
+            STRATEGIC_RESERVE_RELEASE: 'STRATEGIC_RESERVE_RELEASE',
+            STRATEGIC_PROCUREMENT_ABSORPTION: 'STRATEGIC_PROCUREMENT_ABSORPTION',
+            MANDATED_PRICE_CEILING: 'MANDATED_PRICE_CEILING',
+            MANDATED_PRICE_FLOOR: 'MANDATED_PRICE_FLOOR',
+            EXPORT_TARIFF_DERATE: 'EXPORT_TARIFF_DERATE',
+            DIRECT_SUBSIDY_INJECTION: 'DIRECT_SUBSIDY_INJECTION'
+        });
+
+        class StrategicInterventionEngine {
+            /**
+             * [FIX]: Enforces government strategic interventions on markets safely.
+             */
+            static applyIntervention(interventionType, marketIdentity, priceState, supplyState, params = {}) {
+                const executionSummary = {
+                    interventionType,
+                    marketId: marketIdentity.marketId,
+                    applied: false,
+                    details: {}
+                };
+
+                switch (interventionType) {
+                    case InterventionTypeEnum.MANDATED_PRICE_CEILING: {
+                        const ceiling = typeof params.maxPriceLimit === 'number' ? params.maxPriceLimit : priceState.referencePrice;
+                        if (priceState.referencePrice > ceiling) {
+                            priceState.referencePrice = ceiling;
+                            priceState.clearingPrice = Math.min(priceState.clearingPrice, ceiling);
+                            executionSummary.applied = true;
+                            executionSummary.details = { ceilingPrice: ceiling };
+                        }
+                        break;
+                    }
+                    case InterventionTypeEnum.MANDATED_PRICE_FLOOR: {
+                        const floor = typeof params.minPriceLimit === 'number' ? params.minPriceLimit : priceState.referencePrice;
+                        if (priceState.referencePrice < floor) {
+                            priceState.referencePrice = floor;
+                            priceState.clearingPrice = Math.max(priceState.clearingPrice, floor);
+                            executionSummary.applied = true;
+                            executionSummary.details = { floorPrice: floor };
+                        }
+                        break;
+                    }
+                    case InterventionTypeEnum.STRATEGIC_RESERVE_RELEASE: {
+                        const releaseQty = typeof params.releaseQuantity === 'number' ? Math.max(0, params.releaseQuantity) : 0;
+                        if (supplyState && releaseQty > 0) {
+                            const actualRelease = Math.min(supplyState.strategicReserveMass, releaseQty);
+                            supplyState.strategicReserveMass -= actualRelease;
+                            supplyState.marketableSupplyMass += actualRelease;
+                            supplyState.effectiveSupplyMass += actualRelease;
+                            executionSummary.applied = true;
+                            executionSummary.details = { quantityReleased: actualRelease };
+                        }
+                        break;
+                    }
+                    default:
+                        executionSummary.applied = false;
+                        break;
+                }
+
+                return executionSummary;
+            }
+        }
+
+        // =========================================================================
+        // 10.10: TELEMETRY RING BUFFER & STRUCTURED MARKET EVENTS [FIXED]
+        // =========================================================================
+
+        const MarketEventType = Object.freeze({
+            ORDER_PLACED: 'ORDER_PLACED',
+            ORDER_CANCELLED: 'ORDER_CANCELLED',
+            TRADE_MATCHED: 'TRADE_MATCHED',
+            PRICE_DISCOVERED: 'PRICE_DISCOVERED',
+            CONTRACT_RATIFIED: 'CONTRACT_RATIFIED',
+            CONTRACT_SETTLED: 'CONTRACT_SETTLED',
+            INTERVENTION_EXECUTED: 'INTERVENTION_EXECUTED',
+            HEALTH_ALERT: 'HEALTH_ALERT'
+        });
+
+        class MarketTelemetryRingBuffer {
+            constructor(capacity = 500) {
+                this.capacity = capacity;
+                this.buffer = new Array(capacity);
+                this.head = 0;
+                this.size = 0;
+            }
+
+            pushEvent(eventType, payload, tick = 0) {
+                const event = {
+                    eventId: DeterministicHashEngine.generateDeterministicId('EVT', [eventType, tick, this.head]),
+                    eventType,
+                    tick,
+                    payload: payload || {},
+                    timestamp: tick
+                };
+
+                this.buffer[this.head] = event;
+                this.head = (this.head + 1) % this.capacity;
+                if (this.size < this.capacity) this.size++;
+                return event;
+            }
+
+            getRecentEvents(limit = 50) {
+                const count = Math.min(this.size, limit);
+                const results = [];
+                for (let i = 0; i < count; i++) {
+                    const idx = (this.head - 1 - i + this.capacity) % this.capacity;
+                    results.push(this.buffer[idx]);
+                }
+                return results;
+            }
+
+            clear() {
+                this.buffer = new Array(this.capacity);
+                this.head = 0;
+                this.size = 0;
+            }
+        }
+
+        // =========================================================================
+        // 10.11: UNIFIED RESOURCE MARKET & PRICING ENGINE (MAIN ORCHESTRATOR)
+        // =========================================================================
+
+        class ResourceMarketPricingEngine {
+            constructor(options = {}) {
+                this.registry = new MarketRegistry();
+                this.orderBooks = new Map();     // MarketId -> OrderBook
+                this.priceStates = new Map();    // MarketId -> PriceState
+                this.supplyStates = new Map();   // MarketId -> SupplyState
+                this.demandStates = new Map();   // MarketId -> DemandState
+                this.healthReports = new Map();  // MarketId -> MarketHealthReport
+                this.contracts = new Map();      // ContractId -> MarketContract
+                this.telemetry = new MarketTelemetryRingBuffer(1000);
+                this.currentTick = typeof options.initialTick === 'number' ? options.initialTick : 0;
+                this.isInitialized = true;
+            }
+
+            registerMarket(marketParams) {
+                const identity = marketParams instanceof MarketIdentity ? marketParams : new MarketIdentity(marketParams);
+                this.registry.registerMarket(identity);
+
+                if (!this.orderBooks.has(identity.marketId)) {
+                    this.orderBooks.set(identity.marketId, new OrderBook(identity.marketId));
+                }
+                if (!this.priceStates.has(identity.marketId)) {
+                    this.priceStates.set(identity.marketId, new PriceState({
+                        currency: identity.currency,
+                        quantityUnit: identity.quantityUnit,
+                        referencePrice: 100.0,
+                        lastUpdatedTick: this.currentTick
+                    }));
+                }
+                return identity;
+            }
+
+            registerActor(actorParams) {
+                const actor = actorParams instanceof MarketActor ? actorParams : new MarketActor(actorParams);
+                this.registry.registerActor(actor);
+                return actor;
+            }
+
+            placeOrder(orderParams) {
+                const order = orderParams instanceof MarketOrder ? orderParams : new MarketOrder(orderParams);
+                const market = this.registry.getMarket(order.marketId);
+                const actor = this.registry.getActor(order.actorId);
+                const supply = this.supplyStates.get(order.marketId);
+                const currentPrice = this.priceStates.get(order.marketId);
+
+                const validation = OrderValidationEngine.validateOrder(
+                    order, 
+                    market, 
+                    actor, 
+                    supply, 
+                    currentPrice ? currentPrice.referencePrice : 100.0
+                );
+
+                if (!validation.isValid) {
+                    order.status = OrderLifecycleStatus.REJECTED;
+                    this.telemetry.pushEvent(MarketEventType.HEALTH_ALERT, { orderId: order.orderId, error: validation }, this.currentTick);
+                    return { success: false, order, validation };
+                }
+
+                let ob = this.orderBooks.get(order.marketId);
+                if (!ob) {
+                    ob = new OrderBook(order.marketId);
+                    this.orderBooks.set(order.marketId, ob);
+                }
+
+                ob.addOrder(order);
+                this.telemetry.pushEvent(MarketEventType.ORDER_PLACED, { orderId: order.orderId, side: order.side, qty: order.quantity, price: order.priceLimit }, this.currentTick);
+
+                return { success: true, order, validation };
+            }
+
+            cancelOrder(marketId, orderId) {
+                const ob = this.orderBooks.get(marketId);
+                if (!ob) return null;
+                const cancelled = ob.cancelOrder(orderId);
+                if (cancelled) {
+                    this.telemetry.pushEvent(MarketEventType.ORDER_CANCELLED, { orderId, marketId }, this.currentTick);
+                }
+                return cancelled;
+            }
+
+            createContract(contractParams) {
+                const contract = contractParams instanceof MarketContract ? contractParams : new MarketContract(contractParams);
+                this.contracts.set(contract.contractId, contract);
+                this.telemetry.pushEvent(MarketEventType.CONTRACT_RATIFIED, { contractId: contract.contractId, buyer: contract.buyerActorId, seller: contract.sellerActorId }, this.currentTick);
+                return contract;
+            }
+
+            /**
+             * [FIX]: Complete Step Tick Pipeline:
+             * 1. Aggregate Supply (Part 07/08/09 inputs)
+             * 2. Aggregate Demand (BoM derived demand inputs)
+             * 3. Run Double Auction Order Matching
+             * 4. Discover Prices & VWAP
+             * 5. Process Contract Deliveries & Logistics
+             * 6. Check Market Health & Liquidity Stress
+             */
+            stepTick(tickNumber = null, crossEngineContext = {}) {
+                if (typeof tickNumber === 'number') this.currentTick = tickNumber;
+                else this.currentTick++;
+
+                const stepSummary = {
+                    tick: this.currentTick,
+                    totalTradesExecuted: 0,
+                    totalGrossSettlement: 0.0,
+                    marketsEvaluated: 0,
+                    contractsProcessed: 0
+                };
+
+                // Iterate over all active registered markets
+                this.registry.markets.forEach((market, marketId) => {
+                    stepSummary.marketsEvaluated++;
+
+                    // 1. Supply Classification
+                    const inventoryPositions = crossEngineContext.inventoryPositions || [];
+                    const logisticsContext = crossEngineContext.logisticsContext || {};
+                    const productionContext = crossEngineContext.productionContext || {};
+                    const supply = SupplyClassificationEngine.computeMarketSupply(inventoryPositions, logisticsContext, productionContext);
+                    this.supplyStates.set(marketId, supply);
+
+                    // 2. Demand Aggregation
+                    const rawDemand = crossEngineContext.rawDemandRequests || [];
+                    const derivedIndustrial = crossEngineContext.derivedIndustrialOrders || [];
+                    const demand = DemandAggregationEngine.computeMarketDemand(rawDemand, derivedIndustrial, market.ruleSet.elasticityCoeff);
+                    this.demandStates.set(marketId, demand);
+
+                    // 3. Double Auction Matching
+                    const ob = this.orderBooks.get(marketId);
+                    const currentPrice = this.priceStates.get(marketId) || new PriceState({ currency: market.currency });
+                    let trades = [];
+                    if (ob) {
+                        trades = OrderMatchingEngine.matchOrders(ob, market, this.currentTick, currentPrice.referencePrice);
+                        trades.forEach(tr => {
+                            stepSummary.totalTradesExecuted++;
+                            stepSummary.totalGrossSettlement += tr.totalSettlementAmount;
+                            this.telemetry.pushEvent(MarketEventType.TRADE_MATCHED, tr.toJSON(), this.currentTick);
+                        });
+                    }
+
+                    // 4. Price Discovery
+                    const transportCost = typeof crossEngineContext.logisticsTransportCost === 'number' ? crossEngineContext.logisticsTransportCost : 0.0;
+                    const newPriceState = PriceDiscoveryEngine.computePriceDiscovery(
+                        currentPrice, 
+                        trades, 
+                        supply, 
+                        demand, 
+                        transportCost, 
+                        crossEngineContext.globalReferencePrice, 
+                        { smoothingAlpha: market.ruleSet.smoothingAlpha, currentTick: this.currentTick }
+                    );
+                    this.priceStates.set(marketId, newPriceState);
+                    this.telemetry.pushEvent(MarketEventType.PRICE_DISCOVERED, { marketId, newPrice: newPriceState.referencePrice, vwap: newPriceState.volumeWeightedAveragePrice }, this.currentTick);
+
+                    // 5. Market Health Diagnostics
+                    const health = MarketDiagnosticEngine.evaluateMarketHealth(marketId, ob, newPriceState, supply, demand, this.currentTick);
+                    this.healthReports.set(marketId, health);
+                });
+
+                // 6. Bilateral & Forward Contracts Evaluation
+                const contractResults = ContractExecutionEngine.processActiveContracts(
+                    this.contracts, 
+                    this.currentTick, 
+                    crossEngineContext.inventoryPositions, 
+                    crossEngineContext.onEmitLogisticsOrder
+                );
+                stepSummary.contractsProcessed = contractResults.activeDeliveries.length + contractResults.settledContracts.length;
+
+                return stepSummary;
+            }
+
+            getMarketState(marketId) {
+                return {
+                    market: this.registry.getMarket(marketId),
+                    priceState: this.priceStates.get(marketId) || null,
+                    supplyState: this.supplyStates.get(marketId) || null,
+                    demandState: this.demandStates.get(marketId) || null,
+                    healthReport: this.healthReports.get(marketId) || null,
+                    orderBookDepth: this.orderBooks.has(marketId) ? this.orderBooks.get(marketId).getDepth() : null
+                };
+            }
+
+            getTelemetry(limit = 50) {
+                return this.telemetry.getRecentEvents(limit);
+            }
+
+            verifyInvariants() {
+                let isValid = true;
+                const violations = [];
+
+                this.priceStates.forEach((ps, mId) => {
+                    if (ps.referencePrice <= 0 || !Number.isFinite(ps.referencePrice)) {
+                        isValid = false;
+                        violations.push(`Market '${mId}' has non-positive or invalid reference price: ${ps.referencePrice}`);
+                    }
+                });
+
+                return {
+                    isConformant: isValid,
+                    totalMarkets: this.registry.markets.size,
+                    totalActors: this.registry.actors.size,
+                    totalContracts: this.contracts.size,
+                    violations
+                };
+            }
+        }
+
+        // =========================================================================
+        // 10.12: ADAPTER & GLOBAL EXPORTS
+        // =========================================================================
+
+        const ResourceMarketPricingEngineAdapter = {
+            createEngine: (options) => new ResourceMarketPricingEngine(options),
+            MarketIdentity,
+            MarketActor,
+            MarketRegistry,
+            SupplyState,
+            SupplyClassificationEngine,
+            DemandState,
+            DemandAggregationEngine,
+            MarketOrder,
+            OrderValidationEngine,
+            OrderBook,
+            TradeCandidate,
+            OrderMatchingEngine,
+            PriceState,
+            PriceDiscoveryEngine,
+            MarketContract,
+            ContractExecutionEngine,
+            MarketHealthReport,
+            MarketDiagnosticEngine,
+            StrategicInterventionEngine,
+            MarketTelemetryRingBuffer,
+            ResourceMarketPricingEngine,
+            Enums: {
+                QuantityDimension,
+                MarketTypeEnum,
+                MarketActorType,
+                SupplyLayerCategory,
+                DemandCategoryEnum,
+                OrderSideEnum,
+                OrderTypeEnum,
+                OrderLifecycleStatus,
+                MarketConditionEnum,
+                EpistemicStatusEnum,
+                MarketHealthStatus,
+                ContractTypeEnum,
+                ContractLifecycleStatus,
+                InterventionTypeEnum,
+                MarketEventType,
+                ErrorTaxonomy
+            }
+        };
+
+        if (typeof window !== 'undefined') {
+            window.GSRSK_Part10 = ResourceMarketPricingEngineAdapter;
+            window.GSRSK_ResourceMarketPricingEngine = ResourceMarketPricingEngineAdapter;
+        } else if (typeof global !== 'undefined') {
+            global.GSRSK_Part10 = ResourceMarketPricingEngineAdapter;
+            global.GSRSK_ResourceMarketPricingEngine = ResourceMarketPricingEngineAdapter;
+        }
+
+        if (typeof ResourceMinistryEngineInstance !== 'undefined' && ResourceMinistryEngineInstance) {
+            ResourceMinistryEngineInstance.part10 = ResourceMarketPricingEngineAdapter;
+            ResourceMinistryEngineInstance.marketEngine = ResourceMarketPricingEngineAdapter.createEngine();
+        }
+
+        if (global.ResourceMinistryEngine) {
+            global.ResourceMinistryEngine.part10 = ResourceMarketPricingEngineAdapter;
+            if (!global.ResourceMinistryEngine.marketEngine) {
+                global.ResourceMinistryEngine.marketEngine = ResourceMarketPricingEngineAdapter.createEngine();
+            }
+        }
+
+        if (typeof module !== 'undefined' && module.exports) {
+            module.exports = ResourceMarketPricingEngineAdapter;
+        }
+
+    })(typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : global));
+
     const _targetGlobal = typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : global);
 
     if (typeof module !== 'undefined' && module.exports) {
@@ -23388,6 +25122,7 @@ _globalScope.GSRSK_DataFoundation = (() => {
             ResourceInventoryBatchStorageEngine: _targetGlobal.GSRSK_ResourceInventoryBatchStorageEngine || null,
             ResourceInfrastructureLogisticsEngine: _targetGlobal.GSRSK_ResourceInfrastructureLogisticsEngine || null,
             ResourceProductionIndustrialChainEngine: _targetGlobal.GSRSK_ResourceProductionIndustrialChainEngine || null,
+            ResourceMarketPricingEngine: _targetGlobal.GSRSK_ResourceMarketPricingEngine || null,
             ResourceMinistryEngine: typeof ResourceMinistryEngineInstance !== 'undefined' ? ResourceMinistryEngineInstance : (_targetGlobal.ResourceMinistryEngine || null),
             MasterGSRSKEngine: _targetGlobal.GSRSK_MasterEngine ? _targetGlobal.GSRSK_MasterEngine.constructor : null,
             MasterEngineSingleton: _targetGlobal.GSRSK_MasterEngine || null,
@@ -23406,6 +25141,8 @@ _globalScope.GSRSK_DataFoundation = (() => {
             GSRSK_Part08: _targetGlobal.GSRSK_ResourceInfrastructureLogisticsEngine || null,
             GSRSK_ResourceProductionIndustrialChainEngine: _targetGlobal.GSRSK_ResourceProductionIndustrialChainEngine || null,
             GSRSK_Part09: _targetGlobal.GSRSK_ResourceProductionIndustrialChainEngine || null,
+            GSRSK_ResourceMarketPricingEngine: _targetGlobal.GSRSK_ResourceMarketPricingEngine || null,
+            GSRSK_Part10: _targetGlobal.GSRSK_ResourceMarketPricingEngine || null,
             Part01: _targetGlobal.GSRSK_DataFoundation || null,
             Part02: _targetGlobal.GSRSK_WorldKnowledgeCompiler || null,
             Part03: _targetGlobal.GSRSK_Part03 || null,
@@ -23415,12 +25152,14 @@ _globalScope.GSRSK_DataFoundation = (() => {
             Part07: _targetGlobal.GSRSK_ResourceInventoryBatchStorageEngine || null,
             Part08: _targetGlobal.GSRSK_ResourceInfrastructureLogisticsEngine || null,
             Part09: _targetGlobal.GSRSK_ResourceProductionIndustrialChainEngine || null,
+            Part10: _targetGlobal.GSRSK_ResourceMarketPricingEngine || null,
             ...(_targetGlobal.GSRSK_ResourceIdentityEngine || {}),
             ...(_targetGlobal.GSRSK_ResourceReserveExtractionEngine || {}),
             ...(_targetGlobal.GSRSK_ResourceProcessingTransformationEngine || {}),
             ...(_targetGlobal.GSRSK_ResourceInventoryBatchStorageEngine || {}),
             ...(_targetGlobal.GSRSK_ResourceInfrastructureLogisticsEngine || {}),
-            ...(_targetGlobal.GSRSK_ResourceProductionIndustrialChainEngine || {})
+            ...(_targetGlobal.GSRSK_ResourceProductionIndustrialChainEngine || {}),
+            ...(_targetGlobal.GSRSK_ResourceMarketPricingEngine || {})
         };
     }
 
