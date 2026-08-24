@@ -23584,19 +23584,19 @@ _globalScope.GSRSK_DataFoundation = (() => {
                 this.resourceIdentityKey = params.resourceIdentityKey; // Canonical Part 04 Resource Key
                 this.commodityClass = params.commodityClass || 'RAW_COMMODITY_BULK';
                 this.jurisdiction = params.jurisdiction ? String(params.jurisdiction).toUpperCase() : 'GLOBAL';
-                this.currency = params.currency || 'USD';
-                this.quantityUnit = params.quantityUnit || 'TONNES';
-                this.quantityDimension = params.quantityDimension || QuantityDimension.MASS;
+                this.currency = params.currency || null;
+                this.quantityUnit = params.quantityUnit || null;
+                this.quantityDimension = params.quantityDimension || QuantityDimension.UNKNOWN;
                 this.settlementModel = params.settlementModel || 'SPOT_PHYSICAL_DELIVERY';
                 this.pricingModel = params.pricingModel || 'CONTINUOUS_DOUBLE_AUCTION_VWAP';
                 this.participants = Array.isArray(params.participants) ? [...params.participants] : [];
-                this.ruleSet = params.ruleSet || { 
-                    minTickSize: 0.01, 
-                    minLotSize: 1.0, 
-                    maxPriceSlippage: 0.25, 
+                this.ruleSet = Object.assign({ 
+                    minTickSize: null, 
+                    minLotSize: null, 
+                    maxPriceSlippage: null, 
                     smoothingAlpha: 0.25,
-                    elasticityCoeff: -0.45 
-                };
+                    elasticityCoeff: null 
+                }, params.ruleSet || {});
                 this.provenance = params.provenance || { sourceSubsystem: 'MARKET_REGISTRY', timestamp: 0 };
             }
 
@@ -23629,8 +23629,8 @@ _globalScope.GSRSK_DataFoundation = (() => {
                 this.name = params.name || this.actorId;
                 this.actorType = params.actorType;
                 this.countryIso3 = params.countryIso3 ? String(params.countryIso3).toUpperCase() : 'GLOBAL';
-                this.currency = params.currency || 'USD';
-                this.buyingPowerFunds = typeof params.buyingPowerFunds === 'number' ? Math.max(0, params.buyingPowerFunds) : 1000000.0;
+                this.currency = params.currency || null;
+                this.buyingPowerFunds = typeof params.buyingPowerFunds === 'number' ? Math.max(0, params.buyingPowerFunds) : 0.0;
                 this.isAuthorized = params.isAuthorized !== undefined ? Boolean(params.isAuthorized) : true;
                 this.restrictedMarketIds = Array.isArray(params.restrictedMarketIds) ? [...params.restrictedMarketIds] : [];
                 this.provenance = params.provenance || { sourceSubsystem: 'MARKET_ACTOR_REGISTRY', timestamp: 0 };
@@ -24296,12 +24296,12 @@ _globalScope.GSRSK_DataFoundation = (() => {
 
         class PriceState {
             constructor(params = {}) {
-                this.referencePrice = typeof params.referencePrice === 'number' ? Math.max(0.001, params.referencePrice) : 100.0;
+                this.referencePrice = typeof params.referencePrice === 'number' ? Math.max(0.001, params.referencePrice) : 0.0;
                 this.transactionPrice = typeof params.transactionPrice === 'number' ? params.transactionPrice : this.referencePrice;
                 this.clearingPrice = typeof params.clearingPrice === 'number' ? params.clearingPrice : this.referencePrice;
                 this.volumeWeightedAveragePrice = typeof params.volumeWeightedAveragePrice === 'number' ? params.volumeWeightedAveragePrice : this.referencePrice;
-                this.currency = params.currency || 'USD';
-                this.quantityUnit = params.quantityUnit || 'TONNES';
+                this.currency = params.currency || null;
+                this.quantityUnit = params.quantityUnit || null;
                 this.priceDifferentialVsGlobal = typeof params.priceDifferentialVsGlobal === 'number' ? params.priceDifferentialVsGlobal : 0.0;
                 this.lastUpdatedTick = typeof params.lastUpdatedTick === 'number' ? params.lastUpdatedTick : 0;
                 this.epistemicStatus = params.epistemicStatus || EpistemicStatusEnum.KNOWN_VERIFIED;
@@ -24514,14 +24514,14 @@ _globalScope.GSRSK_DataFoundation = (() => {
                 this.marketId = params.marketId || 'GLOBAL';
                 this.totalQuantity = Math.max(0, params.totalQuantity);
                 this.deliveredQuantity = typeof params.deliveredQuantity === 'number' ? Math.max(0, params.deliveredQuantity) : 0.0;
-                this.unitPrice = typeof params.unitPrice === 'number' ? Math.max(0, params.unitPrice) : 100.0;
-                this.currency = params.currency || 'USD';
+                this.unitPrice = typeof params.unitPrice === 'number' ? Math.max(0, params.unitPrice) : 0.0;
+                this.currency = params.currency || null;
                 this.totalValue = this.totalQuantity * this.unitPrice;
                 this.startTick = typeof params.startTick === 'number' ? params.startTick : 0;
                 this.deliveryDueTick = typeof params.deliveryDueTick === 'number' ? params.deliveryDueTick : (this.startTick + 10);
                 this.status = params.status || ContractLifecycleStatus.RATIFIED;
                 this.deliverySchedule = Array.isArray(params.deliverySchedule) ? [...params.deliverySchedule] : [];
-                this.penaltyRatePerTick = typeof params.penaltyRatePerTick === 'number' ? params.penaltyRatePerTick : 0.01;
+                this.penaltyRatePerTick = typeof params.penaltyRatePerTick === 'number' ? params.penaltyRatePerTick : 0.0;
                 this.accruedPenalty = typeof params.accruedPenalty === 'number' ? params.accruedPenalty : 0.0;
                 this.provenance = params.provenance || { sourceSubsystem: 'CONTRACT_REGISTRY', timestamp: 0 };
             }
@@ -24854,7 +24854,7 @@ _globalScope.GSRSK_DataFoundation = (() => {
                     this.priceStates.set(identity.marketId, new PriceState({
                         currency: identity.currency,
                         quantityUnit: identity.quantityUnit,
-                        referencePrice: 100.0,
+                        referencePrice: (identity.ruleSet && typeof identity.ruleSet.initialReferencePrice === 'number') ? identity.ruleSet.initialReferencePrice : 0.0,
                         lastUpdatedTick: this.currentTick
                     }));
                 }
@@ -24879,7 +24879,7 @@ _globalScope.GSRSK_DataFoundation = (() => {
                     market, 
                     actor, 
                     supply, 
-                    currentPrice ? currentPrice.referencePrice : 100.0
+                    currentPrice ? currentPrice.referencePrice : 0.0
                 );
 
                 if (!validation.isValid) {
