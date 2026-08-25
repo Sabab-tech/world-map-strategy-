@@ -8871,6 +8871,10 @@ _globalScope.GSRSK_DataFoundation = (() => {
                     if (this.part10 && typeof this.part10.createEngine === 'function') {
                         this.marketEngine = this.part10.createEngine();
                     }
+                    this.part11 = gScope.GSRSK_TradeFulfillmentSettlementEngine || gScope.GSRSK_Part11 || null;
+                    if (this.part11 && typeof this.part11.createEngine === 'function') {
+                        this.tradeEngine = this.part11.createEngine();
+                    }
 
                     // Verify End-to-End Runtime Pipeline Contracts (Smoke Test)
                     this.pipelineIntegrationReport = this.verifyEndToEndPipelineContracts();
@@ -9204,6 +9208,10 @@ _globalScope.GSRSK_DataFoundation = (() => {
                 // Step 7: Market & Pricing Engine Verification (Part 10)
                 const p10 = gScope.GSRSK_Part10 || gScope.GSRSK_ResourceMarketPricingEngine;
                 results.steps.push({ part: '10_MARKET_PRICING', status: p10 ? 'VERIFIED' : 'STANDALONE', available: !!p10 });
+
+                // Step 8: Trade, Fulfillment & Settlement Engine Verification (Part 11)
+                const p11 = gScope.GSRSK_Part11 || gScope.GSRSK_TradeFulfillmentSettlementEngine;
+                results.steps.push({ part: '11_TRADE_FULFILLMENT', status: p11 ? 'VERIFIED' : 'STANDALONE', available: !!p11 });
             } catch (e) {
                 results.status = 'FAILED';
                 results.error = String(e && e.message ? e.message : e);
@@ -25108,6 +25116,3046 @@ _globalScope.GSRSK_DataFoundation = (() => {
 
     })(typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : global));
 
+
+
+/**
+ * ============================================================================
+ * GSRSK PART 11: TRADE, FULFILLMENT & SETTLEMENT EXECUTION ENGINE
+ * Module Scope: 11.00 through 11.24 (Complete Integration)
+ * 
+ * Hardened deterministic execution engine enforcing zero resource fabrication,
+ * formal Finite State Machine (FSM) guards, Multi-Tranche Escrow accounting,
+ * Two-Phase Locking (2PL) with active lease assertions, deadlock-free key
+ * ordering, multi-jurisdiction border corridors, and topological compliance DAGs.
+ * ============================================================================
+ */
+(function (global) {
+    'use strict';
+
+    // ============================================================================
+    // 11.00 FOUNDATION CONTRACT, ENUMS, STATE TRANSITIONS & CRYPTO HASHING
+    // ============================================================================
+
+    /**
+     * Execution Lifecycle States
+     * @readonly
+     * @enum {string}
+     */
+    const ExecutionState = Object.freeze({
+      CREATED: 'CREATED',
+      VALIDATED: 'VALIDATED',
+      AUTHORIZED: 'AUTHORIZED',
+      ALLOCATED: 'ALLOCATED',
+      RESERVED: 'RESERVED',
+      READY_FOR_DISPATCH: 'READY_FOR_DISPATCH',
+      DISPATCHED: 'DISPATCHED',
+      IN_TRANSIT: 'IN_TRANSIT',
+      BORDER_PROCESSING: 'BORDER_PROCESSING',
+      CUSTOMS_HOLD: 'CUSTOMS_HOLD',
+      ARRIVED: 'ARRIVED',
+      INSPECTING: 'INSPECTING',
+      ACCEPTED: 'ACCEPTED',
+      PARTIALLY_ACCEPTED: 'PARTIALLY_ACCEPTED',
+      SETTLED: 'SETTLED',
+      COMPLETED: 'COMPLETED',
+      // Terminal / Exceptional States
+      FAILED: 'FAILED',
+      SUSPENDED: 'SUSPENDED',
+      CANCELLED: 'CANCELLED',
+      DEFAULTED: 'DEFAULTED',
+      EXPIRED: 'EXPIRED'
+    });
+
+    /**
+     * Strict Finite State Machine (FSM) Transition Matrix
+     */
+    const VALID_STATE_TRANSITIONS = Object.freeze({
+      [ExecutionState.CREATED]: Object.freeze([
+        ExecutionState.VALIDATED,
+        ExecutionState.FAILED,
+        ExecutionState.CANCELLED
+      ]),
+      [ExecutionState.VALIDATED]: Object.freeze([
+        ExecutionState.AUTHORIZED,
+        ExecutionState.FAILED,
+        ExecutionState.CANCELLED
+      ]),
+      [ExecutionState.AUTHORIZED]: Object.freeze([
+        ExecutionState.ALLOCATED,
+        ExecutionState.FAILED,
+        ExecutionState.CANCELLED,
+        ExecutionState.EXPIRED
+      ]),
+      [ExecutionState.ALLOCATED]: Object.freeze([
+        ExecutionState.RESERVED,
+        ExecutionState.FAILED,
+        ExecutionState.CANCELLED
+      ]),
+      [ExecutionState.RESERVED]: Object.freeze([
+        ExecutionState.READY_FOR_DISPATCH,
+        ExecutionState.FAILED,
+        ExecutionState.CANCELLED,
+        ExecutionState.EXPIRED
+      ]),
+      [ExecutionState.READY_FOR_DISPATCH]: Object.freeze([
+        ExecutionState.DISPATCHED,
+        ExecutionState.FAILED,
+        ExecutionState.SUSPENDED,
+        ExecutionState.CANCELLED
+      ]),
+      [ExecutionState.DISPATCHED]: Object.freeze([
+        ExecutionState.IN_TRANSIT,
+        ExecutionState.BORDER_PROCESSING,
+        ExecutionState.ARRIVED, // Direct arrival for instant domestic transfer
+        ExecutionState.FAILED,
+        ExecutionState.SUSPENDED
+      ]),
+      [ExecutionState.IN_TRANSIT]: Object.freeze([
+        ExecutionState.BORDER_PROCESSING,
+        ExecutionState.ARRIVED,
+        ExecutionState.FAILED,
+        ExecutionState.SUSPENDED
+      ]),
+      [ExecutionState.BORDER_PROCESSING]: Object.freeze([
+        ExecutionState.IN_TRANSIT,
+        ExecutionState.CUSTOMS_HOLD,
+        ExecutionState.ARRIVED,
+        ExecutionState.FAILED,
+        ExecutionState.DEFAULTED
+      ]),
+      [ExecutionState.CUSTOMS_HOLD]: Object.freeze([
+        ExecutionState.BORDER_PROCESSING,
+        ExecutionState.IN_TRANSIT,
+        ExecutionState.FAILED,
+        ExecutionState.DEFAULTED,
+        ExecutionState.CANCELLED
+      ]),
+      [ExecutionState.ARRIVED]: Object.freeze([
+        ExecutionState.INSPECTING,
+        ExecutionState.FAILED,
+        ExecutionState.DEFAULTED
+      ]),
+      [ExecutionState.INSPECTING]: Object.freeze([
+        ExecutionState.ACCEPTED,
+        ExecutionState.PARTIALLY_ACCEPTED,
+        ExecutionState.FAILED,
+        ExecutionState.DEFAULTED
+      ]),
+      [ExecutionState.ACCEPTED]: Object.freeze([
+        ExecutionState.SETTLED,
+        ExecutionState.FAILED
+      ]),
+      [ExecutionState.PARTIALLY_ACCEPTED]: Object.freeze([
+        ExecutionState.SETTLED,
+        ExecutionState.READY_FOR_DISPATCH,
+        ExecutionState.FAILED
+      ]),
+      [ExecutionState.SETTLED]: Object.freeze([
+        ExecutionState.COMPLETED
+      ]),
+      [ExecutionState.COMPLETED]: Object.freeze([]),
+      [ExecutionState.FAILED]: Object.freeze([ExecutionState.CANCELLED]),
+      [ExecutionState.SUSPENDED]: Object.freeze([
+        ExecutionState.READY_FOR_DISPATCH,
+        ExecutionState.CANCELLED,
+        ExecutionState.FAILED
+      ]),
+      [ExecutionState.CANCELLED]: Object.freeze([]),
+      [ExecutionState.DEFAULTED]: Object.freeze([]),
+      [ExecutionState.EXPIRED]: Object.freeze([])
+    });
+
+    /**
+     * Visibility and Information Access Levels
+     * @readonly
+     * @enum {string}
+     */
+    const VisibilityLevel = Object.freeze({
+      PUBLIC: 'PUBLIC',
+      MARKET_VISIBLE: 'MARKET_VISIBLE',
+      PARTY_VISIBLE: 'PARTY_VISIBLE',
+      COUNTRY_VISIBLE: 'COUNTRY_VISIBLE',
+      AUTHORIZED_ONLY: 'AUTHORIZED_ONLY',
+      CLASSIFIED: 'CLASSIFIED',
+      PRIVATE: 'PRIVATE'
+    });
+
+    /**
+     * Party Entity Classifications
+     * @readonly
+     * @enum {string}
+     */
+    const PartyType = Object.freeze({
+      SOVEREIGN_STATE: 'SOVEREIGN_STATE',
+      STATE_OWNED_ENTERPRISE: 'STATE_OWNED_ENTERPRISE',
+      PRIVATE_CORPORATION: 'PRIVATE_CORPORATION',
+      STRATEGIC_CONSORTIUM: 'STRATEGIC_CONSORTIUM',
+      COMMODITY_BROKER: 'COMMODITY_BROKER',
+      LOGISTICS_CARRIER: 'LOGISTICS_CARRIER'
+    });
+
+    /**
+     * Specific Failure & Rejection Codes
+     * @readonly
+     * @enum {string}
+     */
+    const ExecutionFailureReason = Object.freeze({
+      NONE: 'NONE',
+      INSUFFICIENT_INVENTORY: 'INSUFFICIENT_INVENTORY',
+      RESERVATION_LOCK_FAILED: 'RESERVATION_LOCK_FAILED',
+      LEASE_EXPIRED: 'LEASE_EXPIRED',
+      DOUBLE_SALE_ATTEMPT: 'DOUBLE_SALE_ATTEMPT',
+      SANCTION_BLOCK: 'SANCTION_BLOCK',
+      EMBARGO_ENFORCED: 'EMBARGO_ENFORCED',
+      QUOTA_EXCEEDED: 'QUOTA_EXCEEDED',
+      BUYER_INSOLVENT: 'BUYER_INSOLVENT',
+      SELLER_UNAUTHORIZED: 'SELLER_UNAUTHORIZED',
+      LICENSE_EXPIRED: 'LICENSE_EXPIRED',
+      LOGISTICS_CAPACITY_EXHAUSTED: 'LOGISTICS_CAPACITY_EXHAUSTED',
+      BORDER_ENTRY_DENIED: 'BORDER_ENTRY_DENIED',
+      TRANSIT_VISA_REFUSED: 'TRANSIT_VISA_REFUSED',
+      CUSTOMS_SEIZURE: 'CUSTOMS_SEIZURE',
+      QUALITY_GRADE_MISMATCH: 'QUALITY_GRADE_MISMATCH',
+      SPECIFICATION_TOLERANCE_BREACH: 'SPECIFICATION_TOLERANCE_BREACH',
+      TRANSIT_SPOILAGE: 'TRANSIT_SPOILAGE',
+      DOCUMENTATION_DEFECT: 'DOCUMENTATION_DEFECT',
+      DUAL_USE_UNLICENSED: 'DUAL_USE_UNLICENSED',
+      FORCE_MAJEURE: 'FORCE_MAJEURE',
+      SLA_TIMEOUT: 'SLA_TIMEOUT',
+      INVARIANT_BREACH: 'INVARIANT_BREACH'
+    });
+
+    /**
+     * Clearance Statuses
+     * @readonly
+     * @enum {string}
+     */
+    const ClearanceStatus = Object.freeze({
+      PENDING: 'PENDING',
+      CLEARED: 'CLEARED',
+      CONDITIONALLY_CLEARED: 'CONDITIONALLY_CLEARED',
+      QUARANTINED: 'QUARANTINED',
+      HELD_FOR_DOCUMENTATION: 'HELD_FOR_DOCUMENTATION',
+      REJECTED_TARIFF_UNPAID: 'REJECTED_TARIFF_UNPAID',
+      REJECTED_SANCTIONED: 'REJECTED_SANCTIONED',
+      CONFISCATED: 'CONFISCATED'
+    });
+
+    /**
+     * Custom Error Taxonomy
+     */
+    class GSRSKExecutionError extends Error {
+      constructor(message, code = 'GSRSK_EXECUTION_ERROR', details = {}) {
+        super(message);
+        this.name = this.constructor.name;
+        this.code = code;
+        this.details = details;
+        this.timestamp = Date.now();
+      }
+    }
+
+    class InvariantBreachError extends GSRSKExecutionError {
+      constructor(message, details) {
+        super(message, 'INVARIANT_BREACH', details);
+      }
+    }
+
+    class StateTransitionError extends GSRSKExecutionError {
+      constructor(message, details) {
+        super(message, 'INVALID_STATE_TRANSITION', details);
+      }
+    }
+
+    class EligibilityCheckError extends GSRSKExecutionError {
+      constructor(message, details) {
+        super(message, 'ELIGIBILITY_CHECK_ERROR', details);
+      }
+    }
+
+    class AllocationEngineError extends GSRSKExecutionError {
+      constructor(message, details) {
+        super(message, 'ALLOCATION_ENGINE_ERROR', details);
+      }
+    }
+
+    class ReservationLockError extends GSRSKExecutionError {
+      constructor(message, details) {
+        super(message, 'RESERVATION_LOCK_ERROR', details);
+      }
+    }
+
+    class RegulatoryGateError extends GSRSKExecutionError {
+      constructor(message, details) {
+        super(message, 'REGULATORY_GATE_ERROR', details);
+      }
+    }
+
+    class LogisticsHandoffError extends GSRSKExecutionError {
+      constructor(message, details) {
+        super(message, 'LOGISTICS_HANDOFF_ERROR', details);
+      }
+    }
+
+    /**
+     * High-performance deterministic deep clone
+     */
+    function fastDeepClone(obj) {
+      if (obj === null || typeof obj !== 'object') return obj;
+      if (Array.isArray(obj)) return obj.map(fastDeepClone);
+      if (obj instanceof Set) return new Set(Array.from(obj).map(fastDeepClone));
+      if (obj instanceof Map) {
+        const mapCopy = new Map();
+        for (const [k, v] of obj.entries()) {
+          mapCopy.set(k, fastDeepClone(v));
+        }
+        return mapCopy;
+      }
+      const copy = {};
+      for (const key of Object.keys(obj)) {
+        copy[key] = fastDeepClone(obj[key]);
+      }
+      return copy;
+    }
+
+    /**
+     * Deep freeze helper for state immutability
+     */
+    function deepFreeze(obj) {
+      if (obj === null || typeof obj !== 'object') return obj;
+      const propNames = Object.getOwnPropertyNames(obj);
+      for (const name of propNames) {
+        const value = obj[name];
+        if (value && typeof value === 'object') {
+          deepFreeze(value);
+        }
+      }
+      return Object.freeze(obj);
+    }
+
+    /**
+     * Deterministic Murmur-style 64-bit Hash Implementation
+     */
+    function deterministicHash(input) {
+      const str = typeof input === 'string' ? input : JSON.stringify(input);
+      let h1 = 0xdeadbeef ^ str.length;
+      let h2 = 0x41c6ce57 ^ str.length;
+      for (let i = 0; i < str.length; i++) {
+        const ch = str.charCodeAt(i);
+        h1 = Math.imul(h1 ^ ch, 2654435761);
+        h2 = Math.imul(h2 ^ ch, 1597334677);
+      }
+      h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+      h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+      const result = 4294967296 * (2097151 & h2) + (h1 >>> 0);
+      return result.toString(16).padStart(16, '0');
+    }
+
+    // ============================================================================
+    // 11.01 TRADE IDENTITY & EXECUTION RECORDS (MULTI-TRANCHE ESCROW SUPPORT)
+    // ============================================================================
+
+    /**
+     * Authoritative record of a physical trade execution.
+     * Completely distinct from an economic market trade agreement.
+     */
+    class ExecutionRecord {
+      /**
+       * @param {Object} params
+       */
+      constructor({
+        executionId,
+        tradeId,
+        marketId,
+        contractRef = null,
+        buyer,
+        seller,
+        resourceId,
+        resourceVariant = 'STANDARD',
+        requiredQualityGrade = 1.0,
+        qualityTolerance = 0.05,
+        quantity,
+        unit = 'METRIC_TON',
+        unitPrice,
+        currency = 'GLOBAL_CREDIT',
+        origin,
+        destination,
+        transitCorridor = [],
+        creationTick,
+        slaMaxTicks = 120,
+        settlementTerms = {},
+        escrowTranches = {}
+      }) {
+        if (!executionId || !tradeId || !buyer || !seller || !resourceId) {
+          throw new GSRSKExecutionError('Critical execution identity parameters missing.');
+        }
+        if (typeof quantity !== 'number' || quantity <= 0 || !Number.isFinite(quantity)) {
+          throw new InvariantBreachError(`Execution quantity must be strictly positive: ${quantity}`);
+        }
+        if (typeof unitPrice !== 'number' || unitPrice < 0 || !Number.isFinite(unitPrice)) {
+          throw new InvariantBreachError(`Unit price cannot be negative: ${unitPrice}`);
+        }
+
+        this.executionId = executionId;
+        this.tradeId = tradeId;
+        this.marketId = marketId;
+        this.contractRef = contractRef;
+        
+        // Parties
+        this.buyer = deepFreeze(fastDeepClone(buyer));
+        this.seller = deepFreeze(fastDeepClone(seller));
+        
+        // Commodity Specifications
+        this.resourceId = resourceId;
+        this.resourceVariant = resourceVariant;
+        this.requiredQualityGrade = requiredQualityGrade;
+        this.qualityTolerance = qualityTolerance;
+        this.quantity = quantity;
+        this.unit = unit;
+
+        // Financial Bindings & Multi-Tranche Escrow
+        this.unitPrice = unitPrice;
+        this.commodityAgreedValue = quantity * unitPrice;
+        this.currency = currency;
+        this.settlementTerms = deepFreeze(fastDeepClone(settlementTerms));
+
+        const dutyEscrow = typeof escrowTranches.dutyEscrow === 'number' ? escrowTranches.dutyEscrow : 0;
+        const freightEscrow = typeof escrowTranches.freightEscrow === 'number' ? escrowTranches.freightEscrow : 0;
+
+        this.escrow = {
+          commodityEscrow: this.commodityAgreedValue,
+          dutyEscrow: dutyEscrow,
+          freightEscrow: freightEscrow,
+          totalEscrowDeposited: this.commodityAgreedValue + dutyEscrow + freightEscrow
+        };
+
+        // Physical Geopolitical Route
+        this.origin = deepFreeze(fastDeepClone(origin));
+        this.destination = deepFreeze(fastDeepClone(destination));
+        this.transitCorridor = deepFreeze(fastDeepClone(transitCorridor));
+
+        // Temporal Engine State
+        this.creationTick = creationTick;
+        this.currentTick = creationTick;
+        this.slaDeadlineTick = creationTick + slaMaxTicks;
+        this.state = ExecutionState.CREATED;
+        this.stateHistory = [{ state: this.state, tick: creationTick, narrative: 'INITIALIZED' }];
+
+        // Mass Accounting (Strict Invariants)
+        this.allocatedBatches = [];
+        this.reservedQuantity = 0;
+        this.dispatchedQuantity = 0;
+        this.deliveredQuantity = 0;
+        this.acceptedQuantity = 0;
+        this.rejectedQuantity = 0;
+        this.outstandingQuantity = quantity;
+        this.transitLossQuantity = 0;
+
+        // Financial Realization
+        this.settledAmount = 0;
+        this.outstandingAmount = this.commodityAgreedValue;
+        this.penaltiesIncurred = 0;
+        this.customsDutiesPaid = 0;
+        this.freightPaid = 0;
+
+        // Provenance Artifacts
+        this.shipments = [];
+        this.customsClearances = [];
+        this.activeLockTokens = [];
+        this.failureReason = ExecutionFailureReason.NONE;
+        this.failureNarrative = '';
+        this.lastStateHash = this.computeComprehensiveStateHash();
+      }
+
+      /**
+       * Generates complete state hash including all mass, financial, and batch states
+       */
+      computeComprehensiveStateHash() {
+        const payload = {
+          id: this.executionId,
+          state: this.state,
+          q_req: this.quantity,
+          q_res: this.reservedQuantity,
+          q_disp: this.dispatchedQuantity,
+          q_del: this.deliveredQuantity,
+          q_acc: this.acceptedQuantity,
+          q_rej: this.rejectedQuantity,
+          q_out: this.outstandingQuantity,
+          q_loss: this.transitLossQuantity,
+          v_set: this.settledAmount,
+          v_out: this.outstandingAmount,
+          v_pen: this.penaltiesIncurred,
+          v_duty: this.customsDutiesPaid,
+          v_freight: this.freightPaid,
+          escrow: this.escrow,
+          locks: this.activeLockTokens,
+          batches: this.allocatedBatches.map(b => `${b.batchId}:${b.allocatedQuantity}`),
+          tick: this.currentTick
+        };
+        return deterministicHash(payload);
+      }
+
+      /**
+       * Enforce valid Finite State Machine (FSM) transitions
+       */
+      transitionState(newState, currentTick, narrative = '') {
+        const allowedTargets = VALID_STATE_TRANSITIONS[this.state];
+        if (!allowedTargets || !allowedTargets.includes(newState)) {
+          throw new StateTransitionError(
+            `Illegal state transition from ${this.state} to ${newState} for execution ${this.executionId}`,
+            { currentState: this.state, requestedState: newState, allowedTargets }
+          );
+        }
+
+        this.state = newState;
+        this.currentTick = currentTick;
+        this.stateHistory.push({ state: newState, tick: currentTick, narrative });
+        this.lastStateHash = this.computeComprehensiveStateHash();
+      }
+
+      /**
+       * Asserts physical mass conservation at the individual execution level
+       */
+      verifyMassConservation() {
+        const sum = this.acceptedQuantity + this.rejectedQuantity + this.outstandingQuantity + this.transitLossQuantity;
+        const diff = Math.abs(sum - this.quantity);
+        if (diff > 1e-7) {
+          throw new InvariantBreachError(
+            `Mass conservation breach in execution ${this.executionId}: Sum (${sum}) != Contracted (${this.quantity})`,
+            { contracted: this.quantity, sum, accepted: this.acceptedQuantity, rejected: this.rejectedQuantity, outstanding: this.outstandingQuantity }
+          );
+        }
+        return true;
+      }
+
+      toSnapshot() {
+        return deepFreeze(fastDeepClone(this));
+      }
+    }
+
+    // ============================================================================
+    // 11.02 SOVEREIGN COUNTRY & PARTY PARTICIPATION FRAMEWORK
+    // ============================================================================
+
+    /**
+     * Manages dynamic registrations of Nations, Entities, Treaties, Tariffs, and Embargoes.
+     * Zero hardcoded countries or resources.
+     */
+    class SovereignPartyRegistry {
+      constructor() {
+        /** @type {Map<string, Object>} */
+        this.countries = new Map();
+        /** @type {Map<string, Object>} */
+        this.parties = new Map();
+        /** @type {Map<string, Set<string>>} */
+        this.bilateralFreeTradeAgreements = new Map();
+        /** @type {Map<string, Map<string, Object>>} */
+        this.sanctionsAndEmbargoes = new Map();
+        /** @type {Map<string, Map<string, Object>>} */
+        this.customsTariffSchedules = new Map();
+        /** @type {Map<string, number>} */
+        this.sovereignTreasuries = new Map(); // countryId -> Balance
+      }
+
+      registerCountry({
+        countryId,
+        displayName,
+        sovereignAuthorityLevel = 1.0,
+        nationalCurrency = 'CREDITS',
+        legalSystemCode = 'CIVIL_LAW',
+        isImportPermitted = true,
+        isExportPermitted = true,
+        customsBorderEfficiency = 0.95,
+        customsInspectionStrictness = 0.5,
+        isPlayerState = false
+      }) {
+        if (this.countries.has(countryId)) {
+          throw new GSRSKExecutionError(`Sovereign Country ${countryId} is already registered.`);
+        }
+
+        const countryRecord = {
+          countryId,
+          displayName,
+          sovereignAuthorityLevel,
+          nationalCurrency,
+          legalSystemCode,
+          isImportPermitted,
+          isExportPermitted,
+          customsBorderEfficiency,
+          customsInspectionStrictness,
+          isPlayerState,
+          resourceQuotas: new Map() // resourceId -> { limit, consumed, periodWindowTicks, lastResetTick }
+        };
+
+        this.countries.set(countryId, countryRecord);
+        this.bilateralFreeTradeAgreements.set(countryId, new Set());
+        this.sanctionsAndEmbargoes.set(countryId, new Map());
+        this.customsTariffSchedules.set(countryId, new Map());
+        this.sovereignTreasuries.set(countryId, 0);
+        return countryRecord;
+      }
+
+      registerParty({
+        partyId,
+        legalName,
+        partyType,
+        countryId,
+        operatingLicenseActive = true,
+        solvencyRating = 1.0,
+        bondedWarehouseAuthorization = true,
+        authorizedResourceCategories = ['*']
+      }) {
+        if (!this.countries.has(countryId)) {
+          throw new GSRSKExecutionError(`Parent sovereign country ${countryId} is not registered.`);
+        }
+        if (this.parties.has(partyId)) {
+          throw new GSRSKExecutionError(`Operating party ${partyId} is already registered.`);
+        }
+
+        const partyRecord = {
+          partyId,
+          legalName,
+          partyType,
+          countryId,
+          operatingLicenseActive,
+          solvencyRating,
+          bondedWarehouseAuthorization,
+          authorizedResourceCategories: new Set(authorizedResourceCategories)
+        };
+
+        this.parties.set(partyId, partyRecord);
+        return partyRecord;
+      }
+
+      setImportQuota(countryId, resourceId, quotaLimit, windowTicks = 1000) {
+        const country = this.getCountry(countryId);
+        country.resourceQuotas.set(resourceId, {
+          limit: quotaLimit,
+          consumed: 0,
+          periodWindowTicks: windowTicks,
+          lastResetTick: 0
+        });
+      }
+
+      setTariffSchedule(countryId, resourceId, {
+        inQuotaAdValoremRate = 0.0,
+        overQuotaAdValoremRate = 0.20,
+        specificDutyPerUnit = 0.0,
+        preferentialFTARate = 0.0
+      }) {
+        if (!this.countries.has(countryId)) throw new GSRSKExecutionError(`Country ${countryId} not found`);
+        const schedule = this.customsTariffSchedules.get(countryId);
+        schedule.set(resourceId, {
+          inQuotaAdValoremRate,
+          overQuotaAdValoremRate,
+          specificDutyPerUnit,
+          preferentialFTARate
+        });
+      }
+
+      establishBilateralFTA(countryA, countryB) {
+        if (!this.countries.has(countryA) || !this.countries.has(countryB)) {
+          throw new GSRSKExecutionError('Cannot link unregistered countries under bilateral treaty.');
+        }
+        this.bilateralFreeTradeAgreements.get(countryA).add(countryB);
+        this.bilateralFreeTradeAgreements.get(countryB).add(countryA);
+      }
+
+      imposeEmbargo(imposingCountry, targetCountry, { scope = 'FULL', bannedResources = ['*'], reason = 'STRATEGIC_RESTRICTION' } = {}) {
+        if (!this.countries.has(imposingCountry) || !this.countries.has(targetCountry)) {
+          throw new GSRSKExecutionError('Invalid sovereign entities in embargo declaration.');
+        }
+        this.sanctionsAndEmbargoes.get(imposingCountry).set(targetCountry, {
+          scope,
+          bannedResources: new Set(bannedResources),
+          reason,
+          declaredAt: Date.now()
+        });
+      }
+
+      getCountry(countryId) {
+        const c = this.countries.get(countryId);
+        if (!c) throw new GSRSKExecutionError(`Sovereign Country not found: ${countryId}`);
+        return c;
+      }
+
+      getParty(partyId) {
+        const p = this.parties.get(partyId);
+        if (!p) throw new GSRSKExecutionError(`Party entity not found: ${partyId}`);
+        return p;
+      }
+    }
+
+    // ============================================================================
+    // 11.03 TRADE VISIBILITY & INFORMATION ACCESS LAYER
+    // ============================================================================
+
+    /**
+     * Granular Role-Based Access Control and Zero-Knowledge Projection Matrix.
+     */
+    class TradeVisibilityEngine {
+      constructor(sovereignPartyRegistry) {
+        this.registry = sovereignPartyRegistry;
+      }
+
+      evaluateViewerAccess(execution, viewerContext) {
+        const { viewerCountryId, viewerPartyId, isGlobalAuditor = false, clearanceTokens = [] } = viewerContext;
+
+        if (isGlobalAuditor) {
+          return { allowed: true, visibility: VisibilityLevel.PUBLIC, maskedFields: [] };
+        }
+
+        const isBuyerParty = execution.buyer.partyId === viewerPartyId;
+        const isSellerParty = execution.seller.partyId === viewerPartyId;
+        const isBuyerCountry = execution.buyer.countryId === viewerCountryId;
+        const isSellerCountry = execution.seller.countryId === viewerCountryId;
+        const isTransitCountry = execution.transitCorridor.some(node => node.countryId === viewerCountryId);
+
+        if (isBuyerParty || isSellerParty) {
+          return { allowed: true, visibility: VisibilityLevel.PARTY_VISIBLE, maskedFields: [] };
+        }
+
+        if (isBuyerCountry || isSellerCountry || isTransitCountry) {
+          return {
+            allowed: true,
+            visibility: VisibilityLevel.COUNTRY_VISIBLE,
+            maskedFields: ['settlementTerms', 'unitPrice', 'commodityAgreedValue', 'escrow', 'contractRef']
+          };
+        }
+
+        if (clearanceTokens.includes(`TRADE_VIEW_${execution.tradeId}`)) {
+          return { allowed: true, visibility: VisibilityLevel.AUTHORIZED_ONLY, maskedFields: ['settlementTerms', 'escrow'] };
+        }
+
+        return {
+          allowed: true,
+          visibility: VisibilityLevel.MARKET_VISIBLE,
+          maskedFields: ['buyer', 'seller', 'allocatedBatches', 'shipments', 'settlementTerms', 'escrow', 'unitPrice', 'contractRef', 'activeLockTokens']
+        };
+      }
+
+      sanitizeExecutionForViewer(execution, viewerContext) {
+        const access = this.evaluateViewerAccess(execution, viewerContext);
+        if (!access.allowed) return null;
+
+        const snapshot = execution.toSnapshot();
+
+        for (const field of access.maskedFields) {
+          if (field in snapshot) {
+            snapshot[field] = '[REDACTED_BY_SECURITY_POLICY]';
+          }
+        }
+
+        return {
+          visibilityLevel: access.visibility,
+          data: snapshot
+        };
+      }
+    }
+
+    // ============================================================================
+    // 11.04 TRADE REQUEST GATEWAY & CONTRACT INGESTION
+    // ============================================================================
+
+    /**
+     * Idempotent Gateway ingesting accepted contracts from Part 10.
+     */
+    class TradeRequestGateway {
+      constructor() {
+        /** @type {Map<string, string>} */
+        this.ingestedTradeToExecutionMap = new Map();
+      }
+
+      ingestAcceptedTrade(contractPayload, currentTick) {
+        const {
+          tradeId,
+          marketId = 'GLOBAL_SPOT_MARKET',
+          contractRef = null,
+          buyerPartyId,
+          buyerCountryId,
+          buyerFacilityId,
+          sellerPartyId,
+          sellerCountryId,
+          sellerFacilityId,
+          resourceId,
+          resourceVariant = 'STANDARD',
+          requiredQualityGrade = 1.0,
+          qualityTolerance = 0.05,
+          quantity,
+          unit = 'METRIC_TON',
+          unitPrice,
+          currency = 'CREDITS',
+          originCheckpoint = 'ORIGIN_PORT',
+          destinationCheckpoint = 'DEST_PORT',
+          transitCorridor = [],
+          slaMaxTicks = 120,
+          settlementTerms = { paymentStructure: 'ESCROW_IMMEDIATE' },
+          escrowTranches = {}
+        } = contractPayload;
+
+        if (this.ingestedTradeToExecutionMap.has(tradeId)) {
+          throw new GSRSKExecutionError(`Duplicate ingestion attempt for Trade ID: ${tradeId}`);
+        }
+
+        const executionId = `EX-${tradeId}-${deterministicHash(`${tradeId}:${currentTick}:${quantity}`).substring(0, 8)}`;
+
+        const executionRecord = new ExecutionRecord({
+          executionId,
+          tradeId,
+          marketId,
+          contractRef,
+          buyer: { partyId: buyerPartyId, countryId: buyerCountryId, facilityId: buyerFacilityId },
+          seller: { partyId: sellerPartyId, countryId: sellerCountryId, facilityId: sellerFacilityId },
+          resourceId,
+          resourceVariant,
+          requiredQualityGrade,
+          qualityTolerance,
+          quantity,
+          unit,
+          unitPrice,
+          currency,
+          origin: { facilityId: sellerFacilityId, countryId: sellerCountryId, checkpointNode: originCheckpoint },
+          destination: { facilityId: buyerFacilityId, countryId: buyerCountryId, checkpointNode: destinationCheckpoint },
+          transitCorridor: transitCorridor.length > 0 ? transitCorridor : [
+            { checkpointNode: originCheckpoint, countryId: sellerCountryId },
+            { checkpointNode: destinationCheckpoint, countryId: buyerCountryId }
+          ],
+          creationTick: typeof contractPayload.creationTick === 'number' ? contractPayload.creationTick : currentTick,
+          slaMaxTicks,
+          settlementTerms,
+          escrowTranches
+        });
+
+        this.ingestedTradeToExecutionMap.set(tradeId, executionId);
+        executionRecord.transitionState(ExecutionState.VALIDATED, currentTick, 'CONTRACT_INGESTED');
+        return executionRecord;
+      }
+    }
+
+    // ============================================================================
+    // 11.05 MULTI-POINT ELIGIBILITY & AUTHORIZATION ENGINE
+    // ============================================================================
+
+    /**
+     * Authoritative validator enforcing legal, financial, and geopolitical compliance.
+     * Strict read-only query semantics (zero side-effects).
+     */
+    class EligibilityAuthorizationEngine {
+      constructor(sovereignPartyRegistry) {
+        this.registry = sovereignPartyRegistry;
+      }
+
+      evaluateExecutionEligibility(execution, currentTick) {
+        const violations = [];
+
+        // 1. Buyer & Seller Entities
+        const buyerCountry = this.registry.getCountry(execution.buyer.countryId);
+        const buyerParty = this.registry.getParty(execution.buyer.partyId);
+        const sellerCountry = this.registry.getCountry(execution.seller.countryId);
+        const sellerParty = this.registry.getParty(execution.seller.partyId);
+
+        if (!buyerCountry.isImportPermitted) violations.push(`Buyer country ${buyerCountry.countryId} imports prohibited.`);
+        if (!buyerParty.operatingLicenseActive) violations.push(`Buyer ${buyerParty.partyId} license is suspended.`);
+        if (buyerParty.solvencyRating < 0.2) violations.push(`Buyer ${buyerParty.partyId} failed solvency score: ${buyerParty.solvencyRating}`);
+        if (!this._isCategoryAuthorized(buyerParty, execution.resourceId)) violations.push(`Buyer unauthorized for ${execution.resourceId}`);
+
+        if (!sellerCountry.isExportPermitted) violations.push(`Seller country ${sellerCountry.countryId} exports prohibited.`);
+        if (!sellerParty.operatingLicenseActive) violations.push(`Seller ${sellerParty.partyId} license is suspended.`);
+        if (!this._isCategoryAuthorized(sellerParty, execution.resourceId)) violations.push(`Seller unauthorized for ${execution.resourceId}`);
+
+        // 2. Sovereign Embargoes across Entire Transit Corridor
+        for (const node of execution.transitCorridor) {
+          const transitCountryEmbargoes = this.registry.sanctionsAndEmbargoes.get(node.countryId);
+          if (transitCountryEmbargoes) {
+            if (transitCountryEmbargoes.has(sellerCountry.countryId)) {
+              violations.push(`Transit country ${node.countryId} has active embargo against seller ${sellerCountry.countryId}`);
+            }
+            if (transitCountryEmbargoes.has(buyerCountry.countryId)) {
+              violations.push(`Transit country ${node.countryId} has active embargo against buyer ${buyerCountry.countryId}`);
+            }
+          }
+        }
+
+        // 3. Read-Only Rolling Window Quota Availability Check
+        const quota = buyerCountry.resourceQuotas.get(execution.resourceId);
+        if (quota) {
+          const isExpiredWindow = (currentTick - quota.lastResetTick) >= quota.periodWindowTicks;
+          const effectiveConsumed = isExpiredWindow ? 0 : quota.consumed;
+
+          if (effectiveConsumed + execution.quantity > quota.limit) {
+            violations.push(`Import quota limit breached for ${execution.resourceId}. Limit: ${quota.limit}, Effective Consumed: ${effectiveConsumed}, Requested: ${execution.quantity}`);
+          }
+        }
+
+        const isEligible = violations.length === 0;
+
+        if (isEligible) {
+          execution.transitionState(ExecutionState.AUTHORIZED, currentTick, 'ELIGIBILITY_PASSED');
+        } else {
+          execution.failureReason = ExecutionFailureReason.SANCTION_BLOCK;
+          execution.failureNarrative = violations.join(' | ');
+          execution.transitionState(ExecutionState.FAILED, currentTick, 'ELIGIBILITY_FAILED');
+        }
+
+        return {
+          eligible: isEligible,
+          violations
+        };
+      }
+
+      _isCategoryAuthorized(party, resourceId) {
+        if (party.authorizedResourceCategories.has('*')) return true;
+        return party.authorizedResourceCategories.has(resourceId);
+      }
+    }
+
+    // ============================================================================
+    // 11.06 AUTHORITATIVE INVENTORY ENGINE ADAPTER
+    // ============================================================================
+
+    /**
+     * Standard decoupled interface with Part 07 Inventory Engine.
+     */
+    class InventoryEngineAdapter {
+      async fetchAuthoritativeBatches(facilityId, resourceId, ownerPartyId) {
+        throw new Error('InventoryEngineAdapter.fetchAuthoritativeBatches must be implemented by bridge');
+      }
+
+      async acquireAtomicBatchLock(batchId, lockQuantity, lockToken, leaseDurationTicks) {
+        throw new Error('InventoryEngineAdapter.acquireAtomicBatchLock must be implemented by bridge');
+      }
+
+      async releaseAtomicBatchLock(batchId, lockQuantity, lockToken) {
+        throw new Error('InventoryEngineAdapter.releaseAtomicBatchLock must be implemented by bridge');
+      }
+
+      async commitAuthoritativeBatchDepletion(batchId, quantity, transferManifest) {
+        throw new Error('InventoryEngineAdapter.commitAuthoritativeBatchDepletion must be implemented by bridge');
+      }
+    }
+
+    // ============================================================================
+    // 11.07 MULTI-BATCH ALLOCATION & FRACTIONAL LOT SPLITTING
+    // ============================================================================
+
+    /**
+     * Consolidates inventory batches with deterministic tie-breaking, fractional lot splitting,
+     * and provenance tracking.
+     */
+    class MultiBatchAllocationPlanner {
+      static planConsolidation(availableBatches, execution, options = { strategy: 'FIFO' }) {
+        const requiredQty = execution.quantity;
+        if (!Array.isArray(availableBatches) || availableBatches.length === 0) {
+          throw new AllocationEngineError(`No batches available for facility ${execution.origin.facilityId}`);
+        }
+
+        const minQuality = execution.requiredQualityGrade * (1 - execution.qualityTolerance);
+
+        const qualifiedBatches = availableBatches.filter(b => {
+          if (b.resourceId !== execution.resourceId) return false;
+          if (b.availableQuantity <= 0 || b.status !== 'AVAILABLE') return false;
+          return true;
+        });
+
+        if (qualifiedBatches.length === 0) {
+          throw new AllocationEngineError(`No available batches found for resource ${execution.resourceId} at facility ${execution.origin.facilityId}`);
+        }
+
+        // Deterministic Sort with batchId tie-breaker
+        qualifiedBatches.sort((a, b) => {
+          if (options.strategy === 'FIFO') {
+            const diff = a.creationTick - b.creationTick;
+            return diff !== 0 ? diff : a.batchId.localeCompare(b.batchId);
+          } else if (options.strategy === 'MAX_PURITY') {
+            const diff = b.qualityGrade - a.qualityGrade;
+            return diff !== 0 ? diff : a.batchId.localeCompare(b.batchId);
+          }
+          return a.batchId.localeCompare(b.batchId);
+        });
+
+        const consolidatedPlan = [];
+        let accumulatedQuantity = 0;
+        let weightedQualitySum = 0;
+
+        for (const batch of qualifiedBatches) {
+          if (accumulatedQuantity >= requiredQty) break;
+
+          const remainingNeeded = requiredQty - accumulatedQuantity;
+          const takeQty = Math.min(batch.availableQuantity, remainingNeeded);
+          const isSplit = takeQty < batch.availableQuantity;
+
+          consolidatedPlan.push({
+            batchId: batch.batchId,
+            parentBatchId: batch.parentBatchId || batch.batchId,
+            facilityId: batch.facilityId,
+            resourceId: batch.resourceId,
+            originalBatchAvailable: batch.availableQuantity,
+            allocatedQuantity: takeQty,
+            remainingUnallocated: batch.availableQuantity - takeQty,
+            isSplitLot: isSplit,
+            qualityGrade: batch.qualityGrade,
+            creationTick: batch.creationTick,
+            provenanceId: batch.provenanceId || `PROV-${batch.batchId}`,
+            unitExtractionCost: batch.unitExtractionCost || 0
+          });
+
+          accumulatedQuantity += takeQty;
+          weightedQualitySum += (takeQty * batch.qualityGrade);
+        }
+
+        const averageGrade = accumulatedQuantity > 0 ? (weightedQualitySum / accumulatedQuantity) : 0;
+        const isComplete = accumulatedQuantity >= requiredQty;
+
+        if (accumulatedQuantity > requiredQty) {
+          throw new InvariantBreachError(`Over-allocation detected: ${accumulatedQuantity} > ${requiredQty}`);
+        }
+
+        return {
+          isComplete,
+          targetQuantity: requiredQty,
+          allocatedTotalQuantity: accumulatedQuantity,
+          shortfall: requiredQty - accumulatedQuantity,
+          averageConsolidatedGrade: averageGrade,
+          batches: consolidatedPlan
+        };
+      }
+    }
+
+    // ============================================================================
+    // 11.08 TWO-PHASE LOCKING (2PL) RESERVATION ENGINE WITH ACTIVE LEASE GUARDS
+    // ============================================================================
+
+    /**
+     * Manages atomic inventory locks with deadlock-free key ordering,
+     * transaction IDs (XID), expiring lease timestamps, and renewal capabilities.
+     */
+    class TwoPhaseReservationEngine {
+      constructor(inventoryAdapter, defaultLeaseDurationTicks = 100) {
+        this.inventoryAdapter = inventoryAdapter;
+        this.defaultLeaseDurationTicks = defaultLeaseDurationTicks;
+        /** @type {Map<string, Object>} */
+        this.activeLocks = new Map();
+        /** @type {Array<Object>} */
+        this.lockJournal = [];
+      }
+
+      async executeAtomicReservation(execution, allocationPlan) {
+        if (!allocationPlan.isComplete) {
+          throw new ReservationLockError(`Cannot reserve incomplete allocation. Shortfall: ${allocationPlan.shortfall}`);
+        }
+
+        const lockTick = execution.currentTick;
+        const xid = `TX-${execution.executionId}-${lockTick}`;
+        const acquiredLockTokens = [];
+
+        // Deadlock Prevention: Sort Batches deterministically by batchId
+        const sortedBatches = [...allocationPlan.batches].sort((a, b) => a.batchId.localeCompare(b.batchId));
+
+        try {
+          for (const item of sortedBatches) {
+            const lockToken = `LCK-${execution.executionId}-${item.batchId}-${lockTick}`;
+            const expiresAtTick = lockTick + this.defaultLeaseDurationTicks;
+
+            const lockResult = await this.inventoryAdapter.acquireAtomicBatchLock(
+              item.batchId,
+              item.allocatedQuantity,
+              lockToken,
+              this.defaultLeaseDurationTicks
+            );
+
+            if (!lockResult || !lockResult.success) {
+              throw new ReservationLockError(`Lock acquisition failed on batch ${item.batchId}: ${lockResult?.reason || 'LOCKED'}`);
+            }
+
+            const lockEntry = {
+              xid,
+              lockToken,
+              executionId: execution.executionId,
+              batchId: item.batchId,
+              quantity: item.allocatedQuantity,
+              acquiredAtTick: lockTick,
+              expiresAtTick,
+              status: 'ACTIVE'
+            };
+
+            this.activeLocks.set(lockToken, lockEntry);
+            acquiredLockTokens.push(lockEntry);
+          }
+
+          execution.allocatedBatches = allocationPlan.batches.map(b => fastDeepClone(b));
+          execution.reservedQuantity = allocationPlan.allocatedTotalQuantity;
+          execution.activeLockTokens = acquiredLockTokens.map(l => l.lockToken);
+          execution.transitionState(ExecutionState.RESERVED, lockTick, `2PL_COMMITTED:${xid}`);
+
+          this.lockJournal.push({
+            action: 'COMMIT',
+            xid,
+            executionId: execution.executionId,
+            quantity: execution.reservedQuantity,
+            tick: lockTick
+          });
+
+          return {
+            success: true,
+            xid,
+            reservedQuantity: execution.reservedQuantity,
+            locks: acquiredLockTokens
+          };
+
+        } catch (err) {
+          // 2PL Rollback Compensation
+          for (const lock of acquiredLockTokens) {
+            await this.inventoryAdapter.releaseAtomicBatchLock(lock.batchId, lock.quantity, lock.lockToken);
+            this.activeLocks.delete(lock.lockToken);
+          }
+
+          this.lockJournal.push({
+            action: 'ABORT',
+            xid,
+            executionId: execution.executionId,
+            error: err.message,
+            tick: lockTick
+          });
+
+          execution.failureReason = ExecutionFailureReason.RESERVATION_LOCK_FAILED;
+          execution.failureNarrative = err.message;
+          execution.transitionState(ExecutionState.FAILED, lockTick, '2PL_ABORTED');
+          throw new ReservationLockError(`Reservation 2PL aborted: ${err.message}`);
+        }
+      }
+
+      async releaseAllLocksForExecution(execution) {
+        for (const token of execution.activeLockTokens) {
+          const lock = this.activeLocks.get(token);
+          if (lock) {
+            await this.inventoryAdapter.releaseAtomicBatchLock(lock.batchId, lock.quantity, token);
+            this.activeLocks.delete(token);
+          }
+        }
+        execution.activeLockTokens = [];
+        execution.reservedQuantity = 0;
+      }
+
+      assertLeaseValidity(execution, currentTick) {
+        if (!execution.activeLockTokens || execution.activeLockTokens.length === 0) {
+          throw new ReservationLockError(`Execution ${execution.executionId} has no active reservation locks`);
+        }
+
+        for (const token of execution.activeLockTokens) {
+          const lock = this.activeLocks.get(token);
+          if (!lock) {
+            throw new ReservationLockError(`Reservation lock token ${token} not found in active lock store`);
+          }
+          if (currentTick > lock.expiresAtTick) {
+            throw new ReservationLockError(`Reservation lease expired on token ${token}. Expiry: ${lock.expiresAtTick}, CurrentTick: ${currentTick}`);
+          }
+        }
+        return true;
+      }
+
+      renewLease(execution, currentTick, additionalTicks = 100) {
+        this.assertLeaseValidity(execution, currentTick);
+        for (const token of execution.activeLockTokens) {
+          const lock = this.activeLocks.get(token);
+          if (lock) {
+            lock.expiresAtTick = currentTick + additionalTicks;
+          }
+        }
+        return true;
+      }
+    }
+
+    // ============================================================================
+    // 11.09 FULFILLMENT PLAN & MILESTONE DAG COORDINATOR
+    // ============================================================================
+
+    /**
+     * Builds and monitors the Milestone DAG and enforces SLA timeouts.
+     */
+    class FulfillmentPlanCoordinator {
+      static generateMilestoneDAG(execution, travelEstimateTicks = 30) {
+        const t0 = execution.creationTick;
+        return {
+          executionId: execution.executionId,
+          totalQuantity: execution.quantity,
+          slaDeadlineTick: execution.slaDeadlineTick,
+          milestones: [
+            { id: 'M1_AUTHORIZE', state: ExecutionState.AUTHORIZED, targetTick: t0 + 1, dependencies: [] },
+            { id: 'M2_RESERVE', state: ExecutionState.RESERVED, targetTick: t0 + 2, dependencies: ['M1_AUTHORIZE'] },
+            { id: 'M3_DISPATCH', state: ExecutionState.DISPATCHED, targetTick: t0 + 5, dependencies: ['M2_RESERVE'] },
+            { id: 'M4_BORDER_CLEAR', state: ExecutionState.BORDER_PROCESSING, targetTick: t0 + 5 + Math.floor(travelEstimateTicks * 0.4), dependencies: ['M3_DISPATCH'] },
+            { id: 'M5_ARRIVE', state: ExecutionState.ARRIVED, targetTick: t0 + 5 + travelEstimateTicks, dependencies: ['M4_BORDER_CLEAR'] },
+            { id: 'M6_INSPECT', state: ExecutionState.INSPECTING, targetTick: t0 + 8 + travelEstimateTicks, dependencies: ['M5_ARRIVE'] },
+            { id: 'M7_ACCEPT', state: ExecutionState.ACCEPTED, targetTick: t0 + 10 + travelEstimateTicks, dependencies: ['M6_INSPECT'] },
+            { id: 'M8_SETTLE', state: ExecutionState.SETTLED, targetTick: t0 + 12 + travelEstimateTicks, dependencies: ['M7_ACCEPT'] },
+            { id: 'M9_COMPLETE', state: ExecutionState.COMPLETED, targetTick: t0 + 15 + travelEstimateTicks, dependencies: ['M8_SETTLE'] }
+          ]
+        };
+      }
+
+      static checkSLA(execution, currentTick) {
+        if (currentTick > execution.slaDeadlineTick && execution.state !== ExecutionState.COMPLETED) {
+          return {
+            breached: true,
+            overdueTicks: currentTick - execution.slaDeadlineTick,
+            action: 'TRIGGER_SLA_PENALTY'
+          };
+        }
+        return { breached: false, overdueTicks: 0, action: 'NONE' };
+      }
+    }
+
+    // ============================================================================
+    // 11.10 LOGISTICS HANDOFF INTERFACE (PART 08 BRIDGE WITH LEASE ASSERTION)
+    // ============================================================================
+
+    /**
+     * Standard adapter interface with Part 08 Transport Engine.
+     */
+    class LogisticsEngineAdapter {
+      async dispatchTransportManifest(manifest) {
+        throw new Error('LogisticsEngineAdapter.dispatchTransportManifest must be implemented by bridge');
+      }
+
+      async fetchShipmentTelemetry(transportTrackingId) {
+        throw new Error('LogisticsEngineAdapter.fetchShipmentTelemetry must be implemented by bridge');
+      }
+
+      async cancelShipmentDispatch(transportTrackingId) {
+        throw new Error('LogisticsEngineAdapter.cancelShipmentDispatch must be implemented by bridge');
+      }
+    }
+
+    /**
+     * Bridges trade execution dispatch requirements with physical logistics execution.
+     * Strictly asserts lease validity before handing off to carrier.
+     */
+    class LogisticsHandoffBridge {
+      constructor(logisticsAdapter, reservationEngine = null) {
+        this.logisticsAdapter = logisticsAdapter;
+        this.reservationEngine = reservationEngine;
+      }
+
+      async executeLogisticsHandoff(execution, transportParameters = {}) {
+        if (execution.state !== ExecutionState.RESERVED && execution.state !== ExecutionState.READY_FOR_DISPATCH) {
+          throw new LogisticsHandoffError(`Invalid state for logistics handoff: ${execution.state}`);
+        }
+
+        // Strict Forensic Check: Assert active reservation lease validity
+        if (this.reservationEngine) {
+          this.reservationEngine.assertLeaseValidity(execution, execution.currentTick);
+        }
+
+        const manifestId = `MNF-${execution.executionId}-${execution.currentTick}`;
+        const unitMassFactor = transportParameters.unitMassFactor || 1.0;
+        const grossWeight = execution.reservedQuantity * unitMassFactor;
+
+        const cargoManifest = {
+          manifestId,
+          executionId: execution.executionId,
+          tradeId: execution.tradeId,
+          resourceId: execution.resourceId,
+          quantity: execution.reservedQuantity,
+          grossWeightMetricTons: grossWeight,
+          hazardClassification: transportParameters.hazardClass || 'NON_HAZARDOUS',
+          temperatureControlled: !!transportParameters.temperatureControlled,
+          origin: execution.origin,
+          destination: execution.destination,
+          transitCorridor: execution.transitCorridor,
+          allocatedBatches: execution.allocatedBatches.map(b => ({
+            batchId: b.batchId,
+            quantity: b.allocatedQuantity,
+            qualityGrade: b.qualityGrade,
+            provenanceId: b.provenanceId
+          })),
+          dispatchTick: execution.currentTick,
+          requiredDeliveryDeadline: execution.slaDeadlineTick
+        };
+
+        const transportTicket = await this.logisticsAdapter.dispatchTransportManifest(cargoManifest);
+
+        if (!transportTicket || !transportTicket.accepted) {
+          execution.failureReason = ExecutionFailureReason.LOGISTICS_CAPACITY_EXHAUSTED;
+          execution.failureNarrative = transportTicket?.reason || 'Logistics carrier network declined manifest';
+          execution.transitionState(ExecutionState.FAILED, execution.currentTick, 'LOGISTICS_REJECTED');
+          throw new LogisticsHandoffError(`Logistics carrier rejected dispatch: ${execution.failureNarrative}`);
+        }
+
+        execution.dispatchedQuantity = execution.reservedQuantity;
+        execution.transitionState(ExecutionState.DISPATCHED, execution.currentTick, 'DISPATCH_CONFIRMED');
+
+        const shipmentRecord = {
+          shipmentId: `SHP-${transportTicket.trackingId}`,
+          manifestId,
+          transportTrackingId: transportTicket.trackingId,
+          dispatchedQuantity: execution.dispatchedQuantity,
+          estimatedArrivalTick: transportTicket.estimatedArrivalTick,
+          actualArrivalTick: null,
+          carrierId: transportTicket.carrierId || 'CARRIER_DEFAULT',
+          routeCheckpointNodes: execution.transitCorridor.map(n => n.checkpointNode),
+          status: 'DISPATCHED',
+          batches: fastDeepClone(execution.allocatedBatches),
+          transitLossQuantity: 0,
+          alreadyReconciledQuantity: 0,
+          acceptedQuantity: 0,
+          rejectedQuantity: 0
+        };
+
+        execution.shipments.push(shipmentRecord);
+        return shipmentRecord;
+      }
+    }
+
+    // ============================================================================
+    // 11.11 MULTI-JURISDICTION BORDER, CHECKPOINT & CUSTOMS CLEARANCE GATE
+    // ============================================================================
+
+    /**
+     * Handles multi-node transit corridors, TRQ customs duties, and quarantine holds.
+     */
+    class BorderCustomsExecutionGate {
+      constructor(sovereignPartyRegistry) {
+        this.registry = sovereignPartyRegistry;
+        /** @type {Array<Object>} */
+        this.customsLedger = [];
+      }
+
+      /**
+       * Process the entire ordered sequence of checkpoints along the transit corridor
+       */
+      processCorridorTransit(execution, shipmentRecord, currentTick) {
+        const clearances = [];
+
+        for (let i = 0; i < execution.transitCorridor.length; i++) {
+          const node = execution.transitCorridor[i];
+          const tickOffset = currentTick + i;
+          const clearance = this.processSingleCheckpoint(execution, shipmentRecord, node, tickOffset);
+
+          clearances.push(clearance);
+
+          if (clearance.status === ClearanceStatus.REJECTED_SANCTIONED || clearance.status === ClearanceStatus.CONFISCATED) {
+            return {
+              allCleared: false,
+              failingCheckpoint: node.checkpointNode,
+              clearances
+            };
+          }
+        }
+
+        return {
+          allCleared: true,
+          failingCheckpoint: null,
+          clearances
+        };
+      }
+
+      processSingleCheckpoint(execution, shipmentRecord, checkpointNode, currentTick) {
+        const countryId = checkpointNode.countryId;
+        const destCountryId = execution.destination.countryId;
+        const originCountryId = execution.origin.countryId;
+
+        // 1. Embargo Verification
+        const sovereignEmbargoes = this.registry.sanctionsAndEmbargoes.get(countryId);
+        if (sovereignEmbargoes) {
+          if (sovereignEmbargoes.has(originCountryId) || sovereignEmbargoes.has(destCountryId)) {
+            const rejection = {
+              checkpoint: checkpointNode.checkpointNode,
+              countryId,
+              status: ClearanceStatus.REJECTED_SANCTIONED,
+              tariffDutyPayable: 0,
+              inspectionPassed: false,
+              remarks: `Transit blocked at checkpoint ${checkpointNode.checkpointNode} under sovereign embargo order`,
+              clearedAtTick: currentTick
+            };
+            execution.customsClearances.push(rejection);
+            execution.failureReason = ExecutionFailureReason.BORDER_ENTRY_DENIED;
+            execution.transitionState(ExecutionState.CUSTOMS_HOLD, currentTick, `EMBARGO_AT_${checkpointNode.checkpointNode}`);
+            return rejection;
+          }
+        }
+
+        // 2. Intermediate Transit Corridor (Bonded Pass)
+        if (countryId !== destCountryId && countryId !== originCountryId) {
+          const transitPass = {
+            checkpoint: checkpointNode.checkpointNode,
+            countryId,
+            status: ClearanceStatus.CLEARED,
+            tariffDutyPayable: 0,
+            inspectionPassed: true,
+            remarks: 'Bonded international transit corridor pass granted',
+            clearedAtTick: currentTick
+          };
+          execution.customsClearances.push(transitPass);
+          return transitPass;
+        }
+
+        // 3. Destination Port Customs Entry & TRQ Duty Assessment
+        if (countryId === destCountryId) {
+          const destSovereign = this.registry.getCountry(destCountryId);
+          const hasFTA = this.registry.bilateralFreeTradeAgreements.get(destCountryId)?.has(originCountryId);
+          const tariffSchedule = this.registry.customsTariffSchedules.get(destCountryId)?.get(execution.resourceId);
+          
+          let effectiveTariffRate = 0;
+          let specificDuty = 0;
+
+          if (tariffSchedule) {
+            if (hasFTA) {
+              effectiveTariffRate = tariffSchedule.preferentialFTARate;
+            } else {
+              const quota = destSovereign.resourceQuotas.get(execution.resourceId);
+              const isOverQuota = quota && (quota.consumed + shipmentRecord.dispatchedQuantity > quota.limit);
+              effectiveTariffRate = isOverQuota ? tariffSchedule.overQuotaAdValoremRate : tariffSchedule.inQuotaAdValoremRate;
+            }
+            specificDuty = tariffSchedule.specificDutyPerUnit * shipmentRecord.dispatchedQuantity;
+          }
+
+          const cargoValue = shipmentRecord.dispatchedQuantity * execution.unitPrice;
+          const totalDuty = (cargoValue * effectiveTariffRate) + specificDuty;
+
+          // Deterministic Quarantine Check
+          if (destSovereign.customsInspectionStrictness >= 1.0) {
+            const quarantine = {
+              checkpoint: checkpointNode.checkpointNode,
+              countryId,
+              status: ClearanceStatus.QUARANTINED,
+              tariffDutyPayable: totalDuty,
+              inspectionPassed: false,
+              remarks: 'Mandatory bio-security chemical screening hold',
+              clearedAtTick: currentTick
+            };
+            execution.customsClearances.push(quarantine);
+            execution.transitionState(ExecutionState.CUSTOMS_HOLD, currentTick, 'QUARANTINE_HOLD');
+            return quarantine;
+          }
+
+          const entryClearance = {
+            checkpoint: checkpointNode.checkpointNode,
+            countryId,
+            status: ClearanceStatus.CLEARED,
+            tariffDutyPayable: totalDuty,
+            inspectionPassed: true,
+            remarks: hasFTA ? 'Cleared under Bilateral Preferential Treaty' : 'Standard Customs Entry Cleared',
+            clearedAtTick: currentTick
+          };
+
+          execution.customsDutiesPaid += totalDuty;
+          execution.customsClearances.push(entryClearance);
+          this.customsLedger.push({ executionId: execution.executionId, ...entryClearance });
+          return entryClearance;
+        }
+
+        // Origin Departure
+        return {
+          checkpoint: checkpointNode.checkpointNode,
+          countryId,
+          status: ClearanceStatus.CLEARED,
+          tariffDutyPayable: 0,
+          inspectionPassed: true,
+          remarks: 'Export customs departure cleared',
+          clearedAtTick: currentTick
+        };
+      }
+    }
+
+    // ============================================================================
+    // 11.12 REGULATORY COMPLIANCE DAG ENGINE
+    // ============================================================================
+
+    /**
+     * Evaluates compliance documentation in strict Topological DAG order.
+     */
+    class RegulatoryComplianceGate {
+      constructor() {
+        /** @type {Map<string, { ruleFn: Function, dependencies: Array<string> }>} */
+        this.complianceRules = new Map();
+      }
+
+      registerRule(ruleId, ruleFn, dependencies = []) {
+        this.complianceRules.set(ruleId, { ruleFn, dependencies });
+      }
+
+      _getTopologicalOrder() {
+        const visited = new Set();
+        const order = [];
+
+        const visit = (ruleId) => {
+          if (visited.has(ruleId)) return;
+          visited.add(ruleId);
+          const rule = this.complianceRules.get(ruleId);
+          if (rule) {
+            for (const dep of rule.dependencies) {
+              visit(dep);
+            }
+            order.push(ruleId);
+          }
+        };
+
+        for (const ruleId of this.complianceRules.keys()) {
+          visit(ruleId);
+        }
+        return order;
+      }
+
+      auditCompliance(execution, documentationManifest = {}) {
+        const auditResults = [];
+
+        // 1. Mandatory Core Invariant: Certificate of Origin
+        if (documentationManifest.requireCertificateOfOrigin && !documentationManifest.certificateOfOriginVerified) {
+          return {
+            compliant: false,
+            status: ClearanceStatus.HELD_FOR_DOCUMENTATION,
+            reason: 'Missing authenticated Certificate of Origin',
+            auditResults
+          };
+        }
+
+        // 2. Dual-Use Strategic Licensing Check
+        if (documentationManifest.isDualUseMaterial && !documentationManifest.strategicExportLicenseId) {
+          return {
+            compliant: false,
+            status: ClearanceStatus.CONFISCATED,
+            reason: 'Dual-use strategic commodity lacks required non-proliferation export license',
+            auditResults
+          };
+        }
+
+        // 3. Topological Rule Evaluation
+        const topologicalOrder = this._getTopologicalOrder();
+
+        for (const ruleId of topologicalOrder) {
+          const entry = this.complianceRules.get(ruleId);
+          if (!entry) continue;
+
+          const result = entry.ruleFn(execution, documentationManifest);
+          auditResults.push({ ruleId, ...result });
+
+          if (!result.passed) {
+            return {
+              compliant: false,
+              status: ClearanceStatus.HELD_FOR_DOCUMENTATION,
+              reason: result.reason || `Failed compliance rule ${ruleId}`,
+              auditResults
+            };
+          }
+        }
+
+        return {
+          compliant: true,
+          status: ClearanceStatus.CLEARED,
+          reason: 'All statutory and strategic export regulations satisfied',
+          auditResults
+        };
+      }
+    }
+
+    // ============================================================================
+    // 11.13 SHIPMENT & MULTI-SHIPMENT TRACKING ENGINE
+    // ============================================================================
+
+    /**
+     * Tracks physical carrier movements, transit telemetry, environmental excursions,
+     * and individual multi-shipment leg lifecycles.
+     */
+    class ShipmentTrackingEngine {
+      constructor() {
+        /** @type {Map<string, Object>} */
+        this.activeShipments = new Map();
+        /** @type {Array<Object>} */
+        this.telemetryJournal = [];
+      }
+
+      registerShipment(shipmentRecord) {
+        if (!shipmentRecord || !shipmentRecord.shipmentId) {
+          throw new GSRSKExecutionError('Invalid shipment manifest provided for registration');
+        }
+        if (this.activeShipments.has(shipmentRecord.shipmentId)) {
+          throw new GSRSKExecutionError(`Shipment ID ${shipmentRecord.shipmentId} already registered.`);
+        }
+
+        const record = {
+          ...fastDeepClone(shipmentRecord),
+          currentCheckpointIndex: 0,
+          currentStatus: 'IN_TRANSIT',
+          temperatureExcursion: false,
+          hazardBreach: false,
+          transitLossQuantity: 0,
+          alreadyReconciledQuantity: 0,
+          acceptedQuantity: 0,
+          rejectedQuantity: 0,
+          lastTelemetryTick: shipmentRecord.dispatchedTick,
+          inspectionCertificate: null
+        };
+
+        this.activeShipments.set(shipmentRecord.shipmentId, record);
+        return record;
+      }
+
+      updateTelemetry(shipmentId, { currentTick, checkpointReached = null, transitDamageQty = 0, isTemperatureExcursion = false, isHazardBreached = false }) {
+        const shipment = this.activeShipments.get(shipmentId);
+        if (!shipment) {
+          throw new GSRSKExecutionError(`Active shipment ${shipmentId} not found for telemetry update`);
+        }
+
+        shipment.lastTelemetryTick = currentTick;
+        if (transitDamageQty > 0) {
+          shipment.transitLossQuantity += transitDamageQty;
+        }
+        if (isTemperatureExcursion) {
+          shipment.temperatureExcursion = true;
+        }
+        if (isHazardBreached) {
+          shipment.hazardBreach = true;
+        }
+
+        if (checkpointReached && Array.isArray(shipment.routeCheckpointNodes)) {
+          const idx = shipment.routeCheckpointNodes.indexOf(checkpointReached);
+          if (idx !== -1) {
+            shipment.currentCheckpointIndex = idx;
+          }
+        }
+
+        const logEntry = {
+          shipmentId,
+          tick: currentTick,
+          checkpoint: checkpointReached,
+          transitLoss: shipment.transitLossQuantity,
+          tempExcursion: shipment.temperatureExcursion,
+          hazardBreach: shipment.hazardBreach
+        };
+        this.telemetryJournal.push(logEntry);
+
+        return shipment;
+      }
+
+      recordArrival(shipmentId, currentTick, execution) {
+        const shipment = this.activeShipments.get(shipmentId);
+        if (!shipment) {
+          throw new GSRSKExecutionError(`Cannot arrive unknown shipment: ${shipmentId}`);
+        }
+
+        shipment.currentStatus = 'ARRIVED';
+        shipment.actualArrivalTick = currentTick;
+
+        const netDeliveredCargo = Math.max(0, shipment.dispatchedQuantity - shipment.transitLossQuantity);
+        execution.transitLossQuantity += shipment.transitLossQuantity;
+        execution.deliveredQuantity += netDeliveredCargo;
+
+        // Transition execution to ARRIVED if currently in transit or border processing
+        if (execution.state === ExecutionState.IN_TRANSIT || execution.state === ExecutionState.BORDER_PROCESSING || execution.state === ExecutionState.DISPATCHED) {
+          execution.transitionState(ExecutionState.ARRIVED, currentTick, `SHIPMENT_ARRIVED:${shipmentId}`);
+        }
+
+        return {
+          shipmentId,
+          dispatchedQuantity: shipment.dispatchedQuantity,
+          deliveredNetQuantity: netDeliveredCargo,
+          transitLossQuantity: shipment.transitLossQuantity,
+          arrivalTick: currentTick,
+          isDelayed: currentTick > shipment.estimatedArrivalTick
+        };
+      }
+
+      getShipment(shipmentId) {
+        const s = this.activeShipments.get(shipmentId);
+        if (!s) throw new GSRSKExecutionError(`Shipment not found: ${shipmentId}`);
+        return s;
+      }
+    }
+
+    // ============================================================================
+    // 11.14 ISOLATED MULTI-SHIPMENT DELIVERY RECONCILIATION LEDGER
+    // ============================================================================
+
+    /**
+     * Maintains mathematically isolated mass balance accounting per shipment leg
+     * and strictly prevents reconciliation overflow across multi-shipment batches.
+     * Invariant: Contracted = Accepted + Rejected + Outstanding + TransitLoss.
+     */
+    class DeliveryReconciliationLedger {
+      /**
+       * Reconcile delivered cargo strictly against individual shipment bounds
+       */
+      static reconcileShipmentDelivery(execution, shipmentRecord, acceptedQty, rejectedQty, currentTick) {
+        if (typeof acceptedQty !== 'number' || acceptedQty < 0 || typeof rejectedQty !== 'number' || rejectedQty < 0) {
+          throw new InvariantBreachError('Accepted and rejected quantities must be non-negative numbers');
+        }
+
+        const netAssayed = acceptedQty + rejectedQty;
+        const transitLoss = typeof shipmentRecord.transitLossQuantity === 'number' ? shipmentRecord.transitLossQuantity : 0;
+        const shipmentNetDelivered = Math.max(0, shipmentRecord.dispatchedQuantity - transitLoss);
+        const availableToReconcile = shipmentNetDelivered - (shipmentRecord.alreadyReconciledQuantity || 0);
+
+        // Strict Forensic Overflow Guard (Per-Shipment Assertion)
+        if (netAssayed > availableToReconcile) {
+          throw new InvariantBreachError(
+            `Shipment reconciliation overflow: Assayed quantity (${netAssayed}) exceeds available un-reconciled cargo (${availableToReconcile}) for shipment ${shipmentRecord.shipmentId}`
+          );
+        }
+
+        // Update Shipment-level stats
+        shipmentRecord.alreadyReconciledQuantity = (shipmentRecord.alreadyReconciledQuantity || 0) + netAssayed;
+        shipmentRecord.acceptedQuantity = (shipmentRecord.acceptedQuantity || 0) + acceptedQty;
+        shipmentRecord.rejectedQuantity = (shipmentRecord.rejectedQuantity || 0) + rejectedQty;
+
+        // Update Execution-level cumulative mass
+        execution.acceptedQuantity += acceptedQty;
+        execution.rejectedQuantity += rejectedQty;
+        execution.outstandingQuantity = Math.max(
+          0,
+          execution.quantity - (execution.acceptedQuantity + execution.rejectedQuantity + execution.transitLossQuantity)
+        );
+
+        // Verify mathematical mass conservation invariant
+        execution.verifyMassConservation();
+
+        const isFullyFulfilled = execution.acceptedQuantity === execution.quantity;
+        const isPartial = execution.acceptedQuantity > 0 && execution.acceptedQuantity < execution.quantity;
+        const isTotalRejection = execution.acceptedQuantity === 0 && execution.rejectedQuantity > 0;
+
+        return {
+          shipmentId: shipmentRecord.shipmentId,
+          contractedQuantity: execution.quantity,
+          shipmentNetDelivered,
+          shipmentAccepted: shipmentRecord.acceptedQuantity,
+          shipmentRejected: shipmentRecord.rejectedQuantity,
+          cumulativeAccepted: execution.acceptedQuantity,
+          cumulativeRejected: execution.rejectedQuantity,
+          transitLossQuantity: execution.transitLossQuantity,
+          outstandingQuantity: execution.outstandingQuantity,
+          isFullyFulfilled,
+          isPartial,
+          isTotalRejection,
+          reconciledAtTick: currentTick
+        };
+      }
+    }
+
+    // ============================================================================
+    // 11.15 MULTI-VECTOR QUALITY & IDENTITY ACCEPTANCE INSPECTOR
+    // ============================================================================
+
+    /**
+     * Validates chemical purity, physical grade tolerance bands, multi-attribute assays,
+     * and provenance signatures (Bridge with Part 04 & 07).
+     */
+    class QualityIdentityAcceptanceInspector {
+      static inspectShipmentCargo(execution, deliveredBatches, inspectionTelemetry = {}) {
+        if (!Array.isArray(deliveredBatches) || deliveredBatches.length === 0) {
+          throw new GSRSKExecutionError('No cargo batches submitted for physical inspection');
+        }
+
+        let totalAssayedUnits = 0;
+        let weightedQualitySum = 0;
+        const batchDefects = [];
+
+        const baseRequiredGrade = execution.requiredQualityGrade;
+        const tolerance = execution.qualityTolerance;
+        const minAcceptableGrade = baseRequiredGrade * (1 - tolerance);
+        const criticalFailureThreshold = baseRequiredGrade * (1 - (tolerance * 2.0));
+
+        for (const batch of deliveredBatches) {
+          const deliveredGrade = typeof batch.qualityGrade === 'number' ? batch.qualityGrade : 1.0;
+          const batchQty = batch.allocatedQuantity;
+
+          totalAssayedUnits += batchQty;
+          weightedQualitySum += (batchQty * deliveredGrade);
+
+          // 1. Anti-Counterfeit & Resource Identity Invariant Check
+          if (batch.resourceId !== execution.resourceId) {
+            return {
+              verdict: 'CRITICAL_IDENTITY_MISMATCH',
+              accepted: false,
+              effectiveGrade: 0,
+              qualityPenaltyRate: 1.0,
+              rejectionReason: `Fraud/Contamination detected: Batch ${batch.batchId} contains ${batch.resourceId}, expected ${execution.resourceId}`,
+              defects: [{ batchId: batch.batchId, error: 'IDENTITY_CORRUPTED' }]
+            };
+          }
+
+          // 2. Tolerance Deficit Check
+          if (deliveredGrade < minAcceptableGrade) {
+            batchDefects.push({
+              batchId: batch.batchId,
+              deliveredGrade,
+              minRequired: minAcceptableGrade,
+              defectDegree: minAcceptableGrade - deliveredGrade
+            });
+          }
+        }
+
+        const effectiveAverageGrade = totalAssayedUnits > 0 ? (weightedQualitySum / totalAssayedUnits) : 0;
+
+        // 3. Band 3: Critical Deficit -> Total Rejection
+        if (effectiveAverageGrade < criticalFailureThreshold || (inspectionTelemetry.hazardBreach)) {
+          return {
+            verdict: 'REJECTED_QUALITY_FAILURE',
+            accepted: false,
+            effectiveGrade: effectiveAverageGrade,
+            qualityPenaltyRate: 0.0,
+            rejectionReason: `Delivered cargo purity (${effectiveAverageGrade.toFixed(3)}) breached critical threshold (${criticalFailureThreshold.toFixed(3)})`,
+            defects: batchDefects
+          };
+        }
+
+        // 4. Band 2: Minor Deficit -> Conditional Acceptance with Nonlinear Price Penalty
+        if (effectiveAverageGrade < baseRequiredGrade) {
+          const deficitRatio = (baseRequiredGrade - effectiveAverageGrade) / baseRequiredGrade;
+          // Nonlinear penalty curve: Penalty = 1.5 * (deficit)^1.2
+          const penaltyRate = Math.min(0.40, 1.5 * Math.pow(deficitRatio, 1.2));
+
+          return {
+            verdict: 'ACCEPTED_WITH_GRADE_PENALTY',
+            accepted: true,
+            effectiveGrade: effectiveAverageGrade,
+            qualityPenaltyRate: penaltyRate,
+            rejectionReason: null,
+            defects: batchDefects
+          };
+        }
+
+        // 5. Band 1: Perfect Specification Compliance
+        return {
+          verdict: 'ACCEPTED_PERFECT_SPECIFICATION',
+          accepted: true,
+          effectiveGrade: effectiveAverageGrade,
+          qualityPenaltyRate: 0.0,
+          rejectionReason: null,
+          defects: []
+        };
+      }
+    }
+
+    // ============================================================================
+    // 11.16 RECEIPT, INSPECTION & AUTHORITATIVE MUTATION PROCESSOR
+    // ============================================================================
+
+    /**
+     * Coordinates destination facility intake, triggers inspection, and executes
+     * authoritative inventory ownership mutation on Part 07.
+     */
+    class ReceiptAcceptanceProcessor {
+      constructor(inventoryAdapter) {
+        this.inventoryAdapter = inventoryAdapter;
+      }
+
+      async processReceiptAndAcceptance(execution, shipmentRecord, currentTick) {
+        execution.transitionState(ExecutionState.INSPECTING, currentTick, 'WAREHOUSE_INSPECTION_STARTED');
+
+        // 1. Run Physical Quality & Identity Assay
+        const inspection = QualityIdentityAcceptanceInspector.inspectShipmentCargo(
+          execution,
+          shipmentRecord.batches,
+          {
+            tempExcursion: shipmentRecord.temperatureExcursion,
+            hazardBreach: shipmentRecord.hazardBreach
+          }
+        );
+
+        shipmentRecord.inspectionCertificate = inspection;
+
+        // 2. Rejection Pathway
+        if (!inspection.accepted) {
+          DeliveryReconciliationLedger.reconcileShipmentDelivery(
+            execution,
+            shipmentRecord,
+            0,
+            shipmentRecord.dispatchedQuantity,
+            currentTick
+          );
+
+          execution.failureReason = ExecutionFailureReason.QUALITY_GRADE_MISMATCH;
+          execution.failureNarrative = inspection.rejectionReason;
+          execution.transitionState(ExecutionState.FAILED, currentTick, `REJECTED:${inspection.verdict}`);
+
+          return {
+            success: false,
+            acceptedQuantity: 0,
+            rejectedQuantity: shipmentRecord.dispatchedQuantity,
+            verdict: inspection.verdict,
+            reason: inspection.rejectionReason
+          };
+        }
+
+        // 3. Acceptance Pathway
+        const transitLoss = typeof shipmentRecord.transitLossQuantity === 'number' ? shipmentRecord.transitLossQuantity : 0;
+        const acceptedCargoQty = Math.max(0, shipmentRecord.dispatchedQuantity - transitLoss);
+        DeliveryReconciliationLedger.reconcileShipmentDelivery(
+          execution,
+          shipmentRecord,
+          acceptedCargoQty,
+          0,
+          currentTick
+        );
+
+        // Apply Quality Penalty Deduction
+        if (inspection.qualityPenaltyRate > 0) {
+          const penaltyAmount = (acceptedCargoQty * execution.unitPrice) * inspection.qualityPenaltyRate;
+          execution.penaltiesIncurred += penaltyAmount;
+        }
+
+        // 4. Trigger Authoritative Inventory Transfer on Part 07 (Seller Facility -> Buyer Facility)
+        for (const batch of shipmentRecord.batches) {
+          await this.inventoryAdapter.commitAuthoritativeBatchDepletion(
+            batch.batchId,
+            batch.allocatedQuantity,
+            {
+              executionId: execution.executionId,
+              tradeId: execution.tradeId,
+              shipmentId: shipmentRecord.shipmentId,
+              sourceFacility: execution.origin.facilityId,
+              destinationFacility: execution.destination.facilityId,
+              newOwnerPartyId: execution.buyer.partyId,
+              deliveredGrade: batch.qualityGrade,
+              tick: currentTick
+            }
+          );
+        }
+
+        const nextState = execution.acceptedQuantity >= execution.quantity ? ExecutionState.ACCEPTED : ExecutionState.PARTIALLY_ACCEPTED;
+        execution.transitionState(nextState, currentTick, `INSPECTION_PASSED:${inspection.verdict}`);
+
+        return {
+          success: true,
+          acceptedQuantity: acceptedCargoQty,
+          rejectedQuantity: 0,
+          verdict: inspection.verdict,
+          qualityPenaltyIncurred: execution.penaltiesIncurred
+        };
+      }
+    }
+
+    // ============================================================================
+    // 11.17 4-WAY MULTI-TRANCHE ESCROW SETTLEMENT COORDINATOR
+    // ============================================================================
+
+    /**
+     * Standard clearing interface with Part 10 Escrow & Sovereign Treasury Engine.
+     */
+    class FinancialSettlementAdapter {
+      async releaseEscrowToSeller(tradeId, amount, currency, recipientPartyId) {
+        throw new Error('FinancialSettlementAdapter.releaseEscrowToSeller must be implemented by bridge');
+      }
+
+      async refundEscrowToBuyer(tradeId, amount, currency, buyerPartyId, trancheName) {
+        throw new Error('FinancialSettlementAdapter.refundEscrowToBuyer must be implemented by bridge');
+      }
+
+      async remitCustomsDutiesToSovereign(tradeId, amount, currency, sovereignCountryId) {
+        throw new Error('FinancialSettlementAdapter.remitCustomsDutiesToSovereign must be implemented by bridge');
+      }
+
+      async remitFreightChargesToCarrier(tradeId, amount, currency, carrierPartyId) {
+        throw new Error('FinancialSettlementAdapter.remitFreightChargesToCarrier must be implemented by bridge');
+      }
+    }
+
+    /**
+     * Coordinates exact 4-way escrow value distribution across all segregated tranches:
+     * Tranche 1: Commodity Escrow = NetToSeller + BuyerCommodityRefund
+     * Tranche 2: Duty Escrow = CustomsDutyRemitted + BuyerDutyRefund
+     * Tranche 3: Freight Escrow = FreightRemitted + BuyerFreightRefund
+     */
+    class SettlementExecutionCoordinator {
+      constructor(settlementAdapter) {
+        this.settlementAdapter = settlementAdapter;
+        /** @type {Array<Object>} */
+        this.settlementLedger = [];
+      }
+
+      async executeSettlement(execution, currentTick, settlementOptions = {}) {
+        if (execution.state !== ExecutionState.ACCEPTED && execution.state !== ExecutionState.PARTIALLY_ACCEPTED) {
+          throw new GSRSKExecutionError(`Cannot settle trade in invalid state: ${execution.state}`);
+        }
+
+        // --- TRANCHE 1: COMMODITY SETTLEMENT ---
+        const grossDeliveredCommodityValue = execution.acceptedQuantity * execution.unitPrice;
+        const effectivePenalty = Math.min(grossDeliveredCommodityValue, execution.penaltiesIncurred);
+        const netPayableToSeller = grossDeliveredCommodityValue - effectivePenalty;
+        
+        const unfulfilledCommodityValue = (execution.quantity - execution.acceptedQuantity) * execution.unitPrice;
+        const buyerCommodityRefund = unfulfilledCommodityValue + effectivePenalty;
+
+        // Commodity Tranche Invariant Assertion
+        const reconciledCommodityTranche = netPayableToSeller + buyerCommodityRefund;
+        if (Math.abs(reconciledCommodityTranche - execution.escrow.commodityEscrow) > 1e-7) {
+          throw new InvariantBreachError(
+            `Commodity escrow tranche conservation breach: Reconciled (${reconciledCommodityTranche}) != Escrow (${execution.escrow.commodityEscrow})`
+          );
+        }
+
+        // --- TRANCHE 2: CUSTOMS DUTY SETTLEMENT ---
+        const actualDutiesIncurred = execution.customsDutiesPaid || 0;
+        const dutyEscrow = execution.escrow.dutyEscrow || 0;
+        const customsDutiesRemitted = Math.min(actualDutiesIncurred, dutyEscrow);
+        const buyerDutyRefund = Math.max(0, dutyEscrow - customsDutiesRemitted);
+
+        if (Math.abs((customsDutiesRemitted + buyerDutyRefund) - dutyEscrow) > 1e-7) {
+          throw new InvariantBreachError('Customs duty escrow tranche conservation breach');
+        }
+
+        // --- TRANCHE 3: FREIGHT SETTLEMENT ---
+        const actualFreightIncurred = settlementOptions.freightCost || 0;
+        const freightEscrow = execution.escrow.freightEscrow || 0;
+        const freightRemitted = Math.min(actualFreightIncurred, freightEscrow);
+        const buyerFreightRefund = Math.max(0, freightEscrow - freightRemitted);
+
+        if (Math.abs((freightRemitted + buyerFreightRefund) - freightEscrow) > 1e-7) {
+          throw new InvariantBreachError('Freight escrow tranche conservation breach');
+        }
+
+        // --- TOTAL 4-WAY ESCROW CONSERVATION PROOF ---
+        const totalOutflow = netPayableToSeller + (buyerCommodityRefund + buyerDutyRefund + buyerFreightRefund) + customsDutiesRemitted + freightRemitted;
+        const totalInflowEscrow = execution.escrow.totalEscrowDeposited;
+        if (Math.abs(totalOutflow - totalInflowEscrow) > 1e-7) {
+          throw new InvariantBreachError(
+            `Global 4-Way Escrow Conservation Breach: Total Outflow (${totalOutflow}) != Total Deposited Escrow (${totalInflowEscrow})`
+          );
+        }
+
+        // Execute Clearing Transfers
+        if (netPayableToSeller > 0) {
+          await this.settlementAdapter.releaseEscrowToSeller(
+            execution.tradeId,
+            netPayableToSeller,
+            execution.currency,
+            execution.seller.partyId
+          );
+        }
+
+        const totalBuyerRefund = buyerCommodityRefund + buyerDutyRefund + buyerFreightRefund;
+        if (totalBuyerRefund > 0) {
+          await this.settlementAdapter.refundEscrowToBuyer(
+            execution.tradeId,
+            totalBuyerRefund,
+            execution.currency,
+            execution.buyer.partyId,
+            'MULTI_TRANCHE_REFUND'
+          );
+        }
+
+        if (customsDutiesRemitted > 0) {
+          await this.settlementAdapter.remitCustomsDutiesToSovereign(
+            execution.tradeId,
+            customsDutiesRemitted,
+            execution.currency,
+            execution.destination.countryId
+          );
+        }
+
+        if (freightRemitted > 0 && settlementOptions.carrierPartyId) {
+          await this.settlementAdapter.remitFreightChargesToCarrier(
+            execution.tradeId,
+            freightRemitted,
+            execution.currency,
+            settlementOptions.carrierPartyId
+          );
+        }
+
+        execution.settledAmount = netPayableToSeller;
+        execution.outstandingAmount = 0;
+        execution.freightPaid = freightRemitted;
+        execution.transitionState(ExecutionState.SETTLED, currentTick, 'MULTI_TRANCHE_ESCROW_SETTLED');
+
+        const settlementRecord = {
+          settlementId: `SET-${execution.executionId}-${currentTick}`,
+          executionId: execution.executionId,
+          tradeId: execution.tradeId,
+          currency: execution.currency,
+          grossCommodityValue: grossDeliveredCommodityValue,
+          penaltiesDeducted: effectivePenalty,
+          netPaidToSeller: netPayableToSeller,
+          customsDutiesRemitted,
+          freightChargesRemitted: freightRemitted,
+          refundedToBuyer: {
+            commodityRefund: buyerCommodityRefund,
+            dutyRefund: buyerDutyRefund,
+            freightRefund: buyerFreightRefund,
+            totalRefund: totalBuyerRefund
+          },
+          settledAtTick: currentTick
+        };
+
+        this.settlementLedger.push(settlementRecord);
+
+        // Final Complete Transition
+        execution.transitionState(ExecutionState.COMPLETED, currentTick, 'LIFECYCLE_COMPLETED');
+        return settlementRecord;
+      }
+    }
+
+    // ============================================================================
+    // 11.18 PARTIAL DELIVERY LIFECYCLE HANDLER
+    // ============================================================================
+
+    /**
+     * Handles contract splits, secondary remainder shipments, and amendment ledgers.
+     */
+    class PartialDeliveryLifecycleHandler {
+      static handleShortfall(execution, actionPlan = 'CLOSE_WITH_REFUND', currentTick) {
+        const shortfallQty = execution.outstandingQuantity;
+
+        if (shortfallQty <= 0) {
+          return { action: 'NO_SHORTFALL', remainderRecord: null };
+        }
+
+        if (actionPlan === 'CLOSE_WITH_REFUND') {
+          return {
+            action: 'SHORTFALL_CLOSED_REFUND_SCHEDULED',
+            shortfallQuantity: shortfallQty,
+            refundAmount: shortfallQty * execution.unitPrice
+          };
+        }
+
+        if (actionPlan === 'SCHEDULE_SECONDARY_SHIPMENT') {
+          const childExecutionId = `EX-${execution.tradeId}-SPLIT-${currentTick}`;
+          const remainderExecution = new ExecutionRecord({
+            executionId: childExecutionId,
+            tradeId: execution.tradeId,
+            marketId: execution.marketId,
+            contractRef: execution.contractRef,
+            buyer: execution.buyer,
+            seller: execution.seller,
+            resourceId: execution.resourceId,
+            resourceVariant: execution.resourceVariant,
+            requiredQualityGrade: execution.requiredQualityGrade,
+            qualityTolerance: execution.qualityTolerance,
+            quantity: shortfallQty,
+            unit: execution.unit,
+            unitPrice: execution.unitPrice,
+            currency: execution.currency,
+            origin: execution.origin,
+            destination: execution.destination,
+            transitCorridor: execution.transitCorridor,
+            creationTick: currentTick,
+            slaMaxTicks: 60,
+            settlementTerms: execution.settlementTerms,
+            escrowTranches: {
+              dutyEscrow: 0,
+              freightEscrow: 0
+            }
+          });
+
+          return {
+            action: 'SECONDARY_EXECUTION_SPAWNED',
+            shortfallQuantity: shortfallQty,
+            childExecutionRecord: remainderExecution
+          };
+        }
+
+        throw new GSRSKExecutionError(`Unknown partial delivery action plan: ${actionPlan}`);
+      }
+    }
+
+    // ============================================================================
+    // 11.19 EXHAUSTIVE FAILURE & DEFAULT ENGINE
+    // ============================================================================
+
+    /**
+     * Manages all 15+ trade failure modes and records formal default assessments.
+     */
+    class FailureAndDefaultEngine {
+      static triggerDefault(execution, reasonCode, narrative, currentTick) {
+        execution.failureReason = reasonCode;
+        execution.failureNarrative = narrative;
+        execution.transitionState(ExecutionState.DEFAULTED, currentTick, `DEFAULT:${reasonCode}`);
+
+        return {
+          executionId: execution.executionId,
+          tradeId: execution.tradeId,
+          state: ExecutionState.DEFAULTED,
+          reason: reasonCode,
+          narrative,
+          defaultedAtTick: currentTick
+        };
+      }
+    }
+
+    // ============================================================================
+    // 11.20 SAGA-BASED STATE RECOVERY & ROLLBACK RECONCILIATION ENGINE
+    // ============================================================================
+
+    /**
+     * Multi-Phase Saga Rollback Engine:
+     * 1. Releases active Part 07 batch reservation locks using stored lock tokens.
+     * 2. Reverses completed Part 07 depletions if cargo was rejected post-arrival.
+     * 3. Cancels pending Part 08 logistics tickets.
+     * 4. Executes 100% escrow refund across all tranches on Part 10.
+     */
+    class StateRecoveryReconciliationEngine {
+      constructor(inventoryAdapter, settlementAdapter, logisticsAdapter = null) {
+        this.inventoryAdapter = inventoryAdapter;
+        this.settlementAdapter = settlementAdapter;
+        this.logisticsAdapter = logisticsAdapter;
+      }
+
+      async executeFullRollback(execution, currentTick) {
+        const recoveryJournal = [];
+
+        // Phase 1: Release Active Batch Reservation Locks on Part 07 using exact lock tokens
+        if (execution.activeLockTokens && execution.activeLockTokens.length > 0) {
+          for (let i = 0; i < execution.allocatedBatches.length; i++) {
+            const batch = execution.allocatedBatches[i];
+            const lockToken = execution.activeLockTokens[i];
+            if (lockToken) {
+              try {
+                await this.inventoryAdapter.releaseAtomicBatchLock(batch.batchId, batch.allocatedQuantity, lockToken);
+                recoveryJournal.push({ phase: 'P07_LOCK_RELEASE', batchId: batch.batchId, token: lockToken, quantity: batch.allocatedQuantity });
+              } catch (err) {
+                recoveryJournal.push({ phase: 'P07_LOCK_RELEASE_ERROR', batchId: batch.batchId, error: err.message });
+              }
+            }
+          }
+          execution.activeLockTokens = [];
+          execution.reservedQuantity = 0;
+        }
+
+        // Phase 2: Cancel Active Logistics Manifests on Part 08
+        if (this.logisticsAdapter && execution.shipments && execution.shipments.length > 0) {
+          for (const shp of execution.shipments) {
+            if (shp.status === 'DISPATCHED' && typeof this.logisticsAdapter.cancelShipmentDispatch === 'function') {
+              try {
+                await this.logisticsAdapter.cancelShipmentDispatch(shp.transportTrackingId);
+                recoveryJournal.push({ phase: 'P08_LOGISTICS_CANCEL', trackingId: shp.transportTrackingId });
+              } catch (err) {
+                recoveryJournal.push({ phase: 'P08_LOGISTICS_CANCEL_ERROR', trackingId: shp.transportTrackingId, error: err.message });
+              }
+            }
+          }
+        }
+
+        // Phase 3: Full Escrow Refund Across All Tranches to Buyer on Part 10
+        const totalRefundAmount = execution.escrow ? execution.escrow.totalEscrowDeposited : execution.commodityAgreedValue;
+        if (totalRefundAmount > 0 && execution.settledAmount === 0) {
+          try {
+            await this.settlementAdapter.refundEscrowToBuyer(
+              execution.tradeId,
+              totalRefundAmount,
+              execution.currency,
+              execution.buyer.partyId,
+              'FULL_SAGA_ROLLBACK_REFUND'
+            );
+            recoveryJournal.push({ phase: 'P10_ESCROW_FULL_REFUND', amount: totalRefundAmount });
+          } catch (err) {
+            recoveryJournal.push({ phase: 'P10_ESCROW_REFUND_ERROR', error: err.message });
+          }
+        }
+
+        // Phase 4: FSM-Compliant State Transition
+        if (execution.state !== ExecutionState.FAILED && execution.state !== ExecutionState.CANCELLED) {
+          execution.transitionState(ExecutionState.FAILED, currentTick, 'SAGA_ROLLBACK_INITIATED');
+        }
+        if (execution.state !== ExecutionState.CANCELLED) {
+          execution.transitionState(ExecutionState.CANCELLED, currentTick, 'SAGA_ROLLBACK_COMPLETED');
+        }
+
+        return {
+          executionId: execution.executionId,
+          status: 'SAFELY_RECOVERED_AND_CANCELLED',
+          recoveryJournal
+        };
+      }
+    }
+
+    // ============================================================================
+    // 11.21 CRYPTOGRAPHICALLY CHAINED IMMUTABLE TRADE EVENT LEDGER
+    // ============================================================================
+
+    /**
+     * Append-only cryptographic journal storing complete simulation provenance.
+     * Invariant: H_k = Murmur64(H_{k-1} || k || EventType || ExecutionId || Tick || Payload || Initiator)
+     */
+    class CryptographicTradeEventLedger {
+      constructor() {
+        /** @type {Array<Object>} */
+        this.events = [];
+        this.genesisHash = '0000000000000000';
+        this.currentChainHash = this.genesisHash;
+      }
+
+      recordEvent({ eventType, executionId, tradeId, tick, payload = {}, initiator = 'SYSTEM', previousState = null, targetState = null }) {
+        const eventIndex = this.events.length;
+        const enrichedPayload = {
+          ...payload,
+          _fsm: { previousState, targetState }
+        };
+        const rawPayload = JSON.stringify(enrichedPayload);
+
+        const eventPayloadString = `${this.currentChainHash}:${eventIndex}:${eventType}:${executionId}:${tradeId}:${tick}:${rawPayload}:${initiator}`;
+        const eventHash = deterministicHash(eventPayloadString);
+
+        const eventRecord = deepFreeze({
+          index: eventIndex,
+          previousHash: this.currentChainHash,
+          eventHash,
+          eventType,
+          executionId,
+          tradeId,
+          tick,
+          previousState,
+          targetState,
+          payload: fastDeepClone(enrichedPayload),
+          initiator,
+          recordedAt: Date.now()
+        });
+
+        this.events.push(eventRecord);
+        this.currentChainHash = eventHash;
+        return eventRecord;
+      }
+
+      verifyChainIntegrity() {
+        let runningHash = this.genesisHash;
+
+        for (let i = 0; i < this.events.length; i++) {
+          const e = this.events[i];
+          if (e.previousHash !== runningHash) {
+            return { valid: false, brokenAtIndex: i, reason: 'PREVIOUS_HASH_MISMATCH' };
+          }
+
+          const rawPayload = JSON.stringify(e.payload);
+          const recomputedHash = deterministicHash(
+            `${runningHash}:${e.index}:${e.eventType}:${e.executionId}:${e.tradeId}:${e.tick}:${rawPayload}:${e.initiator}`
+          );
+
+          if (e.eventHash !== recomputedHash) {
+            return { valid: false, brokenAtIndex: i, reason: 'EVENT_HASH_CORRUPTED' };
+          }
+
+          runningHash = e.eventHash;
+        }
+
+        return { valid: true, totalEvents: this.events.length, headHash: this.currentChainHash };
+      }
+
+      getEventsForExecution(executionId) {
+        return this.events.filter(e => e.executionId === executionId);
+      }
+    }
+
+    // ============================================================================
+    // 11.22 DETERMINISTIC REPLAY & STATE RECONSTRUCTION ENGINE
+    // ============================================================================
+
+    /**
+     * Reconstructs identical execution states from the event ledger stream
+     * strictly applying recorded FSM states without synthetic guessing.
+     */
+    class DeterministicReplayEngine {
+      static replayExecutionFromEvents(events, initialPayload) {
+        if (!Array.isArray(events) || events.length === 0) {
+          throw new GSRSKExecutionError('Cannot replay empty event stream');
+        }
+
+        const gateway = new TradeRequestGateway();
+        const execution = gateway.ingestAcceptedTrade(initialPayload, events[0].tick);
+
+        for (const evt of events) {
+          // 1. Replay State Transitions strictly based on logged FSM target state
+          if (evt.previousState && evt.previousState !== execution.state) {
+            const allowed = VALID_STATE_TRANSITIONS[execution.state];
+            if (allowed && allowed.includes(evt.previousState)) {
+              execution.transitionState(evt.previousState, evt.tick, `REPLAY_ALIGN_${evt.eventType}`);
+            }
+          }
+          if (evt.targetState && evt.targetState !== execution.state) {
+            if (execution.state === ExecutionState.ACCEPTED && evt.targetState === ExecutionState.COMPLETED) {
+              execution.transitionState(ExecutionState.SETTLED, evt.tick, 'REPLAY_SETTLED_INTERMEDIATE');
+            }
+            execution.transitionState(evt.targetState, evt.tick, `REPLAY_${evt.eventType}`);
+          }
+
+          // 2. Replay Artifact Updates
+          switch (evt.eventType) {
+            case 'RESERVATION_COMMITTED':
+              execution.allocatedBatches = evt.payload.allocatedBatches ? fastDeepClone(evt.payload.allocatedBatches) : [];
+              execution.reservedQuantity = evt.payload.reservedQuantity || 0;
+              break;
+
+            case 'SHIPMENT_DISPATCHED':
+              execution.dispatchedQuantity = evt.payload.dispatchedQuantity || 0;
+              if (evt.payload.shipmentRecord) {
+                execution.shipments.push(fastDeepClone(evt.payload.shipmentRecord));
+              }
+              break;
+
+            case 'CUSTOMS_DUTY_ASSESSED':
+              if (typeof evt.payload.tariffDutyPayable === 'number') {
+                execution.customsDutiesPaid += evt.payload.tariffDutyPayable;
+              }
+              break;
+
+            case 'SHIPMENT_ARRIVED':
+              execution.deliveredQuantity += (evt.payload.deliveredQuantity || 0);
+              execution.transitLossQuantity += (evt.payload.transitLoss || 0);
+              break;
+
+            case 'DELIVERY_ACCEPTED':
+              execution.acceptedQuantity += (evt.payload.acceptedQuantity || 0);
+              execution.rejectedQuantity += (evt.payload.rejectedQuantity || 0);
+              execution.outstandingQuantity = Math.max(
+                0,
+                execution.quantity - (execution.acceptedQuantity + execution.rejectedQuantity + execution.transitLossQuantity)
+              );
+              break;
+
+            case 'SETTLEMENT_COMPLETED':
+              execution.settledAmount = evt.payload.settledAmount || 0;
+              execution.outstandingAmount = 0;
+              break;
+          }
+        }
+
+        return execution;
+      }
+    }
+
+    // ============================================================================
+    // 11.23 BILATERAL STRATEGIC TRADE NETWORK & EXPOSURE MATRIX
+    // ============================================================================
+
+    /**
+     * Tracks bilateral trade flows, Herfindahl-Hirschman concentration index,
+     * supplier reliability, and strategic balance (Direct forward feed to Part 12).
+     */
+    class BilateralTradeNetworkRegistry {
+      constructor() {
+        /** @type {Map<string, Object>} */
+        this.corridorLedger = new Map();
+      }
+
+      _corridorKey(originCountry, destCountry) {
+        return `${originCountry}->${destCountry}`;
+      }
+
+      recordTradeOutcome(execution) {
+        const key = this._corridorKey(execution.origin.countryId, execution.destination.countryId);
+        let corridor = this.corridorLedger.get(key);
+
+        if (!corridor) {
+          corridor = {
+            originCountryId: execution.origin.countryId,
+            destinationCountryId: execution.destination.countryId,
+            totalTradesInitiated: 0,
+            totalTradesCompleted: 0,
+            totalTradesFailed: 0,
+            totalVolumeContracted: 0,
+            totalVolumeDelivered: 0,
+            totalFinancialValueSettled: 0,
+            commodityMetrics: new Map()
+          };
+          this.corridorLedger.set(key, corridor);
+        }
+
+        corridor.totalTradesInitiated++;
+        corridor.totalVolumeContracted += execution.quantity;
+
+        if (execution.state === ExecutionState.COMPLETED) {
+          corridor.totalTradesCompleted++;
+          corridor.totalVolumeDelivered += execution.acceptedQuantity;
+          corridor.totalFinancialValueSettled += execution.settledAmount;
+
+          const currentCom = corridor.commodityMetrics.get(execution.resourceId) || { volume: 0, value: 0 };
+          currentCom.volume += execution.acceptedQuantity;
+          currentCom.value += execution.settledAmount;
+          corridor.commodityMetrics.set(execution.resourceId, currentCom);
+
+        } else if (execution.state === ExecutionState.FAILED || execution.state === ExecutionState.DEFAULTED || execution.state === ExecutionState.CANCELLED) {
+          corridor.totalTradesFailed++;
+        }
+
+        return corridor;
+      }
+
+      getCorridorReliability(originCountry, destCountry) {
+        const corridor = this.corridorLedger.get(this._corridorKey(originCountry, destCountry));
+        if (!corridor || corridor.totalTradesInitiated === 0) return 1.0;
+
+        const fulfillmentRatio = corridor.totalVolumeContracted > 0 ? (corridor.totalVolumeDelivered / corridor.totalVolumeContracted) : 1.0;
+        const successRate = corridor.totalTradesCompleted / corridor.totalTradesInitiated;
+        return (fulfillmentRatio * 0.6) + (successRate * 0.4);
+      }
+
+      /**
+       * Computes strategic supply concentration for Part 12
+       */
+      getStrategicSupplyMetrics(importerCountryId, resourceId) {
+        let totalImported = 0;
+        const supplierShares = [];
+
+        for (const [key, corridor] of this.corridorLedger.entries()) {
+          if (corridor.destinationCountryId === importerCountryId) {
+            const com = corridor.commodityMetrics.get(resourceId);
+            if (com && com.volume > 0) {
+              totalImported += com.volume;
+              supplierShares.push({ supplierCountryId: corridor.originCountryId, volume: com.volume });
+            }
+          }
+        }
+
+        // Herfindahl-Hirschman Concentration Index (HHI): Sum of squared percentage market shares
+        let hhi = 0;
+        if (totalImported > 0) {
+          for (const sup of supplierShares) {
+            const share = (sup.volume / totalImported) * 100;
+            hhi += (share * share);
+          }
+        }
+
+        return {
+          importerCountryId,
+          resourceId,
+          totalVolumeImported: totalImported,
+          supplierShares,
+          herfindahlConcentrationIndex: Math.round(hhi) // 0 to 10,000
+        };
+      }
+    }
+
+    // ============================================================================
+    // 11.24 MASTER ORCHESTRATOR & UNIFIED PIPELINE (HARDENED)
+    // ============================================================================
+
+    /**
+     * Master Trade Execution Orchestrator integrating Modules 11.00 through 11.23.
+     */
+    class TradeExecutionMasterOrchestrator {
+      constructor({ inventoryAdapter, logisticsAdapter, settlementAdapter }) {
+        this.registry = new SovereignPartyRegistry();
+        this.visibilityEngine = new TradeVisibilityEngine(this.registry);
+        this.gateway = new TradeRequestGateway();
+        this.eligibilityEngine = new EligibilityAuthorizationEngine(this.registry);
+        this.reservationEngine = new TwoPhaseReservationEngine(inventoryAdapter);
+        this.logisticsBridge = new LogisticsHandoffBridge(logisticsAdapter, this.reservationEngine);
+        this.borderGate = new BorderCustomsExecutionGate(this.registry);
+        this.regulatoryGate = new RegulatoryComplianceGate();
+        this.trackingEngine = new ShipmentTrackingEngine();
+        this.receiptProcessor = new ReceiptAcceptanceProcessor(inventoryAdapter);
+        this.settlementCoordinator = new SettlementExecutionCoordinator(settlementAdapter);
+        this.recoveryEngine = new StateRecoveryReconciliationEngine(inventoryAdapter, settlementAdapter, logisticsAdapter);
+        this.eventLedger = new CryptographicTradeEventLedger();
+        this.networkRegistry = new BilateralTradeNetworkRegistry();
+
+        /** @type {Map<string, ExecutionRecord>} */
+        this.activeExecutions = new Map();
+      }
+
+      /**
+       * Unified Pipeline with Dynamic Tick Sync, Active Lease Checks, and Full Cryptographic Logging
+       */
+      async executeTradePipeline(tradeContractPayload, simulationTick, options = {}) {
+        // 1. Ingest Contract
+        const execution = this.gateway.ingestAcceptedTrade(tradeContractPayload, simulationTick);
+        this.activeExecutions.set(execution.executionId, execution);
+
+        this.eventLedger.recordEvent({
+          eventType: 'TRADE_INGESTED',
+          executionId: execution.executionId,
+          tradeId: execution.tradeId,
+          tick: simulationTick,
+          previousState: ExecutionState.CREATED,
+          targetState: ExecutionState.VALIDATED,
+          payload: { quantity: execution.quantity, unitPrice: execution.unitPrice, escrow: execution.escrow }
+        });
+
+        // 2. Eligibility & Sanctions Check
+        const eligibility = this.eligibilityEngine.evaluateExecutionEligibility(execution, simulationTick);
+        if (!eligibility.eligible) {
+          this.eventLedger.recordEvent({
+            eventType: 'ELIGIBILITY_FAILED',
+            executionId: execution.executionId,
+            tradeId: execution.tradeId,
+            tick: simulationTick,
+            previousState: ExecutionState.VALIDATED,
+            targetState: ExecutionState.FAILED,
+            payload: { violations: eligibility.violations }
+          });
+          await this.recoveryEngine.executeFullRollback(execution, simulationTick);
+          return { success: false, phase: 'ELIGIBILITY', execution };
+        }
+
+        this.eventLedger.recordEvent({
+          eventType: 'ELIGIBILITY_PASSED',
+          executionId: execution.executionId,
+          tradeId: execution.tradeId,
+          tick: simulationTick,
+          previousState: ExecutionState.VALIDATED,
+          targetState: ExecutionState.AUTHORIZED
+        });
+
+        // 3. Multi-Batch Inventory Allocation
+        const availableBatches = await this.reservationEngine.inventoryAdapter.fetchAuthoritativeBatches(
+          execution.origin.facilityId,
+          execution.resourceId,
+          execution.seller.partyId
+        );
+
+        const allocationPlan = MultiBatchAllocationPlanner.planConsolidation(availableBatches, execution, {
+          strategy: options.allocationStrategy || 'FIFO'
+        });
+
+        execution.transitionState(ExecutionState.ALLOCATED, simulationTick, 'BATCHES_ALLOCATED');
+
+        this.eventLedger.recordEvent({
+          eventType: 'BATCHES_ALLOCATED',
+          executionId: execution.executionId,
+          tradeId: execution.tradeId,
+          tick: simulationTick,
+          previousState: ExecutionState.AUTHORIZED,
+          targetState: ExecutionState.ALLOCATED,
+          payload: { allocatedBatches: allocationPlan.batches }
+        });
+
+        // 4. Two-Phase Locking (2PL) Reservation
+        await this.reservationEngine.executeAtomicReservation(execution, allocationPlan);
+        this.eventLedger.recordEvent({
+          eventType: 'RESERVATION_COMMITTED',
+          executionId: execution.executionId,
+          tradeId: execution.tradeId,
+          tick: simulationTick,
+          previousState: ExecutionState.ALLOCATED,
+          targetState: ExecutionState.RESERVED,
+          payload: { allocatedBatches: execution.allocatedBatches, reservedQuantity: execution.reservedQuantity }
+        });
+
+        execution.transitionState(ExecutionState.READY_FOR_DISPATCH, simulationTick, 'READY_FOR_DISPATCH');
+        this.eventLedger.recordEvent({
+          eventType: 'READY_FOR_DISPATCH',
+          executionId: execution.executionId,
+          tradeId: execution.tradeId,
+          tick: simulationTick,
+          previousState: ExecutionState.RESERVED,
+          targetState: ExecutionState.READY_FOR_DISPATCH
+        });
+
+        // 5. Logistics Handoff (Strict Lease Assertion via LogisticsHandoffBridge)
+        const shipmentRecord = await this.logisticsBridge.executeLogisticsHandoff(execution, options.transportParams);
+        this.trackingEngine.registerShipment(shipmentRecord);
+
+        this.eventLedger.recordEvent({
+          eventType: 'SHIPMENT_DISPATCHED',
+          executionId: execution.executionId,
+          tradeId: execution.tradeId,
+          tick: simulationTick,
+          previousState: ExecutionState.READY_FOR_DISPATCH,
+          targetState: ExecutionState.DISPATCHED,
+          payload: { shipmentRecord, dispatchedQuantity: execution.dispatchedQuantity }
+        });
+
+        // 6. Multi-Jurisdiction Transit Corridor & Customs Clearance
+        const isDomestic = execution.origin.countryId === execution.destination.countryId;
+        const transitTick = simulationTick + 2;
+
+        if (!isDomestic) {
+          execution.transitionState(ExecutionState.IN_TRANSIT, transitTick, 'IN_TRANSIT');
+          execution.transitionState(ExecutionState.BORDER_PROCESSING, transitTick + 1, 'BORDER_PROCESSING');
+
+          const borderCorridorResult = this.borderGate.processCorridorTransit(execution, shipmentRecord, transitTick + 1);
+
+          for (const clr of borderCorridorResult.clearances) {
+            this.eventLedger.recordEvent({
+              eventType: 'CUSTOMS_CHECKPOINT_EVALUATED',
+              executionId: execution.executionId,
+              tradeId: execution.tradeId,
+              tick: transitTick + 1,
+              payload: clr
+            });
+          }
+
+          if (!borderCorridorResult.allCleared) {
+            await this.recoveryEngine.executeFullRollback(execution, transitTick + 1);
+            return { success: false, phase: 'BORDER_CUSTOMS', execution };
+          }
+        }
+
+        // 7. Physical Arrival at Destination (Dynamic Logistics ETA)
+        const arrivalTick = shipmentRecord.estimatedArrivalTick || (simulationTick + 10);
+        this.trackingEngine.recordArrival(shipmentRecord.shipmentId, arrivalTick, execution);
+
+        this.eventLedger.recordEvent({
+          eventType: 'SHIPMENT_ARRIVED',
+          executionId: execution.executionId,
+          tradeId: execution.tradeId,
+          tick: arrivalTick,
+          previousState: isDomestic ? ExecutionState.DISPATCHED : ExecutionState.BORDER_PROCESSING,
+          targetState: ExecutionState.ARRIVED,
+          payload: { deliveredQuantity: execution.deliveredQuantity, transitLoss: execution.transitLossQuantity }
+        });
+
+        // 8. Multi-Vector Quality Assay & Part 07 Batch Depletion
+        const inspectionTick = arrivalTick + 2;
+        const trackedShipment = this.trackingEngine.getShipment(shipmentRecord.shipmentId) || shipmentRecord;
+        const receiptResult = await this.receiptProcessor.processReceiptAndAcceptance(execution, trackedShipment, inspectionTick);
+        if (!receiptResult.success) {
+          await this.recoveryEngine.executeFullRollback(execution, inspectionTick);
+          return { success: false, phase: 'QUALITY_INSPECTION', execution };
+        }
+
+        this.eventLedger.recordEvent({
+          eventType: 'DELIVERY_ACCEPTED',
+          executionId: execution.executionId,
+          tradeId: execution.tradeId,
+          tick: inspectionTick,
+          previousState: ExecutionState.INSPECTING,
+          targetState: execution.state,
+          payload: { acceptedQuantity: execution.acceptedQuantity, rejectedQuantity: execution.rejectedQuantity }
+        });
+
+        // 9. 4-Way Multi-Tranche Financial Settlement
+        const settlementTick = inspectionTick + 3;
+        const settlement = await this.settlementCoordinator.executeSettlement(execution, settlementTick, options.settlementParams);
+        this.eventLedger.recordEvent({
+          eventType: 'SETTLEMENT_COMPLETED',
+          executionId: execution.executionId,
+          tradeId: execution.tradeId,
+          tick: settlementTick,
+          previousState: ExecutionState.ACCEPTED,
+          targetState: ExecutionState.COMPLETED,
+          payload: { settledAmount: execution.settledAmount, settlement }
+        });
+
+        // 10. Bilateral Strategic Exposure Update
+        this.networkRegistry.recordTradeOutcome(execution);
+
+        return {
+          success: true,
+          execution,
+          settlement,
+          eventAuditCount: this.eventLedger.getEventsForExecution(execution.executionId).length
+        };
+      }
+    }
+
+    // ============================================================================
+    // COMPREHENSIVE AUTOMATED VERIFICATION TEST SUITE & MOCKS
+    // ============================================================================
+
+    class MockInventoryEngineAdapter extends InventoryEngineAdapter {
+      constructor() {
+        super();
+        this.mockBatches = new Map();
+        this.locks = new Map();
+      }
+
+      seedBatch(batch) {
+        this.mockBatches.set(batch.batchId, { ...batch, availableQuantity: batch.quantity, status: 'AVAILABLE' });
+      }
+
+      async fetchAuthoritativeBatches(facilityId, resourceId, ownerPartyId) {
+        return Array.from(this.mockBatches.values()).filter(b => b.facilityId === facilityId && b.resourceId === resourceId);
+      }
+
+      async acquireAtomicBatchLock(batchId, lockQuantity, lockToken, leaseDurationTicks) {
+        const batch = this.mockBatches.get(batchId);
+        if (!batch || batch.availableQuantity < lockQuantity) {
+          return { success: false, reason: 'INSUFFICIENT_BATCH_VOLUME' };
+        }
+        batch.availableQuantity -= lockQuantity;
+        this.locks.set(lockToken, { batchId, lockQuantity });
+        return { success: true };
+      }
+
+      async releaseAtomicBatchLock(batchId, lockQuantity, lockToken) {
+        const batch = this.mockBatches.get(batchId);
+        if (batch) {
+          batch.availableQuantity += lockQuantity;
+        }
+        this.locks.delete(lockToken);
+        return { success: true };
+      }
+
+      async commitAuthoritativeBatchDepletion(batchId, quantity, transferManifest) {
+        const batch = this.mockBatches.get(batchId);
+        if (batch) {
+          batch.quantity -= quantity;
+        }
+        return { success: true, newOwner: transferManifest.newOwnerPartyId };
+      }
+    }
+
+    class MockLogisticsEngineAdapter extends LogisticsEngineAdapter {
+      async dispatchTransportManifest(manifest) {
+        return {
+          accepted: true,
+          trackingId: `TRK-${deterministicHash(manifest.manifestId).substring(0, 8)}`,
+          estimatedArrivalTick: manifest.dispatchTick + 10,
+          carrierId: 'GLOBAL_PACIFIC_CARRIER',
+          checkpoints: manifest.transitCorridor.map(n => n.checkpointNode)
+        };
+      }
+
+      async cancelShipmentDispatch(trackingId) {
+        return { success: true, trackingId, cancelled: true };
+      }
+    }
+
+    class MockSettlementAdapter extends FinancialSettlementAdapter {
+      constructor() {
+        super();
+        this.transfers = [];
+      }
+      async releaseEscrowToSeller(tradeId, amount, currency, recipientPartyId) {
+        this.transfers.push({ type: 'SELLER_RELEASE', tradeId, amount, recipientPartyId });
+        return { success: true };
+      }
+      async refundEscrowToBuyer(tradeId, amount, currency, buyerPartyId, trancheName) {
+        this.transfers.push({ type: 'BUYER_REFUND', tradeId, amount, buyerPartyId, trancheName });
+        return { success: true };
+      }
+      async remitCustomsDutiesToSovereign(tradeId, amount, currency, sovereignCountryId) {
+        this.transfers.push({ type: 'CUSTOMS_REMITTANCE', tradeId, amount, sovereignCountryId });
+        return { success: true };
+      }
+      async remitFreightChargesToCarrier(tradeId, amount, currency, carrierPartyId) {
+        this.transfers.push({ type: 'FREIGHT_REMITTANCE', tradeId, amount, carrierPartyId });
+        return { success: true };
+      }
+    }
+
+    /**
+     * Complete Verification Test Runner
+     */
+    async function runGSRSKPart11VerificationSuite() {
+      const testResults = [];
+
+      function assert(condition, testName) {
+        if (!condition) {
+          testResults.push({ testName, passed: false });
+          throw new Error(`[TEST FAILED]: ${testName}`);
+        }
+        testResults.push({ testName, passed: true });
+      }
+
+      const inventoryMock = new MockInventoryEngineAdapter();
+      const logisticsMock = new MockLogisticsEngineAdapter();
+      const settlementMock = new MockSettlementAdapter();
+
+      const orchestrator = new TradeExecutionMasterOrchestrator({
+        inventoryAdapter: inventoryMock,
+        logisticsAdapter: logisticsMock,
+        settlementAdapter: settlementMock
+      });
+
+      // 1. Setup Geopolitical Country Profiles
+      orchestrator.registry.registerCountry({ countryId: 'NATION_A', displayName: 'Republic of Alpha', customsBorderEfficiency: 0.95 });
+      orchestrator.registry.registerCountry({ countryId: 'NATION_B', displayName: 'Kingdom of Beta', customsBorderEfficiency: 0.90 });
+
+      // 2. Setup Operating Parties
+      orchestrator.registry.registerParty({ partyId: 'PARTY_SELLER', legalName: 'Alpha Mining Corp', partyType: PartyType.STATE_OWNED_ENTERPRISE, countryId: 'NATION_A' });
+      orchestrator.registry.registerParty({ partyId: 'PARTY_BUYER', legalName: 'Beta Industrial Works', partyType: PartyType.PRIVATE_CORPORATION, countryId: 'NATION_B' });
+      orchestrator.registry.registerParty({ partyId: 'CARRIER_LOGISTICS', legalName: 'Trans-Ocean Freight', partyType: PartyType.LOGISTICS_CARRIER, countryId: 'NATION_A' });
+
+      // 3. Seed Inventory Batches in Part 07 Mock
+      inventoryMock.seedBatch({ batchId: 'BATCH-001', facilityId: 'FAC_MINE_01', resourceId: 'CRUDE_LITHIUM', quantity: 600, qualityGrade: 1.0, creationTick: 10 });
+      inventoryMock.seedBatch({ batchId: 'BATCH-002', facilityId: 'FAC_MINE_01', resourceId: 'CRUDE_LITHIUM', quantity: 600, qualityGrade: 0.98, creationTick: 15 });
+
+      // Set Tariff Schedule
+      orchestrator.registry.setTariffSchedule('NATION_B', 'CRUDE_LITHIUM', {
+        inQuotaAdValoremRate: 0.05,
+        overQuotaAdValoremRate: 0.20,
+        specificDutyPerUnit: 2.0,
+        preferentialFTARate: 0.02
+      });
+
+      // --------------------------------------------------------------------------
+      // TEST 1: Full Happy-Path Trade Pipeline with 4-Way Multi-Tranche Escrow
+      // --------------------------------------------------------------------------
+      const contractPayload = {
+        tradeId: 'TRADE-1001',
+        marketId: 'SPOT_MARKET_01',
+        buyerPartyId: 'PARTY_BUYER',
+        buyerCountryId: 'NATION_B',
+        buyerFacilityId: 'FAC_PLANT_02',
+        sellerPartyId: 'PARTY_SELLER',
+        sellerCountryId: 'NATION_A',
+        sellerFacilityId: 'FAC_MINE_01',
+        resourceId: 'CRUDE_LITHIUM',
+        requiredQualityGrade: 0.95,
+        qualityTolerance: 0.05,
+        quantity: 1000,
+        unitPrice: 50,
+        currency: 'CREDITS',
+        transitCorridor: [
+          { checkpointNode: 'ALPHA_BORDER_EXIT', countryId: 'NATION_A' },
+          { checkpointNode: 'BETA_CUSTOMS_ENTRY', countryId: 'NATION_B' }
+        ],
+        escrowTranches: {
+          dutyEscrow: 5000,
+          freightEscrow: 2000
+        }
+      };
+
+      const outcome1 = await orchestrator.executeTradePipeline(contractPayload, 100, {
+        settlementParams: { freightCost: 2000, carrierPartyId: 'CARRIER_LOGISTICS' }
+      });
+
+      assert(outcome1.success === true, 'TEST 1: Execution Pipeline should complete successfully');
+      assert(outcome1.execution.state === ExecutionState.COMPLETED, 'TEST 1: Execution state must be COMPLETED');
+      assert(outcome1.execution.acceptedQuantity === 1000, 'TEST 1: Mass balance accepted quantity must equal 1000');
+      assert(outcome1.settlement.netPaidToSeller === 50000, 'TEST 1: Seller must receive full 50,000 Credits commodity value');
+
+      // --------------------------------------------------------------------------
+      // TEST 2: Strict 4-Way Escrow Conservation Proof
+      // --------------------------------------------------------------------------
+      assert(outcome1.execution.verifyMassConservation() === true, 'TEST 2: Mass conservation equation must hold exactly');
+      const totalOutflow = outcome1.settlement.netPaidToSeller + outcome1.settlement.refundedToBuyer.totalRefund + outcome1.settlement.customsDutiesRemitted + outcome1.settlement.freightChargesRemitted;
+      assert(totalOutflow === outcome1.execution.escrow.totalEscrowDeposited, 'TEST 2: Total 4-Way Escrow Outflow must exactly equal Total Deposited Escrow');
+
+      // --------------------------------------------------------------------------
+      // TEST 3: Cryptographic Event Ledger Hash-Chain Integrity Verification
+      // --------------------------------------------------------------------------
+      const ledgerIntegrity = orchestrator.eventLedger.verifyChainIntegrity();
+      assert(ledgerIntegrity.valid === true, 'TEST 3: Cryptographic ledger hash chain must be 100% intact');
+
+      // --------------------------------------------------------------------------
+      // TEST 4: Low-Grade Quality Rejection & Non-Destructive Saga Rollback (Unlocks Batches)
+      // --------------------------------------------------------------------------
+      inventoryMock.seedBatch({ batchId: 'BATCH-LOW-GRADE', facilityId: 'FAC_MINE_01', resourceId: 'ENRICHED_URANIUM', quantity: 200, qualityGrade: 0.50, creationTick: 20 });
+      
+      const badQualityContract = {
+        tradeId: 'TRADE-1002',
+        buyerPartyId: 'PARTY_BUYER',
+        buyerCountryId: 'NATION_B',
+        buyerFacilityId: 'FAC_PLANT_02',
+        sellerPartyId: 'PARTY_SELLER',
+        sellerCountryId: 'NATION_A',
+        sellerFacilityId: 'FAC_MINE_01',
+        resourceId: 'ENRICHED_URANIUM',
+        requiredQualityGrade: 0.99,
+        qualityTolerance: 0.02,
+        quantity: 100,
+        unitPrice: 500,
+        currency: 'CREDITS'
+      };
+
+      const outcome2 = await orchestrator.executeTradePipeline(badQualityContract, 200);
+      assert(outcome2.success === false, 'TEST 4: Low-grade cargo must fail quality inspection');
+      assert(outcome2.execution.state === ExecutionState.CANCELLED, 'TEST 4: Execution must transition to CANCELLED post-rollback');
+
+      // Verify inventory restored
+      const badBatch = inventoryMock.mockBatches.get('BATCH-LOW-GRADE');
+      assert(badBatch.availableQuantity === 200, 'TEST 4: Rollback must restore 100% batch inventory volume on Part 07');
+
+      // --------------------------------------------------------------------------
+      // TEST 5: Exact Event-Driven Deterministic Replay Parity Proof
+      // --------------------------------------------------------------------------
+      const eventsForTrade1 = orchestrator.eventLedger.getEventsForExecution(outcome1.execution.executionId);
+      const replayedRecord = DeterministicReplayEngine.replayExecutionFromEvents(eventsForTrade1, contractPayload);
+      assert(replayedRecord.acceptedQuantity === outcome1.execution.acceptedQuantity, 'TEST 5: Replayed accepted mass must match original world state');
+      assert(replayedRecord.settledAmount === outcome1.execution.settledAmount, 'TEST 5: Replayed settled amount must match original world state');
+      assert(replayedRecord.state === ExecutionState.COMPLETED, 'TEST 5: Replayed execution must reach COMPLETED state');
+
+      // --------------------------------------------------------------------------
+      // TEST 6: Strategic Exposure & Herfindahl-Hirschman Concentration Index (HHI)
+      // --------------------------------------------------------------------------
+      const strategicMetrics = orchestrator.networkRegistry.getStrategicSupplyMetrics('NATION_B', 'CRUDE_LITHIUM');
+      assert(strategicMetrics.totalVolumeImported === 1000, 'TEST 6: Strategic network must register 1000 units imported');
+      assert(strategicMetrics.herfindahlConcentrationIndex === 10000, 'TEST 6: Single-supplier corridor HHI must equal 10,000 (Monopoly concentration)');
+
+      return {
+        suite: 'GSRSK_PART_11_EXECUTION_ENGINE',
+        allPassed: testResults.every(r => r.passed),
+        tests: testResults
+      };
+    }
+
+    // ============================================================================
+    // GLOBAL ADAPTER & WIRING FOR PART 11
+    // ============================================================================
+
+    const TradeFulfillmentSettlementEngineAdapter = {
+      createEngine: function(options = {}) {
+        const inv = options.inventoryAdapter || new MockInventoryEngineAdapter();
+        const log = options.logisticsAdapter || new MockLogisticsEngineAdapter();
+        const set = options.settlementAdapter || new MockSettlementAdapter();
+        return new TradeExecutionMasterOrchestrator({
+          inventoryAdapter: inv,
+          logisticsAdapter: log,
+          settlementAdapter: set
+        });
+      },
+      ExecutionState,
+      VALID_STATE_TRANSITIONS,
+      VisibilityLevel,
+      PartyType,
+      ExecutionFailureReason,
+      ClearanceStatus,
+      GSRSKExecutionError,
+      InvariantBreachError,
+      StateTransitionError,
+      EligibilityCheckError,
+      AllocationEngineError,
+      ReservationLockError,
+      RegulatoryGateError,
+      LogisticsHandoffError,
+      fastDeepClone,
+      deepFreeze,
+      deterministicHash,
+      ExecutionRecord,
+      SovereignPartyRegistry,
+      TradeVisibilityEngine,
+      TradeRequestGateway,
+      EligibilityAuthorizationEngine,
+      InventoryEngineAdapter,
+      MultiBatchAllocationPlanner,
+      TwoPhaseReservationEngine,
+      FulfillmentPlanCoordinator,
+      LogisticsEngineAdapter,
+      LogisticsHandoffBridge,
+      BorderCustomsExecutionGate,
+      RegulatoryComplianceGate,
+      ShipmentTrackingEngine,
+      DeliveryReconciliationLedger,
+      QualityIdentityAcceptanceInspector,
+      ReceiptAcceptanceProcessor,
+      FinancialSettlementAdapter,
+      SettlementExecutionCoordinator,
+      PartialDeliveryLifecycleHandler,
+      FailureAndDefaultEngine,
+      StateRecoveryReconciliationEngine,
+      CryptographicTradeEventLedger,
+      DeterministicReplayEngine,
+      BilateralTradeNetworkRegistry,
+      TradeExecutionMasterOrchestrator,
+      MockInventoryEngineAdapter,
+      MockLogisticsEngineAdapter,
+      MockSettlementAdapter,
+      runGSRSKPart11VerificationSuite,
+      Enums: {
+        ExecutionState,
+        VALID_STATE_TRANSITIONS,
+        VisibilityLevel,
+        PartyType,
+        ExecutionFailureReason,
+        ClearanceStatus
+      }
+    };
+
+    if (typeof window !== 'undefined') {
+      window.GSRSK_Part11 = TradeFulfillmentSettlementEngineAdapter;
+      window.GSRSK_TradeFulfillmentSettlementEngine = TradeFulfillmentSettlementEngineAdapter;
+    } else if (typeof global !== 'undefined') {
+      global.GSRSK_Part11 = TradeFulfillmentSettlementEngineAdapter;
+      global.GSRSK_TradeFulfillmentSettlementEngine = TradeFulfillmentSettlementEngineAdapter;
+    }
+
+    if (typeof ResourceMinistryEngineInstance !== 'undefined' && ResourceMinistryEngineInstance) {
+      ResourceMinistryEngineInstance.part11 = TradeFulfillmentSettlementEngineAdapter;
+      ResourceMinistryEngineInstance.tradeEngine = TradeFulfillmentSettlementEngineAdapter.createEngine();
+    }
+
+    if (global.ResourceMinistryEngine) {
+      global.ResourceMinistryEngine.part11 = TradeFulfillmentSettlementEngineAdapter;
+      if (!global.ResourceMinistryEngine.tradeEngine) {
+        global.ResourceMinistryEngine.tradeEngine = TradeFulfillmentSettlementEngineAdapter.createEngine();
+      }
+    }
+
+    if (typeof module !== 'undefined' && module.exports) {
+      module.exports = TradeFulfillmentSettlementEngineAdapter;
+    }
+
+})(typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : global));
+
+
     const _targetGlobal = typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : global);
 
     if (typeof module !== 'undefined' && module.exports) {
@@ -25123,6 +28171,12 @@ _globalScope.GSRSK_DataFoundation = (() => {
             ResourceInfrastructureLogisticsEngine: _targetGlobal.GSRSK_ResourceInfrastructureLogisticsEngine || null,
             ResourceProductionIndustrialChainEngine: _targetGlobal.GSRSK_ResourceProductionIndustrialChainEngine || null,
             ResourceMarketPricingEngine: _targetGlobal.GSRSK_ResourceMarketPricingEngine || null,
+            TradeFulfillmentSettlementEngine: _targetGlobal.GSRSK_TradeFulfillmentSettlementEngine || null,
+            ResourceTradeExecutionEngine: _targetGlobal.GSRSK_TradeFulfillmentSettlementEngine || null,
+            GSRSK_TradeFulfillmentSettlementEngine: _targetGlobal.GSRSK_TradeFulfillmentSettlementEngine || null,
+            GSRSK_Part11: _targetGlobal.GSRSK_TradeFulfillmentSettlementEngine || null,
+            Part11: _targetGlobal.GSRSK_TradeFulfillmentSettlementEngine || null,
+            ...(_targetGlobal.GSRSK_TradeFulfillmentSettlementEngine || {}),
             ResourceMinistryEngine: typeof ResourceMinistryEngineInstance !== 'undefined' ? ResourceMinistryEngineInstance : (_targetGlobal.ResourceMinistryEngine || null),
             MasterGSRSKEngine: _targetGlobal.GSRSK_MasterEngine ? _targetGlobal.GSRSK_MasterEngine.constructor : null,
             MasterEngineSingleton: _targetGlobal.GSRSK_MasterEngine || null,
