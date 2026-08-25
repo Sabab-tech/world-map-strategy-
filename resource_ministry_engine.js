@@ -25837,7 +25837,7 @@ _globalScope.GSRSK_DataFoundation = (() => {
         const access = this.evaluateViewerAccess(execution, viewerContext);
         if (!access.allowed) return null;
 
-        const snapshot = execution.toSnapshot();
+        const snapshot = fastDeepClone(execution);
 
         for (const field of access.maskedFields) {
           if (field in snapshot) {
@@ -25847,7 +25847,7 @@ _globalScope.GSRSK_DataFoundation = (() => {
 
         return {
           visibilityLevel: access.visibility,
-          data: snapshot
+          data: deepFreeze(snapshot)
         };
       }
     }
