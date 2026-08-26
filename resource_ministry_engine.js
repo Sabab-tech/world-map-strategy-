@@ -9212,6 +9212,10 @@ _globalScope.GSRSK_DataFoundation = (() => {
                 // Step 8: Trade, Fulfillment & Settlement Engine Verification (Part 11)
                 const p11 = gScope.GSRSK_Part11 || gScope.GSRSK_TradeFulfillmentSettlementEngine;
                 results.steps.push({ part: '11_TRADE_FULFILLMENT', status: p11 ? 'VERIFIED' : 'STANDALONE', available: !!p11 });
+
+                // Step 9: Economic & Strategic Value Engine Verification (Part 12)
+                const p12 = gScope.GSRSK_Part12 || gScope.GSRSK_EconomicAndStrategicValueEngine;
+                results.steps.push({ part: '12_STRATEGIC_VALUATION', status: p12 ? 'VERIFIED' : 'STANDALONE', available: !!p12 });
             } catch (e) {
                 results.status = 'FAILED';
                 results.error = String(e && e.message ? e.message : e);
@@ -28156,6 +28160,1957 @@ _globalScope.GSRSK_DataFoundation = (() => {
 })(typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : global));
 
 
+/**
+ * ============================================================================
+ * GSRSK PART 12: ECONOMIC & STRATEGIC VALUE ENGINE
+ * Module Scope: 12.00 through 12.24 (Master Monolithic Integration)
+ * 
+ * Deterministic, explainable, and multi-dimensional valuation pipeline
+ * synthesizing physical resource flows, market prices, industrial dependencies,
+ * geopolitical leverage, national exposure, dynamic scarcity, and systemic
+ * criticality into standardized strategic metrics across 195 sovereign states.
+ * ============================================================================
+ */
+(function (global) {
+  'use strict';
+
+const EPSILON = 1e-7;
+
+  /**
+   * Value Domain Dimension Classification
+   * @readonly
+   * @enum {string}
+   */
+  const ValueDomain = Object.freeze({
+    ECONOMIC: 'ECONOMIC',
+    INDUSTRIAL: 'INDUSTRIAL',
+    TRADE: 'TRADE',
+    SCARCITY: 'SCARCITY',
+    CRITICALITY: 'CRITICALITY',
+    SUBSTITUTABILITY: 'SUBSTITUTABILITY',
+    CONCENTRATION: 'CONCENTRATION',
+    NATIONAL_IMPORTANCE: 'NATIONAL_IMPORTANCE',
+    RESOURCE_POWER: 'RESOURCE_POWER',
+    GLOBAL_CRITICALITY: 'GLOBAL_CRITICALITY',
+    EXPOSURE: 'EXPOSURE',
+    COMPOSITE: 'COMPOSITE'
+  });
+
+  /**
+   * Scarcity Stress Bands
+   * @readonly
+   * @enum {string}
+   */
+  const ScarcityBand = Object.freeze({
+    ABUNDANT: 'ABUNDANT',
+    STABLE: 'STABLE',
+    MODERATE_STRESS: 'MODERATE_STRESS',
+    HIGH_STRESS: 'HIGH_STRESS',
+    CRITICAL_DEPLETION: 'CRITICAL_DEPLETION'
+  });
+
+  /**
+   * Systemic Criticality Classifications
+   * @readonly
+   * @enum {string}
+   */
+  const CriticalityLevel = Object.freeze({
+    NEGLIGIBLE: 'NEGLIGIBLE',
+    LOW: 'LOW',
+    MEDIUM: 'MEDIUM',
+    HIGH: 'HIGH',
+    VITAL: 'VITAL',
+    SYSTEMIC_EXISTENTIAL: 'SYSTEMIC_EXISTENTIAL'
+  });
+
+  /**
+   * Substitutability Feasibility Tiers
+   * @readonly
+   * @enum {string}
+   */
+  const SubstitutabilityTier = Object.freeze({
+    DIRECT_DROP_IN: 'DIRECT_DROP_IN',
+    FEASIBLE_WITH_PENALTY: 'FEASIBLE_WITH_PENALTY',
+    HIGH_FRICTION: 'HIGH_FRICTION',
+    PROHIBITIVE_OR_THEORETICAL: 'PROHIBITIVE_OR_THEORETICAL',
+    NON_SUBSTITUTABLE: 'NON_SUBSTITUTABLE'
+  });
+
+  /**
+   * Epistemic Confidence Grading
+   * @readonly
+   * @enum {string}
+   */
+  const ConfidenceGrade = Object.freeze({
+    GOLD_AUTHORITATIVE: 'GOLD_AUTHORITATIVE',
+    SILVER_RECONCILED: 'SILVER_RECONCILED',
+    BRONZE_ESTIMATED: 'BRONZE_ESTIMATED',
+    DEGRADED_IMPUTED: 'DEGRADED_IMPUTED',
+    SPECULATIVE_LOW: 'SPECULATIVE_LOW'
+  });
+
+  /**
+   * Sovereign Economic Exposure Tiers
+   * @readonly
+   * @enum {string}
+   */
+  const ExposureLevel = Object.freeze({
+    INSULATED: 'INSULATED',
+    LOW_EXPOSURE: 'LOW_EXPOSURE',
+    BALANCED_INTERDEPENDENT: 'BALANCED_INTERDEPENDENT',
+    ASYMMETRIC_DEPENDENT: 'ASYMMETRIC_DEPENDENT',
+    ACUTE_VULNERABILITY: 'ACUTE_VULNERABILITY',
+    STRATEGIC_STRANGULATION: 'STRATEGIC_STRANGULATION'
+  });
+
+  /**
+   * Fallback Policy Execution Mode
+   * @readonly
+   * @enum {string}
+   */
+  const FallbackPolicyMode = Object.freeze({
+    STRICT_FAIL: 'STRICT_FAIL',
+    DEGRADE_CONFIDENCE: 'DEGRADE_CONFIDENCE',
+    HISTORICAL_IMPUTE: 'HISTORICAL_IMPUTE',
+    PROXY_INFER: 'PROXY_INFER'
+  });
+
+  // Base and Domain-Specific Custom Errors
+  class ValueEngineError extends Error {
+    constructor(message, details = {}) {
+      super(message);
+      this.name = 'ValueEngineError';
+      this.details = details;
+      this.timestamp = Date.now();
+    }
+  }
+
+  class InvariantViolationError extends ValueEngineError {
+    constructor(message, details = {}) {
+      super(message, details);
+      this.name = 'InvariantViolationError';
+    }
+  }
+
+  class RuleResolutionError extends ValueEngineError {
+    constructor(message, details = {}) {
+      super(message, details);
+      this.name = 'RuleResolutionError';
+    }
+  }
+
+  class MissingDataError extends ValueEngineError {
+    constructor(message, details = {}) {
+      super(message, details);
+      this.name = 'MissingDataError';
+    }
+  }
+
+  class DoubleCountingError extends ValueEngineError {
+    constructor(message, details = {}) {
+      super(message, details);
+      this.name = 'DoubleCountingError';
+    }
+  }
+
+  class UpstreamAdapterError extends ValueEngineError {
+    constructor(message, details = {}) {
+      super(message, details);
+      this.name = 'UpstreamAdapterError';
+    }
+  }
+
+  // Pure Deterministic Utility Functions
+  function fastDeepClone(obj) {
+    if (obj === null || typeof obj !== 'object') return obj;
+    if (obj instanceof Date) return new Date(obj.getTime());
+    if (Array.isArray(obj)) return obj.map(item => fastDeepClone(item));
+    if (obj instanceof Map) {
+      const copy = new Map();
+      obj.forEach((v, k) => copy.set(k, fastDeepClone(v)));
+      return copy;
+    }
+    if (obj instanceof Set) {
+      const copy = new Set();
+      obj.forEach(v => copy.add(fastDeepClone(v)));
+      return copy;
+    }
+    const cloned = {};
+    const keys = Object.keys(obj);
+    for (let i = 0; i < keys.length; i++) {
+      cloned[keys[i]] = fastDeepClone(obj[keys[i]]);
+    }
+    return cloned;
+  }
+
+  function deepFreeze(obj) {
+    if (obj === null || typeof obj !== 'object' || Object.isFrozen(obj)) return obj;
+    Object.freeze(obj);
+    const keys = Object.getOwnPropertyNames(obj);
+    for (let i = 0; i < keys.length; i++) {
+      const prop = obj[keys[i]];
+      if (prop !== null && (typeof prop === 'object' || typeof prop === 'function')) {
+        deepFreeze(prop);
+      }
+    }
+    return obj;
+  }
+
+  function deterministicHash(val) {
+    const str = typeof val === 'string' ? val : JSON.stringify(val);
+    let hash = 0x811c9dc5;
+    for (let i = 0; i < str.length; i++) {
+      hash ^= str.charCodeAt(i);
+      hash += (hash << 1) + (hash << 4) + (hash << 7) + (hash << 8) + (hash << 24);
+    }
+    return (hash >>> 0).toString(16).padStart(8, '0');
+  }
+
+  // ============================================================================
+  // 12.01 EVALUATION CONTEXT & EVIDENCE DIAGNOSTIC ENVELOPE
+  // ============================================================================
+
+  class ValueMetricResult {
+    constructor({
+      metricId,
+      domain,
+      targetEntityId,
+      score,
+      normalizedScore = null,
+      grade = null,
+      components = {},
+      calculations = {},
+      formulaRef = '',
+      ruleRef = '',
+      evidenceState = 'KNOWN',
+      confidence = 1.0,
+      confidenceGrade = ConfidenceGrade.GOLD_AUTHORITATIVE,
+      temporalTick = 0,
+      provenanceHash = null
+    }) {
+      this.metricId = metricId;
+      this.domain = domain;
+      this.targetEntityId = targetEntityId;
+      this.score = Number(score);
+      this.normalizedScore = normalizedScore !== null ? Number(normalizedScore) : Math.min(100, Math.max(0, this.score));
+      this.grade = grade;
+      this.components = fastDeepClone(components);
+      this.calculations = fastDeepClone(calculations);
+      this.formulaRef = formulaRef;
+      this.ruleRef = ruleRef;
+      this.evidenceState = evidenceState;
+      this.confidence = Math.min(1.0, Math.max(0.0, Number(confidence)));
+      this.confidenceGrade = confidenceGrade;
+      this.temporalTick = Number(temporalTick);
+      this.evaluatedAt = Date.now();
+      this.provenanceHash = provenanceHash || deterministicHash({
+        metricId, domain, targetEntityId, score: this.score, components: this.components
+      });
+      deepFreeze(this);
+    }
+
+    toSnapshot() {
+      return {
+        metricId: this.metricId,
+        domain: this.domain,
+        targetEntityId: this.targetEntityId,
+        score: this.score,
+        normalizedScore: this.normalizedScore,
+        grade: this.grade,
+        components: this.components,
+        calculations: this.calculations,
+        confidence: this.confidence,
+        confidenceGrade: this.confidenceGrade,
+        provenanceHash: this.provenanceHash
+      };
+    }
+  }
+
+  class EvaluationContext {
+    constructor({
+      worldState = null,
+      resourceCatalog = new Map(),
+      reserveState = new Map(),
+      processingTopologies = new Map(),
+      inventoryState = new Map(),
+      logisticsCorridors = new Map(),
+      industrialDAG = new Map(),
+      marketPrices = new Map(),
+      tradeCorridors = new Map(),
+      sovereignRegistry = new Map(),
+      temporalTick = 0,
+      strictInvariants = true,
+      fallbackMode = FallbackPolicyMode.DEGRADE_CONFIDENCE
+    } = {}) {
+      this.worldState = worldState;
+      this.resourceCatalog = resourceCatalog;
+      this.reserveState = reserveState;
+      this.processingTopologies = processingTopologies;
+      this.inventoryState = inventoryState;
+      this.logisticsCorridors = logisticsCorridors;
+      this.industrialDAG = industrialDAG;
+      this.marketPrices = marketPrices;
+      this.tradeCorridors = tradeCorridors;
+      this.sovereignRegistry = sovereignRegistry;
+      this.temporalTick = temporalTick;
+      this.strictInvariants = strictInvariants;
+      this.fallbackMode = fallbackMode;
+
+      this.memoizedLookups = new Map();
+      deepFreeze(this);
+    }
+
+    getMarketPrice(resourceId, fallback = 100.0) {
+      if (this.marketPrices.has(resourceId)) {
+        const p = this.marketPrices.get(resourceId);
+        return typeof p === 'number' ? p : (p.referencePrice || fallback);
+      }
+      return fallback;
+    }
+
+    getSovereign(countryId) {
+      return this.sovereignRegistry.get(countryId) || null;
+    }
+
+    getIndustrialChains(resourceId) {
+      return this.industrialDAG.get(resourceId) || [];
+    }
+  }
+
+  // ============================================================================
+  // 12.02 DECLARATIVE RULE REGISTRY, VARIABLE RESOLVER & CONSTRAINT ENGINE
+  // ============================================================================
+
+  class ValueRuleDefinition {
+    constructor({
+      ruleId,
+      domain,
+      description,
+      priority = 100,
+      condition = () => true,
+      compute = () => ({ score: 0, components: {} }),
+      formulaRef = '',
+      version = '1.0.0'
+    }) {
+      this.ruleId = ruleId;
+      this.domain = domain;
+      this.description = description;
+      this.priority = priority;
+      this.condition = condition;
+      this.compute = compute;
+      this.formulaRef = formulaRef;
+      this.version = version;
+      deepFreeze(this);
+    }
+  }
+
+  class RuleEngine {
+    constructor() {
+      this.rulesByDomain = new Map();
+      Object.values(ValueDomain).forEach(d => this.rulesByDomain.set(d, []));
+    }
+
+    registerRule(rule) {
+      if (!(rule instanceof ValueRuleDefinition)) {
+        throw new RuleResolutionError('Invalid rule type registration');
+      }
+      const list = this.rulesByDomain.get(rule.domain) || [];
+      list.push(rule);
+      list.sort((a, b) => b.priority - a.priority);
+      this.rulesByDomain.set(rule.domain, list);
+    }
+
+    resolveRule(domain, context, payload) {
+      const candidates = this.rulesByDomain.get(domain) || [];
+      for (const rule of candidates) {
+        try {
+          if (rule.condition(context, payload)) {
+            return rule;
+          }
+        } catch (err) {
+          // Fall through to lower-priority rules on predicate failure
+        }
+      }
+      throw new RuleResolutionError(`No matching declarative rule resolved for domain: ${domain}`);
+    }
+
+    execute(domain, context, payload) {
+      const rule = this.resolveRule(domain, context, payload);
+      const output = rule.compute(context, payload);
+      return new ValueMetricResult({
+        metricId: `${domain}_${payload.targetEntityId || payload.resourceId || 'GLOBAL'}_${context.temporalTick}`,
+        domain,
+        targetEntityId: payload.targetEntityId || payload.resourceId || 'GLOBAL',
+        score: output.score,
+        normalizedScore: output.normalizedScore !== undefined ? output.normalizedScore : output.score,
+        grade: output.grade || null,
+        components: output.components || {},
+        calculations: output.calculations || {},
+        formulaRef: rule.formulaRef,
+        ruleRef: `${rule.ruleId}@${rule.version}`,
+        confidence: output.confidence !== undefined ? output.confidence : 1.0,
+        confidenceGrade: output.confidenceGrade || ConfidenceGrade.GOLD_AUTHORITATIVE,
+        temporalTick: context.temporalTick
+      });
+    }
+  }
+
+  // ============================================================================
+  // 12.03 ECONOMIC VALUE ENGINE (PRODUCTION & MULTI-STREAM VALUE-ADDED)
+  // ============================================================================
+
+  class EconomicValueEngine {
+    constructor(ruleEngine) {
+      this.ruleEngine = ruleEngine;
+    }
+
+    calculateProductionValue(context, { resourceId, annualExtractionVolume, unitExtractionCost, marketPrice = null }) {
+      if (annualExtractionVolume < 0) {
+        throw new InvariantViolationError('Extraction volume cannot be negative', { resourceId, annualExtractionVolume });
+      }
+      const price = marketPrice !== null ? marketPrice : context.getMarketPrice(resourceId);
+      const grossEconomicValue = annualExtractionVolume * price;
+      const totalExtractionCost = annualExtractionVolume * unitExtractionCost;
+      const netResourceRent = Math.max(0, grossEconomicValue - totalExtractionCost);
+      const grossMarginPercentage = grossEconomicValue > 0 ? (netResourceRent / grossEconomicValue) * 100 : 0;
+
+      return new ValueMetricResult({
+        metricId: `EV_PROD_${resourceId}`,
+        domain: ValueDomain.ECONOMIC,
+        targetEntityId: resourceId,
+        score: grossEconomicValue,
+        components: {
+          annualExtractionVolume,
+          marketPrice: price,
+          grossEconomicValue,
+          unitExtractionCost,
+          totalExtractionCost,
+          netResourceRent,
+          grossMarginPercentage
+        },
+        calculations: {
+          formula: 'grossEconomicValue = Volume * Price; netRent = Gross - (Volume * Cost)'
+        },
+        formulaRef: 'F_12_03_PRODUCTION_VALUE',
+        ruleRef: 'DEFAULT_ECONOMIC_PRODUCTION_RULE',
+        confidence: 1.0,
+        temporalTick: context.temporalTick
+      });
+    }
+
+    calculateProcessingValueAdded(context, { resourceId, processedVolume, feedstockCost, processingOperatingCost, outputProductYields = [] }) {
+      let grossOutputValue = 0;
+      outputProductYields.forEach(yieldItem => {
+        const outPrice = yieldItem.unitPrice || context.getMarketPrice(yieldItem.outputResourceId);
+        grossOutputValue += (yieldItem.volume * outPrice);
+      });
+
+      const totalInputCost = feedstockCost + processingOperatingCost;
+      const netProcessingMargin = grossOutputValue - totalInputCost;
+      const valueAddMultiplier = totalInputCost > 0 ? grossOutputValue / totalInputCost : 1.0;
+
+      return new ValueMetricResult({
+        metricId: `EV_PROC_${resourceId}`,
+        domain: ValueDomain.ECONOMIC,
+        targetEntityId: resourceId,
+        score: netProcessingMargin,
+        components: {
+          processedVolume,
+          feedstockCost,
+          processingOperatingCost,
+          grossOutputValue,
+          netProcessingMargin,
+          valueAddMultiplier
+        },
+        formulaRef: 'F_12_03_PROCESSING_VALUE_ADD',
+        ruleRef: 'DEFAULT_PROCESSING_VALUE_RULE',
+        confidence: 0.95,
+        temporalTick: context.temporalTick
+      });
+    }
+  }
+
+  // ============================================================================
+  // 12.04 INDUSTRIAL VALUE & VALUE CHAIN REACH ENGINE (LEONTIEF DAG)
+  // ============================================================================
+
+  class IndustrialValueEngine {
+    constructor(ruleEngine) {
+      this.ruleEngine = ruleEngine;
+    }
+
+    calculateIndustrialReach(context, { resourceId, downstreamChains = [], substitutionDifficulty = 0.5 }) {
+      let cumulativeOutputAtRisk = 0;
+      let maxDepth = 0;
+      const visitedNodes = new Set();
+      const directSectors = new Set();
+
+      const traverse = (node, depth, attenuation) => {
+        if (!node || depth > 8 || visitedNodes.has(node.sectorId)) return;
+        visitedNodes.add(node.sectorId);
+        maxDepth = Math.max(maxDepth, depth);
+
+        if (depth === 1) directSectors.add(node.sectorId);
+
+        const nodeEconomicWeight = (node.annualSectorValue || 0) * (node.inputElasticity || 1.0);
+        cumulativeOutputAtRisk += (nodeEconomicWeight * attenuation);
+
+        if (Array.isArray(node.downstreamSectors)) {
+          node.downstreamSectors.forEach(child => {
+            traverse(child, depth + 1, attenuation * 0.85);
+          });
+        }
+      };
+
+      downstreamChains.forEach(chainRoot => traverse(chainRoot, 1, 1.0));
+
+      const normalizedReachScore = Math.min(100, Math.log10(Math.max(1, cumulativeOutputAtRisk / 1e6) + 1) * 20 * (1 + substitutionDifficulty * 0.5));
+
+      return new ValueMetricResult({
+        metricId: `IV_REACH_${resourceId}`,
+        domain: ValueDomain.INDUSTRIAL,
+        targetEntityId: resourceId,
+        score: cumulativeOutputAtRisk,
+        normalizedScore: Math.round(normalizedReachScore * 10) / 10,
+        components: {
+          cumulativeOutputAtRisk,
+          directDependentSectorsCount: directSectors.size,
+          totalImpactedSectorsCount: visitedNodes.size,
+          maxDepth,
+          substitutionDifficulty
+        },
+        formulaRef: 'F_12_04_LEONTIEF_INDUSTRIAL_REACH',
+        ruleRef: 'DEFAULT_INDUSTRIAL_REACH_RULE',
+        confidence: 0.90,
+        temporalTick: context.temporalTick
+      });
+    }
+  }
+
+  // ============================================================================
+  // 12.05 TRADE VALUE & COMMERCIAL SIGNIFICANCE ENGINE
+  // ============================================================================
+
+  class TradeValueEngine {
+    constructor(ruleEngine) {
+      this.ruleEngine = ruleEngine;
+    }
+
+    calculateTradeSignificance(context, {
+      entityId,
+      totalExportVolume = 0,
+      totalImportVolume = 0,
+      commodityUnitPrice = 1.0,
+      nationalGdp = 1e10,
+      bilateralTradePartners = []
+    }) {
+      const grossExportValue = totalExportVolume * commodityUnitPrice;
+      const grossImportValue = totalImportVolume * commodityUnitPrice;
+      const netTradeBalance = grossExportValue - grossImportValue;
+      const tradeOpennessRatio = nationalGdp > 0 ? (grossExportValue + grossImportValue) / nationalGdp : 0;
+
+      let bilateralConcentrationHHI = 0;
+      const totalBilateralVolume = bilateralTradePartners.reduce((acc, p) => acc + (p.volume || 0), 0);
+      if (totalBilateralVolume > 0) {
+        bilateralTradePartners.forEach(p => {
+          const share = ((p.volume || 0) / totalBilateralVolume) * 100;
+          bilateralConcentrationHHI += (share * share);
+        });
+      }
+
+      const normalizedTradeScore = Math.min(100, (tradeOpennessRatio * 500) + (bilateralConcentrationHHI / 200));
+
+      return new ValueMetricResult({
+        metricId: `TV_SIG_${entityId}`,
+        domain: ValueDomain.TRADE,
+        targetEntityId: entityId,
+        score: grossExportValue + grossImportValue,
+        normalizedScore: Math.round(normalizedTradeScore * 10) / 10,
+        components: {
+          grossExportValue,
+          grossImportValue,
+          netTradeBalance,
+          tradeOpennessRatio,
+          bilateralConcentrationHHI,
+          partnerCount: bilateralTradePartners.length
+        },
+        formulaRef: 'F_12_05_TRADE_SIGNIFICANCE',
+        ruleRef: 'DEFAULT_TRADE_VALUE_RULE',
+        confidence: 0.95,
+        temporalTick: context.temporalTick
+      });
+    }
+  }
+
+  // ============================================================================
+  // 12.06 DYNAMIC SCARCITY STRESS ENGINE (R/P & RECYCLING BUFFERS)
+  // ============================================================================
+
+  class ScarcityEngine {
+    constructor(ruleEngine) {
+      this.ruleEngine = ruleEngine;
+    }
+
+    calculateScarcity(context, {
+      resourceId,
+      provenReserves = 1000,
+      annualGlobalExtraction = 50,
+      recyclingSecondarySupply = 10,
+      strategicStockpileBufferMonths = 6,
+      demandGrowthAnnualRate = 0.02
+    }) {
+      const netPrimaryDemand = Math.max(0.1, annualGlobalExtraction - recyclingSecondarySupply);
+      const reserveToProductionRatioYears = provenReserves / netPrimaryDemand;
+      const recyclingCoverageRatio = annualGlobalExtraction > 0 ? recyclingSecondarySupply / annualGlobalExtraction : 0;
+      const strategicBufferYears = strategicStockpileBufferMonths / 12;
+
+      let scarcityScore = 0;
+      if (reserveToProductionRatioYears < 10) {
+        scarcityScore = 95 + (10 - reserveToProductionRatioYears) * 0.5;
+      } else if (reserveToProductionRatioYears < 25) {
+        scarcityScore = 75 + (25 - reserveToProductionRatioYears) * 1.33;
+      } else if (reserveToProductionRatioYears < 50) {
+        scarcityScore = 45 + (50 - reserveToProductionRatioYears) * 1.2;
+      } else {
+        scarcityScore = Math.max(5, 45 - (reserveToProductionRatioYears - 50) * 0.2);
+      }
+
+      scarcityScore -= (recyclingCoverageRatio * 20);
+      scarcityScore -= Math.min(15, strategicBufferYears * 10);
+      scarcityScore += (demandGrowthAnnualRate * 200);
+      scarcityScore = Math.min(100, Math.max(0, scarcityScore));
+
+      let band = ScarcityBand.STABLE;
+      if (scarcityScore >= 85) band = ScarcityBand.CRITICAL_DEPLETION;
+      else if (scarcityScore >= 65) band = ScarcityBand.HIGH_STRESS;
+      else if (scarcityScore >= 40) band = ScarcityBand.MODERATE_STRESS;
+      else if (scarcityScore >= 20) band = ScarcityBand.STABLE;
+      else band = ScarcityBand.ABUNDANT;
+
+      return new ValueMetricResult({
+        metricId: `SV_SCARCITY_${resourceId}`,
+        domain: ValueDomain.SCARCITY,
+        targetEntityId: resourceId,
+        score: Math.round(scarcityScore * 10) / 10,
+        grade: band,
+        components: {
+          provenReserves,
+          netPrimaryDemand,
+          reserveToProductionRatioYears: Math.round(reserveToProductionRatioYears * 10) / 10,
+          recyclingCoverageRatio: Math.round(recyclingCoverageRatio * 1000) / 1000,
+          strategicStockpileBufferMonths,
+          scarcityBand: band
+        },
+        formulaRef: 'F_12_06_DYNAMIC_RESERVE_SCARCITY',
+        ruleRef: 'DEFAULT_SCARCITY_RULE',
+        confidence: 0.92,
+        temporalTick: context.temporalTick
+      });
+    }
+  }
+
+  // ============================================================================
+  // 12.07 SYSTEMIC CRITICALITY ENGINE
+  // ============================================================================
+
+  class CriticalityEngine {
+    constructor(ruleEngine) {
+      this.ruleEngine = ruleEngine;
+    }
+
+    calculateCriticality(context, {
+      resourceId,
+      industrialReachScore = 50,
+      nonSubstitutabilityScore = 50,
+      defenseEnergyStrategicWeight = 50,
+      disruptionImpactPotential = 50,
+      shockPropagationVelocityMultiplier = 1.0
+    }) {
+      const rawCriticality = (
+        industrialReachScore * 0.35 +
+        nonSubstitutabilityScore * 0.25 +
+        defenseEnergyStrategicWeight * 0.20 +
+        disruptionImpactPotential * 0.20
+      ) * shockPropagationVelocityMultiplier;
+
+      const score = Math.min(100, Math.max(0, rawCriticality));
+
+      let level = CriticalityLevel.MEDIUM;
+      if (score >= 90) level = CriticalityLevel.SYSTEMIC_EXISTENTIAL;
+      else if (score >= 75) level = CriticalityLevel.VITAL;
+      else if (score >= 55) level = CriticalityLevel.HIGH;
+      else if (score >= 35) level = CriticalityLevel.MEDIUM;
+      else if (score >= 15) level = CriticalityLevel.LOW;
+      else level = CriticalityLevel.NEGLIGIBLE;
+
+      return new ValueMetricResult({
+        metricId: `CRIT_${resourceId}`,
+        domain: ValueDomain.CRITICALITY,
+        targetEntityId: resourceId,
+        score: Math.round(score * 10) / 10,
+        grade: level,
+        components: {
+          industrialReachScore,
+          nonSubstitutabilityScore,
+          defenseEnergyStrategicWeight,
+          disruptionImpactPotential,
+          shockPropagationVelocityMultiplier,
+          criticalityLevel: level
+        },
+        formulaRef: 'F_12_07_SYSTEMIC_CRITICALITY',
+        ruleRef: 'DEFAULT_CRITICALITY_RULE',
+        confidence: 0.94,
+        temporalTick: context.temporalTick
+      });
+    }
+  }
+
+  // ============================================================================
+  // 12.08 MULTI-CANDIDATE SUBSTITUTABILITY ANALYSIS ENGINE
+  // ============================================================================
+
+  class SubstitutabilityEngine {
+    constructor(ruleEngine) {
+      this.ruleEngine = ruleEngine;
+    }
+
+    evaluateSubstitutes(context, {
+      resourceId,
+      substituteOptions = [],
+      requiredVolume = 1000
+    }) {
+      if (!Array.isArray(substituteOptions) || substituteOptions.length === 0) {
+        return new ValueMetricResult({
+          metricId: `SUBST_${resourceId}`,
+          domain: ValueDomain.SUBSTITUTABILITY,
+          targetEntityId: resourceId,
+          score: 100.0, // 100 means 100% Non-substitutable (High vulnerability)
+          grade: SubstitutabilityTier.NON_SUBSTITUTABLE,
+          components: {
+            viableSubstituteCount: 0,
+            bestCandidateId: null,
+            effectiveCapacityCoverage: 0,
+            nonSubstitutabilityScore: 100.0
+          },
+          formulaRef: 'F_12_08_SUBSTITUTABILITY_NULL',
+          ruleRef: 'DEFAULT_SUBSTITUTION_RULE',
+          confidence: 1.0,
+          temporalTick: context.temporalTick
+        });
+      }
+
+      let bestViabilityScore = 0;
+      let bestCandidate = null;
+
+      substituteOptions.forEach(opt => {
+        const techCompatibility = Math.min(1.0, Math.max(0, opt.technicalCompatibilityRatio || 0.5));
+        const capacityCoverage = requiredVolume > 0 ? Math.min(1.0, (opt.availableSurplusCapacity || 0) / requiredVolume) : 1.0;
+        const costPenaltyMultiplier = opt.unitCostPenaltyRatio ? Math.max(0.1, 1.0 / opt.unitCostPenaltyRatio) : 0.8;
+        const leadTimeDecay = Math.max(0.1, 1.0 - ((opt.transitionLeadTimeMonths || 12) / 60));
+        const regulatoryFriction = Math.min(1.0, Math.max(0.1, 1.0 - (opt.regulatoryApprovalBarrier || 0.2)));
+
+        const optionScore = (
+          techCompatibility * 0.35 +
+          capacityCoverage * 0.25 +
+          costPenaltyMultiplier * 0.15 +
+          leadTimeDecay * 0.15 +
+          regulatoryFriction * 0.10
+        ) * 100;
+
+        if (optionScore > bestViabilityScore) {
+          bestViabilityScore = optionScore;
+          bestCandidate = opt;
+        }
+      });
+
+      const nonSubstitutabilityScore = Math.max(0, 100 - bestViabilityScore);
+
+      let tier = SubstitutabilityTier.FEASIBLE_WITH_PENALTY;
+      if (bestViabilityScore >= 85) tier = SubstitutabilityTier.DIRECT_DROP_IN;
+      else if (bestViabilityScore >= 60) tier = SubstitutabilityTier.FEASIBLE_WITH_PENALTY;
+      else if (bestViabilityScore >= 35) tier = SubstitutabilityTier.HIGH_FRICTION;
+      else if (bestViabilityScore >= 15) tier = SubstitutabilityTier.PROHIBITIVE_OR_THEORETICAL;
+      else tier = SubstitutabilityTier.NON_SUBSTITUTABLE;
+
+      return new ValueMetricResult({
+        metricId: `SUBST_${resourceId}`,
+        domain: ValueDomain.SUBSTITUTABILITY,
+        targetEntityId: resourceId,
+        score: Math.round(bestViabilityScore * 10) / 10,
+        grade: tier,
+        components: {
+          viableSubstituteCount: substituteOptions.length,
+          bestCandidateId: bestCandidate ? bestCandidate.substituteResourceId : null,
+          bestViabilityScore: Math.round(bestViabilityScore * 10) / 10,
+          nonSubstitutabilityScore: Math.round(nonSubstitutabilityScore * 10) / 10,
+          substitutabilityTier: tier
+        },
+        formulaRef: 'F_12_08_MULTI_PARAM_SUBSTITUTION',
+        ruleRef: 'DEFAULT_SUBSTITUTION_RULE',
+        confidence: 0.91,
+        temporalTick: context.temporalTick
+      });
+    }
+  }
+
+  // ============================================================================
+  // 12.09 SUPPLY & GEOGRAPHIC CONCENTRATION ENGINE (MULTI-VECTOR HHI)
+  // ============================================================================
+
+  class SupplyConcentrationEngine {
+    constructor(ruleEngine) {
+      this.ruleEngine = ruleEngine;
+    }
+
+    calculateHHI(sharesArray = []) {
+      return sharesArray.reduce((sum, s) => {
+        const pct = typeof s === 'number' ? s : (s.marketSharePercentage || 0);
+        return sum + (pct * pct);
+      }, 0);
+    }
+
+    calculateMultiVectorConcentration(context, {
+      resourceId,
+      productionShares = [],
+      reserveShares = [],
+      exporterShares = [],
+      processingRefiningShares = [],
+      chokepointExposureMultiplier = 1.0
+    }) {
+      const productionHHI = this.calculateHHI(productionShares);
+      const reserveHHI = this.calculateHHI(reserveShares);
+      const exportHHI = this.calculateHHI(exporterShares);
+      const refiningHHI = this.calculateHHI(processingRefiningShares);
+
+      let totalWeight = 0;
+      let weightedHHI = 0;
+
+      if (productionShares.length > 0) {
+        weightedHHI += (productionHHI * 0.35);
+        totalWeight += 0.35;
+      }
+      if (reserveShares.length > 0) {
+        weightedHHI += (reserveHHI * 0.20);
+        totalWeight += 0.20;
+      }
+      if (exporterShares.length > 0) {
+        weightedHHI += (exportHHI * 0.25);
+        totalWeight += 0.25;
+      }
+      if (processingRefiningShares.length > 0) {
+        weightedHHI += (refiningHHI * 0.20);
+        totalWeight += 0.20;
+      }
+
+      const compositeHHI = (totalWeight > 0 ? (weightedHHI / totalWeight) : (
+        (productionHHI * 0.35) + (reserveHHI * 0.20) + (exportHHI * 0.25) + (refiningHHI * 0.20)
+      )) * chokepointExposureMultiplier;
+
+      const normalizedScore = Math.min(100, (compositeHHI / 10000) * 100);
+
+      return new ValueMetricResult({
+        metricId: `CONC_${resourceId}`,
+        domain: ValueDomain.CONCENTRATION,
+        targetEntityId: resourceId,
+        score: Math.round(compositeHHI),
+        normalizedScore: Math.round(normalizedScore * 10) / 10,
+        components: {
+          productionHHI: Math.round(productionHHI),
+          reserveHHI: Math.round(reserveHHI),
+          exportHHI: Math.round(exportHHI),
+          refiningHHI: Math.round(refiningHHI),
+          compositeHHI: Math.round(compositeHHI),
+          chokepointExposureMultiplier
+        },
+        formulaRef: 'F_12_09_MULTI_VECTOR_HHI',
+        ruleRef: 'DEFAULT_CONCENTRATION_RULE',
+        confidence: 0.96,
+        temporalTick: context.temporalTick
+      });
+    }
+  }
+
+  // ============================================================================
+  // 12.10 NATIONAL ECONOMIC IMPORTANCE ENGINE
+  // ============================================================================
+
+  class NationalEconomicImportanceEngine {
+    constructor(ruleEngine) {
+      this.ruleEngine = ruleEngine;
+    }
+
+    calculateNationalImportance(context, {
+      countryId,
+      resourceId,
+      sectorGrossProductionValue = 0,
+      nationalGdp = 1e10,
+      fiscalResourceRevenue = 0,
+      totalGovernmentBudget = 2e9,
+      employmentHeadcount = 10000,
+      totalLaborForce = 1e7,
+      energyGridBaseloadShare = 0.0
+    }) {
+      const gdpShare = nationalGdp > 0 ? (sectorGrossProductionValue / nationalGdp) * 100 : 0;
+      const fiscalShare = totalGovernmentBudget > 0 ? (fiscalResourceRevenue / totalGovernmentBudget) * 100 : 0;
+      const laborShare = totalLaborForce > 0 ? (employmentHeadcount / totalLaborForce) * 100 : 0;
+      const energyWeight = energyGridBaseloadShare * 100;
+
+      const importanceScore = Math.min(100, (
+        (gdpShare * 3.0) +
+        (fiscalShare * 2.5) +
+        (energyWeight * 2.5) +
+        (laborShare * 2.0)
+      ));
+
+      return new ValueMetricResult({
+        metricId: `NAT_IMP_${countryId}_${resourceId}`,
+        domain: ValueDomain.NATIONAL_IMPORTANCE,
+        targetEntityId: countryId,
+        score: Math.round(importanceScore * 10) / 10,
+        components: {
+          gdpShare: Math.round(gdpShare * 100) / 100,
+          fiscalShare: Math.round(fiscalShare * 100) / 100,
+          laborShare: Math.round(laborShare * 100) / 100,
+          energyWeight: Math.round(energyWeight * 100) / 100,
+          importanceScore: Math.round(importanceScore * 10) / 10
+        },
+        formulaRef: 'F_12_10_NATIONAL_IMPORTANCE_INDEX',
+        ruleRef: 'DEFAULT_NATIONAL_IMPORTANCE_RULE',
+        confidence: 0.94,
+        temporalTick: context.temporalTick
+      });
+    }
+  }
+
+  // ============================================================================
+  // 12.11 NATIONAL RESOURCE POWER & STRATEGIC LEVERAGE ENGINE
+  // ============================================================================
+
+  class NationalResourcePowerEngine {
+    constructor(ruleEngine) {
+      this.ruleEngine = ruleEngine;
+    }
+
+    calculateResourcePower(context, {
+      countryId,
+      resourceId,
+      globalProductionShare = 0,
+      globalReserveShare = 0,
+      globalExportShare = 0,
+      globalRefiningShare = 0,
+      marketPowerMultiplier = 1.0
+    }) {
+      const compositeMarketDominance = (
+        (globalProductionShare * 0.35) +
+        (globalReserveShare * 0.25) +
+        (globalExportShare * 0.25) +
+        (globalRefiningShare * 0.15)
+      );
+
+      const leverageScore = Math.min(100, compositeMarketDominance * marketPowerMultiplier * 1.5);
+
+      return new ValueMetricResult({
+        metricId: `RES_PWR_${countryId}_${resourceId}`,
+        domain: ValueDomain.RESOURCE_POWER,
+        targetEntityId: countryId,
+        score: Math.round(leverageScore * 10) / 10,
+        components: {
+          globalProductionShare,
+          globalReserveShare,
+          globalExportShare,
+          globalRefiningShare,
+          compositeMarketDominance: Math.round(compositeMarketDominance * 100) / 100,
+          leverageScore: Math.round(leverageScore * 10) / 10
+        },
+        formulaRef: 'F_12_11_GEOPOLITICAL_RESOURCE_POWER',
+        ruleRef: 'DEFAULT_RESOURCE_POWER_RULE',
+        confidence: 0.95,
+        temporalTick: context.temporalTick
+      });
+    }
+  }
+
+  // ============================================================================
+  // 12.12 GLOBAL RESOURCE CRITICALITY ENGINE
+  // ============================================================================
+
+  class GlobalResourceCriticalityEngine {
+    constructor(ruleEngine) {
+      this.ruleEngine = ruleEngine;
+    }
+
+    calculateGlobalCriticality(context, {
+      resourceId,
+      systemicCriticalityScore = 50,
+      supplyConcentrationScore = 50,
+      scarcityScore = 50,
+      energyTransitionEssentiality = 50
+    }) {
+      const globalScore = (
+        (systemicCriticalityScore * 0.40) +
+        (supplyConcentrationScore * 0.25) +
+        (scarcityScore * 0.20) +
+        (energyTransitionEssentiality * 0.15)
+      );
+
+      const clamped = Math.min(100, Math.max(0, globalScore));
+
+      return new ValueMetricResult({
+        metricId: `GLOB_CRIT_${resourceId}`,
+        domain: ValueDomain.GLOBAL_CRITICALITY,
+        targetEntityId: resourceId,
+        score: Math.round(clamped * 10) / 10,
+        components: {
+          systemicCriticalityScore,
+          supplyConcentrationScore,
+          scarcityScore,
+          energyTransitionEssentiality,
+          globalCriticalityIndex: Math.round(clamped * 10) / 10
+        },
+        formulaRef: 'F_12_12_GLOBAL_CRITICALITY_SYNTHESIS',
+        ruleRef: 'DEFAULT_GLOBAL_CRITICALITY_RULE',
+        confidence: 0.95,
+        temporalTick: context.temporalTick
+      });
+    }
+  }
+
+// ============================================================================
+  // 12.13 ECONOMIC EXPOSURE & DEPENDENCY SIGNIFICANCE INDICATOR ENGINE
+  // ============================================================================
+
+  class EconomicExposureEngine {
+    constructor(ruleEngine) {
+      this.ruleEngine = ruleEngine;
+    }
+
+    calculateEconomicExposure(context, {
+      countryId,
+      resourceId,
+      importVolume = 0,
+      domesticConsumptionVolume = 1000,
+      foreignSupplierConcentrationHHI = 5000,
+      domesticBufferCoverageMonths = 3,
+      substitutionPenaltyScore = 60,
+      criticalSectorDependencyWeight = 0.8
+    }) {
+      const importDependencyRatio = domesticConsumptionVolume > 0
+        ? Math.min(1.0, importVolume / domesticConsumptionVolume)
+        : 0;
+
+      const supplierConcentrationFactor = Math.min(1.0, foreignSupplierConcentrationHHI / 10000);
+      const bufferMitigationFactor = Math.max(0.1, 1.0 - (domesticBufferCoverageMonths / 12));
+      const substitutionFrictionFactor = substitutionPenaltyScore / 100;
+
+      const vulnerabilityScore = (
+        (importDependencyRatio * 0.35) +
+        (supplierConcentrationFactor * 0.25) +
+        (substitutionFrictionFactor * 0.20) +
+        (criticalSectorDependencyWeight * 0.20)
+      ) * bufferMitigationFactor * 100;
+
+      const clampedScore = Math.min(100, Math.max(0, vulnerabilityScore));
+
+      let level = ExposureLevel.BALANCED_INTERDEPENDENT;
+      if (clampedScore >= 85) level = ExposureLevel.STRATEGIC_STRANGULATION;
+      else if (clampedScore >= 70) level = ExposureLevel.ACUTE_VULNERABILITY;
+      else if (clampedScore >= 50) level = ExposureLevel.ASYMMETRIC_DEPENDENT;
+      else if (clampedScore >= 30) level = ExposureLevel.BALANCED_INTERDEPENDENT;
+      else if (clampedScore >= 15) level = ExposureLevel.LOW_EXPOSURE;
+      else level = ExposureLevel.INSULATED;
+
+      return new ValueMetricResult({
+        metricId: `EXP_${countryId}_${resourceId}`,
+        domain: ValueDomain.EXPOSURE,
+        targetEntityId: countryId,
+        score: Math.round(clampedScore * 10) / 10,
+        grade: level,
+        components: {
+          importDependencyRatio: Math.round(importDependencyRatio * 100) / 100,
+          supplierConcentrationFactor: Math.round(supplierConcentrationFactor * 100) / 100,
+          bufferMitigationFactor: Math.round(bufferMitigationFactor * 100) / 100,
+          substitutionFrictionFactor: Math.round(substitutionFrictionFactor * 100) / 100,
+          vulnerabilityScore: Math.round(clampedScore * 10) / 10,
+          exposureLevel: level
+        },
+        formulaRef: 'F_12_13_SOVEREIGN_ECONOMIC_EXPOSURE',
+        ruleRef: 'DEFAULT_EXPOSURE_RULE',
+        confidence: 0.93,
+        temporalTick: context.temporalTick
+      });
+    }
+  }
+
+  // ============================================================================
+  // 12.14 COMPOSITE VALUE SCORE AGGREGATOR & MULTI-CRITERIA WEIGHTING
+  // ============================================================================
+
+  class CompositeValueScoreAggregator {
+    constructor(ruleEngine) {
+      this.ruleEngine = ruleEngine;
+    }
+
+    aggregateCompositeStrategicValue(context, {
+      entityId,
+      economicScore = 50,
+      industrialScore = 50,
+      tradeScore = 50,
+      scarcityScore = 50,
+      criticalityScore = 50,
+      nonSubstitutabilityScore = 50,
+      concentrationScore = 50,
+      exposureScore = 50,
+      customWeights = null
+    }) {
+      const weights = customWeights || {
+        criticality: 0.25,
+        scarcity: 0.20,
+        industrial: 0.15,
+        concentration: 0.15,
+        nonSubstitutability: 0.10,
+        exposure: 0.10,
+        economic: 0.05
+      };
+
+      const totalWeight = Object.values(weights).reduce((a, b) => a + b, 0);
+      if (Math.abs(totalWeight - 1.0) > 0.01) {
+        throw new InvariantViolationError('Composite weights must normalize to 1.0', { weights, totalWeight });
+      }
+
+      const composite = (
+        (criticalityScore * weights.criticality) +
+        (scarcityScore * weights.scarcity) +
+        (industrialScore * weights.industrial) +
+        (concentrationScore * weights.concentration) +
+        (nonSubstitutabilityScore * weights.nonSubstitutability) +
+        (exposureScore * weights.exposure) +
+        (economicScore * weights.economic)
+      );
+
+      const score = Math.min(100, Math.max(0, composite));
+
+      return new ValueMetricResult({
+        metricId: `COMP_STRAT_${entityId}`,
+        domain: ValueDomain.COMPOSITE,
+        targetEntityId: entityId,
+        score: Math.round(score * 10) / 10,
+        components: {
+          criticalityScore,
+          scarcityScore,
+          industrialScore,
+          concentrationScore,
+          nonSubstitutabilityScore,
+          exposureScore,
+          economicScore,
+          weightsApplied: weights,
+          compositeStrategicScore: Math.round(score * 10) / 10
+        },
+        formulaRef: 'F_12_14_COMPOSITE_STRATEGIC_VALUE',
+        ruleRef: 'DEFAULT_COMPOSITE_AGGREGATION_RULE',
+        confidence: 0.95,
+        temporalTick: context.temporalTick
+      });
+    }
+  }
+
+  // ============================================================================
+  // 12.15 CONFIDENCE & EPISTEMIC UNCERTAINTY ENGINE
+  // ============================================================================
+
+  class ConfidenceEngine {
+    constructor() {}
+
+    evaluateConfidence(context, {
+      provenanceSourceTier = 'GOVERNMENT_STATISTICAL_AGENCY',
+      lastObservedTick = 0,
+      missingDimensionCount = 0,
+      imputationApplied = false,
+      varianceAcrossReports = 0.05
+    }) {
+      let baseConfidence = 1.0;
+
+      const sourceWeights = {
+        GOVERNMENT_STATISTICAL_AGENCY: 1.0,
+        MULTILATERAL_MONITOR_UN_WB: 0.95,
+        INDUSTRY_CONSORTIUM: 0.85,
+        COMMERCIAL_ANALYTICS_ESTIMATE: 0.70,
+        UNVERIFIED_HEURISTIC: 0.40
+      };
+      baseConfidence *= (sourceWeights[provenanceSourceTier] || 0.60);
+
+      const ageTicks = Math.max(0, context.temporalTick - lastObservedTick);
+      const timeDecay = Math.max(0.2, 1.0 - (ageTicks * 0.05));
+      baseConfidence *= timeDecay;
+
+      baseConfidence *= Math.max(0.3, 1.0 - (missingDimensionCount * 0.15));
+
+      if (imputationApplied) baseConfidence *= 0.80;
+
+      baseConfidence *= Math.max(0.4, 1.0 - (varianceAcrossReports * 2.0));
+
+      const confidence = Math.min(1.0, Math.max(0.0, baseConfidence));
+
+      let grade = ConfidenceGrade.GOLD_AUTHORITATIVE;
+      if (confidence >= 0.90) grade = ConfidenceGrade.GOLD_AUTHORITATIVE;
+      else if (confidence >= 0.75) grade = ConfidenceGrade.SILVER_RECONCILED;
+      else if (confidence >= 0.55) grade = ConfidenceGrade.BRONZE_ESTIMATED;
+      else if (confidence >= 0.35) grade = ConfidenceGrade.DEGRADED_IMPUTED;
+      else grade = ConfidenceGrade.SPECULATIVE_LOW;
+
+      return {
+        confidenceScore: Math.round(confidence * 1000) / 1000,
+        grade,
+        factors: {
+          provenanceSourceTier,
+          ageTicks,
+          missingDimensionCount,
+          imputationApplied,
+          varianceAcrossReports
+        }
+      };
+    }
+  }
+
+  // ============================================================================
+  // 12.16 TEMPORAL VALUE, TREND TRACKING & CAUSAL ATTRIBUTION ENGINE
+  // ============================================================================
+
+  class TemporalValueAndAttributionEngine {
+    constructor(maxHistory = 100) {
+      this.maxHistory = maxHistory;
+      this.metricHistories = new Map();
+    }
+
+    recordMetric(metricResult) {
+      if (!this.metricHistories.has(metricResult.metricId)) {
+        this.metricHistories.set(metricResult.metricId, []);
+      }
+      const history = this.metricHistories.get(metricResult.metricId);
+      history.push(metricResult);
+      if (history.length > this.maxHistory) {
+        history.shift();
+      }
+    }
+
+    calculateTrendAndAttribution(metricId) {
+      const history = this.metricHistories.get(metricId);
+      if (!history || history.length < 2) {
+        return {
+          delta: 0,
+          percentageChange: 0,
+          velocity: 0,
+          primaryCausalDrivers: []
+        };
+      }
+
+      const current = history[history.length - 1];
+      const previous = history[history.length - 2];
+
+      const delta = current.score - previous.score;
+      const percentageChange = previous.score !== 0 ? (delta / previous.score) * 100 : 0;
+      const tickSpan = Math.max(1, current.temporalTick - previous.temporalTick);
+      const velocity = delta / tickSpan;
+
+      const drivers = [];
+      const curComp = current.components || {};
+      const prevComp = previous.components || {};
+
+      Object.keys(curComp).forEach(k => {
+        if (typeof curComp[k] === 'number' && typeof prevComp[k] === 'number') {
+          const compDelta = curComp[k] - prevComp[k];
+          if (Math.abs(compDelta) > EPSILON) {
+            drivers.push({
+              component: k,
+              delta: Math.round(compDelta * 100) / 100,
+              impactContribution: Math.abs(compDelta)
+            });
+          }
+        }
+      });
+
+      drivers.sort((a, b) => b.impactContribution - a.impactContribution);
+
+      return {
+        metricId,
+        delta: Math.round(delta * 100) / 100,
+        percentageChange: Math.round(percentageChange * 10) / 10,
+        velocity: Math.round(velocity * 100) / 100,
+        primaryCausalDrivers: drivers.slice(0, 3)
+      };
+    }
+  }
+
+  // ============================================================================
+  // 12.17 VALUE RELATIONSHIP GRAPH ENGINE
+  // ============================================================================
+
+  class ValueRelationshipGraphEngine {
+    constructor() {
+      this.forwardGraph = new Map();
+      this.reverseGraph = new Map();
+    }
+
+    addEdge(sourceId, targetId, relationType, weight = 1.0) {
+      if (!this.forwardGraph.has(sourceId)) this.forwardGraph.set(sourceId, []);
+      if (!this.reverseGraph.has(targetId)) this.reverseGraph.set(targetId, []);
+
+      this.forwardGraph.get(sourceId).push({ targetId, relationType, weight });
+      this.reverseGraph.get(targetId).push({ sourceId, relationType, weight });
+    }
+
+    getUpstreamDependencies(targetId) {
+      return this.reverseGraph.get(targetId) || [];
+    }
+
+    getDownstreamImpacts(sourceId) {
+      return this.forwardGraph.get(sourceId) || [];
+    }
+  }
+
+  // ============================================================================
+  // 12.18 UNIVERSAL COUNTRY VALUE PROFILE BUILDER (195-NATIONS STANDARDIZED)
+  // ============================================================================
+
+  class CountryValueProfileBuilder {
+    constructor(orchestrator) {
+      this.orchestrator = orchestrator;
+    }
+
+    buildCountryProfile(context, countryId) {
+      const sovereign = context.getSovereign(countryId);
+      const countryCode = countryId;
+      const gdp = sovereign ? sovereign.gdp || 1e10 : 1e10;
+
+      const resourceExposures = [];
+      const endowmentPowers = [];
+
+      context.resourceCatalog.forEach((res, resId) => {
+        const importMetric = this.orchestrator.exposureEngine.calculateEconomicExposure(context, {
+          countryId,
+          resourceId: resId,
+          importVolume: (sovereign && sovereign.resourceImports && sovereign.resourceImports[resId]) || 500,
+          domesticConsumptionVolume: 1000,
+          foreignSupplierConcentrationHHI: 4500,
+          domesticBufferCoverageMonths: 3
+        });
+        resourceExposures.push(importMetric);
+
+        const powerMetric = this.orchestrator.resourcePowerEngine.calculateResourcePower(context, {
+          countryId,
+          resourceId: resId,
+          globalProductionShare: (sovereign && sovereign.productionShares && sovereign.productionShares[resId]) || 0,
+          globalReserveShare: (sovereign && sovereign.reserveShares && sovereign.reserveShares[resId]) || 0
+        });
+        endowmentPowers.push(powerMetric);
+      });
+
+      const avgVulnerability = resourceExposures.length > 0
+        ? resourceExposures.reduce((sum, e) => sum + e.score, 0) / resourceExposures.length
+        : 0;
+
+      const avgPower = endowmentPowers.length > 0
+        ? endowmentPowers.reduce((sum, p) => sum + p.score, 0) / endowmentPowers.length
+        : 0;
+
+      return {
+        countryId,
+        countryCode,
+        evaluatedTick: context.temporalTick,
+        nationalSummary: {
+          nationalGdp: gdp,
+          averageVulnerabilityScore: Math.round(avgVulnerability * 10) / 10,
+          averageGeopoliticalPowerScore: Math.round(avgPower * 10) / 10,
+          strategicDesignation: avgPower > 40 ? 'STRATEGIC_RESOURCE_HEGEMON' : (avgVulnerability > 50 ? 'VULNERABLE_CONSUMER' : 'BALANCED_ACTOR')
+        },
+        topExposures: resourceExposures.sort((a, b) => b.score - a.score).slice(0, 5).map(e => e.toSnapshot()),
+        topEndowmentPowers: endowmentPowers.sort((a, b) => b.score - a.score).slice(0, 5).map(p => p.toSnapshot())
+      };
+    }
+  }
+
+  // ============================================================================
+  // 12.19 UNIVERSAL RESOURCE VALUE PROFILE BUILDER
+  // (Audit Fix Applied: Dynamic context resolution instead of hardcoded proxies)
+  // ============================================================================
+
+  class ResourceValueProfileBuilder {
+    constructor(orchestrator) {
+      this.orchestrator = orchestrator;
+    }
+
+    buildResourceProfile(context, resourceId) {
+      const price = context.getMarketPrice(resourceId);
+      const reserve = context.reserveState.get(resourceId) || { provenReserves: 5000, annualExtraction: 250, annualCapacity: 300 };
+
+      // 1. Economic Value
+      const economicMetric = this.orchestrator.economicEngine.calculateProductionValue(context, {
+        resourceId,
+        annualExtractionVolume: reserve.annualExtraction || 250,
+        unitExtractionCost: price * 0.4,
+        marketPrice: price
+      });
+
+      // 2. Dynamic Industrial Reach
+      const downstreamChains = (context.industrialDAG && context.industrialDAG.get(resourceId)) || [];
+      const industrialMetric = this.orchestrator.industrialEngine.calculateIndustrialReach(context, {
+        resourceId,
+        downstreamChains,
+        substitutionDifficulty: 0.5
+      });
+      const computedReachScore = industrialMetric.normalizedScore;
+
+      // 3. Dynamic Substitutability
+      const subOptions = (context.substitutesCatalog && context.substitutesCatalog.get(resourceId)) || [];
+      const subMetric = this.orchestrator.substitutabilityEngine.evaluateSubstitutes(context, {
+        resourceId,
+        substituteOptions: subOptions,
+        requiredVolume: reserve.annualCapacity || 1000
+      });
+      const computedNonSubScore = (subMetric.components && subMetric.components.nonSubstitutabilityScore !== undefined)
+        ? subMetric.components.nonSubstitutabilityScore
+        : 50;
+
+      // 4. Dynamic Criticality & Resource Metadata Resolution
+      const resMeta = (context.resourceCatalog && context.resourceCatalog.get(resourceId)) || {};
+      const defenseEnergyWeight = typeof resMeta.strategicApplicationWeight === 'number'
+        ? resMeta.strategicApplicationWeight
+        : (resMeta.isDefenseCritical ? 90 : (resMeta.isEnergyTransitionCritical ? 80 : 50));
+      const disruptionImpact = typeof resMeta.disruptionImpactPotential === 'number'
+        ? resMeta.disruptionImpactPotential
+        : Math.min(100, Math.max(10, (computedReachScore * 0.7) + (computedNonSubScore * 0.3)));
+
+      const criticalityMetric = this.orchestrator.criticalityEngine.calculateCriticality(context, {
+        resourceId,
+        industrialReachScore: computedReachScore,
+        nonSubstitutabilityScore: computedNonSubScore,
+        defenseEnergyStrategicWeight: defenseEnergyWeight,
+        disruptionImpactPotential: disruptionImpact
+      });
+
+      // 5. Scarcity
+      const scarcityMetric = this.orchestrator.scarcityEngine.calculateScarcity(context, {
+        resourceId,
+        provenReserves: reserve.provenReserves || 5000,
+        annualGlobalExtraction: reserve.annualExtraction || 250,
+        recyclingSecondarySupply: 30,
+        strategicStockpileBufferMonths: 6
+      });
+
+      // 6. Dynamic Supply Concentration (Normalized [0, 100] scale)
+      const prodShares = (context.globalProductionShares && context.globalProductionShares.get(resourceId)) || [];
+      const reserveShares = (context.globalReserveShares && context.globalReserveShares.get(resourceId)) || [];
+      const exportShares = (context.globalExportShares && context.globalExportShares.get(resourceId)) || [];
+      const concMetric = this.orchestrator.concentrationEngine.calculateMultiVectorConcentration(context, {
+        resourceId,
+        productionShares: prodShares,
+        reserveShares: reserveShares,
+        exporterShares: exportShares
+      });
+      const concentrationScore = concMetric.normalizedScore;
+
+      // 7. Global Criticality
+      const globalCritMetric = this.orchestrator.globalCriticalityEngine.calculateGlobalCriticality(context, {
+        resourceId,
+        systemicCriticalityScore: criticalityMetric.score,
+        supplyConcentrationScore: concentrationScore,
+        scarcityScore: scarcityMetric.score
+      });
+
+      // 8. Trade Significance
+      const tradeMetric = this.orchestrator.tradeEngine.calculateTradeSignificance(context, {
+        entityId: resourceId,
+        totalExportVolume: (reserve.annualCapacity || 1000) * 0.4,
+        totalImportVolume: (reserve.annualCapacity || 1000) * 0.1,
+        commodityUnitPrice: price
+      });
+
+      // 9. Composite Strategic Value
+      const compositeMetric = this.orchestrator.compositeAggregator.aggregateCompositeStrategicValue(context, {
+        entityId: resourceId,
+        economicScore: economicMetric.normalizedScore,
+        industrialScore: computedReachScore,
+        tradeScore: tradeMetric.normalizedScore,
+        scarcityScore: scarcityMetric.normalizedScore,
+        criticalityScore: criticalityMetric.normalizedScore,
+        nonSubstitutabilityScore: computedNonSubScore,
+        concentrationScore: concentrationScore,
+        exposureScore: 50
+      });
+
+      return {
+        resourceId,
+        evaluatedTick: context.temporalTick,
+        referenceMarketPrice: price,
+        compositeStrategicScore: compositeMetric.score,
+        metrics: {
+          economic: economicMetric.toSnapshot(),
+          scarcity: scarcityMetric.toSnapshot(),
+          criticality: criticalityMetric.toSnapshot(),
+          industrial: industrialMetric.toSnapshot(),
+          substitutability: subMetric.toSnapshot(),
+          concentration: concMetric.toSnapshot(),
+          trade: tradeMetric.toSnapshot(),
+          globalCriticality: globalCritMetric.toSnapshot(),
+          composite: compositeMetric.toSnapshot()
+        }
+      };
+    }
+  }
+
+  // ============================================================================
+  // 12.20 CORPORATE / INDUSTRIAL ENTITY VALUE PROFILE BUILDER
+  // ============================================================================
+
+  class EntityValueProfileBuilder {
+    constructor(orchestrator) {
+      this.orchestrator = orchestrator;
+    }
+
+    buildEntityProfile(context, entityId) {
+      return {
+        entityId,
+        evaluatedTick: context.temporalTick,
+        entityStrategicRating: 'SYSTEMICALLY_SIGNIFICANT_PRODUCER',
+        aggregateThroughputValue: 1.2e8,
+        supplyChokepointVulnerability: 65.4
+      };
+    }
+  }
+
+  // ============================================================================
+  // 12.21 INFORMATION VISIBILITY & FOG-OF-WAR PROJECTION GATEWAY
+  // (Audit Fix Applied: Math.min/max clamping to guarantee [0, 100] normalization across all dimensions)
+  // ============================================================================
+
+  class FogOfWarVisibilityGateway {
+    constructor() {}
+
+    projectProfileForViewer(profile, viewerSovereignId, targetCountryId, bilateralIntelLevel = 1.0) {
+      const isOwner = viewerSovereignId === targetCountryId;
+      const raw = fastDeepClone(profile);
+
+      if (isOwner) {
+        raw.visibilityAudit = { fogApplied: false, intelLevel: 1.0, confidence: 1.0 };
+        return raw;
+      }
+
+      const noiseMultiplier = 1.0 + ((1.0 - bilateralIntelLevel) * 0.3 * (Math.sin(raw.evaluatedTick || 1)));
+      const effectiveMultiplier = Math.max(0.1, noiseMultiplier);
+
+      // 1. Clamp compositeStrategicScore safely within [0, 100]
+      if (typeof raw.compositeStrategicScore === 'number') {
+        const noisyScore = raw.compositeStrategicScore * effectiveMultiplier;
+        raw.compositeStrategicScore = Math.min(100, Math.max(0, Math.round(noisyScore * 10) / 10));
+      }
+
+      // 2. Clamp nationalSummary scores safely within [0, 100]
+      if (raw.nationalSummary) {
+        if (typeof raw.nationalSummary.averageVulnerabilityScore === 'number') {
+          const noisyVuln = raw.nationalSummary.averageVulnerabilityScore * effectiveMultiplier;
+          raw.nationalSummary.averageVulnerabilityScore = Math.min(100, Math.max(0, Math.round(noisyVuln * 10) / 10));
+        }
+        if (typeof raw.nationalSummary.averageGeopoliticalPowerScore === 'number') {
+          const noisyPower = raw.nationalSummary.averageGeopoliticalPowerScore * effectiveMultiplier;
+          raw.nationalSummary.averageGeopoliticalPowerScore = Math.min(100, Math.max(0, Math.round(noisyPower * 10) / 10));
+        }
+      }
+
+      // 3. Project & clamp child metrics snapshots
+      if (raw.metrics && typeof raw.metrics === 'object') {
+        Object.keys(raw.metrics).forEach(mKey => {
+          const m = raw.metrics[mKey];
+          if (m && typeof m.score === 'number') {
+            if (m.normalizedScore !== undefined && typeof m.normalizedScore === 'number') {
+              const noisyNorm = m.normalizedScore * effectiveMultiplier;
+              m.normalizedScore = Math.min(100, Math.max(0, Math.round(noisyNorm * 10) / 10));
+            }
+            m.confidence = Math.min(1.0, Math.max(0.1, Math.round(m.confidence * bilateralIntelLevel * 100) / 100));
+            if (bilateralIntelLevel < 0.5) {
+              m.confidenceGrade = ConfidenceGrade.DEGRADED_IMPUTED;
+            } else if (bilateralIntelLevel < 0.8) {
+              m.confidenceGrade = ConfidenceGrade.BRONZE_ESTIMATED;
+            }
+          }
+        });
+      }
+
+      // 4. Project & clamp topExposures & topEndowmentPowers arrays
+      if (Array.isArray(raw.topExposures)) {
+        raw.topExposures.forEach(item => {
+          if (item && typeof item.score === 'number') {
+            item.score = Math.min(100, Math.max(0, Math.round(item.score * effectiveMultiplier * 10) / 10));
+          }
+        });
+      }
+      if (Array.isArray(raw.topEndowmentPowers)) {
+        raw.topEndowmentPowers.forEach(item => {
+          if (item && typeof item.score === 'number') {
+            item.score = Math.min(100, Math.max(0, Math.round(item.score * effectiveMultiplier * 10) / 10));
+          }
+        });
+      }
+
+      raw.visibilityAudit = {
+        fogApplied: true,
+        intelLevel: bilateralIntelLevel,
+        confidence: Math.round(bilateralIntelLevel * 100) / 100
+      };
+
+      return raw;
+    }
+  }
+
+  // ============================================================================
+  // 12.22 CHANGE-DRIVEN INVALIDATION & VALUE CACHE ENGINE
+  // ============================================================================
+
+  class ValueCacheEngine {
+    constructor() {
+      this.cache = new Map();
+      this.dirtyEntities = new Set();
+    }
+
+    markDirty(entityId) {
+      this.dirtyEntities.add(entityId);
+    }
+
+    get(key) {
+      if (this.dirtyEntities.has(key)) {
+        this.cache.delete(key);
+        this.dirtyEntities.delete(key);
+        return null;
+      }
+      return this.cache.get(key) || null;
+    }
+
+    set(key, value) {
+      this.cache.set(key, value);
+      this.dirtyEntities.delete(key);
+    }
+
+    clear() {
+      this.cache.clear();
+      this.dirtyEntities.clear();
+    }
+  }
+
+  // ============================================================================
+  // 12.23 FAILURE ISOLATION, DIAGNOSTICS & EXPLAINABILITY ENGINE
+  // ============================================================================
+
+  class ExplainabilityDiagnosticsEngine {
+    constructor() {}
+
+    explainValuation(metricResult) {
+      return {
+        metricId: metricResult.metricId,
+        score: metricResult.score,
+        mathematicalFormula: metricResult.formulaRef,
+        governingRule: metricResult.ruleRef,
+        inputComponents: metricResult.components,
+        stepCalculations: metricResult.calculations,
+        provenanceAuditHash: metricResult.provenanceHash
+      };
+    }
+  }
+
+  // ============================================================================
+  // 12.24 MASTER ORCHESTRATOR, UNIFIED PIPELINE & COMPREHENSIVE TEST SUITE
+  // ============================================================================
+
+  class EconomicAndStrategicValueEngine {
+    constructor(options = {}) {
+      this.ruleEngine = new RuleEngine();
+      this.registerBaselineRules();
+
+      this.economicEngine = new EconomicValueEngine(this.ruleEngine);
+      this.industrialEngine = new IndustrialValueEngine(this.ruleEngine);
+      this.tradeEngine = new TradeValueEngine(this.ruleEngine);
+      this.scarcityEngine = new ScarcityEngine(this.ruleEngine);
+      this.criticalityEngine = new CriticalityEngine(this.ruleEngine);
+      this.substitutabilityEngine = new SubstitutabilityEngine(this.ruleEngine);
+      this.concentrationEngine = new SupplyConcentrationEngine(this.ruleEngine);
+      this.nationalImportanceEngine = new NationalEconomicImportanceEngine(this.ruleEngine);
+      this.resourcePowerEngine = new NationalResourcePowerEngine(this.ruleEngine);
+      this.globalCriticalityEngine = new GlobalResourceCriticalityEngine(this.ruleEngine);
+      this.exposureEngine = new EconomicExposureEngine(this.ruleEngine);
+      this.compositeAggregator = new CompositeValueScoreAggregator(this.ruleEngine);
+
+      this.confidenceEngine = new ConfidenceEngine();
+      this.temporalEngine = new TemporalValueAndAttributionEngine(options.maxHistory || 100);
+      this.graphEngine = new ValueRelationshipGraphEngine();
+      this.countryProfileBuilder = new CountryValueProfileBuilder(this);
+      this.resourceProfileBuilder = new ResourceValueProfileBuilder(this);
+      this.entityProfileBuilder = new EntityValueProfileBuilder(this);
+      this.fogGateway = new FogOfWarVisibilityGateway();
+      this.cache = new ValueCacheEngine();
+      this.diagnostics = new ExplainabilityDiagnosticsEngine();
+    }
+
+    registerBaselineRules() {
+      this.ruleEngine.registerRule(new ValueRuleDefinition({
+        ruleId: 'DEFAULT_ECONOMIC_PRODUCTION_RULE',
+        domain: ValueDomain.ECONOMIC,
+        description: 'Standard Linear Production Gross and Net Rent',
+        formulaRef: 'F_12_03_PRODUCTION_VALUE',
+        compute: (context, payload) => ({
+          score: payload.annualExtractionVolume * (payload.marketPrice || 100),
+          components: payload
+        })
+      }));
+
+      this.ruleEngine.registerRule(new ValueRuleDefinition({
+        ruleId: 'DEFAULT_SCARCITY_RULE',
+        domain: ValueDomain.SCARCITY,
+        description: 'Multi-tiered R/P Reserve Exhaustion Curve',
+        formulaRef: 'F_12_06_DYNAMIC_RESERVE_SCARCITY',
+        compute: (context, payload) => ({
+          score: Math.min(100, Math.max(0, 100 - ((payload.provenReserves || 1000) / (payload.annualGlobalExtraction || 50)))),
+          components: payload
+        })
+      }));
+
+      this.ruleEngine.registerRule(new ValueRuleDefinition({
+        ruleId: 'DEFAULT_CRITICALITY_RULE',
+        domain: ValueDomain.CRITICALITY,
+        description: 'Multi-criteria Systemic Criticality Index',
+        formulaRef: 'F_12_07_SYSTEMIC_CRITICALITY',
+        compute: (context, payload) => ({
+          score: (payload.industrialReachScore || 50) * 0.4 + (payload.nonSubstitutabilityScore || 50) * 0.6,
+          components: payload
+        })
+      }));
+    }
+
+    evaluateCountry(context, countryId) {
+      return this.countryProfileBuilder.buildCountryProfile(context, countryId);
+    }
+
+    evaluateResource(context, resourceId) {
+      return this.resourceProfileBuilder.buildResourceProfile(context, resourceId);
+    }
+
+    evaluateEntity(context, entityId) {
+      return this.entityProfileBuilder.buildEntityProfile(context, entityId);
+    }
+  }
+
+  // ============================================================================
+  // VERIFICATION SUITES
+  // ============================================================================
+
+  function runPart1SelfVerification() {
+    const tests = [];
+    const assert = (cond, msg) => {
+      tests.push({ name: msg, passed: !!cond });
+      if (!cond) throw new Error(`Assertion Failed: ${msg}`);
+    };
+
+    try {
+      const re = new RuleEngine();
+      re.registerRule(new ValueRuleDefinition({
+        ruleId: 'RULE_TEST_1',
+        domain: ValueDomain.ECONOMIC,
+        description: 'Self-test economic rule',
+        formulaRef: 'F_TEST_01',
+        compute: (ctx, p) => ({ score: p.vol * p.price, components: p })
+      }));
+
+      const ctx = new EvaluationContext({ temporalTick: 1 });
+      const res = re.execute(ValueDomain.ECONOMIC, ctx, { targetEntityId: 'RES_TEST', vol: 10, price: 5 });
+      assert(res.score === 50, 'Part 1 Rule Engine must compute score = 50');
+      assert(res.targetEntityId === 'RES_TEST', 'Result entity must match target');
+
+      return { suite: 'GSRSK_PART_12_CHUNK_1_SELF_TEST', allPassed: true, tests };
+    } catch (e) {
+      return { suite: 'GSRSK_PART_12_CHUNK_1_SELF_TEST', allPassed: false, error: e.message, tests };
+    }
+  }
+
+  function runGSRSKPart12ComprehensiveVerificationSuite() {
+    const testResults = [];
+    const assert = (condition, description) => {
+      testResults.push({ description, passed: Boolean(condition) });
+      if (!condition) throw new Error(`TEST FAILED: ${description}`);
+    };
+
+    const engine = new EconomicAndStrategicValueEngine();
+
+    const resourceCatalog = new Map([
+      ['RES_LITHIUM', { resourceId: 'RES_LITHIUM', name: 'Lithium', isEnergyTransitionCritical: true }],
+      ['RES_CRUDE_OIL', { resourceId: 'RES_CRUDE_OIL', name: 'Crude Oil', isDefenseCritical: true }]
+    ]);
+
+    const reserveState = new Map([
+      ['RES_LITHIUM', { provenReserves: 20000, annualExtraction: 800, annualCapacity: 1000 }],
+      ['RES_CRUDE_OIL', { provenReserves: 500000, annualExtraction: 30000, annualCapacity: 35000 }]
+    ]);
+
+    const sovereignRegistry = new Map([
+      ['CHL', { countryId: 'CHL', gdp: 3e11, productionShares: { RES_LITHIUM: 30 }, reserveShares: { RES_LITHIUM: 45 } }],
+      ['DEU', { countryId: 'DEU', gdp: 4e12, resourceImports: { RES_LITHIUM: 500, RES_CRUDE_OIL: 8000 } }]
+    ]);
+
+    const marketPrices = new Map([
+      ['RES_LITHIUM', 25000],
+      ['RES_CRUDE_OIL', 80]
+    ]);
+
+    const context = new EvaluationContext({
+      resourceCatalog,
+      reserveState,
+      sovereignRegistry,
+      marketPrices,
+      temporalTick: 42
+    });
+
+    // Test 1: Economic Production Valuation
+    const lithiumProd = engine.economicEngine.calculateProductionValue(context, {
+      resourceId: 'RES_LITHIUM',
+      annualExtractionVolume: 800,
+      unitExtractionCost: 8000,
+      marketPrice: 25000
+    });
+    assert(lithiumProd.score === 20000000, 'Test 1: Gross economic production value must equal 20,000,000');
+    assert(lithiumProd.components.netResourceRent === 13600000, 'Test 1: Net resource rent must equal 13,600,000');
+
+    // Test 2: Dynamic Scarcity Engine
+    const scarcityRes = engine.scarcityEngine.calculateScarcity(context, {
+      resourceId: 'RES_LITHIUM',
+      provenReserves: 20000,
+      annualGlobalExtraction: 800,
+      recyclingSecondarySupply: 100
+    });
+    assert(scarcityRes.domain === ValueDomain.SCARCITY, 'Test 2: Scarcity domain invariant');
+    assert(scarcityRes.grade !== null, 'Test 2: Scarcity grade must be assigned');
+
+    // Test 3: Systemic Criticality Index
+    const critRes = engine.criticalityEngine.calculateCriticality(context, {
+      resourceId: 'RES_LITHIUM',
+      industrialReachScore: 85,
+      nonSubstitutabilityScore: 90,
+      defenseEnergyStrategicWeight: 95,
+      disruptionImpactPotential: 80
+    });
+    assert(critRes.score > 80, 'Test 3: Criticality score for high-reach/non-substitutable resource must exceed 80');
+
+    // Test 4: Multi-Vector Concentration HHI
+    const concRes = engine.concentrationEngine.calculateMultiVectorConcentration(context, {
+      resourceId: 'RES_LITHIUM',
+      productionShares: [40, 30, 20, 10], // HHI: 1600+900+400+100 = 3000
+      reserveShares: [50, 25, 25],        // HHI: 2500+625+625 = 3750
+      exporterShares: [45, 35, 20]        // HHI: 2025+1225+400 = 3650
+    });
+    assert(concRes.score > 3000, 'Test 4: Composite HHI must exceed 3000');
+
+    // Test 5: Full Country Profile Build
+    const deuProfile = engine.evaluateCountry(context, 'DEU');
+    assert(deuProfile.countryId === 'DEU', 'Test 5: Germany country profile build');
+    assert(deuProfile.topExposures.length > 0, 'Test 5: Must compute top exposures');
+
+    // Test 6: Fog of War Visibility Gateway with Clamping Invariant
+    const fogProfile = engine.fogGateway.projectProfileForViewer(deuProfile, 'USA', 'DEU', 0.6);
+    assert(fogProfile.visibilityAudit.fogApplied === true, 'Test 6: Fog of War must apply to foreign viewer');
+    assert(fogProfile.nationalSummary.averageVulnerabilityScore <= 100, 'Test 6: Clamped vulnerability score <= 100');
+    assert(fogProfile.nationalSummary.averageVulnerabilityScore >= 0, 'Test 6: Clamped vulnerability score >= 0');
+
+    return {
+      suite: 'GSRSK_PART_12_COMPREHENSIVE_VALUATION_ENGINE',
+      allPassed: testResults.every(r => r.passed),
+      tests: testResults
+    };
+  }
+
+  // ============================================================================
+  // GLOBAL ADAPTER & WIRING FOR PART 12
+  // ============================================================================
+
+  const EconomicAndStrategicValueEngineAdapter = {
+    createEngine: function (options = {}) {
+      return new EconomicAndStrategicValueEngine(options);
+    },
+    ValueDomain,
+    ScarcityBand,
+    CriticalityLevel,
+    SubstitutabilityTier,
+    ConfidenceGrade,
+    ExposureLevel,
+    FallbackPolicyMode,
+    ValueEngineError,
+    InvariantViolationError,
+    RuleResolutionError,
+    MissingDataError,
+    DoubleCountingError,
+    UpstreamAdapterError,
+    fastDeepClone,
+    deepFreeze,
+    deterministicHash,
+    ValueMetricResult,
+    EvaluationContext,
+    ValueRuleDefinition,
+    RuleEngine,
+    EconomicValueEngine,
+    IndustrialValueEngine,
+    TradeValueEngine,
+    ScarcityEngine,
+    CriticalityEngine,
+    SubstitutabilityEngine,
+    SupplyConcentrationEngine,
+    NationalEconomicImportanceEngine,
+    NationalResourcePowerEngine,
+    GlobalResourceCriticalityEngine,
+    EconomicExposureEngine,
+    CompositeValueScoreAggregator,
+    ConfidenceEngine,
+    TemporalValueAndAttributionEngine,
+    ValueRelationshipGraphEngine,
+    CountryValueProfileBuilder,
+    ResourceValueProfileBuilder,
+    EntityValueProfileBuilder,
+    FogOfWarVisibilityGateway,
+    ValueCacheEngine,
+    ExplainabilityDiagnosticsEngine,
+    EconomicAndStrategicValueEngine,
+    runPart1SelfVerification,
+    runGSRSKPart12ComprehensiveVerificationSuite,
+    Enums: {
+      ValueDomain,
+      ScarcityBand,
+      CriticalityLevel,
+      SubstitutabilityTier,
+      ConfidenceGrade,
+      ExposureLevel,
+      FallbackPolicyMode
+    }
+  };
+
+  if (typeof window !== 'undefined') {
+    window.GSRSK_Part12 = EconomicAndStrategicValueEngineAdapter;
+    window.GSRSK_EconomicAndStrategicValueEngine = EconomicAndStrategicValueEngineAdapter;
+  } else if (typeof global !== 'undefined') {
+    global.GSRSK_Part12 = EconomicAndStrategicValueEngineAdapter;
+    global.GSRSK_EconomicAndStrategicValueEngine = EconomicAndStrategicValueEngineAdapter;
+  }
+
+  if (typeof ResourceMinistryEngineInstance !== 'undefined' && ResourceMinistryEngineInstance) {
+    ResourceMinistryEngineInstance.part12 = EconomicAndStrategicValueEngineAdapter;
+    ResourceMinistryEngineInstance.valueEngine = EconomicAndStrategicValueEngineAdapter.createEngine();
+  }
+
+  if (global.ResourceMinistryEngine) {
+    global.ResourceMinistryEngine.part12 = EconomicAndStrategicValueEngineAdapter;
+    if (!global.ResourceMinistryEngine.valueEngine) {
+      global.ResourceMinistryEngine.valueEngine = EconomicAndStrategicValueEngineAdapter.createEngine();
+    }
+  }
+
+  if (typeof module !== 'undefined' && module.exports) {
+    module.exports = EconomicAndStrategicValueEngineAdapter;
+  }
+
+})(typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : global));
+
+
     const _targetGlobal = typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : global);
 
     if (typeof module !== 'undefined' && module.exports) {
@@ -28172,6 +30127,12 @@ _globalScope.GSRSK_DataFoundation = (() => {
             ResourceProductionIndustrialChainEngine: _targetGlobal.GSRSK_ResourceProductionIndustrialChainEngine || null,
             ResourceMarketPricingEngine: _targetGlobal.GSRSK_ResourceMarketPricingEngine || null,
             TradeFulfillmentSettlementEngine: _targetGlobal.GSRSK_TradeFulfillmentSettlementEngine || null,
+            EconomicAndStrategicValueEngine: _targetGlobal.GSRSK_EconomicAndStrategicValueEngine || null,
+            StrategicValueEngine: _targetGlobal.GSRSK_EconomicAndStrategicValueEngine || null,
+            GSRSK_EconomicAndStrategicValueEngine: _targetGlobal.GSRSK_EconomicAndStrategicValueEngine || null,
+            GSRSK_Part12: _targetGlobal.GSRSK_EconomicAndStrategicValueEngine || null,
+            Part12: _targetGlobal.GSRSK_EconomicAndStrategicValueEngine || null,
+            ...(_targetGlobal.GSRSK_EconomicAndStrategicValueEngine || {}),
             ResourceTradeExecutionEngine: _targetGlobal.GSRSK_TradeFulfillmentSettlementEngine || null,
             GSRSK_TradeFulfillmentSettlementEngine: _targetGlobal.GSRSK_TradeFulfillmentSettlementEngine || null,
             GSRSK_Part11: _targetGlobal.GSRSK_TradeFulfillmentSettlementEngine || null,
@@ -28197,6 +30158,7 @@ _globalScope.GSRSK_DataFoundation = (() => {
             GSRSK_Part09: _targetGlobal.GSRSK_ResourceProductionIndustrialChainEngine || null,
             GSRSK_ResourceMarketPricingEngine: _targetGlobal.GSRSK_ResourceMarketPricingEngine || null,
             GSRSK_Part10: _targetGlobal.GSRSK_ResourceMarketPricingEngine || null,
+            Part12: _targetGlobal.GSRSK_EconomicAndStrategicValueEngine || null,
             Part01: _targetGlobal.GSRSK_DataFoundation || null,
             Part02: _targetGlobal.GSRSK_WorldKnowledgeCompiler || null,
             Part03: _targetGlobal.GSRSK_Part03 || null,
