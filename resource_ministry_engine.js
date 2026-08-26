@@ -28320,6 +28320,50 @@ const EPSILON = 1e-7;
     }
   }
 
+  // Value Chain Contribution Lineage & Double-Counting Prevention Ledger
+  class ValueLineageLedger {
+    constructor() {
+      this.contributions = new Map(); // key: ledgerContextId -> Set of `${nodeId}::${stageId}::${resourceId}`
+      this.cumulativeValueTracked = new Map();
+    }
+
+    recordContribution({ ledgerContextId = 'GLOBAL', nodeId, stageId, resourceId, valueAmount = 0 }) {
+      if (!nodeId || !stageId || !resourceId) {
+        throw new InvariantViolationError('Lineage contribution requires nodeId, stageId, and resourceId', { nodeId, stageId, resourceId });
+      }
+      const itemKey = `${nodeId}::${stageId}::${resourceId}`;
+      if (!this.contributions.has(ledgerContextId)) {
+        this.contributions.set(ledgerContextId, new Set());
+      }
+      const contextSet = this.contributions.get(ledgerContextId);
+      if (contextSet.has(itemKey)) {
+        throw new DoubleCountingError(`Double counting detected: contribution ${itemKey} already recorded in context ${ledgerContextId}`, {
+          ledgerContextId, nodeId, stageId, resourceId, valueAmount
+        });
+      }
+      contextSet.add(itemKey);
+      const prevTotal = this.cumulativeValueTracked.get(ledgerContextId) || 0;
+      this.cumulativeValueTracked.set(ledgerContextId, prevTotal + valueAmount);
+      return { itemKey, totalInContext: this.cumulativeValueTracked.get(ledgerContextId) };
+    }
+
+    hasContribution(ledgerContextId, nodeId, stageId, resourceId) {
+      const itemKey = `${nodeId}::${stageId}::${resourceId}`;
+      const contextSet = this.contributions.get(ledgerContextId);
+      return contextSet ? contextSet.has(itemKey) : false;
+    }
+
+    clear(ledgerContextId = null) {
+      if (ledgerContextId) {
+        this.contributions.delete(ledgerContextId);
+        this.cumulativeValueTracked.delete(ledgerContextId);
+      } else {
+        this.contributions.clear();
+        this.cumulativeValueTracked.clear();
+      }
+    }
+  }
+
   // Pure Deterministic Utility Functions
   function fastDeepClone(obj) {
     if (obj === null || typeof obj !== 'object') return obj;
@@ -28426,6 +28470,8 @@ const EPSILON = 1e-7;
     }
   }
 
+  const _contextRuntimeLookups = new WeakMap();
+
   class EvaluationContext {
     constructor({
       worldState = null,
@@ -28438,6 +28484,11 @@ const EPSILON = 1e-7;
       marketPrices = new Map(),
       tradeCorridors = new Map(),
       sovereignRegistry = new Map(),
+      substitutesCatalog = new Map(),
+      globalProductionShares = new Map(),
+      globalReserveShares = new Map(),
+      globalExportShares = new Map(),
+      lineageLedger = null,
       temporalTick = 0,
       strictInvariants = true,
       fallbackMode = FallbackPolicyMode.DEGRADE_CONFIDENCE
@@ -28452,11 +28503,16 @@ const EPSILON = 1e-7;
       this.marketPrices = marketPrices;
       this.tradeCorridors = tradeCorridors;
       this.sovereignRegistry = sovereignRegistry;
+      this.substitutesCatalog = substitutesCatalog;
+      this.globalProductionShares = globalProductionShares;
+      this.globalReserveShares = globalReserveShares;
+      this.globalExportShares = globalExportShares;
+      this.lineageLedger = lineageLedger || new ValueLineageLedger();
       this.temporalTick = temporalTick;
       this.strictInvariants = strictInvariants;
       this.fallbackMode = fallbackMode;
 
-      this.memoizedLookups = new Map();
+      _contextRuntimeLookups.set(this, new Map());
       deepFreeze(this);
     }
 
@@ -28474,6 +28530,18 @@ const EPSILON = 1e-7;
 
     getIndustrialChains(resourceId) {
       return this.industrialDAG.get(resourceId) || [];
+    }
+
+    getRuntimeLookup(key) {
+      const map = _contextRuntimeLookups.get(this);
+      return map ? map.get(key) : null;
+    }
+
+    setRuntimeLookup(key, value) {
+      const map = _contextRuntimeLookups.get(this);
+      if (map) {
+        map.set(key, value);
+      }
     }
   }
 
@@ -28564,68 +28632,22 @@ const EPSILON = 1e-7;
       this.ruleEngine = ruleEngine;
     }
 
-    calculateProductionValue(context, { resourceId, annualExtractionVolume, unitExtractionCost, marketPrice = null }) {
-      if (annualExtractionVolume < 0) {
-        throw new InvariantViolationError('Extraction volume cannot be negative', { resourceId, annualExtractionVolume });
+    calculateProductionValue(context, payload) {
+      if (payload.annualExtractionVolume !== undefined && payload.annualExtractionVolume < 0) {
+        throw new InvariantViolationError('Extraction volume cannot be negative', payload);
       }
-      const price = marketPrice !== null ? marketPrice : context.getMarketPrice(resourceId);
-      const grossEconomicValue = annualExtractionVolume * price;
-      const totalExtractionCost = annualExtractionVolume * unitExtractionCost;
-      const netResourceRent = Math.max(0, grossEconomicValue - totalExtractionCost);
-      const grossMarginPercentage = grossEconomicValue > 0 ? (netResourceRent / grossEconomicValue) * 100 : 0;
-
-      return new ValueMetricResult({
-        metricId: `EV_PROD_${resourceId}`,
-        domain: ValueDomain.ECONOMIC,
-        targetEntityId: resourceId,
-        score: grossEconomicValue,
-        components: {
-          annualExtractionVolume,
-          marketPrice: price,
-          grossEconomicValue,
-          unitExtractionCost,
-          totalExtractionCost,
-          netResourceRent,
-          grossMarginPercentage
-        },
-        calculations: {
-          formula: 'grossEconomicValue = Volume * Price; netRent = Gross - (Volume * Cost)'
-        },
-        formulaRef: 'F_12_03_PRODUCTION_VALUE',
-        ruleRef: 'DEFAULT_ECONOMIC_PRODUCTION_RULE',
-        confidence: 1.0,
-        temporalTick: context.temporalTick
+      return this.ruleEngine.execute(ValueDomain.ECONOMIC, context, {
+        action: 'PRODUCTION_VALUE',
+        targetEntityId: payload.resourceId,
+        ...payload
       });
     }
 
-    calculateProcessingValueAdded(context, { resourceId, processedVolume, feedstockCost, processingOperatingCost, outputProductYields = [] }) {
-      let grossOutputValue = 0;
-      outputProductYields.forEach(yieldItem => {
-        const outPrice = yieldItem.unitPrice || context.getMarketPrice(yieldItem.outputResourceId);
-        grossOutputValue += (yieldItem.volume * outPrice);
-      });
-
-      const totalInputCost = feedstockCost + processingOperatingCost;
-      const netProcessingMargin = grossOutputValue - totalInputCost;
-      const valueAddMultiplier = totalInputCost > 0 ? grossOutputValue / totalInputCost : 1.0;
-
-      return new ValueMetricResult({
-        metricId: `EV_PROC_${resourceId}`,
-        domain: ValueDomain.ECONOMIC,
-        targetEntityId: resourceId,
-        score: netProcessingMargin,
-        components: {
-          processedVolume,
-          feedstockCost,
-          processingOperatingCost,
-          grossOutputValue,
-          netProcessingMargin,
-          valueAddMultiplier
-        },
-        formulaRef: 'F_12_03_PROCESSING_VALUE_ADD',
-        ruleRef: 'DEFAULT_PROCESSING_VALUE_RULE',
-        confidence: 0.95,
-        temporalTick: context.temporalTick
+    calculateProcessingValueAdded(context, payload) {
+      return this.ruleEngine.execute(ValueDomain.ECONOMIC, context, {
+        action: 'PROCESSING_VALUE_ADD',
+        targetEntityId: payload.resourceId,
+        ...payload
       });
     }
   }
@@ -28639,50 +28661,10 @@ const EPSILON = 1e-7;
       this.ruleEngine = ruleEngine;
     }
 
-    calculateIndustrialReach(context, { resourceId, downstreamChains = [], substitutionDifficulty = 0.5 }) {
-      let cumulativeOutputAtRisk = 0;
-      let maxDepth = 0;
-      const visitedNodes = new Set();
-      const directSectors = new Set();
-
-      const traverse = (node, depth, attenuation) => {
-        if (!node || depth > 8 || visitedNodes.has(node.sectorId)) return;
-        visitedNodes.add(node.sectorId);
-        maxDepth = Math.max(maxDepth, depth);
-
-        if (depth === 1) directSectors.add(node.sectorId);
-
-        const nodeEconomicWeight = (node.annualSectorValue || 0) * (node.inputElasticity || 1.0);
-        cumulativeOutputAtRisk += (nodeEconomicWeight * attenuation);
-
-        if (Array.isArray(node.downstreamSectors)) {
-          node.downstreamSectors.forEach(child => {
-            traverse(child, depth + 1, attenuation * 0.85);
-          });
-        }
-      };
-
-      downstreamChains.forEach(chainRoot => traverse(chainRoot, 1, 1.0));
-
-      const normalizedReachScore = Math.min(100, Math.log10(Math.max(1, cumulativeOutputAtRisk / 1e6) + 1) * 20 * (1 + substitutionDifficulty * 0.5));
-
-      return new ValueMetricResult({
-        metricId: `IV_REACH_${resourceId}`,
-        domain: ValueDomain.INDUSTRIAL,
-        targetEntityId: resourceId,
-        score: cumulativeOutputAtRisk,
-        normalizedScore: Math.round(normalizedReachScore * 10) / 10,
-        components: {
-          cumulativeOutputAtRisk,
-          directDependentSectorsCount: directSectors.size,
-          totalImpactedSectorsCount: visitedNodes.size,
-          maxDepth,
-          substitutionDifficulty
-        },
-        formulaRef: 'F_12_04_LEONTIEF_INDUSTRIAL_REACH',
-        ruleRef: 'DEFAULT_INDUSTRIAL_REACH_RULE',
-        confidence: 0.90,
-        temporalTick: context.temporalTick
+    calculateIndustrialReach(context, payload) {
+      return this.ruleEngine.execute(ValueDomain.INDUSTRIAL, context, {
+        targetEntityId: payload.resourceId,
+        ...payload
       });
     }
   }
@@ -28696,48 +28678,10 @@ const EPSILON = 1e-7;
       this.ruleEngine = ruleEngine;
     }
 
-    calculateTradeSignificance(context, {
-      entityId,
-      totalExportVolume = 0,
-      totalImportVolume = 0,
-      commodityUnitPrice = 1.0,
-      nationalGdp = 1e10,
-      bilateralTradePartners = []
-    }) {
-      const grossExportValue = totalExportVolume * commodityUnitPrice;
-      const grossImportValue = totalImportVolume * commodityUnitPrice;
-      const netTradeBalance = grossExportValue - grossImportValue;
-      const tradeOpennessRatio = nationalGdp > 0 ? (grossExportValue + grossImportValue) / nationalGdp : 0;
-
-      let bilateralConcentrationHHI = 0;
-      const totalBilateralVolume = bilateralTradePartners.reduce((acc, p) => acc + (p.volume || 0), 0);
-      if (totalBilateralVolume > 0) {
-        bilateralTradePartners.forEach(p => {
-          const share = ((p.volume || 0) / totalBilateralVolume) * 100;
-          bilateralConcentrationHHI += (share * share);
-        });
-      }
-
-      const normalizedTradeScore = Math.min(100, (tradeOpennessRatio * 500) + (bilateralConcentrationHHI / 200));
-
-      return new ValueMetricResult({
-        metricId: `TV_SIG_${entityId}`,
-        domain: ValueDomain.TRADE,
-        targetEntityId: entityId,
-        score: grossExportValue + grossImportValue,
-        normalizedScore: Math.round(normalizedTradeScore * 10) / 10,
-        components: {
-          grossExportValue,
-          grossImportValue,
-          netTradeBalance,
-          tradeOpennessRatio,
-          bilateralConcentrationHHI,
-          partnerCount: bilateralTradePartners.length
-        },
-        formulaRef: 'F_12_05_TRADE_SIGNIFICANCE',
-        ruleRef: 'DEFAULT_TRADE_VALUE_RULE',
-        confidence: 0.95,
-        temporalTick: context.temporalTick
+    calculateTradeSignificance(context, payload) {
+      return this.ruleEngine.execute(ValueDomain.TRADE, context, {
+        targetEntityId: payload.entityId,
+        ...payload
       });
     }
   }
@@ -28751,60 +28695,10 @@ const EPSILON = 1e-7;
       this.ruleEngine = ruleEngine;
     }
 
-    calculateScarcity(context, {
-      resourceId,
-      provenReserves = 1000,
-      annualGlobalExtraction = 50,
-      recyclingSecondarySupply = 10,
-      strategicStockpileBufferMonths = 6,
-      demandGrowthAnnualRate = 0.02
-    }) {
-      const netPrimaryDemand = Math.max(0.1, annualGlobalExtraction - recyclingSecondarySupply);
-      const reserveToProductionRatioYears = provenReserves / netPrimaryDemand;
-      const recyclingCoverageRatio = annualGlobalExtraction > 0 ? recyclingSecondarySupply / annualGlobalExtraction : 0;
-      const strategicBufferYears = strategicStockpileBufferMonths / 12;
-
-      let scarcityScore = 0;
-      if (reserveToProductionRatioYears < 10) {
-        scarcityScore = 95 + (10 - reserveToProductionRatioYears) * 0.5;
-      } else if (reserveToProductionRatioYears < 25) {
-        scarcityScore = 75 + (25 - reserveToProductionRatioYears) * 1.33;
-      } else if (reserveToProductionRatioYears < 50) {
-        scarcityScore = 45 + (50 - reserveToProductionRatioYears) * 1.2;
-      } else {
-        scarcityScore = Math.max(5, 45 - (reserveToProductionRatioYears - 50) * 0.2);
-      }
-
-      scarcityScore -= (recyclingCoverageRatio * 20);
-      scarcityScore -= Math.min(15, strategicBufferYears * 10);
-      scarcityScore += (demandGrowthAnnualRate * 200);
-      scarcityScore = Math.min(100, Math.max(0, scarcityScore));
-
-      let band = ScarcityBand.STABLE;
-      if (scarcityScore >= 85) band = ScarcityBand.CRITICAL_DEPLETION;
-      else if (scarcityScore >= 65) band = ScarcityBand.HIGH_STRESS;
-      else if (scarcityScore >= 40) band = ScarcityBand.MODERATE_STRESS;
-      else if (scarcityScore >= 20) band = ScarcityBand.STABLE;
-      else band = ScarcityBand.ABUNDANT;
-
-      return new ValueMetricResult({
-        metricId: `SV_SCARCITY_${resourceId}`,
-        domain: ValueDomain.SCARCITY,
-        targetEntityId: resourceId,
-        score: Math.round(scarcityScore * 10) / 10,
-        grade: band,
-        components: {
-          provenReserves,
-          netPrimaryDemand,
-          reserveToProductionRatioYears: Math.round(reserveToProductionRatioYears * 10) / 10,
-          recyclingCoverageRatio: Math.round(recyclingCoverageRatio * 1000) / 1000,
-          strategicStockpileBufferMonths,
-          scarcityBand: band
-        },
-        formulaRef: 'F_12_06_DYNAMIC_RESERVE_SCARCITY',
-        ruleRef: 'DEFAULT_SCARCITY_RULE',
-        confidence: 0.92,
-        temporalTick: context.temporalTick
+    calculateScarcity(context, payload) {
+      return this.ruleEngine.execute(ValueDomain.SCARCITY, context, {
+        targetEntityId: payload.resourceId,
+        ...payload
       });
     }
   }
@@ -28818,49 +28712,10 @@ const EPSILON = 1e-7;
       this.ruleEngine = ruleEngine;
     }
 
-    calculateCriticality(context, {
-      resourceId,
-      industrialReachScore = 50,
-      nonSubstitutabilityScore = 50,
-      defenseEnergyStrategicWeight = 50,
-      disruptionImpactPotential = 50,
-      shockPropagationVelocityMultiplier = 1.0
-    }) {
-      const rawCriticality = (
-        industrialReachScore * 0.35 +
-        nonSubstitutabilityScore * 0.25 +
-        defenseEnergyStrategicWeight * 0.20 +
-        disruptionImpactPotential * 0.20
-      ) * shockPropagationVelocityMultiplier;
-
-      const score = Math.min(100, Math.max(0, rawCriticality));
-
-      let level = CriticalityLevel.MEDIUM;
-      if (score >= 90) level = CriticalityLevel.SYSTEMIC_EXISTENTIAL;
-      else if (score >= 75) level = CriticalityLevel.VITAL;
-      else if (score >= 55) level = CriticalityLevel.HIGH;
-      else if (score >= 35) level = CriticalityLevel.MEDIUM;
-      else if (score >= 15) level = CriticalityLevel.LOW;
-      else level = CriticalityLevel.NEGLIGIBLE;
-
-      return new ValueMetricResult({
-        metricId: `CRIT_${resourceId}`,
-        domain: ValueDomain.CRITICALITY,
-        targetEntityId: resourceId,
-        score: Math.round(score * 10) / 10,
-        grade: level,
-        components: {
-          industrialReachScore,
-          nonSubstitutabilityScore,
-          defenseEnergyStrategicWeight,
-          disruptionImpactPotential,
-          shockPropagationVelocityMultiplier,
-          criticalityLevel: level
-        },
-        formulaRef: 'F_12_07_SYSTEMIC_CRITICALITY',
-        ruleRef: 'DEFAULT_CRITICALITY_RULE',
-        confidence: 0.94,
-        temporalTick: context.temporalTick
+    calculateCriticality(context, payload) {
+      return this.ruleEngine.execute(ValueDomain.CRITICALITY, context, {
+        targetEntityId: payload.resourceId,
+        ...payload
       });
     }
   }
@@ -28874,81 +28729,10 @@ const EPSILON = 1e-7;
       this.ruleEngine = ruleEngine;
     }
 
-    evaluateSubstitutes(context, {
-      resourceId,
-      substituteOptions = [],
-      requiredVolume = 1000
-    }) {
-      if (!Array.isArray(substituteOptions) || substituteOptions.length === 0) {
-        return new ValueMetricResult({
-          metricId: `SUBST_${resourceId}`,
-          domain: ValueDomain.SUBSTITUTABILITY,
-          targetEntityId: resourceId,
-          score: 100.0, // 100 means 100% Non-substitutable (High vulnerability)
-          grade: SubstitutabilityTier.NON_SUBSTITUTABLE,
-          components: {
-            viableSubstituteCount: 0,
-            bestCandidateId: null,
-            effectiveCapacityCoverage: 0,
-            nonSubstitutabilityScore: 100.0
-          },
-          formulaRef: 'F_12_08_SUBSTITUTABILITY_NULL',
-          ruleRef: 'DEFAULT_SUBSTITUTION_RULE',
-          confidence: 1.0,
-          temporalTick: context.temporalTick
-        });
-      }
-
-      let bestViabilityScore = 0;
-      let bestCandidate = null;
-
-      substituteOptions.forEach(opt => {
-        const techCompatibility = Math.min(1.0, Math.max(0, opt.technicalCompatibilityRatio || 0.5));
-        const capacityCoverage = requiredVolume > 0 ? Math.min(1.0, (opt.availableSurplusCapacity || 0) / requiredVolume) : 1.0;
-        const costPenaltyMultiplier = opt.unitCostPenaltyRatio ? Math.max(0.1, 1.0 / opt.unitCostPenaltyRatio) : 0.8;
-        const leadTimeDecay = Math.max(0.1, 1.0 - ((opt.transitionLeadTimeMonths || 12) / 60));
-        const regulatoryFriction = Math.min(1.0, Math.max(0.1, 1.0 - (opt.regulatoryApprovalBarrier || 0.2)));
-
-        const optionScore = (
-          techCompatibility * 0.35 +
-          capacityCoverage * 0.25 +
-          costPenaltyMultiplier * 0.15 +
-          leadTimeDecay * 0.15 +
-          regulatoryFriction * 0.10
-        ) * 100;
-
-        if (optionScore > bestViabilityScore) {
-          bestViabilityScore = optionScore;
-          bestCandidate = opt;
-        }
-      });
-
-      const nonSubstitutabilityScore = Math.max(0, 100 - bestViabilityScore);
-
-      let tier = SubstitutabilityTier.FEASIBLE_WITH_PENALTY;
-      if (bestViabilityScore >= 85) tier = SubstitutabilityTier.DIRECT_DROP_IN;
-      else if (bestViabilityScore >= 60) tier = SubstitutabilityTier.FEASIBLE_WITH_PENALTY;
-      else if (bestViabilityScore >= 35) tier = SubstitutabilityTier.HIGH_FRICTION;
-      else if (bestViabilityScore >= 15) tier = SubstitutabilityTier.PROHIBITIVE_OR_THEORETICAL;
-      else tier = SubstitutabilityTier.NON_SUBSTITUTABLE;
-
-      return new ValueMetricResult({
-        metricId: `SUBST_${resourceId}`,
-        domain: ValueDomain.SUBSTITUTABILITY,
-        targetEntityId: resourceId,
-        score: Math.round(bestViabilityScore * 10) / 10,
-        grade: tier,
-        components: {
-          viableSubstituteCount: substituteOptions.length,
-          bestCandidateId: bestCandidate ? bestCandidate.substituteResourceId : null,
-          bestViabilityScore: Math.round(bestViabilityScore * 10) / 10,
-          nonSubstitutabilityScore: Math.round(nonSubstitutabilityScore * 10) / 10,
-          substitutabilityTier: tier
-        },
-        formulaRef: 'F_12_08_MULTI_PARAM_SUBSTITUTION',
-        ruleRef: 'DEFAULT_SUBSTITUTION_RULE',
-        confidence: 0.91,
-        temporalTick: context.temporalTick
+    evaluateSubstitutes(context, payload) {
+      return this.ruleEngine.execute(ValueDomain.SUBSTITUTABILITY, context, {
+        targetEntityId: payload.resourceId,
+        ...payload
       });
     }
   }
@@ -28963,69 +28747,20 @@ const EPSILON = 1e-7;
     }
 
     calculateHHI(sharesArray = []) {
-      return sharesArray.reduce((sum, s) => {
-        const pct = typeof s === 'number' ? s : (s.marketSharePercentage || 0);
-        return sum + (pct * pct);
+      if (!Array.isArray(sharesArray) || sharesArray.length === 0) return 0;
+      const rawValues = sharesArray.map(s => typeof s === 'number' ? s : (s.marketSharePercentage !== undefined ? s.marketSharePercentage : (s.share || 0)));
+      const sum = rawValues.reduce((a, b) => a + b, 0);
+      const isFractional = sum <= 1.05 && sum > 0;
+      return rawValues.reduce((acc, v) => {
+        const pct = isFractional ? v * 100 : v;
+        return acc + (pct * pct);
       }, 0);
     }
 
-    calculateMultiVectorConcentration(context, {
-      resourceId,
-      productionShares = [],
-      reserveShares = [],
-      exporterShares = [],
-      processingRefiningShares = [],
-      chokepointExposureMultiplier = 1.0
-    }) {
-      const productionHHI = this.calculateHHI(productionShares);
-      const reserveHHI = this.calculateHHI(reserveShares);
-      const exportHHI = this.calculateHHI(exporterShares);
-      const refiningHHI = this.calculateHHI(processingRefiningShares);
-
-      let totalWeight = 0;
-      let weightedHHI = 0;
-
-      if (productionShares.length > 0) {
-        weightedHHI += (productionHHI * 0.35);
-        totalWeight += 0.35;
-      }
-      if (reserveShares.length > 0) {
-        weightedHHI += (reserveHHI * 0.20);
-        totalWeight += 0.20;
-      }
-      if (exporterShares.length > 0) {
-        weightedHHI += (exportHHI * 0.25);
-        totalWeight += 0.25;
-      }
-      if (processingRefiningShares.length > 0) {
-        weightedHHI += (refiningHHI * 0.20);
-        totalWeight += 0.20;
-      }
-
-      const compositeHHI = (totalWeight > 0 ? (weightedHHI / totalWeight) : (
-        (productionHHI * 0.35) + (reserveHHI * 0.20) + (exportHHI * 0.25) + (refiningHHI * 0.20)
-      )) * chokepointExposureMultiplier;
-
-      const normalizedScore = Math.min(100, (compositeHHI / 10000) * 100);
-
-      return new ValueMetricResult({
-        metricId: `CONC_${resourceId}`,
-        domain: ValueDomain.CONCENTRATION,
-        targetEntityId: resourceId,
-        score: Math.round(compositeHHI),
-        normalizedScore: Math.round(normalizedScore * 10) / 10,
-        components: {
-          productionHHI: Math.round(productionHHI),
-          reserveHHI: Math.round(reserveHHI),
-          exportHHI: Math.round(exportHHI),
-          refiningHHI: Math.round(refiningHHI),
-          compositeHHI: Math.round(compositeHHI),
-          chokepointExposureMultiplier
-        },
-        formulaRef: 'F_12_09_MULTI_VECTOR_HHI',
-        ruleRef: 'DEFAULT_CONCENTRATION_RULE',
-        confidence: 0.96,
-        temporalTick: context.temporalTick
+    calculateMultiVectorConcentration(context, payload) {
+      return this.ruleEngine.execute(ValueDomain.CONCENTRATION, context, {
+        targetEntityId: payload.resourceId,
+        ...payload
       });
     }
   }
@@ -29039,45 +28774,10 @@ const EPSILON = 1e-7;
       this.ruleEngine = ruleEngine;
     }
 
-    calculateNationalImportance(context, {
-      countryId,
-      resourceId,
-      sectorGrossProductionValue = 0,
-      nationalGdp = 1e10,
-      fiscalResourceRevenue = 0,
-      totalGovernmentBudget = 2e9,
-      employmentHeadcount = 10000,
-      totalLaborForce = 1e7,
-      energyGridBaseloadShare = 0.0
-    }) {
-      const gdpShare = nationalGdp > 0 ? (sectorGrossProductionValue / nationalGdp) * 100 : 0;
-      const fiscalShare = totalGovernmentBudget > 0 ? (fiscalResourceRevenue / totalGovernmentBudget) * 100 : 0;
-      const laborShare = totalLaborForce > 0 ? (employmentHeadcount / totalLaborForce) * 100 : 0;
-      const energyWeight = energyGridBaseloadShare * 100;
-
-      const importanceScore = Math.min(100, (
-        (gdpShare * 3.0) +
-        (fiscalShare * 2.5) +
-        (energyWeight * 2.5) +
-        (laborShare * 2.0)
-      ));
-
-      return new ValueMetricResult({
-        metricId: `NAT_IMP_${countryId}_${resourceId}`,
-        domain: ValueDomain.NATIONAL_IMPORTANCE,
-        targetEntityId: countryId,
-        score: Math.round(importanceScore * 10) / 10,
-        components: {
-          gdpShare: Math.round(gdpShare * 100) / 100,
-          fiscalShare: Math.round(fiscalShare * 100) / 100,
-          laborShare: Math.round(laborShare * 100) / 100,
-          energyWeight: Math.round(energyWeight * 100) / 100,
-          importanceScore: Math.round(importanceScore * 10) / 10
-        },
-        formulaRef: 'F_12_10_NATIONAL_IMPORTANCE_INDEX',
-        ruleRef: 'DEFAULT_NATIONAL_IMPORTANCE_RULE',
-        confidence: 0.94,
-        temporalTick: context.temporalTick
+    calculateNationalImportance(context, payload) {
+      return this.ruleEngine.execute(ValueDomain.NATIONAL_IMPORTANCE, context, {
+        targetEntityId: payload.countryId,
+        ...payload
       });
     }
   }
@@ -29091,41 +28791,10 @@ const EPSILON = 1e-7;
       this.ruleEngine = ruleEngine;
     }
 
-    calculateResourcePower(context, {
-      countryId,
-      resourceId,
-      globalProductionShare = 0,
-      globalReserveShare = 0,
-      globalExportShare = 0,
-      globalRefiningShare = 0,
-      marketPowerMultiplier = 1.0
-    }) {
-      const compositeMarketDominance = (
-        (globalProductionShare * 0.35) +
-        (globalReserveShare * 0.25) +
-        (globalExportShare * 0.25) +
-        (globalRefiningShare * 0.15)
-      );
-
-      const leverageScore = Math.min(100, compositeMarketDominance * marketPowerMultiplier * 1.5);
-
-      return new ValueMetricResult({
-        metricId: `RES_PWR_${countryId}_${resourceId}`,
-        domain: ValueDomain.RESOURCE_POWER,
-        targetEntityId: countryId,
-        score: Math.round(leverageScore * 10) / 10,
-        components: {
-          globalProductionShare,
-          globalReserveShare,
-          globalExportShare,
-          globalRefiningShare,
-          compositeMarketDominance: Math.round(compositeMarketDominance * 100) / 100,
-          leverageScore: Math.round(leverageScore * 10) / 10
-        },
-        formulaRef: 'F_12_11_GEOPOLITICAL_RESOURCE_POWER',
-        ruleRef: 'DEFAULT_RESOURCE_POWER_RULE',
-        confidence: 0.95,
-        temporalTick: context.temporalTick
+    calculateResourcePower(context, payload) {
+      return this.ruleEngine.execute(ValueDomain.RESOURCE_POWER, context, {
+        targetEntityId: payload.countryId,
+        ...payload
       });
     }
   }
@@ -29139,43 +28808,15 @@ const EPSILON = 1e-7;
       this.ruleEngine = ruleEngine;
     }
 
-    calculateGlobalCriticality(context, {
-      resourceId,
-      systemicCriticalityScore = 50,
-      supplyConcentrationScore = 50,
-      scarcityScore = 50,
-      energyTransitionEssentiality = 50
-    }) {
-      const globalScore = (
-        (systemicCriticalityScore * 0.40) +
-        (supplyConcentrationScore * 0.25) +
-        (scarcityScore * 0.20) +
-        (energyTransitionEssentiality * 0.15)
-      );
-
-      const clamped = Math.min(100, Math.max(0, globalScore));
-
-      return new ValueMetricResult({
-        metricId: `GLOB_CRIT_${resourceId}`,
-        domain: ValueDomain.GLOBAL_CRITICALITY,
-        targetEntityId: resourceId,
-        score: Math.round(clamped * 10) / 10,
-        components: {
-          systemicCriticalityScore,
-          supplyConcentrationScore,
-          scarcityScore,
-          energyTransitionEssentiality,
-          globalCriticalityIndex: Math.round(clamped * 10) / 10
-        },
-        formulaRef: 'F_12_12_GLOBAL_CRITICALITY_SYNTHESIS',
-        ruleRef: 'DEFAULT_GLOBAL_CRITICALITY_RULE',
-        confidence: 0.95,
-        temporalTick: context.temporalTick
+    calculateGlobalCriticality(context, payload) {
+      return this.ruleEngine.execute(ValueDomain.GLOBAL_CRITICALITY, context, {
+        targetEntityId: payload.resourceId,
+        ...payload
       });
     }
   }
 
-// ============================================================================
+  // ============================================================================
   // 12.13 ECONOMIC EXPOSURE & DEPENDENCY SIGNIFICANCE INDICATOR ENGINE
   // ============================================================================
 
@@ -29184,59 +28825,10 @@ const EPSILON = 1e-7;
       this.ruleEngine = ruleEngine;
     }
 
-    calculateEconomicExposure(context, {
-      countryId,
-      resourceId,
-      importVolume = 0,
-      domesticConsumptionVolume = 1000,
-      foreignSupplierConcentrationHHI = 5000,
-      domesticBufferCoverageMonths = 3,
-      substitutionPenaltyScore = 60,
-      criticalSectorDependencyWeight = 0.8
-    }) {
-      const importDependencyRatio = domesticConsumptionVolume > 0
-        ? Math.min(1.0, importVolume / domesticConsumptionVolume)
-        : 0;
-
-      const supplierConcentrationFactor = Math.min(1.0, foreignSupplierConcentrationHHI / 10000);
-      const bufferMitigationFactor = Math.max(0.1, 1.0 - (domesticBufferCoverageMonths / 12));
-      const substitutionFrictionFactor = substitutionPenaltyScore / 100;
-
-      const vulnerabilityScore = (
-        (importDependencyRatio * 0.35) +
-        (supplierConcentrationFactor * 0.25) +
-        (substitutionFrictionFactor * 0.20) +
-        (criticalSectorDependencyWeight * 0.20)
-      ) * bufferMitigationFactor * 100;
-
-      const clampedScore = Math.min(100, Math.max(0, vulnerabilityScore));
-
-      let level = ExposureLevel.BALANCED_INTERDEPENDENT;
-      if (clampedScore >= 85) level = ExposureLevel.STRATEGIC_STRANGULATION;
-      else if (clampedScore >= 70) level = ExposureLevel.ACUTE_VULNERABILITY;
-      else if (clampedScore >= 50) level = ExposureLevel.ASYMMETRIC_DEPENDENT;
-      else if (clampedScore >= 30) level = ExposureLevel.BALANCED_INTERDEPENDENT;
-      else if (clampedScore >= 15) level = ExposureLevel.LOW_EXPOSURE;
-      else level = ExposureLevel.INSULATED;
-
-      return new ValueMetricResult({
-        metricId: `EXP_${countryId}_${resourceId}`,
-        domain: ValueDomain.EXPOSURE,
-        targetEntityId: countryId,
-        score: Math.round(clampedScore * 10) / 10,
-        grade: level,
-        components: {
-          importDependencyRatio: Math.round(importDependencyRatio * 100) / 100,
-          supplierConcentrationFactor: Math.round(supplierConcentrationFactor * 100) / 100,
-          bufferMitigationFactor: Math.round(bufferMitigationFactor * 100) / 100,
-          substitutionFrictionFactor: Math.round(substitutionFrictionFactor * 100) / 100,
-          vulnerabilityScore: Math.round(clampedScore * 10) / 10,
-          exposureLevel: level
-        },
-        formulaRef: 'F_12_13_SOVEREIGN_ECONOMIC_EXPOSURE',
-        ruleRef: 'DEFAULT_EXPOSURE_RULE',
-        confidence: 0.93,
-        temporalTick: context.temporalTick
+    calculateEconomicExposure(context, payload) {
+      return this.ruleEngine.execute(ValueDomain.EXPOSURE, context, {
+        targetEntityId: payload.countryId,
+        ...payload
       });
     }
   }
@@ -29250,65 +28842,10 @@ const EPSILON = 1e-7;
       this.ruleEngine = ruleEngine;
     }
 
-    aggregateCompositeStrategicValue(context, {
-      entityId,
-      economicScore = 50,
-      industrialScore = 50,
-      tradeScore = 50,
-      scarcityScore = 50,
-      criticalityScore = 50,
-      nonSubstitutabilityScore = 50,
-      concentrationScore = 50,
-      exposureScore = 50,
-      customWeights = null
-    }) {
-      const weights = customWeights || {
-        criticality: 0.25,
-        scarcity: 0.20,
-        industrial: 0.15,
-        concentration: 0.15,
-        nonSubstitutability: 0.10,
-        exposure: 0.10,
-        economic: 0.05
-      };
-
-      const totalWeight = Object.values(weights).reduce((a, b) => a + b, 0);
-      if (Math.abs(totalWeight - 1.0) > 0.01) {
-        throw new InvariantViolationError('Composite weights must normalize to 1.0', { weights, totalWeight });
-      }
-
-      const composite = (
-        (criticalityScore * weights.criticality) +
-        (scarcityScore * weights.scarcity) +
-        (industrialScore * weights.industrial) +
-        (concentrationScore * weights.concentration) +
-        (nonSubstitutabilityScore * weights.nonSubstitutability) +
-        (exposureScore * weights.exposure) +
-        (economicScore * weights.economic)
-      );
-
-      const score = Math.min(100, Math.max(0, composite));
-
-      return new ValueMetricResult({
-        metricId: `COMP_STRAT_${entityId}`,
-        domain: ValueDomain.COMPOSITE,
-        targetEntityId: entityId,
-        score: Math.round(score * 10) / 10,
-        components: {
-          criticalityScore,
-          scarcityScore,
-          industrialScore,
-          concentrationScore,
-          nonSubstitutabilityScore,
-          exposureScore,
-          economicScore,
-          weightsApplied: weights,
-          compositeStrategicScore: Math.round(score * 10) / 10
-        },
-        formulaRef: 'F_12_14_COMPOSITE_STRATEGIC_VALUE',
-        ruleRef: 'DEFAULT_COMPOSITE_AGGREGATION_RULE',
-        confidence: 0.95,
-        temporalTick: context.temporalTick
+    aggregateCompositeStrategicValue(context, payload) {
+      return this.ruleEngine.execute(ValueDomain.COMPOSITE, context, {
+        targetEntityId: payload.entityId,
+        ...payload
       });
     }
   }
@@ -29325,8 +28862,9 @@ const EPSILON = 1e-7;
       lastObservedTick = 0,
       missingDimensionCount = 0,
       imputationApplied = false,
-      varianceAcrossReports = 0.05
-    }) {
+      varianceAcrossReports = 0.05,
+      corroborationCount = 1
+    } = {}) {
       let baseConfidence = 1.0;
 
       const sourceWeights = {
@@ -29334,19 +28872,21 @@ const EPSILON = 1e-7;
         MULTILATERAL_MONITOR_UN_WB: 0.95,
         INDUSTRY_CONSORTIUM: 0.85,
         COMMERCIAL_ANALYTICS_ESTIMATE: 0.70,
-        UNVERIFIED_HEURISTIC: 0.40
+        UNVERIFIED_HEURISTIC: 0.40,
+        MISSING_OR_UNOBSERVED: 0.20
       };
       baseConfidence *= (sourceWeights[provenanceSourceTier] || 0.60);
 
-      const ageTicks = Math.max(0, context.temporalTick - lastObservedTick);
+      const ageTicks = Math.max(0, (context ? context.temporalTick : 0) - lastObservedTick);
       const timeDecay = Math.max(0.2, 1.0 - (ageTicks * 0.05));
       baseConfidence *= timeDecay;
 
-      baseConfidence *= Math.max(0.3, 1.0 - (missingDimensionCount * 0.15));
+      baseConfidence *= Math.max(0.2, 1.0 - (missingDimensionCount * 0.15));
 
-      if (imputationApplied) baseConfidence *= 0.80;
+      if (imputationApplied) baseConfidence *= 0.75;
+      if (corroborationCount > 1) baseConfidence = Math.min(1.0, baseConfidence * (1.0 + Math.min(0.2, (corroborationCount - 1) * 0.05)));
 
-      baseConfidence *= Math.max(0.4, 1.0 - (varianceAcrossReports * 2.0));
+      baseConfidence *= Math.max(0.3, 1.0 - (varianceAcrossReports * 2.0));
 
       const confidence = Math.min(1.0, Math.max(0.0, baseConfidence));
 
@@ -29365,7 +28905,8 @@ const EPSILON = 1e-7;
           ageTicks,
           missingDimensionCount,
           imputationApplied,
-          varianceAcrossReports
+          varianceAcrossReports,
+          corroborationCount
         }
       };
     }
@@ -29479,27 +29020,56 @@ const EPSILON = 1e-7;
     buildCountryProfile(context, countryId) {
       const sovereign = context.getSovereign(countryId);
       const countryCode = countryId;
-      const gdp = sovereign ? sovereign.gdp || 1e10 : 1e10;
+      const gdp = sovereign ? sovereign.gdp || 0 : 0;
 
       const resourceExposures = [];
       const endowmentPowers = [];
 
       context.resourceCatalog.forEach((res, resId) => {
+        const importVol = (sovereign && sovereign.resourceImports && sovereign.resourceImports[resId] !== undefined)
+          ? sovereign.resourceImports[resId]
+          : ((sovereign && sovereign.imports && sovereign.imports[resId] !== undefined) ? sovereign.imports[resId] : 0);
+
+        const consumptionVol = (sovereign && sovereign.resourceConsumption && sovereign.resourceConsumption[resId] !== undefined)
+          ? sovereign.resourceConsumption[resId]
+          : ((sovereign && sovereign.consumption && sovereign.consumption[resId] !== undefined) ? sovereign.consumption[resId] : importVol);
+
+        const supplierHHI = (sovereign && sovereign.supplierConcentrationHHI && sovereign.supplierConcentrationHHI[resId] !== undefined)
+          ? sovereign.supplierConcentrationHHI[resId]
+          : 2500;
+
+        const bufferMonths = (sovereign && sovereign.strategicBufferMonths && sovereign.strategicBufferMonths[resId] !== undefined)
+          ? sovereign.strategicBufferMonths[resId]
+          : ((sovereign && sovereign.stockpileCoverageMonths !== undefined) ? sovereign.stockpileCoverageMonths : 0);
+
+        const prodShare = (sovereign && sovereign.productionShares && sovereign.productionShares[resId] !== undefined)
+          ? sovereign.productionShares[resId]
+          : 0;
+
+        const resShare = (sovereign && sovereign.reserveShares && sovereign.reserveShares[resId] !== undefined)
+          ? sovereign.reserveShares[resId]
+          : 0;
+
+        const exportShare = (sovereign && sovereign.exportShares && sovereign.exportShares[resId] !== undefined)
+          ? sovereign.exportShares[resId]
+          : 0;
+
         const importMetric = this.orchestrator.exposureEngine.calculateEconomicExposure(context, {
           countryId,
           resourceId: resId,
-          importVolume: (sovereign && sovereign.resourceImports && sovereign.resourceImports[resId]) || 500,
-          domesticConsumptionVolume: 1000,
-          foreignSupplierConcentrationHHI: 4500,
-          domesticBufferCoverageMonths: 3
+          importVolume: importVol,
+          domesticConsumptionVolume: consumptionVol,
+          foreignSupplierConcentrationHHI: supplierHHI,
+          domesticBufferCoverageMonths: bufferMonths
         });
         resourceExposures.push(importMetric);
 
         const powerMetric = this.orchestrator.resourcePowerEngine.calculateResourcePower(context, {
           countryId,
           resourceId: resId,
-          globalProductionShare: (sovereign && sovereign.productionShares && sovereign.productionShares[resId]) || 0,
-          globalReserveShare: (sovereign && sovereign.reserveShares && sovereign.reserveShares[resId]) || 0
+          globalProductionShare: prodShare,
+          globalReserveShare: resShare,
+          globalExportShare: exportShare
         });
         endowmentPowers.push(powerMetric);
       });
@@ -29540,13 +29110,19 @@ const EPSILON = 1e-7;
 
     buildResourceProfile(context, resourceId) {
       const price = context.getMarketPrice(resourceId);
-      const reserve = context.reserveState.get(resourceId) || { provenReserves: 5000, annualExtraction: 250, annualCapacity: 300 };
+      const reserve = context.reserveState.get(resourceId) || null;
+      const resMeta = (context.resourceCatalog && context.resourceCatalog.get(resourceId)) || {};
+
+      const extractionVol = reserve ? (reserve.annualExtraction || 0) : 0;
+      const provenRes = reserve ? (reserve.provenReserves || 0) : 0;
+      const capacityVol = reserve ? (reserve.annualCapacity || extractionVol || 0) : 0;
+      const unitCost = (resMeta.unitExtractionCost !== undefined) ? resMeta.unitExtractionCost : (price * 0.4);
 
       // 1. Economic Value
       const economicMetric = this.orchestrator.economicEngine.calculateProductionValue(context, {
         resourceId,
-        annualExtractionVolume: reserve.annualExtraction || 250,
-        unitExtractionCost: price * 0.4,
+        annualExtractionVolume: extractionVol,
+        unitExtractionCost: unitCost,
         marketPrice: price
       });
 
@@ -29555,23 +29131,22 @@ const EPSILON = 1e-7;
       const industrialMetric = this.orchestrator.industrialEngine.calculateIndustrialReach(context, {
         resourceId,
         downstreamChains,
-        substitutionDifficulty: 0.5
+        substitutionDifficulty: (resMeta.substitutionDifficulty !== undefined) ? resMeta.substitutionDifficulty : 0.5
       });
-      const computedReachScore = industrialMetric.normalizedScore;
+      const computedReachScore = industrialMetric.normalizedScore !== undefined ? industrialMetric.normalizedScore : industrialMetric.score;
 
       // 3. Dynamic Substitutability
       const subOptions = (context.substitutesCatalog && context.substitutesCatalog.get(resourceId)) || [];
       const subMetric = this.orchestrator.substitutabilityEngine.evaluateSubstitutes(context, {
         resourceId,
         substituteOptions: subOptions,
-        requiredVolume: reserve.annualCapacity || 1000
+        requiredVolume: capacityVol || 1000
       });
       const computedNonSubScore = (subMetric.components && subMetric.components.nonSubstitutabilityScore !== undefined)
         ? subMetric.components.nonSubstitutabilityScore
-        : 50;
+        : (100 - (subMetric.score || 0));
 
       // 4. Dynamic Criticality & Resource Metadata Resolution
-      const resMeta = (context.resourceCatalog && context.resourceCatalog.get(resourceId)) || {};
       const defenseEnergyWeight = typeof resMeta.strategicApplicationWeight === 'number'
         ? resMeta.strategicApplicationWeight
         : (resMeta.isDefenseCritical ? 90 : (resMeta.isEnergyTransitionCritical ? 80 : 50));
@@ -29590,10 +29165,10 @@ const EPSILON = 1e-7;
       // 5. Scarcity
       const scarcityMetric = this.orchestrator.scarcityEngine.calculateScarcity(context, {
         resourceId,
-        provenReserves: reserve.provenReserves || 5000,
-        annualGlobalExtraction: reserve.annualExtraction || 250,
-        recyclingSecondarySupply: 30,
-        strategicStockpileBufferMonths: 6
+        provenReserves: provenRes,
+        annualGlobalExtraction: extractionVol,
+        recyclingSecondarySupply: resMeta.recyclingSecondarySupply || 0,
+        strategicStockpileBufferMonths: resMeta.strategicStockpileBufferMonths || 0
       });
 
       // 6. Dynamic Supply Concentration (Normalized [0, 100] scale)
@@ -29606,7 +29181,7 @@ const EPSILON = 1e-7;
         reserveShares: reserveShares,
         exporterShares: exportShares
       });
-      const concentrationScore = concMetric.normalizedScore;
+      const concentrationScore = concMetric.normalizedScore !== undefined ? concMetric.normalizedScore : (concMetric.score / 100);
 
       // 7. Global Criticality
       const globalCritMetric = this.orchestrator.globalCriticalityEngine.calculateGlobalCriticality(context, {
@@ -29619,19 +29194,19 @@ const EPSILON = 1e-7;
       // 8. Trade Significance
       const tradeMetric = this.orchestrator.tradeEngine.calculateTradeSignificance(context, {
         entityId: resourceId,
-        totalExportVolume: (reserve.annualCapacity || 1000) * 0.4,
-        totalImportVolume: (reserve.annualCapacity || 1000) * 0.1,
+        totalExportVolume: capacityVol * 0.4,
+        totalImportVolume: capacityVol * 0.1,
         commodityUnitPrice: price
       });
 
       // 9. Composite Strategic Value
       const compositeMetric = this.orchestrator.compositeAggregator.aggregateCompositeStrategicValue(context, {
         entityId: resourceId,
-        economicScore: economicMetric.normalizedScore,
+        economicScore: economicMetric.normalizedScore !== undefined ? economicMetric.normalizedScore : economicMetric.score,
         industrialScore: computedReachScore,
-        tradeScore: tradeMetric.normalizedScore,
-        scarcityScore: scarcityMetric.normalizedScore,
-        criticalityScore: criticalityMetric.normalizedScore,
+        tradeScore: tradeMetric.normalizedScore !== undefined ? tradeMetric.normalizedScore : tradeMetric.score,
+        scarcityScore: scarcityMetric.normalizedScore !== undefined ? scarcityMetric.normalizedScore : scarcityMetric.score,
+        criticalityScore: criticalityMetric.normalizedScore !== undefined ? criticalityMetric.normalizedScore : criticalityMetric.score,
         nonSubstitutabilityScore: computedNonSubScore,
         concentrationScore: concentrationScore,
         exposureScore: 50
@@ -29667,19 +29242,59 @@ const EPSILON = 1e-7;
     }
 
     buildEntityProfile(context, entityId) {
+      const facilities = (context.processingTopologies && context.processingTopologies.get(entityId)) || [];
+      const inventory = (context.inventoryState && context.inventoryState.get(entityId)) || null;
+      const corridors = (context.logisticsCorridors && context.logisticsCorridors.get(entityId)) || [];
+
+      let totalThroughputValue = 0;
+      let bottleneckVulnerability = 20;
+
+      facilities.forEach(fac => {
+        const capacity = fac.annualCapacity || fac.capacity || 0;
+        const outPrice = context.getMarketPrice(fac.outputResourceId || fac.resourceId);
+        totalThroughputValue += (capacity * outPrice);
+        if (fac.isSoleSupplier || fac.soleSource) {
+          bottleneckVulnerability += 30;
+        }
+      });
+
+      if (inventory) {
+        const stockDays = inventory.daysOfSupply || inventory.bufferDays || 15;
+        if (stockDays < 7) bottleneckVulnerability += 25;
+        else if (stockDays > 30) bottleneckVulnerability -= 10;
+      }
+
+      corridors.forEach(corr => {
+        if (corr.isChokepoint || corr.chokepointRisk) bottleneckVulnerability += 15;
+      });
+
+      bottleneckVulnerability = Math.min(100, Math.max(0, bottleneckVulnerability));
+
+      let rating = 'STANDARD_COMMERCIAL_OPERATOR';
+      if (totalThroughputValue > 1e9 || bottleneckVulnerability > 75) {
+        rating = 'SYSTEMICALLY_CRITICAL_INFRASTRUCTURE';
+      } else if (totalThroughputValue > 1e8 || bottleneckVulnerability > 50) {
+        rating = 'SYSTEMICALLY_SIGNIFICANT_PRODUCER';
+      }
+
       return {
         entityId,
         evaluatedTick: context.temporalTick,
-        entityStrategicRating: 'SYSTEMICALLY_SIGNIFICANT_PRODUCER',
-        aggregateThroughputValue: 1.2e8,
-        supplyChokepointVulnerability: 65.4
+        entityStrategicRating: rating,
+        aggregateThroughputValue: Math.round(totalThroughputValue),
+        supplyChokepointVulnerability: Math.round(bottleneckVulnerability * 10) / 10,
+        topologyMetrics: {
+          activeFacilityCount: facilities.length,
+          logisticsCorridorCount: corridors.length,
+          inventoryCoverageDays: inventory ? (inventory.daysOfSupply || inventory.bufferDays || 0) : 0
+        }
       };
     }
   }
 
   // ============================================================================
   // 12.21 INFORMATION VISIBILITY & FOG-OF-WAR PROJECTION GATEWAY
-  // (Audit Fix Applied: Math.min/max clamping to guarantee [0, 100] normalization across all dimensions)
+  // (Audit Fix Applied: Epistemic uncertainty model + [0, 100] normalization clamping)
   // ============================================================================
 
   class FogOfWarVisibilityGateway {
@@ -29694,8 +29309,11 @@ const EPSILON = 1e-7;
         return raw;
       }
 
-      const noiseMultiplier = 1.0 + ((1.0 - bilateralIntelLevel) * 0.3 * (Math.sin(raw.evaluatedTick || 1)));
-      const effectiveMultiplier = Math.max(0.1, noiseMultiplier);
+      const hashHex = deterministicHash(`${viewerSovereignId}_${targetCountryId}_${raw.evaluatedTick || 0}`);
+      const hashInt = parseInt(hashHex, 16) || 0;
+      const pseudoNoise = ((hashInt % 1000) / 500) - 1.0; // [-1.0, +1.0]
+      const noiseMagnitude = (1.0 - bilateralIntelLevel) * 0.35;
+      const effectiveMultiplier = Math.max(0.1, 1.0 + (pseudoNoise * noiseMagnitude));
 
       // 1. Clamp compositeStrategicScore safely within [0, 100]
       if (typeof raw.compositeStrategicScore === 'number') {
@@ -29848,37 +29466,595 @@ const EPSILON = 1e-7;
     }
 
     registerBaselineRules() {
+      // 1. ECONOMIC (Production & Processing Value Added)
       this.ruleEngine.registerRule(new ValueRuleDefinition({
         ruleId: 'DEFAULT_ECONOMIC_PRODUCTION_RULE',
         domain: ValueDomain.ECONOMIC,
-        description: 'Standard Linear Production Gross and Net Rent',
+        description: 'Standard Linear Production Gross and Net Rent & Processing Margin',
         formulaRef: 'F_12_03_PRODUCTION_VALUE',
-        compute: (context, payload) => ({
-          score: payload.annualExtractionVolume * (payload.marketPrice || 100),
-          components: payload
-        })
+        compute: (context, payload) => {
+          if (payload.action === 'PROCESSING_VALUE_ADD') {
+            let grossOutputValue = 0;
+            const outputProductYields = payload.outputProductYields || [];
+            outputProductYields.forEach(yieldItem => {
+              const outPrice = yieldItem.unitPrice || (context ? context.getMarketPrice(yieldItem.outputResourceId) : 0);
+              grossOutputValue += (yieldItem.volume * outPrice);
+            });
+            const feedstockCost = payload.feedstockCost || 0;
+            const processingOperatingCost = payload.processingOperatingCost || 0;
+            const totalInputCost = feedstockCost + processingOperatingCost;
+            const netProcessingMargin = grossOutputValue - totalInputCost;
+            const valueAddMultiplier = totalInputCost > 0 ? grossOutputValue / totalInputCost : 1.0;
+            return {
+              metricId: `EV_PROC_${payload.targetEntityId || payload.resourceId}`,
+              score: netProcessingMargin,
+              components: {
+                processedVolume: payload.processedVolume || 0,
+                feedstockCost,
+                processingOperatingCost,
+                grossOutputValue,
+                netProcessingMargin,
+                valueAddMultiplier
+              },
+              confidence: 0.95
+            };
+          }
+
+          const vol = payload.annualExtractionVolume || 0;
+          const price = payload.marketPrice !== undefined && payload.marketPrice !== null
+            ? payload.marketPrice
+            : (context ? context.getMarketPrice(payload.resourceId || payload.targetEntityId) : 100);
+          const unitCost = payload.unitExtractionCost || 0;
+          const grossEconomicValue = vol * price;
+          const totalExtractionCost = vol * unitCost;
+          const netResourceRent = Math.max(0, grossEconomicValue - totalExtractionCost);
+          const grossMarginPercentage = grossEconomicValue > 0 ? (netResourceRent / grossEconomicValue) * 100 : 0;
+          return {
+            metricId: `EV_PROD_${payload.targetEntityId || payload.resourceId}`,
+            score: grossEconomicValue,
+            components: {
+              annualExtractionVolume: vol,
+              marketPrice: price,
+              grossEconomicValue,
+              unitExtractionCost: unitCost,
+              totalExtractionCost,
+              netResourceRent,
+              grossMarginPercentage
+            },
+            confidence: 1.0
+          };
+        }
       }));
 
+      // 2. INDUSTRIAL (Leontief DAG Reach)
+      this.ruleEngine.registerRule(new ValueRuleDefinition({
+        ruleId: 'DEFAULT_INDUSTRIAL_REACH_RULE',
+        domain: ValueDomain.INDUSTRIAL,
+        description: 'Recursive Multi-Tier Industrial Leontief DAG Output at Risk',
+        formulaRef: 'F_12_04_LEONTIEF_INDUSTRIAL_REACH',
+        compute: (context, payload) => {
+          let cumulativeOutputAtRisk = 0;
+          let maxDepth = 0;
+          const visitedNodes = new Set();
+          const directSectors = new Set();
+          const downstreamChains = payload.downstreamChains || [];
+          const substitutionDifficulty = payload.substitutionDifficulty || 0.5;
+
+          const traverse = (node, depth, attenuation) => {
+            if (!node || depth > 8 || visitedNodes.has(node.sectorId)) return;
+            visitedNodes.add(node.sectorId);
+            maxDepth = Math.max(maxDepth, depth);
+            if (depth === 1) directSectors.add(node.sectorId);
+
+            const nodeEconomicWeight = (node.annualSectorValue || 0) * (node.inputElasticity || 1.0);
+            cumulativeOutputAtRisk += (nodeEconomicWeight * attenuation);
+
+            if (Array.isArray(node.downstreamSectors)) {
+              node.downstreamSectors.forEach(child => {
+                traverse(child, depth + 1, attenuation * 0.85);
+              });
+            }
+          };
+
+          downstreamChains.forEach(chainRoot => traverse(chainRoot, 1, 1.0));
+
+          const normalizedReachScore = Math.min(100, Math.log10(Math.max(1, cumulativeOutputAtRisk / 1e6) + 1) * 20 * (1 + substitutionDifficulty * 0.5));
+
+          return {
+            metricId: `IV_REACH_${payload.targetEntityId || payload.resourceId}`,
+            score: cumulativeOutputAtRisk,
+            normalizedScore: Math.round(normalizedReachScore * 10) / 10,
+            components: {
+              cumulativeOutputAtRisk,
+              directDependentSectorsCount: directSectors.size,
+              totalImpactedSectorsCount: visitedNodes.size,
+              maxDepth,
+              substitutionDifficulty
+            },
+            confidence: 0.90
+          };
+        }
+      }));
+
+      // 3. TRADE (Commercial & Balance Significance)
+      this.ruleEngine.registerRule(new ValueRuleDefinition({
+        ruleId: 'DEFAULT_TRADE_VALUE_RULE',
+        domain: ValueDomain.TRADE,
+        description: 'Trade Openness & Bilateral Partner Concentration',
+        formulaRef: 'F_12_05_TRADE_SIGNIFICANCE',
+        compute: (context, payload) => {
+          const exportVol = payload.totalExportVolume || 0;
+          const importVol = payload.totalImportVolume || 0;
+          const price = payload.commodityUnitPrice || 1.0;
+          const gdp = payload.nationalGdp || 1e10;
+          const partners = payload.bilateralTradePartners || [];
+
+          const grossExportValue = exportVol * price;
+          const grossImportValue = importVol * price;
+          const netTradeBalance = grossExportValue - grossImportValue;
+          const tradeOpennessRatio = gdp > 0 ? (grossExportValue + grossImportValue) / gdp : 0;
+
+          let bilateralConcentrationHHI = 0;
+          const totalBilateralVolume = partners.reduce((acc, p) => acc + (p.volume || 0), 0);
+          if (totalBilateralVolume > 0) {
+            partners.forEach(p => {
+              const share = ((p.volume || 0) / totalBilateralVolume) * 100;
+              bilateralConcentrationHHI += (share * share);
+            });
+          }
+
+          const normalizedTradeScore = Math.min(100, (tradeOpennessRatio * 500) + (bilateralConcentrationHHI / 200));
+
+          return {
+            metricId: `TV_SIG_${payload.targetEntityId || payload.entityId}`,
+            score: grossExportValue + grossImportValue,
+            normalizedScore: Math.round(normalizedTradeScore * 10) / 10,
+            components: {
+              grossExportValue,
+              grossImportValue,
+              netTradeBalance,
+              tradeOpennessRatio,
+              bilateralConcentrationHHI,
+              partnerCount: partners.length
+            },
+            confidence: 0.95
+          };
+        }
+      }));
+
+      // 4. SCARCITY (Dynamic R/P Exhaustion Curve)
       this.ruleEngine.registerRule(new ValueRuleDefinition({
         ruleId: 'DEFAULT_SCARCITY_RULE',
         domain: ValueDomain.SCARCITY,
-        description: 'Multi-tiered R/P Reserve Exhaustion Curve',
+        description: 'Multi-tiered R/P Reserve Exhaustion Curve & Buffers',
         formulaRef: 'F_12_06_DYNAMIC_RESERVE_SCARCITY',
-        compute: (context, payload) => ({
-          score: Math.min(100, Math.max(0, 100 - ((payload.provenReserves || 1000) / (payload.annualGlobalExtraction || 50)))),
-          components: payload
-        })
+        compute: (context, payload) => {
+          const provenReserves = payload.provenReserves || 0;
+          const extraction = payload.annualGlobalExtraction || 0;
+          const recycling = payload.recyclingSecondarySupply || 0;
+          const bufferMonths = payload.strategicStockpileBufferMonths || 0;
+          const growthRate = payload.demandGrowthAnnualRate || 0.02;
+
+          const netPrimaryDemand = Math.max(0.1, extraction - recycling);
+          const reserveToProductionRatioYears = netPrimaryDemand > 0 ? provenReserves / netPrimaryDemand : 100;
+          const recyclingCoverageRatio = extraction > 0 ? recycling / extraction : 0;
+          const strategicBufferYears = bufferMonths / 12;
+
+          let scarcityScore = 0;
+          if (reserveToProductionRatioYears < 10) {
+            scarcityScore = 95 + (10 - reserveToProductionRatioYears) * 0.5;
+          } else if (reserveToProductionRatioYears < 25) {
+            scarcityScore = 75 + (25 - reserveToProductionRatioYears) * 1.33;
+          } else if (reserveToProductionRatioYears < 50) {
+            scarcityScore = 45 + (50 - reserveToProductionRatioYears) * 1.2;
+          } else {
+            scarcityScore = Math.max(5, 45 - (reserveToProductionRatioYears - 50) * 0.2);
+          }
+
+          scarcityScore -= (recyclingCoverageRatio * 20);
+          scarcityScore -= Math.min(15, strategicBufferYears * 10);
+          scarcityScore += (growthRate * 200);
+          scarcityScore = Math.min(100, Math.max(0, scarcityScore));
+
+          let band = ScarcityBand.STABLE;
+          if (scarcityScore >= 85) band = ScarcityBand.CRITICAL_DEPLETION;
+          else if (scarcityScore >= 65) band = ScarcityBand.HIGH_STRESS;
+          else if (scarcityScore >= 40) band = ScarcityBand.MODERATE_STRESS;
+          else if (scarcityScore >= 20) band = ScarcityBand.STABLE;
+          else band = ScarcityBand.ABUNDANT;
+
+          return {
+            metricId: `SV_SCARCITY_${payload.targetEntityId || payload.resourceId}`,
+            score: Math.round(scarcityScore * 10) / 10,
+            grade: band,
+            components: {
+              provenReserves,
+              netPrimaryDemand,
+              reserveToProductionRatioYears: Math.round(reserveToProductionRatioYears * 10) / 10,
+              recyclingCoverageRatio: Math.round(recyclingCoverageRatio * 1000) / 1000,
+              strategicStockpileBufferMonths: bufferMonths,
+              scarcityBand: band
+            },
+            confidence: 0.92
+          };
+        }
       }));
 
+      // 5. CRITICALITY (Systemic Criticality Multi-Criteria)
       this.ruleEngine.registerRule(new ValueRuleDefinition({
         ruleId: 'DEFAULT_CRITICALITY_RULE',
         domain: ValueDomain.CRITICALITY,
         description: 'Multi-criteria Systemic Criticality Index',
         formulaRef: 'F_12_07_SYSTEMIC_CRITICALITY',
-        compute: (context, payload) => ({
-          score: (payload.industrialReachScore || 50) * 0.4 + (payload.nonSubstitutabilityScore || 50) * 0.6,
-          components: payload
-        })
+        compute: (context, payload) => {
+          const reach = payload.industrialReachScore || 50;
+          const nonSub = payload.nonSubstitutabilityScore || 50;
+          const strategicWeight = payload.defenseEnergyStrategicWeight || 50;
+          const disruption = payload.disruptionImpactPotential || 50;
+          const velocity = payload.shockPropagationVelocityMultiplier || 1.0;
+
+          const rawCriticality = (
+            reach * 0.35 +
+            nonSub * 0.25 +
+            strategicWeight * 0.20 +
+            disruption * 0.20
+          ) * velocity;
+
+          const score = Math.min(100, Math.max(0, rawCriticality));
+
+          let level = CriticalityLevel.MEDIUM;
+          if (score >= 90) level = CriticalityLevel.SYSTEMIC_EXISTENTIAL;
+          else if (score >= 75) level = CriticalityLevel.VITAL;
+          else if (score >= 55) level = CriticalityLevel.HIGH;
+          else if (score >= 35) level = CriticalityLevel.MEDIUM;
+          else if (score >= 15) level = CriticalityLevel.LOW;
+          else level = CriticalityLevel.NEGLIGIBLE;
+
+          return {
+            metricId: `CRIT_${payload.targetEntityId || payload.resourceId}`,
+            score: Math.round(score * 10) / 10,
+            grade: level,
+            components: {
+              industrialReachScore: reach,
+              nonSubstitutabilityScore: nonSub,
+              defenseEnergyStrategicWeight: strategicWeight,
+              disruptionImpactPotential: disruption,
+              shockPropagationVelocityMultiplier: velocity,
+              criticalityLevel: level
+            },
+            confidence: 0.94
+          };
+        }
+      }));
+
+      // 6. SUBSTITUTABILITY (Multi-Candidate Viability)
+      this.ruleEngine.registerRule(new ValueRuleDefinition({
+        ruleId: 'DEFAULT_SUBSTITUTION_RULE',
+        domain: ValueDomain.SUBSTITUTABILITY,
+        description: 'Multi-Parameter Candidate Substitutability Analysis',
+        formulaRef: 'F_12_08_MULTI_PARAM_SUBSTITUTION',
+        compute: (context, payload) => {
+          const options = payload.substituteOptions || [];
+          const reqVol = payload.requiredVolume || 1000;
+
+          if (!Array.isArray(options) || options.length === 0) {
+            return {
+              metricId: `SUBST_${payload.targetEntityId || payload.resourceId}`,
+              score: 0.0,
+              grade: SubstitutabilityTier.NON_SUBSTITUTABLE,
+              components: {
+                viableSubstituteCount: 0,
+                bestCandidateId: null,
+                effectiveCapacityCoverage: 0,
+                nonSubstitutabilityScore: 100.0
+              },
+              confidence: 1.0
+            };
+          }
+
+          let bestViabilityScore = 0;
+          let bestCandidate = null;
+
+          options.forEach(opt => {
+            const techCompatibility = Math.min(1.0, Math.max(0, opt.technicalCompatibilityRatio || 0.5));
+            const capacityCoverage = reqVol > 0 ? Math.min(1.0, (opt.availableSurplusCapacity || 0) / reqVol) : 1.0;
+            const costPenaltyMultiplier = opt.unitCostPenaltyRatio ? Math.max(0.1, 1.0 / opt.unitCostPenaltyRatio) : 0.8;
+            const leadTimeDecay = Math.max(0.1, 1.0 - ((opt.transitionLeadTimeMonths || 12) / 60));
+            const regulatoryFriction = Math.min(1.0, Math.max(0.1, 1.0 - (opt.regulatoryApprovalBarrier || 0.2)));
+
+            const optionScore = (
+              techCompatibility * 0.35 +
+              capacityCoverage * 0.25 +
+              costPenaltyMultiplier * 0.15 +
+              leadTimeDecay * 0.15 +
+              regulatoryFriction * 0.10
+            ) * 100;
+
+            if (optionScore > bestViabilityScore) {
+              bestViabilityScore = optionScore;
+              bestCandidate = opt;
+            }
+          });
+
+          const nonSubstitutabilityScore = Math.max(0, 100 - bestViabilityScore);
+
+          let tier = SubstitutabilityTier.FEASIBLE_WITH_PENALTY;
+          if (bestViabilityScore >= 85) tier = SubstitutabilityTier.DIRECT_DROP_IN;
+          else if (bestViabilityScore >= 60) tier = SubstitutabilityTier.FEASIBLE_WITH_PENALTY;
+          else if (bestViabilityScore >= 35) tier = SubstitutabilityTier.HIGH_FRICTION;
+          else if (bestViabilityScore >= 15) tier = SubstitutabilityTier.PROHIBITIVE_OR_THEORETICAL;
+          else tier = SubstitutabilityTier.NON_SUBSTITUTABLE;
+
+          return {
+            metricId: `SUBST_${payload.targetEntityId || payload.resourceId}`,
+            score: Math.round(bestViabilityScore * 10) / 10,
+            grade: tier,
+            components: {
+              viableSubstituteCount: options.length,
+              bestCandidateId: bestCandidate ? bestCandidate.substituteResourceId : null,
+              bestViabilityScore: Math.round(bestViabilityScore * 10) / 10,
+              nonSubstitutabilityScore: Math.round(nonSubstitutabilityScore * 10) / 10,
+              substitutabilityTier: tier
+            },
+            confidence: 0.91
+          };
+        }
+      }));
+
+      // 7. CONCENTRATION (Multi-Vector HHI)
+      this.ruleEngine.registerRule(new ValueRuleDefinition({
+        ruleId: 'DEFAULT_CONCENTRATION_RULE',
+        domain: ValueDomain.CONCENTRATION,
+        description: 'Multi-Vector Supply, Reserve and Export HHI Synthesis',
+        formulaRef: 'F_12_09_MULTI_VECTOR_HHI',
+        compute: (context, payload) => {
+          const calcHHI = (sharesArray = []) => {
+            if (!Array.isArray(sharesArray) || sharesArray.length === 0) return 0;
+            const rawValues = sharesArray.map(s => typeof s === 'number' ? s : (s.marketSharePercentage !== undefined ? s.marketSharePercentage : (s.share || 0)));
+            const sum = rawValues.reduce((a, b) => a + b, 0);
+            const isFractional = sum <= 1.05 && sum > 0;
+            return rawValues.reduce((acc, v) => {
+              const pct = isFractional ? v * 100 : v;
+              return acc + (pct * pct);
+            }, 0);
+          };
+
+          const prodHHI = calcHHI(payload.productionShares);
+          const resHHI = calcHHI(payload.reserveShares);
+          const expHHI = calcHHI(payload.exporterShares);
+          const refHHI = calcHHI(payload.processingRefiningShares);
+          const chokepointMult = payload.chokepointExposureMultiplier || 1.0;
+
+          let totalWeight = 0;
+          let weightedHHI = 0;
+          if (payload.productionShares && payload.productionShares.length > 0) { weightedHHI += (prodHHI * 0.35); totalWeight += 0.35; }
+          if (payload.reserveShares && payload.reserveShares.length > 0) { weightedHHI += (resHHI * 0.20); totalWeight += 0.20; }
+          if (payload.exporterShares && payload.exporterShares.length > 0) { weightedHHI += (expHHI * 0.25); totalWeight += 0.25; }
+          if (payload.processingRefiningShares && payload.processingRefiningShares.length > 0) { weightedHHI += (refHHI * 0.20); totalWeight += 0.20; }
+
+          const compositeHHI = (totalWeight > 0 ? (weightedHHI / totalWeight) : ((prodHHI * 0.35) + (resHHI * 0.20) + (expHHI * 0.25) + (refHHI * 0.20))) * chokepointMult;
+          const normalizedScore = Math.min(100, (compositeHHI / 10000) * 100);
+
+          return {
+            metricId: `CONC_${payload.targetEntityId || payload.resourceId}`,
+            score: Math.round(compositeHHI),
+            normalizedScore: Math.round(normalizedScore * 10) / 10,
+            components: {
+              productionHHI: Math.round(prodHHI),
+              reserveHHI: Math.round(resHHI),
+              exportHHI: Math.round(expHHI),
+              refiningHHI: Math.round(refHHI),
+              compositeHHI: Math.round(compositeHHI),
+              chokepointExposureMultiplier: chokepointMult
+            },
+            confidence: 0.96
+          };
+        }
+      }));
+
+      // 8. NATIONAL IMPORTANCE
+      this.ruleEngine.registerRule(new ValueRuleDefinition({
+        ruleId: 'DEFAULT_NATIONAL_IMPORTANCE_RULE',
+        domain: ValueDomain.NATIONAL_IMPORTANCE,
+        description: 'Sovereign Macroeconomic & Fiscal Resource Footprint',
+        formulaRef: 'F_12_10_NATIONAL_IMPORTANCE_INDEX',
+        compute: (context, payload) => {
+          const gdp = payload.nationalGdp || 1e10;
+          const gdpShare = gdp > 0 ? ((payload.sectorGrossProductionValue || 0) / gdp) * 100 : 0;
+          const budget = payload.totalGovernmentBudget || 2e9;
+          const fiscalShare = budget > 0 ? ((payload.fiscalResourceRevenue || 0) / budget) * 100 : 0;
+          const labor = payload.totalLaborForce || 1e7;
+          const laborShare = labor > 0 ? ((payload.employmentHeadcount || 0) / labor) * 100 : 0;
+          const energyWeight = (payload.energyGridBaseloadShare || 0) * 100;
+
+          const importanceScore = Math.min(100, (
+            (gdpShare * 3.0) + (fiscalShare * 2.5) + (energyWeight * 2.5) + (laborShare * 2.0)
+          ));
+
+          return {
+            metricId: `NAT_IMP_${payload.targetEntityId || payload.countryId}`,
+            score: Math.round(importanceScore * 10) / 10,
+            components: {
+              gdpShare: Math.round(gdpShare * 100) / 100,
+              fiscalShare: Math.round(fiscalShare * 100) / 100,
+              laborShare: Math.round(laborShare * 100) / 100,
+              energyWeight: Math.round(energyWeight * 100) / 100,
+              importanceScore: Math.round(importanceScore * 10) / 10
+            },
+            confidence: 0.94
+          };
+        }
+      }));
+
+      // 9. RESOURCE POWER
+      this.ruleEngine.registerRule(new ValueRuleDefinition({
+        ruleId: 'DEFAULT_RESOURCE_POWER_RULE',
+        domain: ValueDomain.RESOURCE_POWER,
+        description: 'National Resource Power & Strategic Leverage Engine',
+        formulaRef: 'F_12_11_GEOPOLITICAL_RESOURCE_POWER',
+        compute: (context, payload) => {
+          const prod = payload.globalProductionShare || 0;
+          const res = payload.globalReserveShare || 0;
+          const exp = payload.globalExportShare || 0;
+          const ref = payload.globalRefiningShare || 0;
+          const mult = payload.marketPowerMultiplier || 1.0;
+
+          const compositeMarketDominance = (prod * 0.35) + (res * 0.25) + (exp * 0.25) + (ref * 0.15);
+          const leverageScore = Math.min(100, compositeMarketDominance * mult * 1.5);
+
+          return {
+            metricId: `RES_PWR_${payload.targetEntityId || payload.countryId}`,
+            score: Math.round(leverageScore * 10) / 10,
+            components: {
+              globalProductionShare: prod,
+              globalReserveShare: res,
+              globalExportShare: exp,
+              globalRefiningShare: ref,
+              compositeMarketDominance: Math.round(compositeMarketDominance * 100) / 100,
+              leverageScore: Math.round(leverageScore * 10) / 10
+            },
+            confidence: 0.95
+          };
+        }
+      }));
+
+      // 10. GLOBAL CRITICALITY
+      this.ruleEngine.registerRule(new ValueRuleDefinition({
+        ruleId: 'DEFAULT_GLOBAL_CRITICALITY_RULE',
+        domain: ValueDomain.GLOBAL_CRITICALITY,
+        description: 'Global Resource Criticality Synthesis',
+        formulaRef: 'F_12_12_GLOBAL_CRITICALITY_SYNTHESIS',
+        compute: (context, payload) => {
+          const crit = payload.systemicCriticalityScore || 50;
+          const conc = payload.supplyConcentrationScore || 50;
+          const scarc = payload.scarcityScore || 50;
+          const trans = payload.energyTransitionEssentiality || 50;
+
+          const globalScore = (crit * 0.40) + (conc * 0.25) + (scarc * 0.20) + (trans * 0.15);
+          const clamped = Math.min(100, Math.max(0, globalScore));
+
+          return {
+            metricId: `GLOB_CRIT_${payload.targetEntityId || payload.resourceId}`,
+            score: Math.round(clamped * 10) / 10,
+            components: {
+              systemicCriticalityScore: crit,
+              supplyConcentrationScore: conc,
+              scarcityScore: scarc,
+              energyTransitionEssentiality: trans,
+              globalCriticalityIndex: Math.round(clamped * 10) / 10
+            },
+            confidence: 0.95
+          };
+        }
+      }));
+
+      // 11. EXPOSURE
+      this.ruleEngine.registerRule(new ValueRuleDefinition({
+        ruleId: 'DEFAULT_EXPOSURE_RULE',
+        domain: ValueDomain.EXPOSURE,
+        description: 'Sovereign Import Dependency & Economic Exposure',
+        formulaRef: 'F_12_13_SOVEREIGN_ECONOMIC_EXPOSURE',
+        compute: (context, payload) => {
+          const importVol = payload.importVolume || 0;
+          const consumption = payload.domesticConsumptionVolume || 0;
+          const supplierHHI = payload.foreignSupplierConcentrationHHI || 2500;
+          const bufferMonths = payload.domesticBufferCoverageMonths || 0;
+          const subPenalty = payload.substitutionPenaltyScore || 60;
+          const critWeight = payload.criticalSectorDependencyWeight || 0.8;
+
+          const importDependencyRatio = consumption > 0 ? Math.min(1.0, importVol / consumption) : 0;
+          const supplierConcentrationFactor = Math.min(1.0, supplierHHI / 10000);
+          const bufferMitigationFactor = Math.max(0.1, 1.0 - (bufferMonths / 12));
+          const substitutionFrictionFactor = subPenalty / 100;
+
+          const vulnerabilityScore = (
+            (importDependencyRatio * 0.35) +
+            (supplierConcentrationFactor * 0.25) +
+            (substitutionFrictionFactor * 0.20) +
+            (critWeight * 0.20)
+          ) * bufferMitigationFactor * 100;
+
+          const clampedScore = Math.min(100, Math.max(0, vulnerabilityScore));
+
+          let level = ExposureLevel.BALANCED_INTERDEPENDENT;
+          if (clampedScore >= 85) level = ExposureLevel.STRATEGIC_STRANGULATION;
+          else if (clampedScore >= 70) level = ExposureLevel.ACUTE_VULNERABILITY;
+          else if (clampedScore >= 50) level = ExposureLevel.ASYMMETRIC_DEPENDENT;
+          else if (clampedScore >= 30) level = ExposureLevel.BALANCED_INTERDEPENDENT;
+          else if (clampedScore >= 15) level = ExposureLevel.LOW_EXPOSURE;
+          else level = ExposureLevel.INSULATED;
+
+          return {
+            metricId: `EXP_${payload.targetEntityId || payload.countryId}`,
+            score: Math.round(clampedScore * 10) / 10,
+            grade: level,
+            components: {
+              importDependencyRatio: Math.round(importDependencyRatio * 100) / 100,
+              supplierConcentrationFactor: Math.round(supplierConcentrationFactor * 100) / 100,
+              bufferMitigationFactor: Math.round(bufferMitigationFactor * 100) / 100,
+              substitutionFrictionFactor: Math.round(substitutionFrictionFactor * 100) / 100,
+              vulnerabilityScore: Math.round(clampedScore * 10) / 10,
+              exposureLevel: level
+            },
+            confidence: 0.93
+          };
+        }
+      }));
+
+      // 12. COMPOSITE
+      this.ruleEngine.registerRule(new ValueRuleDefinition({
+        ruleId: 'DEFAULT_COMPOSITE_AGGREGATION_RULE',
+        domain: ValueDomain.COMPOSITE,
+        description: 'Multi-Criteria Weighted Composite Strategic Value',
+        formulaRef: 'F_12_14_COMPOSITE_STRATEGIC_VALUE',
+        compute: (context, payload) => {
+          const weights = payload.customWeights || {
+            criticality: 0.25,
+            scarcity: 0.20,
+            industrial: 0.15,
+            concentration: 0.15,
+            nonSubstitutability: 0.10,
+            exposure: 0.10,
+            economic: 0.05
+          };
+
+          const crit = payload.criticalityScore || 50;
+          const scarc = payload.scarcityScore || 50;
+          const ind = payload.industrialScore || 50;
+          const conc = payload.concentrationScore || 50;
+          const nonSub = payload.nonSubstitutabilityScore || 50;
+          const exp = payload.exposureScore || 50;
+          const econ = payload.economicScore || 50;
+
+          const composite = (
+            (crit * weights.criticality) +
+            (scarc * weights.scarcity) +
+            (ind * weights.industrial) +
+            (conc * weights.concentration) +
+            (nonSub * weights.nonSubstitutability) +
+            (exp * weights.exposure) +
+            (econ * weights.economic)
+          );
+
+          const score = Math.min(100, Math.max(0, composite));
+
+          return {
+            metricId: `COMP_STRAT_${payload.targetEntityId || payload.entityId}`,
+            score: Math.round(score * 10) / 10,
+            components: {
+              criticalityScore: crit,
+              scarcityScore: scarc,
+              industrialScore: ind,
+              concentrationScore: conc,
+              nonSubstitutabilityScore: nonSub,
+              exposureScore: exp,
+              economicScore: econ,
+              weightsApplied: weights,
+              compositeStrategicScore: Math.round(score * 10) / 10
+            },
+            confidence: 0.95
+          };
+        }
       }));
     }
 
