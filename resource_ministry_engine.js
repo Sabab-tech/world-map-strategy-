@@ -34835,6 +34835,43 @@ const EPSILON = 1e-7;
     global.runPart14TestSuite = runPart14ComprehensiveVerificationSuite;
   }
 
+  // Register Resource Domain Adapter with Omega Shared Cognitive OS
+  try {
+    const targetScope = typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : global);
+    const cogEngine = targetScope.OmegaCognitiveEngine || targetScope.OmegaSharedCognition;
+    if (cogEngine && cogEngine.instance && typeof cogEngine.instance.registerDomainAdapter === 'function') {
+      cogEngine.instance.registerDomainAdapter('RESOURCE', {
+        domain: 'RESOURCE',
+        getTelemetry: (countryId) => {
+          const gw = new ResilientDataGateway();
+          const inv = (gw.queryInventory(countryId) && gw.queryInventory(countryId).data) || {};
+          const res = (gw.queryReserve(countryId) && gw.queryReserve(countryId).data) || {};
+          const dep = (gw.queryDependency(countryId) && gw.queryDependency(countryId).data) || {};
+          const log = (gw.queryLogistics(countryId) && gw.queryLogistics(countryId).data) || {};
+          return {
+            systemicFragilityIndex: dep.systemicFragilityIndex || 0.38,
+            chokepoints: log.chokepoints || [],
+            inventoryCoverDays: (inv.CRUDE_OIL && inv.CRUDE_OIL.bufferDays) || 78,
+            reserves: res,
+            bindingConstraint: { node: 'REFINERY_CRACKING_FACILITIES', capacity: '65,000 BPD' }
+          };
+        },
+        handleCrossMinistryQuery: (requester, queryType, payload) => {
+          const min = ResourceMinisterAdapter.createMinister(payload?.countryId || 'NATION_ALPHA');
+          return min.queryBus.handleQuery({
+            queryId: 'XMIN-' + Date.now(),
+            requester: requester,
+            targetDomain: 'RESOURCE_SYSTEM',
+            targetCapability: queryType,
+            context: payload || {}
+          });
+        }
+      });
+    }
+  } catch (e) {
+    // Non-blocking registration
+  }
+
   if (typeof ResourceMinistryEngineInstance !== 'undefined' && ResourceMinistryEngineInstance) {
     ResourceMinistryEngineInstance.part14 = ResourceMinisterAdapter;
     ResourceMinistryEngineInstance.minister = ResourceMinisterAdapter.createMinister('NATIONAL_SOVEREIGN');

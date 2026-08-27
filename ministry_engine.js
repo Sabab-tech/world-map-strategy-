@@ -3196,7 +3196,7 @@ if (document.readyState === 'complete' || document.readyState === 'interactive')
     });
 }
 
-window.OmegaCognitiveEngine = window.OmegaMinistry;
+window.OmegaCognitiveEngine = window.OmegaCognitiveEngine || window.OmegaMinistry;
 window.OmegaCognitiveRuntime = window.OmegaMinistry;
 
 // Auto-load ministers.json on boot to ensure 100% data availability
