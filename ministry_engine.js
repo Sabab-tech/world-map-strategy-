@@ -2591,17 +2591,20 @@ window.OmegaCabinetUI = {
                     </div>
                 </div>
 
-                <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+                <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
                     <div style="background:rgba(0,0,0,0.5); padding:8px 14px; border-radius:8px; border:1px solid rgba(234,179,8,0.25); font-family:'Share Tech Mono',monospace; font-size:11px;">
                         <span style="color:#94a3b8;">SECTOR EFFICIENCY</span><br/><strong style="color:#22c55e; font-size:14px;">${m.efficiency}%</strong>
                     </div>
                     <div style="background:rgba(0,0,0,0.5); padding:8px 14px; border-radius:8px; border:1px solid rgba(234,179,8,0.25); font-family:'Share Tech Mono',monospace; font-size:11px;">
                         <span style="color:#94a3b8;">ENERGY BUDGET</span><br/><strong style="color:#ffd700; font-size:14px;">${m.budget}</strong>
                     </div>
-                    <button onclick="if(window.ResourceMinistryEngine && typeof window.ResourceMinistryEngine.openModal === 'function') { window.ResourceMinistryEngine.openModal(); }" style="background:linear-gradient(135deg,rgba(0,229,255,0.25),rgba(6,182,212,0.3)); border:1.5px solid #00e5ff; color:#00e5ff; font-weight:800; font-family:'Share Tech Mono',monospace; font-size:12px; padding:10px 16px; border-radius:8px; cursor:pointer; display:flex; align-items:center; gap:6px; box-shadow:0 0 15px rgba(0,229,255,0.3);">
+                    <button onclick="if(window.ResourceMinistryEngine && typeof window.ResourceMinistryEngine.openModal === 'function') { window.ResourceMinistryEngine.openModal('${normKey}', 'matrix'); }" style="background:linear-gradient(135deg,rgba(0,229,255,0.25),rgba(6,182,212,0.3)); border:1.5px solid #00e5ff; color:#00e5ff; font-weight:800; font-family:'Share Tech Mono',monospace; font-size:12px; padding:10px 14px; border-radius:8px; cursor:pointer; display:flex; align-items:center; gap:6px; box-shadow:0 0 15px rgba(0,229,255,0.3);">
                         💎 GSRSK INTELLIGENCE HUB
                     </button>
-                    <button onclick="window.OmegaLayerManager.setLayer(5, { ministryId: '${m.id}' });" style="background:linear-gradient(135deg,#eab308,#f59e0b); border:none; color:#000; font-weight:800; font-family:'Share Tech Mono',monospace; font-size:12px; padding:10px 16px; border-radius:8px; cursor:pointer; display:flex; align-items:center; gap:6px; box-shadow:0 0 15px rgba(234,179,8,0.3);">
+                    <button onclick="if(window.ResourceMinistryEngine && typeof window.ResourceMinistryEngine.openModal === 'function') { window.ResourceMinistryEngine.openModal('${normKey}', 'cascade'); }" style="background:rgba(239,68,68,0.2); border:1.5px solid #ef4444; color:#ef4444; font-weight:800; font-family:'Share Tech Mono',monospace; font-size:12px; padding:10px 14px; border-radius:8px; cursor:pointer; display:flex; align-items:center; gap:6px;">
+                        ⚠️ CASCADE SANDBOX
+                    </button>
+                    <button onclick="window.OmegaLayerManager.setLayer(5, { ministryId: '${m.id}' });" style="background:linear-gradient(135deg,#eab308,#f59e0b); border:none; color:#000; font-weight:800; font-family:'Share Tech Mono',monospace; font-size:12px; padding:10px 14px; border-radius:8px; cursor:pointer; display:flex; align-items:center; gap:6px; box-shadow:0 0 15px rgba(234,179,8,0.3);">
                         🎙️ INTERROGATE MINISTER
                     </button>
                 </div>

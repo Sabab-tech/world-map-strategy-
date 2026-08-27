@@ -605,7 +605,7 @@ window.CountryIOS = {
     // CHAPTER 05: RESOURCES - AUTONOMOUS RESOURCE MINISTRY ENGINE & NRMS
     // -------------------------------------------------------------------------
     renderChapter5_Resources(countryKey) {
-        const nrms = window.ResourceMinistryEngine ? window.ResourceMinistryEngine.getSummary() : null;
+        const nrms = window.ResourceMinistryEngine ? window.ResourceMinistryEngine.getSummary(countryKey) : null;
         
         if (!nrms) {
             return `<div style="padding:20px; color:#ef4444; font-family:'Share Tech Mono', monospace;">Resource Intelligence Engine Offline.</div>`;
@@ -620,18 +620,27 @@ window.CountryIOS = {
         const profile25 = window.ResourceMinistryEngine && typeof window.ResourceMinistryEngine.getCountryResourceProfile === 'function' ? window.ResourceMinistryEngine.getCountryResourceProfile(countryKey) : null;
         
         const launchBannerHtml = `
-            <div style="display:flex; justify-content:space-between; align-items:center; background:linear-gradient(90deg, rgba(0,229,255,0.15), rgba(168,85,247,0.15)); border:1.5px solid #00e5ff; border-radius:10px; padding:12px 16px; margin-bottom:12px; box-shadow:0 0 20px rgba(0,229,255,0.2);">
-                <div>
-                    <div style="font-size:14px; font-weight:bold; color:#00e5ff; font-family:var(--font-title); display:flex; align-items:center; gap:8px;">
-                        <span>🏛️</span><span>GSRSK RESOURCE MINISTRY & GLOBAL INTELLIGENCE HUB</span>
-                    </div>
-                    <div style="font-size:10px; color:#cbd5e1; font-family:var(--font-mono); margin-top:2px;">
-                        Access 62 Global Deposits, 17 Strategic Resource Matrix, Market Benchmarks, & 25-Section Audits.
+            <div style="display:flex; justify-content:space-between; align-items:center; background:linear-gradient(90deg, rgba(0,229,255,0.18), rgba(168,85,247,0.18), rgba(234,179,8,0.15)); border:1.5px solid #00e5ff; border-radius:10px; padding:12px 16px; margin-bottom:12px; box-shadow:0 0 25px rgba(0,229,255,0.25); flex-wrap:wrap; gap:10px;">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <span style="font-size:24px; padding:6px; background:rgba(0,229,255,0.1); border-radius:8px; border:1px solid rgba(0,229,255,0.3);">💎</span>
+                    <div>
+                        <div style="font-size:14px; font-weight:bold; color:#00e5ff; font-family:var(--font-title); display:flex; align-items:center; gap:8px;">
+                            <span>GSRSK RESOURCE MINISTRY & GLOBAL INTELLIGENCE HUB</span>
+                            <span style="font-size:10px; padding:1px 6px; border-radius:8px; background:rgba(34,197,94,0.2); border:1px solid #22c55e; color:#22c55e;">PARTS 01–13 ACTIVE</span>
+                        </div>
+                        <div style="font-size:10px; color:#cbd5e1; font-family:var(--font-mono); margin-top:2px;">
+                            593 Global Deposits • 18 Strategic Commodities • Spot Market Pricing • Multi-Tier Cascade Risk Sandbox
+                        </div>
                     </div>
                 </div>
-                <button onclick="if(window.ResourceMinistryEngine && typeof window.ResourceMinistryEngine.openModal === 'function') window.ResourceMinistryEngine.openModal('${countryKey}')" style="background:linear-gradient(135deg, #00e5ff, #0066ff); border:none; color:#000; font-weight:bold; font-family:var(--font-mono); padding:8px 16px; border-radius:6px; cursor:pointer; font-size:11px; box-shadow:0 0 10px rgba(0,229,255,0.5);">
-                    ⚡ LAUNCH FULL RESOURCE HUB
-                </button>
+                <div style="display:flex; gap:6px;">
+                    <button onclick="if(window.ResourceMinistryEngine && typeof window.ResourceMinistryEngine.openModal === 'function') window.ResourceMinistryEngine.openModal('${countryKey}', 'cascade')" style="background:rgba(239,68,68,0.2); border:1px solid #ef4444; color:#ef4444; font-weight:bold; font-family:var(--font-mono); padding:8px 12px; border-radius:6px; cursor:pointer; font-size:11px;">
+                        ⚠️ CASCADE SANDBOX
+                    </button>
+                    <button onclick="if(window.ResourceMinistryEngine && typeof window.ResourceMinistryEngine.openModal === 'function') window.ResourceMinistryEngine.openModal('${countryKey}', 'matrix')" style="background:linear-gradient(135deg, #00e5ff, #0066ff); border:none; color:#000; font-weight:bold; font-family:var(--font-mono); padding:8px 16px; border-radius:6px; cursor:pointer; font-size:11px; box-shadow:0 0 12px rgba(0,229,255,0.5);">
+                        ⚡ LAUNCH FULL RESOURCE HUB
+                    </button>
+                </div>
             </div>
         `;
         
@@ -681,8 +690,8 @@ window.CountryIOS = {
                         </div>
                         <div class="ios-card" style="padding:8px 10px;">
                             <div class="ios-card-title">KNOWN RESOURCES</div>
-                            <div class="ios-card-val" style="font-size:12px; color:#22c55e;">${dom.majorResourceCount || 0} Major Types</div>
-                            <div class="ios-card-sub">Strategic: ${dom.strategicResourceCount || 0}</div>
+                            <div class="ios-card-val" style="font-size:12px; color:#22c55e;">${dom.majorResourceCount || 18} Major Types</div>
+                            <div class="ios-card-sub">Strategic: ${dom.strategicResourceCount || 18}</div>
                         </div>
                         <div class="ios-card" style="padding:8px 10px;">
                             <div class="ios-card-title">VERIFICATION STATUS</div>
@@ -713,17 +722,17 @@ window.CountryIOS = {
                         <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.08);">
                             <div style="font-size:11px; font-weight:bold; color:#ffd700; font-family:var(--font-title); margin-bottom:6px;">🪨 GEOLOGICAL & SEDIMENTARY BASINS</div>
                             <div style="font-size:10px; color:#cbd5e1; font-family:var(--font-mono); line-height:1.4;">
-                                <div>• Domains: ${(geol.majorGeologicalDomains || ['Sedimentary Cover']).join(', ')}</div>
-                                <div>• Basins: ${(geol.sedimentaryBasins || ['Coastal & Inland Basins']).join(', ')}</div>
-                                <div>• Tectonic Setting: ${geol.tectonicSetting || 'Continental Margin'}</div>
+                                <div>• Domains: ${(geol.majorGeologicalDomains || ['Sedimentary Cover', 'Bengal Delta Basin']).join(', ')}</div>
+                                <div>• Basins: ${(geol.sedimentaryBasins || ['Surma Basin', 'Hatiya Trough', 'Faridpur Trough']).join(', ')}</div>
+                                <div>• Tectonic Setting: ${geol.tectonicSetting || 'Continental Margin & Active Delta'}</div>
                             </div>
                         </div>
                         <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.08);">
                             <div style="font-size:11px; font-weight:bold; color:#22c55e; font-family:var(--font-title); margin-bottom:6px;">⛏️ MINERAL & CRITICAL METALS BASE</div>
                             <div style="font-size:10px; color:#cbd5e1; font-family:var(--font-mono); line-height:1.4;">
-                                <div>• Metallic: ${(min.metallic || ['Iron', 'Copper']).join(', ')}</div>
-                                <div>• Critical/Rare: ${(min.criticalMinerals || min.rareEarths || ['Phosphate', 'Rare Earths']).join(', ')}</div>
-                                <div>• Non-Metallic: ${(min.nonMetallic || ['Limestone', 'Sand', 'Gypsum']).join(', ')}</div>
+                                <div>• Metallic: ${(min.metallic || ['Iron Ore', 'Copper', 'Titanium Sands']).join(', ')}</div>
+                                <div>• Critical/Rare: ${(min.criticalMinerals || min.rareEarths || ['Monazite Rare Earths', 'Zircon', 'Rutile']).join(', ')}</div>
+                                <div>• Non-Metallic: ${(min.nonMetallic || ['Limestone', 'Kaolin White Clay', 'Silica Quartz']).join(', ')}</div>
                             </div>
                         </div>
                     </div>
@@ -733,17 +742,17 @@ window.CountryIOS = {
                         <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.08);">
                             <div style="font-size:11px; font-weight:bold; color:#00e5ff; font-family:var(--font-title); margin-bottom:6px;">🛢️ HYDROCARBON & ENERGY BASE</div>
                             <div style="font-size:10px; color:#cbd5e1; font-family:var(--font-mono); line-height:1.4;">
-                                <div>• Oil Fields: ${(hc.oil || ['Active Depths']).join(', ')}</div>
-                                <div>• Gas Fields: ${(hc.naturalGas || ['Continental Fields']).join(', ')}</div>
-                                <div>• Renewable/Solar: ${(eng.solarResourceZones || ['High Irradiance Belt']).join(', ')}</div>
+                                <div>• Gas Fields: ${(hc.naturalGas || ['Bibiyana Mega Field (940 MMSCFD)', 'Titas', 'Rashidpur']).join(', ')}</div>
+                                <div>• Deepwater / Marine: ${(hc.gasHydrates || ['Bay of Bengal Methane Hydrates (17-25 TCF)']).join(', ')}</div>
+                                <div>• Nuclear & Renewable: ${(eng.nuclearStatus || ['Rooppur VVER-1200 Nuclear Power Plant (2.4 GW)']).join(', ')}</div>
                             </div>
                         </div>
                         <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.08);">
                             <div style="font-size:11px; font-weight:bold; color:#a855f7; font-family:var(--font-title); margin-bottom:6px;">🏭 INFRASTRUCTURE & TRANSPORT LOGISTICS</div>
                             <div style="font-size:10px; color:#cbd5e1; font-family:var(--font-mono); line-height:1.4;">
-                                <div>• Ports/Maritime: ${(infra.ports || ['Deepwater Hubs']).join(', ')}</div>
-                                <div>• Refineries & Plants: ${(infra.refineries || infra.processingFacilities || ['National Complex']).join(', ')}</div>
-                                <div>• Pipeline/Rail Hubs: ${(infra.pipelineHubs || infra.railTerminals || ['Main Corridors']).join(', ')}</div>
+                                <div>• Deep Ports: ${(infra.ports || ['Matarbari Deep Sea Port', 'Chittagong Port', 'Payra']).join(', ')}</div>
+                                <div>• Refineries & Plants: ${(infra.refineries || infra.processingFacilities || ['Eastern Refinery Ltd (ERL-2)', 'Ghorashal Urea']).join(', ')}</div>
+                                <div>• Pipeline & Rail Hubs: ${(infra.pipelineHubs || infra.railTerminals || ['Indo-Bangla Friendship Pipeline', 'GTCL Grid']).join(', ')}</div>
                             </div>
                         </div>
                     </div>
@@ -793,7 +802,7 @@ window.CountryIOS = {
                         </span>
                     </div>
                     
-                    <div style="font-size:10px; color:#94a3b8; font-family:var(--font-mono); margin-bottom:6px;">${r.bnName} • ${r.category}</div>
+                    <div style="font-size:10px; color:#94a3b8; font-family:var(--font-mono); margin-bottom:6px;">${r.bnName || ''} • ${r.category}</div>
 
                     <div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px; font-size:11px; color:#cbd5e1; font-family:var(--font-mono); margin-bottom:8px;">
                         <div>Output: <strong style="color:#00e5ff;">${r.dailyProduction.toLocaleString()}</strong></div>
@@ -818,8 +827,8 @@ window.CountryIOS = {
                         <button onclick="window.ResourceMinistryEngine.executeDirective('add_reserve', '${r.id}');" style="padding:5px 4px; background:rgba(255,215,0,0.15); border:1px solid #ffd700; color:#ffd700; font-size:10px; font-weight:bold; border-radius:4px; cursor:pointer;">
                             📦 SPR (+50K)
                         </button>
-                        <button onclick="window.ResourceMinistryEngine.executeDirective('focus_map', '${r.id}');" style="padding:5px 4px; background:rgba(168,85,247,0.15); border:1px solid #a855f7; color:#a855f7; font-size:10px; font-weight:bold; border-radius:4px; cursor:pointer;">
-                            🗺️ FOCUS MAP
+                        <button onclick="window.ResourceMinistryEngine.executeDirective('drawdown_spr', '${r.id}');" style="padding:5px 4px; background:rgba(239,68,68,0.15); border:1px solid #ef4444; color:#ef4444; font-size:10px; font-weight:bold; border-radius:4px; cursor:pointer;">
+                            🚨 DRAWDOWN
                         </button>
                     </div>
                 </div>
@@ -890,7 +899,7 @@ window.CountryIOS = {
                         </div>
                         <div class="ios-card" style="padding:8px 12px;">
                             <div class="ios-card-title">UNIVERSAL PIPELINES</div>
-                            <div class="ios-card-val" style="color:#a855f7;">17 Strategic</div>
+                            <div class="ios-card-val" style="color:#a855f7;">18 Strategic</div>
                         </div>
                     </div>
                 </div>
@@ -901,14 +910,14 @@ window.CountryIOS = {
                 <!-- ACTIVE SURVEYS TRACKER -->
                 ${surveyHtml}
 
-                <!-- 17 UNIVERSAL RESOURCE REGISTRY MATRIX -->
+                <!-- 18 UNIVERSAL RESOURCE REGISTRY MATRIX -->
                 <div>
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                         <div style="font-size:13px; font-weight:bold; color:#ffd700; font-family:var(--font-title); letter-spacing:0.5px;">
-                            📦 NATIONAL RESOURCE REGISTRY (17 STRATEGIC PIPELINES)
+                            📦 NATIONAL RESOURCE REGISTRY (18 STRATEGIC COMMODITIES)
                         </div>
-                        <button onclick="Game.Map.toggleResourceOverlay(); if(window.CountryIOS) window.CountryIOS.close();" style="padding:5px 12px; background:rgba(255,215,0,0.2); border:1px solid #ffd700; color:#ffd700; font-size:11px; font-weight:bold; border-radius:6px; cursor:pointer;">
-                            🗺️ SHOW ALL ON MAP
+                        <button onclick="if(window.ResourceMinistryEngine && typeof window.ResourceMinistryEngine.openModal === 'function') window.ResourceMinistryEngine.openModal('${countryKey}', 'deposits');" style="padding:5px 12px; background:rgba(255,215,0,0.2); border:1px solid #ffd700; color:#ffd700; font-size:11px; font-weight:bold; border-radius:6px; cursor:pointer;">
+                            🗺️ 593 WORLD DEPOSITS
                         </button>
                     </div>
 
@@ -919,8 +928,13 @@ window.CountryIOS = {
 
                 <!-- INTER-MINISTRY CABINET COUNCIL DEBATES -->
                 <div style="background:rgba(11,20,36,0.8); border:1px solid rgba(255,255,255,0.1); border-radius:10px; padding:14px;">
-                    <div style="font-size:12px; font-weight:bold; color:#00e5ff; font-family:var(--font-title); margin-bottom:10px; letter-spacing:0.5px;">
-                        🏛️ INTER-MINISTRY RESOURCE CABINET COUNCIL DEBATES & POLICY VOTER
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                        <div style="font-size:12px; font-weight:bold; color:#00e5ff; font-family:var(--font-title); letter-spacing:0.5px;">
+                            🏛️ INTER-MINISTRY RESOURCE CABINET COUNCIL DEBATES & POLICY VOTER
+                        </div>
+                        <button onclick="if(window.ResourceMinistryEngine && typeof window.ResourceMinistryEngine.openModal === 'function') window.ResourceMinistryEngine.openModal('${countryKey}', 'market')" style="padding:4px 8px; background:rgba(34,197,94,0.15); border:1px solid #22c55e; color:#22c55e; font-size:10px; font-weight:bold; border-radius:4px; cursor:pointer;">
+                            📈 COMMODITIES TRADING DESK
+                        </button>
                     </div>
                     <div style="display:flex; flex-direction:column; gap:8px;">
                         ${debatesHtml}

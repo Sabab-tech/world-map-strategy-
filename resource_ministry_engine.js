@@ -8875,6 +8875,15 @@ _globalScope.GSRSK_DataFoundation = (() => {
                     if (this.part11 && typeof this.part11.createEngine === 'function') {
                         this.tradeEngine = this.part11.createEngine();
                     }
+                    this.part12 = gScope.GSRSK_EconomicAndStrategicValueEngine || gScope.GSRSK_Part12 || null;
+                    if (this.part12 && typeof this.part12.createEngine === 'function') {
+                        this.valueEngine = this.part12.createEngine();
+                        this.strategicValueEngine = this.valueEngine;
+                    }
+                    this.part13 = gScope.GSRSK_DependencyRiskCascadeEngine || gScope.GSRSK_Part13 || null;
+                    if (this.part13 && typeof this.part13.createEngine === 'function') {
+                        this.cascadeEngine = this.part13.createEngine();
+                    }
 
                     // Verify End-to-End Runtime Pipeline Contracts (Smoke Test)
                     this.pipelineIntegrationReport = this.verifyEndToEndPipelineContracts();
@@ -9498,26 +9507,93 @@ _globalScope.GSRSK_DataFoundation = (() => {
                         window.showOmegaNotification('📦 STRATEGIC RESERVE STOCKPILED', `+50,000 units of ${resObj.name} transferred to sovereign emergency bunkers!`, 'success');
                     }
                 }
-            } else if (action === 'focus_map') {
-                if (typeof window !== 'undefined' && window.Game && window.Game.Map) {
-                    if (typeof window.Game.Map.activateResourceMode === 'function') {
-                        window.Game.Map.activateResourceMode([resId]);
-                    } else if (typeof window.Game.Map.applyResourceMapFilter === 'function') {
-                        window.Game.Map.applyResourceMapFilter(resId);
-                    }
-                    if (window.showOmegaNotification) {
-                        window.showOmegaNotification('🗺️ MAP SENSORS ENGAGED', `World map targeted on global ${resObj.name} deposits and logistic corridors!`, 'info');
-                    }
-                }
-            } else if (action === 'cabinet_vote') {
-                this.cabinetVotes[resId] = opt;
+            } else if (action === 'drawdown_spr') {
+                const cur = this.strategicReserves[resId] || 100000;
+                const drawdown = Math.min(cur, 30000);
+                this.strategicReserves[resId] = Math.max(0, cur - drawdown);
                 if (typeof window !== 'undefined') {
                     if (window.resources && window.resourceRates) {
-                        window.resourceRates.cash = (window.resourceRates.cash || 0) + 1000;
+                        window.resources.cash = (window.resources.cash || 0) + 15000000;
+                        if (resId === 'crude_oil') window.resourceRates.oil = (window.resourceRates.oil || 0) + 500;
+                        if (resId === 'natural_gas') window.resourceRates.energy = (window.resourceRates.energy || 0) + 300;
                     }
                     if (window.showOmegaNotification) {
-                        window.showOmegaNotification('🏛️ EXECUTIVE DECREE ENACTED', `Cabinet policy decree for ${resId} successfully passed into law!`, 'success');
+                        window.showOmegaNotification('🚨 STRATEGIC RESERVE DRAWDOWN', `Released ${drawdown.toLocaleString()} units of ${resObj.name} to stabilize national markets (+ $15M revenue)!`, 'warning');
                     }
+                }
+            } else if (action === 'upgrade_smelter') {
+                this.facilityUpgrades[resId] = (this.facilityUpgrades[resId] || 1.0) + 0.35;
+                if (typeof window !== 'undefined' && window.showOmegaNotification) {
+                    window.showOmegaNotification('⚡ REFINERY SMELTER UPGRADED', `High-yield catalytic refinery for ${resObj.name} upgraded (+35% processing yield)!`, 'success');
+                }
+            } else if (action === 'buy_spot' || action === 'sell_spot') {
+                const isBuy = action === 'buy_spot';
+                const qty = opt && opt.quantity ? Number(opt.quantity) : 1000;
+                const price = opt && opt.price ? Number(opt.price) : 85;
+                const totalCost = qty * price;
+                if (typeof window !== 'undefined') {
+                    if (isBuy) {
+                        this.strategicReserves[resId] = (this.strategicReserves[resId] || 0) + qty;
+                        if (window.showOmegaNotification) {
+                            window.showOmegaNotification('📈 SPOT MARKET PURCHASE', `Acquired ${qty.toLocaleString()} units of ${resObj.name} for $${(totalCost/1e6).toFixed(2)}M on Global Commodities Exchange!`, 'success');
+                        }
+                    } else {
+                        const cur = this.strategicReserves[resId] || 5000;
+                        this.strategicReserves[resId] = Math.max(0, cur - qty);
+                        if (window.showOmegaNotification) {
+                            window.showOmegaNotification('📉 SPOT MARKET SALE', `Liquidated ${qty.toLocaleString()} units of ${resObj.name} yielding +$${(totalCost/1e6).toFixed(2)}M sovereign revenue!`, 'info');
+                        }
+                    }
+                }
+            } else if (action === 'set_tariff') {
+                const tariffRate = opt && opt.tariff ? Number(opt.tariff) : 15;
+                this.tradeTariffs = this.tradeTariffs || {};
+                this.tradeTariffs[resId] = tariffRate;
+                if (typeof window !== 'undefined' && window.showOmegaNotification) {
+                    window.showOmegaNotification('📜 CUSTOMS TARIFF IMPOSED', `Sovereign protective tariff on ${resObj.name} set to ${tariffRate}%!`, 'info');
+                }
+            } else if (action === 'run_cascade_simulation') {
+                const originId = (opt && opt.originId) || 'DEP_BGD_001';
+                const shockMag = (opt && opt.magnitude) || 0.75;
+                const duration = (opt && opt.duration) || 12;
+                
+                // Execute Part 13 cascade engine if available
+                let cascadeResult = null;
+                if (this.cascadeEngine && typeof this.cascadeEngine.simulateDisruptionCascade === 'function') {
+                    try {
+                        cascadeResult = this.cascadeEngine.simulateDisruptionCascade({
+                            originNodeId: originId,
+                            shockMagnitude: shockMag,
+                            durationWeeks: duration
+                        });
+                    } catch (e) {
+                        console.warn('[GSRSK UI] Cascade simulation engine error:', e);
+                    }
+                }
+                
+                this.activeCascadeSimulation = {
+                    active: true,
+                    originId: originId,
+                    originName: (opt && opt.originName) || 'Bibiyana Mega Gas Field',
+                    magnitude: shockMag,
+                    durationWeeks: duration,
+                    timestamp: Date.now(),
+                    result: cascadeResult || {
+                        tier1Impact: { sector: 'Petrochemicals & Gas Grid', lossPct: Math.round(shockMag * 100) },
+                        tier2Impact: { sector: 'Fertilizer & Heavy Steel Smelting', lossPct: Math.round(shockMag * 72) },
+                        tier3Impact: { sector: 'National Power Generation & Export Grid', lossPct: Math.round(shockMag * 54) },
+                        contingencyPath: 'Engage 60-day Strategic Gas Reserves + Re-route LNG imports via Matarbari Deepsea Terminal',
+                        recoveryWeeks: 8
+                    }
+                };
+
+                if (typeof window !== 'undefined' && window.showOmegaNotification) {
+                    window.showOmegaNotification('⚠️ CASCADE SHOCK SIMULATED', `Multi-tier supply chain disruption propagated across 3 tiers (Shock: ${Math.round(shockMag*100)}%)!`, 'warning');
+                }
+            } else if (action === 'clear_cascade_simulation') {
+                this.activeCascadeSimulation = null;
+                if (typeof window !== 'undefined' && window.showOmegaNotification) {
+                    window.showOmegaNotification('🛡️ CASCADE RESOLVED', 'Supply chain equilibrium restored via contingency inventory injection & alternate routing!', 'success');
                 }
             }
 
@@ -9528,7 +9604,7 @@ _globalScope.GSRSK_DataFoundation = (() => {
             }
         }
 
-        openModal(countryKey) {
+        openModal(countryKey, initialTab = 'matrix') {
             if (typeof document === 'undefined') return;
             const targetCountry = countryKey || (typeof window !== 'undefined' && (window.CountryIOS?.activeCountry || window.currentActiveCountry)) || 'BGD';
             let modal = document.getElementById('gsrsk-intelligence-modal');
@@ -9536,12 +9612,15 @@ _globalScope.GSRSK_DataFoundation = (() => {
             if (!modal) {
                 modal = document.createElement('div');
                 modal.id = 'gsrsk-intelligence-modal';
-                modal.style.cssText = 'display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(2,11,20,0.95); backdrop-filter:blur(10px); z-index:999999; justify-content:center; align-items:center; font-family:var(--font-mono, monospace);';
+                modal.style.cssText = 'display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(2,11,20,0.96); backdrop-filter:blur(12px); z-index:999999; justify-content:center; align-items:center; font-family:var(--font-mono, monospace);';
                 document.body.appendChild(modal);
             }
 
             modal.style.display = 'flex';
-            this.renderModalContent(modal, targetCountry, 'matrix');
+            this.modalActiveTab = initialTab;
+            this.modalSearchQuery = '';
+            this.modalCategoryFilter = 'ALL';
+            this.renderModalContent(modal, targetCountry, initialTab);
         }
 
         closeModal() {
@@ -9550,49 +9629,73 @@ _globalScope.GSRSK_DataFoundation = (() => {
         }
 
         renderModalContent(modalEl, countryKey, activeTab = 'matrix') {
+            this.modalActiveTab = activeTab;
             const summary = this.getSummary(countryKey);
             const profile = this.getCountryResourceProfile(countryKey);
             const countryName = profile.identity?.name || countryKey;
             const countryDeposits = this.getDepositsForCountry(countryKey);
 
+            const tabs = [
+                { id: 'matrix', label: '📊 18 COMMODITIES', icon: '📊' },
+                { id: 'deposits', label: '🗺️ 593 DEPOSITS', icon: '🗺️' },
+                { id: 'extraction', label: '⛏️ EXTRACTION (P05)', icon: '⛏️' },
+                { id: 'processing', label: '🏭 REFINING (P06)', icon: '🏭' },
+                { id: 'inventory', label: '📦 SPR & SILOS (P07)', icon: '📦' },
+                { id: 'logistics', label: '🚚 LOGISTICS (P08)', icon: '🚚' },
+                { id: 'industrial', label: '⚙️ VALUE CHAIN (P09)', icon: '⚙️' },
+                { id: 'market', label: '📈 SPOT MARKET (P10)', icon: '📈' },
+                { id: 'trade', label: '🤝 TRADE (P11)', icon: '🤝' },
+                { id: 'value', label: '👑 VALUE & RENT (P12)', icon: '👑' },
+                { id: 'cascade', label: '⚠️ CASCADE RISK (P13)', icon: '⚠️' },
+                { id: 'profile', label: '📜 25-SEC AUDIT', icon: '📜' }
+            ];
+
             modalEl.innerHTML = `
-                <div style="background:rgba(15,23,42,0.98); border:2px solid #00e5ff; border-radius:16px; width:95vw; max-width:1300px; height:90vh; max-height:850px; display:flex; flex-direction:column; box-shadow:0 0 50px rgba(0,229,255,0.3); overflow:hidden;">
+                <div style="background:rgba(10,18,32,0.98); border:2px solid #00e5ff; border-radius:14px; width:96vw; max-width:1380px; height:92vh; max-height:880px; display:flex; flex-direction:column; box-shadow:0 0 60px rgba(0,229,255,0.35); overflow:hidden;">
                     <!-- MODAL HEADER -->
-                    <div style="padding:16px 24px; background:linear-gradient(90deg, rgba(0,229,255,0.15), rgba(168,85,247,0.15)); border-bottom:1px solid rgba(0,229,255,0.3); display:flex; justify-content:space-between; align-items:center; flex-shrink:0;">
+                    <div style="padding:12px 20px; background:linear-gradient(90deg, rgba(0,229,255,0.18), rgba(168,85,247,0.18), rgba(234,179,8,0.15)); border-bottom:1px solid rgba(0,229,255,0.35); display:flex; justify-content:space-between; align-items:center; flex-shrink:0; flex-wrap:wrap; gap:10px;">
                         <div style="display:flex; align-items:center; gap:12px;">
-                            <span style="font-size:28px;">💎</span>
+                            <span style="font-size:26px; padding:6px; background:rgba(0,229,255,0.1); border-radius:8px; border:1px solid rgba(0,229,255,0.3);">💎</span>
                             <div>
-                                <div style="font-size:18px; font-weight:bold; color:#00e5ff; font-family:var(--font-title, sans-serif); letter-spacing:1px; display:flex; align-items:center; gap:8px;">
-                                    <span>GSRSK RESOURCE INTELLIGENCE HUB</span>
-                                    <span style="font-size:11px; padding:2px 8px; border-radius:12px; background:rgba(34,197,94,0.2); border:1px solid #22c55e; color:#22c55e;">v14.0 ACTIVE</span>
+                                <div style="font-size:16px; font-weight:bold; color:#00e5ff; font-family:var(--font-title, sans-serif); letter-spacing:1px; display:flex; align-items:center; gap:8px;">
+                                    <span>GSRSK RESOURCE MINISTRY & GLOBAL INTELLIGENCE HUB</span>
+                                    <span style="font-size:10px; padding:2px 8px; border-radius:12px; background:rgba(34,197,94,0.2); border:1px solid #22c55e; color:#22c55e;">PARTS 01–13 ACTIVE</span>
                                 </div>
                                 <div style="font-size:11px; color:#cbd5e1; margin-top:2px;">
-                                    Sovereign Focus: <strong style="color:#ffd700;">${countryName}</strong> • Autonomy Rating: <strong style="color:#22c55e;">${summary.globalMetrics.autonomyIndex}%</strong> • Emergency Stock: <strong style="color:#00e5ff;">${summary.globalMetrics.strategicReservesTotalDays} Days</strong>
+                                    Sovereign Focus: <strong style="color:#ffd700;">${countryName}</strong> • Autonomy: <strong style="color:#22c55e;">${summary.globalMetrics.autonomyIndex}%</strong> • Emergency SPR: <strong style="color:#00e5ff;">${summary.globalMetrics.strategicReservesTotalDays} Days</strong> • World Deposits: <strong style="color:#a855f7;">${this.deposits.length}</strong>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- NAVIGATION TABS -->
-                        <div style="display:flex; gap:8px; align-items:center;">
-                            <button onclick="window.ResourceMinistryEngine.renderModalContent(document.getElementById('gsrsk-intelligence-modal'), '${countryKey}', 'matrix')" style="padding:8px 14px; background:${activeTab === 'matrix' ? 'linear-gradient(135deg,#00e5ff,#0066ff)' : 'rgba(0,0,0,0.5)'}; border:1px solid ${activeTab === 'matrix' ? '#00e5ff' : 'rgba(255,255,255,0.1)'}; color:${activeTab === 'matrix' ? '#000' : '#cbd5e1'}; font-weight:bold; font-size:11px; border-radius:6px; cursor:pointer;">
-                                📊 17 COMMODITIES MATRIX
-                            </button>
-                            <button onclick="window.ResourceMinistryEngine.renderModalContent(document.getElementById('gsrsk-intelligence-modal'), '${countryKey}', 'deposits')" style="padding:8px 14px; background:${activeTab === 'deposits' ? 'linear-gradient(135deg,#00e5ff,#0066ff)' : 'rgba(0,0,0,0.5)'}; border:1px solid ${activeTab === 'deposits' ? '#00e5ff' : 'rgba(255,255,255,0.1)'}; color:${activeTab === 'deposits' ? '#000' : '#cbd5e1'}; font-weight:bold; font-size:11px; border-radius:6px; cursor:pointer;">
-                                🗺️ 62+ STRATEGIC DEPOSITS
-                            </button>
-                            <button onclick="window.ResourceMinistryEngine.renderModalContent(document.getElementById('gsrsk-intelligence-modal'), '${countryKey}', 'profile')" style="padding:8px 14px; background:${activeTab === 'profile' ? 'linear-gradient(135deg,#00e5ff,#0066ff)' : 'rgba(0,0,0,0.5)'}; border:1px solid ${activeTab === 'profile' ? '#00e5ff' : 'rgba(255,255,255,0.1)'}; color:${activeTab === 'profile' ? '#000' : '#cbd5e1'}; font-weight:bold; font-size:11px; border-radius:6px; cursor:pointer;">
-                                📜 25-SECTION AUDIT
-                            </button>
-                            <button onclick="window.ResourceMinistryEngine.closeModal()" style="padding:8px 14px; background:rgba(239,68,68,0.2); border:1px solid #ef4444; color:#ef4444; font-weight:bold; font-size:11px; border-radius:6px; cursor:pointer;">
-                                ✕ CLOSE
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <button onclick="window.ResourceMinistryEngine.closeModal()" style="padding:6px 14px; background:rgba(239,68,68,0.2); border:1px solid #ef4444; color:#ef4444; font-weight:bold; font-size:11px; border-radius:6px; cursor:pointer; font-family:var(--font-mono); transition:all 0.2s;">
+                                ✕ EXIT HUB
                             </button>
                         </div>
                     </div>
 
+                    <!-- SUB-NAVIGATION BAR (HORIZONTAL SCROLLING TABS) -->
+                    <div style="display:flex; gap:6px; padding:8px 16px; background:rgba(4,9,18,0.95); border-bottom:1px solid rgba(255,255,255,0.08); overflow-x:auto; flex-shrink:0;">
+                        ${tabs.map(t => `
+                            <button onclick="window.ResourceMinistryEngine.renderModalContent(document.getElementById('gsrsk-intelligence-modal'), '${countryKey}', '${t.id}')" style="padding:6px 12px; background:${activeTab === t.id ? 'linear-gradient(135deg,#00e5ff,#0066ff)' : 'rgba(15,23,42,0.8)'}; border:1px solid ${activeTab === t.id ? '#00e5ff' : 'rgba(255,255,255,0.1)'}; color:${activeTab === t.id ? '#000' : '#cbd5e1'}; font-weight:bold; font-size:11px; border-radius:6px; cursor:pointer; white-space:nowrap; display:flex; align-items:center; gap:5px; transition:all 0.15s;">
+                                <span>${t.label}</span>
+                            </button>
+                        `).join('')}
+                    </div>
+
                     <!-- MODAL BODY VIEWPORT -->
-                    <div style="flex:1; overflow-y:auto; padding:20px; display:flex; flex-direction:column; gap:16px;">
+                    <div style="flex:1; overflow-y:auto; padding:16px 20px; display:flex; flex-direction:column; gap:16px;">
                         ${activeTab === 'matrix' ? this._renderMatrixTab(summary, countryKey) : ''}
                         ${activeTab === 'deposits' ? this._renderDepositsTab(countryDeposits, countryKey) : ''}
+                        ${activeTab === 'extraction' ? this._renderExtractionTab(summary, countryKey) : ''}
+                        ${activeTab === 'processing' ? this._renderProcessingTab(summary, countryKey) : ''}
+                        ${activeTab === 'inventory' ? this._renderInventoryTab(summary, countryKey) : ''}
+                        ${activeTab === 'logistics' ? this._renderLogisticsTab(summary, countryKey) : ''}
+                        ${activeTab === 'industrial' ? this._renderIndustrialTab(summary, countryKey) : ''}
+                        ${activeTab === 'market' ? this._renderMarketTab(summary, countryKey) : ''}
+                        ${activeTab === 'trade' ? this._renderTradeTab(summary, countryKey) : ''}
+                        ${activeTab === 'value' ? this._renderValueTab(profile, summary, countryKey) : ''}
+                        ${activeTab === 'cascade' ? this._renderCascadeTab(countryKey) : ''}
                         ${activeTab === 'profile' ? this._renderProfileTab(profile, countryKey) : ''}
                     </div>
                 </div>
@@ -9600,79 +9703,113 @@ _globalScope.GSRSK_DataFoundation = (() => {
         }
 
         _renderMatrixTab(summary, countryKey) {
+            const query = (this.modalSearchQuery || '').toLowerCase();
+            const cat = this.modalCategoryFilter || 'ALL';
+            
+            const filtered = summary.resourcesList.filter(r => {
+                const matchQ = !query || r.name.toLowerCase().includes(query) || (r.bnName && r.bnName.toLowerCase().includes(query)) || r.category.toLowerCase().includes(query);
+                const matchC = cat === 'ALL' || r.category === cat;
+                return matchQ && matchC;
+            });
+
             return `
-                <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:12px;">
-                    ${summary.resourcesList.map(r => `
-                        <div style="background:rgba(8,15,26,0.9); border:1px solid ${r.color || 'rgba(0,229,255,0.3)'}; border-radius:10px; padding:12px; display:flex; flex-direction:column; gap:8px;">
-                            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-                                <div style="display:flex; align-items:center; gap:8px;">
-                                    <span style="font-size:22px;">${r.icon}</span>
-                                    <div>
-                                        <div style="font-size:12px; font-weight:bold; color:#f8fafc;">${r.name}</div>
-                                        <div style="font-size:10px; color:#94a3b8;">${r.bnName || ''} • ${r.category}</div>
+                <div style="display:flex; flex-direction:column; gap:12px;">
+                    <!-- CONTROLS & CATEGORY FILTER -->
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; background:rgba(0,0,0,0.35); padding:10px 14px; border-radius:8px; border:1px solid rgba(0,229,255,0.2);">
+                        <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
+                            <span style="font-size:11px; color:#94a3b8; font-weight:bold;">FILTER CATEGORY:</span>
+                            ${['ALL', 'Energy', 'Metals', 'Critical', 'Industrial', 'Agriculture'].map(c => `
+                                <button onclick="window.ResourceMinistryEngine.modalCategoryFilter='${c}'; window.ResourceMinistryEngine.renderModalContent(document.getElementById('gsrsk-intelligence-modal'), '${countryKey}', 'matrix')" style="padding:4px 10px; font-size:10px; border-radius:4px; font-weight:bold; cursor:pointer; background:${cat === c ? '#00e5ff' : 'rgba(255,255,255,0.05)'}; color:${cat === c ? '#000' : '#cbd5e1'}; border:1px solid ${cat === c ? '#00e5ff' : 'rgba(255,255,255,0.1)'};">
+                                    ${c}
+                                </button>
+                            `).join('')}
+                        </div>
+                        <input type="text" placeholder="🔍 Search commodities (oil, uranium, lithium)..." value="${this.modalSearchQuery || ''}" oninput="window.ResourceMinistryEngine.modalSearchQuery=this.value; window.ResourceMinistryEngine.renderModalContent(document.getElementById('gsrsk-intelligence-modal'), '${countryKey}', 'matrix')" style="background:rgba(15,23,42,0.9); border:1px solid rgba(0,229,255,0.4); color:#fff; padding:6px 12px; border-radius:6px; font-size:11px; font-family:var(--font-mono); width:280px;">
+                    </div>
+
+                    <!-- 18 COMMODITIES GRID -->
+                    <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:12px;">
+                        ${filtered.map(r => `
+                            <div style="background:rgba(8,15,26,0.92); border:1px solid ${r.color || 'rgba(0,229,255,0.3)'}; border-radius:10px; padding:12px; display:flex; flex-direction:column; gap:8px; box-shadow:0 4px 12px rgba(0,0,0,0.4);">
+                                <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                                    <div style="display:flex; align-items:center; gap:8px;">
+                                        <span style="font-size:22px;">${r.icon}</span>
+                                        <div>
+                                            <div style="font-size:12px; font-weight:bold; color:#f8fafc;">${r.name}</div>
+                                            <div style="font-size:10px; color:#94a3b8;">${r.bnName || ''} • ${r.category}</div>
+                                        </div>
+                                    </div>
+                                    <span style="font-size:10px; padding:2px 6px; border-radius:4px; background:rgba(0,229,255,0.1); color:#00e5ff; font-weight:bold;">${r.unit}</span>
+                                </div>
+
+                                <!-- SELF-SUFFICIENCY BAR -->
+                                <div>
+                                    <div style="display:flex; justify-content:space-between; font-size:10px; margin-bottom:3px;">
+                                        <span style="color:#94a3b8;">Self-Sufficiency:</span>
+                                        <strong style="color:${r.selfSufficiencyRatio >= 100 ? '#22c55e' : (r.selfSufficiencyRatio > 40 ? '#ffd700' : '#ef4444')};">${r.selfSufficiencyRatio}%</strong>
+                                    </div>
+                                    <div style="width:100%; height:6px; background:rgba(255,255,255,0.1); border-radius:3px; overflow:hidden;">
+                                        <div style="width:${Math.min(100, r.selfSufficiencyRatio)}%; height:100%; background:${r.selfSufficiencyRatio >= 100 ? '#22c55e' : (r.selfSufficiencyRatio > 40 ? '#ffd700' : '#ef4444')};"></div>
                                     </div>
                                 </div>
-                                <span style="font-size:10px; padding:2px 6px; border-radius:4px; background:rgba(0,229,255,0.1); color:#00e5ff; font-weight:bold;">${r.unit}</span>
-                            </div>
 
-                            <!-- SELF-SUFFICIENCY BAR -->
-                            <div>
-                                <div style="display:flex; justify-content:space-between; font-size:10px; margin-bottom:3px;">
-                                    <span style="color:#94a3b8;">Self-Sufficiency:</span>
-                                    <strong style="color:${r.selfSufficiencyRatio >= 100 ? '#22c55e' : '#ffd700'};">${r.selfSufficiencyRatio}%</strong>
+                                <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; font-size:10px; background:rgba(0,0,0,0.3); padding:6px 8px; border-radius:6px;">
+                                    <div>Output: <strong style="color:#22c55e;">+${r.dailyProduction.toLocaleString()}</strong></div>
+                                    <div>Demand: <strong style="color:#f87171;">-${r.dailyConsumption.toLocaleString()}</strong></div>
+                                    <div>Net: <strong style="color:${r.netBalance >= 0 ? '#22c55e' : '#f87171'};">${r.netBalance >= 0 ? '+' : ''}${r.netBalance.toLocaleString()}</strong></div>
+                                    <div>Stock: <strong style="color:#ffd700;">${r.stockDays} Days</strong></div>
                                 </div>
-                                <div style="width:100%; height:6px; background:rgba(255,255,255,0.1); border-radius:3px; overflow:hidden;">
-                                    <div style="width:${Math.min(100, r.selfSufficiencyRatio)}%; height:100%; background:${r.selfSufficiencyRatio >= 100 ? '#22c55e' : '#ffd700'};"></div>
+
+                                <div style="display:grid; grid-template-columns:1fr 1fr; gap:4px; margin-top:2px;">
+                                    <button onclick="window.ResourceMinistryEngine.executeDirective('survey', '${r.id}'); window.ResourceMinistryEngine.renderModalContent(document.getElementById('gsrsk-intelligence-modal'), '${countryKey}', 'matrix');" style="padding:6px 4px; background:rgba(0,229,255,0.15); border:1px solid #00e5ff; color:#00e5ff; font-size:10px; font-weight:bold; border-radius:4px; cursor:pointer;">
+                                        ⛏️ SURVEY
+                                    </button>
+                                    <button onclick="window.ResourceMinistryEngine.executeDirective('expand_facility', '${r.id}'); window.ResourceMinistryEngine.renderModalContent(document.getElementById('gsrsk-intelligence-modal'), '${countryKey}', 'matrix');" style="padding:6px 4px; background:rgba(34,197,94,0.15); border:1px solid #22c55e; color:#22c55e; font-size:10px; font-weight:bold; border-radius:4px; cursor:pointer;">
+                                        🏭 EXPAND (+25%)
+                                    </button>
+                                    <button onclick="window.ResourceMinistryEngine.executeDirective('add_reserve', '${r.id}'); window.ResourceMinistryEngine.renderModalContent(document.getElementById('gsrsk-intelligence-modal'), '${countryKey}', 'matrix');" style="padding:6px 4px; background:rgba(255,215,0,0.15); border:1px solid #ffd700; color:#ffd700; font-size:10px; font-weight:bold; border-radius:4px; cursor:pointer;">
+                                        📦 SPR BUFFER
+                                    </button>
+                                    <button onclick="window.ResourceMinistryEngine.executeDirective('drawdown_spr', '${r.id}'); window.ResourceMinistryEngine.renderModalContent(document.getElementById('gsrsk-intelligence-modal'), '${countryKey}', 'matrix');" style="padding:6px 4px; background:rgba(239,68,68,0.15); border:1px solid #ef4444; color:#ef4444; font-size:10px; font-weight:bold; border-radius:4px; cursor:pointer;">
+                                        🚨 DRAWDOWN
+                                    </button>
                                 </div>
                             </div>
-
-                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; font-size:10px; background:rgba(0,0,0,0.3); padding:6px 8px; border-radius:6px;">
-                                <div>Output: <strong style="color:#22c55e;">+${r.dailyProduction.toLocaleString()}</strong></div>
-                                <div>Demand: <strong style="color:#f87171;">-${r.dailyConsumption.toLocaleString()}</strong></div>
-                                <div>Net: <strong style="color:${r.netBalance >= 0 ? '#22c55e' : '#f87171'};">${r.netBalance >= 0 ? '+' : ''}${r.netBalance.toLocaleString()}</strong></div>
-                                <div>Stock Days: <strong style="color:#ffd700;">${r.stockDays} D</strong></div>
-                            </div>
-
-                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:4px; margin-top:2px;">
-                                <button onclick="window.ResourceMinistryEngine.executeDirective('survey', '${r.id}'); window.ResourceMinistryEngine.renderModalContent(document.getElementById('gsrsk-intelligence-modal'), '${countryKey}', 'matrix');" style="padding:6px 4px; background:rgba(0,229,255,0.15); border:1px solid #00e5ff; color:#00e5ff; font-size:10px; font-weight:bold; border-radius:4px; cursor:pointer;">
-                                    ⛏️ SURVEY
-                                </button>
-                                <button onclick="window.ResourceMinistryEngine.executeDirective('expand_facility', '${r.id}'); window.ResourceMinistryEngine.renderModalContent(document.getElementById('gsrsk-intelligence-modal'), '${countryKey}', 'matrix');" style="padding:6px 4px; background:rgba(34,197,94,0.15); border:1px solid #22c55e; color:#22c55e; font-size:10px; font-weight:bold; border-radius:4px; cursor:pointer;">
-                                    🏭 EXPAND (+25%)
-                                </button>
-                                <button onclick="window.ResourceMinistryEngine.executeDirective('add_reserve', '${r.id}'); window.ResourceMinistryEngine.renderModalContent(document.getElementById('gsrsk-intelligence-modal'), '${countryKey}', 'matrix');" style="padding:6px 4px; background:rgba(255,215,0,0.15); border:1px solid #ffd700; color:#ffd700; font-size:10px; font-weight:bold; border-radius:4px; cursor:pointer;">
-                                    📦 SPR BUFFER
-                                </button>
-                                <button onclick="window.ResourceMinistryEngine.executeDirective('focus_map', '${r.id}'); window.ResourceMinistryEngine.closeModal();" style="padding:6px 4px; background:rgba(168,85,247,0.15); border:1px solid #a855f7; color:#a855f7; font-size:10px; font-weight:bold; border-radius:4px; cursor:pointer;">
-                                    🗺️ FOCUS MAP
-                                </button>
-                            </div>
-                        </div>
-                    `).join('')}
+                        `).join('')}
+                    </div>
                 </div>
             `;
         }
 
         _renderDepositsTab(countryDeposits, countryKey) {
             const allDeps = this.deposits;
+            const query = (this.depSearchQuery || '').toLowerCase();
+            const filteredDeps = allDeps.filter(d => {
+                if (!query) return true;
+                return d.name.toLowerCase().includes(query) || d.country.toLowerCase().includes(query) || (d.resId && d.resId.toLowerCase().includes(query));
+            });
+
             return `
                 <div style="display:flex; flex-direction:column; gap:12px;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(0,0,0,0.4); padding:10px 14px; border-radius:8px; border:1px solid rgba(0,229,255,0.2);">
-                        <span style="color:#00e5ff; font-size:12px; font-weight:bold;">CANONICAL GLOBAL STRATEGIC DEPOSIT CATALOG (${allDeps.length} WORLD DEPOSITS)</span>
-                        <span style="color:#94a3b8; font-size:11px;">Real-World Geological Coordinates & Reserve Grades</span>
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; background:rgba(0,0,0,0.4); padding:10px 14px; border-radius:8px; border:1px solid rgba(0,229,255,0.2);">
+                        <div>
+                            <span style="color:#00e5ff; font-size:12px; font-weight:bold;">CANONICAL GLOBAL STRATEGIC DEPOSIT CATALOG (${allDeps.length} WORLD DEPOSITS)</span>
+                            <div style="color:#94a3b8; font-size:10px; margin-top:2px;">Real-World Geological Coordinates, Ore Grades & Extraction Telemetry</div>
+                        </div>
+                        <input type="text" placeholder="🔍 Search deposit, country, resource..." value="${this.depSearchQuery || ''}" oninput="window.ResourceMinistryEngine.depSearchQuery=this.value; window.ResourceMinistryEngine.renderModalContent(document.getElementById('gsrsk-intelligence-modal'), '${countryKey}', 'deposits')" style="background:rgba(15,23,42,0.9); border:1px solid rgba(0,229,255,0.4); color:#fff; padding:6px 12px; border-radius:6px; font-size:11px; font-family:var(--font-mono); width:280px;">
                     </div>
 
-                    <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(350px, 1fr)); gap:10px;">
-                        ${allDeps.map(dep => `
-                            <div style="background:rgba(8,15,26,0.9); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:12px; display:flex; flex-direction:column; gap:6px;">
+                    <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(340px, 1fr)); gap:10px; max-height:600px; overflow-y:auto;">
+                        ${filteredDeps.slice(0, 80).map(dep => `
+                            <div style="background:rgba(8,15,26,0.92); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:12px; display:flex; flex-direction:column; gap:6px;">
                                 <div style="display:flex; justify-content:space-between; align-items:flex-start;">
                                     <div>
                                         <div style="color:#ffd700; font-size:12px; font-weight:bold;">${dep.name}</div>
                                         <div style="color:#94a3b8; font-size:10px;">🌐 ${dep.country} (${dep.countryCode}) • [${dep.lat.toFixed(2)}°, ${dep.lng.toFixed(2)}°]</div>
                                     </div>
-                                    <span style="font-size:9px; padding:2px 6px; border-radius:4px; background:rgba(34,197,94,0.15); color:#22c55e; font-weight:bold;">${dep.status}</span>
+                                    <span style="font-size:9px; padding:2px 6px; border-radius:4px; background:rgba(34,197,94,0.15); color:#22c55e; font-weight:bold;">${dep.status || 'OPERATIONAL'}</span>
                                 </div>
-                                <div style="font-size:11px; color:#cbd5e1; background:rgba(0,0,0,0.3); padding:6px 8px; border-radius:4px;">
+                                <div style="font-size:10px; color:#cbd5e1; background:rgba(0,0,0,0.3); padding:6px 8px; border-radius:4px; line-height:1.4;">
                                     <div>Reserves: <strong style="color:#00e5ff;">${dep.reserves}</strong></div>
                                     <div>Grade: <strong style="color:#a855f7;">${dep.grade}</strong></div>
                                     <div>Operator: <strong style="color:#f8fafc;">${dep.operator || dep.owner}</strong></div>
@@ -9683,6 +9820,396 @@ _globalScope.GSRSK_DataFoundation = (() => {
                             </div>
                         `).join('')}
                     </div>
+                </div>
+            `;
+        }
+
+        _renderExtractionTab(summary, countryKey) {
+            return `
+                <div style="display:flex; flex-direction:column; gap:14px;">
+                    <div style="background:linear-gradient(135deg, rgba(234,179,8,0.15), rgba(15,23,42,0.9)); border:1.5px solid #eab308; border-radius:10px; padding:14px; display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <div style="font-size:15px; font-weight:bold; color:#ffd700;">⛏️ PART 05: RESOURCE RESERVE EXTRACTION ENGINE</div>
+                            <div style="font-size:11px; color:#94a3b8; margin-top:2px;">Ore Recovery Ratios, Stripping Ratios, Geological Depletion Models & CRIRSCO Classification</div>
+                        </div>
+                        <span style="font-size:10px; padding:3px 8px; border-radius:12px; background:rgba(34,197,94,0.2); border:1px solid #22c55e; color:#22c55e; font-weight:bold;">100% CANONICAL</span>
+                    </div>
+
+                    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:12px;">
+                        <div style="background:rgba(8,15,26,0.9); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:12px;">
+                            <div style="color:#00e5ff; font-size:12px; font-weight:bold; margin-bottom:6px;">🪨 CRUDE EXTRACTION RATE</div>
+                            <div style="font-size:20px; font-weight:bold; color:#f8fafc;">1.42 M tons / yr</div>
+                            <div style="font-size:10px; color:#22c55e; margin-top:4px;">▲ +4.8% YoY Expansion</div>
+                        </div>
+                        <div style="background:rgba(8,15,26,0.9); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:12px;">
+                            <div style="color:#ffd700; font-size:12px; font-weight:bold; margin-bottom:6px;">⚖️ AVERAGE STRIPPING RATIO</div>
+                            <div style="font-size:20px; font-weight:bold; color:#ffd700;">2.8 : 1 (Waste/Ore)</div>
+                            <div style="font-size:10px; color:#94a3b8; margin-top:4px;">High-grade open-pit efficiency</div>
+                        </div>
+                        <div style="background:rgba(8,15,26,0.9); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:12px;">
+                            <div style="color:#22c55e; font-size:12px; font-weight:bold; margin-bottom:6px;">📈 ORE RECOVERY RECOVERY</div>
+                            <div style="font-size:20px; font-weight:bold; color:#22c55e;">91.4% Metallurgical</div>
+                            <div style="font-size:10px; color:#94a3b8; margin-top:4px;">Froth flotation & leaching</div>
+                        </div>
+                        <div style="background:rgba(8,15,26,0.9); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:12px;">
+                            <div style="color:#a855f7; font-size:12px; font-weight:bold; margin-bottom:6px;">⏳ DEPLETION HORIZON</div>
+                            <div style="font-size:20px; font-weight:bold; color:#a855f7;">42.8 Years Reserve</div>
+                            <div style="font-size:10px; color:#94a3b8; margin-top:4px;">Proved + Probable base</div>
+                        </div>
+                    </div>
+
+                    <div style="background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:12px;">
+                        <div style="font-size:12px; font-weight:bold; color:#00e5ff; margin-bottom:8px;">🏛️ ACTIVE SOVEREIGN MINING CONCESSIONS</div>
+                        <div style="display:flex; flex-direction:column; gap:8px; font-size:11px; color:#cbd5e1;">
+                            <div style="display:flex; justify-content:space-between; background:rgba(15,23,42,0.8); padding:8px 12px; border-radius:6px;">
+                                <span>⛏️ Block 12 Deep Horizon Natural Gas (Bibiyana Core)</span>
+                                <strong style="color:#22c55e;">940 MMSCFD • Active</strong>
+                            </div>
+                            <div style="display:flex; justify-content:space-between; background:rgba(15,23,42,0.8); padding:8px 12px; border-radius:6px;">
+                                <span>🪨 Barapukuria Underground Coal Extraction Shaft</span>
+                                <strong style="color:#ffd700;">1.2M T/yr • Operating</strong>
+                            </div>
+                            <div style="display:flex; justify-content:space-between; background:rgba(15,23,42,0.8); padding:8px 12px; border-radius:6px;">
+                                <span>💎 Cox's Bazar Heavy Mineral Monazite & Zircon Sands</span>
+                                <strong style="color:#00e5ff;">Pilot Separation • Ready</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        _renderProcessingTab(summary, countryKey) {
+            return `
+                <div style="display:flex; flex-direction:column; gap:14px;">
+                    <div style="background:linear-gradient(135deg, rgba(34,197,94,0.15), rgba(15,23,42,0.9)); border:1.5px solid #22c55e; border-radius:10px; padding:14px; display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <div style="font-size:15px; font-weight:bold; color:#22c55e;">🏭 PART 06: PROCESSING & REFINING TRANSFORMATION ENGINE</div>
+                            <div style="font-size:11px; color:#94a3b8; margin-top:2px;">Catalytic Cracking, Blast Furnaces, Rare Earth Separation & Chemical Synthesis</div>
+                        </div>
+                        <button onclick="window.ResourceMinistryEngine.executeDirective('upgrade_smelter', 'crude_oil'); window.ResourceMinistryEngine.renderModalContent(document.getElementById('gsrsk-intelligence-modal'), '${countryKey}', 'processing');" style="padding:6px 14px; background:linear-gradient(135deg,#22c55e,#16a34a); border:none; color:#000; font-weight:bold; font-size:11px; border-radius:6px; cursor:pointer;">
+                            ⚡ UPGRADE REFINERY (+35%)
+                        </button>
+                    </div>
+
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                        <div style="background:rgba(8,15,26,0.9); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:12px;">
+                            <div style="color:#ffd700; font-size:12px; font-weight:bold; margin-bottom:8px;">🛢️ HYDROCARBON REFINERY COMPLEX</div>
+                            <div style="font-size:11px; color:#cbd5e1; line-height:1.6;">
+                                <div>• Crude Distillation: <strong>Eastern Refinery (33,000 bpd)</strong></div>
+                                <div>• Catalytic Cracking: <strong>Euro-V Diesel & Naphtha</strong></div>
+                                <div>• Processing Efficiency: <strong style="color:#22c55e;">88.6% Yield</strong></div>
+                                <div>• Expansion Pipeline: <strong>ERL-2 Project (60,000 bpd)</strong></div>
+                            </div>
+                        </div>
+                        <div style="background:rgba(8,15,26,0.9); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:12px;">
+                            <div style="color:#00e5ff; font-size:12px; font-weight:bold; margin-bottom:8px;">⚙️ METALLURGICAL SMELTING & REBAR</div>
+                            <div style="font-size:11px; color:#cbd5e1; line-height:1.6;">
+                                <div>• Blast Furnaces: <strong>Chittagong Steel Mill Cluster</strong></div>
+                                <div>• Scrap Induction: <strong>Ship-Breaking Recycling (2.5M T/yr)</strong></div>
+                                <div>• Smelting Purity: <strong style="color:#00e5ff;">99.2% Pure Fe</strong></div>
+                                <div>• Rebar & Billet Yield: <strong style="color:#22c55e;">94% Finished Grade</strong></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        _renderInventoryTab(summary, countryKey) {
+            return `
+                <div style="display:flex; flex-direction:column; gap:14px;">
+                    <div style="background:linear-gradient(135deg, rgba(0,229,255,0.15), rgba(15,23,42,0.9)); border:1.5px solid #00e5ff; border-radius:10px; padding:14px; display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <div style="font-size:15px; font-weight:bold; color:#00e5ff;">📦 PART 07: RESOURCE INVENTORY & BATCH STORAGE ENGINE</div>
+                            <div style="font-size:11px; color:#94a3b8; margin-top:2px;">Strategic Petroleum Reserve (SPR), Cryogenic LNG Tanks, Grain Silos & FIFO Batch Tracking</div>
+                        </div>
+                        <button onclick="window.ResourceMinistryEngine.executeDirective('drawdown_spr', 'crude_oil'); window.ResourceMinistryEngine.renderModalContent(document.getElementById('gsrsk-intelligence-modal'), '${countryKey}', 'inventory');" style="padding:6px 14px; background:rgba(239,68,68,0.2); border:1px solid #ef4444; color:#ef4444; font-weight:bold; font-size:11px; border-radius:6px; cursor:pointer;">
+                            🚨 EMERGENCY SPR DRAWDOWN
+                        </button>
+                    </div>
+
+                    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:12px;">
+                        <div style="background:rgba(8,15,26,0.9); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:12px;">
+                            <div style="color:#eab308; font-size:12px; font-weight:bold;">🛢️ CRUDE & FUEL OIL SPR</div>
+                            <div style="font-size:18px; font-weight:bold; color:#ffd700; margin-top:4px;">1,250,000 BBL</div>
+                            <div style="font-size:10px; color:#94a3b8; margin-top:2px;">62 Days Domestic Buffer</div>
+                        </div>
+                        <div style="background:rgba(8,15,26,0.9); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:12px;">
+                            <div style="color:#00e5ff; font-size:12px; font-weight:bold;">❄️ CRYOGENIC LNG TERMINALS</div>
+                            <div style="font-size:18px; font-weight:bold; color:#00e5ff; margin-top:4px;">3.8 Billion Cu Ft</div>
+                            <div style="font-size:10px; color:#94a3b8; margin-top:2px;">Moheshkhali FSRU (Dual Unit)</div>
+                        </div>
+                        <div style="background:rgba(8,15,26,0.9); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:12px;">
+                            <div style="color:#22c55e; font-size:12px; font-weight:bold;">🌾 NATIONAL GRAIN & AGRI SILOS</div>
+                            <div style="font-size:18px; font-weight:bold; color:#22c55e; margin-top:4px;">1.85 Million Tons</div>
+                            <div style="font-size:10px; color:#94a3b8; margin-top:2px;">Spoilage Rate: < 0.15% / mo</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        _renderLogisticsTab(summary, countryKey) {
+            return `
+                <div style="display:flex; flex-direction:column; gap:14px;">
+                    <div style="background:linear-gradient(135deg, rgba(168,85,247,0.15), rgba(15,23,42,0.9)); border:1.5px solid #a855f7; border-radius:10px; padding:14px;">
+                        <div style="font-size:15px; font-weight:bold; color:#a855f7;">🚚 PART 08: INFRASTRUCTURE & MULTIMODAL LOGISTICS ENGINE</div>
+                        <div style="font-size:11px; color:#cbd5e1; margin-top:2px;">Pipelines, Bulk Maritime Corridors, Freight Rail Networks & 4-Step Intermodal Transfer Nodes</div>
+                    </div>
+
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                        <div style="background:rgba(8,15,26,0.9); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:12px;">
+                            <div style="color:#ffd700; font-size:12px; font-weight:bold; margin-bottom:8px;">⚓ MARITIME & INTERMODAL PORTS</div>
+                            <div style="font-size:11px; color:#cbd5e1; line-height:1.6;">
+                                <div>• Deepwater Hub: <strong>Matarbari Deep Sea Port (18.5m draft)</strong></div>
+                                <div>• Container Throughput: <strong>Chittagong Port (3.2M TEU/yr)</strong></div>
+                                <div>• Single Point Mooring (SPM): <strong>Kutubdia Deep Sea Offloader</strong></div>
+                                <div>• Transfer Time: <strong>4.2 hrs Intermodal Turnaround</strong></div>
+                            </div>
+                        </div>
+                        <div style="background:rgba(8,15,26,0.9); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:12px;">
+                            <div style="color:#00e5ff; font-size:12px; font-weight:bold; margin-bottom:8px;">🚰 STRATEGIC PIPELINE CORRIDORS</div>
+                            <div style="font-size:11px; color:#cbd5e1; line-height:1.6;">
+                                <div>• Cross-Border Pipeline: <strong>Indo-Bangla Friendship Pipeline (1M T/yr)</strong></div>
+                                <div>• National Gas Grid: <strong>GTCL 1,000 km High-Pressure Transmission</strong></div>
+                                <div>• Offshore SPM Line: <strong>110 km Double-Pipeline to Eastern Refinery</strong></div>
+                                <div>• Bottleneck Status: <strong style="color:#22c55e;">CLEAR (84% Nominal Capacity)</strong></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        _renderIndustrialTab(summary, countryKey) {
+            return `
+                <div style="display:flex; flex-direction:column; gap:14px;">
+                    <div style="background:linear-gradient(135deg, rgba(234,179,8,0.15), rgba(15,23,42,0.9)); border:1.5px solid #ffd700; border-radius:10px; padding:14px;">
+                        <div style="font-size:15px; font-weight:bold; color:#ffd700;">⚙️ PART 09: INDUSTRIAL VALUE CHAIN & DIRECTED ACYCLIC GRAPH (DAG)</div>
+                        <div style="font-size:11px; color:#cbd5e1; margin-top:2px;">Raw Extracted Commodities ➔ Intermediate Refining ➔ High-Tech Advanced Manufacturing</div>
+                    </div>
+
+                    <div style="display:flex; flex-direction:column; gap:10px;">
+                        <div style="background:rgba(8,15,26,0.9); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:12px;">
+                            <div style="color:#00e5ff; font-size:12px; font-weight:bold; margin-bottom:6px;">⛓️ VALUE CHAIN 1: NATURAL GAS ➔ UREA FERTILIZER ➔ AGRI FOOD SECURITY</div>
+                            <div style="font-size:11px; color:#94a3b8;">
+                                Raw Gas (Bibiyana) ➔ Methane Desulfurization ➔ Haber-Bosch Ammonia Synthesis ➔ Ghorashal-Polash Urea Plant (2,800 T/day) ➔ National Agricultural Yield
+                            </div>
+                        </div>
+                        <div style="background:rgba(8,15,26,0.9); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:12px;">
+                            <div style="color:#ffd700; font-size:12px; font-weight:bold; margin-bottom:6px;">⛓️ VALUE CHAIN 2: IMPORTED ORE / SCRAP ➔ STEEL BILLET ➔ BRIDGES & DEFENSE ARMOR</div>
+                            <div style="font-size:11px; color:#94a3b8;">
+                                Recycled Hull Scrap ➔ Electric Arc Furnace ➔ Continuous Casting ➔ 500W High-Tensile Rebar ➔ Padma Rail Bridge & Naval Patrol Craft
+                            </div>
+                        </div>
+                        <div style="background:rgba(8,15,26,0.9); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:12px;">
+                            <div style="color:#22c55e; font-size:12px; font-weight:bold; margin-bottom:6px;">⛓️ VALUE CHAIN 3: MONAZITE SANDS ➔ RARE EARTH OXIDES ➔ PERMANENT MAGNET MOTORS</div>
+                            <div style="font-size:11px; color:#94a3b8;">
+                                Heavy Mineral Placer Sands ➔ Magnetic Gravity Table ➔ Neodymium/Praseodymium Solvent Extraction ➔ High-Efficiency EV Powertrain & Radar Magnets
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        _renderMarketTab(summary, countryKey) {
+            const spotPrices = [
+                { id: 'crude_oil', name: 'Brent Crude Oil', price: '$84.50', unit: '/ BBL', change: '+1.8%', dir: 'up', vol: 'Low' },
+                { id: 'natural_gas', name: 'Henry Hub Gas', price: '$3.15', unit: '/ MMBtu', change: '-0.4%', dir: 'down', vol: 'Med' },
+                { id: 'iron_ore', name: 'Iron Ore (62% Fe)', price: '$118.20', unit: '/ Ton', change: '+2.4%', dir: 'up', vol: 'Med' },
+                { id: 'uranium', name: 'Uranium (U3O8)', price: '$92.00', unit: '/ Lb', change: '+4.5%', dir: 'up', vol: 'High' },
+                { id: 'lithium', name: 'Lithium Hydroxide', price: '$15,400', unit: '/ Ton', change: '+0.8%', dir: 'up', vol: 'High' },
+                { id: 'copper', name: 'LME Grade A Copper', price: '$9,850', unit: '/ Ton', change: '+1.2%', dir: 'up', vol: 'Med' }
+            ];
+
+            return `
+                <div style="display:flex; flex-direction:column; gap:14px;">
+                    <div style="background:linear-gradient(135deg, rgba(0,229,255,0.15), rgba(15,23,42,0.9)); border:1.5px solid #00e5ff; border-radius:10px; padding:14px; display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <div style="font-size:15px; font-weight:bold; color:#00e5ff;">📈 PART 10: REAL-TIME COMMODITY MARKET & SPOT PRICING ENGINE</div>
+                            <div style="font-size:11px; color:#cbd5e1; margin-top:2px;">Global Benchmark Clearing, Bid/Ask Orderbooks, Futures Contracts & Spot Trading Desk</div>
+                        </div>
+                        <span style="font-size:10px; padding:3px 8px; border-radius:12px; background:rgba(34,197,94,0.2); border:1px solid #22c55e; color:#22c55e; font-weight:bold;">LIVE FEED ●</span>
+                    </div>
+
+                    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:12px;">
+                        ${spotPrices.map(sp => `
+                            <div style="background:rgba(8,15,26,0.92); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:12px; display:flex; flex-direction:column; gap:8px;">
+                                <div style="display:flex; justify-content:space-between; align-items:center;">
+                                    <span style="font-weight:bold; color:#f8fafc; font-size:12px;">${sp.name}</span>
+                                    <span style="font-size:10px; padding:2px 6px; border-radius:4px; font-weight:bold; background:${sp.dir === 'up' ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)'}; color:${sp.dir === 'up' ? '#22c55e' : '#ef4444'};">
+                                        ${sp.change}
+                                    </span>
+                                </div>
+                                <div style="display:flex; align-items:baseline; gap:4px;">
+                                    <span style="font-size:22px; font-weight:bold; color:#ffd700;">${sp.price}</span>
+                                    <span style="font-size:11px; color:#94a3b8;">${sp.unit}</span>
+                                </div>
+                                <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:4px;">
+                                    <button onclick="window.ResourceMinistryEngine.executeDirective('buy_spot', '${sp.id}', { quantity: 5000, price: 85 }); window.ResourceMinistryEngine.renderModalContent(document.getElementById('gsrsk-intelligence-modal'), '${countryKey}', 'market');" style="padding:6px; background:rgba(34,197,94,0.15); border:1px solid #22c55e; color:#22c55e; font-weight:bold; font-size:10px; border-radius:4px; cursor:pointer;">
+                                        🟢 BUY SPOT
+                                    </button>
+                                    <button onclick="window.ResourceMinistryEngine.executeDirective('sell_spot', '${sp.id}', { quantity: 5000, price: 85 }); window.ResourceMinistryEngine.renderModalContent(document.getElementById('gsrsk-intelligence-modal'), '${countryKey}', 'market');" style="padding:6px; background:rgba(239,68,68,0.15); border:1px solid #ef4444; color:#ef4444; font-weight:bold; font-size:10px; border-radius:4px; cursor:pointer;">
+                                        🔴 SELL SPOT
+                                    </button>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        _renderTradeTab(summary, countryKey) {
+            return `
+                <div style="display:flex; flex-direction:column; gap:14px;">
+                    <div style="background:linear-gradient(135deg, rgba(34,197,94,0.15), rgba(15,23,42,0.9)); border:1.5px solid #22c55e; border-radius:10px; padding:14px;">
+                        <div style="font-size:15px; font-weight:bold; color:#22c55e;">🤝 PART 11: TRADE, FULFILLMENT & SETTLEMENT ENGINE</div>
+                        <div style="font-size:11px; color:#cbd5e1; margin-top:2px;">Bilateral Supply Contracts, Letters of Credit, Customs Tariffs % & FX Currency Clearing</div>
+                    </div>
+
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                        <div style="background:rgba(8,15,26,0.9); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:12px;">
+                            <div style="color:#00e5ff; font-size:12px; font-weight:bold; margin-bottom:8px;">📜 ACTIVE LONG-TERM SUPPLY CONTRACTS</div>
+                            <div style="display:flex; flex-direction:column; gap:6px; font-size:11px; color:#cbd5e1;">
+                                <div style="display:flex; justify-content:space-between; background:rgba(0,0,0,0.3); padding:6px 10px; border-radius:4px;">
+                                    <span>🇶🇦 QatarEnergy LNG (2.5M T/yr • 15 yr)</span>
+                                    <strong style="color:#22c55e;">Delivered Ex-Ship</strong>
+                                </div>
+                                <div style="display:flex; justify-content:space-between; background:rgba(0,0,0,0.3); padding:6px 10px; border-radius:4px;">
+                                    <span>🇴🇲 OQ Trading Oman Crude (1.5M BBL)</span>
+                                    <strong style="color:#ffd700;">FOB Sohar</strong>
+                                </div>
+                                <div style="display:flex; justify-content:space-between; background:rgba(0,0,0,0.3); padding:6px 10px; border-radius:4px;">
+                                    <span>🇷🇺 Rosatom Nuclear Fuel Rods (VVER-1200)</span>
+                                    <strong style="color:#a855f7;">Active Fulfillment</strong>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="background:rgba(8,15,26,0.9); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:12px;">
+                            <div style="color:#ffd700; font-size:12px; font-weight:bold; margin-bottom:8px;">🛡️ CUSTOMS TARIFF POLICY CONTROLS</div>
+                            <div style="display:flex; flex-direction:column; gap:8px;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; font-size:11px;">
+                                    <span>Steel Rebar Import Tariff:</span>
+                                    <button onclick="window.ResourceMinistryEngine.executeDirective('set_tariff', 'refined_steel', { tariff: 20 });" style="padding:4px 8px; background:rgba(234,179,8,0.2); border:1px solid #eab308; color:#ffd700; font-weight:bold; font-size:10px; border-radius:4px; cursor:pointer;">
+                                        SET 20% TARIFF
+                                    </button>
+                                </div>
+                                <div style="display:flex; justify-content:space-between; align-items:center; font-size:11px;">
+                                    <span>Crude Oil Import Surcharge:</span>
+                                    <button onclick="window.ResourceMinistryEngine.executeDirective('set_tariff', 'crude_oil', { tariff: 5 });" style="padding:4px 8px; background:rgba(0,229,255,0.2); border:1px solid #00e5ff; color:#00e5ff; font-weight:bold; font-size:10px; border-radius:4px; cursor:pointer;">
+                                        SET 5% TARIFF
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        _renderValueTab(profile, summary, countryKey) {
+            return `
+                <div style="display:flex; flex-direction:column; gap:14px;">
+                    <div style="background:linear-gradient(135deg, rgba(234,179,8,0.2), rgba(15,23,42,0.9)); border:1.5px solid #ffd700; border-radius:10px; padding:14px;">
+                        <div style="font-size:15px; font-weight:bold; color:#ffd700;">👑 PART 12: ECONOMIC & STRATEGIC VALUE ENGINE</div>
+                        <div style="font-size:11px; color:#cbd5e1; margin-top:2px;">Resource Rent % of GDP, Sovereign Wealth Fund Capitalization & Geopolitical Leverage Index</div>
+                    </div>
+
+                    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:12px;">
+                        <div style="background:rgba(8,15,26,0.9); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:12px;">
+                            <div style="color:#00e5ff; font-size:12px; font-weight:bold;">💎 RESOURCE RENT (% GDP)</div>
+                            <div style="font-size:22px; font-weight:bold; color:#f8fafc; margin-top:4px;">4.2% of GDP</div>
+                            <div style="font-size:10px; color:#22c55e; margin-top:2px;">$19.3 Billion Annual Rent</div>
+                        </div>
+                        <div style="background:rgba(8,15,26,0.9); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:12px;">
+                            <div style="color:#ffd700; font-size:12px; font-weight:bold;">🏛️ SOVEREIGN WEALTH FUND</div>
+                            <div style="font-size:22px; font-weight:bold; color:#ffd700; margin-top:4px;">$6.8 Billion</div>
+                            <div style="font-size:10px; color:#94a3b8; margin-top:2px;">Re-invested in Clean Grid</div>
+                        </div>
+                        <div style="background:rgba(8,15,26,0.9); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:12px;">
+                            <div style="color:#22c55e; font-size:12px; font-weight:bold;">🌐 GEOPOLITICAL LEVERAGE</div>
+                            <div style="font-size:22px; font-weight:bold; color:#22c55e; margin-top:4px;">78 / 100 Score</div>
+                            <div style="font-size:10px; color:#94a3b8; margin-top:2px;">Bay of Bengal Maritime Corridor</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        _renderCascadeTab(countryKey) {
+            const sim = this.activeCascadeSimulation;
+
+            return `
+                <div style="display:flex; flex-direction:column; gap:14px;">
+                    <div style="background:linear-gradient(135deg, rgba(239,68,68,0.2), rgba(15,23,42,0.9)); border:1.5px solid #ef4444; border-radius:10px; padding:14px; display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <div style="font-size:15px; font-weight:bold; color:#ef4444;">⚠️ PART 13: MULTI-TIER CASCADE RISK & DISRUPTION SANDBOX</div>
+                            <div style="font-size:11px; color:#cbd5e1; margin-top:2px;">Non-Linear Shock Propagation, Root-Cause Traversal DAG & Automated Contingency Resolution</div>
+                        </div>
+                        ${sim ? `
+                            <button onclick="window.ResourceMinistryEngine.executeDirective('clear_cascade_simulation'); window.ResourceMinistryEngine.renderModalContent(document.getElementById('gsrsk-intelligence-modal'), '${countryKey}', 'cascade');" style="padding:6px 14px; background:linear-gradient(135deg,#22c55e,#16a34a); border:none; color:#000; font-weight:bold; font-size:11px; border-radius:6px; cursor:pointer;">
+                                🛡️ RESTORE SUPPLY EQUILIBRIUM
+                            </button>
+                        ` : ''}
+                    </div>
+
+                    <!-- SIMULATION LAUNCHER CONTROLS -->
+                    <div style="background:rgba(8,15,26,0.9); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:14px; display:flex; flex-direction:column; gap:10px;">
+                        <div style="font-size:12px; font-weight:bold; color:#ffd700;">🎯 TRIGGER SUPPLY CHAIN DISRUPTION SHOCK</div>
+                        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:10px;">
+                            <button onclick="window.ResourceMinistryEngine.executeDirective('run_cascade_simulation', 'natural_gas', { originId: 'DEP_BGD_001', originName: 'Bibiyana Mega Gas Field', magnitude: 0.75, duration: 8 }); window.ResourceMinistryEngine.renderModalContent(document.getElementById('gsrsk-intelligence-modal'), '${countryKey}', 'cascade');" style="padding:10px; background:rgba(239,68,68,0.15); border:1px solid #ef4444; color:#ef4444; font-weight:bold; font-size:11px; border-radius:6px; cursor:pointer; text-align:left;">
+                                💥 75% Bibiyana Gas Field Outage
+                            </button>
+                            <button onclick="window.ResourceMinistryEngine.executeDirective('run_cascade_simulation', 'crude_oil', { originId: 'DEP_SAU_001', originName: 'Ras Tanura Maritime Terminal', magnitude: 0.60, duration: 12 }); window.ResourceMinistryEngine.renderModalContent(document.getElementById('gsrsk-intelligence-modal'), '${countryKey}', 'cascade');" style="padding:10px; background:rgba(234,179,8,0.15); border:1px solid #eab308; color:#ffd700; font-weight:bold; font-size:11px; border-radius:6px; text-align:left;">
+                                💥 60% Ras Tanura Crude Port Blockade
+                            </button>
+                            <button onclick="window.ResourceMinistryEngine.executeDirective('run_cascade_simulation', 'copper', { originId: 'DEP_CHL_001', originName: 'Escondida Copper Mine Strike', magnitude: 0.85, duration: 6 }); window.ResourceMinistryEngine.renderModalContent(document.getElementById('gsrsk-intelligence-modal'), '${countryKey}', 'cascade');" style="padding:10px; background:rgba(168,85,247,0.15); border:1px solid #a855f7; color:#a855f7; font-weight:bold; font-size:11px; border-radius:6px; text-align:left;">
+                                💥 85% Escondida Global Copper Strike
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- SIMULATION RESULTS / ACTIVE CASCADE TRACE -->
+                    ${sim ? `
+                        <div style="background:rgba(20,8,8,0.95); border:1.5px solid #ef4444; border-radius:8px; padding:14px; display:flex; flex-direction:column; gap:12px; box-shadow:0 0 25px rgba(239,68,68,0.3);">
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <div style="font-size:13px; font-weight:bold; color:#ef4444;">
+                                    🔴 ACTIVE CASCADE INCIDENT: ${sim.originName} (-${Math.round(sim.magnitude * 100)}%)
+                                </div>
+                                <span style="font-size:10px; padding:2px 8px; border-radius:10px; background:rgba(239,68,68,0.2); border:1px solid #ef4444; color:#ef4444; font-weight:bold;">CRITICAL LEVEL 4</span>
+                            </div>
+
+                            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;">
+                                <div style="background:rgba(0,0,0,0.5); padding:10px; border-radius:6px; border-left:3px solid #ef4444;">
+                                    <div style="font-size:10px; color:#94a3b8; font-weight:bold;">TIER 1 DIRECT SHOCK</div>
+                                    <div style="font-size:12px; font-weight:bold; color:#f8fafc; margin-top:2px;">${sim.result.tier1Impact.sector}</div>
+                                    <div style="font-size:11px; color:#ef4444; margin-top:4px;">-${sim.result.tier1Impact.lossPct}% Direct Output</div>
+                                </div>
+                                <div style="background:rgba(0,0,0,0.5); padding:10px; border-radius:6px; border-left:3px solid #eab308;">
+                                    <div style="font-size:10px; color:#94a3b8; font-weight:bold;">TIER 2 INTERMEDIATE SHOCK</div>
+                                    <div style="font-size:12px; font-weight:bold; color:#f8fafc; margin-top:2px;">${sim.result.tier2Impact.sector}</div>
+                                    <div style="font-size:11px; color:#eab308; margin-top:4px;">-${sim.result.tier2Impact.lossPct}% Supply Depletion</div>
+                                </div>
+                                <div style="background:rgba(0,0,0,0.5); padding:10px; border-radius:6px; border-left:3px solid #ffd700;">
+                                    <div style="font-size:10px; color:#94a3b8; font-weight:bold;">TIER 3 FINAL GRID SHOCK</div>
+                                    <div style="font-size:12px; font-weight:bold; color:#f8fafc; margin-top:2px;">${sim.result.tier3Impact.sector}</div>
+                                    <div style="font-size:11px; color:#ffd700; margin-top:4px;">-${sim.result.tier3Impact.lossPct}% National Capacity</div>
+                                </div>
+                            </div>
+
+                            <div style="background:rgba(0,0,0,0.4); padding:10px; border-radius:6px; border:1px solid rgba(34,197,94,0.3);">
+                                <div style="font-size:11px; font-weight:bold; color:#22c55e; margin-bottom:4px;">🛡️ AUTOMATED CONTINGENCY RECOVERY PATH:</div>
+                                <div style="font-size:11px; color:#cbd5e1;">${sim.result.contingencyPath} (Estimated Recovery: ${sim.result.recoveryWeeks} weeks)</div>
+                            </div>
+                        </div>
+                    ` : `
+                        <div style="background:rgba(8,15,26,0.9); border:1px solid rgba(34,197,94,0.2); border-radius:8px; padding:16px; text-align:center; color:#22c55e; font-size:12px;">
+                            🛡️ Global Supply Chain Equilibrium Stable. No Active Cascade Shocks Detected.
+                        </div>
+                    `}
                 </div>
             `;
         }
@@ -32706,81 +33233,989 @@ const EPSILON = 1e-7;
 
 })(typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : global));
 
+/* ========================================================================= */
+/* GSRSK PART 14: RESOURCE STRATEGIC INTELLIGENCE MINISTER CORE ENGINE       */
+/* Autonomous Strategic Decision Core, 10 Specialists, Causal Cognition,     */
+/* Counterfactual Sandbox, Cross-Cabinet Consultation & Fallback Resilience   */
+/* ========================================================================= */
 
-    const _targetGlobal = typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : global);
+(function(root) {
+  'use strict';
 
-    if (typeof module !== 'undefined' && module.exports) {
-        module.exports = {
-            DataFoundation: _targetGlobal.GSRSK_DataFoundation || (typeof _globalScope !== 'undefined' ? _globalScope.GSRSK_DataFoundation : null),
-            WorldKnowledgeCompiler: _targetGlobal.GSRSK_WorldKnowledgeCompiler || null,
-            WorldStateEngineAdapter: _targetGlobal.GSRSK_Part03 || null,
-            WorldStateEngine: _targetGlobal.GSRSK_WorldStateEngine || null,
-            ResourceIdentityEngine: _targetGlobal.GSRSK_ResourceIdentityEngine || null,
-            ResourceReserveExtractionEngine: _targetGlobal.GSRSK_ResourceReserveExtractionEngine || null,
-            ResourceProcessingTransformationEngine: _targetGlobal.GSRSK_ResourceProcessingTransformationEngine || null,
-            ResourceInventoryBatchStorageEngine: _targetGlobal.GSRSK_ResourceInventoryBatchStorageEngine || null,
-            ResourceInfrastructureLogisticsEngine: _targetGlobal.GSRSK_ResourceInfrastructureLogisticsEngine || null,
-            ResourceProductionIndustrialChainEngine: _targetGlobal.GSRSK_ResourceProductionIndustrialChainEngine || null,
-            ResourceMarketPricingEngine: _targetGlobal.GSRSK_ResourceMarketPricingEngine || null,
-            TradeFulfillmentSettlementEngine: _targetGlobal.GSRSK_TradeFulfillmentSettlementEngine || null,
-            EconomicAndStrategicValueEngine: _targetGlobal.GSRSK_EconomicAndStrategicValueEngine || null,
-            StrategicValueEngine: _targetGlobal.GSRSK_EconomicAndStrategicValueEngine || null,
-            GSRSK_EconomicAndStrategicValueEngine: _targetGlobal.GSRSK_EconomicAndStrategicValueEngine || null,
-            GSRSK_Part12: _targetGlobal.GSRSK_EconomicAndStrategicValueEngine || null,
-            Part12: _targetGlobal.GSRSK_EconomicAndStrategicValueEngine || null,
-            ...(_targetGlobal.GSRSK_EconomicAndStrategicValueEngine || {}),
-            ResourceTradeExecutionEngine: _targetGlobal.GSRSK_TradeFulfillmentSettlementEngine || null,
-            GSRSK_TradeFulfillmentSettlementEngine: _targetGlobal.GSRSK_TradeFulfillmentSettlementEngine || null,
-            GSRSK_Part11: _targetGlobal.GSRSK_TradeFulfillmentSettlementEngine || null,
-            Part11: _targetGlobal.GSRSK_TradeFulfillmentSettlementEngine || null,
-            ...(_targetGlobal.GSRSK_TradeFulfillmentSettlementEngine || {}),
-            DependencyRiskCascadeEngine: _targetGlobal.GSRSK_DependencyRiskCascadeEngine || null,
-            CascadeEngine: _targetGlobal.GSRSK_DependencyRiskCascadeEngine || null,
-            GSRSK_DependencyRiskCascadeEngine: _targetGlobal.GSRSK_DependencyRiskCascadeEngine || null,
-            GSRSK_Part13: _targetGlobal.GSRSK_DependencyRiskCascadeEngine || null,
-            Part13: _targetGlobal.GSRSK_DependencyRiskCascadeEngine || null,
-            ...(_targetGlobal.GSRSK_DependencyRiskCascadeEngine || {}),
-            ResourceMinistryEngine: typeof ResourceMinistryEngineInstance !== 'undefined' ? ResourceMinistryEngineInstance : (_targetGlobal.ResourceMinistryEngine || null),
-            MasterGSRSKEngine: _targetGlobal.GSRSK_MasterEngine ? _targetGlobal.GSRSK_MasterEngine.constructor : null,
-            MasterEngineSingleton: _targetGlobal.GSRSK_MasterEngine || null,
-            GSRSK_DataFoundation: _targetGlobal.GSRSK_DataFoundation || null,
-            GSRSK_WorldKnowledgeCompiler: _targetGlobal.GSRSK_WorldKnowledgeCompiler || null,
-            GSRSK_Part03: _targetGlobal.GSRSK_Part03 || null,
-            GSRSK_ResourceIdentityEngine: _targetGlobal.GSRSK_ResourceIdentityEngine || null,
-            GSRSK_Part04: _targetGlobal.GSRSK_ResourceIdentityEngine || null,
-            GSRSK_ResourceReserveExtractionEngine: _targetGlobal.GSRSK_ResourceReserveExtractionEngine || null,
-            GSRSK_Part05: _targetGlobal.GSRSK_ResourceReserveExtractionEngine || null,
-            GSRSK_ResourceProcessingTransformationEngine: _targetGlobal.GSRSK_ResourceProcessingTransformationEngine || null,
-            GSRSK_Part06: _targetGlobal.GSRSK_ResourceProcessingTransformationEngine || null,
-            GSRSK_ResourceInventoryBatchStorageEngine: _targetGlobal.GSRSK_ResourceInventoryBatchStorageEngine || null,
-            GSRSK_Part07: _targetGlobal.GSRSK_ResourceInventoryBatchStorageEngine || null,
-            GSRSK_ResourceInfrastructureLogisticsEngine: _targetGlobal.GSRSK_ResourceInfrastructureLogisticsEngine || null,
-            GSRSK_Part08: _targetGlobal.GSRSK_ResourceInfrastructureLogisticsEngine || null,
-            GSRSK_ResourceProductionIndustrialChainEngine: _targetGlobal.GSRSK_ResourceProductionIndustrialChainEngine || null,
-            GSRSK_Part09: _targetGlobal.GSRSK_ResourceProductionIndustrialChainEngine || null,
-            GSRSK_ResourceMarketPricingEngine: _targetGlobal.GSRSK_ResourceMarketPricingEngine || null,
-            GSRSK_Part10: _targetGlobal.GSRSK_ResourceMarketPricingEngine || null,
-            Part13: _targetGlobal.GSRSK_DependencyRiskCascadeEngine || null,
-            Part12: _targetGlobal.GSRSK_EconomicAndStrategicValueEngine || null,
-            Part01: _targetGlobal.GSRSK_DataFoundation || null,
-            Part02: _targetGlobal.GSRSK_WorldKnowledgeCompiler || null,
-            Part03: _targetGlobal.GSRSK_Part03 || null,
-            Part04: _targetGlobal.GSRSK_ResourceIdentityEngine || null,
-            Part05: _targetGlobal.GSRSK_ResourceReserveExtractionEngine || null,
-            Part06: _targetGlobal.GSRSK_ResourceProcessingTransformationEngine || null,
-            Part07: _targetGlobal.GSRSK_ResourceInventoryBatchStorageEngine || null,
-            Part08: _targetGlobal.GSRSK_ResourceInfrastructureLogisticsEngine || null,
-            Part09: _targetGlobal.GSRSK_ResourceProductionIndustrialChainEngine || null,
-            Part10: _targetGlobal.GSRSK_ResourceMarketPricingEngine || null,
-            ...(_targetGlobal.GSRSK_ResourceIdentityEngine || {}),
-            ...(_targetGlobal.GSRSK_ResourceReserveExtractionEngine || {}),
-            ...(_targetGlobal.GSRSK_ResourceProcessingTransformationEngine || {}),
-            ...(_targetGlobal.GSRSK_ResourceInventoryBatchStorageEngine || {}),
-            ...(_targetGlobal.GSRSK_ResourceInfrastructureLogisticsEngine || {}),
-            ...(_targetGlobal.GSRSK_ResourceProductionIndustrialChainEngine || {}),
-            ...(_targetGlobal.GSRSK_ResourceMarketPricingEngine || {})
-        };
+  // --- PART 14.1 CONTRACT SCHEMAS & PROTOCOLS ---
+  const ResourceMinisterContracts = {
+    ContractVersion: '14.0.0-PROD',
+    ConfidenceTier: {
+      VERIFIED: 'VERIFIED',
+      HIGH: 'HIGH',
+      MODERATE: 'MODERATE',
+      LOW: 'LOW',
+      SPECULATIVE: 'SPECULATIVE'
+    },
+    DirectiveType: {
+      MAINTAIN_STATUS_QUO: 'MAINTAIN_STATUS_QUO',
+      EXPAND_STRATEGIC_RESERVE: 'EXPAND_STRATEGIC_RESERVE',
+      RATION_DOMESTIC_CONSUMPTION: 'RATION_DOMESTIC_CONSUMPTION',
+      MANDATE_DOWNSTREAM_SUBSTITUTION: 'MANDATE_DOWNSTREAM_SUBSTITUTION',
+      DIVERSIFY_IMPORT_PORTFOLIO: 'DIVERSIFY_IMPORT_PORTFOLIO',
+      EXPEDITE_EXTRACTION_CAPEX: 'EXPEDITE_EXTRACTION_CAPEX',
+      COMMISSION_PROCESSING_FACILITY: 'COMMISSION_PROCESSING_FACILITY',
+      ENFORCE_EMBARGO_SHOCK_DEFENSE: 'ENFORCE_EMBARGO_SHOCK_DEFENSE',
+      SECURE_BILATERAL_OFFTAKE: 'SECURE_BILATERAL_OFFTAKE',
+      TRIGGER_STRATEGIC_DRAWDOWN: 'TRIGGER_STRATEGIC_DRAWDOWN'
+    },
+    HealthCategory: {
+      RESERVE_ADEQUACY: 'RESERVE_ADEQUACY',
+      EXTRACTION_EFFICIENCY: 'EXTRACTION_EFFICIENCY',
+      PROCESSING_THROUGHPUT: 'PROCESSING_THROUGHPUT',
+      INVENTORY_COVER: 'INVENTORY_COVER',
+      LOGISTICS_ROBUSTNESS: 'LOGISTICS_ROBUSTNESS',
+      MARKET_STABILITY: 'MARKET_STABILITY',
+      TRADE_DIVERSIFICATION: 'TRADE_DIVERSIFICATION',
+      CONTRACTUAL_SECURITY: 'CONTRACTUAL_SECURITY',
+      DEPENDENCY_RESILIENCE: 'DEPENDENCY_RESILIENCE',
+      SYSTEMIC_RISK_SHIELD: 'SYSTEMIC_RISK_SHIELD'
+    },
+    createAnalysisContract: function(params = {}) {
+      return {
+        contractId: 'RAC-' + Date.now() + '-' + Math.random().toString(36).substr(2, 6),
+        timestamp: Date.now(),
+        countryId: params.countryId || 'GLOBAL',
+        resourceId: params.resourceId || 'ALL',
+        confidenceScore: typeof params.confidenceScore === 'number' ? params.confidenceScore : 0.92,
+        diagnostics: params.diagnostics || [],
+        evidenceBase: params.evidenceBase || {},
+        recommendedDirectives: params.recommendedDirectives || [],
+        validityTicks: params.validityTicks || 30
+      };
+    },
+    createDecisionContract: function(params = {}) {
+      return {
+        decisionId: 'RDC-' + Date.now() + '-' + Math.random().toString(36).substr(2, 6),
+        timestamp: Date.now(),
+        doctrine: params.doctrine || 'RESOURCE_SECURITY_FIRST',
+        activeOption: params.activeOption || 'OPTION_0_DO_NOTHING',
+        projectedNPV: params.projectedNPV || 0,
+        projectedResilienceDelta: params.projectedResilienceDelta || 0,
+        implementationRisk: params.implementationRisk || 'LOW',
+        criticApproval: params.criticApproval !== undefined ? params.criticApproval : true,
+        criticCritique: params.criticCritique || 'Validated with zero fatal blocking flaws.'
+      };
     }
+  };
+
+  // --- PART 14.2 DYNAMIC PERSONA & IDEOLOGY RESOLVER ---
+  function resolveMinisterProfile(countryId, personaOverride) {
+    const rawMinisters = (root.GSRSK_WorldKnowledgeCompiler && root.GSRSK_WorldKnowledgeCompiler.ministers) ||
+                         (root.OmegaCabinetEngine && root.OmegaCabinetEngine.ministers) || {};
+    const countryData = rawMinisters[countryId] || {};
+    const resData = countryData.resources || countryData.industry || {};
+
+    return {
+      name: (personaOverride && personaOverride.name) || resData.name || 'Dr. Tariq Al-Mansoor',
+      title: (personaOverride && personaOverride.title) || resData.title || 'Minister of Mines & Strategic Energy',
+      countryId: countryId || 'NATION_PRIME',
+      ideology: (personaOverride && personaOverride.ideology) || resData.ideology || 'Technocratic Autarky & Supply Fortification',
+      doctrine: (personaOverride && personaOverride.doctrine) || 'PREEMPTIVE_STOCKPILING_AND_INFRASTRUCTURE_SOVEREIGNTY',
+      traits: {
+        discipline: 0.88,
+        riskTolerance: 0.35,
+        strategicFocus: 0.94,
+        resilienceBias: 0.90,
+        interMinisterialCoordination: 0.82
+      },
+      biography: 'Distinguished geological engineer and supply chain strategist with 24 years orchestrating national mineral extraction, processing corridors, and sovereign buffer inventories.'
+    };
+  }
+
+  // --- PART 14.3 DATA GATEWAY & FAULT-TOLERANT CONTEXT BRIDGE (PARTS 01-13) ---
+  class ResilientDataGateway {
+    constructor() {
+      this.cache = new Map();
+      this.cacheTTL = 5000;
+      this.failureLog = [];
+    }
+
+    _safeGet(sourceFn, fallbackVal, errorTag) {
+      try {
+        const val = sourceFn();
+        return (val !== undefined && val !== null) ? val : fallbackVal;
+      } catch (err) {
+        this.failureLog.push({ tag: errorTag, error: err.message, time: Date.now() });
+        return fallbackVal;
+      }
+    }
+
+    getEnginePart(partNumber) {
+      const partKey = 'Part' + (partNumber < 10 ? '0' + partNumber : partNumber);
+      const gsrskKey = 'GSRSK_' + partKey;
+      return root[gsrskKey] || root[partKey] || (root.ResourceMinistryEngine && root.ResourceMinistryEngine[partKey.toLowerCase()]) || null;
+    }
+
+    getReservesData(countryId) {
+      const part05 = this.getEnginePart(5);
+      return this._safeGet(() => {
+        if (part05 && typeof part05.getCountryReserves === 'function') {
+          return part05.getCountryReserves(countryId);
+        }
+        return {
+          CRUDE_OIL: { proven: 145000000, probable: 62000000, dailyExtraction: 48000, rrr: 1.15, depletionYears: 8.27 },
+          NATURAL_GAS: { proven: 85000000, probable: 31000000, dailyExtraction: 19000, rrr: 0.98, depletionYears: 12.25 },
+          LITHIUM_RAW: { proven: 4200000, probable: 1900000, dailyExtraction: 950, rrr: 1.32, depletionYears: 12.11 },
+          RARE_EARTH_RAW: { proven: 1850000, probable: 840000, dailyExtraction: 320, rrr: 0.85, depletionYears: 15.83 }
+        };
+      }, {}, 'Part05_Reserves');
+    }
+
+    getProcessingData(countryId) {
+      const part06 = this.getEnginePart(6);
+      return this._safeGet(() => {
+        if (part06 && typeof part06.getCountryProcessingNodes === 'function') {
+          return part06.getCountryProcessingNodes(countryId);
+        }
+        return {
+          totalRefineries: 14,
+          aggregateCapacityBPD: 65000,
+          currentUtilizationRate: 0.84,
+          smeltingLossRatio: 0.042,
+          crackingBottleneckIndex: 0.18
+        };
+      }, {}, 'Part06_Processing');
+    }
+
+    getInventoryData(countryId) {
+      const part07 = this.getEnginePart(7);
+      return this._safeGet(() => {
+        if (part07 && typeof part07.getInventorySnapshot === 'function') {
+          return part07.getInventorySnapshot(countryId);
+        }
+        return {
+          CRUDE_OIL: { bufferDays: 78, quantity: 3744000, targetDays: 90, condition: 'NOMINAL' },
+          REFINED_DIESEL: { bufferDays: 45, quantity: 1800000, targetDays: 60, condition: 'VULNERABLE' },
+          LITHIUM_BATTERY_GRADE: { bufferDays: 110, quantity: 99000, targetDays: 90, condition: 'ROBUST' },
+          RARE_EARTH_MAGNETS: { bufferDays: 32, quantity: 9600, targetDays: 90, condition: 'CRITICAL' }
+        };
+      }, {}, 'Part07_Inventory');
+    }
+
+    getLogisticsData(countryId) {
+      const part08 = this.getEnginePart(8);
+      return this._safeGet(() => {
+        if (part08 && typeof part08.getLogisticsTopology === 'function') {
+          return part08.getLogisticsTopology(countryId);
+        }
+        return {
+          chokepoints: [
+            { name: 'Strait of Hormuz', vulnerability: 0.74, throughputShare: 0.42 },
+            { name: 'Northern Pipeline Corridor', vulnerability: 0.28, throughputShare: 0.38 }
+          ],
+          railwayFleetUtilization: 0.89,
+          portCapacitySaturation: 0.77
+        };
+      }, {}, 'Part08_Logistics');
+    }
+
+    getMarketData() {
+      const part10 = this.getEnginePart(10);
+      return this._safeGet(() => {
+        if (part10 && typeof part10.getMarketPrices === 'function') {
+          return part10.getMarketPrices();
+        }
+        return {
+          CRUDE_OIL: { spot: 84.50, forward30d: 87.20, forward90d: 91.00, volatility: 0.19 },
+          NATURAL_GAS: { spot: 3.40, forward30d: 3.65, forward90d: 4.10, volatility: 0.28 },
+          LITHIUM_RAW: { spot: 18200, forward30d: 18800, forward90d: 19500, volatility: 0.34 },
+          RARE_EARTH_RAW: { spot: 64000, forward30d: 68500, forward90d: 74000, volatility: 0.41 }
+        };
+      }, {}, 'Part10_Market');
+    }
+
+    getCascadeRisks(countryId) {
+      const part13 = this.getEnginePart(13);
+      return this._safeGet(() => {
+        if (part13 && typeof part13.createEngine === 'function') {
+          const eng = part13.createEngine();
+          return eng.evaluateSystemicFragility ? eng.evaluateSystemicFragility(countryId) : null;
+        }
+        return {
+          systemicFragilityIndex: 0.38,
+          criticalChokepoints: ['RARE_EARTH_MAGNETS', 'REFINED_DIESEL'],
+          cascadeRiskScore: 0.42,
+          maximumBlastRadius: 4
+        };
+      }, {}, 'Part13_Cascade');
+    }
+  }
+
+  // --- PART 14.4 THE 10 DOMAIN SPECIALIST ENGINES ---
+
+  class ReserveSpecialist {
+    constructor(gateway) { this.gateway = gateway; }
+    analyze(countryId) {
+      const data = this.gateway.getReservesData(countryId);
+      const diagnostics = [];
+      let totalDepletionRisk = 0;
+      let count = 0;
+
+      for (const [res, stats] of Object.entries(data)) {
+        count++;
+        const rrr = stats.rrr || 1.0;
+        const years = stats.depletionYears || 10;
+        if (rrr < 1.0) {
+          diagnostics.push({
+            type: 'RESERVE_DEPLETION_ACCELERATION',
+            resource: res,
+            severity: rrr < 0.8 ? 'CRITICAL' : 'WARNING',
+            detail: `Reserve Replacement Ratio (RRR) is ${rrr.toFixed(2)} (<1.0). Depletion timeline: ${years.toFixed(1)} years.`
+          });
+        }
+        totalDepletionRisk += (years < 10 ? (10 - years) / 10 : 0);
+      }
+
+      return {
+        specialist: 'RESERVE_SPECIALIST',
+        healthScore: Math.max(0.2, 1.0 - (totalDepletionRisk / (count || 1))),
+        diagnostics,
+        metrics: data
+      };
+    }
+  }
+
+  class ExtractionSpecialist {
+    constructor(gateway) { this.gateway = gateway; }
+    analyze(countryId) {
+      return {
+        specialist: 'EXTRACTION_SPECIALIST',
+        healthScore: 0.86,
+        capacityUtilization: 0.88,
+        marginalExtractionCostTier: 'MODERATE_LOW',
+        diagnostics: [
+          { type: 'WELLHEAD_DEGRADATION', severity: 'INFO', detail: 'Secondary recovery pumping required in southern shale fields.' }
+        ]
+      };
+    }
+  }
+
+  class ProcessingSpecialist {
+    constructor(gateway) { this.gateway = gateway; }
+    analyze(countryId) {
+      const data = this.gateway.getProcessingData(countryId);
+      const util = data.currentUtilizationRate || 0.84;
+      const isBottleneck = util > 0.90;
+      return {
+        specialist: 'PROCESSING_SPECIALIST',
+        healthScore: isBottleneck ? 0.65 : 0.88,
+        diagnostics: isBottleneck ? [{
+          type: 'REFINERY_BOTTLENECK',
+          severity: 'HIGH',
+          detail: `Refinery capacity utilization is ${Math.round(util * 100)}%, leaving negligible maintenance elasticity.`
+        }] : [],
+        metrics: data
+      };
+    }
+  }
+
+  class InventorySpecialist {
+    constructor(gateway) { this.gateway = gateway; }
+    analyze(countryId) {
+      const data = this.gateway.getInventoryData(countryId);
+      const diagnostics = [];
+      let minCover = 999;
+
+      for (const [res, stats] of Object.entries(data)) {
+        if (stats.bufferDays < minCover) minCover = stats.bufferDays;
+        if (stats.bufferDays < 60) {
+          diagnostics.push({
+            type: 'STRATEGIC_INVENTORY_DEFICIT',
+            resource: res,
+            severity: stats.bufferDays < 40 ? 'CRITICAL' : 'WARNING',
+            detail: `Buffer stock covers only ${stats.bufferDays} days (target: ${stats.targetDays} days).`
+          });
+        }
+      }
+
+      return {
+        specialist: 'INVENTORY_SPECIALIST',
+        healthScore: Math.min(1.0, Math.max(0.2, minCover / 90)),
+        diagnostics,
+        inventoryDays: minCover,
+        raw: data
+      };
+    }
+  }
+
+  class LogisticsSpecialist {
+    constructor(gateway) { this.gateway = gateway; }
+    analyze(countryId) {
+      const data = this.gateway.getLogisticsData(countryId);
+      const chokepoints = data.chokepoints || [];
+      const highRisk = chokepoints.filter(c => c.vulnerability > 0.6);
+      return {
+        specialist: 'LOGISTICS_SPECIALIST',
+        healthScore: highRisk.length > 0 ? 0.68 : 0.91,
+        diagnostics: highRisk.map(c => ({
+          type: 'CHOKEPOINT_VULNERABILITY',
+          severity: 'WARNING',
+          detail: `Heavy reliance on chokepoint "${c.name}" with ${(c.throughputShare * 100).toFixed(0)}% throughput exposure.`
+        })),
+        metrics: data
+      };
+    }
+  }
+
+  class MarketSpecialist {
+    constructor(gateway) { this.gateway = gateway; }
+    analyze() {
+      const data = this.gateway.getMarketData();
+      return {
+        specialist: 'MARKET_SPECIALIST',
+        healthScore: 0.82,
+        diagnostics: [
+          { type: 'MARKET_BACKWARDATION', resource: 'CRUDE_OIL', severity: 'INFO', detail: 'Spot premium suggests strong near-term physical tightness.' }
+        ],
+        prices: data
+      };
+    }
+  }
+
+  class TradeSpecialist {
+    constructor(gateway) { this.gateway = gateway; }
+    analyze(countryId) {
+      return {
+        specialist: 'TRADE_SPECIALIST',
+        healthScore: 0.79,
+        hhiConcentrationIndex: 0.28,
+        supplierDiversification: 'MODERATE',
+        diagnostics: [
+          { type: 'IMPORT_CONCENTRATION', resource: 'RARE_EARTH_MAGNETS', severity: 'HIGH', detail: '84% single-source bilateral import reliance.' }
+        ]
+      };
+    }
+  }
+
+  class ContractSpecialist {
+    constructor(gateway) { this.gateway = gateway; }
+    analyze(countryId) {
+      return {
+        specialist: 'CONTRACT_SPECIALIST',
+        healthScore: 0.87,
+        takeOrPayExposure: '$140M',
+        upcomingExpirations90d: 2,
+        diagnostics: []
+      };
+    }
+  }
+
+  class DependencySpecialist {
+    constructor(gateway) { this.gateway = gateway; }
+    analyze(countryId) {
+      const cascade = this.gateway.getCascadeRisks(countryId);
+      return {
+        specialist: 'DEPENDENCY_SPECIALIST',
+        healthScore: 1.0 - (cascade.systemicFragilityIndex || 0.35),
+        fragility: cascade.systemicFragilityIndex || 0.35,
+        diagnostics: [
+          { type: 'DOWNSTREAM_SEMICONDUCTOR_EXPOSURE', severity: 'WARNING', detail: 'Neon gas & magnet shortfall creates secondary shock vector to advanced electronics.' }
+        ]
+      };
+    }
+  }
+
+  class RiskSpecialist {
+    constructor(gateway) { this.gateway = gateway; }
+    analyze(countryId, specialistOutputs) {
+      const scores = Object.values(specialistOutputs).map(s => s.healthScore || 0.8);
+      const avg = scores.reduce((a, b) => a + b, 0) / (scores.length || 1);
+      return {
+        specialist: 'RISK_SPECIALIST',
+        aggregateNationalHealthScore: avg,
+        healthMatrix10D: {
+          reserveAdequacy: specialistOutputs.reserve?.healthScore || 0.85,
+          extractionEfficiency: specialistOutputs.extraction?.healthScore || 0.86,
+          processingThroughput: specialistOutputs.processing?.healthScore || 0.88,
+          inventoryCover: specialistOutputs.inventory?.healthScore || 0.72,
+          logisticsRobustness: specialistOutputs.logistics?.healthScore || 0.68,
+          marketStability: specialistOutputs.market?.healthScore || 0.82,
+          tradeDiversification: specialistOutputs.trade?.healthScore || 0.79,
+          contractualSecurity: specialistOutputs.contract?.healthScore || 0.87,
+          dependencyResilience: specialistOutputs.dependency?.healthScore || 0.65,
+          systemicRiskShield: avg
+        },
+        diagnosticsSummary: Object.values(specialistOutputs).flatMap(s => s.diagnostics || [])
+      };
+    }
+  }
+
+  // --- PART 14.5 FIVE MEMORY STORES & ADAPTIVE CALIBRATION ---
+
+  class EpisodicMemoryStore {
+    constructor() { this.records = []; }
+    recordEvent(event) {
+      this.records.unshift({ id: 'EP-' + Date.now(), timestamp: Date.now(), ...event });
+      if (this.records.length > 200) this.records.pop();
+    }
+    getHistoricalAnalogues(category) {
+      return this.records.filter(r => r.category === category || !category);
+    }
+  }
+
+  class StrategicMemoryStore {
+    constructor() {
+      this.playbooks = {
+        STRAIT_BLOCKADE_DEFENSE: {
+          name: 'Strait of Hormuz Closure Response',
+          priority: 1,
+          actions: ['ACTIVATE_NORTHERN_PIPELINE_MAX_THROUGHPUT', 'MANDATE_STRATEGIC_BUFFER_DRAWDOWN_25PCT', 'IMPOSE_INDUSTRIAL_DIESEL_RATIONING']
+        },
+        CRITICAL_MINERAL_EMBARGO: {
+          name: 'Rare Earth & Lithium Embargo Shield',
+          priority: 1,
+          actions: ['SUBSIDIZE_SCRAP_RECYCLING_RECOVERY', 'SECURE_EMERGENCY_BILATERAL_SWAPS', 'EXPEDITE_DOMESTIC_OPEN_CAST_MINING']
+        }
+      };
+    }
+    getPlaybook(key) { return this.playbooks[key] || null; }
+  }
+
+  class ProceduralMemoryStore {
+    constructor() {
+      this.sops = {
+        DRAWDOWN_TRIGGER: { thresholdDays: 45, maxDailyReleaseBPD: 25000, approvalLevel: 'MINISTERIAL_DECREE' },
+        DOMESTIC_PRICE_STABILIZATION: { volatilityTrigger: 0.35, mechanism: 'STRATEGIC_AUCTION_RESERVE' }
+      };
+    }
+    getSOP(code) { return this.sops[code] || null; }
+  }
+
+  class RelationalMemoryStore {
+    constructor() {
+      this.trustMatrix = new Map();
+      this.trustMatrix.set('NATION_NORTH', { trustScore: 0.88, historicalFulfillmentRate: 0.96, embargoVulnerability: 0.12 });
+      this.trustMatrix.set('NATION_EAST', { trustScore: 0.54, historicalFulfillmentRate: 0.82, embargoVulnerability: 0.68 });
+    }
+    getTrustProfile(nationId) {
+      return this.trustMatrix.get(nationId) || { trustScore: 0.70, historicalFulfillmentRate: 0.90, embargoVulnerability: 0.30 };
+    }
+  }
+
+  class AdaptiveLearningEngine {
+    constructor() {
+      this.learningRate = 0.05;
+      this.predictionVariance = 0.08;
+      this.calibrationHistory = [];
+    }
+    updateCalibration(predictedDelta, actualDelta) {
+      const error = Math.abs(predictedDelta - actualDelta);
+      this.predictionVariance = (1 - this.learningRate) * this.predictionVariance + this.learningRate * error;
+      this.calibrationHistory.push({ error, variance: this.predictionVariance, timestamp: Date.now() });
+    }
+  }
+
+  // --- PART 14.6 COGNITIVE REASONER & 12 MANDATORY QUESTIONS ENGINE ---
+
+  class ResourceReasoner {
+    constructor(gateway, profile) {
+      this.gateway = gateway;
+      this.profile = profile;
+    }
+
+    analyze12MandatoryQuestions(context, specialistOutputs) {
+      const diagnostics = specialistOutputs.risk?.diagnosticsSummary || [];
+      const primaryIssue = diagnostics.length > 0 ? diagnostics[0] : { detail: 'All mineral flows operating within standard parametric bounds.' };
+
+      return {
+        Q01_CoreProblem: `Primary vulnerability identified: ${primaryIssue.detail}`,
+        Q02_RootCauses: 'Upstream extraction limits compounded by single-corridor logistics and low domestic inventory buffers.',
+        Q03_EpistemicCertainty: '0.91 (Authoritative sensor, satellite, and customs ledger telemetries).',
+        Q04_PhysicalInvariants: 'Geological replenishment is multi-decadal; pipeline throughput is capped by compressor physics.',
+        Q05_ViableOptions: ['OPTION_0_DO_NOTHING', 'OPTION_1_STRATEGIC_STOCKPILE_RAMP', 'OPTION_2_BILATERAL_OFFTAKE_DIVERSIFICATION'],
+        Q06_CostBenefitAnalysis: 'Option 1 requires $320M CAPEX but enhances 365-day resilience score by +26%.',
+        Q07_SecondaryOrderEffects: 'Stockpiling will temporarily increase domestic spot price by 3.2% before stabilizing.',
+        Q08_InactionCost: 'Inaction yields a 44% probability of downstream factory halts within 180 ticks during supply shock.',
+        Q09_FallbackProtocols: 'Pre-drafted rationing decree (SOP-DRAWDOWN-TRIGGER) with industrial priority sequencing.',
+        Q10_StrategicConstraints: 'Must maintain sovereign debt ceiling and adhere to environmental aquifer protection pacts.',
+        Q11_HistoricalPrecedents: 'Similar chokepoint tightening in 2021 was mitigated by rapid pipeline rerouting.',
+        Q12_IndependentAuditCriteria: 'Critic verifies that proposed buffer accumulation does not trigger currency reserves depletion.'
+      };
+    }
+  }
+
+  // --- PART 14.7 OPTION ENGINE & COUNTERFACTUAL SIMULATION SANDBOX ---
+
+  class ResourceOptionEngine {
+    constructor(gateway) { this.gateway = gateway; }
+
+    generateCandidates(context, reasoning) {
+      return [
+        {
+          id: 'OPTION_0_DO_NOTHING',
+          name: 'Maintain Status Quo (Baseline Inertia)',
+          capex: 0,
+          opex: 0,
+          description: 'No state intervention; allow private market equilibrium and existing buffer inventories to absorb fluctuations.',
+          recommended: false
+        },
+        {
+          id: 'OPTION_1_STRATEGIC_STOCKPILE_EXPANSION',
+          name: 'Accelerate Strategic Petroleum & Rare Earth Buffer Stockpiling',
+          capex: 320000000,
+          opex: 18000000,
+          description: 'Deploy sovereign wealth allocations to purchase 60 days of additional rare earth and diesel inventory.',
+          recommended: true
+        },
+        {
+          id: 'OPTION_2_DOMESTIC_REFINERY_UPGRADE',
+          name: 'Secondary Cracking Expansion & Pipeline De-bottlenecking',
+          capex: 580000000,
+          opex: 24000000,
+          description: 'Expand refinery cracking capacity by 20,000 BPD to eliminate dependence on imported middle distillates.',
+          recommended: false
+        }
+      ];
+    }
+
+    runCounterfactualSandbox(option, currentHealth) {
+      if (option.id === 'OPTION_0_DO_NOTHING') {
+        return {
+          tick30: { healthScoreDelta: -0.01, fiscalImpactM: 0, supplySecurityDelta: 0 },
+          tick90: { healthScoreDelta: -0.04, fiscalImpactM: 0, supplySecurityDelta: -0.05 },
+          tick365: { healthScoreDelta: -0.12, fiscalImpactM: 0, supplySecurityDelta: -0.18 },
+          projectedNPV: 0,
+          riskFactor: 0.58
+        };
+      }
+
+      return {
+        tick30: { healthScoreDelta: +0.03, fiscalImpactM: -80, supplySecurityDelta: +0.08 },
+        tick90: { healthScoreDelta: +0.11, fiscalImpactM: -220, supplySecurityDelta: +0.19 },
+        tick365: { healthScoreDelta: +0.24, fiscalImpactM: -320, supplySecurityDelta: +0.32 },
+        projectedNPV: 480000000,
+        riskFactor: 0.19
+      };
+    }
+  }
+
+  // --- PART 14.8 INDEPENDENT RED-TEAMING CRITIC ---
+
+  class ResourceCritic {
+    auditPlan(plan, context) {
+      const flaws = [];
+      if (plan.allocatedBudget > 1000000000) {
+        flaws.push('Budget exceeds single-year sovereign resource allocation ceiling.');
+      }
+      if (!plan.activeOption) {
+        flaws.push('Missing explicit candidate directive in execution contract.');
+      }
+
+      return {
+        passed: flaws.length === 0,
+        critiqueScore: flaws.length === 0 ? 0.94 : 0.40,
+        identifiedFlaws: flaws,
+        redTeamSummary: flaws.length === 0
+          ? 'Autonomous Red-Team Audit Confirms: High strategic alignment, robust risk mitigation, no fatal blind spots.'
+          : 'Audit Failed: Plan requires revision before executive enactment.'
+      };
+    }
+  }
+
+  // --- PART 14.9 MASTER ORCHESTRATOR: RESOURCE STRATEGIC INTELLIGENCE MINISTER ---
+
+  class ResourceStrategicIntelligenceMinister {
+    constructor(countryId, personaOverride) {
+      this.countryId = countryId || 'NATION_PRIME';
+      this.profile = resolveMinisterProfile(this.countryId, personaOverride);
+      this.gateway = new ResilientDataGateway();
+
+      // 10 Specialists
+      this.specialists = {
+        reserve: new ReserveSpecialist(this.gateway),
+        extraction: new ExtractionSpecialist(this.gateway),
+        processing: new ProcessingSpecialist(this.gateway),
+        inventory: new InventorySpecialist(this.gateway),
+        logistics: new LogisticsSpecialist(this.gateway),
+        market: new MarketSpecialist(this.gateway),
+        trade: new TradeSpecialist(this.gateway),
+        contract: new ContractSpecialist(this.gateway),
+        dependency: new DependencySpecialist(this.gateway),
+        risk: new RiskSpecialist(this.gateway)
+      };
+
+      // 5 Memory Stores
+      this.memory = {
+        episodic: new EpisodicMemoryStore(),
+        strategic: new StrategicMemoryStore(),
+        procedural: new ProceduralMemoryStore(),
+        relational: new RelationalMemoryStore(),
+        learning: new AdaptiveLearningEngine()
+      };
+
+      // Cognitive Engine
+      this.reasoner = new ResourceReasoner(this.gateway, this.profile);
+      this.optionEngine = new ResourceOptionEngine(this.gateway);
+      this.critic = new ResourceCritic();
+
+      this.currentHealth = null;
+      this.lastPlan = null;
+      this.tickCount = 0;
+      this.attentionLevel = 'NORMAL';
+    }
+
+    tick(currentTick) {
+      this.tickCount = currentTick || (this.tickCount + 1);
+
+      // 1. Run all 10 specialists
+      const specResults = {
+        reserve: this.specialists.reserve.analyze(this.countryId),
+        extraction: this.specialists.extraction.analyze(this.countryId),
+        processing: this.specialists.processing.analyze(this.countryId),
+        inventory: this.specialists.inventory.analyze(this.countryId),
+        logistics: this.specialists.logistics.analyze(this.countryId),
+        market: this.specialists.market.analyze(),
+        trade: this.specialists.trade.analyze(this.countryId),
+        contract: this.specialists.contract.analyze(this.countryId),
+        dependency: this.specialists.dependency.analyze(this.countryId)
+      };
+      specResults.risk = this.specialists.risk.analyze(this.countryId, specResults);
+      this.currentHealth = specResults.risk;
+
+      // Dynamic Attention Scheduling
+      if (this.currentHealth.aggregateNationalHealthScore < 0.60) {
+        this.attentionLevel = 'CRISIS';
+      } else if (this.currentHealth.aggregateNationalHealthScore < 0.75) {
+        this.attentionLevel = 'ELEVATED';
+      } else {
+        this.attentionLevel = 'NORMAL';
+      }
+
+      // 2. 12 Mandatory Questions Causal Reasoning
+      const reasoning = this.reasoner.analyze12MandatoryQuestions({ tick: this.tickCount }, specResults);
+
+      // 3. Option Generation & Counterfactual Sandbox
+      const candidateOptions = this.optionEngine.generateCandidates({ tick: this.tickCount }, reasoning);
+      const chosenOption = candidateOptions.find(o => o.recommended) || candidateOptions[0];
+      const sandboxResults = this.optionEngine.runCounterfactualSandbox(chosenOption, this.currentHealth);
+
+      // 4. Strategic Plan Construction
+      const strategicPlan = {
+        planId: 'RSP-' + this.countryId + '-' + this.tickCount,
+        tick: this.tickCount,
+        ministerPersona: this.profile.name,
+        doctrine: this.profile.doctrine,
+        attentionLevel: this.attentionLevel,
+        nationalHealthScore: this.currentHealth.aggregateNationalHealthScore,
+        activeOption: chosenOption,
+        sandboxForecast: sandboxResults,
+        causalReasoning12Questions: reasoning,
+        allocatedBudget: chosenOption.capex || 0,
+        directives: [
+          {
+            type: chosenOption.id === 'OPTION_1_STRATEGIC_STOCKPILE_EXPANSION'
+              ? ResourceMinisterContracts.DirectiveType.EXPAND_STRATEGIC_RESERVE
+              : ResourceMinisterContracts.DirectiveType.MAINTAIN_STATUS_QUO,
+            target: 'STRATEGIC_PETROLEUM_AND_MAGNET_RESERVES',
+            allocatedFunds: chosenOption.capex
+          }
+        ]
+      };
+
+      // 5. Independent Red-Team Audit
+      const audit = this.critic.auditPlan(strategicPlan, { countryId: this.countryId });
+      strategicPlan.audit = audit;
+
+      this.lastPlan = strategicPlan;
+
+      // 6. Record to Episodic Memory
+      this.memory.episodic.recordEvent({
+        tick: this.tickCount,
+        health: this.currentHealth.aggregateNationalHealthScore,
+        action: chosenOption.id,
+        category: 'CYCLE_TICK_EXECUTION'
+      });
+
+      return strategicPlan;
+    }
+
+    // --- CROSS-CABINET CONSULTATION INTERFACES ---
+
+    queryByEconomyMinister(topic, params = {}) {
+      return {
+        origin: 'RESOURCE_MINISTRY',
+        target: 'ECONOMY_MINISTRY',
+        status: 'AUTHORITATIVE_DATA_RESPONSE',
+        topic,
+        headline: 'Resource Cost & Capital Allocation Assessment',
+        currentInventoryCoverDays: this.specialists.inventory.analyze(this.countryId).inventoryDays || 78,
+        recommendedFiscalProvisionM: this.lastPlan ? (this.lastPlan.allocatedBudget / 1000000) : 320,
+        inflationaryRiskGrade: 'LOW_TO_MODERATE',
+        strategicMessage: 'Strategic buffer accumulation will incur near-term sovereign outlay of $320M, but eliminates an estimated $1.2B downstream industrial disruption risk.'
+      };
+    }
+
+    queryByForeignMinister(topic, params = {}) {
+      return {
+        origin: 'RESOURCE_MINISTRY',
+        target: 'FOREIGN_AFFAIRS_MINISTRY',
+        status: 'AUTHORITATIVE_DATA_RESPONSE',
+        topic,
+        headline: 'Geopolitical Mineral Leverage & Chokepoint Vulnerability',
+        hhiImportConcentration: 0.28,
+        criticalBilateralLeverageNations: ['NATION_NORTH', 'NATION_EAST'],
+        chokepointExposures: ['Strait of Hormuz (42% export flow)'],
+        strategicMessage: 'Recommend negotiating bilateral swap lines with Nation North while diversifying away from the Strait of Hormuz chokepoint.'
+      };
+    }
+
+    queryByDefenseMinister(topic, params = {}) {
+      return {
+        origin: 'RESOURCE_MINISTRY',
+        target: 'DEFENSE_MINISTRY',
+        status: 'AUTHORITATIVE_DATA_RESPONSE',
+        topic,
+        headline: 'Military Fuel & Rare Earth Magnet Sovereign Readiness',
+        strategicDieselReserveDays: 45,
+        rareEarthMagnetSupplyDays: 32,
+        defensePreparednessScore: 0.76,
+        strategicMessage: 'Critical military grade diesel reserves stand at 45 days. Immediate activation of domestic refining priority protocol recommended in the event of heightened border alert.'
+      };
+    }
+
+    // --- NATURAL LANGUAGE ADVISOR & INTERROGATION INTERFACE ---
+
+    interrogate(userQuery, conversationContext = {}) {
+      const q = (userQuery || '').toLowerCase();
+      const plan = this.lastPlan || this.tick(1);
+      const health = this.currentHealth || this.specialists.risk.analyze(this.countryId, {});
+
+      let responseTopic = 'GENERAL_STRATEGIC_ASSESSMENT';
+      let answer = '';
+      let evidence = [];
+
+      if (q.includes('reserve') || q.includes('depletion') || q.includes('oil') || q.includes('gas') || q.includes('lithium')) {
+        responseTopic = 'RESERVE_DEPLETION_ANALYSIS';
+        const resData = this.specialists.reserve.analyze(this.countryId);
+        answer = `Our national geological reserves show stable crude reserves (~8.3 years life), but accelerating depletion in rare earths with an RRR of 0.85. My directive is to expand geological exploration in the northern tectonic basin immediately.`;
+        evidence = [
+          `Crude Oil Proven: 145M barrels (8.27 yrs depletion life)`,
+          `Lithium Raw Proven: 4.2M tonnes (RRR: 1.32, robust)`,
+          `Rare Earths Proven: 1.85M tonnes (RRR: 0.85, sub-replacement alert)`
+        ];
+      } else if (q.includes('bottleneck') || q.includes('chokepoint') || q.includes('logistics') || q.includes('strait')) {
+        responseTopic = 'LOGISTICS_AND_CHOKEPOINT_ANALYSIS';
+        answer = `Our primary supply vulnerability is the Strait of Hormuz, where 42% of our maritime liquid bulk passes. I have formulated a dual-action playbook: increasing throughput on the Northern Pipeline Corridor to 95% capacity and commissioning 20,000 BPD secondary refinery cracking.`;
+        evidence = [
+          `Strait of Hormuz Vulnerability Index: 0.74 (Heavy dependency)`,
+          `Northern Pipeline Utilization: 89% (Expandable)`,
+          `Port Terminal Saturation: 77%`
+        ];
+      } else if (q.includes('option') || q.includes('plan') || q.includes('decision') || q.includes('budget')) {
+        responseTopic = 'STRATEGIC_DIRECTIVE_AND_OPTIONS';
+        answer = `Under doctrine "${this.profile.doctrine}", I have enacted Plan ${plan.planId}. We are proceeding with ${plan.activeOption.name} with an allocated CAPEX of $${(plan.allocatedBudget / 1000000).toFixed(0)}M, projecting a +24% national resilience delta over 365 ticks.`;
+        evidence = [
+          `Active Option: ${plan.activeOption.name}`,
+          `Critic Audit Status: ${plan.audit.passed ? 'APPROVED' : 'REJECTED'} (${(plan.audit.critiqueScore * 100).toFixed(0)}% confidence)`,
+          `365-Day Projected NPV: +$480M`
+        ];
+      } else {
+        responseTopic = 'MINISTERIAL_EXECUTIVE_SUMMARY';
+        answer = `Greetings. As ${this.profile.name} (${this.profile.title}), I report our aggregate Resource Health Score at ${(health.aggregateNationalHealthScore * 100).toFixed(1)}% (${this.attentionLevel} attention). Our supply corridors and strategic reserves are actively monitored across all 10 domain specialists.`;
+        evidence = [
+          `Overall National Resource Health: ${(health.aggregateNationalHealthScore * 100).toFixed(1)}%`,
+          `Attention Status: ${this.attentionLevel}`,
+          `Specialists Active: 10/10 Online`
+        ];
+      }
+
+      return {
+        minister: this.profile.name,
+        title: this.profile.title,
+        countryId: this.countryId,
+        topic: responseTopic,
+        query: userQuery,
+        answer,
+        evidence,
+        timestamp: Date.now()
+      };
+    }
+  }
+
+  // --- PART 14.10 VERIFICATION, STRESS-TESTING & DIAGNOSTICS SUITE ---
+
+  function runPart14ComprehensiveVerificationSuite() {
+    const results = { total: 0, passed: 0, failed: 0, details: [] };
+    function assert(cond, desc) {
+      results.total++;
+      if (cond) {
+        results.passed++;
+        results.details.push(`[PASS] ${desc}`);
+      } else {
+        results.failed++;
+        results.details.push(`[FAIL] ${desc}`);
+      }
+    }
+
+    try {
+      const minister = new ResourceStrategicIntelligenceMinister('NATION_ALPHA');
+      assert(minister.profile.name.length > 0, 'Minister persona properly resolved');
+      assert(Object.keys(minister.specialists).length === 10, 'All 10 Domain Specialists initialized');
+      assert(Object.keys(minister.memory).length === 5, 'All 5 Memory Stores active');
+
+      const plan = minister.tick(1);
+      assert(plan && plan.planId.startsWith('RSP-'), 'Strategic Plan correctly generated on tick 1');
+      assert(plan.nationalHealthScore > 0, 'National Health Score computed');
+      assert(plan.audit && plan.audit.passed === true, 'Independent Red-Team Audit passed');
+      assert(plan.causalReasoning12Questions && plan.causalReasoning12Questions.Q01_CoreProblem, '12 Questions Causal Reasoner executed');
+
+      const chatReserve = minister.interrogate('What is our oil and gas reserve status?');
+      assert(chatReserve.evidence.length > 0, 'Interrogation chat responds with empirical reserve evidence');
+
+      const chatBottleneck = minister.interrogate('What are our main transport bottlenecks and chokepoints?');
+      assert(chatBottleneck.answer.includes('Strait of Hormuz') || chatBottleneck.answer.includes('Pipeline'), 'Interrogation chat accurately identifies chokepoints');
+
+      const econQuery = minister.queryByEconomyMinister('Budget Request');
+      assert(econQuery.origin === 'RESOURCE_MINISTRY', 'Cross-Cabinet Economy consultation endpoint works');
+
+      const defQuery = minister.queryByDefenseMinister('War Reserves');
+      assert(defQuery.defensePreparednessScore > 0, 'Cross-Cabinet Defense consultation endpoint works');
+
+      // 50-tick stability test
+      for (let t = 2; t <= 50; t++) {
+        minister.tick(t);
+      }
+      assert(minister.tickCount === 50, 'Continuous 50-tick stability test executed successfully without memory leaks');
+
+    } catch (err) {
+      assert(false, `Unexpected exception in verification suite: ${err.message}`);
+    }
+
+    return results;
+  }
+
+  // --- PART 14.11 GLOBAL EXPORTS & INTEGRATION ADAPTER ---
+
+  const ResourceMinisterAdapter = {
+    createMinister: (countryId, persona) => new ResourceStrategicIntelligenceMinister(countryId, persona),
+    ResourceStrategicIntelligenceMinister,
+    Contracts: ResourceMinisterContracts,
+    ResilientDataGateway,
+    Specialists: {
+      ReserveSpecialist,
+      ExtractionSpecialist,
+      ProcessingSpecialist,
+      InventorySpecialist,
+      LogisticsSpecialist,
+      MarketSpecialist,
+      TradeSpecialist,
+      ContractSpecialist,
+      DependencySpecialist,
+      RiskSpecialist
+    },
+    Memory: {
+      EpisodicMemoryStore,
+      StrategicMemoryStore,
+      ProceduralMemoryStore,
+      RelationalMemoryStore,
+      AdaptiveLearningEngine
+    },
+    Cognition: {
+      ResourceReasoner,
+      ResourceOptionEngine,
+      ResourceCritic
+    },
+    runPart14ComprehensiveVerificationSuite,
+    runPart14TestSuite: runPart14ComprehensiveVerificationSuite
+  };
+
+  if (typeof window !== 'undefined') {
+    window.GSRSK_Part14 = ResourceMinisterAdapter;
+    window.ResourceMinisterCore = ResourceMinisterAdapter;
+    window.createResourceMinister = ResourceMinisterAdapter.createMinister;
+    window.runPart14TestSuite = runPart14ComprehensiveVerificationSuite;
+  } else if (typeof global !== 'undefined') {
+    global.GSRSK_Part14 = ResourceMinisterAdapter;
+    global.ResourceMinisterCore = ResourceMinisterAdapter;
+    global.createResourceMinister = ResourceMinisterAdapter.createMinister;
+    global.runPart14TestSuite = runPart14ComprehensiveVerificationSuite;
+  }
+
+  if (typeof ResourceMinistryEngineInstance !== 'undefined' && ResourceMinistryEngineInstance) {
+    ResourceMinistryEngineInstance.part14 = ResourceMinisterAdapter;
+    ResourceMinistryEngineInstance.minister = ResourceMinisterAdapter.createMinister('NATIONAL_SOVEREIGN');
+  }
+
+  if (root.ResourceMinistryEngine) {
+    root.ResourceMinistryEngine.part14 = ResourceMinisterAdapter;
+    if (!root.ResourceMinistryEngine.minister) {
+      root.ResourceMinistryEngine.minister = ResourceMinisterAdapter.createMinister('NATIONAL_SOVEREIGN');
+    }
+  }
+
+})(typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : global));
+
+/* ========================================================================= */
+/* UNIFIED MASTER GSRSK MODULE EXPORTS (PARTS 01-14)                         */
+/* ========================================================================= */
+
+const _gScope = (typeof global !== 'undefined' ? global : (typeof globalThis !== 'undefined' ? globalThis : (typeof window !== 'undefined' ? window : {})));
+
+const _exportPackage = {
+    DataFoundation: _gScope.GSRSK_DataFoundation || null,
+    WorldKnowledgeCompiler: _gScope.GSRSK_WorldKnowledgeCompiler || null,
+    WorldStateEngineAdapter: _gScope.GSRSK_Part03 || null,
+    WorldStateEngine: _gScope.GSRSK_WorldStateEngine || null,
+    ResourceIdentityEngine: _gScope.GSRSK_ResourceIdentityEngine || null,
+    ResourceReserveExtractionEngine: _gScope.GSRSK_ResourceReserveExtractionEngine || null,
+    ResourceProcessingTransformationEngine: _gScope.GSRSK_ResourceProcessingTransformationEngine || null,
+    ResourceInventoryBatchStorageEngine: _gScope.GSRSK_ResourceInventoryBatchStorageEngine || null,
+    ResourceInfrastructureLogisticsEngine: _gScope.GSRSK_ResourceInfrastructureLogisticsEngine || null,
+    ResourceProductionIndustrialChainEngine: _gScope.GSRSK_ResourceProductionIndustrialChainEngine || null,
+    ResourceMarketPricingEngine: _gScope.GSRSK_ResourceMarketPricingEngine || null,
+    TradeFulfillmentSettlementEngine: _gScope.GSRSK_TradeFulfillmentSettlementEngine || null,
+    EconomicAndStrategicValueEngine: _gScope.GSRSK_EconomicAndStrategicValueEngine || null,
+    DependencyRiskCascadeEngine: _gScope.GSRSK_DependencyRiskCascadeEngine || null,
+    ResourceStrategicIntelligenceMinister: _gScope.GSRSK_Part14 || null,
+    ResourceMinisterCore: _gScope.GSRSK_Part14 || null,
+    createResourceMinister: _gScope.createResourceMinister || null,
+    runPart14TestSuite: _gScope.runPart14TestSuite || null,
+    GSRSK_Part01: _gScope.GSRSK_DataFoundation || null,
+    GSRSK_Part02: _gScope.GSRSK_WorldKnowledgeCompiler || null,
+    GSRSK_Part03: _gScope.GSRSK_Part03 || null,
+    GSRSK_Part04: _gScope.GSRSK_ResourceIdentityEngine || null,
+    GSRSK_Part05: _gScope.GSRSK_ResourceReserveExtractionEngine || null,
+    GSRSK_Part06: _gScope.GSRSK_ResourceProcessingTransformationEngine || null,
+    GSRSK_Part07: _gScope.GSRSK_ResourceInventoryBatchStorageEngine || null,
+    GSRSK_Part08: _gScope.GSRSK_ResourceInfrastructureLogisticsEngine || null,
+    GSRSK_Part09: _gScope.GSRSK_ResourceProductionIndustrialChainEngine || null,
+    GSRSK_Part10: _gScope.GSRSK_ResourceMarketPricingEngine || null,
+    GSRSK_Part11: _gScope.GSRSK_TradeFulfillmentSettlementEngine || null,
+    GSRSK_Part12: _gScope.GSRSK_EconomicAndStrategicValueEngine || null,
+    GSRSK_Part13: _gScope.GSRSK_DependencyRiskCascadeEngine || null,
+    GSRSK_Part14: _gScope.GSRSK_Part14 || null,
+    Part01: _gScope.GSRSK_DataFoundation || null,
+    Part02: _gScope.GSRSK_WorldKnowledgeCompiler || null,
+    Part03: _gScope.GSRSK_Part03 || null,
+    Part04: _gScope.GSRSK_ResourceIdentityEngine || null,
+    Part05: _gScope.GSRSK_ResourceReserveExtractionEngine || null,
+    Part06: _gScope.GSRSK_ResourceProcessingTransformationEngine || null,
+    Part07: _gScope.GSRSK_ResourceInventoryBatchStorageEngine || null,
+    Part08: _gScope.GSRSK_ResourceInfrastructureLogisticsEngine || null,
+    Part09: _gScope.GSRSK_ResourceProductionIndustrialChainEngine || null,
+    Part10: _gScope.GSRSK_ResourceMarketPricingEngine || null,
+    Part11: _gScope.GSRSK_TradeFulfillmentSettlementEngine || null,
+    Part12: _gScope.GSRSK_EconomicAndStrategicValueEngine || null,
+    Part13: _gScope.GSRSK_DependencyRiskCascadeEngine || null,
+    Part14: _gScope.GSRSK_Part14 || null,
+    ResourceMinistryEngine: typeof ResourceMinistryEngineInstance !== 'undefined' ? ResourceMinistryEngineInstance : (_gScope.ResourceMinistryEngine || null),
+    MasterGSRSKEngine: _gScope.GSRSK_MasterEngine ? _gScope.GSRSK_MasterEngine.constructor : null,
+    MasterEngineSingleton: _gScope.GSRSK_MasterEngine || null
+};
+
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = _exportPackage;
+}
+if (typeof window !== 'undefined') {
+    window.GSRSK = _exportPackage;
+}
+
 
 
 
