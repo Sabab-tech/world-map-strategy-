@@ -34783,6 +34783,14 @@ const EPSILON = 1e-7;
       }
       assert(minister.tickCount === 50, 'Continuous 50-tick stability test executed successfully without memory leaks');
 
+      // 27-Step Autonomous Deep-State Cognition Test
+      const targetScope = typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : global);
+      const cogEngine = targetScope.OmegaCognitiveEngine || targetScope.OmegaSharedCognition;
+      if (cogEngine && typeof cogEngine.execute27StepScenario === 'function') {
+        const scenarioTest = cogEngine.execute27StepScenario('Copper and refined diesel throughput dropped 20% due to cracking bottleneck');
+        assert(scenarioTest.success === true, 'All 27 steps of the Autonomous Ministerial Cognitive Loop passed successfully');
+      }
+
     } catch (err) {
       assert(false, `Unexpected exception in verification suite: ${err.message}`);
     }
