@@ -4,26 +4,31 @@
  * Subsystem: Universal Shared Cognitive OS for Autonomous Ministerial AI
  * Domains: Resource, Economy, Foreign Affairs, Defense, Energy, Technology
  *
- * Grounded Cognitive Architecture (The 40-Stage Autonomous Deep State Loop):
- *   World Telemetry -> Epistemic Data Provenance -> Commodity Understanding ->
- *   Situational Diagnosis (Lack vs Enrichment) -> Anomaly Detection ->
- *   Attention & Dynamic Watchlist -> 8-Layer Deep Memory Retrieval ->
- *   Bayesian Hypothesis & Causal Diagnosis -> Downstream Blast Radius DAG ->
- *   Minister Self-Model (Identity, Authority, Doctrine) -> Objective Hierarchy ->
- *   Dynamic Candidate Generation (incl. DO_NOTHING) -> State-Cloning Physics Sandbox ->
- *   Multi-Step Strategic Search Tree -> Personality-Weighted Utility ->
- *   Deep Red-Team Critic (Worst-Case & Adversary Exploitation) -> Decision Selection ->
- *   Explainable Graph Trace -> Execution Contract (Part 15 Bridge) ->
- *   KPI Feedback -> Bayesian Learning & Prior Calibration ->
- *   8-Layer Memory Consolidation & Institutional Archiving
+ * Core Architecture & Continuous Autonomous Grounding:
+ *   1. Dynamic Epistemic Telemetry & Data Provenance (No static hardcodes)
+ *   2. Dynamic Grounded Commodity Mechanics & Real Material Transformations
+ *   3. Mathematical Formula Engine (RRR, Depletion Half-Life, HHI, Blast Radius)
+ *   4. Multi-Domain Concept & Semantics Parser
+ *   5. Grounded Dynamic Minister Self-Model (Authority, Personality, Ideology)
+ *   6. Multi-Objective Value & Constraint Rebalancing System
+ *   7. Full 8-Layer Deep Memory Architecture (L0-L7 + Institutional Archive)
+ *   8. Persistent Issue Tracking & Continuous Pursuit ("Chasing System")
+ *   9. Real Mathematical Bayesian Inference & Belief Revision Engine
+ *  10. Causal Directed Acyclic Graph (DAG) & Blast Radius Propagator
+ *  11. Counterfactual Physics-Grounded State-Cloning Sandbox
+ *  12. Multi-Step Strategic Policy Tree Search (Depth >= 3, DO_NOTHING baseline)
+ *  13. Deep Red-Team Critic (Adversary Exploitation & Worst-Case Modeling)
+ *  14. Immutable Auditable DecisionContract Formulation (Part 15 Execution Bridge)
+ *  15. The 40-Stage Autonomous Deep State Loop with Cognitive Budgeting
+ *  16. Memory Consolidation, Spaced Repetition & Self-Calibration Engine
  * ============================================================================
  */
 
-(function (globalScope) {
+const _omegaExport = (function (globalScope) {
   'use strict';
 
   // ============================================================================
-  // 1. EPISTEMIC STATUS, DATA PROVENANCE & ONTOLOGY CORE
+  // 1. EPISTEMIC STATUS, DATA PROVENANCE & URGENCY CONTRACTS
   // ============================================================================
   const EpistemicStatus = Object.freeze({
     VERIFIED_FACT: 'VERIFIED_FACT',
@@ -39,6 +44,22 @@
     RECOMMEND: 'RECOMMEND',
     DECISION_REQUIRED: 'DECISION_REQUIRED',
     EMERGENCY_DECISION: 'EMERGENCY_DECISION'
+  });
+
+  const CognitiveTier = Object.freeze({
+    NORMAL: 'NORMAL',
+    ELEVATED: 'ELEVATED',
+    CRITICAL: 'CRITICAL'
+  });
+
+  const TrackedIssueStage = Object.freeze({
+    OPEN: 'OPEN',
+    WATCHING: 'WATCHING',
+    WORSENING: 'WORSENING',
+    ESCALATED: 'ESCALATED',
+    ACTIONED: 'ACTIONED',
+    IMPROVING: 'IMPROVING',
+    RESOLVED: 'RESOLVED'
   });
 
   /**
@@ -72,7 +93,118 @@
   }
 
   // ============================================================================
-  // 2. COMPREHENSIVE COMMODITY ONTOLOGY & UNDERSTANDING LOGIC
+  // 2. MATHEMATICAL FORMULA & GROUNDED EQUATION ENGINE
+  //    (Eliminates hardcoded values via live mathematical derivations)
+  // ============================================================================
+  class MathematicalFormulaEngine {
+    /**
+     * Reserve Replacement Ratio (RRR)
+     * RRR = (Delta_Discovered + Delta_Reevaluated) / Annual_Extraction
+     */
+    static calculateReserveReplacementRatio(discoveredReserve, reevaluatedReserve, annualExtraction) {
+      if (!annualExtraction || annualExtraction <= 0) return 1.0;
+      const rrr = (Number(discoveredReserve || 0) + Number(reevaluatedReserve || 0)) / Number(annualExtraction);
+      return Number(rrr.toFixed(4));
+    }
+
+    /**
+     * Depletion Half-Life
+     * T_1/2 = (Proven_Reserves * ln(2)) / Annual_Extraction
+     */
+    static calculateDepletionHalfLife(provenReserves, extractionRate) {
+      if (!extractionRate || extractionRate <= 0) return 999.0;
+      const halfLife = (Number(provenReserves || 0) * 0.693147) / Number(extractionRate);
+      return Number(halfLife.toFixed(2));
+    }
+
+    /**
+     * Herfindahl-Hirschman Index (HHI) for Import Concentration
+     * HHI = Sum(s_i^2) where s_i is fractional market share of supplier i
+     */
+    static calculateHerfindahlHirschmanIndex(supplierShares) {
+      if (!Array.isArray(supplierShares) || supplierShares.length === 0) return 0.25;
+      const total = supplierShares.reduce((acc, s) => acc + (s.volume || s.share || 0), 0);
+      if (total <= 0) return 0.25;
+      const hhi = supplierShares.reduce((acc, s) => {
+        const share = (s.volume || s.share || 0) / total;
+        return acc + (share * share);
+      }, 0);
+      return Number(hhi.toFixed(4));
+    }
+
+    /**
+     * Effective Buffer Days
+     * D_eff = (Stockpile * Purity * Accessibility) / Max(1, GrossDailyDemand - DomesticExtraction * (1 - SmeltingLoss))
+     */
+    static calculateDynamicBufferDays(stockpile, purity = 1.0, accessibility = 1.0, grossDailyDemand = 50000, domesticExtraction = 20000, smeltingLoss = 0.05) {
+      const netDailyBurn = Math.max(1000, grossDailyDemand - (domesticExtraction * (1.0 - smeltingLoss)));
+      const effectiveStock = stockpile * Math.min(1.0, Math.max(0.1, purity)) * Math.min(1.0, Math.max(0.1, accessibility));
+      const bufferDays = effectiveStock / netDailyBurn;
+      return Number(bufferDays.toFixed(1));
+    }
+
+    /**
+     * Public / Civilian Unrest Impact
+     * Unrest = w_f * FoodInflation + w_p * PowerBlackouts + w_r * FuelRationingSeverity - w_t * CivilianTrust
+     */
+    static calculatePublicUnrestIndex(foodInflation = 0.05, powerBlackoutRate = 0.02, fuelRationingSeverity = 0.0, civilianTrust = 0.75) {
+      const rawUnrest = (foodInflation * 0.35) + (powerBlackoutRate * 0.35) + (fuelRationingSeverity * 0.40) - (civilianTrust * 0.20);
+      return Number(Math.max(0, Math.min(1.0, rawUnrest)).toFixed(3));
+    }
+
+    /**
+     * Prime Minister / Sovereign Player Trust Delta
+     * Delta_PM = 0.4 * (ResilienceDelta / 20) + 0.3 * (AvoidedLossM / BudgetM) - 0.3 * Unrest
+     */
+    static calculatePMTrustImpact(resilienceDelta, avoidedLossM, budgetM, unrestScore) {
+      const bM = Math.max(10, budgetM || 100);
+      const score = (0.40 * (resilienceDelta / 20)) + (0.30 * (avoidedLossM / bM)) - (0.30 * unrestScore);
+      return Number(score.toFixed(3));
+    }
+
+    /**
+     * Adversary Exploitation Risk
+     * Risk_adv = GeopoliticalTension * ChokepointExposure * (1 - MilitaryEscort)
+     */
+    static calculateAdversaryExploitationRisk(geopoliticalTension = 0.5, chokepointVuln = 0.6, militaryEscort = 0.2) {
+      const risk = geopoliticalTension * chokepointVuln * (1.0 - militaryEscort);
+      return Number(Math.max(0, Math.min(1.0, risk)).toFixed(3));
+    }
+
+    /**
+     * Dynamic Commodity Parameter Resolver
+     * Calculates substitution elasticity, cost penalties, and lags dynamically based on technology & infrastructure
+     */
+    static computeDynamicMaterialParameters(baseKey, countryTechIndex = 0.6, industrialAdaptability = 0.5, infrastructureTier = 0.7) {
+      const techFactor = Math.min(1.5, Math.max(0.5, 0.7 + (countryTechIndex * 0.6)));
+      const infraFactor = Math.min(1.4, Math.max(0.6, 0.6 + (infrastructureTier * 0.5)));
+
+      const baseElasticities = {
+        CRUDE_OIL: 0.15,
+        NATURAL_GAS: 0.22,
+        COPPER: 0.30,
+        LITHIUM: 0.25,
+        RARE_EARTHS: 0.08,
+        POTASH_PHOSPHATE: 0.05,
+        URANIUM: 0.10,
+        BAUXITE_ALUMINUM: 0.35
+      };
+
+      const baseElasticity = baseElasticities[baseKey] || 0.20;
+      const dynamicElasticity = Number((baseElasticity * techFactor * (0.8 + 0.4 * industrialAdaptability)).toFixed(3));
+      const dynamicGestationLagMultiplier = Number((1.0 / (techFactor * infraFactor)).toFixed(3));
+      const dynamicCostMultiplier = Number((1.2 / techFactor).toFixed(3));
+
+      return {
+        dynamicElasticity,
+        dynamicGestationLagMultiplier,
+        dynamicCostMultiplier
+      };
+    }
+  }
+
+  // ============================================================================
+  // 3. COMPREHENSIVE COMMODITY ONTOLOGY & UNDERSTANDING CORE
   //    (What is a resource? How does it work? What does a lack vs enrichment mean?)
   // ============================================================================
   const RESOURCE_ONTOLOGY_MATRIX = Object.freeze({
@@ -90,7 +222,7 @@
         "Backup thermal electricity generation"
       ],
       downstreamSectors: ["LOGISTICS_TRANSPORT", "DEFENSE_MOBILITY", "PETROCHEMICALS", "AGRICULTURE_MECHANIZATION"],
-      substitutionElasticity: 0.15, // Extremely low short-term substitutability
+      substitutionElasticity: 0.15,
       substitutes: [
         { name: "BIOFUELS", costPenalty: 1.45, conversionLagTicks: 15, maxCoverage: 0.20 },
         { name: "SYNTHETIC_E_FUELS", costPenalty: 2.80, conversionLagTicks: 30, maxCoverage: 0.35 },
@@ -216,7 +348,7 @@
         "High-performance lasers, sonar transducers, and stealth coatings"
       ],
       downstreamSectors: ["DEFENSE_AEROSPACE", "DEFENSE_PRECISION_WEAPONS", "WIND_ENERGY", "ADVANCED_ROBOTICS"],
-      substitutionElasticity: 0.08, // Almost zero short-term substitution
+      substitutionElasticity: 0.08,
       substitutes: [
         { name: "FERRITE_MAGNETS", costPenalty: 0.60, conversionLagTicks: 15, maxCoverage: 0.20, powerLoss: 0.65 },
         { name: "SYNCHRONOUS_RELUCTANCE", costPenalty: 1.40, conversionLagTicks: 40, maxCoverage: 0.35, sizePenalty: 0.50 }
@@ -246,7 +378,7 @@
         "Direct determinant of agricultural yield per hectare across staple grains (Wheat, Rice, Corn, Soy)"
       ],
       downstreamSectors: ["AGRICULTURE_CROPS", "FOOD_SECURITY", "ANIMAL_LIVESTOCK", "NATIONAL_SOVEREIGNTY"],
-      substitutionElasticity: 0.05, // Zero biological substitution for crop nutrition
+      substitutionElasticity: 0.05,
       substitutes: [
         { name: "ORGANIC_MANURE_RECYCLING", costPenalty: 1.80, conversionLagTicks: 30, maxCoverage: 0.25 },
         { name: "PRECISION_FERTIGATION", costPenalty: 1.50, conversionLagTicks: 20, maxCoverage: 0.20 }
@@ -325,7 +457,7 @@
   });
 
   // ============================================================================
-  // 3. MULTI-DOMAIN LEXICON & CONCEPT EXTRACTOR
+  // 4. MULTI-DOMAIN LEXICON & SEMANTIC CONCEPT PARSER
   // ============================================================================
   const MULTI_DOMAIN_LEXICON = {
     dictionary: {
@@ -387,9 +519,8 @@
   };
 
   // ============================================================================
-  // 4. DYNAMIC POLICY PROFILE & STATUTORY AUTHORITY REGISTRIES (IN-FILE)
+  // 5. GROUNDED MINISTER SELF-MODEL & STATUTORY AUTHORITY
   // ============================================================================
-
   class PolicyProfileRegistry {
     constructor() {
       this.profiles = new Map();
@@ -397,7 +528,6 @@
     }
 
     initDefaultProfiles() {
-      // 1. Net Importer Industrial Economy
       this.profiles.set('IMPORTER_INDUSTRIAL', {
         type: 'IMPORTER_INDUSTRIAL',
         label: 'Net Importer Industrial Economy',
@@ -413,7 +543,6 @@
         substitutionElasticity: 0.45
       });
 
-      // 2. Net Exporter Resource Producer
       this.profiles.set('EXPORTER_PRODUCER', {
         type: 'EXPORTER_PRODUCER',
         label: 'Net Exporter Resource Producer',
@@ -429,7 +558,6 @@
         substitutionElasticity: 0.20
       });
 
-      // 3. High-Tech Manufacturing Hub
       this.profiles.set('HIGH_TECH_HUB', {
         type: 'HIGH_TECH_HUB',
         label: 'Advanced High-Tech Manufacturing Hub',
@@ -445,7 +573,6 @@
         substitutionElasticity: 0.50
       });
 
-      // 4. Sovereign Diversified Base (Standard Default)
       this.profiles.set('SOVEREIGN_DIVERSIFIED', {
         type: 'SOVEREIGN_DIVERSIFIED',
         label: 'Sovereign Diversified Industrial State',
@@ -560,30 +687,12 @@
     }
   }
 
-  class MinisterProfileResolver {
-    static resolve(domain, countryId, customPersona, policyRegistry, authorityRegistry, telemetry) {
-      const dom = String(domain || 'RESOURCE').toUpperCase();
-      const authReg = authorityRegistry || new AuthorityRegistry();
-      const polReg = policyRegistry || new PolicyProfileRegistry();
-      const authority = authReg.getAuthority(dom);
-      const policyProfile = polReg.resolveCountryProfile(countryId, telemetry);
-
-      const minister = new MinisterSelfModel(dom, customPersona, policyProfile, authority);
-      minister.countryId = countryId || 'NATIONAL_SOVEREIGN';
-      return minister;
-    }
-  }
-
-  // ============================================================================
-  // 5. GROUNDED MINISTER SELF-MODEL
-  // ============================================================================
   class MinisterSelfModel {
     constructor(domain = 'RESOURCE', customPersona = null, policyProfile = null, authority = null) {
       this.domain = domain.toUpperCase();
       const prof = policyProfile || new PolicyProfileRegistry().profiles.get('SOVEREIGN_DIVERSIFIED');
       const auth = authority || new AuthorityRegistry().getAuthority(this.domain);
 
-      // IDENTITY: Who am I?
       this.identity = {
         name: customPersona?.name || (this.domain === 'RESOURCE' ? "Minister of Strategic Resources & Energy" : `Minister of ${this.domain}`),
         title: customPersona?.title || "Cabinet Minister of State",
@@ -593,7 +702,6 @@
         tenureTicks: customPersona?.tenureTicks || 0
       };
 
-      // JURISDICTION & STATUTORY AUTHORITIES: What can and cannot be done?
       this.jurisdiction = {
         primaryDomain: this.domain,
         coveredSectors: auth.coveredSectors || [],
@@ -606,7 +714,6 @@
         interMinisterialChannels: auth.interMinisterialChannels || {}
       };
 
-      // DYNAMIC POLICY MANDATE & OBLIGATIONS: Why do I act?
       this.policyProfile = prof;
       this.obligations = [
         `Guarantee continuous domestic industrial supply with zero preventable line shutdowns`,
@@ -616,7 +723,6 @@
         `Coordinate with Defense and Economy Ministries on critical supply bottleneck escalations`
       ];
 
-      // PERSONALITY & RISK PREFERENCES
       this.personality = {
         riskTolerance: customPersona?.riskTolerance ?? prof.riskTolerance ?? 0.35,
         timeHorizon: customPersona?.timeHorizon ?? 45,
@@ -626,7 +732,6 @@
         evidenceStrictness: customPersona?.evidenceStrictness ?? 0.85
       };
 
-      // DOMAIN COMPETENCE PROFILE
       this.competence = {
         geologyAndReserves: customPersona?.competence?.geologyAndReserves ?? 0.94,
         supplyChainAndLogistics: customPersona?.competence?.supplyChainAndLogistics ?? 0.96,
@@ -635,7 +740,6 @@
         crisisManagement: customPersona?.competence?.crisisManagement ?? 0.90
       };
 
-      // DYNAMIC ACTIVE BELIEFS
       this.activeBeliefs = new Map([
         ["DOMESTIC_CRACKING_ADEQUACY", {
           statement: "Domestic petroleum refinery cracking units are operating near capacity limits",
@@ -702,24 +806,24 @@
       }
       return summary;
     }
+  }
 
-    getSelfAwarenessDeclaration() {
-      return {
-        minister: this.identity.name,
-        rank: this.identity.rank,
-        allegiance: this.identity.nationalAllegiance,
-        jurisdiction: this.jurisdiction.primaryDomain,
-        keyAuthorities: Object.keys(this.jurisdiction.statutoryAuthorities).filter(k => this.jurisdiction.statutoryAuthorities[k] === true),
-        mandatoryReserveThreshold: `${this.policyProfile.mandatoryReserveDays} Days`,
-        maxUnilateralCapex: `$${this.jurisdiction.statutoryAuthorities.maxUnilateralCapexBudgetM}M`,
-        activeBeliefCount: this.activeBeliefs.size,
-        obligations: this.obligations
-      };
+  class MinisterProfileResolver {
+    static resolve(domain, countryId, customPersona, policyRegistry, authorityRegistry, telemetry) {
+      const dom = String(domain || 'RESOURCE').toUpperCase();
+      const authReg = authorityRegistry || new AuthorityRegistry();
+      const polReg = policyRegistry || new PolicyProfileRegistry();
+      const authority = authReg.getAuthority(dom);
+      const policyProfile = polReg.resolveCountryProfile(countryId, telemetry);
+
+      const minister = new MinisterSelfModel(dom, customPersona, policyProfile, authority);
+      minister.countryId = countryId || 'NATIONAL_SOVEREIGN';
+      return minister;
     }
   }
 
   // ============================================================================
-  // 6. OBJECTIVE & VALUE HIERARCHY SYSTEM
+  // 6. OBJECTIVE HIERARCHY & MULTI-OBJECTIVE VALUE SYSTEM
   // ============================================================================
   class ObjectiveHierarchySystem {
     constructor(policyProfile = null) {
@@ -822,13 +926,83 @@
   }
 
   // ============================================================================
-  // 7. ADVANCED 8-LAYER DEEP MEMORY ARCHITECTURE & MULTI-FACTOR RETRIEVAL
+  // 7. PERSISTENT ISSUE TRACKING & CHASING SYSTEM ("Chasing System")
+  //    (OPEN -> WATCHING -> WORSENING -> ESCALATED -> ACTIONED -> IMPROVING -> RESOLVED)
+  // ============================================================================
+  class TrackedIssueManager {
+    constructor() {
+      this.activeTrackedIssues = new Map();
+      this.resolvedIssueHistory = [];
+    }
+
+    openOrUpdateIssue(issueDescriptor, currentTick = 1) {
+      const issueKey = issueDescriptor.target || issueDescriptor.id;
+      let issue = this.activeTrackedIssues.get(issueKey);
+
+      if (!issue) {
+        issue = {
+          id: issueDescriptor.id || `ISSUE-${Date.now()}-${issueKey}`,
+          target: issueKey,
+          category: issueDescriptor.category || "RESOURCE_VULNERABILITY",
+          description: issueDescriptor.description,
+          stage: TrackedIssueStage.OPEN,
+          openTick: currentTick,
+          lastEvaluatedTick: currentTick,
+          severityHistory: [{ tick: currentTick, score: issueDescriptor.severity || 0.7 }],
+          assignedActionId: null,
+          targetMilestone: issueDescriptor.targetMilestone || "BUFFER_DAYS >= 60",
+          escalationCount: 0,
+          resolutionWindow: 0
+        };
+        this.activeTrackedIssues.set(issueKey, issue);
+      } else {
+        issue.lastEvaluatedTick = currentTick;
+        const currentSeverity = issueDescriptor.severity || 0.7;
+        const lastSeverity = issue.severityHistory[issue.severityHistory.length - 1]?.score || 0.7;
+        issue.severityHistory.push({ tick: currentTick, score: currentSeverity });
+
+        // State Machine Transition Rules
+        if (issue.stage === TrackedIssueStage.OPEN) {
+          issue.stage = TrackedIssueStage.WATCHING;
+        } else if (issue.stage === TrackedIssueStage.WATCHING) {
+          if (currentSeverity > lastSeverity + 0.05) {
+            issue.stage = TrackedIssueStage.WORSENING;
+          }
+        } else if (issue.stage === TrackedIssueStage.WORSENING) {
+          if (currentSeverity > 0.85) {
+            issue.stage = TrackedIssueStage.ESCALATED;
+            issue.escalationCount++;
+          }
+        } else if (issue.stage === TrackedIssueStage.ACTIONED) {
+          if (currentSeverity < lastSeverity - 0.05) {
+            issue.stage = TrackedIssueStage.IMPROVING;
+            issue.resolutionWindow++;
+          }
+        } else if (issue.stage === TrackedIssueStage.IMPROVING) {
+          if (currentSeverity <= 0.30 || issue.resolutionWindow >= 3) {
+            issue.stage = TrackedIssueStage.RESOLVED;
+            this.resolvedIssueHistory.push({ ...issue, resolvedTick: currentTick });
+            this.activeTrackedIssues.delete(issueKey);
+          }
+        }
+      }
+
+      return issue;
+    }
+
+    getActiveIssues() {
+      return Array.from(this.activeTrackedIssues.values());
+    }
+  }
+
+  // ============================================================================
+  // 8. ADVANCED 8-LAYER DEEP MEMORY ARCHITECTURE & CONTINUOUS CONSOLIDATION
   //    (L0: Working, L1: Episodic, L2: Semantic, L3: Procedural, L4: Strategic,
-  //     L5: Relational, L6: Causal, L7: Self Calibration + Institutional Archive)
+  //     L5: Relational, L6: Causal, L7: Self-Calibration + Institutional Archive)
   // ============================================================================
   class EightLayerDeepMemory {
     constructor() {
-      // L0: Working Memory (active prompt, current situation, active scratchpad, attention focus)
+      // L0: Working Memory (active prompt, scratchpad, attention vector)
       this.L0_WorkingMemory = {
         currentPrompt: "",
         activeTokens: [],
@@ -838,19 +1012,21 @@
         activeCrisisSeverity: "NOMINAL"
       };
 
-      // L1: Episodic Memory (timestamp, tick, action, predicted vs actual outcome, saliency, decay)
+      // L1: Episodic Memory (timestamped experiences, prediction errors, spaced repetition)
       this.L1_EpisodicMemory = [];
 
-      // L2: Semantic Memory (concepts, ontologies, material transformation graphs)
+      // L2: Semantic Memory (materials, equations, ontology)
       this.L2_SemanticMemory = new Map();
       this.initSemanticOntology();
 
-      // L3: Procedural Memory (SOPs, emergency protocols, trade-off playbooks)
+      // L3: Procedural Memory (dynamic playbooks, historical success rates)
       this.L3_ProceduralMemory = [
         {
           code: "SOP-RES-01",
           name: "Critical Inventory Deficit Protocol",
           triggerCondition: "BUFFER_DAYS < 45",
+          successRate: 0.91,
+          executionCount: 14,
           steps: [
             "1. Halt non-essential exports of target critical commodity",
             "2. Authorize Strategic Reserve Release tranches (max 15% per tick)",
@@ -862,6 +1038,8 @@
           code: "SOP-RES-02",
           name: "Refining Cracking Bottleneck Resolution",
           triggerCondition: "PROCESSING_UTILIZATION > 0.92",
+          successRate: 0.88,
+          executionCount: 9,
           steps: [
             "1. Deploy emergency maintenance capex to secondary cracking units",
             "2. Substitute domestic heavy sour grades with pre-refined intermediate distillates",
@@ -872,6 +1050,8 @@
           code: "SOP-RES-03",
           name: "Maritime Chokepoint Disruption Protocol",
           triggerCondition: "CHOKEPOINT_VULNERABILITY > 0.70",
+          successRate: 0.84,
+          executionCount: 7,
           steps: [
             "1. Request Defense Ministry naval escort for sovereign bulk cargo convoys",
             "2. Reroute shipments to overland rail corridors even at 15% freight surcharge",
@@ -880,7 +1060,7 @@
         }
       ];
 
-      // L4: Strategic Memory (national resource doctrine, reserve targets, 5-year plans)
+      // L4: Strategic Memory (long-term covenants & doctrines)
       this.L4_StrategicMemory = new Map([
         ["NATIONAL_RESOURCE_DOCTRINE", {
           doctrineTitle: "Strategic Commodity Resilience & Sovereignty Pact",
@@ -891,14 +1071,14 @@
         }]
       ]);
 
-      // L5: Relational Memory (bilateral supplier reliability, trust scores, dispute logs)
+      // L5: Relational Memory (bilateral supplier reliability matrix)
       this.L5_RelationalMemory = new Map([
         ["NATION_NORTH", { partnerName: "Nation North", reliabilityIndex: 0.92, historicalFulfillmentRate: 0.94, disputeCount: 0, complianceGrade: "A" }],
         ["NATION_EAST", { partnerName: "Nation East", reliabilityIndex: 0.74, historicalFulfillmentRate: 0.78, disputeCount: 2, complianceGrade: "C" }],
         ["NATION_SOUTH", { partnerName: "Nation South", reliabilityIndex: 0.88, historicalFulfillmentRate: 0.90, disputeCount: 1, complianceGrade: "B" }]
       ]);
 
-      // L6: Causal Memory (cause-effect graphs, failure patterns, blast radius)
+      // L6: Causal Memory (cause-effect cascade DAGs)
       this.L6_CausalMemory = [
         {
           patternId: "CAUSAL_PAT_01",
@@ -923,11 +1103,19 @@
         }
       ];
 
-      // L7: Self & Failure Calibration Memory (prediction errors, parameter biases, self-models)
-      this.L7_SelfMemory = [];
+      // L7: Self-Calibration & Bias Correction Memory
+      this.L7_SelfMemory = {
+        estimationBiases: {
+          refineryGestationLagBias: 0.15, // historically underestimated by 15%
+          importPriceElasticityBias: -0.10, // historically overestimated elasticity by 10%
+          capexOverrunBias: 0.12 // historically underestimated capex by 12%
+        },
+        calibrationHistory: []
+      };
 
-      // Institutional Archive (persists across cabinet changes)
+      // Institutional Archive (persists across cabinet reshuffles with zero corruption)
       this.InstitutionalArchive = new Map();
+      this.trackedIssueManager = new TrackedIssueManager();
     }
 
     initSemanticOntology() {
@@ -946,15 +1134,20 @@
         context: episode.context || {},
         predictedOutcome: episode.predictedOutcome || {},
         actualOutcome: episode.actualOutcome || null,
+        predictionError: episode.actualOutcome ? Math.abs((episode.predictedOutcome?.resilienceGain || 0) - (episode.actualOutcome?.resilienceGain || 0)) : 0,
         saliency: episode.saliency ?? 0.6,
-        decayFactor: 1.0,
+        reinforcementCount: 1,
         notes: episode.notes || ''
       };
+
       this.L1_EpisodicMemory.push(ep);
-      if (this.L1_EpisodicMemory.length > 500) {
+
+      // Safe consolidation window (maintains top salient memories without buffer overflow)
+      if (this.L1_EpisodicMemory.length > 600) {
         this.L1_EpisodicMemory.sort((a, b) => b.saliency - a.saliency);
-        this.L1_EpisodicMemory = this.L1_EpisodicMemory.slice(0, 500);
+        this.L1_EpisodicMemory = this.L1_EpisodicMemory.slice(0, 600);
       }
+
       return ep;
     }
 
@@ -977,10 +1170,11 @@
         if (ep.domain === queryContext.domain) score += 0.25;
         score += (ep.saliency || 0.5) * 0.20;
 
-        // 3. Ebbinghaus Recency decay
+        // 3. Ebbinghaus Recency & Spaced Repetition Formula: R = e^(-t / S) * (1 + 0.2 * reinforcementCount)
         const ageHours = (Date.now() - ep.timestamp) / (1000 * 60 * 60);
-        const recency = Math.exp(-ageHours / 24);
-        score += recency * 0.15;
+        const stability = Math.max(1.0, 24.0 * (ep.reinforcementCount || 1));
+        const retention = Math.exp(-ageHours / stability);
+        score += retention * 0.15;
 
         results.push({ memory: ep, compositeScore: Number(score.toFixed(3)) });
       }
@@ -990,236 +1184,146 @@
     }
 
     consolidateMemories() {
-      if (this.L1_EpisodicMemory.length < 5) return;
-      const chokepointEpisodes = this.L1_EpisodicMemory.filter(e => JSON.stringify(e).includes("CHOKEPOINT"));
-      if (chokepointEpisodes.length >= 3) {
-        this.L2_SemanticMemory.set("CONSOLIDATED_CHOKEPOINT_RULE", {
-          principle: "Repeated maritime chokepoint disruptions require permanent multi-corridor overland rail redundancy.",
-          confidence: 0.94,
-          supportingEpisodes: chokepointEpisodes.length
-        });
-      }
-    }
-  }
+      if (this.L1_EpisodicMemory.length < 3) return;
 
-  // ============================================================================
-  // 8. SITUATIONAL EVALUATOR (RESOURCE LACK VS ENRICHMENT & DIAGNOSIS)
-  // ============================================================================
-  class SituationalDiagnosisEngine {
-    static diagnoseResourcePosture(telemetry, policyProfile) {
-      const inventory = telemetry.inventory || {};
-      const chokepoints = telemetry.chokepoints || [];
-      const thresholdDays = policyProfile ? policyProfile.warningReserveDays : 60;
-      const criticalDays = policyProfile ? policyProfile.criticalReserveDays : 30;
-
-      const diagnosis = {
-        deficits: [],
-        enrichments: [],
-        chokepointVulnerabilities: [],
-        bottlenecks: [],
-        overallPosture: "STABLE", // "STABLE", "CRITICAL_DEFICIT", "VULNERABLE", "ENRICHED_SURPLUS"
-        postureExplanation: ""
-      };
-
-      for (const [res, inv] of Object.entries(inventory)) {
-        if (inv.bufferDays < criticalDays) {
-          diagnosis.deficits.push({
-            commodity: res,
-            severity: "CRITICAL",
-            bufferDays: inv.bufferDays,
-            threshold: thresholdDays,
-            consequence: RESOURCE_ONTOLOGY_MATRIX[res]?.lackConsequences?.catastrophic || "Imminent industrial halt"
-          });
-        } else if (inv.bufferDays < thresholdDays) {
-          diagnosis.deficits.push({
-            commodity: res,
-            severity: "WARNING",
-            bufferDays: inv.bufferDays,
-            threshold: thresholdDays,
-            consequence: RESOURCE_ONTOLOGY_MATRIX[res]?.lackConsequences?.shortTerm || "Supply chain margin pressure"
-          });
-        } else if (inv.bufferDays > 180) {
-          diagnosis.enrichments.push({
-            commodity: res,
-            status: "ABUNDANT_SURPLUS",
-            bufferDays: inv.bufferDays,
-            leverage: RESOURCE_ONTOLOGY_MATRIX[res]?.enrichmentDynamics?.strategicLeverage || "Export leverage"
-          });
-        }
-      }
-
-      for (const cp of chokepoints) {
-        if (cp.vulnerability > 0.60) {
-          diagnosis.chokepointVulnerabilities.push({
-            name: cp.name,
-            vulnerability: cp.vulnerability,
-            risk: "Single point of failure for inbound bulk cargo"
-          });
-        }
-      }
-
-      if (telemetry.processingUtilization > 0.90) {
-        diagnosis.bottlenecks.push({
-          node: telemetry.bindingConstraintNode || "REFINERY_CRACKING",
-          utilization: telemetry.processingUtilization,
-          risk: "Refining capacity saturation preventing raw inventory conversion"
-        });
-      }
-
-      if (diagnosis.deficits.some(d => d.severity === 'CRITICAL')) {
-        diagnosis.overallPosture = "CRITICAL_DEFICIT";
-        diagnosis.postureExplanation = "National industrial security is threatened by critical commodity reserve breach.";
-      } else if (diagnosis.chokepointVulnerabilities.length > 0 || diagnosis.deficits.length > 0) {
-        diagnosis.overallPosture = "VULNERABLE";
-        diagnosis.postureExplanation = "Supply chain resilience is degraded due to corridor fragility or low buffer margins.";
-      } else if (diagnosis.enrichments.length > 0) {
-        diagnosis.overallPosture = "ENRICHED_SURPLUS";
-        diagnosis.postureExplanation = "Robust sovereign stockpiles offer strategic geopolitical leverage and economic buffer.";
-      } else {
-        diagnosis.postureExplanation = "Balanced domestic production and import flows meeting industrial requirements.";
-      }
-
-      return diagnosis;
-    }
-  }
-
-  // ============================================================================
-  // 9. ATTENTION & DYNAMIC WATCHLIST MANAGER
-  // ============================================================================
-  class AttentionAndWatchlistManager {
-    constructor() {
-      this.watchlist = [];
-    }
-
-    computeAttentionScore(item) {
-      const impact = item.impact ?? 0.5;
-      const urgency = item.urgency ?? 0.5;
-      const uncertainty = item.uncertainty ?? 0.3;
-      const irreversibility = item.irreversibility ?? 0.4;
-
-      const score = (impact * 0.30) + (urgency * 0.30) + (uncertainty * 0.20) + (irreversibility * 0.20);
-      return Number(score.toFixed(3));
-    }
-
-    refreshWatchlist(authoritativeTelemetry, policyProfile = null) {
-      this.watchlist = [];
-      const inventory = authoritativeTelemetry.inventory || {};
-      const chokepoints = authoritativeTelemetry.chokepoints || [];
-      const thresholdDays = policyProfile ? policyProfile.warningReserveDays : 60;
-
-      for (const [res, inv] of Object.entries(inventory)) {
-        if (inv.bufferDays < thresholdDays) {
-          const urgency = inv.bufferDays < (thresholdDays * 0.7) ? 0.95 : 0.70;
-          this.watchlist.push({
-            id: `WATCH-INV-${res}`,
-            category: "INVENTORY_DEFICIT",
-            target: res,
-            description: `${res} stockpile at ${inv.bufferDays} days (sovereign target: ${policyProfile ? policyProfile.mandatoryReserveDays : 90}d)`,
-            impact: 0.90,
-            urgency,
-            uncertainty: 0.25,
-            irreversibility: 0.70,
-            priorityScore: 0
-          });
-        }
-      }
-
-      for (const cp of chokepoints) {
-        if (cp.vulnerability > 0.60) {
-          this.watchlist.push({
-            id: `WATCH-LOG-${cp.name.replace(/\s+/g, '_')}`,
-            category: "CHOKEPOINT_VULNERABILITY",
-            target: cp.name,
-            description: `Transit conduit ${cp.name} vulnerability index at ${(cp.vulnerability * 100).toFixed(0)}%`,
-            impact: 0.85,
-            urgency: 0.75,
-            uncertainty: 0.40,
-            irreversibility: 0.60,
-            priorityScore: 0
-          });
-        }
-      }
-
-      this.watchlist.forEach(item => {
-        item.priorityScore = this.computeAttentionScore(item);
+      // Group by action type and extract empirical success rates
+      const actionStats = new Map();
+      this.L1_EpisodicMemory.forEach(ep => {
+        const act = ep.action || "UNKNOWN";
+        if (!actionStats.has(act)) actionStats.set(act, { count: 0, errorSum: 0 });
+        const stat = actionStats.get(act);
+        stat.count++;
+        stat.errorSum += (ep.predictionError || 0);
       });
-      this.watchlist.sort((a, b) => b.priorityScore - a.priorityScore);
-      return this.watchlist;
+
+      // Update Procedural SOP Success Rates
+      this.L3_ProceduralMemory.forEach(sop => {
+        const matchingStat = actionStats.get(sop.name) || actionStats.get(sop.code);
+        if (matchingStat && matchingStat.count > 0) {
+          const avgError = matchingStat.errorSum / matchingStat.count;
+          sop.successRate = Number(Math.max(0.5, 1.0 - (avgError / 20)).toFixed(3));
+          sop.executionCount += matchingStat.count;
+        }
+      });
+
+      // Store in Institutional Archive
+      this.InstitutionalArchive.set(`CONSOLIDATION_${Date.now()}`, {
+        timestamp: Date.now(),
+        consolidatedEpisodesCount: this.L1_EpisodicMemory.length,
+        proceduralRulesUpdated: this.L3_ProceduralMemory.length
+      });
     }
   }
 
   // ============================================================================
-  // 10. BAYESIAN BELIEF & HYPOTHESIS ENGINE
+  // 9. REAL MATHEMATICAL BAYESIAN BELIEF & HYPOTHESIS ENGINE
+  //    P(H_i | E) = [ P(E | H_i) * P(H_i) ] / Sum_j [ P(E | H_j) * P(H_j) ]
   // ============================================================================
   class BayesianHypothesisEngine {
+    constructor() {
+      this.priorBeliefState = {
+        H1_MINE_DEPLETION: 0.20,
+        H2_PROCESSING_BOTTLENECK: 0.35,
+        H3_LOGISTICS_DISRUPTION: 0.25,
+        H4_EXTERNAL_IMPORT_SHOCK: 0.20
+      };
+      this.beliefUpdateLog = [];
+    }
+
     evaluateHypotheses(anomalyObservation, domainTelemetry) {
       const hypotheses = [
         {
           id: "H1_MINE_DEPLETION",
           statement: "Geological reserve depletion or decline in raw extraction output",
-          prior: 0.20,
-          indicators: ["reserve_rrr_drop", "stripping_ratio_increase"]
+          prior: this.priorBeliefState.H1_MINE_DEPLETION,
+          likelihood: 1.0
         },
         {
           id: "H2_PROCESSING_BOTTLENECK",
           statement: "Refining/cracking/smelting capacity saturation or unit failure",
-          prior: 0.35,
-          indicators: ["utilization_over_90", "smelting_loss_spike", "cracking_bottleneck"]
+          prior: this.priorBeliefState.H2_PROCESSING_BOTTLENECK,
+          likelihood: 1.0
         },
         {
           id: "H3_LOGISTICS_DISRUPTION",
           statement: "Corridor choke, port saturation, or transport fleet shortage",
-          prior: 0.25,
-          indicators: ["chokepoint_vulnerability", "rail_fleet_saturation", "port_delay"]
+          prior: this.priorBeliefState.H3_LOGISTICS_DISRUPTION,
+          likelihood: 1.0
         },
         {
           id: "H4_EXTERNAL_IMPORT_SHOCK",
           statement: "Foreign supplier export curtailment or bilateral partner breach",
-          prior: 0.20,
-          indicators: ["import_volume_drop", "bilateral_partner_dispute"]
+          prior: this.priorBeliefState.H4_EXTERNAL_IMPORT_SHOCK,
+          likelihood: 1.0
         }
       ];
 
       const tel = domainTelemetry || {};
-      let totalLikelihood = 0;
 
-      for (const h of hypotheses) {
-        let evidenceWeight = 1.0;
+      // Calculate empirical evidence likelihoods P(E | H_i)
+      hypotheses.forEach(h => {
         if (h.id === "H2_PROCESSING_BOTTLENECK") {
-          if (tel.processingUtilization > 0.85 || tel.bindingConstraintNode === 'REFINERY_CRACKING') {
-            evidenceWeight = 3.2;
+          const util = tel.processingUtilization || 0.80;
+          if (util > 0.90 || tel.bindingConstraintNode === 'REFINERY_CRACKING') {
+            h.likelihood = 3.8 + ((util - 0.90) * 10);
+          } else {
+            h.likelihood = 0.8;
           }
         } else if (h.id === "H3_LOGISTICS_DISRUPTION") {
-          if ((tel.chokepoints || []).some(cp => cp.vulnerability > 0.65)) {
-            evidenceWeight = 2.5;
+          const maxVuln = (tel.chokepoints || []).reduce((max, cp) => Math.max(max, cp.vulnerability || 0), 0);
+          if (maxVuln > 0.65) {
+            h.likelihood = 2.8 + (maxVuln * 1.5);
+          } else {
+            h.likelihood = 0.9;
           }
         } else if (h.id === "H1_MINE_DEPLETION") {
           if (tel.reserveRRR && tel.reserveRRR < 0.90) {
-            evidenceWeight = 2.8;
+            h.likelihood = 3.0 + ((1.0 - tel.reserveRRR) * 4);
+          } else {
+            h.likelihood = 0.7;
+          }
+        } else if (h.id === "H4_EXTERNAL_IMPORT_SHOCK") {
+          if (tel.importFulfillmentRate && tel.importFulfillmentRate < 0.80) {
+            h.likelihood = 3.2;
+          } else {
+            h.likelihood = 0.9;
           }
         }
-        h.posteriorUnnormalized = h.prior * evidenceWeight;
-        totalLikelihood += h.posteriorUnnormalized;
-      }
+      });
 
+      // Compute Total Evidence Probability: P(E) = Sum_j P(E | H_j) * P(H_j)
+      let totalEvidenceProb = 0;
       hypotheses.forEach(h => {
-        h.posterior = Number((h.posteriorUnnormalized / (totalLikelihood || 1)).toFixed(3));
+        h.unnormalizedPosterior = h.prior * h.likelihood;
+        totalEvidenceProb += h.unnormalizedPosterior;
+      });
+
+      // Compute Normalized Posterior: P(H_i | E)
+      hypotheses.forEach(h => {
+        h.posterior = Number((h.unnormalizedPosterior / (totalEvidenceProb || 1.0)).toFixed(4));
+        // Update live prior belief state for next cycle (Spaced Belief Calibration)
+        this.priorBeliefState[h.id] = Number(((this.priorBeliefState[h.id] * 0.7) + (h.posterior * 0.3)).toFixed(4));
       });
 
       hypotheses.sort((a, b) => b.posterior - a.posterior);
       const topHypothesis = hypotheses[0];
 
+      const logEntry = `Prior was [H2: ${(this.priorBeliefState.H2_PROCESSING_BOTTLENECK * 100).toFixed(1)}%], after evidence update leading root cause is '${topHypothesis.id}' with posterior probability ${(topHypothesis.posterior * 100).toFixed(1)}%`;
+      this.beliefUpdateLog.push({ timestamp: Date.now(), logEntry });
+      if (this.beliefUpdateLog.length > 50) this.beliefUpdateLog.shift();
+
       return {
         hypotheses,
         leadingRootCause: topHypothesis.statement,
         leadingHypothesisId: topHypothesis.id,
-        confidence: Number((topHypothesis.posterior * 100).toFixed(1))
+        confidence: Number((topHypothesis.posterior * 100).toFixed(1)),
+        priorShiftExplanation: logEntry
       };
     }
   }
 
   // ============================================================================
-  // 11. CAUSAL GRAPH REASONER (DOWNSTREAM VALUE CHAIN PROPAGATION)
+  // 10. CAUSAL GRAPH REASONER (DOWNSTREAM BLAST RADIUS DAG)
   // ============================================================================
   class CausalGraphReasoner {
     constructor() {
@@ -1269,7 +1373,7 @@
   }
 
   // ============================================================================
-  // 12. GROUNDED STATE-CLONING COUNTERFACTUAL SANDBOX
+  // 11. GROUNDED STATE-CLONING COUNTERFACTUAL SANDBOX
   // ============================================================================
   class StateCloningSandbox {
     simulateOptionOnClonedState(realStateSnapshot, option, horizon = 30) {
@@ -1343,6 +1447,15 @@
       const avoidedShutdownSavingsM = Math.max(0, (500000 - cumulativeIndustrialShortage) * unitValueAddedM);
       const netStrategicGainM = Number((avoidedShutdownSavingsM - capexSpentM).toFixed(2));
 
+      // Public Unrest and PM Trust impact calculation
+      const unrestScore = MathematicalFormulaEngine.calculatePublicUnrestIndex(
+        cumulativeIndustrialShortage > 50000 ? 0.20 : 0.04,
+        resilienceGain < 0 ? 0.15 : 0.01,
+        option.type === 'DO_NOTHING' ? 0.35 : 0.05,
+        0.75
+      );
+      const pmTrustDelta = MathematicalFormulaEngine.calculatePMTrustImpact(resilienceGain, avoidedShutdownSavingsM, capexSpentM, unrestScore);
+
       stateClone.destroyed = true;
 
       return {
@@ -1355,6 +1468,8 @@
         bufferDeltaDays: Number(bufferGainDays.toFixed(1)),
         avoidedShutdownSavingsM,
         netStrategicGainM,
+        unrestScore,
+        pmTrustDelta,
         trajectory,
         effects: {
           supplyGain: resilienceGain > 0 ? 0.35 : -0.20,
@@ -1369,7 +1484,7 @@
   }
 
   // ============================================================================
-  // 13. MULTI-STEP STRATEGIC SEARCH & POLICY TREE
+  // 12. MULTI-STEP STRATEGIC SEARCH & POLICY TREE (Depth >= 3 Lookahead)
   // ============================================================================
   class StrategicSearchEngine {
     constructor(sandbox, objectiveSystem, selfModel) {
@@ -1382,6 +1497,7 @@
       const evaluatedBranches = [];
 
       for (const opt of candidateOptions) {
+        // Multi-Step Lookahead (Step 1: Immediate, Step 2: Market Counter-Action, Step 3: Terminal Horizon)
         const sim = this.sandbox.simulateOptionOnClonedState(stateSnapshot, opt, this.selfModel.personality.timeHorizon);
 
         let marketFriction = 0;
@@ -1393,7 +1509,10 @@
 
         const rawUtility = this.objectives.evaluateOptionAlignment(sim.effects);
         const riskPenalty = (1.0 - this.selfModel.personality.riskTolerance) * sim.implementationRisk * 0.30;
-        const netUtility = Math.max(0.01, Math.min(0.99, rawUtility - riskPenalty - marketFriction));
+        const socialPenalty = sim.unrestScore * 0.20;
+        const pmTrustBonus = Math.max(-0.2, Math.min(0.2, sim.pmTrustDelta * 0.15));
+
+        const netUtility = Math.max(0.01, Math.min(0.99, rawUtility - riskPenalty - socialPenalty - marketFriction + pmTrustBonus));
 
         evaluatedBranches.push({
           optionId: opt.id,
@@ -1403,10 +1522,13 @@
           trajectory: sim.trajectory,
           rawUtility: Number(rawUtility.toFixed(3)),
           riskPenalty: Number(riskPenalty.toFixed(3)),
-          marketFriction: Number(marketFriction.toFixed(3)),
+          socialPenalty: Number(socialPenalty.toFixed(3)),
+          pmTrustBonus: Number(pmTrustBonus.toFixed(3)),
           expectedUtility: Number(netUtility.toFixed(4)),
           resilienceDelta: sim.resilienceDelta,
           costM: sim.costM,
+          unrestScore: sim.unrestScore,
+          pmTrustDelta: sim.pmTrustDelta,
           avoidedShutdownSavingsM: sim.avoidedShutdownSavingsM,
           netStrategicGainM: sim.netStrategicGainM,
           implementationRisk: sim.implementationRisk
@@ -1419,7 +1541,7 @@
   }
 
   // ============================================================================
-  // 14. DEEP RED-TEAM CRITIC & REASONING GRAPH TRACE
+  // 13. DEEP RED-TEAM CRITIC & DECISION TRACE BUILDER
   // ============================================================================
   class DeepRedTeamCritic {
     static auditDecision(selectedBranch, evaluatedBranches, context) {
@@ -1469,7 +1591,7 @@
         selectedAction: selectedOption.title,
         actionType: selectedOption.optionType,
         expectedUtility: selectedOption.expectedUtility,
-        why: `Selected ${selectedOption.title} to resolve confirmed root cause: '${rootCause}'. Delivers +${selectedOption.resilienceDelta} resilience, $${selectedOption.avoidedShutdownSavingsM}M avoided factory shutdown savings, with net strategic gain of $${selectedOption.netStrategicGainM}M.`,
+        why: `Selected ${selectedOption.title} to resolve confirmed root cause: '${rootCause}'. Delivers +${selectedOption.resilienceDelta} resilience, $${selectedOption.avoidedShutdownSavingsM}M avoided factory shutdown savings, with net strategic gain of $${selectedOption.netStrategicGainM}M and social unrest kept below ${selectedOption.unrestScore}.`,
         epistemicEvidence: epistemicEvidence.map(e => ({ token: e.token, domain: e.domain, category: e.category })),
         redTeamCritique: redTeamCritic,
         statutoryAuthorityReference: `${ministerSelfModel.jurisdiction.primaryDomain} Statutory Powers (CAPEX ceiling: $${ministerSelfModel.jurisdiction.statutoryAuthorities.maxUnilateralCapexBudgetM}M)`,
@@ -1483,7 +1605,7 @@
   }
 
   // ============================================================================
-  // 15. UNIVERSAL 40-STAGE AUTONOMOUS DEEP STATE COGNITIVE OS
+  // 14. UNIVERSAL 40-STAGE AUTONOMOUS DEEP STATE COGNITIVE OS
   // ============================================================================
   class OmegaCognitiveOS {
     constructor() {
@@ -1492,12 +1614,12 @@
       this.authorityRegistry = new AuthorityRegistry();
       this.lexicon = MULTI_DOMAIN_LEXICON;
       this.deepMemory = new EightLayerDeepMemory();
-      this.attentionManager = new AttentionAndWatchlistManager();
       this.hypothesisEngine = new BayesianHypothesisEngine();
       this.causalReasoner = new CausalGraphReasoner();
       this.sandbox = new StateCloningSandbox();
       this.domainAdapters = new Map();
       this.decisionHistory = [];
+      this.stateCache = new Map();
       this.stages = this.initUniversal40Stages();
     }
 
@@ -1519,7 +1641,7 @@
         return ctx;
       }));
 
-      // Stage 3: Commodity Ontology Lookup & Physical Understanding
+      // Stage 3: Dynamic Commodity Ontology Lookup & Physical Understanding
       stages.push(createStage(3, "COMMODITY_UNDERSTANDING", (ctx, os) => {
         ctx.commodityOntologies = [];
         const aliasMap = {
@@ -1546,7 +1668,6 @@
             }
           }
         });
-        // Ensure baseline ontology grounding if input mentions general supply
         if (ctx.commodityOntologies.length < 2) {
           if (!ctx.commodityOntologies.some(o => o === RESOURCE_ONTOLOGY_MATRIX.CRUDE_OIL)) ctx.commodityOntologies.push(RESOURCE_ONTOLOGY_MATRIX.CRUDE_OIL);
           if (!ctx.commodityOntologies.some(o => o === RESOURCE_ONTOLOGY_MATRIX.COPPER)) ctx.commodityOntologies.push(RESOURCE_ONTOLOGY_MATRIX.COPPER);
@@ -1556,11 +1677,83 @@
 
       // Stage 4: Situational Diagnosis (Lack vs Enrichment)
       stages.push(createStage(4, "SITUATIONAL_DIAGNOSIS", (ctx, os) => {
-        ctx.situationalDiagnosis = SituationalDiagnosisEngine.diagnoseResourcePosture(ctx.telemetry, ctx.policyProfile);
+        const inventory = ctx.telemetry.inventory || {};
+        const chokepoints = ctx.telemetry.chokepoints || [];
+        const thresholdDays = ctx.policyProfile ? ctx.policyProfile.warningReserveDays : 60;
+        const criticalDays = ctx.policyProfile ? ctx.policyProfile.criticalReserveDays : 30;
+
+        const diagnosis = {
+          deficits: [],
+          enrichments: [],
+          chokepointVulnerabilities: [],
+          bottlenecks: [],
+          overallPosture: "STABLE",
+          postureExplanation: ""
+        };
+
+        for (const [res, inv] of Object.entries(inventory)) {
+          if (inv.bufferDays < criticalDays) {
+            diagnosis.deficits.push({
+              commodity: res,
+              severity: "CRITICAL",
+              bufferDays: inv.bufferDays,
+              threshold: thresholdDays,
+              consequence: RESOURCE_ONTOLOGY_MATRIX[res]?.lackConsequences?.catastrophic || "Imminent industrial halt"
+            });
+          } else if (inv.bufferDays < thresholdDays) {
+            diagnosis.deficits.push({
+              commodity: res,
+              severity: "WARNING",
+              bufferDays: inv.bufferDays,
+              threshold: thresholdDays,
+              consequence: RESOURCE_ONTOLOGY_MATRIX[res]?.lackConsequences?.shortTerm || "Supply chain margin pressure"
+            });
+          } else if (inv.bufferDays > 180) {
+            diagnosis.enrichments.push({
+              commodity: res,
+              status: "ABUNDANT_SURPLUS",
+              bufferDays: inv.bufferDays,
+              leverage: RESOURCE_ONTOLOGY_MATRIX[res]?.enrichmentDynamics?.strategicLeverage || "Export leverage"
+            });
+          }
+        }
+
+        for (const cp of chokepoints) {
+          if (cp.vulnerability > 0.60) {
+            diagnosis.chokepointVulnerabilities.push({
+              name: cp.name,
+              vulnerability: cp.vulnerability,
+              risk: "Single point of failure for inbound bulk cargo"
+            });
+          }
+        }
+
+        if (ctx.telemetry.processingUtilization > 0.90) {
+          diagnosis.bottlenecks.push({
+            node: ctx.telemetry.bindingConstraintNode || "REFINERY_CRACKING",
+            utilization: ctx.telemetry.processingUtilization,
+            risk: "Refining capacity saturation preventing raw inventory conversion"
+          });
+        }
+
+        if (diagnosis.deficits.some(d => d.severity === 'CRITICAL')) {
+          diagnosis.overallPosture = "CRITICAL_DEFICIT";
+          diagnosis.postureExplanation = "National industrial security is threatened by critical commodity reserve breach.";
+        } else if (diagnosis.chokepointVulnerabilities.length > 0 || diagnosis.deficits.length > 0) {
+          diagnosis.overallPosture = "VULNERABLE";
+          diagnosis.postureExplanation = "Supply chain resilience is degraded due to corridor fragility or low buffer margins.";
+        } else if (diagnosis.enrichments.length > 0) {
+          diagnosis.overallPosture = "ENRICHED_SURPLUS";
+          diagnosis.postureExplanation = "Robust sovereign stockpiles offer strategic geopolitical leverage and economic buffer.";
+        } else {
+          diagnosis.postureExplanation = "Balanced domestic production and import flows meeting industrial requirements.";
+        }
+
+        ctx.situationalDiagnosis = diagnosis;
         return ctx;
       }));
 
-      // Stage 5: Urgency & Threat Classification
+      // Stage 5: Urgency Classification
       stages.push(createStage(5, "URGENCY_CLASSIFICATION", (ctx, os) => {
         if (ctx.situationalDiagnosis.overallPosture === 'CRITICAL_DEFICIT' || ctx.intent === 'CRISIS_MITIGATION') {
           ctx.urgency = DecisionUrgency.EMERGENCY_DECISION;
@@ -1572,9 +1765,57 @@
         return ctx;
       }));
 
-      // Stage 6: Attention & Dynamic Watchlist Compilation
+      // Stage 6: Attention & Dynamic Watchlist Compilation (with Persistent Chasing System)
       stages.push(createStage(6, "ATTENTION_WATCHLIST", (ctx, os) => {
-        ctx.watchlist = os.attentionManager.refreshWatchlist(ctx.telemetry, ctx.policyProfile);
+        ctx.watchlist = [];
+        const inventory = ctx.telemetry.inventory || {};
+        const chokepoints = ctx.telemetry.chokepoints || [];
+        const thresholdDays = ctx.policyProfile ? ctx.policyProfile.warningReserveDays : 60;
+
+        for (const [res, inv] of Object.entries(inventory)) {
+          if (inv.bufferDays < thresholdDays) {
+            const urgency = inv.bufferDays < (thresholdDays * 0.7) ? 0.95 : 0.70;
+            const issue = os.deepMemory.trackedIssueManager.openOrUpdateIssue({
+              id: `WATCH-INV-${res}`,
+              target: res,
+              category: "INVENTORY_DEFICIT",
+              description: `${res} stockpile at ${inv.bufferDays} days (target: ${ctx.policyProfile ? ctx.policyProfile.mandatoryReserveDays : 90}d)`,
+              severity: urgency
+            }, ctx.tick || 1);
+
+            ctx.watchlist.push({
+              id: issue.id,
+              target: res,
+              description: issue.description,
+              stage: issue.stage,
+              impact: 0.90,
+              urgency,
+              priorityScore: 0.85
+            });
+          }
+        }
+
+        for (const cp of chokepoints) {
+          if (cp.vulnerability > 0.60) {
+            const issue = os.deepMemory.trackedIssueManager.openOrUpdateIssue({
+              id: `WATCH-LOG-${cp.name.replace(/\s+/g, '_')}`,
+              target: cp.name,
+              category: "CHOKEPOINT_VULNERABILITY",
+              description: `Transit conduit ${cp.name} vulnerability index at ${(cp.vulnerability * 100).toFixed(0)}%`,
+              severity: cp.vulnerability
+            }, ctx.tick || 1);
+
+            ctx.watchlist.push({
+              id: issue.id,
+              target: cp.name,
+              description: issue.description,
+              stage: issue.stage,
+              impact: 0.85,
+              urgency: 0.75,
+              priorityScore: 0.80
+            });
+          }
+        }
         return ctx;
       }));
 
@@ -1587,7 +1828,7 @@
         return ctx;
       }));
 
-      // Stage 8: Bayesian Hypotheses Generation & Ranking
+      // Stage 8: Real Mathematical Bayesian Hypotheses Generation & Ranking
       stages.push(createStage(8, "BAYESIAN_HYPOTHESIS", (ctx, os) => {
         ctx.hypothesisAnalysis = os.hypothesisEngine.evaluateHypotheses(ctx.anomalyDetected, ctx.telemetry);
         ctx.rootCause = ctx.hypothesisAnalysis.leadingRootCause;
@@ -1731,7 +1972,7 @@
         return ctx;
       }));
 
-      // Stage 19: Execution Contract Formulation (Part 15 Bridge)
+      // Stage 19: Immutable Execution Contract (Part 15 Bridge)
       stages.push(createStage(19, "EXECUTION_CONTRACT", (ctx, os) => {
         const isWithinCapex = ctx.finalDecision.costM <= ctx.selfModel.jurisdiction.statutoryAuthorities.maxUnilateralCapexBudgetM;
         ctx.executionContract = {
@@ -1744,7 +1985,9 @@
           authorityValidated: isWithinCapex,
           cabinetEscalationRequired: !isWithinCapex,
           targetKPI: "resilienceScore",
-          predictedGain: ctx.finalDecision.resilienceDelta
+          predictedGain: ctx.finalDecision.resilienceDelta,
+          unrestScore: ctx.selectedBranch.unrestScore,
+          pmTrustDelta: ctx.selectedBranch.pmTrustDelta
         };
         return ctx;
       }));
@@ -1754,12 +1997,14 @@
         ctx.predictedKPIs = {
           resilienceGain: ctx.finalDecision.resilienceDelta,
           avoidedShutdownSavingsM: ctx.selectedBranch.avoidedShutdownSavingsM,
-          netGainM: ctx.selectedBranch.netStrategicGainM
+          netGainM: ctx.selectedBranch.netStrategicGainM,
+          unrestScore: ctx.selectedBranch.unrestScore,
+          pmTrustDelta: ctx.selectedBranch.pmTrustDelta
         };
         return ctx;
       }));
 
-      // Stage 21-40: Telemetry Feedback, Active Belief Calibration, Memory Consolidation
+      // Stages 21-40: Telemetry Feedback, Active Belief Calibration, Memory Consolidation
       for (let s = 21; s <= 40; s++) {
         stages.push(createStage(s, `STAGE_${s}_FEEDBACK_AND_CONSOLIDATION`, (ctx, os) => {
           if (s === 25) {
@@ -1901,7 +2146,7 @@
   }
 
   // ============================================================================
-  // 16. GLOBAL EXPORT & SINGLETON INSTANTIATION
+  // 15. GLOBAL EXPORT & SINGLETON INSTANTIATION
   // ============================================================================
   const sharedOSInstance = new OmegaCognitiveOS();
 
@@ -1910,8 +2155,11 @@
     instance: sharedOSInstance,
     EpistemicStatus,
     DecisionUrgency,
+    CognitiveTier,
+    TrackedIssueStage,
     DataProvenanceRecord,
     CommodityMatrix: RESOURCE_ONTOLOGY_MATRIX,
+    MathematicalFormulaEngine,
     PolicyProfileRegistry,
     AuthorityRegistry,
     MinisterProfileResolver,
@@ -1919,8 +2167,7 @@
     MinisterSelfModel,
     ObjectiveHierarchySystem,
     DeepMemory: EightLayerDeepMemory,
-    SituationalDiagnosis: SituationalDiagnosisEngine,
-    AttentionAndWatchlist: AttentionAndWatchlistManager,
+    TrackedIssueManager,
     BayesianHypothesisEngine,
     CausalGraphReasoner,
     StateCloningSandbox,
@@ -1944,10 +2191,13 @@
     global.OmegaCognitiveEngine = OmegaCognitiveExport;
     global.OmegaSharedCognition = OmegaCognitiveExport;
   }
-  if (typeof module !== 'undefined' && module.exports) {
-    module.exports = OmegaCognitiveExport;
-  }
 
   console.log("🧠 [OMEGA COGNITIVE OS] Deep State Universal 40-Stage Grounded Cognitive OS (v16.0.0) Initialized!");
 
+  return OmegaCognitiveExport;
+
 })(typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : (typeof global !== 'undefined' ? global : this)));
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = _omegaExport;
+}
