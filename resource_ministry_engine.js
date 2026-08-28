@@ -8626,12 +8626,6 @@ _globalScope.GSRSK_DataFoundation = (() => {
                         if (typeof window !== 'undefined' && typeof window.fetchResilient === 'function') {
                             return await window.fetchResilient(file);
                         }
-                        if (typeof fetch !== 'undefined') {
-                            try {
-                                const res = await fetch(file + '?v=' + Date.now());
-                                if (res.ok) return await res.json();
-                            } catch (e) {}
-                        }
                         const reqFn = typeof require === 'function' ? require : (typeof globalThis !== 'undefined' && typeof globalThis.require === 'function' ? globalThis.require : null);
                         if (reqFn) {
                             try {
@@ -8648,9 +8642,30 @@ _globalScope.GSRSK_DataFoundation = (() => {
                                         return JSON.parse(fs.readFileSync(c, 'utf8'));
                                     }
                                 }
-                            } catch (e) {
-                                return null;
-                            }
+                            } catch (e) {}
+                        }
+                        if (typeof process !== 'undefined' && process.versions && process.versions.node) {
+                            try {
+                                const fs = await import('node:fs');
+                                const path = await import('node:path');
+                                const cwd = typeof process.cwd === 'function' ? process.cwd() : '.';
+                                const candidates = [
+                                    path.resolve(cwd, file),
+                                    path.resolve(cwd, 'public', file),
+                                    path.resolve('.', file)
+                                ];
+                                for (const c of candidates) {
+                                    if (fs.existsSync(c)) {
+                                        return JSON.parse(fs.readFileSync(c, 'utf8'));
+                                    }
+                                }
+                            } catch (e) {}
+                        }
+                        if (typeof fetch !== 'undefined') {
+                            try {
+                                const res = await fetch(file + '?v=' + Date.now());
+                                if (res.ok) return await res.json();
+                            } catch (e) {}
                         }
                         return null;
                     };

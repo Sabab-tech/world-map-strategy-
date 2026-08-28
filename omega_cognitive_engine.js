@@ -207,7 +207,35 @@ const _omegaExport = (function (globalScope) {
   // 3. COMPREHENSIVE COMMODITY ONTOLOGY & UNDERSTANDING CORE
   //    (What is a resource? How does it work? What does a lack vs enrichment mean?)
   // ============================================================================
-  const RESOURCE_ONTOLOGY_MATRIX = Object.freeze({
+
+  function loadExternalResourceOntologyMatrix() {
+    let externalOntology = null;
+    const reqFn = typeof require === 'function' ? require : (typeof globalThis !== 'undefined' && typeof globalThis.require === 'function' ? globalThis.require : null);
+    if (reqFn) {
+      try {
+        const fs = reqFn('fs');
+        const path = reqFn('path');
+        const cwd = (typeof process !== 'undefined' && typeof process.cwd === 'function') ? process.cwd() : '.';
+        const candidates = [
+          path.resolve(cwd, 'resource_ontology.json'),
+          path.resolve(cwd, 'public', 'resource_ontology.json'),
+          path.resolve('.', 'resource_ontology.json')
+        ];
+        for (const c of candidates) {
+          if (fs.existsSync(c)) {
+            const parsed = JSON.parse(fs.readFileSync(c, 'utf8'));
+            externalOntology = parsed.COMMODITY_ONTOLOGIES || parsed;
+            break;
+          }
+        }
+      } catch (e) {}
+    }
+    return externalOntology;
+  }
+
+  const _rawLoadedOntology = loadExternalResourceOntologyMatrix();
+
+  const RESOURCE_ONTOLOGY_MATRIX = Object.freeze(_rawLoadedOntology || {
     CRUDE_OIL: {
       name: "Crude Petroleum & Hydrocarbons",
       category: "ENERGY_HYDROCARBON",
@@ -528,65 +556,102 @@ const _omegaExport = (function (globalScope) {
     }
 
     initDefaultProfiles() {
-      this.profiles.set('IMPORTER_INDUSTRIAL', {
-        type: 'IMPORTER_INDUSTRIAL',
-        label: 'Net Importer Industrial Economy',
-        mandatoryReserveDays: 120,
-        warningReserveDays: 60,
-        criticalReserveDays: 35,
-        maxImportHHI: 0.25,
-        minDomesticExtractionTarget: 0.20,
-        maxUnilateralCapexM: 400,
-        cabinetEscalationCapexM: 600,
-        criticalMineralsPriority: ['COPPER', 'LITHIUM', 'CRUDE_OIL', 'RARE_EARTHS', 'NICKEL'],
-        riskTolerance: 0.25,
-        substitutionElasticity: 0.45
-      });
+      let loadedPolicies = null;
+      const reqFn = typeof require === 'function' ? require : (typeof globalThis !== 'undefined' && typeof globalThis.require === 'function' ? globalThis.require : null);
+      if (reqFn) {
+        try {
+          const fs = reqFn('fs');
+          const path = reqFn('path');
+          const cwd = (typeof process !== 'undefined' && typeof process.cwd === 'function') ? process.cwd() : '.';
+          const candidates = [
+            path.resolve(cwd, 'country_policy.json'),
+            path.resolve(cwd, 'public', 'country_policy.json'),
+            path.resolve('.', 'country_policy.json')
+          ];
+          for (const c of candidates) {
+            if (fs.existsSync(c)) {
+              const parsed = JSON.parse(fs.readFileSync(c, 'utf8'));
+              loadedPolicies = parsed.DEFAULT_POLICY_PROFILES || parsed;
+              break;
+            }
+          }
+        } catch (e) {}
+      }
 
-      this.profiles.set('EXPORTER_PRODUCER', {
-        type: 'EXPORTER_PRODUCER',
-        label: 'Net Exporter Resource Producer',
-        mandatoryReserveDays: 60,
-        warningReserveDays: 35,
-        criticalReserveDays: 20,
-        maxImportHHI: 0.50,
-        minDomesticExtractionTarget: 0.75,
-        maxUnilateralCapexM: 600,
-        cabinetEscalationCapexM: 1000,
-        criticalMineralsPriority: ['CRUDE_OIL', 'NATURAL_GAS', 'BAUXITE', 'IRON_ORE', 'LITHIUM'],
-        riskTolerance: 0.55,
-        substitutionElasticity: 0.20
-      });
+      if (loadedPolicies) {
+        for (const [k, v] of Object.entries(loadedPolicies)) {
+          this.profiles.set(k.toUpperCase(), v);
+        }
+      }
 
-      this.profiles.set('HIGH_TECH_HUB', {
-        type: 'HIGH_TECH_HUB',
-        label: 'Advanced High-Tech Manufacturing Hub',
-        mandatoryReserveDays: 150,
-        warningReserveDays: 75,
-        criticalReserveDays: 45,
-        maxImportHHI: 0.20,
-        minDomesticExtractionTarget: 0.10,
-        maxUnilateralCapexM: 500,
-        cabinetEscalationCapexM: 800,
-        criticalMineralsPriority: ['RARE_EARTHS', 'COPPER', 'LITHIUM', 'SILICON', 'GALLIUM'],
-        riskTolerance: 0.20,
-        substitutionElasticity: 0.50
-      });
+      // Ensure fallback baseline profiles exist
+      if (!this.profiles.has('IMPORTER_INDUSTRIAL')) {
+        this.profiles.set('IMPORTER_INDUSTRIAL', {
+          type: 'IMPORTER_INDUSTRIAL',
+          label: 'Net Importer Industrial Economy',
+          mandatoryReserveDays: 120,
+          warningReserveDays: 60,
+          criticalReserveDays: 35,
+          maxImportHHI: 0.25,
+          minDomesticExtractionTarget: 0.20,
+          maxUnilateralCapexM: 400,
+          cabinetEscalationCapexM: 600,
+          criticalMineralsPriority: ['COPPER', 'LITHIUM', 'CRUDE_OIL', 'RARE_EARTHS', 'NICKEL'],
+          riskTolerance: 0.25,
+          substitutionElasticity: 0.45
+        });
+      }
 
-      this.profiles.set('SOVEREIGN_DIVERSIFIED', {
-        type: 'SOVEREIGN_DIVERSIFIED',
-        label: 'Sovereign Diversified Industrial State',
-        mandatoryReserveDays: 90,
-        warningReserveDays: 45,
-        criticalReserveDays: 30,
-        maxImportHHI: 0.30,
-        minDomesticExtractionTarget: 0.40,
-        maxUnilateralCapexM: 350,
-        cabinetEscalationCapexM: 500,
-        criticalMineralsPriority: ['COPPER', 'CRUDE_OIL', 'REFINED_DIESEL', 'LITHIUM'],
-        riskTolerance: 0.35,
-        substitutionElasticity: 0.35
-      });
+      if (!this.profiles.has('EXPORTER_PRODUCER')) {
+        this.profiles.set('EXPORTER_PRODUCER', {
+          type: 'EXPORTER_PRODUCER',
+          label: 'Net Exporter Resource Producer',
+          mandatoryReserveDays: 60,
+          warningReserveDays: 35,
+          criticalReserveDays: 20,
+          maxImportHHI: 0.50,
+          minDomesticExtractionTarget: 0.75,
+          maxUnilateralCapexM: 600,
+          cabinetEscalationCapexM: 1000,
+          criticalMineralsPriority: ['CRUDE_OIL', 'NATURAL_GAS', 'BAUXITE', 'IRON_ORE', 'LITHIUM'],
+          riskTolerance: 0.55,
+          substitutionElasticity: 0.20
+        });
+      }
+
+      if (!this.profiles.has('HIGH_TECH_HUB')) {
+        this.profiles.set('HIGH_TECH_HUB', {
+          type: 'HIGH_TECH_HUB',
+          label: 'Advanced High-Tech Manufacturing Hub',
+          mandatoryReserveDays: 150,
+          warningReserveDays: 75,
+          criticalReserveDays: 45,
+          maxImportHHI: 0.20,
+          minDomesticExtractionTarget: 0.10,
+          maxUnilateralCapexM: 500,
+          cabinetEscalationCapexM: 800,
+          criticalMineralsPriority: ['RARE_EARTHS', 'COPPER', 'LITHIUM', 'SILICON', 'GALLIUM'],
+          riskTolerance: 0.20,
+          substitutionElasticity: 0.50
+        });
+      }
+
+      if (!this.profiles.has('SOVEREIGN_DIVERSIFIED')) {
+        this.profiles.set('SOVEREIGN_DIVERSIFIED', {
+          type: 'SOVEREIGN_DIVERSIFIED',
+          label: 'Sovereign Diversified Industrial State',
+          mandatoryReserveDays: 90,
+          warningReserveDays: 45,
+          criticalReserveDays: 30,
+          maxImportHHI: 0.30,
+          minDomesticExtractionTarget: 0.40,
+          maxUnilateralCapexM: 350,
+          cabinetEscalationCapexM: 500,
+          criticalMineralsPriority: ['COPPER', 'CRUDE_OIL', 'REFINED_DIESEL', 'LITHIUM'],
+          riskTolerance: 0.35,
+          substitutionElasticity: 0.35
+        });
+      }
     }
 
     resolveCountryProfile(countryId, worldTelemetry = null) {
@@ -2174,6 +2239,9 @@ const _omegaExport = (function (globalScope) {
     StrategicSearchEngine,
     DeepRedTeamCritic,
     GraphDecisionTraceBuilder,
+    loadExternalResourceOntologyMatrix,
+    reloadOntology: () => loadExternalResourceOntologyMatrix(),
+    reloadPolicies: () => sharedOSInstance.policyRegistry.initDefaultProfiles(),
     process: (prompt, intent, country, targetCountry, domain, persona) =>
       sharedOSInstance.processCognitiveRequest(prompt, intent, country, targetCountry, domain, persona),
     execute27StepScenario: (prompt) => sharedOSInstance.executeComplete27StepScenario(prompt),

@@ -1,0 +1,87 @@
+{
+  "VERSION": "1.0.0-CANONICAL",
+  "LAST_UPDATED": "2026-08-27",
+  "DESCRIPTION": "Canonical Institutional Policy Profiles and Sovereign Reserve Mandates",
+  "DEFAULT_POLICY_PROFILES": {
+    "IMPORTER_INDUSTRIAL": {
+      "type": "IMPORTER_INDUSTRIAL",
+      "label": "Net Importer Industrial Economy",
+      "mandatoryReserveDays": 120,
+      "warningReserveDays": 60,
+      "criticalReserveDays": 35,
+      "maxImportHHI": 0.25,
+      "minDomesticExtractionTarget": 0.20,
+      "maxUnilateralCapexM": 400,
+      "cabinetEscalationCapexM": 600,
+      "criticalMineralsPriority": ["COPPER", "LITHIUM", "CRUDE_OIL", "RARE_EARTHS", "NICKEL"],
+      "riskTolerance": 0.25,
+      "substitutionElasticity": 0.45
+    },
+    "EXPORTER_PRODUCER": {
+      "type": "EXPORTER_PRODUCER",
+      "label": "Net Exporter Resource Producer",
+      "mandatoryReserveDays": 60,
+      "warningReserveDays": 35,
+      "criticalReserveDays": 20,
+      "maxImportHHI": 0.50,
+      "minDomesticExtractionTarget": 0.75,
+      "maxUnilateralCapexM": 600,
+      "cabinetEscalationCapexM": 1000,
+      "criticalMineralsPriority": ["CRUDE_OIL", "NATURAL_GAS", "BAUXITE", "IRON_ORE", "LITHIUM"],
+      "riskTolerance": 0.55,
+      "substitutionElasticity": 0.20
+    },
+    "HIGH_TECH_HUB": {
+      "type": "HIGH_TECH_HUB",
+      "label": "Advanced High-Tech Manufacturing Hub",
+      "mandatoryReserveDays": 150,
+      "warningReserveDays": 75,
+      "criticalReserveDays": 45,
+      "maxImportHHI": 0.20,
+      "minDomesticExtractionTarget": 0.10,
+      "maxUnilateralCapexM": 500,
+      "cabinetEscalationCapexM": 800,
+      "criticalMineralsPriority": ["RARE_EARTHS", "COPPER", "LITHIUM", "SILICON", "GALLIUM"],
+      "riskTolerance": 0.20,
+      "substitutionElasticity": 0.50
+    },
+    "SOVEREIGN_DIVERSIFIED": {
+      "type": "SOVEREIGN_DIVERSIFIED",
+      "label": "Sovereign Diversified Industrial State",
+      "mandatoryReserveDays": 90,
+      "warningReserveDays": 45,
+      "criticalReserveDays": 30,
+      "maxImportHHI": 0.30,
+      "minDomesticExtractionTarget": 0.40,
+      "maxUnilateralCapexM": 350,
+      "cabinetEscalationCapexM": 500,
+      "criticalMineralsPriority": ["COPPER", "CRUDE_OIL", "REFINED_DIESEL", "LITHIUM"],
+      "riskTolerance": 0.35,
+      "substitutionElasticity": 0.35
+    }
+  },
+  "AUTHORITY_BOUNDARIES": {
+    "RESOURCE_MINISTER": {
+      "role": "RESOURCE_MINISTER",
+      "statutoryPowers": [
+        "STOCKPILE_DRAWDOWN_RELEASE",
+        "EMERGENCY_BILATERAL_IMPORT_EXPEDITE",
+        "DOMESTIC_EXTRACTION_ACCELERATION",
+        "SUBSTITUTION_MANDATE_ISSUANCE",
+        "STRATEGIC_RESERVE_PROCUREMENT",
+        "MODULAR_REFINING_EXPANSION"
+      ],
+      "requiresCabinetApproval": [
+        "FULL_TRADE_EMBARGO_DECLARATION",
+        "PRIVATE_ASSET_EXPROPRIATION",
+        "CAPEX_EXCEEDING_THRESHOLD",
+        "MILITARY_CORRIDOR_ENFORCEMENT"
+      ],
+      "forbiddenUnilateralActions": [
+        "CURRENCY_DEVALUATION",
+        "MILITARY_DEPLOYMENT",
+        "DIRECT_TAX_LEVIES_ON_CITIZENS"
+      ]
+    }
+  }
+}
