@@ -1441,44 +1441,29 @@ Game.Map.renderResourceDeposits = function() {
         summaryCountElem.textContent = `${matchingDeposits.length} deposit${matchingDeposits.length === 1 ? '' : 's'}`;
     }
 
-    // Spatial Proximity Clustering / Radial Ring Offsets
-    const clusters = [];
-    matchingDeposits.forEach(dep => {
-        let addedToCluster = false;
-        for (let cluster of clusters) {
-            const latDiff = Math.abs(dep.lat - cluster.anchorLat);
-            const lngDiff = Math.abs(dep.lng - cluster.anchorLng);
-            if (latDiff < 0.15 && lngDiff < 0.15) {
-                cluster.items.push(dep);
-                addedToCluster = true;
-                break;
-            }
+    // Exact Geographic Placement with micro-offset only for overlapping identical coordinates
+    const coordMap = new Map();
+    matchingDeposits.forEach((dep, index) => {
+        const coordKey = `${dep.lat.toFixed(3)}_${dep.lng.toFixed(3)}`;
+        if (!coordMap.has(coordKey)) {
+            coordMap.set(coordKey, []);
         }
-        if (!addedToCluster) {
-            clusters.push({
-                anchorLat: dep.lat,
-                anchorLng: dep.lng,
-                items: [dep]
-            });
-        }
+        coordMap.get(coordKey).push(dep);
     });
 
     // Render screen-space fixed markers with Leaflet divIcon
-    clusters.forEach(cluster => {
-        const total = cluster.items.length;
-        cluster.items.forEach((dep, index) => {
+    coordMap.forEach((items, coordKey) => {
+        const total = items.length;
+        items.forEach((dep, index) => {
             let renderLat = dep.lat;
             let renderLng = dep.lng;
 
+            // Apply slight micro-separation ONLY if multiple deposits share the exact same coordinates
             if (total > 1) {
-                const ringIndex = Math.floor(index / 6);
-                const posInRing = index % 6;
-                const radius = 0.22 + ringIndex * 0.25;
-                const angle = (posInRing * (2 * Math.PI / 6)) + (ringIndex * 0.5);
-                const cosLat = Math.max(0.2, Math.cos(cluster.anchorLat * Math.PI / 180));
-
-                renderLat = cluster.anchorLat + radius * Math.sin(angle);
-                renderLng = cluster.anchorLng + (radius * Math.cos(angle)) / cosLat;
+                const angle = index * (2 * Math.PI / total);
+                const microOffset = 0.025; // ~2.5 km micro-separation to allow clicking
+                renderLat = dep.lat + microOffset * Math.sin(angle);
+                renderLng = dep.lng + (microOffset * Math.cos(angle)) / Math.max(0.2, Math.cos(dep.lat * Math.PI / 180));
             }
 
             const catalogItem = this.resourceCatalog.find(r => r.id === dep.resId) || { icon: '⛏️', color: '#ffd700' };
@@ -1555,11 +1540,14 @@ Game.Map.renderResourceDeposits = function() {
                         <div>Status: <strong style="color:#a855f7;">${dep.status || 'Active Deposit'}</strong></div>
                     </div>
                     <div style="display:flex; flex-direction:column; gap:5px; margin-top:8px;">
-                        <button onclick="if(window.ResourceMinistryEngine) window.ResourceMinistryEngine.executeDirective('expand_facility', '${dep.resId}');" style="padding:5px 10px; background:rgba(34,197,94,0.2); border:1px solid #22c55e; color:#22c55e; font-size:10px; font-weight:bold; border-radius:4px; cursor:pointer;">
-                            🏭 EXPAND CAPACITY (+25%)
+                        <button onclick="if(window.ResourceMinistryEngine) window.ResourceMinistryEngine.executeDirective('expand_facility', '${dep.resId}');" style="padding:6px 10px; background:rgba(34,197,94,0.25); border:1px solid #22c55e; color:#22c55e; font-size:10px; font-weight:bold; border-radius:4px; cursor:pointer; text-align:center;">
+                            🏭 EXPAND FACILITY CAPACITY (+25%)
                         </button>
-                        <button onclick="if(window.CountryIOS) window.CountryIOS.open('${dep.country}', 5);" style="padding:5px 10px; background:rgba(0,229,255,0.2); border:1px solid #00e5ff; color:#00e5ff; font-size:10px; font-weight:bold; border-radius:4px; cursor:pointer;">
-                            🏛️ OPEN RESOURCE MINISTRY
+                        <button onclick="if(window.ResourceMinistryEngine) window.ResourceMinistryEngine.executeDirective('survey', '${dep.resId}');" style="padding:6px 10px; background:rgba(234,179,8,0.25); border:1px solid #eab308; color:#eab308; font-size:10px; font-weight:bold; border-radius:4px; cursor:pointer; text-align:center;">
+                            ⛏️ DISPATCH GEOLOGICAL SURVEY
+                        </button>
+                        <button onclick="if(window.ResourceMinistryEngine) window.ResourceMinistryEngine.openModal('${dep.country}', 'matrix');" style="padding:6px 10px; background:rgba(0,229,255,0.25); border:1px solid #00e5ff; color:#00e5ff; font-size:10px; font-weight:bold; border-radius:4px; cursor:pointer; text-align:center;">
+                            💎 AUDIT PROVEN IN-SITU LEDGER
                         </button>
                     </div>
                 </div>

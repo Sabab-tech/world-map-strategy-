@@ -8985,6 +8985,33 @@ _globalScope.GSRSK_DataFoundation = (() => {
             const existingDepIds = new Set(this.deposits.map(d => d.id));
             const resourceMap = new Map(this.resourceTypes.map(r => [r.id, r]));
 
+            const KNOWN_GEO_COORDS = {
+                'barapukuria': { lat: 25.552, lng: 88.964, res: 'coal' },
+                'maddhapara': { lat: 25.570, lng: 89.075, res: 'hard_rock' },
+                'bibiyana': { lat: 24.635, lng: 91.662, res: 'natural_gas' },
+                'titas': { lat: 23.988, lng: 91.102, res: 'natural_gas' },
+                'kailashtila': { lat: 24.872, lng: 92.015, res: 'natural_gas' },
+                'rashidpur': { lat: 24.321, lng: 91.595, res: 'natural_gas' },
+                'habiganj': { lat: 24.383, lng: 91.415, res: 'natural_gas' },
+                'sylhet': { lat: 24.894, lng: 91.868, res: 'natural_gas' },
+                'jamalganj': { lat: 25.015, lng: 89.042, res: 'coal' },
+                'dighipara': { lat: 25.320, lng: 88.980, res: 'coal' },
+                'chattak': { lat: 25.042, lng: 91.670, res: 'limestone' },
+                'cox_s_bazar': { lat: 21.432, lng: 91.980, res: 'heavy_minerals' },
+                'matarbari': { lat: 21.710, lng: 91.880, res: 'lng_terminal' },
+                'kutubdia': { lat: 21.815, lng: 91.850, res: 'offshore_gas' },
+                'bengal_basin': { lat: 23.500, lng: 90.500, res: 'natural_gas' },
+                'surma_basin': { lat: 24.750, lng: 91.900, res: 'natural_gas' },
+                'hatia_trough': { lat: 22.350, lng: 91.150, res: 'natural_gas' },
+                'ghawar': { lat: 25.430, lng: 49.620, res: 'crude_oil' },
+                'safaniya': { lat: 28.010, lng: 48.770, res: 'crude_oil' },
+                'permian': { lat: 31.850, lng: -102.350, res: 'crude_oil' },
+                'bakken': { lat: 47.950, lng: -103.000, res: 'crude_oil' },
+                'pilbara': { lat: -21.500, lng: 119.500, res: 'iron_ore' },
+                'santos_basin': { lat: -24.500, lng: -44.500, res: 'crude_oil' },
+                'marcellus': { lat: 41.250, lng: -77.500, res: 'natural_gas' }
+            };
+
             Object.entries(this.countryProfiles).forEach(([cKey, prof]) => {
                 if (!prof || typeof prof !== 'object') return;
                 const iso = (prof.identity?.iso3 || prof.identity?.countryCode || cKey).toUpperCase();
@@ -9024,13 +9051,23 @@ _globalScope.GSRSK_DataFoundation = (() => {
                                 resourceMap.set(primaryRes, newR);
                             }
 
+                            // Precise coordinates if available
+                            const normRegKey = regName.toLowerCase().replace(/[^a-z0-9]+/g, '_');
+                            const known = KNOWN_GEO_COORDS[normRegKey] || KNOWN_GEO_COORDS[normRegKey.replace(/_district|_field|_mine|_basin/g, '')];
+                            const dLat = (reg.coordinates && typeof reg.coordinates.lat === 'number') ? reg.coordinates.lat :
+                                         (typeof reg.lat === 'number' ? reg.lat :
+                                         (known ? known.lat : +(baseLat + (idx % 2 === 0 ? 0.35 : -0.35) * Math.ceil((idx + 1) / 2) * 0.45).toFixed(4)));
+                            const dLng = (reg.coordinates && typeof reg.coordinates.lng === 'number') ? reg.coordinates.lng :
+                                         (typeof reg.lng === 'number' ? reg.lng :
+                                         (known ? known.lng : +(baseLng + (idx % 2 === 1 ? 0.35 : -0.35) * Math.ceil((idx + 1) / 2) * 0.45).toFixed(4)));
+
                             const depRecord = {
                                 id: depId,
                                 name: `${regName} District`,
                                 country: countryName,
                                 countryCode: iso,
-                                lat: +(baseLat + (idx * 0.12)).toFixed(4),
-                                lng: +(baseLng + (idx * 0.12)).toFixed(4),
+                                lat: dLat,
+                                lng: dLng,
                                 resId: primaryRes,
                                 category: reg.type || 'resource_district',
                                 resourceTags: tags,
@@ -9054,13 +9091,18 @@ _globalScope.GSRSK_DataFoundation = (() => {
                         if (!bName || typeof bName !== 'string') return;
                         const depId = `dep-${iso.toLowerCase()}-basin-${bName.toLowerCase()}`.replace(/[^a-z0-9]+/g, '-');
                         if (!existingDepIds.has(depId)) {
+                            const normBKey = bName.toLowerCase().replace(/[^a-z0-9]+/g, '_');
+                            const known = KNOWN_GEO_COORDS[normBKey] || KNOWN_GEO_COORDS[normBKey.replace(/_basin|_trough|_play/g, '')];
+                            const bLat = known ? known.lat : +(baseLat - 0.4 - (idx * 0.35)).toFixed(4);
+                            const bLng = known ? known.lng : +(baseLng + 0.3 + (idx * 0.35)).toFixed(4);
+
                             const depRecord = {
                                 id: depId,
                                 name: `${bName} Basin`,
                                 country: countryName,
                                 countryCode: iso,
-                                lat: +(baseLat - 0.25 - (idx * 0.08)).toFixed(4),
-                                lng: +(baseLng - 0.25 - (idx * 0.08)).toFixed(4),
+                                lat: bLat,
+                                lng: bLng,
                                 resId: 'natural_gas',
                                 category: 'hydrocarbons',
                                 resourceTags: ['natural_gas', 'crude_oil'],
@@ -9468,12 +9510,75 @@ _globalScope.GSRSK_DataFoundation = (() => {
         }
 
         executeDirective(action, resId, opt) {
-            const resObj = this.resourceTypes.find(r => r.id === resId) || { name: resId, icon: '💎' };
+            const effectiveResId = resId || (action === 'drill_oil' ? 'crude_oil' : (action === 'build_nuclear' ? 'uranium' : (action === 'build_solar' ? 'natural_gas' : 'refined_steel')));
+            const resObj = this.resourceTypes.find(r => r.id === effectiveResId) || { name: effectiveResId.replace(/_/g, ' ').toUpperCase(), icon: '💎' };
             const countryName = (typeof window !== 'undefined' && (window.CountryIOS?.activeCountry || window.currentActiveCountry)) || 'BANGLADESH';
 
-            if (action === 'survey') {
-                this.activeSurveys.add(resId);
-                // Interlock with Part 04 / Part 05 if master engine is active
+            if (action === 'drill_oil' || action === 'upgrade_extraction') {
+                const cur = this.strategicReserves['crude_oil'] || 50000;
+                this.strategicReserves['crude_oil'] = cur + 100000;
+                if (typeof window !== 'undefined') {
+                    if (window.resources && window.resources.cash) {
+                        window.resources.cash = Math.max(0, window.resources.cash - 800000000); // $800M
+                    }
+                    if (window.resourceRates) {
+                        window.resourceRates.oil = (window.resourceRates.oil || 0) + 500;
+                        window.resourceRates.energy = (window.resourceRates.energy || 0) + 300;
+                    }
+                    if (window.showOmegaNotification) {
+                        window.showOmegaNotification('🛢️ DEEP-EARTH DRILLING & EXTRACTION', `High-yield offshore crude drilling commissioned for ${countryName}! +500 BBL/day extraction rate, +100,000 reserve buffer added.`, 'success');
+                    }
+                }
+            } else if (action === 'build_nuclear') {
+                const cur = this.facilityUpgrades['uranium'] || 1.0;
+                this.facilityUpgrades['uranium'] = +(cur + 0.50).toFixed(2);
+                if (typeof window !== 'undefined') {
+                    if (window.resources && window.resources.cash) {
+                        window.resources.cash = Math.max(0, window.resources.cash - 2000000000); // $2.0B
+                    }
+                    if (window.resourceRates) {
+                        window.resourceRates.energy = (window.resourceRates.energy || 0) + 2400; // 2.4GW
+                        window.resourceRates.uranium = (window.resourceRates.uranium || 0) + 15;
+                    }
+                    if (window.showOmegaNotification) {
+                        window.showOmegaNotification('⚛️ 2.4GW NUCLEAR BASELOAD REACTOR', `2,400MW VVER/SMR Nuclear Unit commissioned for ${countryName}! Baseload grid capacity boosted by +2.4GW.`, 'success');
+                    }
+                }
+            } else if (action === 'build_solar' || action === 'build_green') {
+                if (typeof window !== 'undefined') {
+                    if (window.resources && window.resources.cash) {
+                        window.resources.cash = Math.max(0, window.resources.cash - 600000000); // $600M
+                    }
+                    if (window.resourceRates) {
+                        window.resourceRates.energy = (window.resourceRates.energy || 0) + 1000; // 1.0GW
+                    }
+                    if (window.showOmegaNotification) {
+                        window.showOmegaNotification('☀️ RENEWABLE SOLAR & WIND GRID', `1,000MW offshore wind and solar array synchronized to national grid in ${countryName}!`, 'success');
+                    }
+                }
+            } else if (action === 'build_factory' || action === 'commission_smelter' || action === 'expand_mining') {
+                const cur = this.facilityUpgrades['refined_steel'] || 1.0;
+                this.facilityUpgrades['refined_steel'] = +(cur + 0.40).toFixed(2);
+                this.facilityUpgrades['crude_oil'] = (this.facilityUpgrades['crude_oil'] || 1.0) + 0.25;
+
+                if (this.part09 && typeof this.part09.expandFacilityCapacity === 'function') {
+                    try { this.part09.expandFacilityCapacity('refined_steel', 0.40); } catch (e) {}
+                }
+
+                if (typeof window !== 'undefined') {
+                    if (window.resources && window.resources.cash) {
+                        window.resources.cash = Math.max(0, window.resources.cash - 1200000000); // $1.2B
+                    }
+                    if (window.resourceRates) {
+                        window.resourceRates.steel = (window.resourceRates.steel || 0) + 400;
+                        window.resourceRates.oil = (window.resourceRates.oil || 0) + 200;
+                    }
+                    if (window.showOmegaNotification) {
+                        window.showOmegaNotification('🏭 HEAVY INDUSTRIAL COMPLEX COMMISSIONED', `New advanced smelting and industrial fabrication plant online in ${countryName}! +400 tons/day refined output.`, 'success');
+                    }
+                }
+            } else if (action === 'survey') {
+                this.activeSurveys.add(effectiveResId);
                 if (this.masterEngine && typeof this.masterEngine.scheduleSimulationCycle === 'function') {
                     this.masterEngine.scheduleSimulationCycle();
                 }
@@ -9481,12 +9586,11 @@ _globalScope.GSRSK_DataFoundation = (() => {
                     window.showOmegaNotification('⛏️ GEOLOGICAL SURVEY DISPATCHED', `Autonomous deep-earth exploration initiated for ${resObj.name}! Discovered reserve confidence increased.`, 'success');
                 }
             } else if (action === 'expand_facility') {
-                const cur = this.facilityUpgrades[resId] || 1.0;
-                this.facilityUpgrades[resId] = +(cur + 0.25).toFixed(2);
+                const cur = this.facilityUpgrades[effectiveResId] || 1.0;
+                this.facilityUpgrades[effectiveResId] = +(cur + 0.25).toFixed(2);
 
-                // Interlock with Part 09 / Part 06 production capacity
                 if (this.part09 && typeof this.part09.expandFacilityCapacity === 'function') {
-                    try { this.part09.expandFacilityCapacity(resId, 0.25); } catch (e) {}
+                    try { this.part09.expandFacilityCapacity(effectiveResId, 0.25); } catch (e) {}
                 }
 
                 if (typeof window !== 'undefined') {
@@ -9494,50 +9598,49 @@ _globalScope.GSRSK_DataFoundation = (() => {
                         window.resources.cash = Math.max(0, window.resources.cash - 10000000);
                     }
                     if (window.resourceRates) {
-                        if (resId === 'crude_oil') window.resourceRates.oil = (window.resourceRates.oil || 0) + 250;
-                        if (resId === 'natural_gas') window.resourceRates.energy = (window.resourceRates.energy || 0) + 200;
-                        if (resId === 'iron_ore') window.resourceRates.steel = (window.resourceRates.steel || 0) + 150;
-                        if (resId === 'uranium') window.resourceRates.uranium = (window.resourceRates.uranium || 0) + 5;
+                        if (effectiveResId === 'crude_oil') window.resourceRates.oil = (window.resourceRates.oil || 0) + 250;
+                        if (effectiveResId === 'natural_gas') window.resourceRates.energy = (window.resourceRates.energy || 0) + 200;
+                        if (effectiveResId === 'iron_ore') window.resourceRates.steel = (window.resourceRates.steel || 0) + 150;
+                        if (effectiveResId === 'uranium') window.resourceRates.uranium = (window.resourceRates.uranium || 0) + 5;
                     }
                     if (window.showOmegaNotification) {
-                        window.showOmegaNotification('🏭 FACILITY EXPANSION AUTHORIZED', `Industrial processing throughput for ${resObj.name} boosted to ${Math.round(this.facilityUpgrades[resId] * 100)}%!`, 'success');
+                        window.showOmegaNotification('🏭 FACILITY EXPANSION AUTHORIZED', `Industrial processing throughput for ${resObj.name} boosted to ${Math.round(this.facilityUpgrades[effectiveResId] * 100)}%!`, 'success');
                     }
                 }
             } else if (action === 'add_reserve') {
-                const cur = this.strategicReserves[resId] || 0;
-                this.strategicReserves[resId] = cur + 50000;
+                const cur = this.strategicReserves[effectiveResId] || 0;
+                this.strategicReserves[effectiveResId] = cur + 50000;
 
-                // Interlock with Part 07 inventory batch storage
                 if (this.part07 && typeof this.part07.adjustInventoryBalance === 'function') {
-                    try { this.part07.adjustInventoryBalance(resId, 50000, 'STRATEGIC_PETROLEUM_RESERVE_INJECTION'); } catch (e) {}
+                    try { this.part07.adjustInventoryBalance(effectiveResId, 50000, 'STRATEGIC_PETROLEUM_RESERVE_INJECTION'); } catch (e) {}
                 }
 
                 if (typeof window !== 'undefined') {
                     if (window.resources) {
-                        if (resId === 'crude_oil') window.resources.oil = (window.resources.oil || 0) + 50000;
-                        if (resId === 'iron_ore') window.resources.steel = (window.resources.steel || 0) + 20000;
-                        if (resId === 'uranium') window.resources.uranium = (window.resources.uranium || 0) + 100;
+                        if (effectiveResId === 'crude_oil') window.resources.oil = (window.resources.oil || 0) + 50000;
+                        if (effectiveResId === 'iron_ore') window.resources.steel = (window.resources.steel || 0) + 20000;
+                        if (effectiveResId === 'uranium') window.resources.uranium = (window.resources.uranium || 0) + 100;
                     }
                     if (window.showOmegaNotification) {
                         window.showOmegaNotification('📦 STRATEGIC RESERVE STOCKPILED', `+50,000 units of ${resObj.name} transferred to sovereign emergency bunkers!`, 'success');
                     }
                 }
             } else if (action === 'drawdown_spr') {
-                const cur = this.strategicReserves[resId] || 100000;
+                const cur = this.strategicReserves[effectiveResId] || 100000;
                 const drawdown = Math.min(cur, 30000);
-                this.strategicReserves[resId] = Math.max(0, cur - drawdown);
+                this.strategicReserves[effectiveResId] = Math.max(0, cur - drawdown);
                 if (typeof window !== 'undefined') {
                     if (window.resources && window.resourceRates) {
                         window.resources.cash = (window.resources.cash || 0) + 15000000;
-                        if (resId === 'crude_oil') window.resourceRates.oil = (window.resourceRates.oil || 0) + 500;
-                        if (resId === 'natural_gas') window.resourceRates.energy = (window.resourceRates.energy || 0) + 300;
+                        if (effectiveResId === 'crude_oil') window.resourceRates.oil = (window.resourceRates.oil || 0) + 500;
+                        if (effectiveResId === 'natural_gas') window.resourceRates.energy = (window.resourceRates.energy || 0) + 300;
                     }
                     if (window.showOmegaNotification) {
                         window.showOmegaNotification('🚨 STRATEGIC RESERVE DRAWDOWN', `Released ${drawdown.toLocaleString()} units of ${resObj.name} to stabilize national markets (+ $15M revenue)!`, 'warning');
                     }
                 }
             } else if (action === 'upgrade_smelter') {
-                this.facilityUpgrades[resId] = (this.facilityUpgrades[resId] || 1.0) + 0.35;
+                this.facilityUpgrades[effectiveResId] = (this.facilityUpgrades[effectiveResId] || 1.0) + 0.35;
                 if (typeof window !== 'undefined' && window.showOmegaNotification) {
                     window.showOmegaNotification('⚡ REFINERY SMELTER UPGRADED', `High-yield catalytic refinery for ${resObj.name} upgraded (+35% processing yield)!`, 'success');
                 }
@@ -9548,13 +9651,13 @@ _globalScope.GSRSK_DataFoundation = (() => {
                 const totalCost = qty * price;
                 if (typeof window !== 'undefined') {
                     if (isBuy) {
-                        this.strategicReserves[resId] = (this.strategicReserves[resId] || 0) + qty;
+                        this.strategicReserves[effectiveResId] = (this.strategicReserves[effectiveResId] || 0) + qty;
                         if (window.showOmegaNotification) {
                             window.showOmegaNotification('📈 SPOT MARKET PURCHASE', `Acquired ${qty.toLocaleString()} units of ${resObj.name} for $${(totalCost/1e6).toFixed(2)}M on Global Commodities Exchange!`, 'success');
                         }
                     } else {
-                        const cur = this.strategicReserves[resId] || 5000;
-                        this.strategicReserves[resId] = Math.max(0, cur - qty);
+                        const cur = this.strategicReserves[effectiveResId] || 5000;
+                        this.strategicReserves[effectiveResId] = Math.max(0, cur - qty);
                         if (window.showOmegaNotification) {
                             window.showOmegaNotification('📉 SPOT MARKET SALE', `Liquidated ${qty.toLocaleString()} units of ${resObj.name} yielding +$${(totalCost/1e6).toFixed(2)}M sovereign revenue!`, 'info');
                         }
@@ -9563,7 +9666,7 @@ _globalScope.GSRSK_DataFoundation = (() => {
             } else if (action === 'set_tariff') {
                 const tariffRate = opt && opt.tariff ? Number(opt.tariff) : 15;
                 this.tradeTariffs = this.tradeTariffs || {};
-                this.tradeTariffs[resId] = tariffRate;
+                this.tradeTariffs[effectiveResId] = tariffRate;
                 if (typeof window !== 'undefined' && window.showOmegaNotification) {
                     window.showOmegaNotification('📜 CUSTOMS TARIFF IMPOSED', `Sovereign protective tariff on ${resObj.name} set to ${tariffRate}%!`, 'info');
                 }

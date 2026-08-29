@@ -942,8 +942,9 @@ window.OmegaCabinetUI = {
             title: 'Health & Welfare',
             bnTitle: 'স্বাস্থ্য, চিকিৎসা ও জনকল্যাণ মন্ত্রণালয়',
             ministerName: 'Dr. Clara Oswald',
-            avatar: '🏥',
-            icon3D: '🏥',
+            avatar: 'assets/ministers/health.svg',
+            icon3D: 'assets/ministers/health.svg',
+            logo: 'health.svg',
             role: 'Minister of Healthcare & Emergency Medicine',
             status: 'HEALTHY',
             efficiency: 92,
@@ -1124,6 +1125,17 @@ window.OmegaCabinetUI = {
 
     mainCabinetView: 'council', // 'council' or 'ministries'
 
+    getMinistryIconHtml(m, size = 32) {
+        if (!m) return '🏛️';
+        if (m.id === 'health_welfare' || (m.logo && m.logo.includes('health')) || (typeof m.avatar === 'string' && m.avatar.includes('health.svg'))) {
+            return `<img src="assets/ministers/health.svg" alt="Health Ministry Logo" style="width:${size}px; height:${size}px; object-fit:contain; filter:drop-shadow(0 0 6px rgba(16,185,129,0.6)); display:inline-block; vertical-align:middle;" />`;
+        }
+        if (typeof m.avatar === 'string' && (m.avatar.endsWith('.svg') || m.avatar.endsWith('.png') || m.avatar.includes('/'))) {
+            return `<img src="${m.avatar}" alt="${m.title} Logo" style="width:${size}px; height:${size}px; object-fit:contain; display:inline-block; vertical-align:middle;" />`;
+        }
+        return m.icon3D || m.avatar || '🏛️';
+    },
+
     setCabinetMainView(view) {
         this.mainCabinetView = view;
         this.renderCabinet(this.activeCountry);
@@ -1260,7 +1272,7 @@ window.OmegaCabinetUI = {
                 html += `
                     <div class="parchment-card-btn" data-ministry-id="${m.id}" onclick="${clickFn}" title="Open ${m.title} Control Room">
                         <div style="font-size:10px; font-weight:800; color:${isCab ? '#ca8a04' : '#16a34a'}; background:${isCab ? 'rgba(234,179,8,0.2)' : 'rgba(34,197,94,0.15)'}; border:1px solid ${isCab ? '#eab308' : '#22c55e'}; padding:1px 8px; border-radius:10px;">${isCab ? '🏛️ CABINET' : '⚡ ' + m.efficiency + '% EFF'}</div>
-                        <div class="parchment-icon-box">${m.icon3D}</div>
+                        <div class="parchment-icon-box">${this.getMinistryIconHtml(m, 32)}</div>
                         <div class="parchment-card-title">${m.title}</div>
                     </div>
                 `;
@@ -1457,7 +1469,7 @@ window.OmegaCabinetUI = {
                     <button onclick="window.OmegaLayerManager.popLayer();" style="background:linear-gradient(135deg,rgba(15,23,42,0.9),rgba(30,41,59,0.9)); border:1.5px solid #00e5ff; color:#00e5ff; padding:8px 14px; border-radius:8px; font-weight:bold; cursor:pointer; font-family:'Share Tech Mono',monospace; font-size:12px; display:flex; align-items:center; gap:6px; box-shadow:0 0 10px rgba(0,229,255,0.2);">
                         <span>⬅️</span> <span>BACK</span>
                     </button>
-                    <div style="font-size:40px; background:rgba(0,229,255,0.08); padding:8px 14px; border-radius:12px; border:1px solid rgba(0,229,255,0.2);">${m.avatar}</div>
+                    <div style="font-size:36px; background:rgba(0,229,255,0.08); padding:8px 14px; border-radius:12px; border:1px solid rgba(0,229,255,0.2); display:flex; align-items:center; justify-content:center;">${this.getMinistryIconHtml(m, 40)}</div>
                     <div>
                         <h1 style="margin:0; font-family:'Inter',sans-serif; font-weight:700; font-size:20px; color:#f8fafc; letter-spacing:0.2px;">${m.title}</h1>
                         <div style="font-size:12px; font-weight:500; color:#00e5ff; margin-top:2px;">${m.role}</div>
@@ -2678,64 +2690,23 @@ window.OmegaCabinetUI = {
                 </div>
             </div>
 
-            <!-- ACTIONABLE RESOURCE DIRECTIVES & EXECUTION HUB -->
-            <div style="display:flex; flex-direction:column; gap:12px;">
-                <div style="font-family:'Inter',sans-serif; font-size:14px; color:#f8fafc; font-weight:700; display:flex; align-items:center; gap:8px;">
-                    <span>⚡</span> <span>Executive Resource Directives & Strategic Mega-Projects</span>
+            <!-- 16-POINT GSRSK STRATEGIC ARCHITECTURE & DIRECTIVES CONTROL CENTER -->
+            <div style="display:flex; flex-direction:column; gap:14px; margin-top:8px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; border-bottom:1px solid rgba(0,229,255,0.2); padding-bottom:8px;">
+                    <div style="font-family:'Inter',sans-serif; font-size:15px; color:#f8fafc; font-weight:700; display:flex; align-items:center; gap:8px;">
+                        <span>💎</span> <span>GSRSK 16-Point Sovereign Resource Architecture & Command Center</span>
+                    </div>
+                    <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                        <button onclick="window.OmegaCabinetUI.setResource16Filter('ALL');" style="padding:4px 10px; font-size:11px; font-weight:700; border-radius:6px; cursor:pointer; background:${(!this.res16Filter || this.res16Filter==='ALL')?'#00e5ff':'rgba(255,255,255,0.06)'}; color:${(!this.res16Filter || this.res16Filter==='ALL')?'#000':'#94a3b8'}; border:none;">ALL (16)</button>
+                        <button onclick="window.OmegaCabinetUI.setResource16Filter('UPSTREAM');" style="padding:4px 10px; font-size:11px; font-weight:700; border-radius:6px; cursor:pointer; background:${this.res16Filter==='UPSTREAM'?'#00e5ff':'rgba(255,255,255,0.06)'}; color:${this.res16Filter==='UPSTREAM'?'#000':'#94a3b8'}; border:none;">UPSTREAM</button>
+                        <button onclick="window.OmegaCabinetUI.setResource16Filter('MIDSTREAM');" style="padding:4px 10px; font-size:11px; font-weight:700; border-radius:6px; cursor:pointer; background:${this.res16Filter==='MIDSTREAM'?'#00e5ff':'rgba(255,255,255,0.06)'}; color:${this.res16Filter==='MIDSTREAM'?'#000':'#94a3b8'}; border:none;">MIDSTREAM</button>
+                        <button onclick="window.OmegaCabinetUI.setResource16Filter('DOWNSTREAM');" style="padding:4px 10px; font-size:11px; font-weight:700; border-radius:6px; cursor:pointer; background:${this.res16Filter==='DOWNSTREAM'?'#00e5ff':'rgba(255,255,255,0.06)'}; color:${this.res16Filter==='DOWNSTREAM'?'#000':'#94a3b8'}; border:none;">DOWNSTREAM</button>
+                        <button onclick="window.OmegaCabinetUI.setResource16Filter('STRATEGY');" style="padding:4px 10px; font-size:11px; font-weight:700; border-radius:6px; cursor:pointer; background:${this.res16Filter==='STRATEGY'?'#00e5ff':'rgba(255,255,255,0.06)'}; color:${this.res16Filter==='STRATEGY'?'#000':'#94a3b8'}; border:none;">STRATEGY & AI</button>
+                    </div>
                 </div>
 
-                <div class="ministry-dept-grid">
-                    <div class="dept-card" style="border-color:rgba(234,179,8,0.4);">
-                        <div class="dept-card-header">
-                            <span class="dept-card-title">🛢️ Strategic Petroleum Extraction</span>
-                            <span style="font-size:10px; color:#22c55e; font-family:'Share Tech Mono',monospace;">ACTIVE ●</span>
-                        </div>
-                        <div style="font-size:12px; color:#cbd5e1; flex:1; line-height:1.4;">
-                            Drill deepwater offshore oil reserves to boost national petroleum stockpiles by +50,000 BBL and yield +500 BBL/s extraction rate.
-                        </div>
-                        <button class="dept-action-btn" onclick="window.OmegaCabinetUI.executeResourceDirective('drill_oil');" style="background:linear-gradient(135deg,#eab308,#ca8a04); color:#000;">
-                            🛢️ Drill Offshore Oil Reserve ($800M)
-                        </button>
-                    </div>
-
-                    <div class="dept-card" style="border-color:rgba(0,229,255,0.4);">
-                        <div class="dept-card-header">
-                            <span class="dept-card-title">⚡ 2,400MW Nuclear Power Plant</span>
-                            <span style="font-size:10px; color:#00e5ff; font-family:'Share Tech Mono',monospace;">PLANNED ●</span>
-                        </div>
-                        <div style="font-size:12px; color:#cbd5e1; flex:1; line-height:1.4;">
-                            Construct dual-reactor nuclear facility to secure uninterrupted zero-carbon electrical baseload for heavy manufacturing plants.
-                        </div>
-                        <button class="dept-action-btn" onclick="window.OmegaCabinetUI.executeResourceDirective('build_nuclear');" style="background:linear-gradient(135deg,#00e5ff,#0284c7); color:#000;">
-                            ⚛️ Build Nuclear Reactor ($2.0B)
-                        </button>
-                    </div>
-
-                    <div class="dept-card" style="border-color:rgba(168,85,247,0.4);">
-                        <div class="dept-card-header">
-                            <span class="dept-card-title">⛏️ Strategic Mining & Rare Earths</span>
-                            <span style="font-size:10px; color:#a855f7; font-family:'Share Tech Mono',monospace;">OPTIMAL ●</span>
-                        </div>
-                        <div style="font-size:12px; color:#cbd5e1; flex:1; line-height:1.4;">
-                            Expand lithium and uranium mining operations to supply military defence industries and advanced electronics exporters.
-                        </div>
-                        <button class="dept-action-btn" onclick="window.OmegaCabinetUI.executeResourceDirective('expand_mining');" style="background:linear-gradient(135deg,#a855f7,#7e22ce); color:#fff;">
-                            ⛏️ Expand Rare Earth Mining ($1.2B)
-                        </button>
-                    </div>
-
-                    <div class="dept-card" style="border-color:rgba(34,197,94,0.4);">
-                        <div class="dept-card-header">
-                            <span class="dept-card-title">☀️ Offshore Wind & Solar Grid</span>
-                            <span style="font-size:10px; color:#22c55e; font-family:'Share Tech Mono',monospace;">GREEN ●</span>
-                        </div>
-                        <div style="font-size:12px; color:#cbd5e1; flex:1; line-height:1.4;">
-                            Deploy 1,000 MW coastal offshore wind turbines to diversify grid energy mix and reduce fossil fuel dependency.
-                        </div>
-                        <button class="dept-action-btn" onclick="window.OmegaCabinetUI.executeResourceDirective('build_solar');" style="background:linear-gradient(135deg,#22c55e,#15803d); color:#fff;">
-                            ☀️ Build Offshore Wind Grid ($600M)
-                        </button>
-                    </div>
+                <div class="ministry-dept-grid" style="grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:12px;">
+                    ${this.getResource16CardsHtml()}
                 </div>
             </div>
         `;
@@ -2745,6 +2716,84 @@ window.OmegaCabinetUI = {
         setTimeout(() => {
             this.initLiveResourceGraph(this.activeResourceSub);
         }, 50);
+    },
+
+    res16Filter: 'ALL',
+
+    setResource16Filter(filterKey) {
+        this.res16Filter = filterKey;
+        const m = this.ministriesDatabase['energy_mining'] || this.ministriesDatabase['resource'];
+        const contentArea = document.getElementById('ministry-dashboard-content');
+        if (m && contentArea) {
+            this.renderResourceMinistryDashboard(m, contentArea);
+        }
+    },
+
+    getResource16CardsHtml() {
+        const countryKey = (this.activeCountry || 'BANGLADESH').toUpperCase();
+        const normKey = countryKey.replace(/[-\s]/g, '_');
+
+        const points = [
+            { num: '01', id: 'p01', tag: 'FOUNDATION', icon: '⚖️', title: 'Unit Standards & Metrology', bn: 'পরিমাপক একক ও জ্ঞানতাত্ত্বিক ভিত্তি', desc: 'Canonical conversion factors for MMBTU, BBL, Metric Tons and Murmur64 checksum validation.', btnText: 'Inspect Metrology Matrix', action: () => `window.ResourceMinistryEngine.openModal('${normKey}', 'matrix')`, border: '#00e5ff' },
+            { num: '02', id: 'p02', tag: 'FOUNDATION', icon: '📖', title: '18 Commodity Ontology Matrix', bn: '১৮ কৌশলগত পদার্থের রাসায়নিক ও ভৌত কাঠামো', desc: 'Physicochemical transformations, substitution elasticities, and CRIRSCO mineral classifications.', btnText: 'View Commodity Ontology', action: () => `window.ResourceMinistryEngine.openModal('${normKey}', 'matrix')`, border: '#38bdf8' },
+            { num: '03', id: 'p03', tag: 'UPSTREAM', icon: '💎', title: 'Sovereign Reserves & In-Situ Ledger', bn: 'সার্বভৌম মজুদ ও খনিজ সম্পদ খতিয়ান', desc: 'Verified proven reserves, daily extraction mutation rates, and sovereign resource balance sheets.', btnText: 'Audit Proven Reserves', action: () => `window.ResourceMinistryEngine.openModal('${normKey}', 'matrix')`, border: '#eab308' },
+            { num: '04', id: 'p04', tag: 'UPSTREAM', icon: '🗺️', title: 'Deposit Registry & Geocoded Mines', bn: 'খনিজ ডিপোজিট ও ভূতাত্ত্বিক ম্যাপিং', desc: '593 geocoded global mining concessions, ore purities, and spatial reserve clusters.', btnText: 'Explore Geocoded Deposits', action: () => `window.ResourceMinistryEngine.openModal('${normKey}', 'deposits')`, border: '#ca8a04' },
+            { num: '05', id: 'p05', tag: 'UPSTREAM', icon: '⛏️', title: 'Geological Extraction & Depletion Rate', bn: 'খনন উত্তোলন ও অবক্ষয় নিয়ন্ত্রণ প্রকল্প', desc: 'Block caving, open-cast stripping, and Reserve Replacement Ratio (RRR) optimization.', btnText: 'Upgrade Extraction & RRR ($800M)', action: () => `window.OmegaCabinetUI.executeResource16Point('p05', 'drill_oil')`, border: '#f59e0b' },
+            { num: '06', id: 'p06', tag: 'MIDSTREAM', icon: '⚙️', title: 'Processing, Smelting & Refining', bn: 'পরিশোধন, ধাতু নিষ্কাশন ও রূপান্তর শিল্প', desc: 'Fluid catalytic cracking, blast furnaces, electro-winning (SX-EW), and uranium centrifuges.', btnText: 'Commission Smelter Complex ($1.2B)', action: () => `window.OmegaCabinetUI.executeResource16Point('p06', 'build_factory')`, border: '#a855f7' },
+            { num: '07', id: 'p07', tag: 'MIDSTREAM', icon: '🛢️', title: 'Strategic Petroleum Reserve (SPR)', bn: 'কৌশলগত তেল ও তরল গ্যাস মজুদাগার', desc: '90-day SPR national buffer, salt cavern storages, cryogenic LNG tanks, and grain silos.', btnText: 'Drawdown / Expand SPR Silos', action: () => `window.ResourceMinistryEngine.openModal('${normKey}', 'inventory')`, border: '#d97706' },
+            { num: '08', id: 'p08', tag: 'MIDSTREAM', icon: '🚢', title: 'Multimodal Transit Corridors', bn: 'পাইপলাইন, সমুদ্রবন্দর ও মাল্টিমোডাল পরিবহন', desc: 'Pipelines, maritime supertanker lanes, deepwater bulk berths, and rail freight networks.', btnText: 'Inspect Logistics Corridors', action: () => `window.ResourceMinistryEngine.openModal('${normKey}', 'logistics')`, border: '#06b6d4' },
+            { num: '09', id: 'p09', tag: 'DOWNSTREAM', icon: '🏭', title: 'Industrial Value Chain (DAG)', bn: 'শিল্প উৎপাদনের ডাইরেক্টেড গ্রাফ (DAG)', desc: 'Multi-stage transformation from raw ore into semiconductors, titanium airframes, and munitions.', btnText: 'Inspect Industrial Value Chains', action: () => `window.ResourceMinistryEngine.openModal('${normKey}', 'industrial')`, border: '#8b5cf6' },
+            { num: '10', id: 'p10', tag: 'DOWNSTREAM', icon: '📈', title: 'Commodity Spot Market & Clearing', bn: 'স্পট মার্কেট ও গ্লোবাল ট্রেডিং ডেস্ক', desc: 'Continuous clearing, order book matching, Brent/WTI arbitrage, and derivative hedging.', btnText: 'Open Commodity Trading Desk', action: () => `window.ResourceMinistryEngine.openModal('${normKey}', 'market')`, border: '#10b981' },
+            { num: '11', id: 'p11', tag: 'DOWNSTREAM', icon: '📜', title: 'Bilateral Supply Contracts & Tariffs', bn: 'দ্বিপাক্ষিক সরবরাহ চুক্তি ও বৈদেশিক শুল্ক', desc: 'Long-term bilateral offtake agreements, Letters of Credit, import/export tariffs, and sanctions.', btnText: 'Negotiate Supply Agreements', action: () => `window.ResourceMinistryEngine.openModal('${normKey}', 'trade')`, border: '#14b8a6' },
+            { num: '12', id: 'p12', tag: 'STRATEGY', icon: '💰', title: 'Economic Rent & Sovereign Wealth (SWF)', bn: 'অর্থনৈতিক রেন্ট ও সার্বভৌম তহবিল (SWF)', desc: 'Resource rent capture, Sovereign Wealth Fund capitalization, and Dutch Disease mitigation.', btnText: 'Capitalize National SWF', action: () => `window.ResourceMinistryEngine.openModal('${normKey}', 'value')`, border: '#fbbf24' },
+            { num: '13', id: 'p13', tag: 'STRATEGY', icon: '⚠️', title: 'Cascade Disruption Sandbox', bn: 'মাল্টি-টিয়ার সাপ্লাই চেইন ক্যাস্কেড সিমুলেটর', desc: 'Non-linear supply shock propagation, chokepoint blockades, and contingency war-gaming.', btnText: 'Launch Cascade Disruption Sandbox', action: () => `window.ResourceMinistryEngine.openModal('${normKey}', 'cascade')`, border: '#ef4444' },
+            { num: '14', id: 'p14', tag: 'STRATEGY', icon: '🧠', title: 'Cognitive Situation & 12-Question Gate', bn: 'কগনিটিভ এআই পরিস্থিতি ও ১২-প্রশ্ন গেট', desc: 'Red-Team counterfactual critics, 10-dimensional health evaluations, and AI briefing generation.', btnText: 'Run AI Cognitive Decision Gate', action: () => `window.ResourceMinistryEngine.openModal('${normKey}', 'profile')`, border: '#ec4899' },
+            { num: '15', id: 'p15', tag: 'MIDSTREAM', icon: '⚡', title: 'Power Grid & 2.4GW Baseload Mix', bn: 'জাতীয় বিদ্যুৎ গ্রিড ও বেসলোড সমন্বয়', desc: '2,400MW nuclear baseload, combined-cycle gas peakers, offshore wind, and black-start capability.', btnText: 'Build 2.4GW Nuclear Baseload ($2.0B)', action: () => `window.OmegaCabinetUI.executeResource16Point('p15', 'build_nuclear')`, border: '#0284c7' },
+            { num: '16', id: 'p16', tag: 'STRATEGY', icon: '🌱', title: 'Carbon Quotas & Circular Remediation', bn: 'কার্বন নির্গমন সীমা ও বৃত্তাকার অর্থনীতি', desc: 'Tailings reprocessing, emissions cap-and-trade, industrial water recycling, and green transition.', btnText: 'Deploy Green Infrastructure ($600M)', action: () => `window.OmegaCabinetUI.executeResource16Point('p16', 'build_solar')`, border: '#22c55e' }
+        ];
+
+        const activeFilter = this.res16Filter || 'ALL';
+        const filtered = points.filter(p => {
+            if (activeFilter === 'ALL') return true;
+            if (activeFilter === 'FOUNDATION' && (p.tag === 'FOUNDATION')) return true;
+            if (activeFilter === 'UPSTREAM' && p.tag === 'UPSTREAM') return true;
+            if (activeFilter === 'MIDSTREAM' && p.tag === 'MIDSTREAM') return true;
+            if (activeFilter === 'DOWNSTREAM' && p.tag === 'DOWNSTREAM') return true;
+            if (activeFilter === 'STRATEGY' && (p.tag === 'STRATEGY' || p.tag === 'FOUNDATION')) return true;
+            return false;
+        });
+
+        let cardsHtml = "";
+        filtered.forEach(pt => {
+            cardsHtml += `
+                <div class="dept-card" style="border-color:${pt.border}; background:rgba(2, 11, 20, 0.85); display:flex; flex-direction:column; justify-content:space-between; padding:12px; border-radius:10px; border-width:1.5px; box-shadow:0 0 12px rgba(0,0,0,0.5);">
+                    <div>
+                        <div class="dept-card-header" style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px;">
+                            <span class="dept-card-title" style="font-size:13px; font-weight:700; color:#f8fafc; display:flex; align-items:center; gap:6px;">
+                                <span style="font-size:16px;">${pt.icon}</span>
+                                <span>${pt.num}. ${pt.title}</span>
+                            </span>
+                            <span style="font-size:9px; font-weight:800; color:${pt.border}; background:rgba(255,255,255,0.06); padding:2px 6px; border-radius:4px; font-family:'Share Tech Mono',monospace;">${pt.tag}</span>
+                        </div>
+                        <div style="font-size:10px; color:#38bdf8; font-weight:600; margin-bottom:4px;">${pt.bn}</div>
+                        <div style="font-size:11px; color:#94a3b8; line-height:1.4; margin-bottom:10px;">
+                            ${pt.desc}
+                        </div>
+                    </div>
+                    <button class="dept-action-btn" onclick="${pt.action()};" style="background:linear-gradient(135deg, ${pt.border} 0%, rgba(15,23,42,0.95) 100%); color:#fff; font-size:11px; font-weight:700; border:1px solid ${pt.border}; padding:7px 10px; border-radius:6px; cursor:pointer; width:100%; text-align:center; transition:all 0.15s;" onmouseover="this.style.opacity='0.9';" onmouseout="this.style.opacity='1';">
+                        ${pt.btnText}
+                    </button>
+                </div>
+            `;
+        });
+        return cardsHtml;
+    },
+
+    executeResource16Point(pointKey, directiveType) {
+        this.executeResourceDirective(directiveType);
+        if (window.OmegaCognitiveOS && typeof window.OmegaCognitiveOS.learnFromExecution === 'function') {
+            window.OmegaCognitiveOS.learnFromExecution({ success: true, impactDelta: 2.5, notes: `Point ${pointKey} executed directly from Resource Command Center.` }, pointKey);
+        }
     },
 
     initLiveResourceGraph(subType) {
@@ -3048,32 +3097,28 @@ window.OmegaCabinetUI = {
         setTimeout(() => {
             let replyText = "";
             let impactAnalysis = "";
-            const isBengali = /[\u0980-\u09FF]/.test(questionText);
-            const qLower = questionText.toLowerCase();
 
-            if (isBengali) {
-                if (qLower.includes('প্রস্তুতি') || qLower.includes('হুমকি') || qLower.includes('যুদ্ধ') || qLower.includes('প্রতিরক্ষা') || qLower.includes('আক্রমণ')) {
-                    replyText = `মাননীয় এক্সিকিউটিভ কমান্ডার, ${cDetails.name}-এর ${mRole} হিসেবে জানাচ্ছি: আমাদের ${minister.title} সর্বোচ্চ DEFCON প্রস্তুতিতে রয়েছে। কাজের দক্ষতা ${minister.efficiency}% এবং জাতীয় সার্বভৌমত্ব সম্পূর্ণ সুরক্ষিত।`;
-                } else if (qLower.includes('অর্থ') || qLower.includes('বাজেট') || qLower.includes('টাকা') || qLower.includes('রাজস্ব') || qLower.includes('খরচ')) {
-                    replyText = `আপনার অর্থনৈতিক প্রশ্নের জবাবে: ${cDetails.name}-এর জন্য বরাদ্দকৃত বার্ষিক বাজেট ${minister.budget} শতভাগ স্বচ্ছতা ও অর্থনৈতিক শৃঙ্খলা মেনে ব্যবহৃত হচ্ছে। জাতীয় রাজকোষ শক্তিশালী রয়েছে।`;
-                } else if (qLower.includes('নীতি') || qLower.includes('পরিকল্পনা') || qLower.includes('চুক্তি') || qLower.includes('সম্পর্ক') || qLower.includes('কাজ')) {
-                    replyText = `আপনার আদেশ বাস্তবায়নে: আমি (${mName}) সরাসরি ২৫-স্তরের কৌশলগত পর্যালোচনা শুরু করেছি। "${questionText}" সংক্রান্ত পদক্ষেপের ফলে ${cDetails.name}-এর জাতীয় স্বার্থ ১০০% সুরক্ষিত থাকবে।`;
-                } else {
-                    replyText = `Executive Order গৃহীত হয়েছে, স্যার! ${cDetails.name}-এর ${mRole} হিসেবে আমি (${mName}) আপনার নির্দেশনা ("${questionText}") বাস্তবায়নে সংশ্লিষ্ট সকল বিভাগকে তাত্ক্ষণিক নির্দেশ প্রদান করছি।`;
-                }
-            } else {
-                if (qLower.includes('readiness') || qLower.includes('threat') || qLower.includes('strike') || qLower.includes('defense') || qLower.includes('war')) {
-                    replyText = `Commander, regarding your query: As ${mRole} of ${cDetails.name}, I confirm our operational efficiency is at ${minister.efficiency}%. Threat vectors are actively monitored and defense dromes are secured.`;
-                } else if (qLower.includes('budget') || qLower.includes('money') || qLower.includes('tax') || qLower.includes('finance') || qLower.includes('revenue')) {
-                    replyText = `Regarding national treasury allocations: Our annual budget of ${minister.budget} for ${cDetails.name} is deployed with strict audit controls under my direct oversight as ${mName}.`;
-                } else if (qLower.includes('plan') || qLower.includes('policy') || qLower.includes('treaty') || qLower.includes('relation') || qLower.includes('foreign')) {
-                    replyText = `As ${mName} (${mRole}), I have executed a 25-layer strategic simulation regarding "${questionText}". Sovereign stability of ${cDetails.name} remains protected at ${cDetails.stability || '88%'}.`;
-                } else {
-                    replyText = `Executive Directive acknowledged, Commander! As ${mName}, ${mRole} of ${cDetails.name}, I have synchronized all departmental channels to execute your order regarding "${questionText}" immediately.`;
+            if (window.OmegaCognitiveOS && typeof window.OmegaCognitiveOS.thinkMinisterQuestion === 'function') {
+                try {
+                    const cogRes = window.OmegaCognitiveOS.thinkMinisterQuestion(questionText, minister, countryKey, cDetails);
+                    if (cogRes && cogRes.text) {
+                        replyText = cogRes.text;
+                        impactAnalysis = cogRes.impact || `Cognitive Confidence: 94.2% • Efficiency: ${minister.efficiency}% • Sovereign Stability: ${cDetails.stability || '88%'}`;
+                    }
+                } catch (e) {
+                    console.warn("[OmegaCognitiveOS] Fallback to cognitive generator:", e);
                 }
             }
 
-            impactAnalysis = `Economic Impact: +${(Math.random()*1.8 + 0.5).toFixed(1)}% • Operational Efficiency: ${minister.efficiency}% • Sovereign Stability: ${cDetails.stability || '88%'}`;
+            if (!replyText) {
+                const isBengali = /[\u0980-\u09FF]/.test(questionText);
+                if (isBengali) {
+                    replyText = `মাননীয় এক্সিকিউটিভ কমান্ডার, ${cDetails.name}-এর ${mRole} হিসেবে আমি (${mName}) আপনার নির্দেশনা ("${questionText}") পর্যালোচনা করেছি। আমাদের বিভাগীয় সক্ষমতা ${minister.efficiency}% এবং কগনিটিভ পলিসি ফ্রেমওয়ার্ক সার্বক্ষণিক কার্যকর রয়েছে।`;
+                } else {
+                    replyText = `Executive Commander, as ${mRole} of ${cDetails.name}, I (${mName}) have processed your inquiry regarding "${questionText}". Department operational efficiency stands at ${minister.efficiency}% under current directives.`;
+                }
+                impactAnalysis = `Cognitive Confidence: 91.5% • Operational Efficiency: ${minister.efficiency}% • Sovereign Stability: ${cDetails.stability || '88%'}`;
+            }
 
             this.chatHistories[minister.id].push({
                 sender: 'MINISTER',
@@ -3083,7 +3128,7 @@ window.OmegaCabinetUI = {
             });
 
             this.renderChatHistory(minister.id);
-        }, 250);
+        }, 150);
     },
 
     executeDirective(ministerId, directiveType) {
