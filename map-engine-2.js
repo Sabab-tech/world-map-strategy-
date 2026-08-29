@@ -1373,6 +1373,13 @@ Game.Map.renderResourceDeposits = function() {
     // CRITICAL MANDATE 11: ONE LAYER ONLY. Always clear before adding new markers.
     this.resourceDepositsLayer.clearLayers();
 
+    // Auto-populate all catalog resources if selectedResources is empty but enabled
+    if (this.resourceState && this.resourceState.enabled && (!this.resourceState.selectedResources || this.resourceState.selectedResources.size === 0)) {
+        if (Array.isArray(this.resourceCatalog)) {
+            this.resourceState.selectedResources = new Set(this.resourceCatalog.map(r => r.id.toLowerCase()));
+        }
+    }
+
     // Check if mode is active or any resources selected
     if (!this.resourceState.enabled || this.resourceState.selectedResources.size === 0) {
         const summaryCountElem = document.getElementById('resource-summary-count');
@@ -1386,22 +1393,22 @@ Game.Map.renderResourceDeposits = function() {
     }
 
     const engine = window.ResourceMinistryEngine;
-    const deposits = (engine && engine.deposits) ? engine.deposits : [];
+    const deposits = (engine && engine.deposits && engine.deposits.length > 0) ? engine.deposits : [];
     
     const normCountry = (c) => {
         if (!c) return '';
-        let s = c.replace(/_/g, " ").toUpperCase().trim();
+        let s = String(c).replace(/_/g, " ").toUpperCase().trim();
         const map = {
-            'UNITED STATES OF AMERICA': 'USA', 'UNITED STATES': 'USA',
+            'UNITED STATES OF AMERICA': 'USA', 'UNITED STATES': 'USA', 'AMERICA': 'USA',
             'IVORY COAST': "COTE D'IVOIRE", "CÔTE D'IVOIRE": "COTE D'IVOIRE",
-            'DEMOCRATIC REPUBLIC OF THE CONGO': 'DR CONGO', 'CONGO (KINSHASA)': 'DR CONGO',
-            'BANGLADESH': 'BANGLADESH', 'INDIA': 'INDIA', 'PAKISTAN': 'PAKISTAN'
+            'DEMOCRATIC REPUBLIC OF THE CONGO': 'DR CONGO', 'CONGO (KINSHASA)': 'DR CONGO', 'CONGO': 'DR CONGO',
+            'BANGLADESH': 'BANGLADESH', 'INDIA': 'INDIA', 'PAKISTAN': 'PAKISTAN', 'CHINA': 'CHINA', 'RUSSIA': 'RUSSIA'
         };
         return map[s] || s;
     };
 
-    const activeCountryNorm = normCountry(Game.currentActiveCountry || 'BANGLADESH');
-    const scope = this.resourceState.scope || 'NATION';
+    const activeCountryNorm = normCountry(Game.currentActiveCountry || (window.CountryIOS && window.CountryIOS.activeCountry) || 'BANGLADESH');
+    const scope = this.resourceState.scope || 'WORLD'; // Default to global scope so all 197 countries show!
     const selectedRes = this.resourceState.selectedResources;
 
     // Deduplication & Safety Validation Loop
@@ -1413,17 +1420,20 @@ Game.Map.renderResourceDeposits = function() {
         const lat = Number(dep.lat);
         const lng = Number(dep.lng);
         if (!Number.isFinite(lat) || !Number.isFinite(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
-            return; // Skip garbage / invalid coordinates!
+            return; // Skip invalid coordinates
         }
 
         const resId = (dep.resId || '').toLowerCase().trim();
-        if (!selectedRes.has(resId)) return; // Filtered out by resource type
+        // Check if selected or tag matches
+        const hasMatch = selectedRes.has(resId) || (Array.isArray(dep.resourceTags) && dep.resourceTags.some(t => selectedRes.has(String(t).toLowerCase())));
+        if (!hasMatch && selectedRes.size > 0 && !selectedRes.has('all')) return; // Filtered out
 
-        const cNorm = normCountry(dep.country || '');
+        const cNorm = normCountry(dep.country || dep.countryCode || '');
 
         // Scope Filter: NATION vs WORLD
         if (scope === 'NATION') {
             const isMatch = (cNorm === activeCountryNorm) ||
+                            (dep.countryCode && String(dep.countryCode).toUpperCase() === activeCountryNorm) ||
                             (cNorm.length > 3 && activeCountryNorm.length > 3 && (cNorm.includes(activeCountryNorm) || activeCountryNorm.includes(cNorm)));
             if (!isMatch) return;
         }
@@ -1443,7 +1453,7 @@ Game.Map.renderResourceDeposits = function() {
 
     // Exact Geographic Placement with micro-offset only for overlapping identical coordinates
     const coordMap = new Map();
-    matchingDeposits.forEach((dep, index) => {
+    matchingDeposits.forEach((dep) => {
         const coordKey = `${dep.lat.toFixed(3)}_${dep.lng.toFixed(3)}`;
         if (!coordMap.has(coordKey)) {
             coordMap.set(coordKey, []);
@@ -1452,7 +1462,7 @@ Game.Map.renderResourceDeposits = function() {
     });
 
     // Render screen-space fixed markers with Leaflet divIcon
-    coordMap.forEach((items, coordKey) => {
+    coordMap.forEach((items) => {
         const total = items.length;
         items.forEach((dep, index) => {
             let renderLat = dep.lat;
@@ -1461,21 +1471,21 @@ Game.Map.renderResourceDeposits = function() {
             // Apply slight micro-separation ONLY if multiple deposits share the exact same coordinates
             if (total > 1) {
                 const angle = index * (2 * Math.PI / total);
-                const microOffset = 0.025; // ~2.5 km micro-separation to allow clicking
+                const microOffset = 0.035; // micro-separation to allow clean clicking
                 renderLat = dep.lat + microOffset * Math.sin(angle);
                 renderLng = dep.lng + (microOffset * Math.cos(angle)) / Math.max(0.2, Math.cos(dep.lat * Math.PI / 180));
             }
 
-            const catalogItem = this.resourceCatalog.find(r => r.id === dep.resId) || { icon: '⛏️', color: '#ffd700' };
-            const icon = catalogItem.icon;
-            const color = catalogItem.color;
+            const catalogItem = (Array.isArray(this.resourceCatalog) ? this.resourceCatalog.find(r => r.id === dep.resId) : null) || { icon: '⛏️', color: '#ffd700' };
+            const icon = catalogItem.icon || '⛏️';
+            const color = catalogItem.color || '#38bdf8';
 
             // Visual Yield Intensity Rating (Low/Medium/High/Massive)
-            const depStr = `${dep.reserve || ''} ${dep.name || ''} ${dep.status || ''}`.toUpperCase();
+            const depStr = `${dep.reserves || dep.reserve || ''} ${dep.name || ''} ${dep.status || ''}`.toUpperCase();
             let quantityTier = 'MEDIUM';
             if (depStr.includes('WORLD TOP') || depStr.includes('WORLD NO1') || depStr.includes('TOP EXPORTER') || depStr.includes('WORLD LEADER') || depStr.includes('SUPERGIANT') || depStr.includes('MASSIVE') || depStr.includes('TIER 1') || depStr.includes('TCF') || depStr.includes('1.8B') || depStr.includes('8.5B') || depStr.includes('2.4M')) {
                 quantityTier = 'MASSIVE';
-            } else if (depStr.includes('MAJOR') || depStr.includes('STRATEGIC') || depStr.includes('ACTIVE EXTRACTION') || depStr.includes('890,000') || depStr.includes('650M') || depStr.includes('MILLION')) {
+            } else if (depStr.includes('MAJOR') || depStr.includes('STRATEGIC') || depStr.includes('ACTIVE') || depStr.includes('890,000') || depStr.includes('650M') || depStr.includes('MILLION')) {
                 quantityTier = 'HIGH';
             }
 
@@ -1529,15 +1539,18 @@ Game.Map.renderResourceDeposits = function() {
 
             const marker = L.marker([renderLat, renderLng], { icon: customIcon });
 
+            const reservesText = dep.reserves || dep.reserve || 'Authoritative In-situ Sovereign Assessment';
             const popupContent = `
-                <div style="font-family:'Segoe UI', sans-serif; color:#f8fafc; width:240px; padding:6px;">
-                    <div style="font-size:12px; font-weight:bold; color:${color}; border-bottom:1px solid rgba(0,229,255,0.3); padding-bottom:4px; margin-bottom:6px; font-family:var(--font-title); display:flex; align-items:center; gap:6px;">
+                <div style="font-family:'Segoe UI', sans-serif; color:#f8fafc; width:250px; padding:8px; background:rgba(15,23,42,0.95); border:1px solid ${color}; border-radius:8px;">
+                    <div style="font-size:13px; font-weight:bold; color:${color}; border-bottom:1px solid rgba(0,229,255,0.3); padding-bottom:4px; margin-bottom:6px; display:flex; align-items:center; gap:6px;">
                         <span>${icon}</span> <span>${(dep.name || '').toUpperCase()}</span>
                     </div>
-                    <div style="font-size:11px; color:#cbd5e1; line-height:1.5; font-family:var(--font-mono); margin-bottom:8px;">
-                        <div>Country: <strong style="color:#00e5ff;">${dep.country}</strong></div>
-                        <div>Reserves: <strong style="color:#22c55e;">${dep.reserve || 'Unspecified'}</strong></div>
-                        <div>Status: <strong style="color:#a855f7;">${dep.status || 'Active Deposit'}</strong></div>
+                    <div style="font-size:11px; color:#cbd5e1; line-height:1.6; margin-bottom:8px;">
+                        <div>🌍 Country: <strong style="color:#00e5ff;">${dep.country || dep.countryCode}</strong></div>
+                        <div>⛏️ Commodity: <strong style="color:#facc15;">${(dep.resId || '').toUpperCase().replace(/_/g, ' ')}</strong></div>
+                        <div>📊 Reserves: <strong style="color:#22c55e;">${reservesText}</strong></div>
+                        <div>🏛️ Operator: <span style="color:#94a3b8;">${dep.operator || 'State Resource Authority'}</span></div>
+                        <div>⚡ Status: <strong style="color:#a855f7;">${dep.status || 'Active Producing'}</strong></div>
                     </div>
                     <div style="display:flex; flex-direction:column; gap:5px; margin-top:8px;">
                         <button onclick="if(window.ResourceMinistryEngine) window.ResourceMinistryEngine.executeDirective('expand_facility', '${dep.resId}');" style="padding:6px 10px; background:rgba(34,197,94,0.25); border:1px solid #22c55e; color:#22c55e; font-size:10px; font-weight:bold; border-radius:4px; cursor:pointer; text-align:center;">
@@ -1546,7 +1559,7 @@ Game.Map.renderResourceDeposits = function() {
                         <button onclick="if(window.ResourceMinistryEngine) window.ResourceMinistryEngine.executeDirective('survey', '${dep.resId}');" style="padding:6px 10px; background:rgba(234,179,8,0.25); border:1px solid #eab308; color:#eab308; font-size:10px; font-weight:bold; border-radius:4px; cursor:pointer; text-align:center;">
                             ⛏️ DISPATCH GEOLOGICAL SURVEY
                         </button>
-                        <button onclick="if(window.ResourceMinistryEngine) window.ResourceMinistryEngine.openModal('${dep.country}', 'matrix');" style="padding:6px 10px; background:rgba(0,229,255,0.25); border:1px solid #00e5ff; color:#00e5ff; font-size:10px; font-weight:bold; border-radius:4px; cursor:pointer; text-align:center;">
+                        <button onclick="if(window.ResourceMinistryEngine) window.ResourceMinistryEngine.openModal('${dep.country || dep.countryCode}', 'matrix');" style="padding:6px 10px; background:rgba(0,229,255,0.25); border:1px solid #00e5ff; color:#00e5ff; font-size:10px; font-weight:bold; border-radius:4px; cursor:pointer; text-align:center;">
                             💎 AUDIT PROVEN IN-SITU LEDGER
                         </button>
                     </div>

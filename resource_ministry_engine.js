@@ -8986,30 +8986,116 @@ _globalScope.GSRSK_DataFoundation = (() => {
             const resourceMap = new Map(this.resourceTypes.map(r => [r.id, r]));
 
             const KNOWN_GEO_COORDS = {
+                // BANGLADESH AUTHORITATIVE MINES & FIELDS
                 'barapukuria': { lat: 25.552, lng: 88.964, res: 'coal' },
                 'maddhapara': { lat: 25.570, lng: 89.075, res: 'hard_rock' },
+                'dighipara': { lat: 25.320, lng: 88.980, res: 'coal' },
+                'jamalganj': { lat: 25.015, lng: 89.042, res: 'coal' },
+                'khalaspir': { lat: 25.430, lng: 89.200, res: 'coal' },
+                'phulbari': { lat: 25.490, lng: 88.940, res: 'coal' },
                 'bibiyana': { lat: 24.635, lng: 91.662, res: 'natural_gas' },
                 'titas': { lat: 23.988, lng: 91.102, res: 'natural_gas' },
                 'kailashtila': { lat: 24.872, lng: 92.015, res: 'natural_gas' },
                 'rashidpur': { lat: 24.321, lng: 91.595, res: 'natural_gas' },
                 'habiganj': { lat: 24.383, lng: 91.415, res: 'natural_gas' },
                 'sylhet': { lat: 24.894, lng: 91.868, res: 'natural_gas' },
-                'jamalganj': { lat: 25.015, lng: 89.042, res: 'coal' },
-                'dighipara': { lat: 25.320, lng: 88.980, res: 'coal' },
+                'jalalabad': { lat: 24.930, lng: 91.950, res: 'natural_gas' },
+                'beanibazar': { lat: 24.825, lng: 92.160, res: 'natural_gas' },
+                'fenchuganj': { lat: 24.670, lng: 91.940, res: 'natural_gas' },
+                'bakhrabad': { lat: 23.615, lng: 90.870, res: 'natural_gas' },
+                'meghna': { lat: 23.630, lng: 90.730, res: 'natural_gas' },
+                'shahbazpur': { lat: 22.470, lng: 90.720, res: 'natural_gas' },
+                'bhola': { lat: 22.610, lng: 90.650, res: 'natural_gas' },
+                'semutang': { lat: 22.840, lng: 91.750, res: 'natural_gas' },
+                'srikail': { lat: 23.620, lng: 90.960, res: 'natural_gas' },
+                'sundalpur': { lat: 22.950, lng: 91.180, res: 'natural_gas' },
+                'begumganj': { lat: 22.950, lng: 91.100, res: 'natural_gas' },
+                'rupganj': { lat: 23.780, lng: 90.520, res: 'natural_gas' },
                 'chattak': { lat: 25.042, lng: 91.670, res: 'limestone' },
+                'chhatak': { lat: 25.042, lng: 91.670, res: 'limestone' },
+                'joypurhat': { lat: 25.100, lng: 89.020, res: 'limestone' },
                 'cox_s_bazar': { lat: 21.432, lng: 91.980, res: 'heavy_minerals' },
                 'matarbari': { lat: 21.710, lng: 91.880, res: 'lng_terminal' },
                 'kutubdia': { lat: 21.815, lng: 91.850, res: 'offshore_gas' },
+                'sangu': { lat: 22.080, lng: 91.620, res: 'natural_gas' },
                 'bengal_basin': { lat: 23.500, lng: 90.500, res: 'natural_gas' },
                 'surma_basin': { lat: 24.750, lng: 91.900, res: 'natural_gas' },
                 'hatia_trough': { lat: 22.350, lng: 91.150, res: 'natural_gas' },
+                'saint_martin': { lat: 20.620, lng: 92.320, res: 'natural_gas' },
+                'kuakata': { lat: 21.820, lng: 90.120, res: 'heavy_minerals' },
+                'tangail': { lat: 24.250, lng: 89.920, res: 'timber' },
+                'sundarbans': { lat: 22.100, lng: 89.400, res: 'timber' },
+                'chittagong_hill_tracts': { lat: 22.330, lng: 92.200, res: 'timber' },
+
+                // GLOBAL STRATEGIC BASINS & MAJOR MINES
                 'ghawar': { lat: 25.430, lng: 49.620, res: 'crude_oil' },
                 'safaniya': { lat: 28.010, lng: 48.770, res: 'crude_oil' },
+                'shaybah': { lat: 22.510, lng: 53.950, res: 'crude_oil' },
+                'khurais': { lat: 25.080, lng: 47.960, res: 'crude_oil' },
+                'jafurah': { lat: 24.800, lng: 49.900, res: 'natural_gas' },
                 'permian': { lat: 31.850, lng: -102.350, res: 'crude_oil' },
                 'bakken': { lat: 47.950, lng: -103.000, res: 'crude_oil' },
+                'marcellus': { lat: 41.250, lng: -77.500, res: 'natural_gas' },
+                'eagle_ford': { lat: 28.750, lng: -98.800, res: 'crude_oil' },
+                'powder_river': { lat: 44.500, lng: -105.500, res: 'coal' },
+                'bingham_canyon': { lat: 40.520, lng: -112.150, res: 'copper' },
+                'morenci': { lat: 33.080, lng: -109.360, res: 'copper' },
                 'pilbara': { lat: -21.500, lng: 119.500, res: 'iron_ore' },
+                'olympic_dam': { lat: -30.430, lng: 136.880, res: 'copper' },
+                'greenbushes': { lat: -33.860, lng: 116.020, res: 'lithium' },
+                'bowen_basin': { lat: -23.500, lng: 148.500, res: 'coal' },
                 'santos_basin': { lat: -24.500, lng: -44.500, res: 'crude_oil' },
-                'marcellus': { lat: 41.250, lng: -77.500, res: 'natural_gas' }
+                'carajas': { lat: -6.070, lng: -50.180, res: 'iron_ore' },
+                'minas_gerais': { lat: -19.920, lng: -43.940, res: 'iron_ore' },
+                'witwatersrand': { lat: -26.200, lng: 28.050, res: 'gold' },
+                'bushveld': { lat: -24.500, lng: 28.500, res: 'platinum' },
+                'norilsk': { lat: 69.350, lng: 88.200, res: 'nickel' },
+                'samotlor': { lat: 61.120, lng: 76.700, res: 'crude_oil' },
+                'urengoy': { lat: 66.000, lng: 78.500, res: 'natural_gas' },
+                'kuzbass': { lat: 54.500, lng: 86.500, res: 'coal' },
+                'kursk_magnetic': { lat: 51.730, lng: 36.190, res: 'iron_ore' },
+                'escondida': { lat: -24.270, lng: -69.070, res: 'copper' },
+                'chuquicamata': { lat: -22.310, lng: -68.900, res: 'copper' },
+                'salar_de_atacama': { lat: -23.500, lng: -68.250, res: 'lithium' },
+                'grasberg': { lat: -4.050, lng: 137.110, res: 'gold' },
+                'morowali': { lat: -2.850, lng: 121.900, res: 'nickel' },
+                'kambove': { lat: -10.870, lng: 26.600, res: 'cobalt' },
+                'kolwezi': { lat: -10.710, lng: 25.470, res: 'cobalt' },
+                'tenke_fungurume': { lat: -10.560, lng: 26.180, res: 'copper' },
+                'athabasca': { lat: 57.000, lng: -111.500, res: 'crude_oil' },
+                'cigar_lake': { lat: 58.050, lng: -104.530, res: 'uranium' },
+                'bayan_obo': { lat: 41.770, lng: 109.970, res: 'rare_earth' },
+                'daqing': { lat: 46.580, lng: 125.000, res: 'crude_oil' },
+                'tarim_basin': { lat: 39.000, lng: 84.000, res: 'natural_gas' },
+                'ordos_basin': { lat: 38.000, lng: 108.000, res: 'coal' },
+                'bombay_high': { lat: 19.420, lng: 71.330, res: 'crude_oil' },
+                'jharia': { lat: 23.750, lng: 86.420, res: 'coal' },
+                'sukinda': { lat: 21.030, lng: 85.830, res: 'chromite' },
+                'bailadila': { lat: 18.670, lng: 81.250, res: 'iron_ore' }
+            };
+
+            const autoRegisterResource = (resId, category = 'strategic_minerals') => {
+                const normId = String(resId || 'iron_ore').toLowerCase().replace(/[^a-z0-9_]+/g, '_');
+                if (!resourceMap.has(normId)) {
+                    const newR = {
+                        id: normId,
+                        name: normId.replace(/_/g, ' ').toUpperCase(),
+                        bnName: normId,
+                        icon: normId.includes('oil') ? '🛢️' : (normId.includes('gas') ? '🔥' : (normId.includes('coal') ? '⛏️' : (normId.includes('gold') ? '🪙' : (normId.includes('lithium') ? '🔋' : '⛏️')))),
+                        category: category,
+                        color: normId.includes('oil') ? '#0284c7' : (normId.includes('gas') ? '#06b6d4' : (normId.includes('coal') ? '#64748b' : '#10b981')),
+                        unit: 'TONS',
+                        basePrice: 500,
+                        dailyOutput: 10000,
+                        dailyDemand: 9000,
+                        strategicImportance: 'medium',
+                        processChain: 'Autonomous Extraction ➔ Processing ➔ Strategic Reserves',
+                        _derivedFromCountryProfiles: true
+                    };
+                    this.resourceTypes.push(newR);
+                    resourceMap.set(normId, newR);
+                }
+                return normId;
             };
 
             Object.entries(this.countryProfiles).forEach(([cKey, prof]) => {
@@ -9018,56 +9104,73 @@ _globalScope.GSRSK_DataFoundation = (() => {
                 const countryName = (prof.identity?.name || cKey).toUpperCase();
                 const baseLat = typeof prof.geography?.coordinates?.lat === 'number' ? prof.geography.coordinates.lat : 20.0;
                 const baseLng = typeof prof.geography?.coordinates?.lng === 'number' ? prof.geography.coordinates.lng : 0.0;
+                const bounds = prof.geography?.bounds;
+                let offsetIndex = 0;
+
+                const getGeoPlacement = (nameKey) => {
+                    offsetIndex++;
+                    const normKey = String(nameKey || '').toLowerCase().replace(/[^a-z0-9]+/g, '_');
+                    
+                    // 1. Direct or fuzzy lookup in known master coordinates
+                    for (const [k, coords] of Object.entries(KNOWN_GEO_COORDS)) {
+                        if (normKey.includes(k) || k.includes(normKey)) {
+                            return { lat: coords.lat, lng: coords.lng };
+                        }
+                    }
+
+                    // 2. Bound-aware geographic sector distribution across the sovereign nation's real territory
+                    if (bounds && typeof bounds.north === 'number' && typeof bounds.south === 'number' &&
+                        typeof bounds.east === 'number' && typeof bounds.west === 'number') {
+                        const spanLat = Math.abs(bounds.north - bounds.south);
+                        const spanLng = Math.abs(bounds.east - bounds.west);
+
+                        // Use deterministic hash of the resource name + offsetIndex to distribute across territory
+                        let hash = 0;
+                        for (let i = 0; i < normKey.length; i++) hash = (hash << 5) - hash + normKey.charCodeAt(i);
+                        const normHash = Math.abs(hash + offsetIndex * 7919);
+                        const latFraction = 0.15 + (0.70 * ((normHash % 1000) / 1000));
+                        const lngFraction = 0.15 + (0.70 * (((normHash >> 3) % 1000) / 1000));
+
+                        const minLat = Math.min(bounds.north, bounds.south);
+                        const minLng = Math.min(bounds.east, bounds.west);
+
+                        return {
+                            lat: +(minLat + spanLat * latFraction).toFixed(4),
+                            lng: +(minLng + spanLng * lngFraction).toFixed(4)
+                        };
+                    }
+
+                    // 3. Multi-radial outward dispersion around national centroid
+                    const angle = (offsetIndex * 137.5) * (Math.PI / 180);
+                    const radius = 0.45 + (0.40 * Math.sqrt(offsetIndex));
+                    const latOffset = +(Math.sin(angle) * radius).toFixed(4);
+                    const lngOffset = +(Math.cos(angle) * radius).toFixed(4);
+                    return {
+                        lat: +(baseLat + latOffset).toFixed(4),
+                        lng: +(baseLng + lngOffset).toFixed(4)
+                    };
+                };
+
 
                 // 1. Administrative Resource Regions
                 const regions = prof.administrative_resource_regions || prof.resource_regions || [];
                 if (Array.isArray(regions)) {
-                    regions.forEach((reg, idx) => {
+                    regions.forEach((reg) => {
                         const regName = reg.name || reg.regionName || (typeof reg === 'string' ? reg : null);
                         if (!regName) return;
                         const depId = `dep-${iso.toLowerCase()}-${reg.regionId ? reg.regionId.toLowerCase() : regName.toLowerCase()}`.replace(/[^a-z0-9]+/g, '-');
                         if (!existingDepIds.has(depId)) {
                             const tags = Array.isArray(reg.resourceTags) ? reg.resourceTags : (reg.primaryResource ? [reg.primaryResource] : ['iron_ore']);
-                            const primaryRes = String(tags[0] || 'iron_ore').toLowerCase().replace(/[^a-z0-9_]+/g, '_');
-                            
-                            // Auto-register resource in catalog if sovereign profile discovers it
-                            if (!resourceMap.has(primaryRes)) {
-                                const newR = {
-                                    id: primaryRes,
-                                    name: primaryRes.replace(/_/g, ' ').toUpperCase(),
-                                    bnName: primaryRes,
-                                    icon: '⛏️',
-                                    category: reg.type || 'strategic_minerals',
-                                    color: '#94a3b8',
-                                    unit: 'TONS',
-                                    basePrice: 500,
-                                    dailyOutput: 10000,
-                                    dailyDemand: 9000,
-                                    strategicImportance: 'medium',
-                                    processChain: 'Autonomous Extraction ➔ Processing ➔ Strategic Reserves',
-                                    _derivedFromCountryProfiles: true
-                                };
-                                this.resourceTypes.push(newR);
-                                resourceMap.set(primaryRes, newR);
-                            }
-
-                            // Precise coordinates if available
-                            const normRegKey = regName.toLowerCase().replace(/[^a-z0-9]+/g, '_');
-                            const known = KNOWN_GEO_COORDS[normRegKey] || KNOWN_GEO_COORDS[normRegKey.replace(/_district|_field|_mine|_basin/g, '')];
-                            const dLat = (reg.coordinates && typeof reg.coordinates.lat === 'number') ? reg.coordinates.lat :
-                                         (typeof reg.lat === 'number' ? reg.lat :
-                                         (known ? known.lat : +(baseLat + (idx % 2 === 0 ? 0.35 : -0.35) * Math.ceil((idx + 1) / 2) * 0.45).toFixed(4)));
-                            const dLng = (reg.coordinates && typeof reg.coordinates.lng === 'number') ? reg.coordinates.lng :
-                                         (typeof reg.lng === 'number' ? reg.lng :
-                                         (known ? known.lng : +(baseLng + (idx % 2 === 1 ? 0.35 : -0.35) * Math.ceil((idx + 1) / 2) * 0.45).toFixed(4)));
+                            const primaryRes = autoRegisterResource(tags[0] || 'iron_ore', reg.type || 'resource_district');
+                            const pos = getGeoPlacement(regName);
 
                             const depRecord = {
                                 id: depId,
                                 name: `${regName} District`,
                                 country: countryName,
                                 countryCode: iso,
-                                lat: dLat,
-                                lng: dLng,
+                                lat: (reg.coordinates && typeof reg.coordinates.lat === 'number') ? reg.coordinates.lat : pos.lat,
+                                lng: (reg.coordinates && typeof reg.coordinates.lng === 'number') ? reg.coordinates.lng : pos.lng,
                                 resId: primaryRes,
                                 category: reg.type || 'resource_district',
                                 resourceTags: tags,
@@ -9084,29 +9187,65 @@ _globalScope.GSRSK_DataFoundation = (() => {
                     });
                 }
 
-                // 2. Hydrocarbon Resource Base (Basins)
-                const basins = prof.hydrocarbon_resource_base?.basins || [];
+                // 2. Geography: Major Resource Zones
+                const majorZones = prof.geography?.majorResourceZones || [];
+                if (Array.isArray(majorZones)) {
+                    majorZones.forEach((zName) => {
+                        if (!zName || typeof zName !== 'string') return;
+                        const depId = `dep-${iso.toLowerCase()}-zone-${zName.toLowerCase()}`.replace(/[^a-z0-9]+/g, '-');
+                        if (!existingDepIds.has(depId)) {
+                            const pos = getGeoPlacement(zName);
+                            let detectedRes = 'rare_earth';
+                            if (zName.toLowerCase().includes('hydrocarbon') || zName.toLowerCase().includes('oil')) detectedRes = 'crude_oil';
+                            else if (zName.toLowerCase().includes('gas')) detectedRes = 'natural_gas';
+                            else if (zName.toLowerCase().includes('mineral') || zName.toLowerCase().includes('uplift')) detectedRes = 'iron_ore';
+                            else if (zName.toLowerCase().includes('marine') || zName.toLowerCase().includes('coastal')) detectedRes = 'phosphate';
+                            
+                            const resId = autoRegisterResource(detectedRes, 'strategic_provinces');
+                            const depRecord = {
+                                id: depId,
+                                name: `${zName}`,
+                                country: countryName,
+                                countryCode: iso,
+                                lat: pos.lat,
+                                lng: pos.lng,
+                                resId: resId,
+                                category: 'strategic_provinces',
+                                resourceTags: [resId],
+                                reserves: 'Macro Sovereign Geological Province',
+                                grade: 'Tier-1 Strategic Belt',
+                                status: 'ACTIVE_PRODUCING',
+                                owner: `${countryName} Geological Survey`,
+                                operator: `${countryName} Sovereign Resource Corp.`,
+                                _derivedFromJson: true
+                            };
+                            this.deposits.push(depRecord);
+                            existingDepIds.add(depId);
+                        }
+                    });
+                }
+
+                // 3. Hydrocarbon Resource Base (Basins, Oil Fields, Natural Gas, Coal)
+                const hc = prof.hydrocarbon_resource_base || {};
+                const basins = hc.basins || [];
                 if (Array.isArray(basins)) {
-                    basins.forEach((bName, idx) => {
+                    basins.forEach((bName) => {
                         if (!bName || typeof bName !== 'string') return;
                         const depId = `dep-${iso.toLowerCase()}-basin-${bName.toLowerCase()}`.replace(/[^a-z0-9]+/g, '-');
                         if (!existingDepIds.has(depId)) {
-                            const normBKey = bName.toLowerCase().replace(/[^a-z0-9]+/g, '_');
-                            const known = KNOWN_GEO_COORDS[normBKey] || KNOWN_GEO_COORDS[normBKey.replace(/_basin|_trough|_play/g, '')];
-                            const bLat = known ? known.lat : +(baseLat - 0.4 - (idx * 0.35)).toFixed(4);
-                            const bLng = known ? known.lng : +(baseLng + 0.3 + (idx * 0.35)).toFixed(4);
-
+                            const pos = getGeoPlacement(bName);
+                            const resId = autoRegisterResource('natural_gas', 'hydrocarbons');
                             const depRecord = {
                                 id: depId,
                                 name: `${bName} Basin`,
                                 country: countryName,
                                 countryCode: iso,
-                                lat: bLat,
-                                lng: bLng,
-                                resId: 'natural_gas',
+                                lat: pos.lat,
+                                lng: pos.lng,
+                                resId: resId,
                                 category: 'hydrocarbons',
                                 resourceTags: ['natural_gas', 'crude_oil'],
-                                reserves: 'National Hydrocarbon Reserve Base',
+                                reserves: 'National Hydrocarbon Basin Reserve',
                                 grade: 'Commercial Basin Hydrocarbon',
                                 status: 'ACTIVE_PRODUCING',
                                 owner: `${countryName} Hydrocarbon Exploration Agency`,
@@ -9118,6 +9257,75 @@ _globalScope.GSRSK_DataFoundation = (() => {
                         }
                     });
                 }
+
+                ['oil', 'naturalGas', 'coal'].forEach((hcType) => {
+                    const items = hc[hcType] || [];
+                    if (Array.isArray(items)) {
+                        items.forEach((fName) => {
+                            if (!fName || typeof fName !== 'string') return;
+                            const depId = `dep-${iso.toLowerCase()}-hc-${hcType}-${fName.toLowerCase()}`.replace(/[^a-z0-9]+/g, '-');
+                            if (!existingDepIds.has(depId)) {
+                                const pos = getGeoPlacement(fName);
+                                const mappedRes = hcType === 'oil' ? 'crude_oil' : (hcType === 'naturalGas' ? 'natural_gas' : 'coal');
+                                const resId = autoRegisterResource(mappedRes, 'hydrocarbons');
+                                const depRecord = {
+                                    id: depId,
+                                    name: `${fName.replace(/_/g, ' ').toUpperCase()} Field`,
+                                    country: countryName,
+                                    countryCode: iso,
+                                    lat: pos.lat,
+                                    lng: pos.lng,
+                                    resId: resId,
+                                    category: 'hydrocarbons',
+                                    resourceTags: [resId],
+                                    reserves: `Sovereign ${hcType.toUpperCase()} Deposit`,
+                                    grade: 'High Commercial Purity',
+                                    status: 'ACTIVE_PRODUCING',
+                                    owner: `${countryName} Energy Exploration Board`,
+                                    operator: `${countryName} National Energy Corp.`,
+                                    _derivedFromJson: true
+                                };
+                                this.deposits.push(depRecord);
+                                existingDepIds.add(depId);
+                            }
+                        });
+                    }
+                });
+
+                // 4. Mineral Resource Base (metallic, nonMetallic, industrial, precious, rareEarths, critical)
+                const min = prof.mineral_resource_base || {};
+                ['metallic', 'nonMetallic', 'industrialMinerals', 'preciousMetals', 'rareEarths', 'criticalMinerals'].forEach((catKey) => {
+                    const minerals = min[catKey] || [];
+                    if (Array.isArray(minerals)) {
+                        minerals.forEach((mItem) => {
+                            if (!mItem || typeof mItem !== 'string') return;
+                            const depId = `dep-${iso.toLowerCase()}-min-${catKey}-${mItem.toLowerCase()}`.replace(/[^a-z0-9]+/g, '-');
+                            if (!existingDepIds.has(depId)) {
+                                const pos = getGeoPlacement(mItem);
+                                const resId = autoRegisterResource(mItem, 'mineral_resources');
+                                const depRecord = {
+                                    id: depId,
+                                    name: `${mItem.replace(/_/g, ' ').toUpperCase()} Mine`,
+                                    country: countryName,
+                                    countryCode: iso,
+                                    lat: pos.lat,
+                                    lng: pos.lng,
+                                    resId: resId,
+                                    category: 'mineral_resources',
+                                    resourceTags: [resId],
+                                    reserves: `Sovereign ${mItem.toUpperCase()} In-Situ Reserve`,
+                                    grade: 'High Metallurgical Grade',
+                                    status: 'ACTIVE_PRODUCING',
+                                    owner: `${countryName} Bureau of Mines & Geology`,
+                                    operator: `${countryName} State Mining Corporation`,
+                                    _derivedFromJson: true
+                                };
+                                this.deposits.push(depRecord);
+                                existingDepIds.add(depId);
+                            }
+                        });
+                    }
+                });
             });
         }
 
@@ -9292,16 +9500,28 @@ _globalScope.GSRSK_DataFoundation = (() => {
 
         normalizeCountryCode(countryKey) {
             if (!countryKey) return 'BGD';
-            const k = String(countryKey).trim().toUpperCase();
+            const rawStr = String(countryKey).trim();
+            const k = rawStr.toUpperCase();
             const aliasMap = {
+                // Bengali Country Names
+                'বাংলাদেশ': 'BGD', 'আমেরিকা': 'USA', 'যুক্তরাষ্ট্র': 'USA', 'ভারত': 'IND', 'ইন্ডিয়া': 'IND', 'ইন্ডিয়া': 'IND',
+                'চীন': 'CHN', 'চায়না': 'CHN', 'চাইনা': 'CHN', 'রাশিয়া': 'RUS', 'রাশিয়া': 'RUS', 'নেপাল': 'NPL', 'ভুটান': 'BTN',
+                'পাকিস্তান': 'PAK', 'সৌদি': 'SAU', 'সৌদি আরব': 'SAU', 'সৌদি_আরব': 'SAU', 'অস্ট্রেলিয়া': 'AUS', 'অস্ট্রেলিয়া': 'AUS',
+                'কঙ্গো': 'COD', 'জার্মানি': 'DEU', 'জাপান': 'JPN', 'ইরান': 'IRN', 'ইরাক': 'IRQ', 'তুরস্ক': 'TUR', 'শ্রীলঙ্কা': 'LKA',
+                'যুক্তরাজ্য': 'GBR', 'ব্রিটেন': 'GBR', 'ফ্রান্স': 'FRA', 'ব্রাজিল': 'BRA', 'কানাডা': 'CAN', 'ইন্দোনেশিয়া': 'IDN',
+                'মিশর': 'EGY', 'আফগানিস্তান': 'AFG', 'মালদ্বীপ': 'MDV', 'কাতার': 'QAT', 'কুয়েত': 'KWT', 'সংযুক্ত আরব আমিরাত': 'ARE',
+                'দুবাই': 'ARE', 'দক্ষিণ আফ্রিকা': 'ZAF', 'ইউক্রেন': 'UKR', 'পোল্যান্ড': 'POL', 'ইতালি': 'ITA', 'স্পেন': 'ESP',
+                'মেক্সিকো': 'MEX', 'আর্জেন্টিনা': 'ARG', 'নাইজেরিয়া': 'NGA', 'ভিয়েতনাম': 'VNM', 'মালয়েশিয়া': 'MYS', 'মায়ানমার': 'MMR',
+
+                // English Country Names & Codes
                 'BANGLADESH': 'BGD', 'BD': 'BGD',
-                'UNITED STATES': 'USA', 'UNITED STATES OF AMERICA': 'USA', 'US': 'USA',
+                'UNITED STATES': 'USA', 'UNITED STATES OF AMERICA': 'USA', 'AMERICA': 'USA', 'US': 'USA',
                 'INDIA': 'IND', 'IN': 'IND',
                 'CHINA': 'CHN', 'CN': 'CHN',
-                'RUSSIA': 'RUS', 'RU': 'RUS',
-                'SAUDI ARABIA': 'SAU', 'SAUDI_ARABIA': 'SAU', 'SA': 'SAU',
+                'RUSSIA': 'RUS', 'RUSSIAN FEDERATION': 'RUS', 'RU': 'RUS',
+                'SAUDI ARABIA': 'SAU', 'SAUDI_ARABIA': 'SAU', 'SAUDI': 'SAU', 'SA': 'SAU',
                 'GERMANY': 'DEU', 'DE': 'DEU',
-                'UNITED KINGDOM': 'GBR', 'UK': 'GBR', 'GREAT BRITAIN': 'GBR',
+                'UNITED KINGDOM': 'GBR', 'UK': 'GBR', 'GREAT BRITAIN': 'GBR', 'BRITAIN': 'GBR',
                 'JAPAN': 'JPN', 'JP': 'JPN',
                 'FRANCE': 'FRA', 'FR': 'FRA',
                 'BRAZIL': 'BRA', 'BR': 'BRA',
@@ -9309,13 +9529,42 @@ _globalScope.GSRSK_DataFoundation = (() => {
                 'CANADA': 'CAN', 'CA': 'CAN',
                 'INDONESIA': 'IDN', 'ID': 'IDN',
                 'CHILE': 'CHL', 'CL': 'CHL',
-                'DR CONGO': 'COD', 'DEMOCRATIC REPUBLIC OF THE CONGO': 'COD', 'CONGO': 'COD',
+                'DR CONGO': 'COD', 'DEMOCRATIC REPUBLIC OF THE CONGO': 'COD', 'CONGO': 'COD', 'DEMOCRATIC REPUBLIC OF CONGO': 'COD',
                 'MOROCCO': 'MAR', 'MA': 'MAR',
                 'IRAN': 'IRN', 'QATAR': 'QAT', 'KUWAIT': 'KWT',
                 'PAKISTAN': 'PAK', 'PK': 'PAK',
-                'TURKEY': 'TUR', 'TR': 'TUR', 'EGYPT': 'EGY', 'EG': 'EGY'
+                'NEPAL': 'NPL', 'NP': 'NPL',
+                'BHUTAN': 'BTN', 'BT': 'BTN',
+                'SRI LANKA': 'LKA', 'LK': 'LKA',
+                'TURKEY': 'TUR', 'TURKIYE': 'TUR', 'TR': 'TUR',
+                'EGYPT': 'EGY', 'EG': 'EGY',
+                'SOUTH AFRICA': 'ZAF', 'ZA': 'ZAF',
+                'UNITED ARAB EMIRATES': 'ARE', 'UAE': 'ARE', 'AE': 'ARE',
+                'NIGERIA': 'NGA', 'NG': 'NGA',
+                'MEXICO': 'MEX', 'MX': 'MEX',
+                'ARGENTINA': 'ARG', 'AR': 'ARG',
+                'VIETNAM': 'VNM', 'VN': 'VNM',
+                'MALAYSIA': 'MYS', 'MY': 'MYS',
+                'MYANMAR': 'MMR', 'BURMA': 'MMR'
             };
-            return aliasMap[k] || k;
+            if (aliasMap[rawStr]) return aliasMap[rawStr];
+            if (aliasMap[k]) return aliasMap[k];
+
+            // Scan country profiles directly for fuzzy match
+            if (this.countryProfiles) {
+                for (let key in this.countryProfiles) {
+                    const prof = this.countryProfiles[key];
+                    if (!prof || !prof.identity) continue;
+                    const pName = (prof.identity.name || '').toUpperCase();
+                    const pOffName = (prof.identity.officialName || '').toUpperCase();
+                    const pIso = (prof.identity.iso3 || prof.identity.countryCode || key).toUpperCase();
+                    if (pIso === k || pName === k || pOffName === k || pName.includes(k) || k.includes(pName)) {
+                        return pIso;
+                    }
+                }
+            }
+
+            return k;
         }
 
         getCountryResourceProfile(countryKey) {

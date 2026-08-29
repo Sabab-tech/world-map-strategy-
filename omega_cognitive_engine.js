@@ -2196,189 +2196,466 @@ const _omegaExport = (function (globalScope) {
       const isBengali = /[\u0980-\u09FF]/.test(questionText);
       const promptLower = questionText.toLowerCase().trim();
 
-      const mId = minister ? minister.id : 'general';
+      const mId = minister ? minister.id : 'energy_mining';
       const mTitle = minister ? minister.title : 'Cabinet Ministry';
-      const mName = (countryDetails.ministers && countryDetails.ministers[mId] && countryDetails.ministers[mId].name) || (minister ? minister.ministerName : 'Honorable Minister');
-      const mRole = (countryDetails.ministers && countryDetails.ministers[mId] && countryDetails.ministers[mId].role) || (minister ? minister.role : 'State Minister');
-      const efficiency = minister ? (minister.efficiency || 88) : 85;
-      const budget = minister ? (minister.budget || '$35.0B') : '$25.0B';
-      const stability = countryDetails.stability || '89%';
 
       // ======================================================================
-      // 8-LANE PARALLEL COGNITIVE PIPELINE EXECUTION
+      // 1. DYNAMIC APPOINTED MINISTER RESOLUTION (NO HARDCODING)
       // ======================================================================
-
-      // Lane 1: Semantics, Intent & Keyword Classification
-      const isAgeQuery = promptLower.includes('age') || promptLower.includes('how old') || promptLower.includes('born') || promptLower.includes('experience') || promptLower.includes('who are you') || promptLower.includes('background') || promptLower.includes('বয়স') || promptLower.includes('কে তুমি') || promptLower.includes('পরিচিতি');
-      const isResourceStockQuery = promptLower.includes('resource') || promptLower.includes('reserve') || promptLower.includes('oil') || promptLower.includes('gas') || promptLower.includes('coal') || promptLower.includes('iron') || promptLower.includes('steel') || promptLower.includes('uranium') || promptLower.includes('how much') || promptLower.includes('current stock') || promptLower.includes('রিসোর্স') || promptLower.includes('সম্পদ') || promptLower.includes('মজুদ') || promptLower.includes('তেল') || promptLower.includes('গ্যাস');
-      const isDurationQuery = promptLower.includes('how long') || promptLower.includes('how many days') || promptLower.includes('depletion') || promptLower.includes('last') || promptLower.includes('runway') || promptLower.includes('exhaust') || promptLower.includes('duration') || promptLower.includes('কতদিন') || promptLower.includes('মেয়াদ') || promptLower.includes('স্থায়িত্ব') || promptLower.includes('শেষ হবে');
-      const isBuildDirective = promptLower.includes('build') || promptLower.includes('construct') || promptLower.includes('create') || promptLower.includes('factory') || promptLower.includes('smelter') || promptLower.includes('plant') || promptLower.includes('nuclear') || promptLower.includes('refinery') || promptLower.includes('কারখানা') || promptLower.includes('তৈরি করো') || promptLower.includes('বিল্ড') || promptLower.includes('নির্মাণ');
-      const isBudgetQuery = promptLower.includes('budget') || promptLower.includes('money') || promptLower.includes('cash') || promptLower.includes('treasury') || promptLower.includes('gdp') || promptLower.includes('tax') || promptLower.includes('টাকা') || promptLower.includes('বাজেট') || promptLower.includes('অর্থ');
-      const isDefenseQuery = promptLower.includes('defense') || promptLower.includes('military') || promptLower.includes('army') || promptLower.includes('navy') || promptLower.includes('border') || promptLower.includes('war') || promptLower.includes('security') || promptLower.includes('প্রতিরক্ষা') || promptLower.includes('সেনা') || promptLower.includes('সীমান্ত');
-      const isHealthQuery = promptLower.includes('health') || promptLower.includes('hospital') || promptLower.includes('medicine') || promptLower.includes('doctor') || promptLower.includes('vaccine') || promptLower.includes('স্বাস্থ্য') || promptLower.includes('হাসপাতাল') || promptLower.includes('ওষুধ');
-
-      // Lane 2: Live Sovereign Telemetry Extraction
-      const resEngine = typeof window !== 'undefined' ? window.ResourceMinistryEngine : null;
-      const gameRes = typeof window !== 'undefined' ? (window.resources || {}) : {};
-      const gameRates = typeof window !== 'undefined' ? (window.resourceRates || {}) : {};
-      const cashVal = gameRes.cash !== undefined ? gameRes.cash : 51780572;
-      const formattedCash = typeof window !== 'undefined' && window.formatGameNumber ? window.formatGameNumber(cashVal) : '$51.78M';
-
-      // Lane 3: Mathematical Formula & Depletion Analytics
-      // Calculate live sovereign resource data for target country
-      let gasReserves = "14.8 TCF (Bibiyana, Titas, Kailashtila fields)";
-      let oilReserves = "90,000 Barrels Strategic Silo Stockpile";
-      let coalReserves = "3.3 Billion Tons (Barapukuria, Dighipara Basin)";
-      let powerGridMW = "27,400 MW Peak Baseload Grid";
-      let gasDays = 4850; // ~13.2 years
-      let oilDays = 90;   // 90 days SPR
-      let coalDays = 45000; // ~123 years
-
-      if (resEngine && resEngine.getSummary) {
+      let dynamicProfile = null;
+      if (typeof window !== 'undefined' && window.OmegaCabinetUI && typeof window.OmegaCabinetUI.getMinisterProfile === 'function') {
         try {
-          const sum = resEngine.getSummary(countryKey);
-          if (sum && sum.globalMetrics) {
-            oilDays = sum.globalMetrics.strategicReservesTotalDays || 90;
-          }
+          dynamicProfile = window.OmegaCabinetUI.getMinisterProfile(mId, countryKey);
         } catch (e) {}
       }
 
-      // Lane 4: Deterministic Biographical Persona Derivation
+      const mName = (dynamicProfile && dynamicProfile.name) ||
+        (countryDetails.ministers && countryDetails.ministers[mId] && countryDetails.ministers[mId].name) ||
+        (minister ? minister.ministerName : 'Honorable Minister');
+
+      const mRole = (countryDetails.ministers && countryDetails.ministers[mId] && countryDetails.ministers[mId].role) ||
+        (minister ? minister.role : 'State Minister');
+
+      const ministerBackground = (dynamicProfile && dynamicProfile.background) ||
+        (minister ? minister.background : 'Senior Sovereign Policy & Public Administration Specialist');
+
+      const ministerStats = (dynamicProfile && dynamicProfile.stats) || (minister && minister.stats) || {
+        discipline: 88,
+        strategic: 85,
+        efficiency: 90
+      };
+
+      const efficiency = (dynamicProfile && dynamicProfile.efficiency && typeof dynamicProfile.efficiency === 'object' ? dynamicProfile.efficiency.accuracy : (dynamicProfile && dynamicProfile.efficiency)) || (minister ? (minister.efficiency || 88) : 85);
+      const budget = minister ? (minister.budget || '$35.0B') : '$25.0B';
+      const stability = countryDetails.stability || '89%';
+
+      // Deterministic age derivation if not in profile
       let hash = 0;
       for (let i = 0; i < mName.length; i++) hash = (hash * 31 + mName.charCodeAt(i)) % 1000;
-      const calculatedAge = 48 + (hash % 18); // 48 - 65 years old
-      const yearsService = 16 + (hash % 14); // 16 - 29 years service
-      const almaMaterList = ["National Defense College & Oxford", "BUET & MIT Fellow", "Harvard Kennedy School & Dhaka University", "London School of Economics", "Sandhurst Royal Military Academy", "Stanford Sovereign Policy Institute"];
+      const calculatedAge = (dynamicProfile && dynamicProfile.age) || (48 + (hash % 18));
+      const yearsService = 16 + (hash % 14);
+      const almaMaterList = [
+        "National Defense College & Oxford University",
+        "BUET & MIT Fellow",
+        "Harvard Kennedy School & Dhaka University",
+        "London School of Economics (LSE)",
+        "Sandhurst Royal Military Academy",
+        "Stanford Sovereign Energy & Geopolitics Institute"
+      ];
       const almaMater = almaMaterList[hash % almaMaterList.length];
 
-      // Lane 5: Autonomous Directive Action Trigger (if build command issued)
-      let buildReceipt = null;
-      if (isBuildDirective) {
-        if (resEngine && typeof resEngine.executeDirective === 'function') {
-          try {
-            resEngine.executeDirective('build_factory', 'refined_steel');
-            buildReceipt = {
-              project: "Heavy Industrial Smelter & Advanced Refining Complex",
-              investment: "$1.2 Billion Allocated from Treasury",
-              capacityBoost: "+25% National Steel & Processing Yield",
-              status: "COMMISSIONED ONLINE IMMEDIATELY"
-            };
-          } catch (e) {}
+      // Lane 0: Live Sovereign & Resource Engine Bindings
+      const resEngine = typeof window !== 'undefined' ? window.ResourceMinistryEngine : null;
+      const gameRes = typeof window !== 'undefined' ? (window.resources || {}) : {};
+      const cashVal = gameRes.cash !== undefined ? gameRes.cash : 51780572;
+      const formattedCash = typeof window !== 'undefined' && window.formatGameNumber ? window.formatGameNumber(cashVal) : '$51.78M';
+
+      // ======================================================================
+      // 2. MULTI-STAGE SEMANTIC KEYWORD & CONCEPTUAL ONTOLOGY PARSER
+      // ======================================================================
+
+      // Step A: Topic & Commodity Ontology Lexicon
+      const COMMODITY_CONCEPTS = {
+        oil: {
+          icon: '🛢️',
+          canonical: 'Crude Petroleum & Hydrocarbons',
+          bnName: 'খনিজ তেল ও পেট্রোলিয়াম',
+          category: 'ENERGY_HYDROCARBON',
+          form: 'Liquid Fossil Hydrocarbon',
+          tasks: [
+            'পণ্য পরিবহন, ভারী রেল ও সমুদ্রগামী কনটেইনার জাহাজের মূল জ্বালানি (Diesel/HFO)',
+            'বিমান চালনা ও সামরিক যুদ্ধযান চলাচলের জন্য অত্যাবশ্যকীয় এভিয়েশন ফুয়েল (Jet-A1 Fuel)',
+            'পেট্রোকেমিক্যাল শিল্প, প্লাস্টিক, পলিমার, সিন্থেটিক ফাইবার ও ফার্মাসিউটিক্যালস উৎপাদনের কাঁচামাল',
+            'জরুরি ব্যাকআপ বিদ্যুৎ কেন্দ্র ও তাপবিদ্যুৎ উৎপাদন',
+            'যানবাহনের ইঞ্জিনের লুব্রিকেন্ট ও রাস্তার পিচ (Asphalt)'
+          ],
+          tasksEn: [
+            'Primary mobility fuel for freight rail, maritime logistics, and road trucking',
+            'Essential aviation fuel (Jet-A1) for commercial airlines and defense aircraft',
+            'Crucial petrochemical feedstock for synthetic polymers, plastics, and pharmaceuticals',
+            'Thermal backup power generation and industrial lubricants',
+            'Road construction asphalt and industrial solvents'
+          ],
+          unit: 'Barrels (BBL)',
+          defaultReserves: '90,000 Barrels Strategic Silo Stockpile',
+          defaultRunwayDays: 90
+        },
+        gas: {
+          icon: '🔥',
+          canonical: 'Natural Gas (Methane CH4 & LNG)',
+          bnName: 'প্রাকৃতিক গ্যাস ও এলএনজি',
+          category: 'ENERGY_HYDROCARBON',
+          form: 'Gaseous Hydrocarbon',
+          tasks: [
+            'জাতীয় গ্রিডের ৫০% এর বেশি বিদ্যুৎ উৎপাদনের মূল জ্বালানি (Baseload Power Grid)',
+            'ইউরিয়া সার কারখানা ও কৃষি খাদ্য নিরাপত্তার অপরিহার্য কাঁচামাল',
+            'ভারী শিল্প, টেক্সটাইল ডাইং, স্টিল রি-রোলিং মিলের ক্যাপটিভ বিদ্যুৎ ও বয়লার',
+            'সিএনজি পরিবহন ব্যবস্থা ও গৃহস্থালি সংযোগ'
+          ],
+          tasksEn: [
+            'Primary baseload electricity grid generation fuel (combined cycle plants)',
+            'Feedstock for industrial urea fertilizer and national agricultural security',
+            'Captive power for heavy manufacturing, textiles, and metallurgy boilers',
+            'Compressed natural gas (CNG) clean transportation and domestic pipelines'
+          ],
+          unit: 'TCF (Trillion Cubic Feet) / MMBTU',
+          defaultReserves: '14.8 TCF Proven In-Situ Reserves (Bibiyana, Titas, Kailashtila fields)',
+          defaultRunwayDays: 4850
+        },
+        coal: {
+          icon: '⛏️',
+          canonical: 'Bituminous & Anthracite Coal',
+          bnName: 'কয়লা ও কঠিন খনিজ',
+          category: 'SOLID_ENERGY_MINERAL',
+          form: 'Solid Carbonaceous Mineral',
+          tasks: [
+            'কয়লাভিত্তিক আল্ট্রা-সুপারক্রিটিক্যাল তাপবিদ্যুৎ কেন্দ্রের মূল জ্বালানি (মাতারবাড়ী, পায়রা, রামপাল)',
+            'ব্লাস্ট ফার্নেসে লোহা গলিয়ে স্টিল/ইস্পাত তৈরির কোকিং কোল',
+            'সিমেন্ট কারখানা ও ভারী নির্মাণ শিল্পের শক্তির উৎস'
+          ],
+          tasksEn: [
+            'Baseload ultra-supercritical thermal power plant fuel',
+            'Coking coal for blast furnace iron smelting and heavy steel production',
+            'High-temperature kilns for cement manufacturing and construction'
+          ],
+          unit: 'Metric Tons',
+          defaultReserves: '3.3 Billion Metric Tons (Barapukuria, Dighipara, Khalashpir Basins)',
+          defaultRunwayDays: 45000
+        },
+        uranium: {
+          icon: '☢️',
+          canonical: 'Enriched Uranium & Nuclear Fuel',
+          bnName: 'ইউরেনিয়াম ও পারমাণবিক জ্বালানি',
+          category: 'NUCLEAR_RADIOACTIVE',
+          form: 'Heavy Actinide Metal',
+          tasks: [
+            'রূপপুর পারমাণবিক বিদ্যুৎ কেন্দ্রের ২৪০০ মেগাওয়াট জিরো-কার্বন বেসলোড বিদ্যুৎ',
+            'চিকিৎসাবিজ্ঞান ও ক্যান্সারের চিকিৎসায় রেডিওআইসোটোপ উৎপাদন',
+            'কৌশলগত জাতীয় ভূ-রাজনৈতিক ও প্রতিরক্ষা প্রতিরোধ'
+          ],
+          tasksEn: [
+            'Zero-carbon high-density nuclear baseload electricity generation',
+            'Medical radioisotopes for nuclear oncology diagnostics',
+            'Strategic geopolitical deterrence and sovereign energy autonomy'
+          ],
+          unit: 'Kilograms (U-235/U-238)',
+          defaultReserves: '2,400 MW Active Reactor Fuel Rod Baseline (36-Month Supply Cycle)',
+          defaultRunwayDays: 1095
+        },
+        lithium: {
+          icon: '🔋',
+          canonical: 'Lithium Carbonate & Hydroxide',
+          bnName: 'লিথিয়াম ও শক্তি রূপান্তর খনিজ',
+          category: 'CRITICAL_BATTERY_METAL',
+          form: 'Alkali Metal Salt / Brine',
+          tasks: [
+            'বৈদ্যুতিক গাড়ি (EV) ও লিথিয়াম-আয়ন ব্যাটারি সেল উৎপাদন',
+            'গ্রিড-স্কেল এনার্জি স্টোরেজ সিস্টেম (BESS)',
+            'স্মার্ট ডিভাইস, সামরিক ড্রোন ও এরোস্পেস এভিওনিক্স ব্যাটারি'
+          ],
+          tasksEn: [
+            'Lithium-ion battery cathode cells for Electric Vehicles (EVs)',
+            'Grid-scale Battery Energy Storage Systems (BESS) for renewable firming',
+            'Tactical drone avionics, portable military communications, and electronics'
+          ],
+          unit: 'Metric Tons (LCE)',
+          defaultReserves: 'Strategic Lithium Battery Reserves & Import Bilateral Quota',
+          defaultRunwayDays: 365
+        },
+        copper: {
+          icon: '⚙️',
+          canonical: 'Refined Copper Cathodes & Concentrates',
+          bnName: 'তামা ও পরিবাহী ধাতু',
+          category: 'BASE_INDUSTRIAL_METAL',
+          form: 'High Conductivity Metal',
+          tasks: [
+            'জাতীয় বিদ্যুৎ সঞ্চালন লাইন, ট্রান্সফরমার ও ইলেকট্রিক মোটর',
+            'রিনিউয়েবল সোলার ও উইন্ড টারবাইন জেনারেটর',
+            'ইলেকট্রনিক্স সার্কিট বোর্ড ও সেমিকন্ডাক্টর ইন্টারকানেক্ট'
+          ],
+          tasksEn: [
+            'National electrical transmission grids, heavy transformers, and copper motors',
+            'Renewable solar PV wiring and wind turbine generator armatures',
+            'Advanced printed circuit boards (PCBs) and semiconductor microelectronics'
+          ],
+          unit: 'Metric Tons',
+          defaultReserves: '85,000 Metric Tons Strategic Industrial Reserve',
+          defaultRunwayDays: 730
+        },
+        steel: {
+          icon: '🏗️',
+          canonical: 'Reinforced Steel & Alloy Ingots',
+          bnName: 'ইস্পাত ও রড/স্টিল অবকাঠামো',
+          category: 'STRUCTURAL_METALLURGY',
+          form: 'Ferrous Alloy',
+          tasks: [
+            'মেগা প্রজেক্ট, পদ্মা সেতু, এলিভেটেড এক্সপ্রেসওয়ে ও গভীর সমুদ্রবন্দর নির্মাণ',
+            'সামরিক যুদ্ধজাহাজ ও আর্মার প্লেট প্রতিরক্ষা অবকাঠামো',
+            'শিল্প কারখানা কাঠামো ও ভারী মেশিনারি'
+          ],
+          tasksEn: [
+            'National mega-infrastructure, long-span bridges, deep seaports, and skyscrapers',
+            'Naval frigate hulls, armored combat vehicles, and heavy defense fortifications',
+            'Industrial factory gantries, civil housing, and mechanical rolling stock'
+          ],
+          unit: 'Metric Tons',
+          defaultReserves: '320,000 Metric Tons Monthly National Milling Output',
+          defaultRunwayDays: 550
+        },
+        rare_earth: {
+          icon: '💎',
+          canonical: 'Rare Earth Elements (Neodymium, Dysprosium)',
+          bnName: 'বিরল খনিজ ও স্ট্র্যাটেজিক মেটাল',
+          category: 'CRITICAL_STRATEGIC_MINERAL',
+          form: 'Heavy Lanthanide Oxides',
+          tasks: [
+            'হাই-টর্ক ইলেকট্রিক মোটর ও উইন্ড টারবাইনের স্থায়ী সুপার-ম্যাগনেট',
+            'সামরিক রাডার, মিসাইল গাইডেন্স ও নাইট ভিশন সেন্সর',
+            'উন্নত সেমিকন্ডাক্টর ও অপটিক্যাল গ্লাস কোটিং'
+          ],
+          tasksEn: [
+            'Ultra-high-strength permanent magnets for EV powertrains and wind turbines',
+            'Phased-array military radars, precision missile guidance, and optics',
+            'Semiconductor lasers, optical fiber amplifiers, and electronic displays'
+          ],
+          unit: 'Kilograms / Metric Tons',
+          defaultReserves: 'Heavy Mineral Sand Deposits (Cox\'s Bazar, Kuakata beach placers: Zircon, Rutile, Monazite)',
+          defaultRunwayDays: 1825
+        }
+      };
+
+      // Step B: Target Keyword Identification
+      let detectedCommodityKey = null;
+      if (promptLower.includes('oil') || promptLower.includes('petroleum') || promptLower.includes('crude') || promptLower.includes('diesel') || promptLower.includes('তেল') || promptLower.includes('পেট্রোল') || promptLower.includes('অয়েল')) {
+        detectedCommodityKey = 'oil';
+      } else if (promptLower.includes('gas') || promptLower.includes('lng') || promptLower.includes('methane') || promptLower.includes('গ্যাস') || promptLower.includes('এলএনজি')) {
+        detectedCommodityKey = 'gas';
+      } else if (promptLower.includes('coal') || promptLower.includes('কয়লা') || promptLower.includes('কোল')) {
+        detectedCommodityKey = 'coal';
+      } else if (promptLower.includes('uranium') || promptLower.includes('nuclear') || promptLower.includes('ইউরেনিয়াম') || promptLower.includes('পারমাণবিক')) {
+        detectedCommodityKey = 'uranium';
+      } else if (promptLower.includes('lithium') || promptLower.includes('battery') || promptLower.includes('লিথিয়াম') || promptLower.includes('ব্যাটারি')) {
+        detectedCommodityKey = 'lithium';
+      } else if (promptLower.includes('copper') || promptLower.includes('তামা')) {
+        detectedCommodityKey = 'copper';
+      } else if (promptLower.includes('steel') || promptLower.includes('iron') || promptLower.includes('ইস্পাত') || promptLower.includes('লোহা')) {
+        detectedCommodityKey = 'steel';
+      } else if (promptLower.includes('rare') || promptLower.includes('earth') || promptLower.includes('বিরল') || promptLower.includes('খনিজ বালু')) {
+        detectedCommodityKey = 'rare_earth';
+      }
+
+      // Step C: Metric / Measurement Word Identification
+      const isAmountQuery = promptLower.includes('amount') || promptLower.includes('quantity') || promptLower.includes('reserve') || promptLower.includes('stock') || promptLower.includes('how much') || promptLower.includes('volume') || promptLower.includes('পরিমাণ') || promptLower.includes('মজুদ') || promptLower.includes('কতটুকু') || promptLower.includes('কত আছে') || promptLower.includes('স্টক');
+      const isWhatIsItQuery = promptLower.includes('what is') || promptLower.includes('use') || promptLower.includes('used for') || promptLower.includes('কাজে লাগে') || promptLower.includes('ব্যবহার') || promptLower.includes('কি জিনিস') || promptLower.includes('কিসের জন্য');
+      const isIdentityQuery = promptLower.includes('who are you') || promptLower.includes('who is he') || promptLower.includes('who is the minister') || promptLower.includes('background') || promptLower.includes('appointed') || promptLower.includes('কে তুমি') || promptLower.includes('কে তিনি') || promptLower.includes('মন্ত্রী কে') || promptLower.includes('দায়িত্বে কে') || promptLower.includes('পরিচয়') || promptLower.includes('জীবনবৃত্তান্ত');
+
+      const isCountryOrMineQuery = promptLower.includes('mine') || promptLower.includes('khoni') || promptLower.includes('deposit') || promptLower.includes('খনি') || promptLower.includes('কোথায় কি') || promptLower.includes('কোন দেশে') || promptLower.includes('কোন সম্পদ') || promptLower.includes('আমেরিকা') || promptLower.includes('যুক্তরাষ্ট্র') || promptLower.includes('ভারত') || promptLower.includes('চীন') || promptLower.includes('রাশিয়া') || promptLower.includes('সৌদি') || promptLower.includes('কঙ্গো') || promptLower.includes('usa') || promptLower.includes('china') || promptLower.includes('india') || promptLower.includes('russia');
+      const isDurationQuery = promptLower.includes('how long') || promptLower.includes('how many days') || promptLower.includes('depletion') || promptLower.includes('last') || promptLower.includes('runway') || promptLower.includes('exhaust') || promptLower.includes('duration') || promptLower.includes('কতদিন') || promptLower.includes('মেয়াদ') || promptLower.includes('স্থায়িত্ব') || promptLower.includes('শেষ হবে');
+      const isBuildDirective = promptLower.includes('build') || promptLower.includes('construct') || promptLower.includes('create') || promptLower.includes('factory') || promptLower.includes('smelter') || promptLower.includes('plant') || promptLower.includes('nuclear') || promptLower.includes('refinery') || promptLower.includes('কারখানা') || promptLower.includes('তৈরি করো') || promptLower.includes('বিল্ড') || promptLower.includes('নির্মাণ');
+      const isHealthQuery = promptLower.includes('health') || promptLower.includes('hospital') || promptLower.includes('medicine') || promptLower.includes('doctor') || promptLower.includes('vaccine') || promptLower.includes('স্বাস্থ্য') || promptLower.includes('হাসপাতাল') || promptLower.includes('ওষুধ');
+      const isDefenseQuery = promptLower.includes('defense') || promptLower.includes('military') || promptLower.includes('army') || promptLower.includes('navy') || promptLower.includes('border') || promptLower.includes('war') || promptLower.includes('security') || promptLower.includes('প্রতিরক্ষা') || promptLower.includes('সেনা') || promptLower.includes('সীমান্ত');
+      const isBudgetQuery = promptLower.includes('budget') || promptLower.includes('money') || promptLower.includes('cash') || promptLower.includes('treasury') || promptLower.includes('gdp') || promptLower.includes('টাকা') || promptLower.includes('বাজেট') || promptLower.includes('অর্থ');
+
+      // Target country profile retrieval
+      let detectedCountryKey = countryKey;
+      if (resEngine && typeof resEngine.normalizeCountryCode === 'function') {
+        const words = promptLower.split(/[\s,?!।।]+/);
+        for (let word of words) {
+          if (!word || word.length < 2) continue;
+          const norm = resEngine.normalizeCountryCode(word);
+          if (norm && norm !== 'BGD' && norm !== word.toUpperCase()) {
+            detectedCountryKey = norm;
+            break;
+          }
         }
       }
 
-      // Lane 6: Deep Cognitive Process Request
-      const cogResult = this.processCognitiveRequest(
-        questionText,
-        promptLower.includes('urgent') || promptLower.includes('জরুরি') || promptLower.includes('সংকট') ? 'CRISIS_MITIGATION' : 'POLICY_ANALYSIS',
-        countryKey,
-        'GLOBAL',
-        mId.toUpperCase(),
-        mName
-      );
+      let targetProfile = null;
+      let targetDeposits = [];
+      if (resEngine && typeof resEngine.getCountryResourceProfile === 'function') {
+        try {
+          targetProfile = resEngine.getCountryResourceProfile(detectedCountryKey);
+          targetDeposits = resEngine.getDepositsForCountry(detectedCountryKey);
+        } catch (e) {}
+      }
 
-      const confidence = cogResult.confidenceScore ? (cogResult.confidenceScore * 100).toFixed(1) : (89.0 + (efficiency * 0.1)).toFixed(1);
-      const epistemicStatus = cogResult.epistemicRecords && cogResult.epistemicRecords[0] ? cogResult.epistemicRecords[0].status : "GROUNDED_FACT";
+      // Live Sovereign Resource Telemetry
+      let liveReserveValue = null;
+      let liveRunwayDays = null;
+      if (detectedCommodityKey && COMMODITY_CONCEPTS[detectedCommodityKey]) {
+        const cObj = COMMODITY_CONCEPTS[detectedCommodityKey];
+        liveReserveValue = cObj.defaultReserves;
+        liveRunwayDays = cObj.defaultRunwayDays;
 
-      // Lane 7 & 8: Natural Synthesis & High-Precision Articulation
+        if (resEngine && typeof resEngine.getSummary === 'function') {
+          try {
+            const sum = resEngine.getSummary(countryKey);
+            if (sum && sum.globalMetrics && sum.globalMetrics.strategicReservesTotalDays) {
+              liveRunwayDays = sum.globalMetrics.strategicReservesTotalDays;
+            }
+          } catch (e) {}
+        }
+        if (gameRes && gameRes[detectedCommodityKey] !== undefined) {
+          liveReserveValue = `${Number(gameRes[detectedCommodityKey]).toLocaleString()} ${cObj.unit}`;
+        }
+      }
+
+      // ======================================================================
+      // 3. GRAMMATICAL SYNTHESIS, VOCABULARY & AUTHORITATIVE BRIEFING
+      // ======================================================================
       let responseText = "";
       let impactText = "";
+      const confidence = (94.0 + (efficiency * 0.05)).toFixed(1);
 
       if (isBengali) {
-        if (isAgeQuery) {
-          responseText = `মাননীয় এক্সিকিউটিভ কমান্ডার, আমি (${mName}) ${countryDetails.name || countryKey}-এর ${mRole}।\n\n` +
-            `👤 বয়স ও অভিজ্ঞতা: আমার বর্তমান বয়স ${calculatedAge} বছর। আমি গত ${yearsService} বছর ধরে রাষ্ট্রীয় প্রশাসন ও নীতিনির্ধারণে দায়িত্ব পালন করছি।\n` +
-            `🎓 শিক্ষাগত যোগ্যতা: ${almaMater} থেকে স্নাতক ও উচ্চতর ডিগ্রি অর্জন করেছি।\n` +
-            `🏛️ দায়িত্ব ও লক্ষ্য: ${mTitle}-এর অধীনে জাতীয় সার্বভৌমত্ব, কার্যদক্ষতা (${efficiency}%) এবং জনগণের কল্যাণে আমি নিবেদিত।`;
-        } else if (isBuildDirective) {
-          responseText = `মাননীয় কমান্ডার, আপনার নির্দেশ অনুযায়ী নতুন শিল্প কারখানা নির্মাণের কাজ শুরু হয়েছে:\n\n` +
-            `🏭 প্রকল্প: ${buildReceipt ? buildReceipt.project : 'অ্যাডভান্সড ইন্ডাস্ট্রিয়াল ম্যানুফ্যাকচারিং প্ল্যান্ট'}\n` +
-            `💰 বিনিয়োগ: ${buildReceipt ? buildReceipt.investment : '$১.২ বিলিয়ন রাষ্ট্রীয় তহবিল বরাদ্ধ'}\n` +
-            `⚡ উৎপাদন সক্ষমতা: ${buildReceipt ? buildReceipt.capacityBoost : '+২৫% শিল্প প্রক্রিয়াকরণ সক্ষমতা'}\n` +
-            `✅ বর্তমান অবস্থা: সফলভাবে সক্রিয় করা হয়েছে এবং জাতীয় গ্রিডের সাথে যুক্ত করা হয়েছে।`;
+        // --- CASE 1: SPECIFIC COMMODITY + AMOUNT / QUANTITATIVE QUERY (e.g. "what is the amount of oil in my reserve") ---
+        if (detectedCommodityKey && (isAmountQuery || isWhatIsItQuery)) {
+          const c = COMMODITY_CONCEPTS[detectedCommodityKey];
+          const taskListStr = c.tasks.map(t => `  • ${t}`).join('\n');
+
+          responseText = `মাননীয় এক্সিকিউটিভ কমান্ডার, ${countryDetails.name || countryKey}-এর ${mRole} হিসেবে আমি (${mName}) আপনার নির্দেশিত "${c.bnName}" (${c.canonical}) সম্পর্কিত তথ্য ও জাতীয় মজুদের বিস্তারিত হিসাব উপস্থাপন করছি:\n\n` +
+            `১. পদার্থের সংজ্ঞা ও ভূতাত্ত্বিক শ্রেণী:\n` +
+            `   ${c.icon} ${c.bnName} হলো একটি ${c.form} যা জাতীয় অর্থনীতি ও সার্বভৌম অবকাঠামোর জন্য ${c.category} হিসেবে শ্রেণীবদ্ধ।\n\n` +
+            `২. এটি প্রধানত যেসব কৌশলগত কাজে ব্যবহৃত হয়:\n` +
+            `${taskListStr}\n\n` +
+            `৩. বর্তমান সার্বভৌম মজুদের পরিমাণ (Current Reserve Amount):\n` +
+            `   📊 মোট যাচাইকৃত জাতীয় মজুদ: ${liveReserveValue}\n` +
+            `   ⏱️ নিরবচ্ছিন্ন সার্বভৌম স্থায়িত্ব (Emergency Runway): প্রায় ${liveRunwayDays} দিন\n\n` +
+            `৪. নীতিনির্ধারণী সুপারিশ ও পদক্ষেপ:\n` +
+            `   আমাদের স্ট্র্যাটেজিক পেট্রোলিয়াম রিজার্ভ (SPR) সাইলো এবং রিফাইনারি কমপ্লেক্স শতভাগ সক্রিয় রয়েছে। অভ্যন্তরীণ সরবরাহ শৃঙ্খল সুরক্ষিত রাখতে নিয়মিত রিফিল ও রি-রোলিং বজায় রাখা হচ্ছে।`;
+
+        // --- CASE 2: DYNAMIC MINISTER IDENTITY RESOLUTION (NO HARDCODING) ---
+        } else if (isIdentityQuery) {
+          const statsStr = Object.entries(ministerStats).map(([k, v]) => `${k.toUpperCase()}: ${v}`).join(' • ');
+
+          responseText = `মাননীয় এক্সিকিউটিভ কমান্ডার, আমি ${mName} — আপনার মন্ত্রিসভায় নিযুক্ত ${mRole}।\n\n` +
+            `👤 ব্যক্তিগত প্রোফাইল ও পরিচিতি:\n` +
+            `  • বয়স: ${calculatedAge} বছর\n` +
+            `  • পেশাগত ব্যাকগ্রাউন্ড: ${ministerBackground}\n` +
+            `  • অভিজ্ঞতা: জাতীয় ও আন্তর্জাতিক নীতিনির্ধারণে দীর্ঘ ${yearsService} বছরের অভিজ্ঞতা\n` +
+            `  • শিক্ষাগত যোগ্যতা: ${almaMater}\n\n` +
+            `🏛️ দায়িত্বপ্রাপ্ত মন্ত্রণালয়: ${mTitle}\n` +
+            `⚡ কার্যদক্ষতা রেটিং: ${efficiency}%\n` +
+            `📊 চারিত্রিক ও প্রশাসনিক স্কোর: ${statsStr}\n\n` +
+            `🎖️ শপথ ও অঙ্গীকার: প্লেয়ার কমান্ডার কর্তৃক নির্ধারিত জাতীয় এজেন্ডা বাস্তবায়ন এবং ${countryDetails.name || countryKey}-এর সার্বভৌমত্ব সুরক্ষায় আমি সার্বক্ষণিক নিবেদিত।`;
+
+        // --- CASE 3: GEOGRAPHIC MINES & DEPOSITS QUERY ---
+        } else if (isCountryOrMineQuery && targetProfile) {
+          const cName = targetProfile.identity?.name || detectedCountryKey;
+          const cIso = targetProfile.identity?.iso3 || detectedCountryKey;
+          const depList = targetDeposits.slice(0, 6).map(d => `  • ${d.name}: ${(d.resId || '').toUpperCase().replace(/_/g, ' ')} (${d.reserves || d.reserve || 'সার্বভৌম রিজার্ভ'})`).join('\n');
+          const hc = targetProfile.hydrocarbon_resource_base || {};
+          const min = targetProfile.mineral_resource_base || {};
+
+          responseText = `মাননীয় এক্সিকিউটিভ কমান্ডার, ${cName} (${cIso})-এর বিস্তারিত খনিজ ও ভূ-সম্পদ গোয়েন্দা খতিয়ান:\n\n` +
+            `📍 সার্বভৌম পরিচয়: ${targetProfile.identity?.officialName || cName} (ISO: ${cIso})\n\n` +
+            `⛏️ প্রধান সক্রিয় খনি ও উত্তোলন ক্ষেত্রসমূহ:\n${depList || '  • রাষ্ট্রীয় খনি জরিপ প্রক্রিয়াধীন'}\n\n` +
+            `🔥 হাইড্রোকার্বন ও জ্বালানি শক্তি:\n` +
+            `  • গ্যাস ও তেল বেসিন: ${Array.isArray(hc.basins) && hc.basins.length ? hc.basins.join(', ') : 'স্থানীয় জ্বালানি গ্রিড সক্রিয়'}\n` +
+            `  • কয়লা রিজার্ভ: ${Array.isArray(hc.coal) && hc.coal.length ? hc.coal.join(', ') : 'সীমিত অথবা আমদানিকৃত'}\n\n` +
+            `💎 খনিজ ও কৌশলগত ধাতু:\n` +
+            `  • ধাতব ও শিল্প খনিজ: ${Array.isArray(min.metallic) && min.metallic.length ? min.metallic.join(', ') : 'সার্বভৌম ইন-সিটু জরিপ অব্যাহত'}\n\n` +
+            `⚡ মন্ত্রণালয় সংক্রান্ত সুপারিশ: উক্ত অঞ্চলের সম্পদ উত্তোলনে প্রত্যক্ষ যৌথ বিনিয়োগ বা সরবরাহ চুক্তি স্থাপন করা যেতে পারে।`;
+
+        // --- CASE 4: DURATION / DEPLETION RUNWAY QUERY ---
         } else if (isDurationQuery) {
-          responseText = `মাননীয় কমান্ডার, আমাদের সার্বভৌম রিজার্ভ ও ব্যবহারের গতি অনুযায়ী মেয়াদ নিম্নরূপ:\n\n` +
-            `🔥 প্রাকৃতিক গ্যাস: বর্তমান উত্তোলন হারে গ্যাস রিজার্ভ চলবে প্রায় ${Math.round(gasDays / 365)} বছর (${gasDays} দিন)।\n` +
-            `🛢️ পেট্রোলিয়াম ও তেল: ইমার্জেন্সি স্ট্র্যাটেজিক বাফার চলবে প্রায় ${oilDays} দিন (পর্যাপ্ত সরবরাহ নিশ্চিত)।\n` +
-            `⛏️ কয়লা ও কঠিন শিলা: জাতীয় কয়লা রিজার্ভ চলবে ১০০ বছরেরও বেশি (${coalDays} দিন)।\n` +
+          responseText = `মাননীয় কমান্ডার, আমাদের সার্বভৌম রিজার্ভ ও ব্যবহারের বর্তমান গতি অনুযায়ী জাতীয় স্থায়িত্ব নিম্নরূপ:\n\n` +
+            `🔥 প্রাকৃতিক গ্যাস: প্রমাণিত মজুদ চলবে প্রায় ১৩.২ বছর (~৪,৮৫০ দিন)।\n` +
+            `🛢️ পেট্রোলিয়াম ও তেল: জরুরি স্ট্র্যাটেজিক বাফার (SPR) চলবে প্রায় ৯০ দিন।\n` +
+            `⛏️ কয়লা ও কঠিন খনিজ: জাতীয় কয়লা রিজার্ভ চলবে ১০০ বছরেরও বেশি।\n` +
             `💡 বিদ্যুৎ ও গ্রিড লোড: জাতীয় গ্রিড সক্ষমতা ২৪ ঘণ্টা নিরবচ্ছিন্ন সেবা প্রদানে প্রস্তুত।`;
-        } else if (isResourceStockQuery) {
+
+        // --- CASE 5: GENERAL RESOURCE OVERVIEW ---
+        } else if (isAmountQuery) {
           responseText = `মাননীয় কমান্ডার, ${countryDetails.name || countryKey}-এর বর্তমান সার্বভৌম খনিজ ও জ্বালানি সম্পদ খতিয়ান:\n\n` +
-            `📊 প্রাকৃতিক গ্যাস: ${gasReserves}\n` +
-            `🛢️ তেল ও পেট্রোলিয়াম: ${oilReserves} (জরুরি সিলোগুলোতে সংরক্ষিত)\n` +
-            `⛏️ কয়লা ও কঠিন খনিজ: ${coalReserves}\n` +
-            `⚡ বিদ্যুৎ উৎপাদন সক্ষমতা: ${powerGridMW}\n` +
-            `💰 রাষ্ট্রীয় ট্রেজারি ফান্ড: ${formattedCash} উপলব্ধ নগদ তারল্য।`;
+            `📊 প্রাকৃতিক গ্যাস: ১৪.৮ টিসিএফ (বিবিয়ানা, তিতাস, কৈলাশটিলা ফিল্ড)\n` +
+            `🛢️ তেল ও পেট্রোলিয়াম: ৯০,০০০ ব্যারেল জরুরি স্ট্র্যাটেজিক সাইলো বাফার\n` +
+            `⛏️ কয়লা ও কঠিন খনিজ: ৩.৩ বিলিয়ন মেট্রিক টন (বড়পুকুরিয়া, দীঘিপাড়া বেসিন)\n` +
+            `⚡ বিদ্যুৎ উৎপাদন সক্ষমতা: ২৭,৪০০ মেগাওয়াট পিক গ্রিড লোড\n` +
+            `💰 রাষ্ট্রীয় কোষাগার ফান্ড: ${formattedCash} উপলব্ধ নগদ তারল্য।`;
+
+        // --- CASE 6: HEALTH / WELFARE ---
         } else if (isHealthQuery) {
-          responseText = `মাননীয় কমান্ডার, স্বাস্থ্য মন্ত্রণালয় সংক্রান্ত পরিস্থিতি:\n\n` +
+          responseText = `মাননীয় কমান্ডার, স্বাস্থ্য মন্ত্রণালয়ের সর্বশেষ পরিস্থিতি:\n\n` +
             `🏥 হাসপাতাল সক্ষমতা: জেলা ও জাতীয় ট্রমা সেন্টারগুলো ৯২% কার্যকর রয়েছে।\n` +
             `💊 জরুরি ওষুধ বাফার স্টক: জীবনরক্ষাকারী ওষুধের বাফার স্টক ৯৫ দিনের জন্য নিরাপদ।\n` +
             `🛡️ জনকল্যাণ কর্মসূচি: সার্বিক স্বাস্থ্য নিরাপত্তা ও চিকিৎসা অনুদান অব্যাহত রয়েছে।`;
+
+        // --- CASE 7: DEFENSE / SECURITY ---
         } else if (isDefenseQuery) {
           responseText = `মাননীয় কমান্ডার, জাতীয় প্রতিরক্ষা ও নিরাপত্তা মূল্যায়ন:\n\n` +
             `🛡️ কমব্যাট রেডিনেস: সশস্ত্র বাহিনী ও সীমান্ত পাহারা সর্বোচ্চ সতর্কতায় প্রস্তুত।\n` +
             `📡 এয়ার ডিফেন্স ও সাইবার শিল্ড: ইন্টিগ্রেটেড রাডার ও সাইবার ইন্টারসেপশন রেট ৯৪%।\n` +
             `🎖️ অপারেশনাল কমান্ড: যেকোনো বহিরাগত হুমকি প্রতিহত করতে যৌথ কমান্ড সক্রিয়।`;
+
+        // --- DEFAULT BENGLI BRIEFING ---
         } else {
-          responseText = `মাননীয় এক্সিকিউটিভ কমান্ডার, আপনার প্রশ্ন ("${questionText}") প্রসঙ্গে:\n\n` +
+          responseText = `মাননীয় এক্সিকিউটিভ কমান্ডার, আপনার প্রশ্ন ("${questionText}") পর্যালোচনা করেছি।\n\n` +
             `📌 বর্তমান সার্বিক অবস্থা: ${mTitle}-এর কার্যদক্ষতা বর্তমানে ${efficiency}% এবং জাতীয় স্থিতিশীলতা ${stability}।\n` +
             `🔍 মূল মূল্যায়ন: আমাদের ৮-স্তর কগনিটিভ মেমোরি ও বেয়েশিয়ান পর্যালোচনায় নিশ্চিত করা হয়েছে যে নীতি কাঠামো পুরোপুরি কার্যকর রয়েছে।\n` +
-            `⚡ সুপারিশ: অগ্রাধিকারমূলক কর্মসূচি বাস্তবায়নে রাষ্ট্রীয় কোষাগার ও সম্পদ সরবরাহ সুসংহত রাখা প্রয়োজন।`;
+            `⚡ সুপারিশ: অগ্রাধিকারমূলক কর্মসূচি বাস্তবায়নে রাষ্ট্রীয় কোষাগার (${formattedCash}) ও সম্পদ সরবরাহ সুসংহত রাখা প্রয়োজন।`;
         }
-        impactText = `কগনিটিভ নির্ভরযোগ্যতা: ${confidence}% • পলিসি প্রভাব: +${(efficiency * 0.025 + 0.8).toFixed(1)}% • অবস্থান: ${epistemicStatus}`;
+
+        impactText = `কগনিটিভ নির্ভরযোগ্যতা: ${confidence}% • পলিসি প্রভাব: +${(efficiency * 0.025 + 0.8).toFixed(1)}% • অবস্থান: GROUNDED_FACT`;
+
       } else {
-        // Full Dynamic English Response (No Hardcoded Templates)
-        if (isAgeQuery) {
-          responseText = `Executive Commander, I am ${mName}, serving as the ${mRole} of ${countryDetails.name || countryKey}.\n\n` +
-            `👤 Age & Background: I am ${calculatedAge} years old, with over ${yearsService} years of dedicated service in sovereign public administration, economic planning, and strategic leadership.\n` +
-            `🎓 Academic Credentials: I completed my graduate and doctoral studies at ${almaMater}.\n` +
-            `🏛️ Mandate & Focus: Under the ${mTitle}, my primary constitutional objective is maximizing national operational efficiency (currently at ${efficiency}%) and ensuring perpetual sovereign stability (${stability}).`;
-        } else if (isBuildDirective) {
-          responseText = `Executive Commander, your industrial directive has been executed in real-time:\n\n` +
-            `🏭 Commissioned Facility: ${buildReceipt ? buildReceipt.project : 'High-Throughput Industrial Manufacturing Complex'}\n` +
-            `💰 Capital Allocation: ${buildReceipt ? buildReceipt.investment : '$1.2B Capital Reallocated from Sovereign Treasury'}\n` +
-            `⚙️ Capacity Multiplier: ${buildReceipt ? buildReceipt.capacityBoost : '+25% Processing & Smelting Throughput'}\n` +
-            `✅ Operational Status: Live facility state integrated into national resource ontology and sovereign grid.`;
+        // --- ENGLISH SYNTHESIS ---
+        if (detectedCommodityKey && (isAmountQuery || isWhatIsItQuery)) {
+          const c = COMMODITY_CONCEPTS[detectedCommodityKey];
+          const taskListStr = c.tasksEn.map(t => `  • ${t}`).join('\n');
+
+          responseText = `Executive Commander, as ${mRole} of ${countryDetails.name || countryKey}, I (${mName}) have synthesized the complete intelligence profile for ${c.canonical}:\n\n` +
+            `1. Physical Ontology & Commodity Classification:\n` +
+            `   ${c.icon} ${c.canonical} is classified as a ${c.form} under the ${c.category} sovereign domain.\n\n` +
+            `2. Essential Strategic Applications & Downstream Utilities:\n` +
+            `${taskListStr}\n\n` +
+            `3. Audited Sovereign Reserve Balance (Amount):\n` +
+            `   📊 In-Situ / Stockpiled Quantity: ${liveReserveValue}\n` +
+            `   ⏱️ Emergency Operational Runway: Approximately ${liveRunwayDays} days of uninhibited consumption\n\n` +
+            `4. Ministerial Policy Directives:\n` +
+            `   Strategic Petroleum Reserves (SPR), distillation units, and transport corridors maintain 100% operational readiness. Continuous replenishment protocols remain active.`;
+
+        } else if (isIdentityQuery) {
+          const statsStr = Object.entries(ministerStats).map(([k, v]) => `${k.toUpperCase()}: ${v}`).join(' • ');
+
+          responseText = `Executive Commander, I am ${mName}, currently assigned as your ${mRole}.\n\n` +
+            `👤 Biographical & Administrative Dossier:\n` +
+            `  • Age: ${calculatedAge} years old\n` +
+            `  • Professional Background: ${ministerBackground}\n` +
+            `  • Tenured Service: Over ${yearsService} years in executive governance & statecraft\n` +
+            `  • Higher Education: ${almaMater}\n\n` +
+            `🏛️ Ministerial Portfolio: ${mTitle}\n` +
+            `⚡ Departmental Throughput Rating: ${efficiency}%\n` +
+            `📊 Behavioral & Strategic Attributes: ${statsStr}\n\n` +
+            `🎖️ Constitutional Mandate: I serve at the appointment of the Executive Commander to ensure absolute sovereignty, industrial resilience, and prosperity for ${countryDetails.name || countryKey}.`;
+
         } else if (isDurationQuery) {
-          responseText = `Executive Commander, based on our real-time depletion curves and consumption metrics for ${countryDetails.name || countryKey}, here is our exact operational runway:\n\n` +
-            `🔥 Natural Gas: Proven reserves will sustain current domestic demand for approximately ${Math.round(gasDays / 365)} years (~${gasDays.toLocaleString()} days).\n` +
-            `🛢️ Strategic Petroleum Reserve (SPR): ${oilDays} days of guaranteed sovereign emergency runway without external maritime imports.\n` +
-            `⛏️ Coal & Mineral Deposits: Substantial reserves spanning over 100+ years (~${coalDays.toLocaleString()} operational days).\n` +
+          responseText = `Executive Commander, here is our audited strategic consumption runway for ${countryDetails.name || countryKey}:\n\n` +
+            `🔥 Natural Gas: Proven reserves will sustain domestic demand for ~13.2 years (4,850 days).\n` +
+            `🛢️ Strategic Petroleum Reserve (SPR): 90 days of emergency autonomy without external imports.\n` +
+            `⛏️ Coal & Mineral Deposits: Substantial in-situ reserves spanning over 100+ years.\n` +
             `⚡ Power Grid Baseload: Continuous 24/7 grid stability with active reserve headroom.\n` +
-            `💰 Fiscal Runway: Sovereign Treasury liquidity stands strong at ${formattedCash}.`;
-        } else if (isResourceStockQuery) {
-          responseText = `Executive Commander, here is the live audited resource ledger for ${countryDetails.name || countryKey}:\n\n` +
-            `📊 Natural Gas Reserves: ${gasReserves}\n` +
-            `🛢️ Petroleum & Strategic Hydrocarbons: ${oilReserves}\n` +
-            `⛏️ Coal & In-Situ Minerals: ${coalReserves}\n` +
-            `⚡ Power Grid Generation Capacity: ${powerGridMW}\n` +
-            `💰 Sovereign Treasury Liquidity: ${formattedCash} available cash balance\n` +
-            `🏛️ Departmental Efficiency: Operating at ${efficiency}% throughput.`;
-        } else if (isHealthQuery) {
-          responseText = `Executive Commander, reporting on the Healthcare & Welfare status for ${countryDetails.name || countryKey}:\n\n` +
-            `🏥 Clinical & Hospital Bed Capacity: Operating at 92% national readiness across all administrative districts.\n` +
-            `💊 Emergency Pharmaceutical Buffer: 95-day strategic stockpile of essential life-saving medicines secured.\n` +
-            `🛡️ Public Welfare Index: Sovereign medical coverage and subsidized nutrition programs fully funded.`;
-        } else if (isDefenseQuery) {
-          responseText = `Executive Commander, Defense Command readiness briefing for ${countryDetails.name || countryKey}:\n\n` +
-            `🛡️ Territorial Combat Readiness: Armed forces and border divisions maintain Tier-1 rapid-response posture.\n` +
-            `📡 Integrated Air Defense & Cyber Shield: 94% threat detection and interception efficiency.\n` +
-            `🎖️ Joint Operational Command: Littoral naval patrols and airspace surveillance active 24/7.`;
-        } else if (isBudgetQuery) {
-          responseText = `Executive Commander, Fiscal & Treasury status for ${countryDetails.name || countryKey}:\n\n` +
-            `💰 Available Sovereign Cash: ${formattedCash}\n` +
-            `🏛️ Annual Departmental Budget Allocation: ${budget}\n` +
-            `📈 Macroeconomic Stability Index: ${stability} with disciplined fiscal liquidity containment.`;
+            `💰 Sovereign Treasury Liquidity: ${formattedCash} available balance.`;
+
+        } else if (isAmountQuery) {
+          responseText = `Executive Commander, audited sovereign resource balance sheet for ${countryDetails.name || countryKey}:\n\n` +
+            `📊 Natural Gas Reserves: 14.8 TCF (Bibiyana, Titas, Kailashtila fields)\n` +
+            `🛢️ Strategic Petroleum Reserve: 90,000 Barrels Strategic Silo Stockpile\n` +
+            `⛏️ Coal & In-Situ Minerals: 3.3 Billion Metric Tons (Barapukuria Basin)\n` +
+            `⚡ Power Grid Generation Capacity: 27,400 MW Peak Baseload\n` +
+            `💰 Sovereign Treasury Liquidity: ${formattedCash} available cash.`;
+
         } else {
-          responseText = `Executive Commander, as ${mRole} of ${countryDetails.name || countryKey}, I (${mName}) have processed your inquiry regarding "${questionText}":\n\n` +
-            `📌 Strategic Evaluation: Current operational efficiency for ${mTitle} stands at ${efficiency}%, operating under a stable macro index of ${stability}.\n` +
-            `🔍 8-Layer Memory & Bayesian Synthesis: Our cognitive OS confirms all sovereign supply chains, data pipelines, and policy parameters are operating within optimal equilibrium thresholds.\n` +
-            `⚡ Recommended Action: Continue proactive capital allocation and maintain prioritized execution of sovereign directives.`;
+          responseText = `Executive Commander, as ${mRole} of ${countryDetails.name || countryKey}, I (${mName}) have processed your directive regarding "${questionText}":\n\n` +
+            `📌 Strategic Evaluation: Current operational efficiency for ${mTitle} stands at ${efficiency}%, operating under a national stability index of ${stability}.\n` +
+            `🔍 8-Layer Cognitive OS Synthesis: Verified that departmental supply chains, regulatory pipelines, and policy parameters operate within optimal equilibrium thresholds.\n` +
+            `⚡ Recommended Action: Maintain steady capital expenditure and prioritize sovereign infrastructure directives.`;
         }
-        impactText = `Cognitive Confidence: ${confidence}% • Macro Impact: +${(efficiency * 0.025 + 0.8).toFixed(1)}% • Epistemic State: ${epistemicStatus}`;
+
+        impactText = `Cognitive Confidence: ${confidence}% • Macro Impact: +${(efficiency * 0.025 + 0.8).toFixed(1)}% • Epistemic State: GROUNDED_FACT`;
       }
 
-      // Record thought and learned experience into persistent 8-layer memory
+      // Record thought into persistent 8-layer deep memory
       this.deepMemory.recordEpisodicDecision({
         id: `COG-INTERROGATE-${Date.now()}`,
         tick: Date.now(),
@@ -2387,14 +2664,20 @@ const _omegaExport = (function (globalScope) {
         minister: mName,
         response: responseText,
         confidence: Number(confidence),
-        rootCause: cogResult.rootCause || "Multi-objective dynamic ministerial interrogation",
-        decisionType: isBuildDirective ? 'DIRECTIVE_COMMISSION' : (isDurationQuery ? 'DEPLETION_AUDIT' : 'STRATEGIC_INTERROGATION')
+        rootCause: detectedCommodityKey ? `Commodity Analysis: ${detectedCommodityKey}` : (isIdentityQuery ? 'Minister Identity Resolution' : 'Ministerial Interrogation'),
+        decisionType: detectedCommodityKey ? 'COMMODITY_AUDIT' : 'STRATEGIC_INTERROGATION'
       });
 
       return {
         text: responseText,
         impact: impactText,
-        cognition: cogResult
+        cognition: {
+          confidenceScore: Number(confidence) / 100,
+          detectedCommodity: detectedCommodityKey,
+          isAmountQuery,
+          ministerName: mName,
+          ministerRole: mRole
+        }
       };
     }
 
@@ -2415,6 +2698,61 @@ const _omegaExport = (function (globalScope) {
         this.selfModel.activeBeliefs.set('RESERVE_SECURITY_INDEX', newPrior);
       }
       return true;
+    }
+
+    async askMinisterWithAI(questionText, minister, countryKey = "BANGLADESH", countryDetails = {}) {
+      const isBn = /[\u0980-\u09FF]/.test(questionText);
+      const mId = minister ? minister.id : 'general';
+      const mName = (countryDetails.ministers && countryDetails.ministers[mId] && countryDetails.ministers[mId].name) || (minister ? minister.ministerName : 'Honorable Minister');
+      const mRole = (countryDetails.ministers && countryDetails.ministers[mId] && countryDetails.ministers[mId].role) || (minister ? minister.role : 'Cabinet Minister');
+      const countryName = countryDetails.name || countryKey;
+      const gameRes = typeof window !== 'undefined' ? (window.resources || {}) : {};
+
+      try {
+        if (typeof fetch === 'function') {
+          const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+          const timeoutId = controller ? setTimeout(() => controller.abort(), 7500) : null;
+
+          const res = await fetch('/api/ai/minister-consult', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            signal: controller ? controller.signal : undefined,
+            body: JSON.stringify({
+              ministerId: mId,
+              ministerName: mName,
+              ministerRole: mRole,
+              countryName: countryName,
+              countryCode: countryDetails.countryCode || 'BGD',
+              prompt: questionText,
+              language: isBn ? 'bn' : 'en',
+              gameState: {
+                cash: gameRes.cash,
+                reserves: gameRes
+              }
+            })
+          });
+
+          if (timeoutId) clearTimeout(timeoutId);
+
+          if (res.ok) {
+            const data = await res.json();
+            if (data.ok && data.aiPowered && data.text) {
+              return {
+                text: data.text,
+                impact: isBn
+                  ? `কগনিটিভ এআই ইন্টেলিজেন্স (Gemini 3.7 Flash) • মন্ত্রী কার্যক্ষমতা: ${minister ? minister.efficiency : 90}% • সার্বভৌম স্থিতিশীলতা: ${countryDetails.stability || '89%'}`
+                  : `Gemini 3.7 Flash Sovereign Synthesis • Minister Efficiency: ${minister ? minister.efficiency : 90}% • Stability: ${countryDetails.stability || '89%'}`,
+                aiPowered: true
+              };
+            }
+          }
+        }
+      } catch (err) {
+        console.info('[OmegaCognitiveOS] Realtime AI consult bypassed, using grounded 8-lane cognitive pipeline:', err.message);
+      }
+
+      // Offline deterministic fallback
+      return this.thinkMinisterQuestion(questionText, minister, countryKey, countryDetails);
     }
 
     queryCrossMinistry(requesterMinistry, targetMinistry, queryType, payload = {}) {
@@ -2471,6 +2809,7 @@ const _omegaExport = (function (globalScope) {
       sharedOSInstance.processCognitiveRequest(prompt, intent, country, targetCountry, domain, persona),
     execute27StepScenario: (prompt) => sharedOSInstance.executeComplete27StepScenario(prompt),
     thinkMinisterQuestion: (q, m, c, cd) => sharedOSInstance.thinkMinisterQuestion(q, m, c, cd),
+    askMinisterWithAI: (q, m, c, cd) => sharedOSInstance.askMinisterWithAI(q, m, c, cd),
     learnFromExecution: (o, d, m) => sharedOSInstance.learnFromExecution(o, d, m),
     getStages: () => sharedOSInstance.getStagesInfo(),
     queryCrossMinistry: (from, to, type, data) => sharedOSInstance.queryCrossMinistry(from, to, type, data)

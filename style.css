@@ -2650,6 +2650,17 @@ body.ios-active #top-status-bar {
     font-size: 42px;
     filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
     margin: 2px 0;
+    overflow: hidden;
+}
+
+.parchment-icon-box img {
+    width: 100%;
+    height: 100%;
+    max-width: 68px;
+    max-height: 68px;
+    object-fit: contain;
+    display: block;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
 }
 
 .parchment-card-title {

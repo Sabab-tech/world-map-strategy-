@@ -3094,11 +3094,36 @@ window.OmegaCabinetUI = {
 
         this.renderChatHistory(minister.id);
 
-        setTimeout(() => {
+        const isBengali = /[\u0980-\u09FF]/.test(questionText);
+        
+        // Show thinking indicator
+        const thinkingItem = {
+            sender: 'MINISTER',
+            senderName: mName,
+            text: isBengali ? 'কগনিটিভ এআই বিশ্লেষণ ও নীতি মূল্যায়ন প্রক্রিয়াধীন...' : 'Synthesizing sovereign policy analysis...',
+            analysis: isBengali ? 'এআই আর (AI Resource & Cognitive Link Active)' : 'AIR Sovereign Neural Link Active',
+            isThinking: true
+        };
+        this.chatHistories[minister.id].push(thinkingItem);
+        this.renderChatHistory(minister.id);
+
+        const executeReply = async () => {
             let replyText = "";
             let impactAnalysis = "";
 
-            if (window.OmegaCognitiveOS && typeof window.OmegaCognitiveOS.thinkMinisterQuestion === 'function') {
+            if (window.OmegaCognitiveOS && typeof window.OmegaCognitiveOS.askMinisterWithAI === 'function') {
+                try {
+                    const cogRes = await window.OmegaCognitiveOS.askMinisterWithAI(questionText, minister, countryKey, cDetails);
+                    if (cogRes && cogRes.text) {
+                        replyText = cogRes.text;
+                        impactAnalysis = cogRes.impact || (isBengali
+                            ? `কগনিটিভ আত্মবিশ্বাস: ৯৮.৫% • কার্যক্ষমতা: ${minister.efficiency}% • সার্বভৌম স্থায়িত্ব: ${cDetails.stability || '৮৯%'}`
+                            : `Cognitive Confidence: 98.5% • Efficiency: ${minister.efficiency}% • Sovereign Stability: ${cDetails.stability || '89%'}`);
+                    }
+                } catch (e) {
+                    console.warn("[OmegaCognitiveOS] Fallback to cognitive generator:", e);
+                }
+            } else if (window.OmegaCognitiveOS && typeof window.OmegaCognitiveOS.thinkMinisterQuestion === 'function') {
                 try {
                     const cogRes = window.OmegaCognitiveOS.thinkMinisterQuestion(questionText, minister, countryKey, cDetails);
                     if (cogRes && cogRes.text) {
@@ -3106,12 +3131,11 @@ window.OmegaCabinetUI = {
                         impactAnalysis = cogRes.impact || `Cognitive Confidence: 94.2% • Efficiency: ${minister.efficiency}% • Sovereign Stability: ${cDetails.stability || '88%'}`;
                     }
                 } catch (e) {
-                    console.warn("[OmegaCognitiveOS] Fallback to cognitive generator:", e);
+                    console.warn("[OmegaCognitiveOS] Fallback error:", e);
                 }
             }
 
             if (!replyText) {
-                const isBengali = /[\u0980-\u09FF]/.test(questionText);
                 if (isBengali) {
                     replyText = `মাননীয় এক্সিকিউটিভ কমান্ডার, ${cDetails.name}-এর ${mRole} হিসেবে আমি (${mName}) আপনার নির্দেশনা ("${questionText}") পর্যালোচনা করেছি। আমাদের বিভাগীয় সক্ষমতা ${minister.efficiency}% এবং কগনিটিভ পলিসি ফ্রেমওয়ার্ক সার্বক্ষণিক কার্যকর রয়েছে।`;
                 } else {
@@ -3120,7 +3144,14 @@ window.OmegaCabinetUI = {
                 impactAnalysis = `Cognitive Confidence: 91.5% • Operational Efficiency: ${minister.efficiency}% • Sovereign Stability: ${cDetails.stability || '88%'}`;
             }
 
-            this.chatHistories[minister.id].push({
+            // Remove thinking item and append final reply
+            const history = this.chatHistories[minister.id];
+            const lastIdx = history.findIndex(h => h.isThinking);
+            if (lastIdx !== -1) {
+                history.splice(lastIdx, 1);
+            }
+
+            history.push({
                 sender: 'MINISTER',
                 senderName: mName,
                 text: replyText,
@@ -3128,8 +3159,11 @@ window.OmegaCabinetUI = {
             });
 
             this.renderChatHistory(minister.id);
-        }, 150);
+        };
+
+        executeReply();
     },
+
 
     executeDirective(ministerId, directiveType) {
         const m = this.ministriesDatabase[ministerId];
