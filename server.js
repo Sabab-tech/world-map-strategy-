@@ -78,33 +78,59 @@ function getAI() {
 
 // Fallback candidate models in priority order
 const CANDIDATE_MODELS = [
-    'gemini-3.6-flash',
     'gemini-3.7-flash',
+    'gemini-3.1-flash-lite',
+    'gemini-3.1-pro-preview',
     'gemini-flash-latest'
 ];
+
+let cachedEconomies = {};
+let cachedPopulations = {};
+let cachedMinisters = {};
+
+try {
+    const ecoPath = path.join(__dirname, 'economy.json');
+    const popPath = path.join(__dirname, 'population.json');
+    const minPath = path.join(__dirname, 'ministers.json');
+    if (fs.existsSync(ecoPath)) cachedEconomies = JSON.parse(fs.readFileSync(ecoPath, 'utf8'));
+    if (fs.existsSync(popPath)) cachedPopulations = JSON.parse(fs.readFileSync(popPath, 'utf8'));
+    if (fs.existsSync(minPath)) cachedMinisters = JSON.parse(fs.readFileSync(minPath, 'utf8'));
+} catch (e) {
+    console.warn('[Server DB] Auxiliary datasets loading notice:', e.message);
+}
+
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 async function generateWithFallback(ai, options) {
     let lastError = null;
     for (const model of CANDIDATE_MODELS) {
-        try {
-            const response = await ai.models.generateContent({
-                model: model,
-                contents: options.contents,
-                config: options.config
-            });
-            if (response && response.text) {
-                return {
-                    ok: true,
+        // Try up to 2 attempts per candidate model for transient 503/429 errors
+        for (let attempt = 1; attempt <= 2; attempt++) {
+            try {
+                const response = await ai.models.generateContent({
                     model: model,
-                    text: response.text
-                };
+                    contents: options.contents,
+                    config: options.config
+                });
+                if (response && response.text) {
+                    return {
+                        ok: true,
+                        model: model,
+                        text: response.text
+                    };
+                }
+            } catch (err) {
+                lastError = err;
+                const isTransient = err.message && (err.message.includes('503') || err.message.includes('429') || err.message.includes('high demand') || err.message.includes('UNAVAILABLE'));
+                if (isTransient && attempt === 1) {
+                    await sleep(350 + Math.random() * 200);
+                    continue;
+                }
+                break; // Move to next candidate model
             }
-        } catch (err) {
-            console.warn(`[Gemini API] Model ${model} returned error (${err.message}). Trying fallback model...`);
-            lastError = err;
         }
     }
-    throw lastError || new Error('All Gemini model candidates failed');
+    throw lastError || new Error('All Gemini model candidates temporarily unavailable');
 }
 
 // AI Status check endpoint
@@ -150,6 +176,9 @@ app.post('/api/ai/minister-consult', async (req, res) => {
 
         const isBn = language === 'bn' || (typeof prompt === 'string' && /[\u0980-\u09FF]/.test(prompt));
         const countryResourceProfile = resolveCountryResourceData(countryCode, countryName);
+        const isoUpper = (countryCode || 'BGD').toUpperCase();
+        const countryEco = cachedEconomies[isoUpper] || cachedEconomies['BANGLADESH'] || {};
+        const countryPop = cachedPopulations[isoUpper] || cachedPopulations['BANGLADESH'] || {};
 
         const systemInstruction = `You are ${ministerName || 'the Minister'}, serving as the esteemed ${ministerRole || 'Cabinet Minister'} of ${countryName || 'the Sovereign Nation'} (ISO: ${countryCode || 'BGD'}).
 You are participating in a deep sovereign geopolitical simulation game.
@@ -160,20 +189,23 @@ Your core directives:
 2. Address the user with supreme respect (e.g. "মাননীয় এক্সিকিউটিভ কমান্ডার" in Bengali, or "Executive Commander" in English).
 3. If the user asks in Bengali or with Bengali characters, respond in flawless, high-register, authoritative sovereign Bengali (সাধু/প্রমিত বাংলা). If asked in English, reply in articulate, sophisticated English.
 4. Deep Resource & Geology Grounding: You have FULL access to the national mineral and energy inventory from our sovereign Geological Knowledge Database (resources.json). Directly reference actual known basins, deposits, refineries, strategic stockpile quantities, import dependencies, and downstream economic utilities.
-5. Answer questions directly, intelligently, and thoroughly. For questions like "Are our rare-earth and oil stockpiles secure?", do NOT repeat canned phrases. Deliver a detailed, multi-dimensional assessment of oil reserves (strategic runway, storage silos, refinery throughput) and rare-earth elements (beach placers/monazite/rutile, import vulnerability, high-tech defense applications).
+5. Answer ANY question directly, intelligently, and thoroughly at runtime. Deliver a detailed, multi-dimensional assessment with clear figures, operational timelines, and ministerial recommendations.
 6. Do NOT include markdown code blocks or meta disclaimers. Speak directly in persona.`;
 
         const userContent = `Executive Ministerial Intelligence Dossier:
 - Minister: ${ministerName} (${ministerRole})
 - Sovereign State: ${countryName} [${countryCode}]
-- Official Geological & Mineral Resource Profile (from resources.json):
+- Official Geological & Mineral Resource Profile:
 ${JSON.stringify({
     hydrocarbon_reserves: countryResourceProfile?.hydrocarbon_resource_base || 'Natural Gas & Strategic Petroleum Reserves',
     mineral_deposits: countryResourceProfile?.mineral_resource_base || {},
     strategic_resources: countryResourceProfile?.strategic_resources || {},
     resource_dependency: countryResourceProfile?.resource_dependency || {},
-    industrial_capacities: countryResourceProfile?.processing_resource_context || countryResourceProfile?.processing_and_industrial_capacities || {}
+    industrial_capacities: countryResourceProfile?.processing_resource_context || countryResourceProfile?.processing_and_industrial_capacities || {},
+    mineSites: countryResourceProfile?.resource_infrastructure_context?.mineSites || []
 }, null, 2)}
+- National Macroeconomics: ${JSON.stringify(countryEco)}
+- National Demographics: ${JSON.stringify(countryPop)}
 - Live Financial & Game Telemetry: ${JSON.stringify(reservesData || gameState || {})}
 - Executive Commander's Inquiry: "${prompt}"
 

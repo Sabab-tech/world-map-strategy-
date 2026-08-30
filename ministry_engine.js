@@ -1128,7 +1128,7 @@ window.OmegaCabinetUI = {
     getMinistryIconHtml(m, size = 32) {
         if (!m) return '🏛️';
         if (m.id === 'health_welfare' || (m.logo && m.logo.includes('health')) || (typeof m.avatar === 'string' && m.avatar.includes('health.svg'))) {
-            return `<img src="assets/ministers/health.svg" alt="Health Ministry Logo" style="width:${size}px; height:${size}px; object-fit:contain; filter:drop-shadow(0 0 6px rgba(16,185,129,0.6)); display:inline-block; vertical-align:middle;" />`;
+            return `<img src="assets/ministers/health.svg" alt="Health Ministry Logo" style="width:100%; height:100%; object-fit:cover; border-radius:8px; display:block;" />`;
         }
         if (typeof m.avatar === 'string' && (m.avatar.endsWith('.svg') || m.avatar.endsWith('.png') || m.avatar.includes('/'))) {
             return `<img src="${m.avatar}" alt="${m.title} Logo" style="width:${size}px; height:${size}px; object-fit:contain; display:inline-block; vertical-align:middle;" />`;
