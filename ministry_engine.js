@@ -224,14 +224,17 @@ window.OmegaMinistry = window.OmegaMinistry || {};
 
     class MultiDomainAnalysisEngine {
         analyzeObservation25Layers(obs = {}) {
+            const domain = obs.domain || "economy";
+            const efficiency = obs.efficiency || 88;
+            const delta = ((efficiency - 80) * 0.15).toFixed(1);
             return {
                 observation: obs,
-                overallImpact: "POSITIVE",
-                confidence: 92,
+                overallImpact: efficiency >= 75 ? "POSITIVE" : "NEUTRAL",
+                confidence: Math.min(99, Math.max(75, Math.round(efficiency * 0.95 + 10))),
                 layers: {
-                    economy: { score: "+2.4%", status: "OPTIMAL" },
+                    economy: { score: `${delta >= 0 ? '+' : ''}${delta}%`, status: efficiency >= 80 ? "OPTIMAL" : "STABLE" },
                     military: { score: "DEFCON 2", status: "HIGH READINESS" },
-                    social: { score: "91%", status: "STABLE" }
+                    social: { score: `${Math.round(efficiency * 0.9 + 5)}%`, status: "STABLE" }
                 }
             };
         }
@@ -240,10 +243,11 @@ window.OmegaMinistry = window.OmegaMinistry || {};
     class NaturalLanguageGenerationEngine {
         generateSemanticText(params = {}, type = "BRIEFING") {
             const domain = (params.domain || "governance").toUpperCase();
+            const eff = params.efficiency || 90;
             if (type === "RESPONSIVE") {
-                return `Under my leadership, the ${params.role || 'Minister'} has analyzed your directive concerning '${params.question || 'policy'}'. All 25 operational parameters show positive momentum.`;
+                return `Executive Commander, as ${params.role || 'Minister'}, I have audited our ${domain.toLowerCase()} metrics. Department throughput is currently at ${eff}%.`;
             }
-            return `Executive Commander, overall operational readiness in the ${domain} domain is proceeding with high efficiency and absolute security.`;
+            return `Executive Commander, operational readiness across the ${domain} portfolio is operating at ${eff}% efficiency with sovereign strategic stability.`;
         }
     }
 
@@ -3047,7 +3051,7 @@ window.OmegaCabinetUI = {
                     <div style="align-self:flex-start; background:rgba(15,23,42,0.9); border:1px solid rgba(255,215,0,0.4); color:#f8fafc; padding:8px 12px; border-radius:8px 8px 8px 0; max-width:85%; font-family:var(--font-mono); font-size:12px; margin-right:auto;">
                         <div style="font-size:10px; color:#ffd700; font-weight:bold; margin-bottom:2px; display:flex; justify-content:space-between;">
                             <span>${item.senderName || 'MINISTER'}:</span>
-                            <span style="font-size:9px; color:#22c55e;">25-LAYER ANALYSIS CERTIFIED</span>
+                            <span style="font-size:9px; color:#38bdf8; letter-spacing:0.5px;">${item.aiPowered ? '🧠 GEMINI SOVEREIGN REASONING' : '⚡ COGNITIVE ONTOLOGY AUDIT'}</span>
                         </div>
                         <div style="line-height:1.4;">${item.text}</div>
                         ${item.analysis ? `<div style="margin-top:6px; padding-top:4px; border-top:1px dashed rgba(255,255,255,0.1); font-size:10px; color:#00e5ff;">📊 Impact: ${item.analysis}</div>` : ''}
@@ -3084,8 +3088,8 @@ window.OmegaCabinetUI = {
         const cDetails = this.getCountryDetails(countryKey);
         
         // Dynamically resolution for localized minister name and role
-        const mName = (cDetails.ministers && cDetails.ministers[minister.id] && cDetails.ministers[minister.id].name) || minister.ministerName;
-        const mRole = (cDetails.ministers && cDetails.ministers[minister.id] && cDetails.ministers[minister.id].role) || minister.role;
+        const mName = (minister && (minister.ministerName || minister.name)) || (cDetails.ministers && cDetails.ministers[minister.id] && cDetails.ministers[minister.id].name) || 'Honorable Minister';
+        const mRole = (minister && minister.role) || (cDetails.ministers && cDetails.ministers[minister.id] && cDetails.ministers[minister.id].role) || 'Cabinet Minister';
 
         this.chatHistories[minister.id].push({
             sender: 'USER',
@@ -3110,15 +3114,17 @@ window.OmegaCabinetUI = {
         const executeReply = async () => {
             let replyText = "";
             let impactAnalysis = "";
+            let isAiPowered = false;
 
             if (window.OmegaCognitiveOS && typeof window.OmegaCognitiveOS.askMinisterWithAI === 'function') {
                 try {
                     const cogRes = await window.OmegaCognitiveOS.askMinisterWithAI(questionText, minister, countryKey, cDetails);
                     if (cogRes && cogRes.text) {
                         replyText = cogRes.text;
+                        isAiPowered = !!cogRes.aiPowered;
                         impactAnalysis = cogRes.impact || (isBengali
-                            ? `কগনিটিভ আত্মবিশ্বাস: ৯৮.৫% • কার্যক্ষমতা: ${minister.efficiency}% • সার্বভৌম স্থায়িত্ব: ${cDetails.stability || '৮৯%'}`
-                            : `Cognitive Confidence: 98.5% • Efficiency: ${minister.efficiency}% • Sovereign Stability: ${cDetails.stability || '89%'}`);
+                            ? `কগনিটিভ এআই ইন্টেলিজেন্স • কার্যক্ষমতা: ${minister.efficiency}% • সার্বভৌম স্থায়িত্ব: ${cDetails.stability || '৮৯%'}`
+                            : `Cognitive AI Synthesis • Efficiency: ${minister.efficiency}% • Sovereign Stability: ${cDetails.stability || '89%'}`);
                     }
                 } catch (e) {
                     console.warn("[OmegaCognitiveOS] Fallback to cognitive generator:", e);
@@ -3155,7 +3161,8 @@ window.OmegaCabinetUI = {
                 sender: 'MINISTER',
                 senderName: mName,
                 text: replyText,
-                analysis: impactAnalysis
+                analysis: impactAnalysis,
+                aiPowered: isAiPowered
             });
 
             this.renderChatHistory(minister.id);

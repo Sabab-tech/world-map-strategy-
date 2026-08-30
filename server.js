@@ -3,6 +3,8 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { GoogleGenAI } from '@google/genai';
+import './minister_query_router.js';
+const MinisterQueryRouter = globalThis.MinisterQueryRouter;
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -47,8 +49,16 @@ function resolveCountryResourceData(countryCode, countryName) {
     );
     if (match) return match;
 
-    // Fallback to BGD
-    return cachedResourceProfiles['BGD'] || null;
+    // Return sovereign empty schema rather than misattributing Bangladesh
+    return {
+        identity: { name: countryName || countryCode || 'Sovereign State', iso: code },
+        hydrocarbon_resource_base: {},
+        mineral_resource_base: {},
+        strategic_resources: {},
+        resource_dependency: {},
+        processing_and_industrial_capacities: {},
+        resource_infrastructure_context: { mineSites: [] }
+    };
 }
 
 const app = express();
@@ -78,8 +88,8 @@ function getAI() {
 
 // Fallback candidate models in priority order
 const CANDIDATE_MODELS = [
-    'gemini-3.7-flash',
     'gemini-3.1-flash-lite',
+    'gemini-3.7-flash',
     'gemini-3.1-pro-preview',
     'gemini-flash-latest'
 ];
@@ -177,27 +187,59 @@ app.post('/api/ai/minister-consult', async (req, res) => {
         const isBn = language === 'bn' || (typeof prompt === 'string' && /[\u0980-\u09FF]/.test(prompt));
         const countryResourceProfile = resolveCountryResourceData(countryCode, countryName);
         const isoUpper = (countryCode || 'BGD').toUpperCase();
-        const countryEco = cachedEconomies[isoUpper] || cachedEconomies['BANGLADESH'] || {};
-        const countryPop = cachedPopulations[isoUpper] || cachedPopulations['BANGLADESH'] || {};
+        const countryEco = cachedEconomies[isoUpper] || {};
+        const countryPop = cachedPopulations[isoUpper] || {};
+
+        // Query Routing & Intent Extraction
+        const routing = MinisterQueryRouter.routeMinisterQuery(prompt, { ministerId, ministerName, ministerRole }, { countryName, countryCode });
+
+        // Resolve Minister Identity Profile
+        let ministerProfile = null;
+        if (cachedMinisters && cachedMinisters.ministers_database) {
+            for (const category of Object.values(cachedMinisters.ministers_database)) {
+                if (Array.isArray(category)) {
+                    const found = category.find(m => m.id === ministerId || (m.regional_names && Object.values(m.regional_names).includes(ministerName)));
+                    if (found) {
+                        ministerProfile = found;
+                        break;
+                    }
+                }
+            }
+        }
 
         const systemInstruction = `You are ${ministerName || 'the Minister'}, serving as the esteemed ${ministerRole || 'Cabinet Minister'} of ${countryName || 'the Sovereign Nation'} (ISO: ${countryCode || 'BGD'}).
 You are participating in a deep sovereign geopolitical simulation game.
-The Executive Commander (User) is consulting you for strategic directives, policy advice, national resource management, economic planning, defense, health, foreign affairs, or energy sovereignty.
+The Executive Commander (User) is consulting you.
 
 Your core directives:
 1. Speak in character as a dedicated, highly articulate, patriotic, analytical sovereign minister with decades of strategic statecraft experience.
 2. Address the user with supreme respect (e.g. "মাননীয় এক্সিকিউটিভ কমান্ডার" in Bengali, or "Executive Commander" in English).
 3. If the user asks in Bengali or with Bengali characters, respond in flawless, high-register, authoritative sovereign Bengali (সাধু/প্রমিত বাংলা). If asked in English, reply in articulate, sophisticated English.
-4. Deep Resource & Geology Grounding: You have FULL access to the national mineral and energy inventory from our sovereign Geological Knowledge Database (resources.json). Directly reference actual known basins, deposits, refineries, strategic stockpile quantities, import dependencies, and downstream economic utilities.
-5. Answer ANY question directly, intelligently, and thoroughly at runtime. Deliver a detailed, multi-dimensional assessment with clear figures, operational timelines, and ministerial recommendations.
+4. SPECIFIC QUERY INTENT EXECUTION:
+   - Intent Detected: ${routing.intent} (Domain: ${routing.domain})
+   - If Intent is MINISTER_IDENTITY (e.g. asking your name, age, background, credentials, who you are): Explicitly state your full name (${ministerName}), age (${ministerProfile?.age || '52'} years), professional background (${ministerProfile?.background || 'Senior Sovereign Policy Specialist'}), alma mater, and ministerial duties directly and proudly. Do not output generic macroeconomic summaries.
+   - If Intent is RESOURCE_SECURITY / STOCKPILES: Focus specifically on the audited stockpile numbers, emergency consumption runway (days), physical bunker storage security, and foreign exchange backup.
+   - If Intent is RESOURCE_MINING_DISCOVERY: Focus specifically on known active mine sites, deposits, and geological basins.
+   - If Intent is MACROECONOMICS: Focus on GDP, inflation, sovereign debt, liquid treasury cash, and foreign exchange reserves.
+5. Ground your answers strictly in the verified data provided in the Executive Intelligence Dossier below. If a specific metric is not present in the dossier, state its strategic operational status realistically without inventing fake numbers.
 6. Do NOT include markdown code blocks or meta disclaimers. Speak directly in persona.`;
 
         const userContent = `Executive Ministerial Intelligence Dossier:
-- Minister: ${ministerName} (${ministerRole})
+- Minister Identity Record:
+  * Name: ${ministerName}
+  * Portfolio: ${ministerRole}
+  * Age: ${ministerProfile?.age || '52'}
+  * Background: ${ministerProfile?.background || 'Senior Statecraft & Policy Specialist'}
+  * Ideology: ${JSON.stringify(ministerProfile?.ideology || { type: 'nationalist' })}
+  * Core Stats: ${JSON.stringify(ministerProfile?.stats || { discipline: 88, strategic: 85 })}
 - Sovereign State: ${countryName} [${countryCode}]
+- Query Routing Analysis:
+  * Intent: ${routing.intent}
+  * Detected Resource Entities: ${JSON.stringify(routing.entities)}
+  * Required Cognition: ${JSON.stringify(routing.requiredData)}
 - Official Geological & Mineral Resource Profile:
 ${JSON.stringify({
-    hydrocarbon_reserves: countryResourceProfile?.hydrocarbon_resource_base || 'Natural Gas & Strategic Petroleum Reserves',
+    hydrocarbon_reserves: countryResourceProfile?.hydrocarbon_resource_base || {},
     mineral_deposits: countryResourceProfile?.mineral_resource_base || {},
     strategic_resources: countryResourceProfile?.strategic_resources || {},
     resource_dependency: countryResourceProfile?.resource_dependency || {},
@@ -209,7 +251,7 @@ ${JSON.stringify({
 - Live Financial & Game Telemetry: ${JSON.stringify(reservesData || gameState || {})}
 - Executive Commander's Inquiry: "${prompt}"
 
-Provide your comprehensive, realistic ministerial briefing, audit numbers, security status, and actionable policy directives now.`;
+Provide your comprehensive, realistic ministerial briefing answering the specific inquiry directly now.`;
 
         const result = await generateWithFallback(ai, {
             contents: userContent,
@@ -220,12 +262,16 @@ Provide your comprehensive, realistic ministerial briefing, audit numbers, secur
             }
         });
 
+        const dynamicConfidence = Math.min(99.5, Math.max(88.0, 92.0 + (routing.confidence * 6.0)));
+
         return res.json({
             ok: true,
             aiPowered: true,
             model: result.model,
             text: result.text || '',
-            confidence: 98,
+            confidence: Number(dynamicConfidence.toFixed(1)),
+            intent: routing.intent,
+            domain: routing.domain,
             status: 'GEMINI_AI_AUTONOMOUS_SYNTHESIS'
         });
 

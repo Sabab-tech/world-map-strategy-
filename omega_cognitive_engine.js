@@ -2333,15 +2333,19 @@ const _omegaExport = (function (globalScope) {
         } catch (e) {}
       }
 
-      const mName = (dynamicProfile && dynamicProfile.name) ||
+      const mName = (minister && (minister.ministerName || minister.name)) ||
         (countryDetails.ministers && countryDetails.ministers[mId] && countryDetails.ministers[mId].name) ||
-        (minister ? minister.ministerName : 'Honorable Minister');
+        (dynamicProfile && dynamicProfile.name) ||
+        'Honorable Minister';
 
-      const mRole = (countryDetails.ministers && countryDetails.ministers[mId] && countryDetails.ministers[mId].role) ||
-        (minister ? minister.role : 'State Minister');
+      const mRole = (minister && minister.role) ||
+        (countryDetails.ministers && countryDetails.ministers[mId] && countryDetails.ministers[mId].role) ||
+        (dynamicProfile && dynamicProfile.role) ||
+        'Cabinet Minister';
 
       const ministerBackground = (dynamicProfile && dynamicProfile.background) ||
-        (minister ? minister.background : 'Senior Sovereign Policy & Public Administration Specialist');
+        (minister && minister.background) ||
+        'Senior Sovereign Policy & Public Administration Specialist';
 
       const ministerStats = (dynamicProfile && dynamicProfile.stats) || (minister && minister.stats) || {
         discipline: 88,
@@ -2525,14 +2529,18 @@ const _omegaExport = (function (globalScope) {
       }
 
       // 4. DYNAMIC TOPIC & INTENT RECOGNITION
-      const isMineQuery = /mine|mines|deposit|deposits|extraction|basin|field|how many|খনি|কয়টি|কোথায়|ক্ষেত্র|আবিষ্কার/.test(promptLower);
-      const isSecurityStockpileQuery = /secure|security|safety|safe|stockpile|stockpiles|reserve|reserves|runway|depletion|হুমকি|নিরাপদ|সুরক্ষিত|মজুদ|স্থায়িত্ব|বাফার/.test(promptLower);
+      const isMineQuery = ((typeof window !== 'undefined' && window.MinisterQueryRouter) ? window.MinisterQueryRouter.detectIntent(promptLower) === 'RESOURCE_MINING_DISCOVERY' : false) ||
+        /mine|mines|deposit|deposits|extraction|basin|field|how many|খনি|কয়টি|কোথায়|ক্ষেত্র|আবিষ্কার/.test(promptLower);
+      const isSecurityStockpileQuery = ((typeof window !== 'undefined' && window.MinisterQueryRouter) ? window.MinisterQueryRouter.detectIntent(promptLower) === 'RESOURCE_SECURITY' : false) ||
+        /secure|security|safety|safe|stockpile|stockpiles|reserve|reserves|runway|depletion|হুমকি|নিরাপদ|সুরক্ষিত|মজুদ|স্থায়িত্ব|বাফার/.test(promptLower);
       const isAmountQuery = isSecurityStockpileQuery || /amount|quantity|volume|how much|how many|পরিমাণ|কতটুকু|কত আছে|ব্যালেন্স/.test(promptLower);
       const isMacroQuery = /gdp|inflation|unemployment|debt|reserve|treasury|economy|trade|currency|অর্থনীতি|জিডিপি|মূল্যস্ফীতি|বেকারত্ব|ঋণ|কোষাগার/.test(promptLower);
       const isDemographicsQuery = /population|demographic|growth|birth|death|urban|people|workforce|জনসংখ্যা|বৃদ্ধি|নাগরিক|শহর/.test(promptLower);
       const isDefenseQuery = /defense|military|army|navy|air force|weapon|border|security|war|missile|প্রতিরক্ষা|সেনা|যুদ্ধ|সীমান্ত|অস্ত্র/.test(promptLower);
       const isEnergyPowerQuery = /power|electricity|grid|megawatt|nuclear|solar|renewable|বিদ্যুৎ|গ্রিড|মেগাওয়াট|উৎপাদন/.test(promptLower);
-      const isIdentityQuery = /who are you|who is|minister|background|education|tenure|appointed|পরিচয়|কে তুমি|মন্ত্রী কে|বায়োগ্রাফি/.test(promptLower);
+      const isIdentityQuery = ((typeof window !== 'undefined' && window.MinisterQueryRouter) ? window.MinisterQueryRouter.detectIntent(promptLower) === 'MINISTER_IDENTITY' : false) ||
+        /\b(what is your name|who are you|how old are you|your age|your background|tell me about yourself|who are u|whats your name|what's your name|your bio|your alma mater|your education|who is the minister)\b/i.test(promptLower) ||
+        /who are you|who is|minister|background|education|tenure|appointed|পরিচয়|কে তুমি|মন্ত্রী কে|বায়োগ্রাফি|নাম কি|বয়স কত|তোমার নাম|আপনার নাম/.test(promptLower);
       const isPolicyProposalQuery = /directive|propose|policy|plan|strategy|recommend|সুপারিশ|পরিকল্পনা|নীতি|নির্দেশনা/.test(promptLower);
 
       // Extract specific sovereign geological facts from country profile
@@ -2545,6 +2553,7 @@ const _omegaExport = (function (globalScope) {
       const resourceDeps = countryProfile.resource_dependency || {};
 
       let responseText = "";
+      let impactText = "";
       let confidence = (94.0 + (efficiency * 0.05)).toFixed(1);
 
       // 5. DYNAMIC RESPONSE SYNTHESIS ENGINE (ZERO STATIC STRINGS - FULLY GROUNDED)
@@ -2817,8 +2826,8 @@ const _omegaExport = (function (globalScope) {
     async askMinisterWithAI(questionText, minister, countryKey = "BANGLADESH", countryDetails = {}) {
       const isBn = /[\u0980-\u09FF]/.test(questionText);
       const mId = minister ? minister.id : 'general';
-      const mName = (countryDetails.ministers && countryDetails.ministers[mId] && countryDetails.ministers[mId].name) || (minister ? minister.ministerName : 'Honorable Minister');
-      const mRole = (countryDetails.ministers && countryDetails.ministers[mId] && countryDetails.ministers[mId].role) || (minister ? minister.role : 'Cabinet Minister');
+      const mName = (minister && (minister.ministerName || minister.name)) || (countryDetails.ministers && countryDetails.ministers[mId] && countryDetails.ministers[mId].name) || 'Honorable Minister';
+      const mRole = (minister && minister.role) || (countryDetails.ministers && countryDetails.ministers[mId] && countryDetails.ministers[mId].role) || 'Cabinet Minister';
       const countryName = countryDetails.name || countryKey;
       const gameRes = typeof window !== 'undefined' ? (window.resources || {}) : {};
 
