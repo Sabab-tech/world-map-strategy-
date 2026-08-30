@@ -1,0 +1,75 @@
+{
+  "schema_version": "1.0.0",
+  "description": "Data-driven semantic knowledge plane. JavaScript must not contain country/resource/question meaning as world-state facts.",
+  "entity_types": ["COUNTRY","RESOURCE","ASSET_CLASS","PERSON","ORGANIZATION","FACILITY","REGION","TIME","UNIT"],
+  "countries": {
+    "BGD": {"type":"COUNTRY","names":["Bangladesh","BD","BGD","বাংলাদেশ","বাংলাদেশে","বাংলাদেশের","বাংলাদেশকে"]},
+    "IND": {"type":"COUNTRY","names":["India","IND","ভারত","ভারতে","ভারতের"]},
+    "CHN": {"type":"COUNTRY","names":["China","CHN","চীন","চীনে","চীনের"]},
+    "USA": {"type":"COUNTRY","names":["United States","USA","America","যুক্তরাষ্ট্র","আমেরিকা"]},
+    "RUS": {"type":"COUNTRY","names":["Russia","RUS","রাশিয়া","রাশিয়ায়","রাশিয়ার","রাশিয়ার"]},
+    "SAU": {"type":"COUNTRY","names":["Saudi Arabia","SAU","সৌদি আরব","সৌদি"]},
+    "AUS": {"type":"COUNTRY","names":["Australia","AUS","অস্ট্রেলিয়া","অস্ট্রেলিয়ায়"]},
+    "CHL": {"type":"COUNTRY","names":["Chile","CHL","চিলি"]},
+    "COD": {"type":"COUNTRY","names":["Democratic Republic of the Congo","DR Congo","COD","কঙ্গো"]}
+  },
+  "resources": {
+    "CRUDE_OIL":{"type":"RESOURCE","names":["oil","crude oil","crude","petroleum","তেল","তেলের","পেট্রোলিয়াম","অপরিশোধিত তেল"]},
+    "NATURAL_GAS":{"type":"RESOURCE","names":["gas","natural gas","LNG","methane","গ্যাস","গ্যাসের","প্রাকৃতিক গ্যাস","এলএনজি","মিথেন"]},
+    "COAL":{"type":"RESOURCE","names":["coal","কয়লা","কয়লা","কোল"]},
+    "IRON_ORE":{"type":"RESOURCE","names":["iron ore","iron","hematite","magnetite","লোহা","লোহার","লৌহ","লৌহ আকরিক"]},
+    "STEEL":{"type":"RESOURCE","names":["steel","ইস্পাত","স্টিল"]},
+    "COPPER":{"type":"RESOURCE","names":["copper","তামা","তামার","কপার","তাম্র"]},
+    "LITHIUM":{"type":"RESOURCE","names":["lithium","লিথিয়াম","লিথিয়াম"]},
+    "RARE_EARTHS":{"type":"RESOURCE","names":["rare earth","rare-earth","rare earths","REE","রেয়ার আর্থ","রেয়ার আর্থ","বিরল মৃত্তিকা","বিরল খনিজ"]},
+    "URANIUM":{"type":"RESOURCE","names":["uranium","ইউরেনিয়াম","ইউরেনিয়াম"]},
+    "BAUXITE":{"type":"RESOURCE","names":["bauxite","বক্সাইট"]},
+    "GOLD":{"type":"RESOURCE","names":["gold","bullion","সোনা","সোনার","স্বর্ণ","বুলিয়ন"]}
+  },
+  "asset_classes": {
+    "MINE":{"type":"ASSET_CLASS","names":["mine","mines","mining site","খনি","খনিগুলো","খনিগুলি","খনি আছে"]},
+    "DEPOSIT":{"type":"ASSET_CLASS","names":["deposit","deposits","mineral deposit","ডিপোজিট","মজুদ ক্ষেত্র","খনিজ মজুদ"]},
+    "OIL_FIELD":{"type":"ASSET_CLASS","names":["oil field","oil fields","তেলক্ষেত্র","তেল ক্ষেত্র"]},
+    "GAS_FIELD":{"type":"ASSET_CLASS","names":["gas field","gas fields","গ্যাসক্ষেত্র","গ্যাস ক্ষেত্র"]},
+    "FACILITY":{"type":"ASSET_CLASS","names":["facility","plant","refinery","smelter","কারখানা","স্থাপনা","রিফাইনারি","স্মেল্টার"]}
+  },
+  "question_semantics": {
+    "COUNT":{"type":"OPERATION","names":["how many","number of","count","total number","কতটি","কয়টি","কয়টি","কতগুলো","কতগুলি","সংখ্যা কত","মোট কত"]},
+    "QUANTITY":{"type":"OPERATION","names":["how much","quantity","amount","পরিমাণ কত","কত আছে","কতটুকু"]},
+    "IDENTIFY":{"type":"OPERATION","names":["what is","what are","define","কি","কী","কী আছে","কি আছে"]},
+    "SELECT":{"type":"OPERATION","names":["which","which ones","কোনটি","কোনগুলো","কোনগুলি"]},
+    "PERSON":{"type":"OPERATION","names":["who","কে","কারা"]},
+    "LOCATION":{"type":"OPERATION","names":["where","location","located","কোথায়","কোথায়","অবস্থান","কোথায় আছে","কোথায় আছে"]},
+    "TIME":{"type":"OPERATION","names":["when","কখন","কোন সময়","কোন সময়ে"]},
+    "METHOD":{"type":"OPERATION","names":["how","how does","how to","কীভাবে","কিভাবে","কী উপায়ে","কীভাবে কাজ"]},
+    "CAUSE":{"type":"OPERATION","names":["why","because","cause","কেন","কারণ","কী কারণে","কি কারণে"]},
+    "POLICY":{"type":"OPERATION","names":["should","should we","recommend","recommendation","what should we do","করা উচিত","করা উচিত কি","কী করা উচিত","কি করা উচিত","সুপারিশ","পরামর্শ"]},
+    "FEASIBILITY":{"type":"OPERATION","names":["can","is it possible","feasible","পারবে কি","সম্ভব কি","সম্ভব কিনা","করা সম্ভব"]},
+    "FORECAST":{"type":"OPERATION","names":["will","forecast","future","predict","ভবিষ্যতে","পূর্বাভাস","অনুমান"]}
+  },
+  "relations": [
+    {"id":"HAS_RESOURCE","from":"COUNTRY","to":"RESOURCE"},
+    {"id":"HAS_MINE","from":"COUNTRY","to":"MINE"},
+    {"id":"HAS_DEPOSIT","from":"COUNTRY","to":"DEPOSIT"},
+    {"id":"HAS_FIELD","from":"COUNTRY","to":"OIL_FIELD"},
+    {"id":"CONTAINS_RESOURCE","from":"MINE","to":"RESOURCE"},
+    {"id":"CONTAINS_RESOURCE","from":"DEPOSIT","to":"RESOURCE"},
+    {"id":"PRODUCES","from":"FACILITY","to":"RESOURCE"},
+    {"id":"LOCATED_IN","from":"MINE","to":"COUNTRY"},
+    {"id":"LOCATED_IN","from":"DEPOSIT","to":"COUNTRY"}
+  ],
+  "normalization": {
+    "unicode":"NFKC",
+    "remove_punctuation":true,
+    "collapse_whitespace":true,
+    "strip_bangla_case_suffixes":false,
+    "preserve_surface_form":true
+  },
+  "ambiguity_policy": {
+    "minimum_confidence":0.82,
+    "margin_over_second_best":0.08,
+    "never_default_to_BGD":true,
+    "never_default_to_any_resource":true,
+    "on_ambiguous":"ASK_CLARIFICATION_OR_REPORT_UNRESOLVED"
+  }
+}
