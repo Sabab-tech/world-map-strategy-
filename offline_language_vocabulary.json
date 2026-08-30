@@ -1,0 +1,52 @@
+{
+  "schema_version": "1.0.0",
+  "engine_role": "LANGUAGE_SOURCE_ONLY",
+  "reasoning_role": "NONE",
+  "learning_policy": {
+    "mode": "bounded_adaptive",
+    "learns": ["user_phrase_to_intent", "user_phrase_to_entity", "successful_aliases", "language_preferences"],
+    "never_learns_automatically": ["world_state_facts", "resource_quantities", "country_facts", "minister_identity", "causal_laws"],
+    "storage": "localStorage",
+    "max_learned_entries": 512,
+    "confidence_required_for_persistent_mapping": 0.90
+  },
+  "languages": {
+    "en": {
+      "grammar": {"word_order": "SVO", "question_markers": ["what", "which", "where", "when", "how", "why", "who", "how many", "how much"]},
+      "quantity_markers": ["how many", "how much", "number", "count", "total"],
+      "location_markers": ["where", "located", "site", "region", "basin", "field"],
+      "comparison_markers": ["more", "less", "higher", "lower", "largest", "smallest", "compare", "versus"],
+      "causal_markers": ["why", "because", "cause", "effect", "impact", "consequence", "lead to"],
+      "policy_markers": ["should", "recommend", "strategy", "policy", "plan", "action", "priority"]
+    },
+    "bn": {
+      "grammar": {"word_order": "SOV", "question_markers": ["কি", "কী", "কে", "কোথায়", "কোথায়", "কখন", "কেন", "কীভাবে", "কত", "কতটি", "কয়টি", "কয়টি"]},
+      "quantity_markers": ["কত", "কতটি", "কয়টি", "কয়টি", "কতগুলো", "কতগুলি", "সংখ্যা", "মোট"],
+      "location_markers": ["কোথায়", "কোথায়", "অবস্থান", "কোথায় আছে", "কোন অঞ্চলে", "কোন এলাকায়"],
+      "comparison_markers": ["বেশি", "কম", "উচ্চ", "নিম্ন", "সবচেয়ে বেশি", "সবচেয়ে কম", "তুলনা", "বনাম"],
+      "causal_markers": ["কেন", "কারণ", "ফলে", "প্রভাব", "পরিণতি", "কী কারণে"],
+      "policy_markers": ["কী করা উচিত", "কি করা উচিত", "সুপারিশ", "কৌশল", "নীতিমালা", "পরিকল্পনা", "পদক্ষেপ"]
+    }
+  },
+  "semantic_relations": [
+    ["mine", "deposit", "mineral_site"],
+    ["oil", "petroleum", "crude_oil"],
+    ["gas", "natural_gas", "lng", "methane"],
+    ["iron", "iron_ore", "hematite", "magnetite"],
+    ["rare_earth", "rare_earths", "ree", "critical_mineral"],
+    ["stockpile", "inventory", "reserve", "stored_quantity"],
+    ["country", "nation", "state", "sovereign_state"],
+    ["count", "number", "quantity", "total"]
+  ],
+  "entity_resolution": {
+    "country_id_format": "ISO_3166_ALPHA3",
+    "resource_id_format": "GSRSK_CANONICAL_RESOURCE_ID",
+    "resolution_order": ["explicit_id", "exact_alias", "normalized_alias", "semantic_relation", "dataset_name_match", "conversation_context"],
+    "ambiguity_policy": "do_not_guess"
+  },
+  "response_contract": {
+    "required_sections": ["interpretation", "evidence", "result", "uncertainty"],
+    "numeric_claim_policy": "dataset_or_deterministic_derivation_only",
+    "unknown_policy": "state_unknown_explicitly"
+  }
+}
