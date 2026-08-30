@@ -1,0 +1,19 @@
+{
+  "schemaVersion":"1.0.0",
+  "bounds":{"stress":{"min":0,"max":100},"workload":{"min":0,"max":100},"fatigue":{"min":0,"max":100},"confidence":{"min":0,"max":100},"trust":{"min":0,"max":100}},
+  "learning":{"basePracticeGain":0.18,"successFactor":1.15,"failureFactor":0.55,"trainingFactor":1.35,"diminishingScale":12,"maxDomainExperience":1000,"maxLessons":128},
+  "workload":{"taskWeights":{"complexity":0.42,"urgency":0.23,"cognitiveDemand":0.20,"deadlinePressure":0.10,"communications":0.05},"decayPerGameHour":1.5,"delegationRelief":0.45},
+  "stress":{"weights":{"workload":0.26,"crisisExposure":0.20,"economicPressure":0.12,"politicalPressure":0.12,"decisionPressure":0.10,"timePressure":0.08,"uncertainty":0.07,"recentFailures":0.05},"recovery":{"taskCompletion":0.06,"successfulResolution":0.10,"delegation":0.04,"rest":0.035,"support":0.025,"stableConditions":0.01},"responseCurve":1.15,"recoveryCurve":0.8},
+  "performance":{"weights":{"capability":0.40,"experience":0.15,"informationQuality":0.15,"workload":0.10,"stress":0.10,"timePressure":0.10},"stressPenaltyMax":0.30,"overloadPenaltyMax":0.35},
+  "roles":[
+    {"match":["defense","military","security","intelligence"],"exposure":{"economic":0.35,"political":0.55,"crisis":0.95},"operations":["SECURITY","CRISIS","EXECUTION"]},
+    {"match":["foreign","diplomacy","trade"],"exposure":{"economic":0.40,"political":0.55,"crisis":0.65},"operations":["NEGOTIATION","DIPLOMACY","AUDIT"]},
+    {"match":["finance","treasury","tax","central_bank"],"exposure":{"economic":0.95,"political":0.55,"crisis":0.65},"operations":["FISCAL","AUDIT","CRISIS"]},
+    {"match":["energy","mining","production","industry","infrastructure","agriculture"],"exposure":{"economic":0.80,"political":0.45,"crisis":0.80},"operations":["INDUSTRY","EXECUTION","CRISIS"]},
+    {"match":["health","education","science","research"],"exposure":{"economic":0.55,"political":0.55,"crisis":0.75},"operations":["RESEARCH","EXECUTION","CRISIS"]},
+    {"match":[],"exposure":{"economic":0.50,"political":0.50,"crisis":0.60},"operations":["EXECUTION","AUDIT","CRISIS"]}
+  ],
+  "taskTypes":{"ROUTINE_REPORT":{"complexity":15,"urgency":10,"cognitiveDemand":15},"NEGOTIATION":{"complexity":55,"urgency":45,"cognitiveDemand":65},"RESOURCE_CRISIS":{"complexity":85,"urgency":95,"cognitiveDemand":90},"POLICY_DECISION":{"complexity":70,"urgency":60,"cognitiveDemand":80},"ADMINISTRATION":{"complexity":25,"urgency":30,"cognitiveDemand":25},"COMMUNICATION":{"complexity":20,"urgency":40,"cognitiveDemand":35}},
+  "persistence":{"storageKey":"OMEGA_MINISTER_STATE_V2","schemaVersion":"2.0.0","writeDebounceMs":120},
+  "limits":{"maxTasksPerMinister":100,"maxMessagesPerMinister":100,"maxDecisionHistory":250,"maxEpisodes":250,"maxInstitutionalLessons":250}
+}
