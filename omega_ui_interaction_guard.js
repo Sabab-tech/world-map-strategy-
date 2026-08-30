@@ -1,4 +1,4 @@
-/* OMEGA UI INTERACTION GUARD v1.0.0
+/* OMEGA UI INTERACTION GUARD v1.0.1
  * Owns active modal hit-testing, vertical touch scrolling and background input isolation.
  */
 (function (global) {
@@ -7,13 +7,6 @@
   global.__OMEGA_UI_INTERACTION_GUARD__ = true;
 
   const STYLE_ID = 'omega-ui-interaction-guard-style';
-  const SELECTORS = [
-    '#cabinet-full-window',
-    '#command-hub-modal',
-    '#ministry-dashboard',
-    '#ministry-dashboard-content',
-    '.omega-minister-recruitment'
-  ];
 
   function injectStyles() {
     if (document.getElementById(STYLE_ID)) return;
@@ -21,12 +14,7 @@
     style.id = STYLE_ID;
     style.textContent = `
       html, body, #app { width:100%; height:100%; overflow:hidden; }
-
-      #cabinet-full-window,
-      #command-hub-modal,
-      #ministry-dashboard {
-        isolation:isolate;
-      }
+      #cabinet-full-window, #command-hub-modal, #ministry-dashboard { isolation:isolate; }
 
       #cabinet-full-window {
         pointer-events:none;
@@ -34,13 +22,9 @@
         touch-action:pan-y;
       }
       #cabinet-full-window.omega-ui-active,
-      #cabinet-full-window.omega-ui-active * {
-        pointer-events:auto;
-      }
+      #cabinet-full-window.omega-ui-active * { pointer-events:auto; }
 
-      #command-hub-modal {
-        overscroll-behavior:contain;
-      }
+      #command-hub-modal { overscroll-behavior:contain; }
 
       #ministry-dashboard {
         position:absolute;
@@ -86,9 +70,7 @@
       }
 
       .omega-minister-recruitment,
-      .omega-minister-recruitment * {
-        pointer-events:auto;
-      }
+      .omega-minister-recruitment * { pointer-events:auto; }
 
       body.omega-modal-lock #cabinet-full-window,
       body.omega-modal-lock #command-hub-modal,
@@ -97,11 +79,8 @@
       body.omega-modal-lock #special-map-controls {
         pointer-events:none !important;
       }
-
       body.omega-modal-lock #ministry-dashboard,
-      body.omega-modal-lock #ministry-dashboard * {
-        pointer-events:auto;
-      }
+      body.omega-modal-lock #ministry-dashboard * { pointer-events:auto; }
     `;
     document.head.appendChild(style);
   }
@@ -114,8 +93,9 @@
   }
 
   function activeMinistry() {
-    const el = document.querySelector('#ministry-dashboard');
-    return visible(el) || !!document.querySelector('.omega-minister-recruitment');
+    const ministry = document.querySelector('#ministry-dashboard');
+    if (visible(ministry)) return true;
+    return [...document.querySelectorAll('.omega-minister-recruitment')].some(visible);
   }
 
   function lockBackground() {
@@ -131,36 +111,40 @@
     if (active) {
       if (cabinet) cabinet.setAttribute('aria-hidden', 'true');
       if (command) command.setAttribute('aria-hidden', 'true');
+    } else {
+      if (cabinet) cabinet.removeAttribute('aria-hidden');
+      if (command) command.removeAttribute('aria-hidden');
     }
   }
 
-  function stopBackgroundClick(event) {
+  function backgroundEvent(event) {
     if (!activeMinistry()) return;
     const ministry = document.querySelector('#ministry-dashboard');
-    if (!ministry) return;
-    if (event.target === ministry || ministry.contains(event.target)) return;
-    event.stopPropagation();
+    if (ministry && ministry.contains(event.target)) return;
     event.preventDefault();
-  }
-
-  function guardPointer(event) {
-    if (!activeMinistry()) return;
-    const ministry = document.querySelector('#ministry-dashboard');
-    if (!ministry || ministry.contains(event.target)) return;
     event.stopImmediatePropagation();
-    event.preventDefault();
-  }
-
-  function installObservers() {
-    const observer = new MutationObserver(() => lockBackground());
-    observer.observe(document.body, { childList:true, subtree:true, attributes:true, attributeFilter:['style','class','hidden'] });
-    setInterval(lockBackground, 250);
   }
 
   function installEvents() {
-    ['pointerdown', 'pointerup', 'click', 'touchend'].forEach(type => {
-      document.addEventListener(type, type === 'pointerdown' ? guardPointer : stopBackgroundClick, true);
-    });
+    document.addEventListener('pointerdown', backgroundEvent, true);
+    document.addEventListener('pointerup', backgroundEvent, true);
+    document.addEventListener('click', backgroundEvent, true);
+    document.addEventListener('touchend', backgroundEvent, true);
+  }
+
+  function installObservers() {
+    let scheduled = false;
+    const schedule = () => {
+      if (scheduled) return;
+      scheduled = true;
+      queueMicrotask(() => {
+        scheduled = false;
+        lockBackground();
+      });
+    };
+    const observer = new MutationObserver(schedule);
+    observer.observe(document.body, { childList:true, subtree:true, attributes:true, attributeFilter:['style','class','hidden'] });
+    setInterval(lockBackground, 500);
   }
 
   function boot() {
@@ -173,5 +157,5 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, { once:true });
   else boot();
 
-  global.OmegaUIInteractionGuard = { version:'1.0.0', lockBackground };
+  global.OmegaUIInteractionGuard = { version:'1.0.1', lockBackground };
 })(window);
