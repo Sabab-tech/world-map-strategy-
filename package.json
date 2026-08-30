@@ -4,10 +4,11 @@
   "type":"module",
   "scripts":{
     "dev":"node server.js",
-    "build":"node --check server.js && node --check omega_ai_integrity_layer.js && node --check minister_query_router.js && node --check offline_semantic_brain.js && node --check offline_query_engine.js && node --check omega_cognitive_engine.js && node --check ministry_engine.js",
-    "lint":"node --check server.js && node --check omega_ai_integrity_layer.js && node --check minister_query_router.js && node --check offline_semantic_brain.js && node --check offline_query_engine.js && node --check omega_cognitive_engine.js && node --check ministry_engine.js",
-    "test":"node test/omega_ai_integrity.test.js && node scripts/test_deep_semantic_brain.cjs && node scripts/test_runtime_semantic_all_countries.mjs",
+    "build":"node --check server.js && node --check omega_ai_integrity_layer.js && node --check minister_query_router.js && node --check offline_semantic_brain.js && node --check offline_query_engine.js && node --check minister_capability_engine.js && node --check minister_recruitment_engine.js && node --check omega_cognitive_engine.js && node --check ministry_engine.js",
+    "lint":"node --check server.js && node --check omega_ai_integrity_layer.js && node --check minister_query_router.js && node --check offline_semantic_brain.js && node --check offline_query_engine.js && node --check minister_capability_engine.js && node --check minister_recruitment_engine.js && node --check omega_cognitive_engine.js && node --check ministry_engine.js",
+    "test":"node test/omega_ai_integrity.test.js && node scripts/test_deep_semantic_brain.cjs && node scripts/test_runtime_semantic_all_countries.mjs && node scripts/test_minister_capability.cjs",
     "test:semantic":"node scripts/test_deep_semantic_brain.cjs && node scripts/test_runtime_semantic_all_countries.mjs",
+    "test:cabinet":"node scripts/test_minister_capability.cjs",
     "start":"node server.js"
   },
   "dependencies":{
