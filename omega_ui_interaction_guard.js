@@ -1,161 +1,31 @@
-/* OMEGA UI INTERACTION GUARD v1.0.1
- * Owns active modal hit-testing, vertical touch scrolling and background input isolation.
- */
-(function (global) {
-  'use strict';
-  if (global.__OMEGA_UI_INTERACTION_GUARD__) return;
-  global.__OMEGA_UI_INTERACTION_GUARD__ = true;
-
-  const STYLE_ID = 'omega-ui-interaction-guard-style';
-
-  function injectStyles() {
-    if (document.getElementById(STYLE_ID)) return;
-    const style = document.createElement('style');
-    style.id = STYLE_ID;
-    style.textContent = `
-      html, body, #app { width:100%; height:100%; overflow:hidden; }
-      #cabinet-full-window, #command-hub-modal, #ministry-dashboard { isolation:isolate; }
-
-      #cabinet-full-window {
-        pointer-events:none;
-        overscroll-behavior:contain;
-        touch-action:pan-y;
-      }
-      #cabinet-full-window.omega-ui-active,
-      #cabinet-full-window.omega-ui-active * { pointer-events:auto; }
-
-      #command-hub-modal { overscroll-behavior:contain; }
-
-      #ministry-dashboard {
-        position:absolute;
-        inset:0;
-        z-index:9000 !important;
-        display:none;
-        flex-direction:column;
-        min-height:0;
-        overflow:hidden !important;
-        pointer-events:none;
-        isolation:isolate;
-        overscroll-behavior:contain;
-      }
-      #ministry-dashboard.omega-ui-active {
-        display:flex !important;
-        pointer-events:auto !important;
-      }
-
-      #ministry-dashboard-content {
-        min-height:0 !important;
-        flex:1 1 auto !important;
-        width:100%;
-        max-height:none !important;
-        overflow-y:auto !important;
-        overflow-x:hidden !important;
-        -webkit-overflow-scrolling:touch;
-        overscroll-behavior-y:contain;
-        touch-action:pan-y;
-        pointer-events:auto !important;
-        box-sizing:border-box;
-      }
-
-      #ministry-dashboard-content button,
-      #ministry-dashboard-content a,
-      #ministry-dashboard-content input,
-      #ministry-dashboard-content select,
-      #ministry-dashboard-content textarea,
-      #ministry-dashboard-content [role="button"] {
-        pointer-events:auto !important;
-        touch-action:manipulation;
-        position:relative;
-        z-index:1;
-      }
-
-      .omega-minister-recruitment,
-      .omega-minister-recruitment * { pointer-events:auto; }
-
-      body.omega-modal-lock #cabinet-full-window,
-      body.omega-modal-lock #command-hub-modal,
-      body.omega-modal-lock #render-engine-root,
-      body.omega-modal-lock #map,
-      body.omega-modal-lock #special-map-controls {
-        pointer-events:none !important;
-      }
-      body.omega-modal-lock #ministry-dashboard,
-      body.omega-modal-lock #ministry-dashboard * { pointer-events:auto; }
-    `;
-    document.head.appendChild(style);
-  }
-
-  function visible(el) {
-    if (!el) return false;
-    const s = getComputedStyle(el);
-    const r = el.getBoundingClientRect();
-    return s.display !== 'none' && s.visibility !== 'hidden' && Number(s.opacity) !== 0 && r.width > 0 && r.height > 0;
-  }
-
-  function activeMinistry() {
-    const ministry = document.querySelector('#ministry-dashboard');
-    if (visible(ministry)) return true;
-    return [...document.querySelectorAll('.omega-minister-recruitment')].some(visible);
-  }
-
-  function lockBackground() {
-    const ministry = document.querySelector('#ministry-dashboard');
-    const cabinet = document.querySelector('#cabinet-full-window');
-    const command = document.querySelector('#command-hub-modal');
-    const active = activeMinistry();
-
-    document.body.classList.toggle('omega-modal-lock', active);
-    if (cabinet) cabinet.classList.toggle('omega-ui-active', !active && visible(cabinet));
-    if (ministry) ministry.classList.toggle('omega-ui-active', active);
-
-    if (active) {
-      if (cabinet) cabinet.setAttribute('aria-hidden', 'true');
-      if (command) command.setAttribute('aria-hidden', 'true');
-    } else {
-      if (cabinet) cabinet.removeAttribute('aria-hidden');
-      if (command) command.removeAttribute('aria-hidden');
-    }
-  }
-
-  function backgroundEvent(event) {
-    if (!activeMinistry()) return;
-    const ministry = document.querySelector('#ministry-dashboard');
-    if (ministry && ministry.contains(event.target)) return;
-    event.preventDefault();
-    event.stopImmediatePropagation();
-  }
-
-  function installEvents() {
-    document.addEventListener('pointerdown', backgroundEvent, true);
-    document.addEventListener('pointerup', backgroundEvent, true);
-    document.addEventListener('click', backgroundEvent, true);
-    document.addEventListener('touchend', backgroundEvent, true);
-  }
-
-  function installObservers() {
-    let scheduled = false;
-    const schedule = () => {
-      if (scheduled) return;
-      scheduled = true;
-      queueMicrotask(() => {
-        scheduled = false;
-        lockBackground();
-      });
-    };
-    const observer = new MutationObserver(schedule);
-    observer.observe(document.body, { childList:true, subtree:true, attributes:true, attributeFilter:['style','class','hidden'] });
-    setInterval(lockBackground, 500);
-  }
-
-  function boot() {
-    injectStyles();
-    installEvents();
-    installObservers();
-    lockBackground();
-  }
-
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, { once:true });
-  else boot();
-
-  global.OmegaUIInteractionGuard = { version:'1.0.1', lockBackground };
+/* OMEGA UI INTERACTION GUARD v2.0.0 */
+(function(global){'use strict';
+  if(global.__OMEGA_UI_INTERACTION_GUARD_V2__)return;global.__OMEGA_UI_INTERACTION_GUARD_V2__=true;
+  const STYLE_ID='omega-ui-interaction-guard-v2';
+  const MINISTRY='#ministry-dashboard-view';
+  const CABINET='#cabinet-full-window';
+  const COMMAND='#command-hub-modal';
+  const isVisible=el=>{if(!el)return false;const s=getComputedStyle(el),r=el.getBoundingClientRect();return s.display!=='none'&&s.visibility!=='hidden'&&Number(s.opacity)!==0&&r.width>0&&r.height>0};
+  const ministryOpen=()=>isVisible(document.querySelector(MINISTRY));
+  function styles(){if(document.getElementById(STYLE_ID))return;const s=document.createElement('style');s.id=STYLE_ID;s.textContent=`
+    html,body,#app{width:100%;height:100%;overflow:hidden!important;overscroll-behavior:none}
+    #ui-engine-root{position:fixed!important;inset:0!important;z-index:100!important;pointer-events:none!important}
+    ${CABINET},${COMMAND},${MINISTRY}{isolation:isolate;contain:layout paint style}
+    ${CABINET}{z-index:4000!important}
+    ${MINISTRY}{position:fixed!important;inset:0!important;width:100%!important;height:100%!important;max-width:none!important;max-height:none!important;transform:none!important;margin:0!important;display:none;flex-direction:column;pointer-events:none!important;overflow:hidden!important;z-index:9000!important;background:var(--omega-glass,#07111f)}
+    ${MINISTRY}[aria-hidden="false"],${MINISTRY}.omega-ui-active{display:flex!important;pointer-events:auto!important}
+    ${MINISTRY}>.sticky-layer-header{flex:0 0 auto;position:sticky;top:0;z-index:20}
+    #ministry-dashboard-content{position:relative!important;display:block!important;flex:1 1 0!important;min-height:0!important;height:auto!important;max-height:none!important;width:100%!important;overflow-y:auto!important;overflow-x:hidden!important;overscroll-behavior-y:contain!important;overscroll-behavior-x:none!important;-webkit-overflow-scrolling:touch!important;touch-action:pan-y!important;scroll-behavior:auto;isolation:isolate;box-sizing:border-box;padding-bottom:max(24px,env(safe-area-inset-bottom))!important;}
+    #ministry-dashboard-content>*{max-width:100%;box-sizing:border-box}
+    #ministry-dashboard-content button,#ministry-dashboard-content a,#ministry-dashboard-content input,#ministry-dashboard-content select,#ministry-dashboard-content textarea,#ministry-dashboard-content [role="button"]{pointer-events:auto!important;touch-action:manipulation!important;position:relative;z-index:2}
+    ${CABINET},${COMMAND},#render-engine-root,#map,#special-map-controls,.ui-bottom-navigation,.ui-right-controls{transition:none!important}
+    body.omega-ministry-active ${CABINET},body.omega-ministry-active ${COMMAND},body.omega-ministry-active #render-engine-root,body.omega-ministry-active #map,body.omega-ministry-active #special-map-controls,body.omega-ministry-active .ui-bottom-navigation,body.omega-ministry-active .ui-right-controls{pointer-events:none!important}
+    body.omega-ministry-active ${MINISTRY},body.omega-ministry-active ${MINISTRY} *{pointer-events:auto}
+  `;document.head.appendChild(s)}
+  function setActive(){const active=ministryOpen();document.body.classList.toggle('omega-ministry-active',active);const m=document.querySelector(MINISTRY),c=document.querySelector(CABINET),cmd=document.querySelector(COMMAND);if(m){m.setAttribute('aria-hidden',active?'false':'true');if(active)m.classList.add('omega-ui-active');else m.classList.remove('omega-ui-active')}if(c)c.setAttribute('aria-hidden',active?'true':'false');if(cmd)cmd.setAttribute('aria-hidden',active?'true':'false');}
+  function intercept(e){if(!ministryOpen())return;const m=document.querySelector(MINISTRY);if(m&&m.contains(e.target))return;e.preventDefault();e.stopImmediatePropagation();}
+  function wheel(e){if(!ministryOpen())return;const m=document.querySelector(MINISTRY);if(m&&m.contains(e.target))return;e.preventDefault();e.stopImmediatePropagation();}
+  function boot(){styles();['pointerdown','pointerup','click','touchstart','touchend'].forEach(t=>document.addEventListener(t,intercept,true));document.addEventListener('wheel',wheel,{capture:true,passive:false});document.addEventListener('scroll',()=>setActive(),true);const obs=new MutationObserver(setActive);obs.observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['style','class','hidden','aria-hidden']});setInterval(setActive,250);setActive();}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
+  global.OmegaUIInteractionGuard={version:'2.0.0',refresh:setActive};
 })(window);
