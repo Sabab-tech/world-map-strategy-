@@ -9,324 +9,187 @@ const MinisterQueryRouter = globalThis.MinisterQueryRouter;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const INDEX_PATH = path.join(__dirname, 'index.html');
+const AI_INTEGRITY_SCRIPT = '<script src="/omega_ai_integrity_layer.js"></script>';
 const HEALTH_LOGO_SCRIPT = '<script src="/health-ministry-logo.js"></script>';
 
-// Load and aggregate sovereign geological knowledge from resources.json & resources_2.json
 let cachedResourceProfiles = {};
 let resourceTypesRegistry = {};
-
 try {
-    const r1Path = path.join(__dirname, 'resources.json');
-    const r2Path = path.join(__dirname, 'resources_2.json');
-    
-    if (fs.existsSync(r1Path)) {
-        const raw1 = JSON.parse(fs.readFileSync(r1Path, 'utf8'));
-        if (raw1.resource_types) resourceTypesRegistry = { ...resourceTypesRegistry, ...raw1.resource_types };
-        if (raw1.GSRSK_Master_CountryProfiles_v14?.countryProfiles) {
-            cachedResourceProfiles = { ...cachedResourceProfiles, ...raw1.GSRSK_Master_CountryProfiles_v14.countryProfiles };
-        }
+  for (const filename of ['resources.json', 'resources_2.json']) {
+    const file = path.join(__dirname, filename);
+    if (!fs.existsSync(file)) continue;
+    const raw = JSON.parse(fs.readFileSync(file, 'utf8'));
+    if (raw.resource_types) resourceTypesRegistry = { ...resourceTypesRegistry, ...raw.resource_types };
+    if (raw.GSRSK_Master_CountryProfiles_v14?.countryProfiles) {
+      cachedResourceProfiles = { ...cachedResourceProfiles, ...raw.GSRSK_Master_CountryProfiles_v14.countryProfiles };
     }
-    if (fs.existsSync(r2Path)) {
-        const raw2 = JSON.parse(fs.readFileSync(r2Path, 'utf8'));
-        if (raw2.resource_types) resourceTypesRegistry = { ...resourceTypesRegistry, ...raw2.resource_types };
-        if (raw2.GSRSK_Master_CountryProfiles_v14?.countryProfiles) {
-            cachedResourceProfiles = { ...cachedResourceProfiles, ...raw2.GSRSK_Master_CountryProfiles_v14.countryProfiles };
-        }
-    }
-    console.log(`[Server Resources DB] Successfully indexed ${Object.keys(cachedResourceProfiles).length} sovereign geological profiles and ${Object.keys(resourceTypesRegistry).length} resource types.`);
+  }
+  console.log(`[Server Resources DB] Indexed ${Object.keys(cachedResourceProfiles).length} sovereign profiles and ${Object.keys(resourceTypesRegistry).length} resource types.`);
 } catch (e) {
-    console.warn('[Server Resources DB] Failed to pre-cache resources.json:', e.message);
+  console.warn('[Server Resources DB] Load warning:', e.message);
 }
 
 function resolveCountryResourceData(countryCode, countryName) {
-    const code = (countryCode || '').toUpperCase();
-    if (cachedResourceProfiles[code]) return cachedResourceProfiles[code];
-    
-    // Fuzzy search by country name
-    const match = Object.values(cachedResourceProfiles).find(p => 
-        (p.identity?.name && p.identity.name.toLowerCase() === (countryName || '').toLowerCase()) ||
-        (p.identity?.officialName && p.identity.officialName.toLowerCase().includes((countryName || '').toLowerCase()))
+  const code = String(countryCode || '').trim().toUpperCase();
+  if (code && cachedResourceProfiles[code]) return cachedResourceProfiles[code];
+  const name = String(countryName || '').trim().toLowerCase();
+  if (name) {
+    const match = Object.values(cachedResourceProfiles).find(p =>
+      String(p.identity?.name || '').trim().toLowerCase() === name ||
+      String(p.identity?.officialName || '').trim().toLowerCase() === name
     );
     if (match) return match;
-
-    // Return sovereign empty schema rather than misattributing Bangladesh
-    return {
-        identity: { name: countryName || countryCode || 'Sovereign State', iso: code },
-        hydrocarbon_resource_base: {},
-        mineral_resource_base: {},
-        strategic_resources: {},
-        resource_dependency: {},
-        processing_and_industrial_capacities: {},
-        resource_infrastructure_context: { mineSites: [] }
-    };
+  }
+  return {
+    identity: { name: countryName || countryCode || 'Sovereign State', iso: code || 'UNKNOWN' },
+    hydrocarbon_resource_base: {}, mineral_resource_base: {}, strategic_resources: {},
+    resource_dependency: {}, processing_and_industrial_capacities: {},
+    resource_infrastructure_context: { mineSites: [] }
+  };
 }
 
 const app = express();
 const PORT = 3000;
-
 app.use(express.json({ limit: '10mb' }));
+
+function renderIndex(res, next) {
+  fs.readFile(INDEX_PATH, 'utf8', (err, html) => {
+    if (err) return next(err);
+    let output = html;
+    if (!output.includes('/omega_ai_integrity_layer.js')) output = output.replace('</body>', `    ${AI_INTEGRITY_SCRIPT}\n</body>`);
+    if (!output.includes('/health-ministry-logo.js')) output = output.replace('</body>', `    ${HEALTH_LOGO_SCRIPT}\n</body>`);
+    res.type('html').send(output);
+  });
+}
+
+// Explicitly serve the boot document through the integrity injector. Static assets remain untouched.
+app.get('/', (req, res, next) => renderIndex(res, next));
+app.get('/index.html', (req, res, next) => renderIndex(res, next));
 app.use(express.static(__dirname, { index: false }));
 
-// Lazy GoogleGenAI Initialization
 let aiClient = null;
 function getAI() {
-    if (!aiClient) {
-        const apiKey = process.env.GEMINI_API_KEY;
-        if (apiKey) {
-            aiClient = new GoogleGenAI({
-                apiKey: apiKey,
-                httpOptions: {
-                    headers: {
-                        'User-Agent': 'aistudio-build'
-                    }
-                }
-            });
-        }
-    }
-    return aiClient;
+  if (!aiClient && process.env.GEMINI_API_KEY) aiClient = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY, httpOptions: { headers: { 'User-Agent': 'aistudio-build' } } });
+  return aiClient;
 }
 
-// Fallback candidate models in priority order
-const CANDIDATE_MODELS = [
-    'gemini-3.1-flash-lite',
-    'gemini-3.7-flash',
-    'gemini-3.1-pro-preview',
-    'gemini-flash-latest'
-];
-
-let cachedEconomies = {};
-let cachedPopulations = {};
-let cachedMinisters = {};
-
+const CANDIDATE_MODELS = ['gemini-3.1-flash-lite', 'gemini-3.7-flash', 'gemini-3.1-pro-preview', 'gemini-flash-latest'];
+let cachedEconomies = {}, cachedPopulations = {}, cachedMinisters = {};
 try {
-    const ecoPath = path.join(__dirname, 'economy.json');
-    const popPath = path.join(__dirname, 'population.json');
-    const minPath = path.join(__dirname, 'ministers.json');
-    if (fs.existsSync(ecoPath)) cachedEconomies = JSON.parse(fs.readFileSync(ecoPath, 'utf8'));
-    if (fs.existsSync(popPath)) cachedPopulations = JSON.parse(fs.readFileSync(popPath, 'utf8'));
-    if (fs.existsSync(minPath)) cachedMinisters = JSON.parse(fs.readFileSync(minPath, 'utf8'));
-} catch (e) {
-    console.warn('[Server DB] Auxiliary datasets loading notice:', e.message);
-}
+  const eco = path.join(__dirname, 'economy.json');
+  const pop = path.join(__dirname, 'population.json');
+  const min = path.join(__dirname, 'ministers.json');
+  if (fs.existsSync(eco)) cachedEconomies = JSON.parse(fs.readFileSync(eco, 'utf8'));
+  if (fs.existsSync(pop)) cachedPopulations = JSON.parse(fs.readFileSync(pop, 'utf8'));
+  if (fs.existsSync(min)) cachedMinisters = JSON.parse(fs.readFileSync(min, 'utf8'));
+} catch (e) { console.warn('[Server DB] Auxiliary dataset warning:', e.message); }
 
-const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-
+const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 async function generateWithFallback(ai, options) {
-    let lastError = null;
-    for (const model of CANDIDATE_MODELS) {
-        // Try up to 2 attempts per candidate model for transient 503/429 errors
-        for (let attempt = 1; attempt <= 2; attempt++) {
-            try {
-                const response = await ai.models.generateContent({
-                    model: model,
-                    contents: options.contents,
-                    config: options.config
-                });
-                if (response && response.text) {
-                    return {
-                        ok: true,
-                        model: model,
-                        text: response.text
-                    };
-                }
-            } catch (err) {
-                lastError = err;
-                const isTransient = err.message && (err.message.includes('503') || err.message.includes('429') || err.message.includes('high demand') || err.message.includes('UNAVAILABLE'));
-                if (isTransient && attempt === 1) {
-                    await sleep(350 + Math.random() * 200);
-                    continue;
-                }
-                break; // Move to next candidate model
-            }
-        }
+  let lastError = null;
+  for (const model of CANDIDATE_MODELS) {
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      try {
+        const response = await ai.models.generateContent({ model, contents: options.contents, config: options.config });
+        if (response?.text) return { ok: true, model, text: response.text };
+      } catch (err) {
+        lastError = err;
+        const transient = /503|429|high demand|UNAVAILABLE/i.test(err.message || '');
+        if (transient && attempt === 1) { await sleep(350 + Math.random() * 200); continue; }
+        break;
+      }
     }
-    throw lastError || new Error('All Gemini model candidates temporarily unavailable');
+  }
+  throw lastError || new Error('All Gemini model candidates temporarily unavailable');
 }
 
-// AI Status check endpoint
+function findMinisterProfile(ministerId, ministerName) {
+  const db = cachedMinisters?.ministers_database;
+  if (!db) return null;
+  for (const category of Object.values(db)) {
+    if (!Array.isArray(category)) continue;
+    const found = category.find(m => m.id === ministerId || (m.regional_names && ministerName && Object.values(m.regional_names).includes(ministerName)));
+    if (found) return found;
+  }
+  return null;
+}
+
+function evidenceConfidence({ routing, identityResolved, dossierFields, profileResolved }) {
+  const routingScore = Math.max(0, Math.min(1, Number(routing?.confidence ?? 0)));
+  const dataScore = Math.max(0, Math.min(1, dossierFields));
+  const identityScore = identityResolved ? 1 : 0.25;
+  const profileScore = profileResolved ? 1 : 0.35;
+  return Number((100 * (0.25 * routingScore + 0.35 * dataScore + 0.25 * identityScore + 0.15 * profileScore)).toFixed(1));
+}
+
 app.get('/api/ai/status', (req, res) => {
-    const hasKey = !!process.env.GEMINI_API_KEY;
-    res.json({
-        ok: true,
-        aiAvailable: hasKey,
-        models: CANDIDATE_MODELS,
-        primaryModel: CANDIDATE_MODELS[0],
-        timestamp: new Date().toISOString()
-    });
+  const hasKey = !!process.env.GEMINI_API_KEY;
+  res.json({ ok: true, aiAvailable: hasKey, models: CANDIDATE_MODELS, primaryModel: CANDIDATE_MODELS[0], integrityLayer: '1.1.0', timestamp: new Date().toISOString() });
 });
 
-// AI Minister Consultation & Strategy Reasoning Endpoint
 app.post('/api/ai/minister-consult', async (req, res) => {
-    try {
-        const {
-            ministerId,
-            ministerName,
-            ministerRole,
-            countryName,
-            countryCode,
-            prompt,
-            language,
-            gameState,
-            reservesData
-        } = req.body;
+  try {
+    const { ministerId, ministerName, ministerRole, ministryId, countryName, countryCode, prompt, language, gameState, reservesData } = req.body;
+    if (!prompt || typeof prompt !== 'string') return res.status(400).json({ ok: false, error: 'Prompt is required' });
 
-        if (!prompt || typeof prompt !== 'string') {
-            return res.status(400).json({ ok: false, error: 'Prompt is required' });
-        }
+    const identity = {
+      ministerId: String(ministerId || '').trim(), ministerName: String(ministerName || '').trim(),
+      ministerRole: String(ministerRole || '').trim(), ministryId: String(ministryId || '').trim(),
+      countryName: String(countryName || '').trim(), countryCode: String(countryCode || '').trim().toUpperCase()
+    };
+    const profile = findMinisterProfile(identity.ministerId, identity.ministerName);
+    const ai = getAI();
+    if (!ai) return res.json({ ok: false, aiPowered: false, reason: 'NO_API_KEY', message: 'Gemini API key is not configured; use the grounded offline cognitive path.' });
 
-        const ai = getAI();
-        if (!ai) {
-            return res.json({
-                ok: false,
-                aiPowered: false,
-                reason: 'NO_API_KEY',
-                message: 'Gemini API key is not configured; using offline cognitive engine.'
-            });
-        }
+    const isBn = language === 'bn' || /[\u0980-\u09FF]/.test(prompt);
+    const routing = MinisterQueryRouter.routeMinisterQuery(prompt, { ministryId: identity.ministryId, ministerId: identity.ministerId, ministerName: identity.ministerName, ministerRole: identity.ministerRole }, { countryName: identity.countryName, countryCode: identity.countryCode });
+    const resourceProfile = resolveCountryResourceData(identity.countryCode, identity.countryName);
+    const eco = cachedEconomies[identity.countryCode] || {};
+    const pop = cachedPopulations[identity.countryCode] || {};
+    const telemetry = reservesData || gameState || {};
+    const dossier = {
+      minister: { id: identity.ministerId || 'UNKNOWN', name: identity.ministerName || 'UNKNOWN', role: identity.ministerRole || 'UNKNOWN', ministryId: identity.ministryId || 'UNKNOWN', profileFound: !!profile },
+      country: { name: identity.countryName || 'UNKNOWN', iso: identity.countryCode || 'UNKNOWN' },
+      routing: { intent: routing.intent, domain: routing.domain, entities: routing.entities || [], requiredData: routing.requiredData || [] },
+      resources: {
+        hydrocarbons: resourceProfile.hydrocarbon_resource_base || {}, minerals: resourceProfile.mineral_resource_base || {},
+        strategic: resourceProfile.strategic_resources || {}, dependency: resourceProfile.resource_dependency || {},
+        processing: resourceProfile.processing_and_industrial_capacities || {}, mineSites: resourceProfile.resource_infrastructure_context?.mineSites || []
+      },
+      economy: eco, population: pop, liveTelemetry: telemetry
+    };
+    const dossierText = JSON.stringify(dossier, null, 2);
+    const dossierFields = Object.values(dossier).filter(v => v && typeof v === 'object' && Object.keys(v).length).length / 7;
+    const confidence = evidenceConfidence({ routing, identityResolved: !!identity.ministerId && !!identity.ministerName && !!identity.countryCode, dossierFields, profileResolved: !!profile });
 
-        const isBn = language === 'bn' || (typeof prompt === 'string' && /[\u0980-\u09FF]/.test(prompt));
-        const countryResourceProfile = resolveCountryResourceData(countryCode, countryName);
-        const isoUpper = (countryCode || 'BGD').toUpperCase();
-        const countryEco = cachedEconomies[isoUpper] || {};
-        const countryPop = cachedPopulations[isoUpper] || {};
+    const systemInstruction = `You are the minister identified in the CANONICAL IDENTITY RECORD below. Identity is authoritative and must never be changed. Never invent a different name, country, ministry, age, credentials, reserves, stockpile, infrastructure or event.\n\nCANONICAL IDENTITY:\n${JSON.stringify(identity, null, 2)}\n\nRules:\n1. Answer the user's actual question, not a generic briefing.\n2. Treat only values explicitly present in the dossier as observed data.\n3. Derived values must be labeled as calculated/derived and must show the basic equation when material.\n4. Missing values are UNKNOWN. Do not replace missing data with defaults.\n5. Separate fact, calculation, inference and recommendation.\n6. If the question asks your identity, answer from the canonical identity record and do not discuss unrelated macroeconomics.\n7. ${isBn ? 'Respond in standard Bengali.' : 'Respond in English.'}`;
 
-        // Query Routing & Intent Extraction
-        const routing = MinisterQueryRouter.routeMinisterQuery(prompt, { ministerId, ministerName, ministerRole }, { countryName, countryCode });
-
-        // Resolve Minister Identity Profile
-        let ministerProfile = null;
-        if (cachedMinisters && cachedMinisters.ministers_database) {
-            for (const category of Object.values(cachedMinisters.ministers_database)) {
-                if (Array.isArray(category)) {
-                    const found = category.find(m => m.id === ministerId || (m.regional_names && Object.values(m.regional_names).includes(ministerName)));
-                    if (found) {
-                        ministerProfile = found;
-                        break;
-                    }
-                }
-            }
-        }
-
-        const systemInstruction = `You are ${ministerName || 'the Minister'}, serving as the esteemed ${ministerRole || 'Cabinet Minister'} of ${countryName || 'the Sovereign Nation'} (ISO: ${countryCode || 'BGD'}).
-You are participating in a deep sovereign geopolitical simulation game.
-The Executive Commander (User) is consulting you.
-
-Your core directives:
-1. Speak in character as a dedicated, highly articulate, patriotic, analytical sovereign minister with decades of strategic statecraft experience.
-2. Address the user with supreme respect (e.g. "মাননীয় এক্সিকিউটিভ কমান্ডার" in Bengali, or "Executive Commander" in English).
-3. If the user asks in Bengali or with Bengali characters, respond in flawless, high-register, authoritative sovereign Bengali (সাধু/প্রমিত বাংলা). If asked in English, reply in articulate, sophisticated English.
-4. SPECIFIC QUERY INTENT EXECUTION:
-   - Intent Detected: ${routing.intent} (Domain: ${routing.domain})
-   - If Intent is MINISTER_IDENTITY (e.g. asking your name, age, background, credentials, who you are): Explicitly state your full name (${ministerName}), age (${ministerProfile?.age || '52'} years), professional background (${ministerProfile?.background || 'Senior Sovereign Policy Specialist'}), alma mater, and ministerial duties directly and proudly. Do not output generic macroeconomic summaries.
-   - If Intent is RESOURCE_SECURITY / STOCKPILES: Focus specifically on the audited stockpile numbers, emergency consumption runway (days), physical bunker storage security, and foreign exchange backup.
-   - If Intent is RESOURCE_MINING_DISCOVERY: Focus specifically on known active mine sites, deposits, and geological basins.
-   - If Intent is MACROECONOMICS: Focus on GDP, inflation, sovereign debt, liquid treasury cash, and foreign exchange reserves.
-5. Ground your answers strictly in the verified data provided in the Executive Intelligence Dossier below. If a specific metric is not present in the dossier, state its strategic operational status realistically without inventing fake numbers.
-6. Do NOT include markdown code blocks or meta disclaimers. Speak directly in persona.`;
-
-        const userContent = `Executive Ministerial Intelligence Dossier:
-- Minister Identity Record:
-  * Name: ${ministerName}
-  * Portfolio: ${ministerRole}
-  * Age: ${ministerProfile?.age || '52'}
-  * Background: ${ministerProfile?.background || 'Senior Statecraft & Policy Specialist'}
-  * Ideology: ${JSON.stringify(ministerProfile?.ideology || { type: 'nationalist' })}
-  * Core Stats: ${JSON.stringify(ministerProfile?.stats || { discipline: 88, strategic: 85 })}
-- Sovereign State: ${countryName} [${countryCode}]
-- Query Routing Analysis:
-  * Intent: ${routing.intent}
-  * Detected Resource Entities: ${JSON.stringify(routing.entities)}
-  * Required Cognition: ${JSON.stringify(routing.requiredData)}
-- Official Geological & Mineral Resource Profile:
-${JSON.stringify({
-    hydrocarbon_reserves: countryResourceProfile?.hydrocarbon_resource_base || {},
-    mineral_deposits: countryResourceProfile?.mineral_resource_base || {},
-    strategic_resources: countryResourceProfile?.strategic_resources || {},
-    resource_dependency: countryResourceProfile?.resource_dependency || {},
-    industrial_capacities: countryResourceProfile?.processing_resource_context || countryResourceProfile?.processing_and_industrial_capacities || {},
-    mineSites: countryResourceProfile?.resource_infrastructure_context?.mineSites || []
-}, null, 2)}
-- National Macroeconomics: ${JSON.stringify(countryEco)}
-- National Demographics: ${JSON.stringify(countryPop)}
-- Live Financial & Game Telemetry: ${JSON.stringify(reservesData || gameState || {})}
-- Executive Commander's Inquiry: "${prompt}"
-
-Provide your comprehensive, realistic ministerial briefing answering the specific inquiry directly now.`;
-
-        const result = await generateWithFallback(ai, {
-            contents: userContent,
-            config: {
-                systemInstruction: systemInstruction,
-                temperature: 0.7,
-                topP: 0.95
-            }
-        });
-
-        const dynamicConfidence = Math.min(99.5, Math.max(88.0, 92.0 + (routing.confidence * 6.0)));
-
-        return res.json({
-            ok: true,
-            aiPowered: true,
-            model: result.model,
-            text: result.text || '',
-            confidence: Number(dynamicConfidence.toFixed(1)),
-            intent: routing.intent,
-            domain: routing.domain,
-            status: 'GEMINI_AI_AUTONOMOUS_SYNTHESIS'
-        });
-
-    } catch (err) {
-        console.warn('[Gemini consultation fallback warning]:', err.message || err);
-        return res.json({
-            ok: false,
-            aiPowered: false,
-            error: err.message || 'Error generating AI response'
-        });
-    }
+    const userContent = `EXECUTIVE INTELLIGENCE DOSSIER:\n${dossierText}\n\nEXECUTIVE COMMANDER QUESTION:\n${prompt}`;
+    const result = await generateWithFallback(ai, { contents: userContent, config: { systemInstruction, temperature: 0.35, topP: 0.9 } });
+    return res.json({ ok: true, aiPowered: true, model: result.model, text: result.text || '', confidence, intent: routing.intent, domain: routing.domain, identity, grounding: { dossierFields: Number(dossierFields.toFixed(3)), profileResolved: !!profile, policy: 'NO_UNGROUNDED_DEFAULTS' }, status: 'GEMINI_GROUNDED_SYNTHESIS' });
+  } catch (err) {
+    console.warn('[Gemini consultation error]:', err.message || err);
+    return res.json({ ok: false, aiPowered: false, error: err.message || 'Error generating AI response' });
+  }
 });
 
-// General AI generation endpoint
 app.post('/api/ai/generate', async (req, res) => {
-    try {
-        const { prompt, systemInstruction } = req.body;
-        if (!prompt) return res.status(400).json({ ok: false, error: 'Prompt is required' });
-
-        const ai = getAI();
-        if (!ai) {
-            return res.json({ ok: false, aiPowered: false, reason: 'NO_API_KEY' });
-        }
-
-        const result = await generateWithFallback(ai, {
-            contents: prompt,
-            config: {
-                systemInstruction: systemInstruction || 'You are a sovereign strategic advisor in a geopolitical strategy simulator.',
-                temperature: 0.7
-            }
-        });
-
-        return res.json({
-            ok: true,
-            aiPowered: true,
-            model: result.model,
-            text: result.text || ''
-        });
-    } catch (err) {
-        console.warn('[Gemini general generate error]:', err.message || err);
-        return res.json({ ok: false, aiPowered: false, error: err.message });
-    }
+  try {
+    const { prompt, systemInstruction } = req.body;
+    if (!prompt) return res.status(400).json({ ok: false, error: 'Prompt is required' });
+    const ai = getAI();
+    if (!ai) return res.json({ ok: false, aiPowered: false, reason: 'NO_API_KEY' });
+    const result = await generateWithFallback(ai, { contents: prompt, config: { systemInstruction: systemInstruction || 'You are a sovereign strategic advisor. Do not invent facts not present in the supplied state.', temperature: 0.35 } });
+    return res.json({ ok: true, aiPowered: true, model: result.model, text: result.text || '' });
+  } catch (err) {
+    console.warn('[Gemini general generate error]:', err.message || err);
+    return res.json({ ok: false, aiPowered: false, error: err.message || 'AI generation failed' });
+  }
 });
 
-app.get('*', (req, res, next) => {
-    fs.readFile(INDEX_PATH, 'utf8', (err, html) => {
-        if (err) return next(err);
-        const output = html.includes('/health-ministry-logo.js')
-            ? html
-            : html.replace('</body>', `    ${HEALTH_LOGO_SCRIPT}\n</body>`);
-        res.type('html').send(output);
-    });
+app.use((req, res, next) => {
+  if (req.method !== 'GET') return next();
+  renderIndex(res, next);
 });
 
-app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server running on http://0.0.0.0:${PORT}`);
-});
-
+app.listen(PORT, '0.0.0.0', () => console.log(`Server running on http://0.0.0.0:${PORT}`));
