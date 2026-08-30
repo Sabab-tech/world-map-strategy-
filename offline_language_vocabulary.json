@@ -1,52 +1,12 @@
 {
-  "schema_version": "1.0.0",
+  "schema_version": "2.0.0",
   "engine_role": "LANGUAGE_SOURCE_ONLY",
   "reasoning_role": "NONE",
-  "learning_policy": {
-    "mode": "bounded_adaptive",
-    "learns": ["user_phrase_to_intent", "user_phrase_to_entity", "successful_aliases", "language_preferences"],
-    "never_learns_automatically": ["world_state_facts", "resource_quantities", "country_facts", "minister_identity", "causal_laws"],
-    "storage": "localStorage",
-    "max_learned_entries": 512,
-    "confidence_required_for_persistent_mapping": 0.90
-  },
+  "learning_policy": {"mode":"bounded_adaptive","learns":["user_phrase_to_intent","user_phrase_to_entity"],"never_learns_automatically":["world_state_facts","resource_quantities","country_facts","minister_identity","causal_laws"],"storage":"localStorage","max_learned_entries":512,"confidence_required_for_persistent_mapping":0.9},
   "languages": {
-    "en": {
-      "grammar": {"word_order": "SVO", "question_markers": ["what", "which", "where", "when", "how", "why", "who", "how many", "how much"]},
-      "quantity_markers": ["how many", "how much", "number", "count", "total"],
-      "location_markers": ["where", "located", "site", "region", "basin", "field"],
-      "comparison_markers": ["more", "less", "higher", "lower", "largest", "smallest", "compare", "versus"],
-      "causal_markers": ["why", "because", "cause", "effect", "impact", "consequence", "lead to"],
-      "policy_markers": ["should", "recommend", "strategy", "policy", "plan", "action", "priority"]
-    },
-    "bn": {
-      "grammar": {"word_order": "SOV", "question_markers": ["কি", "কী", "কে", "কোথায়", "কোথায়", "কখন", "কেন", "কীভাবে", "কত", "কতটি", "কয়টি", "কয়টি"]},
-      "quantity_markers": ["কত", "কতটি", "কয়টি", "কয়টি", "কতগুলো", "কতগুলি", "সংখ্যা", "মোট"],
-      "location_markers": ["কোথায়", "কোথায়", "অবস্থান", "কোথায় আছে", "কোন অঞ্চলে", "কোন এলাকায়"],
-      "comparison_markers": ["বেশি", "কম", "উচ্চ", "নিম্ন", "সবচেয়ে বেশি", "সবচেয়ে কম", "তুলনা", "বনাম"],
-      "causal_markers": ["কেন", "কারণ", "ফলে", "প্রভাব", "পরিণতি", "কী কারণে"],
-      "policy_markers": ["কী করা উচিত", "কি করা উচিত", "সুপারিশ", "কৌশল", "নীতিমালা", "পরিকল্পনা", "পদক্ষেপ"]
-    }
+    "en": {"question":{"what":["what","define","tell me about"],"who":["who","whom","whose"],"which":["which","which ones","which of"],"where":["where","where is","where are","located"],"when":["when","what time","what date"],"why":["why","what causes","cause","reason"],"how":["how","how does","how do","how can"],"how_many":["how many","number of","count","total number"],"how_much":["how much","quantity","amount","volume"],"should":["should","recommend","recommendation","what should we do"],"can":["can","is it possible","feasible","could"],"will":["will","forecast","predict","future"]},"operators":{"list":["list","show","give me","name"],"status":["status","current","available","present","inventory","stock","reserve"],"compare":["compare","versus","vs","difference","higher","lower","more","less"]}},
+    "bn": {"question":{"what":["কি","কী","কি আছে","কী আছে","কী বলতে"],"who":["কে","কারা","কার"],"which":["কোনটি","কোনটা","কোনগুলো","কোনগুলি","কোন"],"where":["কোথায়","কোথায়","কোথায় আছে","কোথায় আছে","অবস্থান"],"when":["কখন","কোন সময়","কোন সময়ে","কোন তারিখ"],"why":["কেন","কী কারণে","কি কারণে","কারণ কী","কারণ কি"],"how":["কীভাবে","কিভাবে","কী উপায়ে","কীভাবে কাজ"],"how_many":["কতটি","কয়টি","কয়টি","কতগুলো","কতগুলি","কত সংখ্যক","সংখ্যা কত","মোট কত"],"how_much":["কত","কত আছে","কতটুকু","পরিমাণ কত","পরিমাণ"],"should":["করা উচিত","করা উচিত কি","করা উচিত কিনা","কী করা উচিত","কি করা উচিত","সুপারিশ","পরামর্শ"],"can":["পারবে কি","সম্ভব কি","সম্ভব কিনা","করা সম্ভব","পারা যাবে"],"will":["হবে কি","ভবিষ্যতে","পূর্বাভাস","অনুমান","হবে"]},"operators":{"list":["তালিকা","দেখাও","দাও","নাম","নামগুলো"],"status":["অবস্থা","বর্তমান","মজুদ","মজুত","রিজার্ভ","কত আছে","উপস্থিত"],"compare":["তুলনা","বনাম","পার্থক্য","বেশি","কম","উচ্চ","নিম্ন"]}}
   },
-  "semantic_relations": [
-    ["mine", "deposit", "mineral_site"],
-    ["oil", "petroleum", "crude_oil"],
-    ["gas", "natural_gas", "lng", "methane"],
-    ["iron", "iron_ore", "hematite", "magnetite"],
-    ["rare_earth", "rare_earths", "ree", "critical_mineral"],
-    ["stockpile", "inventory", "reserve", "stored_quantity"],
-    ["country", "nation", "state", "sovereign_state"],
-    ["count", "number", "quantity", "total"]
-  ],
-  "entity_resolution": {
-    "country_id_format": "ISO_3166_ALPHA3",
-    "resource_id_format": "GSRSK_CANONICAL_RESOURCE_ID",
-    "resolution_order": ["explicit_id", "exact_alias", "normalized_alias", "semantic_relation", "dataset_name_match", "conversation_context"],
-    "ambiguity_policy": "do_not_guess"
-  },
-  "response_contract": {
-    "required_sections": ["interpretation", "evidence", "result", "uncertainty"],
-    "numeric_claim_policy": "dataset_or_deterministic_derivation_only",
-    "unknown_policy": "state_unknown_explicitly"
-  }
+  "morphology":{"bn_suffixes":["ে","এর","র","কে","তে","টি","টা","গুলো","গুলি","গণ","সমূহ"],"en_suffixes":["s","es","ed","ing"]},
+  "semantic_policy":{"world_entities_must_be_loaded_from_runtime_datasets":true,"no_country_catalog_in_code":true,"no_resource_catalog_in_code":true,"unknown_entity_action":"UNRESOLVED","ambiguous_entity_action":"ASK_OR_REPORT_AMBIGUITY"}
 }
