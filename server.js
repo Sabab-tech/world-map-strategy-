@@ -9,6 +9,48 @@ const __dirname = path.dirname(__filename);
 const INDEX_PATH = path.join(__dirname, 'index.html');
 const HEALTH_LOGO_SCRIPT = '<script src="/health-ministry-logo.js"></script>';
 
+// Load and aggregate sovereign geological knowledge from resources.json & resources_2.json
+let cachedResourceProfiles = {};
+let resourceTypesRegistry = {};
+
+try {
+    const r1Path = path.join(__dirname, 'resources.json');
+    const r2Path = path.join(__dirname, 'resources_2.json');
+    
+    if (fs.existsSync(r1Path)) {
+        const raw1 = JSON.parse(fs.readFileSync(r1Path, 'utf8'));
+        if (raw1.resource_types) resourceTypesRegistry = { ...resourceTypesRegistry, ...raw1.resource_types };
+        if (raw1.GSRSK_Master_CountryProfiles_v14?.countryProfiles) {
+            cachedResourceProfiles = { ...cachedResourceProfiles, ...raw1.GSRSK_Master_CountryProfiles_v14.countryProfiles };
+        }
+    }
+    if (fs.existsSync(r2Path)) {
+        const raw2 = JSON.parse(fs.readFileSync(r2Path, 'utf8'));
+        if (raw2.resource_types) resourceTypesRegistry = { ...resourceTypesRegistry, ...raw2.resource_types };
+        if (raw2.GSRSK_Master_CountryProfiles_v14?.countryProfiles) {
+            cachedResourceProfiles = { ...cachedResourceProfiles, ...raw2.GSRSK_Master_CountryProfiles_v14.countryProfiles };
+        }
+    }
+    console.log(`[Server Resources DB] Successfully indexed ${Object.keys(cachedResourceProfiles).length} sovereign geological profiles and ${Object.keys(resourceTypesRegistry).length} resource types.`);
+} catch (e) {
+    console.warn('[Server Resources DB] Failed to pre-cache resources.json:', e.message);
+}
+
+function resolveCountryResourceData(countryCode, countryName) {
+    const code = (countryCode || '').toUpperCase();
+    if (cachedResourceProfiles[code]) return cachedResourceProfiles[code];
+    
+    // Fuzzy search by country name
+    const match = Object.values(cachedResourceProfiles).find(p => 
+        (p.identity?.name && p.identity.name.toLowerCase() === (countryName || '').toLowerCase()) ||
+        (p.identity?.officialName && p.identity.officialName.toLowerCase().includes((countryName || '').toLowerCase()))
+    );
+    if (match) return match;
+
+    // Fallback to BGD
+    return cachedResourceProfiles['BGD'] || null;
+}
+
 const app = express();
 const PORT = 3000;
 
@@ -107,26 +149,35 @@ app.post('/api/ai/minister-consult', async (req, res) => {
         }
 
         const isBn = language === 'bn' || (typeof prompt === 'string' && /[\u0980-\u09FF]/.test(prompt));
+        const countryResourceProfile = resolveCountryResourceData(countryCode, countryName);
 
-        const systemInstruction = `You are ${ministerName || 'the Minister'}, serving as the ${ministerRole || 'Cabinet Minister'} of ${countryName || 'the Sovereign State'} (${countryCode || 'BGD'}).
-You are participating in a sovereign geopolitical simulation game.
+        const systemInstruction = `You are ${ministerName || 'the Minister'}, serving as the esteemed ${ministerRole || 'Cabinet Minister'} of ${countryName || 'the Sovereign Nation'} (ISO: ${countryCode || 'BGD'}).
+You are participating in a deep sovereign geopolitical simulation game.
 The Executive Commander (User) is consulting you for strategic directives, policy advice, national resource management, economic planning, defense, health, foreign affairs, or energy sovereignty.
 
 Your core directives:
-1. Speak in character as a dedicated, highly articulate, patriotic, analytical sovereign minister with decades of strategic experience.
+1. Speak in character as a dedicated, highly articulate, patriotic, analytical sovereign minister with decades of strategic statecraft experience.
 2. Address the user with supreme respect (e.g. "মাননীয় এক্সিকিউটিভ কমান্ডার" in Bengali, or "Executive Commander" in English).
-3. If the user asks in Bengali or with Bengali characters, respond in flawless, high-register, authoritative sovereign Bengali (সাধু/প্রমিত বাংলা).
-4. Provide structured, insightful answers with actionable policy steps, numerical reserve intelligence, strategic trade implications, and sovereign recommendations.
-5. If the user asks about resources, mines, age, biography, or policy, provide rich contextual data grounded in actual geography and statecraft.
+3. If the user asks in Bengali or with Bengali characters, respond in flawless, high-register, authoritative sovereign Bengali (সাধু/প্রমিত বাংলা). If asked in English, reply in articulate, sophisticated English.
+4. Deep Resource & Geology Grounding: You have FULL access to the national mineral and energy inventory from our sovereign Geological Knowledge Database (resources.json). Directly reference actual known basins, deposits, refineries, strategic stockpile quantities, import dependencies, and downstream economic utilities.
+5. Answer questions directly, intelligently, and thoroughly. For questions like "Are our rare-earth and oil stockpiles secure?", do NOT repeat canned phrases. Deliver a detailed, multi-dimensional assessment of oil reserves (strategic runway, storage silos, refinery throughput) and rare-earth elements (beach placers/monazite/rutile, import vulnerability, high-tech defense applications).
 6. Do NOT include markdown code blocks or meta disclaimers. Speak directly in persona.`;
 
-        const userContent = `Executive Consultation Context:
+        const userContent = `Executive Ministerial Intelligence Dossier:
 - Minister: ${ministerName} (${ministerRole})
 - Sovereign State: ${countryName} [${countryCode}]
-- Strategic Reserves & Financial Telemetry: ${JSON.stringify(reservesData || gameState || {})}
-- Executive Commander's Query: "${prompt}"
+- Official Geological & Mineral Resource Profile (from resources.json):
+${JSON.stringify({
+    hydrocarbon_reserves: countryResourceProfile?.hydrocarbon_resource_base || 'Natural Gas & Strategic Petroleum Reserves',
+    mineral_deposits: countryResourceProfile?.mineral_resource_base || {},
+    strategic_resources: countryResourceProfile?.strategic_resources || {},
+    resource_dependency: countryResourceProfile?.resource_dependency || {},
+    industrial_capacities: countryResourceProfile?.processing_resource_context || countryResourceProfile?.processing_and_industrial_capacities || {}
+}, null, 2)}
+- Live Financial & Game Telemetry: ${JSON.stringify(reservesData || gameState || {})}
+- Executive Commander's Inquiry: "${prompt}"
 
-Provide your comprehensive ministerial briefing, analysis, and concrete policy directives now.`;
+Provide your comprehensive, realistic ministerial briefing, audit numbers, security status, and actionable policy directives now.`;
 
         const result = await generateWithFallback(ai, {
             contents: userContent,

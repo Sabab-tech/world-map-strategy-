@@ -2424,28 +2424,42 @@ const _omegaExport = (function (globalScope) {
         }
       };
 
-      // Step B: Target Keyword Identification
+      // Step B: Target Keyword Identification & Multi-Commodity Extraction
       let detectedCommodityKey = null;
+      const detectedCommodities = [];
+
       if (promptLower.includes('oil') || promptLower.includes('petroleum') || promptLower.includes('crude') || promptLower.includes('diesel') || promptLower.includes('তেল') || promptLower.includes('পেট্রোল') || promptLower.includes('অয়েল')) {
-        detectedCommodityKey = 'oil';
-      } else if (promptLower.includes('gas') || promptLower.includes('lng') || promptLower.includes('methane') || promptLower.includes('গ্যাস') || promptLower.includes('এলএনজি')) {
-        detectedCommodityKey = 'gas';
-      } else if (promptLower.includes('coal') || promptLower.includes('কয়লা') || promptLower.includes('কোল')) {
-        detectedCommodityKey = 'coal';
-      } else if (promptLower.includes('uranium') || promptLower.includes('nuclear') || promptLower.includes('ইউরেনিয়াম') || promptLower.includes('পারমাণবিক')) {
-        detectedCommodityKey = 'uranium';
-      } else if (promptLower.includes('lithium') || promptLower.includes('battery') || promptLower.includes('লিথিয়াম') || promptLower.includes('ব্যাটারি')) {
-        detectedCommodityKey = 'lithium';
-      } else if (promptLower.includes('copper') || promptLower.includes('তামা')) {
-        detectedCommodityKey = 'copper';
-      } else if (promptLower.includes('steel') || promptLower.includes('iron') || promptLower.includes('ইস্পাত') || promptLower.includes('লোহা')) {
-        detectedCommodityKey = 'steel';
-      } else if (promptLower.includes('rare') || promptLower.includes('earth') || promptLower.includes('বিরল') || promptLower.includes('খনিজ বালু')) {
-        detectedCommodityKey = 'rare_earth';
+        detectedCommodities.push('oil');
+      }
+      if (promptLower.includes('rare') || promptLower.includes('earth') || promptLower.includes('বিরল') || promptLower.includes('খনিজ বালু') || promptLower.includes('monazite') || promptLower.includes('zircon') || promptLower.includes('rutile')) {
+        detectedCommodities.push('rare_earth');
+      }
+      if (promptLower.includes('gas') || promptLower.includes('lng') || promptLower.includes('methane') || promptLower.includes('গ্যাস') || promptLower.includes('এলএনজি')) {
+        detectedCommodities.push('gas');
+      }
+      if (promptLower.includes('coal') || promptLower.includes('কয়লা') || promptLower.includes('কোল')) {
+        detectedCommodities.push('coal');
+      }
+      if (promptLower.includes('uranium') || promptLower.includes('nuclear') || promptLower.includes('ইউরেনিয়াম') || promptLower.includes('পারমাণবিক')) {
+        detectedCommodities.push('uranium');
+      }
+      if (promptLower.includes('lithium') || promptLower.includes('battery') || promptLower.includes('লিথিয়াম') || promptLower.includes('ব্যাটারি')) {
+        detectedCommodities.push('lithium');
+      }
+      if (promptLower.includes('copper') || promptLower.includes('তামা')) {
+        detectedCommodities.push('copper');
+      }
+      if (promptLower.includes('steel') || promptLower.includes('iron') || promptLower.includes('ইস্পাত') || promptLower.includes('লোহা')) {
+        detectedCommodities.push('steel');
       }
 
-      // Step C: Metric / Measurement Word Identification
-      const isAmountQuery = promptLower.includes('amount') || promptLower.includes('quantity') || promptLower.includes('reserve') || promptLower.includes('stock') || promptLower.includes('how much') || promptLower.includes('volume') || promptLower.includes('পরিমাণ') || promptLower.includes('মজুদ') || promptLower.includes('কতটুকু') || promptLower.includes('কত আছে') || promptLower.includes('স্টক');
+      if (detectedCommodities.length > 0) {
+        detectedCommodityKey = detectedCommodities[0];
+      }
+
+      // Step C: Metric / Measurement / Security Word Identification
+      const isSecurityQuery = promptLower.includes('secure') || promptLower.includes('security') || promptLower.includes('safe') || promptLower.includes('stockpile') || promptLower.includes('stockpiles') || promptLower.includes('হুমকি') || promptLower.includes('নিরাপদ') || promptLower.includes('সুরক্ষিত') || promptLower.includes('মজুদ কি নিরাপদ');
+      const isAmountQuery = isSecurityQuery || promptLower.includes('amount') || promptLower.includes('quantity') || promptLower.includes('reserve') || promptLower.includes('stock') || promptLower.includes('how much') || promptLower.includes('volume') || promptLower.includes('পরিমাণ') || promptLower.includes('মজুদ') || promptLower.includes('কতটুকু') || promptLower.includes('কত আছে') || promptLower.includes('স্টক');
       const isWhatIsItQuery = promptLower.includes('what is') || promptLower.includes('use') || promptLower.includes('used for') || promptLower.includes('কাজে লাগে') || promptLower.includes('ব্যবহার') || promptLower.includes('কি জিনিস') || promptLower.includes('কিসের জন্য');
       const isIdentityQuery = promptLower.includes('who are you') || promptLower.includes('who is he') || promptLower.includes('who is the minister') || promptLower.includes('background') || promptLower.includes('appointed') || promptLower.includes('কে তুমি') || promptLower.includes('কে তিনি') || promptLower.includes('মন্ত্রী কে') || promptLower.includes('দায়িত্বে কে') || promptLower.includes('পরিচয়') || promptLower.includes('জীবনবৃত্তান্ত');
 
@@ -2508,8 +2522,25 @@ const _omegaExport = (function (globalScope) {
       const confidence = (94.0 + (efficiency * 0.05)).toFixed(1);
 
       if (isBengali) {
-        // --- CASE 1: SPECIFIC COMMODITY + AMOUNT / QUANTITATIVE QUERY (e.g. "what is the amount of oil in my reserve") ---
-        if (detectedCommodityKey && (isAmountQuery || isWhatIsItQuery)) {
+        // --- CASE 1: MULTI-COMMODITY / SPECIFIC COMMODITY + AMOUNT / SECURITY QUERY ---
+        if (detectedCommodities.length > 1) {
+          const blocks = detectedCommodities.map(k => {
+            const c = COMMODITY_CONCEPTS[k];
+            let val = c.defaultReserves;
+            if (gameRes && gameRes[k] !== undefined) {
+              val = `${Number(gameRes[k]).toLocaleString()} ${c.unit}`;
+            }
+            return `• ${c.icon} ${c.bnName} (${c.canonical}):\n   - মজুদ / ভূতাত্ত্বিক ক্ষেত্র: ${val}\n   - প্রধান ব্যবহার: ${c.tasks[0] || 'সার্বভৌম শিল্প'}\n   - স্থায়িত্ব বাফার: ~${c.defaultRunwayDays} দিন`;
+          }).join('\n\n');
+
+          responseText = `মাননীয় এক্সিকিউটিভ কমান্ডার, ${countryDetails.name || countryKey}-এর ${mRole} হিসেবে আমি (${mName}) আপনার জিজ্ঞাসিত কৌশলগত সম্পদসমূহের (${detectedCommodities.map(k => COMMODITY_CONCEPTS[k].bnName).join(', ')}) নিরাপত্তা ও মজুদের বিস্তারিত খতিয়ান পেশ করছি:\n\n` +
+            `📊 নিরীক্ষিত জাতীয় মজুদ ও নিরাপত্তা খতিয়ান:\n${blocks}\n\n` +
+            `🛡️ নিরাপত্তা ও স্থায়িত্ব মূল্যায়ন:\n` +
+            `   ১. আমাদের স্ট্র্যাটেজিক পেট্রোলিয়াম বাফার এবং ভারী খনিজ বালুর (Monazite, Zircon, Rutile) মজুদ উপকূলীয় খনিজ প্রক্রিয়াজাতকরণ ও রিফাইনারি কমপ্লেক্সে সম্পূর্ণ সুরক্ষিত রয়েছে।\n` +
+            `   ২. গুরুত্বপূর্ণ সরবরাহ চ্যানেল ও উপকূলীয় করিডোরে ২৪/৭ সামরিক ও বেসামরিক নিরাপত্তা প্রোটোকল সক্রিয় রয়েছে।\n\n` +
+            `⚡ সুপারিশ: দীর্ঘমেয়াদী সংকট মোকাবেলায় উপকূলীয় খনিজ বালি আহরণ বৃদ্ধি ও অতিরিক্ত অপরিশোধিত তেল বাফার সাইলো নির্মাণের সুপারিশ করা হলো।`;
+
+        } else if (detectedCommodityKey && (isAmountQuery || isWhatIsItQuery)) {
           const c = COMMODITY_CONCEPTS[detectedCommodityKey];
           const taskListStr = c.tasks.map(t => `  • ${t}`).join('\n');
 
@@ -2518,9 +2549,10 @@ const _omegaExport = (function (globalScope) {
             `   ${c.icon} ${c.bnName} হলো একটি ${c.form} যা জাতীয় অর্থনীতি ও সার্বভৌম অবকাঠামোর জন্য ${c.category} হিসেবে শ্রেণীবদ্ধ।\n\n` +
             `২. এটি প্রধানত যেসব কৌশলগত কাজে ব্যবহৃত হয়:\n` +
             `${taskListStr}\n\n` +
-            `৩. বর্তমান সার্বভৌম মজুদের পরিমাণ (Current Reserve Amount):\n` +
+            `৩. বর্তমান সার্বভৌম মজুদের পরিমাণ ও নিরাপত্তা (Current Reserve & Security):\n` +
             `   📊 মোট যাচাইকৃত জাতীয় মজুদ: ${liveReserveValue}\n` +
-            `   ⏱️ নিরবচ্ছিন্ন সার্বভৌম স্থায়িত্ব (Emergency Runway): প্রায় ${liveRunwayDays} দিন\n\n` +
+            `   ⏱️ নিরবচ্ছিন্ন সার্বভৌম স্থায়িত্ব (Emergency Runway): প্রায় ${liveRunwayDays} দিন\n` +
+            `   🛡️ নিরাপত্তা অবস্থা: কৌশলগত রিজার্ভ সাইলো ও সুরক্ষিত বাফারে ১০০% অক্ষত ও নিরাপদ রয়েছে।\n\n` +
             `৪. নীতিনির্ধারণী সুপারিশ ও পদক্ষেপ:\n` +
             `   আমাদের স্ট্র্যাটেজিক পেট্রোলিয়াম রিজার্ভ (SPR) সাইলো এবং রিফাইনারি কমপ্লেক্স শতভাগ সক্রিয় রয়েছে। অভ্যন্তরীণ সরবরাহ শৃঙ্খল সুরক্ষিত রাখতে নিয়মিত রিফিল ও রি-রোলিং বজায় রাখা হচ্ছে।`;
 
@@ -2600,7 +2632,24 @@ const _omegaExport = (function (globalScope) {
 
       } else {
         // --- ENGLISH SYNTHESIS ---
-        if (detectedCommodityKey && (isAmountQuery || isWhatIsItQuery)) {
+        if (detectedCommodities.length > 1) {
+          const blocks = detectedCommodities.map(k => {
+            const c = COMMODITY_CONCEPTS[k];
+            let val = c.defaultReserves;
+            if (gameRes && gameRes[k] !== undefined) {
+              val = `${Number(gameRes[k]).toLocaleString()} ${c.unit}`;
+            }
+            return `• ${c.icon} ${c.canonical} (${c.form}):\n   - Sovereign In-Situ / Silo Stockpile: ${val}\n   - Primary Application: ${c.tasksEn[0] || 'Strategic Industrial Grid'}\n   - Emergency Runway: ~${c.defaultRunwayDays} days`;
+          }).join('\n\n');
+
+          responseText = `Executive Commander, as ${mRole} of ${countryDetails.name || countryKey}, I (${mName}) have synthesized the complete sovereign intelligence and security audit for ${detectedCommodities.map(k => COMMODITY_CONCEPTS[k].canonical).join(' & ')}:\n\n` +
+            `📊 Audited Sovereign Inventory & Stockpiles:\n${blocks}\n\n` +
+            `🛡️ Stockpile Security & Physical Integrity Assessment:\n` +
+            `   1. Strategic Petroleum Reserves (SPR) are securely isolated within fortified underground storage silos and domestic refining complexes, maintaining 100% operational integrity against supply disruption.\n` +
+            `   2. Rare-Earth and heavy mineral deposits (Monazite, Rutile, Zircon) are geo-fenced along specialized extraction zones with 24/7 security escorts for strategic transport corridors.\n\n` +
+            `⚡ Ministerial Recommendation: Maintain strict import tariff protections, expand downstream distillation capacities, and safeguard sovereign stockpile depots.`;
+
+        } else if (detectedCommodityKey && (isAmountQuery || isWhatIsItQuery)) {
           const c = COMMODITY_CONCEPTS[detectedCommodityKey];
           const taskListStr = c.tasksEn.map(t => `  • ${t}`).join('\n');
 
@@ -2609,11 +2658,12 @@ const _omegaExport = (function (globalScope) {
             `   ${c.icon} ${c.canonical} is classified as a ${c.form} under the ${c.category} sovereign domain.\n\n` +
             `2. Essential Strategic Applications & Downstream Utilities:\n` +
             `${taskListStr}\n\n` +
-            `3. Audited Sovereign Reserve Balance (Amount):\n` +
+            `3. Audited Sovereign Reserve Balance & Security Status:\n` +
             `   📊 In-Situ / Stockpiled Quantity: ${liveReserveValue}\n` +
-            `   ⏱️ Emergency Operational Runway: Approximately ${liveRunwayDays} days of uninhibited consumption\n\n` +
+            `   ⏱️ Emergency Operational Runway: Approximately ${liveRunwayDays} days of uninhibited consumption\n` +
+            `   🛡️ Security Rating: 100% Secure in fortified sovereign depots and refineries\n\n` +
             `4. Ministerial Policy Directives:\n` +
-            `   Strategic Petroleum Reserves (SPR), distillation units, and transport corridors maintain 100% operational readiness. Continuous replenishment protocols remain active.`;
+            `   Strategic reserves, distillation units, and transport corridors maintain 100% operational readiness. Continuous replenishment protocols remain active.`;
 
         } else if (isIdentityQuery) {
           const statsStr = Object.entries(ministerStats).map(([k, v]) => `${k.toUpperCase()}: ${v}`).join(' • ');
@@ -2656,17 +2706,16 @@ const _omegaExport = (function (globalScope) {
       }
 
       // Record thought into persistent 8-layer deep memory
-      this.deepMemory.recordEpisodicDecision({
-        id: `COG-INTERROGATE-${Date.now()}`,
-        tick: Date.now(),
-        domain: mId,
-        query: questionText,
-        minister: mName,
-        response: responseText,
-        confidence: Number(confidence),
-        rootCause: detectedCommodityKey ? `Commodity Analysis: ${detectedCommodityKey}` : (isIdentityQuery ? 'Minister Identity Resolution' : 'Ministerial Interrogation'),
-        decisionType: detectedCommodityKey ? 'COMMODITY_AUDIT' : 'STRATEGIC_INTERROGATION'
-      });
+      if (this.deepMemory && typeof this.deepMemory.recordEpisode === 'function') {
+        this.deepMemory.recordEpisode({
+          tick: Date.now(),
+          domain: mId,
+          action: 'MINISTER_INTERROGATION',
+          context: { query: questionText, minister: mName },
+          predictedOutcome: { response: responseText, confidence: Number(confidence) },
+          saliency: 0.85
+        });
+      }
 
       return {
         text: responseText,
