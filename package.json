@@ -4,16 +4,16 @@
   "type":"module",
   "scripts":{
     "dev":"node server.js",
-    "build":"node --check server.js && node --check omega_ai_integrity_layer.js && node --check minister_query_router.js && node --check offline_semantic_brain.js && node --check offline_query_engine.js && node --check minister_capability_engine.js && node --check minister_recruitment_engine.js && node --check omega_cognitive_engine.js && node --check ministry_engine.js",
-    "lint":"node --check server.js && node --check omega_ai_integrity_layer.js && node --check minister_query_router.js && node --check offline_semantic_brain.js && node --check offline_query_engine.js && node --check minister_capability_engine.js && node --check minister_recruitment_engine.js && node --check omega_cognitive_engine.js && node --check ministry_engine.js",
-    "test":"node test/omega_ai_integrity.test.js && node scripts/test_deep_semantic_brain.cjs && node scripts/test_runtime_semantic_all_countries.mjs && node scripts/test_minister_capability.cjs",
+    "build":"node --check server.js && node --check omega_ai_integrity_layer.js && node --check minister_query_router.js && node --check offline_semantic_brain.js && node --check offline_query_engine.js && node --check minister_capability_engine.js && node --check minister_recruitment_engine.js && node --check omega_minister_state_system.js && node --check omega_minister_bootstrap.js && node --check omega_ui_interaction_guard.js && node --check omega_cognitive_engine.js && node --check ministry_engine.js",
+    "lint":"node --check server.js && node --check omega_ai_integrity_layer.js && node --check minister_query_router.js && node --check offline_semantic_brain.js && node --check offline_query_engine.js && node --check minister_capability_engine.js && node --check minister_recruitment_engine.js && node --check omega_minister_state_system.js && node --check omega_minister_bootstrap.js && node --check omega_ui_interaction_guard.js && node --check omega_cognitive_engine.js && node --check ministry_engine.js",
+    "test":"node test/omega_ai_integrity.test.js && node scripts/test_deep_semantic_brain.cjs && node scripts/test_runtime_semantic_all_countries.mjs && node scripts/test_minister_capability.cjs && node scripts/test_minister_state_lifecycle.mjs",
     "test:semantic":"node scripts/test_deep_semantic_brain.cjs && node scripts/test_runtime_semantic_all_countries.mjs",
-    "test:cabinet":"node scripts/test_minister_capability.cjs",
+    "test:cabinet":"node scripts/test_minister_capability.cjs && node scripts/test_minister_state_lifecycle.mjs",
+    "test:minister":"node scripts/test_minister_state_lifecycle.mjs",
     "start":"node server.js"
   },
   "dependencies":{
     "@google/genai":"^2.19.0",
-    "express":"^4.19.2",
     "react":"^19.2.8",
     "react-dom":"^19.2.8",
     "recharts":"^3.10.1"
