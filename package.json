@@ -4,8 +4,9 @@
   "type": "module",
   "scripts": {
     "dev": "node server.js",
-    "build": "echo 'Build complete'",
-    "lint": "echo 'No lint errors'",
+    "build": "node --check server.js && node --check omega_ai_integrity_layer.js && node --check minister_query_router.js && node --check omega_cognitive_engine.js && node --check ministry_engine.js",
+    "lint": "node --check server.js && node --check omega_ai_integrity_layer.js && node --check minister_query_router.js && node --check omega_cognitive_engine.js && node --check ministry_engine.js",
+    "test": "node test/omega_ai_integrity.test.js",
     "start": "node server.js"
   },
   "dependencies": {
