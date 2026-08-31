@@ -11,7 +11,8 @@ const sandbox={console,Date,JSON,Object,Number,String,RegExp,Map,Set,Array,Math,
 sandbox.globalThis=sandbox;
 vm.runInNewContext(source,sandbox,{filename:'omega_semantic_runtime_v32.js'});
 vm.runInNewContext(bridge,sandbox,{filename:'omega_country_semantic_bridge.js'});
-await new Promise(r=>setTimeout(r,100));
+await new Promise(r=>setTimeout(r,20));
+await sandbox.OmegaCountrySemanticBridge.init();sandbox.OmegaCountrySemanticBridge.install();
 const api=sandbox.OmegaSemanticRuntimeV32;assert.ok(api);assert.equal(api.diagnostics().ready,true);assert.ok(api.diagnostics().resources>=Object.keys(read('resource_ontology.json').COMMODITY_ONTOLOGIES||{}).length);
 const countryDiag=sandbox.OmegaCountrySemanticBridge.diagnostics();assert.equal(countryDiag.ready,true);assert.ok(countryDiag.countries>=195,`canonical country bridge has only ${countryDiag.countries}`);
 let p=sandbox.OmegaAIIntegrity.parse('How old are you?',{ministerId:'Finance_1',countryId:'BD',ministryId:'Finance'});assert.equal(p.question.type,'how_old');assert.equal(p.operation,'ATTRIBUTE');assert.equal(p.attribute.name,'age');
