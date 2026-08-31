@@ -19,7 +19,8 @@ jobs:
           css='<link rel="stylesheet" href="omega_ui_interaction_fix_v2.css">'
           runtime='<script src="omega_minister_runtime_v2.js" defer></script>'
           semantic='<script src="omega_semantic_runtime_v32.js" defer></script>'
-          bridge='<script src="omega_country_semantic_bridge.js" defer></script>'
+          country='<script src="omega_country_semantic_bridge.js" defer></script>'
+          resource='<script src="omega_resource_semantic_bridge.js" defer></script>'
           if 'omega_ui_interaction_fix_v2.css' not in s:
               s=s.replace('</head>', '    '+css+'\n</head>', 1)
           if 'omega_minister_runtime_v2.js' not in s:
@@ -27,13 +28,16 @@ jobs:
           if 'omega_semantic_runtime_v32.js' not in s:
               s=s.replace('</body>', '    '+semantic+'\n</body>', 1)
           if 'omega_country_semantic_bridge.js' not in s:
-              s=s.replace('</body>', '    '+bridge+'\n</body>', 1)
+              s=s.replace('</body>', '    '+country+'\n</body>', 1)
+          if 'omega_resource_semantic_bridge.js' not in s:
+              s=s.replace('</body>', '    '+resource+'\n</body>', 1)
           p.write_text(s,encoding='utf-8')
           PY
       - name: Validate production runtime syntax
         run: |
           node --check omega_semantic_runtime_v32.js
           node --check omega_country_semantic_bridge.js
+          node --check omega_resource_semantic_bridge.js
           node --check omega_production_semantic_runtime_v3.js
           node --check omega_minister_runtime_v2.js
       - name: Run semantic regression tests
@@ -43,5 +47,5 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add index.html
-          git diff --cached --quiet || git commit -m 'Wire complete country semantic bridge into live app'
+          git diff --cached --quiet || git commit -m 'Wire country and resource semantic bridges into live app'
           git push
