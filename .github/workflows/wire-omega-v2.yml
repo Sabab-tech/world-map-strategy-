@@ -25,8 +25,9 @@ jobs:
           if 'omega_ui_interaction_fix_v2.css' not in s:
               s=s.replace('</head>', '    '+css+'\n</head>', 1)
           for legacy in (legacy_semantic, legacy_country, legacy_resource):
-              s=s.replace('\n    '+legacy, '')
+              s=s.replace('    '+legacy+'\n', '')
               s=s.replace(legacy+'\n', '')
+              s=s.replace(legacy, '')
           if 'omega_minister_runtime_v2.js' not in s:
               s=s.replace('</body>', '    '+runtime+'\n</body>', 1)
           if 'omega_production_semantic_runtime_v3.js' not in s:
@@ -48,4 +49,6 @@ jobs:
           node --check omega_country_semantic_bridge.js
           node --check omega_resource_semantic_bridge.js
       - name: Run semantic regression tests
-        run: node scripts/test_semantic_runtime_v32.mjs
+        run: |
+          node scripts/test_semantic_runtime_v4.cjs
+          node scripts/test_semantic_runtime_v32.mjs
