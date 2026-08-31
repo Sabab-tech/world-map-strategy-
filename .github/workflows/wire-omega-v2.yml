@@ -1,4 +1,4 @@
-name: Wire OMEGA V2
+name: Wire OMEGA Runtime
 on:
   push:
     branches: [main]
@@ -17,17 +17,24 @@ jobs:
           p=Path('index.html')
           s=p.read_text(encoding='utf-8')
           css='<link rel="stylesheet" href="omega_ui_interaction_fix_v2.css">'
-          js='<script src="omega_minister_runtime_v2.js" defer></script>'
+          runtime='<script src="omega_minister_runtime_v2.js" defer></script>'
+          semantic='<script src="omega_production_semantic_runtime_v3.js" defer></script>'
           if 'omega_ui_interaction_fix_v2.css' not in s:
               s=s.replace('</head>', '    '+css+'\n</head>', 1)
           if 'omega_minister_runtime_v2.js' not in s:
-              s=s.replace('</body>', '    '+js+'\n</body>', 1)
+              s=s.replace('</body>', '    '+runtime+'\n</body>', 1)
+          if 'omega_production_semantic_runtime_v3.js' not in s:
+              s=s.replace('</body>', '    '+semantic+'\n</body>', 1)
           p.write_text(s,encoding='utf-8')
           PY
+      - name: Validate production runtime syntax
+        run: |
+          node --check omega_production_semantic_runtime_v3.js
+          node --check omega_minister_runtime_v2.js
       - name: Commit wiring
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add index.html
-          git diff --cached --quiet || git commit -m 'Wire OMEGA Minister Runtime V2 and UI interaction fix'
+          git diff --cached --quiet || git commit -m 'Wire production semantic runtime into live app'
           git push
