@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Wire runtime assets into index
+      - name: Wire production runtime assets into index
         run: |
           python3 - <<'PY'
           from pathlib import Path
@@ -18,19 +18,19 @@ jobs:
           s=p.read_text(encoding='utf-8')
           css='<link rel="stylesheet" href="omega_ui_interaction_fix_v2.css">'
           runtime='<script src="omega_minister_runtime_v2.js" defer></script>'
-          semantic='<script src="omega_semantic_runtime_v32.js" defer></script>'
-          country='<script src="omega_country_semantic_bridge.js" defer></script>'
-          resource='<script src="omega_resource_semantic_bridge.js" defer></script>'
+          semantic='<script src="omega_production_semantic_runtime_v3.js" defer></script>'
+          legacy_semantic='<script src="omega_semantic_runtime_v32.js" defer></script>'
+          legacy_country='<script src="omega_country_semantic_bridge.js" defer></script>'
+          legacy_resource='<script src="omega_resource_semantic_bridge.js" defer></script>'
           if 'omega_ui_interaction_fix_v2.css' not in s:
               s=s.replace('</head>', '    '+css+'\n</head>', 1)
+          for legacy in (legacy_semantic, legacy_country, legacy_resource):
+              s=s.replace('\n    '+legacy, '')
+              s=s.replace(legacy+'\n', '')
           if 'omega_minister_runtime_v2.js' not in s:
               s=s.replace('</body>', '    '+runtime+'\n</body>', 1)
-          if 'omega_semantic_runtime_v32.js' not in s:
+          if 'omega_production_semantic_runtime_v3.js' not in s:
               s=s.replace('</body>', '    '+semantic+'\n</body>', 1)
-          if 'omega_country_semantic_bridge.js' not in s:
-              s=s.replace('</body>', '    '+country+'\n</body>', 1)
-          if 'omega_resource_semantic_bridge.js' not in s:
-              s=s.replace('</body>', '    '+resource+'\n</body>', 1)
           p.write_text(s,encoding='utf-8')
           PY
       - name: Persist live wiring
@@ -38,14 +38,14 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add index.html
-          git diff --cached --quiet || git commit -m 'Wire production semantic runtime into live app'
+          git diff --cached --quiet || git commit -m 'Wire OMEGA semantic runtime v4 into live app'
           git push
       - name: Validate production runtime syntax
         run: |
+          node --check omega_production_semantic_runtime_v3.js
+          node --check omega_minister_runtime_v2.js
           node --check omega_semantic_runtime_v32.js
           node --check omega_country_semantic_bridge.js
           node --check omega_resource_semantic_bridge.js
-          node --check omega_production_semantic_runtime_v3.js
-          node --check omega_minister_runtime_v2.js
       - name: Run semantic regression tests
         run: node scripts/test_semantic_runtime_v32.mjs
