@@ -1,30 +1,1076 @@
 <!DOCTYPE html>
-<html lang="en" data-omega-engine-spec="INDUSTRIAL-ENTERPRISE-CORE" data-omega-contract-version="8.0.0-ULTIMATE" data-omega-html-version="10.1.0-MINISTER-SEMANTIC-LIVE">
+<html lang="en" 
+      data-omega-engine-spec="INDUSTRIAL-ENTERPRISE-CORE"
+      data-omega-contract-version="8.0.0-ULTIMATE"
+      data-omega-html-version="10.0.0-ENTERPRISE-FINAL"
+      data-boot-state="INITIALIZING">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#000000">
-<title>Global Geopolitical Strategy Simulator | OMEGA CORE</title>
-<link rel="stylesheet" href="leaflet.css">
-<link rel="stylesheet" href="style.css">
-<style>
-.omega-minister-selector{margin-top:10px;padding:10px;border:1px solid rgba(0,229,255,.35);border-radius:10px;background:rgba(2,12,24,.82);display:flex;gap:8px;align-items:center;flex-wrap:wrap}.omega-minister-selector label{font-size:11px;font-weight:700;color:#ffd700;font-family:var(--font-mono)}.omega-minister-selector select{flex:1;min-width:180px;background:#081522;color:#f8fafc;border:1px solid #00e5ff;border-radius:8px;padding:9px;font-size:12px}.omega-minister-selector button{background:linear-gradient(135deg,#00e5ff,#0066ff);border:0;border-radius:8px;padding:9px 12px;font-weight:800;color:#001018;cursor:pointer}.omega-semantic-debug{margin-top:8px;padding:7px;border:1px dashed rgba(0,229,255,.25);border-radius:8px;color:#94a3b8;font:10px var(--font-mono);display:none}.omega-semantic-debug.visible{display:block}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#000000">
+    <title>Global Geopolitical Strategy Simulator | OMEGA CORE</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Share+Tech+Mono&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="leaflet.css">
+    <link rel="stylesheet" href="style.css">
+
+    <style>
+        :root {
+            --omega-neon: #00ffcc;
+            --omega-danger: #ff4444;
+            --omega-bg: #000000;
+            --omega-glass: rgba(0, 20, 20, 0.85);
+            --omega-border: rgba(0, 255, 204, 0.3);
+            --safe-top: env(safe-area-inset-top);
+            --safe-bottom: env(safe-area-inset-bottom);
+            --font-mono: 'Share Tech Mono', monospace;
+            --font-title: 'Orbitron', sans-serif;
+        }
+
+        html, body, #app {
+            width: 100%; height: 100%; margin: 0; padding: 0;
+            overflow: hidden; background: var(--omega-bg);
+            font-family: 'Inter', sans-serif; color: #eee;
+        }
+
+        @keyframes resMarkerPulse {
+            0% { transform: scale(1); opacity: 0.85; box-shadow: 0 0 8px currentColor; }
+            50% { transform: scale(1.35); opacity: 0.35; box-shadow: 0 0 20px currentColor; }
+            100% { transform: scale(1); opacity: 0.85; box-shadow: 0 0 8px currentColor; }
+        }
+
+        /* [FIX P1] Safe Area & Layering */
+        #render-engine-root { position: fixed; inset: 0; z-index: 1; overflow: hidden; touch-action: auto; }
+        #map { width: 100%; height: 100%; }
+        
+        .leaflet-container { background: #1b4965 !important; touch-action: pan-x pan-y !important; }
+
+        #ui-engine-root { 
+            position: fixed; inset: 0; z-index: 100; 
+            pointer-events: none; display: flex; flex-direction: column;
+            padding-top: var(--safe-top); padding-bottom: var(--safe-bottom);
+        }
+
+        .ui-top-hud {
+            position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+            width: auto; max-width: 95%; background: var(--omega-glass);
+            border: 1px solid var(--omega-border); border-radius: 0 0 12px 12px;
+            padding: 6px 20px; display: flex; gap: 20px; pointer-events: auto;
+            backdrop-filter: blur(10px); z-index: 101;
+        }
+
+        .res-node { font-family: var(--font-mono); font-size: 14px; display: flex; align-items: center; gap: 5px; }
+        .res-node span:first-child { color: var(--omega-neon); font-weight: bold; }
+
+        .ui-right-controls {
+            position: absolute; right: 15px; top: 50%; transform: translateY(-50%);
+            display: flex; flex-direction: column; gap: 12px;
+            background: var(--omega-glass); border: 1px solid var(--omega-border);
+            padding: 12px; border-radius: 30px; pointer-events: auto;
+            backdrop-filter: blur(8px);
+        }
+
+        .icon-btn {
+            width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--omega-border);
+            background: rgba(255,255,255,0.05); color: #fff; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; font-size: 18px;
+        }
+
+        .ui-bottom-navigation {
+            position: absolute; bottom: 15px; left: 50%; transform: translateX(-50%);
+            width: 90%; max-width: 600px; background: var(--omega-glass);
+            border: 1px solid var(--omega-border); border-radius: 14px;
+            padding: 8px; display: flex; justify-content: space-around;
+            pointer-events: auto; backdrop-filter: blur(12px);
+        }
+
+        .nav-btn {
+            background: none; border: none; color: #888; font-family: var(--font-title);
+            font-size: 11px; text-transform: uppercase; cursor: pointer;
+            display: flex; flex-direction: column; align-items: center; gap: 4px;
+        }
+        .nav-btn.active { color: var(--omega-neon); }
+
+        .omega-modal {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 95%; height: 88%; background: var(--omega-glass);
+            border: 1px solid var(--omega-border); border-radius: 14px;
+            pointer-events: auto; z-index: 1000; backdrop-filter: blur(20px);
+            display: none;
+        }
+
+        .tab-pane { display: none; }
+        .tab-pane.active { display: block !important; }
+        #debug-root { display: none; }
+
+        /* [P2 Fatal Recovery Style] */
+        #fatal-screen {
+            position: fixed; inset: 0; z-index: 99999; background: #000;
+            display: none; flex-direction: column; align-items: center; justify-content: center;
+            text-align: center; padding: 20px;
+        }
+    </style>
+
+    <script>
+        /* [TELEMETRY RING BUFFER - FIX P2] */
+        window.__OMEGA_DIAG__ = {
+            state: "BOOTING",
+            boot: { start: performance.now(), timeline: [], scriptStatus: {} },
+            errors: [], resources: [], metrics: { fps: 0, mem: 0, tick: 0 },
+            snapshot: () => {
+                const data = { telemetry: window.__OMEGA_DIAG__, engineLoaded: !!window.Omega };
+                const blob = new Blob([JSON.stringify(data, null, 4)], {type: 'application/json'});
+                const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+                a.download = `OMEGA_FINAL_REPORT_${Date.now()}.json`; a.click();
+            }
+        };
+
+        window.__LOG_EVENT__ = (evt) => {
+            const timeline = window.__OMEGA_DIAG__.boot.timeline;
+            timeline.push({ event: evt, ts: performance.now() - window.__OMEGA_DIAG__.boot.start });
+            if (timeline.length > 500) timeline.shift(); // [FIX P2] Memory Management
+            console.log(`[OMEGA] ${evt}`);
+        };
+
+        // [FIX P1] Global Error & Resource Failure Detector
+        window.addEventListener('error', (e) => {
+            if (e.target.tagName) {
+                window.__OMEGA_DIAG__.resources.push({ tag: e.target.tagName, src: e.target.src || e.target.href, ts: performance.now() });
+                const fileName = (e.target.src || e.target.href || "").split('/').pop();
+                if(fileName) window.__OMEGA_DIAG__.boot.scriptStatus[fileName] = 'ERROR';
+            } else {
+                window.__OMEGA_DIAG__.errors.push({ msg: e.message, file: e.filename, type: 'RUNTIME' });
+            }
+        }, true);
+    </script>
     <link rel="stylesheet" href="omega_ui_interaction_fix_v2.css">
 </head>
 <body>
-<div id="map"></div>
-<div id="cabinet-full-window" style="display:none"></div>
-<div id="ministry-dashboard-view" style="display:none"></div>
-<div id="minister-interrogation-modal" style="display:none"></div>
-<div id="command-hub-modal" style="display:none"></div>
-<div id="country-info-card" style="display:none"></div>
-<script>
-window.addEventListener('OMEGA_SEMANTIC_RUNTIME_READY',()=>document.documentElement.setAttribute('data-semantic-runtime','ready'));
-</script>
-<script src="leaflet.js" defer></script>
+
+    <div id="fatal-screen" role="alert">
+        <h1 style="color:var(--omega-danger); font-family:var(--font-title);">KERNEL PANIC</h1>
+        <p id="fatal-msg" style="color:#aaa;">Critical Initialization Error</p>
+        <div style="display:flex; gap:10px;">
+            <button onclick="location.reload()" style="padding:12px; background:var(--omega-neon); border:none; cursor:pointer; font-weight:bold;">RETRY BOOT</button>
+            <button onclick="window.__OMEGA_DIAG__.snapshot()" style="padding:12px; background:#333; color:#fff; border:none; cursor:pointer;">DOWNLOAD LOG</button>
+        </div>
+    </div>
+
+    <div id="app" role="main">
+        <div id="render-engine-root">
+            <div id="map"></div>
+        </div>
+        
+        <div id="ui-engine-root">
+            <!-- ⬅️ GLOBAL PERMANENT TACTICAL BACK BUTTON -->
+            <button id="global-back-btn" class="global-back-btn" style="display:none;" onclick="window.OmegaLayerManager ? window.OmegaLayerManager.popLayer() : window.closeAnyActiveModal();" title="Return to Previous Screen / Map">
+                <span>⬅️</span> <span>BACK</span>
+            </button>
+
+            <!-- 🛰️ TOP STATUS AREA (Unified AAA Top Header) -->
+            <div id="top-status-bar" class="top-status-bar" role="banner">
+                <div class="status-group status-left">
+                    <span class="status-item"><span class="icon">⏰</span> <span id="status-clock">2026.07.27 | 03:42:15 UTC</span></span>
+                    <div class="speed-controls" role="group" aria-label="Game Speed">
+                        <button class="speed-btn" data-speed="0" title="Pause Game">⏸</button>
+                        <button class="speed-btn active" data-speed="1" title="Normal Speed">1x</button>
+                        <button class="speed-btn" data-speed="2" title="Fast Speed">2x</button>
+                        <button class="speed-btn" data-speed="5" title="Ultra Speed">5x</button>
+                    </div>
+                </div>
+
+                <div class="status-group status-resources" role="status" title="Click or slide anywhere on Top Bar to view Resources & Dropdown Menu">
+                    <!-- 🌐 MAP METRIC SELECTOR DROPDOWN BUTTON -->
+                    <div id="metric-selector-pill" class="res-node metric-pill-btn" onclick="if(window.Game && window.Game.Map && typeof window.Game.Map.toggleMetricDropdown === 'function') { window.Game.Map.toggleMetricDropdown(event); }" style="cursor:pointer; background:rgba(0,229,255,0.18); border:1.5px solid #00e5ff; padding:3px 12px; border-radius:14px; box-shadow:0 0 12px rgba(0,229,255,0.35); user-select:none;">
+                        <span class="res-icon">📊</span>
+                        <span id="active-metric-label" class="res-val" style="color:#00e5ff; font-weight:900;">MAP METRIC: GDP</span>
+                        <span class="res-trend" style="color:#ffd700; margin-left:4px; font-weight:bold;">▼</span>
+                    </div>
+
+                    <div class="res-node" title="Treasury Reserve">
+                        <span class="res-icon">💵</span>
+                        <span id="res-cash" class="res-val">$100M</span>
+                        <span class="res-trend positive">▲ +5K/s</span>
+                    </div>
+                    <div class="res-node" title="Political Power">
+                        <span class="res-icon">🏛️</span>
+                        <span id="res-power" class="res-val">850 PP</span>
+                        <span class="res-trend positive">▲ +2.5/s</span>
+                    </div>
+                    <div class="res-node" title="Military Manpower">
+                        <span class="res-icon">👥</span>
+                        <span id="res-manpower" class="res-val">500K</span>
+                        <span class="res-trend positive">▲ +150/s</span>
+                    </div>
+                    <div class="res-node" title="Energy Production">
+                        <span class="res-icon">⚡</span>
+                        <span id="res-energy" class="res-val">12.4 GW</span>
+                        <span class="res-trend positive">▲ +1.2 GW</span>
+                    </div>
+                    <div class="res-node" title="Crude Oil Stockpile">
+                        <span class="res-icon">🛢️</span>
+                        <span id="res-oil" class="res-val">500K BBL</span>
+                        <span class="res-trend positive">▲ +200/s</span>
+                    </div>
+
+                    <!-- 🔽 TOP BAR DROPDOWN TRIGGER ICON BUTTON -->
+                    <div id="top-bar-dropdown-trigger" class="res-node" onclick="if(window.Game && window.Game.Map && typeof window.Game.Map.toggleMetricDropdown === 'function') { window.Game.Map.toggleMetricDropdown(event); }" style="cursor:pointer; background:rgba(0,229,255,0.25); border:1px solid #00e5ff; border-radius:12px; padding:3px 10px; color:#00e5ff; font-weight:900; font-size:11px; margin-left:auto; display:flex; align-items:center; gap:4px; box-shadow:0 0 8px rgba(0,229,255,0.4); user-select:none;" title="Click to Open Sovereign Intelligence & Resource Dropdown">
+                        <span>MENU</span>
+                        <span style="color:#ffd700;">▼</span>
+                    </div>
+                </div>
+
+                <div class="status-group status-right">
+                    <span class="status-item green"><span class="icon">💾</span> <span id="status-autosave">SYNCED</span></span>
+                    <span class="status-item cyan"><span class="icon">📡</span> <span id="status-link">ONLINE</span></span>
+                    <span class="status-item debug-fps"><span id="status-fps">60 FPS</span></span>
+                </div>
+            </div>
+
+            <!-- 📊 MAP METRIC & SOVEREIGN INTELLIGENCE DROPDOWN DRAWER -->
+            <div id="map-metric-dropdown" class="map-metric-dropdown hidden" style="display:none; position:fixed; top:54px; left:50%; transform:translateX(-50%); z-index:1000000; background:rgba(8,15,26,0.98); border:1.5px solid #00e5ff; border-radius:12px; width:360px; max-width:94vw; padding:12px; box-shadow:0 12px 35px rgba(0,0,0,0.95), 0 0 25px rgba(0,229,255,0.35); backdrop-filter:blur(16px); font-family:var(--font-mono); color:#f8fafc; flex-direction:column; gap:8px;">
+                <div style="font-size:11px; font-weight:900; color:#00e5ff; font-family:var(--font-mono); border-bottom:1px solid rgba(0,229,255,0.3); padding-bottom:6px; display:flex; justify-content:space-between; align-items:center; letter-spacing:0.5px;">
+                    <span style="display:flex; align-items:center; gap:6px;">
+                        <span>📊</span>
+                        <span>SOVEREIGN MAP METRIC & OVERLAY</span>
+                    </span>
+                    <button onclick="if(window.Game && window.Game.Map) window.Game.Map.hideMetricDropdown();" style="background:rgba(239,68,68,0.2); border:1px solid #ef4444; color:#ef4444; border-radius:4px; width:22px; height:22px; display:flex; align-items:center; justify-content:center; font-weight:bold; cursor:pointer;">✕</button>
+                </div>
+
+                <!-- QUICK REAL-TIME STATS HEADER IN DROPDOWN -->
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; background:rgba(0,229,255,0.06); border:1px solid rgba(0,229,255,0.2); border-radius:8px; padding:8px; font-size:10px;">
+                    <div><span style="color:#94a3b8;">💵 TREASURY:</span> <span id="dropdown-cash-val" style="color:#00e5ff; font-weight:bold;">$100M</span></div>
+                    <div><span style="color:#94a3b8;">🏛️ PP:</span> <span id="dropdown-power-val" style="color:#38bdf8; font-weight:bold;">850 PP</span></div>
+                    <div><span style="color:#94a3b8;">👥 MANPOWER:</span> <span id="dropdown-manpower-val" style="color:#4ade80; font-weight:bold;">500K</span></div>
+                    <div><span style="color:#94a3b8;">⚡ ENERGY:</span> <span id="dropdown-energy-val" style="color:#facc15; font-weight:bold;">12.4 GW</span></div>
+                </div>
+
+                <div style="display:flex; flex-direction:column; gap:6px; max-height:340px; overflow-y:auto; font-family:var(--font-mono); font-size:11px; padding-right:4px;">
+                    <div style="font-size:9px; color:#ffd700; font-weight:bold; letter-spacing:1px; margin-top:2px;">MACROECONOMICS</div>
+                    <button onclick="Game.Map.setMapMetric('GDP')" class="metric-opt-btn" style="text-align:left; padding:6px 10px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); color:#fff; border-radius:6px; cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
+                        <span>💵 Gross Domestic Product ($ USD)</span>
+                        <span style="color:#00e5ff; font-size:10px;">GLOBAL</span>
+                    </button>
+                    <button onclick="Game.Map.setMapMetric('GDP_PER_CAPITA')" class="metric-opt-btn" style="text-align:left; padding:6px 10px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); color:#fff; border-radius:6px; cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
+                        <span>📈 GDP Per Capita ($/person)</span>
+                        <span style="color:#00e5ff; font-size:10px;">INCOME</span>
+                    </button>
+                    <button onclick="Game.Map.setMapMetric('TREASURY')" class="metric-opt-btn" style="text-align:left; padding:6px 10px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); color:#fff; border-radius:6px; cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
+                        <span>🏛️ Sovereign Treasury Reserves</span>
+                        <span style="color:#00e5ff; font-size:10px;">RESERVE</span>
+                    </button>
+                    <button onclick="Game.Map.setMapMetric('DEBT')" class="metric-opt-btn" style="text-align:left; padding:6px 10px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); color:#fff; border-radius:6px; cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
+                        <span>💳 National Debt Ratio (% GDP)</span>
+                        <span style="color:#ef4444; font-size:10px;">RATIO</span>
+                    </button>
+
+                    <div style="font-size:9px; color:#ffd700; font-weight:bold; letter-spacing:1px; margin-top:6px;">DEMOGRAPHICS & LABOR</div>
+                    <button onclick="Game.Map.setMapMetric('POPULATION')" class="metric-opt-btn" style="text-align:left; padding:6px 10px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); color:#fff; border-radius:6px; cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
+                        <span>👥 National Population Count</span>
+                        <span style="color:#00e5ff; font-size:10px;">PEOPLE</span>
+                    </button>
+                    <button onclick="Game.Map.setMapMetric('EMPLOYMENT')" class="metric-opt-btn" style="text-align:left; padding:6px 10px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); color:#fff; border-radius:6px; cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
+                        <span>💼 Employment Rate (%)</span>
+                        <span style="color:#00e5ff; font-size:10px;">LABOR</span>
+                    </button>
+
+                    <div style="font-size:9px; color:#ffd700; font-weight:bold; letter-spacing:1px; margin-top:6px;">NATURAL RESOURCES & POWER</div>
+                    <button onclick="Game.Map.setMapMetric('RESOURCE_WEALTH')" class="metric-opt-btn" style="text-align:left; padding:6px 10px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); color:#fff; border-radius:6px; cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
+                        <span>💎 Strategic Resource Wealth Index</span>
+                        <span style="color:#00e5ff; font-size:10px;">DEPOSITS</span>
+                    </button>
+                    <button onclick="Game.Map.setMapMetric('ENERGY')" class="metric-opt-btn" style="text-align:left; padding:6px 10px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); color:#fff; border-radius:6px; cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
+                        <span>⚡ Energy Grid Production (GW)</span>
+                        <span style="color:#00e5ff; font-size:10px;">GRID</span>
+                    </button>
+
+                    <div style="font-size:9px; color:#ffd700; font-weight:bold; letter-spacing:1px; margin-top:6px;">MILITARY & SECURITY</div>
+                    <button onclick="Game.Map.setMapMetric('MILITARY')" class="metric-opt-btn" style="text-align:left; padding:6px 10px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); color:#fff; border-radius:6px; cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
+                        <span>⚔️ Military Power Rating</span>
+                        <span style="color:#00e5ff; font-size:10px;">POWER</span>
+                    </button>
+                    <button onclick="Game.Map.setMapMetric('STABILITY')" class="metric-opt-btn" style="text-align:left; padding:6px 10px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); color:#fff; border-radius:6px; cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
+                        <span>🛡️ Government Stability Index</span>
+                        <span style="color:#00e5ff; font-size:10px;">ORDER</span>
+                    </button>
+
+                    <!-- DIRECTIVES -->
+                    <div style="font-size:9px; color:#ffd700; font-weight:bold; letter-spacing:1px; margin-top:8px;">QUICK DIRECTIVES & NAVIGATION</div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+                        <button onclick="window.openMainMinistryView(event); Game.Map.hideMetricDropdown();" style="padding:6px 8px; background:rgba(0,229,255,0.15); border:1px solid #00e5ff; color:#00e5ff; border-radius:6px; cursor:pointer; font-size:10px; font-weight:bold;">🏛️ OPEN CABINET</button>
+                        <button onclick="Game.Map.toggleResourceFilterMenu(); Game.Map.hideMetricDropdown();" style="padding:6px 8px; background:rgba(0,229,255,0.15); border:1px solid #00e5ff; color:#00e5ff; border-radius:6px; cursor:pointer; font-size:10px; font-weight:bold;">💎 RESOURCE MAP (◇)</button>
+                    </div>
+
+                    <div style="font-size:9px; color:#ffd700; font-weight:bold; letter-spacing:1px; margin-top:8px;">SOVEREIGN CONTROL & SETTINGS</div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+                        <button onclick="if(window.toggleSettingsModal) window.toggleSettingsModal(); else if(window.Game && window.Game.Map) window.Game.Map.hideMetricDropdown();" style="padding:6px 8px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); color:#e2e8f0; border-radius:6px; cursor:pointer; font-size:10px; font-weight:bold; display:flex; align-items:center; gap:4px; justify-content:center;">⚙️ Quick Settings</button>
+                        <button onclick="Game.Map.setMapMetric('GDP'); Game.Map.hideMetricDropdown();" style="padding:6px 8px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); color:#e2e8f0; border-radius:6px; cursor:pointer; font-size:10px; font-weight:bold; display:flex; align-items:center; gap:4px; justify-content:center;">📊 Global Stats Overview</button>
+                        <button onclick="if(window.openUserProfile) window.openUserProfile(); else if(window.Game && window.Game.Map) window.Game.Map.hideMetricDropdown();" style="padding:6px 8px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); color:#e2e8f0; border-radius:6px; cursor:pointer; font-size:10px; font-weight:bold; display:flex; align-items:center; gap:4px; justify-content:center;">👤 User Profile</button>
+                        <button onclick="if(window.openHelpModal) window.openHelpModal(); else if(window.Game && window.Game.Map) window.Game.Map.hideMetricDropdown();" style="padding:6px 8px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); color:#e2e8f0; border-radius:6px; cursor:pointer; font-size:10px; font-weight:bold; display:flex; align-items:center; gap:4px; justify-content:center;">❓ Help/Tutorials</button>
+                    </div>
+
+                    <button onclick="Game.Map.setMapMetric('NONE')" class="metric-opt-btn" style="text-align:center; padding:8px; background:rgba(239,68,68,0.2); border:1px solid #ef4444; color:#ef4444; border-radius:6px; cursor:pointer; margin-top:8px; font-weight:bold;">❌ RESET MAP COLORS TO DEFAULT</button>
+                </div>
+            </div>
+
+            <!-- 🗺️ DYNAMIC CHOROPLETH MAP LEGEND -->
+            <div id="map-metric-legend" class="map-metric-legend hidden" style="display:none; position:fixed; bottom:80px; left:20px; z-index:999900; background:rgba(11,19,35,0.95); border:1px solid #00e5ff; border-radius:8px; padding:8px 12px; width:220px; box-shadow:0 6px 20px rgba(0,0,0,0.8); backdrop-filter:blur(8px); font-family:var(--font-mono);">
+                <div id="legend-metric-title" style="font-size:10px; font-weight:bold; color:#00e5ff; margin-bottom:4px; text-transform:uppercase;">
+                    GLOBAL GDP DISTRIBUTION
+                </div>
+                <div style="height:10px; width:100%; border-radius:4px; background:linear-gradient(to right, #1e293b 0%, #1d4ed8 25%, #059669 50%, #eab308 75%, #ef4444 100%); margin-bottom:4px;"></div>
+                <div style="display:flex; justify-content:space-between; font-size:8px; color:#cbd5e1;">
+                    <span id="legend-min-val">Low</span>
+                    <span id="legend-mid-val">Med</span>
+                    <span id="legend-max-val">High</span>
+                </div>
+            </div>
+
+            <!-- 🔔 TOP RIGHT NOTIFICATION STACK -->
+            <div id="notification-stack" class="notification-stack" role="region" aria-label="Notifications">
+                <!-- Notifications dynamically pushed here -->
+            </div>
+
+            <!-- 🎛️ RIGHT QUICK DOCK (Search, Events, Layers, Resource Mode) -->
+            <div class="ui-right-controls" role="toolbar" aria-label="Quick Tools">
+                <button id="btn-quick-search" class="icon-btn" title="Instant Search (Countries, Cities, Bases)">🔍</button>
+                <button id="btn-quick-events" class="icon-btn" title="Live Situations & Directives">⚠</button>
+                <button id="btn-quick-layers" class="icon-btn" title="Map Overlays & Layers">🛰</button>
+                <button id="btn-resource-mode" class="icon-btn" title="Resource Intelligence Panel (◇)" onclick="if(window.Game && window.Game.Map) { window.Game.Map.toggleResourceFilterMenu(); }">◇</button>
+            </div>
+
+            <!-- 🔍 INSTANT SEARCH DRAWER -->
+            <div id="search-drawer" class="omega-drawer" role="dialog" aria-modal="true">
+                <div class="drawer-header">
+                    <span>🔍 GLOBAL STRATEGIC SEARCH</span>
+                    <button id="btn-close-search" class="drawer-close">✕</button>
+                </div>
+                <div class="drawer-body">
+                    <input type="text" id="search-input" placeholder="Type country, capital, or base name..." />
+                    <div id="search-results-container" class="search-results"></div>
+                </div>
+            </div>
+
+            <!-- ⚠ GLOBAL EVENTS DRAWER -->
+            <div id="events-drawer" class="omega-drawer" role="dialog" aria-modal="true">
+                <div class="drawer-header">
+                    <span style="color:#ef4444;">⚠ LIVE STRATEGIC SITUATIONS</span>
+                    <button id="btn-close-events" class="drawer-close">✕</button>
+                </div>
+                <div id="events-feed-container" class="drawer-body events-feed"></div>
+            </div>
+
+            <!-- 🛰️ MAP LAYERS DRAWER -->
+            <div id="layers-drawer" class="omega-drawer" role="dialog" aria-modal="true">
+                <div class="drawer-header">
+                    <span>🛰️ MAP LAYER SPECTRUM</span>
+                    <button id="btn-close-layers" class="drawer-close">✕</button>
+                </div>
+                <div class="drawer-body layer-options-grid">
+                    <button class="layer-opt-btn active" data-layer="satellite">🌐 Ultra HD Satellite Terrain</button>
+                    <button class="layer-opt-btn" data-layer="political">🗺️ Political Border Focus</button>
+                    <button class="layer-opt-btn" data-layer="night">🌃 Night Lights & Power Grid</button>
+                    <button class="layer-opt-btn" data-layer="weather">🌧️ Dynamic Weather Radar</button>
+                    <button class="layer-opt-btn" data-layer="resources">💎 Resource Heatmap</button>
+                </div>
+            </div>
+
+            <!-- 📜 STRATEGIC DIRECTIVES & NATIONAL PRIORITIES MODAL -->
+            <div id="daily-quests-modal" class="omega-modal" role="dialog" aria-modal="true" style="display:none; max-width:580px; width:92%; height:auto; max-height:85vh;">
+                <div style="padding:20px; display:flex; flex-direction:column;">
+                    <header style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--omega-border); padding-bottom:12px; margin-bottom:15px;">
+                        <div style="font-family:var(--font-title); color:#00e5ff; font-size:16px; font-weight:bold; display:flex; align-items:center; gap:8px;">
+                            <span>📜</span> <span>STRATEGIC DIRECTIVES & NATIONAL PRIORITIES</span>
+                        </div>
+                        <button id="btn-close-quests" class="omega-close-btn" style="background:rgba(255,68,68,0.25); border:1px solid var(--omega-danger); color:#fff; border-radius:6px; padding:6px 14px; font-weight:bold; cursor:pointer; font-family:var(--font-mono); font-size:12px;">
+                            ✕ CLOSE
+                        </button>
+                    </header>
+
+                    <div style="font-family:var(--font-mono); font-size:12px; color:#94a3b8; margin-bottom:15px;">
+                        Active sovereign directives and executive governance mandates monitoring territorial readiness and diplomatic posture.
+                    </div>
+
+                    <div id="quest-list-container" style="display:flex; flex-direction:column; gap:12px; max-height:50vh; overflow-y:auto; padding-right:5px;">
+                        <!-- Directive Items Rendered Dynamically -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- 🌐 COUNTRY INTELLIGENCE OPERATING SYSTEM (IOS v2.0) -->
+            <div id="command-hub-modal" class="omega-modal ios-modal-window" role="dialog" aria-modal="true">
+                <div class="ios-wrapper">
+                    <!-- 🛰️ TOP IOS SYSTEM BAR -->
+                    <header class="ios-header">
+                        <div class="ios-title-group">
+                            <span class="ios-classified-tag">CLASSIFIED // IOS v2.0</span>
+                            <h2 id="modal-country-name" class="ios-country-heading">COMMAND HQ: UNITED STATES</h2>
+                            <span id="ios-status-tag" class="ios-status-badge">SOVEREIGN STATE</span>
+                        </div>
+                        <div style="font-size:11px; font-family:var(--font-mono); display:flex; gap:12px; color:#94a3b8;">
+                            <div id="econ-gdp">GDP: --</div>
+                            <div id="econ-debt">DEBT: --</div>
+                        </div>
+                        <div class="ios-header-actions">
+                            <button id="btn-toggle-advisor" class="ios-advisor-btn" title="Toggle AI Strategic Advisor">
+                                <span class="adv-icon">🤖</span>
+                                <span>AI ADVISOR</span>
+                                <span class="adv-pulse"></span>
+                            </button>
+                            <button id="btn-close-hub" class="ios-exit-btn" title="Exit Intelligence Operating System">
+                                <span>✕</span><span>EXIT IOS</span>
+                            </button>
+                        </div>
+                    </header>
+
+                    <!-- Hidden Contract Compatibility Container -->
+                    <div id="contract-compat-container" style="display:none;" aria-hidden="true">
+                        <div id="tab-population" class="tab-pane"></div>
+                        <div id="tab-military" class="tab-pane"></div>
+                        <div id="tab-diplomacy" class="tab-pane"><div id="diplomacy-list"></div></div>
+                        <div id="tab-projects" class="tab-pane"></div>
+                        <div id="tab-internal" class="tab-pane"></div>
+                    </div>
+
+                    <!-- ↔️ CHAPTER HORIZONTAL SWIPE NAVIGATION BAR -->
+                    <div class="ios-chapter-bar">
+                        <button id="btn-chapter-prev" class="chapter-arrow-btn" title="Previous Chapter">◀</button>
+                        <nav id="ios-chapter-nav" class="ios-chapter-track">
+                            <button class="chapter-tab active" data-chapter="1"><span>01</span> OVERVIEW</button>
+                            <button class="chapter-tab" data-chapter="2"><span>02</span> GOVERNMENT</button>
+                            <button class="chapter-tab" data-chapter="3"><span>03</span> MILITARY</button>
+                            <button class="chapter-tab" data-chapter="4"><span>04</span> ECONOMY</button>
+                            <button class="chapter-tab" data-chapter="5"><span>05</span> RESOURCES</button>
+                            <button class="chapter-tab" data-chapter="6"><span>06</span> DIPLOMACY</button>
+                            <button class="chapter-tab" data-chapter="7"><span>07</span> INTELLIGENCE</button>
+                            <button class="chapter-tab" data-chapter="8"><span>08</span> INFRASTRUCTURE</button>
+                            <button class="chapter-tab" data-chapter="9"><span>09</span> TECHNOLOGY</button>
+                            <button class="chapter-tab" data-chapter="10"><span>10</span> SOCIETY</button>
+                            <button class="chapter-tab" data-chapter="11"><span>11</span> OPERATIONS</button>
+                            <button class="chapter-tab" data-chapter="12"><span>12</span> WORLD ECOSYSTEM & CAUSAL</button>
+                        </nav>
+                        <button id="btn-chapter-next" class="chapter-arrow-btn" title="Next Chapter">▶</button>
+                    </div>
+
+                    <!-- 📖 CHAPTER MAIN WORKSPACE & AI ADVISOR DOCK -->
+                    <div class="ios-content-viewport">
+                        <!-- CHAPTER CONTENT DISPLAY -->
+                        <main id="ios-chapter-stage" class="ios-chapter-stage">
+                            <!-- Dynamic Chapter content injected here by JavaScript -->
+                        </main>
+
+                        <!-- 🤖 AI STRATEGIC ADVISOR PANEL -->
+                        <aside id="ios-advisor-dock" class="ios-advisor-dock collapsed">
+                            <div class="advisor-dock-header">
+                                <div class="advisor-title-text">
+                                    <span>🤖</span> <span>AI STRATEGIC ADVISOR</span>
+                                </div>
+                                <button id="btn-close-advisor" class="advisor-close-x">✕</button>
+                            </div>
+                            <div class="advisor-dock-body">
+                                <div class="advisor-chapter-indicator">ACTIVE CHAPTER: <span id="advisor-chapter-name">01 OVERVIEW</span></div>
+                                <div id="advisor-insights-text" class="advisor-insights-content">
+                                    Initiating Strategic Analysis Engine... Select a chapter to receive context-aware command intelligence.
+                                </div>
+                                <div id="advisor-action-container" class="advisor-action-box">
+                                    <button id="btn-advisor-execute" class="advisor-execute-btn">⚡ EXECUTE STRATEGIC DIRECTIVE</button>
+                                </div>
+                            </div>
+                        </aside>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 🏛️ LAYER 2/3: SELECTED MINISTRY SPECIFIC DEEP DASHBOARD -->
+            <div id="ministry-dashboard-view" class="omega-modal" style="display:none;">
+                <header class="sticky-layer-header">
+                    <div class="sticky-header-left">
+                        <button class="parchment-back-btn" onclick="window.OmegaLayerManager.popLayer();" title="Back to Cabinet">
+                            <span class="back-icon">⬅️</span>
+                            <span>EXIT / BACK</span>
+                        </button>
+                        <div class="breadcrumb-trail">
+                            <span class="crumb">WORLD</span>
+                            <span class="crumb-sep">›</span>
+                            <span class="crumb">GOVERNMENT HQ</span>
+                            <span class="crumb-sep">›</span>
+                            <span class="crumb active" id="dash-crumb-title">MINISTRY DASHBOARD</span>
+                        </div>
+                    </div>
+                    <div class="sticky-header-right">
+                        <div class="layer-status-pill">LAYER 2: <span id="dash-layer-status">MINISTRY CONTROL ROOM</span> ●</div>
+                    </div>
+                </header>
+
+                <div id="ministry-dashboard-content" class="ministry-content-area">
+                    <!-- Dynamically populated by JS based on selected Ministry identity & theme -->
+                </div>
+            </div>
+
+            <div id="cabinet-full-window" class="omega-modal" role="dialog" style="display:none; inset:0; width:100%; height:100%; transform:none; border-radius:0;">
+                <div class="cabinet-top-header" style="display:flex; justify-content:space-between; align-items:center; padding:12px 20px; background:rgba(0,18,28,0.95); border-bottom:1px solid var(--omega-border); position:relative; z-index:20;">
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <button id="btn-back-cabinet" class="omega-back-btn" onclick="window.OmegaLayerManager.popLayer();" style="background:rgba(0,229,255,0.15); border:1px solid var(--omega-neon); color:#00e5ff; border-radius:6px; padding:6px 14px; font-weight:bold; cursor:pointer; font-family:var(--font-mono); font-size:13px; display:flex; align-items:center; gap:6px;" title="Back to Command HQ">
+                            <span>⬅️</span><span>BACK TO HQ</span>
+                        </button>
+                        <div style="font-family:var(--font-title); font-size:15px; color:var(--omega-neon); display:flex; align-items:center; gap:8px;">
+                            <span>🏛️</span><span>STATE COUNCIL EXECUTIVE CABINET</span>
+                        </div>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <span id="cabinet-country-badge" style="background:rgba(0,229,255,0.1); border:1px solid #00e5ff; color:#00e5ff; padding:4px 10px; border-radius:12px; font-family:var(--font-mono); font-size:11px; font-weight:bold;">USA STATE COUNCIL</span>
+                        <button id="btn-close-cabinet" class="omega-close-btn" onclick="window.OmegaLayerManager.setLayer(0);" style="background:rgba(255,68,68,0.25); border:1px solid var(--omega-danger); color:#fff; border-radius:6px; padding:6px 16px; font-weight:bold; cursor:pointer; font-family:var(--font-mono); font-size:13px; display:flex; align-items:center; gap:6px;">
+                            <span>✕</span><span>EXIT CABINET</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="cabinet-body" id="cabinet-body" style="padding:16px 16px 120px 16px; overflow:visible; height:auto; min-height:min-content; box-sizing:border-box;"></div>
+            </div>
+
+            <!-- 🎙️ MINISTER INTERROGATION & DIALOGUE MODAL -->
+            <div id="minister-interrogation-modal" class="omega-modal" role="dialog" aria-modal="true" style="display:none; max-width:820px; width:95%; height:88vh; max-height:780px;">
+                <div style="display:flex; flex-direction:column; height:100%; padding:0; background:rgba(2,11,20,0.98); border:1px solid var(--omega-neon); border-radius:12px; overflow:hidden; box-shadow:0 0 35px rgba(0,229,255,0.25);">
+                    <header style="display:flex; justify-content:space-between; align-items:center; padding:12px 18px; background:rgba(0,18,28,0.95); border-bottom:1px solid rgba(0,229,255,0.3);">
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <button onclick="window.OmegaLayerManager.popLayer();" style="background:linear-gradient(180deg, rgba(0,229,255,0.25), rgba(0,100,150,0.4)); border:1.5px solid #00e5ff; color:#00e5ff; border-radius:8px; padding:6px 14px; font-weight:bold; cursor:pointer; font-family:var(--font-mono); font-size:12px; display:flex; align-items:center; gap:6px; box-shadow:0 0 10px rgba(0,229,255,0.3);">
+                                <span>⬅️</span><span>BACK TO CABINET</span>
+                            </button>
+                            <div style="font-family:var(--font-title); color:#00e5ff; font-size:15px; font-weight:bold; display:flex; align-items:center; gap:6px;">
+                                <span>🎙️</span><span id="interrogation-title">MINISTER INTERROGATION & DIALOGUE FRAMEWORK</span>
+                            </div>
+                        </div>
+                        <button onclick="window.OmegaLayerManager.popLayer();" style="background:rgba(255,68,68,0.25); border:1px solid #ef4444; color:#fff; border-radius:6px; padding:5px 12px; font-weight:bold; cursor:pointer; font-family:var(--font-mono); font-size:12px;">
+                            ✕ CLOSE
+                        </button>
+                    </header>
+
+                    <div style="display:grid; grid-template-columns:250px 1fr; flex:1; overflow:hidden;">
+                        <!-- Left Sidebar: Minister Profile & Cognitive Metrics -->
+                        <div style="background:rgba(1,15,28,0.85); border-right:1px solid rgba(0,229,255,0.2); padding:16px; display:flex; flex-direction:column; gap:12px; overflow-y:auto;">
+                            <div style="text-align:center; padding-bottom:10px; border-bottom:1px solid rgba(255,255,255,0.1);">
+                                <div id="interrogation-avatar" style="font-size:52px; line-height:1; margin-bottom:8px;">🏛️</div>
+                                <div id="interrogation-name" style="font-size:14px; font-weight:bold; color:#f8fafc; font-family:var(--font-title);">Hon. Minister</div>
+                                <div id="interrogation-role" style="font-size:11px; color:#00e5ff; font-family:var(--font-mono);">Ministry of State</div>
+                            </div>
+
+                            <div style="background:rgba(0,0,0,0.5); padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.1); font-family:var(--font-mono); font-size:11px; display:flex; flex-direction:column; gap:6px;">
+                                <div style="display:flex; justify-content:space-between;">
+                                    <span style="color:#94a3b8;">Trust Score:</span>
+                                    <strong id="interrogation-trust" style="color:#22c55e;">85/100</strong>
+                                </div>
+                                <div style="display:flex; justify-content:space-between;">
+                                    <span style="color:#94a3b8;">Reliability:</span>
+                                    <strong id="interrogation-reliability" style="color:#00e5ff;">92%</strong>
+                                </div>
+                                <div style="display:flex; justify-content:space-between;">
+                                    <span style="color:#94a3b8;">Loyalty:</span>
+                                    <strong id="interrogation-loyalty" style="color:#ffd700;">HIGH</strong>
+                                </div>
+                                <div style="display:flex; justify-content:space-between;">
+                                    <span style="color:#94a3b8;">Stress Level:</span>
+                                    <strong id="interrogation-stress" style="color:#f97316;">LOW (14%)</strong>
+                                </div>
+                            </div>
+
+                            <div style="font-size:11px; font-family:var(--font-mono); color:#cbd5e1;">
+                                <div style="color:#ffd700; font-weight:bold; margin-bottom:4px;">🧠 COGNITIVE ENGINE PIPELINE</div>
+                                <div id="interrogation-cognitive-status" style="font-size:10px; color:#94a3b8; line-height:1.4;">
+                                    Active: Memory Engine V3, 25-Layer Multi-Domain Analysis, NLG Engine, Trust V3 Matrix.
+                                </div>
+                            </div>
+
+                            <div style="margin-top:auto; font-size:10px; color:#64748b; font-family:var(--font-mono); text-align:center;">
+                                OMEGA AI ENGINE v13.14
+                            </div>
+                        </div>
+
+                        <!-- Right Main: Speech, Thoughts & Interactive Interrogation Dialogue -->
+                        <div style="display:flex; flex-direction:column; padding:16px; gap:12px; background:rgba(0,8,16,0.6); overflow-y:auto;">
+                            <!-- Internal Speech & Thought Display Box -->
+                            <div style="background:rgba(15,23,42,0.9); border:1px solid rgba(0,229,255,0.3); border-radius:8px; padding:12px; display:flex; flex-direction:column; gap:8px;">
+                                <div style="font-size:11px; font-weight:bold; color:#ffd700; font-family:var(--font-mono); display:flex; justify-content:space-between; align-items:center;">
+                                    <span>💬 MINISTER'S LIVE SPEECH & POLICY THOUGHTS</span>
+                                    <span style="font-size:9px; background:rgba(0,229,255,0.2); color:#00e5ff; padding:2px 6px; border-radius:4px;">NLG ENGINE v3</span>
+                                </div>
+                                <div id="interrogation-thought-box" style="font-size:12px; color:#f8fafc; font-family:var(--font-mono); background:rgba(0,0,0,0.5); padding:10px; border-radius:6px; line-height:1.5; border-left:3px solid #00e5ff; max-height:110px; overflow-y:auto;">
+                                    Initializing minister dialogue pipeline...
+                                </div>
+                            </div>
+
+                            <!-- Live Conversation History Feed -->
+                            <div style="flex:1; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:12px; display:flex; flex-direction:column; gap:10px; overflow-y:auto; min-height:200px;" id="interrogation-chat-history">
+                                <div style="font-size:11px; color:#64748b; font-family:var(--font-mono); text-align:center;">--- INTERROGATION SESSION STARTED ---</div>
+                            </div>
+
+                            <!-- Quick Strategic Question Triggers -->
+                            <div>
+                                <div style="font-size:11px; font-weight:bold; color:#94a3b8; font-family:var(--font-mono); margin-bottom:6px;">⚡ PRESET STRATEGIC QUESTIONS (INTERROGATE MINISTER):</div>
+                                <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;" id="interrogation-quick-questions">
+                                    <!-- Injected dynamically by JS -->
+                                </div>
+                            </div>
+
+                            <!-- Custom Question Input Box -->
+                            <div style="display:flex; gap:8px;">
+                                <input type="text" id="interrogation-input" placeholder="Type custom question for the minister..." style="flex:1; background:rgba(15,23,42,0.9); border:1px solid rgba(0,229,255,0.4); color:#fff; padding:8px 12px; border-radius:6px; font-family:var(--font-mono); font-size:12px;" />
+                                <button id="btn-submit-interrogation" style="background:linear-gradient(135deg, #00e5ff, #0066ff); border:none; color:#000; font-weight:bold; padding:8px 16px; border-radius:6px; cursor:pointer; font-family:var(--font-mono); font-size:12px;">
+                                    ❓ ASK MINISTER
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 🗺️ COUNTRY INFO CARD (Height: 140px - Appears above navigation) -->
+            <div id="country-info-card" class="country-info-card" role="region" aria-label="Country Strategic Data">
+                <button id="btn-close-card-top" class="card-top-close-btn" onclick="if(window.Game && window.Game.closeCountryInfoCard) window.Game.closeCountryInfoCard();" title="Close Country Card">
+                    ✕ CLOSE
+                </button>
+                <div class="card-left">
+                    <div class="country-flag-badge" id="card-country-flag">🌐</div>
+                    <div class="country-meta">
+                        <h2 id="card-country-name">SELECT A NATION</h2>
+                        <div id="card-country-leader" class="country-sub">Leader: Unspecified</div>
+                        <div id="card-country-gov" class="country-sub">Gov: Sovereign Republic</div>
+                    </div>
+                </div>
+
+                <div class="card-stats-grid">
+                    <div class="stat-box"><span class="stat-lbl">POPULATION</span><span id="card-stat-pop" class="stat-val">--</span></div>
+                    <div class="stat-box"><span class="stat-lbl">GDP TREASURY</span><span id="card-stat-gdp" class="stat-val">--</span></div>
+                    <div class="stat-box"><span class="stat-lbl">STABILITY</span><span id="card-stat-stability" class="stat-val">--</span></div>
+                    <div class="stat-box"><span class="stat-lbl">RELATIONS</span><span id="card-stat-relations" class="stat-val">--</span></div>
+                    <div class="stat-box"><span class="stat-lbl">MIL POWER</span><span id="card-stat-mil" class="stat-val">--</span></div>
+                </div>
+
+                <div class="card-action-bar">
+                    <button class="card-act-btn" id="btn-card-cabinet" onclick="window.openMainMinistryView(event);">🏛 CABINET</button>
+                    <button class="card-act-btn" id="btn-card-diplomacy">🤝 DIPLOMACY</button>
+                    <button class="card-act-btn" id="btn-card-military">🛡 MILITARY</button>
+                    <button class="card-act-btn" id="btn-card-economy">💰 ECONOMY</button>
+                    <button class="card-act-btn" id="btn-card-intel">🛰 INTEL</button>
+                    <button id="btn-close-card" class="card-close-btn" onclick="if(window.Game && window.Game.closeCountryInfoCard) window.Game.closeCountryInfoCard();" title="Close Card">✕ CLOSE</button>
+                </div>
+            </div>
+
+            <!-- 🏛️ BOTTOM COMMAND BAR (76px Height) -->
+            <!-- 🏙️ CENTERED CITY DETAIL MODAL CARD -->
+            <div id="city-detail-bar" class="city-detail-bar" role="dialog" aria-modal="true">
+                <div class="city-modal-header">
+                    <div class="city-bar-left">
+                        <span id="city-bar-role-dot" class="city-bar-dot"></span>
+                        <div class="city-bar-titles">
+                            <span id="city-bar-name" class="city-bar-name">DHAKA</span>
+                            <span id="city-bar-tag" class="city-bar-tag">CAPITAL COMMAND HUB • BANGLADESH</span>
+                        </div>
+                    </div>
+                    <button class="city-modal-exit-btn" onclick="Game.Map.closeCityDetailBar()">
+                        <span>✕</span> <span>EXIT / BACK</span>
+                    </button>
+                </div>
+                <div class="city-modal-body">
+                    <div class="city-bar-stats">
+                        <div class="city-stat-item">
+                            <span class="stat-label">HUB TYPE</span>
+                            <span id="city-bar-type" class="stat-val">POLITICAL / ADMIN</span>
+                        </div>
+                        <div class="city-stat-item">
+                            <span class="stat-label">GEOGRAPHIC COORDS</span>
+                            <span id="city-bar-coords" class="stat-val">23.81°N, 90.41°E</span>
+                        </div>
+                        <div class="city-stat-item">
+                            <span class="stat-label">METRO POPULATION</span>
+                            <span id="city-bar-pop" class="stat-val">12.5M</span>
+                        </div>
+                    </div>
+                    <div class="city-desc-box">
+                        <span class="stat-label">STRATEGIC PROFILE & DESCRIPTION</span>
+                        <div id="city-bar-desc" class="city-desc-text">National capital, administrative command center, and primary sovereign economic engine.</div>
+                    </div>
+                    <div class="city-bar-actions">
+                        <button class="city-bar-btn upgrade-btn" onclick="Game.Map.actionUpgradeCity()">🔨 UPGRADE INFRASTRUCTURE</button>
+                        <button class="city-bar-btn garrison-btn" onclick="Game.Map.actionGarrisonCity()">🛡️ STATION GARRISON</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="country-selection-bar" class="country-selection-bar hidden">
+                <div class="sel-country-left">
+                    <div id="sel-country-flag" class="sel-country-flag">🌐</div>
+                    <div class="sel-country-titles">
+                        <span class="sel-country-label">SELECTED NATION</span>
+                        <h3 id="sel-country-name" class="sel-country-name">BANGLADESH</h3>
+                    </div>
+                </div>
+                <div class="sel-country-actions">
+                    <button id="btn-country-eye" class="sel-country-eye-btn" onclick="if(window.Game && window.Game.Map && typeof window.Game.Map.openSelectedCountryDetails === 'function') { window.Game.Map.openSelectedCountryDetails(); } else { window.toggleCommandHub(true); }" title="Click Eye icon to view details and Command HQ of selected country">
+                        <span class="eye-icon">👁️</span>
+                        <span class="eye-label">VIEW DETAILS</span>
+                    </button>
+                    <button class="sel-country-close-btn" onclick="if(window.Game && typeof window.Game.closeCountrySelectionBar === 'function') window.Game.closeCountrySelectionBar();" title="Deselect Country">✕</button>
+                </div>
+            </div>
+
+            <nav class="ui-bottom-navigation" role="navigation" aria-label="Main Command Navigation">
+                <button id="btn-ministry-dock" class="nav-btn active" title="State Ministries & Strategic Cabinet Dashboard" onclick="window.openMainMinistryView(event);">
+                    <span class="nav-icon">🏛️</span>
+                    <span class="nav-text">MINISTRIES</span>
+                </button>
+                <button id="btn-view-map" class="nav-btn" title="Toggle Map Layer Spectrum & Camera Focus" onclick="window.openMainMapView(event);">
+                    <span class="nav-icon">👁️</span>
+                    <span class="nav-text">VIEW MAP</span>
+                </button>
+            </nav>
+        </div>
+        
+        <!-- 💎 RESOURCE INTELLIGENCE CONTROL PANEL -->
+        <div id="resource-filter-box" class="resource-filter-box hidden" style="display:none; position:fixed; top:54px; right:20px; z-index:1000000; width:340px; max-width:92vw; max-height:calc(100vh - 65px); background:rgba(8, 15, 26, 0.98); border:1.5px solid #00e5ff; border-radius:12px; padding:12px; box-shadow:0 12px 35px rgba(0,0,0,0.95), 0 0 25px rgba(0,229,255,0.25); backdrop-filter:blur(14px); font-family:var(--font-mono); color:#f8fafc; flex-direction:column; gap:8px; overflow-y:auto;">
+            <!-- Panel Header -->
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(0,229,255,0.3); padding-bottom:6px; position:sticky; top:0; background:rgba(8,15,26,0.98); z-index:10;">
+                <div style="font-size:12px; font-weight:bold; color:#00e5ff; letter-spacing:0.5px; display:flex; align-items:center; gap:6px;">
+                    <span>◆</span> <span>RESOURCE INTELLIGENCE</span>
+                </div>
+                <button onclick="Game.Map.hideResourceFilterMenu()" style="background:rgba(239,68,68,0.2); border:1px solid #ef4444; color:#ef4444; border-radius:4px; width:22px; height:22px; display:flex; align-items:center; justify-content:center; font-weight:bold; cursor:pointer;" title="Exit / Close Filter">✕</button>
+            </div>
+
+            <!-- Scope Switcher: NATION vs WORLD -->
+            <div style="display:flex; gap:6px; background:rgba(15,23,42,0.8); padding:4px; border-radius:8px; border:1px solid rgba(255,255,255,0.1);">
+                <button id="btn-scope-nation" onclick="Game.Map.setResourceScope('NATION')" style="flex:1; padding:6px; background:rgba(0,229,255,0.2); border:1px solid #00e5ff; color:#00e5ff; font-size:11px; font-weight:bold; border-radius:6px; cursor:pointer; font-family:var(--font-mono); transition:all 0.2s ease;">
+                    🎯 NATION
+                </button>
+                <button id="btn-scope-world" onclick="Game.Map.setResourceScope('WORLD')" style="flex:1; padding:6px; background:transparent; border:1px solid transparent; color:#94a3b8; font-size:11px; font-weight:bold; border-radius:6px; cursor:pointer; font-family:var(--font-mono); transition:all 0.2s ease;">
+                    🌐 WORLD
+                </button>
+            </div>
+
+            <!-- Active Scope Target Indicator -->
+            <div id="res-scope-indicator" style="font-size:10px; color:#cbd5e1; background:rgba(0,229,255,0.06); border:1px solid rgba(0,229,255,0.2); padding:5px 8px; border-radius:6px; display:flex; justify-content:space-between; align-items:center;">
+                <span>SCOPE: <strong id="res-scope-target" style="color:#22c55e;">BANGLADESH (SELECTED NATION)</strong></span>
+            </div>
+
+            <!-- Quick Action Header -->
+            <div style="display:flex; justify-content:space-between; align-items:center; font-size:10px; color:#94a3b8; font-weight:bold;">
+                <span>SELECT RESOURCES:</span>
+                <div style="display:flex; gap:8px;">
+                    <button onclick="Game.Map.selectAllResourceTypes()" style="background:none; border:none; color:#00e5ff; font-size:10px; font-weight:bold; cursor:pointer; text-decoration:underline;">[ SELECT ALL ]</button>
+                    <button onclick="Game.Map.deselectAllResourceTypes()" style="background:none; border:none; color:#ef4444; font-size:10px; font-weight:bold; cursor:pointer; text-decoration:underline;">[ CLEAR ]</button>
+                </div>
+            </div>
+
+            <!-- Multi-Select Checkbox Grid -->
+            <div id="resource-chip-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:5px; max-height:160px; overflow-y:auto; padding:6px; border:1px solid rgba(0,229,255,0.2); border-radius:8px; background:rgba(15,23,42,0.85);">
+                <!-- Populated dynamically by Game.Map.renderResourceCheckboxesInPanel() -->
+            </div>
+
+            <!-- Summary Count -->
+            <div style="padding:6px 8px; background:rgba(0,229,255,0.08); border:1px solid rgba(0,229,255,0.25); border-radius:6px; font-size:10px; color:#88d6ec; display:flex; justify-content:space-between; align-items:center;">
+                <span>📊 Visible Deposits:</span>
+                <strong id="resource-summary-count" style="color:#00e5ff; font-size:11px;">0 deposits</strong>
+            </div>
+
+            <!-- Action Buttons - Sticky at Bottom -->
+            <div style="display:flex; gap:6px; margin-top:4px; position:sticky; bottom:0; background:rgba(8, 15, 26, 0.98); border-top:1px solid rgba(0,229,255,0.25); padding-top:8px; padding-bottom:2px; z-index:10; flex-shrink:0;">
+                <button id="btn-exit-res-filter" onclick="Game.Map.hideResourceFilterMenu()" style="flex:1; padding:8px 4px; background:rgba(239,68,68,0.2); border:1px solid #ef4444; color:#ef4444; font-size:10px; font-weight:bold; border-radius:6px; cursor:pointer; font-family:var(--font-mono); display:flex; align-items:center; justify-content:center; gap:3px;">
+                    <span>🚪</span> <span>EXIT</span>
+                </button>
+                <button id="btn-clear-res-filter" onclick="Game.Map.clearAndResetResourceMode()" style="flex:1; padding:8px 4px; background:rgba(234,179,8,0.2); border:1px solid #eab308; color:#eab308; font-size:10px; font-weight:bold; border-radius:6px; cursor:pointer; font-family:var(--font-mono); display:flex; align-items:center; justify-content:center; gap:3px;">
+                    <span>🧹</span> <span>CLEAR</span>
+                </button>
+                <button id="btn-apply-res-filter" onclick="Game.Map.applyResourceFilterAndClose()" style="flex:2; padding:8px 6px; background:linear-gradient(135deg, rgba(0,229,255,0.3) 0%, rgba(59,130,246,0.3) 100%); border:1.5px solid #00e5ff; color:#00e5ff; font-size:11px; font-weight:bold; border-radius:6px; cursor:pointer; font-family:var(--font-mono); display:flex; align-items:center; justify-content:center; gap:4px; box-shadow:0 0 12px rgba(0,229,255,0.4);">
+                    <span>✅</span> <span>APPLY FILTER</span>
+                </button>
+            </div>
+        </div>
+        <div id="debug-root" aria-hidden="true"></div>
+
+        <div id="rotate-warning">
+            <div class="rotate-panel">
+                <h1>🔄 ROTATE DEVICE (LANDSCAPE MODE REQUIRED)</h1>
+                <p>Landscape mode is required for full geopolitical command interface</p>
+            </div>
+        </div>
+
+        <div id="template-root" style="display: none !important;">
+            <template id="template-ui-button"><button class="c-omega-button"><span class="label-slot"></span></button></template>
+            <template id="template-ui-window"><section class="omega-window-container"><div class="panel-body"></div></section></template>
+        </div>
+    </div>
+
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/recharts@2.12.7/umd/Recharts.min.js"></script>
+
+<script src="design-tokens.js"></script>
+<script src="leaflet.js" defer onload="window.__OMEGA_DIAG__.boot.scriptStatus['leaflet.js']='LOADED'"></script>
+
+<script src="map-engine-1.js" defer onload="window.__OMEGA_DIAG__.boot.scriptStatus['map-engine-1.js']='LOADED'"></script>
+
+<script src="map-engine-2.js" defer onload="window.__OMEGA_DIAG__.boot.scriptStatus['map-engine-2.js']='LOADED'"></script>
+
+<script src="omega_kernel.js" defer onload="window.__OMEGA_DIAG__.boot.scriptStatus['omega_kernel.js']='LOADED'"></script>
+
+<script src="presentation-engine.js" defer onload="window.__OMEGA_DIAG__.boot.scriptStatus['presentation-engine.js']='LOADED'"></script>
+
+<script src="ui_engine_core.js" defer></script>
+<script src="minister_query_router.js" defer></script>
+<script src="omega_cognitive_engine.js" defer></script>
 <script src="ministry_engine.js" defer></script>
-<script src="omega_minister_runtime_v2.js" defer></script>
-<script src="omega_production_semantic_runtime_v3.js" defer></script>
+<script src="cabinet_engine.js" defer></script>
+<script src="resource_ministry_engine.js" defer></script>
+<script src="education_engine.js" defer></script>
+<script src="world_ecosystem_engine.js" defer></script>
+<script src="display_and_layer_system.js" defer></script>
+
+<script src="game-logic.js" defer></script>
+<script src="country-ios.js" defer></script>
+
+<script>
+        (function() {
+            let frames = 0, lastTime = performance.now();
+            function monitorLoop() {
+                frames++; const now = performance.now();
+                if (now >= lastTime + 1000) {
+                    window.__OMEGA_DIAG__.metrics.fps = frames;
+                    frames = 0; lastTime = now;
+                }
+                requestAnimationFrame(monitorLoop);
+            }
+            monitorLoop();
+        })();
+          </script>
+
+    <script>
+    /** 
+     * OMEGA ENTERPRISE COMPOSITION ROOT (V10.0.0)
+     * Responsibility: Orchestration, Lifecycle, Shutdown, Sync.
+     */
+    (function () {
+        const OMEGA_BOOT = {
+            validateContract: () => {
+                const req = [
+                    'map', 'res-cash', 'res-oil', 'command-hub-modal', 'cabinet-full-window',
+                    'econ-gdp', 'econ-debt', 'diplomacy-list', 'tab-internal', 'tab-projects'
+                ];
+                const missing = req.filter(id => !document.getElementById(id));
+                if (missing.length > 0) throw new Error("Contract Violation: Missing IDs " + missing.join(", "));
+                
+                // [FIX P1] Verify Script Load Status
+                const critical = ['leaflet.js', 'omega_kernel.js', 'presentation-engine.js'];
+                critical.forEach(src => {
+                    if(window.__OMEGA_DIAG__.boot.scriptStatus[src] === 'ERROR') {
+                        console.warn(`[OMEGA WARN] Script load warning for: ${src}`);
+                    }
+                });
+                window.__LOG_EVENT__("ALL_CONTRACTS_VERIFIED");
+            }
+        };
+
+        const triggerFatal = (msg) => {
+            const screen = document.getElementById('fatal-screen');
+            const msgEl = document.getElementById('fatal-msg');
+            if (screen) { screen.style.display = 'flex'; msgEl.innerText = msg; }
+            window.__OMEGA_DIAG__.state = "FAILED";
+            if (window.Omega && window.Omega.App && window.Omega.App.stopLoop) window.Omega.App.stopLoop();
+        };
+
+        const initOmega = () => {
+            if (window.__OMEGA_DIAG__.state === "RUNNING") return;
+            window.__LOG_EVENT__("BOOTSTRAP_SEQUENCE_START");
+
+            try {
+                OMEGA_BOOT.validateContract();
+
+                if (!window.Omega || !window.Omega.Kernel) throw new Error("Kernel Core Missing.");
+                const kernel = window.Omega.Kernel;
+                
+                // [FIX P1] Single Shared Bridge Creation
+                let sharedBridge = null;
+                if (typeof kernel.createBridge === "function") {
+                    sharedBridge = kernel.createBridge();
+                    window.__LOG_EVENT__("SHARED_BRIDGE_ESTABLISHED");
+                }
+                
+                const PE = window.PresentationEngine || window.PresentationEngine;
+                let presentation;
+                if (typeof PE === 'function') {
+                    try {
+                        presentation = new PE(kernel);
+                        // [FIX P1] Inject Shared Bridge into Presentation
+                        if(sharedBridge) presentation.bridge = sharedBridge; 
+                        
+                        // [FIX P3] Subscribe to Presentation Ready State
+                        window.addEventListener('UI_INTERIOR_READY', () => window.__LOG_EVENT__("PRESENTATION_INTERIOR_READY"));
+                    } catch (peErr) { console.warn("Presentation Sync Warn", peErr); }
+                }
+
+                const MINISTRIES = ["economy", "defense"];
+                MINISTRIES.forEach(id => {
+                    if (typeof kernel.registerMinistry === "function") kernel.registerMinistry(id);
+                });
+                // [FIX P3] Expose System Objects
+                window.Omega.App = { kernel, presentation, bridge: sharedBridge, state: "READY" };
+
+                if (window.OmegaMinistry && typeof window.OmegaMinistry.createRuntime === "function") {
+                    const ministryRuntime = window.OmegaMinistry.createRuntime();
+                    if (ministryRuntime && typeof ministryRuntime.init === "function") {
+                        ministryRuntime.init(sharedBridge);
+                        window.__LOG_EVENT__("MINISTRY_RUNTIME_INIT_CALLED");
+                    }
+                    if (window.OMEGA_UI_ADAPTER) {
+                        window.OMEGA_UI_ADAPTER.init(ministryRuntime, sharedBridge, presentation);
+                        window.__LOG_EVENT__("UI_ADAPTER_MANUAL_INIT_CALLED");
+                    }
+                } else {
+                    console.warn("[OMEGA] OmegaMinistry.createRuntime not found.");
+                }
+
+                let isPaused = false;
+                let rafId = null;
+                let lastTime = performance.now();
+                let tick = 0;
+
+                // --- Event-Driven Update Architecture ---
+                const dirtyMinistries = new Set(["economy", "defense"]);
+                let activeMinistryId = "economy";
+                let lastSimTickTime = performance.now();
+                const SIMULATION_TICK_INTERVAL = 1000; // 1s interval for macro simulation ticks
+
+                const markMinistryDirty = (id) => {
+                    if (id) dirtyMinistries.add(id);
+                };
+
+                const setActiveMinistry = (id) => {
+                    if (id) {
+                        activeMinistryId = id;
+                        dirtyMinistries.add(id);
+                    }
+                };
+
+                // Expose event-driven hooks to Omega & Window
+                window.Omega.markMinistryDirty = markMinistryDirty;
+                window.Omega.setActiveMinistry = setActiveMinistry;
+                window.Omega.requestMinistryUpdate = markMinistryDirty;
+
+                // Event Listeners for reactive updates
+                window.addEventListener("MINISTRY_STATE_CHANGED", (e) => {
+                    const id = e.detail && (e.detail.ministryId || e.detail.id);
+                    if (id) markMinistryDirty(id);
+                });
+                window.addEventListener("MINISTRY_SELECTED", (e) => {
+                    const id = e.detail && (e.detail.ministryId || e.detail.id);
+                    if (id) setActiveMinistry(id);
+                });
+                window.addEventListener("RESOURCE_STATE_UPDATED", () => {
+                    markMinistryDirty("economy");
+                    markMinistryDirty("defense");
+                });
+                window.addEventListener("POLICY_VOTE_CAST", (e) => {
+                    const id = e.detail && e.detail.ministryId;
+                    if (id) markMinistryDirty(id);
+                    else MINISTRIES.forEach(m => markMinistryDirty(m));
+                });
+                window.addEventListener("DECISION_ENACTED", (e) => {
+                    const id = e.detail && e.detail.ministryId;
+                    if (id) markMinistryDirty(id);
+                });
+
+                document.addEventListener("visibilitychange", () => {
+                    isPaused = document.hidden;
+                    window.__LOG_EVENT__(isPaused ? "CORE_SLEEP" : "CORE_WAKE");
+                });
+
+                function engineLoop(now) {
+                    if (isPaused) { rafId = requestAnimationFrame(engineLoop); return; }
+                    const dt = now - lastTime; lastTime = now; tick++;
+                    window.__OMEGA_DIAG__.metrics.tick = tick;
+
+                    const isSimTick = (now - lastSimTickTime) >= SIMULATION_TICK_INTERVAL;
+                    if (isSimTick) {
+                        lastSimTickTime = now;
+                    }
+
+                    // Event-Driven: Process only active, dirty, or periodic background macro ticks
+                    const ministriesToProcess = new Set();
+                    if (activeMinistryId) ministriesToProcess.add(activeMinistryId);
+                    dirtyMinistries.forEach(id => ministriesToProcess.add(id));
+
+                    if (isSimTick) {
+                        MINISTRIES.forEach(id => ministriesToProcess.add(id));
+                    }
+
+                    ministriesToProcess.forEach(id => {
+                        if (typeof kernel.pumpOrchestratedPipelineTick === "function") {
+                            kernel.pumpOrchestratedPipelineTick(id, dt, tick, { onMessage: () => {} });
+                        }
+                    });
+
+                    // Reset dirty set after processing
+                    dirtyMinistries.clear();
+
+                    if (tick === 1) {
+                        setTimeout(() => {
+                            const mapInst = window.map || (window.Game && window.Game.Map && window.Game.Map.map);
+                            if (mapInst && typeof mapInst.invalidateSize === 'function') mapInst.invalidateSize();
+                        }, 200); // [FIX P2] Delayed OMEGA_READY sync
+                    }
+                    rafId = requestAnimationFrame(engineLoop);
+                }
+
+                rafId = requestAnimationFrame(engineLoop);
+
+                // Auto transition disabled on boot so player lands cleanly on primary interface
+                // if (presentation && typeof presentation.triggerTransition === "function") {
+                //     presentation.triggerTransition({ ministryId: "economy" });
+                // }
+
+                // [FIX P2] Safe Dispatch
+                setTimeout(() => {
+                    window.__OMEGA_DIAG__.state = "RUNNING";
+                    window.dispatchEvent(new CustomEvent("OMEGA_READY", { detail: window.Omega.App }));
+                    window.__LOG_EVENT__("SYSTEM_LIVE_ENTERPRISE");
+                }, 500);
+
+                // [FIX P1/P2] Universal Cleanup & Shutdown
+                const shutdown = () => {
+                    window.__LOG_EVENT__("SYSTEM_SHUTDOWN_CLEANUP");
+                    if (rafId) cancelAnimationFrame(rafId);
+                    if (kernel && typeof kernel.stopOrchestratedPipeline === 'function') kernel.stopOrchestratedPipeline();
+                    if (presentation && typeof presentation.destroy === 'function') presentation.destroy();
+                };
+
+                window.Omega.App.stopLoop = shutdown;
+                window.addEventListener("beforeunload", shutdown);
+
+            } catch (err) {
+                triggerFatal(err.message);
+                console.error("[FATAL]", err);
+            }
+        };
+
+        // [FIX P1] Boot only when window and all assets are ready
+        window.addEventListener("load", initOmega);
+    })();
+    </script>
+    <!-- ⌛ HIGH-TECH EXECUTIVE LOADING OVERLAY -->
+    <div id="cabinet-loading-overlay" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(2,11,20,0.92); backdrop-filter:blur(10px); z-index:99999; align-items:center; justify-content:center; flex-direction:column; gap:20px; font-family:'Share Tech Mono',monospace;">
+        <div style="background:rgba(15,23,42,0.95); border:2px solid #00e5ff; border-radius:16px; padding:32px 40px; box-shadow:0 0 50px rgba(0,229,255,0.4); text-align:center; max-width:450px; width:90%;">
+            <div style="font-size:36px; margin-bottom:12px; animation: pulse 1.5s infinite alternate;">🏛️</div>
+            <div id="loading-overlay-title" style="color:#00e5ff; font-weight:bold; font-size:16px; letter-spacing:1px; margin-bottom:16px; text-transform:uppercase;">SYNCHRONIZING EXECUTIVE COMMAND...</div>
+            
+            <!-- PROGRESS BAR CONTAINER -->
+            <div style="width:100%; background:rgba(255,255,255,0.1); border:1px solid rgba(0,229,255,0.3); height:16px; border-radius:8px; overflow:hidden; position:relative; box-shadow:inset 0 0 8px rgba(0,0,0,0.6);">
+                <div id="loading-overlay-bar" style="width:0%; height:100%; background:linear-gradient(90deg, #00e5ff, #0066ff, #ffd700); border-radius:8px; transition:width 0.05s linear; box-shadow:0 0 12px #00e5ff;"></div>
+            </div>
+            
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; font-size:12px;">
+                <span style="color:#94a3b8;" id="loading-overlay-status">Calibrating Ministerial Matrix...</span>
+                <span style="color:#ffd700; font-weight:bold; font-size:14px;" id="loading-overlay-percent">0%</span>
+            </div>
+        </div>
+    </div>
+
+    <script src="omega_minister_runtime_v2.js" defer></script>
+    <script src="omega_production_semantic_runtime_v3.js" defer></script>
 </body>
 </html>
