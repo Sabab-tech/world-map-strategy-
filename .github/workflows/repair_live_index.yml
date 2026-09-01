@@ -6,13 +6,21 @@ permissions:
   contents: write
 jobs:
   repair:
-    if: github.sha == '3b1cea4a22526a389e9e2815d35560bc9978fb60'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - name: Detect broken shell
+        id: detect
+        run: |
+          if grep -q 'id="app"' index.html && grep -q 'omega_minister_runtime_v2.js' index.html; then
+            echo "broken=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "broken=true" >> "$GITHUB_OUTPUT"
+          fi
       - name: Restore known-good index
+        if: steps.detect.outputs.broken == 'true'
         run: |
           git checkout 899de7ed952955a1a93eddc377d85779a022a845 -- index.html
           python3 - <<'PY'
@@ -26,12 +34,15 @@ jobs:
           p.write_text(s)
           PY
       - name: Verify restored index
+        if: steps.detect.outputs.broken == 'true'
         run: |
           test -s index.html
+          grep -q 'id="app"' index.html
           grep -q 'omega_minister_runtime_v2.js' index.html
           grep -q 'omega_production_semantic_runtime_v3.js' index.html
           grep -q 'omega_ui_interaction_fix_v2.css' index.html
       - name: Commit repair
+        if: steps.detect.outputs.broken == 'true'
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
