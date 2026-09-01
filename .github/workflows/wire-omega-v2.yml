@@ -19,19 +19,17 @@ jobs:
           css='<link rel="stylesheet" href="omega_ui_interaction_fix_v2.css">'
           runtime='<script src="omega_minister_runtime_v2.js" defer></script>'
           semantic='<script src="omega_production_semantic_runtime_v3.js" defer></script>'
-          legacy_semantic='<script src="omega_semantic_runtime_v32.js" defer></script>'
-          legacy_country='<script src="omega_country_semantic_bridge.js" defer></script>'
-          legacy_resource='<script src="omega_resource_semantic_bridge.js" defer></script>'
+          selector='<script src="omega_live_minister_selector.js" defer></script>'
+          for legacy in ('omega_semantic_runtime_v32.js','omega_country_semantic_bridge.js','omega_resource_semantic_bridge.js'):
+              s=s.replace(legacy,'')
           if 'omega_ui_interaction_fix_v2.css' not in s:
               s=s.replace('</head>', '    '+css+'\n</head>', 1)
-          for legacy in (legacy_semantic, legacy_country, legacy_resource):
-              s=s.replace('    '+legacy+'\n', '')
-              s=s.replace(legacy+'\n', '')
-              s=s.replace(legacy, '')
           if 'omega_minister_runtime_v2.js' not in s:
               s=s.replace('</body>', '    '+runtime+'\n</body>', 1)
           if 'omega_production_semantic_runtime_v3.js' not in s:
               s=s.replace('</body>', '    '+semantic+'\n</body>', 1)
+          if 'omega_live_minister_selector.js' not in s:
+              s=s.replace('</body>', '    '+selector+'\n</body>', 1)
           p.write_text(s,encoding='utf-8')
           PY
       - name: Persist live wiring
@@ -39,15 +37,13 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add index.html
-          git diff --cached --quiet || git commit -m 'Wire OMEGA semantic runtime v4 into live app'
+          git diff --cached --quiet || git commit -m 'Wire live minister selector and semantic runtime'
           git push
       - name: Validate production runtime syntax
         run: |
           node --check omega_production_semantic_runtime_v3.js
           node --check omega_minister_runtime_v2.js
-          node --check omega_semantic_runtime_v32.js
-          node --check omega_country_semantic_bridge.js
-          node --check omega_resource_semantic_bridge.js
+          node --check omega_live_minister_selector.js
       - name: Run semantic regression tests
         run: |
           node scripts/test_semantic_runtime_v4.cjs
