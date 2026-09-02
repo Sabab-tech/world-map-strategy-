@@ -1,0 +1,86 @@
+name: OMEGA Surgical De-hardcode
+
+on:
+  push:
+    paths:
+      - '.github/workflows/omega_surgical_dehardcode.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  surgical:
+    if: ${{ github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 2
+
+      - name: Remove production hardcoded minister identities and canned answer branches
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+
+          root = Path('.')
+          ministry = root / 'ministry_engine.js'
+          cognitive = root / 'omega_cognitive_engine.js'
+
+          m = ministry.read_text(encoding='utf-8')
+          c = cognitive.read_text(encoding='utf-8')
+
+          # 1. Production ministry metadata must not own a minister identity.
+          m2, n_names = re.subn(r"ministerName\s*:\s*(['\"])[^'\"]*\1", "ministerName: null", m)
+          if n_names == 0:
+              raise SystemExit('No hardcoded ministerName metadata found; refusing an unverified mutation.')
+
+          # 2. Retire the physical canned interrogation branch in ministry_engine.js.
+          m2, n_ministry_canned = re.subn(
+              r"else\s*\{\s*.*?processed your inquiry regarding.*?(?=\n\s*impactAnalysis\s*=)",
+              "else { throw new Error('LEGACY_CANNED_RESPONSE_DISABLED'); }\n",
+              m2,
+              count=1,
+              flags=re.S,
+          )
+
+          # 3. Retire the physical generalized canned-response branch in the cognitive engine.
+          c2, n_cognitive_canned = re.subn(
+              r"else\s*\{\s*// Dynamic Generalized Briefing for ANY question.*?(?=\n\s*impactAnalysis\s*=)",
+              "else { throw new Error('LEGACY_CANNED_RESPONSE_DISABLED'); }\n",
+              c,
+              count=1,
+              flags=re.S,
+          )
+          if n_cognitive_canned != 1:
+              raise SystemExit(f'Expected exactly one cognitive generalized canned branch, found {n_cognitive_canned}.')
+
+          ministry.write_text(m2, encoding='utf-8')
+          cognitive.write_text(c2, encoding='utf-8')
+
+          # The known-good application shell is immutable in this pass.
+          import subprocess
+          subprocess.run(['git', 'diff', '--exit-code', '--', 'index.html'], check=True)
+
+          # Syntax-check exactly what was changed.
+          subprocess.run(['node', '--check', 'ministry_engine.js'], check=True)
+          subprocess.run(['node', '--check', 'omega_cognitive_engine.js'], check=True)
+
+          if 'processed your inquiry regarding' in m2 or 'Dynamic Generalized Briefing for ANY question' in c2:
+              raise SystemExit('Legacy canned response marker still present after mutation.')
+
+      - name: Commit surgical result and remove this one-shot workflow
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          rm -f .github/workflows/omega_surgical_dehardcode.yml
+          git add ministry_engine.js omega_cognitive_engine.js .github/workflows/omega_surgical_dehardcode.yml
+          git diff --cached --check
+          git diff --cached -- index.html
+          test -z "$(git diff --cached -- index.html)"
+          git commit -m 'Remove physical minister identity and canned response hardcodes'
+          git push origin HEAD:main
