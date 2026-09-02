@@ -25,10 +25,8 @@ jobs:
           s=p.read_text(encoding='utf-8')
           marker='if (!replyText)'
           pos=s.find(marker)
-          if pos<0:
-              raise SystemExit('Expected legacy replyText fallback was not found; refusing mutation.')
-          if 'মাননীয় এক্সিকিউটিভ কমান্ডার' not in s[pos:pos+5000]:
-              raise SystemExit('Expected Bengali canned response marker was not found near replyText fallback.')
+          if pos<0: raise SystemExit('Expected legacy replyText fallback was not found; refusing mutation.')
+          if 'মাননীয় এক্সিকিউটিভ কমান্ডার' not in s[pos:pos+5000]: raise SystemExit('Expected Bengali canned response marker was not found near replyText fallback.')
           brace=s.find('{',pos)
           if brace<0: raise SystemExit('Fallback opening brace not found.')
           depth=0; end=None
@@ -51,6 +49,9 @@ jobs:
           rm -f .github/workflows/omega_surgical_remove_bengali_fallback.yml
           git add ministry_engine.js .github/workflows/omega_surgical_remove_bengali_fallback.yml
           test -z "$(git diff --cached -- index.html)"
+          # The legacy block removal can expose one blank line containing spaces. Normalize only that file.
+          sed -i 's/[[:space:]]*$//' ministry_engine.js
+          git add ministry_engine.js
           git diff --cached --check
           git commit -m 'Remove remaining Bengali canned interrogation fallback'
           git push origin HEAD:main
