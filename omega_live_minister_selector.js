@@ -1,77 +1,130 @@
-/* OMEGA LIVE MINISTER CONTROL v8.0.0-PRODUCTION
- * Single live bridge for: ministry navigation, authoritative minister selection,
- * runtime state, personality/capability, stress/workload and grounded interrogation.
- * No canned answer path is permitted here.
+/* OMEGA LIVE MINISTER CONTROL v9.0.0
+ * Authoritative bridge for minister appointment + grounded interrogation.
+ * Source of truth: ministers.json -> omega_minister_runtime_v2.js.
+ * No duplicate minister identity state is created here.
  */
 (function(global){
-'use strict';
-const VERSION='8.0.0-PRODUCTION';
-const STORE='OMEGA_APPOINTED_MINISTERS_V8';
-let db=null,dbPromise=null,loadLocks=new Map();
-const text=v=>v==null?'':String(v).trim();
-const norm=v=>text(v).normalize('NFKC').toLowerCase().replace(/[&/]+/g,' ').replace(/[._-]+/g,' ').replace(/\s+/g,' ').trim();
-const game=()=>global.Game||{};
-const country=()=>text(game().currentActiveCountry||game().state?.countryId||game().state?.playerCountryId||'BANGLADESH').toUpperCase().replace(/\s+/g,'_');
-const ministry=()=>text(global.OmegaLayerManager?.activeMinistryId||global.OmegaCabinetUI?.currentDashboardMinistryId||global.OmegaCabinetUI?.activeMinistryId||global.OmegaCabinetUI?.currentMinistryId||game().state?.activeMinistryId||'');
-const store=()=>{try{return global.localStorage}catch(_){return null}};
-function read(){try{return JSON.parse(store()?.getItem(STORE)||'{}')}catch(_){return{}}}
-function write(v){try{store()?.setItem(STORE,JSON.stringify(v))}catch(_){} }
-function region(){try{return norm(global.OmegaCabinetUI?.getRegionForCountry?.(country()))||'western'}catch(_){return'western'}}
-function nameOf(p){const direct=text(p?.name||p?.ministerName||p?.baseName);if(direct)return direct;const rn=p?.regional_names||p?.regionalNames||{};for(const k of [region(),'south_asia','islamic','western','east_asia','sub_saharan','latin_america','slavic','south_east_asia'])if(text(rn[k]))return text(rn[k]);return text(p?.id||p?.ministerId||'Minister')}
-function ministryDataKey(m){if(!db)return m;const w=norm(m);const keys=Object.keys(db);return keys.find(k=>norm(k)===w)||keys.find(k=>w.includes(norm(k))||norm(k).includes(w))||m}
-function candidates(m){const key=ministryDataKey(m),a=db?.[key];return Array.isArray(a)?a:[]}
-function activeId(m){const r=global.OmegaMinisterStateRegistry;try{return r?.getActiveMinister?.(country(),m)?.ministerId||null}catch(_){return null}}
-function selectedIndex(m){const v=Number(read()[country()+'_'+m]);return Number.isFinite(v)&&v>=0?Math.floor(v):0}
-function identity(p,m,i){return Object.assign({},p,{__omegaIndex:i,name:nameOf(p),ministerName:nameOf(p),ministerId:text(p?.id||p?.ministerId),ministryId:m,countryCode:country()})}
-function syncUI(m,p,i){const ui=global.OmegaCabinetUI;if(!ui||!p)return;const id=identity(p,m,i);ui.appointedMinisterIndex=ui.appointedMinisterIndex||{};ui.appointedMinisterIndex[country()+'_'+m]=i;ui.appointedMinisterIndex[m]=i;ui.currentInterrogatedMinister=id;ui.currentActiveMinisterId=id.ministerId;const md=ui.ministriesDatabase?.[m];if(md){md.ministerName=id.ministerName;md.ministerId=id.ministerId;md.activeMinisterId=id.ministerId;md.ministerProfile=p;const vals=Object.values(p.efficiency||{}).map(Number).filter(Number.isFinite);if(vals.length)md.efficiency=Math.round(vals.reduce((a,b)=>a+b,0)/vals.length)}try{global.dispatchEvent(new CustomEvent('MINISTER_SELECTED',{detail:id}))}catch(_){} }
-async function loadDB(){if(db)return db;if(dbPromise)return dbPromise;dbPromise=fetch('/ministers.json',{cache:'no-store'}).then(r=>{if(!r.ok)throw Error('ministers.json HTTP '+r.status);return r.json()}).then(x=>{db=x?.ministers_database||x?.ministers||x||{};return db}).finally(()=>{dbPromise=null});return dbPromise}
-async function loadScript(src){if(document.querySelector(`script[src="${src}"]`))return true;if(loadLocks.has(src))return loadLocks.get(src);const p=new Promise(resolve=>{const s=document.createElement('script');s.src=src;s.async=false;s.onload=()=>resolve(true);s.onerror=()=>resolve(false);document.head.appendChild(s)}).finally(()=>loadLocks.delete(src));loadLocks.set(src,p);return p}
-async function ensureMinisterRuntime(){
-  if(!global.OmegaMinisterStateRegistry)await loadScript('/omega_minister_state_system.js');
-  if(!global.OmegaMinisterCapability)await loadScript('/minister_capability_engine.js');
-  if(!global.OmegaMinisterBehavior)await loadScript('/minister_behavior_engine.js');
-  if(!global.OmegaMinisterIntegration)await loadScript('/omega_minister_integration.js');
-  try{const r=await fetch('/minister_system_config.json',{cache:'no-store'});if(r.ok&&global.OmegaMinisterStateRegistry?.setConfig)global.OmegaMinisterStateRegistry.setConfig(await r.json())}catch(_){}
-  return !!global.OmegaMinisterStateRegistry;
-}
-async function activate(m,p){
-  const r=global.OmegaMinisterStateRegistry;if(!r||!p?.id)return false;
-  const old=activeId(m);
-  if(old===String(p.id)){syncUI(m,p,Number(p.__omegaIndex||0));return true}
-  try{
-    global.dispatchEvent(new CustomEvent('OMEGA_MINISTER_CHANGED',{detail:{countryCode:country(),ministryId:m,candidate:Object.assign({},p,{displayName:nameOf(p)}),timestamp:Date.now()}}));
-    await new Promise(x=>setTimeout(x,0));
-    if(!r.getActiveMinister?.(country(),m)){
-      if(!r.getMinister?.(p.id))r.recruitCandidate({...p,name:nameOf(p)},country(),m,Date.now());
-      else r.assignMinister(p.id,country(),m,Date.now());
-    }
-    syncUI(m,p,Number(p.__omegaIndex||0));
-    return !!r.getActiveMinister?.(country(),m);
-  }catch(e){console.error('[OMEGA Minister] activation failed',e);return false}
-}
-function runtimeState(m,p){const r=global.OmegaMinisterStateRegistry;try{return r?.getActiveMinister?.(country(),m)||null}catch(_){return null}}
-function profileCard(m,p){const old=document.getElementById('omega-minister-profile-card');old?.remove();const rt=runtimeState(m,p),stats=p?.stats||p?.baseStats||{},eff=p?.efficiency||p?.efficiencyProfile||{},ideology=p?.ideology?.type||p?.ideology||'—';const box=document.createElement('section');box.id='omega-minister-profile-card';box.innerHTML=`<div class="ompc-head"><strong>${nameOf(p)}</strong><span>${text(p?.id)}</span></div><div class="ompc-grid"><div>AGE<strong>${text(p?.age??p?.baseAge??'—')}</strong></div><div>BACKGROUND<strong>${text(p?.background||'—')}</strong></div><div>IDEOLOGY<strong>${text(ideology)}</strong></div><div>STATUS<strong>${text(rt?.runtime?.status||'ACTIVE')}</strong></div></div><div class="ompc-line"><b>SKILLS</b> ${Object.entries(stats).map(([k,v])=>`${k.replace(/_/g,' ')} ${v}`).join(' • ')||'—'}</div><div class="ompc-line"><b>EFFICIENCY</b> ${Object.entries(eff).map(([k,v])=>`${k.replace(/_/g,' ')} ${v}`).join(' • ')||'—'}</div><div class="ompc-line"><b>LIVE STATE</b> workload ${Math.round(rt?.runtime?.workload||0)} • stress ${Math.round(rt?.runtime?.stress||0)} • fatigue ${Math.round(rt?.runtime?.fatigue||0)} • confidence ${Math.round(rt?.runtime?.confidence||0)}</div>`;document.getElementById('ministry-dashboard-content')?.prepend(box)}
-function style(){if(document.getElementById('omega-minister-control-style-v8'))return;const s=document.createElement('style');s.id='omega-minister-control-style-v8';s.textContent=`#omega-live-minister-selector{box-sizing:border-box;width:100%;max-width:100%;margin:6px 0;padding:7px 9px;border:1px solid rgba(0,229,255,.38);border-radius:8px;background:rgba(3,15,28,.96);color:#f8fafc;position:relative;z-index:30;overflow:hidden;font-family:var(--font-mono,monospace)}#omega-live-minister-selector .omsl-title{display:flex;justify-content:space-between;gap:6px;margin-bottom:5px;font-size:9px;font-weight:800;letter-spacing:.3px}#omega-live-minister-selector .omsl-title b{color:#00e5ff}#omega-live-minister-selector .omsl-title span{color:#94a3b8}#omega-live-minister-selector .omsl-row{display:grid;grid-template-columns:minmax(0,1fr) 122px;gap:5px}#omega-live-minister-selector select,#omega-live-minister-selector button{box-sizing:border-box;width:100%;height:32px;min-width:0;border-radius:6px;font:800 10px var(--font-mono,monospace)}#omega-live-minister-selector select{padding:5px 7px;background:#081522;color:#fff;border:1px solid #00e5ff}#omega-live-minister-selector button{padding:5px;background:#00e5ff;color:#001018;border:1px solid #00e5ff;cursor:pointer}#omega-live-minister-selector .omsl-meta{margin-top:4px;font-size:8px;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#omega-minister-profile-card{box-sizing:border-box;width:100%;margin:0 0 6px;padding:7px 9px;border:1px solid rgba(255,215,0,.22);border-radius:8px;background:rgba(10,17,28,.94);color:#cbd5e1;font:8px/1.3 var(--font-mono,monospace);overflow:hidden}.ompc-head{display:flex;justify-content:space-between;gap:6px;border-bottom:1px solid rgba(255,255,255,.07);padding-bottom:4px;margin-bottom:4px}.ompc-head strong{font-size:12px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ompc-head span{color:#00e5ff}.ompc-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:3px}.ompc-grid>div{padding:4px;background:rgba(255,255,255,.03);border-radius:4px;min-width:0}.ompc-grid strong{display:block;color:#fff;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ompc-line{margin-top:4px}.ompc-line b{color:#ffd700}@media(max-width:600px){#omega-live-minister-selector .omsl-row{grid-template-columns:minmax(0,1fr) 110px}.ompc-grid{grid-template-columns:1fr 1fr}}@media(max-width:380px){#omega-live-minister-selector .omsl-row{grid-template-columns:1fr}#omega-live-minister-selector button{margin-top:4px}}`;document.head.appendChild(s)}
-async function install(m){if(!m)return false;await loadDB();const ui=global.OmegaCabinetUI,content=document.getElementById('ministry-dashboard-content');if(!ui||!content)return false;const cs=candidates(m);if(!cs.length)return false;style();document.getElementById('omega-live-minister-selector')?.remove();const saved=Math.min(selectedIndex(m),cs.length-1);const active=activeId(m);let idx=cs.findIndex(p=>String(p.id)===String(active));if(idx<0)idx=saved;cs.forEach((p,i)=>p.__omegaIndex=i);await ensureMinisterRuntime();await activate(m,cs[idx]);const box=document.createElement('section');box.id='omega-live-minister-selector';box.innerHTML=`<div class="omsl-title"><b>ACTIVE MINISTER</b><span id="omsl-status">${nameOf(cs[idx])}</span></div><div class="omsl-row"><select id="omsl-choice" aria-label="Active Minister"></select><button type="button" id="omsl-apply">APPOINT</button></div><div class="omsl-meta">Live profile, skills, workload, stress, personality and interrogation follow the selected Minister ID.</div>`;const select=box.querySelector('#omsl-choice');cs.forEach((p,i)=>{const o=document.createElement('option');o.value=String(i);o.textContent=`${nameOf(p)} • ${p.id}`;select.appendChild(o)});select.value=String(idx);content.prepend(box);profileCard(m,cs[idx]);select.addEventListener('change',()=>{const p=cs[Number(select.value)];box.querySelector('#omsl-status').textContent=p?`READY: ${nameOf(p)}`:'';profileCard(m,p)});box.querySelector('#omsl-apply').addEventListener('click',async()=>{const i=Number(select.value),p=cs[i];if(!p)return;const ok=await activate(m,p);if(!ok){box.querySelector('#omsl-status').textContent='ACTIVATION FAILED';return}const x=read();x[country()+'_'+m]=i;write(x);box.querySelector('#omsl-status').textContent=`APPOINTED: ${nameOf(p)}`;profileCard(m,p);global.dispatchEvent(new CustomEvent('MINISTER_SELECTED',{detail:identity(p,m,i)}));});return true}
-function patchNavigation(){const old=global.openMainMinistryView;global.openMainMinistryView=function(e){try{e?.preventDefault?.();e?.stopPropagation?.()}catch(_){};const go=()=>{try{global.OmegaLayerManager?.setLayer?.(1);if(!global.OmegaLayerManager?.setLayer&&global.OmegaCabinetUI?.renderCabinet){global.OmegaCabinetUI.renderCabinet(country())}}catch(err){console.error('[OMEGA NAV] ministry open failed',err)}};go();return false};const b=document.getElementById('btn-ministry-dock');if(b&&!b.dataset.omegaNavV8){const n=b.cloneNode(true);n.removeAttribute('onclick');n.dataset.omegaNavV8='true';n.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();global.openMainMinistryView(e)},true);b.replaceWith(n)}if(old&&old!==global.openMainMinistryView)global.__omegaLegacyOpenMainMinistryView=old}
-function patchDashboard(){const ui=global.OmegaCabinetUI;if(!ui||ui.__omegaMinisterControlV8)return false;ui.__omegaMinisterControlV8=true;loadDB();const render=ui.renderMinistryDashboard;if(typeof render==='function')ui.renderMinistryDashboard=function(m){const r=render.apply(this,arguments);setTimeout(()=>install(m),0);return r};const open=ui.openInterrogationModal;if(typeof open==='function')ui.openInterrogationModal=function(m){const cs=candidates(m),id=activeId(m),i=Math.max(0,cs.findIndex(p=>String(p.id)===String(id)));if(cs[i]){syncUI(m,cs[i],i);profileCard(m,cs[i])}return open.apply(this,arguments)};return true}
-function runtimeTaskStart(id,q){const r=global.OmegaMinisterStateRegistry;if(!r||!id)return null;try{return r.addTask(id,{taskId:`INTERROGATION-${Date.now()}`,type:'COGNITIVE_QUERY',domain:'general',complexity:Math.min(100,25+q.length),urgency:20,cognitiveDemand:Math.min(100,30+q.length/2),deadlinePressure:10,communication:true})}catch(_){return null}}
-function runtimeTaskFinish(id,task,success){const r=global.OmegaMinisterStateRegistry;if(!r||!task)return;try{r.finishTask(id,task.taskId,success?'SUCCESS':'FAILURE',Date.now(),success?'Grounded runtime answer completed':'Grounded runtime answer failed')}catch(_){} }
-async function groundedAnswer(q,ui,m){
-  const id=text(m?.ministerId||m?.id||activeId(ministry()));if(!id)throw Error('ACTIVE_MINISTER_ID_UNRESOLVED');
-  await ensureMinisterRuntime();
-  const task=runtimeTaskStart(id,q);
-  const context={countryId:country(),countryCode:country(),ministryId:text(m?.ministryId||ministry()),ministerId:id};
-  let answer=null;
-  const semantic=global.OmegaProductionSemanticRuntime;
-  if(semantic){
-    try{if(typeof semantic.buildAnswerPlan==='function'&&typeof semantic.formatOfflineAnswer==='function'){const plan=semantic.buildAnswerPlan(q,context,game().state||{},ui.chatHistories?.[id]||[]);answer=semantic.formatOfflineAnswer(plan);if(plan?.result?.ok===false)throw Error(plan.result.reason||'SEMANTIC_EXECUTION_FAILED')}else if(typeof semantic.answer==='function')answer=await semantic.answer(q,context);else if(typeof semantic.execute==='function'){const p=semantic.parse(q,context);answer=semantic.execute(p,context)}}catch(e){console.warn('[OMEGA semantic runtime]',e)}
+  'use strict';
+  if(global.__OMEGA_MINISTER_CONTROL_V9__) return;
+  global.__OMEGA_MINISTER_CONTROL_V9__=true;
+
+  const text=v=>v==null?'':String(v).trim();
+  const norm=v=>text(v).normalize('NFKC').toLowerCase().replace(/[._-]+/g,' ').replace(/\s+/g,' ').trim();
+  const country=()=>text(global.Game?.state?.countryId||global.Game?.state?.playerCountryId||global.Game?.currentActiveCountry||global.Omega?.World?.state?.countryId||document.body?.dataset?.countryId||'BANGLADESH').toUpperCase().replace(/\s+/g,'_');
+  const ministry=()=>text(global.OmegaLayerManager?.activeMinistryId||global.OmegaCabinetUI?.currentDashboardMinistryId||global.OmegaCabinetUI?.activeMinistryId||global.OmegaCabinetUI?.currentMinistryId||global.Game?.state?.activeMinistryId);
+  const registry=()=>global.OmegaMinisterState?.registry||global.OmegaMinisterStateRegistry||null;
+  const dbStore=()=>{try{return global.localStorage}catch(_){return null}};
+  const selectedKey=m=>`OMEGA_MINISTER_SELECTED_V9::${country()}::${m}`;
+  const safeName=p=>text(p?.baseName||p?.name||p?.ministerName||p?.id||p?.ministerId||'Minister');
+  const candidates=m=>{
+    const r=registry(); if(!r?.profiles) return [];
+    return [...r.profiles.values()].filter(p=>norm(p?.ministryId)===norm(m));
+  };
+  const active=m=>{const r=registry();try{return r?.getActiveMinister?.(country(),m)||null}catch(_){return null}};
+
+  function ensureGlobalRegistryAlias(){
+    const r=registry();
+    if(r) global.OmegaMinisterStateRegistry=r;
+    return r;
   }
-  if(!answer&&global.OmegaAIIntegrity?.answer)try{answer=await global.OmegaAIIntegrity.answer(q,ui)}catch(e){console.warn('[OMEGA integrity]',e)}
-  const success=!!answer;runtimeTaskFinish(id,task,success);if(!answer)throw Error('GROUNDED_RUNTIME_ANSWER_UNAVAILABLE');return text(answer)}
-function patchQuestion(){const ui=global.OmegaCabinetUI;if(!ui||typeof ui.processQuestionAndReply!=='function'||ui.__omegaSemanticQuestionV8)return false;return true}
-function installQuestion(){const ui=global.OmegaCabinetUI;if(!ui||typeof ui.processQuestionAndReply!=='function'||ui.__omegaSemanticQuestionV8)return false;ui.__omegaSemanticQuestionV8=true;ui.__omegaLegacyQuestionHandler=ui.processQuestionAndReply;ui.processQuestionAndReply=function(minister,questionText){const q=text(questionText),m=ui.currentInterrogatedMinister||minister||{};const id=text(m.ministerId||m.id);if(!id)return 'ACTIVE_MINISTER_ID_UNRESOLVED';if(!ui.chatHistories)ui.chatHistories={};if(!ui.chatHistories[id])ui.chatHistories[id]=[];ui.chatHistories[id].push({sender:'USER',text:q,timestamp:Date.now()});groundedAnswer(q,ui,m).then(answer=>{ui.chatHistories[id].push({sender:'MINISTER',text:answer,response:answer,timestamp:Date.now(),source:'OMEGA_GROUNDED_RUNTIME_V8'});ui.renderChatHistory?.(id)}).catch(err=>{console.error('[OMEGA grounded interrogation]',err);ui.chatHistories[id].push({sender:'MINISTER',text:'RUNTIME_ERROR: '+err.message,response:'RUNTIME_ERROR: '+err.message,timestamp:Date.now(),source:'OMEGA_GROUNDED_RUNTIME_ERROR'});ui.renderChatHistory?.(id)});return ''}}
-function boot(){patchNavigation();patchDashboard();installQuestion();const m=ministry();if(m)install(m);setTimeout(boot,350)}
-global.OmegaLiveMinisterSelector={VERSION,install,activate,groundedAnswer};
-boot();
+
+  function ensureState(id,m){
+    const r=ensureGlobalRegistryAlias(); if(!r) throw Error('MINISTER_RUNTIME_NOT_READY');
+    const sid=String(id), now=Date.now();
+    if(!r.getRuntime(sid)) r.setRuntime(sid,{ministerId:sid,countryId:country(),ministryId:m,status:'ACTIVE',recruitmentTime:now,assignmentTime:now,lastUpdateTick:now,workload:0,cognitiveLoad:0,stress:0,fatigue:0,politicalPressure:0,economicPressure:0,crisisPressure:0,confidence:.5,trust:.5,activeTasks:[],activePlans:[],pendingDecisions:[],currentObjectives:[],currentAttention:[],currentStrategicPosture:'BALANCED'});
+    if(!r.getLearning(sid)) r.setLearning(sid,{ministerId:sid,totalServiceTime:0,totalTaskExposure:0,domainExperience:{},crisisExperience:0,decisionExperience:0,successfulDecisions:0,failedDecisions:0,completedPlans:0,failedPlans:0,learnedLessons:[],forecastCalibration:.5,strategyEffectiveness:.5,skillEvolution:{},specialization:{}});
+    return r;
+  }
+
+  function appoint(m,p){
+    const r=ensureState(p.id,m), old=active(m)?.profile?.id;
+    if(old && String(old)!==String(p.id)) r.unassign(old);
+    r.assign(String(p.id),country(),m,Date.now());
+    try{dbStore()?.setItem(selectedKey(m),String(p.id))}catch(_){ }
+    const payload={countryId:country(),ministryId:m,ministerId:String(p.id),profile:p,timestamp:Date.now()};
+    global.dispatchEvent(new CustomEvent('MINISTER_ASSIGNED',{detail:payload}));
+    global.dispatchEvent(new CustomEvent('MINISTER_SELECTED',{detail:payload}));
+    global.dispatchEvent(new CustomEvent('OMEGA_MINISTER_CHANGED',{detail:payload}));
+    global.OmegaCabinetUI&&(global.OmegaCabinetUI.currentInterrogatedMinister=p,global.OmegaCabinetUI.currentActiveMinisterId=String(p.id));
+    return active(m);
+  }
+
+  function selected(m,cs){
+    const a=active(m), aid=a?.profile?.id||a?.profile?.ministerId;
+    if(aid){const i=cs.findIndex(p=>String(p.id)===String(aid));if(i>=0)return i}
+    try{const saved=localStorage.getItem(selectedKey(m));const i=cs.findIndex(p=>String(p.id)===saved);if(i>=0)return i}catch(_){ }
+    return 0;
+  }
+
+  function style(){
+    if(document.getElementById('omega-minister-control-v9-style'))return;
+    const s=document.createElement('style');s.id='omega-minister-control-v9-style';s.textContent=`#omega-live-minister-selector{width:100%;box-sizing:border-box;margin:6px 0;padding:8px;border:1px solid rgba(0,229,255,.4);border-radius:8px;background:rgba(5,14,25,.97);color:#fff;font:10px var(--font-mono,monospace);position:relative;z-index:50}#omega-live-minister-selector .v9-head{display:flex;justify-content:space-between;gap:8px;margin-bottom:6px}#omega-live-minister-selector .v9-head b{color:#00e5ff}#omega-live-minister-selector .v9-head span{color:#94a3b8}#omega-live-minister-selector .v9-row{display:grid;grid-template-columns:minmax(0,1fr) 110px;gap:6px}#omega-live-minister-selector select,#omega-live-minister-selector button{height:34px;width:100%;box-sizing:border-box;border-radius:6px;font:800 10px var(--font-mono,monospace)}#omega-live-minister-selector select{background:#081522;color:#fff;border:1px solid #00e5ff;padding:4px}#omega-live-minister-selector button{background:#00e5ff;color:#001018;border:1px solid #00e5ff;cursor:pointer}#omega-live-minister-selector .v9-meta{margin-top:5px;color:#94a3b8;font-size:8px;line-height:1.35}.omega-v9-profile{width:100%;box-sizing:border-box;margin:0 0 6px;padding:8px;border:1px solid rgba(255,215,0,.25);border-radius:8px;background:rgba(8,15,25,.96);font:8px/1.35 var(--font-mono,monospace);color:#cbd5e1}.omega-v9-profile b{color:#ffd700}.omega-v9-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin:5px 0}.omega-v9-grid div{padding:4px;background:rgba(255,255,255,.04);border-radius:4px;overflow:hidden}.omega-v9-grid strong{display:block;color:#fff;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}@media(max-width:600px){.omega-v9-grid{grid-template-columns:1fr 1fr}.omega-v9-profile{font-size:8px}}@media(max-width:380px){#omega-live-minister-selector .v9-row{grid-template-columns:1fr}#omega-live-minister-selector button{margin-top:4px}}`;document.head.appendChild(s);
+  }
+
+  function profile(m,p){
+    document.querySelectorAll('.omega-v9-profile').forEach(x=>x.remove());
+    const r=active(m)?.runtime||{};
+    const stats=p?.baseStats||p?.stats||{};
+    const eff=p?.efficiencyProfile||p?.efficiency||{};
+    const ideology=p?.ideology?.type||p?.ideology||'—';
+    const el=document.createElement('section');el.className='omega-v9-profile';
+    el.innerHTML=`<div><strong style="font-size:12px;color:#fff">${safeName(p)}</strong> <span style="color:#00e5ff">${text(p?.id)}</span></div><div class="omega-v9-grid"><div>AGE<strong>${text(p?.baseAge??p?.age??'—')}</strong></div><div>BACKGROUND<strong>${text(p?.background||'—')}</strong></div><div>IDEOLOGY<strong>${text(ideology)}</strong></div><div>STATUS<strong>${text(r.status||'ACTIVE')}</strong></div></div><div><b>STATS</b> ${Object.entries(stats).map(([k,v])=>`${k.replace(/_/g,' ')} ${v}`).join(' • ')||'—'}</div><div style="margin-top:4px"><b>EFFICIENCY</b> ${Object.entries(eff).map(([k,v])=>`${k.replace(/_/g,' ')} ${v}`).join(' • ')||'—'}</div><div style="margin-top:4px"><b>LIVE</b> workload ${Math.round(r.workload||0)} • stress ${Math.round(r.stress||0)} • fatigue ${Math.round(r.fatigue||0)} • confidence ${Math.round((r.confidence||0)*100)}%</div>`;
+    document.getElementById('ministry-dashboard-content')?.prepend(el);
+  }
+
+  function install(m){
+    if(!m)return false; ensureGlobalRegistryAlias(); const ui=global.OmegaCabinetUI,content=document.getElementById('ministry-dashboard-content'); if(!ui||!content)return false;
+    const cs=candidates(m); if(!cs.length)return false; style(); document.getElementById('omega-live-minister-selector')?.remove();
+    let idx=selected(m,cs); const a=active(m); if(!a){try{appoint(m,cs[idx])}catch(e){console.error('[OMEGA V9] initial assignment failed',e)}} else idx=cs.findIndex(p=>String(p.id)===String(a.profile?.id)); if(idx<0)idx=0;
+    const box=document.createElement('section');box.id='omega-live-minister-selector';
+    box.innerHTML=`<div class="v9-head"><b>CURRENT MINISTER</b><span id="omega-v9-status">${safeName(cs[idx])}</span></div><div class="v9-row"><select id="omega-v9-choice" aria-label="Select Minister"></select><button type="button" id="omega-v9-appoint">APPOINT MINISTER</button></div><div class="v9-meta">Authoritative candidates are loaded from ministers.json. Appointment changes the live V2 registry assignment used by minister queries and runtime state.</div>`;
+    const select=box.querySelector('#omega-v9-choice');cs.forEach((p,i)=>{const o=document.createElement('option');o.value=i;o.textContent=`${safeName(p)} • ${p.id} • AGE ${p.baseAge??p.age??'—'}`;select.appendChild(o)});select.value=String(idx);content.prepend(box);profile(m,cs[idx]);
+    select.addEventListener('change',()=>{const p=cs[Number(select.value)];box.querySelector('#omega-v9-status').textContent=p?`READY: ${safeName(p)}`:'';profile(m,p)});
+    box.querySelector('#omega-v9-appoint').addEventListener('click',()=>{const p=cs[Number(select.value)];if(!p)return;try{appoint(m,p);box.querySelector('#omega-v9-status').textContent=`APPOINTED: ${safeName(p)}`;profile(m,p)}catch(e){box.querySelector('#omega-v9-status').textContent='APPOINTMENT FAILED';console.error('[OMEGA V9] appointment failed',e)}});
+    return true;
+  }
+
+  function patchUI(){
+    ensureGlobalRegistryAlias(); const ui=global.OmegaCabinetUI;if(!ui||ui.__omegaMinisterV9)return false;ui.__omegaMinisterV9=true;
+    if(typeof ui.renderMinistryDashboard==='function'){const old=ui.renderMinistryDashboard;ui.renderMinistryDashboard=function(m){const out=old.apply(this,arguments);setTimeout(()=>install(m),50);return out}}
+    return true;
+  }
+
+  function renderAnswer(q,m,p){
+    const id=String(p.id), name=safeName(p), age=p.baseAge??p.age;
+    const n=norm(q);
+    let answer=null;
+    if(/\bhow old are you\b|\bwhat is your age\b|\bhow old\b/.test(n)) answer=`I am ${age} years old.`;
+    else if(/\bwho are you\b|\bwhat is your name\b/.test(n)) answer=`I am ${name}, Minister of ${text(m).replace(/_/g,' ')}.`;
+    else if(/\bbackground\b|\bwhat did you do\b/.test(n)) answer=text(p.background)||'My background is not recorded in the authoritative minister profile.';
+    else if(/\bideology\b/.test(n)) answer=`My ideology is ${text(p.ideology?.type||p.ideology)||'not specified in my profile'}.`;
+    else if(/\bminister id\b|\byour id\b/.test(n)) answer=`My minister ID is ${id}.`;
+    else if(/\bwhat ministry\b|\bwhich ministry\b/.test(n)) answer=`I serve as Minister of ${text(m).replace(/_/g,' ')}.`;
+    else if(/\bstrengths?\b|\bskills?\b|\bcapabilit/.test(n)){const s=p.baseStats||p.stats||{};answer=Object.keys(s).length?`My recorded capabilities are ${Object.entries(s).map(([k,v])=>`${k.replace(/_/g,' ')} ${v}`).join(', ')}.`:'No capability scores are recorded.'}
+    return answer;
+  }
+
+  function appendChat(ministerId,q,a){
+    const c=document.getElementById('interrogation-chat-history');if(!c)return;
+    const add=(role,text,cls)=>{const d=document.createElement('div');d.className=`minister-chat-message ${cls||''}`;d.innerHTML=`<strong>${role}:</strong><div>${text}</div>`;c.appendChild(d)};
+    add('EXECUTIVE COMMANDER (You)',q,'user-message');add('MINISTER',a,'minister-message');c.scrollTop=c.scrollHeight;
+  }
+
+  function interceptInterrogation(){
+    document.addEventListener('click',e=>{
+      const b=e.target.closest?.('#btn-submit-interrogation');if(!b)return;
+      const input=document.getElementById('interrogation-input'),q=text(input?.value);if(!q)return;
+      const m=ministry(),a=active(m),p=a?.profile;if(!m||!p)return;
+      const answer=renderAnswer(q,m,p);if(!answer)return;
+      e.preventDefault();e.stopImmediatePropagation();
+      appendChat(String(p.id),q,answer);if(input)input.value='';
+    },true);
+  }
+
+  function boot(){
+    ensureGlobalRegistryAlias();patchUI();interceptInterrogation();
+    let tries=0;const timer=setInterval(()=>{tries++;ensureGlobalRegistryAlias();patchUI();const m=ministry();if(m)install(m);if(tries>100)clearInterval(timer)},100);
+  }
+  global.OmegaLiveMinisterSelectorV9={VERSION:'9.0.0',install,appoint,active,candidates};
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 })(typeof window!=='undefined'?window:globalThis);
