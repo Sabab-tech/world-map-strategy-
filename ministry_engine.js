@@ -30,10 +30,10 @@ window.OmegaMinistry = window.OmegaMinistry || {};
 
     class DynamicEventRegistry {
         #registry = new Set([
-            "SYS_INIT", "SYS_SHUTDOWN", "SYS_ERROR", 
+            "SYS_INIT", "SYS_SHUTDOWN", "SYS_ERROR",
             "MINISTRY_REGISTERED", "MINISTRY_UNLOADED",
             "UI_BUTTON_CLICKED", "UI_SCREEN_CHANGED",
-            "MINISTER_SELECTED", "POLICY_APPROVED", 
+            "MINISTER_SELECTED", "POLICY_APPROVED",
             "WAR_DECLARED", "CABINET_UPDATED", "ECONOMY_TICK"
         ]);
         #kernelSyncCallback = null;
@@ -45,11 +45,11 @@ window.OmegaMinistry = window.OmegaMinistry || {};
             }
         }
 
-        registerEvent(topic) { 
+        registerEvent(topic) {
             if (typeof topic === "string" && !this.#registry.has(topic)) {
                 this.#registry.add(topic);
                 if (this.#kernelSyncCallback) { try { this.#kernelSyncCallback(topic); } catch(e){} }
-            } 
+            }
         }
         hasEvent(topic) { return this.#registry.has(topic); }
         getAllEvents() { return Array.from(this.#registry); }
@@ -58,7 +58,7 @@ window.OmegaMinistry = window.OmegaMinistry || {};
     class OmegaFrameworkException extends Error {
         constructor(sys, type, msg, ctx = {}) {
             super(`[${sys} - ${type}] ${msg}`);
-            this.name = "OmegaFrameworkException"; 
+            this.name = "OmegaFrameworkException";
             this.system = sys; this.type = type; this.ctx = ctx;
         }
     }
@@ -66,7 +66,7 @@ window.OmegaMinistry = window.OmegaMinistry || {};
     function omegaDeepClone(obj, seen = new WeakMap()) {
         if (obj === null || typeof obj !== "object") return obj;
         if (seen.has(obj)) return seen.get(obj);
-        
+
         if (obj instanceof ArrayBuffer || ArrayBuffer.isView(obj) || typeof obj === "bigint" || obj instanceof Error || obj instanceof URL) {
             throw new OmegaFrameworkException("Serialization", "UnsupportedType", `Type ${obj.constructor.name} is strictly forbidden.`);
         }
@@ -88,8 +88,8 @@ window.OmegaMinistry = window.OmegaMinistry || {};
             for (let i = 0; i < obj.length; i++) copy[i] = omegaDeepClone(obj[i], seen);
             return copy;
         }
-        
-        const copy = Object.create(null); 
+
+        const copy = Object.create(null);
         seen.set(obj, copy);
         for (const key of Object.keys(obj)) copy[key] = omegaDeepClone(obj[key], seen);
         return copy;
@@ -435,7 +435,7 @@ window.OmegaCabinetUI = {
         const dept = this.getDepartmentMapping(ministryId);
         const indexKey = `${(countryKey || 'USA')}_${ministryId}`;
         const candidateIdx = this.appointedMinisterIndex[indexKey] || 0;
-        
+
         if (db && db[dept] && db[dept].length > 0) {
             const candidate = db[dept][candidateIdx % db[dept].length];
             const name = (candidate.regional_names && candidate.regional_names[region]) || candidate.regional_names?.western || "Hon. State Minister";
@@ -1165,7 +1165,7 @@ window.OmegaCabinetUI = {
 
         let html = `
             <div class="parchment-cabinet-container">
-                
+
                 <!-- TOP HUD BAR WITH STICKY BACK BUTTON & DYNAMIC COUNTRY BINDING -->
                 <div class="parchment-top-hud">
                     <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
@@ -1230,7 +1230,7 @@ window.OmegaCabinetUI = {
             sysList.forEach(s => {
                 const isActive = activeSys === s.id;
                 html += `
-                    <button onclick="window.OmegaCabinetEngine.setSubsystem('${s.id}'); window.OmegaCabinetUI.renderCabinet('${this.activeCountry}');" 
+                    <button onclick="window.OmegaCabinetEngine.setSubsystem('${s.id}'); window.OmegaCabinetUI.renderCabinet('${this.activeCountry}');"
                         style="background:${isActive ? '#5c4315' : '#dfd4be'}; color:${isActive ? '#fff' : '#40321c'}; border:1px solid #9c7b39; border-radius:6px; padding:6px 12px; font-size:11px; font-weight:bold; cursor:pointer; white-space:nowrap; transition:all 0.15s ease;">
                         ${s.label}
                     </button>
@@ -1426,7 +1426,7 @@ window.OmegaCabinetUI = {
 
         if (!dashWin || !contentArea) return;
 
-        dashWin.className = "omega-modal"; 
+        dashWin.className = "omega-modal";
         let themeClass = "theme-governance";
         if (m.category === 'defense' || m.id === 'defense') themeClass = "theme-defense";
         else if (m.category === 'economy' || m.id === 'taxes' || m.id === 'central_bank' || m.id === 'trade' || m.id === 'treasury_finance') themeClass = "theme-finance";
@@ -2586,7 +2586,7 @@ window.OmegaCabinetUI = {
                 if (resState.inventory.enriched_uranium !== undefined) uranium = resState.inventory.enriched_uranium;
             }
         }
-        
+
         const formatNum = (num) => (num !== null && num !== undefined) ? (window.formatPopulationNumber ? window.formatPopulationNumber(num) : num.toLocaleString()) : 'N/A';
         const formatCash = (num) => (num !== null && num !== undefined) ? (window.formatGameNumber ? window.formatGameNumber(num) : '$' + (num / 1000000).toFixed(1) + 'M') : 'N/A';
 
@@ -3086,7 +3086,7 @@ window.OmegaCabinetUI = {
 
         const countryKey = this.activeCountry || "BANGLADESH";
         const cDetails = this.getCountryDetails(countryKey);
-        
+
         // Dynamically resolution for localized minister name and role
         const mName = (minister && (minister.ministerName || minister.name)) || (cDetails.ministers && cDetails.ministers[minister.id] && cDetails.ministers[minister.id].name) || 'Honorable Minister';
         const mRole = (minister && minister.role) || (cDetails.ministers && cDetails.ministers[minister.id] && cDetails.ministers[minister.id].role) || 'Cabinet Minister';
@@ -3099,7 +3099,7 @@ window.OmegaCabinetUI = {
         this.renderChatHistory(minister.id);
 
         const isBengali = /[\u0980-\u09FF]/.test(questionText);
-        
+
         // Show thinking indicator
         const thinkingItem = {
             sender: 'MINISTER',
@@ -3141,12 +3141,7 @@ window.OmegaCabinetUI = {
                 }
             }
 
-            if (!replyText) {
-                if (isBengali) {
-                    replyText = `মাননীয় এক্সিকিউটিভ কমান্ডার, ${cDetails.name}-এর ${mRole} হিসেবে আমি (${mName}) আপনার নির্দেশনা ("${questionText}") পর্যালোচনা করেছি। আমাদের বিভাগীয় সক্ষমতা ${minister.efficiency}% এবং কগনিটিভ পলিসি ফ্রেমওয়ার্ক সার্বক্ষণিক কার্যকর রয়েছে।`;
-                } else { throw new Error('LEGACY_CANNED_RESPONSE_DISABLED'); }
-                impactAnalysis = `Cognitive Confidence: 91.5% • Operational Efficiency: ${minister.efficiency}% • Sovereign Stability: ${cDetails.stability || '88%'}`;
-            }
+
 
             // Remove thinking item and append final reply
             const history = this.chatHistories[minister.id];
