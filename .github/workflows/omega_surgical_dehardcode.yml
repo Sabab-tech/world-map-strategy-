@@ -23,44 +23,57 @@ jobs:
         run: |
           from pathlib import Path
           import re, subprocess
+
+          def remove_else_branch(src, marker):
+              pos = src.find(marker)
+              if pos < 0:
+                  return src, False
+              start = src.rfind('else', 0, pos)
+              if start < 0:
+                  raise SystemExit(f'Found marker but no preceding else: {marker}')
+              brace = src.find('{', start, pos + len(marker) + 400)
+              if brace < 0:
+                  raise SystemExit(f'Found else but no opening brace: {marker}')
+              depth = 0
+              end = None
+              for i in range(brace, len(src)):
+                  ch = src[i]
+                  if ch == '{': depth += 1
+                  elif ch == '}':
+                      depth -= 1
+                      if depth == 0:
+                          end = i + 1
+                          break
+              if end is None:
+                  raise SystemExit(f'Unbalanced legacy branch: {marker}')
+              return src[:start] + "else { throw new Error('LEGACY_CANNED_RESPONSE_DISABLED'); }" + src[end:], True
+
           ministry = Path('ministry_engine.js')
           cognitive = Path('omega_cognitive_engine.js')
           m = ministry.read_text(encoding='utf-8')
           c = cognitive.read_text(encoding='utf-8')
 
-          m2, n_names = re.subn(r"ministerName\s*:\s*(['\"])[^'\"]*\1", "ministerName: null", m)
+          m, n_names = re.subn(r"ministerName\s*:\s*(['\"])[^'\"]*\1", "ministerName: null", m)
           if n_names == 0:
               raise SystemExit('No production ministerName literals found; refusing an unverified identity mutation.')
 
-          # Remove the ministry-level canned branch if it still exists.
-          ministry_marker = 'processed your inquiry regarding'
-          if ministry_marker in m2:
-              pos = m2.index(ministry_marker)
-              start = m2.rfind('else', 0, pos)
-              end = m2.find('impactAnalysis =', pos)
-              if start < 0 or end < 0:
-                  raise SystemExit('Ministry canned branch found but its boundaries could not be proven.')
-              m2 = m2[:start] + "else { throw new Error('LEGACY_CANNED_RESPONSE_DISABLED'); }\n        " + m2[end:]
+          m, _ = remove_else_branch(m, 'processed your inquiry regarding')
+          if 'processed your inquiry regarding' in m:
+              raise SystemExit('Ministry canned response survived surgical removal.')
 
-          # Remove the cognitive generalized canned branch using its semantic marker,
-          # without assuming a particular indentation or brace layout.
-          markers = ['Dynamic Generalized Briefing for ANY question', 'processed your directive regarding']
-          pos = next((c.find(x) for x in markers if x in c), -1)
-          if pos >= 0:
-              start = c.rfind('else', 0, pos)
-              end = c.find('impactAnalysis =', pos)
-              if start < 0 or end < 0:
-                  raise SystemExit('Cognitive canned branch found but its boundaries could not be proven.')
-              c = c[:start] + "else { throw new Error('LEGACY_CANNED_RESPONSE_DISABLED'); }\n        " + c[end:]
+          changed = False
+          for marker in ('Dynamic Generalized Briefing for ANY question', 'processed your directive regarding'):
+              c, did = remove_else_branch(c, marker)
+              changed = changed or did
+              if did: break
+          if not changed and ('Dynamic Generalized Briefing for ANY question' in c or 'processed your directive regarding' in c):
+              raise SystemExit('Cognitive canned response marker survived but was not removable.')
 
-          ministry.write_text(m2, encoding='utf-8')
+          ministry.write_text(m, encoding='utf-8')
           cognitive.write_text(c, encoding='utf-8')
           subprocess.run(['git', 'diff', '--exit-code', '--', 'index.html'], check=True)
           subprocess.run(['node', '--check', 'ministry_engine.js'], check=True)
           subprocess.run(['node', '--check', 'omega_cognitive_engine.js'], check=True)
-
-          if ministry_marker in m2 or any(x in c for x in markers):
-              raise SystemExit('Legacy canned response marker still present after mutation.')
 
       - name: Commit surgical result and remove this one-shot workflow
         shell: bash
