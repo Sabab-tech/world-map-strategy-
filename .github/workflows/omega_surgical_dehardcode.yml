@@ -18,7 +18,7 @@ jobs:
         with:
           fetch-depth: 2
 
-      - name: Remove production hardcoded minister identities and canned answer branches
+      - name: Surgical production de-hardcode
         shell: python
         run: |
           from pathlib import Path
@@ -30,19 +30,36 @@ jobs:
 
           m2, n_names = re.subn(r"ministerName\s*:\s*(['\"])[^'\"]*\1", "ministerName: null", m)
           if n_names == 0:
-              raise SystemExit('No hardcoded ministerName metadata found; refusing an unverified mutation.')
+              raise SystemExit('No production ministerName literals found; refusing an unverified identity mutation.')
 
-          m2, n_ministry_canned = re.subn(r"else\s*\{\s*.*?processed your inquiry regarding.*?(?=\n\s*impactAnalysis\s*=)", "else { throw new Error('LEGACY_CANNED_RESPONSE_DISABLED'); }\n", m2, count=1, flags=re.S)
-          c2, n_cognitive_canned = re.subn(r"else\s*\{\s*// Dynamic Generalized Briefing for ANY question.*?(?=\n\s*impactAnalysis\s*=)", "else { throw new Error('LEGACY_CANNED_RESPONSE_DISABLED'); }\n", c, count=1, flags=re.S)
-          if n_cognitive_canned != 1:
-              raise SystemExit(f'Expected exactly one cognitive generalized canned branch, found {n_cognitive_canned}.')
+          # Remove the ministry-level canned branch if it still exists.
+          ministry_marker = 'processed your inquiry regarding'
+          if ministry_marker in m2:
+              pos = m2.index(ministry_marker)
+              start = m2.rfind('else', 0, pos)
+              end = m2.find('impactAnalysis =', pos)
+              if start < 0 or end < 0:
+                  raise SystemExit('Ministry canned branch found but its boundaries could not be proven.')
+              m2 = m2[:start] + "else { throw new Error('LEGACY_CANNED_RESPONSE_DISABLED'); }\n        " + m2[end:]
+
+          # Remove the cognitive generalized canned branch using its semantic marker,
+          # without assuming a particular indentation or brace layout.
+          markers = ['Dynamic Generalized Briefing for ANY question', 'processed your directive regarding']
+          pos = next((c.find(x) for x in markers if x in c), -1)
+          if pos >= 0:
+              start = c.rfind('else', 0, pos)
+              end = c.find('impactAnalysis =', pos)
+              if start < 0 or end < 0:
+                  raise SystemExit('Cognitive canned branch found but its boundaries could not be proven.')
+              c = c[:start] + "else { throw new Error('LEGACY_CANNED_RESPONSE_DISABLED'); }\n        " + c[end:]
 
           ministry.write_text(m2, encoding='utf-8')
-          cognitive.write_text(c2, encoding='utf-8')
+          cognitive.write_text(c, encoding='utf-8')
           subprocess.run(['git', 'diff', '--exit-code', '--', 'index.html'], check=True)
           subprocess.run(['node', '--check', 'ministry_engine.js'], check=True)
           subprocess.run(['node', '--check', 'omega_cognitive_engine.js'], check=True)
-          if 'processed your inquiry regarding' in m2 or 'Dynamic Generalized Briefing for ANY question' in c2:
+
+          if ministry_marker in m2 or any(x in c for x in markers):
               raise SystemExit('Legacy canned response marker still present after mutation.')
 
       - name: Commit surgical result and remove this one-shot workflow
@@ -56,5 +73,3 @@ jobs:
           test -z "$(git diff --cached -- index.html)"
           git commit -m 'Remove physical minister identity and canned response hardcodes'
           git push origin HEAD:main
-
-# one-shot trigger
