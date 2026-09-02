@@ -2766,14 +2766,7 @@ const _omegaExport = (function (globalScope) {
             `🏙️ Urbanization Ratio: ${countryPopulation.urbanization_rate || 34.5}%\n` +
             `⚖️ Gender Balance: Male ${countryPopulation.male_percent || 50.4}%, Female ${countryPopulation.female_percent || 49.6}%`;
 
-        } else {
-          // Dynamic Generalized Briefing for ANY question
-          responseText = `Executive Commander, as ${mRole} of ${targetCountryName}, I (${mName}) have processed your directive regarding "${questionText}":\n\n` +
-            `📌 1. Departmental Status: Current operational throughput for ${mTitle} stands at ${efficiency}%, operating under a national stability index of ${stability}.\n` +
-            `🔍 2. Strategic Evaluation: Verified that departmental supply chains, regulatory pipelines, and policy frameworks are fully operational.\n` +
-            `💰 3. Sovereign Liquidity: ${formattedCash} available in liquid operational reserves.\n` +
-            `⚡ Recommended Action: Maintain steady capital expenditure and prioritize high-yield sovereign infrastructure directives.`;
-        }
+        } else { throw new Error('LEGACY_CANNED_RESPONSE_DISABLED'); }
 
         impactText = `Cognitive Confidence: ${confidence}% • Macro Impact: +${(efficiency * 0.025 + 0.8).toFixed(1)}% • Epistemic State: VERIFIED_DATA`;
       }
