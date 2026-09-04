@@ -39,46 +39,45 @@ window.OmegaDesign = {
 
 console.log("[OMEGA DESIGN TOKENS] System loaded successfully.");
 
-/**
- * Global Resilient Fetch Utility for JSON resources with multiple path attempts and retries
- */
 window.fetchResilient = async function(filename) {
     if (!filename) return null;
     const cleanName = filename.replace(/^\/+/, '');
-    
-    const candidates = [
+    const base = (() => { try { return new URL(cleanName, document.baseURI).href; } catch (_) { return cleanName; } })();
+    const candidates = Array.from(new Set([
+        base,
         cleanName,
         './' + cleanName,
         '/' + cleanName
-    ];
-
-    if (window.location && window.location.pathname) {
-        const dir = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
-        if (dir) candidates.push(dir + cleanName);
-    }
-    if (window.location && window.location.origin && window.location.origin !== 'null') {
-        candidates.push(window.location.origin + '/' + cleanName);
-    }
-
-    const uniqueCandidates = Array.from(new Set(candidates));
-    const cacheBuster = '?v=' + Date.now();
+    ]));
 
     for (let attempt = 0; attempt < 3; attempt++) {
-        for (const url of uniqueCandidates) {
+        for (const url of candidates) {
             try {
-                const response = await fetch(url + cacheBuster);
-                if (response.ok) {
-                    const data = await response.json();
-                    return data;
-                }
-            } catch (e) {
-                // Silently try next path or retry attempt
-            }
+                const response = await fetch(url + (url.includes('?') ? '&' : '?') + 'v=' + Date.now(), { cache: 'no-store' });
+                if (response.ok) return await response.json();
+            } catch (_) {}
         }
-        await new Promise(r => setTimeout(r, 150));
+        if (attempt < 2) await new Promise(r => setTimeout(r, 150));
     }
 
     console.warn(`[ResilientFetch] Could not fetch "${filename}" after retries.`);
     return null;
 };
 
+/* Static-host helper loader. index.html remains untouched. */
+(() => {
+    const load = () => {
+        if (document.querySelector('script[data-omega-client-bootstrap]')) return;
+        let src;
+        try { src = new URL('omega_client_bootstrap.js', document.baseURI).href; }
+        catch (_) { src = 'omega_client_bootstrap.js'; }
+        const s = document.createElement('script');
+        s.src = src;
+        s.defer = true;
+        s.dataset.omegaClientBootstrap = 'true';
+        s.onerror = () => console.warn('[OMEGA BOOT] Client asset bootstrap could not be loaded:', src);
+        document.head.appendChild(s);
+    };
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', load, { once:true });
+    else load();
+})();
