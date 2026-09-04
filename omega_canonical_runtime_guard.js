@@ -1,5 +1,5 @@
 /**
- * OMEGA CANONICAL RUNTIME GUARD v1.3.0
+ * OMEGA CANONICAL RUNTIME GUARD v1.4.0
  * Single owner for minister interrogation, identity and UI layer isolation.
  */
 (function(global){
@@ -19,9 +19,9 @@
 
   function resolveMinister(ministerId){
     const ui=global.OmegaCabinetUI||{},gs=global.Game?.state||global.gameState||global.OmegaGameState||{},runtime=global.OmegaMinisterSystem;
-    const country=gs.countryCode||gs.countryId||gs.playerCountryId||ui.activeCountry||'', ministry=ui.currentMinistryId||ui.activeMinistryId||'';
+    const country=gs.countryCode||gs.countryId||gs.playerCountryId||ui.activeCountry||'',ministry=ui.currentMinistryId||ui.activeMinistryId||'';
     if(runtime?.getActive&&country&&ministry){try{const x=runtime.getActive(country,ministry);if(x?.profile)return x.profile;}catch(_){} }
-    if(runtime?.getMinister&&ministerId){try{const x=runtime.getMinister(ministerId),p=x?.profile; if(p)return p;}catch(_){} }
+    if(runtime?.getMinister&&ministerId){try{const x=runtime.getMinister(ministerId),p=x?.profile;if(p)return p;}catch(_){} }
     const ids=global.OmegaMinisterState?.snapshot?.()?.activeIds||[];
     if(runtime?.getMinister)for(const id of ids){try{const x=runtime.getMinister(id),p=x?.profile;if(p&&(!ministry||String(p.ministryId||'')===String(ministry)))return p;}catch(_){} }
     const db=ui.ministriesDatabase||{};return (ministerId&&db[ministerId])||ui.currentInterrogatedMinister||ui.currentMinister||ui.activeMinister||null;
@@ -36,19 +36,15 @@
     const ui=global.OmegaCabinetUI||{},ctx=ministerContext(ui.currentMinisterId||ui.currentInterrogatedMinister?.id||ui.currentMinister?.id||'');
     const fields={'interrogation-name':ctx.ministerName||'IDENTITY UNRESOLVED','interrogation-role':ctx.ministerRole||'ROLE UNRESOLVED','interrogation-cognitive-status':ctx.ministerName?'Canonical minister runtime active.':'Awaiting authoritative minister identity.'};
     for(const[id,text]of Object.entries(fields)){const el=document.getElementById(id);if(el)el.textContent=text;}
-    const p=resolveMinister(ctx.ministerId);
-    const runtime=p?.runtime||{};
-    const trust=runtime.trustScore??runtime.trust??p?.trustScore??null;
-    const reliability=runtime.reliability??p?.reliability??null;
-    const loyalty=runtime.loyalty??p?.loyalty??null;
-    const stress=runtime.stress??p?.stress??null;
+    const p=resolveMinister(ctx.ministerId),runtime=p?.runtime||{};
+    const trust=runtime.trustScore??runtime.trust??p?.trustScore??null,reliability=runtime.reliability??p?.reliability??null,loyalty=runtime.loyalty??p?.loyalty??null,stress=runtime.stress??p?.stress??null;
     const set=(id,v,fallback='—')=>{const el=document.getElementById(id);if(el)el.textContent=v==null?fallback:String(v);};
     set('interrogation-trust',trust==null?null:(Number(trust)<=1?Math.round(Number(trust)*100)+'/100':Math.round(Number(trust))+'/100'));
     set('interrogation-reliability',reliability==null?null:(Number(reliability)<=1?Math.round(Number(reliability)*100)+'%':Math.round(Number(reliability))+'%'));
     set('interrogation-loyalty',loyalty==null?null:String(loyalty).toUpperCase());
     set('interrogation-stress',stress==null?null:(Number(stress)<=1?Math.round(Number(stress)*100)+'%':Math.round(Number(stress))+'%'));
     const thought=document.getElementById('interrogation-thought-box');
-    if(thought&&!thought.dataset.omegaCanonicalThought) {thought.textContent='Awaiting a verified minister response. No synthetic speech is displayed before a real query.';thought.dataset.omegaCanonicalThought='true';}
+    if(thought&&!thought.dataset.omegaCanonicalThought){thought.textContent='Awaiting a verified minister response. No synthetic speech is displayed before a real query.';thought.dataset.omegaCanonicalThought='true';}
     const engineLabel=Array.from(document.querySelectorAll('#minister-interrogation-modal *')).find(el=>el.childNodes.length===1&&/OMEGA AI ENGINE V13\.14/i.test(el.textContent||''));
     if(engineLabel)engineLabel.textContent='OMEGA CANONICAL MINISTER RUNTIME';
   }
@@ -63,20 +59,24 @@
     const block=document.createElement('div');block.dataset.omegaCanonicalMessage='1';block.style.cssText='padding:10px 12px;margin:6px 0;border:1px solid rgba(0,229,255,.18);border-radius:8px;background:#06111d;color:#e8f7ff;white-space:pre-wrap;user-select:text;-webkit-user-select:text;font-family:var(--font-mono,monospace);font-size:11px;line-height:1.5;';block.textContent=`${ctx.ministerName||'MINISTER'}:\n${answer}`;host.appendChild(block);host.scrollTop=host.scrollHeight;
   }
 
+  function canonicalQuery(question,frame){
+    const map={IMPORT:'import',EXPORT:'export',SECURITY:'security',COMPARE:'compare',LOCATION:'location',COUNT:'count',LOOKUP:'lookup'};
+    const op=map[frame?.operation];
+    return op&&frame?.operation&&![...String(question).toLowerCase()].includes(op)?`${question} ${op}`:question;
+  }
+
   async function answer(question,ministerId){
-    const q=String(question||'').trim();if(!q)return;purgeLegacyLog();syncVisibleIdentity();const ctx=ministerContext(ministerId);const frame=global.OmegaSemanticPlanner?.frame?global.OmegaSemanticPlanner.frame(q):null;
+    const q=String(question||'').trim();if(!q)return;purgeLegacyLog();syncVisibleIdentity();const ctx=ministerContext(ministerId),frame=global.OmegaSemanticPlanner?.frame?global.OmegaSemanticPlanner.frame(q):null,executionQuery=canonicalQuery(q,frame);
     try{
-      const result=global.MinisterQueryRouter?.offlineQuery?await global.MinisterQueryRouter.offlineQuery(q,{...ctx,semanticFrame:frame}):null;
+      const result=global.MinisterQueryRouter?.offlineQuery?await global.MinisterQueryRouter.offlineQuery(executionQuery,{...ctx,semanticFrame:frame}):null;
       const text=result?.text||result?.answer||'No evidence-backed answer is available in the current authoritative game data.';appendConversation(q,text,ctx);
-      try{const h=JSON.parse(localStorage.getItem('omega.ai.canonical.history.v1')||'[]');h.push({q,a:text,frame,ministerId:ctx.ministerId,ministryId:ctx.ministryId,ts:Date.now()});localStorage.setItem('omega.ai.canonical.history.v1',JSON.stringify(h.slice(-200)));}catch(_){ }
+      try{const h=JSON.parse(localStorage.getItem('omega.ai.canonical.history.v1')||'[]');h.push({q,a:text,frame,executionQuery,ministerId:ctx.ministerId,ministryId:ctx.ministryId,ts:Date.now()});localStorage.setItem('omega.ai.canonical.history.v1',JSON.stringify(h.slice(-200)));}catch(_){}
     }catch(e){const msg=/[\u0980-\u09FF]/.test(q)?`উত্তর তৈরির সময় সমস্যা হয়েছে: ${e.message}`:`The canonical answer pipeline failed: ${e.message}`;appendConversation(q,msg,ctx);}
   }
 
   function patchInterrogationAPI(){
     const ui=global.OmegaCabinetUI;if(!ui||ui.__omegaCanonicalPatched)return false;ui.__omegaCanonicalPatched=true;
-    const originalAskCustom=typeof ui.askCustomQuestion==='function'?ui.askCustomQuestion.bind(ui):null;
-    const originalAskPreset=typeof ui.askPresetQuestion==='function'?ui.askPresetQuestion.bind(ui):null;
-    const originalProcess=typeof ui.processQuestionAndReply==='function'?ui.processQuestionAndReply.bind(ui):null;
+    const originalAskCustom=typeof ui.askCustomQuestion==='function'?ui.askCustomQuestion.bind(ui):null,originalAskPreset=typeof ui.askPresetQuestion==='function'?ui.askPresetQuestion.bind(ui):null,originalProcess=typeof ui.processQuestionAndReply==='function'?ui.processQuestionAndReply.bind(ui):null;
     ui.askCustomQuestion=function(id,q){return answer(q,id);};
     ui.askPresetQuestion=function(id,qid){const m=this.ministriesDatabase?.[id],q=m?.presetQuestions?.find(x=>String(x.id)===String(qid));return answer(q?.text||String(qid||''),id);};
     ui.processQuestionAndReply=function(m,q){return answer(q,m?.id||this.currentMinisterId||'');};
