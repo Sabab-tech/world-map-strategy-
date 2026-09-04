@@ -1,0 +1,39 @@
+/**
+ * OMEGA CLIENT BOOTSTRAP v1.0.0
+ * Resolves project-relative assets correctly on GitHub Pages and local hosting.
+ * Loads optional helper layers exactly once, in dependency-safe order.
+ */
+(function(global){
+  'use strict';
+  if(global.__OMEGA_CLIENT_BOOTSTRAP__) return;
+  global.__OMEGA_CLIENT_BOOTSTRAP__ = true;
+
+  const asset = file => {
+    try { return new URL(String(file).replace(/^\/+/,''), document.baseURI).href; }
+    catch (_) { return file; }
+  };
+
+  const hasScript = file => [...document.scripts].some(s => s.src === asset(file) || s.src.endsWith('/' + file));
+
+  function load(file){
+    return new Promise((resolve,reject)=>{
+      if(hasScript(file)) return resolve();
+      const s=document.createElement('script');
+      s.src=asset(file);
+      s.defer=true;
+      s.dataset.omegaBootstrap=true;
+      s.onload=resolve;
+      s.onerror=()=>reject(new Error('Unable to load '+file));
+      document.head.appendChild(s);
+    });
+  }
+
+  async function start(){
+    const order=['health-ministry-logo.js'];
+    for(const file of order){ try{ await load(file); } catch(e){ console.warn('[OMEGA BOOT]',e.message); } }
+    global.__OMEGA_CLIENT_ASSETS__={healthLogo:true,base:document.baseURI};
+  }
+
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',start,{once:true});
+  else start();
+})(window);
