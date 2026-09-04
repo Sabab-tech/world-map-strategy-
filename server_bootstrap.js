@@ -1,7 +1,5 @@
-/** OMEGA SERVER BOOTSTRAP v2.0.0
- * Canonical runtime bootstrap.
- * 1) keeps Gemini transport compatible with the supported GenerateContent model
- * 2) injects the canonical universal AI runtime into the served index without modifying index.html
+/** OMEGA SERVER BOOTSTRAP v2.1.0
+ * Canonical server bootstrap. Never changes index.html on disk.
  */
 import fs from 'fs';
 
@@ -30,11 +28,12 @@ if (!globalThis.__omegaUniversalIndexInjection) {
   globalThis.__omegaUniversalIndexInjection = true;
   const nativeReadFile = fs.readFile;
   fs.readFile = function omegaReadFile(file, options, callback) {
+    if (typeof options === 'function') { callback = options; options = undefined; }
     return nativeReadFile.call(fs, file, options, function (err, data) {
       if (!err && typeof data === 'string' && /(?:^|[\\/])index\.html$/i.test(String(file)) && !data.includes('/omega_universal_ai_runtime.js')) {
         data = data.replace('</body>', '    <script src="/omega_universal_ai_runtime.js"></script>\n</body>');
       }
-      callback(err, data);
+      if (typeof callback === 'function') callback(err, data);
     });
   };
 }
