@@ -1,21 +1,18 @@
-html,body{overflow:hidden!important;height:100%;width:100%;}#ui-engine-root{pointer-events:none;isolation:isolate;z-index:1000;}#ui-engine-root>*{pointer-events:auto;}.omega-modal,#command-hub-modal,#cabinet-full-window{pointer-events:auto;isolation:isolate;}.tab-content-area{min-height:0;overflow-y:auto!important;overflow-x:hidden;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y;}#cabinet-full-window{overflow-y:auto!important;overflow-x:hidden;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;}. [hidden],[aria-hidden="true"]{pointer-events:none!important;}@media(max-width:700px){#command-hub-modal,#cabinet-full-window,.omega-modal{max-height:100dvh;}}
+html,body{overflow:hidden!important;height:100%;width:100%;}#ui-engine-root{pointer-events:none;isolation:isolate;z-index:1000;}#ui-engine-root>*{pointer-events:auto;}.omega-modal,#command-hub-modal,#cabinet-full-window{pointer-events:auto;isolation:isolate;}.tab-content-area{min-height:0;overflow-y:auto!important;overflow-x:hidden;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y;}#cabinet-full-window{overflow-y:auto!important;overflow-x:hidden;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;}[hidden],[aria-hidden="true"]{pointer-events:none!important;}@media(max-width:700px){#command-hub-modal,#cabinet-full-window,.omega-modal{max-height:100dvh;}}
 
 /* ============================================================================
    OMEGA MOBILE CLARITY + PERFORMANCE PROFILE
-   Purpose: remove GPU-heavy glass/blur/filter effects and expensive animations
-   that make the UI look soft and cause frame drops on low-end Android devices.
-   This is an override layer so the existing visual architecture is preserved.
    ============================================================================ */
 
-/* Backdrop blur is a major compositor cost on mobile and can make the whole
-   scene appear smeared while the map underneath is moving. Use solid/near-solid
-   surfaces instead. */
+/* Disable compositor-heavy glass blur. It was being applied across multiple
+   full-screen/fixed UI surfaces, which is especially expensive on low-end
+   Android and can visually smear the moving map underneath. */
 *,*::before,*::after{
   -webkit-backdrop-filter:none!important;
   backdrop-filter:none!important;
 }
 
-/* Keep the map and Leaflet renderer crisp. */
+/* Keep the map and Leaflet renderer genuinely crisp. */
 #render-engine-root,#map,.leaflet-container,.leaflet-pane,.leaflet-map-pane,
 .leaflet-tile-pane,.leaflet-overlay-pane,.leaflet-marker-pane,.leaflet-shadow-pane,
 .leaflet-tooltip-pane,.leaflet-popup-pane{
@@ -24,7 +21,6 @@ html,body{overflow:hidden!important;height:100%;width:100%;}#ui-engine-root{poin
   image-rendering:auto!important;
 }
 
-/* Prevent accidental compositor filters from softening text/UI. */
 #ui-engine-root,.ui-top-hud,.ui-right-controls,.ui-bottom-navigation,
 .omega-modal,#command-hub-modal,#cabinet-full-window,.country-info-card,
 .resource-filter-bar,.map-metric-dropdown,.city-detail-bar{
@@ -34,8 +30,7 @@ html,body{overflow:hidden!important;height:100%;width:100%;}#ui-engine-root{poin
   backdrop-filter:none!important;
 }
 
-/* Replace transparent glass with stable surfaces. This keeps the intended
-   dark command-console look without asking the GPU to blur the map every frame. */
+/* Stable dark surfaces instead of transparent glass. */
 .ui-top-hud{background:rgba(8,15,26,.97)!important;}
 .ui-right-controls{background:rgba(8,15,26,.97)!important;}
 .ui-bottom-navigation{background:rgba(8,15,26,.97)!important;}
@@ -43,8 +38,7 @@ html,body{overflow:hidden!important;height:100%;width:100%;}#ui-engine-root{poin
 .country-info-card{background:rgba(8,15,26,.985)!important;}
 .resource-filter-bar,.map-metric-dropdown,.city-detail-bar{background:rgba(8,15,26,.985)!important;}
 
-/* Expensive glow/shadow stacks are particularly costly when many map labels,
-   markers and cards are present. Preserve borders but simplify raster work. */
+/* Reduce large glow stacks on small screens. */
 @media (max-width:900px){
   .ui-top-hud,.ui-right-controls,.ui-bottom-navigation,
   .omega-modal,#command-hub-modal,#cabinet-full-window,.country-info-card,
@@ -62,8 +56,7 @@ html,body{overflow:hidden!important;height:100%;width:100%;}#ui-engine-root{poin
   }
 }
 
-/* Stop decorative animation storms on touch devices. Interaction remains fully
-   functional, but the compositor no longer animates dozens of layers. */
+/* Stop decorative animation storms on touch devices. Controls remain usable. */
 @media (pointer:coarse){
   *,*::before,*::after{
     animation-duration:0.001ms!important;
@@ -82,13 +75,14 @@ html,body{overflow:hidden!important;height:100%;width:100%;}#ui-engine-root{poin
   }
 }
 
-/* Never blur the main rendering surface when another UI layer is active. */
+/* Never blur the rendering surface when another UI layer is active. */
 body[data-active-layer] #render-engine-root,
 body[data-active-layer] #map{
   filter:none!important;
   -webkit-filter:none!important;
 }
 
-/* Reduce layout/compositor churn from fixed full-screen UI roots. */
+/* Constrain paint work without using strict containment, which could interfere
+   with Leaflet's internal panes/popups. */
 #render-engine-root{contain:layout paint style!important;}
-#map{contain:strict!important;}
+#map{contain:layout paint!important;}
