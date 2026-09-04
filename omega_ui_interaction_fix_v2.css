@@ -1,88 +1,35 @@
 html,body{overflow:hidden!important;height:100%;width:100%;}#ui-engine-root{pointer-events:none;isolation:isolate;z-index:1000;}#ui-engine-root>*{pointer-events:auto;}.omega-modal,#command-hub-modal,#cabinet-full-window{pointer-events:auto;isolation:isolate;}.tab-content-area{min-height:0;overflow-y:auto!important;overflow-x:hidden;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y;}#cabinet-full-window{overflow-y:auto!important;overflow-x:hidden;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;}[hidden],[aria-hidden="true"]{pointer-events:none!important;}@media(max-width:700px){#command-hub-modal,#cabinet-full-window,.omega-modal{max-height:100dvh;}}
 
-/* ============================================================================
-   OMEGA MOBILE CLARITY + PERFORMANCE PROFILE
-   ============================================================================ */
+/* OMEGA MOBILE CLARITY + PERFORMANCE PROFILE */
+*,*::before,*::after{-webkit-backdrop-filter:none!important;backdrop-filter:none!important;}
+#render-engine-root,#map,.leaflet-container,.leaflet-pane,.leaflet-map-pane,.leaflet-tile-pane,.leaflet-overlay-pane,.leaflet-marker-pane,.leaflet-shadow-pane,.leaflet-tooltip-pane,.leaflet-popup-pane{filter:none!important;-webkit-filter:none!important;image-rendering:auto!important;}
+#ui-engine-root,.ui-top-hud,.ui-right-controls,.ui-bottom-navigation,.omega-modal,#command-hub-modal,#cabinet-full-window,.country-info-card,.resource-filter-bar,.map-metric-dropdown,.city-detail-bar{filter:none!important;-webkit-filter:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;}
+.ui-top-hud{background:rgba(8,15,26,.97)!important;}.ui-right-controls{background:rgba(8,15,26,.97)!important;}.ui-bottom-navigation{background:rgba(8,15,26,.97)!important;}.omega-modal,#command-hub-modal,#cabinet-full-window{background:rgba(8,15,26,.985)!important;}.country-info-card{background:rgba(8,15,26,.985)!important;}.resource-filter-bar,.map-metric-dropdown,.city-detail-bar{background:rgba(8,15,26,.985)!important;}
+@media (max-width:900px){.ui-top-hud,.ui-right-controls,.ui-bottom-navigation,.omega-modal,#command-hub-modal,#cabinet-full-window,.country-info-card,.resource-filter-bar,.map-metric-dropdown,.city-detail-bar,.access-card,.info-card,.special-btn,.icon-btn{box-shadow:0 3px 12px rgba(0,0,0,.45)!important;}.game-country-label,.country-label,.country-label-inner,.ocean-label-text{text-shadow:0 1px 3px #000!important;}.omega-modal *,.country-info-card *,.city-detail-bar *{text-rendering:geometricPrecision;}}
+@media (pointer:coarse){*,*::before,*::after{animation-duration:0.001ms!important;animation-iteration-count:1!important;transition-duration:0.12s!important;scroll-behavior:auto!important;}.leaflet-marker-icon,.leaflet-marker-shadow,.leaflet-tile{will-change:auto!important;}.access-card:hover,.icon-btn:hover,.special-btn:hover,.tab-btn:hover,.res-quick-btn:hover,.city-bar-btn:hover{transform:none!important;}}
 
-/* Disable compositor-heavy glass blur. It was being applied across multiple
-   full-screen/fixed UI surfaces, which is especially expensive on low-end
-   Android and can visually smear the moving map underneath. */
-*,*::before,*::after{
-  -webkit-backdrop-filter:none!important;
-  backdrop-filter:none!important;
-}
+/* HARD LAYER ISOLATION: inactive map cannot receive selection, pointer or focus
+   while a full-screen UI layer is active. Text remains selectable only inside
+   the active UI surface. */
+body[data-active-layer]:not([data-active-layer="0"]) #render-engine-root,
+body[data-active-layer]:not([data-active-layer="0"]) #map{pointer-events:none!important;user-select:none!important;-webkit-user-select:none!important;}
+body[data-active-layer]:not([data-active-layer="0"]) .leaflet-container,
+body[data-active-layer]:not([data-active-layer="0"]) .leaflet-marker-icon,
+body[data-active-layer]:not([data-active-layer="0"]) .leaflet-marker-pane,
+body[data-active-layer]:not([data-active-layer="0"]) .leaflet-tooltip-pane,
+body[data-active-layer]:not([data-active-layer="0"]) .leaflet-popup-pane{pointer-events:none!important;user-select:none!important;-webkit-user-select:none!important;}
+body[data-active-layer]:not([data-active-layer="0"]) #ui-engine-root{user-select:text!important;-webkit-user-select:text!important;}
+body[data-active-layer]:not([data-active-layer="0"]) .omega-modal,
+body[data-active-layer]:not([data-active-layer="0"]) .omega-modal *,
+body[data-active-layer]:not([data-active-layer="0"]) #command-hub-modal,
+body[data-active-layer]:not([data-active-layer="0"]) #command-hub-modal *,
+body[data-active-layer]:not([data-active-layer="0"]) #cabinet-full-window,
+body[data-active-layer]:not([data-active-layer="0"]) #cabinet-full-window *{user-select:text!important;-webkit-user-select:text!important;}
 
-/* Keep the map and Leaflet renderer genuinely crisp. */
-#render-engine-root,#map,.leaflet-container,.leaflet-pane,.leaflet-map-pane,
-.leaflet-tile-pane,.leaflet-overlay-pane,.leaflet-marker-pane,.leaflet-shadow-pane,
-.leaflet-tooltip-pane,.leaflet-popup-pane{
-  filter:none!important;
-  -webkit-filter:none!important;
-  image-rendering:auto!important;
-}
-
-#ui-engine-root,.ui-top-hud,.ui-right-controls,.ui-bottom-navigation,
-.omega-modal,#command-hub-modal,#cabinet-full-window,.country-info-card,
-.resource-filter-bar,.map-metric-dropdown,.city-detail-bar{
-  filter:none!important;
-  -webkit-filter:none!important;
-  -webkit-backdrop-filter:none!important;
-  backdrop-filter:none!important;
-}
-
-/* Stable dark surfaces instead of transparent glass. */
-.ui-top-hud{background:rgba(8,15,26,.97)!important;}
-.ui-right-controls{background:rgba(8,15,26,.97)!important;}
-.ui-bottom-navigation{background:rgba(8,15,26,.97)!important;}
-.omega-modal,#command-hub-modal,#cabinet-full-window{background:rgba(8,15,26,.985)!important;}
-.country-info-card{background:rgba(8,15,26,.985)!important;}
-.resource-filter-bar,.map-metric-dropdown,.city-detail-bar{background:rgba(8,15,26,.985)!important;}
-
-/* Reduce large glow stacks on small screens. */
-@media (max-width:900px){
-  .ui-top-hud,.ui-right-controls,.ui-bottom-navigation,
-  .omega-modal,#command-hub-modal,#cabinet-full-window,.country-info-card,
-  .resource-filter-bar,.map-metric-dropdown,.city-detail-bar,
-  .access-card,.info-card,.special-btn,.icon-btn{
-    box-shadow:0 3px 12px rgba(0,0,0,.45)!important;
-  }
-
-  .game-country-label,.country-label,.country-label-inner,.ocean-label-text{
-    text-shadow:0 1px 3px #000!important;
-  }
-
-  .omega-modal *,.country-info-card *,.city-detail-bar *{
-    text-rendering:geometricPrecision;
-  }
-}
-
-/* Stop decorative animation storms on touch devices. Controls remain usable. */
-@media (pointer:coarse){
-  *,*::before,*::after{
-    animation-duration:0.001ms!important;
-    animation-iteration-count:1!important;
-    transition-duration:0.12s!important;
-    scroll-behavior:auto!important;
-  }
-
-  .leaflet-marker-icon,.leaflet-marker-shadow,.leaflet-tile{
-    will-change:auto!important;
-  }
-
-  .access-card:hover,.icon-btn:hover,.special-btn:hover,
-  .tab-btn:hover,.res-quick-btn:hover,.city-bar-btn:hover{
-    transform:none!important;
-  }
-}
+body[data-active-layer="0"] #render-engine-root,
+body[data-active-layer="0"] #map{pointer-events:auto;user-select:none;-webkit-user-select:none;}
 
 /* Never blur the rendering surface when another UI layer is active. */
-body[data-active-layer] #render-engine-root,
-body[data-active-layer] #map{
-  filter:none!important;
-  -webkit-filter:none!important;
-}
+body[data-active-layer] #render-engine-root,body[data-active-layer] #map{filter:none!important;-webkit-filter:none!important;}
 
-/* Constrain paint work without using strict containment, which could interfere
-   with Leaflet's internal panes/popups. */
-#render-engine-root{contain:layout paint style!important;}
-#map{contain:layout paint!important;}
+#render-engine-root{contain:layout paint style!important;}#map{contain:layout paint!important;}
