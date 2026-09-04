@@ -1,10 +1,10 @@
-/** OMEGA SERVER BOOTSTRAP v2.1.0
- * Canonical server bootstrap. Never changes index.html on disk.
+/** OMEGA SERVER BOOTSTRAP v3.0.0
+ * Server entrypoint only. The client router is the single interrogation owner,
+ * so this bootstrap no longer injects a second browser AI runtime.
  */
-import fs from 'fs';
 
-const nativeFetch = globalThis.fetch;
 const MODEL_FALLBACK = 'gemini-3.7-flash';
+const nativeFetch = globalThis.fetch;
 
 if (typeof nativeFetch === 'function' && !globalThis.__omegaGeminiFetchCompat) {
   globalThis.__omegaGeminiFetchCompat = true;
@@ -21,20 +21,6 @@ if (typeof nativeFetch === 'function' && !globalThis.__omegaGeminiFetchCompat) {
       }
     } catch (_) {}
     return nativeFetch(input, init);
-  };
-}
-
-if (!globalThis.__omegaUniversalIndexInjection) {
-  globalThis.__omegaUniversalIndexInjection = true;
-  const nativeReadFile = fs.readFile;
-  fs.readFile = function omegaReadFile(file, options, callback) {
-    if (typeof options === 'function') { callback = options; options = undefined; }
-    return nativeReadFile.call(fs, file, options, function (err, data) {
-      if (!err && typeof data === 'string' && /(?:^|[\\/])index\.html$/i.test(String(file)) && !data.includes('/omega_universal_ai_runtime.js')) {
-        data = data.replace('</body>', '    <script src="/omega_universal_ai_runtime.js"></script>\n</body>');
-      }
-      if (typeof callback === 'function') callback(err, data);
-    });
   };
 }
 
