@@ -1,7 +1,9 @@
 /**
- * OMEGA CLIENT BOOTSTRAP v1.2.0
+ * OMEGA CLIENT BOOTSTRAP v1.3.0
  * Static-host-safe helper loader. Loads semantic planning, health branding,
- * and the canonical interrogation/layer guard exactly once.
+ * canonical interrogation/layer isolation, then the ontology-grounded
+ * resource semantic executor. The executor is deliberately last so it can
+ * become the single wrapper around MinisterQueryRouter.offlineQuery.
  */
 (function(global){
   'use strict';
@@ -12,7 +14,7 @@
   const hasScript=file=>[...document.scripts].some(s=>s.src===asset(file)||s.src.endsWith('/'+file));
   function load(file){return new Promise((resolve,reject)=>{if(hasScript(file))return resolve();const s=document.createElement('script');s.src=asset(file);s.async=false;s.dataset.omegaBootstrap='true';s.onload=resolve;s.onerror=()=>reject(new Error('Unable to load '+file));document.head.appendChild(s);});}
   async function start(){
-    const order=['omega_semantic_planner.js','health-ministry-logo.js','omega_canonical_runtime_guard.js'];
+    const order=['omega_semantic_planner.js','health-ministry-logo.js','omega_canonical_runtime_guard.js','omega_resource_semantic_executor.js'];
     const loaded=[],failed=[];
     for(const file of order){try{await load(file);loaded.push(file);}catch(e){failed.push(file+': '+e.message);console.warn('[OMEGA BOOT]',e.message);}}
     global.__OMEGA_CLIENT_ASSETS__={loaded,failed,base:document.baseURI};
