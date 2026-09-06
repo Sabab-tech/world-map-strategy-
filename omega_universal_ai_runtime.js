@@ -1,5 +1,5 @@
 /**
- * OMEGA UNIVERSAL AI RUNTIME v1.1.0
+ * OMEGA UNIVERSAL AI RUNTIME v1.2.0
  * Canonical interrogation owner. Works on both Node-backed hosts and static hosts
  * such as GitHub Pages: no POST-only dependency for offline execution.
  */
@@ -20,7 +20,15 @@
     const gs = global.Game?.state || global.gameState || global.Omega?.World?.state || {};
     const ui = global.OmegaCabinetUI || {};
     const m = ui.currentInterrogatedMinister || ui.currentMinister || ui.activeMinister || global.OmegaMinisterState?.activeMinister || {};
-    return { countryId: gs.countryCode || gs.countryId || gs.playerCountryId || ui.activeCountry || '', countryName: gs.countryName || gs.country?.name || ui.activeCountry || '', ministerId: m.id || ui.currentMinisterId || '', ministerName: m.name || m.displayName || '', ministerRole: m.role || m.title || '', ministryId: m.ministryId || ui.currentMinistryId || '' };
+    return {
+      countryId: gs.countryCode || gs.countryId || gs.playerCountryId || ui.activeCountry || '',
+      countryName: gs.countryName || gs.country?.name || ui.activeCountry || '',
+      ministerId: m.id || ui.currentMinisterId || '',
+      ministerName: m.name || m.displayName || '',
+      ministerRole: m.role || m.title || '',
+      ministryId: m.ministryId || ui.currentMinistryId || '',
+      gameState: gs
+    };
   }
 
   function localConversation(text, ctx) {
@@ -38,7 +46,8 @@
     if (!node) { node = document.createElement('div'); node.id = 'omega-ai-answer-text'; const host = document.getElementById('omega-ai-answer') || document.getElementById('minister-ai-answer') || document.getElementById('interrogation-answer') || document.getElementById('interrogation-modal-content'); if (host) host.appendChild(node); }
     if (!node) return;
     node.textContent = String(text || ''); node.dataset.source = meta.source || 'OMEGA_UNIVERSAL_AI_RUNTIME'; node.dataset.operation = meta.operation || '';
-    const h = readHistory(); h.push({ role: 'user', content: question, timestamp: Date.now() }); h.push({ role: 'assistant', content: String(text || ''), timestamp: Date.now(), source: meta.source || '' }); writeHistory(h);
+    if (meta.reasoning) node.dataset.reasoning = JSON.stringify(meta.reasoning).slice(0, 2000);
+    const h = readHistory(); h.push({ role: 'user', content: question, timestamp: Date.now() }); h.push({ role: 'assistant', content: String(text || ''), timestamp: Date.now(), source: meta.source || '', reasoning: meta.reasoning || null }); writeHistory(h);
   }
 
   async function postJson(url, body) {
@@ -53,6 +62,12 @@
       if ([...document.scripts].some(s => s.src && s.src.endsWith('/' + src))) return resolve();
       const s = document.createElement('script'); s.src = '/' + src; s.onload = resolve; s.onerror = () => reject(new Error(`Unable to load ${src}`)); document.head.appendChild(s);
     });
+  }
+
+  async function ensureReasoningDispatcher() {
+    if (global.OmegaReasoningDispatcher) return global.OmegaReasoningDispatcher;
+    try { await loadScript('omega_reasoning_dispatcher.js'); } catch (_) { return null; }
+    return global.OmegaReasoningDispatcher || null;
   }
 
   async function browserOffline() {
@@ -76,9 +91,13 @@
     const { datasets } = await browserOffline();
     const brain = global.OfflineSemanticBrain, engine = global.OfflineQueryEngine;
     if (!brain || !engine || typeof brain.parse !== 'function' || typeof engine.execute !== 'function') throw new Error('Browser offline execution engine is unavailable');
-    const parsed = brain.parse(question, { countryId: common.countryId, resourceId: common.resourceId, ministerId: common.ministerId, timeHorizon: common.timeHorizon });
+    const parsed = brain.parse(question, { countryId: common.countryId, resourceId: common.resourceId, ministerId: common.ministerId, timeHorizon: common.timeHorizon, countryName: common.countryName, ministryId: common.ministryId });
     const result = engine.execute(parsed, datasets, common.language, common);
-    return { parsed, result };
+    const dispatcher = await ensureReasoningDispatcher();
+    const reasoning = dispatcher ? dispatcher.dispatch(question, parsed, result, { ...common, gameState: common.gameState }) : null;
+    if (reasoning?.used && reasoning.text && !result?.text) result.text = reasoning.text;
+    result.reasoning = reasoning;
+    return { parsed, result, reasoning };
   }
 
   async function runTurn(question) {
@@ -87,26 +106,32 @@
     if (conversation) { output(conversation, question, { source: 'OFFLINE_CONVERSATION' }); return; }
     const provider = String(localStorage.getItem('omega_ai_provider') || document.getElementById('omega-ai-provider')?.value || 'OFFLINE').toUpperCase();
     const common = { prompt: question, language: isBn(question) ? 'bn' : 'en', ...ctx, timeHorizon: 'CURRENT' };
+    const dispatcher = await ensureReasoningDispatcher();
 
     if (provider.includes('GOOGLE')) {
       try {
         const history = readHistory().slice(-40).map(x => `${x.role}: ${x.content}`).join('\n');
-        const data = await postJson('/api/ai/minister-consult', { ...common, conversationHistory: history, gameState: global.Game?.state || global.gameState || null });
-        if (data?.text) { output(data.text, question, { source: data.aiPowered ? `GOOGLE:${data.model || 'GEMINI'}` : 'OFFLINE_GROUNDED' }); return; }
-        if (data?.result?.text) { output(data.result.text, question, { source: 'OFFLINE_GROUNDED_FALLBACK' }); return; }
+        const data = await postJson('/api/ai/minister-consult', { ...common, conversationHistory: history, gameState: common.gameState });
+        if (data?.text) {
+          const reasoning = dispatcher && data?.result ? dispatcher.dispatch(question, data.semantic || {}, data.result, common) : null;
+          output(data.text, question, { source: data.aiPowered ? `GOOGLE:${data.model || 'GEMINI'}` : 'OFFLINE_GROUNDED', reasoning });
+          return;
+        }
+        if (data?.result?.text) { output(data.result.text, question, { source: 'OFFLINE_GROUNDED_FALLBACK', reasoning: data.result.reasoning || null }); return; }
       } catch (e) { console.warn('[OMEGA UNIVERSAL AI] Server/Google transport unavailable; switching to browser offline executor:', e.message); }
     }
 
     try {
       const data = await runOfflineDirect(question, common);
       const text = data?.result?.text || 'The offline execution engine could not produce an evidence-backed answer from the current game data.';
-      output(text, question, { source: 'BROWSER_OFFLINE_GROUNDED', operation: data?.result?.operation || '' });
+      output(text, question, { source: 'BROWSER_OFFLINE_GROUNDED', operation: data?.result?.operation || '', reasoning: data?.reasoning || null });
       return;
     } catch (directError) {
       try {
-        const data = await postJson('/api/ai/semantic-query', { ...common, gameState: global.Game?.state || global.gameState || null, reservesData: global.Omega?.World?.reservesData || null });
-        const text = data?.result?.text || data?.text || 'The offline runtime could not produce an evidence-backed answer from the current game state.';
-        output(text, question, { source: 'SERVER_OFFLINE_GROUNDED', operation: data?.result?.operation || '' });
+        const data = await postJson('/api/ai/semantic-query', { ...common, gameState: common.gameState, reservesData: global.Omega?.World?.reservesData || null });
+        const reasoning = dispatcher && data?.result ? dispatcher.dispatch(question, data.semantic || {}, data.result, common) : null;
+        const text = data?.result?.text || data?.text || reasoning?.text || 'The offline runtime could not produce an evidence-backed answer from the current game state.';
+        output(text, question, { source: 'SERVER_OFFLINE_GROUNDED', operation: data?.result?.operation || '', reasoning });
       } catch (serverError) {
         throw new Error(`Offline execution failed: ${directError.message}; server fallback: ${serverError.message}`);
       }
@@ -120,8 +145,8 @@
     if (installed || typeof document === 'undefined') return; installed = true;
     document.addEventListener('click', e => { const button = e.target?.closest?.('#btn-submit-interrogation'); if (!button) return; e.preventDefault(); e.stopImmediatePropagation(); submitFromUI(); }, true);
     document.addEventListener('keydown', e => { if (e.key !== 'Enter' || e.shiftKey || e.isComposing || e.target?.id !== 'interrogation-input') return; e.preventDefault(); e.stopImmediatePropagation(); submitFromUI(); }, true);
-    global.OmegaUniversalAIRuntime = Object.freeze({ enqueue, submitFromUI, context, readHistory, version: '1.1.0' });
-    console.log('[OMEGA UNIVERSAL AI] Canonical interrogation pipeline installed. Browser offline execution and unlimited sequential turns enabled.');
+    global.OmegaUniversalAIRuntime = Object.freeze({ enqueue, submitFromUI, context, readHistory, version: '1.2.0' });
+    console.log('[OMEGA UNIVERSAL AI] Canonical interrogation pipeline installed. Browser offline execution, live-state context, reasoning dispatch and sequential turns enabled.');
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', install, { once: true }); else install();
 })(window);
