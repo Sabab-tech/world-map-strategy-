@@ -1,4 +1,4 @@
-/** OMEGA SERVER BOOTSTRAP v2.1.0
+/** OMEGA SERVER BOOTSTRAP v2.2.0
  * Canonical server bootstrap. Never changes index.html on disk.
  */
 import fs from 'fs';
@@ -30,8 +30,16 @@ if (!globalThis.__omegaUniversalIndexInjection) {
   fs.readFile = function omegaReadFile(file, options, callback) {
     if (typeof options === 'function') { callback = options; options = undefined; }
     return nativeReadFile.call(fs, file, options, function (err, data) {
-      if (!err && typeof data === 'string' && /(?:^|[\\/])index\.html$/i.test(String(file)) && !data.includes('/omega_universal_ai_runtime.js')) {
-        data = data.replace('</body>', '    <script src="/omega_universal_ai_runtime.js"></script>\n</body>');
+      if (!err && typeof data === 'string' && /(?:^|[\\/])index\.html$/i.test(String(file))) {
+        const hasLanguage = data.includes('/omega_language_system.js') || data.includes('omega_language_system.js');
+        const hasRuntime = data.includes('/omega_universal_ai_runtime.js') || data.includes('omega_universal_ai_runtime.js');
+        if (!hasLanguage || !hasRuntime) {
+          const scripts = [
+            !hasLanguage ? '    <script src="/omega_language_system.js"></script>' : '',
+            !hasRuntime ? '    <script src="/omega_universal_ai_runtime.js"></script>' : ''
+          ].filter(Boolean).join('\n');
+          data = data.replace('</body>', scripts + '\n</body>');
+        }
       }
       if (typeof callback === 'function') callback(err, data);
     });
