@@ -41,6 +41,31 @@ jobs:
           console.log('STANDALONE_DEPENDENCY_GATE_OK');
           NODE
 
+      - name: Standalone runtime smoke test
+        run: |
+          node - <<'NODE'
+          const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
+          const listeners=new Map();
+          const sandbox={console,Date,JSON,Object,Array,Map,Set,Math,RegExp,String,Number,Promise,Intl,setTimeout,clearTimeout,
+            localStorage:{d:new Map(),getItem(k){return this.d.get(k)||null},setItem(k,v){this.d.set(k,String(v))}},
+            Game:{state:{}},dispatchEvent(e){for(const f of listeners.get(e.type)||[])f(e);return true},addEventListener(t,f){(listeners.get(t)||listeners.set(t,new Set()).get(t)).add(f)}};
+          sandbox.globalThis=sandbox;sandbox.window=sandbox;
+          vm.runInNewContext(fs.readFileSync('omega_language_system.js','utf8'),sandbox,{filename:'omega_language_system.js'});
+          const L=sandbox.OmegaLanguageSystem;
+          assert.ok(L);assert.equal(L.STATUS,'STANDALONE_READY');assert.equal(L.diagnostics().externalLanguageFileDependency,false);
+          const data=L.sourceData();
+          assert.equal(data['offline_lexicon.json'].TOTAL_WORDS,7756);
+          assert.equal(data['omega_game_language_source_inventory.json'].source_concept_count,17);
+          assert.equal(data['omega_game_language_source_inventory.json'].raw_surface_entry_count,332);
+          assert.equal(data['omega_game_language_source_inventory.json'].unique_surface_entry_count,226);
+          L.configure({datasets:[]});
+          const a=L.parse('How many iron mines are in Bangladesh?');
+          const b=L.parse('বাংলাদেশে কয়টি লোহার খনি আছে?');
+          assert.ok(a&&b);assert.equal(a.standalone,true);assert.equal(b.standalone,true);
+          assert.ok(a.operation||a.intent);assert.ok(b.operation||b.intent);
+          console.log('STANDALONE_RUNTIME_SMOKE_OK',JSON.stringify({english:a.operation||a.intent,bengali:b.operation||b.intent,embeddedStrings:L.diagnostics().sourceStringCount,bundleVersion:L.VERSION}));
+          NODE
+
       - name: Remove legacy language sources and obsolete language-only tests
         run: |
           git rm -f \
@@ -59,7 +84,7 @@ jobs:
       - name: Verify legacy source absence
         run: node scripts/test_omega_language_system.cjs
 
-      - name: Ensure package no longer references deleted language files
+      - name: Remove deleted-language commands from package scripts
         run: |
           node - <<'NODE'
           const fs=require('node:fs');
@@ -71,16 +96,26 @@ jobs:
             'omega_reasoning_dispatcher.js','test_deep_semantic_brain.cjs','test_runtime_semantic_all_countries.mjs',
             'validate_game_language_ontology.cjs'
           ];
-          for(const [k,v] of Object.entries(p.scripts||{})) for(const x of blocked) if(String(v).includes(x)) throw Error(`package script ${k} still references ${x}`);
+          for(const [name,cmd] of Object.entries(p.scripts||{})) {
+            p.scripts[name]=String(cmd).split(' && ').filter(part=>!blocked.some(x=>part.includes(x))).join(' && ');
+          }
           fs.writeFileSync('package.json',JSON.stringify(p,null,2)+'\n');
+          for(const [name,cmd] of Object.entries(p.scripts||{})) for(const x of blocked) if(String(cmd).includes(x)) throw Error(`package script ${name} still references ${x}`);
+          console.log('PACKAGE_LANGUAGE_DEPENDENCIES_CLEAN');
           NODE
+
+      - name: Final syntax and package smoke gate
+        run: |
+          node --check omega_language_system.js
+          node --check omega_universal_ai_runtime.js
+          node --check server_bootstrap.js
+          node -e "const p=require('./package.json'); for(const v of Object.values(p.scripts)) if(/offline_(language_vocabulary|lexicon|semantic_knowledge|semantic_brain|query_engine)|omega_game_language_(ontology|source_inventory|bridge)|omega_reasoning_dispatcher|validate_game_language_ontology|test_runtime_semantic_all_countries|test_deep_semantic_brain/.test(v)) process.exit(1); console.log('PACKAGE_GATE_OK')"
 
       - name: Commit finalized migration
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add omega_language_system.js package.json scripts/test_omega_language_system.cjs
-          git add -u
+          git add -A
           git diff --cached --quiet && exit 0
           git commit -m "refactor: make OMEGA language system fully standalone [skip ci]"
           git push
