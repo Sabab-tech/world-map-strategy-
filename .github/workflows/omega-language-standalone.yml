@@ -1,0 +1,86 @@
+name: OMEGA Language Standalone Migration
+
+on:
+  push:
+    branches: [omega-language-consolidation-v1]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Build exact standalone bundle
+        run: node scripts/finalize_omega_language_standalone.cjs
+
+      - name: Syntax gate
+        run: |
+          node --check omega_language_system.js
+          node --check omega_universal_ai_runtime.js
+          node --check server_bootstrap.js
+
+      - name: Standalone dependency gate
+        run: |
+          node - <<'NODE'
+          const fs=require('node:fs');
+          const s=fs.readFileSync('omega_language_system.js','utf8');
+          const body=s.replace(/\/\*[\s\S]*?\*\//g,'').replace(/\/\/.*$/gm,'');
+          for(const r of [/\bfetch\s*\(/,/document\.createElement\(['"]script['"]\)/,/\bloadScript\s*\(/,/\bfetchJSON\s*\(/]) if(r.test(body)) throw Error('LEGACY_RUNTIME_DEPENDENCY:'+r);
+          if(!s.includes('EMBEDDED_SOURCE_DATA')||!s.includes('STANDALONE_READY')) throw Error('STANDALONE_API_MISSING');
+          console.log('STANDALONE_DEPENDENCY_GATE_OK');
+          NODE
+
+      - name: Remove legacy language sources and obsolete language-only tests
+        run: |
+          git rm -f \
+            offline_language_vocabulary.json \
+            offline_lexicon.json \
+            offline_semantic_knowledge.json \
+            omega_game_language_ontology.json \
+            omega_game_language_source_inventory.json \
+            offline_semantic_brain.js \
+            offline_query_engine.js \
+            omega_game_language_bridge.js \
+            omega_reasoning_dispatcher.js \
+            scripts/test_runtime_semantic_all_countries.mjs \
+            scripts/validate_game_language_ontology.cjs
+
+      - name: Verify legacy source absence
+        run: node scripts/test_omega_language_system.cjs
+
+      - name: Ensure package no longer references deleted language files
+        run: |
+          node - <<'NODE'
+          const fs=require('node:fs');
+          const p=JSON.parse(fs.readFileSync('package.json','utf8'));
+          const blocked=[
+            'offline_language_vocabulary.json','offline_lexicon.json','offline_semantic_knowledge.json',
+            'omega_game_language_ontology.json','omega_game_language_source_inventory.json',
+            'offline_semantic_brain.js','offline_query_engine.js','omega_game_language_bridge.js',
+            'omega_reasoning_dispatcher.js','test_deep_semantic_brain.cjs','test_runtime_semantic_all_countries.mjs',
+            'validate_game_language_ontology.cjs'
+          ];
+          for(const [k,v] of Object.entries(p.scripts||{})) for(const x of blocked) if(String(v).includes(x)) throw Error(`package script ${k} still references ${x}`);
+          fs.writeFileSync('package.json',JSON.stringify(p,null,2)+'\n');
+          NODE
+
+      - name: Commit finalized migration
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add omega_language_system.js package.json scripts/test_omega_language_system.cjs
+          git add -u
+          git diff --cached --quiet && exit 0
+          git commit -m "refactor: make OMEGA language system fully standalone [skip ci]"
+          git push
