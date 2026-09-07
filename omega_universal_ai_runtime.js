@@ -1,7 +1,11 @@
 /**
- * OMEGA UNIVERSAL AI RUNTIME v1.2.0
+ * OMEGA UNIVERSAL AI RUNTIME v1.3.0
  * Canonical interrogation owner. Works on both Node-backed hosts and static hosts
  * such as GitHub Pages: no POST-only dependency for offline execution.
+ *
+ * The game-language ontology is a semantic layer only. World-state facts remain
+ * authoritative in runtime datasets and capabilities remain authoritative in
+ * their own registry/engines.
  */
 (function (global) {
   'use strict';
@@ -10,6 +14,7 @@
   let installed = false;
   let queue = Promise.resolve();
   let datasetPromise = null;
+  let gameLanguagePromise = null;
   const norm = s => String(s || '').normalize('NFKC').trim();
   const isBn = s => /[\u0980-\u09FF]/.test(String(s || ''));
 
@@ -47,7 +52,8 @@
     if (!node) return;
     node.textContent = String(text || ''); node.dataset.source = meta.source || 'OMEGA_UNIVERSAL_AI_RUNTIME'; node.dataset.operation = meta.operation || '';
     if (meta.reasoning) node.dataset.reasoning = JSON.stringify(meta.reasoning).slice(0, 2000);
-    const h = readHistory(); h.push({ role: 'user', content: question, timestamp: Date.now() }); h.push({ role: 'assistant', content: String(text || ''), timestamp: Date.now(), source: meta.source || '', reasoning: meta.reasoning || null }); writeHistory(h);
+    if (meta.gameLanguage) node.dataset.gameLanguage = JSON.stringify(meta.gameLanguage).slice(0, 2000);
+    const h = readHistory(); h.push({ role: 'user', content: question, timestamp: Date.now() }); h.push({ role: 'assistant', content: String(text || ''), timestamp: Date.now(), source: meta.source || '', reasoning: meta.reasoning || null, gameLanguage: meta.gameLanguage || null }); writeHistory(h);
   }
 
   async function postJson(url, body) {
@@ -70,11 +76,29 @@
     return global.OmegaReasoningDispatcher || null;
   }
 
+  async function ensureGameLanguageLayer() {
+    if (gameLanguagePromise) return gameLanguagePromise;
+    gameLanguagePromise = (async () => {
+      if (!global.OmegaGameLanguageBridge) await loadScript('omega_game_language_bridge.js');
+      if (!global.OmegaGameLanguageBridge) return null;
+      try {
+        const r = await fetch('/omega_game_language_ontology.json', { cache: 'no-store' });
+        if (!r.ok) return null;
+        const ontology = await r.json();
+        global.OmegaGameLanguageBridge.load(ontology);
+        global.OmegaGameLanguageBridge.install();
+        return global.OmegaGameLanguageBridge;
+      } catch (_) { return null; }
+    })().catch(() => null);
+    return gameLanguagePromise;
+  }
+
   async function browserOffline() {
     if (datasetPromise) return datasetPromise;
     datasetPromise = (async () => {
       if (!global.OfflineSemanticBrain) await loadScript('offline_semantic_brain.js');
       if (!global.OfflineQueryEngine) await loadScript('offline_query_engine.js');
+      await ensureGameLanguageLayer();
       const files = ['resources.json','resources_2.json','economy.json','population.json','countries.json','relations.json','country_policy.json','world.json','society.json','offline_semantic_knowledge.json','resource_ontology.json','offline_language_vocabulary.json'];
       const loaded = await Promise.all(files.map(async f => { try { const r = await fetch('/' + f, { cache: 'no-store' }); if (!r.ok) return null; return await r.json(); } catch (_) { return null; } }));
       const datasets = loaded.filter(Boolean);
@@ -97,6 +121,7 @@
     const reasoning = dispatcher ? dispatcher.dispatch(question, parsed, result, { ...common, gameState: common.gameState }) : null;
     if (reasoning?.used && reasoning.text && !result?.text) result.text = reasoning.text;
     result.reasoning = reasoning;
+    result.gameLanguage = parsed?.gameLanguage || null;
     return { parsed, result, reasoning };
   }
 
@@ -114,24 +139,24 @@
         const data = await postJson('/api/ai/minister-consult', { ...common, conversationHistory: history, gameState: common.gameState });
         if (data?.text) {
           const reasoning = dispatcher && data?.result ? dispatcher.dispatch(question, data.semantic || {}, data.result, common) : null;
-          output(data.text, question, { source: data.aiPowered ? `GOOGLE:${data.model || 'GEMINI'}` : 'OFFLINE_GROUNDED', reasoning });
+          output(data.text, question, { source: data.aiPowered ? `GOOGLE:${data.model || 'GEMINI'}` : 'OFFLINE_GROUNDED', reasoning, gameLanguage: data.semantic?.gameLanguage || null });
           return;
         }
-        if (data?.result?.text) { output(data.result.text, question, { source: 'OFFLINE_GROUNDED_FALLBACK', reasoning: data.result.reasoning || null }); return; }
+        if (data?.result?.text) { output(data.result.text, question, { source: 'OFFLINE_GROUNDED_FALLBACK', reasoning: data.result.reasoning || null, gameLanguage: data.result.gameLanguage || null }); return; }
       } catch (e) { console.warn('[OMEGA UNIVERSAL AI] Server/Google transport unavailable; switching to browser offline executor:', e.message); }
     }
 
     try {
       const data = await runOfflineDirect(question, common);
       const text = data?.result?.text || 'The offline execution engine could not produce an evidence-backed answer from the current game data.';
-      output(text, question, { source: 'BROWSER_OFFLINE_GROUNDED', operation: data?.result?.operation || '', reasoning: data?.reasoning || null });
+      output(text, question, { source: 'BROWSER_OFFLINE_GROUNDED', operation: data?.result?.operation || '', reasoning: data?.reasoning || null, gameLanguage: data?.result?.gameLanguage || null });
       return;
     } catch (directError) {
       try {
         const data = await postJson('/api/ai/semantic-query', { ...common, gameState: common.gameState, reservesData: global.Omega?.World?.reservesData || null });
         const reasoning = dispatcher && data?.result ? dispatcher.dispatch(question, data.semantic || {}, data.result, common) : null;
         const text = data?.result?.text || data?.text || reasoning?.text || 'The offline runtime could not produce an evidence-backed answer from the current game state.';
-        output(text, question, { source: 'SERVER_OFFLINE_GROUNDED', operation: data?.result?.operation || '', reasoning });
+        output(text, question, { source: 'SERVER_OFFLINE_GROUNDED', operation: data?.result?.operation || '', reasoning, gameLanguage: data?.semantic?.gameLanguage || data?.result?.gameLanguage || null });
       } catch (serverError) {
         throw new Error(`Offline execution failed: ${directError.message}; server fallback: ${serverError.message}`);
       }
@@ -145,8 +170,8 @@
     if (installed || typeof document === 'undefined') return; installed = true;
     document.addEventListener('click', e => { const button = e.target?.closest?.('#btn-submit-interrogation'); if (!button) return; e.preventDefault(); e.stopImmediatePropagation(); submitFromUI(); }, true);
     document.addEventListener('keydown', e => { if (e.key !== 'Enter' || e.shiftKey || e.isComposing || e.target?.id !== 'interrogation-input') return; e.preventDefault(); e.stopImmediatePropagation(); submitFromUI(); }, true);
-    global.OmegaUniversalAIRuntime = Object.freeze({ enqueue, submitFromUI, context, readHistory, version: '1.2.0' });
-    console.log('[OMEGA UNIVERSAL AI] Canonical interrogation pipeline installed. Browser offline execution, live-state context, reasoning dispatch and sequential turns enabled.');
+    global.OmegaUniversalAIRuntime = Object.freeze({ enqueue, submitFromUI, context, readHistory, version: '1.3.0' });
+    console.log('[OMEGA UNIVERSAL AI] Canonical interrogation pipeline installed. Browser offline execution, live-state context, canonical game-language metadata, reasoning dispatch and sequential turns enabled.');
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', install, { once: true }); else install();
 })(window);
