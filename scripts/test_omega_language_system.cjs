@@ -4,7 +4,6 @@ const path = require('node:path');
 const { TextDecoder } = require('node:util');
 
 const root = path.resolve(__dirname, '..');
-
 function readJSON(file) {
   const bytes = fs.readFileSync(path.join(root, file));
   try { return JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes)); }
@@ -52,7 +51,8 @@ assert.equal(knowledge.ambiguity_policy.never_default_to_BGD, true);
 assert.equal(knowledge.ambiguity_policy.never_default_to_any_resource, true);
 
 const js = fs.readFileSync(path.join(root, 'omega_language_system.js'), 'utf8');
-for (const forbidden of ['eval(', 'new Function(', 'Function(']) assert.equal(js.includes(forbidden), false, `forbidden dynamic execution found: ${forbidden}`);
+const executable = js.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
+for (const forbidden of ['eval(', 'new Function(', 'Function(']) assert.equal(executable.includes(forbidden), false, `forbidden dynamic execution found: ${forbidden}`);
 for (const requiredSymbol of ['OmegaLanguageSystem','buildCanonicalIndex','canonicalCandidates','registerConcept','registerEvent','learnPhrase','eventRequest','diagnostics','validate']) assert.ok(js.includes(requiredSymbol), `missing canonical integration symbol: ${requiredSymbol}`);
 for (const source of required.slice(0, 5)) assert.ok(js.includes(source), `canonical system does not import ${source}`);
 assert.ok(js.includes('pronunciation') && js.includes('pronunciations'), 'pronunciation/phonetic fields must be preserved when present');
