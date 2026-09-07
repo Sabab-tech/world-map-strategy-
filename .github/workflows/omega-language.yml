@@ -1,0 +1,33 @@
+name: OMEGA Language System
+
+on:
+  push:
+    branches: [main, omega-language-consolidation-v1]
+  pull_request:
+    branches: [main]
+
+jobs:
+  language-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Syntax gate
+        run: |
+          node --check omega_language_system.js
+          node --check omega_universal_ai_runtime.js
+          node --check server_bootstrap.js
+          node --check offline_semantic_brain.js
+          node --check offline_query_engine.js
+          node --check omega_game_language_bridge.js
+          node --check omega_reasoning_dispatcher.js
+      - name: Lossless source and contract gate
+        run: node scripts/test_omega_language_system.cjs
+      - name: Existing ontology gate
+        run: node scripts/validate_game_language_ontology.cjs
+      - name: Existing semantic regression gate
+        run: node scripts/test_deep_semantic_brain.cjs
