@@ -1,0 +1,124 @@
+{
+  "schema_version": "1.0.0",
+  "ontology_id": "OMEGA_GAME_LANGUAGE",
+  "implementation_status": "DESIGN_LOCKED_INCREMENTAL_POPULATION",
+  "canonical_concept_target": 4500,
+  "counting_rule": "A concept_id counts once. Synonyms, aliases, inflections, phrases, and bilingual realizations never count as additional concepts.",
+  "separation_of_concerns": {
+    "language_core": "Canonical game-language concepts, lexical realizations, morphology, grammar, semantic roles and operational compatibility.",
+    "domain_knowledge": "Existing country/resource/minister/facility datasets remain authoritative for world entities and facts.",
+    "capability_registry": "Determines whether a requested game operation is actually executable; vocabulary alone never grants capability.",
+    "reasoning": "Consumes deterministic runtime evidence and may infer only within the evidence boundary."
+  },
+  "tiers": {
+    "P0": "Core game control and command language",
+    "P1": "Core simulation state and operational language",
+    "P2": "Strategy, policy, trade-offs and analysis",
+    "P3": "Advanced analysis and specialized domain language",
+    "P4": "Rare technical/domain language"
+  },
+  "target_tiers": {
+    "core_game_language": 3200,
+    "advanced_strategy_language": 800,
+    "grammar_discourse_command_language": 500
+  },
+  "domains": [
+    {"id":"GAME_STATE","name":"Core Game State & Simulation","target":300},
+    {"id":"GOVERNMENT","name":"Government & State Administration","target":350},
+    {"id":"POLITICS","name":"Politics & Political Strategy","target":300},
+    {"id":"ECONOMY","name":"Economy & Macroeconomics","target":450},
+    {"id":"RESOURCES","name":"Resources & Raw Materials","target":500},
+    {"id":"EXTRACTION_PRODUCTION","name":"Extraction, Mining & Production","target":400},
+    {"id":"INDUSTRY","name":"Industrial Capacity & Factories","target":250},
+    {"id":"TRADE_LOGISTICS","name":"Trade, Import, Export & Logistics","target":400},
+    {"id":"ENERGY","name":"Energy System","target":250},
+    {"id":"INFRASTRUCTURE","name":"Infrastructure","target":250},
+    {"id":"POPULATION_SOCIETY","name":"Population & Society","target":250},
+    {"id":"MILITARY","name":"Military & Defense","target":350},
+    {"id":"DIPLOMACY","name":"Diplomacy & International Relations","target":300},
+    {"id":"TECHNOLOGY","name":"Technology, Research & Industrial Development","target":250},
+    {"id":"RISK_REASONING","name":"Risk, Causality, Strategy & Reasoning","target":300},
+    {"id":"GAME_ACTIONS","name":"Game Action & Policy Operators","target":250},
+    {"id":"LANGUAGE_CONTROL","name":"Language, Grammar & Discourse Control","target":100}
+  ],
+  "concept_contract": {
+    "required": [
+      "concept_id",
+      "domain",
+      "subdomain",
+      "semantic_type",
+      "lexical.en",
+      "lexical.bn",
+      "morphology",
+      "grammar_features",
+      "semantic_roles",
+      "allowed_actions",
+      "compatible_variables",
+      "compatible_entities",
+      "phrase_patterns",
+      "paraphrase_family",
+      "register",
+      "priority"
+    ],
+    "lexical": {
+      "english": ["lemma","aliases","forms","pos"],
+      "bengali": ["lemma","aliases","forms","pos"]
+    },
+    "semantic_identity": "concept_id is the only canonical identity; surface strings are realizations, never identities."
+  },
+  "grammar": {
+    "source_alignment": "Universal-Dependencies-compatible feature names where useful, with an OMEGA game-optimized subset.",
+    "features": ["Person","Number","Case","Tense","Aspect","Mood","Voice","Polarity","Degree","VerbForm"],
+    "bengali_case_subset": ["Nom","Gen","Acc","Loc"],
+    "verb_forms": ["Fin","Inf","Part","Vnoun"],
+    "dependency_relations": ["nsubj","obj","obl","advmod","aux","mark","conj","nmod"],
+    "rule": "Grammar metadata describes a realization; it never creates a new canonical concept."
+  },
+  "semantic_pipeline": [
+    "LEXICAL",
+    "MORPHOLOGICAL",
+    "SYNTACTIC",
+    "SEMANTIC",
+    "OPERATIONAL"
+  ],
+  "operational_rules": {
+    "direction": ["POSITIVE_CHANGE","NEGATIVE_CHANGE","NEUTRAL"],
+    "action_parameters": ["actor","target","scope","quantity","unit","intensity","time_horizon","constraint","condition"],
+    "capability_boundary": "A compatible action is a semantic possibility, not proof that the game currently permits execution.",
+    "unknown_entity": "UNRESOLVED",
+    "ambiguous_entity": "ASK_OR_REPORT_AMBIGUITY",
+    "unknown_fact": "UNKNOWN_WHEN_NOT_EVIDENCED"
+  },
+  "seed_concepts": [
+    {
+      "concept_id":"STATE_VARIABLE",
+      "domain":"GAME_STATE",
+      "subdomain":"STATE",
+      "semantic_type":"STATE_VARIABLE",
+      "lexical":{"en":{"lemma":"state","aliases":["status","condition"],"forms":["state","status","condition"],"pos":["NOUN"]},"bn":{"lemma":"অবস্থা","aliases":["স্থিতি","পরিস্থিতি"],"forms":["অবস্থা","স্থিতি","পরিস্থিতি"],"pos":["NOUN"]}},
+      "morphology":{"derivation":"runtime"},"grammar_features":{},"semantic_roles":["TARGET"],"allowed_actions":["COMPARE","FORECAST","ANALYZE"],"compatible_variables":["*"],"compatible_entities":["*"],"phrase_patterns":[],"paraphrase_family":"STATE","register":["neutral","formal"],"priority":"P1"
+    },
+    {
+      "concept_id":"RESOURCE_PRODUCTION",
+      "domain":"RESOURCES",
+      "subdomain":"PRODUCTION",
+      "semantic_type":"STATE_VARIABLE",
+      "lexical":{"en":{"lemma":"production","aliases":["output","production rate","domestic output"],"forms":["production","output","production rate","domestic output"],"pos":["NOUN"]},"bn":{"lemma":"উৎপাদন","aliases":["উৎপাদনের পরিমাণ","উৎপাদন হার","আউটপুট"],"forms":["উৎপাদন","উৎপাদনের পরিমাণ","উৎপাদন হার","আউটপুট"],"pos":["NOUN"]}},
+      "morphology":{"derivation":"runtime"},"grammar_features":{},"semantic_roles":["TARGET","BASELINE","DESIRED_STATE"],"allowed_actions":["INCREASE","DECREASE","MAINTAIN","FORECAST","COMPARE"],"compatible_variables":["PRODUCTION"],"compatible_entities":["RESOURCE","COUNTRY"],"phrase_patterns":["increase {target}","{target} production"],"paraphrase_family":"PRODUCTION","register":["neutral","technical"],"priority":"P0"
+    },
+    {
+      "concept_id":"ACTION_INCREASE",
+      "domain":"GAME_ACTIONS",
+      "subdomain":"CHANGE_OF_STATE",
+      "semantic_type":"ACTION",
+      "lexical":{"en":{"lemma":"increase","aliases":["raise","boost","expand"],"forms":["increase","increases","increased","increasing","raise","boost","expand"],"pos":["VERB"]},"bn":{"lemma":"বাড়ানো","aliases":["বৃদ্ধি করা","বাড়িয়ে দেওয়া"],"forms":["বাড়ানো","বৃদ্ধি করা","বাড়িয়ে দেওয়া"],"pos":["VERB"]}},
+      "morphology":{"derivation":"runtime","inflectional_features":["Tense","Aspect","Mood","Voice","Polarity","Person","Number","VerbForm"]},"grammar_features":{"direction":"POSITIVE_CHANGE"},"semantic_roles":["ACTOR","TARGET","DESIRED_STATE","CONSTRAINT"],"allowed_actions":["INCREASE"],"compatible_variables":["PRODUCTION","EXPORTS","IMPORTS","CAPACITY","GDP","ENERGY","POPULATION"],"compatible_entities":["COUNTRY","RESOURCE","FACILITY","ECONOMIC_VARIABLE"],"phrase_patterns":["increase {target}","{actor} increases {target}"],"paraphrase_family":"POSITIVE_CHANGE","register":["neutral","formal","technical"],"priority":"P0"
+    }
+  ],
+  "population_policy": {
+    "current_seed_count": 3,
+    "target_count": 4500,
+    "do_not_fabricate": true,
+    "next_step": "Populate exact category-by-category inventory, deduplicate against existing domain lexicon, then validate every concept against this contract before wiring it into runtime."
+  }
+}
