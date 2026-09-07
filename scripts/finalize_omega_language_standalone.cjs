@@ -4,7 +4,7 @@ const crypto=require('node:crypto');
 const {TextDecoder}=require('node:util');
 const root=path.resolve(__dirname,'..');
 const JSON_SOURCES=['offline_language_vocabulary.json','offline_lexicon.json','offline_semantic_knowledge.json','omega_game_language_ontology.json','omega_game_language_source_inventory.json'];
-const JS_SOURCES=['offline_semantic_brain.js','offline_query_engine.js','omega_game_language_bridge.js','omega_reasoning_dispatcher.js','omega_cognitive_engine.js','omega_ai_integrity_layer.js'];
+const JS_SOURCES=['offline_semantic_brain.js','offline_query_engine.js','omega_game_language_bridge.js','omega_reasoning_dispatcher.js'];
 const ALL=[...JSON_SOURCES,...JS_SOURCES];
 function hybridDecode(bytes){try{return new TextDecoder('utf-8',{fatal:true}).decode(bytes).replace(/^\uFEFF/,'');}catch(_){let out='';for(let i=0;i<bytes.length;){const b=bytes[i];let n=0;if(b<128)n=1;else if(b>=194&&b<=223&&i+1<bytes.length&&(bytes[i+1]&192)===128)n=2;else if(b>=224&&b<=239&&i+2<bytes.length&&(bytes[i+1]&192)===128&&(bytes[i+2]&192)===128)n=3;else if(b>=240&&b<=244&&i+3<bytes.length&&(bytes[i+1]&192)===128&&(bytes[i+2]&192)===128&&(bytes[i+3]&192)===128)n=4;if(n){out+=new TextDecoder('utf-8').decode(bytes.slice(i,i+n));i+=n;}else{const m={128:'€',130:'‚',131:'ƒ',132:'„',133:'…',134:'†',135:'‡',136:'ˆ',137:'‰',138:'Š',139:'‹',140:'Œ',142:'Ž',145:'‘',146:'’',147:'“',148:'”',149:'•',150:'–',151:'—',152:'˜',153:'™',154:'š',155:'›',156:'œ',158:'ž',159:'Ÿ'};out+=m[b]||String.fromCharCode(b);i++;}}return out.replace(/^\uFEFF/,'');}}
 function snap(file){const bytes=fs.readFileSync(path.join(root,file));const text=hybridDecode(bytes);return {bytes,text,rawSha256:crypto.createHash('sha256').update(bytes).digest('hex'),textSha256:crypto.createHash('sha256').update(text,'utf8').digest('hex')};}
@@ -20,14 +20,13 @@ if(!data['offline_language_vocabulary.json'].languages?.en||!data['offline_langu
 const sourceStringCount=JSON_SOURCES.reduce((n,f)=>n+strings(data[f]),0);
 const embeddedJson=JSON.stringify(data);
 const moduleBlock=JS_SOURCES.map(f=>'/* BEGIN EMBEDDED_MODULE '+f+' */\n'+mods[f]+'\n/* END EMBEDDED_MODULE '+f+' */').join('\n');
-const build=JSON.stringify({build:'OMEGA-LANGUAGE-STANDALONE',version:'4.0.0',sourceFiles:ALL,jsonSources:JSON_SOURCES,jsSources:JS_SOURCES,sourceStringCount,lexiconTotalWords:7756,sourceConceptCount:17,rawSurfaceEntryCount:332,uniqueSurfaceEntryCount:226,intentionallyExcluded:[],migrationInvariant:'source = migrated + deduplicated + intentionally_excluded',sources:meta});
-const wrapper=`
-(function(global){'use strict';
+const build=JSON.stringify({build:'OMEGA-LANGUAGE-STANDALONE',version:'4.1.0',sourceFiles:ALL,jsonSources:JSON_SOURCES,jsSources:JS_SOURCES,sourceStringCount,lexiconTotalWords:7756,sourceConceptCount:17,rawSurfaceEntryCount:332,uniqueSurfaceEntryCount:226,intentionallyExcluded:['omega_cognitive_engine.js','omega_ai_integrity_layer.js'],migrationInvariant:'source = migrated + deduplicated + intentionally_excluded',exclusionReason:'Reasoning consumer and epistemic integrity remain modular platform services, not language-source dependencies',sources:meta});
+const wrapper=`\n(function(global){'use strict';
 const BUILD=Object.freeze(${build});
 const SOURCE_DATA=Object.freeze(${embeddedJson});
 const MAX_INPUT=20000,MAX_HISTORY=200;
 let datasets=[],ctxState=Object.create(null),history=[];
-const text=v=>String(v==null?'':v),langOf=v=>/[\\u0980-\\u09FF]/.test(text(v))?'bn':'en';
+const text=v=>String(v==null?'':v),langOf=v=>/[\u0980-\u09FF]/.test(text(v))?'bn':'en';
 function clone(v){try{return v===undefined?undefined:JSON.parse(JSON.stringify(v));}catch(_){return null;}}
 function storage(){try{return global.localStorage||null;}catch(_){return null;}}
 function restore(){const s=storage();if(!s)return[];try{const x=JSON.parse(s.getItem('omega.language.standalone.history.v1')||'[]');return Array.isArray(x)?x.slice(-MAX_HISTORY):[]}catch(_){return[]}}
@@ -49,7 +48,7 @@ validate();history=restore();
 global.OmegaLanguageSystem=Object.freeze({VERSION:BUILD.version,STATUS:'STANDALONE_READY',BUILD,SOURCE_MANIFEST:Object.freeze(BUILD.sourceFiles.reduce((m,f)=>(m[f]={path:f,role:'embedded'},m),{})),configure,parse,analyze:parse,resolve:x=>x,executeIntent,realize,run,dispatchReasoning,eventRequest,learnPhrase,sourceData,diagnostics,validate,get context(){return context()},setContext:x=>{ctxState=Object.assign({},ctxState,x&&typeof x==='object'?x:{});return context()},get history(){return clone(history)}});
 })(typeof window!=='undefined'?window:globalThis);
 `;
-const out=`/* OMEGA LANGUAGE SYSTEM v4.0.0-STANDALONE\n * Exact migration bundle. All legacy language JSON data and language/runtime JS modules are embedded below.\n * Runtime rule: no legacy language file is fetched, imported, or dynamically loaded.\n */\n${moduleBlock}\n${wrapper}`;
+const out=`/* OMEGA LANGUAGE SYSTEM v4.1.0-STANDALONE */\n${moduleBlock}\n${wrapper}`;
 fs.writeFileSync(path.join(root,'omega_language_system.js.tmp'),out,'utf8');
 fs.renameSync(path.join(root,'omega_language_system.js.tmp'),path.join(root,'omega_language_system.js'));
-console.log(JSON.stringify({ok:true,bundleBytes:Buffer.byteLength(out,'utf8'),sourceStringCount,sourceFiles:ALL,integrity:meta},null,2));
+console.log(JSON.stringify({ok:true,bundleBytes:Buffer.byteLength(out,'utf8'),sourceStringCount,sourceFiles:ALL,integrity:meta,intentionallyExcluded:['omega_cognitive_engine.js','omega_ai_integrity_layer.js']},null,2));
