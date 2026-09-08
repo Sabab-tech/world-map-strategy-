@@ -18,7 +18,7 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
       - name: Build exact standalone bundle when migration sources exist
         run: |
           if [ -f scripts/finalize_omega_language_standalone.cjs ] && [ -f scripts/omega_language_system.runtime.template.js ]; then
