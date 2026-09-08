@@ -12,7 +12,7 @@ assert.ok(system, 'OmegaLanguageSystem must be exported by the consolidated file
 assert.equal(sandbox.OmegaGameLanguageBridge?.VERSION, '1.0.1');
 
 const ontology = system.gameLanguageOntology();
-assert.equal(ontology.schema_version, '1.0.0');
+assert.equal(ontology.schema_version, '1.1.0');
 assert.equal(ontology.ontology_id, 'OMEGA_GAME_LANGUAGE');
 assert.equal(ontology.canonical_concept_target, 4500);
 assert.equal(ontology.domains.reduce((sum, d) => sum + d.target, 0), 5200);
