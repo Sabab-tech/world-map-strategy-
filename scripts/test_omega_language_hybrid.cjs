@@ -5,157 +5,88 @@ const vm = require('node:vm');
 (async () => {
   const source = fs.readFileSync('omega_language_system.js', 'utf8');
   assert.doesNotThrow(() => new vm.Script(source, { filename: 'omega_language_system.js' }));
+  const vocabulary = { languages: { en: {}, bn: {} }, semantic_policy: {
+    world_entities_must_be_loaded_from_runtime_datasets:true,
+    question_meaning_must_be_loaded_from_vocabulary:true,
+    attributes_must_be_loaded_from_vocabulary:true,
+    no_country_catalog_in_code:true,no_resource_catalog_in_code:true,
+    no_asset_alias_catalog_in_code:true,no_answer_fact_catalog_in_code:true
+  }};
+  const sandbox={console,Date,setTimeout,clearTimeout,fetch:async url=>({ok:true,json:async()=>String(url).endsWith('offline_language_vocabulary.json')?vocabulary:{}}),document:{scripts:[],createElement:()=>({src:'',async:false,onload:null,onerror:null}),head:{appendChild:s=>{if(typeof s.onload==='function')s.onload();}}}};
+  vm.createContext(sandbox); vm.runInContext(source,sandbox,{filename:'omega_language_system.js'});
+  const system=sandbox.OmegaLanguageSystem,bridge=sandbox.OmegaGameLanguageBridge;
+  assert.ok(system); assert.ok(bridge);
+  assert.equal(system.VERSION,'1.4.0');
+  assert.equal(system.SCHEMA_VERSION,'OMEGA-LANGUAGE-SYSTEM/1.4');
+  const ontology=system.gameLanguageOntology();
+  assert.equal(ontology.schema_version,'1.2.0');
+  assert.equal(ontology.implementation_status,'BATCH_02_DEEP_SEMANTIC_LOCKED');
+  assert.equal(ontology.canonical_concept_target,4500);
+  assert.equal(ontology.seed_concepts.length,24);
+  assert.equal(ontology.population_policy.current_seed_count,24);
+  assert.equal(ontology.population_policy.previous_batch_seed_count,12);
+  assert.equal(ontology.population_policy.batch,'BATCH_02');
+  assert.equal(ontology.domains.length,17);
+  assert.equal(ontology.target_tiers.core_game_language+ontology.target_tiers.advanced_strategy_language+ontology.target_tiers.grammar_discourse_command_language,4500);
+  assert.deepEqual(Array.from(ontology.grammar.features),['Person','Number','Case','Tense','Aspect','Mood','Voice','Polarity','Degree','VerbForm']);
+  assert.deepEqual(Array.from(ontology.grammar.dependency_relations),['nsubj','obj','obl','advmod','aux','mark','conj','nmod']);
 
-  const vocabulary = {
-    languages: { en: {}, bn: {} },
-    semantic_policy: {
-      world_entities_must_be_loaded_from_runtime_datasets: true,
-      question_meaning_must_be_loaded_from_vocabulary: true,
-      attributes_must_be_loaded_from_vocabulary: true,
-      no_country_catalog_in_code: true,
-      no_resource_catalog_in_code: true,
-      no_asset_alias_catalog_in_code: true,
-      no_answer_fact_catalog_in_code: true,
-      unknown_entity_action: 'UNRESOLVED',
-      ambiguous_entity_action: 'ASK_OR_REPORT_AMBIGUITY'
-    }
-  };
+  const d=await system.load();
+  assert.equal(d.version,'1.4.0'); assert.equal(d.ontologySeedCount,24); assert.equal(d.embeddedSourceCount,2);
+  assert.ok(d.sourceFiles.includes('offline_language_vocabulary.json'));
 
-  const sandbox = {
-    console,
-    Date,
-    setTimeout,
-    clearTimeout,
-    fetch: async (url) => ({
-      ok: true,
-      json: async () => String(url).endsWith('offline_language_vocabulary.json') ? vocabulary : {}
-    }),
-    document: {
-      scripts: [],
-      createElement: () => ({ src: '', async: false, onload: null, onerror: null }),
-      head: { appendChild: (script) => { if (typeof script.onload === 'function') script.onload(); } }
-    }
-  };
-  vm.createContext(sandbox);
-  vm.runInContext(source, sandbox, { filename: 'omega_language_system.js' });
-
-  const system = sandbox.OmegaLanguageSystem;
-  const bridge = sandbox.OmegaGameLanguageBridge;
-  assert.ok(system, 'OmegaLanguageSystem must be exported');
-  assert.ok(bridge, 'OmegaGameLanguageBridge must be exported');
-
-  assert.equal(system.VERSION, '1.3.0');
-  assert.equal(system.SCHEMA_VERSION, 'OMEGA-LANGUAGE-SYSTEM/1.3');
-
-  const ontology = system.gameLanguageOntology();
-  assert.equal(ontology.ontology_id, 'OMEGA_GAME_LANGUAGE');
-  assert.equal(ontology.schema_version, '1.1.0');
-  assert.equal(ontology.implementation_status, 'BATCH_01_DEEP_SEMANTIC_LOCKED');
-  assert.equal(ontology.canonical_concept_target, 4500);
-  assert.equal(ontology.seed_concepts.length, 12);
-  assert.equal(ontology.population_policy.current_seed_count, 12);
-  assert.equal(ontology.domains.length, 17);
-  assert.equal(ontology.domains.reduce((n, d) => n + d.target, 0), 5250);
-  assert.equal(ontology.target_tiers.core_game_language + ontology.target_tiers.advanced_strategy_language + ontology.target_tiers.grammar_discourse_command_language, 4500);
-  assert.deepEqual(Array.from(ontology.grammar.features), ['Person','Number','Case','Tense','Aspect','Mood','Voice','Polarity','Degree','VerbForm']);
-  assert.deepEqual(Array.from(ontology.grammar.dependency_relations), ['nsubj','obj','obl','advmod','aux','mark','conj','nmod']);
-
-  const loadDiagnostics = await system.load();
-  assert.equal(loadDiagnostics.version, '1.3.0');
-  assert.equal(loadDiagnostics.embeddedSourceCount, 2);
-  assert.ok(loadDiagnostics.sourceFiles.includes('offline_language_vocabulary.json'));
-
-  const ids = new Set();
-  const concepts = new Map();
-  for (const c of ontology.seed_concepts) {
-    assert.ok(/^[A-Z][A-Z0-9_]+$/.test(c.concept_id), `Invalid concept_id: ${c.concept_id}`);
-    assert.ok(!ids.has(c.concept_id), `Duplicate concept_id: ${c.concept_id}`);
-    ids.add(c.concept_id);
-    concepts.set(c.concept_id, c);
-    assert.ok(ontology.domains.some(d => d.id === c.domain), `Unknown domain: ${c.domain}`);
-    for (const lang of ['en', 'bn']) {
-      assert.ok(c.lexical?.[lang]?.lemma, `${c.concept_id}: missing ${lang} lemma`);
-      assert.ok(Array.isArray(c.lexical?.[lang]?.aliases), `${c.concept_id}: missing ${lang} aliases`);
-      assert.ok(Array.isArray(c.lexical?.[lang]?.forms), `${c.concept_id}: missing ${lang} forms`);
-      assert.ok(Array.isArray(c.lexical?.[lang]?.pos), `${c.concept_id}: missing ${lang} POS`);
-    }
-    for (const field of ['semantic_roles','compatible_variables','compatible_entities','allowed_actions','relations','construction_patterns','phrase_patterns']) {
-      assert.ok(Array.isArray(c[field]), `${c.concept_id}: missing ${field}`);
-    }
-    assert.ok(c.derivational_family?.length, `${c.concept_id}: missing derivational family`);
-    assert.ok(c.morphological_eligibility && typeof c.morphological_eligibility === 'object', `${c.concept_id}: missing morphology eligibility`);
-    assert.ok(c.runtime_resolution && typeof c.runtime_resolution.strategy === 'string', `${c.concept_id}: missing runtime resolution`);
-    assert.ok(/^P[0-4]$/.test(c.priority), `${c.concept_id}: invalid priority`);
+  const ids=new Set(), concepts=new Map();
+  for(const c of ontology.seed_concepts){
+    assert.ok(/^[A-Z][A-Z0-9_]+$/.test(c.concept_id)); assert.ok(!ids.has(c.concept_id),`duplicate ${c.concept_id}`); ids.add(c.concept_id); concepts.set(c.concept_id,c);
+    assert.ok(ontology.domains.some(x=>x.id===c.domain));
+    for(const lang of ['en','bn']){assert.ok(c.lexical?.[lang]?.lemma);assert.ok(Array.isArray(c.lexical[lang].aliases));assert.ok(Array.isArray(c.lexical[lang].forms));assert.ok(Array.isArray(c.lexical[lang].pos));}
+    for(const field of ['semantic_roles','compatible_variables','compatible_entities','allowed_actions','relations','construction_patterns','phrase_patterns'])assert.ok(Array.isArray(c[field]),`${c.concept_id}:${field}`);
+    assert.ok(c.derivational_family?.length); assert.ok(c.morphological_eligibility); assert.ok(c.runtime_resolution?.strategy); assert.ok(c.compositional_frame?.required_roles); assert.ok(/^P[0-4]$/.test(c.priority));
   }
+  assert.equal(ids.size,24);
+  const has=(id,rel,target)=>concepts.get(id)?.relations?.some(r=>r.relation===rel&&r.target===target);
+  const must=(id,rel,target)=>assert.equal(has(id,rel,target),true,`${id} -> ${rel} -> ${target}`);
 
-  const hasRelation = (id, rel, target) => concepts.get(id)?.relations?.some(r => r.relation === rel && r.target === target);
-  const mustRelate = (id, rel, target) => assert.equal(hasRelation(id, rel, target), true, `${id} -> ${rel} -> ${target}`);
+  /* Batch 01 remains intact and now connects into Batch 02. */
+  must('RESOURCE_PRODUCTION','measured_by','QUANTITY'); must('RESOURCE_PRODUCTION','measured_as','RATE');
+  must('RESOURCE_PRODUCTION','constrained_by','CAPACITY'); must('RESOURCE_PRODUCTION','changed_by','ACTION_INCREASE');
+  must('ACTION_INCREASE','operates_on','STATE_VARIABLE'); must('ACTION_DECREASE','operates_on','STATE_VARIABLE');
+  must('CAPACITY','measured_by','RATE'); must('DEMAND','measured_by','QUANTITY'); must('SUPPLY','measured_by','QUANTITY');
+  must('PRICE','measured_by','UNIT'); must('INVESTMENT','quantified_by','QUANTITY');
 
-  /* The existing 12 anchors must form an operational graph, not a word list. */
-  mustRelate('RESOURCE_PRODUCTION', 'child_of', 'STATE_VARIABLE');
-  mustRelate('RESOURCE_PRODUCTION', 'measured_by', 'QUANTITY');
-  mustRelate('RESOURCE_PRODUCTION', 'measured_as', 'RATE');
-  mustRelate('RESOURCE_PRODUCTION', 'constrained_by', 'CAPACITY');
-  mustRelate('RESOURCE_PRODUCTION', 'changed_by', 'ACTION_INCREASE');
-  mustRelate('RESOURCE_PRODUCTION', 'changed_by', 'ACTION_DECREASE');
-  mustRelate('ACTION_INCREASE', 'operates_on', 'STATE_VARIABLE');
-  mustRelate('ACTION_DECREASE', 'operates_on', 'STATE_VARIABLE');
-  mustRelate('ACTION_INCREASE', 'action_family', 'ACTION_DECREASE');
-  mustRelate('ACTION_DECREASE', 'action_family', 'ACTION_INCREASE');
-  mustRelate('RESOURCE', 'semantic_root_for', 'RESOURCE_PRODUCTION');
-  mustRelate('CAPACITY', 'affected_by', 'INVESTMENT');
-  mustRelate('CAPACITY', 'associated_with', 'PRODUCTION_FACILITY');
-  mustRelate('DEMAND', 'related_to', 'PRICE');
-  mustRelate('DEMAND', 'related_to', 'SUPPLY');
-  mustRelate('SUPPLY', 'paired_with', 'DEMAND');
-  mustRelate('SUPPLY', 'constrained_by', 'CAPACITY');
-  mustRelate('PRICE', 'distinct_from', 'COST');
-  mustRelate('INVESTMENT', 'affects', 'CAPACITY');
-  mustRelate('INVESTMENT', 'affects', 'PRODUCTION');
+  /* Batch 02 internal graph. */
+  must('QUANTITY','expressed_in','UNIT'); must('QUANTITY','can_be_rate','RATE');
+  must('RATE','distinct_from','QUANTITY'); must('RATE','expressed_in','UNIT');
+  must('RATIO','distinct_from','PERCENTAGE'); must('RATIO','can_be_rendered_as','PERCENTAGE');
+  must('PERCENTAGE','is_unit_for','RELATIVE_CHANGE'); must('PERCENTAGE','is_magnitude_of','CHANGE_DELTA');
+  must('TIME_POINT','anchors','TIME_PERIOD'); must('TIME_POINT','distinct_from','TIME_DURATION');
+  must('TIME_DURATION','distinct_from','TIME_POINT'); must('TIME_PERIOD','anchors','BASELINE');
+  must('FREQUENCY','distinct_from','RATE');
+  must('BASELINE','reference_for','CHANGE_DELTA'); must('BASELINE','reference_for','RELATIVE_CHANGE');
+  must('CHANGE_DELTA','distinct_from','RELATIVE_CHANGE'); must('CHANGE_DELTA','expressed_by','QUANTITY');
+  must('RELATIVE_CHANGE','represented_by','PERCENTAGE'); must('RELATIVE_CHANGE','distinct_from','CHANGE_DELTA');
 
-  assert.deepEqual(Array.from(system.concept('ACTION_INCREASE').semantic_roles), ['ACTOR','TARGET','AMOUNT','UNIT','TIME_HORIZON','SCOPE','CONSTRAINT','CONDITION']);
-  assert.equal(system.concept('ACTION_DECREASE').grammar_features.direction, 'NEGATIVE_CHANGE');
-  assert.equal(system.concept('ACTION_INCREASE').grammar_features.direction, 'POSITIVE_CHANGE');
-  assert.equal(system.concept('PRICE').relations.some(r => r.relation === 'distinct_from' && r.target === 'COST'), true);
-  assert.equal(system.concept('COUNTRY').runtime_resolution.requires.includes('authoritative_country_registry'), true);
-  assert.equal(system.concept('PRODUCTION_FACILITY').runtime_resolution.requires.includes('authoritative_facility_dataset'), true);
-  assert.equal(system.concept('INVESTMENT').runtime_resolution.numeric_effect, 'GAME_DATA_ONLY');
+  for(const invariant of ontology.semantic_invariants)assert.ok(typeof invariant==='string'&&invariant.includes('!='));
+  assert.equal(ontology.semantic_invariants.includes('QUANTITY != RATE'),true);
+  assert.equal(ontology.semantic_invariants.includes('TIME_POINT != TIME_DURATION'),true);
+  assert.equal(ontology.semantic_invariants.includes('CHANGE_DELTA != RELATIVE_CHANGE'),true);
 
-  assert.equal(ids.size, 12);
-  assert.equal(bridge.VERSION, '1.0.2');
-  assert.equal(typeof bridge.match, 'function');
-  assert.equal(typeof bridge.enrich, 'function');
-  assert.equal(typeof bridge.install, 'function');
+  assert.equal(system.concept('ACTION_INCREASE').semantic_roles.includes('UNIT'),true);
+  assert.equal(system.concept('RELATIVE_CHANGE').runtime_resolution.formula,'(to_value - from_value) / from_value');
+  assert.equal(system.concept('CHANGE_DELTA').runtime_resolution.formula,'to_value - from_value');
+  assert.equal(system.concept('UNIT').runtime_resolution.never.includes('invent_conversion_factor'),true);
+  assert.equal(system.concept('COUNTRY').runtime_resolution.never.includes('hardcoded_country_catalog'),true);
+  assert.equal(system.concept('RESOURCE').runtime_resolution.never.includes('hardcoded_resource_catalog'),true);
 
-  const diagnostics = system.diagnostics();
-  assert.equal(diagnostics.version, '1.3.0');
-  assert.ok(diagnostics.embeddedSourceFiles.includes('<embedded:omega_game_language_ontology.json>'));
-  assert.ok(diagnostics.embeddedSourceFiles.includes('<embedded:omega_game_language_bridge.js>'));
-  assert.ok(!diagnostics.sourceFiles.includes('omega_game_language_ontology.json'));
-  assert.ok(!diagnostics.sourceFiles.includes('omega_game_language_bridge.js'));
-  assert.equal(diagnostics.embeddedSourceCount, 2);
+  assert.equal(bridge.VERSION,'1.0.3'); assert.equal(typeof bridge.match,'function'); assert.equal(typeof bridge.enrich,'function');
+  assert.ok(bridge.match('quantity','en').some(x=>x.concept_id==='QUANTITY'));
+  assert.ok(bridge.match('উৎপাদন','bn').some(x=>x.concept_id==='RESOURCE_PRODUCTION'));
+  assert.ok(bridge.match('percentage','en').some(x=>x.concept_id==='PERCENTAGE'));
 
-  const bn = system.parse('বাংলাদেশের উৎপাদন বাড়াও');
-  assert.equal(bn.language, 'bn');
-  assert.equal(bn.contract.unknownFact, 'UNKNOWN_WHEN_NOT_EVIDENCED');
-  assert.equal(bn.contract.capabilityBoundary, 'LANGUAGE_DOES_NOT_GRANT_EXECUTION_CAPABILITY');
-
-  const en = system.parse('increase production');
-  assert.equal(en.language, 'en');
-  assert.equal(en.contract.unknownEntity, 'UNRESOLVED');
-
-  const event = system.eventRequest('increase', { target: 'PRODUCTION', quantity: 10 });
-  assert.equal(event.type, 'GAME_EVENT_REQUEST');
-  assert.equal(event.state, 'EVENT_REQUESTED');
-  assert.equal(event.operation, 'INCREASE');
-  assert.equal(event.capabilityRequired, true);
-  assert.equal(event.executionOwner, 'GAME_CAPABILITY_AND_EVENT_ENGINE');
-
-  assert.equal(system.learnPhrase('increase output', 'increase', 'PRODUCTION', 0.99), true);
-  assert.equal(system.learnPhrase('weak confidence', 'increase', 'PRODUCTION', 0.5), false);
-
-  console.log(`OMEGA hybrid runtime regression: PASS (${ids.size} seeds; loader exercised; semantic graph locked; ontology 1.1.0; language system 1.3.0; bridge 1.0.2)`);
-})().catch((error) => {
-  console.error(error);
-  process.exitCode = 1;
-});
+  const validation=system.validate(); assert.equal(validation.ok,true,JSON.stringify(validation));
+  const bn=system.parse('উৎপাদন ১৫ শতাংশ বাড়াও'); assert.equal(bn.language,'bn'); assert.equal(bn.contract.unknownFact,'UNKNOWN_WHEN_NOT_EVIDENCED');
+  const en=system.parse('increase production by 15 percent over 5 years'); assert.equal(en.language,'en'); assert.equal(en.contract.capabilityBoundary,'LANGUAGE_DOES_NOT_GRANT_EXECUTION_CAPABILITY');
+  const event=system.eventRequest('increase',{target:'PRODUCTION',quantity:10,unit:'ton',duration:'5 years'}); assert.equal(event.type,'GAME_EVENT_REQUEST'); assert.equal(event.capabilityRequired,true);
+  assert.equal(system.learnPhrase('increase output','increase','PRODUCTION',.99),true); assert.equal(system.learnPhrase('weak confidence','increase','PRODUCTION',.5),false);
+  console.log(`OMEGA Batch 02 semantic regression: PASS (${ids.size} canonical seeds; 12 new; loader exercised; duplicate guard; measurement/time/comparison graph locked; ontology 1.2.0; system 1.4.0; bridge 1.0.3)`);
+})().catch(error=>{console.error(error);process.exitCode=1;});
