@@ -82,6 +82,7 @@ jobs:
             omega_game_language_ontology.json omega_game_language_source_inventory.json \
             offline_semantic_brain.js offline_query_engine.js omega_game_language_bridge.js omega_reasoning_dispatcher.js \
             scripts/test_runtime_semantic_all_countries.mjs scripts/validate_game_language_ontology.cjs \
+            scripts/test_semantic_runtime_v4.cjs scripts/test_semantic_runtime_v32.mjs scripts/test_production_semantic_runtime_v3.mjs \
             scripts/build_offline_lexicon.cjs scripts/omega_language_execution_module.js \
             scripts/omega_language_execution_module_v2.js scripts/omega_language_system.runtime.template.js; do
             [ -e "$f" ] && git rm -f "$f" || true
