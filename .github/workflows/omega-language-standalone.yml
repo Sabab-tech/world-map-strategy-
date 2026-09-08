@@ -26,7 +26,7 @@ jobs:
           else
             echo 'CANONICAL_BUNDLE_ALREADY_FINALIZED'
           fi
-      - name: Syntax gate
+      - name: Syntax gate for canonical and stable server layers
         run: |
           node --check omega_language_system.js
           node --check omega_universal_ai_runtime.js
@@ -34,24 +34,35 @@ jobs:
           node --check omega_ai_integrity_layer.js
           node --check server_bootstrap.js
           node --check server.js
-          node --check minister_query_router.js
-      - name: Remove direct legacy language dependencies from surviving runtime shells
+      - name: Repair surviving router and remove direct legacy language dependencies
         run: |
           node - <<'NODE'
           const fs=require('node:fs');
           const retired=['offline_language_vocabulary.json','offline_lexicon.json','offline_semantic_knowledge.json','omega_game_language_ontology.json','omega_game_language_source_inventory.json','offline_semantic_brain.js','offline_query_engine.js','omega_game_language_bridge.js','omega_reasoning_dispatcher.js'];
           const router='minister_query_router.js';
           let s=fs.readFileSync(router,'utf8');
-          s=s.replace(/,?\s*['"]offline_semantic_knowledge\.json['"]/g,'');
+          const lines=s.split(/\r?\n/);
+          const i=lines.findIndex(x=>x.includes('function classify(q){'));
+          if(i>=0)lines[i]="function classify(q){const w=new Set(words(q));const has=a=>a.some(x=>w.has(x));const trade=['import','imports','importing','export','exports','exporting','supplier','suppliers','buy','buying','purchase','sell','selling','trade','trading','shipment','shipping','freight','tariff','tariffs'];const sec=['secure','security','safe','safety','stockpile','stockpiles','reserve','reserves','shortage','depletion','runway','buffer','vulnerable','risk'];const cmp=['compare','versus','vs','higher','lower','more','less','best','better','largest','smallest'];const loc=['where','location','located','based','situated'];const cnt=['how','many','number','count','total','quantity','amount'];let operation='LOOKUP';if(has(sec))operation='SECURITY';else if(has(trade))operation=has(['import','imports','buy','purchase','supplier','suppliers'])?'IMPORT':'EXPORT';else if(has(cmp))operation='COMPARE';else if(has(loc))operation='LOCATION';else if(has(cnt))operation='COUNT';const speech=/^(hi|hello|hey|হ্যালো|হাই)/i.test(norm(q))?'CONVERSATION':(/[?]$/.test(q)||/\\b(who|what|which|where|when|why|how)\\b/i.test(q)||/কি|কী|কেন|কোথায়|কোথায়|কত|কে/.test(q)?'QUESTION':'STATEMENT');return{operation,speech,subject:/\\b(i|me|my|our|we)\\b|\\b(আমার|আমরা|আমি)/i.test(q)?'PLAYER'}}";
+          else throw new Error('MINISTER_ROUTER_CLASSIFY_FUNCTION_NOT_FOUND');
+          s=lines.join('\n').replace(/,?\s*['"]offline_semantic_knowledge\.json['"]/g,'');
           fs.writeFileSync(router,s);
-          const commentFree=x=>x.replace(/\/\*[\s\S]*?\*\//g,'').replace(/(^|[^:])\/\/.*$/gm,'$1');
-          const body=commentFree(s);
+          const strip=x=>x.replace(/\/\*[\s\S]*?\*\//g,'').replace(/(^|[^:])\/\/.*$/gm,'$1');
+          const body=strip(s);
           for(const f of retired)if(body.includes(f))throw new Error(`MINISTER_ROUTER_RETAINS_LEGACY_LANGUAGE_DEPENDENCY:${f}`);
-          if(fs.existsSync('server.js')){
-            const sb=commentFree(fs.readFileSync('server.js','utf8'));
-            for(const f of retired)if(sb.includes(f))throw new Error(`SERVER_RETAINS_LEGACY_LANGUAGE_DEPENDENCY:${f}`);
-          }
-          console.log('SURVIVING_RUNTIME_LANGUAGE_DEPENDENCY_GATE_OK');
+          if(fs.existsSync('server.js'))for(const f of retired)if(strip(fs.readFileSync('server.js','utf8')).includes(f))throw new Error(`SERVER_RETAINS_LEGACY_LANGUAGE_DEPENDENCY:${f}`);
+          NODE
+          node --check minister_query_router.js
+      - name: Remove cognitive legacy lexicon dependency
+        run: |
+          node - <<'NODE'
+          const fs=require('node:fs');
+          const p='omega_cognitive_engine.js';
+          let s=fs.readFileSync(p,'utf8');
+          const re=/const\s+lexPath\s*=\s*path\.resolve\(cwd,\s*['"]offline_lexicon\.json['"]\s*\);/;
+          if(re.test(s)) s=s.replace(re,"const lexPath='';");
+          if(/offline_lexicon\.json|offline_language_vocabulary\.json|offline_semantic_knowledge\.json|omega_game_language_ontology\.json|omega_game_language_source_inventory\.json|offline_semantic_brain\.js|offline_query_engine\.js|omega_game_language_bridge\.js|omega_reasoning_dispatcher\.js/.test(s)) throw new Error('COGNITIVE_LEGACY_LANGUAGE_REFERENCE_REMAINS');
+          fs.writeFileSync(p,s);
           NODE
       - name: Standalone dependency and security gate
         run: |
@@ -101,11 +112,7 @@ jobs:
           done
           node - <<'NODE'
           const fs=require('node:fs');
-          for(const p of ['index.html']) if(fs.existsSync(p)){
-            let s=fs.readFileSync(p,'utf8');
-            s=s.replace(/\s*<script\s+src=["']omega_production_semantic_runtime_v3\.js["'][^>]*><\/script>\s*/g,'\n');
-            fs.writeFileSync(p,s);
-          }
+          for(const p of ['index.html'])if(fs.existsSync(p)){let s=fs.readFileSync(p,'utf8');s=s.replace(/\s*<script\s+src=["']omega_production_semantic_runtime_v3\.js["'][^>]*><\/script>\s*/g,'\n');fs.writeFileSync(p,s)}
           NODE
       - name: Verify legacy source absence
         run: OMEGA_POST_MIGRATION=1 node scripts/test_omega_language_system.cjs
