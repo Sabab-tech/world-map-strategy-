@@ -11,11 +11,11 @@ const js=fs.readFileSync(bundle,'utf8');
 assert.match(js,/OMEGA LANGUAGE SYSTEM v5\.0\.0/);
 assert.match(js,/STATUS:'STANDALONE_READY'/);
 assert.match(js,/SOURCE_DATA/);
-if(post)for(const f of legacy)assert.equal(fs.existsSync(path.join(root,f)),false,`legacy language dependency still present: ${f}`);
+if(post)for(const f of legacy)assert.equal(fs.existsSync(path.join(root,f)),false,`legacy language dependency still present: ${f}`);else{assert.ok(fs.existsSync(path.join(root,'offline_language_vocabulary.json')),'pre-migration vocabulary source missing');assert.ok(fs.existsSync(path.join(root,'offline_lexicon.json')),'pre-migration lexicon source missing')}
 const executable=js.replace(/\/\*[\s\S]*?\*\//g,'').replace(/\/\/.*$/gm,'');
 for(const re of [/\bfetch\s*\(/,/document\.createElement\(['"]script['"]\)/,/\bloadScript\s*\(/,/\bfetchJSON\s*\(/,/\beval\s*\(/,/new\s+Function\s*\(/])assert.equal(re.test(executable),false,`unsafe or legacy construct found: ${re}`);
-for(const symbol of ['OmegaLanguageSystem','configure','parse','buildIR','executeIntent','realize','run','eventRequest','sourceData','sourceArchive','diagnostics','validate'])assert.ok(js.includes(symbol),`missing standalone API: ${symbol}`);
-for(const marker of ['pronunciation','phonetic','ipa','EVENT_REQUESTED','EVENT_CONFIRMED','EVENT_REJECTED','EVENT_EXECUTED','EVENT_FAILED','EVENT_PENDING'])assert.ok(js.includes(marker),`language preservation marker missing: ${marker}`);
+for(const symbol of ['OmegaLanguageSystem','configure','parse','buildIR','executeIntent','realize','run','eventRequest','learnPhrase','sourceData','sourceArchive','diagnostics','validate'])assert.ok(js.includes(symbol),`missing standalone API: ${symbol}`);
+for(const marker of ['pronunciation','phonetic','ipa','lemma','alias','aliases','forms','morphology','grammar','semantic_roles','allowed_actions','events','actions','EVENT_REQUESTED','EVENT_CONFIRMED','EVENT_REJECTED','EVENT_EXECUTED','EVENT_FAILED','EVENT_PENDING'])assert.ok(js.includes(marker),`language preservation marker missing: ${marker}`);
 for(const op of ['IDENTIFY','COUNT','QUANTITY','COMPARE','ANALYZE','FORECAST','POLICY','IMPORT','EXPORT','APPOINT','REMOVE','NEGOTIATE','ALLOCATE','START','HALT'])assert.ok(js.includes(`'${op}'`)||js.includes(`\"${op}\"`)||js.includes(op),`operation missing: ${op}`);
 assert.ok(js.includes('sourceFiles')&&js.includes('migrationInvariant'),'embedded source manifest missing');
 assert.equal(/(?:\.\/)?(?:offline_language_vocabulary|offline_lexicon|offline_semantic_knowledge|omega_game_language_ontology|omega_game_language_source_inventory|offline_semantic_brain|offline_query_engine|omega_game_language_bridge|omega_reasoning_dispatcher)\.(?:json|js)/.test(executable),false,'bundle contains a runtime reference to a retired language source');
@@ -24,6 +24,11 @@ const sandbox={console,Date,JSON,Object,Array,Map,Set,Math,RegExp,String,Number,
 vm.runInNewContext(js,sandbox,{filename:'omega_language_system.js'});
 const L=sandbox.OmegaLanguageSystem;assert.ok(L);assert.equal(L.STATUS,'STANDALONE_READY');const d=L.sourceData();
 assert.equal(d['offline_lexicon.json'].TOTAL_WORDS,7756);const inv=d['omega_game_language_source_inventory.json'];assert.equal(inv.source_concept_count,17);assert.equal(inv.raw_surface_entry_count,332);assert.equal(inv.unique_surface_entry_count,226);assert.ok(d['offline_language_vocabulary.json'].languages.en&&d['offline_language_vocabulary.json'].languages.bn);
-L.configure({datasets:[]});const en=L.parse('How many iron mines are in Bangladesh?');const bn=L.parse('বাংলাদেশে কয়টি লোহার খনি আছে?');assert.equal(en.operation,'COUNT');assert.equal(bn.operation,'COUNT');const unknown=L.parse('How many facilities are in Atlantis?');assert.ok(unknown.unresolved.includes('COUNTRY'));
+const hasField=(v,target)=>{if(v&&typeof v==='object'){if(Object.prototype.hasOwnProperty.call(v,target))return true;if(Array.isArray(v))return v.some(x=>hasField(x,target));return Object.entries(v).some(([k,x])=>k!=='__proto__'&&k!=='constructor'&&k!=='prototype'&&hasField(x,target))}return false};
+for(const marker of ['pronunciation','phonetic','ipa'])assert.ok(hasField(d,marker),`embedded source data lost pronunciation metadata: ${marker}`);assert.ok(hasField(d,'events')||hasField(d,'actions'),'embedded source data lost event/action metadata');
+L.configure({datasets:[]});const en=L.parse('How many iron mines are in Bangladesh?');const bn=L.parse('বাংলাদেশে কয়টি লোহার খনি আছে?');assert.equal(en.operation,'COUNT');assert.equal(bn.operation,'COUNT');
+const unknown=L.parse('How many facilities are in Atlantis?');assert.ok(unknown.unresolved.includes('COUNTRY'));
 const ev=L.eventRequest('IMPORT',{resource:'CRUDE_OIL'});assert.equal(ev.state,'EVENT_REQUESTED');assert.equal(ev.operation,'IMPORT');
-console.log('OMEGA_STANDALONE_POST_MIGRATION_CONTRACT_OK');console.log(JSON.stringify({postMigration:post,bundleBytes:Buffer.byteLength(js),version:L.VERSION,words:7756,inventory:inv,english:en.operation,bengali:bn.operation,unknownCountryPolicy:unknown.unresolved,legacyFilesAbsent:post?legacy.length:0},null,2));
+const learned=L.learnPhrase('custom import phrase',{operation:'IMPORT'},0.95);assert.equal(learned,true);
+const diag=L.diagnostics();assert.equal(diag.externalLanguageFileDependency,false);assert.equal(diag.lexiconTotalWords,7756);assert.equal(diag.version,'5.0.0');
+console.log('OMEGA_STANDALONE_LANGUAGE_CONTRACT_OK');console.log(JSON.stringify({postMigration:post,bundleBytes:Buffer.byteLength(js),version:L.VERSION,words:7756,inventory:inv,english:en.operation,bengali:bn.operation,unknownCountryPolicy:unknown.unresolved,legacyFilesAbsent:post?legacy.length:0},null,2));
