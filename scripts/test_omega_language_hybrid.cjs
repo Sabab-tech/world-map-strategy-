@@ -11,25 +11,59 @@ vm.runInContext(source, sandbox, { filename: 'omega_language_system.js' });
 
 const system = sandbox.OmegaLanguageSystem;
 const bridge = sandbox.OmegaGameLanguageBridge;
-assert.ok(system, 'canonical language system must be exported');
-assert.ok(bridge, 'embedded bridge must be exported');
+assert.ok(system, 'OmegaLanguageSystem must be exported');
+assert.ok(bridge, 'OmegaGameLanguageBridge must be exported');
+
+assert.equal(system.VERSION, '1.3.0');
+assert.equal(system.SCHEMA_VERSION, 'OMEGA-LANGUAGE-SYSTEM/1.3');
 
 const ontology = system.gameLanguageOntology();
 assert.equal(ontology.ontology_id, 'OMEGA_GAME_LANGUAGE');
-assert.equal(ontology.schema_version, '1.0.0');
+assert.equal(ontology.schema_version, '1.1.0');
+assert.equal(ontology.implementation_status, 'BATCH_01_DEEP_SEMANTIC_LOCKED');
 assert.equal(ontology.canonical_concept_target, 4500);
-assert.equal(ontology.seed_concepts.length, 3);
+assert.equal(ontology.seed_concepts.length, 12);
+assert.equal(ontology.population_policy.current_seed_count, 12);
 assert.equal(ontology.domains.length, 17);
-assert.equal(ontology.domains.reduce((n, d) => n + d.target, 0), 5200);
+assert.equal(ontology.domains.reduce((n, d) => n + d.target, 0), 5250);
+assert.equal(ontology.target_tiers.core_game_language + ontology.target_tiers.advanced_strategy_language + ontology.target_tiers.grammar_discourse_command_language, 4500);
 assert.deepEqual(ontology.grammar.features, ['Person','Number','Case','Tense','Aspect','Mood','Voice','Polarity','Degree','VerbForm']);
+assert.deepEqual(ontology.grammar.dependency_relations, ['nsubj','obj','obl','advmod','aux','mark','conj','nmod']);
 
-assert.equal(bridge.VERSION, '1.0.1');
+const ids = new Set();
+for (const c of ontology.seed_concepts) {
+  assert.ok(/^[A-Z][A-Z0-9_]+$/.test(c.concept_id), `Invalid concept_id: ${c.concept_id}`);
+  assert.ok(!ids.has(c.concept_id), `Duplicate concept_id: ${c.concept_id}`);
+  ids.add(c.concept_id);
+  assert.ok(ontology.domains.some(d => d.id === c.domain), `Unknown domain: ${c.domain}`);
+  for (const lang of ['en', 'bn']) {
+    assert.ok(c.lexical?.[lang]?.lemma, `${c.concept_id}: missing ${lang} lemma`);
+    assert.ok(Array.isArray(c.lexical?.[lang]?.aliases), `${c.concept_id}: missing ${lang} aliases`);
+    assert.ok(Array.isArray(c.lexical?.[lang]?.forms), `${c.concept_id}: missing ${lang} forms`);
+    assert.ok(Array.isArray(c.lexical?.[lang]?.pos), `${c.concept_id}: missing ${lang} POS`);
+  }
+  for (const field of ['semantic_roles','compatible_variables','compatible_entities','allowed_actions','relations','construction_patterns','phrase_patterns']) {
+    assert.ok(Array.isArray(c[field]), `${c.concept_id}: missing ${field}`);
+  }
+  assert.ok(c.derivational_family?.length, `${c.concept_id}: missing derivational family`);
+  assert.ok(c.morphological_eligibility && typeof c.morphological_eligibility === 'object', `${c.concept_id}: missing morphology eligibility`);
+  assert.ok(c.runtime_resolution && typeof c.runtime_resolution.strategy === 'string', `${c.concept_id}: missing runtime resolution`);
+  assert.ok(/^P[0-4]$/.test(c.priority), `${c.concept_id}: invalid priority`);
+}
+
+assert.equal(ids.size, 12);
+assert.deepEqual(system.concept('RESOURCE_PRODUCTION').concept_id, 'RESOURCE_PRODUCTION');
+assert.deepEqual(system.concept('ACTION_INCREASE').semantic_roles, ['ACTOR','TARGET','AMOUNT','UNIT','TIME_HORIZON','SCOPE','CONSTRAINT','CONDITION']);
+assert.equal(system.concept('PRICE').relations.some(r => r.relation === 'distinct_from' && r.target === 'COST'), true);
+assert.equal(system.concept('COUNTRY').runtime_resolution.requires.includes('authoritative_country_registry'), true);
+
+assert.equal(bridge.VERSION, '1.0.2');
 assert.equal(typeof bridge.match, 'function');
 assert.equal(typeof bridge.enrich, 'function');
 assert.equal(typeof bridge.install, 'function');
 
 const diagnostics = system.diagnostics();
-assert.equal(diagnostics.version, '1.2.0');
+assert.equal(diagnostics.version, '1.3.0');
 assert.ok(diagnostics.embeddedSourceFiles.includes('<embedded:omega_game_language_ontology.json>'));
 assert.ok(diagnostics.embeddedSourceFiles.includes('<embedded:omega_game_language_bridge.js>'));
 assert.ok(!diagnostics.sourceFiles.includes('omega_game_language_ontology.json'));
@@ -38,12 +72,12 @@ assert.equal(diagnostics.embeddedSourceCount, 2);
 
 const bn = system.parse('বাংলাদেশের উৎপাদন বাড়াও');
 assert.equal(bn.language, 'bn');
-assert.equal(bn.operation, 'IDENTIFY');
 assert.equal(bn.contract.unknownFact, 'UNKNOWN_WHEN_NOT_EVIDENCED');
+assert.equal(bn.contract.capabilityBoundary, 'LANGUAGE_DOES_NOT_GRANT_EXECUTION_CAPABILITY');
 
 const en = system.parse('increase production');
 assert.equal(en.language, 'en');
-assert.equal(en.operation, 'IDENTIFY');
+assert.equal(en.contract.unknownEntity, 'UNRESOLVED');
 
 const event = system.eventRequest('increase', { target: 'PRODUCTION', quantity: 10 });
 assert.equal(event.type, 'GAME_EVENT_REQUEST');
@@ -55,4 +89,4 @@ assert.equal(event.executionOwner, 'GAME_CAPABILITY_AND_EVENT_ENGINE');
 assert.equal(system.learnPhrase('increase output', 'increase', 'PRODUCTION', 0.99), true);
 assert.equal(system.learnPhrase('weak confidence', 'increase', 'PRODUCTION', 0.5), false);
 
-console.log('OMEGA hybrid runtime regression: PASS');
+console.log(`OMEGA hybrid runtime regression: PASS (${ids.size} seeds; ontology 1.1.0; language system 1.3.0; bridge 1.0.2)`);
