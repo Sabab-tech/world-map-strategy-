@@ -51,8 +51,7 @@ jobs:
           console.log('STANDALONE_DEPENDENCY_GATE_OK');
           NODE
       - name: Standalone runtime smoke test
-        run: |
-          node scripts/test_omega_language_system.cjs
+        run: OMEGA_POST_MIGRATION=0 node scripts/test_omega_language_system.cjs
       - name: Remove legacy language sources and obsolete language-only tests
         run: |
           git rm -f \
@@ -69,7 +68,7 @@ jobs:
             scripts/validate_game_language_ontology.cjs \
             scripts/build_offline_lexicon.cjs
       - name: Verify legacy source absence
-        run: node scripts/test_omega_language_system.cjs
+        run: OMEGA_POST_MIGRATION=1 node scripts/test_omega_language_system.cjs
       - name: Remove deleted-language commands from package scripts
         run: |
           node - <<'NODE'
