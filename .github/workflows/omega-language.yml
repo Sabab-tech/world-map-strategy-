@@ -17,6 +17,9 @@ on:
       - 'package.json'
       - '.github/workflows/omega-language.yml'
 
+permissions:
+  contents: read
+
 jobs:
   language-regression:
     runs-on: ubuntu-latest
@@ -29,6 +32,29 @@ jobs:
           node-version: 24
       - name: Syntax gate
         run: node --check omega_language_system.js && node --check scripts/test_omega_language_hybrid.cjs && node --check scripts/validate_game_language_ontology.cjs
+      - name: Security static gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          targets=(omega_language_system.js scripts/validate_game_language_ontology.cjs scripts/test_omega_language_hybrid.cjs)
+          if grep -nE '(^|[^[:alnum:]_])(eval[[:space:]]*\(|new[[:space:]]+Function[[:space:]]*\()' "${targets[@]}"; then
+            echo 'SECURITY GATE FAILED: dynamic code execution primitive detected.' >&2
+            exit 1
+          fi
+          if grep -nE 'document\.write[[:space:]]*\(|innerHTML[[:space:]]*=' "${targets[@]}"; then
+            echo 'SECURITY GATE FAILED: unsafe DOM sink detected in language subsystem.' >&2
+            exit 1
+          fi
+          if grep -nEi '(api[_-]?key|secret|token)[[:space:]]*[:=][[:space:]]*["'"'][A-Za-z0-9_\-]{20,}["'"']' "${targets[@]}"; then
+            echo 'SECURITY GATE FAILED: hard-coded credential-like literal detected.' >&2
+            exit 1
+          fi
+      - name: Dependency security gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --package-lock-only --ignore-scripts --no-audit
+          npm audit --audit-level=high --omit=dev
       - name: Canonical ontology validation
         run: node scripts/validate_game_language_ontology.cjs
       - name: Hybrid runtime regression
