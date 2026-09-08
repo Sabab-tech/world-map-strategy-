@@ -1,0 +1,34 @@
+name: OMEGA Language System
+
+on:
+  push:
+    paths:
+      - 'omega_language_system.js'
+      - 'scripts/validate_game_language_ontology.cjs'
+      - 'scripts/test_omega_language_hybrid.cjs'
+      - 'package.json'
+      - '.github/workflows/omega-language.yml'
+  pull_request:
+    paths:
+      - 'omega_language_system.js'
+      - 'scripts/validate_game_language_ontology.cjs'
+      - 'scripts/test_omega_language_hybrid.cjs'
+      - 'package.json'
+      - '.github/workflows/omega-language.yml'
+
+jobs:
+  language-regression:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Syntax gate
+        run: node --check omega_language_system.js && node --check scripts/test_omega_language_hybrid.cjs && node --check scripts/validate_game_language_ontology.cjs
+      - name: Canonical ontology validation
+        run: node scripts/validate_game_language_ontology.cjs
+      - name: Hybrid runtime regression
+        run: node scripts/test_omega_language_hybrid.cjs
