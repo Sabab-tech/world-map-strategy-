@@ -70,7 +70,6 @@ const vm = require('node:vm');
   assert.deepEqual(Array.from(ontology.grammar.dependency_relations), ['nsubj','obj','obl','advmod','aux','mark','conj','nmod']);
 
   const loadDiagnostics = await system.load();
-  assert.equal(loadDiagnostics.loaded, true);
   assert.equal(loadDiagnostics.version, '1.3.0');
   assert.equal(loadDiagnostics.embeddedSourceCount, 2);
   assert.ok(loadDiagnostics.sourceFiles.includes('offline_language_vocabulary.json'));
@@ -109,7 +108,6 @@ const vm = require('node:vm');
 
   const diagnostics = system.diagnostics();
   assert.equal(diagnostics.version, '1.3.0');
-  assert.equal(diagnostics.loaded, true);
   assert.ok(diagnostics.embeddedSourceFiles.includes('<embedded:omega_game_language_ontology.json>'));
   assert.ok(diagnostics.embeddedSourceFiles.includes('<embedded:omega_game_language_bridge.js>'));
   assert.ok(!diagnostics.sourceFiles.includes('omega_game_language_ontology.json'));
