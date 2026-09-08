@@ -25,33 +25,34 @@ jobs:
         run: |
           node --check omega_language_system.js
           node --check omega_universal_ai_runtime.js
+          node --check omega_cognitive_engine.js
+          node --check omega_ai_integrity_layer.js
           node --check server_bootstrap.js
+      - name: Remove cognitive legacy lexicon dependency
+        run: |
+          node - <<'NODE'
+          const fs=require('node:fs');
+          const p='omega_cognitive_engine.js';
+          let s=fs.readFileSync(p,'utf8');
+          const re=/const\s+lexPath\s*=\s*path\.resolve\(cwd,\s*['"]offline_lexicon\.json['"]\s*\);/;
+          if(re.test(s)) s=s.replace(re,"const lexPath='';");
+          if(/offline_lexicon\.json|offline_language_vocabulary\.json|offline_semantic_knowledge\.json|omega_game_language_ontology\.json|omega_game_language_source_inventory\.json|offline_semantic_brain\.js|offline_query_engine\.js|omega_game_language_bridge\.js|omega_reasoning_dispatcher\.js/.test(s)) throw new Error('COGNITIVE_LEGACY_LANGUAGE_REFERENCE_REMAINS');
+          fs.writeFileSync(p,s);
+          console.log('COGNITIVE_LEGACY_LANGUAGE_DEPENDENCY_REMOVED');
+          NODE
       - name: Standalone dependency gate
         run: |
           node - <<'NODE'
           const fs=require('node:fs');
           const s=fs.readFileSync('omega_language_system.js','utf8');
           const body=s.replace(/\/\*[\s\S]*?\*\//g,'').replace(/\/\/.*$/gm,'');
-          for(const r of [/\bfetch\s*\(/,/document\.createElement\(['"]script['"]\)/,/\bloadScript\s*\(/,/\bfetchJSON\s*\(/]) if(r.test(body)) throw Error('LEGACY_RUNTIME_DEPENDENCY:'+r);
+          for(const r of [/\bfetch\s*\(/,/document\.createElement\(['"]script['"]\)/,/\bloadScript\s*\(/,/\bfetchJSON\s*\(/,/\beval\s*\(/,/new\s+Function\s*\(/]) if(r.test(body)) throw Error('LEGACY_OR_UNSAFE_RUNTIME_CONSTRUCT:'+r);
           if(!s.includes('SOURCE_DATA')||!s.includes('STANDALONE_READY')) throw Error('STANDALONE_API_MISSING');
           console.log('STANDALONE_DEPENDENCY_GATE_OK');
           NODE
       - name: Standalone runtime smoke test
         run: |
-          node - <<'NODE'
-          const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
-          const sandbox={console,Date,JSON,Object,Array,Map,Set,Math,RegExp,String,Number,Promise,Intl,setTimeout,clearTimeout,localStorage:{d:new Map(),getItem(k){return this.d.get(k)||null},setItem(k,v){this.d.set(k,String(v))}},Game:{state:{}}};
-          sandbox.globalThis=sandbox;sandbox.window=sandbox;
-          vm.runInNewContext(fs.readFileSync('omega_language_system.js','utf8'),sandbox,{filename:'omega_language_system.js'});
-          const L=sandbox.OmegaLanguageSystem;assert.ok(L);assert.equal(L.STATUS,'STANDALONE_READY');assert.equal(L.diagnostics().externalLanguageFileDependency,false);
-          const d=L.sourceData();
-          assert.equal(d['offline_lexicon.json'].TOTAL_WORDS,7756);
-          assert.equal(d['omega_game_language_source_inventory.json'].source_concept_count,17);
-          assert.equal(d['omega_game_language_source_inventory.json'].raw_surface_entry_count,332);
-          assert.equal(d['omega_game_language_source_inventory.json'].unique_surface_entry_count,226);
-          assert.ok(d['offline_language_vocabulary.json'].languages.en&&d['offline_language_vocabulary.json'].languages.bn);
-          console.log('STANDALONE_RUNTIME_SMOKE_OK',JSON.stringify({version:L.VERSION,embeddedWords:d['offline_lexicon.json'].TOTAL_WORDS}));
-          NODE
+          node scripts/test_omega_language_system.cjs
       - name: Remove legacy language sources and obsolete language-only tests
         run: |
           git rm -f \
@@ -84,6 +85,8 @@ jobs:
         run: |
           node --check omega_language_system.js
           node --check omega_universal_ai_runtime.js
+          node --check omega_cognitive_engine.js
+          node --check omega_ai_integrity_layer.js
           node --check server_bootstrap.js
           node -e "const fs=require('fs'); const p=JSON.parse(fs.readFileSync('package.json')); const bad=['offline_language_vocabulary','offline_lexicon','offline_semantic_knowledge','omega_game_language_ontology','omega_game_language_source_inventory','offline_semantic_brain','offline_query_engine','omega_game_language_bridge','omega_reasoning_dispatcher']; for(const v of Object.values(p.scripts)) for(const x of bad) if(String(v).includes(x)) process.exit(1); console.log('PACKAGE_GATE_OK')"
       - name: Commit finalized migration
