@@ -25,9 +25,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: 24
       - name: Syntax gate
@@ -45,7 +45,7 @@ jobs:
             echo 'SECURITY GATE FAILED: unsafe DOM sink detected in language subsystem.' >&2
             exit 1
           fi
-          if grep -nEi '(api[_-]?key|secret|token)[[:space:]]*[:=][[:space:]]*["'"'][A-Za-z0-9_\-]{20,}["'"']' "${targets[@]}"; then
+          if grep -nE '(api[_-]?key|secret|token)[[:space:]]*[:=][[:space:]]*"[A-Za-z0-9_\-]{20,}"' "${targets[@]}" || grep -nE "(api[_-]?key|secret|token)[[:space:]]*[:=][[:space:]]*'[A-Za-z0-9_\-]{20,}'" "${targets[@]}"; then
             echo 'SECURITY GATE FAILED: hard-coded credential-like literal detected.' >&2
             exit 1
           fi
