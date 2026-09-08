@@ -15,7 +15,7 @@ const ontology = system.gameLanguageOntology();
 assert.equal(ontology.schema_version, '1.1.0');
 assert.equal(ontology.ontology_id, 'OMEGA_GAME_LANGUAGE');
 assert.equal(ontology.canonical_concept_target, 4500);
-assert.equal(ontology.domains.reduce((sum, d) => sum + d.target, 0), 5200);
+assert.equal(ontology.domains.reduce((sum, d) => sum + d.target, 0), 5250);
 assert.equal(ontology.target_tiers.core_game_language + ontology.target_tiers.advanced_strategy_language + ontology.target_tiers.grammar_discourse_command_language, 4500);
 assert.equal(ontology.seed_concepts.length, ontology.population_policy.current_seed_count);
 
