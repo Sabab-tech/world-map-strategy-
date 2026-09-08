@@ -24,7 +24,7 @@ const sandbox={console,Date,JSON,Object,Array,Map,Set,Math,RegExp,String,Number,
 vm.runInNewContext(js,sandbox,{filename:'omega_language_system.js'});
 const L=sandbox.OmegaLanguageSystem;assert.ok(L);assert.equal(L.STATUS,'STANDALONE_READY');assert.equal(L.VERSION,'5.2.0');
 const d=L.sourceData();assert.equal(d['offline_lexicon.json'].TOTAL_WORDS,7756);const inv=d['omega_game_language_source_inventory.json'];assert.equal(inv.source_concept_count,17);assert.equal(inv.raw_surface_entry_count,332);assert.equal(inv.unique_surface_entry_count,226);assert.ok(d['offline_language_vocabulary.json'].languages.en&&d['offline_language_vocabulary.json'].languages.bn);
-L.configure({datasets:[]});const en=L.parse('How many iron mines are in Bangladesh?');const bn=L.parse('বাংলাদেশে কয়টি লোহার খনি আছে?');assert.equal(en.operation,'COUNT');assert.equal(bn.operation,'COUNT');
+L.configure({datasets:[]});const en=L.parse('How many iron mines are in Bangladesh?');const bn=L.parse('বাংলাদেশে কয়টি লোহার খনি আছে?');console.log('OMEGA_PARSE_DIAGNOSTIC',JSON.stringify({en,enFn:String(L.parse),analyze:String(L.analyze),version:L.VERSION},null,2));assert.equal(en.operation,'COUNT');assert.equal(bn.operation,'COUNT');
 const unknown=L.parse('How many facilities are in Atlantis?');assert.ok(unknown.unresolved.includes('COUNTRY'));
 const ev=L.eventRequest('IMPORT',{resource:'CRUDE_OIL'});assert.equal(ev.state,'EVENT_REQUESTED');assert.equal(ev.operation,'IMPORT');
 const learned=L.learnPhrase('custom import phrase',{operation:'IMPORT'},0.95);assert.equal(learned,true);
