@@ -15,8 +15,9 @@ for(const [key,next] of [['SOURCE_DATA','SOURCE_ARCHIVE'],['SOURCE_ARCHIVE','SOU
   const end=s.indexOf(endMarker,start); if(end<0)throw Error('SECTION_END_MISSING:'+key);
   const prefix='const '+key+'=Object.freeze('; const expression=s.slice(start+prefix.length,end).trim();
   if(!expression.endsWith(');'))throw Error('SECTION_SHAPE_INVALID:'+key);
-  const value=JSON.parse(expression.slice(0,-2));
-  const encoded=Buffer.from(JSON.stringify(value),'utf8').toString('base64');
+  const jsonText=expression.slice(0,-2).trim();
+  try{JSON.parse(jsonText)}catch(e){throw new Error('SOURCE_PLANE_NOT_VALID_JSON:'+key+':'+e.message)}
+  const encoded=Buffer.from(jsonText,'utf8').toString('base64');
   const replacement='const '+key+'=Object.freeze(__OMEGA_B64_JSON__('+JSON.stringify(encoded)+'));';
   s=s.slice(0,start)+replacement+s.slice(end);
 }
