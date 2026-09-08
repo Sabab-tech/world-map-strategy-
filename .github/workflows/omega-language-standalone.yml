@@ -33,16 +33,25 @@ jobs:
           node --check omega_cognitive_engine.js
           node --check omega_ai_integrity_layer.js
           node --check server_bootstrap.js
-      - name: Remove cognitive legacy lexicon dependency
+          node --check server.js
+          node --check minister_query_router.js
+      - name: Remove direct legacy language dependencies from surviving runtime shells
         run: |
           node - <<'NODE'
           const fs=require('node:fs');
-          const p='omega_cognitive_engine.js';
-          let s=fs.readFileSync(p,'utf8');
-          const re=/const\s+lexPath\s*=\s*path\.resolve\(cwd,\s*['"]offline_lexicon\.json['"]\s*\);/;
-          if(re.test(s)) s=s.replace(re,"const lexPath='';");
-          if(/offline_lexicon\.json|offline_language_vocabulary\.json|offline_semantic_knowledge\.json|omega_game_language_ontology\.json|omega_game_language_source_inventory\.json|offline_semantic_brain\.js|offline_query_engine\.js|omega_game_language_bridge\.js|omega_reasoning_dispatcher\.js/.test(s)) throw new Error('COGNITIVE_LEGACY_LANGUAGE_REFERENCE_REMAINS');
-          fs.writeFileSync(p,s);
+          const retired=['offline_language_vocabulary.json','offline_lexicon.json','offline_semantic_knowledge.json','omega_game_language_ontology.json','omega_game_language_source_inventory.json','offline_semantic_brain.js','offline_query_engine.js','omega_game_language_bridge.js','omega_reasoning_dispatcher.js'];
+          const router='minister_query_router.js';
+          let s=fs.readFileSync(router,'utf8');
+          s=s.replace(/,?\s*['"]offline_semantic_knowledge\.json['"]/g,'');
+          fs.writeFileSync(router,s);
+          const commentFree=x=>x.replace(/\/\*[\s\S]*?\*\//g,'').replace(/(^|[^:])\/\/.*$/gm,'$1');
+          const body=commentFree(s);
+          for(const f of retired)if(body.includes(f))throw new Error(`MINISTER_ROUTER_RETAINS_LEGACY_LANGUAGE_DEPENDENCY:${f}`);
+          if(fs.existsSync('server.js')){
+            const sb=commentFree(fs.readFileSync('server.js','utf8'));
+            for(const f of retired)if(sb.includes(f))throw new Error(`SERVER_RETAINS_LEGACY_LANGUAGE_DEPENDENCY:${f}`);
+          }
+          console.log('SURVIVING_RUNTIME_LANGUAGE_DEPENDENCY_GATE_OK');
           NODE
       - name: Standalone dependency and security gate
         run: |
@@ -75,18 +84,29 @@ jobs:
           assert.ok(sup.result&&sup.result.available,'offline supplier execution did not run');
           console.log('OMEGA_OFFLINE_EXECUTION_REGRESSION_OK');
           NODE
-      - name: Remove legacy language sources, build-only inputs, and obsolete language-only tests
+      - name: Remove legacy language sources, obsolete runtimes, build-only inputs, and obsolete language-only tests
         run: |
           for f in \
             offline_language_vocabulary.json offline_lexicon.json offline_semantic_knowledge.json \
             omega_game_language_ontology.json omega_game_language_source_inventory.json \
             offline_semantic_brain.js offline_query_engine.js omega_game_language_bridge.js omega_reasoning_dispatcher.js \
+            omega_country_semantic_bridge.js omega_semantic_runtime_v31.js omega_semantic_runtime_v32.js \
+            omega_production_semantic_runtime_v3.js \
             scripts/test_runtime_semantic_all_countries.mjs scripts/validate_game_language_ontology.cjs \
             scripts/test_semantic_runtime_v4.cjs scripts/test_semantic_runtime_v32.mjs scripts/test_production_semantic_runtime_v3.mjs \
+            scripts/test_minister_cognition.cjs scripts/test_reasoning_dispatcher.cjs \
             scripts/build_offline_lexicon.cjs scripts/omega_language_execution_module.js \
             scripts/omega_language_execution_module_v2.js scripts/omega_language_system.runtime.template.js; do
             [ -e "$f" ] && git rm -f "$f" || true
           done
+          node - <<'NODE'
+          const fs=require('node:fs');
+          for(const p of ['index.html']) if(fs.existsSync(p)){
+            let s=fs.readFileSync(p,'utf8');
+            s=s.replace(/\s*<script\s+src=["']omega_production_semantic_runtime_v3\.js["'][^>]*><\/script>\s*/g,'\n');
+            fs.writeFileSync(p,s);
+          }
+          NODE
       - name: Verify legacy source absence
         run: OMEGA_POST_MIGRATION=1 node scripts/test_omega_language_system.cjs
       - name: Repository-wide retired-language reference gate
@@ -95,8 +115,9 @@ jobs:
           const fs=require('node:fs'),path=require('node:path');
           const retired=['offline_language_vocabulary.json','offline_lexicon.json','offline_semantic_knowledge.json','omega_game_language_ontology.json','omega_game_language_source_inventory.json','offline_semantic_brain.js','offline_query_engine.js','omega_game_language_bridge.js','omega_reasoning_dispatcher.js'];
           const allowed=new Set(['omega_language_system.js','.github/workflows/omega-language-standalone.yml','scripts/test_omega_language_system.cjs','package.json']);
+          const stripComments=s=>s.replace(/\/\*[\s\S]*?\*\//g,'').replace(/(^|[^:])\/\/.*$/gm,'$1');
           const files=[];(function walk(d){for(const n of fs.readdirSync(d)){if(n==='.git'||n==='node_modules')continue;const p=path.join(d,n),s=fs.statSync(p);if(s.isDirectory())walk(p);else if(/\.(?:js|cjs|mjs|json)$/.test(p))files.push(p)}})('.');
-          const bad=[];for(const f of files){const rel=f.replaceAll('\\','/');if(allowed.has(rel))continue;const txt=fs.readFileSync(f,'utf8');if(retired.some(x=>txt.includes(x)))bad.push(rel)}
+          const bad=[];for(const f of files){const rel=f.replaceAll('\\','/');if(allowed.has(rel))continue;const txt=stripComments(fs.readFileSync(f,'utf8'));if(retired.some(x=>txt.includes(x)))bad.push(rel)}
           if(bad.length)throw new Error('RETIRED_LANGUAGE_REFERENCES:'+bad.join(','));
           console.log('REPOSITORY_RETIRED_LANGUAGE_REFERENCE_GATE_OK');
           NODE
@@ -105,7 +126,7 @@ jobs:
           node - <<'NODE'
           const fs=require('node:fs');
           const p=JSON.parse(fs.readFileSync('package.json','utf8'));
-          const blocked=['offline_language_vocabulary.json','offline_lexicon.json','offline_semantic_knowledge.json','omega_game_language_ontology.json','omega_game_language_source_inventory.json','offline_semantic_brain.js','offline_query_engine.js','omega_game_language_bridge.js','omega_reasoning_dispatcher.js','test_deep_semantic_brain.cjs','test_runtime_semantic_all_countries.mjs','validate_game_language_ontology.cjs','build_offline_lexicon.cjs','test_semantic_runtime_v4.cjs','test_semantic_runtime_v32.mjs','test_production_semantic_runtime_v3.mjs','omega_language_system.runtime.template.js','omega_language_execution_module.js','omega_language_execution_module_v2.js'];
+          const blocked=['offline_language_vocabulary.json','offline_lexicon.json','offline_semantic_knowledge.json','omega_game_language_ontology.json','omega_game_language_source_inventory.json','offline_semantic_brain.js','offline_query_engine.js','omega_game_language_bridge.js','omega_reasoning_dispatcher.js','test_deep_semantic_brain.cjs','test_runtime_semantic_all_countries.mjs','validate_game_language_ontology.cjs','build_offline_lexicon.cjs','test_semantic_runtime_v4.cjs','test_semantic_runtime_v32.mjs','test_production_semantic_runtime_v3.mjs','test_minister_cognition.cjs','test_reasoning_dispatcher.cjs','omega_country_semantic_bridge.js','omega_semantic_runtime_v31.js','omega_semantic_runtime_v32.js','omega_production_semantic_runtime_v3.js','omega_language_system.runtime.template.js','omega_language_execution_module.js','omega_language_execution_module_v2.js'];
           for(const [name,cmd] of Object.entries(p.scripts||{})) p.scripts[name]=String(cmd).split(' && ').filter(part=>!blocked.some(x=>part.includes(x))).join(' && ');
           fs.writeFileSync('package.json',JSON.stringify(p,null,2)+'\n');
           for(const [name,cmd] of Object.entries(p.scripts||{})) for(const x of blocked) if(String(cmd).includes(x)) throw Error(`package script ${name} still references ${x}`);
@@ -117,8 +138,10 @@ jobs:
           node --check omega_cognitive_engine.js
           node --check omega_ai_integrity_layer.js
           node --check server_bootstrap.js
+          node --check server.js
+          node --check minister_query_router.js
           OMEGA_POST_MIGRATION=1 node scripts/test_omega_language_system.cjs
-          node -e "const p=require('./package.json'); for(const v of Object.values(p.scripts)) if(/offline_(language_vocabulary|lexicon|semantic_knowledge)|omega_game_language_(ontology|source_inventory|bridge)|offline_semantic_(brain)|offline_query_engine|omega_reasoning_dispatcher|validate_game_language_ontology|test_runtime_semantic_all_countries|build_offline_lexicon|omega_language_system\.runtime\.template|omega_language_execution_module/.test(v)) process.exit(1); console.log('PACKAGE_GATE_OK')"
+          node -e "const p=require('./package.json'); for(const v of Object.values(p.scripts)) if(/offline_(language_vocabulary|lexicon|semantic_knowledge)|omega_game_language_(ontology|source_inventory|bridge)|offline_semantic_(brain)|offline_query_engine|omega_reasoning_dispatcher|validate_game_language_ontology|test_runtime_semantic_all_countries|build_offline_lexicon|test_semantic_runtime_|test_production_semantic_runtime_|test_minister_cognition|test_reasoning_dispatcher|omega_country_semantic_bridge|omega_semantic_runtime_v3|omega_production_semantic_runtime_v3|omega_language_system\.runtime\.template|omega_language_execution_module/.test(v)) process.exit(1); console.log('PACKAGE_GATE_OK')"
       - name: Commit finalized migration
         if: github.event_name == 'push'
         run: |
