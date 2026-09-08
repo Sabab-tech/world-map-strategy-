@@ -27,8 +27,8 @@ assert.equal(ontology.population_policy.current_seed_count, 12);
 assert.equal(ontology.domains.length, 17);
 assert.equal(ontology.domains.reduce((n, d) => n + d.target, 0), 5250);
 assert.equal(ontology.target_tiers.core_game_language + ontology.target_tiers.advanced_strategy_language + ontology.target_tiers.grammar_discourse_command_language, 4500);
-assert.deepEqual(ontology.grammar.features, ['Person','Number','Case','Tense','Aspect','Mood','Voice','Polarity','Degree','VerbForm']);
-assert.deepEqual(ontology.grammar.dependency_relations, ['nsubj','obj','obl','advmod','aux','mark','conj','nmod']);
+assert.deepEqual(Array.from(ontology.grammar.features), ['Person','Number','Case','Tense','Aspect','Mood','Voice','Polarity','Degree','VerbForm']);
+assert.deepEqual(Array.from(ontology.grammar.dependency_relations), ['nsubj','obj','obl','advmod','aux','mark','conj','nmod']);
 
 const ids = new Set();
 for (const c of ontology.seed_concepts) {
@@ -52,8 +52,8 @@ for (const c of ontology.seed_concepts) {
 }
 
 assert.equal(ids.size, 12);
-assert.deepEqual(system.concept('RESOURCE_PRODUCTION').concept_id, 'RESOURCE_PRODUCTION');
-assert.deepEqual(system.concept('ACTION_INCREASE').semantic_roles, ['ACTOR','TARGET','AMOUNT','UNIT','TIME_HORIZON','SCOPE','CONSTRAINT','CONDITION']);
+assert.equal(system.concept('RESOURCE_PRODUCTION').concept_id, 'RESOURCE_PRODUCTION');
+assert.deepEqual(Array.from(system.concept('ACTION_INCREASE').semantic_roles), ['ACTOR','TARGET','AMOUNT','UNIT','TIME_HORIZON','SCOPE','CONSTRAINT','CONDITION']);
 assert.equal(system.concept('PRICE').relations.some(r => r.relation === 'distinct_from' && r.target === 'COST'), true);
 assert.equal(system.concept('COUNTRY').runtime_resolution.requires.includes('authoritative_country_registry'), true);
 
