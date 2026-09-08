@@ -25,7 +25,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
       - name: Syntax gate
         run: node --check omega_language_system.js && node --check scripts/test_omega_language_hybrid.cjs && node --check scripts/validate_game_language_ontology.cjs
       - name: Canonical ontology validation
