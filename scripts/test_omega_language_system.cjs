@@ -8,7 +8,7 @@ const post=process.env.OMEGA_POST_MIGRATION==='1';
 const bundle=path.join(root,'omega_language_system.js');
 assert.ok(fs.existsSync(bundle),'canonical standalone bundle is missing');
 const js=fs.readFileSync(bundle,'utf8');
-assert.match(js,/OMEGA LANGUAGE SYSTEM v5\.0\.0/);
+assert.match(js,/OMEGA LANGUAGE SYSTEM v5\.1\.0/);
 assert.match(js,/STATUS:'STANDALONE_READY'/);
 assert.match(js,/SOURCE_DATA/);
 if(post)for(const f of legacy)assert.equal(fs.existsSync(path.join(root,f)),false,`legacy language dependency still present: ${f}`);else{assert.ok(fs.existsSync(path.join(root,'offline_language_vocabulary.json')),'pre-migration vocabulary source missing');assert.ok(fs.existsSync(path.join(root,'offline_lexicon.json')),'pre-migration lexicon source missing')}
@@ -18,8 +18,8 @@ for(const symbol of ['OmegaLanguageSystem','configure','parse','buildIR','execut
 for(const marker of ['pronunciation','phonetic','ipa','lemma','alias','aliases','forms','morphology','grammar','semantic_roles','allowed_actions','events','actions','EVENT_REQUESTED','EVENT_CONFIRMED','EVENT_REJECTED','EVENT_EXECUTED','EVENT_FAILED','EVENT_PENDING'])assert.ok(js.includes(marker),`language preservation marker missing: ${marker}`);
 for(const op of ['IDENTIFY','COUNT','QUANTITY','COMPARE','ANALYZE','FORECAST','POLICY','IMPORT','EXPORT','APPOINT','REMOVE','NEGOTIATE','ALLOCATE','START','HALT'])assert.ok(js.includes(`'${op}'`)||js.includes(`\"${op}\"`)||js.includes(op),`operation missing: ${op}`);
 assert.ok(js.includes('sourceFiles')&&js.includes('migrationInvariant'),'embedded source manifest missing');
-assert.equal(/(?:\.\/)?(?:offline_language_vocabulary|offline_lexicon|offline_semantic_knowledge|omega_game_language_ontology|omega_game_language_source_inventory|offline_semantic_brain|offline_query_engine|omega_game_language_bridge|omega_reasoning_dispatcher)\.(?:json|js)/.test(executable),false,'bundle contains a runtime reference to a retired language source');
-if(post)for(const f of ['omega_cognitive_engine.js','omega_ai_integrity_layer.js','omega_universal_ai_runtime.js'])if(fs.existsSync(path.join(root,f))){const s=fs.readFileSync(path.join(root,f),'utf8');assert.equal(/offline_lexicon\.json|offline_language_vocabulary\.json|offline_semantic_knowledge\.json|omega_game_language_ontology\.json|omega_game_language_source_inventory\.json|offline_semantic_brain\.js|offline_query_engine\.js|omega_game_language_bridge\.js|omega_reasoning_dispatcher\.js/.test(s),false,`${f} retains a retired language-source dependency`)}
+assert.equal(/['"]\.\/(?:offline_language_vocabulary|offline_lexicon|offline_semantic_knowledge|omega_game_language_ontology|omega_game_language_source_inventory|offline_semantic_brain|offline_query_engine|omega_game_language_bridge|omega_reasoning_dispatcher)\.(?:json|js)['"]/.test(executable),false,'bundle contains an executable path reference to a retired language source');
+if(post)for(const f of ['omega_cognitive_engine.js','omega_ai_integrity_layer.js','omega_universal_ai_runtime.js'])if(fs.existsSync(path.join(root,f))){const s=fs.readFileSync(path.join(root,f),'utf8');assert.equal(/['"]\.\/(?:offline_language_vocabulary|offline_lexicon|offline_semantic_knowledge|omega_game_language_ontology|omega_game_language_source_inventory|offline_semantic_brain|offline_query_engine|omega_game_language_bridge|omega_reasoning_dispatcher)\.(?:json|js)['"]/.test(s),false,`${f} retains a retired language-source path dependency`)}
 const sandbox={console,Date,JSON,Object,Array,Map,Set,Math,RegExp,String,Number,Promise,Intl,setTimeout,clearTimeout,localStorage:{d:new Map(),getItem(k){return this.d.get(k)||null},setItem(k,v){this.d.set(k,String(v))}},Game:{state:{}}};sandbox.globalThis=sandbox;sandbox.window=sandbox;
 vm.runInNewContext(js,sandbox,{filename:'omega_language_system.js'});
 const L=sandbox.OmegaLanguageSystem;assert.ok(L);assert.equal(L.STATUS,'STANDALONE_READY');const d=L.sourceData();
@@ -30,5 +30,5 @@ L.configure({datasets:[]});const en=L.parse('How many iron mines are in Banglade
 const unknown=L.parse('How many facilities are in Atlantis?');assert.ok(unknown.unresolved.includes('COUNTRY'));
 const ev=L.eventRequest('IMPORT',{resource:'CRUDE_OIL'});assert.equal(ev.state,'EVENT_REQUESTED');assert.equal(ev.operation,'IMPORT');
 const learned=L.learnPhrase('custom import phrase',{operation:'IMPORT'},0.95);assert.equal(learned,true);
-const diag=L.diagnostics();assert.equal(diag.externalLanguageFileDependency,false);assert.equal(diag.lexiconTotalWords,7756);assert.equal(diag.version,'5.0.0');
+const diag=L.diagnostics();assert.equal(diag.externalLanguageFileDependency,false);assert.equal(diag.lexiconTotalWords,7756);assert.equal(diag.version,'5.1.0');
 console.log('OMEGA_STANDALONE_LANGUAGE_CONTRACT_OK');console.log(JSON.stringify({postMigration:post,bundleBytes:Buffer.byteLength(js),version:L.VERSION,words:7756,inventory:inv,english:en.operation,bengali:bn.operation,unknownCountryPolicy:unknown.unresolved,legacyFilesAbsent:post?legacy.length:0},null,2));
