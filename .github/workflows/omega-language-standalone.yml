@@ -43,8 +43,27 @@ jobs:
           let r=fs.readFileSync('minister_query_router.js','utf8');
           const rl=r.split(/\r?\n/), ri=rl.findIndex(x=>x.includes('function classify(q){'));
           if(ri<0)throw new Error('MINISTER_ROUTER_CLASSIFY_FUNCTION_NOT_FOUND');
-          rl[ri]="function classify(q){const w=new Set(words(q));const has=a=>a.some(x=>w.has(x));const trade=['import','imports','importing','export','exports','exporting','supplier','suppliers','buy','buying','purchase','sell','selling','trade','trading','shipment','shipping','freight','tariff','tariffs'];const sec=['secure','security','safe','safety','stockpile','stockpiles','reserve','reserves','shortage','depletion','runway','buffer','vulnerable','risk'];const cmp=['compare','versus','vs','higher','lower','more','less','best','better','largest','smallest'];const loc=['where','location','located','based','situated'];const cnt=['how','many','number','count','total','quantity','amount'];let operation='LOOKUP';if(has(sec))operation='SECURITY';else if(has(trade))operation=has(['import','imports','buy','purchase','supplier','suppliers'])?'IMPORT':'EXPORT';else if(has(cmp))operation='COMPARE';else if(has(loc))operation='LOCATION';else if(has(cnt))operation='COUNT';const speech=/^(hi|hello|hey|হ্যালো|হাই)/i.test(norm(q))?'CONVERSATION':(/[?]$/.test(q)||/\\b(who|what|which|where|when|why|how)\\b/i.test(q)||/কি|কী|কেন|কোথায়|কোথায়|কত|কে/.test(q)?'QUESTION':'STATEMENT');return{operation,speech,subject:/\\b(i|me|my|our|we)\\b|\\b(আমার|আমরা|আমি)/i.test(q)?'PLAYER'}}";
-          r=rl.join('\n').replace(/,?\s*['"]offline_semantic_knowledge\.json['"]/g,'');fs.writeFileSync('minister_query_router.js',r);
+          const replacement=[
+            'function classify(q){',
+            "  const w=new Set(words(q));",
+            "  const has=a=>a.some(x=>w.has(x));",
+            "  const trade=['import','imports','importing','export','exports','exporting','supplier','suppliers','buy','buying','purchase','sell','selling','trade','trading','shipment','shipping','freight','tariff','tariffs'];",
+            "  const sec=['secure','security','safe','safety','stockpile','stockpiles','reserve','reserves','shortage','depletion','runway','buffer','vulnerable','risk'];",
+            "  const cmp=['compare','versus','vs','higher','lower','more','less','best','better','largest','smallest'];",
+            "  const loc=['where','location','located','based','situated'];",
+            "  const cnt=['how','many','number','count','total','quantity','amount'];",
+            "  let operation='LOOKUP';",
+            "  if(has(sec))operation='SECURITY';",
+            "  else if(has(trade))operation=has(['import','imports','buy','purchase','supplier','suppliers'])?'IMPORT':'EXPORT';",
+            "  else if(has(cmp))operation='COMPARE';",
+            "  else if(has(loc))operation='LOCATION';",
+            "  else if(has(cnt))operation='COUNT';",
+            "  const speech=/^(hi|hello|hey|হ্যালো|হাই)/i.test(norm(q))?'CONVERSATION':(/[?]$/.test(q)||/\\b(who|what|which|where|when|why|how)\\b/i.test(q)||/কি|কী|কেন|কোথায়|কোথায়|কত|কে/.test(q)?'QUESTION':'STATEMENT');",
+            "  const subject=/\\b(i|me|my|our|we)\\b|\\b(আমার|আমরা|আমি)\\b/i.test(q)?'PLAYER':undefined;",
+            "  return {operation,speech,subject};",
+            '}'
+          ];
+          const before=rl.slice(0,ri), after=rl.slice(ri+1);r=before.concat(replacement,after).join('\n').replace(/,?\s*['"]offline_semantic_knowledge\.json['"]/g,'');fs.writeFileSync('minister_query_router.js',r);
           for(const f of retired)if(strip(r).includes(f))throw new Error(`MINISTER_ROUTER_RETAINS_LEGACY_LANGUAGE_DEPENDENCY:${f}`);
 
           let s=fs.readFileSync('server.js','utf8');
@@ -54,10 +73,10 @@ jobs:
           const start=s.indexOf('let languageVocabulary = {};');
           const sem=s.indexOf('const semanticRuntime =',start);
           if(start<0||sem<0)throw new Error('SERVER_LANGUAGE_INIT_BLOCK_NOT_FOUND');
-          const nl=s.indexOf('\n',sem);const after=nl>=0?nl+1:s.length;
+          const nl=s.indexOf('\n',sem);const afterInit=nl>=0?nl+1:s.length;
           const langInit=`const __languageSandbox={console,Date,JSON,Object,Array,Map,Set,Math,RegExp,String,Number,Promise,Intl,localStorage:{getItem(){return null},setItem(){}}};__languageSandbox.globalThis=__languageSandbox;__languageSandbox.window=__languageSandbox;vm.runInNewContext(fs.readFileSync(path.join(__dirname,'omega_language_system.js'),'utf8'),__languageSandbox,{filename:'omega_language_system.js'});const OmegaLanguageSystem=__languageSandbox.OmegaLanguageSystem;if(!OmegaLanguageSystem||OmegaLanguageSystem.STATUS!=='STANDALONE_READY')throw new Error('OMEGA_LANGUAGE_SYSTEM_STANDALONE_UNAVAILABLE');function canonicalParse(prompt,ctx={}){OmegaLanguageSystem.configure({datasets:semanticDatasets,context:ctx});const parsed=OmegaLanguageSystem.parse(prompt,ctx);return {...parsed,raw:String(prompt||'')}}function canonicalExecute(parsed,ctx={}){const prompt=typeof parsed==='string'?parsed:(parsed?.raw||parsed?.input||parsed?.query||'');OmegaLanguageSystem.configure({datasets:semanticDatasets,context:ctx});const run=OmegaLanguageSystem.run(prompt,ctx);return {...run,text:run?.text||run?.answer||'',plan:run?.plan||run?.analysis||null,answerState:run?.answerState||run?.result||null,contextPacket:run?.contextPacket||{result:run?.result||null}}}const OfflineSemanticBrain=Object.freeze({parse:canonicalParse,explain:x=>x});const OfflineQueryEngine=Object.freeze({execute:(parsed,_datasets,_language,ctx={})=>canonicalExecute(parsed,ctx)});const semanticRuntime=OmegaLanguageSystem.diagnostics();`;
-          s=s.slice(0,start)+langInit+s.slice(after);
-          if(/offline_semantic_brain\.js|offline_query_engine\.js|offline_language_vocabulary\.json|offline_lexicon\.json/.test(strip(s)))throw new Error('SERVER_CANONICAL_MIGRATION_INCOMPLETE');
+          s=s.slice(0,start)+langInit+s.slice(afterInit);
+          if(/OfflineSemanticBrain|OfflineQueryEngine|offline_semantic_brain\.js|offline_query_engine\.js|offline_language_vocabulary\.json|offline_lexicon\.json/.test(strip(s)))throw new Error('SERVER_CANONICAL_MIGRATION_INCOMPLETE');
           fs.writeFileSync('server.js',s);
           NODE
           node --check minister_query_router.js
