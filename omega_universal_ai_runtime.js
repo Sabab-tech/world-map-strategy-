@@ -1,11 +1,15 @@
 /**
- * OMEGA UNIVERSAL AI RUNTIME v1.4.0
+ * OMEGA UNIVERSAL AI RUNTIME v1.4.1
  * Canonical interrogation owner. Works on both Node-backed hosts and static hosts
  * such as GitHub Pages: no POST-only dependency for offline execution.
  *
  * Game-language ontology + bridge now live inside omega_language_system.js.
  * World-state facts remain authoritative in runtime datasets and capabilities
  * remain authoritative in their own registry/engines.
+ *
+ * v1.4.1: live game-state context is explicitly bridged into the canonical
+ * language runtime before semantic parsing, so language and world state share
+ * one synchronized context contract.
  */
 (function (global) {
   'use strict';
@@ -31,6 +35,25 @@
       ministerId: m.id || ui.currentMinisterId || '', ministerName: m.name || m.displayName || '',
       ministerRole: m.role || m.title || '', ministryId: m.ministryId || ui.currentMinistryId || '', gameState: gs
     };
+  }
+
+  function syncLanguageContext(ctx, system = global.OmegaLanguageSystem) {
+    if (!system || typeof system.setContext !== 'function') return false;
+    try {
+      system.setContext({
+        countryId: ctx?.countryId || '',
+        countryName: ctx?.countryName || '',
+        ministerId: ctx?.ministerId || '',
+        ministerName: ctx?.ministerName || '',
+        ministerRole: ctx?.ministerRole || '',
+        ministryId: ctx?.ministryId || '',
+        gameState: ctx?.gameState || {}
+      });
+      return true;
+    } catch (e) {
+      console.warn('[OMEGA UNIVERSAL AI] Language context bridge rejected live state:', e?.message || e);
+      return false;
+    }
   }
 
   function localConversation(text, ctx) {
@@ -73,8 +96,12 @@
     return global.OmegaReasoningDispatcher || null;
   }
 
-  async function ensureGameLanguageLayer() {
-    if (gameLanguagePromise) return gameLanguagePromise;
+  async function ensureGameLanguageLayer(ctx = context()) {
+    if (gameLanguagePromise) {
+      const bridge = await gameLanguagePromise;
+      syncLanguageContext(ctx);
+      return bridge;
+    }
     gameLanguagePromise = (async () => {
       if (!global.OmegaLanguageSystem) await loadScript('omega_language_system.js');
       const system = global.OmegaLanguageSystem;
@@ -83,18 +110,24 @@
       try {
         bridge.load(system.gameLanguageOntology());
         bridge.install();
+        syncLanguageContext(ctx, system);
         return bridge;
       } catch (_) { return null; }
     })().catch(() => null);
-    return gameLanguagePromise;
+    const bridge = await gameLanguagePromise;
+    syncLanguageContext(ctx);
+    return bridge;
   }
 
-  async function browserOffline() {
-    if (datasetPromise) return datasetPromise;
+  async function browserOffline(common = context()) {
+    if (datasetPromise) {
+      await ensureGameLanguageLayer(common);
+      return datasetPromise;
+    }
     datasetPromise = (async () => {
       if (!global.OfflineSemanticBrain) await loadScript('offline_semantic_brain.js');
       if (!global.OfflineQueryEngine) await loadScript('offline_query_engine.js');
-      await ensureGameLanguageLayer();
+      await ensureGameLanguageLayer(common);
       const files = ['resources.json','resources_2.json','economy.json','population.json','countries.json','relations.json','country_policy.json','world.json','society.json','offline_semantic_knowledge.json','resource_ontology.json','offline_language_vocabulary.json'];
       const loaded = await Promise.all(files.map(async f => { try { const r = await fetch('/' + f, { cache: 'no-store' }); if (!r.ok) return null; return await r.json(); } catch (_) { return null; } }));
       const datasets = loaded.filter(Boolean);
@@ -108,7 +141,10 @@
   }
 
   async function runOfflineDirect(question, common) {
-    const { datasets } = await browserOffline();
+    const { datasets } = await browserOffline(common);
+    const bridge = await ensureGameLanguageLayer(common);
+    const system = global.OmegaLanguageSystem;
+    syncLanguageContext(common, system);
     const brain = global.OfflineSemanticBrain, engine = global.OfflineQueryEngine;
     if (!brain || !engine || typeof brain.parse !== 'function' || typeof engine.execute !== 'function') throw new Error('Browser offline execution engine is unavailable');
     const parsed = brain.parse(question, { countryId: common.countryId, resourceId: common.resourceId, ministerId: common.ministerId, timeHorizon: common.timeHorizon, countryName: common.countryName, ministryId: common.ministryId });
@@ -117,16 +153,19 @@
     const reasoning = dispatcher ? dispatcher.dispatch(question, parsed, result, { ...common, gameState: common.gameState }) : null;
     if (reasoning?.used && reasoning.text && !result?.text) result.text = reasoning.text;
     result.reasoning = reasoning;
-    result.gameLanguage = parsed?.gameLanguage || null;
+    result.gameLanguage = parsed?.gameLanguage || bridge || null;
     return { parsed, result, reasoning };
   }
 
   async function runTurn(question) {
     const ctx = context();
+    await ensureGameLanguageLayer(ctx);
+    syncLanguageContext(ctx);
     const conversation = localConversation(question, ctx);
     if (conversation) { output(conversation, question, { source: 'OFFLINE_CONVERSATION' }); return; }
     const provider = String(localStorage.getItem('omega_ai_provider') || document.getElementById('omega-ai-provider')?.value || 'OFFLINE').toUpperCase();
     const common = { prompt: question, language: isBn(question) ? 'bn' : 'en', ...ctx, timeHorizon: 'CURRENT' };
+    syncLanguageContext(common);
     const dispatcher = await ensureReasoningDispatcher();
 
     if (provider.includes('GOOGLE')) {
@@ -166,8 +205,8 @@
     if (installed || typeof document === 'undefined') return; installed = true;
     document.addEventListener('click', e => { const button = e.target?.closest?.('#btn-submit-interrogation'); if (!button) return; e.preventDefault(); e.stopImmediatePropagation(); submitFromUI(); }, true);
     document.addEventListener('keydown', e => { if (e.key !== 'Enter' || e.shiftKey || e.isComposing || e.target?.id !== 'interrogation-input') return; e.preventDefault(); e.stopImmediatePropagation(); submitFromUI(); }, true);
-    global.OmegaUniversalAIRuntime = Object.freeze({ enqueue, submitFromUI, context, readHistory, version: '1.4.0' });
-    console.log('[OMEGA UNIVERSAL AI] Canonical interrogation pipeline installed. Browser offline execution, live-state context, consolidated game-language system, reasoning dispatch and sequential turns enabled.');
+    global.OmegaUniversalAIRuntime = Object.freeze({ enqueue, submitFromUI, context, readHistory, syncLanguageContext, version: '1.4.1' });
+    console.log('[OMEGA UNIVERSAL AI] Canonical interrogation pipeline installed. Browser offline execution, live-state context bridge, consolidated game-language system, reasoning dispatch and sequential turns enabled.');
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', install, { once: true }); else install();
 })(window);
