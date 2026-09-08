@@ -1,6 +1,7 @@
 name: OMEGA Language System
 
 on:
+  workflow_dispatch:
   push:
     paths:
       - 'omega_language_system.js'
