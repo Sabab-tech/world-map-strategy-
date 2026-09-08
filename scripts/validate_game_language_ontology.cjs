@@ -3,6 +3,7 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 
 const source = fs.readFileSync('omega_language_system.js', 'utf8');
+const semanticKnowledge = JSON.parse(fs.readFileSync('offline_semantic_knowledge.json', 'utf8'));
 const sandbox = { console };
 vm.createContext(sandbox);
 vm.runInContext(source, sandbox, { filename: 'omega_language_system.js' });
@@ -105,4 +106,32 @@ assert.equal(typeof sandbox.OmegaGameLanguageBridge.match, 'function');
 assert.equal(typeof sandbox.OmegaGameLanguageBridge.enrich, 'function');
 assert.equal(typeof sandbox.OmegaGameLanguageBridge.install, 'function');
 
-console.log(`OMEGA consolidated game-language validation: PASS (${ids.size} seeds; 12 new Batch 02 concepts; ${ontology.canonical_concept_target} canonical target; measurement/time/comparison graph locked; bridge v${sandbox.OmegaGameLanguageBridge.VERSION})`);
+const primitiveIds = ['QUANTITY','RATE','RATIO','PERCENTAGE','UNIT','TIME_POINT','TIME_DURATION','TIME_PERIOD','FREQUENCY','BASELINE','CHANGE_DELTA','RELATIVE_CHANGE'];
+const primitiveContract = semanticKnowledge.semantic_control_primitives;
+assert.equal(primitiveContract.schema_version, '1.0.0');
+assert.equal(primitiveContract.global_contract.required_layers.length, 17);
+for (const id of primitiveIds) {
+  const c = primitiveContract[id];
+  assert.ok(c, `Missing deep semantic control primitive: ${id}`);
+  for (const field of primitiveContract.global_contract.required_layers) assert.ok(c[field] !== undefined, `${id}: missing deep layer ${field}`);
+  assert.ok(Array.isArray(c.allowed_composition), `${id}: allowed_composition missing`);
+  assert.ok(Array.isArray(c.invalid_composition), `${id}: invalid_composition missing`);
+  assert.ok(c.runtime_resolution_policy?.strategy, `${id}: runtime resolution strategy missing`);
+  assert.equal(c.game_state_mutation_authority, 'NONE', `${id}: measurement/time/comparison primitives cannot directly mutate game state`);
+}
+assert.equal(primitiveContract.QUANTITY.measurement_semantics.stock_flow_guard, true);
+assert.equal(primitiveContract.RATE.measurement_semantics.capacity_actual_guard, true);
+assert.equal(primitiveContract.RATIO.measurement_semantics.ordering_significant, true);
+assert.equal(primitiveContract.RATIO.measurement_semantics.zero_denominator_guard, true);
+assert.equal(primitiveContract.PERCENTAGE.measurement_semantics.not_an_action, true);
+assert.equal(primitiveContract.UNIT.runtime_resolution_policy.never.includes('invent_conversion_factor'), true);
+assert.equal(primitiveContract.TIME_POINT.temporal_semantics.kind, 'anchor');
+assert.equal(primitiveContract.TIME_DURATION.temporal_semantics.kind, 'execution_or_decay_horizon');
+assert.equal(primitiveContract.TIME_PERIOD.temporal_semantics.kind, 'simulation_or_analysis_window');
+assert.equal(primitiveContract.FREQUENCY.temporal_semantics.kind, 'recurrence_semantics');
+assert.equal(primitiveContract.BASELINE.measurement_semantics.kind, 'reference');
+assert.equal(primitiveContract.CHANGE_DELTA.measurement_semantics.formula, 'to_value - from_value');
+assert.equal(primitiveContract.RELATIVE_CHANGE.measurement_semantics.zero_baseline_guard, true);
+assert.equal(primitiveContract.RELATIVE_CHANGE.measurement_semantics.sign_preservation, true);
+
+console.log(`OMEGA consolidated game-language validation: PASS (${ids.size} seeds; 12 new Batch 02 concepts; deep semantic control contract v${primitiveContract.schema_version}; measurement/time/comparison graph locked; bridge v${sandbox.OmegaGameLanguageBridge.VERSION})`);
