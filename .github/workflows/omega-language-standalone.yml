@@ -34,25 +34,38 @@ jobs:
           node --check omega_ai_integrity_layer.js
           node --check server_bootstrap.js
           node --check server.js
-      - name: Repair surviving router and remove direct legacy language dependencies
+      - name: Repair surviving router and migrate server to canonical language boundary
         run: |
           node - <<'NODE'
-          const fs=require('node:fs');
+          const fs=require('node:fs'),path=require('node:path');
           const retired=['offline_language_vocabulary.json','offline_lexicon.json','offline_semantic_knowledge.json','omega_game_language_ontology.json','omega_game_language_source_inventory.json','offline_semantic_brain.js','offline_query_engine.js','omega_game_language_bridge.js','omega_reasoning_dispatcher.js'];
           const router='minister_query_router.js';
-          let s=fs.readFileSync(router,'utf8');
-          const lines=s.split(/\r?\n/);
-          const i=lines.findIndex(x=>x.includes('function classify(q){'));
+          let r=fs.readFileSync(router,'utf8');
+          const lines=r.split(/\r?\n/), i=lines.findIndex(x=>x.includes('function classify(q){'));
           if(i>=0)lines[i]="function classify(q){const w=new Set(words(q));const has=a=>a.some(x=>w.has(x));const trade=['import','imports','importing','export','exports','exporting','supplier','suppliers','buy','buying','purchase','sell','selling','trade','trading','shipment','shipping','freight','tariff','tariffs'];const sec=['secure','security','safe','safety','stockpile','stockpiles','reserve','reserves','shortage','depletion','runway','buffer','vulnerable','risk'];const cmp=['compare','versus','vs','higher','lower','more','less','best','better','largest','smallest'];const loc=['where','location','located','based','situated'];const cnt=['how','many','number','count','total','quantity','amount'];let operation='LOOKUP';if(has(sec))operation='SECURITY';else if(has(trade))operation=has(['import','imports','buy','purchase','supplier','suppliers'])?'IMPORT':'EXPORT';else if(has(cmp))operation='COMPARE';else if(has(loc))operation='LOCATION';else if(has(cnt))operation='COUNT';const speech=/^(hi|hello|hey|হ্যালো|হাই)/i.test(norm(q))?'CONVERSATION':(/[?]$/.test(q)||/\\b(who|what|which|where|when|why|how)\\b/i.test(q)||/কি|কী|কেন|কোথায়|কোথায়|কত|কে/.test(q)?'QUESTION':'STATEMENT');return{operation,speech,subject:/\\b(i|me|my|our|we)\\b|\\b(আমার|আমরা|আমি)/i.test(q)?'PLAYER'}}";
           else throw new Error('MINISTER_ROUTER_CLASSIFY_FUNCTION_NOT_FOUND');
-          s=lines.join('\n').replace(/,?\s*['"]offline_semantic_knowledge\.json['"]/g,'');
-          fs.writeFileSync(router,s);
+          r=lines.join('\n').replace(/,?\s*['"]offline_semantic_knowledge\.json['"]/g,'');
+          fs.writeFileSync(router,r);
           const strip=x=>x.replace(/\/\*[\s\S]*?\*\//g,'').replace(/(^|[^:])\/\/.*$/gm,'$1');
-          const body=strip(s);
-          for(const f of retired)if(body.includes(f))throw new Error(`MINISTER_ROUTER_RETAINS_LEGACY_LANGUAGE_DEPENDENCY:${f}`);
-          if(fs.existsSync('server.js'))for(const f of retired)if(strip(fs.readFileSync('server.js','utf8')).includes(f))throw new Error(`SERVER_RETAINS_LEGACY_LANGUAGE_DEPENDENCY:${f}`);
+          for(const f of retired)if(strip(r).includes(f))throw new Error(`MINISTER_ROUTER_RETAINS_LEGACY_LANGUAGE_DEPENDENCY:${f}`);
+
+          const p='server.js'; let s=fs.readFileSync(p,'utf8');
+          s=s.replace(/import ['"]\.\/offline_semantic_brain\.js['"];\s*/g,'').replace(/import ['"]\.\/offline_query_engine\.js['"];\s*/g,'');
+          s=s.replace(/const OfflineSemanticBrain = globalThis\.OfflineSemanticBrain;\s*/g,'').replace(/const OfflineQueryEngine = globalThis\.OfflineQueryEngine;\s*/g,'');
+          s=s.replace(/let languageVocabulary = \{\};[\s\S]*?const semanticRuntime = OfflineSemanticBrain\.configure\(\{ datasets: semanticDatasets, vocabulary: languageVocabulary \}\);/,
+`const __languageSandbox = { console, Date, JSON, Object, Array, Map, Set, Math, RegExp, String, Number, Promise, Intl, localStorage: { getItem(){return null}, setItem(){} } };\n__languageSandbox.globalThis=__languageSandbox;\n__languageSandbox.window=__languageSandbox;\nconst __languageSource = fs.readFileSync(path.join(__dirname,'omega_language_system.js'),'utf8');\nawaitLoadCanonical(__languageSource);\nconst OmegaLanguageSystem = __languageSandbox.OmegaLanguageSystem;\nif(!OmegaLanguageSystem || OmegaLanguageSystem.STATUS !== 'STANDALONE_READY') throw new Error('OMEGA_LANGUAGE_SYSTEM_STANDALONE_UNAVAILABLE');\nfunction awaitLoadCanonical(source){ vm.runInNewContext(source,__languageSandbox,{filename:'omega_language_system.js'}); }\nfunction canonicalRun(prompt,ctx={}){ OmegaLanguageSystem.configure({datasets:semanticDatasets,context:ctx}); return OmegaLanguageSystem.run(prompt,ctx); }\nconst semanticRuntime = OmegaLanguageSystem.diagnostics();`);
+          s=s.replace(/import \{ GoogleGenAI \} from '@google\/genai';/,"import { GoogleGenAI } from '@google/genai';\nimport vm from 'node:vm';");
+          s=s.replace(/OfflineSemanticBrain\.parse\(prompt, \{ countryId, resourceId, ministerId, timeHorizon \}\)/g,"(OmegaLanguageSystem.configure({datasets:semanticDatasets,context:{countryId,resourceId,ministerId,timeHorizon}}), OmegaLanguageSystem.parse(prompt,{countryId,resourceId,ministerId,timeHorizon}))");
+          s=s.replace(/OfflineSemanticBrain\.parse\(prompt, \{ countryId: identity\.countryCode, ministerId: identity\.ministerId, timeHorizon \}\)/g,"(OmegaLanguageSystem.configure({datasets:semanticDatasets,context:{countryId:identity.countryCode,ministerId:identity.ministerId,timeHorizon}}), OmegaLanguageSystem.parse(prompt,{countryId:identity.countryCode,ministerId:identity.ministerId,timeHorizon}))");
+          s=s.replace(/OfflineSemanticBrain\.explain\(parsed\)/g,'parsed').replace(/OfflineSemanticBrain\.explain\(semantic\)/g,'semantic');
+          s=s.replace(/OfflineQueryEngine\.execute\(parsed, semanticDatasets, language === 'bn' \|\| parsed\.language === 'bn' \? 'bn' : 'en', \{ countryId, resourceId, ministerId, timeHorizon \}\)/g,"canonicalRun(prompt,{countryId,resourceId,ministerId,timeHorizon})");
+          s=s.replace(/OfflineQueryEngine\.execute\(semantic, semanticDatasets, language === 'bn' \|\| semantic\.language === 'bn' \? 'bn' : 'en', \{ countryId: identity\.countryCode, ministerId: identity\.ministerId, ministerProfile: profile, timeHorizon \}\)/g,"canonicalRun(prompt,{countryId:identity.countryCode,ministerId:identity.ministerId,timeHorizon})");
+          s=s.replace(/const answer = data\?\.result\?\.text \|\| data\?\.text \|\| getLanguage\(\)\.realize\(data\?\.result \|\| \{\}, language\);/g,"const answer = data?.result?.text || data?.text || OmegaLanguageSystem.realize(data?.result || {}, language);");
+          fs.writeFileSync(p,s);
+          const sb=strip(s); for(const f of retired)if(sb.includes(f))throw new Error(`SERVER_RETAINS_LEGACY_LANGUAGE_DEPENDENCY:${f}`);
           NODE
           node --check minister_query_router.js
+          node --check server.js
       - name: Remove cognitive legacy lexicon dependency
         run: |
           node - <<'NODE'
@@ -112,7 +125,7 @@ jobs:
           done
           node - <<'NODE'
           const fs=require('node:fs');
-          for(const p of ['index.html'])if(fs.existsSync(p)){let s=fs.readFileSync(p,'utf8');s=s.replace(/\s*<script\s+src=["']omega_production_semantic_runtime_v3\.js["'][^>]*><\/script>\s*/g,'\n');fs.writeFileSync(p,s)}
+          if(fs.existsSync('index.html')){let s=fs.readFileSync('index.html','utf8');s=s.replace(/\s*<script\s+src=["']omega_production_semantic_runtime_v3\.js["'][^>]*><\/script>\s*/g,'\n');fs.writeFileSync('index.html',s)}
           NODE
       - name: Verify legacy source absence
         run: OMEGA_POST_MIGRATION=1 node scripts/test_omega_language_system.cjs
@@ -122,9 +135,9 @@ jobs:
           const fs=require('node:fs'),path=require('node:path');
           const retired=['offline_language_vocabulary.json','offline_lexicon.json','offline_semantic_knowledge.json','omega_game_language_ontology.json','omega_game_language_source_inventory.json','offline_semantic_brain.js','offline_query_engine.js','omega_game_language_bridge.js','omega_reasoning_dispatcher.js'];
           const allowed=new Set(['omega_language_system.js','.github/workflows/omega-language-standalone.yml','scripts/test_omega_language_system.cjs','package.json']);
-          const stripComments=s=>s.replace(/\/\*[\s\S]*?\*\//g,'').replace(/(^|[^:])\/\/.*$/gm,'$1');
-          const files=[];(function walk(d){for(const n of fs.readdirSync(d)){if(n==='.git'||n==='node_modules')continue;const p=path.join(d,n),s=fs.statSync(p);if(s.isDirectory())walk(p);else if(/\.(?:js|cjs|mjs|json)$/.test(p))files.push(p)}})('.');
-          const bad=[];for(const f of files){const rel=f.replaceAll('\\','/');if(allowed.has(rel))continue;const txt=stripComments(fs.readFileSync(f,'utf8'));if(retired.some(x=>txt.includes(x)))bad.push(rel)}
+          const strip=s=>s.replace(/\/\*[\s\S]*?\*\//g,'').replace(/(^|[^:])\/\/.*$/gm,'$1');
+          const files=[];(function walk(d){for(const n of fs.readdirSync(d)){if(n==='.git'||n==='node_modules')continue;const p=path.join(d,n),st=fs.statSync(p);if(st.isDirectory())walk(p);else if(/\.(?:js|cjs|mjs|json)$/.test(p))files.push(p)}})('.');
+          const bad=[];for(const f of files){const rel=f.replaceAll('\\','/');if(allowed.has(rel))continue;if(retired.some(x=>strip(fs.readFileSync(f,'utf8')).includes(x)))bad.push(rel)}
           if(bad.length)throw new Error('RETIRED_LANGUAGE_REFERENCES:'+bad.join(','));
           console.log('REPOSITORY_RETIRED_LANGUAGE_REFERENCE_GATE_OK');
           NODE
