@@ -20,8 +20,8 @@ jobs:
         with:
           node-version: 24
 
-      - name: Build and harden canonical bundle
-        run: node scripts/finalize_omega_language_standalone_v8.cjs
+      - name: Build canonical bundle
+        run: node scripts/finalize_omega_language_standalone_v9.cjs
 
       - name: Syntax and security gate
         run: |
@@ -39,9 +39,9 @@ jobs:
           node - <<'NODE'
           const fs=require('node:fs');
           let r=fs.readFileSync('minister_query_router.js','utf8').replace(/offline_semantic_knowledge\.json/g,'');
-          const rl=r.split(/\r?\n/),i=rl.findIndex(x=>x.includes('function classify(q){'));
+          const lines=r.split(/\r?\n/),i=lines.findIndex(x=>x.includes('function classify(q){'));
           if(i<0)throw Error('MINISTER_ROUTER_CLASSIFY_NOT_FOUND');
-          rl[i]=`function classify(q){
+          lines[i]=`function classify(q){
             const w=new Set(words(q)); const has=a=>a.some(x=>w.has(x));
             const trade=['import','imports','importing','export','exports','exporting','supplier','suppliers','buy','buying','purchase','sell','selling','trade','trading','shipment','shipping','freight','tariff','tariffs'];
             const sec=['secure','security','safe','safety','stockpile','stockpiles','reserve','reserves','shortage','depletion','runway','buffer','vulnerable','risk'];
@@ -51,7 +51,7 @@ jobs:
             const speech=/^(hi|hello|hey|হ্যালো|হাই)/i.test(norm(q))?'CONVERSATION':(/[?]$/.test(q)||/\\b(who|what|which|where|when|why|how)\\b/i.test(q)||/কি|কী|কেন|কোথায়|কোথায়|কত|কে/.test(q)?'QUESTION':'STATEMENT');
             return {operation,speech,subject:/\\b(i|me|my|our|we)\\b|\\b(আমার|আমরা|আমি)\\b/i.test(q)?'PLAYER':undefined};
           }`;
-          fs.writeFileSync('minister_query_router.js',rl.join('\n'));
+          fs.writeFileSync('minister_query_router.js',lines.join('\n'));
 
           let s=fs.readFileSync('server.js','utf8');
           s=s.split(/\r?\n/).filter(x=>!x.includes('./offline_semantic_brain.js')&&!x.includes('./offline_query_engine.js')&&!x.includes('const OfflineSemanticBrain = globalThis.OfflineSemanticBrain;')&&!x.includes('const OfflineQueryEngine = globalThis.OfflineQueryEngine;')).join('\n');
@@ -69,13 +69,13 @@ jobs:
           fs.writeFileSync('server.js',s);
           NODE
 
-      - name: Post-migration syntax/security gate
+      - name: Post-migration backend gates
         run: |
           node --check server.js
           node --check minister_query_router.js
           OMEGA_POST_MIGRATION=0 node scripts/test_omega_language_system.cjs
 
-      - name: Cognitive legacy dependency gate
+      - name: Cognitive dependency gate
         run: |
           node - <<'NODE'
           const fs=require('node:fs'); let s=fs.readFileSync('omega_cognitive_engine.js','utf8');
@@ -90,7 +90,7 @@ jobs:
           const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
           const b={console,Date,JSON,Object,Array,Map,Set,Math,RegExp,String,Number,Promise,Intl,TextDecoder,Uint8Array,atob,localStorage:{getItem(){return null},setItem(){}}};b.globalThis=b;b.window=b;
           vm.runInNewContext(fs.readFileSync('omega_language_system.js','utf8'),b);const L=b.OmegaLanguageSystem;
-          for(const f of L.BUILD.sourceFiles){assert.ok(L.SOURCE_RAW&&L.SOURCE_RAW[f]!==undefined,'RAW_SOURCE_MISSING:'+f);assert.equal(L.SOURCE_RAW[f],fs.readFileSync(f,'utf8'),'RAW_SOURCE_MISMATCH:'+f)}
+          for(const f of L.BUILD.sourceFiles){assert.ok(L.SOURCE_RAW?.[f]!==undefined,'RAW_SOURCE_MISSING:'+f);assert.equal(L.SOURCE_RAW[f],fs.readFileSync(f,'utf8'),'RAW_SOURCE_MISMATCH:'+f)}
           assert.equal(L.BUILD.lexiconTotalWords,7756);assert.equal(L.BUILD.sourceConceptCount,17);assert.equal(L.BUILD.rawSurfaceEntryCount,332);assert.equal(L.BUILD.uniqueSurfaceEntryCount,226);assert.equal(L.BUILD.ontologyTarget,4500);
           console.log('OMEGA_EXACT_SOURCE_PRESERVATION_OK');
           NODE
@@ -113,22 +113,14 @@ jobs:
           console.log('OMEGA_FULL_BEHAVIORAL_REGRESSION_OK');
           NODE
 
-      - name: Delete retired language layer after all proofs pass
+      - name: Delete retired language layer only after all proofs pass
         run: |
-          for f in offline_language_vocabulary.json offline_lexicon.json offline_semantic_knowledge.json omega_game_language_ontology.json omega_game_language_source_inventory.json offline_semantic_brain.js offline_query_engine.js omega_game_language_bridge.js omega_reasoning_dispatcher.js omega_country_semantic_bridge.js omega_semantic_runtime_v31.js omega_semantic_runtime_v32.js omega_production_semantic_runtime_v3.js scripts/test_runtime_semantic_all_countries.mjs scripts/validate_game_language_ontology.cjs scripts/test_semantic_runtime_v4.cjs scripts/test_semantic_runtime_v32.mjs scripts/test_production_semantic_runtime_v3.mjs scripts/test_minister_cognition.cjs scripts/test_reasoning_dispatcher.cjs scripts/test_deep_semantic_brain.cjs scripts/build_offline_lexicon.cjs scripts/omega_language_execution_module.js scripts/omega_language_execution_module_v2.js scripts/omega_language_system.runtime.template.js scripts/finalize_omega_language_standalone.cjs scripts/finalize_omega_language_standalone_v7.cjs scripts/finalize_omega_language_standalone_v8.cjs; do [ -e "$f" ] && git rm -f "$f" || true; done
+          for f in offline_language_vocabulary.json offline_lexicon.json offline_semantic_knowledge.json omega_game_language_ontology.json omega_game_language_source_inventory.json offline_semantic_brain.js offline_query_engine.js omega_game_language_bridge.js omega_reasoning_dispatcher.js omega_country_semantic_bridge.js omega_semantic_runtime_v31.js omega_semantic_runtime_v32.js omega_production_semantic_runtime_v3.js scripts/test_runtime_semantic_all_countries.mjs scripts/validate_game_language_ontology.cjs scripts/test_semantic_runtime_v4.cjs scripts/test_semantic_runtime_v32.mjs scripts/test_production_semantic_runtime_v3.mjs scripts/test_minister_cognition.cjs scripts/test_reasoning_dispatcher.cjs scripts/test_deep_semantic_brain.cjs scripts/build_offline_lexicon.cjs scripts/omega_language_execution_module.js scripts/omega_language_execution_module_v2.js scripts/omega_language_system.runtime.template.js scripts/finalize_omega_language_standalone.cjs scripts/finalize_omega_language_standalone_v7.cjs scripts/finalize_omega_language_standalone_v8.cjs scripts/finalize_omega_language_standalone_v9.cjs; do [ -e "$f" ] && git rm -f "$f" || true; done
           node - <<'NODE'
           const fs=require('node:fs');if(fs.existsSync('index.html')){let s=fs.readFileSync('index.html','utf8').replace(/\s*<script\s+src=["']omega_production_semantic_runtime_v3\.js["'][^>]*><\/script>\s*/g,'\n');fs.writeFileSync('index.html',s)}
           NODE
 
-      - name: Remove deleted-language commands and enforce zero references
-        run: |
-          node - <<'NODE'
-          const fs=require('node:fs'),path=require('node:path');
-          if(fs.existsSync('package.json')){const p=JSON.parse(fs.readFileSync('package.json','utf8'));const blocked=['offline_language_vocabulary.json','offline_lexicon.json','offline_semantic_knowledge.json','omega_game_language_ontology.json','omega_game_language_source_inventory.json','offline_semantic_brain.js','offline_query_engine.js','omega_game_language_bridge.js','omega_reasoning_dispatcher.js','test_runtime_semantic_all_countries.mjs','validate_game_language_ontology.cjs','build_offline_lexicon.cjs','test_semantic_runtime_v4.cjs','test_semantic_runtime_v32.mjs','test_production_semantic_runtime_v3.mjs','test_minister_cognition.cjs','test_reasoning_dispatcher.cjs','test_deep_semantic_brain.cjs','omega_country_semantic_bridge.js','omega_semantic_runtime_v31.js','omega_semantic_runtime_v32.js','omega_production_semantic_runtime_v3.js','omega_language_system.runtime.template.js','finalize_omega_language_standalone.cjs','finalize_omega_language_standalone_v7.cjs','finalize_omega_language_standalone_v8.cjs','omega_language_execution_module.js','omega_language_execution_module_v2.js'];for(const[k,v]of Object.entries(p.scripts||{}))p.scripts[k]=String(v).split(' && ').filter(x=>!blocked.some(n=>x.includes(n))).join(' && ');fs.writeFileSync('package.json',JSON.stringify(p,null,2)+'\n')}
-          const retired=['offline_language_vocabulary.json','offline_lexicon.json','offline_semantic_knowledge.json','omega_game_language_ontology.json','omega_game_language_source_inventory.json','offline_semantic_brain.js','offline_query_engine.js','omega_game_language_bridge.js','omega_reasoning_dispatcher.js'];const allow=new Set(['omega_language_system.js','.github/workflows/omega-language-final-authority.yml','scripts/test_omega_language_system.cjs','package.json']);const bad=[];(function w(d){for(const n of fs.readdirSync(d)){if(n==='.git'||n==='node_modules')continue;const p=path.join(d,n),st=fs.statSync(p);if(st.isDirectory())w(p);else if(/\.(?:js|cjs|mjs|json)$/.test(p)){const rel=p.replaceAll('\\','/'),txt=fs.readFileSync(p,'utf8');if(!allow.has(rel)&&retired.some(x=>txt.includes(x)))bad.push(rel)}}})('.');if(bad.length)throw Error('RETIRED_LANGUAGE_REFERENCES:'+bad.join(','));for(const f of retired)if(fs.existsSync(f))throw Error('RETIRED_LANGUAGE_FILE_REMAINS:'+f);console.log('OMEGA_ZERO_REFERENCE_GATE_OK');
-          NODE
-
-      - name: Final syntax and runtime gate
+      - name: Final zero-reference and runtime gate
         run: |
           node --check omega_language_system.js
           node --check omega_universal_ai_runtime.js
@@ -138,6 +130,9 @@ jobs:
           node --check server.js
           node --check minister_query_router.js
           OMEGA_POST_MIGRATION=1 node scripts/test_omega_language_system.cjs
+          node - <<'NODE'
+          const fs=require('node:fs'),path=require('node:path');const retired=['offline_language_vocabulary.json','offline_lexicon.json','offline_semantic_knowledge.json','omega_game_language_ontology.json','omega_game_language_source_inventory.json','offline_semantic_brain.js','offline_query_engine.js','omega_game_language_bridge.js','omega_reasoning_dispatcher.js'];const allow=new Set(['omega_language_system.js','.github/workflows/omega-language-final-authority.yml','scripts/test_omega_language_system.cjs','package.json','PR_FINALIZATION_STATUS.md']);const bad=[];(function w(d){for(const n of fs.readdirSync(d)){if(n==='.git'||n==='node_modules')continue;const p=path.join(d,n),st=fs.statSync(p);if(st.isDirectory())w(p);else if(/\.(?:js|cjs|mjs|json)$/.test(p)){const rel=p.replaceAll('\\','/'),txt=fs.readFileSync(p,'utf8');if(!allow.has(rel)&&retired.some(x=>txt.includes(x)))bad.push(rel)}}})('.');if(bad.length)throw Error('RETIRED_LANGUAGE_REFERENCES:'+bad.join(','));for(const f of retired)if(fs.existsSync(f))throw Error('RETIRED_LANGUAGE_FILE_REMAINS:'+f);console.log('OMEGA_FINAL_ZERO_REFERENCE_OK');
+          NODE
 
       - name: Commit finalized migration
         if: github.event_name == 'push'
