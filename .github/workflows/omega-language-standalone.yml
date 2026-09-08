@@ -83,7 +83,7 @@ jobs:
             offline_semantic_brain.js offline_query_engine.js omega_game_language_bridge.js omega_reasoning_dispatcher.js \
             scripts/test_runtime_semantic_all_countries.mjs scripts/validate_game_language_ontology.cjs \
             scripts/build_offline_lexicon.cjs scripts/omega_language_execution_module.js \
-            scripts/omega_language_system.runtime.template.js; do
+            scripts/omega_language_execution_module_v2.js scripts/omega_language_system.runtime.template.js; do
             [ -e "$f" ] && git rm -f "$f" || true
           done
       - name: Verify legacy source absence
@@ -104,7 +104,7 @@ jobs:
           node - <<'NODE'
           const fs=require('node:fs');
           const p=JSON.parse(fs.readFileSync('package.json','utf8'));
-          const blocked=['offline_language_vocabulary.json','offline_lexicon.json','offline_semantic_knowledge.json','omega_game_language_ontology.json','omega_game_language_source_inventory.json','offline_semantic_brain.js','offline_query_engine.js','omega_game_language_bridge.js','omega_reasoning_dispatcher.js','test_deep_semantic_brain.cjs','test_runtime_semantic_all_countries.mjs','validate_game_language_ontology.cjs','build_offline_lexicon.cjs','test_semantic_runtime_v4.cjs','test_semantic_runtime_v32.mjs','test_production_semantic_runtime_v3.mjs','omega_language_system.runtime.template.js','omega_language_execution_module.js'];
+          const blocked=['offline_language_vocabulary.json','offline_lexicon.json','offline_semantic_knowledge.json','omega_game_language_ontology.json','omega_game_language_source_inventory.json','offline_semantic_brain.js','offline_query_engine.js','omega_game_language_bridge.js','omega_reasoning_dispatcher.js','test_deep_semantic_brain.cjs','test_runtime_semantic_all_countries.mjs','validate_game_language_ontology.cjs','build_offline_lexicon.cjs','test_semantic_runtime_v4.cjs','test_semantic_runtime_v32.mjs','test_production_semantic_runtime_v3.mjs','omega_language_system.runtime.template.js','omega_language_execution_module.js','omega_language_execution_module_v2.js'];
           for(const [name,cmd] of Object.entries(p.scripts||{})) p.scripts[name]=String(cmd).split(' && ').filter(part=>!blocked.some(x=>part.includes(x))).join(' && ');
           fs.writeFileSync('package.json',JSON.stringify(p,null,2)+'\n');
           for(const [name,cmd] of Object.entries(p.scripts||{})) for(const x of blocked) if(String(cmd).includes(x)) throw Error(`package script ${name} still references ${x}`);
