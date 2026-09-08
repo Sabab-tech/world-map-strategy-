@@ -8,7 +8,7 @@ const post=process.env.OMEGA_POST_MIGRATION==='1';
 const bundle=path.join(root,'omega_language_system.js');
 assert.ok(fs.existsSync(bundle),'canonical standalone bundle is missing');
 const js=fs.readFileSync(bundle,'utf8');
-assert.match(js,/OMEGA LANGUAGE SYSTEM v5\.1\.0/);
+assert.match(js,/OMEGA LANGUAGE SYSTEM v5\.0\.0 STANDALONE TEMPLATE/);
 assert.match(js,/STATUS:'STANDALONE_READY'/);
 assert.match(js,/SOURCE_DATA/);
 if(post)for(const f of legacy)assert.equal(fs.existsSync(path.join(root,f)),false,`legacy language dependency still present: ${f}`);else{assert.ok(fs.existsSync(path.join(root,'offline_language_vocabulary.json')),'pre-migration vocabulary source missing');assert.ok(fs.existsSync(path.join(root,'offline_lexicon.json')),'pre-migration lexicon source missing')}
@@ -22,7 +22,7 @@ assert.equal(/['"]\.\/(?:offline_language_vocabulary|offline_lexicon|offline_sem
 if(post)for(const f of ['omega_cognitive_engine.js','omega_ai_integrity_layer.js','omega_universal_ai_runtime.js'])if(fs.existsSync(path.join(root,f))){const s=fs.readFileSync(path.join(root,f),'utf8');assert.equal(/['"]\.\/(?:offline_language_vocabulary|offline_lexicon|offline_semantic_knowledge|omega_game_language_ontology|omega_game_language_source_inventory|offline_semantic_brain|offline_query_engine|omega_game_language_bridge|omega_reasoning_dispatcher)\.(?:json|js)['"]/.test(s),false,`${f} retains a retired language-source path dependency`)}
 const sandbox={console,Date,JSON,Object,Array,Map,Set,Math,RegExp,String,Number,Promise,Intl,setTimeout,clearTimeout,localStorage:{d:new Map(),getItem(k){return this.d.get(k)||null},setItem(k,v){this.d.set(k,String(v))}},Game:{state:{}}};sandbox.globalThis=sandbox;sandbox.window=sandbox;
 vm.runInNewContext(js,sandbox,{filename:'omega_language_system.js'});
-const L=sandbox.OmegaLanguageSystem;assert.ok(L);assert.equal(L.STATUS,'STANDALONE_READY');const d=L.sourceData();
+const L=sandbox.OmegaLanguageSystem;assert.ok(L);assert.equal(L.STATUS,'STANDALONE_READY');assert.equal(L.VERSION,'5.1.0');const d=L.sourceData();
 assert.equal(d['offline_lexicon.json'].TOTAL_WORDS,7756);const inv=d['omega_game_language_source_inventory.json'];assert.equal(inv.source_concept_count,17);assert.equal(inv.raw_surface_entry_count,332);assert.equal(inv.unique_surface_entry_count,226);assert.ok(d['offline_language_vocabulary.json'].languages.en&&d['offline_language_vocabulary.json'].languages.bn);
 const hasField=(v,target)=>{if(v&&typeof v==='object'){if(Object.prototype.hasOwnProperty.call(v,target))return true;if(Array.isArray(v))return v.some(x=>hasField(x,target));return Object.entries(v).some(([k,x])=>k!=='__proto__'&&k!=='constructor'&&k!=='prototype'&&hasField(x,target))}return false};
 for(const marker of ['pronunciation','phonetic','ipa'])assert.ok(hasField(d,marker),`embedded source data lost pronunciation metadata: ${marker}`);assert.ok(hasField(d,'events')||hasField(d,'actions'),'embedded source data lost event/action metadata');
