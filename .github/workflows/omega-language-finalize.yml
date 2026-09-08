@@ -1,0 +1,112 @@
+name: OMEGA Language Finalization
+
+on:
+  push:
+    branches: [omega-language-consolidation-v1]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Build canonical standalone bundle
+        run: node scripts/finalize_omega_language_standalone.cjs
+
+      - name: Syntax gate
+        run: |
+          node --check omega_language_system.js
+          node --check omega_universal_ai_runtime.js
+          node --check omega_cognitive_engine.js
+          node --check omega_ai_integrity_layer.js
+          node --check server_bootstrap.js
+          node --check server.js
+          node --check minister_query_router.js
+
+      - name: Migrate surviving runtime shells to canonical language system
+        run: |
+          cat >/tmp/omega_migrate.cjs <<'NODE'
+          const fs=require('node:fs');
+          const path='minister_query_router.js';
+          const retired=['offline_language_vocabulary.json','offline_lexicon.json','offline_semantic_knowledge.json','omega_game_language_ontology.json','omega_game_language_source_inventory.json','offline_semantic_brain.js','offline_query_engine.js','omega_game_language_bridge.js','omega_reasoning_dispatcher.js'];
+          let r=fs.readFileSync(path,'utf8');
+          r=r.replace(/offline_semantic_knowledge\.json/g,'');
+          const lines=r.split(/\r?\n/),i=lines.findIndex(x=>x.includes('function classify(q){'));
+          if(i<0) throw new Error('MINISTER_ROUTER_CLASSIFY_FUNCTION_NOT_FOUND');
+          lines[i]='function classify(q){\n  const w=new Set(words(q));\n  const has=a=>a.some(x=>w.has(x));\n  const trade=[\'import\',\'imports\',\'importing\',\'export\',\'exports\',\'exporting\',\'supplier\',\'suppliers\',\'buy\',\'buying\',\'purchase\',\'sell\',\'selling\',\'trade\',\'trading\',\'shipment\',\'shipping\',\'freight\',\'tariff\',\'tariffs\'];\n  const sec=[\'secure\',\'security\',\'safe\',\'safety\',\'stockpile\',\'stockpiles\',\'reserve\',\'reserves\',\'shortage\',\'depletion\',\'runway\',\'buffer\',\'vulnerable\',\'risk\'];\n  const cmp=[\'compare\',\'versus\',\'vs\',\'higher\',\'lower\',\'more\',\'less\',\'best\',\'better\',\'largest\',\'smallest\'];\n  const loc=[\'where\',\'location\',\'located\',\'based\',\'situated\'];\n  const cnt=[\'how\',\'many\',\'number\',\'count\',\'total\',\'quantity\',\'amount\'];\n  let operation=\'LOOKUP\';\n  if(has(sec)) operation=\'SECURITY\';\n  else if(has(trade)) operation=has([\'import\',\'imports\',\'buy\',\'purchase\',\'supplier\',\'suppliers\'])?\'IMPORT\':\'EXPORT\';\n  else if(has(cmp)) operation=\'COMPARE\';\n  else if(has(loc)) operation=\'LOCATION\';\n  else if(has(cnt)) operation=\'COUNT\';\n  const speech= /^(hi|hello|hey|হ্যালো|হাই)/i.test(norm(q)) ? \'CONVERSATION\' : ((/[?]$/.test(q)||/\\b(who|what|which|where|when|why|how)\\b/i.test(q)||/কি|কী|কেন|কোথায়|কোথায়|কত|কে/.test(q)) ? \'QUESTION\' : \'STATEMENT\');\n  const subject=/\\b(i|me|my|our|we)\\b|\\b(আমার|আমরা|আমি)\\b/i.test(q)?\'PLAYER\':undefined;\n  return {operation,speech,subject};\n}';
+          r=lines.join('\n');
+          fs.writeFileSync(path,r);
+          if(retired.some(x=>r.includes(x))) throw new Error('MINISTER_ROUTER_LEGACY_REFERENCE_REMAINS');
+
+          let s=fs.readFileSync('server.js','utf8');
+          s=s.split(/\r?\n/).filter(line=>!line.includes("./offline_semantic_brain.js")&&!line.includes("./offline_query_engine.js")&&!line.includes('const OfflineSemanticBrain = globalThis.OfflineSemanticBrain;')&&!line.includes('const OfflineQueryEngine = globalThis.OfflineQueryEngine;')).join('\n');
+          if(!s.includes("import vm from 'node:vm';")) s=s.replace(/import \{ GoogleGenAI \} from '@google\/genai';/,"import { GoogleGenAI } from '@google/genai';\nimport vm from 'node:vm';");
+          const start=s.indexOf('let languageVocabulary = {};');
+          const sem=s.indexOf('const semanticRuntime =',start);
+          if(start<0||sem<0) throw new Error('SERVER_LANGUAGE_INIT_BLOCK_NOT_FOUND');
+          const nl=s.indexOf('\n',sem),after=nl>=0?nl+1:s.length;
+          const init=`const __languageSandbox={console,Date,JSON,Object,Array,Map,Set,Math,RegExp,String,Number,Promise,Intl,localStorage:{getItem(){return null},setItem(){}}};__languageSandbox.globalThis=__languageSandbox;__languageSandbox.window=__languageSandbox;vm.runInNewContext(fs.readFileSync(path.join(__dirname,'omega_language_system.js'),'utf8'),__languageSandbox,{filename:'omega_language_system.js'});const OmegaLanguageSystem=__languageSandbox.OmegaLanguageSystem;if(!OmegaLanguageSystem||OmegaLanguageSystem.STATUS!=='STANDALONE_READY')throw new Error('OMEGA_LANGUAGE_SYSTEM_STANDALONE_UNAVAILABLE');function canonicalParse(prompt,ctx={}){OmegaLanguageSystem.configure({datasets:semanticDatasets,context:ctx});return OmegaLanguageSystem.parse(prompt,ctx)}function canonicalExecute(parsed,ctx={}){const prompt=typeof parsed==='string'?parsed:(parsed?.raw||parsed?.surface||parsed?.query||'');OmegaLanguageSystem.configure({datasets:semanticDatasets,context:ctx});const run=OmegaLanguageSystem.run(prompt,ctx);return {...run,text:run?.text||run?.answer||'',plan:run?.plan||run?.analysis||null,answerState:run?.answerState||run?.result||null,contextPacket:run?.contextPacket||{result:run?.result||null}}}const semanticRuntime=OmegaLanguageSystem.diagnostics();`;
+          s=s.slice(0,start)+init+s.slice(after);
+          s=s.replace(/OfflineSemanticBrain\.parse\(prompt,\s*\{ countryId, resourceId, ministerId, timeHorizon \}\)/g,'canonicalParse(prompt,{countryId,resourceId,ministerId,timeHorizon})');
+          s=s.replace(/OfflineSemanticBrain\.parse\(prompt,\s*\{ countryId: identity\.countryCode, ministerId: identity\.ministerId, timeHorizon \}\)/g,'canonicalParse(prompt,{countryId:identity.countryCode,ministerId:identity.ministerId,timeHorizon})');
+          s=s.replace(/OfflineSemanticBrain\.explain\((parsed|semantic)\)/g,'$1');
+          s=s.replace(/OfflineQueryEngine\.execute\(parsed, semanticDatasets, language === 'bn' \|\| parsed\.language === 'bn' \? 'bn' : 'en', \{ countryId, resourceId, ministerId, timeHorizon \}\)/g,'canonicalExecute(parsed,{countryId,resourceId,ministerId,timeHorizon})');
+          s=s.replace(/OfflineQueryEngine\.execute\(semantic, semanticDatasets, language === 'bn' \|\| semantic\.language === 'bn' \? 'bn' : 'en', \{ countryId: identity\.countryCode, ministerId: identity\.ministerId, ministerProfile: profile, timeHorizon \}\)/g,'canonicalExecute(semantic,{countryId:identity.countryCode,ministerId:identity.ministerId,timeHorizon})');
+          if(/\.\/offline_semantic_brain\.js|\.\/offline_query_engine\.js|offline_language_vocabulary\.json|offline_lexicon\.json/.test(s)) throw new Error('SERVER_CANONICAL_MIGRATION_INCOMPLETE');
+          fs.writeFileSync('server.js',s);
+          NODE
+          node /tmp/omega_migrate.cjs
+          node --check minister_query_router.js
+          node --check server.js
+
+      - name: Cognitive legacy dependency gate
+        run: |
+          node -e "const fs=require('node:fs');let s=fs.readFileSync('omega_cognitive_engine.js','utf8');s=s.replace(/const\\s+lexPath\\s*=\\s*path\\.resolve\\(cwd,\\s*['\"]offline_lexicon\\.json['\"]\\s*\\);/,'const lexPath=\"\";');if(/offline_lexicon\\.json|offline_language_vocabulary\\.json|offline_semantic_knowledge\\.json|omega_game_language_ontology\\.json|omega_game_language_source_inventory\\.json|offline_semantic_brain\\.js|offline_query_engine\\.js|omega_game_language_bridge\\.js|omega_reasoning_dispatcher\\.js/.test(s))throw Error('COGNITIVE_LEGACY_REFERENCE_REMAINS');fs.writeFileSync('omega_cognitive_engine.js',s);"
+
+      - name: Standalone runtime and security gate
+        run: OMEGA_POST_MIGRATION=0 node scripts/test_omega_language_system.cjs
+
+      - name: Lossless source preservation gate
+        run: |
+          node -e "const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');const s=fs.readFileSync('omega_language_system.js','utf8');const box={console,Date,JSON,Object,Array,Map,Set,Math,RegExp,String,Number,Promise,Intl,localStorage:{d:new Map(),getItem(k){return this.d.get(k)||null},setItem(k,v){this.d.set(k,String(v))}}};box.globalThis=box;box.window=box;vm.runInNewContext(s,box);const L=box.OmegaLanguageSystem;assert.equal(L.STATUS,'STANDALONE_READY');const names=['offline_semantic_brain.js','offline_query_engine.js','omega_game_language_bridge.js','omega_reasoning_dispatcher.js','scripts/omega_language_execution_module_v2.js'];for(const n of names){assert.equal(L.SOURCE_ARCHIVE?.[n],fs.readFileSync(n,'utf8'),\`ARCHIVE_MISMATCH:\${n}\`)}for(const n of ['offline_language_vocabulary.json','offline_semantic_knowledge.json','omega_game_language_ontology.json','omega_game_language_source_inventory.json']){const a=JSON.stringify(L.SOURCE_DATA?.[n]);const b=fs.readFileSync(n,'utf8').replace(/^\\uFEFF/,'');assert.deepEqual(JSON.parse(a),JSON.parse(b),\`JSON_MISMATCH:\${n}\`)}assert.equal(L.BUILD.lexiconTotalWords,7756);assert.equal(L.BUILD.sourceConceptCount,17);assert.equal(L.BUILD.rawSurfaceEntryCount,332);assert.equal(L.BUILD.uniqueSurfaceEntryCount,226);assert.equal(L.BUILD.ontologyTarget,4500);console.log('OMEGA_LOSSLESS_SOURCE_GATE_OK')"
+
+      - name: Behavioral regression matrix
+        run: |
+          node -e "const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');const box={console,Date,JSON,Object,Array,Map,Set,Math,RegExp,String,Number,Promise,Intl,setTimeout,clearTimeout,localStorage:{d:new Map(),getItem(k){return this.d.get(k)||null},setItem(k,v){this.d.set(k,String(v))}},Game:{state:{}}};box.globalThis=box;box.window=box;vm.runInNewContext(fs.readFileSync('omega_language_system.js','utf8'),box);const L=box.OmegaLanguageSystem;const ds=[{countries:[{id:'BGD',name:'Bangladesh',resources:{iron:{name:'Iron',production:120,stockpile:900,reserves:5000,exports:50}}},{id:'AUS',name:'Australia',resources:{iron:{name:'Iron',production:900,stockpile:2000,reserves:20000,exports:600}}}]}];L.configure({datasets:ds,context:{countryId:'BGD',countryName:'Bangladesh'}});const cases=[['How many iron mines are in Bangladesh?','COUNT'],['How much iron production is in Bangladesh?','QUANTITY'],['Which country can I import iron from?','RECOMMEND'],['কয়টি লোহার খনি বাংলাদেশে আছে?','COUNT'],['কত পরিমাণ iron উৎপাদন বাংলাদেশে?','QUANTITY'],['কোন দেশ থেকে iron আমদানি করতে পারি?','RECOMMEND'],['Why is iron security weak?','CAUSE'],['কীভাবে iron নিরাপত্তা বাড়াব?','METHOD'],['Is iron import possible?','FEASIBILITY'],['Where are iron resources?','LOCATION']];for(const [q,o] of cases){const p=L.parse(q,{countryId:'BGD',countryName:'Bangladesh'});assert.equal(p.operation,o,\`OP:\${q}=>\${p.operation}, expected \${o}\`);assert.ok(p.language);assert.ok(Array.isArray(p.tokens));assert.ok(p.entities);assert.ok(p.grammar);assert.ok(p.conditions!==undefined||p.unresolved!==undefined)}const u=L.parse('How many iron mines are in Atlantis?');assert.ok((u.unresolved||[]).includes('COUNTRY')||u.entities?.some?.(x=>x.type==='COUNTRY'&&x.status!=='RESOLVED'));const q=L.run('How much iron production is in Bangladesh?',{countryId:'BGD',countryName:'Bangladesh'});assert.ok(q.result?.available);assert.equal(q.result?.value,120);const sup=L.run('Which country can I import iron from?',{countryId:'BGD',countryName:'Bangladesh'});assert.ok(sup.result?.available);console.log('OMEGA_BEHAVIORAL_MATRIX_OK')"
+
+      - name: Post-migration cleanup and reference gate
+        run: |
+          for f in offline_language_vocabulary.json offline_lexicon.json offline_semantic_knowledge.json omega_game_language_ontology.json omega_game_language_source_inventory.json offline_semantic_brain.js offline_query_engine.js omega_game_language_bridge.js omega_reasoning_dispatcher.js omega_country_semantic_bridge.js omega_semantic_runtime_v31.js omega_semantic_runtime_v32.js omega_production_semantic_runtime_v3.js scripts/test_runtime_semantic_all_countries.mjs scripts/validate_game_language_ontology.cjs scripts/test_semantic_runtime_v4.cjs scripts/test_semantic_runtime_v32.mjs scripts/test_production_semantic_runtime_v3.mjs scripts/test_minister_cognition.cjs scripts/test_reasoning_dispatcher.cjs scripts/test_deep_semantic_brain.cjs scripts/build_offline_lexicon.cjs scripts/omega_language_execution_module.js scripts/omega_language_execution_module_v2.js scripts/omega_language_system.runtime.template.js scripts/finalize_omega_language_standalone.cjs; do [ -e "$f" ] && git rm -f "$f" || true; done
+          node -e "const fs=require('node:fs');if(fs.existsSync('index.html')){let s=fs.readFileSync('index.html','utf8').replace(/\\s*<script\\s+src=[\"']omega_production_semantic_runtime_v3\\.js[\"'][^>]*><\\/script>\\s*/g,'\\n');fs.writeFileSync('index.html',s)}"
+          node -e "const fs=require('node:fs'),path=require('node:path');const retired=['offline_language_vocabulary.json','offline_lexicon.json','offline_semantic_knowledge.json','omega_game_language_ontology.json','omega_game_language_source_inventory.json','offline_semantic_brain.js','offline_query_engine.js','omega_game_language_bridge.js','omega_reasoning_dispatcher.js'];const allow=new Set(['omega_language_system.js','.github/workflows/omega-language-finalize.yml','scripts/test_omega_language_system.cjs','package.json']);const strip=s=>s.replace(/\\/\\*[\\s\\S]*?\\*\\//g,'').replace(/(^|[^:])\\/\\/.*$/gm,'$1');const bad=[];(function w(d){for(const n of fs.readdirSync(d)){if(n==='.git'||n==='node_modules')continue;const p=path.join(d,n),st=fs.statSync(p);if(st.isDirectory())w(p);else if(/\\.(?:js|cjs|mjs|json)$/.test(p)){const rel=p.replaceAll('\\\\','/');if(!allow.has(rel)&&retired.some(x=>strip(fs.readFileSync(p,'utf8')).includes(x)))bad.push(rel)}}})('.');if(bad.length)throw Error('RETIRED_LANGUAGE_REFERENCES:'+bad.join(','));console.log('OMEGA_RETIRED_REFERENCE_GATE_OK')"
+
+      - name: Final syntax and canonical runtime gate
+        run: |
+          node --check omega_language_system.js
+          node --check omega_universal_ai_runtime.js
+          node --check omega_cognitive_engine.js
+          node --check omega_ai_integrity_layer.js
+          node --check server_bootstrap.js
+          node --check server.js
+          node --check minister_query_router.js
+          OMEGA_POST_MIGRATION=1 node scripts/test_omega_language_system.cjs
+
+      - name: Commit finalized migration
+        if: github.event_name == 'push'
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git diff --cached --quiet && exit 0
+          git commit -m 'refactor: finalize canonical OMEGA language system [skip ci]'
+          git push
