@@ -9,7 +9,7 @@ vm.runInContext(source, sandbox, { filename: 'omega_language_system.js' });
 
 const system = sandbox.OmegaLanguageSystem;
 assert.ok(system, 'OmegaLanguageSystem must be exported by the consolidated file');
-assert.equal(sandbox.OmegaGameLanguageBridge?.VERSION, '1.0.1');
+assert.equal(sandbox.OmegaGameLanguageBridge?.VERSION, '1.0.2');
 
 const ontology = system.gameLanguageOntology();
 assert.equal(ontology.schema_version, '1.1.0');
