@@ -32,17 +32,8 @@ const vm = require('node:vm');
     }),
     document: {
       scripts: [],
-      createElement: () => ({
-        src: '',
-        async: false,
-        onload: null,
-        onerror: null
-      }),
-      head: {
-        appendChild: (script) => {
-          if (typeof script.onload === 'function') script.onload();
-        }
-      }
+      createElement: () => ({ src: '', async: false, onload: null, onerror: null }),
+      head: { appendChild: (script) => { if (typeof script.onload === 'function') script.onload(); } }
     }
   };
   vm.createContext(sandbox);
@@ -75,10 +66,12 @@ const vm = require('node:vm');
   assert.ok(loadDiagnostics.sourceFiles.includes('offline_language_vocabulary.json'));
 
   const ids = new Set();
+  const concepts = new Map();
   for (const c of ontology.seed_concepts) {
     assert.ok(/^[A-Z][A-Z0-9_]+$/.test(c.concept_id), `Invalid concept_id: ${c.concept_id}`);
     assert.ok(!ids.has(c.concept_id), `Duplicate concept_id: ${c.concept_id}`);
     ids.add(c.concept_id);
+    concepts.set(c.concept_id, c);
     assert.ok(ontology.domains.some(d => d.id === c.domain), `Unknown domain: ${c.domain}`);
     for (const lang of ['en', 'bn']) {
       assert.ok(c.lexical?.[lang]?.lemma, `${c.concept_id}: missing ${lang} lemma`);
@@ -95,12 +88,40 @@ const vm = require('node:vm');
     assert.ok(/^P[0-4]$/.test(c.priority), `${c.concept_id}: invalid priority`);
   }
 
-  assert.equal(ids.size, 12);
-  assert.equal(system.concept('RESOURCE_PRODUCTION').concept_id, 'RESOURCE_PRODUCTION');
+  const hasRelation = (id, rel, target) => concepts.get(id)?.relations?.some(r => r.relation === rel && r.target === target);
+  const mustRelate = (id, rel, target) => assert.equal(hasRelation(id, rel, target), true, `${id} -> ${rel} -> ${target}`);
+
+  /* The existing 12 anchors must form an operational graph, not a word list. */
+  mustRelate('RESOURCE_PRODUCTION', 'child_of', 'STATE_VARIABLE');
+  mustRelate('RESOURCE_PRODUCTION', 'measured_by', 'QUANTITY');
+  mustRelate('RESOURCE_PRODUCTION', 'measured_as', 'RATE');
+  mustRelate('RESOURCE_PRODUCTION', 'constrained_by', 'CAPACITY');
+  mustRelate('RESOURCE_PRODUCTION', 'changed_by', 'ACTION_INCREASE');
+  mustRelate('RESOURCE_PRODUCTION', 'changed_by', 'ACTION_DECREASE');
+  mustRelate('ACTION_INCREASE', 'operates_on', 'STATE_VARIABLE');
+  mustRelate('ACTION_DECREASE', 'operates_on', 'STATE_VARIABLE');
+  mustRelate('ACTION_INCREASE', 'action_family', 'ACTION_DECREASE');
+  mustRelate('ACTION_DECREASE', 'action_family', 'ACTION_INCREASE');
+  mustRelate('RESOURCE', 'semantic_root_for', 'RESOURCE_PRODUCTION');
+  mustRelate('CAPACITY', 'affected_by', 'INVESTMENT');
+  mustRelate('CAPACITY', 'associated_with', 'PRODUCTION_FACILITY');
+  mustRelate('DEMAND', 'related_to', 'PRICE');
+  mustRelate('DEMAND', 'related_to', 'SUPPLY');
+  mustRelate('SUPPLY', 'paired_with', 'DEMAND');
+  mustRelate('SUPPLY', 'constrained_by', 'CAPACITY');
+  mustRelate('PRICE', 'distinct_from', 'COST');
+  mustRelate('INVESTMENT', 'affects', 'CAPACITY');
+  mustRelate('INVESTMENT', 'affects', 'PRODUCTION');
+
   assert.deepEqual(Array.from(system.concept('ACTION_INCREASE').semantic_roles), ['ACTOR','TARGET','AMOUNT','UNIT','TIME_HORIZON','SCOPE','CONSTRAINT','CONDITION']);
+  assert.equal(system.concept('ACTION_DECREASE').grammar_features.direction, 'NEGATIVE_CHANGE');
+  assert.equal(system.concept('ACTION_INCREASE').grammar_features.direction, 'POSITIVE_CHANGE');
   assert.equal(system.concept('PRICE').relations.some(r => r.relation === 'distinct_from' && r.target === 'COST'), true);
   assert.equal(system.concept('COUNTRY').runtime_resolution.requires.includes('authoritative_country_registry'), true);
+  assert.equal(system.concept('PRODUCTION_FACILITY').runtime_resolution.requires.includes('authoritative_facility_dataset'), true);
+  assert.equal(system.concept('INVESTMENT').runtime_resolution.numeric_effect, 'GAME_DATA_ONLY');
 
+  assert.equal(ids.size, 12);
   assert.equal(bridge.VERSION, '1.0.2');
   assert.equal(typeof bridge.match, 'function');
   assert.equal(typeof bridge.enrich, 'function');
@@ -133,7 +154,7 @@ const vm = require('node:vm');
   assert.equal(system.learnPhrase('increase output', 'increase', 'PRODUCTION', 0.99), true);
   assert.equal(system.learnPhrase('weak confidence', 'increase', 'PRODUCTION', 0.5), false);
 
-  console.log(`OMEGA hybrid runtime regression: PASS (${ids.size} seeds; loader exercised; ontology 1.1.0; language system 1.3.0; bridge 1.0.2)`);
+  console.log(`OMEGA hybrid runtime regression: PASS (${ids.size} seeds; loader exercised; semantic graph locked; ontology 1.1.0; language system 1.3.0; bridge 1.0.2)`);
 })().catch((error) => {
   console.error(error);
   process.exitCode = 1;
