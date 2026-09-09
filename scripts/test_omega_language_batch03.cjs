@@ -28,6 +28,23 @@ assert.equal(extensionApi.BATCH_ID, 'BATCH_03_DEEP_SEMANTIC');
 assert.equal(extensionApi.VERSION, '1.2.0');
 assert.equal(extensionApi.SEED_IDS.length, 16);
 assert.equal(extensionApi.registry.seeds.length, 16);
+assert.ok(extensionApi.discourseLexicon, 'contextual discourse lexicon must be exported');
+assert.equal(extensionApi.discourseLexicon.schema_version, 'OMEGA-DISCOURSE/1.0');
+assert.equal(extensionApi.discourseLexicon.detection.standaloneOnly, true);
+assert.ok(extensionApi.discourseLexicon.detection.contextWindowTurns >= 8);
+for (const id of ['GREETING','GRATITUDE','GRATITUDE_DECLINED','WELCOME','FAREWELL','APOLOGY','ACKNOWLEDGEMENT','AFFIRMATION','NEGATION','DISAGREEMENT','HESITATION','CONTINUATION','CLOSURE_REQUEST','WELLBEING']) {
+  const intent = extensionApi.discourseLexicon.intents[id];
+  assert.ok(intent, `missing discourse intent: ${id}`);
+  assert.ok(intent.phrases.en.length > 0, `${id} missing English phrases`);
+  assert.ok(intent.phrases.bn.length > 0, `${id} missing Bengali phrases`);
+  assert.ok(intent.melody.en.length > 0, `${id} missing English melody`);
+  assert.ok(intent.melody.bn.length > 0, `${id} missing Bengali melody`);
+}
+assert.ok(extensionApi.discourseLexicon.intents.HESITATION.contextSensitive);
+assert.ok(extensionApi.discourseLexicon.contextualResolution.HESITATION.afterQuestion);
+assert.equal(extensionApi.discourseLexicon.contextualResolution.ACKNOWLEDGEMENT.afterQuestion, 'CONFIRMATION');
+assert.equal(extensionApi.discourseLexicon.contextualResolution.AFFIRMATION.afterQuestion, 'CONSENT_OR_AFFIRMATION');
+assert.equal(extensionApi.discourseLexicon.contextualResolution.NEGATION.afterQuestion, 'REFUSAL_OR_NEGATION');
 
 const built = extensionApi.buildOntology(system);
 assert.equal(built.ok, true, built.reason || 'Batch 03 ontology build failed');
@@ -36,6 +53,7 @@ assert.equal(ontology.seed_concepts.length, 40);
 assert.equal(ontology.population_policy.current_seed_count, 40);
 assert.equal(ontology.implementation_status, 'BATCH_03_DEEP_SEMANTIC_LOCKED');
 assert.equal(ontology.batch_03.seed_ids.length, 16);
+assert.ok(ontology.discourse_lexicon);
 assert.equal(system.gameLanguageOntology().seed_concepts.length, 24, 'canonical runtime must remain immutable');
 
 const ids = new Set();
@@ -75,7 +93,6 @@ for (const id of extensionApi.SEED_IDS) {
 
 const mustBePresent = ['ACTOR','TARGET','ATTRIBUTE','VALUE','CONDITION','CONSTRAINT','THRESHOLD','CAUSE','CONSEQUENCE','DEPENDENCY','RISK','PROBABILITY','GOAL','PRIORITY','SCENARIO','DECISION'];
 for (const id of mustBePresent) assert.ok(ids.has(id), `missing required seed ${id}`);
-
 assert.deepEqual(Array.from(ontology.batch_03.seed_ids), mustBePresent);
 assert.equal(new Set(ontology.seed_concepts.map(c => c.concept_id)).size, 40);
 
@@ -83,4 +100,4 @@ const installResult = extensionApi.install(system);
 assert.equal(installResult.installed, true);
 assert.equal(installResult.seed_count, 40);
 
-console.log('Batch 03 integration PASS: canonical 24 + Batch 03 16 = 40 seeds; descriptions, contracts, boundaries and bridge installation validated.');
+console.log('Batch 03 integration PASS: canonical 24 + Batch 03 16 = 40 seeds; contextual discourse lexicon, descriptions, contracts, boundaries and bridge installation validated.');
