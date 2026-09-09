@@ -10,7 +10,7 @@
   'use strict';
 
   const BATCH_ID = 'BATCH_03_DEEP_SEMANTIC';
-  const VERSION = '1.0.0';
+  const VERSION = '1.1.0';
   const REQUIRED_PREVIOUS_SEEDS = 24;
   const SEED_IDS = Object.freeze([
     'ACTOR','TARGET','ATTRIBUTE','VALUE','CONDITION','CONSTRAINT','THRESHOLD',
@@ -33,7 +33,14 @@
       'entity_resolution_required',
       'provenance_preserved',
       'uncertainty_preserved',
-      'temporal_scope_preserved'
+      'temporal_scope_preserved',
+      'causal_role_preserved',
+      'strategic_role_preserved',
+      'comparison_semantics_preserved',
+      'forecast_semantics_preserved',
+      'execution_boundary_enforced',
+      'mutation_authority_required',
+      'diagnostic_trace_required'
     ]),
     invalid_compositions: Object.freeze(invalid_compositions.slice()),
     runtime_resolution: Object.freeze({ ...runtime }),
@@ -43,7 +50,9 @@
       invalid_type: 'SEMANTIC_TYPE_MISMATCH',
       unresolved_reference: 'SEMANTIC_REFERENCE_UNRESOLVED',
       invalid_composition: 'SEMANTIC_COMPOSITION_INVALID',
-      missing_provenance: 'SEMANTIC_PROVENANCE_MISSING'
+      missing_provenance: 'SEMANTIC_PROVENANCE_MISSING',
+      invalid_temporal_scope: 'SEMANTIC_TIME_SCOPE_INVALID',
+      unauthorized_mutation: 'SEMANTIC_MUTATION_UNAUTHORIZED'
     }),
     reasoning_contract: Object.freeze({
       causal_graph: ['CAUSE','CONSEQUENCE'],
@@ -55,7 +64,7 @@
     })
   });
 
-  const SEEDS = Object.freeze([
+  const SEEDS = [
     seed('ACTOR','AGENT','AGENCY',['ENTITY','ROLE','AUTHORITY','CAPABILITY'],
       { required:['identity'], optional:['role','authority','capability','ownership','jurisdiction','intent'] },
       [{relation:'acts_on',target:'TARGET'},{relation:'owns',target:'OWNERSHIP'},{relation:'pursues',target:'GOAL'},{relation:'makes',target:'DECISION'}],
@@ -120,21 +129,53 @@
       { required:['actor','selected_action'], optional:['target','alternatives','goals','priorities','constraints','risks','probabilities','consequences','rationale','confidence','authority','scenario'] },
       [{relation:'made_by',target:'ACTOR'},{relation:'targets',target:'TARGET'},{relation:'satisfies',target:'GOAL'},{relation:'bounded_by',target:'CONSTRAINT'}],
       { strategy:'construct_auditable_validated_decision_contract', never:['execute_unvalidated_decision','bypass_authority_or_constraint_checks'] }, 'DECISION_VALIDATION_GATE')
-  ]);
+  ];
 
-  const registry = Object.freeze({ batch_id:BATCH_ID, version:VERSION, required_previous_seed_count:REQUIRED_PREVIOUS_SEEDS, seed_ids:SEED_IDS, seeds:SEEDS });
+  const DESCRIPTIONS = Object.freeze({
+    ACTOR:'Identifies the entity that performs, authorizes, owns, delegates, or is accountable for a semantic action or decision. It resolves identity, role, authority, capability, jurisdiction and ownership without inferring power from a name alone.',
+    TARGET:'Identifies the exact entity, property, state variable, resource, facility, actor, or scoped object that an action, goal, evaluation, or decision refers to. It preserves target identity and scope so resolution cannot silently invent or mutate the object.',
+    ATTRIBUTE:'Defines a typed property of an entity or state, such as quality, stability, readiness, accessibility, capacity, or strategic importance. It describes what is being measured or evaluated, but is deliberately not the measured value itself.',
+    VALUE:'Represents an actual typed value attached to an attribute. It preserves units, timestamp, source, provenance, confidence and uncertainty so the semantic layer cannot fabricate a number or discard the evidence behind one.',
+    CONDITION:'Represents a logical prerequisite that must evaluate as true, false, or unknown in a specific world or scenario context. It supports atomic and compound predicates, temporal scope, threshold references, and safe unknown-state handling.',
+    CONSTRAINT:'Represents a binding limit on an action, plan, decision, actor, resource, or state transition. It validates candidates against legal, physical, economic, capability, budget, capacity, or policy boundaries and never silently relaxes a failed constraint.',
+    THRESHOLD:'Represents a typed boundary-crossing rule made from a metric, boundary value, comparison operator, scope and optional duration. Crossing the boundary can activate a condition or policy without confusing an ordinary value with a trigger threshold.',
+    CAUSE:'Represents an evidence-supported causal edge explaining why an effect occurred or is expected to occur. It records mechanism, direction, strength, evidence, confidence and temporal ordering while refusing to promote mere correlation into causation.',
+    CONSEQUENCE:'Represents an effect produced by an event, action, or state change. It distinguishes direct from downstream effects, intended from unintended outcomes, polarity, horizon and confidence so strategic reasoning can trace impact rather than flattening an entire causal chain.',
+    DEPENDENCY:'Represents a directed relationship in which one entity, process, capability, or outcome depends on another. It records direction, strength, criticality, substitutability, latency and failure mode and supports propagation analysis without inventing dependencies from co-occurrence.',
+    RISK:'Represents structured exposure to a harmful or undesirable event. It combines the event with probability context, impact, exposure, vulnerability, horizon and mitigation so risk remains distinct from probability and can inform decisions.',
+    PROBABILITY:'Represents the likelihood of a defined event or hypothesis under a defined model, evidence set and time horizon. It preserves prior, posterior, distribution and confidence metadata and never treats confidence in an estimate as the probability of the event itself.',
+    GOAL:'Represents an actor-owned desired future state that can be evaluated against measurable success or failure conditions. It binds targets, metrics, deadlines, constraints and priorities without confusing the object being targeted with the outcome being desired.',
+    PRIORITY:'Represents contextual ordering or weighting among goals, decisions, or competing objectives. Priority depends on actor, context, horizon and conflict policy, so the subsystem does not pretend there is one universal ranking for every situation.',
+    SCENARIO:'Represents an isolated hypothetical or counterfactual world configuration used for forecasting and strategic reasoning. It branches from a base state, applies explicit assumptions or overrides, and must never mutate live world state without an explicit commit boundary.',
+    DECISION:'Represents an auditable selected choice produced after alternatives, goals, priorities, conditions, constraints, risks, probabilities and authority have been evaluated. It is a validated decision contract, not permission to execute an action automatically.'
+  });
 
-  function install(system) {
-    if (!system || typeof system.gameLanguageOntology !== 'function') return { installed:false, reason:'CANONICAL_LANGUAGE_SYSTEM_NOT_READY' };
-    const originalOntology = system.gameLanguageOntology.bind(system);
-    const original = originalOntology();
-    if (!original || !Array.isArray(original.seed_concepts)) return { installed:false, reason:'INVALID_CANONICAL_ONTOLOGY' };
-    if (original.seed_concepts.length < REQUIRED_PREVIOUS_SEEDS) return { installed:false, reason:'PREVIOUS_SEED_LOCK_NOT_SATISFIED' };
-    const byId = new Map(original.seed_concepts.map(c => [c.concept_id, c]));
-    for (const item of SEEDS) {
-      if (byId.has(item.concept_id)) return { installed:false, reason:`DUPLICATE_SEED:${item.concept_id}` };
-      byId.set(item.concept_id, item);
-    }
+  for (const item of SEEDS) {
+    Object.defineProperty(item, 'description', { value: DESCRIPTIONS[item.concept_id], enumerable: true, writable: false, configurable: false });
+    Object.defineProperty(item, 'subsystem_contract', { value: Object.freeze({
+      semantic_identity: item.semantic_type,
+      measurement_semantics: item.concept_id === 'VALUE' ? 'typed_observation_with_unit_and_provenance' : 'semantic_role_not_a_world_fact',
+      temporal_semantics: 'explicit_scope_required_when_time_changes_meaning',
+      causal_role: item.concept_id === 'CAUSE' ? 'causal_explanation' : item.concept_id === 'CONSEQUENCE' ? 'causal_effect' : 'causal_context_preserved',
+      strategic_role: ['GOAL','PRIORITY','RISK','DECISION'].includes(item.concept_id) ? item.concept_id.toLowerCase() : 'supporting_semantic_context',
+      uncertainty_model: ['RISK','PROBABILITY','VALUE','CAUSE','CONSEQUENCE'].includes(item.concept_id) ? 'preserve_uncertainty_and_confidence' : 'unknown_must_not_become_true',
+      provenance_policy: 'source_and_evidence_are_preserved_when_present',
+      comparison_behavior: 'typed_comparison_only',
+      forecast_behavior: ['SCENARIO','PROBABILITY','RISK','CONSEQUENCE'].includes(item.concept_id) ? 'forecast_aware' : 'context_preserving',
+      mutation_authority: 'semantic_layer_never_mutates_world_state_without_explicit_execution_authority'
+    }), enumerable: true, writable: false, configurable: false });
+  }
+
+  Object.freeze(SEEDS);
+  const registry = Object.freeze({ batch_id:BATCH_ID, version:VERSION, required_previous_seed_count:REQUIRED_PREVIOUS_SEEDS, seed_ids:SEED_IDS, seeds:SEEDS, descriptions:DESCRIPTIONS });
+
+  function buildOntology(system) {
+    if (!system || typeof system.gameLanguageOntology !== 'function') return { ok:false, reason:'CANONICAL_LANGUAGE_SYSTEM_NOT_READY' };
+    const original = system.gameLanguageOntology();
+    if (!original || !Array.isArray(original.seed_concepts)) return { ok:false, reason:'INVALID_CANONICAL_ONTOLOGY' };
+    if (original.seed_concepts.length < REQUIRED_PREVIOUS_SEEDS) return { ok:false, reason:'PREVIOUS_SEED_LOCK_NOT_SATISFIED' };
+    const byId = new Set(original.seed_concepts.map(c => c.concept_id));
+    for (const item of SEEDS) if (byId.has(item.concept_id)) return { ok:false, reason:`DUPLICATE_SEED:${item.concept_id}` };
     const merged = Object.freeze({
       ...original,
       schema_version: '1.3.0',
@@ -144,24 +185,27 @@
       batch_03: registry,
       semantic_layers: Object.freeze([...(original.semantic_layers || []), 'AGENCY','CONTROL','CAUSALITY','DEPENDENCY','UNCERTAINTY','STRATEGY','COUNTERFACTUAL','DECISION'])
     });
-    system.gameLanguageOntology = () => merged;
-    system.BATCH_03 = registry;
-    return { installed:true, seed_count:merged.seed_concepts.length, batch_id:BATCH_ID };
+    return { ok:true, ontology:merged };
   }
 
-  global.OmegaLanguageBatch03 = Object.freeze({ BATCH_ID, VERSION, SEED_IDS, registry, install });
+  function install(system) {
+    const built = buildOntology(system);
+    if (!built.ok) return { installed:false, reason:built.reason };
+    if (global.OmegaGameLanguageBridge && typeof global.OmegaGameLanguageBridge.load === 'function') {
+      try {
+        global.OmegaGameLanguageBridge.load(built.ontology);
+        if (typeof global.OmegaGameLanguageBridge.install === 'function') global.OmegaGameLanguageBridge.install();
+      } catch (_) {}
+    }
+    return { installed:true, seed_count:built.ontology.seed_concepts.length, batch_id:BATCH_ID, ontology:built.ontology };
+  }
+
+  global.OmegaLanguageBatch03 = Object.freeze({ BATCH_ID, VERSION, SEED_IDS, registry, buildOntology, install });
 
   function autoInstall() {
     const system = global.OmegaLanguageSystem;
     if (!system) return false;
-    const result = install(system);
-    if (result.installed && global.OmegaGameLanguageBridge && typeof global.OmegaGameLanguageBridge.load === 'function') {
-      try {
-        global.OmegaGameLanguageBridge.load(system.gameLanguageOntology());
-        if (typeof global.OmegaGameLanguageBridge.install === 'function') global.OmegaGameLanguageBridge.install();
-      } catch (_) {}
-    }
-    return result.installed;
+    return install(system).installed;
   }
 
   if (!autoInstall()) {
