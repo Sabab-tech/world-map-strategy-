@@ -1,20 +1,23 @@
 {
   "name":"world-map-strategy",
   "version":"1.0.0",
+  "private":true,
   "type":"module",
   "scripts":{
     "dev":"node server_bootstrap.js",
-    "build":"node --check server_bootstrap.js && node --check server.js && node --check omega_server_ai_gateway.js && node --check omega_ai_context_bridge.js && node --check omega_ai_integrity_layer.js && node --check minister_query_router.js && node --check offline_semantic_brain.js && node --check offline_query_engine.js && node --check omega_language_system.js && node --check omega_production_semantic_runtime_v3.js && node --check minister_capability_engine.js && node --check minister_recruitment_engine.js && node --check omega_minister_state_system.js && node --check omega_minister_bootstrap.js && node --check minister_behavior_engine.js && node --check omega_minister_integration.js && node --check minister_communication_engine.js && node --check omega_ui_interaction_guard.js && node --check omega_cognitive_engine.js && node --check ministry_engine.js && node --check omega_reasoning_dispatcher.js && node --check scripts/validate_game_language_ontology.cjs && node --check scripts/test_omega_language_hybrid.cjs",
-    "lint":"node --check server_bootstrap.js && node --check server.js && node --check omega_server_ai_gateway.js && node --check omega_ai_context_bridge.js && node --check minister_query_router.js && node --check offline_semantic_brain.js && node --check offline_query_engine.js && node --check omega_language_system.js && node --check omega_reasoning_dispatcher.js && node --check scripts/validate_game_language_ontology.cjs && node --check scripts/test_omega_language_hybrid.cjs",
-    "test":"node test/omega_ai_integrity.test.js && node scripts/test_semantic_runtime_v4.cjs && node scripts/test_deep_semantic_brain.cjs && node scripts/test_minister_capability.cjs && node scripts/test_minister_state_lifecycle.mjs && node scripts/test_minister_behavior.mjs && node scripts/test_reasoning_dispatcher.cjs && node scripts/validate_game_language_ontology.cjs && node scripts/test_omega_language_hybrid.cjs",
+    "build":"npm run lint && npm run test:semantic && npm run test:cabinet && npm run test:canonical",
+    "lint":"node --check server_bootstrap.js && node --check server.js && node --check omega_server_ai_gateway.js && node --check omega_ai_context_bridge.js && node --check omega_ai_integrity_layer.js && node --check omega_ai_integrity_canonical_bridge.js && node --check minister_query_router.js && node --check offline_semantic_brain.js && node --check offline_query_engine.js && node --check omega_language_system.js && node --check omega_language_batch03_semantic_extension.js && node --check omega_production_semantic_runtime_v3.js && node --check minister_capability_engine.js && node --check minister_recruitment_engine.js && node --check omega_minister_state_system.js && node --check omega_minister_bootstrap.js && node --check minister_behavior_engine.js && node --check omega_minister_integration.js && node --check minister_communication_engine.js && node --check omega_ui_interaction_guard.js && node --check omega_cognitive_engine.js && node --check omega_reasoning_dispatcher.js && node --check omega_resource_semantic_bridge.js && node --check omega_country_semantic_bridge.js && node --check omega_universal_ai_runtime.js && node --check ministry_engine.js && node --check scripts/validate_game_language_ontology.cjs && node --check scripts/test_omega_language_hybrid.cjs && node --check scripts/test_canonical_ai_chain.cjs",
+    "test":"node test/omega_ai_integrity.test.js && node scripts/test_semantic_runtime_v4.cjs && node scripts/test_deep_semantic_brain.cjs && node scripts/test_minister_capability.cjs && node scripts/test_minister_state_lifecycle.mjs && node scripts/test_minister_behavior.mjs && node scripts/test_reasoning_dispatcher.cjs && node scripts/validate_game_language_ontology.cjs && node scripts/test_omega_language_hybrid.cjs && node scripts/test_canonical_ai_chain.cjs",
     "test:semantic":"node scripts/test_semantic_runtime_v4.cjs && node scripts/test_deep_semantic_brain.cjs && node scripts/test_reasoning_dispatcher.cjs && node scripts/validate_game_language_ontology.cjs && node scripts/test_omega_language_hybrid.cjs",
     "test:compatibility":"node scripts/test_semantic_runtime_v32.mjs",
     "test:cabinet":"node scripts/test_minister_capability.cjs && node scripts/test_minister_state_lifecycle.mjs && node scripts/test_minister_behavior.mjs",
     "test:minister":"node scripts/test_minister_state_lifecycle.mjs && node scripts/test_minister_behavior.mjs",
+    "test:canonical":"node scripts/test_canonical_ai_chain.cjs",
     "start":"node server_bootstrap.js"
   },
   "dependencies":{
     "@google/genai":"^2.21.0",
+    "express":"^5.1.0",
     "react":"^19.2.8",
     "react-dom":"^19.2.8",
     "recharts":"^3.10.1"
