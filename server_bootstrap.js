@@ -1,9 +1,10 @@
-/** OMEGA SERVER BOOTSTRAP v2.3.3
+/** OMEGA SERVER BOOTSTRAP v2.3.4
  * Canonical server bootstrap. Never changes index.html on disk.
  * Establishes one canonical AI/language/bridge chain before the UI is served.
  * Legacy semantic runtime v3.2 is compatibility-only and is never injected here.
  */
 import fs from 'fs';
+import './omega_server_ai_gateway.js';
 
 const nativeFetch = globalThis.fetch;
 const MODEL_FALLBACK = 'gemini-3.7-flash';
@@ -35,7 +36,8 @@ const CANONICAL_AI_SCRIPTS = [
   'omega_ai_integrity_layer.js',
   'omega_cognitive_engine.js',
   'omega_reasoning_dispatcher.js',
-  'omega_universal_ai_runtime.js'
+  'omega_universal_ai_runtime.js',
+  'omega_ai_context_bridge.js'
 ];
 
 if (!globalThis.__omegaUniversalIndexInjection) {
