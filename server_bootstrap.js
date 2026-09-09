@@ -1,7 +1,6 @@
-/** OMEGA SERVER BOOTSTRAP v2.3.5
- * Canonical server bootstrap. Never changes index.html on disk.
- * Establishes one canonical AI/language/bridge chain before the UI is served.
- * Legacy semantic runtime v3.2 is compatibility-only and is never injected here.
+/** OMEGA SERVER BOOTSTRAP v2.4.0
+ * Canonical server bootstrap. Establishes one deterministic browser AI boot chain.
+ * Legacy semantic runtime v3.2 is compatibility-only and is never injected.
  */
 import fs from 'fs';
 import './omega_server_ai_gateway.js';
@@ -27,7 +26,7 @@ if (typeof nativeFetch === 'function' && !globalThis.__omegaGeminiFetchCompat) {
   };
 }
 
-const CANONICAL_AI_SCRIPTS = [
+const CANONICAL_AI_SCRIPTS = Object.freeze([
   'omega_language_system.js',
   'omega_language_batch03_semantic_extension.js',
   'omega_country_semantic_bridge.js',
@@ -39,7 +38,16 @@ const CANONICAL_AI_SCRIPTS = [
   'omega_reasoning_dispatcher.js',
   'omega_universal_ai_runtime.js',
   'omega_ai_context_bridge.js'
-];
+]);
+
+const escapeRegExp = value => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const canonicalTags = name => new RegExp(`<script\\b[^>]*\\bsrc=["'][^"']*${escapeRegExp(name)}(?:[?#][^"']*)?["'][^>]*>\\s*</script>\\s*`, 'gi');
+
+for (const name of CANONICAL_AI_SCRIPTS) {
+  if (!fs.existsSync(new URL(`./${name}`, import.meta.url))) {
+    throw new Error(`[OMEGA BOOT] Canonical AI script missing: ${name}`);
+  }
+}
 
 if (!globalThis.__omegaUniversalIndexInjection) {
   globalThis.__omegaUniversalIndexInjection = true;
@@ -48,12 +56,13 @@ if (!globalThis.__omegaUniversalIndexInjection) {
     if (typeof options === 'function') { callback = options; options = undefined; }
     return nativeReadFile.call(fs, file, options, function (err, data) {
       if (!err && typeof data === 'string' && /(?:^|[\\/])index\.html$/i.test(String(file))) {
-        const existing = String(data);
-        const additions = CANONICAL_AI_SCRIPTS
-          .filter(name => !existing.includes(`/${name}`) && !existing.includes(`src="${name}"`) && !existing.includes(`src='${name}'`))
-          .map(name => `    <script src="${name}" defer></script>`)
-          .join('\n');
-        if (additions) data = existing.replace('</body>', `${additions}\n</body>`);
+        let html = String(data);
+        for (const name of CANONICAL_AI_SCRIPTS) html = html.replace(canonicalTags(name), '');
+        const additions = CANONICAL_AI_SCRIPTS.map(name => `    <script src="${name}" defer></script>`).join('\n');
+        if (!html.includes('</body>')) {
+          return callback(new Error('[OMEGA BOOT] index.html has no </body> insertion point'), data);
+        }
+        data = html.replace('</body>', `${additions}\n</body>`);
       }
       if (typeof callback === 'function') callback(err, data);
     });
