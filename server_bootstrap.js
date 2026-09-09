@@ -1,6 +1,7 @@
-/** OMEGA SERVER BOOTSTRAP v2.2.0
+/** OMEGA SERVER BOOTSTRAP v2.3.0
  * Canonical server bootstrap. Never changes index.html on disk.
- * Batch 03 semantic extension is injected after the universal language runtime.
+ * Establishes one canonical AI/language/semantic bridge chain before the UI is served.
+ * No world facts are hardcoded here; this file only wires existing runtime modules.
  */
 import fs from 'fs';
 
@@ -25,6 +26,17 @@ if (typeof nativeFetch === 'function' && !globalThis.__omegaGeminiFetchCompat) {
   };
 }
 
+const CANONICAL_AI_SCRIPTS = [
+  'omega_language_system.js',
+  'omega_semantic_runtime_v32.js',
+  'omega_ai_integrity_layer.js',
+  'omega_reasoning_dispatcher.js',
+  'omega_country_semantic_bridge.js',
+  'omega_resource_semantic_bridge.js',
+  'omega_universal_ai_runtime.js',
+  'omega_language_batch03_semantic_extension.js'
+];
+
 if (!globalThis.__omegaUniversalIndexInjection) {
   globalThis.__omegaUniversalIndexInjection = true;
   const nativeReadFile = fs.readFile;
@@ -32,12 +44,12 @@ if (!globalThis.__omegaUniversalIndexInjection) {
     if (typeof options === 'function') { callback = options; options = undefined; }
     return nativeReadFile.call(fs, file, options, function (err, data) {
       if (!err && typeof data === 'string' && /(?:^|[\\/])index\.html$/i.test(String(file))) {
-        if (!data.includes('/omega_universal_ai_runtime.js')) {
-          data = data.replace('</body>', '    <script src="/omega_universal_ai_runtime.js"></script>\n</body>');
-        }
-        if (!data.includes('/omega_language_batch03_semantic_extension.js')) {
-          data = data.replace('</body>', '    <script src="/omega_language_batch03_semantic_extension.js"></script>\n</body>');
-        }
+        const existing = String(data);
+        const additions = CANONICAL_AI_SCRIPTS
+          .filter(name => !existing.includes(`/${name}`) && !existing.includes(`src="${name}"`) && !existing.includes(`src='${name}'`))
+          .map(name => `    <script src="/${name}" defer></script>`)
+          .join('\n');
+        if (additions) data = existing.replace('</body>', `${additions}\n</body>`);
       }
       if (typeof callback === 'function') callback(err, data);
     });
