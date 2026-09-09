@@ -111,9 +111,21 @@ assert(universal.includes('historyContext()'), 'universal runtime must consult c
 assert(universal.includes('conversationVocabulary'), 'universal runtime must use data-driven conversation vocabulary');
 assert(universal.includes('EXCLAMATION_GUARD'), 'exclamatory input must be protected from question classification');
 assert(universal.includes('OFFLINE_CONTEXTUAL_CONVERSATION'), 'contextual conversation result must be surfaced explicitly');
+assert(universal.includes('SELF_QUERY_SCHEMA'), 'self-query routing must be schema-driven');
+assert(universal.includes('function resolveSelfQuery('), 'identity/self-query resolver must be present');
+assert(universal.includes('function discoverSelfModel('), 'identity facts must come from runtime providers');
+assert(universal.includes('OmegaSelfStateProviders'), 'future affect/wellbeing systems must have a generic provider path');
+assert(universal.includes('OmegaStressSystem'), 'stress provider auto-discovery must be supported');
+assert(universal.includes('OmegaHappinessSystem'), 'happiness provider auto-discovery must be supported');
+assert(universal.includes("selfQueryAuthority:'RUNTIME_IDENTITY_AND_AFFECT_PROVIDERS'"), 'self-query authority boundary must be explicit');
+assert(universal.includes("version:'1.8.0'"), 'universal runtime version must be 1.8.0');
+
+const runtimeSyntax = spawnSync(process.execPath, ['--check', path.join(root, 'omega_universal_ai_runtime.js')], { encoding: 'utf8' });
+assert(runtimeSyntax.status === 0, `omega_universal_ai_runtime.js syntax gate failed: ${runtimeSyntax.stderr || runtimeSyntax.stdout}`);
 
 console.log('CANONICAL CHAIN TEST PASSED');
 console.log(`Ontology entries: ${Object.keys(ontology.COMMODITY_ONTOLOGIES || {}).length}`);
 console.log(`Canonical scripts: ${requiredScripts.length}`);
 console.log('40-stage cognitive bridge: structurally connected to server/Gemini');
 console.log('Contextual discourse: Batch 03 + universal runtime integration validated');
+console.log('Self-query: identity facts + future affect provider path structurally validated');
