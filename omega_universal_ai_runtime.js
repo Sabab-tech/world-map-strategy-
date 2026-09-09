@@ -1,8 +1,8 @@
 /**
- * OMEGA UNIVERSAL AI RUNTIME v1.7.0
+ * OMEGA UNIVERSAL AI RUNTIME v1.8.0
  * Canonical interrogation owner.
  * Uses runtime language data + contextual discourse semantics + production
- * semantic routing + full 40-stage cognitive handoff.
+ * semantic routing + full 40-stage cognitive handoff + data-driven self-model.
  * No conversational response text is hard-coded here.
  */
 (function(global){
@@ -61,7 +61,7 @@
         const response=await fetch(asset('offline_language_vocabulary.json'),{cache:'no-store'});
         if(!response.ok)throw new Error(`HTTP_${response.status}`);
         conversationVocabulary=await response.json();
-        if(!global.OmegaLanguageBatch03){try{await loadScript('omega_language_batch03_semantic_extension.js');}catch(_){}}
+        if(!global.OmegaLanguageBatch03){try{await loadScript('omega_language_batch03_semantic_extension.js');}catch(_) {}}
       }catch(e){conversationVocabulary=null;console.warn('[OMEGA UNIVERSAL AI] language vocabulary unavailable:',e?.message||e);}
       return conversationVocabulary;
     })().finally(()=>{conversationVocabularyPromise=null;});
@@ -131,6 +131,198 @@
     const seed=matchNorm(text).split('').reduce((v,ch)=>(v*31+ch.charCodeAt(0))>>>0,7);return String(pool[seed%pool.length]);
   }
 
+  /*
+   * SELF-QUERY LAYER
+   * This layer resolves identity and wellbeing from authoritative runtime
+   * providers. It does not own identity facts or affect values.
+   */
+  const SELF_QUERY_SCHEMA=Object.freeze({
+    identity:Object.freeze({
+      en:Object.freeze({
+        name:Object.freeze(['name','your name','what is your name','what s your name','who are you']),
+        role:Object.freeze(['role','job','work','what do you do','what is your job','what is your role','your work','your purpose']),
+        capability:Object.freeze(['what can you do','capabilities','capability','skills','what are you capable of','what are your capabilities']),
+        scope:Object.freeze(['what is your function','what is your purpose','what are you for'])
+      }),
+      bn:Object.freeze({
+        name:Object.freeze(['নাম','তোমার নাম','আপনার নাম','তোমার নাম কী','আপনার নাম কী','তুমি কে','আপনি কে']),
+        role:Object.freeze(['কাজ','কী কাজ করো','কী কাজ করেন','কি কাজ করো','কি কাজ করেন','ভূমিকা','দায়িত্ব','দায়িত্ব','তোমার কাজ কী','আপনার কাজ কী']),
+        capability:Object.freeze(['কী করতে পারো','কি করতে পারো','কী কী পারো','ক্ষমতা','দক্ষতা','কী করতে সক্ষম','কি করতে সক্ষম']),
+        scope:Object.freeze(['উদ্দেশ্য কী','উদ্দেশ্য কি','কাজ কী','কাজ কি','কোন কাজে','কিসের জন্য'])
+      })
+    }),
+    wellbeing:Object.freeze({
+      linkedIntents:Object.freeze(['WELLBEING']),
+      en:Object.freeze(['how are you','how have you been','are you okay','are you well','are you doing well']),
+      bn:Object.freeze(['কেমন আছো','কেমন আছেন','তুমি কেমন আছ','তুমি কেমন আছো','আপনি কেমন আছেন','ভালো আছো','ভালো আছেন'])
+    })
+  });
+
+  function flattenStrings(value){
+    if(typeof value==='string')return [value];
+    if(Array.isArray(value))return value.flatMap(flattenStrings);
+    if(value&&typeof value==='object')return Object.values(value).flatMap(flattenStrings);
+    return [];
+  }
+
+  function collectProviders(){
+    const providers=[];
+    const registry=global.OmegaSelfStateProviders;
+    if(registry){
+      const entries=Array.isArray(registry)?registry:Object.values(registry);
+      for(const provider of entries)if(provider&&typeof provider==='object')providers.push(provider);
+    }
+    const named=['OmegaEmotionEngine','OmegaAffectEngine','OmegaWellbeingEngine','OmegaStressSystem','OmegaHappinessSystem','OmegaPsychologySystem'];
+    for(const key of named){const provider=global[key];if(provider&&typeof provider==='object'&&!providers.includes(provider))providers.push(provider);}
+    return providers;
+  }
+
+  function safeProviderRead(provider,ctx){
+    const methods=['getWellbeing','getAffectState','getEmotionalState','getState','snapshot','diagnostics'];
+    for(const method of methods){
+      if(typeof provider?.[method]!=='function')continue;
+      try{
+        const value=provider[method](ctx);
+        if(value&&typeof value==='object')return{value,method};
+      }catch(_){}
+    }
+    const direct=provider?.wellbeing||provider?.affect||provider?.emotion||provider?.state;
+    if(direct&&typeof direct==='object')return{value:direct,method:'DIRECT_STATE'};
+    return null;
+  }
+
+  function discoverSelfModel(ctx={}){
+    const candidates=[];
+    const explicit=[global.OmegaIdentityRegistry,global.OmegaIdentity,global.OmegaAIIdentity,global.Omega?.AI,global.Omega?.Identity,global.Game?.ai,global.Game?.AI];
+    for(const value of explicit)if(value&&typeof value==='object')candidates.push({source:'RUNTIME_IDENTITY_REGISTRY',value});
+
+    const runtimeMeta=global.OmegaUniversalAIConfig||global.OmegaRuntimeConfig||global.Omega?.Runtime||global.Omega?.Config;
+    if(runtimeMeta&&typeof runtimeMeta==='object')candidates.push({source:'RUNTIME_CONFIGURATION',value:runtimeMeta});
+
+    const self={};
+    const readFirst=keys=>{
+      for(const candidate of candidates){
+        for(const key of keys){
+          const value=candidate.value?.[key];
+          if(value!==undefined&&value!==null&&String(value).trim()!=='')return{value,source:candidate.source};
+        }
+      }
+      return null;
+    };
+
+    const name=readFirst(['displayName','name','agentName','assistantName','aiName','id']);
+    const role=readFirst(['role','title','job','function','purpose','description']);
+    const capabilities=readFirst(['capabilities','skills','abilities','functions','supportedTasks']);
+    const scope=readFirst(['scope','domain','mission','responsibility','responsibilities']);
+    if(name)self.name={value:String(name.value),source:name.source};
+    if(role)self.role={value:String(role.value),source:role.source};
+    if(capabilities)self.capabilities={value:flattenStrings(capabilities.value),source:capabilities.source};
+    if(scope)self.scope={value:flattenStrings(scope.value),source:scope.source};
+
+    if(!self.name){
+      const namespace='OmegaUniversalAIRuntime';
+      const derived=namespace.replace(/UniversalAI?Runtime$/i,'').replace(/^Omega/i,'Omega').trim();
+      if(derived)self.name={value:derived,source:'RUNTIME_NAMESPACE_DERIVED'};
+    }
+    if(!self.role){
+      const title=typeof document!=='undefined'?String(document.title||'').trim():'';
+      if(title)self.scope={...(self.scope||{}),value:[...(self.scope?.value||[]),title],source:'DOCUMENT_RUNTIME_METADATA'};
+    }
+
+    const providerReadings=[];
+    for(const provider of collectProviders()){
+      const reading=safeProviderRead(provider,ctx);
+      if(reading)providerReadings.push(reading);
+    }
+    self.wellbeingProviders=providerReadings;
+    return self;
+  }
+
+  function selfAttributeMatch(question){
+    const n=matchNorm(question),vocab=conversationVocabulary||{};
+    const attrs=vocab?.languages?.[isBn(question)?'bn':'en']?.attributes||{};
+    const selfPronouns=vocab?.languages?.[isBn(question)?'bn':'en']?.pronouns?.SELF||[];
+    const schemaLanguage=isBn(question)?'bn':'en';
+    const schemaGroups=SELF_QUERY_SCHEMA.identity?.[schemaLanguage]||{};
+    const selfWords=[...selfPronouns,...Object.values(schemaGroups).flat()].filter(Boolean);
+    const hasSelf=selfWords.some(term=>{
+      const t=matchNorm(term);return t&&n.includes(t);
+    });
+    if(!hasSelf)return null;
+
+    const normalizeAliases=list=>list.flatMap(x=>[x,...(attrs[x]||[])]);
+    for(const [attribute,aliases] of Object.entries(schemaGroups)){
+      const expanded=normalizeAliases(aliases);
+      if(expanded.some(alias=>{const a=matchNorm(alias);return a&&n.includes(a);}))return attribute;
+    }
+    return null;
+  }
+
+  function resolveWellbeing(model,language){
+    const readings=Array.isArray(model?.wellbeingProviders)?model.wellbeingProviders:[];
+    if(!readings.length)return{status:'UNAVAILABLE',source:'NO_AFFECT_PROVIDER',known:false};
+    const combined={};
+    for(const reading of readings){
+      const data=reading?.value||{};
+      for(const [key,value] of Object.entries(data))if(value!==undefined&&value!==null&&typeof value!=='function')combined[key]=value;
+    }
+    const hasValues=Object.keys(combined).length>0;
+    if(!hasValues)return{status:'UNAVAILABLE',source:'AFFECT_PROVIDER_EMPTY',known:false};
+    return{status:'AVAILABLE',source:'AFFECT_PROVIDER',known:true,values:combined,language};
+  }
+
+  function serializeSelfValue(value){
+    if(value===undefined||value===null)return null;
+    if(typeof value==='string'||typeof value==='number'||typeof value==='boolean')return String(value);
+    if(Array.isArray(value))return value.filter(v=>v!==undefined&&v!==null).map(v=>serializeSelfValue(v)).filter(Boolean).join(', ');
+    return Object.entries(value).map(([k,v])=>`${k}=${serializeSelfValue(v)}`).filter(Boolean).join(', ');
+  }
+
+  function buildSelfText(attribute,model,language,question){
+    const self=model||{};
+    const data=self[attribute];
+    if(data?.value!==undefined){
+      const value=serializeSelfValue(data.value);
+      if(value)return language==='bn'?`${value}`:`${value}`;
+    }
+    if(attribute==='wellbeing'){
+      const wb=resolveWellbeing(self,language);
+      if(wb.known)return serializeSelfValue(wb.values);
+      const ops=global.Omega?.status||global.OmegaRuntimeStatus||global.Game?.aiStatus;
+      if(ops){const value=serializeSelfValue(ops);if(value)return value;}
+      return language==='bn'?'বর্তমান affect/wellbeing state-এর কোনো authoritative provider এখনো যুক্ত নেই।':'No authoritative affect/wellbeing provider is currently connected.';
+    }
+    if(attribute==='role'){
+      const role=serializeSelfValue(self.role?.value);
+      const scope=serializeSelfValue(self.scope?.value);
+      if(role&&scope)return `${role}\n${scope}`;
+      if(role)return role;
+      if(scope)return scope;
+    }
+    if(attribute==='capability'){
+      const caps=serializeSelfValue(self.capabilities?.value);
+      if(caps)return caps;
+    }
+    return language==='bn'?'পরিচয় তথ্যের authoritative source পাওয়া যায়নি।':'No authoritative identity source is registered.';
+  }
+
+  function resolveSelfQuery(question,ctx){
+    const text=norm(question),lang=isBn(text)?'bn':'en';
+    const match=conversationIntent(text);
+    const wellbeingAliases=SELF_QUERY_SCHEMA.wellbeing?.[lang]||[];
+    const normalizedQuestion=matchNorm(text);
+    const wellbeingMatch=wellbeingAliases.some(alias=>matchNorm(alias)===normalizedQuestion);
+    let attribute=wellbeingMatch||match?.intent==='WELLBEING'?'wellbeing':selfAttributeMatch(text);
+    if(!attribute)return null;
+    const model=discoverSelfModel(ctx);
+    const response=buildSelfText(attribute,model,lang,text);
+    return{type:'SELF_QUERY',attribute,response,language:lang,identityModel:{
+      availableFields:Object.keys(model).filter(k=>k!=='wellbeingProviders'),
+      identitySources:[model.name?.source,model.role?.source,model.capabilities?.source,model.scope?.source].filter(Boolean),
+      wellbeingSource:resolveWellbeing(model,lang).source
+    },question:text};
+  }
+
   function localConversation(text){
     const match=conversationIntent(text);if(!match)return null;
     return{intent:match.intent,text:renderMelody(match,text),language:match.language,contextualRole:match.contextualRole,contextConfidence:match.contextConfidence,contextMethod:match.contextMethod,evidence:{source:match.source,phrase:match.phrase,priority:match.priority,questionSignal:match.questionSignal,contextWindowTurns:historyContext().length}};
@@ -143,8 +335,9 @@
     node.textContent=String(text||'');node.dataset.source=meta.source||'OMEGA_UNIVERSAL_AI_RUNTIME';node.dataset.operation=meta.operation||'';
     if(meta.reasoning)node.dataset.reasoning=JSON.stringify(meta.reasoning).slice(0,5000);
     if(meta.conversation)node.dataset.conversation=JSON.stringify(meta.conversation).slice(0,3000);
+    if(meta.selfQuery)node.dataset.selfQuery=JSON.stringify(meta.selfQuery).slice(0,4000);
     if(meta.gameLanguage)node.dataset.gameLanguage=JSON.stringify(meta.gameLanguage).slice(0,2000);
-    const h=readHistory();h.push({role:'user',content:question,timestamp:Date.now()});h.push({role:'assistant',content:String(text||''),timestamp:Date.now(),source:meta.source||'',reasoning:meta.reasoning||null,conversation:meta.conversation||null,gameLanguage:meta.gameLanguage||null});writeHistory(h);
+    const h=readHistory();h.push({role:'user',content:question,timestamp:Date.now()});h.push({role:'assistant',content:String(text||''),timestamp:Date.now(),source:meta.source||'',reasoning:meta.reasoning||null,conversation:meta.conversation||null,selfQuery:meta.selfQuery||null,gameLanguage:meta.gameLanguage||null});writeHistory(h);
   }
 
   async function postJson(url,body){const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});let data=null;try{data=await r.json();}catch(_){}if(!r.ok)throw new Error(data?.error||`HTTP_${r.status}`);return data||{};}
@@ -174,14 +367,23 @@
   }
 
   async function runTurn(question){
-    const ctx=context();await ensureGameLanguageLayer(ctx);await ensureConversationVocabulary();syncLanguageContext(ctx);const conversation=localConversation(question);
-    if(conversation?.text){output(conversation.text,question,{source:'OFFLINE_CONTEXTUAL_CONVERSATION',conversation});return;}
+    const ctx=context();await ensureGameLanguageLayer(ctx);await ensureConversationVocabulary();syncLanguageContext(ctx);
+    const selfQuery=resolveSelfQuery(question,ctx);
+    if(selfQuery){output(selfQuery.response,question,{source:'SELF_QUERY_RUNTIME',selfQuery});return;}
+    const conversation=localConversation(question);
+    if(conversation?.text){
+      if(conversation.intent==='WELLBEING'){
+        const wb=resolveSelfQuery(question,ctx);
+        if(wb){output(wb.response,question,{source:'SELF_WELLBEING_RUNTIME',selfQuery:wb,conversation});return;}
+      }
+      output(conversation.text,question,{source:'OFFLINE_CONTEXTUAL_CONVERSATION',conversation});return;
+    }
     const provider=String(localStorage.getItem('omega_ai_provider')||document.getElementById('omega-ai-provider')?.value||'OFFLINE').toUpperCase();const common={prompt:question,language:isBn(question)?'bn':'en',...ctx,timeHorizon:'CURRENT',history:historyContext()};syncLanguageContext(common);const dispatcher=await ensureReasoningDispatcher();
     if(provider.includes('GOOGLE')){try{const history=readHistory().slice(-40).map(x=>`${x.role}: ${x.content}`).join('\n');const data=await postJson('/api/ai/minister-consult',{...common,conversationHistory:history,gameState:common.gameState});if(data?.text){output(data.text,question,{source:data.aiPowered?`GOOGLE:${data.model||'GEMINI'}`:'OFFLINE_GROUNDED',reasoning:data.cognitiveTrace||data.result?.reasoning||null,gameLanguage:data.semantic?.gameLanguage||null});return;}if(data?.result?.text){output(data.result.text,question,{source:'OFFLINE_GROUNDED_FALLBACK',reasoning:data.cognitiveTrace||data.result.reasoning||null,gameLanguage:data.result.gameLanguage||null});return;}}catch(e){console.warn('[OMEGA UNIVERSAL AI] server/google transport unavailable:',e?.message||e);}}
     try{const data=await runOfflineDirect(question,common);const text=data?.result?.text||'The offline semantic executor could not produce an evidence-backed answer from the current game data.';output(text,question,{source:data.canonical?'BROWSER_PRODUCTION_SEMANTIC':'BROWSER_COMPATIBILITY_OFFLINE',operation:data?.result?.operation||'',reasoning:data?.reasoning||null,gameLanguage:data?.result?.gameLanguage||null});return;}catch(directError){try{const data=await postJson('/api/ai/semantic-query',{...common,gameState:common.gameState,reservesData:global.Omega?.World?.reservesData||null});const text=data?.result?.text||data?.text||data?.cognitiveTrace?.aiGroundingPacket?.answerEvidence||'The semantic runtime could not produce an evidence-backed answer from the current game state.';output(text,question,{source:'SERVER_OFFLINE_GROUNDED',operation:data?.result?.operation||'',reasoning:data?.cognitiveTrace||null,gameLanguage:data?.semantic?.gameLanguage||data?.result?.gameLanguage||null});}catch(serverError){throw new Error(`Semantic execution failed: ${directError.message}; server fallback: ${serverError.message}`);}}
   }
   function enqueue(question){const q=norm(question);if(!q)return;queue=queue.then(()=>runTurn(q)).catch(e=>{console.error('[OMEGA UNIVERSAL AI] turn failed',e);output(isBn(q)?`উত্তর তৈরির পাইপলাইনে সমস্যা হয়েছে: ${e.message}`:`The answer pipeline failed: ${e.message}`,q,{source:'PIPELINE_ERROR'});});}
   function submitFromUI(){const input=document.getElementById('interrogation-input');const q=input?.value||'';if(!norm(q))return;input.value='';enqueue(q);}
-  function install(){if(installed||typeof document==='undefined')return;installed=true;document.addEventListener('click',e=>{const button=e.target?.closest?.('#btn-submit-interrogation');if(!button)return;e.preventDefault();e.stopImmediatePropagation();submitFromUI();},true);document.addEventListener('keydown',e=>{if(e.key!=='Enter'||e.shiftKey||e.isComposing||e.target?.id!=='interrogation-input')return;e.preventDefault();e.stopImmediatePropagation();submitFromUI();},true);global.OmegaUniversalAIRuntime=Object.freeze({enqueue,submitFromUI,context,readHistory,syncLanguageContext,conversationIntent,questionSignals,version:'1.7.0',semanticAuthority:'OmegaProductionSemanticRuntime',cognitiveAuthority:'OmegaReasoningDispatcher'});console.log('[OMEGA UNIVERSAL AI] Contextual discourse + semantic + 40-stage cognitive pipeline installed.');}
+  function install(){if(installed||typeof document==='undefined')return;installed=true;document.addEventListener('click',e=>{const button=e.target?.closest?.('#btn-submit-interrogation');if(!button)return;e.preventDefault();e.stopImmediatePropagation();submitFromUI();},true);document.addEventListener('keydown',e=>{if(e.key!=='Enter'||e.shiftKey||e.isComposing||e.target?.id!=='interrogation-input')return;e.preventDefault();e.stopImmediatePropagation();submitFromUI();},true);global.OmegaUniversalAIRuntime=Object.freeze({enqueue,submitFromUI,context,readHistory,syncLanguageContext,conversationIntent,questionSignals,resolveSelfQuery,discoverSelfModel,resolveWellbeing,version:'1.8.0',semanticAuthority:'OmegaProductionSemanticRuntime',cognitiveAuthority:'OmegaReasoningDispatcher',selfQueryAuthority:'RUNTIME_IDENTITY_AND_AFFECT_PROVIDERS'});console.log('[OMEGA UNIVERSAL AI] Self-model + contextual discourse + semantic + 40-stage cognitive pipeline installed.');}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
 })(window);
