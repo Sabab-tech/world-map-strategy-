@@ -25,7 +25,7 @@ const extensionApi = sandbox.OmegaLanguageBatch03;
 
 assert.ok(extensionApi, 'Batch 03 extension API must be exported');
 assert.equal(extensionApi.BATCH_ID, 'BATCH_03_DEEP_SEMANTIC');
-assert.equal(extensionApi.VERSION, '1.1.0');
+assert.equal(extensionApi.VERSION, '1.2.0');
 assert.equal(extensionApi.SEED_IDS.length, 16);
 
 const built = extensionApi.buildOntology(system);
