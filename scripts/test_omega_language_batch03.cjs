@@ -46,7 +46,6 @@ for (const concept of ontology.seed_concepts) {
   assert.ok(Array.isArray(concept.semantic_roles));
   assert.ok(Array.isArray(concept.relations));
   assert.ok(concept.runtime_resolution);
-  assert.ok(concept.execution_boundary);
 }
 
 for (const id of extensionApi.SEED_IDS) {
@@ -58,8 +57,10 @@ for (const id of extensionApi.SEED_IDS) {
   assert.ok(concept.invalid_compositions.length >= 1, `${id} lacks invalid-composition protection`);
   assert.ok(concept.diagnostics);
   assert.ok(concept.reasoning_contract);
+  assert.ok(concept.execution_boundary);
   assert.ok(typeof concept.description === 'string' && concept.description.length >= 120, `${id} lacks a substantive semantic description`);
   assert.ok(concept.subsystem_contract);
+  assert.ok(concept.subsystem_contract.semantic_identity);
   assert.ok(concept.subsystem_contract.measurement_semantics);
   assert.ok(concept.subsystem_contract.temporal_semantics);
   assert.ok(concept.subsystem_contract.causal_role);
@@ -77,4 +78,4 @@ for (const id of mustBePresent) assert.ok(ids.has(id), `missing required seed ${
 assert.deepEqual(ontology.batch_03.seed_ids, mustBePresent);
 assert.equal(new Set(ontology.seed_concepts.map(c => c.concept_id)).size, 40);
 
-console.log('Batch 03 integration PASS: canonical 24 + Batch 03 16 = 40 seeds; descriptions and deep contracts validated.');
+console.log('Batch 03 integration PASS: canonical 24 + Batch 03 16 = 40 seeds; descriptions, contracts and boundaries validated.');
