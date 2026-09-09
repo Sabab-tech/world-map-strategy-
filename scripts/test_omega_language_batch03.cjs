@@ -27,6 +27,7 @@ assert.ok(extensionApi, 'Batch 03 extension API must be exported');
 assert.equal(extensionApi.BATCH_ID, 'BATCH_03_DEEP_SEMANTIC');
 assert.equal(extensionApi.VERSION, '1.2.0');
 assert.equal(extensionApi.SEED_IDS.length, 16);
+assert.equal(extensionApi.registry.seeds.length, 16);
 
 const built = extensionApi.buildOntology(system);
 assert.equal(built.ok, true, built.reason || 'Batch 03 ontology build failed');
@@ -75,7 +76,11 @@ for (const id of extensionApi.SEED_IDS) {
 const mustBePresent = ['ACTOR','TARGET','ATTRIBUTE','VALUE','CONDITION','CONSTRAINT','THRESHOLD','CAUSE','CONSEQUENCE','DEPENDENCY','RISK','PROBABILITY','GOAL','PRIORITY','SCENARIO','DECISION'];
 for (const id of mustBePresent) assert.ok(ids.has(id), `missing required seed ${id}`);
 
-assert.deepEqual(ontology.batch_03.seed_ids, mustBePresent);
+assert.deepEqual(Array.from(ontology.batch_03.seed_ids), mustBePresent);
 assert.equal(new Set(ontology.seed_concepts.map(c => c.concept_id)).size, 40);
 
-console.log('Batch 03 integration PASS: canonical 24 + Batch 03 16 = 40 seeds; descriptions, contracts and boundaries validated.');
+const installResult = extensionApi.install(system);
+assert.equal(installResult.installed, true);
+assert.equal(installResult.seed_count, 40);
+
+console.log('Batch 03 integration PASS: canonical 24 + Batch 03 16 = 40 seeds; descriptions, contracts, boundaries and bridge installation validated.');
