@@ -1,3 +1,4 @@
+# Batch 03 verification trigger: keep all semantic regression gates active.
 name: OMEGA Language System
 
 on:
