@@ -1,4 +1,4 @@
-/** OMEGA SERVER BOOTSTRAP v2.3.4
+/** OMEGA SERVER BOOTSTRAP v2.3.5
  * Canonical server bootstrap. Never changes index.html on disk.
  * Establishes one canonical AI/language/bridge chain before the UI is served.
  * Legacy semantic runtime v3.2 is compatibility-only and is never injected here.
@@ -34,6 +34,7 @@ const CANONICAL_AI_SCRIPTS = [
   'omega_resource_semantic_bridge.js',
   'omega_minister_runtime_v2.js',
   'omega_ai_integrity_layer.js',
+  'omega_ai_integrity_canonical_bridge.js',
   'omega_cognitive_engine.js',
   'omega_reasoning_dispatcher.js',
   'omega_universal_ai_runtime.js',
