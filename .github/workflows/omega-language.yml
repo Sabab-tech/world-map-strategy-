@@ -5,17 +5,23 @@ on:
   push:
     paths:
       - 'omega_language_system.js'
+      - 'omega_language_batch03_semantic_extension.js'
       - 'offline_semantic_knowledge.json'
       - 'scripts/validate_game_language_ontology.cjs'
       - 'scripts/test_omega_language_hybrid.cjs'
+      - 'scripts/test_omega_language_batch03.cjs'
+      - 'server_bootstrap.js'
       - 'package.json'
       - '.github/workflows/omega-language.yml'
   pull_request:
     paths:
       - 'omega_language_system.js'
+      - 'omega_language_batch03_semantic_extension.js'
       - 'offline_semantic_knowledge.json'
       - 'scripts/validate_game_language_ontology.cjs'
       - 'scripts/test_omega_language_hybrid.cjs'
+      - 'scripts/test_omega_language_batch03.cjs'
+      - 'server_bootstrap.js'
       - 'package.json'
       - '.github/workflows/omega-language.yml'
 
@@ -33,12 +39,12 @@ jobs:
         with:
           node-version: 24
       - name: Syntax gate
-        run: node --check omega_language_system.js && node --check scripts/test_omega_language_hybrid.cjs && node --check scripts/validate_game_language_ontology.cjs
+        run: node --check omega_language_system.js && node --check omega_language_batch03_semantic_extension.js && node --check server_bootstrap.js && node --check scripts/test_omega_language_batch03.cjs && node --check scripts/test_omega_language_hybrid.cjs && node --check scripts/validate_game_language_ontology.cjs
       - name: Security static gate
         shell: bash
         run: |
           set -euo pipefail
-          targets=(omega_language_system.js scripts/validate_game_language_ontology.cjs scripts/test_omega_language_hybrid.cjs)
+          targets=(omega_language_system.js omega_language_batch03_semantic_extension.js server_bootstrap.js scripts/validate_game_language_ontology.cjs scripts/test_omega_language_hybrid.cjs scripts/test_omega_language_batch03.cjs)
           if grep -nE '(^|[^[:alnum:]_])(eval[[:space:]]*\(|new[[:space:]]+Function[[:space:]]*\()' "${targets[@]}"; then
             echo 'SECURITY GATE FAILED: dynamic code execution primitive detected.' >&2
             exit 1
@@ -59,5 +65,7 @@ jobs:
           npm audit --audit-level=high --omit=dev
       - name: Canonical ontology validation
         run: node scripts/validate_game_language_ontology.cjs
-      - name: Hybrid runtime regression
+      - name: Existing hybrid runtime regression
         run: node scripts/test_omega_language_hybrid.cjs
+      - name: Batch 03 40-seed integration regression
+        run: node scripts/test_omega_language_batch03.cjs
