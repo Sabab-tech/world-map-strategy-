@@ -15,6 +15,8 @@ const integrityBridge = read('omega_ai_integrity_canonical_bridge.js');
 const universal = read('omega_universal_ai_runtime.js');
 const server = read('server.js');
 const router = read('minister_query_router.js');
+const dispatcher = read('omega_reasoning_dispatcher.js');
+const batch03 = read('omega_language_batch03_semantic_extension.js');
 const ontology = JSON.parse(read('resource_ontology.json'));
 
 assert(packageJson.dependencies?.express, 'express must be a declared runtime dependency');
@@ -70,12 +72,48 @@ assert(Object.keys(ontology.COMMODITY_ONTOLOGIES || {}).length > 0, 'canonical r
 assert(integrityBridge.includes("return rt.parse(question,context)"), 'integrity semantic parser must delegate directly to canonical runtime');
 assert(!integrityBridge.includes('return typeof previous'), 'integrity layer must not fall back to a second semantic parser');
 
+assert(server.includes("import './omega_cognitive_engine.js'"), 'server must load the cognitive engine');
+assert(server.includes("import './omega_reasoning_dispatcher.js'"), 'server must load the reasoning dispatcher');
+assert(server.includes('function runCognitiveBridge('), 'server must expose the canonical cognitive bridge');
+assert(server.includes('const cognitive = runCognitiveBridge('), 'minister consultation must execute the cognitive bridge before Gemini');
+assert(server.includes('40-STAGE GROUNDED COGNITIVE PACKET'), 'Gemini request must explicitly include the 40-stage packet');
+assert(server.includes('NO_UNGROUNDED_DEFAULTS'), 'server must enforce grounded-answer policy');
+assert(server.includes('cognitive40:'), 'grounded dossier must carry 40-stage cognitive trace');
+assert(server.includes('cognitiveBridge:'), 'AI status must expose cognitive bridge diagnostics');
+
+assert(dispatcher.includes("const VERSION='2.1.1'"), 'dispatcher version must be 2.1.1');
+assert(dispatcher.includes('stageCount:40'), 'dispatcher must expose full 40-stage count');
+for (const id of ['EVIDENCE_LEDGER','PROVENANCE_AUDIT','DATA_COMPLETENESS_AUDIT','CONSISTENCY_AND_CONFLICT_CHECK','BELIEF_REVISION','TEMPORAL_CONTEXT_MODEL','CAUSAL_LINK_GRAPH','DEPENDENCY_RECONSTRUCTION','RESOURCE_BALANCE_ANALYSIS','CAPACITY_CONSTRAINT_ANALYSIS','TRADE_AND_CHOKEPOINT_EXPOSURE','STRATEGIC_VULNERABILITY_SYNTHESIS','OPTION_EVIDENCE_ALIGNMENT','COUNTERFACTUAL_FRAME','MEMORY_CONSOLIDATION','RED_TEAM_RECHECK','DECISION_CONFIDENCE_SYNTHESIS','ANSWER_EVIDENCE_PACKET','ANSWER_CONTRACT','FINAL_AI_HANDOFF']) {
+  assert(dispatcher.includes(`name:'${id}'`), `dispatcher stage responsibility missing: ${id}`);
+}
+assert(dispatcher.includes("groundingBoundary:'RUNTIME_STAGE_ARTIFACTS_ONLY'"), 'AI handoff must be bounded by runtime stage artifacts');
+assert(dispatcher.includes('doNotInventMissingValues:true'), 'answer contract must prohibit invention');
+assert(dispatcher.includes('source:\'LIVE_GAME_STATE\''), 'cognitive bridge must record live telemetry source');
+assert(dispatcher.includes("const originals=stages.slice(20,40)"), 'dispatcher must preserve existing 21-40 stage slots and wrap them');
+
+assert(batch03.includes('DISCOURSE_LEXICON'), 'Batch 03 must contain contextual discourse lexicon');
+for (const id of ['GREETING','GRATITUDE','GRATITUDE_DECLINED','WELCOME','FAREWELL','APOLOGY','ACKNOWLEDGEMENT','AFFIRMATION','NEGATION','DISAGREEMENT','HESITATION','CONTINUATION','CLOSURE_REQUEST','WELLBEING']) {
+  assert(batch03.includes(`${id}:Object.freeze`), `discourse intent missing: ${id}`);
+}
+assert(batch03.includes('contextualResolution'), 'context-sensitive discourse resolution missing');
+assert(batch03.includes("HESITATION_AFTER_QUESTION"), 'hesitation must use prior-question context');
+assert(batch03.includes("CONSENT_OR_AFFIRMATION"), 'affirmation must expose contextual interpretation');
+assert(batch03.includes("REFUSAL_OR_NEGATION"), 'negation must expose contextual interpretation');
+
 assert(universal.includes("loadScript('omega_language_system.js')"), 'universal runtime must be able to recover the language layer');
+assert(universal.includes("loadScript('omega_language_batch03_semantic_extension.js')"), 'universal runtime must load Batch 03 discourse semantics');
 assert(universal.includes("loadScript('omega_production_semantic_runtime_v3.js')"), 'universal runtime must load the production semantic runtime');
 assert(universal.includes('new URL(p,document.baseURI)'), 'universal runtime assets must be document-relative');
-assert(server.includes("app.post('/api/ai/minister-consult'"), 'minister consultation endpoint missing');
-assert(server.includes("app.post('/api/ai/semantic-query'"), 'semantic query endpoint missing');
+assert(universal.includes('function conversationIntent('), 'universal runtime must expose contextual conversation classification');
+assert(universal.includes('function questionSignals('), 'universal runtime must distinguish question signals from exclamations');
+assert(universal.includes('contextMethod'), 'universal runtime must retain contextual resolution method');
+assert(universal.includes('historyContext()'), 'universal runtime must consult conversation history');
+assert(universal.includes('conversationVocabulary'), 'universal runtime must use data-driven conversation vocabulary');
+assert(universal.includes('EXCLAMATION_GUARD'), 'exclamatory input must be protected from question classification');
+assert(universal.includes('OFFLINE_CONTEXTUAL_CONVERSATION'), 'contextual conversation result must be surfaced explicitly');
 
 console.log('CANONICAL CHAIN TEST PASSED');
 console.log(`Ontology entries: ${Object.keys(ontology.COMMODITY_ONTOLOGIES || {}).length}`);
 console.log(`Canonical scripts: ${requiredScripts.length}`);
+console.log('40-stage cognitive bridge: structurally connected to server/Gemini');
+console.log('Contextual discourse: Batch 03 + universal runtime integration validated');
