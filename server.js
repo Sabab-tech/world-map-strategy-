@@ -216,24 +216,159 @@ function evidenceConfidence({ routing, identityResolved, dossierFields, profileR
   return Number((100 * (.25 * routingScore + .35 * dataScore + .25 * identityScore + .15 * profileScore)).toFixed(1));
 }
 
+function vocabularyIntentMatches(prompt, wantedIntent) {
+  const raw = String(prompt || '').trim().toLowerCase();
+  const sources = [languageVocabulary?.conversation?.intentRules?.[wantedIntent], global.OmegaLanguageBatch03?.discourseLexicon?.intents?.[wantedIntent]];
+  for (const rule of sources) {
+    if (!rule) continue;
+    for (const lang of ['en', 'bn']) {
+      for (const phrase of Array.isArray(rule?.phrases?.[lang]) ? rule.phrases[lang] : []) {
+        const p = String(phrase || '').trim().toLowerCase();
+        if (p && raw === p) return true;
+      }
+    }
+  }
+  return false;
+}
+
+function providerRead(provider, context) {
+  const methods = ['getWellbeing', 'getAffectState', 'getEmotionalState', 'getState', 'snapshot', 'diagnostics'];
+  for (const method of methods) {
+    if (typeof provider?.[method] !== 'function') continue;
+    try {
+      const value = provider[method](context);
+      if (value && typeof value === 'object') return { value, method };
+    } catch (_) {}
+  }
+  const direct = provider?.wellbeing || provider?.affect || provider?.emotion || provider?.state;
+  return direct && typeof direct === 'object' ? { value: direct, method: 'DIRECT_STATE' } : null;
+}
+
+function ministerWellbeingEvidence(identity, profile) {
+  const providers = [];
+  const registry = globalThis.OmegaSelfStateProviders;
+  if (registry) {
+    const entries = Array.isArray(registry) ? registry : Object.values(registry);
+    for (const provider of entries) if (provider && typeof provider === 'object') providers.push(provider);
+  }
+  for (const key of ['OmegaEmotionEngine', 'OmegaAffectEngine', 'OmegaWellbeingEngine', 'OmegaStressSystem', 'OmegaHappinessSystem', 'OmegaPsychologySystem']) {
+    const provider = globalThis[key];
+    if (provider && typeof provider === 'object' && !providers.includes(provider)) providers.push(provider);
+  }
+  for (const provider of providers) {
+    const reading = providerRead(provider, { ministerId: identity.ministerId, ministerName: identity.ministerName, ministryId: identity.ministryId, countryCode: identity.countryCode, profile });
+    if (reading) return { ok: true, source: reading.method, evidence: reading.value };
+  }
+  return { ok: false, reason: 'AFFECT_PROVIDER_UNAVAILABLE' };
+}
+
+function findResourceQuantity(root, resourceId, countryCode) {
+  if (!root || typeof root !== 'object') return null;
+  const resourceNeedles = [String(resourceId || '').toLowerCase(), String(resourceId || '').replace(/_/g, ' ').toLowerCase()];
+  const countryNeedle = String(countryCode || '').toLowerCase();
+  const quantityKeys = new Set(['quantity', 'amount', 'stock', 'stockpile', 'inventory', 'reserve', 'reserves', 'provenreserve', 'proven_reserve', 'totalreserve', 'total_reserve', 'remainingreserve', 'remaining_reserve', 'production', 'productionrate', 'production_rate', 'capacity']);
+  const seen = new Set();
+  const walk = value => {
+    if (!value || typeof value !== 'object' || seen.has(value)) return null;
+    seen.add(value);
+    if (Array.isArray(value)) {
+      for (const item of value) { const r = walk(item); if (r) return r; }
+      return null;
+    }
+    const blob = JSON.stringify(value).toLowerCase();
+    const resourceMatch = resourceNeedles.some(n => n && blob.includes(n));
+    const countryMatch = !countryNeedle || blob.includes(countryNeedle);
+    if (resourceMatch && countryMatch) {
+      for (const [key, candidate] of Object.entries(value)) {
+        const normalizedKey = String(key).toLowerCase().replace(/[^a-z0-9]/g, '');
+        if (quantityKeys.has(normalizedKey) && (typeof candidate === 'number' || (typeof candidate === 'string' && candidate.trim() !== '' && Number.isFinite(Number(candidate))))) {
+          return { value: Number(candidate), field: key, record: value };
+        }
+      }
+    }
+    for (const child of Object.values(value)) { const r = walk(child); if (r) return r; }
+    return null;
+  };
+  return walk(root);
+}
+
+function resourceQuantityEvidence(identity, semantic, semanticPlan, gameState, reservesData) {
+  const countryId = identity.countryCode || identity.countryName;
+  const resourceId = semantic?.entities?.resource?.id;
+  if (!resourceId || !countryId || semantic?.assetClass) return null;
+  const roots = [gameState, reservesData, resolveCountryResourceData(identity.countryCode, identity.countryName), ...semanticDatasets].filter(Boolean);
+  for (const root of roots) {
+    const found = findResourceQuantity(root, resourceId, countryId);
+    if (found) return { ...found, source: 'RUNTIME_DATASET_SEARCH', resourceId, countryId };
+  }
+  return null;
+}
+
+function directMinisterAnswer(prompt, semantic, semanticPlan, identity, profile, gameState, reservesData) {
+  const activeMinisterResolved = !!identity.ministerId || !!identity.ministerName;
+  if (!activeMinisterResolved || semantic?.targetDomain !== 'MINISTER') return null;
+
+  if (semantic.operation === 'ATTRIBUTE' && semantic.attribute?.name) {
+    const runtime = ProductionSemanticRuntime?.execute?.(semantic, { ...identity, gameState, reservesData });
+    if (runtime?.ok && runtime.value !== undefined && runtime.value !== null) {
+      return { ok: true, kind: 'DETERMINISTIC_MINISTER_ATTRIBUTE', text: String(runtime.value), value: runtime.value, source: runtime.source || 'MINISTER_RUNTIME' };
+    }
+    const value = ProductionSemanticRuntime?.explain ? null : null;
+    if (value !== null) return { ok: true, kind: 'DETERMINISTIC_MINISTER_ATTRIBUTE', text: String(value), value };
+    return null;
+  }
+
+  if (vocabularyIntentMatches(prompt, 'WELLBEING')) {
+    const wellbeing = ministerWellbeingEvidence(identity, profile);
+    if (wellbeing.ok) return { ok: true, kind: 'DETERMINISTIC_MINISTER_WELLBEING', evidence: wellbeing.evidence, source: wellbeing.source };
+    return { ok: true, kind: 'MINISTER_WELLBEING_UNKNOWN', text: null, unknown: true, reason: wellbeing.reason };
+  }
+
+  return null;
+}
+
 app.post('/api/ai/minister-consult', async (req, res) => {
   try {
     const { ministerId, ministerName, ministerRole, ministryId, countryName, countryCode, prompt, language, gameState, reservesData, timeHorizon, conversationHistory } = req.body;
     if (!prompt || typeof prompt !== 'string') return res.status(400).json({ ok: false, error: 'Prompt is required' });
     const identity = { ministerId: String(ministerId || '').trim(), ministerName: String(ministerName || '').trim(), ministerRole: String(ministerRole || '').trim(), ministryId: String(ministryId || '').trim(), countryName: String(countryName || '').trim(), countryCode: String(countryCode || '').trim().toUpperCase() };
     const parsedHistory = conversationHistory ? String(conversationHistory).split('\n').slice(-24).map(x => ({ role: x.startsWith('assistant:') ? 'assistant' : 'user', content: x.replace(/^(assistant|user):\s*/, '') })) : [];
+
     const semanticPlan = canonicalPlan(prompt, { ...identity, language, gameState, reservesData, timeHorizon, history: parsedHistory });
     const semantic = semanticPlan.semantic || semanticPlan.plan?.semantic || (ProductionSemanticRuntime?.parse ? ProductionSemanticRuntime.parse(prompt, identity) : null);
-    const offlineResult = semanticPlan.result || ProductionSemanticRuntime?.execute?.(semantic, identity) || null;
+    const offlineResult = semanticPlan.result || ProductionSemanticRuntime?.execute?.(semantic, { ...identity, gameState, reservesData }) || null;
+    const profile = findMinisterProfile(identity.ministerId, identity.ministerName);
+
+    const direct = directMinisterAnswer(prompt, semantic, semanticPlan, identity, profile, gameState, reservesData);
+    if (direct) {
+      if (direct.kind === 'DETERMINISTIC_MINISTER_ATTRIBUTE') {
+        return res.json({ ok: true, aiPowered: false, mode: 'DIRECT_GROUNDED_ATTRIBUTE', text: direct.text, answerContract: { exactQuestion: prompt, target: identity.ministerId || identity.ministerName, responseCardinality: 1, topicLock: true, source: direct.source }, semantic: ProductionSemanticRuntime?.explain ? ProductionSemanticRuntime.explain(prompt, identity) : semantic, result: offlineResult, identity, grounding: { policy: 'NO_UNGROUNDED_DEFAULTS', answerMode: 'DETERMINISTIC_RUNTIME_VALUE' } });
+      }
+      if (direct.kind === 'MINISTER_WELLBEING_UNKNOWN') {
+        return res.json({ ok: true, aiPowered: false, mode: 'DIRECT_GROUNDED_UNKNOWN', text: null, answerContract: { exactQuestion: prompt, target: identity.ministerId || identity.ministerName, responseCardinality: 1, topicLock: true, status: 'UNKNOWN', reason: direct.reason }, semantic: ProductionSemanticRuntime?.explain ? ProductionSemanticRuntime.explain(prompt, identity) : semantic, result: offlineResult, identity, grounding: { policy: 'UNKNOWN_WHEN_PROVIDER_UNAVAILABLE', answerMode: 'NO_AFFECT_PROVIDER' } });
+      }
+      if (direct.kind === 'DETERMINISTIC_MINISTER_WELLBEING') {
+        return res.json({ ok: true, aiPowered: false, mode: 'DIRECT_GROUNDED_PROVIDER_STATE', text: null, evidence: direct.evidence, answerContract: { exactQuestion: prompt, target: identity.ministerId || identity.ministerName, responseCardinality: 1, topicLock: true, source: direct.source }, semantic: ProductionSemanticRuntime?.explain ? ProductionSemanticRuntime.explain(prompt, identity) : semantic, result: offlineResult, identity, grounding: { policy: 'PROVIDER_GROUNDED' } });
+      }
+    }
+
+    const resourceQuestion = semantic?.targetDomain === 'COUNTRY_RESOURCE' && semantic?.entities?.resource?.id && !semantic?.assetClass && ['COUNT', 'QUANTITY'].includes(String(semantic?.operation || '').toUpperCase());
+    if (resourceQuestion) {
+      const quantity = resourceQuantityEvidence(identity, semantic, semanticPlan, gameState, reservesData);
+      if (quantity) {
+        return res.json({ ok: true, aiPowered: false, mode: 'DIRECT_GROUNDED_RESOURCE_QUANTITY', text: `${quantity.value}`, value: quantity.value, unit: resourceTypesRegistry?.[semantic.entities.resource.id]?.unit || null, answerContract: { exactQuestion: prompt, responseCardinality: 1, topicLock: true, target: semantic.entities.resource.id, country: identity.countryCode, source: quantity.source, field: quantity.field }, semantic: ProductionSemanticRuntime?.explain ? ProductionSemanticRuntime.explain(prompt, identity) : semantic, result: offlineResult, identity, grounding: { policy: 'NO_UNGROUNDED_DEFAULTS', answerMode: 'RUNTIME_RESOURCE_QUANTITY' } });
+      }
+      return res.json({ ok: true, aiPowered: false, mode: 'DIRECT_GROUNDED_UNKNOWN', text: null, answerContract: { exactQuestion: prompt, responseCardinality: 1, topicLock: true, status: 'UNKNOWN', reason: 'RESOURCE_QUANTITY_NOT_PRESENT_IN_LOADED_RUNTIME_DATA' }, semantic: ProductionSemanticRuntime?.explain ? ProductionSemanticRuntime.explain(prompt, identity) : semantic, result: offlineResult, identity, grounding: { policy: 'NO_GROUNDED_QUANTITY_NO_ANSWER', answerMode: 'RESOURCE_QUANTITY_MISSING' } });
+    }
+
     const cognitive = runCognitiveBridge(prompt, semantic, offlineResult, identity, language || semantic?.language || 'en', gameState || reservesData || {}, parsedHistory);
     const ai = getAI();
     if (!ai) {
       const text = ProductionSemanticRuntime?.formatOfflineAnswer && semantic ? ProductionSemanticRuntime.formatOfflineAnswer(semanticPlan) : offlineResult?.text || null;
-      return res.json({ ok: true, aiPowered: false, mode: 'OFFLINE_GROUNDED', authority: ProductionSemanticRuntime?.VERSION || 'OFFLINE_COMPATIBILITY', text, semantic: ProductionSemanticRuntime?.explain ? ProductionSemanticRuntime.explain(prompt, identity) : OfflineSemanticBrain.explain(semantic), result: offlineResult, identity, cognitiveTrace: cognitive.cognitiveTrace || cognitive, grounding: { runtimeDatasets: ProductionSemanticRuntime?.diagnostics?.() || canonicalSemanticRuntime, policy: 'NO_UNGROUNDED_DEFAULTS' } });
+      return res.json({ ok: true, aiPowered: false, mode: 'OFFLINE_GROUNDED', text, semantic: ProductionSemanticRuntime?.explain ? ProductionSemanticRuntime.explain(prompt, identity) : OfflineSemanticBrain.explain(semantic), result: offlineResult, identity, cognitiveTrace: cognitive.cognitiveTrace || cognitive, grounding: { runtimeDatasets: ProductionSemanticRuntime?.diagnostics?.() || canonicalSemanticRuntime, policy: 'NO_UNGROUNDED_DEFAULTS' } });
     }
 
     const routing = ProductionSemanticRuntime?.parse ? ProductionSemanticRuntime.parse(prompt, identity) : MinisterQueryRouter.routeMinisterQuery(prompt, { ministryId: identity.ministryId, ministerId: identity.ministerId, ministerName: identity.ministerName, ministerRole: identity.ministerRole }, { countryName: identity.countryName, countryCode: identity.countryCode });
-    const profile = findMinisterProfile(identity.ministerId, identity.ministerName);
     const resourceProfile = resolveCountryResourceData(identity.countryCode, identity.countryName) || {};
     const eco = cachedEconomies[identity.countryCode] || {}, pop = cachedPopulations[identity.countryCode] || {}, telemetry = reservesData || gameState || {};
     const dossier = {
@@ -251,12 +386,11 @@ app.post('/api/ai/minister-consult', async (req, res) => {
     };
     const dossierText = JSON.stringify(dossier, null, 2), dossierFields = Object.values(dossier).filter(v => v && typeof v === 'object' && Object.keys(v).length).length / 10;
     const confidence = evidenceConfidence({ routing: semantic || routing, identityResolved: !!identity.ministerId && !!identity.ministerName && !!identity.countryCode, dossierFields, profileResolved: !!profile });
-    const systemInstruction = `You are the minister identified in the canonical identity record. First obey the semantic contract, deterministic answer state, and the 40-stage grounded cognitive packet. Answer the actual question, not a different interpretation. Runtime datasets and the cognitive packet are the evidence boundary. Never invent a country, resource, quantity, mine, reserve, identity, event, causal link, calculation, or missing telemetry. Distinguish VERIFIED FACT, DETERMINISTIC CALCULATION, INFERENCE, RECOMMENDATION and UNKNOWN. The cognitive packet is structured analytical metadata; do not reveal hidden chain-of-thought or internal scratch work. Use its evidence, uncertainty, decision and handoff fields to synthesize the answer. Preserve the user's language; respond in ${language === 'bn' ? 'standard Bengali' : 'English'}.`;
+    const systemInstruction = `You are the minister identified in the canonical identity record. The active minister identity is the only speaker reference for this consultation. Never replace the active minister with a global runtime, AI system, or another minister. First obey the exact-question answer contract. Answer ONLY the question asked. For a simple identity, age, status, quantity, location, date, or other single-value request, return only the requested value or a single concise sentence. Do not append a dossier, audit, recommendation, strategic report, or unrelated resource analysis unless explicitly requested. Runtime datasets and the cognitive packet are evidence boundaries. Never invent a country, resource, quantity, mine, reserve, identity, event, causal link, calculation, or missing telemetry. Distinguish VERIFIED FACT, DETERMINISTIC CALCULATION, INFERENCE, RECOMMENDATION and UNKNOWN. The cognitive packet is analytical metadata, not the answer itself. If the required fact is absent, return UNKNOWN rather than substituting another topic. Preserve the user's language; respond in ${language === 'bn' ? 'standard Bengali' : 'English'}.`;
     const cognitiveText = JSON.stringify(cognitive.cognitiveTrace || cognitive, null, 2);
-    const userContent = `CANONICAL IDENTITY:\n${JSON.stringify(identity, null, 2)}\n\nCANONICAL SEMANTIC PLAN:\n${JSON.stringify(semanticPlan, null, 2)}\n\nGROUNDED EXECUTIVE DOSSIER:\n${dossierText}\n\n40-STAGE GROUNDED COGNITIVE PACKET:\n${cognitiveText}\n\nEXECUTIVE COMMANDER QUESTION:\n${prompt}`;
-    const result = await generateWithFallback(ai, { contents: userContent, config: { systemInstruction, temperature: .25, topP: .9 } });
-    return res.json({ ok: true, aiPowered: true, model: result.model, text: result.text || '', confidence, authority: ProductionSemanticRuntime?.VERSION || 'OFFLINE_COMPATIBILITY', semantic: ProductionSemanticRuntime?.explain ? ProductionSemanticRuntime.explain(prompt, identity) : semantic, result: offlineResult, intent: semantic?.targetDomain || routing?.intent, domain: semantic?.targetDomain || routing?.domain, identity, cognitiveTrace: cognitive.cognitiveTrace || cognitive, grounding: { runtimeDatasets: ProductionSemanticRuntime?.diagnostics?.() || canonicalSemanticRuntime, cognitiveBridge: cognitive.cognitiveTrace || cognitive, policy: 'NO_UNGROUNDED_DEFAULTS' } });
+    const answerContract = { exactQuestion: prompt, activeSpeaker: { ministerId: identity.ministerId || null, ministerName: identity.ministerName || null, ministryId: identity.ministryId || null }, responseCardinality: 1, topicLock: true, noTopicSubstitution: true, noDossierExpansion: true, missingDataPolicy: 'UNKNOWN', evidenceBoundary: 'RUNTIME_DATA_AND_GROUNDED_COGNITIVE_PACKET' };
+    const userContent = `ANSWER CONTRACT:\n${JSON.stringify(answerContract, null, 2)}\n\nCANONICAL IDENTITY:\n${JSON.stringify(identity, null, 2)}\n\nCANONICAL SEMANTIC PLAN:\n${JSON.stringify(semanticPlan, null, 2)}\n\nGROUNDED EXECUTIVE DOSSIER:\n${dossierText}\n\n40-STAGE GROUNDED COGNITIVE PACKET:\n${cognitiveText}\n\nEXECUTIVE COMMANDER QUESTION:\n${prompt}`;
+    const result = await generateWithFallback(ai, { contents: userContent, config: { systemInstruction, temperature: .15, topP: .85 } });
+    return res.json({ ok: true, aiPowered: true, model: result.model, text: result.text || '', confidence, authority: ProductionSemanticRuntime?.VERSION || 'OFFLINE_COMPATIBILITY', semantic: ProductionSemanticRuntime?.explain ? ProductionSemanticRuntime.explain(prompt, identity) : semantic, result: offlineResult, intent: semantic?.targetDomain || routing?.intent, domain: semantic?.targetDomain || routing?.domain, identity, answerContract, cognitiveTrace: cognitive.cognitiveTrace || cognitive, grounding: { runtimeDatasets: ProductionSemanticRuntime?.diagnostics?.() || canonicalSemanticRuntime, cognitiveBridge: cognitive.cognitiveTrace || cognitive, policy: 'NO_UNGROUNDED_DEFAULTS' } });
   } catch (e) { console.error('[AI Minister Consult]', e); return res.status(500).json({ ok: false, error: e.message || 'AI consultation failed' }); }
 });
-
-app.listen(PORT, '0.0.0.0', () => console.log(`OMEGA server running on http://0.0.0.0:${PORT}`));
