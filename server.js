@@ -7,11 +7,15 @@ import './omega_production_semantic_runtime_v3.js';
 import './offline_semantic_brain.js';
 import './offline_query_engine.js';
 import './minister_query_router.js';
+import './omega_cognitive_engine.js';
+import './omega_reasoning_dispatcher.js';
 
 const ProductionSemanticRuntime = globalThis.OmegaProductionSemanticRuntime;
 const OfflineSemanticBrain = globalThis.OfflineSemanticBrain;
 const OfflineQueryEngine = globalThis.OfflineQueryEngine;
 const MinisterQueryRouter = globalThis.MinisterQueryRouter;
+const OmegaCognitiveEngine = globalThis.OmegaCognitiveEngine || globalThis.OmegaSharedCognition || null;
+const OmegaReasoningDispatcher = globalThis.OmegaReasoningDispatcher || null;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const INDEX_PATH = path.join(__dirname, 'index.html');
@@ -53,14 +57,11 @@ try {
 
 let canonicalSemanticRuntime = null;
 try {
-  if (ProductionSemanticRuntime?.init) {
-    canonicalSemanticRuntime = await ProductionSemanticRuntime.init();
-  }
+  if (ProductionSemanticRuntime?.init) canonicalSemanticRuntime = await ProductionSemanticRuntime.init();
 } catch (e) { console.warn('[Production Semantic Runtime] Initialization warning:', e.message); }
-if (!canonicalSemanticRuntime && OfflineSemanticBrain?.configure) {
-  canonicalSemanticRuntime = OfflineSemanticBrain.configure({ datasets: semanticDatasets, vocabulary: languageVocabulary });
-}
+if (!canonicalSemanticRuntime && OfflineSemanticBrain?.configure) canonicalSemanticRuntime = OfflineSemanticBrain.configure({ datasets: semanticDatasets, vocabulary: languageVocabulary });
 console.log('[Semantic Runtime] Canonical authority:', ProductionSemanticRuntime?.VERSION || 'OFFLINE_COMPATIBILITY');
+console.log('[Cognitive Bridge] 40-stage dispatcher:', OmegaReasoningDispatcher?.VERSION || 'UNAVAILABLE');
 
 let cachedEconomies = {}, cachedPopulations = {}, cachedMinisters = {};
 try {
@@ -141,7 +142,7 @@ app.get('/api/minister-candidates', (req, res) => {
 
 app.get('/api/ai/status', (req, res) => {
   const hasKey = !!process.env.GEMINI_API_KEY;
-  res.json({ ok: true, aiAvailable: hasKey, models: CANDIDATE_MODELS, primaryModel: CANDIDATE_MODELS[0], integrityLayer: '2.0.0', ministerStateSystem: '1.0.0', semanticRuntime: { authority: ProductionSemanticRuntime?.VERSION || null, diagnostics: ProductionSemanticRuntime?.diagnostics?.() || canonicalSemanticRuntime }, timestamp: new Date().toISOString() });
+  res.json({ ok: true, aiAvailable: hasKey, models: CANDIDATE_MODELS, primaryModel: CANDIDATE_MODELS[0], integrityLayer: '2.0.0', ministerStateSystem: '1.0.0', semanticRuntime: { authority: ProductionSemanticRuntime?.VERSION || null, diagnostics: ProductionSemanticRuntime?.diagnostics?.() || canonicalSemanticRuntime }, cognitiveBridge: { authority: OmegaReasoningDispatcher?.VERSION || null, full40: OmegaReasoningDispatcher?.full40 === true }, timestamp: new Date().toISOString() });
 });
 
 app.post('/api/minister-state/diagnostics', (req, res) => {
@@ -162,12 +163,24 @@ function canonicalPlan(prompt, input = {}) {
   return { semantic, result };
 }
 
+function runCognitiveBridge(prompt, semantic, offlineResult, identity, language, gameState, conversationHistory) {
+  if (!OmegaReasoningDispatcher?.dispatch) return { available: false, reason: 'COGNITIVE_DISPATCHER_UNAVAILABLE' };
+  try {
+    const parsed = semantic || { operation: 'LOOKUP', language: language || 'en', surface: prompt };
+    const history = Array.isArray(conversationHistory) ? conversationHistory : [];
+    return OmegaReasoningDispatcher.dispatch(prompt, parsed, offlineResult || {}, { ...identity, language, gameState: gameState || {}, history, timeHorizon: 'CURRENT' });
+  } catch (e) {
+    return { available: false, reason: 'COGNITIVE_DISPATCH_ERROR', error: e.message };
+  }
+}
+
 app.post('/api/ai/semantic-query', (req, res) => {
   try {
     const body = req.body || {};
     if (!body.prompt || typeof body.prompt !== 'string') return res.status(400).json({ ok: false, error: 'Prompt is required' });
     const plan = canonicalPlan(body.prompt, body);
-    return res.json({ ok: true, authority: ProductionSemanticRuntime?.VERSION || 'OFFLINE_COMPATIBILITY', semantic: ProductionSemanticRuntime?.explain ? ProductionSemanticRuntime.explain(body.prompt, body) : OfflineSemanticBrain.explain(plan.semantic), result: plan.result, plan });
+    const cognitive = runCognitiveBridge(body.prompt, plan.semantic || null, plan.result || null, body, body.language || (plan.semantic?.language === 'bn' ? 'bn' : 'en'), body.gameState || {}, body.history || []);
+    return res.json({ ok: true, authority: ProductionSemanticRuntime?.VERSION || 'OFFLINE_COMPATIBILITY', semantic: ProductionSemanticRuntime?.explain ? ProductionSemanticRuntime.explain(body.prompt, body) : OfflineSemanticBrain.explain(plan.semantic), result: plan.result, plan, cognitiveTrace: cognitive.cognitiveTrace || cognitive });
   } catch (err) { return res.status(500).json({ ok: false, error: err.message || 'Semantic query failed' }); }
 });
 
@@ -208,14 +221,15 @@ app.post('/api/ai/minister-consult', async (req, res) => {
     const { ministerId, ministerName, ministerRole, ministryId, countryName, countryCode, prompt, language, gameState, reservesData, timeHorizon, conversationHistory } = req.body;
     if (!prompt || typeof prompt !== 'string') return res.status(400).json({ ok: false, error: 'Prompt is required' });
     const identity = { ministerId: String(ministerId || '').trim(), ministerName: String(ministerName || '').trim(), ministerRole: String(ministerRole || '').trim(), ministryId: String(ministryId || '').trim(), countryName: String(countryName || '').trim(), countryCode: String(countryCode || '').trim().toUpperCase() };
-
-    const semanticPlan = canonicalPlan(prompt, { ...identity, language, gameState, reservesData, timeHorizon, history: conversationHistory ? String(conversationHistory).split('\n').slice(-24).map(x => ({ role: x.startsWith('assistant:') ? 'assistant' : 'user', content: x.replace(/^(assistant|user):\s*/, '') })) : [] });
+    const parsedHistory = conversationHistory ? String(conversationHistory).split('\n').slice(-24).map(x => ({ role: x.startsWith('assistant:') ? 'assistant' : 'user', content: x.replace(/^(assistant|user):\s*/, '') })) : [];
+    const semanticPlan = canonicalPlan(prompt, { ...identity, language, gameState, reservesData, timeHorizon, history: parsedHistory });
     const semantic = semanticPlan.semantic || semanticPlan.plan?.semantic || (ProductionSemanticRuntime?.parse ? ProductionSemanticRuntime.parse(prompt, identity) : null);
     const offlineResult = semanticPlan.result || ProductionSemanticRuntime?.execute?.(semantic, identity) || null;
+    const cognitive = runCognitiveBridge(prompt, semantic, offlineResult, identity, language || semantic?.language || 'en', gameState || reservesData || {}, parsedHistory);
     const ai = getAI();
     if (!ai) {
       const text = ProductionSemanticRuntime?.formatOfflineAnswer && semantic ? ProductionSemanticRuntime.formatOfflineAnswer(semanticPlan) : offlineResult?.text || null;
-      return res.json({ ok: true, aiPowered: false, mode: 'OFFLINE_GROUNDED', authority: ProductionSemanticRuntime?.VERSION || 'OFFLINE_COMPATIBILITY', text, semantic: ProductionSemanticRuntime?.explain ? ProductionSemanticRuntime.explain(prompt, identity) : OfflineSemanticBrain.explain(semantic), result: offlineResult, identity, grounding: { runtimeDatasets: ProductionSemanticRuntime?.diagnostics?.() || canonicalSemanticRuntime, policy: 'NO_UNGROUNDED_DEFAULTS' } });
+      return res.json({ ok: true, aiPowered: false, mode: 'OFFLINE_GROUNDED', authority: ProductionSemanticRuntime?.VERSION || 'OFFLINE_COMPATIBILITY', text, semantic: ProductionSemanticRuntime?.explain ? ProductionSemanticRuntime.explain(prompt, identity) : OfflineSemanticBrain.explain(semantic), result: offlineResult, identity, cognitiveTrace: cognitive.cognitiveTrace || cognitive, grounding: { runtimeDatasets: ProductionSemanticRuntime?.diagnostics?.() || canonicalSemanticRuntime, policy: 'NO_UNGROUNDED_DEFAULTS' } });
     }
 
     const routing = ProductionSemanticRuntime?.parse ? ProductionSemanticRuntime.parse(prompt, identity) : MinisterQueryRouter.routeMinisterQuery(prompt, { ministryId: identity.ministryId, ministerId: identity.ministerId, ministerName: identity.ministerName, ministerRole: identity.ministerRole }, { countryName: identity.countryName, countryCode: identity.countryCode });
@@ -232,14 +246,16 @@ app.post('/api/ai/minister-consult', async (req, res) => {
       contextPacket: offlineResult?.contextPacket || null,
       routing: { operation: semantic?.operation || routing?.operation || routing?.targetDomain || null, domain: semantic?.targetDomain || routing?.domain || null, entities: semantic?.entities ? Object.values(semantic.entities).filter(x => x?.id) : [], requiredData: semantic?.operation ? [semantic.operation] : [] },
       resources: { hydrocarbons: resourceProfile.hydrocarbon_resource_base || {}, minerals: resourceProfile.mineral_resource_base || {}, strategic: resourceProfile.strategic_resources || {}, dependency: resourceProfile.resource_dependency || {}, processing: resourceProfile.processing_and_industrial_capacities || {}, mineSites: resourceProfile.resource_infrastructure_context?.mineSites || [] },
-      economy: eco, population: pop, liveTelemetry: telemetry
+      economy: eco, population: pop, liveTelemetry: telemetry,
+      cognitive40: cognitive.cognitiveTrace || cognitive
     };
     const dossierText = JSON.stringify(dossier, null, 2), dossierFields = Object.values(dossier).filter(v => v && typeof v === 'object' && Object.keys(v).length).length / 10;
     const confidence = evidenceConfidence({ routing: semantic || routing, identityResolved: !!identity.ministerId && !!identity.ministerName && !!identity.countryCode, dossierFields, profileResolved: !!profile });
-    const systemInstruction = `You are the minister identified in the canonical identity record. First obey the semantic contract and deterministic answer state. Answer the actual question, not a different interpretation. The canonical semantic runtime and grounded context are the evidence boundary. Never invent a country, resource, quantity, mine, reserve, identity, event, causal link or calculation. Distinguish VERIFIED FACT, DETERMINISTIC CALCULATION, INFERENCE and RECOMMENDATION. When the answer state is incomplete, say what is known and what is UNKNOWN. Preserve the user's language; respond in ${language === 'bn' ? 'standard Bengali' : 'English'}.`;
-    const userContent = `CANONICAL IDENTITY:\n${JSON.stringify(identity, null, 2)}\n\nCANONICAL SEMANTIC PLAN:\n${JSON.stringify(semanticPlan, null, 2)}\n\nGROUNDED EXECUTIVE DOSSIER:\n${dossierText}\n\nEXECUTIVE COMMANDER QUESTION:\n${prompt}`;
+    const systemInstruction = `You are the minister identified in the canonical identity record. First obey the semantic contract, deterministic answer state, and the 40-stage grounded cognitive packet. Answer the actual question, not a different interpretation. Runtime datasets and the cognitive packet are the evidence boundary. Never invent a country, resource, quantity, mine, reserve, identity, event, causal link, calculation, or missing telemetry. Distinguish VERIFIED FACT, DETERMINISTIC CALCULATION, INFERENCE, RECOMMENDATION and UNKNOWN. The cognitive packet is structured analytical metadata; do not reveal hidden chain-of-thought or internal scratch work. Use its evidence, uncertainty, decision and handoff fields to synthesize the answer. Preserve the user's language; respond in ${language === 'bn' ? 'standard Bengali' : 'English'}.`;
+    const cognitiveText = JSON.stringify(cognitive.cognitiveTrace || cognitive, null, 2);
+    const userContent = `CANONICAL IDENTITY:\n${JSON.stringify(identity, null, 2)}\n\nCANONICAL SEMANTIC PLAN:\n${JSON.stringify(semanticPlan, null, 2)}\n\nGROUNDED EXECUTIVE DOSSIER:\n${dossierText}\n\n40-STAGE GROUNDED COGNITIVE PACKET:\n${cognitiveText}\n\nEXECUTIVE COMMANDER QUESTION:\n${prompt}`;
     const result = await generateWithFallback(ai, { contents: userContent, config: { systemInstruction, temperature: .25, topP: .9 } });
-    return res.json({ ok: true, aiPowered: true, model: result.model, text: result.text || '', confidence, authority: ProductionSemanticRuntime?.VERSION || 'OFFLINE_COMPATIBILITY', semantic: ProductionSemanticRuntime?.explain ? ProductionSemanticRuntime.explain(prompt, identity) : semantic, result: offlineResult, intent: semantic?.targetDomain || routing?.intent, domain: semantic?.targetDomain || routing?.domain, identity, grounding: { runtimeDatasets: ProductionSemanticRuntime?.diagnostics?.() || canonicalSemanticRuntime, policy: 'NO_UNGROUNDED_DEFAULTS' } });
+    return res.json({ ok: true, aiPowered: true, model: result.model, text: result.text || '', confidence, authority: ProductionSemanticRuntime?.VERSION || 'OFFLINE_COMPATIBILITY', semantic: ProductionSemanticRuntime?.explain ? ProductionSemanticRuntime.explain(prompt, identity) : semantic, result: offlineResult, intent: semantic?.targetDomain || routing?.intent, domain: semantic?.targetDomain || routing?.domain, identity, cognitiveTrace: cognitive.cognitiveTrace || cognitive, grounding: { runtimeDatasets: ProductionSemanticRuntime?.diagnostics?.() || canonicalSemanticRuntime, cognitiveBridge: cognitive.cognitiveTrace || cognitive, policy: 'NO_UNGROUNDED_DEFAULTS' } });
   } catch (e) { console.error('[AI Minister Consult]', e); return res.status(500).json({ ok: false, error: e.message || 'AI consultation failed' }); }
 });
 
