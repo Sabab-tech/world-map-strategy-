@@ -1,17 +1,17 @@
-/* OMEGA RESOURCE SEMANTIC BRIDGE v1.7.1
+/* OMEGA RESOURCE SEMANTIC BRIDGE v1.8.0
  * Resource identity and ontology come only from resource_ontology.json.
- * This bridge binds the canonical repository ontology into resource parsing
- * and into the shared cognitive OS after the ontology has been loaded.
+ * Before canonical injection, any bootstrap-time cognitive ontology entries
+ * are purged so a legacy/static fallback can never remain authoritative.
  */
 (function(g){
   'use strict';
-  if(g.OmegaResourceSemanticBridge?.VERSION === '1.7.1')return;
+  if(g.OmegaResourceSemanticBridge?.VERSION === '1.8.0')return;
 
-  const V='1.7.1';
+  const V='1.8.0';
   const N=v=>String(v==null?'':v).normalize('NFKC').replace(/[?!,.:;'"(){}\\[\\]<>]/g,' ').replace(/\s+/g,' ').trim().toLowerCase();
   const asset=p=>{try{return typeof document!=='undefined'&&document.baseURI?new URL(p,document.baseURI).href:p}catch(_){return p}};
   const clone=v=>{try{return JSON.parse(JSON.stringify(v))}catch(_){return null}};
-  let ready=false, resources=new Map(), ontology=null, error=null, cognitiveOntologyInjected=false;
+  let ready=false, resources=new Map(), ontology=null, error=null, cognitiveOntologyInjected=false, cognitiveMemorySize=0;
 
   function add(raw,fallback){
     if(!raw||typeof raw!=='object')return;
@@ -23,16 +23,18 @@
   }
 
   function loadCognitiveOntology(){
-    const cognitive=g.OmegaCognitiveEngine;
-    const instance=cognitive?.instance;
+    const instance=g.OmegaCognitiveEngine?.instance;
     const matrix=ontology?.COMMODITY_ONTOLOGIES||ontology?.resources||ontology?.resource_types||ontology||{};
-    if(!instance||!instance.L2_SemanticMemory||!Object.keys(matrix).length)return false;
+    if(!instance||!instance.L2_SemanticMemory||!Object.keys(matrix).length){cognitiveOntologyInjected=false;return false;}
     try{
+      if(typeof instance.L2_SemanticMemory.clear==='function')instance.L2_SemanticMemory.clear();
       for(const [key,value] of Object.entries(matrix)){
         if(value&&typeof value==='object')instance.L2_SemanticMemory.set(String(key).toUpperCase(),clone(value));
       }
       if(typeof instance.setResourceOntology==='function')instance.setResourceOntology(clone(matrix));
-      cognitiveOntologyInjected=true;
+      cognitiveMemorySize=instance.L2_SemanticMemory.size;
+      cognitiveOntologyInjected=cognitiveMemorySize===Object.keys(matrix).length;
+      if(!cognitiveOntologyInjected)throw Error('Cognitive ontology size mismatch after canonical injection');
       return true;
     }catch(e){error=e?.message||String(e);cognitiveOntologyInjected=false;return false;}
   }
@@ -47,11 +49,13 @@
       ontology=clone(d);
       resources.clear();
       for(const[k,x]of Object.entries(root))add(typeof x==='object'?x:{id:k,name:x},k);
-      ready=true;
       cognitiveOntologyInjected=loadCognitiveOntology();
-      g.dispatchEvent(new CustomEvent('OMEGA_RESOURCE_SEMANTIC_READY',{detail:{version:V,resources:resources.size,cognitiveOntologyInjected}}));
+      if(!cognitiveOntologyInjected)throw Error(error||'Canonical ontology could not be injected into cognitive memory');
+      ready=true;
+      g.dispatchEvent(new CustomEvent('OMEGA_RESOURCE_SEMANTIC_READY',{detail:{version:V,resources:resources.size,cognitiveOntologyInjected,cognitiveMemorySize}}));
     }catch(e){
       ready=false;
+      cognitiveOntologyInjected=false;
       error=e?.message||String(e);
       console.error('[OMEGA Resource Semantic Bridge]',error);
     }
@@ -70,7 +74,7 @@
   function install(){
     const base=g.OmegaProductionSemanticRuntime;
     if(!base||typeof base.parse!=='function')return false;
-    if(base.__resourceBridgeV171)return true;
+    if(base.__resourceBridgeV180)return true;
     const oldParse=base.parse;
     const parse=(q,c={})=>{
       const p=oldParse.call(base,q,c);
@@ -87,7 +91,7 @@
       };
     };
     base.parse=parse;
-    base.__resourceBridgeV171=true;
+    base.__resourceBridgeV180=true;
     const prev=g.OmegaAIIntegrity||{};
     g.OmegaAIIntegrity={...prev,VERSION:'4.1.0-PRODUCTION',parse};
     return true;
@@ -96,7 +100,7 @@
   g.OmegaResourceSemanticBridge={
     VERSION:V,
     init,
-    diagnostics:()=>({version:V,ready,resources:resources.size,cognitiveOntologyInjected,error}),
+    diagnostics:()=>({version:V,ready,resources:resources.size,cognitiveOntologyInjected,cognitiveMemorySize,error}),
     resolve,
     install,
     ontology:()=>clone(ontology)
