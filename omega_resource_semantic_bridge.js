@@ -1,17 +1,17 @@
-/* OMEGA RESOURCE SEMANTIC BRIDGE v1.7.0
+/* OMEGA RESOURCE SEMANTIC BRIDGE v1.7.1
  * Resource identity and ontology come only from resource_ontology.json.
  * This bridge binds the canonical repository ontology into resource parsing
  * and into the shared cognitive OS after the ontology has been loaded.
  */
 (function(g){
   'use strict';
-  if(g.OmegaResourceSemanticBridge?.VERSION === '1.7.0')return;
+  if(g.OmegaResourceSemanticBridge?.VERSION === '1.7.1')return;
 
-  const V='1.7.0';
-  const N=v=>String(v==null?'':'').normalize('NFKC').replace(/[?!,.:;'"(){}\\[\\]<>]/g,' ').replace(/\s+/g,' ').trim().toLowerCase();
+  const V='1.7.1';
+  const N=v=>String(v==null?'':v).normalize('NFKC').replace(/[?!,.:;'"(){}\\[\\]<>]/g,' ').replace(/\s+/g,' ').trim().toLowerCase();
   const asset=p=>{try{return typeof document!=='undefined'&&document.baseURI?new URL(p,document.baseURI).href:p}catch(_){return p}};
   const clone=v=>{try{return JSON.parse(JSON.stringify(v))}catch(_){return null}};
-  let ready=false, resources=new Map(), ontology=null, error=null;
+  let ready=false, resources=new Map(), ontology=null, error=null, cognitiveOntologyInjected=false;
 
   function add(raw,fallback){
     if(!raw||typeof raw!=='object')return;
@@ -32,8 +32,9 @@
         if(value&&typeof value==='object')instance.L2_SemanticMemory.set(String(key).toUpperCase(),clone(value));
       }
       if(typeof instance.setResourceOntology==='function')instance.setResourceOntology(clone(matrix));
+      cognitiveOntologyInjected=true;
       return true;
-    }catch(e){error=e?.message||String(e);return false;}
+    }catch(e){error=e?.message||String(e);cognitiveOntologyInjected=false;return false;}
   }
 
   async function init(){
@@ -46,9 +47,9 @@
       ontology=clone(d);
       resources.clear();
       for(const[k,x]of Object.entries(root))add(typeof x==='object'?x:{id:k,name:x},k);
-      const injected=loadCognitiveOntology();
       ready=true;
-      g.dispatchEvent(new CustomEvent('OMEGA_RESOURCE_SEMANTIC_READY',{detail:{version:V,resources:resources.size,cognitiveOntologyInjected:injected}}));
+      cognitiveOntologyInjected=loadCognitiveOntology();
+      g.dispatchEvent(new CustomEvent('OMEGA_RESOURCE_SEMANTIC_READY',{detail:{version:V,resources:resources.size,cognitiveOntologyInjected}}));
     }catch(e){
       ready=false;
       error=e?.message||String(e);
@@ -69,7 +70,7 @@
   function install(){
     const base=g.OmegaProductionSemanticRuntime;
     if(!base||typeof base.parse!=='function')return false;
-    if(base.__resourceBridgeV170)return true;
+    if(base.__resourceBridgeV171)return true;
     const oldParse=base.parse;
     const parse=(q,c={})=>{
       const p=oldParse.call(base,q,c);
@@ -86,7 +87,7 @@
       };
     };
     base.parse=parse;
-    base.__resourceBridgeV170=true;
+    base.__resourceBridgeV171=true;
     const prev=g.OmegaAIIntegrity||{};
     g.OmegaAIIntegrity={...prev,VERSION:'4.1.0-PRODUCTION',parse};
     return true;
@@ -95,13 +96,13 @@
   g.OmegaResourceSemanticBridge={
     VERSION:V,
     init,
-    diagnostics:()=>({version:V,ready,resources:resources.size,cognitiveOntologyInjected:!!(g.OmegaCognitiveEngine?.instance?.L2_SemanticMemory&&ontology),error}),
+    diagnostics:()=>({version:V,ready,resources:resources.size,cognitiveOntologyInjected,error}),
     resolve,
     install,
     ontology:()=>clone(ontology)
   };
 
-  const boot=setInterval(()=>{if(install())clearInterval(boot)},50);
+  const boot=setInterval(()=>{if(install()){clearInterval(boot);loadCognitiveOntology()}},50);
   setTimeout(()=>clearInterval(boot),15000);
   init().then(()=>{install();loadCognitiveOntology()}).catch(()=>{});
 })(typeof globalThis!=='undefined'?globalThis:window);
