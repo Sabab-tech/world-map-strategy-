@@ -1,4 +1,4 @@
-/* OMEGA SERVER AI GATEWAY v1.2.0
+/* OMEGA SERVER AI GATEWAY v1.3.0
  * Request-scoped transport authority for the canonical semantic plan/context.
  * A request carrying a canonical plan must never be silently reinterpreted by
  * another semantic parser or explainer during the same turn.
@@ -10,7 +10,7 @@ import './offline_query_engine.js';
 import './omega_minister_state_system.js';
 import './omega_production_semantic_runtime_v3.js';
 
-const VERSION='1.2.0';
+const VERSION='1.3.0';
 const store=new AsyncLocalStorage();
 const brain=globalThis.OfflineSemanticBrain;
 const production=globalThis.OmegaProductionSemanticRuntime;
@@ -18,6 +18,7 @@ const production=globalThis.OmegaProductionSemanticRuntime;
 function active(){return store.getStore()||null;}
 function activePlan(){return active()?.canonicalSemanticPlan||null;}
 function isValidCanonicalPlan(value){return !!value&&typeof value==='object'&&typeof value.semantic==='object'&&value.semantic!==null;}
+function canonicalQuestion(plan,packet){return String(packet?.question??plan?.question??'').trim();}
 
 function installParserBridge(target,name){
   if(!target||typeof target[name]!=='function'||target[name].__omegaCanonicalGateway)return;
@@ -26,20 +27,16 @@ function installParserBridge(target,name){
   const original=target[name];
   const wrapped=function(...args){
     const canonical=activePlan();
-    if(canonical&&name==='parse')return canonical.semantic;
-    if(canonical&&name==='explain')return canonical.semantic;
+    if(canonical&&(name==='parse'||name==='explain'))return canonical.semantic;
     return original.apply(this,args);
   };
   wrapped.__omegaCanonicalGateway=true;
-  try{target[name]=wrapped;}catch(_){}
+  try{target[name]=wrapped}catch(_){}
 }
 
 installParserBridge(brain,'parse');
 installParserBridge(brain,'explain');
-if(production){
-  installParserBridge(production,'parse');
-  installParserBridge(production,'explain');
-}
+if(production){installParserBridge(production,'parse');installParserBridge(production,'explain');}
 
 if(production&&typeof production.buildAnswerPlan==='function'&&!production.buildAnswerPlan.__omegaCanonicalGateway){
   const original=production.buildAnswerPlan;
@@ -65,16 +62,12 @@ export function withCanonicalAIRequest(req,res,next){
   const body=req.body||{};
   const plan=body.canonicalSemanticPlan;
   if(!isValidCanonicalPlan(plan))return next();
-
   const packet=body.canonicalContextPacket||null;
-  if(packet?.question && packet.question!==body.prompt)return res.status(400).json({ok:false,error:'Canonical context question does not match request prompt'});
+  const requestQuestion=String(body.prompt||'').trim();
+  const planQuestion=canonicalQuestion(plan,packet);
+  if(planQuestion&&planQuestion!==requestQuestion)return res.status(400).json({ok:false,error:'Canonical context question does not match request prompt'});
   if(body.canonicalAuthority&&body.canonicalAuthority!=='OMEGA_PRODUCTION_SEMANTIC_RUNTIME')return res.status(400).json({ok:false,error:'Unsupported canonical semantic authority'});
-
-  return store.run({
-    canonicalSemanticPlan:plan,
-    canonicalContextPacket:packet,
-    authority:body.canonicalAuthority||'OMEGA_PRODUCTION_SEMANTIC_RUNTIME'
-  },next);
+  return store.run({canonicalSemanticPlan:plan,canonicalContextPacket:packet,authority:body.canonicalAuthority||'OMEGA_PRODUCTION_SEMANTIC_RUNTIME'},next);
 }
 
 if(!express.application.__omegaCanonicalAIPostPatch){
@@ -87,17 +80,5 @@ if(!express.application.__omegaCanonicalAIPostPatch){
   express.application.__omegaCanonicalAIPostPatch=true;
 }
 
-globalThis.OmegaServerAIGateway=Object.freeze({
-  VERSION,
-  withCanonicalAIRequest,
-  diagnostics:()=>({
-    version:VERSION,
-    asyncContext:'AsyncLocalStorage',
-    routePatch:true,
-    canonicalPlanPassthrough:true,
-    canonicalExplainPassthrough:true,
-    canonicalQuestionGuard:true,
-    productionRuntimeVersion:production?.VERSION||null
-  })
-});
+globalThis.OmegaServerAIGateway=Object.freeze({VERSION,withCanonicalAIRequest,diagnostics:()=>({version:VERSION,asyncContext:'AsyncLocalStorage',routePatch:true,canonicalPlanPassthrough:true,canonicalExplainPassthrough:true,canonicalQuestionGuard:true,productionRuntimeVersion:production?.VERSION||null})});
 console.log('[OMEGA Server AI Gateway] request-scoped canonical semantic transport ready');
