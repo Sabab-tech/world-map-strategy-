@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const { spawnSync } = require('child_process');
 
 const root = path.resolve(__dirname, '..');
 const read = file => fs.readFileSync(path.join(root, file), 'utf8');
@@ -13,8 +14,8 @@ const resourceBridge = read('omega_resource_semantic_bridge.js');
 const integrityBridge = read('omega_ai_integrity_canonical_bridge.js');
 const universal = read('omega_universal_ai_runtime.js');
 const server = read('server.js');
+const router = read('minister_query_router.js');
 const ontology = JSON.parse(read('resource_ontology.json'));
-const index = read('index.html');
 
 assert(packageJson.dependencies?.express, 'express must be a declared runtime dependency');
 assert(packageJson.scripts?.test?.includes('scripts/test_canonical_ai_chain.cjs'), 'canonical test must be part of npm test');
@@ -42,6 +43,10 @@ assert(!bootstrap.includes('omega_semantic_runtime_v32'), 'legacy V3.2 must not 
 assert(bootstrap.includes('Canonical AI script missing'), 'bootstrap must fail fast when a canonical asset is absent');
 assert(bootstrap.includes("html = html.replace(canonicalTags(name), '')"), 'bootstrap must normalize/remove duplicate canonical script tags before reinsertion');
 
+const routerSyntax = spawnSync(process.execPath, ['--check', path.join(root, 'minister_query_router.js')], { encoding: 'utf8' });
+assert(routerSyntax.status === 0, `minister_query_router.js syntax gate failed: ${routerSyntax.stderr || routerSyntax.stdout}`);
+assert(router.includes("replace(/[?!,.:;\\\"'“”‘’(){}\\[\\]<>—–\\/\\\\]/g"), 'router tokenizer must use a valid escaped slash character class');
+
 assert(gateway.includes('AsyncLocalStorage'), 'server gateway must remain request-scoped');
 assert(gateway.includes('canonicalSemanticPlan'), 'server gateway must preserve canonical semantic plan');
 assert(gateway.includes('canonicalContextPacket'), 'server gateway must preserve canonical context packet');
@@ -52,9 +57,12 @@ assert(contextBridge.includes('canonicalSemanticPlan:packet.semanticPlan'), 'con
 assert(contextBridge.includes('canonicalContextPacket:{'), 'context bridge must attach canonical context packet');
 assert(contextBridge.includes('reservesData'), 'context bridge must preserve reserves/telemetry context');
 assert(contextBridge.includes('timeHorizon'), 'context bridge must preserve time horizon');
+assert(contextBridge.includes('canonicalAuthority'), 'context bridge must attach canonical authority');
 
 assert(resourceBridge.includes('resource_ontology.json'), 'resource bridge must load canonical ontology');
 assert(resourceBridge.includes('cognitiveOntologyInjected'), 'resource bridge must expose cognitive ontology injection diagnostics');
+assert(resourceBridge.includes('L2_SemanticMemory.clear'), 'resource bridge must purge bootstrap-time cognitive ontology fallback');
+assert(resourceBridge.includes('cognitiveMemorySize===Object.keys(matrix).length'), 'resource bridge must verify cognitive ontology size equality');
 assert(resourceBridge.includes('instance.L2_SemanticMemory.set'), 'resource bridge must bind ontology to the cognitive memory layer');
 assert(!resourceBridge.includes("String(v==null?'':'')"), 'resource normalizer must consume its input');
 assert(Object.keys(ontology.COMMODITY_ONTOLOGIES || {}).length > 0, 'canonical resource ontology must contain entries');
