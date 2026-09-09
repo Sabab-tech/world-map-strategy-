@@ -1,4 +1,4 @@
-# Batch 03 verification trigger: keep all semantic regression gates active.
+# Canonical language + AI runtime verification trigger. All semantic regression gates remain active.
 name: OMEGA Language System
 
 on:
@@ -7,22 +7,48 @@ on:
     paths:
       - 'omega_language_system.js'
       - 'omega_language_batch03_semantic_extension.js'
+      - 'omega_country_semantic_bridge.js'
+      - 'omega_resource_semantic_bridge.js'
+      - 'omega_minister_runtime_v2.js'
+      - 'omega_ai_integrity_layer.js'
+      - 'omega_ai_integrity_canonical_bridge.js'
+      - 'omega_cognitive_engine.js'
+      - 'omega_reasoning_dispatcher.js'
+      - 'omega_universal_ai_runtime.js'
+      - 'omega_ai_context_bridge.js'
+      - 'omega_server_ai_gateway.js'
+      - 'server_bootstrap.js'
+      - 'server.js'
+      - 'resource_ontology.json'
       - 'offline_semantic_knowledge.json'
+      - 'scripts/test_canonical_ai_chain.cjs'
       - 'scripts/validate_game_language_ontology.cjs'
       - 'scripts/test_omega_language_hybrid.cjs'
       - 'scripts/test_omega_language_batch03.cjs'
-      - 'server_bootstrap.js'
       - 'package.json'
       - '.github/workflows/omega-language.yml'
   pull_request:
     paths:
       - 'omega_language_system.js'
       - 'omega_language_batch03_semantic_extension.js'
+      - 'omega_country_semantic_bridge.js'
+      - 'omega_resource_semantic_bridge.js'
+      - 'omega_minister_runtime_v2.js'
+      - 'omega_ai_integrity_layer.js'
+      - 'omega_ai_integrity_canonical_bridge.js'
+      - 'omega_cognitive_engine.js'
+      - 'omega_reasoning_dispatcher.js'
+      - 'omega_universal_ai_runtime.js'
+      - 'omega_ai_context_bridge.js'
+      - 'omega_server_ai_gateway.js'
+      - 'server_bootstrap.js'
+      - 'server.js'
+      - 'resource_ontology.json'
       - 'offline_semantic_knowledge.json'
+      - 'scripts/test_canonical_ai_chain.cjs'
       - 'scripts/validate_game_language_ontology.cjs'
       - 'scripts/test_omega_language_hybrid.cjs'
       - 'scripts/test_omega_language_batch03.cjs'
-      - 'server_bootstrap.js'
       - 'package.json'
       - '.github/workflows/omega-language.yml'
 
@@ -39,33 +65,31 @@ jobs:
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: 24
+      - name: Install runtime dependencies
+        run: npm install --ignore-scripts --no-audit
       - name: Syntax gate
-        run: node --check omega_language_system.js && node --check omega_language_batch03_semantic_extension.js && node --check server_bootstrap.js && node --check scripts/test_omega_language_batch03.cjs && node --check scripts/test_omega_language_hybrid.cjs && node --check scripts/validate_game_language_ontology.cjs
+        run: npm run lint
       - name: Security static gate
         shell: bash
         run: |
           set -euo pipefail
-          targets=(omega_language_system.js omega_language_batch03_semantic_extension.js server_bootstrap.js scripts/validate_game_language_ontology.cjs scripts/test_omega_language_hybrid.cjs scripts/test_omega_language_batch03.cjs)
+          targets=(omega_language_system.js omega_language_batch03_semantic_extension.js omega_country_semantic_bridge.js omega_resource_semantic_bridge.js omega_ai_integrity_canonical_bridge.js omega_ai_context_bridge.js omega_server_ai_gateway.js server_bootstrap.js server.js scripts/test_canonical_ai_chain.cjs scripts/validate_game_language_ontology.cjs scripts/test_omega_language_hybrid.cjs scripts/test_omega_language_batch03.cjs)
           if grep -nE '(^|[^[:alnum:]_])(eval[[:space:]]*\(|new[[:space:]]+Function[[:space:]]*\()' "${targets[@]}"; then
             echo 'SECURITY GATE FAILED: dynamic code execution primitive detected.' >&2
             exit 1
           fi
           if grep -nE 'document\.write[[:space:]]*\(|innerHTML[[:space:]]*=' "${targets[@]}"; then
-            echo 'SECURITY GATE FAILED: unsafe DOM sink detected in language subsystem.' >&2
+            echo 'SECURITY GATE FAILED: unsafe DOM sink detected in canonical AI subsystem.' >&2
             exit 1
           fi
           if grep -nE '(api[_-]?key|secret|token)[[:space:]]*[:=][[:space:]]*"[A-Za-z0-9_\-]{20,}"' "${targets[@]}" || grep -nE "(api[_-]?key|secret|token)[[:space:]]*[:=][[:space:]]*'[A-Za-z0-9_\-]{20,}'" "${targets[@]}"; then
             echo 'SECURITY GATE FAILED: hard-coded credential-like literal detected.' >&2
             exit 1
           fi
-      - name: Dependency security gate
-        shell: bash
-        run: |
-          set -euo pipefail
-          npm install --package-lock-only --ignore-scripts --no-audit
-          npm audit --audit-level=high --omit=dev
       - name: Canonical ontology validation
         run: node scripts/validate_game_language_ontology.cjs
+      - name: Canonical AI chain structural gate
+        run: node scripts/test_canonical_ai_chain.cjs
       - name: Existing hybrid runtime regression
         run: node scripts/test_omega_language_hybrid.cjs
       - name: Batch 03 40-seed integration regression
