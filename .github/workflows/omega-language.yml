@@ -1,4 +1,5 @@
 # Canonical language + AI runtime verification. Full semantic/cognitive regression is required.
+# Final validation marker: canonical-ai-final
 name: OMEGA Language System
 
 on:
