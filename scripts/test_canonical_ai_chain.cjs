@@ -49,6 +49,9 @@ const routerSyntax = spawnSync(process.execPath, ['--check', path.join(root, 'mi
 assert(routerSyntax.status === 0, `minister_query_router.js syntax gate failed: ${routerSyntax.stderr || routerSyntax.stdout}`);
 assert(router.includes("replace(/[?!,.:;\\\"'“”‘’(){}\\[\\]<>—–\\/\\\\]/g"), 'router tokenizer must use a valid escaped slash character class');
 
+const serverSyntax = spawnSync(process.execPath, ['--check', path.join(root, 'server.js')], { encoding: 'utf8' });
+assert(serverSyntax.status === 0, `server.js syntax gate failed: ${serverSyntax.stderr || serverSyntax.stdout}`);
+
 assert(gateway.includes('AsyncLocalStorage'), 'server gateway must remain request-scoped');
 assert(gateway.includes('canonicalSemanticPlan'), 'server gateway must preserve canonical semantic plan');
 assert(gateway.includes('canonicalContextPacket'), 'server gateway must preserve canonical context packet');
@@ -75,11 +78,23 @@ assert(!integrityBridge.includes('return typeof previous'), 'integrity layer mus
 assert(server.includes("import './omega_cognitive_engine.js'"), 'server must load the cognitive engine');
 assert(server.includes("import './omega_reasoning_dispatcher.js'"), 'server must load the reasoning dispatcher');
 assert(server.includes('function runCognitiveBridge('), 'server must expose the canonical cognitive bridge');
-assert(server.includes('const cognitive = runCognitiveBridge('), 'minister consultation must execute the cognitive bridge before Gemini');
+assert(server.includes('const cognitive = runCognitiveBridge('), 'minister consultation must execute the cognitive bridge for non-direct queries');
 assert(server.includes('40-STAGE GROUNDED COGNITIVE PACKET'), 'Gemini request must explicitly include the 40-stage packet');
 assert(server.includes('NO_UNGROUNDED_DEFAULTS'), 'server must enforce grounded-answer policy');
 assert(server.includes('cognitive40:'), 'grounded dossier must carry 40-stage cognitive trace');
 assert(server.includes('cognitiveBridge:'), 'AI status must expose cognitive bridge diagnostics');
+assert(server.includes('function vocabularyIntentMatches('), 'server must use vocabulary-driven discourse detection');
+assert(server.includes('function ministerWellbeingEvidence('), 'minister wellbeing must resolve through generic affect providers');
+assert(server.includes('function directMinisterAnswer('), 'minister self queries must have a deterministic direct-answer gate');
+assert(server.includes("kind === 'DETERMINISTIC_MINISTER_ATTRIBUTE'"), 'single minister attributes must return one grounded value');
+assert(server.includes('responseCardinality: 1'), 'answer contract must enforce a single response for simple queries');
+assert(server.includes('topicLock: true'), 'simple queries must be topic locked');
+assert(server.includes('noTopicSubstitution: true'), 'simple queries must prohibit unrelated answer substitution');
+assert(server.includes('function resourceQuantityEvidence('), 'resource quantity queries must have a dedicated evidence path');
+assert(server.includes('RESOURCE_QUANTITY_NOT_PRESENT_IN_LOADED_RUNTIME_DATA'), 'missing resource quantity must remain unknown instead of producing unrelated analysis');
+assert(server.includes('The active minister identity is the only speaker reference'), 'Gemini must resolve self-reference to the active minister, not the global runtime');
+assert(server.includes('return UNKNOWN rather than substituting another topic'), 'Gemini must not substitute a dossier when the requested fact is unavailable');
+assert(server.includes("temperature: .15"), 'grounded minister responses must use the reduced-generation configuration');
 
 assert(dispatcher.includes("const VERSION='2.1.1'"), 'dispatcher version must be 2.1.1');
 assert(dispatcher.includes('stageCount:40'), 'dispatcher must expose full 40-stage count');
@@ -128,4 +143,5 @@ console.log(`Ontology entries: ${Object.keys(ontology.COMMODITY_ONTOLOGIES || {}
 console.log(`Canonical scripts: ${requiredScripts.length}`);
 console.log('40-stage cognitive bridge: structurally connected to server/Gemini');
 console.log('Contextual discourse: Batch 03 + universal runtime integration validated');
-console.log('Self-query: identity facts + future affect provider path structurally validated');
+console.log('Speaker-aware minister answers: active-minister context + deterministic direct-answer gate validated');
+console.log('Resource quantity: dedicated grounded evidence path + UNKNOWN-on-missing-data policy validated');
