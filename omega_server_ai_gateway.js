@@ -1,9 +1,8 @@
-/* OMEGA SERVER AI GATEWAY v1.1.0
+/* OMEGA SERVER AI GATEWAY v1.1.1
  * Request-scoped transport adapter for the canonical semantic plan/context.
- * It does not invent facts or replace the deterministic execution engine.
- * When the browser sends a canonical plan, all server semantic consumers see
- * that exact plan for the lifetime of that request. Requests without one keep
- * the pre-existing compatibility behavior.
+ * It does not invent facts or replace deterministic execution. When the browser
+ * sends a canonical plan, the mutable server-side semantic consumers observe
+ * that exact plan for the lifetime of the request.
  */
 import { AsyncLocalStorage } from 'node:async_hooks';
 import express from 'express';
@@ -12,37 +11,36 @@ import './offline_query_engine.js';
 import './minister_query_router.js';
 import './omega_production_semantic_runtime_v3.js';
 
-const VERSION='1.1.0';
+const VERSION='1.1.1';
 const store=new AsyncLocalStorage();
 const brain=globalThis.OfflineSemanticBrain;
-const router=globalThis.MinisterQueryRouter;
 const production=globalThis.OmegaProductionSemanticRuntime;
 
 function activePlan(){return store.getStore()?.canonicalSemanticPlan||null;}
 function installParserBridge(target,name){
   if(!target||typeof target[name]!=='function'||target[name].__omegaCanonicalGateway)return;
+  const descriptor=Object.getOwnPropertyDescriptor(target,name);
+  if(descriptor&&!descriptor.writable)return;
   const original=target[name];
   const wrapped=function(...args){
     const canonical=activePlan();
     if(canonical){
       const p=canonical.semantic||canonical;
       if(name==='parse')return p;
-      if(name==='routeMinisterQuery')return {version:VERSION,intent:p.targetDomain,domain:p.targetDomain,entities:Object.values(p.entities||{}).filter(x=>x?.id),requiredData:[p.operation].filter(Boolean),semantic:p,executable:p.executable};
     }
     return original.apply(this,args);
   };
   wrapped.__omegaCanonicalGateway=true;
-  target[name]=wrapped;
+  try{target[name]=wrapped;}catch(_){/* immutable consumer; leave untouched */}
 }
 
 installParserBridge(brain,'parse');
-installParserBridge(router,'routeMinisterQuery');
 if(production)installParserBridge(production,'parse');
 if(production&&typeof production.buildAnswerPlan==='function'&&!production.buildAnswerPlan.__omegaCanonicalGateway){
   const original=production.buildAnswerPlan;
   const wrapped=function(...args){const canonical=activePlan();return canonical||original.apply(this,args)};
   wrapped.__omegaCanonicalGateway=true;
-  production.buildAnswerPlan=wrapped;
+  try{production.buildAnswerPlan=wrapped;}catch(_){/* keep original if immutable */}
 }
 
 export function withCanonicalAIRequest(req,res,next){
