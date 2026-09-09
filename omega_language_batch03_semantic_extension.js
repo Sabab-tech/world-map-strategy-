@@ -6,7 +6,7 @@
   'use strict';
 
   const BATCH_ID='BATCH_03_DEEP_SEMANTIC';
-  const VERSION='1.3.0';
+  const VERSION='1.2.0';
   const REQUIRED_PREVIOUS_SEEDS=24;
   const SEED_IDS=Object.freeze(['ACTOR','TARGET','ATTRIBUTE','VALUE','CONDITION','CONSTRAINT','THRESHOLD','CAUSE','CONSEQUENCE','DEPENDENCY','RISK','PROBABILITY','GOAL','PRIORITY','SCENARIO','DECISION']);
 
@@ -22,22 +22,10 @@
     unauthorized_mutation:'SEMANTIC_MUTATION_UNAUTHORIZED'
   });
 
-  /* Context-sensitive natural dialogue is data, not a response hard-code in the runtime. */
   const DISCOURSE_LEXICON=Object.freeze({
     schema_version:'OMEGA-DISCOURSE/1.0',
-    detection:Object.freeze({
-      standaloneOnly:true,
-      maxTokens:10,
-      rejectWhenQuestionMarkersPresent:true,
-      longestPhraseFirst:true,
-      contextWindowTurns:8,
-      usePreviousTurn:true,
-      useFollowingTurnWhenAvailable:true
-    }),
-    dimensions:Object.freeze([
-      'dialogAct','polarity','certainty','commitment','stance','emotion','socialForce',
-      'temporalReference','requiresContext','previousTurnDependency','followingTurnDependency'
-    ]),
+    detection:Object.freeze({standaloneOnly:true,maxTokens:10,rejectWhenQuestionMarkersPresent:true,longestPhraseFirst:true,contextWindowTurns:8,usePreviousTurn:true,useFollowingTurnWhenAvailable:true}),
+    dimensions:Object.freeze(['dialogAct','polarity','certainty','commitment','stance','emotion','socialForce','temporalReference','requiresContext','previousTurnDependency','followingTurnDependency']),
     intents:Object.freeze({
       GREETING:Object.freeze({priority:100,requiresContext:false,dialogAct:'GREETING',polarity:'NEUTRAL',certainty:'HIGH',commitment:'NONE',stance:'SOCIAL_OPEN',phrases:Object.freeze({en:['hi','hello','hey','good morning','good afternoon','good evening'],bn:['হাই','হ্যালো','আসসালামু আলাইকুম','সুপ্রভাত','শুভ সকাল','শুভ অপরাহ্ণ','শুভ সন্ধ্যা']}),melody:Object.freeze({en:['How can I help?','I am ready for your question.'],bn:['কীভাবে সাহায্য করতে পারি?','আপনার প্রশ্নের জন্য প্রস্তুত আছি।']})}),
       GRATITUDE:Object.freeze({priority:98,requiresContext:false,dialogAct:'THANKS',polarity:'POSITIVE',certainty:'HIGH',commitment:'NONE',stance:'SOCIAL_CLOSING',phrases:Object.freeze({en:['thanks','thank you','many thanks','thanks a lot','thank you very much','much appreciated'],bn:['ধন্যবাদ','অনেক ধন্যবাদ','অশেষ ধন্যবাদ','অনেক কৃতজ্ঞতা']}),melody:Object.freeze({en:['You are welcome.','Glad to help.'],bn:['স্বাগতম।','সহায়তা করতে পেরে ভালো লাগল।']})}),
@@ -54,14 +42,7 @@
       CLOSURE_REQUEST:Object.freeze({priority:87,requiresContext:false,dialogAct:'CLOSURE_REQUEST',polarity:'NEUTRAL',certainty:'HIGH',commitment:'HIGH',stance:'CLOSING',phrases:Object.freeze({en:['that’s all','thats all','that is all','enough','stop there','we are done','i am done','nothing else'],bn:['এই পর্যন্ত','এটাই যথেষ্ট','আর দরকার নেই','এখানেই শেষ','শেষ','আর কিছু না','এই পর্যন্তই']}),melody:Object.freeze({en:['Understood. I will close this line of conversation.'],bn:['বুঝেছি। এই কথোপকথনের ধারাটি এখানে শেষ করছি।']})}),
       WELLBEING:Object.freeze({priority:86,requiresContext:false,dialogAct:'WELLBEING_CHECK',polarity:'NEUTRAL',certainty:'MEDIUM',commitment:'NONE',stance:'SOCIAL_CHECK',phrases:Object.freeze({en:['how are you','how have you been','are you okay'],bn:['কেমন আছো','কেমন আছেন','তুমি কেমন আছ','আপনি কেমন আছেন']}),melody:Object.freeze({en:['I am operating normally and ready for the next question.'],bn:['আমি স্বাভাবিকভাবে কাজ করছি এবং পরের প্রশ্নের জন্য প্রস্তুত।']})})
     }),
-    contextualResolution:Object.freeze({
-      HESITATION:Object.freeze({afterQuestion:'HESITATION_AFTER_QUESTION',afterStatement:'HESITATION_AFTER_STATEMENT',afterAffirmation:'ACKNOWLEDGEMENT_OR_HESITATION',afterNegation:'HESITATION_AFTER_NEGATION'}),
-      ACKNOWLEDGEMENT:Object.freeze({afterQuestion:'CONFIRMATION',afterStatement:'ACKNOWLEDGEMENT'}),
-      AFFIRMATION:Object.freeze({afterQuestion:'CONSENT_OR_AFFIRMATION',afterStatement:'AGREEMENT'}),
-      NEGATION:Object.freeze({afterQuestion:'REFUSAL_OR_NEGATION',afterStatement:'NEGATION'}),
-      DISAGREEMENT:Object.freeze({afterQuestion:'CORRECTION',afterStatement:'DISAGREEMENT'}),
-      CONTINUATION:Object.freeze({afterQuestion:'CONTINUE_REQUEST',afterStatement:'CONTINUE_REQUEST'})
-    })
+    contextualResolution:Object.freeze({HESITATION:Object.freeze({afterQuestion:'HESITATION_AFTER_QUESTION',afterStatement:'HESITATION_AFTER_STATEMENT',afterAffirmation:'ACKNOWLEDGEMENT_OR_HESITATION',afterNegation:'HESITATION_AFTER_NEGATION'}),ACKNOWLEDGEMENT:Object.freeze({afterQuestion:'CONFIRMATION',afterStatement:'ACKNOWLEDGEMENT'}),AFFIRMATION:Object.freeze({afterQuestion:'CONSENT_OR_AFFIRMATION',afterStatement:'AGREEMENT'}),NEGATION:Object.freeze({afterQuestion:'REFUSAL_OR_NEGATION',afterStatement:'NEGATION'}),DISAGREEMENT:Object.freeze({afterQuestion:'CORRECTION',afterStatement:'DISAGREEMENT'}),CONTINUATION:Object.freeze({afterQuestion:'CONTINUE_REQUEST',afterStatement:'CONTINUE_REQUEST'})})
   });
 
   const DATA={
