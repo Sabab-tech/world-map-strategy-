@@ -1,5 +1,6 @@
-/** OMEGA SERVER BOOTSTRAP v2.1.0
+/** OMEGA SERVER BOOTSTRAP v2.2.0
  * Canonical server bootstrap. Never changes index.html on disk.
+ * Batch 03 semantic extension is injected after the universal language runtime.
  */
 import fs from 'fs';
 
@@ -30,8 +31,13 @@ if (!globalThis.__omegaUniversalIndexInjection) {
   fs.readFile = function omegaReadFile(file, options, callback) {
     if (typeof options === 'function') { callback = options; options = undefined; }
     return nativeReadFile.call(fs, file, options, function (err, data) {
-      if (!err && typeof data === 'string' && /(?:^|[\\/])index\.html$/i.test(String(file)) && !data.includes('/omega_universal_ai_runtime.js')) {
-        data = data.replace('</body>', '    <script src="/omega_universal_ai_runtime.js"></script>\n</body>');
+      if (!err && typeof data === 'string' && /(?:^|[\\/])index\.html$/i.test(String(file))) {
+        if (!data.includes('/omega_universal_ai_runtime.js')) {
+          data = data.replace('</body>', '    <script src="/omega_universal_ai_runtime.js"></script>\n</body>');
+        }
+        if (!data.includes('/omega_language_batch03_semantic_extension.js')) {
+          data = data.replace('</body>', '    <script src="/omega_language_batch03_semantic_extension.js"></script>\n</body>');
+        }
       }
       if (typeof callback === 'function') callback(err, data);
     });
