@@ -12,303 +12,34 @@ const N=v=>S(v).normalize('NFKC').replace(/[?!,.:;'"“”‘’(){}[\]<>]/g,' '
 const O=v=>v&&typeof v==='object'&&!Array.isArray(v);
 const A=v=>Array.isArray(v)?v:[];
 const isNode=typeof process!=='undefined'&&!!process?.versions?.node&&typeof window==='undefined';
-
-const state={
- ready:false,error:null,loadedAt:null,promise:null,
- countries:new Map(),countryAliases:new Map(),
- cities:new Map(),cityAliases:new Map(),
- datasets:new Map(),sourceCounts:{}
-};
-
-function rows(r){
- if(Array.isArray(r))return r;
- if(Array.isArray(r?.countries))return r.countries;
- if(Array.isArray(r?.data))return r.data;
- if(O(r))return Object.entries(r).map(([k,v])=>O(v)?({...v,__sourceKey:k}):({id:k,name:v,__sourceKey:k}));
- return [];
-}
-function idOf(x,key=''){
- const i=O(x?.identity)?x.identity:(x||{});
- return S(i.iso2||i.countryCode||i.country_code||i.code||i.id||i.canonicalId||key).toUpperCase();
-}
-function nameOf(x,key=''){
- const i=O(x?.identity)?x.identity:(x||{});
- return S(i.name||i.countryName||i.country_name||i.shortName||i.displayName||i.officialName||x?.name||key);
-}
-function addCountryAlias(id,v){
- const n=N(v),canonical=S(id).toUpperCase();
- if(!n||!canonical)return;
- const set=state.countryAliases.get(n)||new Set();
- set.add(canonical);
- state.countryAliases.set(n,set);
-}
-function registerCountry(x,key='',source=''){
- if(!O(x))return null;
- const id=idOf(x,key),name=nameOf(x,key);
- if(!id||!name)return null;
- const old=state.countries.get(id)||{id,names:[],officialName:'',sources:[],cities:[],raw:null,datasets:Object.create(null)};
- const names=[...new Set([...old.names,name,S(x.officialName),S(x.shortName),S(x.displayName),S(x.nativeName)].filter(Boolean))];
- old.names=names;
- if(S(x.officialName))old.officialName=S(x.officialName);
- old.sources=[...new Set([...old.sources,source].filter(Boolean))];
- old.raw=old.raw||x;
- if(source)old.datasets[source]=x;
- state.countries.set(id,old);
- for(const n of names)addCountryAlias(id,n);
- for(const k of ['iso2','iso3','isoCode','countryCode','country_code','code','id','canonicalId'])if(S(x?.[k]))addCountryAlias(id,x[k]);
- return old;
-}
-function ingestCountries(r){
- const a=rows(r);state.sourceCounts.countries=a.length;
- for(const x of a)registerCountry(x,x?.__sourceKey||'','countries.json');
-}
-function cityObject(v,role=''){
- if(!O(v)||!S(v.name))return null;
- const city={...v,name:S(v.name),role:S(v.role||role||v.type||'').toUpperCase()};
- city.countryId=S(v.countryId||v.countryCode||v.iso2||v.iso3||'').toUpperCase();
- return city;
-}
-function canonicalCityId(countryId,name){
- return `${S(countryId).toUpperCase()}:${N(name).replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'')}`;
-}
-function addCityAlias(id,v){
- const n=N(v);
- if(!n||!id)return;
- const set=state.cityAliases.get(n)||new Set();
- set.add(id);
- state.cityAliases.set(n,set);
-}
-function ingestCities(r){
- const a=rows(r);state.sourceCounts.cities=a.length;
- for(const x of a){
-   const countryName=nameOf(x,x?.__sourceKey||'');
-   let countryId=S(x?.countryId||x?.countryCode||x?.iso2||x?.iso3||'').toUpperCase();
-   if(!countryId){const ids=state.countryAliases.get(N(countryName));countryId=ids instanceof Set&&ids.size===1?[...ids][0]:(typeof ids==='string'?ids:'');}
-   const country=countryId?registerCountry({id:countryId,name:countryName},countryId,'cities.json'):null;
-   if(!country)continue;
-   const collected=[];
-   const pushOne=(v,role='')=>{const c=cityObject(v,role);if(c)collected.push(c);};
-   const push=(v,role='')=>{for(const z of A(v))pushOne(z,role);};
-   pushOne(x.capital,'CAPITAL');push(x.economic,'ECONOMIC');push(x.military,'MILITARY');push(x.secret,'SECRET');push(x.cities,'CITY');
-   const merged=state.cities.get(countryId)||new Map();
-   for(const city of collected){
-     const cityId=S(city.id||city.cityId||city.canonicalId)||canonicalCityId(countryId,city.name);
-     const record={...city,id:cityId,canonicalId:cityId,countryId};
-     const prior=merged.get(cityId);
-     merged.set(cityId,prior?{...prior,...record,name:prior.name||record.name}:record);
-     addCityAlias(cityId,city.name);addCityAlias(cityId,cityId);
-   }
-   state.cities.set(countryId,merged);
-   country.cities=[...merged.values()].map(x=>({...x}));
- }
-}
-function ingestRelations(r){
- const root=r?.RELATION_GENERATION_ENGINE?.srie_v2_asymmetrical_salience||r?.srie_v2_asymmetrical_salience||{};let count=0;
- for(const [k,v] of Object.entries(root)){if(!O(v))continue;registerCountry({id:S(v.country_code||k).toUpperCase(),name:S(v.country_name||k)},k,'relation_generation_engine.json');count++;}
- state.sourceCounts.relations=count;
-}
-function ingestResourceDataset(r,source){
- if(!O(r))return;
- state.datasets.set(source,r);
- const walk=v=>{
-   if(!O(v))return;
-   if(Array.isArray(v)){for(const x of v)walk(x);return;}
-   const name=S(v.countryName||v.country_name||v.country||v.country_name_en||'');
-   if(name){
-     const ids=state.countryAliases.get(N(name));
-     if(ids instanceof Set&&ids.size===1)addCountryAlias([...ids][0],name);
-   }
-   for(const x of Object.values(v))if(O(x)||Array.isArray(x))walk(x);
- };
- walk(r);state.sourceCounts[source]=1;
-}
-async function loadJson(p,optional=false){
- try{
-   if(isNode){
-     const fs=await import('node:fs/promises');
-     const base=S(process.env.OMEGA_ROOT||process.cwd());
-     const text=await fs.readFile(`${base}/${p}`,'utf8');
-     return JSON.parse(text);
-   }
-   const r=await fetch(p,{cache:'no-store'});
-   if(!r.ok){if(optional)return null;throw Error(`${p}: HTTP ${r.status}`);}
-   return await r.json();
- }catch(e){if(optional)return null;throw e;}
-}
-async function init(){
- if(state.promise)return state.promise;
- state.promise=(async()=>{
-   state.ready=false;state.error=null;
-   try{
-     const files=[
-       ['countries.json',false],['cities.json',false],
-       ['resources.json',false],['resources_2.json',true],
-       ['resource_ontology.json',true],['relation_generation_engine.json',true],
-       ['economy.json',true],['population.json',true]
-     ];
-     const loaded=await Promise.all(files.map(([p,o])=>loadJson(p,o)));
-     state.datasets.clear();state.countries.clear();state.countryAliases.clear();state.cities.clear();state.cityAliases.clear();state.sourceCounts={};
-     for(let i=0;i<files.length;i++)if(loaded[i])state.datasets.set(files[i][0],loaded[i]);
-     ingestCountries(loaded[0]);
-     if(loaded[5])ingestRelations(loaded[5]);
-     ingestCities(loaded[1]);
-     ingestResourceDataset(loaded[2],'resources.json');
-     if(loaded[3])ingestResourceDataset(loaded[3],'resources_2.json');
-     if(loaded[4])ingestResourceDataset(loaded[4],'resource_ontology.json');
-     if(loaded[6])ingestResourceDataset(loaded[6],'economy.json');
-     if(loaded[7])ingestResourceDataset(loaded[7],'population.json');
-     state.loadedAt=Date.now();state.ready=true;
-     g.dispatchEvent?.(new (g.CustomEvent||class{constructor(t,i){this.type=t;this.detail=i?.detail}})('OMEGA_CANONICAL_IDENTITY_READY',{detail:diagnostics()}));
-     installRuntimeBridges();
-     return true;
-   }catch(e){state.error=String(e);state.ready=false;console.error('[OMEGA Canonical Identity]',e);return false;}
- })();
- return state.promise;
-}
-function rankMatches(text,map,contextCountryId=null){
- const q=N(text);if(!q)return[];const hits=[];
- for(const [alias,ids] of map.entries()){
-   if(!alias||alias.length<2)continue;
-   const exact=q===alias,boundary=(` ${q} `).includes(` ${alias} `)||q.startsWith(alias+' ')||q.endsWith(' '+alias);
-   if(!exact&&!boundary)continue;
-   const candidates=ids instanceof Set?[...ids]:[ids];
-   for(const id of candidates){
-     const sameContext=contextCountryId&&S(id).split(':')[0]===S(contextCountryId).toUpperCase();
-     const base=exact?1:Math.min(.995,.76+alias.length/Math.max(100,q.length*2));
-     hits.push({id,alias,score:Math.min(1,base+(sameContext?.004:0))});
-   }
- }
- hits.sort((a,b)=>b.score-a.score||b.alias.length-a.alias.length||String(a.id).localeCompare(String(b.id)));
- return hits;
-}
-function resolveCountry(q){
- const hits=rankMatches(q,state.countryAliases);if(!hits.length)return null;
- const best=hits[0],second=hits[1];
- const ambiguous=second&&best.alias===second.alias&&best.score===second.score&&best.id!==second.id;
- if(ambiguous)return{id:null,type:'COUNTRY',confidence:best.score,surface:best.alias,source:'AMBIGUOUS_COUNTRY_IDENTITY',candidates:hits.filter(x=>x.alias===best.alias).map(x=>({id:x.id,surface:x.alias,confidence:x.score})),raw:null};
- const id=S(best.id).toUpperCase();
- return{id,type:'COUNTRY',confidence:best.score,surface:best.alias,source:'OMEGA_CANONICAL_COUNTRY_REGISTRY',raw:state.countries.get(id)||null};
-}
-function resolveCity(q,contextCountryId=null){
- const hits=rankMatches(q,state.cityAliases,contextCountryId);if(!hits.length)return null;
- const best=hits[0],second=hits[1],sameAlias=second&&best.alias===second.alias;
- if(sameAlias&&best.id!==second.id&&best.score===second.score)return{id:null,type:'CITY',confidence:best.score,surface:best.alias,source:'AMBIGUOUS_CITY_IDENTITY',candidates:hits.filter(x=>x.alias===best.alias).map(x=>({id:x.id,confidence:x.score})),raw:null};
- const [countryId]=S(best.id).split(':');const city=state.cities.get(countryId)?.get(best.id)||null;
- return{id:best.id,type:'CITY',confidence:best.score,surface:best.alias,countryId,source:'OMEGA_CANONICAL_CITY_REGISTRY',raw:city};
-}
-function resolve(q){
- const country=resolveCountry(q),city=resolveCity(q,country?.id||null);
- if(city?.id&&(!country?.id||city.confidence>country.confidence))return city;
- return country;
-}
+const state={ready:false,error:null,loadedAt:null,promise:null,countries:new Map(),countryAliases:new Map(),cities:new Map(),cityAliases:new Map(),datasets:new Map(),sourceCounts:{}};
+function rows(r){if(Array.isArray(r))return r;if(Array.isArray(r?.countries))return r.countries;if(Array.isArray(r?.data))return r.data;if(O(r))return Object.entries(r).map(([k,v])=>O(v)?({...v,__sourceKey:k}):({id:k,name:v,__sourceKey:k}));return[];}
+function idOf(x,key=''){const i=O(x?.identity)?x.identity:(x||{});return S(i.iso2||i.countryCode||i.country_code||i.code||i.id||i.canonicalId||key).toUpperCase();}
+function nameOf(x,key=''){const i=O(x?.identity)?x.identity:(x||{});return S(i.name||i.countryName||i.country_name||i.shortName||i.displayName||i.officialName||x?.name||key);}
+function addCountryAlias(id,v){const n=N(v),canonical=S(id).toUpperCase();if(!n||!canonical)return;const set=state.countryAliases.get(n)||new Set();set.add(canonical);state.countryAliases.set(n,set);}
+function registerCountry(x,key='',source=''){if(!O(x))return null;const id=idOf(x,key),name=nameOf(x,key);if(!id||!name)return null;const old=state.countries.get(id)||{id,names:[],officialName:'',sources:[],cities:[],raw:null,datasets:Object.create(null)};old.names=[...new Set([...old.names,name,S(x.officialName),S(x.shortName),S(x.displayName),S(x.nativeName)].filter(Boolean))];if(S(x.officialName))old.officialName=S(x.officialName);old.sources=[...new Set([...old.sources,source].filter(Boolean))];old.raw=old.raw||x;if(source)old.datasets[source]=x;state.countries.set(id,old);for(const n of old.names)addCountryAlias(id,n);for(const k of ['iso2','iso3','isoCode','countryCode','country_code','code','id','canonicalId'])if(S(x?.[k]))addCountryAlias(id,x[k]);return old;}
+function ingestCountries(r){const a=rows(r);state.sourceCounts.countries=a.length;for(const x of a)registerCountry(x,x?.__sourceKey||'','countries.json');}
+function cityObject(v,role=''){if(!O(v)||!S(v.name))return null;const city={...v,name:S(v.name),role:S(v.role||role||v.type||'').toUpperCase()};city.countryId=S(v.countryId||v.countryCode||v.iso2||v.iso3||'').toUpperCase();return city;}
+function canonicalCityId(countryId,name){return`${S(countryId).toUpperCase()}:${N(name).replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'')}`;}
+function addCityAlias(id,v){const n=N(v);if(!n||!id)return;const set=state.cityAliases.get(n)||new Set();set.add(id);state.cityAliases.set(n,set);}
+function ingestCities(r){const a=rows(r);state.sourceCounts.cities=a.length;for(const x of a){const countryName=nameOf(x,x?.__sourceKey||'');let countryId=S(x?.countryId||x?.countryCode||x?.iso2||x?.iso3||'').toUpperCase();if(!countryId){const ids=state.countryAliases.get(N(countryName));countryId=ids instanceof Set&&ids.size===1?[...ids][0]:(typeof ids==='string'?ids:'');}const country=countryId?registerCountry({id:countryId,name:countryName},countryId,'cities.json'):null;if(!country)continue;const collected=[];const pushOne=(v,role='')=>{const c=cityObject(v,role);if(c)collected.push(c);};const push=(v,role='')=>{for(const z of A(v))pushOne(z,role);};pushOne(x.capital,'CAPITAL');push(x.economic,'ECONOMIC');push(x.military,'MILITARY');push(x.secret,'SECRET');push(x.cities,'CITY');const merged=state.cities.get(countryId)||new Map();for(const city of collected){const cityId=S(city.id||city.cityId||city.canonicalId)||canonicalCityId(countryId,city.name);const record={...city,id:cityId,canonicalId:cityId,countryId};const prior=merged.get(cityId);merged.set(cityId,prior?{...prior,...record,name:prior.name||record.name}:record);addCityAlias(cityId,city.name);addCityAlias(cityId,cityId);}state.cities.set(countryId,merged);country.cities=[...merged.values()].map(x=>({...x}));}}
+function ingestRelations(r){const root=r?.RELATION_GENERATION_ENGINE?.srie_v2_asymmetrical_salience||r?.srie_v2_asymmetrical_salience||{};let count=0;for(const[k,v]of Object.entries(root)){if(!O(v))continue;registerCountry({id:S(v.country_code||k).toUpperCase(),name:S(v.country_name||k)},k,'relation_generation_engine.json');count++;}state.sourceCounts.relations=count;}
+function ingestResourceDataset(r,source){if(!O(r))return;state.datasets.set(source,r);const walk=v=>{if(!O(v))return;if(Array.isArray(v)){for(const x of v)walk(x);return;}const name=S(v.countryName||v.country_name||v.country||v.country_name_en||'');if(name){const ids=state.countryAliases.get(N(name));if(ids instanceof Set&&ids.size===1)addCountryAlias([...ids][0],name);else if(typeof ids==='string'&&ids)addCountryAlias(ids,name);}for(const x of Object.values(v))if(O(x)||Array.isArray(x))walk(x);};walk(r);state.sourceCounts[source]=1;}
+async function loadJson(p,optional=false){try{if(isNode){const fs=await import('node:fs/promises');const base=S(process.env.OMEGA_ROOT||process.cwd());const text=await fs.readFile(`${base}/${p}`,'utf8');return JSON.parse(text);}const r=await fetch(p,{cache:'no-store'});if(!r.ok){if(optional)return null;throw Error(`${p}: HTTP ${r.status}`);}return await r.json();}catch(e){if(optional)return null;throw e;}}
+async function init(){if(state.promise)return state.promise;state.promise=(async()=>{state.ready=false;state.error=null;try{const files=[['countries.json',false],['cities.json',false],['resources.json',false],['resources_2.json',true],['resource_ontology.json',true],['relation_generation_engine.json',true],['economy.json',true],['population.json',true]];const loaded=await Promise.all(files.map(([p,o])=>loadJson(p,o)));state.datasets.clear();state.countries.clear();state.countryAliases.clear();state.cities.clear();state.cityAliases.clear();state.sourceCounts={};for(let i=0;i<files.length;i++)if(loaded[i])state.datasets.set(files[i][0],loaded[i]);ingestCountries(loaded[0]);if(loaded[5])ingestRelations(loaded[5]);ingestCities(loaded[1]);ingestResourceDataset(loaded[2],'resources.json');if(loaded[3])ingestResourceDataset(loaded[3],'resources_2.json');if(loaded[4])ingestResourceDataset(loaded[4],'resource_ontology.json');if(loaded[6])ingestResourceDataset(loaded[6],'economy.json');if(loaded[7])ingestResourceDataset(loaded[7],'population.json');state.loadedAt=Date.now();state.ready=true;g.dispatchEvent?.(new(g.CustomEvent||class{constructor(t,i){this.type=t;this.detail=i?.detail}})('OMEGA_CANONICAL_IDENTITY_READY',{detail:diagnostics()}));installRuntimeBridges();return true;}catch(e){state.error=String(e);state.ready=false;console.error('[OMEGA Canonical Identity]',e);return false;}})();return state.promise;}
+function rankMatches(text,map,contextCountryId=null){const q=N(text);if(!q)return[];const hits=[];for(const[alias,ids]of map.entries()){if(!alias||alias.length<2)continue;const exact=q===alias,boundary=(` ${q} `).includes(` ${alias} `)||q.startsWith(alias+' ')||q.endsWith(' '+alias);if(!exact&&!boundary)continue;const candidates=ids instanceof Set?[...ids]:[ids];for(const id of candidates){const sameContext=contextCountryId&&S(id).split(':')[0]===S(contextCountryId).toUpperCase();const base=exact?1:Math.min(.995,.76+alias.length/Math.max(100,q.length*2));hits.push({id,alias,score:Math.min(1,base+(sameContext?.004:0))});}}hits.sort((a,b)=>b.score-a.score||b.alias.length-a.alias.length||String(a.id).localeCompare(String(b.id)));return hits;}
+function resolveCountry(q){const hits=rankMatches(q,state.countryAliases);if(!hits.length)return null;const best=hits[0],second=hits[1],ambiguous=second&&best.alias===second.alias&&best.score===second.score&&best.id!==second.id;if(ambiguous)return{id:null,type:'COUNTRY',confidence:best.score,surface:best.alias,source:'AMBIGUOUS_COUNTRY_IDENTITY',candidates:hits.filter(x=>x.alias===best.alias).map(x=>({id:x.id,surface:x.alias,confidence:x.score})),raw:null};const id=S(best.id).toUpperCase();return{id,type:'COUNTRY',confidence:best.score,surface:best.alias,source:'OMEGA_CANONICAL_COUNTRY_REGISTRY',raw:state.countries.get(id)||null};}
+function resolveCity(q,contextCountryId=null){const hits=rankMatches(q,state.cityAliases,contextCountryId);if(!hits.length)return null;const best=hits[0],second=hits[1],sameAlias=second&&best.alias===second.alias;if(sameAlias&&best.id!==second.id&&best.score===second.score)return{id:null,type:'CITY',confidence:best.score,surface:best.alias,source:'AMBIGUOUS_CITY_IDENTITY',candidates:hits.filter(x=>x.alias===best.alias).map(x=>({id:x.id,confidence:x.score})),raw:null};const[countryId]=S(best.id).split(':');const city=state.cities.get(countryId)?.get(best.id)||null;return{id:best.id,type:'CITY',confidence:best.score,surface:best.alias,countryId,source:'OMEGA_CANONICAL_CITY_REGISTRY',raw:city};}
+function resolve(q){const country=resolveCountry(q),city=resolveCity(q,country?.id||null);if(city?.id&&(!country?.id||city.confidence>country.confidence))return city;return country;}
 function allCities(countryId){const id=S(countryId).toUpperCase();return[...(state.cities.get(id)?.values()||[])].map(x=>({...x}));}
-function countryBrief(q){
- const h=resolveCountry(q);if(!h?.id)return null;const c=state.countries.get(h.id),cities=allCities(h.id);
- return{countryId:h.id,countryName:c?.names?.[0]||h.surface,realCountryName:c?.officialName||c?.names?.[0]||h.surface,cities,cityCount:cities.length,sources:c?.sources||[],datasets:Object.keys(c?.datasets||{})};
-}
-function getDatasetRecord(source,countryId,surface=''){
- const root=state.datasets.get(source);if(!root)return null;
- const canonical=S(countryId).toUpperCase(),candidateNames=[N(surface),S(surface).toUpperCase(),N(String(surface).replace(/_/g,' '))].filter(Boolean);
- if(O(root))for(const key of [canonical,...candidateNames])if(root[key]!==undefined)return root[key];
- let found=null;
- const walk=v=>{
-   if(found||!O(v))return;
-   if(Array.isArray(v)){for(const x of v)walk(x);return;}
-   const id=S(v.countryCode||v.country_code||v.iso2||v.iso3||v.code||v.id||'').toUpperCase();
-   const name=N(v.countryName||v.country_name||v.name||v.officialName||'');
-   if((id&&canonical&&id===canonical)||(name&&candidateNames.includes(name))){found=v;return;}
-   for(const x of Object.values(v))if(O(x)||Array.isArray(x))walk(x);
- };
- walk(root);return found;
-}
-function canonicalizePlan(question,plan){
- if(!plan||typeof plan!=='object')return plan;
- const semantic=plan.semantic&&typeof plan.semantic==='object'?{...plan.semantic}:{};
- const country=resolveCountry(question),city=resolveCity(question,country?.id||null);
- let entityCountry=country?.id?country:null;
- if(city?.id&&!entityCountry){const cityCountry=state.countries.get(city.countryId);entityCountry={id:city.countryId,type:'COUNTRY',confidence:city.confidence,source:'CITY_PARENT_COUNTRY',surface:cityCountry?.names?.[0]||city.countryId,raw:cityCountry||null};}
- if(entityCountry){semantic.entities={...(semantic.entities||{}),country:entityCountry};semantic.unresolved=A(semantic.unresolved).filter(x=>x!=='COUNTRY');semantic.confidence=Math.max(Number(semantic.confidence||0),entityCountry.confidence);}
- if(city?.id){semantic.entities={...(semantic.entities||{}),city};semantic.unresolved=A(semantic.unresolved).filter(x=>x!=='CITY');}
- if(entityCountry||city?.id){
-   semantic.executable=semantic.operation!=='UNKNOWN'&&semantic.unresolved.length===0;
-   semantic.identityAuthority='OMEGA_CANONICAL_IDENTITY_BRIDGE';
-   const out={...plan,semantic,entities:semantic.entities};
-   if(entityCountry)out.countryId=entityCountry.id;
-   if(city?.id)out.cityId=city.id;
-   if(entityCountry)out.countryBrief=countryBrief(entityCountry.surface);
-   return out;
- }
- return plan;
-}
-function installRuntimeBridges(){
- const rt=g.OmegaProductionSemanticRuntime;
- if(rt&&!rt.__canonicalIdentityV500){
-   const oldParse=typeof rt.parse==='function'?rt.parse.bind(rt):null,oldExplain=typeof rt.explain==='function'?rt.explain.bind(rt):null,oldPlan=typeof rt.buildAnswerPlan==='function'?rt.buildAnswerPlan.bind(rt):null;
-   if(oldParse)rt.parse=function(q,ctx={}){const base=oldParse(q,ctx);return canonicalizePlan(q,{semantic:base})?.semantic||base;};
-   if(oldExplain)rt.explain=function(q,ctx={}){const base=oldExplain(q,ctx);return canonicalizePlan(q,{semantic:base})?.semantic||base;};
-   if(oldPlan)rt.buildAnswerPlan=function(q,ctx={},world={},history=[]){const base=oldPlan(q,ctx,world,history);return canonicalizePlan(q,base)||base;};
-   rt.__canonicalIdentityV500=true;
- }
- const cog=g.OmegaCognitiveOS;
- if(cog&&!cog.__canonicalIdentityV500){
-   if(typeof cog.getCountryProfile==='function'){
-     cog.getCountryProfile=function(v){const h=resolveCountry(v);return h?.id?h.raw||h:null;};
-   }
-   if(typeof cog.getEconomy==='function'){
-     cog.getEconomy=function(v){const h=resolveCountry(v);return h?.id?getDatasetRecord('economy.json',h.id,h.surface):null;};
-   }
-   if(typeof cog.getPopulation==='function'){
-     cog.getPopulation=function(v){const h=resolveCountry(v);return h?.id?getDatasetRecord('population.json',h.id,h.surface):null;};
-   }
-   if(typeof cog.thinkMinisterQuestion==='function'){
-     const old=cog.thinkMinisterQuestion.bind(cog);
-     cog.thinkMinisterQuestion=function(question,minister,countryKey,countryDetails){
-       const h=resolveCountry(question)||resolveCountry(countryKey);
-       if(h?.id)return old(question,minister,h.id,countryDetails||h.raw||{});
-       return old(question,minister,S(countryKey),countryDetails||{});
-     };
-   }
-   cog.__canonicalIdentityV500=true;
- }
- const ui=g.OmegaCabinetUI;
- if(ui&&!ui.__canonicalIdentityV500){
-   if(typeof ui.processQuestionAndReply==='function'){
-     const old=ui.processQuestionAndReply.bind(ui);
-     ui.processQuestionAndReply=function(minister,question){
-       const q=S(question),h=resolveCountry(q);const previous=ui.activeCountry;
-       if(h?.id)ui.activeCountry=h.id;
-       try{return old(minister,q);}finally{if(h?.id&&previous!=null)ui.activeCountry=previous;}
-     };
-   }
-   if(typeof ui.askCustomQuestion==='function'){
-     const old=ui.askCustomQuestion.bind(ui);
-     ui.askCustomQuestion=function(ministerId,question){
-       const q=S(question),h=resolveCountry(q);const previous=ui.activeCountry;
-       if(h?.id)ui.activeCountry=h.id;
-       try{return old(ministerId,q);}finally{if(h?.id&&previous!=null)ui.activeCountry=previous;}
-     };
-   }
-   ui.__canonicalIdentityV500=true;
- }
-}
-function diagnostics(){
- return{
-  version:VERSION,ready:state.ready,loadedAt:state.loadedAt,error:state.error,
-  countryCount:state.countries.size,expectedCountryCount:197,complete:state.countries.size===197,
-  aliasCount:state.countryAliases.size,totalCityCountries:state.cities.size,
-  totalCityRecords:[...state.cities.values()].reduce((n,m)=>n+m.size,0),
-  cityAliasCount:state.cityAliases.size,sourceCounts:{...state.sourceCounts},datasets:[...state.datasets.keys()]
- };
-}
+function countryBrief(q){const h=resolveCountry(q);if(!h?.id)return null;const c=state.countries.get(h.id),cities=allCities(h.id);return{countryId:h.id,countryName:c?.names?.[0]||h.surface,realCountryName:c?.officialName||c?.names?.[0]||h.surface,cities,cityCount:cities.length,sources:c?.sources||[],datasets:Object.keys(c?.datasets||{})};}
+function getDatasetRecord(source,countryId,surface=''){const root=state.datasets.get(source);if(!root)return null;const canonical=S(countryId).toUpperCase(),candidateNames=[N(surface),S(surface).toUpperCase(),N(String(surface).replace(/_/g,' '))].filter(Boolean);if(O(root))for(const key of [canonical,...candidateNames])if(root[key]!==undefined)return root[key];let found=null;const walk=v=>{if(found||!O(v))return;if(Array.isArray(v)){for(const x of v)walk(x);return;}const id=S(v.countryCode||v.country_code||v.iso2||v.iso3||v.code||v.id||'').toUpperCase();const name=N(v.countryName||v.country_name||v.name||v.officialName||'');if((id&&canonical&&id===canonical)||(name&&candidateNames.includes(name))){found=v;return;}for(const x of Object.values(v))if(O(x)||Array.isArray(x))walk(x);};walk(root);return found;}
+function canonicalizePlan(question,plan){if(!plan||typeof plan!=='object')return plan;const semantic=plan.semantic&&typeof plan.semantic==='object'?{...plan.semantic}:{};const country=resolveCountry(question),city=resolveCity(question,country?.id||null);let entityCountry=country?.id?country:null;if(city?.id&&!entityCountry){const cityCountry=state.countries.get(city.countryId);entityCountry={id:city.countryId,type:'COUNTRY',confidence:city.confidence,source:'CITY_PARENT_COUNTRY',surface:cityCountry?.names?.[0]||city.countryId,raw:cityCountry||null};}if(entityCountry){semantic.entities={...(semantic.entities||{}),country:entityCountry};semantic.unresolved=A(semantic.unresolved).filter(x=>x!=='COUNTRY');semantic.confidence=Math.max(Number(semantic.confidence||0),entityCountry.confidence);}if(city?.id){semantic.entities={...(semantic.entities||{}),city};semantic.unresolved=A(semantic.unresolved).filter(x=>x!=='CITY');}if(entityCountry||city?.id){semantic.executable=semantic.operation!=='UNKNOWN'&&semantic.unresolved.length===0;semantic.identityAuthority='OMEGA_CANONICAL_IDENTITY_BRIDGE';const out={...plan,semantic,entities:semantic.entities};if(entityCountry)out.countryId=entityCountry.id;if(city?.id)out.cityId=city.id;if(entityCountry)out.countryBrief=countryBrief(entityCountry.surface);return out;}return plan;}
+function installRuntimeBridges(){const rt=g.OmegaProductionSemanticRuntime;if(rt&&!rt.__canonicalIdentityV500){const oldParse=typeof rt.parse==='function'?rt.parse.bind(rt):null,oldExplain=typeof rt.explain==='function'?rt.explain.bind(rt):null,oldPlan=typeof rt.buildAnswerPlan==='function'?rt.buildAnswerPlan.bind(rt):null;if(oldParse)rt.parse=function(q,ctx={}){const base=oldParse(q,ctx);return canonicalizePlan(q,{semantic:base})?.semantic||base;};if(oldExplain)rt.explain=function(q,ctx={}){const base=oldExplain(q,ctx);return canonicalizePlan(q,{semantic:base})?.semantic||base;};if(oldPlan)rt.buildAnswerPlan=function(q,ctx={},world={},history=[]){const base=oldPlan(q,ctx,world,history);return canonicalizePlan(q,base)||base;};rt.__canonicalIdentityV500=true;}
+const cog=g.OmegaCognitiveOS;if(cog&&!cog.__canonicalIdentityV500){if(typeof cog.getCountryProfile==='function')cog.getCountryProfile=function(v){const h=resolveCountry(v);return h?.id?h.raw||h:null;};if(typeof cog.getEconomy==='function')cog.getEconomy=function(v){const h=resolveCountry(v);return h?.id?getDatasetRecord('economy.json',h.id,h.surface):null;};if(typeof cog.getPopulation==='function')cog.getPopulation=function(v){const h=resolveCountry(v);return h?.id?getDatasetRecord('population.json',h.id,h.surface):null;};if(typeof cog.thinkMinisterQuestion==='function'){const old=cog.thinkMinisterQuestion.bind(cog);cog.thinkMinisterQuestion=function(question,minister,countryKey,countryDetails){const h=resolveCountry(question)||resolveCountry(countryKey);if(h?.id)return old(question,minister,h.id,countryDetails||h.raw||{});return old(question,minister,S(countryKey),countryDetails||{});};}cog.__canonicalIdentityV500=true;}
+const ui=g.OmegaCabinetUI;if(ui&&!ui.__canonicalIdentityV500){if(typeof ui.processQuestionAndReply==='function'){const old=ui.processQuestionAndReply.bind(ui);ui.processQuestionAndReply=function(minister,question){const q=S(question),h=resolveCountry(q),previous=ui.activeCountry;if(h?.id)ui.activeCountry=h.id;try{return old(minister,q);}finally{if(h?.id&&previous!=null)ui.activeCountry=previous;};};}if(typeof ui.askCustomQuestion==='function'){const old=ui.askCustomQuestion.bind(ui);ui.askCustomQuestion=function(ministerId,question){const q=S(question),h=resolveCountry(q),previous=ui.activeCountry;if(h?.id)ui.activeCountry=h.id;try{return old(ministerId,q);}finally{if(h?.id&&previous!=null)ui.activeCountry=previous;};};}ui.__canonicalIdentityV500=true;}}
+function diagnostics(){return{version:VERSION,ready:state.ready,loadedAt:state.loadedAt,error:state.error,countryCount:state.countries.size,expectedCountryCount:197,complete:state.countries.size===197,aliasCount:state.countryAliases.size,totalCityCountries:state.cities.size,totalCityRecords:[...state.cities.values()].reduce((n,m)=>n+m.size,0),cityAliasCount:state.cityAliases.size,sourceCounts:{...state.sourceCounts},datasets:[...state.datasets.keys()]};}
 g.OmegaCanonicalIdentityRegistry={VERSION,init,resolve,resolveCountry,resolveCity,countryBrief,allCities,getDatasetRecord,canonicalizePlan,diagnostics,exportData:()=>({version:VERSION,countries:[...state.countries.values()].map(c=>({id:c.id,names:c.names,officialName:c.officialName,cities:allCities(c.id),sources:c.sources,datasets:Object.keys(c.datasets||{})}))})};
-g.OmegaCountrySemanticBridge={
- VERSION,init,resolve:resolveCountry,resolveCountry,resolveCity,countryBrief,allCities,
- parseCountry:(q,ctx={})=>{const h=resolveCountry(q);if(!h?.id)return null;const b=countryBrief(q);return{version:VERSION,surface:S(q),normalized:N(q),language:/[\u0980-\u09FF]/.test(S(q))?'bn':'en',operation:'IDENTIFY',targetDomain:'COUNTRY',entities:{country:h},unresolved:[],confidence:h.confidence,executable:true,countryBrief:ctx.initialTurn?b:null,responseTemplate:ctx.initialTurn?{type:'COUNTRY_FIRST_TURN',fields:['countryName','realCountryName','cities','cityCount']}:null};},
- countryOnly:(q,ctx={})=>{const h=resolveCountry(q);return!!h?.id&&N(q)===N(h.surface)&&(ctx.initialTurn===true||ctx.firstTurn===true||ctx.turn===0||ctx.chatTurn===0);},
- isExactCountry:q=>{const h=resolveCountry(q);return h?.id&&N(q)===N(h.surface)?h:null;},
- canonicalizePlan,diagnostics,exportData:()=>g.OmegaCanonicalIdentityRegistry.exportData(),install:installRuntimeBridges
-};
-const boot=setInterval(()=>{installRuntimeBridges();if(state.ready){clearInterval(boot);}},50);
-setTimeout(()=>clearInterval(boot),20000);
-init();
+g.OmegaCountrySemanticBridge={VERSION,init,resolve:resolveCountry,resolveCountry,resolveCity,countryBrief,allCities,parseCountry:(q,ctx={})=>{const h=resolveCountry(q);if(!h?.id)return null;const b=countryBrief(q);return{version:VERSION,surface:S(q),normalized:N(q),language:/[\u0980-\u09FF]/.test(S(q))?'bn':'en',operation:'IDENTIFY',targetDomain:'COUNTRY',entities:{country:h},unresolved:[],confidence:h.confidence,executable:true,countryBrief:ctx.initialTurn?b:null,responseTemplate:ctx.initialTurn?{type:'COUNTRY_FIRST_TURN',fields:['countryName','realCountryName','cities','cityCount']}:null};},countryOnly:(q,ctx={})=>{const h=resolveCountry(q);return!!h?.id&&N(q)===N(h.surface)&&(ctx.initialTurn===true||ctx.firstTurn===true||ctx.turn===0||ctx.chatTurn===0);},isExactCountry:q=>{const h=resolveCountry(q);return h?.id&&N(q)===N(h.surface)?h:null;},canonicalizePlan,diagnostics,exportData:()=>g.OmegaCanonicalIdentityRegistry.exportData(),install:installRuntimeBridges};
+const boot=setInterval(()=>{installRuntimeBridges();if(state.ready)clearInterval(boot);},50);setTimeout(()=>clearInterval(boot),20000);init();
 })(typeof globalThis!=='undefined'?globalThis:window);
