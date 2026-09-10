@@ -3,6 +3,7 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 
 const runtimeSource = fs.readFileSync('./omega_production_semantic_runtime_v3.js', 'utf8');
+const countryBridgeSource = fs.readFileSync('./omega_country_semantic_bridge.js', 'utf8');
 const resourceBridgeSource = fs.readFileSync('./omega_resource_semantic_bridge.js', 'utf8');
 const files = new Map([
   ['offline_language_vocabulary.json', JSON.parse(fs.readFileSync('./offline_language_vocabulary.json', 'utf8'))],
@@ -16,48 +17,29 @@ const files = new Map([
 ]);
 
 const sandbox = {
-  console,
-  Date,
-  JSON,
-  Object,
-  Array,
-  Map,
-  Set,
-  Math,
-  RegExp,
-  String,
-  Number,
-  Intl,
-  Promise,
-  Error,
-  TypeError,
+  console, Date, JSON, Object, Array, Map, Set, Math, RegExp, String, Number, Intl, Promise, Error, TypeError,
   CustomEvent: class CustomEvent { constructor(type, init = {}) { this.type = type; this.detail = init.detail; } },
   dispatchEvent() {},
-  localStorage: {
-    _data: new Map(),
-    getItem(k) { return this._data.get(k) ?? null; },
-    setItem(k, v) { this._data.set(k, String(v)); }
-  },
+  localStorage: { _data: new Map(), getItem(k) { return this._data.get(k) ?? null; }, setItem(k, v) { this._data.set(k, String(v)); } },
   Game: { state: {} },
-  fetch(path) {
-    const key = String(path).replace(/^\//, '');
-    if (!files.has(key)) return Promise.resolve({ ok: false, status: 404, json: async () => ({}) });
-    return Promise.resolve({ ok: true, status: 200, json: async () => files.get(key) });
-  }
+  fetch(path) { const key = String(path).replace(/^\//, ''); if (!files.has(key)) return Promise.resolve({ ok: false, status: 404, json: async () => ({}) }); return Promise.resolve({ ok: true, status: 200, json: async () => files.get(key) }); }
 };
 sandbox.globalThis = sandbox;
 sandbox.window = sandbox;
 
 vm.runInNewContext(runtimeSource, sandbox, { filename: 'omega_production_semantic_runtime_v3.js' });
+vm.runInNewContext(countryBridgeSource, sandbox, { filename: 'omega_country_semantic_bridge.js' });
 vm.runInNewContext(resourceBridgeSource, sandbox, { filename: 'omega_resource_semantic_bridge.js' });
 
 (async () => {
-  await new Promise(resolve => setTimeout(resolve, 120));
+  await new Promise(resolve => setTimeout(resolve, 180));
 
   const runtime = sandbox.OmegaProductionSemanticRuntime;
+  const countryBridge = sandbox.OmegaCountrySemanticBridge;
   const resourceBridge = sandbox.OmegaResourceSemanticBridge;
 
   assert.ok(runtime, 'Production semantic runtime must load');
+  assert.ok(countryBridge, 'Country semantic bridge must load');
   assert.ok(resourceBridge, 'Resource semantic bridge must load');
 
   const diag = runtime.diagnostics();
@@ -66,13 +48,36 @@ vm.runInNewContext(resourceBridgeSource, sandbox, { filename: 'omega_resource_se
   assert.ok(diag.resources > 0, 'Resource registry is empty');
   assert.ok(diag.ministers > 0, 'Minister registry is empty');
 
+  const countryDiag = countryBridge.diagnostics();
+  assert.equal(countryDiag.ready, true, JSON.stringify(countryDiag));
+  assert.equal(countryDiag.expectedCountryIds, 197);
+  assert.equal(countryDiag.complete, true, `197-country identity coverage incomplete: ${JSON.stringify(countryDiag)}`);
+  assert.ok(countryDiag.countries === 197, `Expected exactly 197 canonical country IDs, got ${countryDiag.countries}`);
+  for (const [name, id] of [['Bangladesh','BDG'], ['India','IND'], ['Japan','JPN'], ['Namibia','NAM']]) {
+    const resolved = countryBridge.resolve(name);
+    assert.ok(resolved?.id, `${name} must resolve as a country`);
+    assert.equal(resolved.type, 'COUNTRY');
+  }
+  assert.ok(countryBridge.resolve('বাংলাদেশ')?.id, 'Bangladesh Bengali name must resolve');
+  assert.ok(countryBridge.resolve('भारत')?.id || countryBridge.resolve('India')?.id, 'India must resolve through country identity data');
+
   const bridgeDiag = resourceBridge.diagnostics();
   assert.equal(bridgeDiag.ready, true, JSON.stringify(bridgeDiag));
   assert.ok(bridgeDiag.countries > 0, 'Bridge country registry is empty');
   assert.ok(bridgeDiag.resources > 0, 'Bridge resource registry is empty');
-  assert.ok(bridgeDiag.exportReady, 'Resource data export/access layer is not ready');
   assert.equal(bridgeDiag.expectedCountryIds, 197);
-  assert.ok(bridgeDiag.countryIdCoverageComplete, `197-country ID coverage incomplete: ${bridgeDiag.countryIdCoverage}`);
+  assert.ok(bridgeDiag.exportReady, 'Resource data export/access layer is not ready');
+  assert.equal(bridgeDiag.countryIdCoverageComplete, true, `197-country resource bridge coverage incomplete: ${bridgeDiag.countryIdCoverage}`);
+
+  const ontology = files.get('resource_ontology.json');
+  const resourceTypes = ontology?.COMMODITY_ONTOLOGIES || {};
+  assert.equal(Object.keys(resourceTypes).length, 18, `Expected 18 canonical resource types, got ${Object.keys(resourceTypes).length}`);
+  for (const [id, record] of Object.entries(resourceTypes)) {
+    assert.equal(String(record?.key || id).toUpperCase(), id.toUpperCase(), `Resource ID mismatch for ${id}`);
+    assert.ok(record?.name, `Resource ${id} must have a canonical name`);
+    assert.ok(resourceBridge.resolveResource(id)?.id === id, `Resource ${id} must resolve by ID`);
+    assert.ok(resourceBridge.resolveResource(record.name)?.id === id, `Resource ${id} must resolve by canonical name`);
+  }
 
   const q1 = runtime.parse('How many iron mines are in Bangladesh?');
   assert.equal(q1.entities.country.id, 'BGD');
@@ -118,11 +123,7 @@ vm.runInNewContext(resourceBridgeSource, sandbox, { filename: 'omega_resource_se
   assert.equal(q7.targetDomain, 'RESOURCE');
   assert.equal(q7.executable, true);
 
-  const uraniumResult = resourceBridge.queryResource({
-    resourceId: q7.entities.resource.id,
-    operation: 'LOCATE',
-    worldwide: true
-  });
+  const uraniumResult = resourceBridge.queryResource({ resourceId: q7.entities.resource.id, operation: 'LOCATE', worldwide: true });
   assert.equal(uraniumResult.ok, true, JSON.stringify(uraniumResult));
   assert.equal(uraniumResult.resourceId, q7.entities.resource.id);
   assert.equal(uraniumResult.worldwide, true);
@@ -141,9 +142,7 @@ vm.runInNewContext(resourceBridgeSource, sandbox, { filename: 'omega_resource_se
     const entityLookup = resourceBridge.resolveResourceRecord(sampleRecordId);
     assert.equal(entityLookup.ok, true, JSON.stringify(entityLookup));
     assert.equal(entityLookup.entityId, sampleRecordId);
-    if (entityLookup.countryId) {
-      assert.equal(resourceBridge.resolveCountry(entityLookup.countryId).id, entityLookup.countryId);
-    }
+    if (entityLookup.countryId) assert.equal(resourceBridge.resolveCountry(entityLookup.countryId).id, entityLookup.countryId);
   }
 
   const exportResult = resourceBridge.exportData({ resourceId: q7.entities.resource.id, operation: 'LOCATE' });
@@ -161,19 +160,5 @@ vm.runInNewContext(resourceBridgeSource, sandbox, { filename: 'omega_resource_se
     assert.equal(bridgeSourceText.includes(forbidden), false, `Country/resource fact leaked into resource bridge: ${forbidden}`);
   }
 
-  console.log(JSON.stringify({
-    ok: true,
-    diagnostics: diag,
-    resourceBridgeDiagnostics: bridgeDiag,
-    cases: 9,
-    hardcodeGuard: true,
-    worldwideResourceQuery: {
-      resourceId: uraniumResult.resourceId,
-      countries: uraniumResult.countries.length,
-      locations: uraniumResult.locations.length
-    }
-  }, null, 2));
-})().catch(error => {
-  console.error(error);
-  process.exitCode = 1;
-});
+  console.log(JSON.stringify({ ok: true, diagnostics: diag, countryBridgeDiagnostics: countryDiag, resourceBridgeDiagnostics: bridgeDiag, resourceTypeCount: Object.keys(resourceTypes).length, cases: 9, hardcodeGuard: true, worldwideResourceQuery: { resourceId: uraniumResult.resourceId, countries: uraniumResult.countries.length, locations: uraniumResult.locations.length } }, null, 2));
+})().catch(error => { console.error(error); process.exitCode = 1; });
