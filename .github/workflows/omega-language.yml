@@ -113,12 +113,12 @@ jobs:
           marker="function ingestCountries(r){"
           canonical="function canonicalizeCountryRegistry(){const grouped=new Map();for(const e of state.countries.values()){const key=norm(e.names?.[0]||e.id);if(!key)continue;if(!grouped.has(key))grouped.set(key,[]);grouped.get(key).push(e)}const next=new Map();for(const group of grouped.values()){const preferred=group.find(e=>/^[A-Z]{3}$/.test(e.id))||group[0];const names=[...new Set(group.flatMap(e=>e.names||[]))];const countryAliasesFromNames=[...new Set(group.flatMap(e=>e.aliases||[]).concat(names.flatMap(x=>{const n=norm(x);return [n,preferred.id]})))];next.set(preferred.id,{...preferred,names,aliases:countryAliasesFromNames,raw:preferred.raw,source:'CANONICAL_COUNTRY_REGISTRY'})}state.countries=next}"
           if marker in s and 'function canonicalizeCountryRegistry()' not in s:s=s.replace(marker,canonical+marker)
+          s=s.replace("aliases(preferred.id,[x])", "[norm(x),preferred.id]")
           s=s.replace("ingestCountries(c);ingestCountries(rel?.RELATION_GENERATION_ENGINE?.srie_v2_asymmetrical_salience||rel?.srie_v2_asymmetrical_salience||rel);", "ingestCountries(c);ingestCountries(rel?.RELATION_GENERATION_ENGINE?.srie_v2_asymmetrical_salience||rel?.srie_v2_asymmetrical_salience||rel);canonicalizeCountryRegistry();")
           s=s.replace("['resources.json',r],['resources_2.json',r2]])registerDataset", "['resources.json',r],['resources_2.json',r2],['relation_generation_engine.json',rel]])registerDataset")
           s=s.replace('semantic:p,executable:p.executable}});init();','semantic:p,executable:p.executable}}});init();')
           p.write_text(s,encoding='utf-8')
           p=Path('omega_country_semantic_bridge.js');s=p.read_text(encoding='utf-8')
-          s=s.replace("const existing3=i.iso3?countries.get(N(i.iso3)):null;const existing2=i.iso2?countries.get(N(i.iso2)):null;const existingName=i.name?countries.get(N(i.name)):null;const existing=existing3||existing2||existingName;", "const existing3=i.iso3?countries.get(N(i.iso3)):null;const existing2=i.iso2?countries.get(N(i.iso2)):null;const existingName=i.name?countries.get(N(i.name)):null;const existing=existing3||existing2||existingName;")
           s=s.replace("register({country_code:x.country_code,country_name:x.country_name||k},k,'relation_generation_engine')", "register({iso3:x.country_code,countryName:x.country_name||k},k,'relation_generation_engine')")
           p.write_text(s,encoding='utf-8')
           PY
