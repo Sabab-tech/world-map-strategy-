@@ -1,13 +1,13 @@
-/* OMEGA CANONICAL AI CONTEXT BRIDGE v1.2.1
+/* OMEGA CANONICAL AI CONTEXT BRIDGE v1.3.0
  * Browser-side transport bridge for canonical semantic context and repository-data entity discovery.
  * Country identity is discovered from the canonical country registry / countries.json.
  * No country facts or country mappings are hardcoded here.
  */
 (function(global){
   'use strict';
-  if(global.OmegaCanonicalAIContextBridge?.VERSION === '1.2.1')return;
+  if(global.OmegaCanonicalAIContextBridge?.VERSION === '1.3.0')return;
 
-  const VERSION='1.2.1';
+  const VERSION='1.3.0';
   const text=v=>String(v==null?'':v).trim();
   const norm=v=>text(v).normalize('NFKC').toLowerCase().replace(/[?!,.:;'"“”‘’(){}[\]<>—–]/g,' ').replace(/\s+/g,' ').trim();
   const tokens=v=>norm(v).split(' ').filter(Boolean);
@@ -21,6 +21,61 @@
     }catch(_){ }
     return [];
   };
+
+  function countryNameScore(question,name){
+    const q=norm(question),n=norm(name);
+    if(!q||!n)return 0;
+    if(q===n)return 1;
+    if(q.includes(n))return Math.min(.998,.92+n.length/Math.max(100,q.length*2));
+    const qt=tokens(q),nt=tokens(n);
+    if(!qt.length||!nt.length||nt.length>qt.length)return 0;
+    let best=0;
+    for(let start=0;start<=qt.length-nt.length;start++){
+      let matched=0;
+      for(let i=0;i<nt.length;i++){
+        const a=qt[start+i],b=nt[i];
+        if(a===b||(a.length>=2&&b.startsWith(a)))matched++;else break;
+      }
+      if(matched===nt.length){
+        const coverage=nt.length/Math.max(1,qt.length);
+        const compactness=nt.length/Math.max(1,nt.length+(qt.length-nt.length));
+        best=Math.max(best,.80+.14*coverage+.04*compactness+.02*(q.length/Math.max(1,n.length)));
+      }
+    }
+    return Math.min(.99,best);
+  }
+
+  function installQuestionAwareCountryResolver(){
+    const registry=global.OmegaCanonicalIdentityRegistry||global.OmegaCountrySemanticBridge;
+    if(!registry||registry.__omegaQuestionAwareResolverV130)return false;
+    const originalRegistry=typeof registry.resolveCountry==='function'?registry.resolveCountry.bind(registry):null;
+    const originalBridge=typeof global.OmegaCountrySemanticBridge?.resolveCountry==='function'?global.OmegaCountrySemanticBridge.resolveCountry.bind(global.OmegaCountrySemanticBridge):null;
+    const resolveFromExport=(question)=>{
+      const exported=registry?.exportData?.();
+      const rows=Array.isArray(exported?.countries)?exported.countries:[];
+      let best=null;
+      for(const row of rows){
+        const id=text(row?.id).toUpperCase();
+        const names=[...(Array.isArray(row?.names)?row.names:[]),row?.officialName].filter(Boolean).map(text);
+        if(!id)continue;
+        for(const name of names){
+          const score=countryNameScore(question,name);
+          if(score<=0)continue;
+          const candidate={id,type:'COUNTRY',confidence:score,surface:name,source:'OMEGA_COUNTRIES_JSON_ENTITY_DISCOVERY',raw:row};
+          if(!best||candidate.confidence>best.confidence||candidate.confidence===best.confidence&&candidate.surface.length>best.surface.length)best=candidate;
+        }
+      }
+      return best;
+    };
+    const wrapped=q=>{
+      try{const direct=originalRegistry?.(q);if(direct?.id)return direct;}catch(_){ }
+      try{return resolveFromExport(q)}catch(_){return null}
+    };
+    try{if(originalRegistry)registry.resolveCountry=wrapped;}catch(_){ }
+    try{if(global.OmegaCountrySemanticBridge&&originalBridge)global.OmegaCountrySemanticBridge.resolveCountry=wrapped;}catch(_){ }
+    try{registry.__omegaQuestionAwareResolverV130=true;}catch(_){ }
+    return true;
+  }
 
   function context(overrides={}){
     const gs=global.Game?.state||global.gameState||global.Omega?.World?.state||{};
@@ -56,53 +111,15 @@
     }catch(_){return null;}
   }
 
-  function countryNameScore(question,name){
-    const q=norm(question),n=norm(name);
-    if(!q||!n)return 0;
-    if(q===n)return 1;
-    if(q.includes(n))return Math.min(.998,.92+n.length/Math.max(100,q.length*2));
-    const qt=tokens(q),nt=tokens(n);
-    if(!qt.length||!nt.length||nt.length>qt.length)return 0;
-    let best=0;
-    for(let start=0;start<=qt.length-nt.length;start++){
-      let matched=0;
-      for(let i=0;i<nt.length;i++){
-        const a=qt[start+i],b=nt[i];
-        if(a===b||(a.length>=2&&b.startsWith(a)))matched++;else break;
-      }
-      if(matched===nt.length){
-        const coverage=nt.length/Math.max(1,qt.length);
-        const compactness=nt.length/Math.max(1,nt.length+(qt.length-nt.length));
-        best=Math.max(best,.80+.14*coverage+.04*compactness+.02*(q.length/Math.max(1,n.length)));
-      }
-    }
-    return Math.min(.99,best);
-  }
-
   async function discoverCountry(question){
     const registry=global.OmegaCanonicalIdentityRegistry||global.OmegaCountrySemanticBridge;
     try{if(registry?.init)await registry.init();}catch(_){ }
+    installQuestionAwareCountryResolver();
     try{
       const direct=registry?.resolveCountry?.(question);
       if(direct?.id)return direct;
     }catch(_){ }
-    const records=[];
-    try{
-      const exported=registry?.exportData?.();
-      if(Array.isArray(exported?.countries))for(const c of exported.countries){
-        const id=text(c?.id).toUpperCase();
-        const names=[...(Array.isArray(c?.names)?c.names:[]),c?.officialName].filter(Boolean).map(text);
-        if(id&&names.length)records.push({id,names,raw:c});
-      }
-    }catch(_){ }
-    let best=null;
-    for(const record of records)for(const name of record.names){
-      const score=countryNameScore(question,name);
-      if(score<=0)continue;
-      const candidate={id:record.id,type:'COUNTRY',confidence:score,surface:name,source:'OMEGA_COUNTRIES_JSON_ENTITY_DISCOVERY',raw:record.raw};
-      if(!best||candidate.confidence>best.confidence||candidate.confidence===best.confidence&&candidate.surface.length>best.surface.length)best=candidate;
-    }
-    return best;
+    return null;
   }
 
   function groundedCountryPlan(question,plan,country){
@@ -122,18 +139,14 @@
     out.semantic=semantic;
     out.countryId=country.id;
     out.countryName=name;
-    out.result=out.result&&typeof out.result==='object'?out.result:{
-      ok:true,status:'VERIFIED_FACT',operation:semantic.operation,targetDomain:'COUNTRY',countryId:country.id,
-      text:bn?`${name} একটি দেশ; ক্যানোনিক্যাল ডেটা আইডি ${country.id}.`:`${name} is a country; canonical data ID: ${country.id}.`,
-      value:country.id,entity:clone(country.raw),source:'countries.json',
-      evidence:{dataset:'countries.json',recordIdentity:country.id,fieldPath:'code',canonicalEntityId:country.id,rawValue:country.id,surface:country.surface,confidence:country.confidence}
-    };
+    out.result=out.result&&typeof out.result==='object'?out.result:{ok:true,status:'VERIFIED_FACT',operation:semantic.operation,targetDomain:'COUNTRY',countryId:country.id,text:bn?`${name} একটি দেশ; ক্যানোনিক্যাল ডেটা আইডি ${country.id}.`:`${name} is a country; canonical data ID: ${country.id}.`,value:country.id,entity:clone(country.raw),source:'countries.json',evidence:{dataset:'countries.json',recordIdentity:country.id,fieldPath:'code',canonicalEntityId:country.id,rawValue:country.id,surface:country.surface,confidence:country.confidence}};
     return out;
   }
 
   function build(question,request={},preResolved=null){
     const rt=global.OmegaProductionSemanticRuntime;
     const ctx=context(request);
+    installQuestionAwareCountryResolver();
     if(!rt||typeof rt.buildAnswerPlan!=='function')return{ok:false,reason:'CANONICAL_SEMANTIC_RUNTIME_UNAVAILABLE',context:ctx};
     try{
       const minister=ministerSnapshot(ctx);
@@ -149,9 +162,11 @@
   }
 
   async function buildAsync(question,request={}){
+    installQuestionAwareCountryResolver();
     const country=await discoverCountry(question);
     const plan=build(question,request,country);
     if(plan?.ok===false&&country?.id)return groundedCountryPlan(question,{semantic:{operation:'IDENTIFY',targetDomain:'COUNTRY',entities:{},unresolved:[]}},country);
+    if(country?.id&&plan&&!plan.countryId)return groundedCountryPlan(question,plan,country);
     return plan;
   }
 
@@ -180,9 +195,10 @@
     return true;
   }
 
+  installQuestionAwareCountryResolver();
   global.OmegaCanonicalAIContextBridge=Object.freeze({VERSION,context,discoverCountry,build,buildAsync,installFetch});
   if(typeof document!=='undefined'){
-    const boot=()=>{installFetch();global.dispatchEvent?.(new CustomEvent('OMEGA_CANONICAL_AI_CONTEXT_BRIDGE_READY',{detail:{version:VERSION}}));};
+    const boot=()=>{installQuestionAwareCountryResolver();installFetch();global.dispatchEvent?.(new CustomEvent('OMEGA_CANONICAL_AI_CONTEXT_BRIDGE_READY',{detail:{version:VERSION}}));};
     if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
   }
 })(typeof globalThis!=='undefined'?globalThis:window);
