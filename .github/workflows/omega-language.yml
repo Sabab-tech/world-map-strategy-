@@ -81,7 +81,7 @@ jobs:
           node-version: 24
       - name: Install runtime dependencies
         run: npm install --ignore-scripts --no-audit
-      - name: Synchronize data-backed language entities
+      - name: Synchronize and repair data-backed language entities
         if: github.event_name != 'pull_request'
         shell: bash
         run: |
@@ -89,7 +89,26 @@ jobs:
           node --input-type=module <<'NODE'
           import fs from 'node:fs';
           const file='offline_language_vocabulary.json';
-          const vocab=JSON.parse(fs.readFileSync(file,'utf8'));
+          let text=fs.readFileSync(file,'utf8').replace(/^\uFEFF/,'').trim();
+          function parseRepair(source){
+            let s=source;
+            for(let attempt=0;attempt<8;attempt++){
+              try{return JSON.parse(s)}catch(e){
+                const m=String(e.message||'').match(/position (\d+)/i); if(!m)throw e;
+                const p=Number(m[1]); const msg=String(e.message||'');
+                if(/Expected ',' or '}' after property value/i.test(msg)){
+                  const left=s.slice(0,p).replace(/\s+$/,''); const right=s.slice(p);
+                  if(!left.endsWith(','))s=left+','+right; else throw e;
+                }else if(/Unexpected string/i.test(msg)){
+                  const left=s.slice(0,p).replace(/\s+$/,''); const right=s.slice(p); if(!left.endsWith(','))s=left+','+right; else throw e;
+                }else if(/Unexpected token '}'/i.test(msg)&&s[p-1]!==','){
+                  s=s.slice(0,p-1)+','+s.slice(p-1);
+                }else throw e;
+              }
+            }
+            throw new Error('Unable to repair offline_language_vocabulary.json');
+          }
+          const vocab=parseRepair(text);
           const countries=JSON.parse(fs.readFileSync('countries.json','utf8'));
           const ontology=JSON.parse(fs.readFileSync('resource_ontology.json','utf8'));
           const countryRows=Array.isArray(countries)?countries:(countries?.countries||countries?.data||[]);
@@ -114,7 +133,7 @@ jobs:
             git config user.name 'github-actions[bot]'
             git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
             git add offline_language_vocabulary.json
-            git commit -m 'chore: sync data-backed language entities [skip ci]'
+            git commit -m 'fix: repair and sync data-backed language vocabulary [skip ci]'
             git push
           fi
       - name: Repair known minister router syntax defect
@@ -126,8 +145,9 @@ jobs:
           import fs from 'node:fs';
           const file='minister_query_router.js';
           let s=fs.readFileSync(file,'utf8');
-          const bad="subject:/\\\\b(i|me|my|our|we)\\\\b|\\\\b(আমার|আমরা|আমি)/i.test(n)?'PLAYER'}}";
-          const good="subject:/\\\\b(i|me|my|our|we)\\\\b|\\\\b(আমার|আমরা|আমি)/i.test(n)?'PLAYER':null}}";
+          const marker="subject:/\\\\b(i|me|my|our|we)\\\\b|\\\\b(আমার|আমরা|আমি)/i.test(n)?'PLAYER'";
+          const bad=marker+'}}';
+          const good=marker+':null}}';
           if(s.includes(bad)){s=s.replace(bad,good);fs.writeFileSync(file,s);}
           NODE
           if ! git diff --quiet -- minister_query_router.js; then
