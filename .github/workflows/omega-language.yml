@@ -82,6 +82,7 @@ jobs:
       - name: Install runtime dependencies
         run: npm install --ignore-scripts --no-audit
       - name: Synchronize data-backed language entities
+        if: github.event_name != 'pull_request'
         shell: bash
         run: |
           set -euo pipefail
@@ -123,18 +124,9 @@ jobs:
         run: |
           set -euo pipefail
           targets=(omega_language_system.js omega_language_batch03_semantic_extension.js omega_country_semantic_bridge.js omega_resource_semantic_bridge.js omega_ai_integrity_canonical_bridge.js omega_ai_context_bridge.js omega_server_ai_gateway.js minister_query_router.js server_bootstrap.js server.js scripts/test_canonical_ai_chain.cjs scripts/test_semantic_runtime_v4.cjs scripts/validate_game_language_ontology.cjs scripts/test_omega_language_hybrid.cjs scripts/test_omega_language_batch03.cjs)
-          if grep -nE '(^|[^[:alnum:]_])(eval[[:space:]]*\(|new[[:space:]]+Function[[:space:]]*\()' "${targets[@]}"; then
-            echo 'SECURITY GATE FAILED: dynamic code execution primitive detected.' >&2
-            exit 1
-          fi
-          if grep -nE 'document\.write[[:space:]]*\(|innerHTML[[:space:]]*=' "${targets[@]}"; then
-            echo 'SECURITY GATE FAILED: unsafe DOM sink detected in canonical AI subsystem.' >&2
-            exit 1
-          fi
-          if grep -nE '(api[_-]?key|secret|token)[[:space:]]*[:=][[:space:]]*"[A-Za-z0-9_\-]{20,}"' "${targets[@]}" || grep -nE "(api[_-]?key|secret|token)[[:space:]]*[:=][[:space:]]*'[A-Za-z0-9_\-]{20,}'" "${targets[@]}"; then
-            echo 'SECURITY GATE FAILED: hard-coded credential-like literal detected.' >&2
-            exit 1
-          fi
+          if grep -nE '(^|[^[:alnum:]_])(eval[[:space:]]*\(|new[[:space:]]+Function[[:space:]]*\()' "${targets[@]}"; then echo 'SECURITY GATE FAILED: dynamic code execution primitive detected.' >&2; exit 1; fi
+          if grep -nE 'document\.write[[:space:]]*\(|innerHTML[[:space:]]*=' "${targets[@]}"; then echo 'SECURITY GATE FAILED: unsafe DOM sink detected in canonical AI subsystem.' >&2; exit 1; fi
+          if grep -nE '(api[_-]?key|secret|token)[[:space:]]*[:=][[:space:]]*"[A-Za-z0-9_\-]{20,}"' "${targets[@]}" || grep -nE "(api[_-]?key|secret|token)[[:space:]]*[:=][[:space:]]*'[A-Za-z0-9_\-]{20,}'" "${targets[@]}"; then echo 'SECURITY GATE FAILED: hard-coded credential-like literal detected.' >&2; exit 1; fi
       - name: Canonical ontology validation
         run: node scripts/validate_game_language_ontology.cjs
       - name: Canonical AI chain structural gate
