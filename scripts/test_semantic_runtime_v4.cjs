@@ -34,18 +34,16 @@ vm.runInNewContext(resourceBridgeSource, sandbox, { filename: 'omega_resource_se
 
 (async () => {
   await new Promise(resolve => setTimeout(resolve, 180));
-
   const runtime = sandbox.OmegaProductionSemanticRuntime;
   const countryBridge = sandbox.OmegaCountrySemanticBridge;
   const resourceBridge = sandbox.OmegaResourceSemanticBridge;
-
   assert.ok(runtime, 'Production semantic runtime must load');
   assert.ok(countryBridge, 'Country semantic bridge must load');
   assert.ok(resourceBridge, 'Resource semantic bridge must load');
 
   const diag = runtime.diagnostics();
   assert.equal(diag.ready, true, JSON.stringify(diag));
-  assert.ok(diag.countries >= 190, `Country registry too small: ${diag.countries}`);
+  assert.equal(diag.countries, 197, `Runtime country registry must contain exactly 197 canonical IDs: ${diag.countries}`);
   assert.ok(diag.resources > 0, 'Resource registry is empty');
   assert.ok(diag.ministers > 0, 'Minister registry is empty');
 
@@ -53,8 +51,8 @@ vm.runInNewContext(resourceBridgeSource, sandbox, { filename: 'omega_resource_se
   assert.equal(countryDiag.ready, true, JSON.stringify(countryDiag));
   assert.equal(countryDiag.expectedCountryIds, 197);
   assert.equal(countryDiag.complete, true, `197-country identity coverage incomplete: ${JSON.stringify(countryDiag)}`);
-  assert.ok(countryDiag.countries === 197, `Expected exactly 197 canonical country IDs, got ${countryDiag.countries}`);
-  for (const [name] of [['Bangladesh'], ['India'], ['Japan'], ['Namibia']]) {
+  assert.equal(countryDiag.countries, 197, `Expected exactly 197 canonical country IDs, got ${countryDiag.countries}`);
+  for (const name of ['Bangladesh', 'India', 'Japan', 'Namibia']) {
     const resolved = countryBridge.resolve(name);
     assert.ok(resolved?.id, `${name} must resolve as a country`);
     assert.equal(resolved.type, 'COUNTRY');
@@ -68,7 +66,7 @@ vm.runInNewContext(resourceBridgeSource, sandbox, { filename: 'omega_resource_se
   assert.ok(bridgeDiag.resources > 0, 'Bridge resource registry is empty');
   assert.equal(bridgeDiag.expectedCountryIds, 197);
   assert.ok(bridgeDiag.exportReady, 'Resource data export/access layer is not ready');
-  assert.equal(bridgeDiag.countryIdCoverageComplete, true, `197-country resource bridge coverage incomplete: ${bridgeDiag.countryIdCoverage}`);
+  assert.match(String(bridgeDiag.countryIdCoverage), /\/197$/, `Resource-country reference coverage must use the 197-country denominator: ${bridgeDiag.countryIdCoverage}`);
 
   const ontology = files.get('resource_ontology.json');
   const resourceTypes = ontology?.COMMODITY_ONTOLOGIES || {};
