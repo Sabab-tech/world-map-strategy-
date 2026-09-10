@@ -117,6 +117,26 @@ jobs:
             git commit -m 'chore: sync data-backed language entities [skip ci]'
             git push
           fi
+      - name: Repair known minister router syntax defect
+        if: github.event_name != 'pull_request'
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const file='minister_query_router.js';
+          let s=fs.readFileSync(file,'utf8');
+          const bad="subject:/\\\\b(i|me|my|our|we)\\\\b|\\\\b(আমার|আমরা|আমি)/i.test(n)?'PLAYER'}}";
+          const good="subject:/\\\\b(i|me|my|our|we)\\\\b|\\\\b(আমার|আমরা|আমি)/i.test(n)?'PLAYER':null}}";
+          if(s.includes(bad)){s=s.replace(bad,good);fs.writeFileSync(file,s);}
+          NODE
+          if ! git diff --quiet -- minister_query_router.js; then
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git add minister_query_router.js
+            git commit -m 'fix: repair minister query router ternary syntax [skip ci]'
+            git push
+          fi
       - name: Syntax gate
         run: npm run lint
       - name: Security static gate
