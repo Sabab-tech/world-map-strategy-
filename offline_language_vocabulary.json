@@ -1,1 +1,1437 @@
-{"schema_version":"3.2.0","engine_role":"LANGUAGE_SOURCE_ONLY","reasoning_role":"SEMANTIC_LABELS_ONLY","learning_policy":{"mode":"bounded_adaptive","learns":["user_phrase_to_intent","user_phrase_to_entity"],"never_learns_automatically":["world_state_facts","resource_quantities","country_facts","minister_identity","causal_laws"],"storage":"localStorage","max_learned_entries":512,"confidence_required_for_persistent_mapping":0.95},"languages":{"en":{"question":{"what":["what","what is","what are","what was","what were","what does","what do","what did","what has","what have","what can you tell me about","tell me about","explain what","define"],"who":["who","whom","whose","who is","who are","who was","who were","who does","who can","who should"],"which":["which","which ones","which of","which one","which countries","which country","which resources","which ministers","which option","which options"],"where":["where","where is","where are","where was","where were","where can","where could","where do","where does","where did","located","location","in which place","at what location","from where"],"when":["when","when is","when are","when was","when were","when will","when did","when can","what time","what date","at what time","by when","how soon","how long until"],"why":["why","why is","why are","why was","why were","why does","why do","why did","what causes","what caused","cause","causes","reason","for what reason","what is the reason"],"how":["how","how does","how do","how did","how can","how could","how would","how should","how to","how long","how far","how often","how fast","how much time","how many times","in what way","in what manner","by what method","through what process"],"how_many":["how many","how many are there","how many exist","how many have","how many does","number of","count","total number","total count","how many kinds","how many types","how many countries","how many resources","how many mines","how many facilities"],"how_much":["how much","how much does","how much is","how much are","quantity","amount","volume","value","cost","price","how much is there","how much stock","how much reserve"],"how_old":["how old","what age","what is the age","how many years old","how long has he served"],"should":["should","should we","should i","should the government","what should we do","what should i do","what ought we to do","recommend","recommendation","what do you recommend","what is the best course"],"can":["can","can we","can i","can the country","can this","is it possible","are we able to","feasible","could","could we","could this","is this possible"],"will":["will","will it","will they","will we","will this","what will happen","what happens if","forecast","predict","future","expected to","likely to"],"binary":["is there","are there","is it","are we","is this","are they","does it","does the country","does the government","do we have","do they have","did it","has it","have we","has the country","have the country"]},"operators":{"retrieve":["tell me","tell us","show me","show us","find","locate","search","retrieve","report","give me","give us","get me","look up","look for","identify","where can i find","where is it"],"list":["list","name","names","enumerate","display","list out"],"status":["status","current","currently","available","present","inventory","stock","stockpile","reserve","reserves","standing","level","condition"],"compare":["compare","versus","vs","difference","differentiate","higher","lower","more","less","better","worse","largest","smallest","stronger","weaker"]},"assets":{"MINE":["mine","mines","mining site","mining sites","quarry","quarries","mining operation","mineral mine"],"DEPOSIT":["deposit","deposits","mineral deposit","mineral deposits","ore deposit","ore deposits","mineral reserve","mineral reserves"],"OIL_FIELD":["oil field","oil fields","oilfield","petroleum field","petroleum fields"],"GAS_FIELD":["gas field","gas fields","gasfield","natural gas field","natural gas fields"],"FACILITY":["facility","facilities","plant","plants","refinery","refineries","smelter","smelters","processing plant","industrial facility"]},"attributes":{"name":["name","your name","my name","minister name","what is your name","what's your name"],"age":["age","old","how old","your age","what age","years old"],"background":["background","career background","professional background","career","profession","education","training"],"gender":["gender","sex"],"role":["role","position","post","office","job","responsibility","responsibilities","portfolio"],"ministry":["ministry","department","portfolio","ministry name","department name"],"country":["country","nation","state","sovereign country"],"location":["location","locations","located","place","places","site location","geographic location","position"],"experience":["experience","service experience","career experience","years of service","service history"],"stress":["stress","stress level","pressure","pressure level"],"workload":["workload","work load","work burden","task load"],"skill":["skill","skills","capability","competence","ability","abilities","expertise"]},"pronouns":{"SELF":["you","your","yours","yourself"],"PLAYER":["i","me","my","we","our","ours","us"]}},"bn":{"question":{"what":["কি","কী","কি আছে","কী আছে","কি বলতে","কী বলতে","কি হচ্ছে","কী হচ্ছে","কি হলো","কী হলো","কি করে","কী করে","কি বিষয়ে","কী বিষয়ে"],"who":["কে","কারা","কার","কে আছেন","কে ছিল","কারা আছে","কে করতে পারে","কে করবে","কে করেছেন"],"which":["কোনটি","কোনটা","কোনগুলো","কোনগুলি","কোন","কোন দেশ","কোন দেশগুলো","কোন সম্পদ","কোন মন্ত্রী","কোন অপশন","কোনটি ভালো"],"where":["কোথায়","কোথায়","কোথায় আছে","কোথায় আছে","কোথায় ছিল","কোথায় ছিল","কোথায় পাওয়া যায়","কোথায় পাওয়া যায়","অবস্থান","কোন স্থানে","কোথা থেকে"],"when":["কখন","কখন হবে","কখন ছিল","কখন হবে","কোন সময়","কোন সময়ে","কোন তারিখ","কতক্ষণ পরে","কবে","কত তাড়াতাড়ি","কত তাড়াতাড়ি"],"why":["কেন","কেন হচ্ছে","কেন হলো","কেন হবে","কী কারণে","কি কারণে","কারণ কী","কারণ কি","কী জন্য","কি জন্য","এর কারণ কী","এর কারণ কি"],"how":["কীভাবে","কিভাবে","কী করে","কিভাবে করে","কীভাবে কাজ","কীভাবে কাজ করে","কী উপায়ে","কী উপায়ে","কী পদ্ধতিতে","কোন পদ্ধতিতে","কতক্ষণ","কত দূর","কতবার","কত দ্রুত","কীভাবে সম্ভব"],"how_many":["কতটি","কয়টি","কয়টি","কতগুলো","কতগুলি","কত সংখ্যক","সংখ্যা কত","মোট কত","কতজন","কতগুলো আছে","কত ধরনের","কত প্রকার","কতটি দেশ","কতটি সম্পদ","কতটি খনি","কতটি স্থাপনা"],"how_much":["কত","কত আছে","কতটুকু","পরিমাণ কত","পরিমাণ","কত টাকা","দাম কত","মূল্য কত","খরচ কত","মজুদ কত","রিজার্ভ কত","কত পরিমাণ"],"how_old":["বয়স কত","বয়স কত","কত বছর বয়স","কত বছর বয়স","বয়স কত বছর","কত বছর চাকরি","কত বছর ধরে কাজ করছেন"],"should":["করা উচিত","করা উচিত কি","করা উচিত কিনা","কি করা উচিত","কী করা উচিত","আমাদের কী করা উচিত","আমার কী করা উচিত","সুপারিশ","পরামর্শ","কী পরামর্শ","সবচেয়ে ভালো ব্যবস্থা কী"],"can":["পারবে কি","পারবে","সম্ভব কি","সম্ভব কিনা","করা সম্ভব","পারা যাবে","পারবো কি","আমরা পারি কি","সম্ভব হবে কি","এটা কি সম্ভব"],"will":["হবে কি","হবে","হবে কিনা","ভবিষ্যতে","পূর্বাভাস","অনুমান","কি হবে","কী হবে","সম্ভাবনা কী","সম্ভাবনা কি","কী ঘটবে"],"binary":["আছে কি","আছে কিনা","এটা কি","এটি কি","এটা কি সত্য","এটি কি সত্য","আমরা কি","আমাদের কি","দেশে কি","দেশটির কি","করেছে কি","হয়েছে কি","হয়েছে কি","আছে কি না"]},"operators":{"retrieve":["আমাকে বল","আমাকে বলো","বলো","বলুন","দেখাও","দেখিয়ে দাও","দেখিয়ে দাও","খুঁজে বের কর","খুঁজে দাও","খোঁজ কর","সন্ধান কর","খুঁজুন","বের কর","জানাও","জানিয়ে দাও","জানিয়ে দাও","উদ্ধার কর","রিপোর্ট কর","দাও"],"list":["তালিকা","নাম","নামগুলো","নামগুলি","তালিকা দাও","তালিকা কর","চিহ্নিত কর","গণনা কর"],"status":["অবস্থা","বর্তমান","এখন","বর্তমানে","মজুদ","মজুত","রিজার্ভ","মজুদ কত","উপস্থিত","স্তর","পরিস্থিতি"],"compare":["তুলনা","বনাম","পার্থক্য","বেশি","কম","উচ্চ","নিম্ন","ভালো","খারাপ","শক্তিশালী","দুর্বল"]},"assets":{"MINE":["খনি","খনিগুলো","খনিগুলি","খনির সাইট","খনন সাইট","খনি এলাকা","খনি প্রকল্প"],"DEPOSIT":["ডিপোজিট","খনিজ মজুদ","খনিজ ভান্ডার","খনিজ ভাণ্ডার","আকরিক মজুদ","খনিজ রিজার্ভ","আকরিক ভান্ডার"],"OIL_FIELD":["তেলক্ষেত্র","তেল ক্ষেত্র","পেট্রোলিয়াম ক্ষেত্র","পেট্রোলিয়াম ক্ষেত্র"],"GAS_FIELD":["গ্যাসক্ষেত্র","গ্যাস ক্ষেত্র","প্রাকৃতিক গ্যাসক্ষেত্র","প্রাকৃতিক গ্যাস ক্ষেত্র"],"FACILITY":["স্থাপনা","কারখানা","রিফাইনারি","স্মেল্টার","শোধনাগার","প্রক্রিয়াজাতকরণ কারখানা","শিল্প স্থাপনা"]},"attributes":{"name":["নাম","তোমার নাম","আপনার নাম","মন্ত্রীর নাম","নাম কী","নাম কি","আপনার নাম কী"],"age":["বয়স","বয়স","বয়স কত","বয়স কত","কত বছর বয়স","কত বছর বয়স"],"background":["ব্যাকগ্রাউন্ড","পেশাগত পরিচয়","পেশাগত পরিচয়","ক্যারিয়ার","ক্যারিয়ার","পেশা","শিক্ষা","প্রশিক্ষণ"],"gender":["লিঙ্গ"],"role":["পদ","দায়িত্ব","দায়িত্ব","পদবি","কাজ","ভূমিকা","পোর্টফোলিও"],"ministry":["মন্ত্রণালয়","মন্ত্রণালয়","বিভাগ","দপ্তর","মন্ত্রণালয়ের নাম","মন্ত্রণালয়ের নাম"],"country":["দেশ","রাষ্ট্র","জাতি","সার্বভৌম দেশ"],"location":["অবস্থান","কোথায়","কোথায়","কোথায় আছে","কোথায় আছে","স্থান","কোন স্থানে","ভৌগোলিক অবস্থান"],"experience":["অভিজ্ঞতা","সার্ভিস অভিজ্ঞতা","কর্মজীবনের অভিজ্ঞতা","কত বছর চাকরি","সেবার ইতিহাস"],"stress":["স্ট্রেস","চাপ","মানসিক চাপ","চাপের মাত্রা"],"workload":["ওয়ার্কলোড","ওয়ার্কলোড","কাজের চাপ","কাজের বোঝা","কাজের ভার"],"skill":["দক্ষতা","স্কিল","সক্ষমতা","যোগ্যতা","ক্ষমতা","বিশেষজ্ঞতা"]},"pronouns":{"SELF":["তুমি","তোমার","তোমাকে","আপনি","আপনার","নিজে","নিজের"],"PLAYER":["আমি","আমার","আমরা","আমাদের","আমাকে"]}},"conversation":{"detection":{"standaloneOnly":true,"maxTokens":8,"ignoreWhenQuestionMarkersPresent":true,"priorityByLongestPhrase":true},"intentRules":{"GREETING":{"priority":100,"phrases":{"en":["hi","hello","hey","good morning","good afternoon","good evening","assalamu alaikum"],"bn":["হাই","হ্যালো","আসসালামু আলাইকুম","সুপ্রভাত","শুভ সকাল","শুভ সন্ধ্যা","শুভ অপরাহ্ন"]}},"TALK_REQUEST":{"priority":94,"phrases":{"en":["talk","talk to me","let's talk","lets talk","can we talk","i want to talk","speak with me","chat with me","let's discuss","lets discuss","discuss this","talk about this"],"bn":["কথা বল","আমার সাথে কথা বল","চল কথা বলি","কথা বলি","কথা বলতে চাই","আলোচনা কর","আলোচনা করি","আমার সাথে কথা বলো","আমার সঙ্গে কথা বলো"]}},"GRATITUDE_DECLINED":{"priority":110,"phrases":{"en":["no thanks","no thank you","no thank you, please","thanks but no thanks"],"bn":["না ধন্যবাদ","না, ধন্যবাদ","ধন্যবাদ দরকার নেই","ধন্যবাদ, লাগবে না","না ধন্যবাদ, লাগবে না"]}},"GRATITUDE":{"priority":105,"phrases":{"en":["thank you","thanks","thanks a lot","many thanks","thank you so much","much appreciated","appreciate it"],"bn":["ধন্যবাদ","অনেক ধন্যবাদ","আপনাকে ধন্যবাদ","অসংখ্য ধন্যবাদ","অনেক অনেক ধন্যবাদ","কৃতজ্ঞ","কৃতজ্ঞতা"]}},"WELCOME":{"priority":90,"phrases":{"en":["you're welcome","you are welcome","welcome","no problem","no worries","my pleasure"],"bn":["স্বাগতম","আপনাকে স্বাগতম","কোনো সমস্যা নেই","কোন সমস্যা নেই","সমস্যা নেই","সাদরে স্বাগতম"]}},"FAREWELL":{"priority":80,"phrases":{"en":["bye","goodbye","see you","see you later","good night"],"bn":["বিদায়","বিদায়","আবার দেখা হবে","পরে দেখা হবে","শুভরাত্রি"]}},"WELLBEING":{"priority":95,"phrases":{"en":["how are you","how are you doing","how is everything","are you okay"],"bn":["তুমি কেমন আছ","তুমি কেমন আছেন","কেমন আছো","কেমন আছেন","সব ঠিক আছে কি"]}},"melody":{"GREETING":{"en":["Hello. I am ready to assist."],"bn":["হ্যালো। আমি সহায়তার জন্য প্রস্তুত।"]},"TALK_REQUEST":{"en":["I am listening. Tell me what you want to discuss."],"bn":["আমি শুনছি। কী নিয়ে কথা বলতে চান বলুন।"]}}},"morphology":{"bn_suffixes":["ে","এর","র","কে","তে","টি","টা","গুলো","গুলি","গণ","সমূহ"],"en_suffixes":["s","es","ed","ing"]},"questionDetection":{"explicitMarkers":["?"],"englishStarters":["what","who","whom","whose","which","where","when","why","how","should","can","could","will","would","is there","are there","does","do","did","has","have"],"bengaliStarters":["কি","কী","কে","কারা","কেন","কোথায়","কোথায়","কখন","কোন","কীভাবে","কিভাবে","কত","করা উচিত","সম্ভব কি","হবে কি","আছে কি"],"exclamationMarkers":["!"],"statementGuard":["i think","i believe","i know","we think","আমি মনে করি","আমি জানি","আমরা মনে করি"]},"semantic_policy":{"world_entities_must_be_loaded_from_runtime_datasets":true,"question_meaning_must_be_loaded_from_vocabulary":true,"attributes_must_be_loaded_from_vocabulary":true,"operational_actions_must_be_loaded_from_vocabulary":true,"conversation_actions_must_be_loaded_from_vocabulary":true,"no_country_catalog_in_code":true,"no_resource_catalog_in_code":true,"no_asset_alias_catalog_in_code":true,"no_answer_fact_catalog_in_code":true,"unknown_entity_action":"UNRESOLVED","ambiguous_entity_action":"ASK_OR_REPORT_AMBIGUITY","pronoun_resolution":"AUTHORITATIVE_RUNTIME_CONTEXT_FIRST","binary_question_handling":"SEMANTIC_LABEL_UNTIL_DATA_EXECUTOR_SUPPORTS_BOOLEAN_FACTS","conversation_handling":"DATA_DRIVEN_INTENT_AND_MELODY"}}
+{
+  "schema_version": "3.2.0",
+  "engine_role": "LANGUAGE_SOURCE_ONLY",
+  "reasoning_role": "SEMANTIC_LABELS_ONLY",
+  "learning_policy": {
+    "mode": "bounded_adaptive",
+    "learns": [
+      "user_phrase_to_intent",
+      "user_phrase_to_entity"
+    ],
+    "never_learns_automatically": [
+      "world_state_facts",
+      "resource_quantities",
+      "country_facts",
+      "minister_identity",
+      "causal_laws"
+    ],
+    "storage": "localStorage",
+    "max_learned_entries": 512,
+    "confidence_required_for_persistent_mapping": 0.95
+  },
+  "languages": {
+    "en": {
+      "question": {
+        "what": [
+          "what",
+          "what is",
+          "what are",
+          "what was",
+          "what were",
+          "what does",
+          "what do",
+          "what did",
+          "what has",
+          "what have",
+          "what can you tell me about",
+          "tell me about",
+          "explain what",
+          "define"
+        ],
+        "who": [
+          "who",
+          "whom",
+          "whose",
+          "who is",
+          "who are",
+          "who was",
+          "who were",
+          "who does",
+          "who can",
+          "who should"
+        ],
+        "which": [
+          "which",
+          "which ones",
+          "which of",
+          "which one",
+          "which countries",
+          "which country",
+          "which resources",
+          "which ministers",
+          "which option",
+          "which options"
+        ],
+        "where": [
+          "where",
+          "where is",
+          "where are",
+          "where was",
+          "where were",
+          "where can",
+          "where could",
+          "where do",
+          "where does",
+          "where did",
+          "located",
+          "location",
+          "in which place",
+          "at what location",
+          "from where"
+        ],
+        "when": [
+          "when",
+          "when is",
+          "when are",
+          "when was",
+          "when were",
+          "when will",
+          "when did",
+          "when can",
+          "what time",
+          "what date",
+          "at what time",
+          "by when",
+          "how soon",
+          "how long until"
+        ],
+        "why": [
+          "why",
+          "why is",
+          "why are",
+          "why was",
+          "why were",
+          "why does",
+          "why do",
+          "why did",
+          "what causes",
+          "what caused",
+          "cause",
+          "causes",
+          "reason",
+          "for what reason",
+          "what is the reason"
+        ],
+        "how": [
+          "how",
+          "how does",
+          "how do",
+          "how did",
+          "how can",
+          "how could",
+          "how would",
+          "how should",
+          "how to",
+          "how long",
+          "how far",
+          "how often",
+          "how fast",
+          "how much time",
+          "how many times",
+          "in what way",
+          "in what manner",
+          "by what method",
+          "through what process"
+        ],
+        "how_many": [
+          "how many",
+          "how many are there",
+          "how many exist",
+          "how many have",
+          "how many does",
+          "number of",
+          "count",
+          "total number",
+          "total count",
+          "how many kinds",
+          "how many types",
+          "how many countries",
+          "how many resources",
+          "how many mines",
+          "how many facilities"
+        ],
+        "how_much": [
+          "how much",
+          "how much does",
+          "how much is",
+          "how much are",
+          "quantity",
+          "amount",
+          "volume",
+          "value",
+          "cost",
+          "price",
+          "how much is there",
+          "how much stock",
+          "how much reserve"
+        ],
+        "how_old": [
+          "how old",
+          "what age",
+          "what is the age",
+          "how many years old",
+          "how long has he served"
+        ],
+        "should": [
+          "should",
+          "should we",
+          "should i",
+          "should the government",
+          "what should we do",
+          "what should i do",
+          "what ought we to do",
+          "recommend",
+          "recommendation",
+          "what do you recommend",
+          "what is the best course"
+        ],
+        "can": [
+          "can",
+          "can we",
+          "can i",
+          "can the country",
+          "can this",
+          "is it possible",
+          "are we able to",
+          "feasible",
+          "could",
+          "could we",
+          "could this",
+          "is this possible"
+        ],
+        "will": [
+          "will",
+          "will it",
+          "will they",
+          "will we",
+          "will this",
+          "what will happen",
+          "what happens if",
+          "forecast",
+          "predict",
+          "future",
+          "expected to",
+          "likely to"
+        ],
+        "binary": [
+          "is there",
+          "are there",
+          "is it",
+          "are we",
+          "is this",
+          "are they",
+          "does it",
+          "does the country",
+          "does the government",
+          "do we have",
+          "do they have",
+          "did it",
+          "has it",
+          "have we",
+          "has the country",
+          "have the country"
+        ]
+      },
+      "operators": {
+        "retrieve": [
+          "tell me",
+          "tell us",
+          "show me",
+          "show us",
+          "find",
+          "locate",
+          "search",
+          "retrieve",
+          "report",
+          "give me",
+          "give us",
+          "get me",
+          "look up",
+          "look for",
+          "identify",
+          "where can i find",
+          "where is it"
+        ],
+        "list": [
+          "list",
+          "name",
+          "names",
+          "enumerate",
+          "display",
+          "list out"
+        ],
+        "status": [
+          "status",
+          "current",
+          "currently",
+          "available",
+          "present",
+          "inventory",
+          "stock",
+          "stockpile",
+          "reserve",
+          "reserves",
+          "standing",
+          "level",
+          "condition"
+        ],
+        "compare": [
+          "compare",
+          "versus",
+          "vs",
+          "difference",
+          "differentiate",
+          "higher",
+          "lower",
+          "more",
+          "less",
+          "better",
+          "worse",
+          "largest",
+          "smallest",
+          "stronger",
+          "weaker"
+        ]
+      },
+      "assets": {
+        "MINE": [
+          "mine",
+          "mines",
+          "mining site",
+          "mining sites",
+          "quarry",
+          "quarries",
+          "mining operation",
+          "mineral mine"
+        ],
+        "DEPOSIT": [
+          "deposit",
+          "deposits",
+          "mineral deposit",
+          "mineral deposits",
+          "ore deposit",
+          "ore deposits",
+          "mineral reserve",
+          "mineral reserves"
+        ],
+        "OIL_FIELD": [
+          "oil field",
+          "oil fields",
+          "oilfield",
+          "petroleum field",
+          "petroleum fields"
+        ],
+        "GAS_FIELD": [
+          "gas field",
+          "gas fields",
+          "gasfield",
+          "natural gas field",
+          "natural gas fields"
+        ],
+        "FACILITY": [
+          "facility",
+          "facilities",
+          "plant",
+          "plants",
+          "refinery",
+          "refineries",
+          "smelter",
+          "smelters",
+          "processing plant",
+          "industrial facility"
+        ]
+      },
+      "attributes": {
+        "name": [
+          "name",
+          "your name",
+          "my name",
+          "minister name",
+          "what is your name",
+          "what's your name"
+        ],
+        "age": [
+          "age",
+          "old",
+          "how old",
+          "your age",
+          "what age",
+          "years old"
+        ],
+        "background": [
+          "background",
+          "career background",
+          "professional background",
+          "career",
+          "profession",
+          "education",
+          "training"
+        ],
+        "gender": [
+          "gender",
+          "sex"
+        ],
+        "role": [
+          "role",
+          "position",
+          "post",
+          "office",
+          "job",
+          "responsibility",
+          "responsibilities",
+          "portfolio"
+        ],
+        "ministry": [
+          "ministry",
+          "department",
+          "portfolio",
+          "ministry name",
+          "department name"
+        ],
+        "country": [
+          "country",
+          "nation",
+          "state",
+          "sovereign country"
+        ],
+        "location": [
+          "location",
+          "locations",
+          "located",
+          "place",
+          "places",
+          "site location",
+          "geographic location",
+          "position"
+        ],
+        "experience": [
+          "experience",
+          "service experience",
+          "career experience",
+          "years of service",
+          "service history"
+        ],
+        "stress": [
+          "stress",
+          "stress level",
+          "pressure",
+          "pressure level"
+        ],
+        "workload": [
+          "workload",
+          "work load",
+          "work burden",
+          "task load"
+        ],
+        "skill": [
+          "skill",
+          "skills",
+          "capability",
+          "competence",
+          "ability",
+          "abilities",
+          "expertise"
+        ]
+      },
+      "pronouns": {
+        "SELF": [
+          "you",
+          "your",
+          "yours",
+          "yourself"
+        ],
+        "PLAYER": [
+          "i",
+          "me",
+          "my",
+          "we",
+          "our",
+          "ours",
+          "us"
+        ]
+      }
+    },
+    "bn": {
+      "question": {
+        "what": [
+          "কি",
+          "কী",
+          "কি আছে",
+          "কী আছে",
+          "কি বলতে",
+          "কী বলতে",
+          "কি হচ্ছে",
+          "কী হচ্ছে",
+          "কি হলো",
+          "কী হলো",
+          "কি করে",
+          "কী করে",
+          "কি বিষয়ে",
+          "কী বিষয়ে"
+        ],
+        "who": [
+          "কে",
+          "কারা",
+          "কার",
+          "কে আছেন",
+          "কে ছিল",
+          "কারা আছে",
+          "কে করতে পারে",
+          "কে করবে",
+          "কে করেছেন"
+        ],
+        "which": [
+          "কোনটি",
+          "কোনটা",
+          "কোনগুলো",
+          "কোনগুলি",
+          "কোন",
+          "কোন দেশ",
+          "কোন দেশগুলো",
+          "কোন সম্পদ",
+          "কোন মন্ত্রী",
+          "কোন অপশন",
+          "কোনটি ভালো"
+        ],
+        "where": [
+          "কোথায়",
+          "কোথায়",
+          "কোথায় আছে",
+          "কোথায় আছে",
+          "কোথায় ছিল",
+          "কোথায় ছিল",
+          "কোথায় পাওয়া যায়",
+          "কোথায় পাওয়া যায়",
+          "অবস্থান",
+          "কোন স্থানে",
+          "কোথা থেকে"
+        ],
+        "when": [
+          "কখন",
+          "কখন হবে",
+          "কখন ছিল",
+          "কখন হবে",
+          "কোন সময়",
+          "কোন সময়ে",
+          "কোন তারিখ",
+          "কতক্ষণ পরে",
+          "কবে",
+          "কত তাড়াতাড়ি",
+          "কত তাড়াতাড়ি"
+        ],
+        "why": [
+          "কেন",
+          "কেন হচ্ছে",
+          "কেন হলো",
+          "কেন হবে",
+          "কী কারণে",
+          "কি কারণে",
+          "কারণ কী",
+          "কারণ কি",
+          "কী জন্য",
+          "কি জন্য",
+          "এর কারণ কী",
+          "এর কারণ কি"
+        ],
+        "how": [
+          "কীভাবে",
+          "কিভাবে",
+          "কী করে",
+          "কিভাবে করে",
+          "কীভাবে কাজ",
+          "কীভাবে কাজ করে",
+          "কী উপায়ে",
+          "কী উপায়ে",
+          "কী পদ্ধতিতে",
+          "কোন পদ্ধতিতে",
+          "কতক্ষণ",
+          "কত দূর",
+          "কতবার",
+          "কত দ্রুত",
+          "কীভাবে সম্ভব"
+        ],
+        "how_many": [
+          "কতটি",
+          "কয়টি",
+          "কয়টি",
+          "কতগুলো",
+          "কতগুলি",
+          "কত সংখ্যক",
+          "সংখ্যা কত",
+          "মোট কত",
+          "কতজন",
+          "কতগুলো আছে",
+          "কত ধরনের",
+          "কত প্রকার",
+          "কতটি দেশ",
+          "কতটি সম্পদ",
+          "কতটি খনি",
+          "কতটি স্থাপনা"
+        ],
+        "how_much": [
+          "কত",
+          "কত আছে",
+          "কতটুকু",
+          "পরিমাণ কত",
+          "পরিমাণ",
+          "কত টাকা",
+          "দাম কত",
+          "মূল্য কত",
+          "খরচ কত",
+          "মজুদ কত",
+          "রিজার্ভ কত",
+          "কত পরিমাণ"
+        ],
+        "how_old": [
+          "বয়স কত",
+          "বয়স কত",
+          "কত বছর বয়স",
+          "কত বছর বয়স",
+          "বয়স কত বছর",
+          "কত বছর চাকরি",
+          "কত বছর ধরে কাজ করছেন"
+        ],
+        "should": [
+          "করা উচিত",
+          "করা উচিত কি",
+          "করা উচিত কিনা",
+          "কি করা উচিত",
+          "কী করা উচিত",
+          "আমাদের কী করা উচিত",
+          "আমার কী করা উচিত",
+          "সুপারিশ",
+          "পরামর্শ",
+          "কী পরামর্শ",
+          "সবচেয়ে ভালো ব্যবস্থা কী"
+        ],
+        "can": [
+          "পারবে কি",
+          "পারবে",
+          "সম্ভব কি",
+          "সম্ভব কিনা",
+          "করা সম্ভব",
+          "পারা যাবে",
+          "পারবো কি",
+          "আমরা পারি কি",
+          "সম্ভব হবে কি",
+          "এটা কি সম্ভব"
+        ],
+        "will": [
+          "হবে কি",
+          "হবে",
+          "হবে কিনা",
+          "ভবিষ্যতে",
+          "পূর্বাভাস",
+          "অনুমান",
+          "কি হবে",
+          "কী হবে",
+          "সম্ভাবনা কী",
+          "সম্ভাবনা কি",
+          "কী ঘটবে"
+        ],
+        "binary": [
+          "আছে কি",
+          "আছে কিনা",
+          "এটা কি",
+          "এটি কি",
+          "এটা কি সত্য",
+          "এটি কি সত্য",
+          "আমরা কি",
+          "আমাদের কি",
+          "দেশে কি",
+          "দেশটির কি",
+          "করেছে কি",
+          "হয়েছে কি",
+          "হয়েছে কি",
+          "আছে কি না"
+        ]
+      },
+      "operators": {
+        "retrieve": [
+          "আমাকে বল",
+          "আমাকে বলো",
+          "বলো",
+          "বলুন",
+          "দেখাও",
+          "দেখিয়ে দাও",
+          "দেখিয়ে দাও",
+          "খুঁজে বের কর",
+          "খুঁজে দাও",
+          "খোঁজ কর",
+          "সন্ধান কর",
+          "খুঁজুন",
+          "বের কর",
+          "জানাও",
+          "জানিয়ে দাও",
+          "জানিয়ে দাও",
+          "উদ্ধার কর",
+          "রিপোর্ট কর",
+          "দাও"
+        ],
+        "list": [
+          "তালিকা",
+          "নাম",
+          "নামগুলো",
+          "নামগুলি",
+          "তালিকা দাও",
+          "তালিকা কর",
+          "চিহ্নিত কর",
+          "গণনা কর"
+        ],
+        "status": [
+          "অবস্থা",
+          "বর্তমান",
+          "এখন",
+          "বর্তমানে",
+          "মজুদ",
+          "মজুত",
+          "রিজার্ভ",
+          "মজুদ কত",
+          "উপস্থিত",
+          "স্তর",
+          "পরিস্থিতি"
+        ],
+        "compare": [
+          "তুলনা",
+          "বনাম",
+          "পার্থক্য",
+          "বেশি",
+          "কম",
+          "উচ্চ",
+          "নিম্ন",
+          "ভালো",
+          "খারাপ",
+          "শক্তিশালী",
+          "দুর্বল"
+        ]
+      },
+      "assets": {
+        "MINE": [
+          "খনি",
+          "খনিগুলো",
+          "খনিগুলি",
+          "খনির সাইট",
+          "খনন সাইট",
+          "খনি এলাকা",
+          "খনি প্রকল্প"
+        ],
+        "DEPOSIT": [
+          "ডিপোজিট",
+          "খনিজ মজুদ",
+          "খনিজ ভান্ডার",
+          "খনিজ ভাণ্ডার",
+          "আকরিক মজুদ",
+          "খনিজ রিজার্ভ",
+          "আকরিক ভান্ডার"
+        ],
+        "OIL_FIELD": [
+          "তেলক্ষেত্র",
+          "তেল ক্ষেত্র",
+          "পেট্রোলিয়াম ক্ষেত্র",
+          "পেট্রোলিয়াম ক্ষেত্র"
+        ],
+        "GAS_FIELD": [
+          "গ্যাসক্ষেত্র",
+          "গ্যাস ক্ষেত্র",
+          "প্রাকৃতিক গ্যাসক্ষেত্র",
+          "প্রাকৃতিক গ্যাস ক্ষেত্র"
+        ],
+        "FACILITY": [
+          "স্থাপনা",
+          "কারখানা",
+          "রিফাইনারি",
+          "স্মেল্টার",
+          "শোধনাগার",
+          "প্রক্রিয়াজাতকরণ কারখানা",
+          "শিল্প স্থাপনা"
+        ]
+      },
+      "attributes": {
+        "name": [
+          "নাম",
+          "তোমার নাম",
+          "আপনার নাম",
+          "মন্ত্রীর নাম",
+          "নাম কী",
+          "নাম কি",
+          "আপনার নাম কী"
+        ],
+        "age": [
+          "বয়স",
+          "বয়স",
+          "বয়স কত",
+          "বয়স কত",
+          "কত বছর বয়স",
+          "কত বছর বয়স"
+        ],
+        "background": [
+          "ব্যাকগ্রাউন্ড",
+          "পেশাগত পরিচয়",
+          "পেশাগত পরিচয়",
+          "ক্যারিয়ার",
+          "ক্যারিয়ার",
+          "পেশা",
+          "শিক্ষা",
+          "প্রশিক্ষণ"
+        ],
+        "gender": [
+          "লিঙ্গ"
+        ],
+        "role": [
+          "পদ",
+          "দায়িত্ব",
+          "দায়িত্ব",
+          "পদবি",
+          "কাজ",
+          "ভূমিকা",
+          "পোর্টফোলিও"
+        ],
+        "ministry": [
+          "মন্ত্রণালয়",
+          "মন্ত্রণালয়",
+          "বিভাগ",
+          "দপ্তর",
+          "মন্ত্রণালয়ের নাম",
+          "মন্ত্রণালয়ের নাম"
+        ],
+        "country": [
+          "দেশ",
+          "রাষ্ট্র",
+          "জাতি",
+          "সার্বভৌম দেশ"
+        ],
+        "location": [
+          "অবস্থান",
+          "কোথায়",
+          "কোথায়",
+          "কোথায় আছে",
+          "কোথায় আছে",
+          "স্থান",
+          "কোন স্থানে",
+          "ভৌগোলিক অবস্থান"
+        ],
+        "experience": [
+          "অভিজ্ঞতা",
+          "সার্ভিস অভিজ্ঞতা",
+          "কর্মজীবনের অভিজ্ঞতা",
+          "কত বছর চাকরি",
+          "সেবার ইতিহাস"
+        ],
+        "stress": [
+          "স্ট্রেস",
+          "চাপ",
+          "মানসিক চাপ",
+          "চাপের মাত্রা"
+        ],
+        "workload": [
+          "ওয়ার্কলোড",
+          "ওয়ার্কলোড",
+          "কাজের চাপ",
+          "কাজের বোঝা",
+          "কাজের ভার"
+        ],
+        "skill": [
+          "দক্ষতা",
+          "স্কিল",
+          "সক্ষমতা",
+          "যোগ্যতা",
+          "ক্ষমতা",
+          "বিশেষজ্ঞতা"
+        ]
+      },
+      "pronouns": {
+        "SELF": [
+          "তুমি",
+          "তোমার",
+          "তোমাকে",
+          "আপনি",
+          "আপনার",
+          "নিজে",
+          "নিজের"
+        ],
+        "PLAYER": [
+          "আমি",
+          "আমার",
+          "আমরা",
+          "আমাদের",
+          "আমাকে"
+        ]
+      }
+    },
+    "conversation": {
+      "detection": {
+        "standaloneOnly": true,
+        "maxTokens": 8,
+        "ignoreWhenQuestionMarkersPresent": true,
+        "priorityByLongestPhrase": true
+      },
+      "intentRules": {
+        "GREETING": {
+          "priority": 100,
+          "phrases": {
+            "en": [
+              "hi",
+              "hello",
+              "hey",
+              "good morning",
+              "good afternoon",
+              "good evening",
+              "assalamu alaikum"
+            ],
+            "bn": [
+              "হাই",
+              "হ্যালো",
+              "আসসালামু আলাইকুম",
+              "সুপ্রভাত",
+              "শুভ সকাল",
+              "শুভ সন্ধ্যা",
+              "শুভ অপরাহ্ন"
+            ]
+          }
+        },
+        "TALK_REQUEST": {
+          "priority": 94,
+          "phrases": {
+            "en": [
+              "talk",
+              "talk to me",
+              "let's talk",
+              "lets talk",
+              "can we talk",
+              "i want to talk",
+              "speak with me",
+              "chat with me",
+              "let's discuss",
+              "lets discuss",
+              "discuss this",
+              "talk about this"
+            ],
+            "bn": [
+              "কথা বল",
+              "আমার সাথে কথা বল",
+              "চল কথা বলি",
+              "কথা বলি",
+              "কথা বলতে চাই",
+              "আলোচনা কর",
+              "আলোচনা করি",
+              "আমার সাথে কথা বলো",
+              "আমার সঙ্গে কথা বলো"
+            ]
+          }
+        },
+        "GRATITUDE_DECLINED": {
+          "priority": 110,
+          "phrases": {
+            "en": [
+              "no thanks",
+              "no thank you",
+              "no thank you, please",
+              "thanks but no thanks"
+            ],
+            "bn": [
+              "না ধন্যবাদ",
+              "না, ধন্যবাদ",
+              "ধন্যবাদ দরকার নেই",
+              "ধন্যবাদ, লাগবে না",
+              "না ধন্যবাদ, লাগবে না"
+            ]
+          }
+        },
+        "GRATITUDE": {
+          "priority": 105,
+          "phrases": {
+            "en": [
+              "thank you",
+              "thanks",
+              "thanks a lot",
+              "many thanks",
+              "thank you so much",
+              "much appreciated",
+              "appreciate it"
+            ],
+            "bn": [
+              "ধন্যবাদ",
+              "অনেক ধন্যবাদ",
+              "আপনাকে ধন্যবাদ",
+              "অসংখ্য ধন্যবাদ",
+              "অনেক অনেক ধন্যবাদ",
+              "কৃতজ্ঞ",
+              "কৃতজ্ঞতা"
+            ]
+          }
+        },
+        "WELCOME": {
+          "priority": 90,
+          "phrases": {
+            "en": [
+              "you're welcome",
+              "you are welcome",
+              "welcome",
+              "no problem",
+              "no worries",
+              "my pleasure"
+            ],
+            "bn": [
+              "স্বাগতম",
+              "আপনাকে স্বাগতম",
+              "কোনো সমস্যা নেই",
+              "কোন সমস্যা নেই",
+              "সমস্যা নেই",
+              "সাদরে স্বাগতম"
+            ]
+          }
+        },
+        "FAREWELL": {
+          "priority": 80,
+          "phrases": {
+            "en": [
+              "bye",
+              "goodbye",
+              "see you",
+              "see you later",
+              "good night"
+            ],
+            "bn": [
+              "বিদায়",
+              "বিদায়",
+              "আবার দেখা হবে",
+              "পরে দেখা হবে",
+              "শুভরাত্রি"
+            ]
+          }
+        },
+        "WELLBEING": {
+          "priority": 95,
+          "phrases": {
+            "en": [
+              "how are you",
+              "how are you doing",
+              "how is everything",
+              "are you okay"
+            ],
+            "bn": [
+              "তুমি কেমন আছ",
+              "তুমি কেমন আছেন",
+              "কেমন আছো",
+              "কেমন আছেন",
+              "সব ঠিক আছে কি"
+            ]
+          }
+        },
+        "melody": {
+          "GREETING": {
+            "en": [
+              "Hello. I am ready to assist."
+            ],
+            "bn": [
+              "হ্যালো। আমি সহায়তার জন্য প্রস্তুত।"
+            ]
+          },
+          "TALK_REQUEST": {
+            "en": [
+              "I am listening. Tell me what you want to discuss."
+            ],
+            "bn": [
+              "আমি শুনছি। কী নিয়ে কথা বলতে চান বলুন।"
+            ]
+          }
+        }
+      },
+      "morphology": {
+        "bn_suffixes": [
+          "ে",
+          "এর",
+          "র",
+          "কে",
+          "তে",
+          "টি",
+          "টা",
+          "গুলো",
+          "গুলি",
+          "গণ",
+          "সমূহ"
+        ],
+        "en_suffixes": [
+          "s",
+          "es",
+          "ed",
+          "ing"
+        ]
+      },
+      "questionDetection": {
+        "explicitMarkers": [
+          "?"
+        ],
+        "englishStarters": [
+          "what",
+          "who",
+          "whom",
+          "whose",
+          "which",
+          "where",
+          "when",
+          "why",
+          "how",
+          "should",
+          "can",
+          "could",
+          "will",
+          "would",
+          "is there",
+          "are there",
+          "does",
+          "do",
+          "did",
+          "has",
+          "have"
+        ],
+        "bengaliStarters": [
+          "কি",
+          "কী",
+          "কে",
+          "কারা",
+          "কেন",
+          "কোথায়",
+          "কোথায়",
+          "কখন",
+          "কোন",
+          "কীভাবে",
+          "কিভাবে",
+          "কত",
+          "করা উচিত",
+          "সম্ভব কি",
+          "হবে কি",
+          "আছে কি"
+        ],
+        "exclamationMarkers": [
+          "!"
+        ],
+        "statementGuard": [
+          "i think",
+          "i believe",
+          "i know",
+          "we think",
+          "আমি মনে করি",
+          "আমি জানি",
+          "আমরা মনে করি"
+        ]
+      },
+      "semantic_policy": {
+        "world_entities_must_be_loaded_from_runtime_datasets": true,
+        "question_meaning_must_be_loaded_from_vocabulary": true,
+        "attributes_must_be_loaded_from_vocabulary": true,
+        "operational_actions_must_be_loaded_from_vocabulary": true,
+        "conversation_actions_must_be_loaded_from_vocabulary": true,
+        "no_country_catalog_in_code": true,
+        "no_resource_catalog_in_code": true,
+        "no_asset_alias_catalog_in_code": true,
+        "no_answer_fact_catalog_in_code": true,
+        "unknown_entity_action": "UNRESOLVED",
+        "ambiguous_entity_action": "ASK_OR_REPORT_AMBIGUITY",
+        "pronoun_resolution": "AUTHORITATIVE_RUNTIME_CONTEXT_FIRST",
+        "binary_question_handling": "SEMANTIC_LABEL_UNTIL_DATA_EXECUTOR_SUPPORTS_BOOLEAN_FACTS",
+        "conversation_handling": "DATA_DRIVEN_INTENT_AND_MELODY"
+      }
+    }
+  },
+  "data_backed_entities": {
+    "country": {
+      "type": "COUNTRY",
+      "source": "countries.json + relation_generation_engine.json",
+      "ids": [
+        "AF",
+        "AL",
+        "DZ",
+        "AD",
+        "AO",
+        "AR",
+        "AM",
+        "AU",
+        "AT",
+        "AZ",
+        "BD",
+        "BE",
+        "BR",
+        "CA",
+        "CN",
+        "IN",
+        "ID",
+        "IR",
+        "IQ",
+        "JP",
+        "DE",
+        "FR",
+        "GB",
+        "US",
+        "PK",
+        "RU",
+        "SA",
+        "ZA",
+        "KR",
+        "ES",
+        "IT",
+        "TR",
+        "VN",
+        "SE",
+        "CH",
+        "NL",
+        "NO",
+        "FI",
+        "PL",
+        "UA",
+        "RO",
+        "GR",
+        "PT",
+        "EG",
+        "NG",
+        "KE",
+        "ET",
+        "TH",
+        "MY",
+        "SG",
+        "PH",
+        "MM",
+        "NP",
+        "LK",
+        "MX",
+        "CL",
+        "CO",
+        "PE",
+        "VE",
+        "UY",
+        "CU",
+        "HT",
+        "DO",
+        "NZ",
+        "PG",
+        "FJ",
+        "KZ",
+        "UZ",
+        "TM",
+        "KG",
+        "TJ",
+        "SY",
+        "JO",
+        "LB",
+        "IL",
+        "PS",
+        "BH",
+        "MV",
+        "QA",
+        "AE",
+        "KW",
+        "OM",
+        "YE",
+        "MA",
+        "TN",
+        "LY",
+        "SD",
+        "SS",
+        "UG",
+        "TZ",
+        "RW",
+        "BI",
+        "GH",
+        "CI",
+        "SN",
+        "ML",
+        "NE",
+        "BF",
+        "CM",
+        "GA",
+        "CG",
+        "CD",
+        "MG",
+        "MZ",
+        "ZW",
+        "ZM",
+        "IS",
+        "MC",
+        "SM",
+        "VA",
+        "AGO",
+        "PRT"
+      ],
+      "names": [
+        "Afghanistan",
+        "Albania",
+        "Algeria",
+        "Andorra",
+        "Angola",
+        "Argentina",
+        "Armenia",
+        "Australia",
+        "Austria",
+        "Azerbaijan",
+        "Bangladesh",
+        "Belgium",
+        "Brazil",
+        "Canada",
+        "China",
+        "India",
+        "Indonesia",
+        "Iran",
+        "Iraq",
+        "Japan",
+        "Germany",
+        "France",
+        "United Kingdom",
+        "United States",
+        "Pakistan",
+        "Russia",
+        "Saudi Arabia",
+        "South Africa",
+        "South Korea",
+        "Spain",
+        "Italy",
+        "Turkey",
+        "Vietnam",
+        "Sweden",
+        "Switzerland",
+        "Netherlands",
+        "Norway",
+        "Finland",
+        "Poland",
+        "Ukraine",
+        "Romania",
+        "Greece",
+        "Portugal",
+        "Egypt",
+        "Nigeria",
+        "Kenya",
+        "Ethiopia",
+        "Thailand",
+        "Malaysia",
+        "Singapore",
+        "Philippines",
+        "Myanmar",
+        "Nepal",
+        "Sri Lanka",
+        "Mexico",
+        "Chile",
+        "Colombia",
+        "Peru",
+        "Venezuela",
+        "Uruguay",
+        "Cuba",
+        "Haiti",
+        "Dominican Republic",
+        "New Zealand",
+        "Papua New Guinea",
+        "Fiji",
+        "Kazakhstan",
+        "Uzbekistan",
+        "Turkmenistan",
+        "Kyrgyzstan",
+        "Tajikistan",
+        "Syria",
+        "Jordan",
+        "Lebanon",
+        "Israel",
+        "Palestine",
+        "Bahrain",
+        "Maldives",
+        "Qatar",
+        "United Arab Emirates",
+        "Kuwait",
+        "Oman",
+        "Yemen",
+        "Morocco",
+        "Tunisia",
+        "Libya",
+        "Sudan",
+        "South Sudan",
+        "Uganda",
+        "Tanzania",
+        "Rwanda",
+        "Burundi",
+        "Ghana",
+        "Ivory Coast",
+        "Senegal",
+        "Mali",
+        "Niger",
+        "Burkina Faso",
+        "Cameroon",
+        "Gabon",
+        "Congo Republic",
+        "DR Congo",
+        "Madagascar",
+        "Mozambique",
+        "Zimbabwe",
+        "Zambia",
+        "Iceland",
+        "Monaco",
+        "San Marino",
+        "Vatican City"
+      ]
+    },
+    "resource": {
+      "type": "RESOURCE",
+      "source": "resource_ontology.json",
+      "ids": [
+        "BAUXITE_ALUMINUM",
+        "COPPER",
+        "CRUDE_OIL",
+        "LITHIUM",
+        "NATURAL_GAS",
+        "POTASH_PHOSPHATE",
+        "RARE_EARTHS",
+        "URANIUM"
+      ],
+      "names": [
+        "Crude Petroleum & Hydrocarbons",
+        "CRUDE_OIL",
+        "Natural Gas & Methane",
+        "NATURAL_GAS",
+        "Refined Copper & Concentrates",
+        "COPPER",
+        "Lithium Carbonate & Hydroxide",
+        "LITHIUM",
+        "Heavy & Light Rare Earth Elements (Nd, Pr, Dy, Tb)",
+        "RARE_EARTHS",
+        "Muriate of Potash (KCl) & Phosphate Rock (P2O5)",
+        "POTASH_PHOSPHATE",
+        "Natural Uranium (U3O8 Yellowcake)",
+        "URANIUM",
+        "Bauxite Ore & Primary Smelted Aluminum",
+        "BAUXITE_ALUMINUM"
+      ]
+    }
+  },
+  "semantic_operations": {
+    "TRADE": {
+      "import": [
+        "import",
+        "imports",
+        "imported",
+        "importing",
+        "importation",
+        "আমদানি",
+        "আমদানি করা",
+        "আমদানি করে",
+        "আমদানিকৃত"
+      ],
+      "export": [
+        "export",
+        "exports",
+        "exported",
+        "exporting",
+        "exportation",
+        "রপ্তানি",
+        "রপ্তানি করা",
+        "রপ্তানি করে",
+        "রপ্তানিকৃত"
+      ],
+      "trade": [
+        "trade",
+        "trading",
+        "traded",
+        "বাণিজ্য",
+        "ব্যবসা-বাণিজ্য",
+        "বাণিজ্য করা"
+      ],
+      "import_meaning": "bring goods or resources into a country or market from another country",
+      "export_meaning": "send goods or resources from a country or market to another country"
+    }
+  }
+}
