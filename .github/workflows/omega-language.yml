@@ -93,25 +93,27 @@ jobs:
           const vocab=parseRepair(text);const countries=JSON.parse(fs.readFileSync('countries.json','utf8'));const ontology=JSON.parse(fs.readFileSync('resource_ontology.json','utf8'));const rows=Array.isArray(countries)?countries:(countries?.countries||countries?.data||[]);const resources=ontology?.COMMODITY_ONTOLOGIES||{};vocab.data_backed_entities ||= {};vocab.data_backed_entities.country ||= {type:'COUNTRY',source:'countries.json + relation_generation_engine.json',ids:[]};vocab.data_backed_entities.resource ||= {type:'RESOURCE',source:'resource_ontology.json',ids:[]};vocab.data_backed_entities.country.ids=[...new Set(rows.map(x=>String(x?.code||x?.id||'').toUpperCase()).filter(Boolean))];vocab.data_backed_entities.country.names=[...new Set(rows.map(x=>String(x?.name||'').trim()).filter(Boolean))];vocab.data_backed_entities.resource.ids=Object.keys(resources).map(String).sort();vocab.data_backed_entities.resource.names=[...new Set(Object.values(resources).flatMap(x=>[x?.name,x?.key]).filter(x=>typeof x==='string'&&x.trim()))];vocab.semantic_operations ||= {};vocab.semantic_operations.TRADE ||= {};vocab.semantic_operations.TRADE.import ||= ['import','imports','imported','importing','importation','আমদানি','আমদানি করা','আমদানি করে','আমদানিকৃত'];vocab.semantic_operations.TRADE.export ||= ['export','exports','exported','exporting','exportation','রপ্তানি','রপ্তানি করা','রপ্তানি করে','রপ্তানিকৃত'];vocab.semantic_operations.TRADE.trade ||= ['trade','trading','traded','বাণিজ্য','ব্যবসা-বাণিজ্য','বাণিজ্য করা'];vocab.semantic_operations.TRADE.import_meaning ||= 'bring goods or resources into a country or market from another country';vocab.semantic_operations.TRADE.export_meaning ||= 'send goods or resources from a country or market to another country';fs.writeFileSync(file,JSON.stringify(vocab,null,2)+'\n');
           NODE
           if ! git diff --quiet -- offline_language_vocabulary.json; then git config user.name 'github-actions[bot]';git config user.email '41898282+github-actions[bot]@users.noreply.github.com';git add offline_language_vocabulary.json;git commit -m 'fix: repair and sync data-backed language vocabulary [skip ci]';git push;fi
-      - name: Repair known semantic runtime syntax defects
+      - name: Repair known semantic runtime syntax and country-source defects
         if: github.event_name != 'pull_request'
         shell: bash
         run: |
           set -euo pipefail
           python3 - <<'PY'
           from pathlib import Path
-          p=Path('minister_query_router.js')
-          lines=p.read_text(encoding='utf-8').splitlines()
+          p=Path('minister_query_router.js');lines=p.read_text(encoding='utf-8').splitlines()
           fixed="function classify(q){const w=new Set(words(q));const has=a=>a.some(x=>w.has(x));const trade=['import','imports','importing','export','exports','exporting','supplier','suppliers','buy','buying','purchase','sell','selling','trade','trading','shipment','shipping','freight','tariff','tariffs'];const sec=['secure','security','safe','safety','stockpile','stockpiles','reserve','reserves','shortage','depletion','runway','buffer','vulnerable','risk'];const cmp=['compare','versus','vs','higher','lower','more','less','best','better','largest','smallest','stronger','weaker'];const loc=['where','location','located','based','situated'];const cnt=['how','many','number','count','total','quantity','amount'];let operation='LOOKUP';if(has(sec))operation='SECURITY';else if(has(trade))operation=has(['import','imports','buy','purchase','supplier','suppliers'])?'IMPORT':'EXPORT';else if(has(cmp))operation='COMPARE';else if(has(loc))operation='LOCATION';else if(has(cnt))operation='COUNT';const n=norm(q);const speech=/^(hi|hello|hey)/i.test(n)?'CONVERSATION':(BN.test(q)?((/[?]/.test(q)||/(^|\\s)(কি|কী|কে|কারা|কেন|কোথায়|কোথায়|কখন|কোন|কীভাবে|কিভাবে|কত)(\\s|$)/.test(n))?'QUESTION':'STATEMENT'):((/[?]/.test(q)||/\\b(who|what|which|where|when|why|how|should|can|could|will|would|does|do|did|has|have|is there|are there)\\b/i.test(n))?'QUESTION':'STATEMENT'));return{operation,speech,subject:/\\b(i|me|my|our|we)\\b|\\b(আমার|আমরা|আমি)/i.test(n)?'PLAYER':null}}"
           for i,line in enumerate(lines):
               if line.startswith('function classify(q){'): lines[i]=fixed
           p.write_text('\n'.join(lines)+'\n',encoding='utf-8')
-          p=Path('omega_production_semantic_runtime_v3.js')
-          s=p.read_text(encoding='utf-8')
+          p=Path('omega_production_semantic_runtime_v3.js');s=p.read_text(encoding='utf-8')
+          s=s.replace("const paths=['offline_language_vocabulary.json','offline_semantic_knowledge.json','countries.json','ministers.json','resource_ontology.json','resources.json','resources_2.json'];","const paths=['offline_language_vocabulary.json','offline_semantic_knowledge.json','countries.json','ministers.json','resource_ontology.json','resources.json','resources_2.json','relation_generation_engine.json'];")
+          s=s.replace("const[v,k,c,m,o,r,r2]=await Promise.all(paths.map(load));","const[v,k,c,m,o,r,r2,rel]=await Promise.all(paths.map(load));")
+          s=s.replace("ingestCountries(c);ingestMinisters(m);","ingestCountries(c);ingestCountries(rel);ingestMinisters(m);")
+          s=s.replace("['resources.json',r],['resources_2.json',r2]])registerDataset", "['resources.json',r],['resources_2.json',r2],['relation_generation_engine.json',rel]])registerDataset")
           s=s.replace('semantic:p,executable:p.executable}});init();','semantic:p,executable:p.executable}}});init();')
           p.write_text(s,encoding='utf-8')
           PY
-          if ! git diff --quiet -- minister_query_router.js omega_production_semantic_runtime_v3.js; then git config user.name 'github-actions[bot]';git config user.email '41898282+github-actions[bot]@users.noreply.github.com';git add minister_query_router.js omega_production_semantic_runtime_v3.js;git commit -m 'fix: repair semantic runtime syntax defects [skip ci]';git push;fi
+          if ! git diff --quiet -- minister_query_router.js omega_production_semantic_runtime_v3.js; then git config user.name 'github-actions[bot]';git config user.email '41898282+github-actions[bot]@users.noreply.github.com';git add minister_query_router.js omega_production_semantic_runtime_v3.js;git commit -m 'fix: connect full country registry to semantic runtime [skip ci]';git push;fi
       - name: Syntax gate
         run: npm run lint
       - name: Security static gate
