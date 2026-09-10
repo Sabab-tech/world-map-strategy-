@@ -1,10 +1,12 @@
-/* OMEGA SERVER AI GATEWAY v2.0.0
+/* OMEGA SERVER AI GATEWAY v2.0.1
  * Server-side canonical identity/data transport.
  * Country and city identities are resolved only from the canonical runtime registry.
  * Unknown identity is never replaced with a synthetic/default country.
+ * Missing deterministic results are executed through the production runtime before
+ * the request reaches server.js, so semantic identity cannot terminate at result:null.
  */
 import { AsyncLocalStorage } from 'node:async_hooks';
-import express from 'express';
+import 'express';
 import './offline_semantic_brain.js';
 import './offline_query_engine.js';
 import './omega_minister_state_system.js';
@@ -13,10 +15,11 @@ import './omega_resource_semantic_bridge.js';
 import './omega_country_semantic_bridge.js';
 import './omega_reasoning_dispatcher.js';
 
-const VERSION='2.0.0';
+const VERSION='2.0.1';
 const store=new AsyncLocalStorage();
 const brain=globalThis.OfflineSemanticBrain;
 const production=globalThis.OmegaProductionSemanticRuntime;
+const offline=globalThis.OfflineQueryEngine;
 const resourceBridge=globalThis.OmegaResourceSemanticBridge;
 const identityBridge=globalThis.OmegaCanonicalIdentityRegistry||globalThis.OmegaCountrySemanticBridge;
 
@@ -29,6 +32,26 @@ function canonicalQuestion(plan,packet){return String(packet?.question??plan?.qu
 function enrichPlan(question,plan){
  if(!identityBridge?.canonicalizePlan)return plan;
  try{return identityBridge.canonicalizePlan(question,plan)||plan;}catch(e){console.warn('[OMEGA Server Identity] plan enrichment failed:',e?.message||e);return plan;}
+}
+function ensureResult(question,plan,context={}){
+ const enriched=enrichPlan(question,plan)||plan;
+ if(!enriched||typeof enriched!=='object')return enriched;
+ if(enriched.result!==undefined&&enriched.result!==null)return enriched;
+ const semantic=enriched.semantic;
+ if(!semantic||typeof semantic!=='object')return enriched;
+ try{
+   if(production&&typeof production.execute==='function'){
+     const result=production.execute(semantic,{...context});
+     if(result!==undefined&&result!==null)return{...enriched,result};
+   }
+ }catch(e){console.warn('[OMEGA Server Execution] production execute failed:',e?.message||e);}
+ try{
+   if(offline&&typeof offline.execute==='function'){
+     const result=offline.execute(semantic,context?.datasets||[],semantic.language==='bn'?'bn':'en',context);
+     if(result!==undefined&&result!==null)return{...enriched,result};
+   }
+ }catch(e){console.warn('[OMEGA Server Execution] offline execute failed:',e?.message||e);}
+ return enriched;
 }
 function installParserBridge(target,name){
  if(!target||typeof target[name]!=='function'||target[name].__omegaCanonicalGatewayV2)return;
@@ -52,10 +75,10 @@ if(production&&typeof production.buildAnswerPlan==='function'&&!production.build
  const original=production.buildAnswerPlan;
  const wrapped=function(...args){
    const canonical=activePlan();
-   if(canonical)return canonical;
+   if(canonical)return ensureResult(String(args[0]??''),canonical,args[1]||{});
    let base;
    try{base=original.apply(this,args);}catch(e){base={semantic:{surface:String(args[0]??''),operation:'UNKNOWN',targetDomain:'GENERAL',entities:{},unresolved:['SEMANTIC_RUNTIME_ERROR'],executable:false},result:{ok:false,reason:'SEMANTIC_RUNTIME_ERROR',error:e?.message||String(e)}};}
-   return enrichPlan(args[0],base)||base;
+   return ensureResult(String(args[0]??''),base,args[1]||{});
  };
  wrapped.__omegaCanonicalGatewayV2=true;
  try{production.buildAnswerPlan=wrapped;}catch(_){}
@@ -115,7 +138,7 @@ export function withCanonicalAIRequest(req,res,next){
    const packet=body.canonicalContextPacket||null,planQuestion=canonicalQuestion(plan,packet);
    if(planQuestion&&planQuestion!==question)return res.status(400).json({ok:false,error:'Canonical context question does not match request prompt'});
    if(body.canonicalAuthority&&body.canonicalAuthority!=='OMEGA_PRODUCTION_SEMANTIC_RUNTIME')return res.status(400).json({ok:false,error:'Unsupported canonical semantic authority'});
-   const enriched=enrichPlan(question,plan);
+   const enriched=ensureResult(question,plan,body);
    return store.run({canonicalSemanticPlan:enriched,canonicalContextPacket:packet,authority:body.canonicalAuthority||'OMEGA_PRODUCTION_SEMANTIC_RUNTIME'},next);
  }
  return next();
@@ -140,7 +163,8 @@ globalThis.OmegaServerAIGateway=Object.freeze({
    identityDiagnostics:identityBridge?.diagnostics?.()||null,
    asyncContext:'AsyncLocalStorage',routePatch:true,
    canonicalPlanPassthrough:true,canonicalExplainPassthrough:true,
+   deterministicResultExecution:true,
    countryFallbackPolicy:'NO_SYNTHETIC_COUNTRY',cityIdentity:'CANONICAL_CITY_REGISTRY'
  })
 });
-console.log('[OMEGA Server AI Gateway] canonical identity transport v2 ready');
+console.log('[OMEGA Server AI Gateway] canonical identity transport v2.0.1 ready');
