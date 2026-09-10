@@ -108,12 +108,13 @@ jobs:
           p=Path('omega_production_semantic_runtime_v3.js');s=p.read_text(encoding='utf-8')
           s=s.replace("const paths=['offline_language_vocabulary.json','offline_semantic_knowledge.json','countries.json','ministers.json','resource_ontology.json','resources.json','resources_2.json'];","const paths=['offline_language_vocabulary.json','offline_semantic_knowledge.json','countries.json','ministers.json','resource_ontology.json','resources.json','resources_2.json','relation_generation_engine.json'];")
           s=s.replace("const[v,k,c,m,o,r,r2]=await Promise.all(paths.map(load));","const[v,k,c,m,o,r,r2,rel]=await Promise.all(paths.map(load));")
+          s=s.replace("ingestCountries(c);ingestCountries(rel);","ingestCountries(c);ingestCountries(rel?.RELATION_GENERATION_ENGINE?.srie_v2_asymmetrical_salience||rel?.srie_v2_asymmetrical_salience||rel);")
           s=s.replace("ingestCountries(c);ingestMinisters(m);","ingestCountries(c);ingestCountries(rel?.RELATION_GENERATION_ENGINE?.srie_v2_asymmetrical_salience||rel?.srie_v2_asymmetrical_salience||rel);ingestMinisters(m);")
           s=s.replace("['resources.json',r],['resources_2.json',r2]])registerDataset", "['resources.json',r],['resources_2.json',r2],['relation_generation_engine.json',rel]])registerDataset")
           s=s.replace('semantic:p,executable:p.executable}});init();','semantic:p,executable:p.executable}}});init();')
           p.write_text(s,encoding='utf-8')
           PY
-          if ! git diff --quiet -- minister_query_router.js omega_production_semantic_runtime_v3.js; then git config user.name 'github-actions[bot]';git config user.email '41898282+github-actions[bot]@users.noreply.github.com';git add minister_query_router.js omega_production_semantic_runtime_v3.js;git commit -m 'fix: connect canonical 197-country registry to semantic runtime [skip ci]';git push;fi
+          if ! git diff --quiet -- minister_query_router.js omega_production_semantic_runtime_v3.js; then git config user.name 'github-actions[bot]';git config user.email '41898282+github-actions[bot]@users.noreply.github.com';git add minister_query_router.js omega_production_semantic_runtime_v3.js;git commit -m 'fix: canonicalize full 197-country runtime registry [skip ci]';git push;fi
       - name: Syntax gate
         run: npm run lint
       - name: Security static gate
