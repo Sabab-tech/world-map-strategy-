@@ -52,10 +52,17 @@ assert(router.includes("replace(/[?!,.:;\\\"'“”‘’(){}\\[\\]<>—–\\/\\
 const serverSyntax = spawnSync(process.execPath, ['--check', path.join(root, 'server.js')], { encoding: 'utf8' });
 assert(serverSyntax.status === 0, `server.js syntax gate failed: ${serverSyntax.stderr || serverSyntax.stdout}`);
 
+const gatewaySyntax = spawnSync(process.execPath, ['--check', path.join(root, 'omega_server_ai_gateway.js')], { encoding: 'utf8' });
+assert(gatewaySyntax.status === 0, `omega_server_ai_gateway.js syntax gate failed: ${gatewaySyntax.stderr || gatewaySyntax.stdout}`);
+
 assert(gateway.includes('AsyncLocalStorage'), 'server gateway must remain request-scoped');
 assert(gateway.includes('canonicalSemanticPlan'), 'server gateway must preserve canonical semantic plan');
 assert(gateway.includes('canonicalContextPacket'), 'server gateway must preserve canonical context packet');
 assert(gateway.includes("name==='parse'"), 'semantic parser bridge must be request-scoped');
+assert(gateway.includes("import './omega_resource_semantic_bridge.js'"), 'server gateway must load the resource-country bridge');
+assert(gateway.includes('waitForResourceBridge'), 'server gateway must wait for resource bridge readiness');
+assert(gateway.includes('resourceBridgeReady'), 'server gateway diagnostics must expose resource bridge readiness');
+assert(gateway.includes('resourceBridgeDiagnostics'), 'server gateway diagnostics must expose resource bridge diagnostics');
 
 assert(contextBridge.includes('function build(question, request={})'), 'context bridge must accept the exact request body');
 assert(contextBridge.includes('canonicalSemanticPlan:packet.semanticPlan'), 'context bridge must attach canonical semantic plan');
@@ -65,11 +72,24 @@ assert(contextBridge.includes('timeHorizon'), 'context bridge must preserve time
 assert(contextBridge.includes('canonicalAuthority'), 'context bridge must attach canonical authority');
 
 assert(resourceBridge.includes('resource_ontology.json'), 'resource bridge must load canonical ontology');
-assert(resourceBridge.includes('cognitiveOntologyInjected'), 'resource bridge must expose cognitive ontology injection diagnostics');
-assert(resourceBridge.includes('L2_SemanticMemory.clear'), 'resource bridge must purge bootstrap-time cognitive ontology fallback');
-assert(resourceBridge.includes('cognitiveMemorySize===Object.keys(matrix).length'), 'resource bridge must verify cognitive ontology size equality');
-assert(resourceBridge.includes('instance.L2_SemanticMemory.set'), 'resource bridge must bind ontology to the cognitive memory layer');
-assert(!resourceBridge.includes("String(v==null?'':'')"), 'resource normalizer must consume its input');
+assert(resourceBridge.includes('countries.json'), 'resource bridge must load the canonical countries JSON');
+assert(resourceBridge.includes("loadJson('resources.json')"), 'resource bridge must load resources.json');
+assert(resourceBridge.includes("loadJson('resources_2.json',true)"), 'resource bridge must support optional resources_2.json');
+assert(resourceBridge.includes('function ingestCountriesJson'), 'resource bridge must ingest countries.json');
+assert(resourceBridge.includes('function ingestProfiles'), 'resource bridge must ingest GSRSK country profiles');
+assert(resourceBridge.includes('function resolveCountry'), 'resource bridge must expose country ID resolution');
+assert(resourceBridge.includes('function resolveResource'), 'resource bridge must expose resource ID resolution');
+assert(resourceBridge.includes('function queryResource'), 'resource bridge must expose data-driven resource queries');
+assert(resourceBridge.includes('function exportData'), 'resource bridge must expose resource/country data export');
+assert(resourceBridge.includes('expectedCountryIdCount:197'), 'resource bridge must declare the 197-country identity target');
+assert(resourceBridge.includes('countryIdCoverageComplete'), 'resource bridge must report 197-country coverage status');
+assert(resourceBridge.includes('countryId'), 'resource-country relationship must preserve country IDs');
+assert(resourceBridge.includes('resourceId'), 'resource-country relationship must preserve resource IDs');
+assert(resourceBridge.includes('evidencePath'), 'resource query results must preserve data evidence paths');
+assert(resourceBridge.includes('OMEGA_RESOURCE_DATA_EXPORT'), 'resource bridge must expose a named data-export source');
+for (const forbidden of ['bangladesh', 'germany', 'india', 'iron_ore', 'crude_oil']) {
+  assert(!resourceBridge.toLowerCase().includes(forbidden), `resource bridge must not hardcode a specific resource/country fact: ${forbidden}`);
+}
 assert(Object.keys(ontology.COMMODITY_ONTOLOGIES || {}).length > 0, 'canonical resource ontology must contain entries');
 
 assert(integrityBridge.includes("return rt.parse(question,context)"), 'integrity semantic parser must delegate directly to canonical runtime');
@@ -145,3 +165,4 @@ console.log('40-stage cognitive bridge: structurally connected to server/Gemini'
 console.log('Contextual discourse: Batch 03 + universal runtime integration validated');
 console.log('Speaker-aware minister answers: active-minister context + deterministic direct-answer gate validated');
 console.log('Resource quantity: dedicated grounded evidence path + UNKNOWN-on-missing-data policy validated');
+console.log('Resource-country integration: countries.json + resource datasets + canonical bridge contract validated');
