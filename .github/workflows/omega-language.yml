@@ -93,7 +93,7 @@ jobs:
           const vocab=parseRepair(text);const countries=JSON.parse(fs.readFileSync('countries.json','utf8'));const ontology=JSON.parse(fs.readFileSync('resource_ontology.json','utf8'));const rows=Array.isArray(countries)?countries:(countries?.countries||countries?.data||[]);const resources=ontology?.COMMODITY_ONTOLOGIES||{};vocab.data_backed_entities ||= {};vocab.data_backed_entities.country ||= {type:'COUNTRY',source:'countries.json + relation_generation_engine.json',ids:[]};vocab.data_backed_entities.resource ||= {type:'RESOURCE',source:'resource_ontology.json',ids:[]};vocab.data_backed_entities.country.ids=[...new Set(rows.map(x=>String(x?.code||x?.id||'').toUpperCase()).filter(Boolean))];vocab.data_backed_entities.country.names=[...new Set(rows.map(x=>String(x?.name||'').trim()).filter(Boolean))];vocab.data_backed_entities.resource.ids=Object.keys(resources).map(String).sort();vocab.data_backed_entities.resource.names=[...new Set(Object.values(resources).flatMap(x=>[x?.name,x?.key]).filter(x=>typeof x==='string'&&x.trim()))];vocab.semantic_operations ||= {};vocab.semantic_operations.TRADE ||= {};vocab.semantic_operations.TRADE.import ||= ['import','imports','imported','importing','importation','আমদানি','আমদানি করা','আমদানি করে','আমদানিকৃত'];vocab.semantic_operations.TRADE.export ||= ['export','exports','exported','exporting','exportation','রপ্তানি','রপ্তানি করা','রপ্তানি করে','রপ্তানিকৃত'];vocab.semantic_operations.TRADE.trade ||= ['trade','trading','traded','বাণিজ্য','ব্যবসা-বাণিজ্য','বাণিজ্য করা'];vocab.semantic_operations.TRADE.import_meaning ||= 'bring goods or resources into a country or market from another country';vocab.semantic_operations.TRADE.export_meaning ||= 'send goods or resources from a country or market to another country';fs.writeFileSync(file,JSON.stringify(vocab,null,2)+'\n');
           NODE
           if ! git diff --quiet -- offline_language_vocabulary.json; then git config user.name 'github-actions[bot]';git config user.email '41898282+github-actions[bot]@users.noreply.github.com';git add offline_language_vocabulary.json;git commit -m 'fix: repair and sync data-backed language vocabulary [skip ci]';git push;fi
-      - name: Repair known semantic runtime syntax and country-source defects
+      - name: Repair semantic runtime and country identity defects
         if: github.event_name != 'pull_request'
         shell: bash
         run: |
@@ -113,8 +113,12 @@ jobs:
           s=s.replace("['resources.json',r],['resources_2.json',r2]])registerDataset", "['resources.json',r],['resources_2.json',r2],['relation_generation_engine.json',rel]])registerDataset")
           s=s.replace('semantic:p,executable:p.executable}});init();','semantic:p,executable:p.executable}}});init();')
           p.write_text(s,encoding='utf-8')
+          p=Path('omega_country_semantic_bridge.js');s=p.read_text(encoding='utf-8')
+          s=s.replace("const existing3=i.iso3?countries.get(N(i.iso3)):null;const existing2=i.iso2?countries.get(N(i.iso2)):null;const existing=existing3||existing2;", "const existing3=i.iso3?countries.get(N(i.iso3)):null;const existing2=i.iso2?countries.get(N(i.iso2)):null;const existingName=i.name?countries.get(N(i.name)):null;const existing=existing3||existing2||existingName;")
+          s=s.replace("register({country_code:x.country_code,country_name:x.country_name||k},k,'relation_generation_engine')", "register({iso3:x.country_code,countryName:x.country_name||k},k,'relation_generation_engine')")
+          p.write_text(s,encoding='utf-8')
           PY
-          if ! git diff --quiet -- minister_query_router.js omega_production_semantic_runtime_v3.js; then git config user.name 'github-actions[bot]';git config user.email '41898282+github-actions[bot]@users.noreply.github.com';git add minister_query_router.js omega_production_semantic_runtime_v3.js;git commit -m 'fix: canonicalize full 197-country runtime registry [skip ci]';git push;fi
+          if ! git diff --quiet -- minister_query_router.js omega_production_semantic_runtime_v3.js omega_country_semantic_bridge.js; then git config user.name 'github-actions[bot]';git config user.email '41898282+github-actions[bot]@users.noreply.github.com';git add minister_query_router.js omega_production_semantic_runtime_v3.js omega_country_semantic_bridge.js;git commit -m 'fix: canonicalize country names and IDs across registries [skip ci]';git push;fi
       - name: Syntax gate
         run: npm run lint
       - name: Security static gate
