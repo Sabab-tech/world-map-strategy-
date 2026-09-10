@@ -1,11 +1,74 @@
-# world-map-strategy
+# OMEGA Geopolitical Game Engine
 
-OMEGA geopolitical simulation runtime.
+## Vision
 
-## Data-driven AI identity/query architecture
+OMEGA is a next-generation geopolitical strategy game engine built entirely with vanilla JavaScript.
 
-The AI query path resolves entities from repository datasets at runtime. Country identity is obtained from the canonical country registry backed by `countries.json`; resource identity is obtained from the canonical resource bridge. Semantic capabilities and field mappings come from the semantic knowledge JSON rather than country/resource dictionaries embedded in JavaScript.
+The goal is not to create a simple game, but to build a highly modular, deterministic, AAA-quality engine that simulates government, economy, military, diplomacy, intelligence, technology, and national infrastructure.
 
-A question such as `What is <country>` is processed as an entity-discovery request. The runtime extracts candidate spans, matches them against the loaded country records, returns the canonical dataset ID, and carries provenance through the query plan/evidence layer.
+---
 
-Core data files remain authoritative and are not replaced by generated registries.
+## Current Status
+
+The project is under active development.
+
+Many core systems already exist, but after continuous expansion the architecture has become increasingly complex.
+
+I am currently focusing on refactoring the engine into a clean, scalable and maintainable architecture.
+
+---
+
+## What I Need
+
+I am looking for experienced software engineers, game engine developers, or software architects who are willing to review the project.
+
+I am NOT looking for someone to write the project for me.
+
+Instead, I need honest feedback on:
+
+- Engine architecture
+- Module boundaries
+- State management
+- Engine lifecycle
+- Event system
+- Code organization
+- Scalability
+- Performance
+- Long-term maintainability
+
+Even a short review or architectural suggestion would be greatly appreciated.
+
+---
+
+## Project Goals
+
+- Deterministic Architecture
+- Modular Engine Design
+- Zero Memory Leaks
+- Maintainable Codebase
+- Production-grade Structure
+- AAA-quality User Experience
+
+---
+
+## Technologies
+
+- Vanilla JavaScript
+- HTML
+- CSS
+
+No frameworks.
+
+---
+
+## Repository Structure
+
+(Describe your folders here.)
+
+---
+
+## Contributing
+
+Constructive criticism, architectural feedback, and pull requests are welcome.
+
+Thank you for taking the time to review this project.
