@@ -6,7 +6,7 @@
  * the request reaches server.js, so semantic identity cannot terminate at result:null.
  */
 import { AsyncLocalStorage } from 'node:async_hooks';
-import 'express';
+import express from 'express';
 import './offline_semantic_brain.js';
 import './offline_query_engine.js';
 import './omega_minister_state_system.js';
