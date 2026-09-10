@@ -53,6 +53,7 @@ vm.runInNewContext(resourceBridgeSource, sandbox, { filename: 'omega_resource_se
   assert.equal(countryDiag.expectedCountryCount, 197);
   assert.equal(countryDiag.complete, true, `197-country identity coverage incomplete: ${JSON.stringify(countryDiag)}`);
   assert.equal(countryDiag.countryCount, 197, `Expected exactly 197 canonical country IDs, got ${countryDiag.countryCount}`);
+  assert.ok(countryDiag.totalCityRecords > 0, 'No city records were ingested from cities.json');
   for (const name of ['Bangladesh', 'India', 'Japan', 'Namibia']) {
     const resolved = countryBridge.resolve(name);
     assert.ok(resolved?.id, `${name} must resolve as a country`);
@@ -65,11 +66,19 @@ vm.runInNewContext(resourceBridgeSource, sandbox, { filename: 'omega_resource_se
   assert.equal(india?.entities?.country?.id, 'IN', 'India must resolve to IN, never Bangladesh');
   assert.equal(india?.responseTemplate?.type, 'COUNTRY_FIRST_TURN');
   assert.equal(india?.countryBrief?.countryName, 'India');
-  assert.equal(india?.countryBrief?.majorCities?.length, 3);
+  assert.equal(india?.countryBrief?.cityCount, india?.countryBrief?.cities?.length);
+  assert.ok(india?.countryBrief?.cityCount > 3, 'Country brief must expose all JSON-described cities, not only three major cities');
+  assert.deepEqual(india?.countryBrief?.cities?.map(c => c.name), files.get('cities.json').countries.find(c => c.name === 'India').cities.map(c => c.name));
 
   const japan = countryBridge.parseCountry('Japan', { initialTurn: true });
   assert.equal(japan?.entities?.country?.id, 'JP', 'Japan must resolve to JP, never Bangladesh');
   assert.equal(japan?.responseTemplate?.type, 'COUNTRY_FIRST_TURN');
+  assert.equal(japan?.countryBrief?.cityCount, japan?.countryBrief?.cities?.length);
+
+  const bridgeExport = countryBridge.exportData();
+  assert.equal(bridgeExport.expectedCountryCount, 197);
+  assert.equal(bridgeExport.countries.length, 197, 'Export must contain all 197 runtime countries');
+  assert.ok(bridgeExport.countries.every(c => Array.isArray(c.cities)), 'Every exported country must carry its runtime city array');
 
   const bridgeDiag = resourceBridge.diagnostics();
   assert.equal(bridgeDiag.ready, true, JSON.stringify(bridgeDiag));
@@ -109,7 +118,8 @@ vm.runInNewContext(resourceBridgeSource, sandbox, { filename: 'omega_resource_se
   console.log('SEMANTIC RUNTIME V4 TEST PASSED');
   console.log(`Runtime countries: ${diag.countries}`);
   console.log(`Country bridge countries: ${countryDiag.countryCount}`);
+  console.log(`Runtime city records: ${countryDiag.totalCityRecords}`);
   console.log(`Canonical resources: ${Object.keys(resourceTypes).length}`);
-  console.log('India/Japan first-turn identity and cities template validated');
+  console.log('All JSON-described India/Japan cities and 197-country identity validated');
   console.log('Worldwide resource location semantic route validated');
 })().catch(err => { console.error(err); process.exit(1); });
