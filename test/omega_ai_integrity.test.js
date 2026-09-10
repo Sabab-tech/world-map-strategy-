@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
-import OfflineQueryEngine from '../offline_query_engine.js';
 
 const brainSource=fs.readFileSync(new URL('../offline_semantic_brain.js',import.meta.url),'utf8');
+const engineSource=fs.readFileSync(new URL('../offline_query_engine.js',import.meta.url),'utf8');
 const integritySource=fs.readFileSync(new URL('../omega_ai_integrity_layer.js',import.meta.url),'utf8');
 const countries=JSON.parse(fs.readFileSync(new URL('../countries.json',import.meta.url),'utf8'));
 const knowledge=JSON.parse(fs.readFileSync(new URL('../offline_semantic_knowledge.json',import.meta.url),'utf8'));
@@ -13,6 +13,7 @@ assert.ok(Array.isArray(countries)&&countries.length>0,'countries.json must cont
 const sandbox={console,setInterval:()=>0,clearInterval:()=>{},Date,JSON,Object,Number,String,RegExp,Intl,Map,Array,Math,process};
 sandbox.globalThis=sandbox;
 vm.runInNewContext(brainSource,sandbox,{filename:'offline_semantic_brain.js'});
+vm.runInNewContext(engineSource,sandbox,{filename:'offline_query_engine.js'});
 const configured=sandbox.OfflineSemanticBrain.configure({
   datasets:[
     Object.assign({__datasetName:'countries.json'},countries),
@@ -23,7 +24,9 @@ const configured=sandbox.OfflineSemanticBrain.configure({
 assert.equal(configured.countries,countries.length,'semantic brain must index every country record');
 vm.runInNewContext(integritySource,sandbox,{filename:'omega_ai_integrity_layer.js'});
 const api=sandbox.OmegaAIIntegrity;
+const OfflineQueryEngine=sandbox.OfflineQueryEngine;
 assert.ok(api,'integrity API must load');
+assert.ok(OfflineQueryEngine,'Data Finder API must load');
 assert.equal(api.VERSION,'2.0.0');
 
 const first=countries[0];
