@@ -70,6 +70,11 @@ vm.runInNewContext(resourceBridgeSource, sandbox, { filename: 'omega_resource_se
   assert.ok(india?.countryBrief?.cityCount > 3, 'Country brief must expose all JSON-described cities, not only three major cities');
   assert.deepEqual(india?.countryBrief?.cities?.map(c => c.name), files.get('cities.json').countries.find(c => c.name === 'India').cities.map(c => c.name));
 
+  const indiaPlan = runtime.buildAnswerPlan('India', {}, {}, []);
+  assert.equal(indiaPlan?.semantic?.entities?.country?.id, 'IN', 'buildAnswerPlan must use runtime country identity for India');
+  assert.equal(indiaPlan?.countryBrief?.countryName, 'India', 'buildAnswerPlan must expose India country brief');
+  assert.equal(indiaPlan?.countryBrief?.cityCount, india?.countryBrief?.cityCount, 'buildAnswerPlan must preserve every JSON-described India city');
+
   const japan = countryBridge.parseCountry('Japan', { initialTurn: true });
   assert.equal(japan?.entities?.country?.id, 'JP', 'Japan must resolve to JP, never Bangladesh');
   assert.equal(japan?.responseTemplate?.type, 'COUNTRY_FIRST_TURN');
@@ -121,5 +126,6 @@ vm.runInNewContext(resourceBridgeSource, sandbox, { filename: 'omega_resource_se
   console.log(`Runtime city records: ${countryDiag.totalCityRecords}`);
   console.log(`Canonical resources: ${Object.keys(resourceTypes).length}`);
   console.log('All JSON-described India/Japan cities and 197-country identity validated');
+  console.log('buildAnswerPlan country identity override validated');
   console.log('Worldwide resource location semantic route validated');
 })().catch(err => { console.error(err); process.exit(1); });
