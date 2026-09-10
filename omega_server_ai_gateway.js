@@ -1,7 +1,8 @@
-/* OMEGA SERVER AI GATEWAY v2.1.0
+/* OMEGA SERVER AI GATEWAY v2.2.0
  * Server-side canonical identity/data transport.
- * Country and city identities are resolved only from the canonical runtime registry.
- * Partial country phrases are resolved generically against repository country data.
+ * Country identity is discovered generically from the canonical repository registry.
+ * Question entity extraction is token-aware, so full questions and partial country names
+ * converge on the same canonical country ID without country-specific rules.
  * Verified identity queries always produce a UI-consumable grounded result instead of null.
  */
 import { AsyncLocalStorage } from 'node:async_hooks';
@@ -14,7 +15,7 @@ import './omega_resource_semantic_bridge.js';
 import './omega_country_semantic_bridge.js';
 import './omega_reasoning_dispatcher.js';
 
-const VERSION='2.1.0';
+const VERSION='2.2.0';
 const store=new AsyncLocalStorage();
 const brain=globalThis.OfflineSemanticBrain;
 const production=globalThis.OmegaProductionSemanticRuntime;
@@ -28,7 +29,26 @@ function isValidCanonicalPlan(v){return !!v&&typeof v==='object'&&v.semantic&&ty
 function canonicalQuestion(plan,packet){return String(packet?.question??plan?.question??'').trim();}
 function norm(v){return String(v??'').normalize('NFKC').toLowerCase().replace(/[?!,.:;'"“”‘’(){}[\]<>—–]/g,' ').replace(/\s+/g,' ').trim();}
 function tokens(v){return norm(v).split(' ').filter(Boolean);}
-function partialNameScore(query,name){const q=norm(query),n=norm(name);if(!q||!n)return 0;if(q===n)return 1;if(n.includes(q))return Math.min(.995,.90+q.length/Math.max(100,n.length*2));const qt=tokens(q),nt=tokens(n);if(qt.length>nt.length)return 0;for(let i=0;i<qt.length;i++){const a=qt[i],b=nt[i];if(a===b)continue;if(a.length>=2&&b.startsWith(a))continue;return 0;}return Math.min(.985,.78+.18*(qt.length/nt.length)+.02*(q.length/Math.max(1,n.length)));}
+function tokenPrefixMatch(a,b){const x=String(a||''),y=String(b||'');if(!x||!y)return false;return x===y||(x.length>=2&&y.startsWith(x));}
+function partialNameScore(query,name){
+  const q=norm(query),n=norm(name);
+  if(!q||!n)return 0;
+  if(q===n)return 1;
+  if(q.includes(n))return Math.min(.995,.92+n.length/Math.max(100,q.length*2));
+  const qt=tokens(q),nt=tokens(n);
+  if(!qt.length||!nt.length||nt.length>qt.length)return 0;
+  let best=0;
+  for(let start=0;start<=qt.length-nt.length;start++){
+    let matched=0;
+    for(let i=0;i<nt.length;i++)if(tokenPrefixMatch(qt[start+i],nt[i]))matched++;else break;
+    if(matched===nt.length){
+      const coverage=nt.length/Math.max(1,qt.length);
+      const compactness=nt.length/Math.max(1,nt.length+(qt.length-nt.length));
+      best=Math.max(best,.80+.14*coverage+.04*compactness+.02*(q.length/Math.max(1,n.length)));
+    }
+  }
+  return Math.min(.99,best);
+}
 function genericCountryResolve(question){
   const direct=identityBridge?.resolveCountry?.(question);
   if(direct?.id)return direct;
@@ -40,7 +60,7 @@ function genericCountryResolve(question){
     for(const name of names){
       const score=partialNameScore(question,name);
       if(score<=0)continue;
-      const candidate={id:String(c.id).toUpperCase(),type:'COUNTRY',confidence:score,surface:String(name),source:'OMEGA_CANONICAL_COUNTRY_REGISTRY_PARTIAL',raw:c};
+      const candidate={id:String(c.id).toUpperCase(),type:'COUNTRY',confidence:score,surface:String(name),source:'OMEGA_CANONICAL_COUNTRY_REGISTRY_QUESTION_DISCOVERY',raw:c};
       if(!best||candidate.confidence>best.confidence||candidate.confidence===best.confidence&&candidate.surface.length>best.surface.length)best=candidate;
     }
   }
@@ -59,7 +79,7 @@ function groundedIdentityResult(question,plan){
       const raw=country.raw||identityBridge.countryBrief?.(country.surface)||null;
       const label=country.raw?.officialName||country.raw?.names?.[0]||country.surface||country.id;
       const text=`${label} identified (${country.id}).`;
-      return{ok:true,status:'VERIFIED_FACT',operation:String(semantic.operation||'IDENTIFY').toUpperCase(),targetDomain:'COUNTRY',countryId:country.id,entity:raw,source:'OMEGA_CANONICAL_COUNTRY_REGISTRY',text,value:raw,evidence:{entityType:'COUNTRY',canonicalId:country.id,surface:country.surface,confidence:country.confidence,matchMode:country.source?.includes('PARTIAL')?'PARTIAL_CANONICAL':'CANONICAL'}};
+      return{ok:true,status:'VERIFIED_FACT',operation:String(semantic.operation||'IDENTIFY').toUpperCase(),targetDomain:'COUNTRY',countryId:country.id,entity:raw,source:'OMEGA_CANONICAL_COUNTRY_REGISTRY',text,value:raw,evidence:{entityType:'COUNTRY',canonicalEntityId:country.id,surface:country.surface,confidence:country.confidence,matchMode:country.source?.includes('QUESTION')?'QUESTION_CANONICAL':'CANONICAL'}};
     }
     const city=identityBridge.resolveCity?.(question,semantic?.entities?.country?.id||null);
     if(city?.id){
@@ -90,7 +110,7 @@ function ensureResult(question,plan,context={}){
   return enriched;
 }
 function installParserBridge(target,name){
-  if(!target||typeof target[name]!=='function'||target[name].__omegaCanonicalGatewayV21)return;
+  if(!target||typeof target[name]!=='function'||target[name].__omegaCanonicalGatewayV22)return;
   const original=target[name];
   const wrapped=function(...args){
     const canonical=activePlan();
@@ -99,14 +119,14 @@ function installParserBridge(target,name){
     try{base=original.apply(this,args);}catch(e){return{version:VERSION,surface:String(args[0]??''),operation:'UNKNOWN',targetDomain:'GENERAL',entities:{},unresolved:['SEMANTIC_RUNTIME_ERROR'],executable:false,error:e?.message||String(e)};}
     return enrichPlan(args[0],{semantic:base})?.semantic||base;
   };
-  wrapped.__omegaCanonicalGatewayV21=true;
+  wrapped.__omegaCanonicalGatewayV22=true;
   try{target[name]=wrapped;}catch(_){}
 }
 installParserBridge(brain,'parse');
 installParserBridge(brain,'explain');
 installParserBridge(production,'parse');
 installParserBridge(production,'explain');
-if(production&&typeof production.buildAnswerPlan==='function'&&!production.buildAnswerPlan.__omegaCanonicalGatewayV21){
+if(production&&typeof production.buildAnswerPlan==='function'&&!production.buildAnswerPlan.__omegaCanonicalGatewayV22){
   const original=production.buildAnswerPlan;
   const wrapped=function(...args){
     const canonical=activePlan();
@@ -115,7 +135,7 @@ if(production&&typeof production.buildAnswerPlan==='function'&&!production.build
     try{base=original.apply(this,args);}catch(e){base={semantic:{surface:String(args[0]??''),operation:'UNKNOWN',targetDomain:'GENERAL',entities:{},unresolved:['SEMANTIC_RUNTIME_ERROR'],executable:false},result:{ok:false,reason:'SEMANTIC_RUNTIME_ERROR',error:e?.message||String(e)}};}
     return ensureResult(String(args[0]??''),base,args[1]||{});
   };
-  wrapped.__omegaCanonicalGatewayV21=true;
+  wrapped.__omegaCanonicalGatewayV22=true;
   try{production.buildAnswerPlan=wrapped;}catch(_){}
 }
 function enrichIdentityObject(question,input={}){
@@ -127,14 +147,14 @@ function enrichIdentityObject(question,input={}){
   if(c?.id)out.cityId=c.id;
   return out;
 }
-if(globalThis.OmegaReasoningDispatcher?.dispatch&&!globalThis.OmegaReasoningDispatcher.__omegaCanonicalGatewayV21){
+if(globalThis.OmegaReasoningDispatcher?.dispatch&&!globalThis.OmegaReasoningDispatcher.__omegaCanonicalGatewayV22){
   const dispatcher=globalThis.OmegaReasoningDispatcher,original=dispatcher.dispatch.bind(dispatcher);
   dispatcher.dispatch=function(question,semantic,offlineResult,identityContext){return original(question,semantic,offlineResult,enrichIdentityObject(question,identityContext||{}));};
-  dispatcher.__omegaCanonicalGatewayV21=true;
+  dispatcher.__omegaCanonicalGatewayV22=true;
 }
 if(globalThis.OmegaCognitiveOS){
   const cog=globalThis.OmegaCognitiveOS;
-  if(!cog.__omegaCanonicalIdentityGuardV21){
+  if(!cog.__omegaCanonicalIdentityGuardV22){
     for(const name of ['getCountryProfile','getEconomy','getPopulation']){
       if(typeof cog[name]!=='function')continue;
       cog[name]=function(value){
@@ -147,12 +167,12 @@ if(globalThis.OmegaCognitiveOS){
         return null;
       };
     }
-    if(typeof cog.thinkMinisterQuestion==='function'&&!cog.thinkMinisterQuestion.__omegaCanonicalIdentityGuardV21){
+    if(typeof cog.thinkMinisterQuestion==='function'&&!cog.thinkMinisterQuestion.__omegaCanonicalIdentityGuardV22){
       const original=cog.thinkMinisterQuestion.bind(cog);
       const wrapped=function(question,minister,countryKey,countryDetails){const h=genericCountryResolve(question)||genericCountryResolve(countryKey);return original(question,minister,h?.id||String(countryKey||''),countryDetails||h?.raw||{});};
-      wrapped.__omegaCanonicalIdentityGuardV21=true;cog.thinkMinisterQuestion=wrapped;
+      wrapped.__omegaCanonicalIdentityGuardV22=true;cog.thinkMinisterQuestion=wrapped;
     }
-    cog.__omegaCanonicalIdentityGuardV21=true;
+    cog.__omegaCanonicalIdentityGuardV22=true;
   }
 }
 export function withCanonicalAIRequest(req,res,next){
@@ -166,10 +186,10 @@ export function withCanonicalAIRequest(req,res,next){
   }
   return next();
 }
-if(!express.application.__omegaCanonicalAIPostPatchV21){
+if(!express.application.__omegaCanonicalAIPostPatchV22){
   const originalPost=express.application.post;
   express.application.post=function(path,...handlers){const key=String(path);if((key==='/api/ai/minister-consult'||key==='/api/ai/semantic-query')&&!handlers.some(h=>h===withCanonicalAIRequest))handlers=[withCanonicalAIRequest,...handlers];return originalPost.call(this,path,...handlers);};
-  express.application.__omegaCanonicalAIPostPatchV21=true;
+  express.application.__omegaCanonicalAIPostPatchV22=true;
 }
-globalThis.OmegaServerAIGateway=Object.freeze({VERSION,withCanonicalAIRequest,diagnostics:()=>({version:VERSION,identityBridgeVersion:identityBridge?.VERSION||null,identityReady:!!identityBridge?.diagnostics?.().ready,identityDiagnostics:identityBridge?.diagnostics?.()||null,asyncContext:'AsyncLocalStorage',routePatch:true,canonicalPlanPassthrough:true,canonicalExplainPassthrough:true,deterministicResultExecution:true,groundedIdentityResult:true,partialCountryResolution:true,countryFallbackPolicy:'NO_SYNTHETIC_COUNTRY',cityIdentity:'CANONICAL_CITY_REGISTRY'})});
-console.log('[OMEGA Server AI Gateway] canonical identity transport v2.1.0 ready');
+globalThis.OmegaServerAIGateway=Object.freeze({VERSION,withCanonicalAIRequest,diagnostics:()=>({version:VERSION,identityBridgeVersion:identityBridge?.VERSION||null,identityReady:!!identityBridge?.diagnostics?.().ready,identityDiagnostics:identityBridge?.diagnostics?.()||null,asyncContext:'AsyncLocalStorage',routePatch:true,canonicalPlanPassthrough:true,canonicalExplainPassthrough:true,deterministicResultExecution:true,groundedIdentityResult:true,partialCountryResolution:true,tokenAwareQuestionEntityExtraction:true,countryFallbackPolicy:'NO_SYNTHETIC_COUNTRY',cityIdentity:'CANONICAL_CITY_REGISTRY'})});
+console.log('[OMEGA Server AI Gateway] canonical identity transport v2.2.0 ready');
