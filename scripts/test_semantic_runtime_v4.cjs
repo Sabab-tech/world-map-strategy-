@@ -11,7 +11,8 @@ const files = new Map([
   ['ministers.json', JSON.parse(fs.readFileSync('./ministers.json', 'utf8'))],
   ['resource_ontology.json', JSON.parse(fs.readFileSync('./resource_ontology.json', 'utf8'))],
   ['resources.json', JSON.parse(fs.readFileSync('./resources.json', 'utf8'))],
-  ['resources_2.json', JSON.parse(fs.readFileSync('./resources_2.json', 'utf8'))]
+  ['resources_2.json', JSON.parse(fs.readFileSync('./resources_2.json', 'utf8'))],
+  ['relation_generation_engine.json', JSON.parse(fs.readFileSync('./relation_generation_engine.json', 'utf8'))]
 ]);
 
 const sandbox = {
@@ -51,7 +52,7 @@ vm.runInNewContext(runtimeSource, sandbox, { filename: 'omega_production_semanti
 vm.runInNewContext(resourceBridgeSource, sandbox, { filename: 'omega_resource_semantic_bridge.js' });
 
 (async () => {
-  await new Promise(resolve => setTimeout(resolve, 80));
+  await new Promise(resolve => setTimeout(resolve, 120));
 
   const runtime = sandbox.OmegaProductionSemanticRuntime;
   const resourceBridge = sandbox.OmegaResourceSemanticBridge;
@@ -71,6 +72,7 @@ vm.runInNewContext(resourceBridgeSource, sandbox, { filename: 'omega_resource_se
   assert.ok(bridgeDiag.resources > 0, 'Bridge resource registry is empty');
   assert.ok(bridgeDiag.exportReady, 'Resource data export/access layer is not ready');
   assert.equal(bridgeDiag.expectedCountryIds, 197);
+  assert.ok(bridgeDiag.countryIdCoverageComplete, `197-country ID coverage incomplete: ${bridgeDiag.countryIdCoverage}`);
 
   const q1 = runtime.parse('How many iron mines are in Bangladesh?');
   assert.equal(q1.entities.country.id, 'BGD');
@@ -108,6 +110,7 @@ vm.runInNewContext(resourceBridgeSource, sandbox, { filename: 'omega_resource_se
   assert.ok(q6.entities.country.id);
   assert.equal(q6.assetClass, 'MINE');
   assert.equal(q6.operation, 'LOCATE');
+  assert.equal(q6.executable, true);
 
   const q7 = runtime.parse('Tell me the location of uranium worldwide.');
   assert.ok(q7.entities.resource.id, 'Uranium must resolve from resource ontology/data');
@@ -122,6 +125,7 @@ vm.runInNewContext(resourceBridgeSource, sandbox, { filename: 'omega_resource_se
   });
   assert.equal(uraniumResult.ok, true, JSON.stringify(uraniumResult));
   assert.equal(uraniumResult.resourceId, q7.entities.resource.id);
+  assert.equal(uraniumResult.worldwide, true);
   assert.ok(Array.isArray(uraniumResult.countries), 'Worldwide result must expose country mappings');
   assert.ok(Array.isArray(uraniumResult.locations), 'Worldwide result must expose location records');
 
@@ -132,13 +136,27 @@ vm.runInNewContext(resourceBridgeSource, sandbox, { filename: 'omega_resource_se
     assert.ok(resolved.raw, 'Country ID must resolve to canonical country data');
   }
 
+  if (uraniumResult.records.some(r => r?.id)) {
+    const sampleRecordId = uraniumResult.records.find(r => r?.id)?.id;
+    const entityLookup = resourceBridge.resolveResourceRecord(sampleRecordId);
+    assert.equal(entityLookup.ok, true, JSON.stringify(entityLookup));
+    assert.equal(entityLookup.entityId, sampleRecordId);
+    if (entityLookup.countryId) {
+      assert.equal(resourceBridge.resolveCountry(entityLookup.countryId).id, entityLookup.countryId);
+    }
+  }
+
+  const exportResult = resourceBridge.exportData({ resourceId: q7.entities.resource.id, operation: 'LOCATE' });
+  assert.equal(exportResult.ok, true, JSON.stringify(exportResult));
+  assert.equal(exportResult.resourceId, q7.entities.resource.id);
+
   const unknown = runtime.parse('How many mines are in Atlantis?');
   assert.equal(unknown.entities.country.id, null);
   assert.equal(unknown.executable, false);
 
   const runtimeSourceText = runtimeSource.toLowerCase();
   const bridgeSourceText = resourceBridgeSource.toLowerCase();
-  for (const forbidden of ['bangladesh', 'germany', 'india', 'iron_ore', 'crude_oil']) {
+  for (const forbidden of ['bangladesh', 'germany', 'india', 'iron_ore', 'crude_oil', 'uranium:']) {
     assert.equal(runtimeSourceText.includes(forbidden), false, `Country/resource fact leaked into runtime code: ${forbidden}`);
     assert.equal(bridgeSourceText.includes(forbidden), false, `Country/resource fact leaked into resource bridge: ${forbidden}`);
   }
@@ -147,7 +165,7 @@ vm.runInNewContext(resourceBridgeSource, sandbox, { filename: 'omega_resource_se
     ok: true,
     diagnostics: diag,
     resourceBridgeDiagnostics: bridgeDiag,
-    cases: 8,
+    cases: 9,
     hardcodeGuard: true,
     worldwideResourceQuery: {
       resourceId: uraniumResult.resourceId,
