@@ -97,11 +97,12 @@ jobs:
                 const m=String(e.message||'').match(/position (\d+)/i); if(!m)throw e;
                 const p=Number(m[1]); const msg=String(e.message||'');
                 if(/Expected ',' or '}' after property value/i.test(msg)){
+                  if(p>=s.length-1){s=s+'}';continue;}
                   const left=s.slice(0,p).replace(/\s+$/,''); const right=s.slice(p);
                   if(!left.endsWith(','))s=left+','+right; else throw e;
                 }else if(/Unexpected string/i.test(msg)){
                   const left=s.slice(0,p).replace(/\s+$/,''); const right=s.slice(p); if(!left.endsWith(','))s=left+','+right; else throw e;
-                }else if(/Unexpected token '}'/i.test(msg)&&s[p-1]!==','){
+                }else if(/Unexpected token '}'/i.test(msg)&&p>0&&s[p-1]!==','){
                   s=s.slice(0,p-1)+','+s.slice(p-1);
                 }else throw e;
               }
