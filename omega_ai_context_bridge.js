@@ -1,18 +1,17 @@
-/* OMEGA CANONICAL AI CONTEXT BRIDGE v1.2.0
+/* OMEGA CANONICAL AI CONTEXT BRIDGE v1.2.1
  * Browser-side transport bridge for canonical semantic context and repository-data entity discovery.
  * Country identity is discovered from the canonical country registry / countries.json.
  * No country facts or country mappings are hardcoded here.
  */
 (function(global){
   'use strict';
-  if(global.OmegaCanonicalAIContextBridge?.VERSION === '1.2.0')return;
+  if(global.OmegaCanonicalAIContextBridge?.VERSION === '1.2.1')return;
 
-  const VERSION='1.2.0';
+  const VERSION='1.2.1';
   const text=v=>String(v==null?'':v).trim();
   const norm=v=>text(v).normalize('NFKC').toLowerCase().replace(/[?!,.:;'"“”‘’(){}[\]<>—–]/g,' ').replace(/\s+/g,' ').trim();
   const tokens=v=>norm(v).split(' ').filter(Boolean);
   const clone=v=>{try{return v===undefined?undefined:JSON.parse(JSON.stringify(v))}catch(_){return null}};
-  const base=p=>{try{return typeof document!=='undefined'&&document.baseURI?new URL(p,document.baseURI).href:p}catch(_){return p}};
   const lastHistory=()=>{
     try{
       if(global.OmegaUniversalAIRuntime&&typeof global.OmegaUniversalAIRuntime.readHistory==='function'){
@@ -58,27 +57,26 @@
   }
 
   function countryNameScore(question,name){
-    const q=norm(question), n=norm(name);
+    const q=norm(question),n=norm(name);
     if(!q||!n)return 0;
     if(q===n)return 1;
-    if(q.includes(n))return Math.min(.995,.92+n.length/Math.max(100,q.length*2));
-    const qt=tokens(q), nt=tokens(n);
-    if(!qt.length||qt.length>nt.length)return 0;
-    const candidateStart=nt.length===qt.length;
-    for(let i=0;i<qt.length;i++){
-      const a=qt[i],b=nt[i];
-      if(a===b)continue;
-      if(a.length>=2&&b.startsWith(a))continue;
-      return 0;
+    if(q.includes(n))return Math.min(.998,.92+n.length/Math.max(100,q.length*2));
+    const qt=tokens(q),nt=tokens(n);
+    if(!qt.length||!nt.length||nt.length>qt.length)return 0;
+    let best=0;
+    for(let start=0;start<=qt.length-nt.length;start++){
+      let matched=0;
+      for(let i=0;i<nt.length;i++){
+        const a=qt[start+i],b=nt[i];
+        if(a===b||(a.length>=2&&b.startsWith(a)))matched++;else break;
+      }
+      if(matched===nt.length){
+        const coverage=nt.length/Math.max(1,qt.length);
+        const compactness=nt.length/Math.max(1,nt.length+(qt.length-nt.length));
+        best=Math.max(best,.80+.14*coverage+.04*compactness+.02*(q.length/Math.max(1,n.length)));
+      }
     }
-    return Math.min(.98,.80+.16*(qt.length/nt.length)+.02*(q.length/Math.max(1,n.length))+(candidateStart?.01:0));
-  }
-
-  function candidateFromRecord(record){
-    if(!record||typeof record!=='object')return null;
-    const id=text(record.code||record.iso2||record.countryCode||record.country_code||record.iso3||record.id||record.canonicalId).toUpperCase();
-    const names=[record.name,record.countryName,record.officialName,record.shortName,record.displayName,record.nativeName].filter(Boolean).map(text);
-    return id&&names.length?{id,names,raw:record}:null;
+    return Math.min(.99,best);
   }
 
   async function discoverCountry(question){
@@ -88,26 +86,21 @@
       const direct=registry?.resolveCountry?.(question);
       if(direct?.id)return direct;
     }catch(_){ }
-
     const records=[];
     try{
       const exported=registry?.exportData?.();
       if(Array.isArray(exported?.countries))for(const c of exported.countries){
-        const x={code:c?.id,names:Array.isArray(c?.names)?c.names:[],officialName:c?.officialName,raw:c};
-        const id=text(x.code).toUpperCase();
-        const names=[...new Set([...x.names,x.officialName].filter(Boolean).map(text))];
-        if(id&&names.length)records.push({id,names,raw:x.raw});
+        const id=text(c?.id).toUpperCase();
+        const names=[...(Array.isArray(c?.names)?c.names:[]),c?.officialName].filter(Boolean).map(text);
+        if(id&&names.length)records.push({id,names,raw:c});
       }
     }catch(_){ }
-
     let best=null;
-    for(const record of records){
-      for(const name of record.names){
-        const score=countryNameScore(question,name);
-        if(score<=0)continue;
-        const candidate={id:record.id,type:'COUNTRY',confidence:score,surface:name,source:'OMEGA_COUNTRIES_JSON_ENTITY_DISCOVERY',raw:record.raw};
-        if(!best||candidate.confidence>best.confidence||candidate.confidence===best.confidence&&candidate.surface.length>best.surface.length)best=candidate;
-      }
+    for(const record of records)for(const name of record.names){
+      const score=countryNameScore(question,name);
+      if(score<=0)continue;
+      const candidate={id:record.id,type:'COUNTRY',confidence:score,surface:name,source:'OMEGA_COUNTRIES_JSON_ENTITY_DISCOVERY',raw:record.raw};
+      if(!best||candidate.confidence>best.confidence||candidate.confidence===best.confidence&&candidate.surface.length>best.surface.length)best=candidate;
     }
     return best;
   }
@@ -117,15 +110,7 @@
     const out=clone(plan)||{};
     const semantic=out.semantic&&typeof out.semantic==='object'?{...out.semantic}:{};
     const existing=semantic.entities&&typeof semantic.entities==='object'?{...semantic.entities}:{};
-    existing.country={
-      id:country.id,
-      canonicalId:country.id,
-      type:'COUNTRY',
-      surface:country.surface,
-      confidence:country.confidence,
-      source:country.source,
-      raw:clone(country.raw)
-    };
+    existing.country={id:country.id,canonicalId:country.id,type:'COUNTRY',surface:country.surface,confidence:country.confidence,source:country.source,raw:clone(country.raw)};
     semantic.entities=existing;
     semantic.targetDomain='COUNTRY';
     semantic.operation=semantic.operation&&semantic.operation!=='UNKNOWN'?semantic.operation:'IDENTIFY';
@@ -138,24 +123,10 @@
     out.countryId=country.id;
     out.countryName=name;
     out.result=out.result&&typeof out.result==='object'?out.result:{
-      ok:true,
-      status:'VERIFIED_FACT',
-      operation:semantic.operation,
-      targetDomain:'COUNTRY',
-      countryId:country.id,
+      ok:true,status:'VERIFIED_FACT',operation:semantic.operation,targetDomain:'COUNTRY',countryId:country.id,
       text:bn?`${name} একটি দেশ; ক্যানোনিক্যাল ডেটা আইডি ${country.id}.`:`${name} is a country; canonical data ID: ${country.id}.`,
-      value:country.id,
-      entity:clone(country.raw),
-      source:'countries.json',
-      evidence:{
-        dataset:'countries.json',
-        recordIdentity:country.id,
-        fieldPath:'code',
-        canonicalEntityId:country.id,
-        rawValue:country.id,
-        surface:country.surface,
-        confidence:country.confidence
-      }
+      value:country.id,entity:clone(country.raw),source:'countries.json',
+      evidence:{dataset:'countries.json',recordIdentity:country.id,fieldPath:'code',canonicalEntityId:country.id,rawValue:country.id,surface:country.surface,confidence:country.confidence}
     };
     return out;
   }
@@ -180,9 +151,7 @@
   async function buildAsync(question,request={}){
     const country=await discoverCountry(question);
     const plan=build(question,request,country);
-    if(plan?.ok===false&&country?.id){
-      return groundedCountryPlan(question,{semantic:{operation:'IDENTIFY',targetDomain:'COUNTRY',entities:{},unresolved:[]}},country);
-    }
+    if(plan?.ok===false&&country?.id)return groundedCountryPlan(question,{semantic:{operation:'IDENTIFY',targetDomain:'COUNTRY',entities:{},unresolved:[]}},country);
     return plan;
   }
 
@@ -195,15 +164,17 @@
 
   function installFetch(){
     if(global.__omegaCanonicalFetchBridgeInstalled||typeof global.fetch!=='function')return false;
-    const nativeFetch=global.fetch.bind(global); global.__omegaCanonicalFetchBridgeInstalled=true;
+    const nativeFetch=global.fetch.bind(global);global.__omegaCanonicalFetchBridgeInstalled=true;
     global.fetch=async function(input,init={}){
       let target='';try{target=typeof input==='string'?input:(input?.url||'')}catch(_){}
       if(!shouldBridge(target)||!init?.body)return nativeFetch(input,init);
       let body;try{body=JSON.parse(String(init.body))}catch(_){return nativeFetch(input,init)}
       if(!body?.prompt||typeof body.prompt!=='string')return nativeFetch(input,init);
       const packet=await buildAsync(body.prompt,body);
-      if(!packet?.ok){try{console.warn('[OMEGA Canonical Context Bridge] request passed without semantic plan:',packet?.reason)}catch(_){}return nativeFetch(input,init)}
-      const next={...init,headers:{'Content-Type':'application/json',...(init.headers||{})},body:JSON.stringify(mergeRequestBody(body,{...packet,semanticPlan:packet}))};
+      if(!packet?.ok)return nativeFetch(input,init);
+      const semanticPlan=packet.semanticPlan&&typeof packet.semanticPlan==='object'?packet.semanticPlan:packet;
+      const envelope={...packet,semanticPlan};
+      const next={...init,headers:{'Content-Type':'application/json',...(init.headers||{})},body:JSON.stringify(mergeRequestBody(body,envelope))};
       return nativeFetch(input,next);
     };
     return true;
