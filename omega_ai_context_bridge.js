@@ -1,13 +1,16 @@
-/* OMEGA CANONICAL AI CONTEXT BRIDGE v1.1.1
- * Browser-side transport bridge. It owns transport only. Facts, language, identity,
- * ontology and cognition remain owned by their canonical subsystems.
+/* OMEGA CANONICAL AI CONTEXT BRIDGE v1.2.0
+ * Browser-side transport bridge for canonical semantic context and repository-data entity discovery.
+ * Country identity is discovered from the canonical country registry / countries.json.
+ * No country facts or country mappings are hardcoded here.
  */
 (function(global){
   'use strict';
-  if(global.OmegaCanonicalAIContextBridge?.VERSION === '1.1.1')return;
+  if(global.OmegaCanonicalAIContextBridge?.VERSION === '1.2.0')return;
 
-  const VERSION='1.1.1';
+  const VERSION='1.2.0';
   const text=v=>String(v==null?'':v).trim();
+  const norm=v=>text(v).normalize('NFKC').toLowerCase().replace(/[?!,.:;'"“”‘’(){}[\]<>—–]/g,' ').replace(/\s+/g,' ').trim();
+  const tokens=v=>norm(v).split(' ').filter(Boolean);
   const clone=v=>{try{return v===undefined?undefined:JSON.parse(JSON.stringify(v))}catch(_){return null}};
   const base=p=>{try{return typeof document!=='undefined'&&document.baseURI?new URL(p,document.baseURI).href:p}catch(_){return p}};
   const lastHistory=()=>{
@@ -54,7 +57,110 @@
     }catch(_){return null;}
   }
 
-  function build(question, request={}){
+  function countryNameScore(question,name){
+    const q=norm(question), n=norm(name);
+    if(!q||!n)return 0;
+    if(q===n)return 1;
+    if(q.includes(n))return Math.min(.995,.92+n.length/Math.max(100,q.length*2));
+    const qt=tokens(q), nt=tokens(n);
+    if(!qt.length||qt.length>nt.length)return 0;
+    const candidateStart=nt.length===qt.length;
+    for(let i=0;i<qt.length;i++){
+      const a=qt[i],b=nt[i];
+      if(a===b)continue;
+      if(a.length>=2&&b.startsWith(a))continue;
+      return 0;
+    }
+    return Math.min(.98,.80+.16*(qt.length/nt.length)+.02*(q.length/Math.max(1,n.length))+(candidateStart?.01:0));
+  }
+
+  function candidateFromRecord(record){
+    if(!record||typeof record!=='object')return null;
+    const id=text(record.code||record.iso2||record.countryCode||record.country_code||record.iso3||record.id||record.canonicalId).toUpperCase();
+    const names=[record.name,record.countryName,record.officialName,record.shortName,record.displayName,record.nativeName].filter(Boolean).map(text);
+    return id&&names.length?{id,names,raw:record}:null;
+  }
+
+  async function discoverCountry(question){
+    const registry=global.OmegaCanonicalIdentityRegistry||global.OmegaCountrySemanticBridge;
+    try{if(registry?.init)await registry.init();}catch(_){ }
+    try{
+      const direct=registry?.resolveCountry?.(question);
+      if(direct?.id)return direct;
+    }catch(_){ }
+
+    const records=[];
+    try{
+      const exported=registry?.exportData?.();
+      if(Array.isArray(exported?.countries))for(const c of exported.countries){
+        const x={code:c?.id,names:Array.isArray(c?.names)?c.names:[],officialName:c?.officialName,raw:c};
+        const id=text(x.code).toUpperCase();
+        const names=[...new Set([...x.names,x.officialName].filter(Boolean).map(text))];
+        if(id&&names.length)records.push({id,names,raw:x.raw});
+      }
+    }catch(_){ }
+
+    let best=null;
+    for(const record of records){
+      for(const name of record.names){
+        const score=countryNameScore(question,name);
+        if(score<=0)continue;
+        const candidate={id:record.id,type:'COUNTRY',confidence:score,surface:name,source:'OMEGA_COUNTRIES_JSON_ENTITY_DISCOVERY',raw:record.raw};
+        if(!best||candidate.confidence>best.confidence||candidate.confidence===best.confidence&&candidate.surface.length>best.surface.length)best=candidate;
+      }
+    }
+    return best;
+  }
+
+  function groundedCountryPlan(question,plan,country){
+    if(!country?.id)return plan;
+    const out=clone(plan)||{};
+    const semantic=out.semantic&&typeof out.semantic==='object'?{...out.semantic}:{};
+    const existing=semantic.entities&&typeof semantic.entities==='object'?{...semantic.entities}:{};
+    existing.country={
+      id:country.id,
+      canonicalId:country.id,
+      type:'COUNTRY',
+      surface:country.surface,
+      confidence:country.confidence,
+      source:country.source,
+      raw:clone(country.raw)
+    };
+    semantic.entities=existing;
+    semantic.targetDomain='COUNTRY';
+    semantic.operation=semantic.operation&&semantic.operation!=='UNKNOWN'?semantic.operation:'IDENTIFY';
+    semantic.unresolved=Array.isArray(semantic.unresolved)?semantic.unresolved.filter(x=>x!=='COUNTRY'):[];
+    semantic.identityAuthority='OMEGA_CANONICAL_IDENTITY_BRIDGE';
+    semantic.executable=semantic.unresolved.length===0&&semantic.operation!=='UNKNOWN';
+    const name=country.raw?.officialName||country.raw?.name||country.raw?.names?.[0]||country.surface||country.id;
+    const bn=/[\u0980-\u09FF]/.test(question);
+    out.semantic=semantic;
+    out.countryId=country.id;
+    out.countryName=name;
+    out.result=out.result&&typeof out.result==='object'?out.result:{
+      ok:true,
+      status:'VERIFIED_FACT',
+      operation:semantic.operation,
+      targetDomain:'COUNTRY',
+      countryId:country.id,
+      text:bn?`${name} একটি দেশ; ক্যানোনিক্যাল ডেটা আইডি ${country.id}.`:`${name} is a country; canonical data ID: ${country.id}.`,
+      value:country.id,
+      entity:clone(country.raw),
+      source:'countries.json',
+      evidence:{
+        dataset:'countries.json',
+        recordIdentity:country.id,
+        fieldPath:'code',
+        canonicalEntityId:country.id,
+        rawValue:country.id,
+        surface:country.surface,
+        confidence:country.confidence
+      }
+    };
+    return out;
+  }
+
+  function build(question,request={},preResolved=null){
     const rt=global.OmegaProductionSemanticRuntime;
     const ctx=context(request);
     if(!rt||typeof rt.buildAnswerPlan!=='function')return{ok:false,reason:'CANONICAL_SEMANTIC_RUNTIME_UNAVAILABLE',context:ctx};
@@ -67,8 +173,17 @@
       if(ctx.timeHorizon!=null)state.timeHorizon=ctx.timeHorizon;
       const plan=rt.buildAnswerPlan(question,identity,state,history);
       if(!plan||typeof plan!=='object')return{ok:false,reason:'CANONICAL_SEMANTIC_RUNTIME_RETURNED_INVALID_PLAN',context:ctx};
-      return {ok:true,version:VERSION,question:String(question),authority:'OMEGA_PRODUCTION_SEMANTIC_RUNTIME',identity,context:ctx,ministerState:minister,semanticPlan:clone(plan),runtimeDiagnostics:typeof rt.diagnostics==='function'?clone(rt.diagnostics()):null,languageDiagnostics:{version:global.OmegaLanguageSystem?.VERSION||null,batch03:global.OmegaLanguageBatch03?.VERSION||null,gameLanguageBridge:!!global.OmegaGameLanguageBridge}};
+      return groundedCountryPlan(question,plan,preResolved);
     }catch(e){return{ok:false,reason:'CANONICAL_CONTEXT_BUILD_FAILED',error:text(e.message||e),context:ctx};}
+  }
+
+  async function buildAsync(question,request={}){
+    const country=await discoverCountry(question);
+    const plan=build(question,request,country);
+    if(plan?.ok===false&&country?.id){
+      return groundedCountryPlan(question,{semantic:{operation:'IDENTIFY',targetDomain:'COUNTRY',entities:{},unresolved:[]}},country);
+    }
+    return plan;
   }
 
   function shouldBridge(url){try{const u=new URL(url,typeof location!=='undefined'?location.href:undefined);return u.pathname.endsWith('/api/ai/minister-consult')||u.pathname.endsWith('/api/ai/semantic-query')}catch(_){return false}}
@@ -86,15 +201,15 @@
       if(!shouldBridge(target)||!init?.body)return nativeFetch(input,init);
       let body;try{body=JSON.parse(String(init.body))}catch(_){return nativeFetch(input,init)}
       if(!body?.prompt||typeof body.prompt!=='string')return nativeFetch(input,init);
-      const packet=build(body.prompt,body);
-      if(!packet.ok){try{console.warn('[OMEGA Canonical Context Bridge] request passed without semantic plan:',packet.reason)}catch(_){} return nativeFetch(input,init)}
-      const next={...init,headers:{'Content-Type':'application/json',...(init.headers||{})},body:JSON.stringify(mergeRequestBody(body,packet))};
+      const packet=await buildAsync(body.prompt,body);
+      if(!packet?.ok){try{console.warn('[OMEGA Canonical Context Bridge] request passed without semantic plan:',packet?.reason)}catch(_){}return nativeFetch(input,init)}
+      const next={...init,headers:{'Content-Type':'application/json',...(init.headers||{})},body:JSON.stringify(mergeRequestBody(body,{...packet,semanticPlan:packet}))};
       return nativeFetch(input,next);
     };
     return true;
   }
 
-  global.OmegaCanonicalAIContextBridge=Object.freeze({VERSION,context,build,installFetch});
+  global.OmegaCanonicalAIContextBridge=Object.freeze({VERSION,context,discoverCountry,build,buildAsync,installFetch});
   if(typeof document!=='undefined'){
     const boot=()=>{installFetch();global.dispatchEvent?.(new CustomEvent('OMEGA_CANONICAL_AI_CONTEXT_BRIDGE_READY',{detail:{version:VERSION}}));};
     if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
