@@ -1,7 +1,7 @@
-/* OMEGA SERVER AI GATEWAY v1.3.0
+/* OMEGA SERVER AI GATEWAY v1.4.0
  * Request-scoped transport authority for the canonical semantic plan/context.
- * A request carrying a canonical plan must never be silently reinterpreted by
- * another semantic parser or explainer during the same turn.
+ * Resource intelligence is grounded in the existing resource-country bridge,
+ * which imports repository JSON data without duplicating facts in server code.
  */
 import { AsyncLocalStorage } from 'node:async_hooks';
 import express from 'express';
@@ -9,11 +9,23 @@ import './offline_semantic_brain.js';
 import './offline_query_engine.js';
 import './omega_minister_state_system.js';
 import './omega_production_semantic_runtime_v3.js';
+import './omega_resource_semantic_bridge.js';
 
-const VERSION='1.3.0';
+const VERSION='1.4.0';
 const store=new AsyncLocalStorage();
 const brain=globalThis.OfflineSemanticBrain;
 const production=globalThis.OmegaProductionSemanticRuntime;
+const resourceBridge=globalThis.OmegaResourceSemanticBridge;
+
+async function waitForResourceBridge(){
+  if(!resourceBridge?.diagnostics)return;
+  for(let i=0;i<200;i++){
+    const d=resourceBridge.diagnostics();
+    if(d.ready)return;
+    await new Promise(resolve=>setTimeout(resolve,10));
+  }
+}
+await waitForResourceBridge();
 
 function active(){return store.getStore()||null;}
 function activePlan(){return active()?.canonicalSemanticPlan||null;}
@@ -80,5 +92,20 @@ if(!express.application.__omegaCanonicalAIPostPatch){
   express.application.__omegaCanonicalAIPostPatch=true;
 }
 
-globalThis.OmegaServerAIGateway=Object.freeze({VERSION,withCanonicalAIRequest,diagnostics:()=>({version:VERSION,asyncContext:'AsyncLocalStorage',routePatch:true,canonicalPlanPassthrough:true,canonicalExplainPassthrough:true,canonicalQuestionGuard:true,productionRuntimeVersion:production?.VERSION||null})});
+globalThis.OmegaServerAIGateway=Object.freeze({
+  VERSION,
+  withCanonicalAIRequest,
+  diagnostics:()=>({
+    version:VERSION,
+    asyncContext:'AsyncLocalStorage',
+    routePatch:true,
+    canonicalPlanPassthrough:true,
+    canonicalExplainPassthrough:true,
+    canonicalQuestionGuard:true,
+    productionRuntimeVersion:production?.VERSION||null,
+    resourceBridgeVersion:resourceBridge?.VERSION||null,
+    resourceBridgeReady:!!resourceBridge?.diagnostics?.().ready,
+    resourceBridgeDiagnostics:resourceBridge?.diagnostics?.()||null
+  })
+});
 console.log('[OMEGA Server AI Gateway] request-scoped canonical semantic transport ready');
