@@ -18,6 +18,7 @@ const files = new Map([
 
 const sandbox = {
   console, Date, JSON, Object, Array, Map, Set, Math, RegExp, String, Number, Intl, Promise, Error, TypeError,
+  setInterval, clearInterval, setTimeout, clearTimeout,
   CustomEvent: class CustomEvent { constructor(type, init = {}) { this.type = type; this.detail = init.detail; } },
   dispatchEvent() {},
   localStorage: { _data: new Map(), getItem(k) { return this._data.get(k) ?? null; }, setItem(k, v) { this._data.set(k, String(v)); } },
@@ -53,7 +54,7 @@ vm.runInNewContext(resourceBridgeSource, sandbox, { filename: 'omega_resource_se
   assert.equal(countryDiag.expectedCountryIds, 197);
   assert.equal(countryDiag.complete, true, `197-country identity coverage incomplete: ${JSON.stringify(countryDiag)}`);
   assert.ok(countryDiag.countries === 197, `Expected exactly 197 canonical country IDs, got ${countryDiag.countries}`);
-  for (const [name, id] of [['Bangladesh','BDG'], ['India','IND'], ['Japan','JPN'], ['Namibia','NAM']]) {
+  for (const [name] of [['Bangladesh'], ['India'], ['Japan'], ['Namibia']]) {
     const resolved = countryBridge.resolve(name);
     assert.ok(resolved?.id, `${name} must resolve as a country`);
     assert.equal(resolved.type, 'COUNTRY');
