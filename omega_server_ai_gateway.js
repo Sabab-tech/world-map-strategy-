@@ -1,9 +1,9 @@
-/* OMEGA SERVER AI GATEWAY v2.0.1
+/* OMEGA SERVER AI GATEWAY v2.0.2
  * Server-side canonical identity/data transport.
  * Country and city identities are resolved only from the canonical runtime registry.
  * Unknown identity is never replaced with a synthetic/default country.
- * Missing deterministic results are executed through the production runtime before
- * the request reaches server.js, so semantic identity cannot terminate at result:null.
+ * Deterministic execution runs before server routes consume the plan, and a verified
+ * canonical identity is never allowed to collapse silently into result:null.
  */
 import { AsyncLocalStorage } from 'node:async_hooks';
 import express from 'express';
@@ -15,12 +15,11 @@ import './omega_resource_semantic_bridge.js';
 import './omega_country_semantic_bridge.js';
 import './omega_reasoning_dispatcher.js';
 
-const VERSION='2.0.1';
+const VERSION='2.0.2';
 const store=new AsyncLocalStorage();
 const brain=globalThis.OfflineSemanticBrain;
 const production=globalThis.OmegaProductionSemanticRuntime;
 const offline=globalThis.OfflineQueryEngine;
-const resourceBridge=globalThis.OmegaResourceSemanticBridge;
 const identityBridge=globalThis.OmegaCanonicalIdentityRegistry||globalThis.OmegaCountrySemanticBridge;
 
 await identityBridge?.init?.();
@@ -32,6 +31,22 @@ function canonicalQuestion(plan,packet){return String(packet?.question??plan?.qu
 function enrichPlan(question,plan){
  if(!identityBridge?.canonicalizePlan)return plan;
  try{return identityBridge.canonicalizePlan(question,plan)||plan;}catch(e){console.warn('[OMEGA Server Identity] plan enrichment failed:',e?.message||e);return plan;}
+}
+function groundedIdentityResult(question,plan){
+ const semantic=plan?.semantic||{};
+ if(!identityBridge)return null;
+ try{
+   const country=identityBridge.resolveCountry?.(question);
+   if(country?.id){
+     const raw=country.raw||identityBridge.countryBrief?.(country.surface)||null;
+     return{ok:true,operation:String(semantic.operation||'IDENTIFY').toUpperCase(),targetDomain:semantic.targetDomain||'COUNTRY',countryId:country.id,entity:raw,source:'OMEGA_CANONICAL_COUNTRY_REGISTRY',evidence:{entityType:'COUNTRY',canonicalId:country.id,surface:country.surface,confidence:country.confidence}};
+   }
+   const city=identityBridge.resolveCity?.(question,semantic?.entities?.country?.id||null);
+   if(city?.id){
+     return{ok:true,operation:String(semantic.operation||'IDENTIFY').toUpperCase(),targetDomain:semantic.targetDomain||'CITY',cityId:city.id,countryId:city.countryId,entity:city.raw||null,source:'OMEGA_CANONICAL_CITY_REGISTRY',evidence:{entityType:'CITY',canonicalId:city.id,countryId:city.countryId,surface:city.surface,confidence:city.confidence}};
+   }
+ }catch(e){console.warn('[OMEGA Server Identity] grounded identity result failed:',e?.message||e);}
+ return null;
 }
 function ensureResult(question,plan,context={}){
  const enriched=enrichPlan(question,plan)||plan;
@@ -51,6 +66,8 @@ function ensureResult(question,plan,context={}){
      if(result!==undefined&&result!==null)return{...enriched,result};
    }
  }catch(e){console.warn('[OMEGA Server Execution] offline execute failed:',e?.message||e);}
+ const grounded=groundedIdentityResult(question,enriched);
+ if(grounded)return{...enriched,result:grounded};
  return enriched;
 }
 function installParserBridge(target,name){
@@ -164,7 +181,8 @@ globalThis.OmegaServerAIGateway=Object.freeze({
    asyncContext:'AsyncLocalStorage',routePatch:true,
    canonicalPlanPassthrough:true,canonicalExplainPassthrough:true,
    deterministicResultExecution:true,
+   groundedIdentityResult:true,
    countryFallbackPolicy:'NO_SYNTHETIC_COUNTRY',cityIdentity:'CANONICAL_CITY_REGISTRY'
  })
 });
-console.log('[OMEGA Server AI Gateway] canonical identity transport v2.0.1 ready');
+console.log('[OMEGA Server AI Gateway] canonical identity transport v2.0.2 ready');
