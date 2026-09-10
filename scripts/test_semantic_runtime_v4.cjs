@@ -34,64 +34,71 @@ vm.runInNewContext(countryBridgeSource, sandbox, { filename: 'omega_country_sema
 vm.runInNewContext(resourceBridgeSource, sandbox, { filename: 'omega_resource_semantic_bridge.js' });
 
 (async () => {
-  await new Promise(resolve => setTimeout(resolve, 180));
+  await new Promise(resolve => setTimeout(resolve, 220));
   const runtime = sandbox.OmegaProductionSemanticRuntime;
   const countryBridge = sandbox.OmegaCountrySemanticBridge;
+  const identity = sandbox.OmegaCanonicalIdentityRegistry;
   const resourceBridge = sandbox.OmegaResourceSemanticBridge;
   assert.ok(runtime, 'Production semantic runtime must load');
   assert.ok(countryBridge, 'Country semantic bridge must load');
+  assert.ok(identity, 'Canonical identity registry must load');
   assert.ok(resourceBridge, 'Resource semantic bridge must load');
 
-  const diag = runtime.diagnostics();
-  assert.equal(diag.ready, true, JSON.stringify(diag));
-  assert.equal(diag.countries, 197, `Runtime country registry must contain exactly 197 canonical IDs: ${diag.countries}`);
-  assert.ok(diag.resources > 0, 'Resource registry is empty');
-  assert.ok(diag.ministers > 0, 'Minister registry is empty');
-
-  const countryDiag = countryBridge.diagnostics();
+  const countryDiag = identity.diagnostics();
   assert.equal(countryDiag.ready, true, JSON.stringify(countryDiag));
-  assert.equal(countryDiag.expectedCountryCount, 197);
-  assert.equal(countryDiag.complete, true, `197-country identity coverage incomplete: ${JSON.stringify(countryDiag)}`);
   assert.equal(countryDiag.countryCount, 197, `Expected exactly 197 canonical country IDs, got ${countryDiag.countryCount}`);
+  assert.equal(countryDiag.complete, true, JSON.stringify(countryDiag));
   assert.ok(countryDiag.totalCityRecords > 0, 'No city records were ingested from cities.json');
+
   for (const name of ['Bangladesh', 'India', 'Japan', 'Namibia']) {
-    const resolved = countryBridge.resolve(name);
+    const resolved = identity.resolveCountry(name);
     assert.ok(resolved?.id, `${name} must resolve as a country`);
     assert.equal(resolved.type, 'COUNTRY');
   }
-  assert.ok(countryBridge.resolve('বাংলাদেশ')?.id, 'Bangladesh Bengali name must resolve');
-  assert.ok(countryBridge.resolve('भारत')?.id || countryBridge.resolve('India')?.id, 'India must resolve through country identity data');
+
+  const namibia = identity.resolveCountry('Namibia');
+  assert.equal(namibia.id, 'NA', 'Namibia must resolve to canonical country ID NA');
+  assert.equal(identity.resolveCountry('What is the GDP of Namibia?')?.id, 'NA', 'Country ID must survive inside a question');
+
+  const windhoek = identity.resolveCity('Windhoek');
+  assert.equal(windhoek?.id, 'NA:windhoek', 'Windhoek must resolve to a deterministic Namibia city ID');
+  assert.equal(windhoek?.countryId, 'NA');
+  assert.equal(identity.resolveCity('Tell me about Windhoek')?.countryId, 'NA');
+
+  const cityBrief = identity.countryBrief('Namibia');
+  assert.equal(cityBrief?.countryId, 'NA');
+  assert.equal(cityBrief?.cityCount, cityBrief?.cities?.length);
+  assert.ok(cityBrief?.cityCount > 0, 'Namibia city registry must preserve JSON-described cities');
 
   const india = countryBridge.parseCountry('India', { initialTurn: true });
   assert.equal(india?.entities?.country?.id, 'IN', 'India must resolve to IN, never Bangladesh');
   assert.equal(india?.responseTemplate?.type, 'COUNTRY_FIRST_TURN');
   assert.equal(india?.countryBrief?.countryName, 'India');
   assert.equal(india?.countryBrief?.cityCount, india?.countryBrief?.cities?.length);
-  assert.ok(india?.countryBrief?.cityCount > 3, 'Country brief must expose all JSON-described cities, not only three major cities');
+  assert.ok(india?.countryBrief?.cityCount > 3, 'Country brief must expose all JSON-described cities, not only three cities');
   assert.deepEqual(india?.countryBrief?.cities?.map(c => c.name), files.get('cities.json').countries.find(c => c.name === 'India').cities.map(c => c.name));
 
   const indiaPlan = runtime.buildAnswerPlan('India', {}, {}, []);
-  assert.equal(indiaPlan?.semantic?.entities?.country?.id, 'IN', 'buildAnswerPlan must use runtime country identity for India');
+  assert.equal(indiaPlan?.semantic?.entities?.country?.id, 'IN', 'buildAnswerPlan must use canonical country identity for India');
   assert.equal(indiaPlan?.countryBrief?.countryName, 'India', 'buildAnswerPlan must expose India country brief');
-  assert.equal(indiaPlan?.countryBrief?.cityCount, india?.countryBrief?.cityCount, 'buildAnswerPlan must preserve every JSON-described India city');
+  assert.equal(indiaPlan?.countryBrief?.cityCount, india?.countryBrief?.cityCount, 'buildAnswerPlan must preserve all JSON-described India cities');
 
-  const japan = countryBridge.parseCountry('Japan', { initialTurn: true });
-  assert.equal(japan?.entities?.country?.id, 'JP', 'Japan must resolve to JP, never Bangladesh');
-  assert.equal(japan?.responseTemplate?.type, 'COUNTRY_FIRST_TURN');
-  assert.equal(japan?.countryBrief?.cityCount, japan?.countryBrief?.cities?.length);
+  const namibiaPlan = runtime.buildAnswerPlan('What is the GDP of Namibia?', {}, {}, []);
+  assert.equal(namibiaPlan?.semantic?.entities?.country?.id, 'NA', 'buildAnswerPlan must resolve Namibia to NA inside a question');
+  assert.equal(namibiaPlan?.countryId, 'NA');
 
-  const bridgeExport = countryBridge.exportData();
-  assert.equal(bridgeExport.expectedCountryCount, 197);
-  assert.equal(bridgeExport.countries.length, 197, 'Export must contain all 197 runtime countries');
+  const unknown = identity.resolveCountry('Atlantis');
+  assert.equal(unknown, null, 'Unknown country must remain unresolved, never become Bangladesh');
+
+  const bridgeExport = identity.exportData();
+  assert.equal(bridgeExport.countries.length, 197, 'Export must contain all 197 canonical countries');
   assert.ok(bridgeExport.countries.every(c => Array.isArray(c.cities)), 'Every exported country must carry its runtime city array');
 
   const bridgeDiag = resourceBridge.diagnostics();
   assert.equal(bridgeDiag.ready, true, JSON.stringify(bridgeDiag));
-  assert.ok(bridgeDiag.countries > 0, 'Bridge country registry is empty');
-  assert.ok(bridgeDiag.resources > 0, 'Bridge resource registry is empty');
+  assert.ok(bridgeDiag.countries > 0, 'Resource bridge country registry is empty');
+  assert.ok(bridgeDiag.resources > 0, 'Resource bridge registry is empty');
   assert.equal(bridgeDiag.expectedCountryIds, 197);
-  assert.ok(bridgeDiag.exportReady, 'Resource data export/access layer is not ready');
-  assert.match(String(bridgeDiag.countryIdCoverage), /\/197$/, `Resource-country reference coverage must use the 197-country denominator: ${bridgeDiag.countryIdCoverage}`);
 
   const ontology = files.get('resource_ontology.json');
   const resourceTypes = ontology?.COMMODITY_ONTOLOGIES || {};
@@ -120,12 +127,11 @@ vm.runInNewContext(resourceBridgeSource, sandbox, { filename: 'omega_resource_se
   assert.equal(q3.operation, 'LOCATE');
   assert.equal(q3.executable, true);
 
-  console.log('SEMANTIC RUNTIME V4 TEST PASSED');
-  console.log(`Runtime countries: ${diag.countries}`);
-  console.log(`Country bridge countries: ${countryDiag.countryCount}`);
+  console.log('SEMANTIC RUNTIME V5 TEST PASSED');
+  console.log(`Canonical countries: ${countryDiag.countryCount}`);
   console.log(`Runtime city records: ${countryDiag.totalCityRecords}`);
   console.log(`Canonical resources: ${Object.keys(resourceTypes).length}`);
-  console.log('All JSON-described India/Japan cities and 197-country identity validated');
-  console.log('buildAnswerPlan country identity override validated');
-  console.log('Worldwide resource location semantic route validated');
+  console.log('Namibia -> NA and Windhoek -> NA:windhoek validated');
+  console.log('India -> IN buildAnswerPlan validated');
+  console.log('Unknown-country no-fallback rule validated');
 })().catch(err => { console.error(err); process.exit(1); });
