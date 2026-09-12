@@ -19,6 +19,7 @@ const OmegaReasoningDispatcher = globalThis.OmegaReasoningDispatcher || null;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const INDEX_PATH = path.join(__dirname, 'index.html');
+const CANDIDATE_MODELS = ['gemini-2.5-flash','gemini-2.0-flash'];
 const AI_INTEGRITY_SCRIPT = '<script src="/omega_ai_integrity_layer.js"></script>';
 const HEALTH_LOGO_SCRIPT = '<script src="/health-ministry-logo.js"></script>';
 const MINISTER_CAPABILITY_SCRIPT = '<script src="/minister_capability_engine.js"></script>';
@@ -36,18 +37,19 @@ const LANGUAGE_SYSTEM_SCRIPT = '<script src="/omega_language_system.js"></script
 const LANGUAGE_BATCH03_SCRIPT = '<script src="/omega_language_batch03_semantic_extension.js"></script>';
 
 let cachedResourceProfiles = {}, resourceTypesRegistry = {};
-const semanticDatasets = [];
 try {
-  for (const filename of ['resources.json', 'resources_2.json']) {
-    const file = path.join(__dirname, filename);
-    if (!fs.existsSync(file)) continue;
-    const raw = JSON.parse(fs.readFileSync(file, 'utf8'));
-    semanticDatasets.push(raw);
-    if (raw.resource_types) resourceTypesRegistry = { ...resourceTypesRegistry, ...raw.resource_types };
-    if (raw.GSRSK_Master_CountryProfiles_v14?.countryProfiles) cachedResourceProfiles = { ...cachedResourceProfiles, ...raw.GSRSK_Master_CountryProfiles_v14.countryProfiles };
+  for (const fileName of fs.readdirSync(__dirname)) {
+    if (!/\.json$/i.test(fileName)) continue;
+    const file = path.join(__dirname, fileName);
+    let raw;
+    try { raw = JSON.parse(fs.readFileSync(file, 'utf8')); } catch (_) { continue; }
+    if (raw?.resource_types && typeof raw.resource_types === 'object') resourceTypesRegistry = { ...resourceTypesRegistry, ...raw.resource_types };
+    if (raw?.GSRSK_Master_CountryProfiles_v14?.countryProfiles && typeof raw.GSRSK_Master_CountryProfiles_v14.countryProfiles === 'object') {
+      cachedResourceProfiles = { ...cachedResourceProfiles, ...raw.GSRSK_Master_CountryProfiles_v14.countryProfiles };
+    }
   }
-  console.log(`[Server Resources DB] Indexed ${Object.keys(cachedResourceProfiles).length} sovereign profiles and ${Object.keys(resourceTypesRegistry).length} resource types.`);
-} catch (e) { console.warn('[Server Resources DB] Load warning:', e.message); }
+  console.log(`[Server Resources DB] Discovered ${Object.keys(cachedResourceProfiles).length} sovereign profiles and ${Object.keys(resourceTypesRegistry).length} resource types.`);
+} catch (e) { console.warn('[Server Resources DB] Discovery warning:', e.message); }
 
 let languageVocabulary = {};
 try {
@@ -59,17 +61,16 @@ let canonicalSemanticRuntime = null;
 try {
   if (ProductionSemanticRuntime?.init) canonicalSemanticRuntime = await ProductionSemanticRuntime.init();
 } catch (e) { console.warn('[Production Semantic Runtime] Initialization warning:', e.message); }
-if (!canonicalSemanticRuntime && OfflineSemanticBrain?.configure) canonicalSemanticRuntime = OfflineSemanticBrain.configure({ datasets: semanticDatasets, vocabulary: languageVocabulary });
+if (!canonicalSemanticRuntime && OfflineSemanticBrain?.configure) canonicalSemanticRuntime = OfflineSemanticBrain.configure({ vocabulary: languageVocabulary });
 console.log('[Semantic Runtime] Canonical authority:', ProductionSemanticRuntime?.VERSION || 'OFFLINE_COMPATIBILITY');
-console.log('[Cognitive Bridge] 40-stage dispatcher:', OmegaReasoningDispatcher?.VERSION || 'UNAVAILABLE');
+console.log('[Deep Core] Authority:', OfflineQueryEngine?.VERSION || 'UNAVAILABLE');
+console.log('[Cognitive Bridge] Dispatcher:', OmegaReasoningDispatcher?.VERSION || 'UNAVAILABLE');
 
-let cachedEconomies = {}, cachedPopulations = {}, cachedMinisters = {};
+let cachedMinisters = {};
 try {
-  const eco = path.join(__dirname, 'economy.json'), pop = path.join(__dirname, 'population.json'), min = path.join(__dirname, 'ministers.json');
-  if (fs.existsSync(eco)) cachedEconomies = JSON.parse(fs.readFileSync(eco, 'utf8'));
-  if (fs.existsSync(pop)) cachedPopulations = JSON.parse(fs.readFileSync(pop, 'utf8'));
-  if (fs.existsSync(min)) cachedMinisters = JSON.parse(fs.readFileSync(min, 'utf8'));
-} catch (e) { console.warn('[Server DB] Auxiliary dataset warning:', e.message); }
+  const file = path.join(__dirname, 'ministers.json');
+  if (fs.existsSync(file)) cachedMinisters = JSON.parse(fs.readFileSync(file, 'utf8'));
+} catch (e) { console.warn('[Server DB] Minister dataset warning:', e.message); }
 
 function normalizeKey(value) { return String(value || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, ''); }
 function tokens(value) { return new Set(normalizeKey(value).split('_').filter(Boolean)); }
@@ -104,7 +105,7 @@ function ministerCandidates(ministryId, countryCode) {
 }
 
 const app = express();
-const PORT = 3000;
+const PORT = Number(process.env.PORT || 3000);
 app.use(express.json({ limit: '10mb' }));
 
 function renderIndex(res, next) {
@@ -125,6 +126,7 @@ function renderIndex(res, next) {
     res.type('html').send(output);
   });
 }
+
 app.get('/', (req, res, next) => renderIndex(res, next));
 app.get('/index.html', (req, res, next) => renderIndex(res, next));
 app.use(express.static(__dirname, { index: false }));
@@ -142,7 +144,7 @@ app.get('/api/minister-candidates', (req, res) => {
 
 app.get('/api/ai/status', (req, res) => {
   const hasKey = !!process.env.GEMINI_API_KEY;
-  res.json({ ok: true, aiAvailable: hasKey, models: CANDIDATE_MODELS, primaryModel: CANDIDATE_MODELS[0], integrityLayer: '2.1.0', ministerStateSystem: '1.0.0', semanticRuntime: { authority: ProductionSemanticRuntime?.VERSION || null, diagnostics: ProductionSemanticRuntime?.diagnostics?.() || canonicalSemanticRuntime }, cognitiveBridge: { authority: OmegaReasoningDispatcher?.VERSION || null, full40: OmegaReasoningDispatcher?.full40 === true }, timestamp: new Date().toISOString() });
+  res.json({ ok: true, aiAvailable: hasKey, models: CANDIDATE_MODELS, primaryModel: CANDIDATE_MODELS[0], integrityLayer: '2.1.0', ministerStateSystem: '1.0.0', deepCore: OfflineQueryEngine?.VERSION || null, semanticRuntime: { authority: ProductionSemanticRuntime?.VERSION || null, diagnostics: ProductionSemanticRuntime?.diagnostics?.() || canonicalSemanticRuntime }, cognitiveBridge: { authority: OmegaReasoningDispatcher?.VERSION || null, full40: OmegaReasoningDispatcher?.full40 === true }, timestamp: new Date().toISOString() });
 });
 
 app.post('/api/minister-state/diagnostics', (req, res) => {
@@ -154,17 +156,89 @@ app.post('/api/minister-state/diagnostics', (req, res) => {
   } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
 
+function deepCoreContext(req) {
+  const body = req.body && typeof req.body === 'object' ? req.body : {};
+  return { ...body, countryId: body.countryId || body.countryCode, countryCode: body.countryCode || body.countryId };
+}
+function buildDeepCoreIR(prompt, input = {}) {
+  if (!OfflineSemanticBrain?.parse) throw new Error('OfflineSemanticBrain is unavailable');
+  return OfflineSemanticBrain.parse(prompt, input);
+}
+function executeDeepCorePrompt(prompt, input = {}) {
+  const ir = buildDeepCoreIR(prompt, input);
+  const plan = OfflineQueryEngine?.buildExecutionPlan ? OfflineQueryEngine.buildExecutionPlan(ir, [], input) : null;
+  const result = OfflineQueryEngine?.execute ? OfflineQueryEngine.execute(ir, [], ir.language || input.language || 'en', input) : { ok: false, status: 'DEEP_CORE_UNAVAILABLE', value: null, evidence: [] };
+  const ledger = OfflineQueryEngine?.buildEvidenceLedger ? OfflineQueryEngine.buildEvidenceLedger(result) : null;
+  return { prompt, ir, searchStrategy: ir.searchStrategy || null, executionPlan: plan, result, evidenceLedger: ledger, diagnostics: OfflineQueryEngine?.diagnostics ? OfflineQueryEngine.diagnostics() : null };
+}
+
+app.get('/api/deep-core/diagnostics', (req, res) => {
+  try { res.json(OfflineQueryEngine.diagnostics()); }
+  catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+app.get('/api/deep-core/catalog', (req, res) => {
+  try { res.json({ ok: true, version: OfflineQueryEngine.VERSION, catalog: OfflineQueryEngine.catalog() }); }
+  catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+app.get('/api/deep-core/schema/:dataset(*)', (req, res) => {
+  try {
+    const dataset = String(req.params.dataset || '').trim();
+    if (!dataset) return res.status(400).json({ ok: false, error: 'dataset is required' });
+    const schema = OfflineQueryEngine.schema(dataset);
+    if (!schema) return res.status(404).json({ ok: false, status: 'DATASET_NOT_FOUND', dataset });
+    res.json({ ok: true, dataset, schema });
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+app.get('/api/deep-core/lookup/:id', (req, res) => {
+  try {
+    const id = String(req.params.id || '').trim();
+    if (!id) return res.status(400).json({ ok: false, error: 'id is required' });
+    const result = OfflineQueryEngine.lookupId(id);
+    res.status(result.status === 'NOT_FOUND' ? 404 : 200).json({ ok: result.status !== 'NOT_FOUND', ...result });
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+app.post('/api/deep-core/plan', (req, res) => {
+  try {
+    const input = deepCoreContext(req), prompt = String(input.prompt || input.question || '').trim();
+    if (!prompt) return res.status(400).json({ ok: false, error: 'prompt or question is required' });
+    const ir = buildDeepCoreIR(prompt, input);
+    const executionPlan = OfflineQueryEngine.buildExecutionPlan(ir, [], input);
+    res.json({ ok: true, prompt, ir, searchStrategy: ir.searchStrategy || null, executionPlan, diagnostics: OfflineQueryEngine.diagnostics() });
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+app.post('/api/deep-core/query', (req, res) => {
+  try {
+    const input = deepCoreContext(req), prompt = String(input.prompt || input.question || '').trim();
+    if (!prompt) return res.status(400).json({ ok: false, error: 'prompt or question is required' });
+    const output = executeDeepCorePrompt(prompt, input);
+    const status = output.result?.status || 'UNRESOLVED';
+    res.status(status === 'VERIFIED_FACT' ? 200 : 422).json({ ok: status === 'VERIFIED_FACT', ...output });
+  } catch (e) { res.status(500).json({ ok: false, error: e.message, source: 'DEEP_CORE_GATEWAY' }); }
+});
+
+app.post('/api/deep-core/refresh', (req, res) => {
+  try { res.json({ ok: true, refresh: OfflineQueryEngine.refresh(), diagnostics: OfflineQueryEngine.diagnostics() }); }
+  catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
 function canonicalPlan(prompt, input = {}) {
   const ctx = { ...input, countryId: input.countryId || input.countryCode, countryCode: input.countryCode || input.countryId };
   if (MinisterQueryRouter?.routeMinisterQuery) {
     const routed = MinisterQueryRouter.routeMinisterQuery(prompt, ctx, ctx);
-    if (routed?.semantic) return { semantic: routed.semantic, result: routed.result || null, router: routed };
+    if (routed?.semantic && routed?.result) return { semantic: routed.semantic, result: routed.result, router: routed };
   }
-  if (ProductionSemanticRuntime?.buildAnswerPlan) return ProductionSemanticRuntime.buildAnswerPlan(prompt, { countryCode: ctx.countryCode, ministryId: ctx.ministryId, ministerId: ctx.ministerId, ministerName: ctx.ministerName }, ctx.gameState || ctx.worldState || {}, ctx.history || []);
-  if (!OfflineSemanticBrain?.parse || !OfflineQueryEngine?.execute) throw new Error('No semantic execution authority is available');
-  const semantic = OfflineSemanticBrain.parse(prompt, ctx);
-  const result = OfflineQueryEngine.execute(semantic, semanticDatasets, input.language === 'bn' || semantic.language === 'bn' ? 'bn' : 'en', ctx);
-  return { semantic, result };
+  if (ProductionSemanticRuntime?.buildAnswerPlan) {
+    try {
+      const result = ProductionSemanticRuntime.buildAnswerPlan(prompt, { countryCode: ctx.countryCode, ministryId: ctx.ministryId, ministerId: ctx.ministerId, ministerName: ctx.ministerName }, ctx.gameState || ctx.worldState || {}, ctx.history || []);
+      if (result?.semantic && result?.result) return result;
+    } catch (e) { console.warn('[Canonical Plan] Production runtime fallback:', e.message); }
+  }
+  return executeDeepCorePrompt(prompt, ctx);
 }
 
 function runCognitiveBridge(prompt, semantic, offlineResult, identity, language, gameState, conversationHistory) {
@@ -177,3 +251,16 @@ function runCognitiveBridge(prompt, semantic, offlineResult, identity, language,
     return { available: false, reason: 'COGNITIVE_DISPATCH_ERROR', error: e.message };
   }
 }
+
+app.get('/api/deep-core/health', (req, res) => {
+  try {
+    const diagnostics = OfflineQueryEngine.diagnostics();
+    res.json({ ok: diagnostics.initialized === true, engine: 'OMEGA_DEEP_CORE', version: OfflineQueryEngine.VERSION, diagnostics });
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+app.listen(PORT, () => {
+  console.log(`[OMEGA Server] Listening on port ${PORT}`);
+  try { console.log('[Deep Core Diagnostics]', JSON.stringify(OfflineQueryEngine.diagnostics())); }
+  catch (e) { console.warn('[Deep Core Diagnostics] unavailable:', e.message); }
+});
