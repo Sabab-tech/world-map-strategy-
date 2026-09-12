@@ -1,10 +1,10 @@
-/* OMEGA OFFLINE SEMANTIC BRAIN v8.0.0-DEEP-CORE-CONTRACT
+/* OMEGA OFFLINE SEMANTIC BRAIN v8.1.0-DEEP-CORE-CONTRACT
  * Language/semantic interpretation only. Repository navigation and evidence extraction
  * belong to OfflineQueryEngine. Domain vocabulary is loaded from JSON knowledge.
  */
 (function(global){
 'use strict';
-const VERSION='8.0.0';
+const VERSION='8.1.0';
 const A=v=>Array.isArray(v)?v:[];
 const O=v=>v!==null&&typeof v==='object';
 const S=v=>String(v==null?'':v).trim();
@@ -14,7 +14,7 @@ function localJSON(name){try{const p=global.process,fs=p?.getBuiltinModule?.('fs
 function loadKnowledge(){return global.OmegaOfflineSemanticKnowledge||global.OmegaSemanticKnowledge||localJSON('offline_semantic_knowledge.json')||{}}
 let R={knowledge:{},vocabulary:{},datasets:[],initialized:false};
 function discoverJSON(){try{const p=global.process,fs=p?.getBuiltinModule?.('fs');if(!fs)return[];return fs.readdirSync(p.cwd(),{withFileTypes:true}).filter(x=>x.isFile()&&x.name.endsWith('.json')).map(x=>x.name).sort()}catch(_){return[]}}
-function normalizeDatasets(input){const out=[],seen=new Set();for(const [i,x] of A(input).entries()){if(x==null)continue;const name=S(x?.__datasetName||x?.dataset||`runtime_${i}`);const raw=Object.prototype.hasOwnProperty.call(x,'__data')?x.__data:(Object.prototype.hasOwnProperty.call(x,'data')&&x.dataset?x.data:x);const key=N(name);if(!seen.has(key)){seen.add(key);out.push({__datasetName:name,__data:raw})}}const meta=A(R.knowledge?.data_finding?.dataset_capabilities).map(x=>N(x.dataset));for(const name of discoverJSON()){if(meta.length&&!meta.includes(N(name)))continue;if(seen.has(N(name)))continue;const raw=localJSON(name);if(raw!==null){seen.add(N(name));out.push({__datasetName:name,__data:raw})}}return out}
+function normalizeDatasets(input){const out=[],seen=new Set();for(const [i,x] of A(input).entries()){if(x==null)continue;const name=S(x?.__datasetName||x?.dataset||`runtime_${i}`);const raw=Object.prototype.hasOwnProperty.call(x,'__data')?x.__data:(Object.prototype.hasOwnProperty.call(x,'data')&&x.dataset?x.data:x);const key=N(name);if(!seen.has(key)){seen.add(key);out.push({__datasetName:name,__data:raw})}}for(const name of discoverJSON()){if(seen.has(N(name)))continue;const raw=localJSON(name);if(raw!==null){seen.add(N(name));out.push({__datasetName:name,__data:raw})}}return out}
 function flattenVocabulary(v,out=[],lang=''){if(v==null)return out;if(Array.isArray(v)){for(const x of v)typeof x==='string'?out.push({raw:x,lang,semantic:'VOCAB'}):flattenVocabulary(x,out,lang);return out}if(!O(v))return out;for(const [k,x] of Object.entries(v)){if(typeof x==='string'&&S(x))out.push({raw:S(x),lang,semantic:S(k).toUpperCase()});else if(Array.isArray(x))for(const z of x)typeof z==='string'?out.push({raw:S(z),lang,semantic:S(k).toUpperCase()}):flattenVocabulary(z,out,lang);else if(O(x))flattenVocabulary(x,out,(k==='en'||k==='bn')?k:lang)}return out}
 function knowledgeEntities(type){const bucket=type==='COUNTRY'?R.knowledge?.countries:type==='RESOURCE'?R.knowledge?.resources:type==='ASSET_CLASS'?R.knowledge?.asset_classes:null;const out=[];for(const [id,v] of Object.entries(bucket||{}))out.push({id:S(id).toUpperCase(),type:S(v?.type||type).toUpperCase(),names:A(v?.names),aliases:A(v?.aliases)});return out}
 function spans(q){const t=N(q).split(/\s+/).filter(Boolean),out=[];for(let len=t.length;len>0;len--)for(let i=0;i+len<=t.length;i++)out.push(t.slice(i,i+len).join(' '));return out}
