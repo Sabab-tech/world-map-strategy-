@@ -1,11 +1,11 @@
-/* OMEGA DEEP CORE v12.0.0
+/* OMEGA DEEP CORE v12.1.0
  * Deterministic metadata-driven repository navigation runtime.
  * Domain facts, dataset names, entity names, field meanings and routing rules
  * come from repository data/metadata. This file only implements generic mechanics.
  */
 (function(global){
 'use strict';
-const VERSION='12.0.0';
+const VERSION='12.1.0';
 const A=v=>Array.isArray(v)?v:[];
 const O=v=>v!==null&&typeof v==='object';
 const S=v=>String(v==null?'':v).trim();
@@ -16,7 +16,7 @@ function discoverJSON(){try{const p=global.process,fs=p?.getBuiltinModule?.('fs'
 function knowledge(){return global.OmegaOfflineSemanticKnowledge||global.OmegaSemanticKnowledge||readLocalJSON('offline_semantic_knowledge.json')||{}}
 function metadata(k){const out=[];for(const d of A(k?.data_finding?.dataset_capabilities)){if(!O(d))continue;for(const cap of A(d.capabilities)){const key=S(cap);const map=d.fieldMappings?.[key]||d.fieldMappings?.[U(key)]||{};out.push({dataset:S(d.dataset),capability:U(key),metadata:d,mapping:map})}}return out}
 function normalizeDataset(x,i){if(O(x)&&Object.prototype.hasOwnProperty.call(x,'__datasetName'))return{name:S(x.__datasetName)||`runtime_${i}`,raw:Object.prototype.hasOwnProperty.call(x,'__data')?x.__data:x};if(O(x)&&Object.prototype.hasOwnProperty.call(x,'dataset')&&Object.prototype.hasOwnProperty.call(x,'data'))return{name:S(x.dataset)||`runtime_${i}`,raw:x.data};return{name:`runtime_${i}`,raw:x}}
-function runtimeDatasets(input,k){const out=[],seen=new Set();for(const [i,x] of A(input).entries()){const d=normalizeDataset(x,i),key=N(d.name);if(d.raw!=null&&!seen.has(key)){seen.add(key);out.push({...d,source:'INPUT'})}}const explicit=new Map(metadata(k).map(x=>[N(x.dataset),x.dataset]));for(const d of discoverJSON()){const key=N(d.name);if(seen.has(key))continue;if(explicit.size===0||explicit.has(key)){seen.add(key);out.push({...d,source:explicit.has(key)?'METADATA':'DISCOVERY'})}}return out}
+function runtimeDatasets(input,k){const out=[],seen=new Set();for(const [i,x] of A(input).entries()){const d=normalizeDataset(x,i),key=N(d.name);if(d.raw!=null&&!seen.has(key)){seen.add(key);out.push({...d,source:'INPUT'})}}for(const d of discoverJSON()){const key=N(d.name);if(seen.has(key))continue;seen.add(key);out.push({...d,source:metadata(k).some(m=>N(m.dataset)===key)?'METADATA':'DISCOVERY'})}return out}
 function pathRead(root,path){if(path==null||S(path)==='')return root;let cur=root;const clean=S(path).replace(/^\$\.?/,'').replace(/\[([^\]]+)\]/g,'.$1');for(const p of clean.split('.').filter(Boolean)){if(cur==null)return undefined;cur=Array.isArray(cur)&&/^\d+$/.test(p)?cur[Number(p)]:cur[p]}return cur}
 function scalar(v){return v===null||['string','number','boolean'].includes(typeof v)}
 function leafFields(v,path='',out=[]){if(v==null)return out;if(Array.isArray(v)){v.forEach((x,i)=>leafFields(x,`${path}[${i}]`,out));return out}if(!O(v))return out;for(const [k,x] of Object.entries(v)){const p=path?`${path}.${k}`:k;if(scalar(x))out.push({key:k,path:p,value:x});else leafFields(x,p,out)}return out}
