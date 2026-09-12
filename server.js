@@ -126,7 +126,6 @@ function renderIndex(res, next) {
     res.type('html').send(output);
   });
 }
-
 app.get('/', (req, res, next) => renderIndex(res, next));
 app.get('/index.html', (req, res, next) => renderIndex(res, next));
 app.use(express.static(__dirname, { index: false }));
@@ -166,10 +165,10 @@ function buildDeepCoreIR(prompt, input = {}) {
 }
 function executeDeepCorePrompt(prompt, input = {}) {
   const ir = buildDeepCoreIR(prompt, input);
-  const plan = OfflineQueryEngine?.buildExecutionPlan ? OfflineQueryEngine.buildExecutionPlan(ir, [], input) : null;
+  const executionPlan = OfflineQueryEngine?.buildExecutionPlan ? OfflineQueryEngine.buildExecutionPlan(ir, [], input) : null;
   const result = OfflineQueryEngine?.execute ? OfflineQueryEngine.execute(ir, [], ir.language || input.language || 'en', input) : { ok: false, status: 'DEEP_CORE_UNAVAILABLE', value: null, evidence: [] };
-  const ledger = OfflineQueryEngine?.buildEvidenceLedger ? OfflineQueryEngine.buildEvidenceLedger(result) : null;
-  return { prompt, ir, searchStrategy: ir.searchStrategy || null, executionPlan: plan, result, evidenceLedger: ledger, diagnostics: OfflineQueryEngine?.diagnostics ? OfflineQueryEngine.diagnostics() : null };
+  const evidenceLedger = OfflineQueryEngine?.buildEvidenceLedger ? OfflineQueryEngine.buildEvidenceLedger(result) : null;
+  return { prompt, ir, searchStrategy: ir.searchStrategy || null, executionPlan, result, evidenceLedger, diagnostics: OfflineQueryEngine?.diagnostics ? OfflineQueryEngine.diagnostics() : null };
 }
 
 app.get('/api/deep-core/diagnostics', (req, res) => {
@@ -182,20 +181,20 @@ app.get('/api/deep-core/catalog', (req, res) => {
   catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
 
-app.get('/api/deep-core/schema/:dataset(*)', (req, res) => {
+app.get('/api/deep-core/schema', (req, res) => {
   try {
-    const dataset = String(req.params.dataset || '').trim();
-    if (!dataset) return res.status(400).json({ ok: false, error: 'dataset is required' });
+    const dataset = String(req.query.dataset || '').trim();
+    if (!dataset) return res.status(400).json({ ok: false, error: 'dataset query parameter is required' });
     const schema = OfflineQueryEngine.schema(dataset);
     if (!schema) return res.status(404).json({ ok: false, status: 'DATASET_NOT_FOUND', dataset });
     res.json({ ok: true, dataset, schema });
   } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
 
-app.get('/api/deep-core/lookup/:id', (req, res) => {
+app.get('/api/deep-core/lookup', (req, res) => {
   try {
-    const id = String(req.params.id || '').trim();
-    if (!id) return res.status(400).json({ ok: false, error: 'id is required' });
+    const id = String(req.query.id || '').trim();
+    if (!id) return res.status(400).json({ ok: false, error: 'id query parameter is required' });
     const result = OfflineQueryEngine.lookupId(id);
     res.status(result.status === 'NOT_FOUND' ? 404 : 200).json({ ok: result.status !== 'NOT_FOUND', ...result });
   } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
@@ -215,8 +214,7 @@ app.post('/api/deep-core/query', (req, res) => {
   try {
     const input = deepCoreContext(req), prompt = String(input.prompt || input.question || '').trim();
     if (!prompt) return res.status(400).json({ ok: false, error: 'prompt or question is required' });
-    const output = executeDeepCorePrompt(prompt, input);
-    const status = output.result?.status || 'UNRESOLVED';
+    const output = executeDeepCorePrompt(prompt, input), status = output.result?.status || 'UNRESOLVED';
     res.status(status === 'VERIFIED_FACT' ? 200 : 422).json({ ok: status === 'VERIFIED_FACT', ...output });
   } catch (e) { res.status(500).json({ ok: false, error: e.message, source: 'DEEP_CORE_GATEWAY' }); }
 });
