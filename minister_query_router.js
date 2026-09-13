@@ -1,105 +1,30 @@
-/* OMEGA MINISTER QUERY ROUTER v13.0.0-DEEP-CORE-BRIDGE
- * Browser entry -> server Deep Core -> repository search registry -> verified evidence.
- * The browser cannot read the server repository filesystem directly, so data authority
- * is explicitly bridged through /api/deep-core/query. AI layers are never authoritative.
+/* OMEGA MINISTER QUERY ROUTER v14.0.0
+ * Browser entry -> repository-backed Deep Core.
+ * HTTP transport is optional. The browser Deep Core scanner is authoritative when
+ * the static application has no Node server behind /api/deep-core/query.
  */
 (function(global){'use strict';
-const VERSION='13.0.0-DEEP-CORE-BRIDGE';
-const S=v=>String(v==null?'':v).trim();
-const U=v=>S(v).toUpperCase();
+const VERSION='14.0.0',S=v=>String(v==null?'':v).trim(),U=v=>S(v).toUpperCase();
 const asset=p=>{try{return typeof document!=='undefined'&&document.baseURI?new URL(p,document.baseURI).href:p}catch(_){return p}};
-const rt=()=>global.OmegaProductionSemanticRuntime||null;
-const brain=()=>global.OfflineSemanticBrain||null;
-const qe=()=>global.OfflineQueryEngine||null;
-const integrity=()=>global.OmegaAIIntegrity||null;
+const brain=()=>global.OfflineSemanticBrain||null,qe=()=>global.OfflineQueryEngine||null,rt=()=>global.OmegaProductionSemanticRuntime||null,integrity=()=>global.OmegaAIIntegrity||null;
 const QueryIntent=Object.freeze({RESOURCE_MINING_DISCOVERY:'RESOURCE_MINING_DISCOVERY',RESOURCE_SECURITY:'RESOURCE_SECURITY',RESOURCE_QUANTITY:'RESOURCE_QUANTITY',RESOURCE_LOCATION:'RESOURCE_LOCATION',COMPARE:'COMPARE',LOOKUP:'LOOKUP',COUNT:'COUNT',LOCATION:'LOCATION'});
-let universalPromise=null;
-const loadedScripts=new Set();
-
-function parse(q,ctx={}){
-  try{if(brain()?.parse){const p=brain().parse(q,ctx);if(p?.contractVersion)return p}}catch(_){}
-  try{if(rt()?.parse)return rt().parse(q,ctx,ctx.gameState||ctx.worldState||{},ctx.history||[])}catch(_){}
-  return{contractVersion:'OMEGA-QUERY-IR-FAILURE',raw:S(q),language:/[\u0980-\u09FF]/.test(S(q))?'bn':'en',operation:'UNKNOWN',subject:{type:'UNKNOWN',id:null},entities:{country:{status:'UNRESOLVED',id:null},resource:{status:'UNRESOLVED',id:null}},unresolved:['SEMANTIC_RUNTIME_UNAVAILABLE'],executable:false};
-}
-
-function executeSemantic(p,ctx={}){
-  try{if(qe()?.execute){const r=qe().execute(p,[],p.language||'en',{...ctx,countryId:p?.entities?.country?.id||ctx.countryId,resourceId:p?.entities?.resource?.id||ctx.resourceId});if(r)return r}}catch(_){}
-  try{const i=integrity();if(i?.buildAnswerPlan){const plan=i.buildAnswerPlan(p.raw||'',ctx,ctx.gameState||ctx.worldState||{},ctx.history||[]);if(plan?.result?.status==='VERIFIED_FACT')return plan.result}}catch(_){}
-  try{if(rt()?.execute)return rt().execute(p,ctx)}catch(_){}
-  return{ok:false,status:'NO_AUTHORITATIVE_EXECUTOR',value:null,evidence:[]};
-}
-
-async function executeServerDeepCore(question,ctx={}){
-  if(typeof fetch!=='function')return{status:'SERVER_FETCH_UNAVAILABLE',value:null,evidence:[]};
-  const controller=typeof AbortController==='function'?new AbortController():null;
-  const timer=controller?setTimeout(()=>{try{controller.abort()}catch(_){ }},30000):null;
-  try{
-    const response=await fetch(asset('/api/deep-core/query'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:S(question),question:S(question),...ctx,countryId:ctx.countryId||ctx.countryCode,resourceId:ctx.resourceId||ctx.resourceId}),signal:controller?.signal});
-    const payload=await response.json().catch(()=>({}));
-    if(!response.ok&&payload?.status!=='VERIFIED_FACT'&&payload?.result?.status!=='VERIFIED_FACT')return{...payload,status:payload?.result?.status||payload?.status||`HTTP_${response.status}`,value:payload?.result?.value??payload?.value??null,evidence:payload?.result?.evidence||payload?.evidence||[],server:true};
-    return{...payload,result:payload?.result||null,status:payload?.result?.status||payload?.status||'UNKNOWN',value:payload?.result?.value??payload?.value??null,evidence:payload?.result?.evidence||payload?.evidence||[],server:true};
-  }catch(e){return{status:'SERVER_FETCH_FAILED',value:null,evidence:[],server:false,error:e?.message||String(e)}}
-  finally{if(timer)clearTimeout(timer)}
-}
-
-function legacyIntent(p){const a=U(p?.entities?.assetClass?.id||p?.assetClass||''),op=U(p?.operation||'LOOKUP');if(['MINE','DEPOSIT','OIL_FIELD','GAS_FIELD'].includes(a))return QueryIntent.RESOURCE_MINING_DISCOVERY;if(p?.property&&/SECURITY|STOCK|RESERVE/.test(U(p.property)))return QueryIntent.RESOURCE_SECURITY;if(op==='COUNT')return QueryIntent.COUNT;if(op==='LOCATE')return QueryIntent.LOCATION;if(op==='COMPARE')return QueryIntent.COMPARE;return op||QueryIntent.LOOKUP}
-
-function route(q,identity={},world={}){
-  const ctx={...identity,...world,history:world.history||identity.history||[]},p=parse(q,ctx),result=executeSemantic(p,ctx);
-  return{version:VERSION,intent:legacyIntent(p),operation:p.operation||'UNKNOWN',domain:p.intent||p.targetDomain||'GENERAL',entities:Object.values(p.entities||{}).filter(e=>e?.id).map(e=>({type:e.type||null,id:e.id,confidence:e.confidence||null,source:e.source||null,surface:e.surface||null})),requiredData:Object.values(p.entities||{}).filter(e=>e?.id).map(e=>e.type||null).filter(Boolean),semantic:p,result,dataFound:result?.status==='VERIFIED_FACT',executable:p.executable!==false&&result?.status!=='NO_AUTHORITATIVE_EXECUTOR'};
-}
-
-function resolveKnowledgeQuery(q,ctx={}){const r=route(q,ctx,ctx);return{...r,country:r.semantic?.entities?.country||null,resource:r.semantic?.entities?.resource||null,operation:r.semantic?.operation||r.semantic?.question?.type||'UNKNOWN'}}
+let universalPromise=null;const loaded=new Set();
+function parse(q,ctx={}){try{if(brain()?.parse){const p=brain().parse(q,ctx);if(p?.contractVersion)return p}}catch(_){}try{if(rt()?.parse)return rt().parse(q,ctx,ctx.gameState||ctx.worldState||{},ctx.history||[])}catch(_){}return{contractVersion:'OMEGA-QUERY-IR-FAILURE',raw:S(q),language:/[\u0980-\u09ff]/.test(S(q))?'bn':'en',operation:'UNKNOWN',entities:{country:{status:'UNRESOLVED',id:null},resource:{status:'UNRESOLVED',id:null}},unresolved:['SEMANTIC_RUNTIME_UNAVAILABLE'],executable:false}}
+function localExecute(p,ctx={}){try{if(qe()?.execute)return qe().execute(p,[],p.language||'en',{...ctx,countryId:p?.entities?.country?.id||ctx.countryId,resourceId:p?.entities?.resource?.id||ctx.resourceId})}catch(_){}return null}
+async function server(question,ctx={}){if(typeof fetch!=='function')return{status:'SERVER_FETCH_UNAVAILABLE',server:false,value:null,evidence:[]};try{const r=await fetch(asset('/api/deep-core/query'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:S(question),question:S(question),...ctx}),credentials:'same-origin'});const p=await r.json().catch(()=>({}));const result=p?.result||p;return{...p,result:p?.result||null,status:result?.status||p?.status||`HTTP_${r.status}`,value:result?.value??p?.value??null,evidence:result?.evidence||p?.evidence||[],server:r.ok===true,transportStatus:r.status}}catch(e){return{status:'SERVER_FETCH_FAILED',server:false,value:null,evidence:[],error:e?.message||String(e)}}}
+async function repositoryExecute(question,ctx={}){const p=parse(question,ctx);const engine=qe();if(!engine)return{status:'DEEP_CORE_ENGINE_UNAVAILABLE',value:null,evidence:[]};try{if(engine.executeAsync){const r=await engine.executeAsync(p,[],p.language||'en',ctx);return{...r,semantic:p}}if(engine.ensureRepositoryAsync){await engine.ensureRepositoryAsync();const r=engine.execute(p,[],p.language||'en',ctx);return{...r,semantic:p}}const r=localExecute(p,ctx);return r?{...r,semantic:p}:{status:'DEEP_CORE_EXECUTOR_UNAVAILABLE',value:null,evidence:[]}}catch(e){return{status:'DEEP_CORE_EXECUTION_ERROR',value:null,evidence:[],error:e?.message||String(e),semantic:p}}}
+function legacyIntent(p){const a=U(p?.entities?.assetClass?.id||p?.assetClass||''),o=U(p?.operation||'LOOKUP');if(a)return QueryIntent.RESOURCE_MINING_DISCOVERY;if(o==='COUNT')return QueryIntent.COUNT;if(o==='LOCATE'||o==='LOCATION')return QueryIntent.LOCATION;if(o==='COMPARE')return QueryIntent.COMPARE;return o||QueryIntent.LOOKUP}
+function route(q,identity={},world={}){const ctx={...identity,...world,history:world.history||identity.history||[]},p=parse(q,ctx),r=localExecute(p,ctx)||{status:'ASYNC_ONLY',value:null,evidence:[]};return{version:VERSION,intent:legacyIntent(p),operation:p.operation||'UNKNOWN',domain:p.intent||p.targetDomain||'GENERAL',entities:Object.values(p.entities||{}).filter(e=>e?.id).map(e=>({type:e.type||null,id:e.id,confidence:e.confidence||null,source:e.source||null,surface:e.surface||null})),requiredData:Object.values(p.entities||{}).filter(e=>e?.id).map(e=>e.type||null).filter(Boolean),semantic:p,result:r,dataFound:r?.status==='VERIFIED_FACT',executable:p.executable!==false&&r?.status!=='NO_AUTHORITATIVE_EXECUTOR'}}
+function resolveKnowledgeQuery(q,ctx={}){const r=route(q,ctx,ctx);return{...r,country:r.semantic?.entities?.country||null,resource:r.semantic?.entities?.resource||null,operation:r.semantic?.operation||'UNKNOWN'}}
 function detectIntent(q,ctx={}){return legacyIntent(parse(q,ctx))}
 function learn(surface,mapping={},confidence=.95){const r=rt(),id=mapping.canonicalId||mapping.countryId||mapping.resourceId||mapping.ministerId,type=mapping.entityType||(mapping.countryId?'COUNTRY':mapping.resourceId?'RESOURCE':mapping.ministerId?'PERSON':null);try{return!!(r?.learn&&surface&&id&&type&&r.learn(surface,type,id,confidence))}catch(_){return false}}
 function recall(q){try{return rt()?.recall?.(q)||{}}catch(_){return{}}}
-
-function renderResult(output,question){
-  if(typeof document==='undefined')return;
-  const input=document.getElementById('interrogation-input');
-  let host=document.getElementById('omega-deep-core-result');
-  if(!host){host=document.createElement('div');host.id='omega-deep-core-result';host.setAttribute('data-source','DEEP_CORE');host.style.cssText='margin-top:10px;padding:10px;border:1px solid rgba(0,229,255,.28);background:rgba(0,0,0,.28);border-radius:6px;color:#dbeafe;font:12px/1.5 Inter,Arial,sans-serif;white-space:pre-wrap;overflow-wrap:anywhere;max-height:260px;overflow:auto;';const parent=input?.parentElement;if(parent)parent.appendChild(host);else document.body.appendChild(host)}
-  while(host.firstChild)host.removeChild(host.firstChild);
-  const status=S(output?.status||'UNKNOWN');
-  const title=document.createElement('div');title.style.fontWeight='700';title.textContent=`DEEP CORE • ${status}`;host.appendChild(title);
-  const value=document.createElement('div');value.style.marginTop='6px';value.textContent=output?.value===null||output?.value===undefined?'Result: null':`Result: ${typeof output.value==='object'?JSON.stringify(output.value):String(output.value)}`;host.appendChild(value);
-  if(question){const q=document.createElement('div');q.style.marginTop='5px';q.style.opacity='.75';q.textContent=`Question: ${question}`;host.appendChild(q)}
-  const ev=Array.isArray(output?.evidence)?output.evidence:[];
-  if(ev.length){const e=document.createElement('div');e.style.marginTop='6px';e.textContent=ev.slice(0,8).map((x,i)=>`[${i+1}] ${x.dataset||'?'} → ${x.physicalPath||'?'} → ${x.recordLocator||'?'}${x.fieldPath?` → ${x.fieldPath}`:''}${x.canonicalEntityId?` → ${x.canonicalEntityId}`:''}`).join('\n');host.appendChild(e)}
-  if(status!=='VERIFIED_FACT'&&output?.error){const er=document.createElement('div');er.style.marginTop='6px';er.style.opacity='.8';er.textContent=`Error: ${output.error}`;host.appendChild(er)}
-}
-
-function loadOnce(src){
-  if(loadedScripts.has(src))return Promise.resolve(true);
-  if(typeof document==='undefined')return Promise.resolve(false);
-  const existing=[...document.scripts].find(x=>x.src&&(x.src===asset(src)||x.src.endsWith('/'+src)));
-  if(existing){loadedScripts.add(src);return Promise.resolve(true)}
-  return new Promise(resolve=>{const s=document.createElement('script');s.src=asset(src);s.onload=()=>{loadedScripts.add(src);resolve(true)};s.onerror=()=>resolve(false);document.head.appendChild(s)})
-}
-async function ensureCanonicalBrowserStack(){await loadOnce('omega_language_system.js');await loadOnce('omega_language_batch03_semantic_extension.js');await loadOnce('omega_country_semantic_bridge.js');await loadOnce('omega_resource_semantic_bridge.js');await loadOnce('omega_production_semantic_runtime_v3.js');await loadOnce('offline_semantic_brain.js');await loadOnce('offline_query_engine.js');await loadOnce('omega_reasoning_dispatcher.js');await loadOnce('omega_universal_ai_runtime.js');return global.OmegaUniversalAIRuntime||null}
-function getQuestionFromUI(){const input=document.getElementById('interrogation-input');return{input,q:S(input?.value)}}
-
-async function enqueue(q,ctx={}){
-  const question=S(q);if(!question)return{status:'EMPTY_QUERY',value:null,evidence:[]};
-  const server=await executeServerDeepCore(question,ctx);
-  if(server.server===true){renderResult(server,question);return server;}
-  try{
-    if(universalPromise===null)universalPromise=ensureCanonicalBrowserStack();
-    const u=await universalPromise;
-    if(u?.enqueue)return u.enqueue(question);
-  }catch(_){ }
-  renderResult(server,question);
-  return server;
-}
-
-function interceptSubmission(event){const button=event?.target?.closest?.('#btn-submit-interrogation');if(!button)return false;const{input,q}=getQuestionFromUI();if(!q)return false;event.preventDefault();event.stopImmediatePropagation();if(input)input.value='';enqueue(q).catch(e=>renderResult({status:'ENTRY_FAILED',value:null,evidence:[],error:e?.message||String(e)},q));return true}
-function interceptEnter(event){if(event.key!=='Enter'||event.shiftKey||event.isComposing||event.target?.id!=='interrogation-input')return false;const q=S(event.target.value);if(!q)return false;event.preventDefault();event.stopImmediatePropagation();event.target.value='';enqueue(q).catch(e=>renderResult({status:'ENTRY_FAILED',value:null,evidence:[],error:e?.message||String(e)},q));return true}
-function installEntryInterceptors(){if(typeof document==='undefined'||document.__OMEGA_CANONICAL_ENTRY_V13)return false;document.__OMEGA_CANONICAL_ENTRY_V13=true;document.addEventListener('click',interceptSubmission,true);document.addEventListener('keydown',interceptEnter,true);return true}
-function canonicalMinisterAnswer(questionText,minister,countryKey,countryDetails){const i=integrity();if(!i?.buildAnswerPlan)return null;const gs=global.Game?.state||global.gameState||global.Omega?.World?.state||{};const identity={countryId:S(countryKey||gs.countryCode||gs.countryId||''),countryName:S(countryDetails?.name||countryDetails?.countryName||gs.countryName||''),ministerId:S(minister?.id||minister?.ministerId||''),ministerName:S(minister?.name||minister?.ministerName||minister?.displayName||''),ministerRole:S(minister?.role||minister?.title||''),ministryId:S(minister?.ministryId||''),gameState:gs};try{const plan=i.buildAnswerPlan(S(questionText),identity,gs,[]);if(!plan||plan?.result?.status!=='VERIFIED_FACT')return null;const text=typeof i.formatOfflineAnswer==='function'?i.formatOfflineAnswer(plan):'';return{text:String(text||''),impact:plan?.semantic?.identityAuthority||'DEEP_CORE',aiPowered:false,canonical:true,plan}}catch(_){return null}}
-function wrapCognitive(os){if(!os||typeof os.thinkMinisterQuestion!=='function'||os.thinkMinisterQuestion.__omegaCanonicalFacade)return false;const original=os.thinkMinisterQuestion.bind(os);function wrapped(questionText,minister,countryKey,countryDetails){const canonical=canonicalMinisterAnswer(questionText,minister,countryKey,countryDetails);if(canonical)return canonical;return original(questionText,minister,countryKey,countryDetails)}wrapped.__omegaCanonicalFacade=true;wrapped.__omegaOriginal=original;try{os.thinkMinisterQuestion=wrapped;return true}catch(_){return false}}
-function installCognitiveFacade(){if(wrapCognitive(global.OmegaCognitiveOS))return true;if(typeof global.setInterval!=='function')return false;let tries=0;const timer=global.setInterval(()=>{tries++;if(wrapCognitive(global.OmegaCognitiveOS)||tries>=240){try{global.clearInterval(timer)}catch(_){}}},25);return true}
-
-const API=Object.freeze({VERSION,QueryIntent,parse,executeSemantic,executeServerDeepCore,routeMinisterQuery:route,resolveKnowledgeQuery,detectIntent,learn,recall,ensureCanonicalBrowserStack,enqueue});
-global.MinisterQueryRouter=API;installEntryInterceptors();installCognitiveFacade();
-if(typeof module!=='undefined'&&module.exports)module.exports=API;
+function renderResult(out,q){if(typeof document==='undefined')return;let host=document.getElementById('omega-deep-core-result');const input=document.getElementById('interrogation-input');if(!host){host=document.createElement('div');host.id='omega-deep-core-result';host.setAttribute('data-source','DEEP_CORE');host.style.cssText='margin-top:10px;padding:10px;border:1px solid rgba(0,229,255,.28);background:rgba(0,0,0,.28);border-radius:6px;color:#dbeafe;font:12px/1.5 Inter,Arial,sans-serif;white-space:pre-wrap;overflow-wrap:anywhere;max-height:320px;overflow:auto;';(input?.parentElement||document.body).appendChild(host)}while(host.firstChild)host.removeChild(host.firstChild);const st=S(out?.status||'UNKNOWN');const t=document.createElement('div');t.style.fontWeight='700';t.textContent=`DEEP CORE • ${st}`;host.appendChild(t);const v=document.createElement('div');v.textContent=out?.value===null||out?.value===undefined?'Result: null':`Result: ${typeof out.value==='object'?JSON.stringify(out.value):String(out.value)}`;host.appendChild(v);if(q){const z=document.createElement('div');z.style.opacity='.75';z.textContent=`Question: ${q}`;host.appendChild(z)}const scan=out?.dataAccess?.scan||out?.scan;if(scan){const d=document.createElement('div');d.style.marginTop='5px';d.textContent=`Scan: ${scan.mode||'?'} | ${scan.source||'?'} | ${scan.loadedFiles||0}/${scan.discoveredFiles||0}`;host.appendChild(d)}const ev=Array.isArray(out?.evidence)?out.evidence:[];if(ev.length){const e=document.createElement('div');e.style.marginTop='6px';e.textContent=ev.slice(0,10).map((x,i)=>`[${i+1}] ${x.dataset||'?'} → ${x.physicalPath||'?'} → ${x.recordLocator||'?'}${x.fieldPath?` → ${x.fieldPath}`:''}${x.canonicalEntityId?` → ${x.canonicalEntityId}`:''}`).join('\n');host.appendChild(e)}}
+function loadOnce(src){if(loaded.has(src))return Promise.resolve(true);if(typeof document==='undefined')return Promise.resolve(false);const existing=[...document.scripts].find(s=>s.src&&(s.src===asset(src)||s.src.endsWith('/'+src)));if(existing){loaded.add(src);return Promise.resolve(true)}return new Promise(ok=>{const s=document.createElement('script');s.src=asset(src);s.onload=()=>{loaded.add(src);ok(true)};s.onerror=()=>ok(false);document.head.appendChild(s)})}
+async function ensureStack(){await loadOnce('offline_query_engine.js');return true}
+async function enqueue(q,ctx={}){const question=S(q);if(!question)return{status:'EMPTY_QUERY',value:null,evidence:[]};const srv=await server(question,ctx);if(srv.server&&srv.status==='VERIFIED_FACT'){renderResult(srv,question);return srv}const local=await repositoryExecute(question,ctx);if(local?.status&&local.status!=='DEEP_CORE_ENGINE_UNAVAILABLE'){renderResult(local,question);return local}renderResult({...srv,transportStatus:srv.transportStatus||null},question);return{...local,...srv,status:local?.status||srv.status,value:local?.value??srv.value??null,evidence:local?.evidence||srv.evidence||[]}}
+function interceptSubmission(ev){const b=ev?.target?.closest?.('#btn-submit-interrogation');if(!b)return false;const input=document.getElementById('interrogation-input'),q=S(input?.value);if(!q)return false;ev.preventDefault();ev.stopImmediatePropagation();if(input)input.value='';enqueue(q).catch(e=>renderResult({status:'ENTRY_FAILED',value:null,evidence:[],error:e?.message||String(e)},q));return true}
+function interceptEnter(ev){if(ev.key!=='Enter'||ev.shiftKey||ev.isComposing||ev.target?.id!=='interrogation-input')return false;const q=S(ev.target.value);if(!q)return false;ev.preventDefault();ev.stopImmediatePropagation();ev.target.value='';enqueue(q).catch(e=>renderResult({status:'ENTRY_FAILED',value:null,evidence:[],error:e?.message||String(e)},q));return true}
+function install(){if(typeof document==='undefined'||document.__OMEGA_CANONICAL_ENTRY_V14)return;document.__OMEGA_CANONICAL_ENTRY_V14=true;document.addEventListener('click',interceptSubmission,true);document.addEventListener('keydown',interceptEnter,true)}
+const API=Object.freeze({VERSION,QueryIntent,parse,executeServerDeepCore:server,repositoryExecute,routeMinisterQuery:route,resolveKnowledgeQuery,detectIntent,learn,recall,ensureCanonicalBrowserStack:ensureStack,enqueue});global.MinisterQueryRouter=API;install();if(typeof module!=='undefined'&&module.exports)module.exports=API;
 })(typeof globalThis!=='undefined'?globalThis:window);
