@@ -1,81 +1,463 @@
-/* OMEGA DEEP CORE v15.2.0
- * Deterministic repository navigation, indexed identity, ancestry scope, relation graph,
- * semantic property extraction, deterministic operations and evidence provenance.
- * Generic mechanics only; domain facts come from repository data and metadata.
+/* OMEGA DEEP CORE v16.0.0
+ * Repository-wide deterministic data index.
+ *
+ * Purpose:
+ *   QUESTION IR -> exact/semantic identity lookup -> repository search registry
+ *   -> physical dataset -> record/field location -> relation/ancestry scope
+ *   -> deterministic operation -> evidence.
+ *
+ * This file contains mechanics only. Domain identities, aliases, capabilities,
+ * relations and field mappings come from the repository knowledge/configuration.
  */
 (function(global){
 'use strict';
-const VERSION='15.2.0',A=v=>Array.isArray(v)?v:[],O=v=>v!==null&&typeof v==='object',S=v=>String(v==null?'':v).trim(),N=v=>S(v).normalize('NFKC').toLowerCase().replace(/[?!,.:;"'“”‘’(){}[\]<>—–/\\]/g,' ').replace(/\s+/g,' ').trim(),U=v=>S(v).toUpperCase(),has=(o,k)=>O(o)&&Object.prototype.hasOwnProperty.call(o,k);
+
+const VERSION='16.0.0';
+const A=v=>Array.isArray(v)?v:[];
+const O=v=>v!==null&&typeof v==='object';
+const S=v=>String(v==null?'':v).trim();
+const U=v=>S(v).toUpperCase();
+const N=v=>S(v).normalize('NFKC').toLowerCase().replace(/[?!,.:;"'“”‘’(){}[\]<>—–/\\]/g,' ').replace(/\s+/g,' ').trim();
+const KEY=v=>N(v).replace(/\s+/g,'_');
+const has=(o,k)=>O(o)&&Object.prototype.hasOwnProperty.call(o,k);
+
 function builtIn(name){try{const p=global.process;return p?.getBuiltinModule?p.getBuiltinModule(name):null}catch(_){return null}}
 function mods(){return{fs:builtIn('fs'),path:builtIn('path'),crypto:builtIn('crypto')}}
-function readJSON(file){try{const fs=mods().fs;if(!fs||!fs.existsSync(file))return null;return JSON.parse(fs.readFileSync(file,'utf8'))}catch(_){return null}}
+function readJSON(file){try{const{fs}=mods();if(!fs||!fs.existsSync(file))return null;return JSON.parse(fs.readFileSync(file,'utf8'))}catch(_){return null}}
 function hash(text){try{const c=mods().crypto;return c?.createHash?c.createHash('sha256').update(String(text)).digest('hex'):null}catch(_){return null}}
-function relPath(file,root){const p=mods().path;if(p)return p.relative(root,file).replace(/\\/g,'/')||p.basename(file);return S(file).replace(/^\.?\//,'')}
-function walkFiles(root){const{fs,path}=mods();if(!fs||!path)return[];const out=[],blocked=new Set(['node_modules','.git','.github','.cache','dist','build']);const visit=dir=>{let entries=[];try{entries=fs.readdirSync(dir,{withFileTypes:true})}catch(_){return}for(const e of entries){const full=path.join(dir,e.name);if(e.isDirectory()){if(!blocked.has(e.name))visit(full)}else if(e.isFile()&&/\.(json|geojson)$/i.test(e.name))out.push(full)}};visit(root);return out.sort((a,b)=>a.localeCompare(b))}
-function loadKnowledge(){if(global.OmegaOfflineSemanticKnowledge)return global.OmegaOfflineSemanticKnowledge;if(global.OmegaSemanticKnowledge)return global.OmegaSemanticKnowledge;const p=mods().path,root=global.process?.cwd?.()||'.';return p?readJSON(p.join(root,'offline_semantic_knowledge.json'))||{}:{}}
-function metaEntries(k){const out=[];for(const d of A(k?.data_finding?.dataset_capabilities)){if(!O(d)||!S(d.dataset))continue;for(const cap of A(d.capabilities)){const c=U(cap),m=d.fieldMappings?.[cap]||d.fieldMappings?.[c]||{};out.push({dataset:S(d.dataset),capability:c,mapping:m,metadata:d})}}return out}
-function relationDefs(k){return A(k?.relations||k?.relationship_registry||k?.relationshipRegistry).filter(x=>O(x)&&S(x.id)).map(x=>({...x,id:U(x.id),from:U(x.from||x.fromType||''),to:U(x.to||x.toType||'')}))}
-function entityTypeDefs(k){return new Set(A(k?.entity_types).map(U))}
-function knownEntities(k){const out=[],skip=new Set(['data_finding','question_semantics','ambiguity_policy','normalization','entity_types','schema','relations','relationship_registry','relationshipRegistry']);const add=(id,v,b)=>{if(!O(v))return;const type=U(v.type||({countries:'COUNTRY',resources:'RESOURCE',asset_classes:'ASSET_CLASS'}[b]||''));if(!type)return;const names=[...A(v.names),...A(v.aliases)].map(S).filter(Boolean);out.push({id:U(id),type,names:[...new Set(names)]})};for(const[b,c]of Object.entries(k||{})){if(skip.has(b)||!O(c)||Array.isArray(c))continue;for(const[id,v]of Object.entries(c))add(id,v,b)}const d=new Map;for(const x of out)d.set(`${x.type}::${x.id}`,x);return[...d.values()]}
-function pathRead(root,p){if(p==null||S(p)==='')return root;let cur=root;const clean=S(p).replace(/^\$\.?/,'').replace(/\[([^\]]+)\]/g,'.$1');for(const part of clean.split('.').filter(Boolean)){if(cur==null)return undefined;cur=Array.isArray(cur)&&/^\d+$/.test(part)?cur[Number(part)]:cur[part]}return cur}
-function scalar(v){return v===null||['string','number','boolean'].includes(typeof v)}
-function scalarEntries(value,path='',out=[]){if(value==null)return out;if(Array.isArray(value)){value.forEach((v,i)=>scalarEntries(v,`${path}.${i}`,out));return out}if(!O(value))return out;for(const[k,v]of Object.entries(value)){const p=path?`${path}.${k}`:k;if(scalar(v))out.push({key:k,path:p,value:v,type:v===null?'null':typeof v});else scalarEntries(v,p,out)}return out}
-function tokens(v){return N(v).split(/\s+/).filter(Boolean)}
-function tokenScore(a,b){const aa=new Set(tokens(a)),bb=new Set(tokens(b));if(!aa.size||!bb.size)return 0;let h=0;for(const x of aa)if(bb.has(x))h++;return h/Math.max(aa.size,bb.size)}
-function textScore(a,b){const x=N(a),y=N(b);if(!x||!y)return 0;if(x===y)return 1;if(x.includes(y)||y.includes(x))return .94;return tokenScore(x,y)*.8}
-function rootShape(v){return Array.isArray(v)?'ARRAY':O(v)?'OBJECT':'SCALAR'}
-function normalizeInput(x,i){if(O(x)&&has(x,'__datasetName'))return{name:S(x.__datasetName)||`runtime_${i}`,raw:has(x,'__data')?x.__data:x,source:'RUNTIME_INPUT'};if(O(x)&&has(x,'dataset')&&has(x,'data'))return{name:S(x.dataset)||`runtime_${i}`,raw:x.data,source:'RUNTIME_INPUT'};return{name:`runtime_${i}`,raw:x,source:'RUNTIME_INPUT'}}
-function datasetMetaFor(k,name){const all=metaEntries(k).filter(x=>N(x.dataset)===N(name)||N(x.dataset).replace(/\.json$/,'')===N(name).replace(/\.json$/,''));if(!all.length)return null;const m={dataset:S(name),capabilities:[],fieldMappings:{},entityTypes:[],identityFields:[],recordLocator:null,recordKeyIsIdentity:false,authority:'EXPLICIT_METADATA'};for(const x of all){if(!m.capabilities.includes(x.capability))m.capabilities.push(x.capability);m.fieldMappings[x.capability]=x.mapping||{};for(const t of A(x.metadata.entityTypes)){const u=U(t);if(!m.entityTypes.includes(u))m.entityTypes.push(u)}for(const f of A(x.metadata.identityFields)){if(!m.identityFields.includes(S(f)))m.identityFields.push(S(f))}if(!m.recordLocator&&x.metadata.recordLocator)m.recordLocator=S(x.metadata.recordLocator);if(x.metadata.recordKeyIsIdentity===true)m.recordKeyIsIdentity=true}return m}
-function schemaProfile(raw){const fields=new Map;let objects=0,arrays=0,maxDepth=0;const walk=(v,p='',d=0)=>{maxDepth=Math.max(maxDepth,d);if(Array.isArray(v)){arrays++;v.forEach(x=>walk(x,p,d+1));return}if(!O(v))return;objects++;for(const[k,x]of Object.entries(v)){const path=p?`${p}.${k}`:k,typ=Array.isArray(x)?'array':x===null?'null':typeof x;let f=fields.get(path);if(!f)f={path,key:k,types:new Set,count:0};f.types.add(typ);f.count++;fields.set(path,f);if(O(x)||Array.isArray(x))walk(x,path,d+1)}};walk(raw);return{rootShape:rootShape(raw),objectCount:objects,arrayCount:arrays,maxDepth,fields:[...fields.values()].map(x=>({path:x.path,key:x.key,types:[...x.types],count:x.count}))}}
-class Catalog{constructor(root,k){this.root=root;this.k=k;this.entries=[];this.byId=new Map;this.version=0}clear(){this.entries=[];this.byId.clear();this.version=0}add(e){const key=N(e.datasetId||e.name||e.physicalPath);if(!key)return null;const old=this.byId.get(key);if(old){Object.assign(old,e);return old}const v={...e,datasetId:key};this.byId.set(key,v);this.entries.push(v);return v}get(name){return this.byId.get(N(name))||this.entries.find(e=>N(e.name)===N(name)||N(e.physicalPath)===N(name))||null}list(){return this.entries.slice().sort((a,b)=>a.datasetId.localeCompare(b.datasetId))}}
-class DeepCoreRuntime{
-constructor(opts={}){this.root=opts.rootDir||global.process?.cwd?.()||'.';this.k=opts.knowledge||loadKnowledge();this.catalog=new Catalog(this.root,this.k);this.datasets=new Map;this.records=[];this.byLocator=new Map;this.idIndex=new Map;this.aliasIndex=new Map;this.edgesOut=new Map;this.edgesIn=new Map;this.schemas=new Map;this.properties=new Map;this.relations=relationDefs(this.k);this.known=new Map(knownEntities(this.k).map(x=>[`${x.type}::${x.id}`,x]));this.initialized=false;this.version=0}
-clear(){this.catalog.clear();this.datasets.clear();this.records=[];this.byLocator.clear();this.idIndex.clear();this.aliasIndex.clear();this.edgesOut.clear();this.edgesIn.clear();this.schemas.clear();this.properties.clear();this.initialized=false}
-registerPhysical(file){const fs=mods().fs,path=mods().path;if(!fs)return null;let st,txt;try{st=fs.statSync(file);txt=fs.readFileSync(file,'utf8')}catch(_){return null}let raw,status='PARSE_OK',error=null;try{raw=JSON.parse(txt)}catch(e){status='PARSE_ERROR';error=e.message}const name=path?path.basename(file):file.split('/').pop(),relative=relPath(file,this.root),meta=datasetMetaFor(this.k,name),entry=this.catalog.add({...{physicalPath:relative,absolutePath:file,name,extension:(name.split('.').pop()||'').toLowerCase(),bytes:st.size,modifiedAt:new Date(st.mtimeMs).toISOString(),hash:hash(txt),parseStatus:status,parseError:error,rootShape:raw==null?'UNKNOWN':rootShape(raw),rootKeys:O(raw)&&!Array.isArray(raw)?Object.keys(raw):[],source:'PHYSICAL_FILE'},...meta?{logicalDatasetId:meta.logicalDatasetId||meta.dataset,capabilities:meta.capabilities,entityTypes:meta.entityTypes,identityFields:meta.identityFields,recordLocator:meta.recordLocator,recordKeyIsIdentity:meta.recordKeyIsIdentity,authority:meta.authority}:{}});if(raw!==undefined){this.datasets.set(N(entry.datasetId),{entry,raw});this.schemas.set(N(entry.datasetId),schemaProfile(raw));this.collect(raw,entry,meta)}return entry}
-registerInput(x,i){const d=normalizeInput(x,i),meta=datasetMetaFor(this.k,d.name),entry=this.catalog.add({...{physicalPath:null,absolutePath:null,name:d.name,extension:'runtime',bytes:null,modifiedAt:null,hash:null,parseStatus:'RUNTIME_INPUT',rootShape:rootShape(d.raw),rootKeys:O(d.raw)&&!Array.isArray(d.raw)?Object.keys(d.raw):[],source:'RUNTIME_INPUT'},...meta?{logicalDatasetId:meta.logicalDatasetId||meta.dataset,capabilities:meta.capabilities,entityTypes:meta.entityTypes,identityFields:meta.identityFields,recordLocator:meta.recordLocator,recordKeyIsIdentity:meta.recordKeyIsIdentity,authority:meta.authority}:{}});this.datasets.set(N(entry.datasetId),{entry,raw:d.raw});this.schemas.set(N(entry.datasetId),schemaProfile(d.raw));this.collect(d.raw,entry,meta);return entry}
-makeRecord(value,locator,key,entry,meta,parent,ancestors){const fields=scalarEntries(value),identityEvidence=[],identityFields=A(meta?.identityFields);for(const f of fields){if(typeof f.value!=='string'||!S(f.value))continue;for(const df of identityFields){const fk=N(f.key),dk=N(String(df).replace(/\[.*?\]/g,''));if(fk===dk||fk.includes(dk)||dk.includes(fk))identityEvidence.push({value:U(f.value),source:'METADATA_ID_FIELD',fieldPath:f.path})}}if(key&&!/^\d+$/.test(S(key)))identityEvidence.push({value:U(key),source:'OBJECT_KEY',fieldPath:null});const aliases=[];for(const f of fields)if(typeof f.value==='string'&&S(f.value))aliases.push({value:S(f.value),source:'SCALAR_FIELD',fieldPath:f.path});if(key&&!/^\d+$/.test(S(key)))aliases.push({value:S(key).replace(/[_-]+/g,' '),source:'OBJECT_KEY',fieldPath:null});const seen=new Set,a=aliases.filter(x=>{const q=N(x.value);if(!q||seen.has(q))return false;seen.add(q);return true});return{dataset:entry.datasetId,locator,key,value,parent,ancestry:A(ancestors),entityType:'UNKNOWN',identities:[],identityValues:[],identityEvidence,aliases:a,aliasValues:a.map(x=>x.value),fields,fileEntry:{datasetId:entry.datasetId,name:entry.name,physicalPath:entry.physicalPath,source:entry.source},meta:meta||null}}
-collect(raw,entry,meta){const out=[],add=(v,p,k,parent,anc)=>{if(!O(v))return null;const r=this.makeRecord(v,p,k,entry,meta,parent,anc);out.push(r);return r},visit=(v,p,parent,anc,d)=>{if(!O(v)||d>60)return;for(const[k,x]of Object.entries(v)){if(Array.isArray(x))x.forEach((item,i)=>{const q=`${p}.${k}.${i}`,r=add(item,q,String(i),parent,anc);if(r)visit(item,q,r,[...anc,r],d+1)});else if(O(x)){const q=p?`${p}.${k}`:k,r=add(x,q,k,parent,anc);if(r)visit(x,q,r,[...anc,r],d+1)}}};if(Array.isArray(raw))raw.forEach((x,i)=>{const r=add(x,String(i),String(i),null,[]);if(r)visit(x,String(i),r,[r],1)});else if(O(raw)){for(const[k,x]of Object.entries(raw)){if(Array.isArray(x))x.forEach((item,i)=>{const r=add(item,`${k}.${i}`,String(i),null,[]);if(r)visit(item,`${k}.${i}`,r,[r],1)});else if(O(x)){const r=add(x,k,k,null,[]);if(r)visit(x,k,r,[r],1)}}if(!out.length)out.push(this.makeRecord(raw,'root','root',entry,meta,null,[]))}else out.push(this.makeRecord(raw,'root','root',entry,meta,null,[]));const seen=new Set;for(const r of out){const k=`${r.dataset}::${r.locator}`;if(seen.has(k))continue;seen.add(k);this.records.push(r);this.byLocator.set(k,r)}}
-inferIdentities(){const types=entityTypeDefs(this.k);for(const r of this.records){const candidates=[];for(const f of r.fields){if(typeof f.value!=='string'||!S(f.value))continue;const known=[...this.known.values()].find(e=>e.id===U(f.value));if(known)candidates.push({id:known.id,type:known.type,score:100,source:'KNOWLEDGE_ENTITY',fieldPath:f.path});for(const t of types){const tn=N(t).replace(/_/g,' '),fk=N(f.key);if(fk.includes(tn.split(' ')[0])&&/(id|key|ref)/.test(fk))candidates.push({id:U(f.value),type:t,score:30,source:'IDENTITY_FIELD_SHAPE',fieldPath:f.path})}}for(const a of A(r.ancestry))for(const iv of A(a.identityEvidence)){const known=[...this.known.values()].find(e=>e.id===U(iv.value));if(known)candidates.push({id:known.id,type:known.type,score:50,source:'ANCESTRY',fieldPath:iv.fieldPath})}if(r.key&&!/^\d+$/.test(S(r.key))){const known=[...this.known.values()].find(e=>e.id===U(r.key));if(known)candidates.push({id:known.id,type:known.type,score:120,source:'KNOWN_OBJECT_KEY'});else if(r.meta?.recordKeyIsIdentity)candidates.push({id:U(r.key),type:r.entityType,score:100,source:'RECORD_KEY'})}if(r.meta?.entityTypes?.length===1)candidates.push({type:U(r.meta.entityTypes[0]),score:10,source:'DATASET_METADATA'});candidates.sort((a,b)=>b.score-a.score);r.entityType=candidates[0]?.type||'UNKNOWN';r.identities=[];for(const c of candidates.filter(x=>x.id))if(!r.identities.some(x=>x.id===c.id))r.identities.push(c);r.identities=r.identities.slice(0,16);r.identityValues=[...new Set(r.identities.map(x=>U(x.id)))];for(const id of r.identityValues){if(!this.idIndex.has(id))this.idIndex.set(id,[]);this.idIndex.get(id).push(r)}for(const a of r.aliases){const q=N(a.value);if(!q)continue;if(!this.aliasIndex.has(q))this.aliasIndex.set(q,[]);this.aliasIndex.get(q).push({record:r,source:a.source,fieldPath:a.fieldPath||null})}}}
-buildProperties(){this.properties.clear();for(const m of metaEntries(this.k))this.properties.set(`${N(m.dataset)}::${m.capability}`,{dataset:m.dataset,capability:m.capability,mapping:m.mapping,metadata:m.metadata})}
-addEdge(from,to,relation,detail={}){if(!from||!to||from===to)return;const fk=`${from.dataset}::${from.locator}`,tk=`${to.dataset}::${to.locator}`,e={from,to,relation:relation||null,...detail};if(!this.edgesOut.has(fk))this.edgesOut.set(fk,[]);if(!this.edgesIn.has(tk))this.edgesIn.set(tk,[]);if(!this.edgesOut.get(fk).some(x=>x.to===to&&x.relation===e.relation&&x.fieldPath===e.fieldPath))this.edgesOut.get(fk).push(e);if(!this.edgesIn.get(tk).some(x=>x.from===from&&x.relation===e.relation&&x.fieldPath===e.fieldPath))this.edgesIn.get(tk).push(e)}
-buildGraph(){this.edgesOut.clear();this.edgesIn.clear();for(const r of this.records){for(const f of r.fields){const targets=this.idIndex.get(U(f.value))||[];for(const t of targets){if(t===r)continue;const defs=this.relations.filter(x=>(!x.from||x.from===r.entityType||r.entityType==='UNKNOWN')&&(!x.to||x.to===t.entityType||t.entityType==='UNKNOWN'));this.addEdge(r,t,defs[0]?.id,{kind:'REFERENCE',fieldPath:f.path,targetId:U(f.value),source:'DATA_REFERENCE'})}}for(const a of A(r.ancestry)){if(a===r)continue;const defs=this.relations.filter(x=>(!x.from||x.from===a.entityType||a.entityType==='UNKNOWN')&&(!x.to||x.to===r.entityType||r.entityType==='UNKNOWN'));for(const d of defs)this.addEdge(a,r,d.id,{kind:'NESTED_RELATION',source:'JSON_ANCESTRY'})}}}
-initialize(opts={}){if(this.initialized&&!opts.force)return this.report();this.clear();this.root=opts.rootDir||this.root;this.k=opts.knowledge||loadKnowledge();this.relations=relationDefs(this.k);this.known=new Map(knownEntities(this.k).map(x=>[`${x.type}::${x.id}`,x]));this.catalog=new Catalog(this.root,this.k);for(let i=0;i<A(opts.datasets).length;i++)this.registerInput(opts.datasets[i],i);if(opts.discover!==false)for(const f of walkFiles(this.root))this.registerPhysical(f);this.inferIdentities();this.buildProperties();this.buildGraph();this.initialized=true;this.version++;this.catalog.version=this.version;return this.report()}
-ensure(inputs=[]){if(!this.initialized)return this.initialize({datasets:inputs});return this.report()}
-report(){return{ok:true,version:VERSION,initialized:this.initialized,rootDir:this.root,catalog:{files:this.catalog.entries.length,version:this.catalog.version},collection:{records:this.records.length,uniqueIds:this.idIndex.size,aliases:this.aliasIndex.size,edges:[...this.edgesOut.values()].reduce((n,a)=>n+a.length,0)},registries:{datasets:this.datasets.size,schemas:this.schemas.size,properties:this.properties.size,relations:this.relations.length}}}
-schema(name){return this.schemas.get(N(name))||null}
-catalogView(){return this.catalog.list().map(e=>({...e,recordCount:this.records.filter(r=>r.dataset===e.datasetId).length}))}
-resolveExactId(id,type){const all=(this.idIndex.get(U(id))||[]).filter(r=>!type||r.entityType==='UNKNOWN'||r.entityType===U(type));const typeSet=new Set(all.map(r=>r.entityType).filter(t=>t!=='UNKNOWN'));if(typeSet.size>1)return{status:'AMBIGUOUS',id:U(id),records:all};return{status:all.length?'RESOLVED':'NOT_FOUND',id:U(id),records:all}}
-lookupText(text,type){const out=[];for(const x of this.aliasIndex.get(N(text))||[])if(!type||x.record.entityType==='UNKNOWN'||x.record.entityType===U(type))out.push({record:x.record,score:1,source:x.source,fieldPath:x.fieldPath});for(const r of this.records){if(type&&r.entityType!=='UNKNOWN'&&r.entityType!==U(type))continue;for(const a of r.aliases){const s=textScore(text,a.value);if(s>=.72)out.push({record:r,score:s,source:a.source,fieldPath:a.fieldPath||null})}}const d=new Map;for(const x of out){const k=`${x.record.dataset}::${x.record.locator}`,old=d.get(k);if(!old||x.score>old.score)d.set(k,x)}return[...d.values()].sort((a,b)=>b.score-a.score)}
-resolveEntity(spec,type){if(spec?.id){const ex=this.resolveExactId(spec.id,type);if(ex.status==='RESOLVED')return{status:'RESOLVED',id:U(spec.id),type:U(type),records:ex.records,confidence:1,source:'QUERY_IR_ID'};return{status:ex.status,id:null,type:U(type),records:ex.records,candidates:ex.records.slice(0,8).map(r=>({dataset:r.dataset,locator:r.locator,entityType:r.entityType}))}}const text=spec?.surface||spec?.name||A(spec?.names)[0]||null;if(!text)return{status:'UNRESOLVED',id:null,type:U(type),records:[],candidates:[]};const c=[];for(const x of this.lookupText(text,type))for(const id of x.record.identities)c.push({id:U(id.id),record:x.record,score:x.score});c.sort((a,b)=>b.score-a.score);const best=c[0],second=c.find(x=>x.id!==best?.id);if(!best)return{status:'UNRESOLVED',id:null,type:U(type),records:[]};if(best.score<.82||(second&&best.score-second.score<.08))return{status:'AMBIGUOUS',id:null,type:U(type),candidates:c.slice(0,8).map(x=>({id:x.id,score:x.score,dataset:x.record.dataset,locator:x.record.locator}))};return{status:'RESOLVED',id:best.id,type:U(type),confidence:best.score,record:best.record,records:this.idIndex.get(best.id)||[best.record]}}
-neighbours(r,direction='OUT',relationId=null){const k=`${r.dataset}::${r.locator}`,es=direction==='IN'?(this.edgesIn.get(k)||[]):(this.edgesOut.get(k)||[]);return es.filter(e=>!relationId||U(e.relation)===U(relationId)).map(e=>direction==='IN'?e.from:e.to)}
-bfs(starts,maxDepth=30){const found=new Map,queue=[];for(const s of A(starts)){const k=`${s.dataset}::${s.locator}`;if(!found.has(k)){found.set(k,{record:s,depth:0,path:[]});queue.push({record:s,depth:0,path:[]})}}while(queue.length){const cur=queue.shift();if(cur.depth>=maxDepth)continue;const k=`${cur.record.dataset}::${cur.record.locator}`,es=[...(this.edgesOut.get(k)||[]),...(this.edgesIn.get(k)||[])];for(const e of es){const n=e.from===cur.record?e.to:e.from,nk=`${n.dataset}::${n.locator}`;if(found.has(nk))continue;const p=[...cur.path,{relation:e.relation,direction:e.from===cur.record?'OUT':'IN',fieldPath:e.fieldPath||null,targetId:e.targetId||null}];found.set(nk,{record:n,depth:cur.depth+1,path:p});queue.push({record:n,depth:cur.depth+1,path:p})}}return[...found.values()]}
-ancestryScope(starts){const set=new Set(A(starts));const out=[];for(const r of this.records){if(set.has(r)){out.push({record:r,depth:0,path:[]});continue}const chain=A(r.ancestry),hits=chain.map((a,i)=>({a,i})).filter(x=>set.has(x.a));if(hits.length){const nearest=hits[hits.length-1];out.push({record:r,depth:chain.length-nearest.i,path:[{relation:null,direction:'DESCENDANT',fieldPath:null,targetId:nearest.a.identityValues?.[0]||null}]})}}return out}
-scope(starts){const map=new Map;for(const x of [...this.bfs(starts,30),...this.ancestryScope(starts)])map.set(`${x.record.dataset}::${x.record.locator}`,x);return[...map.values()]}
-matchesEntity(r,e){if(!e?.id)return false;const id=U(e.id);if(r.identityValues.includes(id))return true;return r.fields.some(f=>S(f.value)&&U(f.value)===id)}
-findRecords(e,dataset){let rs=(this.idIndex.get(U(e?.id))||[]).filter(r=>!dataset||N(r.dataset)===N(dataset));if(!rs.length&&e?.surface)rs=this.lookupText(e.surface,e.type).map(x=>x.record).filter(r=>!dataset||N(r.dataset)===N(dataset));return[...new Map(rs.map(r=>[`${r.dataset}::${r.locator}`,r])).values()]}
-assetType(ir){return U(ir?.assetClass||ir?.target?.assetClass||A(ir?.targets).find(x=>x?.type==='ASSET_CLASS')?.id||'')||null}
-assetAliases(type){return[...this.known.values()].filter(x=>x.type==='ASSET_CLASS'&&x.id===U(type)).flatMap(x=>[x.id,...x.names])}
-looksLikeAsset(r,type){if(!type)return false;if(r.entityType===U(type))return true;const aliases=this.assetAliases(type),blob=[r.key,...r.aliasValues,...r.fields.map(f=>f.key)].join(' ');return aliases.some(a=>textScore(blob,a)>=.8)||r.fields.some(f=>{const key=N(f.key),want=N(type).replace(/_/g,' ');return key.includes(want.split(' ')[0])&&/(id|key|ref)/.test(key)})}
-propertyTerms(ir,plan){const t=new Set([...tokens(ir?.property||''),...tokens(ir?.raw||'')]);for(const v of Object.values(plan?.mapping||{}))if(typeof v==='string')for(const x of tokens(v))t.add(x);return[...t].filter(x=>x.length>2)}
-resolveField(r,ir,plan){const m=plan?.mapping||{};for(const p of ['valuePath','fieldPath','path','fieldName','field','key'])if(S(m[p])){const v=pathRead(r.value,m[p]);if(v!==undefined)return{value:v,path:S(m[p]),method:'EXPLICIT_METADATA'}}const terms=this.propertyTerms(ir,plan),c=[];for(const f of r.fields){let score=0,k=N(f.key),p=N(f.path);for(const t of terms){if(k===t)score+=12;if(k.includes(t))score+=7;if(p.includes(t))score+=4}if(typeof f.value==='number'&&Number.isFinite(f.value))score+=3;if(score)c.push({field:f,score})}c.sort((a,b)=>b.score-a.score);if(c[0]?.score>=7&&(!c[1]||c[0].score>c[1].score))return{value:c[0].field.value,path:c[0].field.path,method:'SCHEMA_SEMANTIC_MATCH'};return null}
-candidatePlans(ir){const prop=U(ir?.property||''),raw=N(ir?.raw||''),out=[];for(const p of this.properties.values()){let score=0;if(prop&&prop===p.capability)score+=100;const terms=[p.capability.replace(/_/g,' ')];for(const v of Object.values(p.mapping||{}))if(typeof v==='string')terms.push(v.replace(/_/g,' '));for(const t of terms)if(t&&raw.includes(N(t)))score=Math.max(score,60);if(score)out.push({...p,score,terms})}if(!out.length&&prop)for(const m of metaEntries(this.k))if(m.capability===prop)out.push({dataset:m.dataset,capability:m.capability,mapping:m.mapping,metadata:m.metadata,score:100,terms:[]});return out.sort((a,b)=>b.score-a.score||a.dataset.localeCompare(b.dataset))}
-buildExecutionPlan(ir){this.ensure();return{status:ir?.unresolved?.length?'UNRESOLVED_QUERY':'PLANNED',identity:{country:ir?.ids?.country?{type:'COUNTRY',id:ir.ids.country}:null,resource:ir?.ids?.resource?{type:'RESOURCE',id:ir.ids.resource}:null},assetClass:this.assetType(ir),candidates:this.candidatePlans(ir).slice(0,20),operation:U(ir?.operation||'GET'),searchOrder:['EXACT_ID','SEMANTIC_ALIAS','CANONICAL_ID','CAPABILITY','DATASET_COMPATIBILITY','RECORD_GRAPH','ANCESTRY_SCOPE','RELATION_PATH','FIELD','OPERATION','VALIDATION','EVIDENCE']}}
-execute(ir,datasets=[],language='en',ctx={}){this.ensure(datasets);const country=this.resolveEntity(ir?.entities?.country||{id:ir?.context?.countryId},'COUNTRY'),resource=this.resolveEntity(ir?.entities?.resource||{id:ir?.context?.resourceId},'RESOURCE');if(country.status==='AMBIGUOUS'||resource.status==='AMBIGUOUS')return this.fail('AMBIGUOUS_IDENTITY',{semantic:ir,diagnostics:{country,resource}});const hc=country.status==='RESOLVED',hr=resource.status==='RESOLVED';if(!hc&&!hr&&!['GENERAL_ANSWER','EVALUATE_POLICY','METHOD','ANALYZE_CAUSE','FEASIBILITY','FORECAST'].includes(U(ir?.operation)))return this.fail('IDENTITY_NOT_FOUND',{semantic:ir,diagnostics:{country,resource}});const plans=this.candidatePlans(ir),asset=this.assetType(ir),op=U(ir?.operation||'GET'),results=[];for(const plan of plans){for(const ds of this.datasets.values()){if(N(ds.entry.name)!==N(plan.dataset))continue;let starts=[];if(hc)starts.push(...this.findRecords(country,ds.entry.datasetId));if(hr)starts.push(...this.findRecords(resource,ds.entry.datasetId));starts=[...new Map(starts.map(r=>[`${r.dataset}::${r.locator}`,r])).values()];if(!starts.length)continue;let graph=this.scope(starts);if(hc&&hr){graph=graph.filter(x=>{const r=x.record;const rNear=this.matchesEntity(r,resource)||this.bfs([r],10).some(y=>this.matchesEntity(y.record,resource))||A(r.ancestry).some(a=>this.matchesEntity(a,resource));const cNear=this.matchesEntity(r,country)||this.bfs([r],10).some(y=>this.matchesEntity(y.record,country))||A(r.ancestry).some(a=>this.matchesEntity(a,country));return rNear&&cNear})}if(asset){const target=graph.filter(x=>this.looksLikeAsset(x.record,asset));if(op==='COUNT'){results.push({plan,records:target.map(x=>x.record),paths:target});continue}if(target.length)graph=target}const extracted=[];for(const g of graph){const f=this.resolveField(g.record,ir,plan);if(f)extracted.push({record:g.record,field:f,path:g.path})}if(extracted.length)results.push({plan,extracted})}}
-if(asset&&op==='COUNT')return this.finishCount(results,ir,asset,country,resource);if(!results.length)return this.fail(op==='COUNT'?'RECORD_NOT_FOUND':'FIELD_NOT_FOUND',{semantic:ir,diagnostics:{country,resource,plans:plans.map(x=>({dataset:x.dataset,capability:x.capability}))}});const entries=results.flatMap(x=>x.extracted||[]),unique=[...new Map(entries.map(e=>[`${e.record.dataset}::${e.record.locator}::${e.field.path}`,e])).values()];if(!unique.length)return this.fail('FIELD_NOT_FOUND',{semantic:ir});const values=unique.map(x=>x.field.value);if(['GET','QUANTITY'].includes(op)){const distinct=[...new Set(values.map(v=>JSON.stringify(v)))].map(x=>JSON.parse(x));if(distinct.length>1)return this.fail('SOURCE_CONFLICT',{semantic:ir,values:distinct,evidence:unique.map(e=>this.makeEvidence(e.record,e.field,ir,op,null,e.path))});return this.finishValue(distinct[0],unique,ir,op,country,resource)}const calc=this.operation(op,values);if(calc.status)return this.fail(calc.status,{semantic:ir,error:calc.error});return this.finishValue(calc.value,unique,ir,op,country,resource)}
-finishCount(results,ir,asset,country,resource){const map=new Map;for(const r of results.flatMap(x=>x.records||[])){const identity=r.identityValues.find(x=>x&&!/^\d+$/.test(x));map.set(`${r.entityType}::${identity||r.dataset+'::'+r.locator}`,r)}if(!map.size)return this.fail('RECORD_NOT_FOUND',{semantic:ir,assetClass:asset});const records=[...map.values()],e=records.map(r=>this.makeEvidence(r,null,ir,'COUNT',asset));return{ok:true,status:'VERIFIED_FACT',value:records.length,unit:'COUNT',operation:'COUNT',target:{assetClass:asset,countryId:country?.id||null,resourceId:resource?.id||null},evidence:e,trace:this.trace(ir,results,e),provenance:this.provenance(ir,e)}}
-finishValue(value,entries,ir,op,country,resource){if(value===null||value===undefined)return this.fail('VALUE_NOT_FOUND',{semantic:ir});const e=entries.map(x=>this.makeEvidence(x.record,x.field,ir,op,null,x.path));return{ok:true,status:'VERIFIED_FACT',value,operation:op,target:{countryId:country?.id||null,resourceId:resource?.id||null},evidence:e,trace:this.trace(ir,[{extracted:entries}],e),provenance:this.provenance(ir,e)}}
-operation(op,values){try{const nums=values.filter(v=>typeof v==='number'&&Number.isFinite(v));if(op==='COUNT')return{value:values.length};if(op==='SUM'||op==='TOTAL')return{value:nums.reduce((a,b)=>a+b,0)};if(op==='AVERAGE')return{value:nums.length?nums.reduce((a,b)=>a+b,0)/nums.length:null};if(op==='MIN')return{value:nums.length?Math.min(...nums):null};if(op==='MAX')return{value:nums.length?Math.max(...nums):null};if(op==='DISTINCT')return{value:[...new Set(values.map(v=>JSON.stringify(v)))].map(x=>JSON.parse(x))};if(op==='SELECT'||op==='LIST')return{value:values};if(op==='GET'||op==='QUANTITY')return{value:values.length===1?values[0]:values};return{value:values.length===1?values[0]:values}}catch(e){return{status:'OPERATION_UNSUPPORTED',error:e.message}}}
-makeEvidence(r,f,ir,op,asset,pathInfo){return{dataset:r?.dataset||null,physicalPath:r?.fileEntry?.physicalPath||null,logicalDataset:r?.meta?.dataset||null,recordLocator:r?.locator||null,fieldPath:f?.path||null,canonicalEntityId:r?.identityValues?.[0]||null,entityType:r?.entityType||'UNKNOWN',property:ir?.property||null,assetClass:asset||null,rawValue:f?f.value:true,operation:op,relationPath:A(pathInfo),authority:f?.method||'IDENTITY_REGISTRY',source:r?.fileEntry?.source||null}}
-trace(ir,results,evidence){return[{stage:'QUESTION_INTERPRETATION',status:'RECEIVED'},{stage:'QUERY_IR',operation:ir?.operation||null,property:ir?.property||null},{stage:'IDENTITY_RESOLUTION',countryId:ir?.ids?.country||ir?.entities?.country?.id||null,resourceId:ir?.ids?.resource||ir?.entities?.resource?.id||null},{stage:'DATASET_DISCOVERY',candidates:results.map(x=>x.plan?.dataset).filter(Boolean)},{stage:'RECORD_GRAPH',resultSets:results.length},{stage:'ANCESTRY_SCOPE',status:'USED_AS_FALLBACK'},{stage:'FIELD_RESOLUTION',evidenceCount:evidence.length},{stage:'DETERMINISTIC_OPERATION',operation:ir?.operation||null},{stage:'VALIDATION',status:'PASSED'},{stage:'EVIDENCE',count:evidence.length}]}
-provenance(ir,evidence){return{question:ir?.raw||'',ids:ir?.ids||{},operation:ir?.operation||null,property:ir?.property||null,evidence:evidence.map(e=>({dataset:e.dataset,physicalPath:e.physicalPath,recordLocator:e.recordLocator,fieldPath:e.fieldPath,canonicalEntityId:e.canonicalEntityId}))}}
-fail(status,extra={}){return{ok:false,status,value:null,evidence:[],...extra,trace:[{stage:'FAILURE',status}]}}
-index(){this.ensure();return{report:this.report(),files:this.catalogView(),records:this.records.map(r=>({dataset:r.dataset,locator:r.locator,entityType:r.entityType,identities:r.identityValues,ancestry:r.ancestry.map(a=>a.locator),fields:r.fields.map(f=>f.path)})),relations:this.relations,edges:[...this.edgesOut.values()].flat().map(e=>({from:`${e.from.dataset}::${e.from.locator}`,to:`${e.to.dataset}::${e.to.locator}`,relation:e.relation,fieldPath:e.fieldPath,source:e.source}))}}
-buildEvidenceLedger(result){return{status:result?.status||'UNRESOLVED',value:result?.value??null,facts:A(result?.evidence),trace:A(result?.trace),provenance:result?.provenance||null,evidence:A(result?.evidence)}}
-lookup(id){const r=this.resolveExactId(id);return{...r,records:r.records.map(x=>({dataset:x.dataset,physicalPath:x.fileEntry?.physicalPath,locator:x.locator,entityType:x.entityType,identityValues:x.identityValues,aliases:x.aliasValues.slice(0,40)}))}}
-resolveResources(q){this.ensure();return this.lookupText(q,'RESOURCE').slice(0,20).map(x=>({id:x.record.identityValues.find(v=>[...this.known.values()].some(e=>e.type==='RESOURCE'&&e.id===v))||null,type:x.record.entityType,name:x.record.aliasValues[0]||null,dataset:x.record.dataset,locator:x.record.locator,score:x.score}))}
-traverse(start,relationId,targetType){this.ensure();const s=start?.id?this.resolveExactId(start.id).records:[];if(!s.length)return{status:'RECORD_NOT_FOUND',records:[]};const found=[];for(const r of s)for(const n of this.neighbours(r,'OUT',relationId))if(!targetType||n.entityType==='UNKNOWN'||n.entityType===U(targetType))found.push(n);const u=[...new Map(found.map(r=>[`${r.dataset}::${r.locator}`,r])).values()];return{status:u.length?'OK':'RELATION_PATH_NOT_FOUND',records:u}}
-refresh(){return this.initialize({rootDir:this.root,knowledge:this.k,discover:true,force:true})}
+function relPath(file,root){const{path}=mods();return path?path.relative(root,file).replace(/\\/g,'/')||path.basename(file):S(file).replace(/^\.?\//,'')}
+function rootDir(){return global.process?.cwd?.()||'.'}
+
+function walkFiles(root){
+  const{fs,path}=mods();if(!fs||!path)return[];
+  const blocked=new Set(['node_modules','.git','.github','.cache','dist','build','coverage']);
+  const out=[];
+  const visit=dir=>{
+    let entries=[];try{entries=fs.readdirSync(dir,{withFileTypes:true})}catch(_){return}
+    for(const e of entries){
+      const full=path.join(dir,e.name);
+      if(e.isDirectory()){if(!blocked.has(e.name))visit(full)}
+      else if(e.isFile()&&/\.(json|geojson)$/i.test(e.name))out.push(full);
+    }
+  };
+  visit(root);return out.sort((a,b)=>a.localeCompare(b));
 }
-let runtime=null;function getRuntime(){if(!runtime)runtime=new DeepCoreRuntime;return runtime}function initializeRepository(options={}){runtime=new DeepCoreRuntime(options);return runtime.initialize(options)}function ensureRepository(datasets=[]){return getRuntime().ensure(datasets)}function execute(parsed,datasets=[],language='en',ctx={}){return getRuntime().execute(parsed,datasets,language,ctx)}function index(datasets=[]){ensureRepository(datasets);return getRuntime().index()}function buildExecutionPlan(parsed,datasets,ctx={}){ensureRepository(datasets);return getRuntime().buildExecutionPlan(parsed,ctx)}function buildEvidenceLedger(result){return getRuntime().buildEvidenceLedger(result)}function resolveResources(q){return getRuntime().resolveResources(q)}function lookupId(id){return getRuntime().lookup(id)}function catalog(){ensureRepository();return getRuntime().catalogView()}function diagnostics(){ensureRepository();return getRuntime().report()}function traverse(start,relationId,targetType){return getRuntime().traverse(start,relationId,targetType)}
-const api={VERSION,initializeRepository,ensureRepository,execute,index,buildExecutionPlan,buildEvidenceLedger,resolveResources,lookupId,catalog,diagnostics,traverse,schema:(dataset)=>getRuntime().schema(dataset),refresh:()=>getRuntime().refresh(),securityFor:(country,re)=>execute({raw:'',operation:'GET',property:'RESOURCE_SECURITY',entities:{country:country?{id:country.id}:null,resource:re?{id:re.id}:null}},[],'en',{}),supplierRows:()=>[],composeAnswer:a=>a?.text||'',realizeVerb:(subject,verb)=>S(verb)};global.OfflineQueryEngine=api;global.OmegaDeepCoreRuntime=getRuntime();if(typeof module!=='undefined'&&module.exports)module.exports=api;
+
+function loadKnowledge(){
+  if(global.OmegaOfflineSemanticKnowledge)return global.OmegaOfflineSemanticKnowledge;
+  if(global.OmegaSemanticKnowledge)return global.OmegaSemanticKnowledge;
+  const{path}=mods();return path?readJSON(path.join(rootDir(),'offline_semantic_knowledge.json'))||{}:{};
+}
+function relationDefs(k){
+  return A(k?.relations||k?.relationship_registry||k?.relationshipRegistry)
+    .filter(x=>O(x)&&S(x.id))
+    .map(x=>({...x,id:U(x.id),from:U(x.from||x.fromType||''),to:U(x.to||x.toType||'')}));
+}
+function entityTypeDefs(k){return new Set(A(k?.entity_types).map(U))}
+function entityContainers(k){
+  const skip=new Set(['data_finding','question_semantics','ambiguity_policy','normalization','entity_types','schema','relations','relationship_registry','relationshipRegistry']);
+  const out=[];
+  for(const[bucket,container]of Object.entries(k||{})){
+    if(skip.has(bucket)||!O(container)||Array.isArray(container))continue;
+    for(const[id,v]of Object.entries(container)){
+      if(!O(v))continue;
+      const inferred=({countries:'COUNTRY',resources:'RESOURCE',asset_classes:'ASSET_CLASS'}[bucket]||'');
+      const type=U(v.type||inferred);if(!type)continue;
+      const names=[...A(v.names),...A(v.aliases)].map(S).filter(Boolean);
+      out.push({id:U(id),type,names:[...new Set(names)],bucket});
+    }
+  }
+  const m=new Map();for(const e of out)m.set(`${e.type}::${e.id}`,e);return[...m.values()];
+}
+function semanticAliases(k,capability){
+  const wanted=U(capability),out=[];
+  const walk=(v,keyHint='')=>{
+    if(Array.isArray(v)){for(const x of v)if(O(x)||Array.isArray(x))walk(x,keyHint);return}
+    if(!O(v))return;
+    for(const[k,x]of Object.entries(v)){
+      if(U(k)===wanted){
+        if(Array.isArray(x))for(const z of x)if(typeof z==='string'&&S(z))out.push(S(z));
+        else if(typeof x==='string'&&S(x))out.push(S(x));
+      }
+      if(O(x)||Array.isArray(x))walk(x,k);
+    }
+  };
+  walk(k);return[...new Set(out)];
+}
+function metadataEntries(k){
+  const out=[];
+  for(const d of A(k?.data_finding?.dataset_capabilities)){
+    if(!O(d)||!S(d.dataset))continue;
+    const capabilities=A(d.capabilities).map(U);
+    for(const cap of capabilities){
+      const mapping=d.fieldMappings?.[cap]||d.fieldMappings?.[cap.toLowerCase()]||{};
+      out.push({dataset:S(d.dataset),capability:cap,entityTypes:A(d.entityTypes).map(U),identityFields:A(d.identityFields).map(S),recordLocator:S(d.recordLocator)||null,recordKeyIsIdentity:d.recordKeyIsIdentity===true,fieldMapping:mapping,authority:S(d.authority)||'EXPLICIT_METADATA',aliases:semanticAliases(k,cap)});
+    }
+  }
+  return out;
+}
+function datasetMeta(k,name){
+  const n=N(name).replace(/\.json$/,'');
+  const rows=metadataEntries(k).filter(x=>N(x.dataset).replace(/\.json$/,'')===n);
+  if(!rows.length)return null;
+  const m={dataset:S(name),logicalDatasetId:rows[0].logicalDatasetId||null,capabilities:[],entityTypes:[],identityFields:[],recordLocator:null,recordKeyIsIdentity:false,fieldMappings:{},authority:'EXPLICIT_METADATA'};
+  for(const r of rows){
+    if(!m.capabilities.includes(r.capability))m.capabilities.push(r.capability);
+    for(const t of r.entityTypes)if(!m.entityTypes.includes(t))m.entityTypes.push(t);
+    for(const f of r.identityFields)if(!m.identityFields.includes(f))m.identityFields.push(f);
+    if(r.recordLocator)m.recordLocator=r.recordLocator;
+    if(r.recordKeyIsIdentity)m.recordKeyIsIdentity=true;
+    m.fieldMappings[r.capability]=r.fieldMapping||{};
+  }
+  return m;
+}
+function pathRead(root,p){
+  if(p==null||S(p)==='')return root;
+  let cur=root;
+  const clean=S(p).replace(/^\$\.?/,'').replace(/\[([^\]]+)\]/g,'.$1');
+  for(const part of clean.split('.').filter(Boolean)){
+    if(cur==null)return undefined;
+    cur=Array.isArray(cur)&&/^\d+$/.test(part)?cur[Number(part)]:cur[part];
+  }
+  return cur;
+}
+function scalar(v){return v===null||['string','number','boolean'].includes(typeof v)}
+function scalarEntries(value,path='',out=[]){
+  if(Array.isArray(value)){value.forEach((v,i)=>scalarEntries(v,`${path}.${i}`,out));return out}
+  if(!O(value))return out;
+  for(const[k,v]of Object.entries(value)){
+    const p=path?`${path}.${k}`:k;
+    if(scalar(v))out.push({key:k,path:p,value:v,type:v===null?'null':typeof v});
+    else scalarEntries(v,p,out);
+  }
+  return out;
+}
+function rootShape(v){return Array.isArray(v)?'ARRAY':O(v)?'OBJECT':'SCALAR'}
+function schemaProfile(raw){
+  const fields=new Map();let objects=0,arrays=0,maxDepth=0;
+  const walk=(v,p='',d=0)=>{
+    maxDepth=Math.max(maxDepth,d);
+    if(Array.isArray(v)){arrays++;for(const x of v)walk(x,p,d+1);return}
+    if(!O(v))return;
+    objects++;
+    for(const[k,x]of Object.entries(v)){
+      const pp=p?`${p}.${k}`:k,typ=Array.isArray(x)?'array':x===null?'null':typeof x;
+      let f=fields.get(pp);if(!f)f={path:pp,key:k,types:new Set,count:0};f.types.add(typ);f.count++;fields.set(pp,f);
+      if(O(x)||Array.isArray(x))walk(x,pp,d+1);
+    }
+  };
+  walk(raw);
+  return{rootShape:rootShape(raw),objectCount:objects,arrayCount:arrays,maxDepth,fields:[...fields.values()].map(x=>({path:x.path,key:x.key,types:[...x.types],count:x.count}))};
+}
+
+class SearchRegistry{
+  constructor(){this.clear()}
+  clear(){
+    this.exact=new Map();this.tokens=new Map();this.fieldNames=new Map();this.keys=new Map();this.typeEntries=new Map();this.valueCount=0;
+  }
+  addBucket(map,key,row){const n=N(key);if(!n)return;let a=map.get(n);if(!a)map.set(n,a=[]);a.push(row)}
+  add(row){
+    const value=S(row.value);
+    if(value){this.addBucket(this.exact,value,row);for(const t of N(value).split(/\s+/).filter(Boolean))this.addBucket(this.tokens,t,row);this.valueCount++}
+    if(row.fieldPath){const leaf=S(row.fieldPath).split('.').pop();if(leaf)this.addBucket(this.fieldNames,leaf,row)}
+    if(row.objectKey)this.addBucket(this.keys,row.objectKey,row);
+    if(row.identityType){let a=this.typeEntries.get(U(row.identityType));if(!a)this.typeEntries.set(U(row.identityType),a=[]);a.push(row)}
+  }
+  exactValue(value){return (this.exact.get(N(value))||[]).slice()}
+  tokenValue(value){return (this.tokens.get(N(value))||[]).slice()}
+  field(name){return (this.fieldNames.get(N(name))||[]).slice()}
+  key(name){return (this.keys.get(N(name))||[]).slice()}
+  search(text,limit=200){
+    const n=N(text);if(!n)return[];
+    const exact=this.exactValue(n);if(exact.length)return exact.slice(0,limit);
+    const terms=[...new Set(n.split(/\s+/).filter(Boolean))];
+    const sets=terms.map(t=>new Map((this.tokenValue(t)).map(x=>[x.signature,x])));
+    const merged=new Map();for(const m of sets)for(const[r,v]of m)merged.set(r,v);
+    return[...merged.values()].slice(0,limit);
+  }
+}
+
+class DeepCoreRuntime{
+  constructor(opts={}){
+    this.root=opts.rootDir||rootDir();
+    this.k=opts.knowledge||loadKnowledge();
+    this.catalogEntries=[];this.datasets=new Map();this.records=[];this.byLocator=new Map();
+    this.schemas=new Map();this.registry=new SearchRegistry();this.identityIndex=new Map();this.aliasIndex=new Map();
+    this.parentRecords=new Map();this.childrenRecords=new Map();this.relations=relationDefs(this.k);
+    this.known=new Map(entityContainers(this.k).map(e=>[`${e.type}::${e.id}`,e]));
+    this.initialized=false;this.lastBuild=null;this.buildVersion=0;
+  }
+  clear(){this.catalogEntries=[];this.datasets.clear();this.records=[];this.byLocator.clear();this.schemas.clear();this.registry.clear();this.identityIndex.clear();this.aliasIndex.clear();this.parentRecords.clear();this.childrenRecords.clear();this.lastBuild=null;this.initialized=false}
+  addCatalog(entry){const key=N(entry.datasetId||entry.name||entry.physicalPath);const old=this.catalogEntries.find(x=>N(x.datasetId)===key);if(old){Object.assign(old,entry);return old}entry.datasetId=key;this.catalogEntries.push(entry);return entry}
+  registerPhysical(file){
+    const{fs,path}=mods();if(!fs)return null;let txt='',raw,parseStatus='PARSE_OK',parseError=null,st;
+    try{st=fs.statSync(file);txt=fs.readFileSync(file,'utf8');raw=JSON.parse(txt)}catch(e){parseStatus='PARSE_ERROR';parseError=e.message}
+    const name=path?path.basename(file):file.split('/').pop();const meta=datasetMeta(this.k,name);
+    const entry=this.addCatalog({datasetId:name.toLowerCase(),name,physicalPath:relPath(file,this.root),absolutePath:file,extension:(name.split('.').pop()||'').toLowerCase(),bytes:st?.size||0,modifiedAt:st?new Date(st.mtimeMs).toISOString():null,hash:hash(txt),parseStatus,parseError,rootShape:raw==null?'UNKNOWN':rootShape(raw),rootKeys:O(raw)&&!Array.isArray(raw)?Object.keys(raw):[],source:'PHYSICAL_FILE',logicalDatasetId:meta?.logicalDatasetId||meta?.dataset||name,capabilities:meta?.capabilities||[],entityTypes:meta?.entityTypes||[],identityFields:meta?.identityFields||[],recordLocator:meta?.recordLocator||null,recordKeyIsIdentity:meta?.recordKeyIsIdentity===true,fieldMappings:meta?.fieldMappings||{},authority:meta?.authority||'DISCOVERED_PHYSICAL_FILE'});
+    if(raw!==undefined){this.datasets.set(entry.datasetId,{entry,raw});this.schemas.set(entry.datasetId,schemaProfile(raw));this.collect(raw,entry,meta)}
+    return entry;
+  }
+  collect(raw,entry,meta){
+    const local=[];
+    const addObject=(value,locator,key,parent,ancestry)=>{
+      if(!O(value))return null;
+      const fields=scalarEntries(value),r={dataset:entry.datasetId,physicalPath:entry.physicalPath,logicalDatasetId:entry.logicalDatasetId,locator,key:key==null?null:S(key),value,parent,ancestry:A(ancestry),entityType:'UNKNOWN',identities:[],aliases:[],fields,meta:meta||null,fileEntry:entry};
+      r.signature=`${entry.datasetId}::${locator}`;local.push(r);return r;
+    };
+    const visit=(value,locator,key,parent,ancestry,depth)=>{
+      if(!O(value)||depth>80)return;
+      const r=addObject(value,locator,key,parent,ancestry);if(r)this.indexObject(r);
+      if(!r)return;
+      for(const[k,x]of Object.entries(value)){
+        if(Array.isArray(x)){
+          x.forEach((item,i)=>{if(O(item)){const q=`${locator}.${k}.${i}`;visit(item,q,String(i),r,[...ancestry,r],depth+1)}});
+        }else if(O(x)){
+          const q=locator?`${locator}.${k}`:k;visit(x,q,k,r,[...ancestry,r],depth+1);
+        }
+      }
+    };
+    if(Array.isArray(raw))raw.forEach((item,i)=>{if(O(item))visit(item,String(i),String(i),null,[],1)});
+    else if(O(raw)){for(const[k,x]of Object.entries(raw)){if(O(x))visit(x,k,k,null,[],1)}if(!local.length)local.push(addObject(raw,'root','root',null,[]) )} 
+    else local.push(addObject({value:raw},'root','root',null,[]));
+    for(const r of local){this.records.push(r);this.byLocator.set(r.signature,r)}
+  }
+  inferEntityType(record){
+    const candidates=[];const types=entityTypeDefs(this.k);const knownById=[];
+    for(const f of record.fields){
+      if(typeof f.value==='string'&&S(f.value)){
+        const id=U(f.value);for(const t of types){if(this.known.has(`${t}::${id}`))knownById.push({id,type:t,score:100,source:'KNOWLEDGE_ID',fieldPath:f.path})}
+      }
+      const leaf=N(f.key).replace(/[^a-z0-9_ -]/g,'');
+      for(const t of types){
+        const tid=N(t).replace(/_/g,' ');if(!tid)continue;
+        if(leaf.includes(tid)||leaf.includes(tid.replace(/\s+/g,'')))candidates.push({type:t,score:20,source:'FIELD_TYPE_SHAPE',fieldPath:f.path});
+      }
+    }
+    for(const t of record.meta?.entityTypes||[])candidates.push({type:U(t),score:5,source:'DATASET_METADATA'});
+    for(const e of knownById)candidates.push(e);
+    if(record.key&&!/^\d+$/.test(record.key)){
+      const id=U(record.key);for(const t of types)if(this.known.has(`${t}::${id}`))candidates.push({id,type:t,score:120,source:'KNOWN_OBJECT_KEY'});
+      if(record.meta?.recordKeyIsIdentity)candidates.push({id,type:(record.meta.entityTypes||[])[0]||'UNKNOWN',score:40,source:'RECORD_KEY'});
+    }
+    candidates.sort((a,b)=>(b.score||0)-(a.score||0));
+    record.entityType=candidates[0]?.type||'UNKNOWN';
+    record.identities=[];for(const c of candidates.filter(x=>x.id))if(!record.identities.some(x=>x.id===c.id&&x.type===c.type))record.identities.push(c);
+    record.identities=record.identities.slice(0,32);
+    return record;
+  }
+  indexObject(r){
+    this.inferEntityType(r);
+    const addIdentity=(id,type,source,fieldPath)=>{
+      const row={id:U(id),type:U(type||'UNKNOWN'),dataset:r.dataset,physicalPath:r.physicalPath,logicalDatasetId:r.logicalDatasetId,recordLocator:r.locator,fieldPath:fieldPath||null,value:S(id),recordSignature:r.signature,source};
+      const key=`${row.type}::${row.id}`;let a=this.identityIndex.get(key);if(!a)this.identityIndex.set(key,a=[]);if(!a.some(x=>x.recordSignature===row.recordSignature&&x.fieldPath===row.fieldPath))a.push(row);
+      let byAlias=this.aliasIndex.get(N(id));if(!byAlias)this.aliasIndex.set(N(id),byAlias=[]);byAlias.push(row);
+    };
+    for(const c of r.identities)if(c.id)addIdentity(c.id,c.type,c.source,c.fieldPath);
+    for(const f of r.fields){
+      const value=S(f.value);if(!value)continue;
+      const known=[...this.known.values()].filter(e=>e.id===U(value));for(const e of known)addIdentity(e.id,e.type,'KNOWLEDGE_VALUE',f.path);
+      const row={dataset:r.dataset,physicalPath:r.physicalPath,logicalDatasetId:r.logicalDatasetId,recordLocator:r.locator,fieldPath:f.path,key:f.key,value:f.value,objectKey:r.key,recordSignature:r.signature,identityType:r.entityType==='UNKNOWN'?null:r.entityType,signature:`${r.signature}::${f.path}`};
+      this.registry.add(row);
+      if(f.key)this.registry.add({...row,value:f.key,signature:`${r.signature}::FIELDNAME::${f.path}`});
+    }
+    if(r.key&&!/^\d+$/.test(r.key))this.registry.add({dataset:r.dataset,physicalPath:r.physicalPath,logicalDatasetId:r.logicalDatasetId,recordLocator:r.locator,fieldPath:null,key:null,value:r.key,objectKey:r.key,recordSignature:r.signature,identityType:r.entityType,signature:`${r.signature}::OBJECTKEY`});
+  }
+  rebuildRelations(){
+    this.parentRecords.clear();this.childrenRecords.clear();
+    for(const r of this.records){
+      for(const a of A(r.ancestry)){if(a?.signature&&a.signature!==r.signature)this.parentRecords.set(r.signature,a.signature);}
+    }
+    for(const [child,parent]of this.parentRecords){let a=this.childrenRecords.get(parent);if(!a)this.childrenRecords.set(parent,a=[]);a.push(child)}
+  }
+  build(){
+    this.clear();const files=walkFiles(this.root);for(const f of files)this.registerPhysical(f);this.rebuildRelations();
+    this.initialized=true;this.buildVersion++;this.lastBuild=new Date().toISOString();return this.diagnostics();
+  }
+  ensure(opts={}){if(!this.initialized||opts.refresh)return this.build();return this.diagnostics()}
+  resolveId(id,type=null){
+    const wanted=U(id);const t=type?U(type):null;
+    if(!wanted)return{status:'IDENTITY_NOT_FOUND',id:null,candidates:[]};
+    if(t){const exact=this.identityIndex.get(`${t}::${wanted}`)||[];if(exact.length)return{status:'RESOLVED',id:wanted,type:t,candidates:exact.slice(0,64),matchCount:exact.length};}
+    const candidates=[];for(const [k,a]of this.identityIndex){const [kt,kid]=k.split('::');if(kid===wanted)candidates.push({type:kt,rows:a})}
+    if(candidates.length===1)return{status:'RESOLVED',id:wanted,type:candidates[0].type,candidates:candidates[0].rows.slice(0,64),matchCount:candidates[0].rows.length};
+    if(candidates.length>1)return{status:'AMBIGUOUS_IDENTITY',id:wanted,type:null,candidates:candidates.map(x=>({type:x.type,matchCount:x.rows.length,rows:x.rows.slice(0,16)}))};
+    const alias=this.aliasIndex.get(N(id))||[];if(alias.length===1)return{status:'RESOLVED_ALIAS',id:alias[0].id,type:alias[0].type,candidates:alias.slice(0,64),matchCount:alias.length};
+    if(alias.length>1)return{status:'AMBIGUOUS_IDENTITY',id:wanted,type:null,candidates:alias.slice(0,64)};
+    return{status:'IDENTITY_NOT_FOUND',id:wanted,type:t,candidates:[]};
+  }
+  search(value,opts={}){
+    this.ensure();const term=S(value);const rows=this.registry.exactValue(term);const out=[];const seen=new Set();
+    const push=r=>{if(!r||seen.has(r.signature))return;seen.add(r.signature);if(opts.dataset&&!N(r.dataset).includes(N(opts.dataset)))return;out.push(r)};
+    for(const r of rows)push(r);
+    if(!out.length)for(const r of this.registry.search(term,Number(opts.limit||200)))push(r);
+    return out.slice(0,Number(opts.limit||200));
+  }
+  recordScope(signatures){
+    const allowed=new Set(signatures);const queue=[...allowed];
+    while(queue.length){const s=queue.shift();const p=this.parentRecords.get(s);if(p&&!allowed.has(p)){allowed.add(p);queue.push(p)}for(const c of this.childrenRecords.get(s)||[]){if(!allowed.has(c)){allowed.add(c);queue.push(c)}}}
+    return [...allowed].map(s=>this.byLocator.get(s)).filter(Boolean);
+  }
+  subtreeContains(r,term){const n=N(term);if(!n)return false;for(const f of r.fields)if(N(f.value)===n||N(f.key)===n)return true;return false}
+  anchorRecords(id,type){
+    const resolved=this.resolveId(id,type);if(!['RESOLVED','RESOLVED_ALIAS'].includes(resolved.status))return{resolved,records:[]};
+    const sigs=new Set((resolved.candidates||[]).map(x=>x.recordSignature));
+    return{resolved,records:this.recordScope([...sigs])};
+  }
+  assetClassForRecord(r){
+    if(r.entityType==='MINE'||r.entityType==='DEPOSIT'||r.entityType==='OIL_FIELD'||r.entityType==='GAS_FIELD'||r.entityType==='FACILITY')return r.entityType;
+    const classes=entityContainers(this.k).filter(e=>e.type==='ASSET_CLASS');
+    let best=null;
+    for(const f of r.fields){const fk=N(f.key);for(const c of classes){const id=N(c.id),compact=id.replace(/_/g,'');if(fk.includes(id)||fk.includes(compact)){best=c.id;break}}if(best)break}
+    if(!best&&r.key){const k=N(r.key);for(const c of classes){for(const n of c.names)if(k.includes(N(n))){best=c.id;break}if(best)break}}
+    return best;
+  }
+  candidateDatasets(ir){
+    const p=U(ir.property||'');const asset=U(ir.assetClass||ir.entities?.assetClass?.id||'');const q=N(ir.raw||'');const out=[];
+    for(const e of this.catalogEntries){
+      const caps=A(e.capabilities).map(U);let score=0;
+      if(p&&caps.includes(p))score+=100;
+      if(asset&&caps.includes(asset))score+=80;
+      if(!p&&!asset&&caps.length)score+=1;
+      if(q&&caps.some(c=>q.includes(N(c).replace(/_/g,' '))))score+=15;
+      if(e.parseStatus==='PARSE_OK'&&score>0)out.push({entry:e,score});
+    }
+    out.sort((a,b)=>b.score-a.score||a.entry.name.localeCompare(b.entry.name));
+    if(!out.length)for(const e of this.catalogEntries.filter(x=>x.parseStatus==='PARSE_OK'))out.push({entry:e,score:0});
+    return out;
+  }
+  selectRecords(ir,entry){
+    const country=ir.entities?.country?.id||ir.ids?.country||null;
+    const resource=ir.entities?.resource?.id||ir.ids?.resource||null;
+    const a=country?this.anchorRecords(country,'COUNTRY'):null;
+    const b=resource?this.anchorRecords(resource,'RESOURCE'):null;
+    if((country&&a?.resolved.status==='IDENTITY_NOT_FOUND')||(resource&&b?.resolved.status==='IDENTITY_NOT_FOUND'))return{status:'RECORD_NOT_FOUND',records:[],anchors:{country:a?.resolved||null,resource:b?.resolved||null}};
+    const base=this.records.filter(r=>r.dataset===entry.datasetId);
+    const scopes=[];
+    if(a?.records?.length)scopes.push(new Set(a.records.filter(r=>r.dataset===entry.datasetId).map(r=>r.signature)));
+    if(b?.records?.length)scopes.push(new Set(b.records.filter(r=>r.dataset===entry.datasetId).map(r=>r.signature)));
+    let records=base;
+    if(scopes.length){const union=new Set();for(const s of scopes)for(const x of s)union.add(x);records=base.filter(r=>union.has(r.signature)||scopes.some(s=>s.has(this.parentRecords.get(r.signature))));}
+    if(country&&records.length){records=records.filter(r=>this.recordNearEntity(r,country,'COUNTRY')||this.subtreeContains(r,country)||r.ancestry.some(x=>this.subtreeContains(x,country)))}
+    if(resource&&records.length){records=records.filter(r=>this.recordNearEntity(r,resource,'RESOURCE')||this.subtreeContains(r,resource)||r.ancestry.some(x=>this.subtreeContains(x,resource)))}
+    return{status:'OK',records,anchors:{country:a?.resolved||null,resource:b?.resolved||null}};
+  }
+  recordNearEntity(r,id,type){const key=`${U(type)}::${U(id)}`;if(r.identities.some(x=>`${U(x.type)}::${U(x.id)}`===key))return true;const rows=this.identityIndex.get(key)||[];return rows.some(x=>x.recordSignature===r.signature);}
+  resolveProperty(ir,records){
+    const prop=U(ir.property||'');if(!prop)return null;
+    const candidates=[];const qTerms=[...new Set([prop,...A(ir.propertyCandidates)])].map(N).filter(Boolean);
+    for(const r of records){
+      const mapping=this.propertyMapping(prop,r.dataset);
+      if(mapping){
+        const v=pathRead(r.value,mapping.valuePath||'');if(v!==undefined&&!O(v))candidates.push({record:r,fieldPath:mapping.valuePath||'',value:v,score:120,source:'EXPLICIT_METADATA'});
+      }
+      for(const f of r.fields){
+        const fieldText=N(f.key).replace(/_/g,' ');let score=0;
+        for(const t of qTerms){if(fieldText===t)score=Math.max(score,90);else if(fieldText.includes(t)||t.includes(fieldText))score=Math.max(score,70)}
+        if(score)candidates.push({record:r,fieldPath:f.path,value:f.value,score,source:'SCHEMA_SEMANTIC_MATCH'});
+      }
+    }
+    candidates.sort((a,b)=>b.score-a.score||a.fieldPath.localeCompare(b.fieldPath));
+    if(!candidates.length)return{status:'FIELD_NOT_FOUND',candidates:[]};
+    const top=candidates[0];const near=candidates.filter(x=>x.score===top.score);
+    if(near.length>1&&new Set(near.map(x=>`${x.record.dataset}::${x.fieldPath}`)).size>1)return{status:'FIELD_NOT_FOUND',candidates:near.slice(0,16)};
+    return{status:'RESOLVED',...top,candidates:candidates.slice(0,24)};
+  }
+  propertyMapping(prop,datasetId){
+    const meta=this.catalogEntries.find(e=>e.datasetId===datasetId);if(!meta)return null;
+    for(const [cap,m]of Object.entries(meta.fieldMappings||{}))if(U(cap)===U(prop)&&S(m.valuePath))return m;
+    return null;
+  }
+  uniqueTargetRecords(records,asset){
+    let rs=records;
+    if(asset){const target=U(asset);rs=rs.filter(r=>U(this.assetClassForRecord(r)||'')===target)}
+    const out=[];const seen=new Set();
+    for(const r of rs){const id=r.identities.find(x=>x.id)?.id||r.key||r.signature;if(seen.has(`${U(r.entityType)}::${U(id)}`))continue;seen.add(`${U(r.entityType)}::${U(id)}`);out.push(r)}
+    return out;
+  }
+  evidence(record,fieldPath,value,operation,relationPath=[]){
+    return{dataset:record.dataset,physicalPath:record.physicalPath,logicalDatasetId:record.logicalDatasetId,recordLocator:record.locator,fieldPath:fieldPath||null,canonicalEntityId:record.identities.find(x=>x.id)?.id||null,entityType:record.entityType,property:null,assetClass:this.assetClassForRecord(record),rawValue:value,operation,relationPath,authority:record.fileEntry?.authority||'DISCOVERED_PHYSICAL_FILE',source:'REPOSITORY_SEARCH_REGISTRY'};
+  }
+  execute(ir,inputs=[],language='en',runtimeInput={}){
+    this.ensure();
+    const trace=[];const add=(stage,status,data={})=>trace.push({stage,status,...data});
+    add('QUESTION_INTERPRETATION','READY',{operation:ir.operation,language});
+    add('QUERY_IR','READY',{ids:ir.ids||{},property:ir.property||null,assetClass:ir.assetClass||null});
+    const idResults={};
+    for(const [kind,spec] of Object.entries(ir.entities||{}))if(spec?.id&&spec.type){idResults[kind]=this.resolveId(spec.id,spec.type);}
+    add('IDENTITY_RESOLUTION','COMPLETE',{results:idResults});
+    const failures=Object.values(idResults).filter(x=>['AMBIGUOUS_IDENTITY','IDENTITY_NOT_FOUND'].includes(x.status));
+    if(failures.length){return this.fail(failures[0].status,trace,{identities:idResults})}
+    const plans=this.candidateDatasets(ir);add('DATASET_DISCOVERY','COMPLETE',{candidates:plans.map(p=>({dataset:p.entry.name,physicalPath:p.entry.physicalPath,score:p.score,capabilities:p.entry.capabilities}))});
+    const evidences=[];let values=[];let matchedRecords=[];let lastStatus='RECORD_NOT_FOUND';
+    for(const p of plans){
+      const selected=this.selectRecords(ir,p.entry);if(selected.status!=='OK'){lastStatus=selected.status;continue}
+      let records=selected.records;
+      const asset=U(ir.assetClass||ir.entities?.assetClass?.id||'');
+      records=this.uniqueTargetRecords(records,asset);
+      if(!records.length)continue;
+      matchedRecords.push(...records);
+      add('RECORD_DISCOVERY','MATCHED',{dataset:p.entry.name,recordCount:records.length});
+      if(ir.operation==='COUNT'){
+        for(const r of records)evidences.push(this.evidence(r,null,r.key||r.entityType||true,'COUNT',[]));
+        values.push(records.length);
+        continue;
+      }
+      if(['LOCATE','LIST','SELECT','IDENTIFY'].includes(ir.operation)){
+        for(const r of records){const val=r.value?.name||r.value?.location||r.key||r.signature;evidences.push(this.evidence(r,null,val,ir.operation,[]));values.push(val)}
+        continue;
+      }
+      const prop=this.resolveProperty(ir,records);add('FIELD_RESOLUTION',prop?.status||'NOT_RUN',{dataset:p.entry.name,fieldPath:prop?.fieldPath||null});
+      if(!prop||prop.status!=='RESOLVED')continue;
+      evidences.push(this.evidence(prop.record,prop.fieldPath,prop.value,ir.operation,[]));values.push(prop.value);
+    }
+    add('RECORD_GRAPH','SCOPED',{matchedRecordCount:matchedRecords.length});
+    const op=U(ir.operation||'GET');let result=null;let status='VERIFIED_FACT';
+    if(op==='COUNT'){const count=evidences.length?new Set(evidences.map(e=>`${e.dataset}::${e.recordLocator}::${e.canonicalEntityId||e.recordLocator}`)).size:0;if(count===0){status='RECORD_NOT_FOUND';result=null}else result=count;}
+    else if(['LIST','SELECT','IDENTIFY','LOCATE'].includes(op)){result=[...new Set(values.map(x=>typeof x==='object'?JSON.stringify(x):S(x)).filter(Boolean))].map(x=>{try{return JSON.parse(x)}catch(_){return x}});if(!result.length)status='RECORD_NOT_FOUND'}
+    else if(['GET','TOTAL','SUM','AVERAGE','MIN','MAX'].includes(op)){
+      if(!values.length){status='FIELD_NOT_FOUND';result=null}
+      else if(values.map(v=>JSON.stringify(v)).filter(Boolean).reduce((a,v)=>a.has(v)?a:(a.add(v),a),new Set()).size>1&&op==='GET'){status='SOURCE_CONFLICT';result=null}
+      else {const nums=values.map(Number).filter(Number.isFinite);if(op==='GET')result=values[0];else if(op==='TOTAL'||op==='SUM')result=nums.reduce((a,b)=>a+b,0);else if(op==='AVERAGE')result=nums.length?nums.reduce((a,b)=>a+b,0)/nums.length:null;else if(op==='MIN')result=nums.length?Math.min(...nums):null;else if(op==='MAX')result=nums.length?Math.max(...nums):null;if(result===null)status='UNIT_CONFLICT'}
+    } else if(op==='EXISTS'){result=matchedRecords.length>0}
+    else if(op==='COMPARE'){result=values}
+    else {status='OPERATION_UNSUPPORTED';result=null}
+    add('DETERMINISTIC_OPERATION',status,{operation:op,result});
+    add('VALIDATION',status,{evidenceCount:evidences.length});
+    return{status,value:result,evidence:evidences,trace,queryIR:ir,diagnostics:this.diagnostics(),registry:{indexedValues:this.registry.valueCount}};
+  }
+  fail(status,trace,extra={}){trace.push({stage:'VALIDATION',status});return{status,value:null,evidence:[],trace,...extra,diagnostics:this.diagnostics(),registry:{indexedValues:this.registry.valueCount}}}
+  buildExecutionPlan(ir){this.ensure();return{version:VERSION,order:['EXACT_ID','REPOSITORY_SEARCH_REGISTRY','DATASET','RECORD','RELATION_ANCESTRY','FIELD','OPERATION','VALIDATION','EVIDENCE'],identities:ir.ids||{},datasets:this.candidateDatasets(ir).map(x=>({dataset:x.entry.name,physicalPath:x.entry.physicalPath,logicalDatasetId:x.entry.logicalDatasetId,capabilities:x.entry.capabilities,score:x.score})),recordStrategy:'INDEXED_EXACT_VALUE + TYPE_SCOPED_ID + PARENT/CHILD ANCESTRY',fieldStrategy:'EXPLICIT_METADATA + SCHEMA SEMANTIC MATCH',operation:ir.operation||'GET'};}
+  buildEvidenceLedger(result){return{version:VERSION,status:result?.status||null,count:A(result?.evidence).length,chain:A(result?.evidence).map(e=>({dataset:e.dataset,physicalPath:e.physicalPath,recordLocator:e.recordLocator,fieldPath:e.fieldPath,canonicalEntityId:e.canonicalEntityId,entityType:e.entityType,rawValue:e.rawValue,operation:e.operation,authority:e.authority,source:e.source}))};}
+  lookupId(id,type=null){this.ensure();return{query:id,...this.resolveId(id,type),searchHits:this.search(id,{limit:200})};}
+  catalog(){this.ensure();return{version:VERSION,count:this.catalogEntries.length,datasets:this.catalogEntries.map(e=>({...e,absolutePath:undefined}))};}
+  schema(dataset){this.ensure();const e=this.catalogEntries.find(x=>N(x.name)===N(dataset)||N(x.datasetId)===N(dataset)||N(x.physicalPath)===N(dataset));return e?{dataset:e.name,physicalPath:e.physicalPath,logicalDatasetId:e.logicalDatasetId,metadata:e,schema:this.schemas.get(e.datasetId)||null}:null;}
+  diagnostics(){return{version:VERSION,initialized:this.initialized,root:this.root,catalogDatasets:this.catalogEntries.length,parsedDatasets:this.datasets.size,records:this.records.length,indexedValues:this.registry.valueCount,identityKeys:this.identityIndex.size,aliasKeys:this.aliasIndex.size,schemas:this.schemas.size,lastBuild:this.lastBuild,physicalSearchRegistry:{exactValues:this.registry.exact.size,tokenTerms:this.registry.tokens.size,fieldNames:this.registry.fieldNames.size,objectKeys:this.registry.keys.size}}}
+  refresh(){return this.build()}
+  traverse(id,type=null){this.ensure();const r=this.resolveId(id,type);if(!['RESOLVED','RESOLVED_ALIAS'].includes(r.status))return{status:r.status,id,type,records:[]};const sigs=new Set((r.candidates||[]).map(x=>x.recordSignature));return{status:'RESOLVED',id:r.id,type:r.type,records:this.recordScope([...sigs]).map(x=>({dataset:x.dataset,physicalPath:x.physicalPath,recordLocator:x.locator,entityType:x.entityType,key:x.key,identities:x.identities.map(y=>({id:y.id,type:y.type})),fields:x.fields}))};}
+  index(){this.ensure();return this.diagnostics()}
+  findRecords(entity,dataset){this.ensure();const id=entity?.id||entity;const type=entity?.type||null;const r=this.resolveId(id,type);if(!['RESOLVED','RESOLVED_ALIAS'].includes(r.status))return[];const sigs=new Set((r.candidates||[]).map(x=>x.recordSignature));return this.records.filter(x=>(!dataset||N(x.dataset)===N(dataset)||N(x.physicalPath)===N(dataset))&&sigs.has(x.signature));}
+}
+
+const runtime=new DeepCoreRuntime();
+const api={
+  VERSION,
+  initializeRepository:opts=>runtime.build(opts||{}),
+  ensureRepository:opts=>runtime.ensure(opts||{}),
+  execute:(ir,inputs=[],language='en',runtimeInput={})=>runtime.execute(ir,inputs,language,runtimeInput),
+  index:()=>runtime.index(),
+  lookupId:(id,type)=>runtime.lookupId(id,type),
+  search:(value,opts)=>runtime.search(value,opts),
+  buildExecutionPlan:(ir,inputs=[],runtimeInput={})=>runtime.buildExecutionPlan(ir,inputs,runtimeInput),
+  buildEvidenceLedger:result=>runtime.buildEvidenceLedger(result),
+  catalog:()=>runtime.catalog(),
+  schema:dataset=>runtime.schema(dataset),
+  diagnostics:()=>runtime.diagnostics(),
+  refresh:()=>runtime.refresh(),
+  traverse:(id,type)=>runtime.traverse(id,type),
+  findRecords:(entity,dataset)=>runtime.findRecords(entity,dataset),
+  resolveResources:entity=>runtime.findRecords(entity),
+  _runtime:runtime
+};
+global.OfflineQueryEngine=api;
+if(typeof module!=='undefined'&&module.exports)module.exports=api;
 })(typeof globalThis!=='undefined'?globalThis:window);
