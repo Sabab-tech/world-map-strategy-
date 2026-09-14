@@ -159,6 +159,7 @@ jobs:
           set -euo pipefail
           PORT=39079 node server_bootstrap.js >/tmp/omega-server.log 2>&1 &
           SERVER_PID=$!
+          export OMEGA_SERVER_PID="$SERVER_PID"
           cleanup() { kill "$SERVER_PID" 2>/dev/null || true; }
           trap cleanup EXIT
           node --input-type=module <<'NODE'
@@ -182,7 +183,7 @@ jobs:
           }
           if (!health?.ok) {
             const log = await fs.readFile('/tmp/omega-server.log', 'utf8').catch(() => '');
-            throw new Error(`Deep Core server did not become healthy. last=${lastError?.message || 'none'}\\nSERVER_LOG\\n${log}`);
+            throw new Error(`Deep Core server did not become healthy. last=${lastError?.message || 'none'}\nSERVER_LOG\n${log}`);
           }
           const diag = await (await fetch(`${base}/api/deep-core/diagnostics`, { cache: 'no-store' })).json();
           if (diag?.scan?.authority !== 'NODE_FILESYSTEM') throw new Error(`Server Deep Core authority mismatch: ${diag?.scan?.authority || 'UNKNOWN'}`);
@@ -192,6 +193,7 @@ jobs:
           const countries = JSON.parse(await fs.readFile('countries.json', 'utf8'));
           const rows = Array.isArray(countries) ? countries : (countries?.countries || countries?.data || Object.values(countries || {}));
           const row = rows.find(x => String(x?.code || x?.id || x?.iso2 || x?.iso3 || '').trim() && String(x?.name || '').trim());
+          if (!row) throw new Error('No usable country record found in countries.json for server API test');
           const id = String(row.code || row.id || row.iso2 || row.iso3).trim().toUpperCase();
           const name = String(row.name).trim();
 
@@ -203,9 +205,16 @@ jobs:
           const search = await searchResponse.json();
           if (!searchResponse.ok || search.status !== 'RESOLVED' || !search.count) throw new Error(`Server search failed: ${search.status || searchResponse.status}`);
 
-          const queryResponse = await fetch(`${base}/api/deep-core/query`, { method: 'POST', headers: {'content-type':'application/json'}, body: JSON.stringify({ prompt: `List records for ${name}`, countryId: id }) });
+          const queryPrompt = `What is the population of ${name}?`;
+          const queryResponse = await fetch(`${base}/api/deep-core/query`, {
+            method: 'POST',
+            headers: {'content-type':'application/json'},
+            body: JSON.stringify({ prompt: queryPrompt, countryId: id })
+          });
           const query = await queryResponse.json();
-          if (!query?.result || !query.result?.evidence?.length) throw new Error(`Server Deep Core query returned no evidence: ${query?.result?.status || query?.status || queryResponse.status}`);
+          if (!queryResponse.ok || !query?.ok || query.result?.status !== 'VERIFIED_FACT' || !query.result?.evidence?.length) {
+            throw new Error(`Server Deep Core query failed: HTTP ${queryResponse.status}; status=${query?.result?.status || query?.status || 'UNKNOWN'}; prompt=${queryPrompt}; response=${JSON.stringify(query)}`);
+          }
           if (query.result?.dataAccess?.authority !== 'NODE_FILESYSTEM') throw new Error(`Server query authority mismatch: ${query.result?.dataAccess?.authority || 'UNKNOWN'}`);
           for (const e of query.result.evidence) {
             if (!e.dataset || !e.physicalPath || !e.recordLocator || !e.authority) throw new Error('Server query evidence missing provenance fields');
@@ -216,6 +225,7 @@ jobs:
           console.log(`Authority: ${diag.scan.authority}`);
           console.log(`Lookup: ${id} -> RESOLVED`);
           console.log(`Search: ${name} -> RESOLVED`);
+          console.log(`Query: ${queryPrompt} -> VERIFIED_FACT`);
           console.log(`Query evidence: ${query.result.evidence.length}`);
           console.log(`Query evidence authority: ${query.result.evidence[0].authority}`);
           NODE
