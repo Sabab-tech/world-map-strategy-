@@ -37,43 +37,18 @@ jobs:
           raw = p.read_bytes()
           try:
               text = raw.decode('utf-8')
-              json.loads(text)
-              print('OFFLINE_LEXICON_JSON: already valid UTF-8 JSON')
+              data = json.loads(text)
+              if not isinstance(data, dict): raise ValueError('root is not an object')
+              print(f'OFFLINE_LEXICON_JSON: already valid UTF-8 JSON; entries={len(data.get("DICTIONARY", {})) if isinstance(data.get("DICTIONARY"), dict) else 0}')
           except Exception as first_error:
-              text = raw.decode('utf-8', errors='surrogateescape')
-              safe = []
-              in_string = False
-              escaped = False
-              for ch in text:
-                  code = ord(ch)
-                  if escaped:
-                      safe.append(ch)
-                      escaped = False
-                      continue
-                  if ch == '\\' and in_string:
-                      safe.append(ch)
-                      escaped = True
-                      continue
-                  if ch == '"':
-                      safe.append(ch)
-                      in_string = not in_string
-                      continue
-                  if in_string and code < 0x20:
-                      safe.append(f'\\u{code:04x}')
-                  elif in_string and 0xDC80 <= code <= 0xDCFF:
-                      safe.append(f'\\u{code - 0xDC00:04x}')
-                  elif not in_string and 0xDC80 <= code <= 0xDCFF:
-                      safe.append(' ')
-                  else:
-                      safe.append(ch)
-              sanitized = ''.join(safe)
-              repaired = repair_json(sanitized, ensure_ascii=False)
+              text = raw.decode('utf-8', errors='replace')
+              repaired = repair_json(text, ensure_ascii=False)
               data = json.loads(repaired)
               if not isinstance(data, dict):
-                  raise SystemExit('offline_lexicon.json repair produced a non-object root')
+                  raise SystemExit(f'offline_lexicon.json repair produced a non-object root: {first_error}')
               data_words = data.get('DICTIONARY')
               if not isinstance(data_words, dict) or not data_words:
-                  raise SystemExit('offline_lexicon.json repair produced an empty DICTIONARY')
+                  raise SystemExit(f'offline_lexicon.json repair produced an empty DICTIONARY: {first_error}')
               p.write_text(repaired, encoding='utf-8')
               print(f'OFFLINE_LEXICON_REPAIRED: {first_error}')
               print(f'OFFLINE_LEXICON_WORDS: {len(data_words)}')
