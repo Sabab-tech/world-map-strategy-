@@ -120,7 +120,6 @@ jobs:
           s=s.replace("register({country_code:x.country_code,country_name:x.country_name||k},k,'relation_generation_engine')", "register({iso2:x.country_code,countryName:x.country_name||k},k,'relation_generation_engine')")
           p.write_text(s,encoding='utf-8')
 
-          # Resource bridge: mirror country data from the canonical country registry only.
           p=Path('omega_resource_semantic_bridge.js');s=p.read_text(encoding='utf-8')
           if 'function canonicalCountryBridge()' not in s:
               marker="  function first(v,keys=[]){"
@@ -136,24 +135,20 @@ jobs:
           if 'expectedCountryIdCount:197' in s or 'COUNTRY_ALIASES' in s: raise SystemExit('RESOURCE BRIDGE REPAIR FAILED: stale country authority marker remains')
           p.write_text(s,encoding='utf-8')
 
-          # Deep Core: COUNTRY identity must come only from the canonical registry; semantic knowledge remains for non-country semantics.
           p=Path('offline_query_engine.js');s=p.read_text(encoding='utf-8')
-          if 'this.known=knowledgeEntities(this.k).filter(e=>e.type!==\'COUNTRY\')' not in s:
-              if 'this.known=knowledgeEntities(this.k);' not in s: raise SystemExit('DEEP CORE REPAIR FAILED: knowledge index anchor not found')
-              s=s.replace('this.known=knowledgeEntities(this.k);','this.known=knowledgeEntities(this.k).filter(e=>e.type!==\'COUNTRY\');',1)
-          if 'function canonicalCountryResolve' not in s:
-              anchor='function relations(k)'
-              helper="function canonicalCountryResolve(q){const b=global.OmegaCanonicalIdentityRegistry||global.OmegaCountrySemanticBridge;try{const h=b?.resolveCountry?.(q);return h?.id?h:null}catch(_){return null}}\n"
-              if anchor not in s: raise SystemExit('DEEP CORE REPAIR FAILED: function anchor not found')
-              s=s.replace(anchor,helper+anchor,1)
-          if 'canonicalCountryResolve(surface)' not in s:
+          s=s.replace("this.known=knowledgeEntities(this.k).filter(e=>e.type!=='COUNTRY');","this.known=knowledgeEntities(this.k).filter(e=>e.type!=='COUNTRY'&&e.type!=='RESOURCE');",1)
+          if 'function canonicalResourceResolve' not in s:
+              marker='function canonicalCountryResolve(q)'
+              helper="function canonicalResourceResolve(q){const b=global.OmegaResourceSemanticBridge;try{const h=b?.resolveResource?.(q);return h?.id?h:null}catch(_){return null}}\n"
+              if marker not in s: raise SystemExit('DEEP CORE RESOURCE REPAIR FAILED: canonical country resolver anchor missing')
+              s=s.replace(marker,helper+marker,1)
+          if 'canonicalResourceResolve(surface)' not in s:
               m=re.search(r"(resolveEntity\([^)]*\)\{)",s)
               if not m: raise SystemExit('DEEP CORE REPAIR FAILED: resolveEntity method not found')
-              ins="if(U(type)==='COUNTRY'){const h=canonicalCountryResolve(surface);if(h?.id)return{...h,type:'COUNTRY',id:U(h.id),authority:'OMEGA_CANONICAL_COUNTRY_REGISTRY'};}"
+              ins="if(U(type)==='RESOURCE'){const h=canonicalResourceResolve(surface);if(h?.id)return{...h,type:'RESOURCE',id:U(h.id),authority:'OMEGA_CANONICAL_RESOURCE_BRIDGE'};}"
               s=s[:m.end()]+ins+s[m.end():]
           p.write_text(s,encoding='utf-8')
 
-          # Cognitive Engine: remove the embedded country alias table/default and resolve through the canonical registry.
           p=Path('omega_cognitive_engine.js');s=p.read_text(encoding='utf-8')
           if 'COUNTRY_ALIASES' in s or 'let targetCountryIso = "BGD"' in s:
               pattern=r"      // 2\. DYNAMIC TARGET COUNTRY RESOLUTION.*?(?=\n      // 3\.)"
@@ -165,7 +160,6 @@ jobs:
               raise SystemExit('COGNITIVE REPAIR FAILED: embedded country aliases/default remain')
           p.write_text(s,encoding='utf-8')
 
-          # Server gateway: explicitly wait for both canonical country and resource readiness.
           p=Path('omega_server_ai_gateway.js');s=p.read_text(encoding='utf-8')
           if 'waitForResourceBridge' not in s:
               anchor='const identityBridge=globalThis.OmegaCanonicalIdentityRegistry||globalThis.OmegaCountrySemanticBridge;'
@@ -176,19 +170,21 @@ jobs:
           s=s.replace("tokenAwareQuestionEntityExtraction:true,countryFallbackPolicy:'NO_SYNTHETIC_COUNTRY',cityIdentity:'CANONICAL_CITY_REGISTRY'", "tokenAwareQuestionEntityExtraction:true,countryFallbackPolicy:'NO_SYNTHETIC_COUNTRY',cityIdentity:'CANONICAL_CITY_REGISTRY',resourceBridgeReady:!!resourceBridge?.diagnostics?.().ready,resourceBridgeDiagnostics:resourceBridge?.diagnostics?.()||null,waitForResourceBridge:true")
           p.write_text(s,encoding='utf-8')
 
-          # Canonical structural test: dynamic source counts only; forbid the old fixed-count expectation and enforce authority boundaries.
           p=Path('scripts/test_canonical_ai_chain.cjs');s=p.read_text(encoding='utf-8')
-          s=s.replace("assert(resourceBridge.includes('expectedCountryIdCount:197'), 'resource bridge must declare the 197-country identity target');\n", "assert(!resourceBridge.includes('expectedCountryIdCount:197'), 'resource bridge must not hardcode a country-count target');\nassert(resourceBridge.includes('canonicalCountryBridge'), 'resource bridge must delegate country identity to the canonical registry');\nassert(resourceBridge.includes('waitForCanonicalCountryBridge'), 'resource bridge must wait for canonical country identity readiness');\n")
-          old="""for (const forbidden of ['bangladesh', 'germany', 'india', 'iron_ore', 'crude_oil']) {\n  assert(!resourceBridge.toLowerCase().includes(forbidden), `resource bridge must not hardcode a specific resource/country fact: ${forbidden}`);\n}\n"""
-          new="""for (const forbidden of ['bangladesh', 'germany', 'india', 'iron_ore', 'crude_oil']) {\n  assert(!resourceBridge.toLowerCase().includes(forbidden), `resource bridge must not hardcode a specific resource/country fact: ${forbidden}`);\n}\nconst cognitive = read('omega_cognitive_engine.js');\nconst deepCore = read('offline_query_engine.js');\nassert(!cognitive.includes('COUNTRY_ALIASES'), 'cognitive engine must not own a country alias table');\nassert(!cognitive.includes('let targetCountryIso = "BGD"'), 'cognitive engine must not contain a synthetic default country');\nassert(cognitive.includes('OmegaCanonicalIdentityRegistry') || cognitive.includes('OmegaCountrySemanticBridge'), 'cognitive engine must resolve country identity through the canonical registry');\nassert(deepCore.includes("this.known=knowledgeEntities(this.k).filter(e=>e.type!=='COUNTRY')"), 'Deep Core must not use semantic knowledge as the country identity authority');\nassert(deepCore.includes('canonicalCountryResolve(surface)'), 'Deep Core COUNTRY resolution must delegate to the canonical registry');\nconst countriesJsonRaw = read('countries.json');\nconst countrySource = JSON.parse(countriesJsonRaw);\nconst countryRows = Array.isArray(countrySource) ? countrySource : (countrySource?.countries || countrySource?.data || Object.values(countrySource || {}));\nfunction collectIdentityStrings(value,out=new Set()){if(Array.isArray(value)){for(const x of value)collectIdentityStrings(x,out);return out;}if(!value||typeof value!=='object')return out;for(const [k,v] of Object.entries(value)){if(['id','iso2','iso3','code','countryCode','canonicalId','name','officialName','countryName','shortName','displayName'].includes(k)&&typeof v==='string'&&v.trim().length>=2)out.add(v.trim().toLowerCase());if(Array.isArray(v)&&['names','aliases','forms','alternativeNames','alternateNames'].includes(k))for(const x of v)if(typeof x==='string'&&x.trim().length>=2)out.add(x.trim().toLowerCase());else if(v&&typeof v==='object')collectIdentityStrings(v,out);}return out;}\nconst countryIdentityLiterals=collectIdentityStrings(countryRows);\nfor(const file of ['omega_cognitive_engine.js','omega_resource_semantic_bridge.js','offline_query_engine.js','offline_semantic_brain.js','omega_server_ai_gateway.js']){const src=read(file).toLowerCase();for(const value of countryIdentityLiterals){const escaped=value.replace(/[.*+?^${}()|[\\]\\\\]/g,'\\\\$&');const literal=new RegExp(`[\\\\\"']${escaped}[\\\\\"']`,'i');assert(!literal.test(src), `${file} must not embed a country identity literal from countries.json: ${value}`);}}\n"""
-          if old not in s: raise SystemExit('CANONICAL TEST REPAIR FAILED: legacy hardcoded-resource assertion block not found')
+          s=s.replace("assert(contextBridge.includes('function build(question, request={})'), 'context bridge must accept the exact request body');", "assert(/function build\\(question,request=\\{\\}(,preResolved=null)?\\)/.test(contextBridge.replace(/\\s+/g,'')), 'context bridge must expose the canonical request-body build interface');")
+          s=s.replace("assert(deepCore.includes(\"this.known=knowledgeEntities(this.k).filter(e=>e.type!=='COUNTRY')\"), 'Deep Core must not use semantic knowledge as the country identity authority');\nassert(deepCore.includes('canonicalCountryResolve(surface)'), 'Deep Core COUNTRY resolution must delegate to the canonical registry');", "assert(deepCore.includes(\"this.known=knowledgeEntities(this.k).filter(e=>e.type!=='COUNTRY'&&e.type!=='RESOURCE')\"), 'Deep Core must not use semantic knowledge as country/resource identity authority');\nassert(deepCore.includes('canonicalCountryResolve(surface)'), 'Deep Core COUNTRY resolution must delegate to the canonical registry');\nassert(deepCore.includes('canonicalResourceResolve(surface)'), 'Deep Core RESOURCE resolution must delegate to the canonical resource registry');\nassert(deepCore.includes('OmegaResourceSemanticBridge'), 'Deep Core must reference the canonical resource bridge for resource identity');")
+          s=s.replace("const deepCore = read('offline_query_engine.js');", "const deepCore = read('offline_query_engine.js');\nconst semanticBrain = read('offline_semantic_brain.js');")
+          s=s.replace("assert(cognitive.includes('OmegaCanonicalIdentityRegistry') || cognitive.includes('OmegaCountrySemanticBridge'), 'cognitive engine must resolve country identity through the canonical registry');", "assert(cognitive.includes('OmegaCanonicalIdentityRegistry') || cognitive.includes('OmegaCountrySemanticBridge'), 'cognitive engine must resolve country identity through the canonical registry');\nassert(semanticBrain.includes('function canonicalEntity(raw,type)'), 'Semantic Brain must expose canonical entity interpretation');\nassert(semanticBrain.includes(\"t==='COUNTRY'?countryRegistry():t==='RESOURCE'?resourceRegistry():null\"), 'Semantic Brain COUNTRY/RESOURCE interpretation must delegate to canonical registries');\nassert(semanticBrain.includes('never stores country/resource world facts'), 'Semantic Brain must remain an interpreter, not a world-data store');")
+          old="""const countryIdentityLiterals=collectIdentityStrings(countryRows);\nfor(const file of ['omega_cognitive_engine.js','omega_resource_semantic_bridge.js','offline_query_engine.js','offline_semantic_brain.js','omega_server_ai_gateway.js']){const src=read(file).toLowerCase();for(const value of countryIdentityLiterals){const escaped=value.replace(/[.*+?^${}()|[\\]\\\\]/g,'\\\\$&');const literal=new RegExp(`[\\\\\"']${escaped}[\\\\\"']`,'i');assert(!literal.test(src), `${file} must not embed a country identity literal from countries.json: ${value}`);}}\n"""
+          new="""const countryIdentityLiterals=collectIdentityStrings(countryRows);\nfor(const file of ['omega_cognitive_engine.js','omega_resource_semantic_bridge.js','offline_query_engine.js','offline_semantic_brain.js','omega_server_ai_gateway.js']){const src=read(file).toLowerCase();for(const value of countryIdentityLiterals){const escaped=value.replace(/[.*+?^${}()|[\\]\\\\]/g,'\\\\$&');const literal=new RegExp(`[\\\\\"']${escaped}[\\\\\"']`,'i');assert(!literal.test(src), `${file} must not embed a country identity literal from countries.json: ${value}`);}}\nassert(!semanticBrain.includes('economy.json'), 'Semantic Brain must not directly read economy data');\nassert(!semanticBrain.includes('population.json'), 'Semantic Brain must not directly read population data');\n"""
+          if old not in s: raise SystemExit('CANONICAL TEST REPAIR FAILED: dynamic country literal assertion block not found')
           s=s.replace(old,new,1)
           p.write_text(s,encoding='utf-8')
           PY
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add minister_query_router.js omega_production_semantic_runtime_v3.js omega_country_semantic_bridge.js omega_resource_semantic_bridge.js offline_query_engine.js omega_cognitive_engine.js omega_server_ai_gateway.js scripts/test_canonical_ai_chain.cjs
-          if ! git diff --cached --quiet; then git commit -m 'fix: close canonical country identity authority gaps [skip ci]'; git push; fi
+          if ! git diff --cached --quiet; then git commit -m 'fix: close canonical country and resource identity authority gaps [skip ci]'; git push; fi
       - name: Syntax gate
         run: npm run lint
       - name: Security static gate
