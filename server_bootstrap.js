@@ -7,6 +7,13 @@ import fs from 'fs';
 const nativeFetch = globalThis.fetch;
 const MODEL_FALLBACK = 'gemini-3.7-flash';
 
+if (typeof globalThis.addEventListener !== 'function' || typeof globalThis.dispatchEvent !== 'function') {
+  const omegaEventTarget = new EventTarget();
+  globalThis.addEventListener = omegaEventTarget.addEventListener.bind(omegaEventTarget);
+  globalThis.removeEventListener = omegaEventTarget.removeEventListener.bind(omegaEventTarget);
+  globalThis.dispatchEvent = omegaEventTarget.dispatchEvent.bind(omegaEventTarget);
+}
+
 if (typeof nativeFetch === 'function' && !globalThis.__omegaGeminiFetchCompat) {
   globalThis.__omegaGeminiFetchCompat = true;
   globalThis.fetch = async function omegaGeminiFetch(input, init) {
