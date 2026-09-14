@@ -30,6 +30,25 @@ jobs:
           git add omega_country_semantic_bridge.js
           git commit -m 'fix: resolve inflected country aliases from canonical data [skip ci]'
           git push
+      - name: Repair canonical resource alias ingestion
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('omega_resource_semantic_bridge.js')
+          s=p.read_text(encoding='utf-8')
+          old="""function registerResourceType(raw,key=''){if(raw==null)return null;const id=TOKEN(first(raw,['id','key','resource_id','resourceTypeId'])||key);if(!id)return null;const names=[];if(O(raw))for(const k of ['name','resourceName','canonicalName','displayName','label','name_en','name_bn'])if(typeof raw[k]==='string'&&raw[k].trim())names.push(raw[k]);names.push(key,id);const old=state.resources.get(id);const entry={id,names:[...new Set([...(old?.names||[]),...names])],raw:O(raw)?C(raw):{id:key,name:raw}};state.resources.set(id,entry);for(const n of entry.names){addAlias(state.resourceAliases,n,id);addAlias(state.resourceAliases,String(n).replace(/_/g,' '),id);}return entry;}"""
+          new="""function registerResourceType(raw,key=''){if(raw==null)return null;const id=TOKEN(first(raw,['id','key','resource_id','resourceTypeId'])||key);if(!id)return null;const names=[];if(O(raw))for(const k of ['name','resourceName','canonicalName','displayName','label','name_en','name_bn'])if(typeof raw[k]==='string'&&raw[k].trim())names.push(raw[k]);if(O(raw))for(const k of ['aliases','alias_names','altNames','alternateNames','forms','names'])for(const x of A(raw[k]))if(typeof x==='string'&&x.trim())names.push(x);names.push(key,id);const old=state.resources.get(id);const entry={id,names:[...new Set([...(old?.names||[]),...names])],raw:O(raw)?C(raw):{id:key,name:raw}};state.resources.set(id,entry);for(const n of entry.names){addAlias(state.resourceAliases,n,id);addAlias(state.resourceAliases,String(n).replace(/_/g,' '),id);}return entry;}"""
+          if old not in s: raise SystemExit('resource registerResourceType anchor not found')
+          s=s.replace(old,new,1)
+          p.write_text(s,encoding='utf-8')
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add omega_resource_semantic_bridge.js
+          git commit -m 'fix: ingest canonical resource aliases from data registry [skip ci]'
+          git push
       - name: Finalize canonical resource identity data
         shell: bash
         run: |
@@ -111,4 +130,4 @@ jobs:
                 - run: node scripts/test_omega_language_batch03.cjs
                 - run: npm test
           YAML
-          echo 'Final workflow lock is applied by the migration job.'
+          echo 'Final workflow lock is applied by direct repository control.'
