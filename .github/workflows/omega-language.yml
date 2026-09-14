@@ -39,30 +39,62 @@ jobs:
               print('OFFLINE_LEXICON_JSON: already valid UTF-8 JSON')
           except Exception as first_error:
               text = raw.decode('utf-8', errors='surrogateescape')
+              lines = text.splitlines()
+              line_no = 21027
+              if 1 <= line_no <= len(lines):
+                  print('OFFLINE_LEXICON_BAD_LINE:', repr(lines[line_no - 1]))
+              print('OFFLINE_LEXICON_INITIAL_ERROR:', repr(first_error))
+
               out = []
               in_string = False
               escaped = False
-              for ch in text:
+              i = 0
+              n = len(text)
+              structural = {':', ',', '}', ']'}
+              while i < n:
+                  ch = text[i]
                   code = ord(ch)
                   if escaped:
                       out.append(ch)
                       escaped = False
+                      i += 1
                       continue
-                  if ch == '\\' and in_string:
+                  if in_string and ch == '\\':
                       out.append(ch)
                       escaped = True
+                      i += 1
                       continue
                   if ch == '"':
-                      out.append(ch)
-                      in_string = not in_string
+                      if not in_string:
+                          in_string = True
+                          out.append(ch)
+                          i += 1
+                          continue
+                      j = i + 1
+                      while j < n and text[j] in ' \t\r\n':
+                          j += 1
+                      nxt = text[j] if j < n else ''
+                      if nxt in structural or not nxt:
+                          in_string = False
+                          out.append(ch)
+                      else:
+                          out.append('\\"')
+                      i += 1
                       continue
                   if in_string and code < 0x20:
                       out.append(f'\\u{code:04x}')
+                      i += 1
                       continue
-                  if in_string and 0xDC80 <= code <= 0xDCFF:
-                      out.append(f'\\u{code - 0xDC00:04x}')
+                  if 0xDC80 <= code <= 0xDCFF:
+                      if in_string:
+                          out.append(f'\\u{code - 0xDC00:04x}')
+                      else:
+                          out.append(' ')
+                      i += 1
                       continue
                   out.append(ch)
+                  i += 1
+
               repaired = ''.join(out)
               data = json.loads(repaired)
               if not isinstance(data, dict):
