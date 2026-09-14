@@ -25,7 +25,10 @@ const semanticKnowledge = readJson('offline_semantic_knowledge.json');
   await import(pathToUrl(path.join(root, 'omega_resource_semantic_bridge.js')));
   const resourceBridge = globalThis.OmegaResourceSemanticBridge;
   assert.ok(resourceBridge, 'Canonical resource bridge must initialize');
-  assert.equal(await resourceBridge.init?.(), true, 'Canonical resource bridge must load');
+  const resourceInit = await resourceBridge.init?.();
+  assert.ok(resourceInit?.ready === true || resourceBridge.diagnostics?.().ready === true, 'Canonical resource bridge must be ready');
+  const resourceDiagnostics = resourceBridge.diagnostics?.() || {};
+  assert.equal(resourceDiagnostics.countryIdCoverageComplete, true, 'Resource bridge must cover every canonical country');
 
   await import(pathToUrl(path.join(root, 'omega_production_semantic_runtime_v3.js')));
   await import(pathToUrl(path.join(root, 'offline_semantic_brain.js')));
@@ -62,7 +65,7 @@ const semanticKnowledge = readJson('offline_semantic_knowledge.json');
   assert.equal(unknown.executable, false);
   assert.ok(unknown.unresolved.includes('COUNTRY'));
 
-  console.log('Runtime multilingual semantic brain tests: PASS', { countries: runtime.countries, resources: runtime.resources.length });
+  console.log('Runtime multilingual semantic brain tests: PASS', { countries: runtime.countries, resources: runtime.resources.length, resourceBridge: resourceDiagnostics });
 })().catch(error => {
   console.error(error);
   process.exit(1);
