@@ -6,7 +6,12 @@
     "lng": 67.71,
     "minZoom": 3.5,
     "maxZoom": 9,
-    "importance": 3
+    "importance": 3,
+    "canonicalId": "AF",
+    "aliases": [
+      "Afghanistan",
+      "AF"
+    ]
   },
   {
     "code": "AL",
@@ -15,7 +20,12 @@
     "lng": 20.1683,
     "minZoom": 4,
     "maxZoom": 9,
-    "importance": 2
+    "importance": 2,
+    "canonicalId": "AL",
+    "aliases": [
+      "Albania",
+      "AL"
+    ]
   },
   {
     "code": "DZ",
@@ -24,7 +34,12 @@
     "lng": 1.6596,
     "minZoom": 3.5,
     "maxZoom": 8.5,
-    "importance": 3
+    "importance": 3,
+    "canonicalId": "DZ",
+    "aliases": [
+      "Algeria",
+      "DZ"
+    ]
   },
   {
     "code": "AD",
@@ -33,7 +48,12 @@
     "lng": 1.6015,
     "minZoom": 5,
     "maxZoom": 9,
-    "importance": 1
+    "importance": 1,
+    "canonicalId": "AD",
+    "aliases": [
+      "Andorra",
+      "AD"
+    ]
   },
   {
     "code": "AO",
@@ -42,7 +62,12 @@
     "lng": 17.8739,
     "minZoom": 3.8,
     "maxZoom": 8.8,
-    "importance": 3
+    "importance": 3,
+    "canonicalId": "AO",
+    "aliases": [
+      "Angola",
+      "AO"
+    ]
   },
   {
     "code": "AR",
@@ -51,7 +76,12 @@
     "lng": -63.6167,
     "minZoom": 3.5,
     "maxZoom": 8.5,
-    "importance": 4
+    "importance": 4,
+    "canonicalId": "AR",
+    "aliases": [
+      "Argentina",
+      "AR"
+    ]
   },
   {
     "code": "AM",
@@ -60,7 +90,12 @@
     "lng": 45.0382,
     "minZoom": 4,
     "maxZoom": 9,
-    "importance": 2
+    "importance": 2,
+    "canonicalId": "AM",
+    "aliases": [
+      "Armenia",
+      "AM"
+    ]
   },
   {
     "code": "AU",
@@ -69,7 +104,12 @@
     "lng": 133.7751,
     "minZoom": 3,
     "maxZoom": 7.5,
-    "importance": 5
+    "importance": 5,
+    "canonicalId": "AU",
+    "aliases": [
+      "Australia",
+      "AU"
+    ]
   },
   {
     "code": "AT",
@@ -78,7 +118,12 @@
     "lng": 14.5501,
     "minZoom": 4.5,
     "maxZoom": 9,
-    "importance": 3
+    "importance": 3,
+    "canonicalId": "AT",
+    "aliases": [
+      "Austria",
+      "AT"
+    ]
   },
   {
     "code": "AZ",
@@ -87,7 +132,12 @@
     "lng": 47.5769,
     "minZoom": 4,
     "maxZoom": 9,
-    "importance": 3
+    "importance": 3,
+    "canonicalId": "AZ",
+    "aliases": [
+      "Azerbaijan",
+      "AZ"
+    ]
   },
   {
     "code": "BD",
@@ -101,8 +151,11 @@
     "iso3": "BGD",
     "aliases": [
       "বাংলাদেশ",
-      "BGD"
-    ]
+      "BGD",
+      "Bangladesh",
+      "BD"
+    ],
+    "canonicalId": "BGD"
   },
   {
     "code": "BE",
@@ -111,7 +164,12 @@
     "lng": 4.4699,
     "minZoom": 4.5,
     "maxZoom": 9,
-    "importance": 3
+    "importance": 3,
+    "canonicalId": "BE",
+    "aliases": [
+      "Belgium",
+      "BE"
+    ]
   },
   {
     "code": "BR",
@@ -120,7 +178,12 @@
     "lng": -51.9253,
     "minZoom": 3,
     "maxZoom": 7.5,
-    "importance": 5
+    "importance": 5,
+    "canonicalId": "BR",
+    "aliases": [
+      "Brazil",
+      "BR"
+    ]
   },
   {
     "code": "CA",
@@ -129,7 +192,12 @@
     "lng": -106.3468,
     "minZoom": 3,
     "maxZoom": 7.5,
-    "importance": 5
+    "importance": 5,
+    "canonicalId": "CA",
+    "aliases": [
+      "Canada",
+      "CA"
+    ]
   },
   {
     "code": "CN",
@@ -138,7 +206,12 @@
     "lng": 104.1954,
     "minZoom": 3,
     "maxZoom": 7.5,
-    "importance": 5
+    "importance": 5,
+    "canonicalId": "CN",
+    "aliases": [
+      "China",
+      "CN"
+    ]
   },
   {
     "code": "IN",
@@ -147,7 +220,12 @@
     "lng": 78.9629,
     "minZoom": 3.5,
     "maxZoom": 8.5,
-    "importance": 5
+    "importance": 5,
+    "canonicalId": "IN",
+    "aliases": [
+      "India",
+      "IN"
+    ]
   },
   {
     "code": "ID",
@@ -156,7 +234,12 @@
     "lng": 113.9213,
     "minZoom": 3.5,
     "maxZoom": 8.5,
-    "importance": 4
+    "importance": 4,
+    "canonicalId": "ID",
+    "aliases": [
+      "Indonesia",
+      "ID"
+    ]
   },
   {
     "code": "IR",
@@ -165,7 +248,12 @@
     "lng": 53.688,
     "minZoom": 3.5,
     "maxZoom": 8.5,
-    "importance": 4
+    "importance": 4,
+    "canonicalId": "IR",
+    "aliases": [
+      "Iran",
+      "IR"
+    ]
   },
   {
     "code": "IQ",
@@ -174,7 +262,12 @@
     "lng": 43.6793,
     "minZoom": 4,
     "maxZoom": 9,
-    "importance": 3
+    "importance": 3,
+    "canonicalId": "IQ",
+    "aliases": [
+      "Iraq",
+      "IQ"
+    ]
   },
   {
     "code": "JP",
@@ -183,7 +276,12 @@
     "lng": 138.2529,
     "minZoom": 4,
     "maxZoom": 9,
-    "importance": 5
+    "importance": 5,
+    "canonicalId": "JP",
+    "aliases": [
+      "Japan",
+      "JP"
+    ]
   },
   {
     "code": "DE",
@@ -198,8 +296,11 @@
     "aliases": [
       "Deutschland",
       "Federal Republic of Germany",
-      "DEU"
-    ]
+      "DEU",
+      "Germany",
+      "DE"
+    ],
+    "canonicalId": "DEU"
   },
   {
     "code": "FR",
@@ -208,7 +309,12 @@
     "lng": 2.2137,
     "minZoom": 4,
     "maxZoom": 8.5,
-    "importance": 5
+    "importance": 5,
+    "canonicalId": "FR",
+    "aliases": [
+      "France",
+      "FR"
+    ]
   },
   {
     "code": "GB",
@@ -217,7 +323,12 @@
     "lng": -3.436,
     "minZoom": 4,
     "maxZoom": 8.5,
-    "importance": 5
+    "importance": 5,
+    "canonicalId": "GB",
+    "aliases": [
+      "United Kingdom",
+      "GB"
+    ]
   },
   {
     "code": "US",
@@ -226,7 +337,12 @@
     "lng": -95.7129,
     "minZoom": 3,
     "maxZoom": 7,
-    "importance": 5
+    "importance": 5,
+    "canonicalId": "US",
+    "aliases": [
+      "United States",
+      "US"
+    ]
   },
   {
     "code": "PK",
@@ -235,7 +351,12 @@
     "lng": 69.3451,
     "minZoom": 3.8,
     "maxZoom": 9,
-    "importance": 4
+    "importance": 4,
+    "canonicalId": "PK",
+    "aliases": [
+      "Pakistan",
+      "PK"
+    ]
   },
   {
     "code": "RU",
@@ -244,7 +365,12 @@
     "lng": 105.3188,
     "minZoom": 3,
     "maxZoom": 7,
-    "importance": 5
+    "importance": 5,
+    "canonicalId": "RU",
+    "aliases": [
+      "Russia",
+      "RU"
+    ]
   },
   {
     "code": "SA",
@@ -253,7 +379,12 @@
     "lng": 45.0792,
     "minZoom": 3.8,
     "maxZoom": 8.8,
-    "importance": 4
+    "importance": 4,
+    "canonicalId": "SA",
+    "aliases": [
+      "Saudi Arabia",
+      "SA"
+    ]
   },
   {
     "code": "ZA",
@@ -262,7 +393,12 @@
     "lng": 22.9375,
     "minZoom": 3.8,
     "maxZoom": 8.8,
-    "importance": 4
+    "importance": 4,
+    "canonicalId": "ZA",
+    "aliases": [
+      "South Africa",
+      "ZA"
+    ]
   },
   {
     "code": "KR",
@@ -271,7 +407,12 @@
     "lng": 127.7669,
     "minZoom": 4,
     "maxZoom": 9,
-    "importance": 4
+    "importance": 4,
+    "canonicalId": "KR",
+    "aliases": [
+      "South Korea",
+      "KR"
+    ]
   },
   {
     "code": "ES",
@@ -280,7 +421,12 @@
     "lng": -3.7492,
     "minZoom": 4,
     "maxZoom": 8.5,
-    "importance": 4
+    "importance": 4,
+    "canonicalId": "ES",
+    "aliases": [
+      "Spain",
+      "ES"
+    ]
   },
   {
     "code": "IT",
@@ -289,7 +435,12 @@
     "lng": 12.5674,
     "minZoom": 4,
     "maxZoom": 8.5,
-    "importance": 4
+    "importance": 4,
+    "canonicalId": "IT",
+    "aliases": [
+      "Italy",
+      "IT"
+    ]
   },
   {
     "code": "TR",
@@ -298,7 +449,12 @@
     "lng": 35.2433,
     "minZoom": 3.8,
     "maxZoom": 8.8,
-    "importance": 4
+    "importance": 4,
+    "canonicalId": "TR",
+    "aliases": [
+      "Turkey",
+      "TR"
+    ]
   },
   {
     "code": "VN",
@@ -307,7 +463,12 @@
     "lng": 108.2772,
     "minZoom": 4,
     "maxZoom": 9,
-    "importance": 3
+    "importance": 3,
+    "canonicalId": "VN",
+    "aliases": [
+      "Vietnam",
+      "VN"
+    ]
   },
   {
     "code": "SE",
@@ -316,7 +477,12 @@
     "lng": 18.6435,
     "minZoom": 4.5,
     "maxZoom": 9,
-    "importance": 4
+    "importance": 4,
+    "canonicalId": "SE",
+    "aliases": [
+      "Sweden",
+      "SE"
+    ]
   },
   {
     "code": "CH",
@@ -325,7 +491,12 @@
     "lng": 8.2275,
     "minZoom": 4.5,
     "maxZoom": 9,
-    "importance": 4
+    "importance": 4,
+    "canonicalId": "CH",
+    "aliases": [
+      "Switzerland",
+      "CH"
+    ]
   },
   {
     "code": "NL",
@@ -334,7 +505,12 @@
     "lng": 5.2913,
     "minZoom": 4.5,
     "maxZoom": 9,
-    "importance": 4
+    "importance": 4,
+    "canonicalId": "NL",
+    "aliases": [
+      "Netherlands",
+      "NL"
+    ]
   },
   {
     "code": "NO",
@@ -343,7 +519,12 @@
     "lng": 8.4689,
     "minZoom": 4.5,
     "maxZoom": 9,
-    "importance": 4
+    "importance": 4,
+    "canonicalId": "NO",
+    "aliases": [
+      "Norway",
+      "NO"
+    ]
   },
   {
     "code": "FI",
@@ -352,7 +533,12 @@
     "lng": 25.7482,
     "minZoom": 4.5,
     "maxZoom": 9,
-    "importance": 4
+    "importance": 4,
+    "canonicalId": "FI",
+    "aliases": [
+      "Finland",
+      "FI"
+    ]
   },
   {
     "code": "PL",
@@ -361,7 +547,12 @@
     "lng": 19.1451,
     "minZoom": 4,
     "maxZoom": 8.5,
-    "importance": 4
+    "importance": 4,
+    "canonicalId": "PL",
+    "aliases": [
+      "Poland",
+      "PL"
+    ]
   },
   {
     "code": "UA",
@@ -370,7 +561,12 @@
     "lng": 31.1656,
     "minZoom": 3.8,
     "maxZoom": 8.5,
-    "importance": 4
+    "importance": 4,
+    "canonicalId": "UA",
+    "aliases": [
+      "Ukraine",
+      "UA"
+    ]
   },
   {
     "code": "RO",
@@ -379,7 +575,12 @@
     "lng": 24.9668,
     "minZoom": 4,
     "maxZoom": 9,
-    "importance": 3
+    "importance": 3,
+    "canonicalId": "RO",
+    "aliases": [
+      "Romania",
+      "RO"
+    ]
   },
   {
     "code": "GR",
@@ -388,7 +589,12 @@
     "lng": 21.8243,
     "minZoom": 4.5,
     "maxZoom": 9,
-    "importance": 4
+    "importance": 4,
+    "canonicalId": "GR",
+    "aliases": [
+      "Greece",
+      "GR"
+    ]
   },
   {
     "code": "PT",
@@ -397,7 +603,12 @@
     "lng": -8.2245,
     "minZoom": 4.5,
     "maxZoom": 9,
-    "importance": 4
+    "importance": 4,
+    "canonicalId": "PT",
+    "aliases": [
+      "Portugal",
+      "PT"
+    ]
   },
   {
     "code": "EG",
@@ -406,7 +617,12 @@
     "lng": 30.8025,
     "minZoom": 3.8,
     "maxZoom": 8.8,
-    "importance": 4
+    "importance": 4,
+    "canonicalId": "EG",
+    "aliases": [
+      "Egypt",
+      "EG"
+    ]
   },
   {
     "code": "NG",
@@ -415,7 +631,12 @@
     "lng": 8.6753,
     "minZoom": 3.8,
     "maxZoom": 8.8,
-    "importance": 4
+    "importance": 4,
+    "canonicalId": "NG",
+    "aliases": [
+      "Nigeria",
+      "NG"
+    ]
   },
   {
     "code": "KE",
@@ -424,7 +645,12 @@
     "lng": 37.9062,
     "minZoom": 4,
     "maxZoom": 9,
-    "importance": 3
+    "importance": 3,
+    "canonicalId": "KE",
+    "aliases": [
+      "Kenya",
+      "KE"
+    ]
   },
   {
     "code": "ET",
@@ -433,7 +659,12 @@
     "lng": 40.4897,
     "minZoom": 4,
     "maxZoom": 9,
-    "importance": 3
+    "importance": 3,
+    "canonicalId": "ET",
+    "aliases": [
+      "Ethiopia",
+      "ET"
+    ]
   },
   {
     "code": "TH",
@@ -442,7 +673,12 @@
     "lng": 100.9925,
     "minZoom": 4,
     "maxZoom": 9,
-    "importance": 4
+    "importance": 4,
+    "canonicalId": "TH",
+    "aliases": [
+      "Thailand",
+      "TH"
+    ]
   },
   {
     "code": "MY",
@@ -451,7 +687,12 @@
     "lng": 101.9758,
     "minZoom": 4,
     "maxZoom": 9,
-    "importance": 4
+    "importance": 4,
+    "canonicalId": "MY",
+    "aliases": [
+      "Malaysia",
+      "MY"
+    ]
   },
   {
     "code": "SG",
@@ -460,7 +701,12 @@
     "lng": 103.8198,
     "minZoom": 5,
     "maxZoom": 9.5,
-    "importance": 5
+    "importance": 5,
+    "canonicalId": "SG",
+    "aliases": [
+      "Singapore",
+      "SG"
+    ]
   },
   {
     "code": "PH",
@@ -469,7 +715,12 @@
     "lng": 121.774,
     "minZoom": 4,
     "maxZoom": 9,
-    "importance": 4
+    "importance": 4,
+    "canonicalId": "PH",
+    "aliases": [
+      "Philippines",
+      "PH"
+    ]
   },
   {
     "code": "MM",
@@ -478,7 +729,12 @@
     "lng": 95.956,
     "minZoom": 4,
     "maxZoom": 9,
-    "importance": 3
+    "importance": 3,
+    "canonicalId": "MM",
+    "aliases": [
+      "Myanmar",
+      "MM"
+    ]
   },
   {
     "code": "NP",
@@ -487,7 +743,12 @@
     "lng": 84.124,
     "minZoom": 4,
     "maxZoom": 9,
-    "importance": 3
+    "importance": 3,
+    "canonicalId": "NP",
+    "aliases": [
+      "Nepal",
+      "NP"
+    ]
   },
   {
     "code": "LK",
@@ -496,7 +757,12 @@
     "lng": 80.7718,
     "minZoom": 4,
     "maxZoom": 9,
-    "importance": 3
+    "importance": 3,
+    "canonicalId": "LK",
+    "aliases": [
+      "Sri Lanka",
+      "LK"
+    ]
   },
   {
     "code": "MX",
@@ -505,7 +771,12 @@
     "lng": -102.5528,
     "minZoom": 3.8,
     "maxZoom": 8.5,
-    "importance": 4
+    "importance": 4,
+    "canonicalId": "MX",
+    "aliases": [
+      "Mexico",
+      "MX"
+    ]
   },
   {
     "code": "CL",
@@ -514,7 +785,12 @@
     "lng": -71.543,
     "minZoom": 3.8,
     "maxZoom": 8.5,
-    "importance": 4
+    "importance": 4,
+    "canonicalId": "CL",
+    "aliases": [
+      "Chile",
+      "CL"
+    ]
   },
   {
     "code": "CO",
@@ -523,7 +799,12 @@
     "lng": -74.2973,
     "minZoom": 3.8,
     "maxZoom": 8.5,
-    "importance": 4
+    "importance": 4,
+    "canonicalId": "CO",
+    "aliases": [
+      "Colombia",
+      "CO"
+    ]
   },
   {
     "code": "PE",
@@ -532,7 +813,12 @@
     "lng": -75.0152,
     "minZoom": 3.8,
     "maxZoom": 8.5,
-    "importance": 4
+    "importance": 4,
+    "canonicalId": "PE",
+    "aliases": [
+      "Peru",
+      "PE"
+    ]
   },
   {
     "code": "VE",
@@ -541,7 +827,12 @@
     "lng": -66.5897,
     "minZoom": 3.8,
     "maxZoom": 8.5,
-    "importance": 3
+    "importance": 3,
+    "canonicalId": "VE",
+    "aliases": [
+      "Venezuela",
+      "VE"
+    ]
   },
   {
     "code": "UY",
@@ -550,7 +841,12 @@
     "lng": -55.7658,
     "minZoom": 4.5,
     "maxZoom": 9,
-    "importance": 3
+    "importance": 3,
+    "canonicalId": "UY",
+    "aliases": [
+      "Uruguay",
+      "UY"
+    ]
   },
   {
     "code": "CU",
@@ -559,7 +855,12 @@
     "lng": -77.7812,
     "minZoom": 4.5,
     "maxZoom": 9,
-    "importance": 3
+    "importance": 3,
+    "canonicalId": "CU",
+    "aliases": [
+      "Cuba",
+      "CU"
+    ]
   },
   {
     "code": "HT",
@@ -568,7 +869,12 @@
     "lng": -72.2852,
     "minZoom": 4.5,
     "maxZoom": 9,
-    "importance": 2
+    "importance": 2,
+    "canonicalId": "HT",
+    "aliases": [
+      "Haiti",
+      "HT"
+    ]
   },
   {
     "code": "DO",
@@ -577,7 +883,12 @@
     "lng": -70.1627,
     "minZoom": 4.5,
     "maxZoom": 9,
-    "importance": 3
+    "importance": 3,
+    "canonicalId": "DO",
+    "aliases": [
+      "Dominican Republic",
+      "DO"
+    ]
   },
   {
     "code": "NZ",
@@ -586,7 +897,12 @@
     "lng": 174.886,
     "minZoom": 4,
     "maxZoom": 8.5,
-    "importance": 4
+    "importance": 4,
+    "canonicalId": "NZ",
+    "aliases": [
+      "New Zealand",
+      "NZ"
+    ]
   },
   {
     "code": "PG",
@@ -595,7 +911,12 @@
     "lng": 143.9555,
     "minZoom": 4,
     "maxZoom": 8.5,
-    "importance": 3
+    "importance": 3,
+    "canonicalId": "PG",
+    "aliases": [
+      "Papua New Guinea",
+      "PG"
+    ]
   },
   {
     "code": "FJ",
@@ -604,7 +925,12 @@
     "lng": 178.065,
     "minZoom": 5,
     "maxZoom": 9.5,
-    "importance": 2
+    "importance": 2,
+    "canonicalId": "FJ",
+    "aliases": [
+      "Fiji",
+      "FJ"
+    ]
   },
   {
     "code": "KZ",
@@ -613,7 +939,12 @@
     "lng": 66.9237,
     "minZoom": 3.5,
     "maxZoom": 8.5,
-    "importance": 4
+    "importance": 4,
+    "canonicalId": "KZ",
+    "aliases": [
+      "Kazakhstan",
+      "KZ"
+    ]
   },
   {
     "code": "UZ",
@@ -622,7 +953,12 @@
     "lng": 64.5853,
     "minZoom": 4,
     "maxZoom": 9,
-    "importance": 3
+    "importance": 3,
+    "canonicalId": "UZ",
+    "aliases": [
+      "Uzbekistan",
+      "UZ"
+    ]
   },
   {
     "code": "TM",
@@ -631,7 +967,12 @@
     "lng": 59.5563,
     "minZoom": 4,
     "maxZoom": 9,
-    "importance": 3
+    "importance": 3,
+    "canonicalId": "TM",
+    "aliases": [
+      "Turkmenistan",
+      "TM"
+    ]
   },
   {
     "code": "KG",
@@ -640,7 +981,12 @@
     "lng": 74.7661,
     "minZoom": 4,
     "maxZoom": 9,
-    "importance": 3
+    "importance": 3,
+    "canonicalId": "KG",
+    "aliases": [
+      "Kyrgyzstan",
+      "KG"
+    ]
   },
   {
     "code": "TJ",
@@ -649,7 +995,12 @@
     "lng": 71.2761,
     "minZoom": 4,
     "maxZoom": 9,
-    "importance": 3
+    "importance": 3,
+    "canonicalId": "TJ",
+    "aliases": [
+      "Tajikistan",
+      "TJ"
+    ]
   },
   {
     "code": "SY",
@@ -658,7 +1009,12 @@
     "lng": 38.9968,
     "minZoom": 4,
     "maxZoom": 9,
-    "importance": 3
+    "importance": 3,
+    "canonicalId": "SY",
+    "aliases": [
+      "Syria",
+      "SY"
+    ]
   },
   {
     "code": "JO",
@@ -667,7 +1023,12 @@
     "lng": 36.2384,
     "minZoom": 4,
     "maxZoom": 9,
-    "importance": 3
+    "importance": 3,
+    "canonicalId": "JO",
+    "aliases": [
+      "Jordan",
+      "JO"
+    ]
   },
   {
     "code": "LB",
@@ -676,7 +1037,12 @@
     "lng": 35.8623,
     "minZoom": 4.5,
     "maxZoom": 9,
-    "importance": 3
+    "importance": 3,
+    "canonicalId": "LB",
+    "aliases": [
+      "Lebanon",
+      "LB"
+    ]
   },
   {
     "code": "IL",
@@ -685,7 +1051,12 @@
     "lng": 34.8516,
     "minZoom": 4.5,
     "maxZoom": 9,
-    "importance": 4
+    "importance": 4,
+    "canonicalId": "IL",
+    "aliases": [
+      "Israel",
+      "IL"
+    ]
   },
   {
     "code": "PS",
@@ -694,7 +1065,12 @@
     "lng": 35.2332,
     "minZoom": 4.5,
     "maxZoom": 9,
-    "importance": 4
+    "importance": 4,
+    "canonicalId": "PS",
+    "aliases": [
+      "Palestine",
+      "PS"
+    ]
   },
   {
     "code": "BH",
@@ -703,7 +1079,12 @@
     "lng": 50.5577,
     "minZoom": 5,
     "maxZoom": 9.5,
-    "importance": 4
+    "importance": 4,
+    "canonicalId": "BH",
+    "aliases": [
+      "Bahrain",
+      "BH"
+    ]
   },
   {
     "code": "MV",
@@ -712,7 +1093,12 @@
     "lng": 73.2207,
     "minZoom": 5,
     "maxZoom": 9.5,
-    "importance": 4
+    "importance": 4,
+    "canonicalId": "MV",
+    "aliases": [
+      "Maldives",
+      "MV"
+    ]
   },
   {
     "code": "QA",
@@ -721,7 +1107,12 @@
     "lng": 51.1839,
     "minZoom": 5,
     "maxZoom": 9.5,
-    "importance": 4
+    "importance": 4,
+    "canonicalId": "QA",
+    "aliases": [
+      "Qatar",
+      "QA"
+    ]
   },
   {
     "code": "AE",
@@ -730,7 +1121,12 @@
     "lng": 53.8478,
     "minZoom": 4.5,
     "maxZoom": 9,
-    "importance": 4
+    "importance": 4,
+    "canonicalId": "AE",
+    "aliases": [
+      "United Arab Emirates",
+      "AE"
+    ]
   },
   {
     "code": "KW",
@@ -739,7 +1135,12 @@
     "lng": 47.4818,
     "minZoom": 5,
     "maxZoom": 9.5,
-    "importance": 4
+    "importance": 4,
+    "canonicalId": "KW",
+    "aliases": [
+      "Kuwait",
+      "KW"
+    ]
   },
   {
     "code": "OM",
@@ -748,7 +1149,12 @@
     "lng": 55.9754,
     "minZoom": 4.5,
     "maxZoom": 9,
-    "importance": 3
+    "importance": 3,
+    "canonicalId": "OM",
+    "aliases": [
+      "Oman",
+      "OM"
+    ]
   },
   {
     "code": "YE",
@@ -757,7 +1163,12 @@
     "lng": 48.5164,
     "minZoom": 4,
     "maxZoom": 9,
-    "importance": 3
+    "importance": 3,
+    "canonicalId": "YE",
+    "aliases": [
+      "Yemen",
+      "YE"
+    ]
   },
   {
     "code": "MA",
@@ -766,7 +1177,12 @@
     "lng": -7.0926,
     "minZoom": 4,
     "maxZoom": 8.8,
-    "importance": 4
+    "importance": 4,
+    "canonicalId": "MA",
+    "aliases": [
+      "Morocco",
+      "MA"
+    ]
   },
   {
     "code": "TN",
@@ -775,7 +1191,12 @@
     "lng": 9.5375,
     "minZoom": 4.5,
     "maxZoom": 9,
-    "importance": 3
+    "importance": 3,
+    "canonicalId": "TN",
+    "aliases": [
+      "Tunisia",
+      "TN"
+    ]
   },
   {
     "code": "LY",
@@ -784,7 +1205,12 @@
     "lng": 17.2283,
     "minZoom": 4,
     "maxZoom": 8.8,
-    "importance": 3
+    "importance": 3,
+    "canonicalId": "LY",
+    "aliases": [
+      "Libya",
+      "LY"
+    ]
   },
   {
     "code": "SD",
@@ -793,7 +1219,12 @@
     "lng": 30.2176,
     "minZoom": 4,
     "maxZoom": 8.8,
-    "importance": 3
+    "importance": 3,
+    "canonicalId": "SD",
+    "aliases": [
+      "Sudan",
+      "SD"
+    ]
   },
   {
     "code": "SS",
@@ -802,7 +1233,12 @@
     "lng": 31.307,
     "minZoom": 4,
     "maxZoom": 9,
-    "importance": 2
+    "importance": 2,
+    "canonicalId": "SS",
+    "aliases": [
+      "South Sudan",
+      "SS"
+    ]
   },
   {
     "code": "UG",
@@ -811,7 +1247,12 @@
     "lng": 32.2903,
     "minZoom": 4.5,
     "maxZoom": 9,
-    "importance": 3
+    "importance": 3,
+    "canonicalId": "UG",
+    "aliases": [
+      "Uganda",
+      "UG"
+    ]
   },
   {
     "code": "TZ",
@@ -820,7 +1261,12 @@
     "lng": 34.8888,
     "minZoom": 4,
     "maxZoom": 9,
-    "importance": 3
+    "importance": 3,
+    "canonicalId": "TZ",
+    "aliases": [
+      "Tanzania",
+      "TZ"
+    ]
   },
   {
     "code": "RW",
@@ -829,7 +1275,12 @@
     "lng": 29.8739,
     "minZoom": 4.5,
     "maxZoom": 9,
-    "importance": 2
+    "importance": 2,
+    "canonicalId": "RW",
+    "aliases": [
+      "Rwanda",
+      "RW"
+    ]
   },
   {
     "code": "BI",
@@ -838,7 +1289,12 @@
     "lng": 29.9189,
     "minZoom": 4.5,
     "maxZoom": 9,
-    "importance": 2
+    "importance": 2,
+    "canonicalId": "BI",
+    "aliases": [
+      "Burundi",
+      "BI"
+    ]
   },
   {
     "code": "GH",
@@ -847,7 +1303,12 @@
     "lng": -1.0232,
     "minZoom": 4.5,
     "maxZoom": 9,
-    "importance": 3
+    "importance": 3,
+    "canonicalId": "GH",
+    "aliases": [
+      "Ghana",
+      "GH"
+    ]
   },
   {
     "code": "CI",
@@ -856,7 +1317,12 @@
     "lng": -5.5471,
     "minZoom": 4.5,
     "maxZoom": 9,
-    "importance": 3
+    "importance": 3,
+    "canonicalId": "CI",
+    "aliases": [
+      "Ivory Coast",
+      "CI"
+    ]
   },
   {
     "code": "SN",
@@ -865,7 +1331,12 @@
     "lng": -14.4524,
     "minZoom": 4.5,
     "maxZoom": 9,
-    "importance": 3
+    "importance": 3,
+    "canonicalId": "SN",
+    "aliases": [
+      "Senegal",
+      "SN"
+    ]
   },
   {
     "code": "ML",
@@ -874,7 +1345,12 @@
     "lng": -3.9962,
     "minZoom": 4,
     "maxZoom": 9,
-    "importance": 3
+    "importance": 3,
+    "canonicalId": "ML",
+    "aliases": [
+      "Mali",
+      "ML"
+    ]
   },
   {
     "code": "NE",
@@ -883,7 +1359,12 @@
     "lng": 8.0817,
     "minZoom": 4,
     "maxZoom": 9,
-    "importance": 2
+    "importance": 2,
+    "canonicalId": "NE",
+    "aliases": [
+      "Niger",
+      "NE"
+    ]
   },
   {
     "code": "BF",
@@ -892,7 +1373,12 @@
     "lng": -1.5616,
     "minZoom": 4.5,
     "maxZoom": 9,
-    "importance": 2
+    "importance": 2,
+    "canonicalId": "BF",
+    "aliases": [
+      "Burkina Faso",
+      "BF"
+    ]
   },
   {
     "code": "CM",
@@ -901,7 +1387,12 @@
     "lng": 12.3547,
     "minZoom": 4,
     "maxZoom": 9,
-    "importance": 3
+    "importance": 3,
+    "canonicalId": "CM",
+    "aliases": [
+      "Cameroon",
+      "CM"
+    ]
   },
   {
     "code": "GA",
@@ -910,7 +1401,12 @@
     "lng": 11.6094,
     "minZoom": 4.5,
     "maxZoom": 9,
-    "importance": 3
+    "importance": 3,
+    "canonicalId": "GA",
+    "aliases": [
+      "Gabon",
+      "GA"
+    ]
   },
   {
     "code": "CG",
@@ -919,7 +1415,12 @@
     "lng": 15.8277,
     "minZoom": 4.5,
     "maxZoom": 9,
-    "importance": 3
+    "importance": 3,
+    "canonicalId": "CG",
+    "aliases": [
+      "Congo Republic",
+      "CG"
+    ]
   },
   {
     "code": "CD",
@@ -928,7 +1429,12 @@
     "lng": 21.7587,
     "minZoom": 3.8,
     "maxZoom": 8.5,
-    "importance": 3
+    "importance": 3,
+    "canonicalId": "CD",
+    "aliases": [
+      "DR Congo",
+      "CD"
+    ]
   },
   {
     "code": "MG",
@@ -937,7 +1443,12 @@
     "lng": 46.8691,
     "minZoom": 4.5,
     "maxZoom": 9,
-    "importance": 3
+    "importance": 3,
+    "canonicalId": "MG",
+    "aliases": [
+      "Madagascar",
+      "MG"
+    ]
   },
   {
     "code": "MZ",
@@ -946,7 +1457,12 @@
     "lng": 35.5296,
     "minZoom": 4,
     "maxZoom": 9,
-    "importance": 3
+    "importance": 3,
+    "canonicalId": "MZ",
+    "aliases": [
+      "Mozambique",
+      "MZ"
+    ]
   },
   {
     "code": "ZW",
@@ -955,7 +1471,12 @@
     "lng": 29.1549,
     "minZoom": 4.5,
     "maxZoom": 9,
-    "importance": 3
+    "importance": 3,
+    "canonicalId": "ZW",
+    "aliases": [
+      "Zimbabwe",
+      "ZW"
+    ]
   },
   {
     "code": "ZM",
@@ -964,7 +1485,12 @@
     "lng": 27.8493,
     "minZoom": 4.5,
     "maxZoom": 9,
-    "importance": 3
+    "importance": 3,
+    "canonicalId": "ZM",
+    "aliases": [
+      "Zambia",
+      "ZM"
+    ]
   },
   {
     "code": "IS",
@@ -973,7 +1499,12 @@
     "lng": -19.0208,
     "minZoom": 5,
     "maxZoom": 9.5,
-    "importance": 3
+    "importance": 3,
+    "canonicalId": "IS",
+    "aliases": [
+      "Iceland",
+      "IS"
+    ]
   },
   {
     "code": "MC",
@@ -982,7 +1513,12 @@
     "lng": 7.4246,
     "minZoom": 6,
     "maxZoom": 10,
-    "importance": 2
+    "importance": 2,
+    "canonicalId": "MC",
+    "aliases": [
+      "Monaco",
+      "MC"
+    ]
   },
   {
     "code": "SM",
@@ -991,7 +1527,12 @@
     "lng": 12.45,
     "minZoom": 6,
     "maxZoom": 10,
-    "importance": 2
+    "importance": 2,
+    "canonicalId": "SM",
+    "aliases": [
+      "San Marino",
+      "SM"
+    ]
   },
   {
     "code": "VA",
@@ -1000,18 +1541,33 @@
     "lng": 12.4534,
     "minZoom": 6.5,
     "maxZoom": 10,
-    "importance": 1
+    "importance": 1,
+    "canonicalId": "VA",
+    "aliases": [
+      "Vatican City",
+      "VA"
+    ]
   },
   {
     "code": "AGO",
     "name": "Angola",
     "lat": -8.839,
-    "lng": 13.289
+    "lng": 13.289,
+    "canonicalId": "AGO",
+    "aliases": [
+      "Angola",
+      "AGO"
+    ]
   },
   {
     "code": "PRT",
     "name": "Portugal",
     "lat": 38.722,
-    "lng": -9.139
+    "lng": -9.139,
+    "canonicalId": "PRT",
+    "aliases": [
+      "Portugal",
+      "PRT"
+    ]
   }
 ]
