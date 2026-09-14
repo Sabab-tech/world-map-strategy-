@@ -8,7 +8,7 @@
 (function(global){'use strict';
 const V='19.1.0',A=v=>Array.isArray(v)?v:[],O=v=>v!==null&&typeof v==='object',S=v=>String(v==null?'':v).trim(),U=v=>S(v).toUpperCase();
 const N=v=>S(v).normalize('NFKC').toLowerCase().replace(/[?!,.:;\"'“”‘’(){}[\]<>—–/\\]/g,' ').replace(/\s+/g,' ').trim();
-function B(n){try{return global.process?.getBuiltinModule?.(n)||null}catch(_){return null}}function M(){return{fs:B('fs'),path:B('path')}}
+function B(n){try{const p=global.process;if(p?.getBuiltinModule){return p.getBuiltinModule(n)||p.getBuiltinModule(`node:${n}`)||null}}catch(_){}try{if(typeof global.require==='function')return global.require(n)}catch(_){}return null}function M(){return{fs:B('fs'),path:B('path')}}
 function readJSON(f){try{const fs=M().fs;if(!fs||!fs.existsSync(f))return null;return JSON.parse(fs.readFileSync(f,'utf8'))}catch(_){return null}}
 const cwd=()=>global.process?.cwd?.()||'.';
 const rel=(f,r)=>{const p=M().path;return p?p.relative(r,f).replace(/\\/g,'/'):f};
