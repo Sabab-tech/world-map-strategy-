@@ -115,6 +115,8 @@ const countryIdentityLiterals=collectIdentityStrings(countryRows);
 for(const file of ['omega_cognitive_engine.js','omega_resource_semantic_bridge.js','offline_query_engine.js','offline_semantic_brain.js','omega_server_ai_gateway.js']){const src=read(file).toLowerCase();for(const value of countryIdentityLiterals){const escaped=value.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');const literal=new RegExp(`[\\"']${escaped}[\\"']`,'i');assert(!literal.test(src), `${file} must not embed a country identity literal from countries.json: ${value}`);}}
 assert(!semanticBrain.includes('economy.json'), 'Semantic Brain must not directly read economy data');
 assert(!semanticBrain.includes('population.json'), 'Semantic Brain must not directly read population data');
+assert(!semanticBrain.includes('economy.json'), 'Semantic Brain must not directly read economy data');
+assert(!semanticBrain.includes('population.json'), 'Semantic Brain must not directly read population data');
 assert(Object.keys(ontology.COMMODITY_ONTOLOGIES || {}).length > 0, 'canonical resource ontology must contain entries');
 
 assert(integrityBridge.includes("return rt.parse(question,context)"), 'integrity semantic parser must delegate directly to canonical runtime');
