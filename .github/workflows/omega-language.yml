@@ -9,7 +9,7 @@ on:
     branches: [main]
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   language-regression:
@@ -23,6 +23,76 @@ jobs:
           node-version: 24
       - name: Install runtime dependencies
         run: npm install --ignore-scripts --no-audit
+      - name: Repair malformed offline lexicon only when required
+        if: github.event_name != 'pull_request'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import json
+          p = Path('offline_lexicon.json')
+          raw = p.read_bytes()
+          try:
+              text = raw.decode('utf-8')
+              json.loads(text)
+              print('OFFLINE_LEXICON_JSON: already valid UTF-8 JSON')
+          except Exception as first_error:
+              text = raw.decode('utf-8', errors='surrogateescape')
+              out = []
+              in_string = False
+              escaped = False
+              for ch in text:
+                  code = ord(ch)
+                  if escaped:
+                      out.append(ch)
+                      escaped = False
+                      continue
+                  if ch == '\\' and in_string:
+                      out.append(ch)
+                      escaped = True
+                      continue
+                  if ch == '"':
+                      out.append(ch)
+                      in_string = not in_string
+                      continue
+                  if in_string and code < 0x20:
+                      out.append(f'\\u{code:04x}')
+                      continue
+                  if in_string and 0xDC80 <= code <= 0xDCFF:
+                      out.append(f'\\u{code - 0xDC00:04x}')
+                      continue
+                  out.append(ch)
+              repaired = ''.join(out)
+              data = json.loads(repaired)
+              if not isinstance(data, dict):
+                  raise SystemExit('offline_lexicon.json repaired successfully but root is not an object')
+              data_words = data.get('DICTIONARY')
+              if not isinstance(data_words, dict) or not data_words:
+                  raise SystemExit('offline_lexicon.json repaired successfully but DICTIONARY is empty')
+              p.write_text(repaired, encoding='utf-8')
+              print(f'OFFLINE_LEXICON_REPAIRED: {first_error}')
+              print(f'OFFLINE_LEXICON_WORDS: {len(data_words)}')
+          PY
+          if ! git diff --quiet -- offline_lexicon.json; then
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git add offline_lexicon.json
+            git commit -m 'fix: repair malformed offline lexicon [skip ci]'
+            git push
+          fi
+      - name: Validate repaired repository JSON
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs/promises';
+          const text = await fs.readFile('offline_lexicon.json', 'utf8');
+          const data = JSON.parse(text);
+          if (!data || typeof data !== 'object' || Array.isArray(data)) throw new Error('offline_lexicon.json root must be an object');
+          if (!data.DICTIONARY || typeof data.DICTIONARY !== 'object' || !Object.keys(data.DICTIONARY).length) throw new Error('offline_lexicon.json DICTIONARY is empty');
+          console.log(`OFFLINE LEXICON JSON TEST PASSED; entries=${Object.keys(data.DICTIONARY).length}`);
+          NODE
       - name: Syntax gate
         shell: bash
         run: |
@@ -74,14 +144,11 @@ jobs:
           console.log('DEEP_CORE_DIAGNOSTICS', JSON.stringify(diagnostics, null, 2));
           if (!diagnostics?.scan || diagnostics.scan.authority !== 'NODE_FILESYSTEM') throw new Error(`Unexpected repository authority: ${diagnostics?.scan?.authority || 'UNKNOWN'}`);
           if (diagnostics.initialized !== true) throw new Error('Deep Core repository index did not initialize');
-          if (!Number(diagnostics.files) || !Number(diagnostics.records)) throw new Error(`Deep Core repository index contains no usable indexed records: ${JSON.stringify(diagnostics)}`);
+          if (!Number(diagnostics?.stats?.files) || !Number(diagnostics?.stats?.records)) throw new Error(`Deep Core repository index contains no usable indexed records: ${JSON.stringify(diagnostics)}`);
+          if (diagnostics.scan.complete !== true) throw new Error(`Deep Core repository scan is incomplete: ${JSON.stringify(diagnostics.scan.failedFiles || [])}`);
+          if (Number(diagnostics.scan.loadedFiles) !== Number(diagnostics.scan.discoveredFiles)) throw new Error(`Deep Core loaded/discovered mismatch: ${diagnostics.scan.loadedFiles}/${diagnostics.scan.discoveredFiles}`);
           const countryDataset = engine.catalog().find(x => String(x?.dataset || x?.name || '').toLowerCase() === 'countries.json');
           if (!countryDataset) throw new Error(`countries.json was not discovered by the Deep Core index: ${JSON.stringify(diagnostics.catalog || [])}`);
-
-          if (Array.isArray(diagnostics.scan.failedFiles) && diagnostics.scan.failedFiles.length) {
-            console.log(`Repository scanner reported ${diagnostics.scan.failedFiles.length} non-loadable file(s); targeted Deep Core data-path validation continues.`);
-            for (const failure of diagnostics.scan.failedFiles.slice(0, 20)) console.log(`NON_BLOCKING_SCAN_FAILURE: ${failure.path || '<root>'} :: ${failure.error || 'unknown'}`);
-          }
 
           const lookup = engine.lookupId(id);
           if (lookup.status !== 'RESOLVED' || !lookup.count) throw new Error(`Deep Core ID lookup failed for ${id}: ${lookup.status}; diagnostics=${JSON.stringify(diagnostics)}`);
@@ -100,8 +167,8 @@ jobs:
 
           console.log('DEEP CORE NODE RUNTIME TEST PASSED');
           console.log(`Repository authority: ${diagnostics.scan.authority}`);
-          console.log(`Indexed files: ${diagnostics.files}`);
-          console.log(`Indexed records: ${diagnostics.records}`);
+          console.log(`Indexed files: ${diagnostics.stats.files}`);
+          console.log(`Indexed records: ${diagnostics.stats.records}`);
           console.log(`Identity lookup: ${id} -> RESOLVED`);
           console.log(`Search: ${name} -> RESOLVED`);
           console.log(`Execution: VERIFIED_FACT; evidence=${result.evidence.length}`);
@@ -131,6 +198,7 @@ jobs:
           const diag = await (await fetch(`${base}/api/deep-core/diagnostics`, { cache: 'no-store' })).json();
           if (diag?.scan?.authority !== 'NODE_FILESYSTEM') throw new Error(`Server Deep Core authority mismatch: ${diag?.scan?.authority || 'UNKNOWN'}`);
           if (diag?.initialized !== true) throw new Error('Server Deep Core was not initialized');
+          if (diag?.scan?.complete !== true) throw new Error(`Server Deep Core repository scan incomplete: ${JSON.stringify(diag?.scan?.failedFiles || [])}`);
 
           const countries = JSON.parse(await fs.readFile('countries.json', 'utf8'));
           const rows = Array.isArray(countries) ? countries : (countries?.countries || countries?.data || Object.values(countries || {}));
