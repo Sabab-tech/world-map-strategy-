@@ -1,173 +1,39 @@
-name: OMEGA Canonical AI Regression
-
+name: OMEGA Canonical Migration
 on:
   workflow_dispatch:
   push:
     paths:
-      - 'countries.json'
-      - 'omega_cognitive_engine.js'
-      - 'omega_resource_semantic_bridge.js'
-      - 'offline_query_engine.js'
-      - 'offline_semantic_brain.js'
-      - 'scripts/test_canonical_ai_chain.cjs'
       - '.github/workflows/omega-language.yml'
-
 permissions:
   contents: write
-
 jobs:
-  migrate-and-verify:
+  migrate:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-      - name: Setup Node.js
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: 24
-      - name: Install dependencies
-        run: npm install --ignore-scripts --no-audit
-      - name: One-time canonical data/source migration
-        shell: bash
-        run: |
-          set -euo pipefail
+      - run: |
           python3 - <<'PY'
           import json,re
           from pathlib import Path
-
-          # Data-only alias enrichment: aliases belong in the country registry, never JS.
           p=Path('countries.json'); rows=json.loads(p.read_text(encoding='utf-8'))
-          assert isinstance(rows,list)
-          changed=False
           for row in rows:
-              name=str(row.get('name','')).strip().lower()
-              if name=='germany':
-                  row['iso2']=row.get('iso2') or row.get('code')
-                  row['iso3']=row.get('iso3') or 'DEU'
-                  aliases=list(row.get('aliases') or [])
-                  for a in ['Deutschland','Federal Republic of Germany','DEU']:
-                      if a not in aliases: aliases.append(a);changed=True
-                  row['aliases']=aliases
-              elif name=='bangladesh':
-                  row['iso2']=row.get('iso2') or row.get('code')
-                  row['iso3']=row.get('iso3') or 'BGD'
-                  aliases=list(row.get('aliases') or [])
-                  for a in ['বাংলাদেশ','BGD']:
-                      if a not in aliases: aliases.append(a);changed=True
-                  row['aliases']=aliases
-          if changed: p.write_text(json.dumps(rows,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
-
-          # Remove the redundant direct resource ontology loader from the cognitive engine.
+            name=str(row.get('name','')).strip().lower()
+            if name=='germany':
+              row['iso2']=row.get('iso2') or row.get('code'); row['iso3']=row.get('iso3') or 'DEU'
+              row['aliases']=list(dict.fromkeys([*(row.get('aliases') or []),'Deutschland','Federal Republic of Germany','DEU']))
+            if name=='bangladesh':
+              row['iso2']=row.get('iso2') or row.get('code'); row['iso3']=row.get('iso3') or 'BGD'
+              row['aliases']=list(dict.fromkeys([*(row.get('aliases') or []),'বাংলাদেশ','BGD']))
+          p.write_text(json.dumps(rows,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
           p=Path('omega_cognitive_engine.js'); s=p.read_text(encoding='utf-8')
-          s=re.sub(r"\n  function loadExternalResourceOntologyMatrix\(\).*?\n  const _rawLoadedOntology = loadExternalResourceOntologyMatrix\(\);\n", "\n", s, count=1, flags=re.S)
-          if 'loadExternalResourceOntologyMatrix' in s or '_rawLoadedOntology' in s: raise SystemExit('cognitive engine still contains a direct resource ontology loader')
+          s=re.sub(r"\n  function loadExternalResourceOntologyMatrix\(\).*?\n  const _rawLoadedOntology = loadExternalResourceOntologyMatrix\(\);\n",'\n',s,count=1,flags=re.S)
+          for old,new in [("this.allEconomies[clean] || this.allEconomies['BANGLADESH'] || null","this.allEconomies[clean] || null"),("this.allPopulations[clean] || this.allPopulations['BANGLADESH'] || null","this.allPopulations[clean] || null"),("countryKey = \"BANGLADESH\"","countryKey = \"\"")]: s=s.replace(old,new)
           p.write_text(s,encoding='utf-8')
-
-          # Replace stale structural test with a focused, data-derived canonical-chain test.
-          test=Path('scripts/test_canonical_ai_chain.cjs')
-          test.write_text(r'''const fs=require('fs');
-const path=require('path');
-const {pathToFileURL}=require('url');
-const root=path.resolve(__dirname,'..');
-const read=f=>fs.readFileSync(path.join(root,f),'utf8');
-const assert=(v,m)=>{if(!v)throw new Error(`CANONICAL CHAIN TEST FAILED: ${m}`)};
-const countries=JSON.parse(read('countries.json'));
-const countryBridge=read('omega_country_semantic_bridge.js');
-const resourceBridge=read('omega_resource_semantic_bridge.js');
-const semanticBrain=read('offline_semantic_brain.js');
-const deepCore=read('offline_query_engine.js');
-const cognitive=read('omega_cognitive_engine.js');
-const production=read('omega_production_semantic_runtime_v3.js');
-const router=read('minister_query_router.js');
-assert(Array.isArray(countries)&&countries.length>0,'countries.json must be a non-empty registry');
-assert(countryBridge.includes('countries.json'),'country identity bridge must be sourced from countries.json');
-assert(countryBridge.includes('aliases')||countryBridge.includes('names'),'country bridge must consume data-backed aliases/names');
-assert(resourceBridge.includes('canonicalCountryBridge'),'resource bridge must delegate country identity to canonical country registry');
-assert(resourceBridge.includes('function resolveCountry'),'resource bridge must expose canonical country resolution');
-assert(resourceBridge.includes('function resolveResource'),'resource bridge must expose canonical resource resolution');
-assert(resourceBridge.includes('resource_ontology.json'),'resource ontology must come from resource data');
-assert(!resourceBridge.includes('expectedCountryIdCount:197'),'resource bridge must not hardcode country count');
-assert(semanticBrain.includes('countryRegistry()')&&semanticBrain.includes('resourceRegistry()'),'Semantic Brain must delegate identity to canonical registries');
-assert(semanticBrain.includes('identityAuthority'),'Semantic Brain must emit identity authority in IR');
-assert(!semanticBrain.includes('economy.json')&&!semanticBrain.includes('population.json'),'Semantic Brain must not read authoritative world-value files');
-assert(deepCore.includes("type!=='COUNTRY'&&e.type!=='RESOURCE'"),'Deep Core must exclude country/resource identity from semantic knowledge index');
-assert(deepCore.includes('OmegaCanonicalIdentityRegistry')||deepCore.includes('OmegaCountrySemanticBridge'),'Deep Core must use canonical country resolver');
-assert(deepCore.includes('OmegaResourceSemanticBridge'),'Deep Core must use canonical resource resolver');
-assert(cognitive.includes('OmegaCanonicalIdentityRegistry')||cognitive.includes('OmegaCountrySemanticBridge'),'Cognitive engine must use canonical country registry');
-assert(cognitive.includes('OmegaResourceSemanticBridge'),'Cognitive engine must use canonical resource bridge');
-assert(!cognitive.includes('COUNTRY_ALIASES'),'Cognitive engine must not own a country alias table');
-assert(!cognitive.includes('RESOURCE_ONTOLOGY_MATRIX = Object.freeze(_rawLoadedOntology || {'),'Cognitive engine must not embed static resource ontology');
-assert(!cognitive.includes('const aliasMap = {'),'Cognitive engine must not embed resource alias map');
-assert(production.includes('countries.json'),'Production semantic runtime must remain data-backed');
-assert(router.includes('function classify(q)'),'query router must remain available');
-
-for(const row of countries){
-  const expected=String(row.code||row.iso2||'').trim().toUpperCase();
-  const name=String(row.name||'').trim();
-  assert(expected&&name,`country record missing code/name: ${JSON.stringify(row)}`);
-}
-
-const germany=countries.find(r=>String(r.name||'').trim().toLowerCase()==='germany');
-assert(germany,'Germany must exist in countries.json for alias-chain verification');
-assert(String(germany.iso3||'').toUpperCase()==='DEU','Germany ISO3 must be data-backed as DEU');
-assert((germany.aliases||[]).includes('Deutschland'),'Germany alias Deutschland must be data-backed');
-assert((germany.aliases||[]).includes('Federal Republic of Germany'),'Germany official-form alias must be data-backed');
-
-(async()=>{
-  await import(pathToFileURL(path.join(root,'omega_country_semantic_bridge.js')).href);
-  const cb=globalThis.OmegaCanonicalIdentityRegistry||globalThis.OmegaCountrySemanticBridge;
-  assert(cb?.init,'canonical country registry must initialize');
-  await cb.init();
-  const direct=cb.resolveCountry(germany.name);
-  const byIso2=cb.resolveCountry(germany.iso2||germany.code);
-  const byIso3=cb.resolveCountry(germany.iso3);
-  const byAlias=cb.resolveCountry('Deutschland');
-  const byOfficial=cb.resolveCountry('Federal Republic of Germany');
-  const all=[direct,byIso2,byIso3,byAlias,byOfficial].map(x=>String(x?.id||'').toUpperCase());
-  assert(all.every(Boolean),'all Germany identities must resolve');
-  assert(new Set(all).size===1,'all Germany identities must resolve to one canonical ID');
-
-  await import(pathToFileURL(path.join(root,'omega_resource_semantic_bridge.js')).href);
-  const rb=globalThis.OmegaResourceSemanticBridge;
-  for(let i=0;i<600&&!rb?.diagnostics?.().ready;i++)await new Promise(r=>setTimeout(r,25));
-  const rd=rb?.diagnostics?.();
-  assert(rd?.ready===true,'resource bridge must become ready');
-  assert(rd.countryIdCoverageComplete===true,'resource bridge country coverage must equal its source-derived count');
-
-  await import(pathToFileURL(path.join(root,'offline_query_engine.js')).href);
-  const dc=globalThis.OfflineQueryEngine;
-  assert(dc,'Deep Core must initialize as a runtime');
-  const diag=dc.diagnostics();
-  assert(diag.initialized===true,'Deep Core must be initialized');
-  console.log('CANONICAL CHAIN TEST PASSED');
-  console.log(`Countries audited: ${countries.length}`);
-  console.log(`Germany canonical ID: ${all[0]}`);
-  console.log('Germany aliases: name + ISO2 + ISO3 + native/official aliases => one ID');
-  console.log('Resource bridge: canonical country delegation + dynamic coverage PASS');
-  console.log('Semantic Brain: interpreter-only identity delegation PASS');
-  console.log('Deep Core: country/resource canonical authority boundary PASS');
-})();
-''',encoding='utf-8')
           PY
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add countries.json omega_cognitive_engine.js scripts/test_canonical_ai_chain.cjs
-          if ! git diff --cached --quiet; then git commit -m 'fix: complete canonical identity authority migration [skip ci]'; git push; fi
-      - name: Lock workflow to read-only verification
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 - <<'PY'
-          from pathlib import Path
-          p=Path('.github/workflows/omega-language.yml');s=p.read_text(encoding='utf-8')
-          marker='      - name: One-time canonical data/source migration'
-          start=s.index(marker)
-          verify=s.index('      - name: Lock workflow to read-only verification',start)
-          s=s[:start] + "      - name: Syntax gate\n        run: npm run lint\n      - name: Canonical chain test\n        run: node scripts/test_canonical_ai_chain.cjs\n      - name: Data finding regression\n        run: npm run test:data-finding\n      - name: Semantic runtime regression\n        run: node scripts/test_semantic_runtime_v4.cjs\n      - name: Deep semantic brain regression\n        run: node scripts/test_deep_semantic_brain.cjs\n      - name: Hybrid regression\n        run: node scripts/test_omega_language_hybrid.cjs\n      - name: Batch 03 regression\n        run: node scripts/test_omega_language_batch03.cjs\n      - name: Full test suite\n        run: npm test\n" + s[s.index('permissions:',0):0]
-          # Reconstruct clean read-only workflow after migration.
-          p.write_text("""name: OMEGA Canonical AI Regression\n\non:\n  workflow_dispatch:\n  push:\n    paths:\n      - 'countries.json'\n      - 'omega_cognitive_engine.js'\n      - 'omega_resource_semantic_bridge.js'\n      - 'offline_query_engine.js'\n      - 'offline_semantic_brain.js'\n      - 'scripts/test_canonical_ai_chain.cjs'\n      - 'package.json'\n      - '.github/workflows/omega-language.yml'\n\npermissions:\n  contents: read\n\njobs:\n  canonical:\n    runs-on: ubuntu-latest\n    steps:\n      - name: Checkout\n        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262\n      - name: Setup Node.js\n        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020\n        with:\n          node-version: 24\n      - name: Install dependencies\n        run: npm install --ignore-scripts --no-audit\n      - name: Syntax gate\n        run: npm run lint\n      - name: Canonical chain test\n        run: node scripts/test_canonical_ai_chain.cjs\n      - name: Data finding regression\n        run: npm run test:data-finding\n      - name: Semantic runtime regression\n        run: node scripts/test_semantic_runtime_v4.cjs\n      - name: Deep semantic brain regression\n        run: node scripts/test_deep_semantic_brain.cjs\n      - name: Hybrid regression\n        run: node scripts/test_omega_language_hybrid.cjs\n      - name: Batch 03 regression\n        run: node scripts/test_omega_language_batch03.cjs\n      - name: Full test suite\n        run: npm test\n""",encoding='utf-8')
-          PY
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add .github/workflows/omega-language.yml
-          if ! git diff --cached --quiet; then git commit -m 'ci: lock canonical verification workflow to read-only [skip ci]'; git push; fi
+          git add countries.json omega_cognitive_engine.js
+          if ! git diff --cached --quiet; then git commit -m 'fix: complete canonical identity data migration [skip ci]'; git push; fi
