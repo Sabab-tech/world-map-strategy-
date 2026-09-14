@@ -6,6 +6,7 @@
 (function(g){
 'use strict';
 const VERSION='5.2.0-PRODUCTION';
+const DFS_VERSION='1.0.0-CANONICAL';
 const S=v=>String(v==null?'':v).trim();
 const N=v=>S(v).normalize('NFKC').replace(/[?!,.:;'\"“”‘’(){}[\]<>—–]/g,' ').replace(/\s+/g,' ').trim().toLowerCase();
 const O=v=>v&&typeof v==='object'&&!Array.isArray(v);
