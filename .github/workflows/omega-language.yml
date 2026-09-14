@@ -1,108 +1,49 @@
-name: OMEGA Canonical AI Final Migration
+name: OMEGA Canonical AI Regression
 on:
   workflow_dispatch:
   push:
     paths:
-      - '.github/workflows/omega-language.yml'
       - 'countries.json'
+      - 'relation_generation_engine.json'
+      - 'omega_country_semantic_bridge.js'
+      - 'omega_resource_semantic_bridge.js'
+      - 'offline_semantic_brain.js'
+      - 'offline_query_engine.js'
+      - 'omega_cognitive_engine.js'
+      - 'omega_production_semantic_runtime_v3.js'
+      - 'omega_server_ai_gateway.js'
+      - 'omega_ai_context_bridge.js'
+      - 'scripts/test_canonical_ai_chain.cjs'
       - 'scripts/test_deep_semantic_brain.cjs'
+      - 'package.json'
+      - '.github/workflows/omega-language.yml'
 permissions:
-  contents: write
+  contents: read
 jobs:
-  migrate:
+  canonical:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: 24
-      - name: Complete canonical country registry from source datasets
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 - <<'PY'
-          from pathlib import Path
-          import json
-          c=Path('countries.json')
-          rows=json.loads(c.read_text(encoding='utf-8'))
-          if not isinstance(rows,list): rows=rows.get('countries',rows.get('data',[]))
-          relation=json.loads(Path('relation_generation_engine.json').read_text(encoding='utf-8'))
-          root=relation.get('RELATION_GENERATION_ENGINE',{}).get('srie_v2_asymmetrical_salience',{})
-          by_code={str(r.get('code') or r.get('iso2') or r.get('countryCode') or '').upper():r for r in rows if isinstance(r,dict)}
-          changed=False
-          for r in rows:
-              if not isinstance(r,dict): continue
-              canonical=r.get('canonicalId') or r.get('iso3') or r.get('iso2') or r.get('code')
-              if canonical and r.get('canonicalId')!=canonical:
-                  r['canonicalId']=canonical; changed=True
-              aliases=r.get('aliases') if isinstance(r.get('aliases'),list) else []
-              for v in [r.get('name'),r.get('iso2'),r.get('iso3'),r.get('code'),r.get('officialName'),r.get('shortName'),r.get('nativeName')]:
-                  if isinstance(v,str) and v.strip() and v not in aliases: aliases.append(v)
-              aliases=[x for x in aliases if isinstance(x,str) and x.strip()]
-              if r.get('aliases')!=aliases: r['aliases']=aliases; changed=True
-          for key,v in root.items():
-              if not isinstance(v,dict): continue
-              code=str(v.get('country_code') or '').strip().upper()
-              name=str(v.get('country_name') or key or '').strip()
-              if not code or not name or code in by_code: continue
-              row={'code':code,'name':name,'canonicalId':code,'aliases':[name,code]}
-              rows.append(row); by_code[code]=row; changed=True
-          if changed: c.write_text(json.dumps(rows,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
-          if len(rows)<190: raise SystemExit(f'canonical countries registry remains incomplete: {len(rows)} records')
-          PY
-      - name: Remove remaining cognitive country/resource fallbacks
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 - <<'PY'
-          from pathlib import Path
-          import re
-          p=Path('omega_cognitive_engine.js')
-          s=p.read_text(encoding='utf-8')
-          replacements={
-            "this.allEconomies[clean] || this.allEconomies['BANGLADESH'] || null":"this.allEconomies[clean] || null",
-            "this.allPopulations[clean] || this.allPopulations['BANGLADESH'] || null":"this.allPopulations[clean] || null",
-            'countryKey = "BANGLADESH"':'countryKey = ""'
-          }
-          for old,new in replacements.items(): s=s.replace(old,new)
-          if 'BANGLADESH' in s or 'COUNTRY_ALIASES' in s: raise SystemExit('cognitive country fallback/alias remains')
-          s=re.sub(r"const RESOURCE_ONTOLOGY_MATRIX = Object\.freeze\(_rawLoadedOntology \|\| \{.*?\n\s*\}\);\n", "const RESOURCE_ONTOLOGY_MATRIX = {};\nfunction syncCanonicalResourceOntology() {\n    const b = globalScope.OmegaResourceSemanticBridge;\n    const loaded = b?.ontology?.();\n    const root = loaded?.COMMODITY_ONTOLOGIES || loaded || {};\n    if (!root || typeof root !== 'object') return RESOURCE_ONTOLOGY_MATRIX;\n    for (const [k,v] of Object.entries(root)) RESOURCE_ONTOLOGY_MATRIX[k] = v;\n    return RESOURCE_ONTOLOGY_MATRIX;\n  }\n", s, count=1, flags=re.S)
-          p.write_text(s,encoding='utf-8')
-          PY
-      - name: Repair Deep Semantic Brain runtime harness
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 - <<'PY'
-          from pathlib import Path
-          p=Path('scripts/test_deep_semantic_brain.cjs')
-          s=p.read_text(encoding='utf-8')
-          old="  await import('../offline_semantic_brain.js');\n  const brain = globalThis.OfflineSemanticBrain;"
-          new="  await import('../omega_country_semantic_bridge.js');\n  const countryRegistry = globalThis.OmegaCanonicalIdentityRegistry || globalThis.OmegaCountrySemanticBridge;\n  assert.ok(countryRegistry, 'Canonical country identity registry must initialize');\n  assert.equal(await countryRegistry.init(), true, 'Canonical country identity registry must load');\n  await import('../omega_resource_semantic_bridge.js');\n  const resourceBridge = globalThis.OmegaResourceSemanticBridge;\n  assert.ok(resourceBridge, 'Canonical resource bridge must initialize');\n  await resourceBridge.init?.();\n  await import('../offline_semantic_brain.js');\n  const brain = globalThis.OfflineSemanticBrain;"
-          if old not in s: raise SystemExit('semantic brain test initialization anchor missing')
-          s=s.replace(old,new,1)
-          old2="  const runtime = brain.configure({datasets,vocabulary});\n  assert.ok(runtime.countries >= 190, `Expected global country registry, got ${runtime.countries}`);"
-          new2="  const runtime = brain.configure({datasets,vocabulary});\n  assert.equal(runtime.countries, countryRegistry.exportData().countries.length, 'Semantic Brain country count must come from canonical registry');\n  assert.ok(runtime.countries >= 190, `Expected complete global country registry, got ${runtime.countries}`);"
-          if old2 not in s: raise SystemExit('semantic brain test country-count anchor missing')
-          s=s.replace(old2,new2,1)
-          p.write_text(s,encoding='utf-8')
-          PY
-      - name: Persist source migration
-        shell: bash
-        run: |
-          set -euo pipefail
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add countries.json omega_cognitive_engine.js scripts/test_deep_semantic_brain.cjs
-          git commit -m 'fix: complete canonical country registry and semantic grounding [skip ci]' || true
-          git push
-      - name: Validate repaired source
-        shell: bash
-        run: |
-          set -euo pipefail
-          git fetch origin fix/canonical-identity-full
-          git reset --hard origin/fix/canonical-identity-full
-          npm install --ignore-scripts --no-audit
-          npm run lint
-          node scripts/test_canonical_ai_chain.cjs
-          node scripts/test_deep_semantic_brain.cjs
+      - name: Install dependencies
+        run: npm install --ignore-scripts --no-audit
+      - name: Syntax gate
+        run: npm run lint
+      - name: Canonical identity and data authority
+        run: node scripts/test_canonical_ai_chain.cjs
+      - name: Deep Semantic Brain runtime
+        run: node scripts/test_deep_semantic_brain.cjs
+      - name: Data Finding runtime
+        run: npm run test:data-finding
+      - name: Semantic runtime regression
+        run: node scripts/test_semantic_runtime_v4.cjs
+      - name: Hybrid runtime regression
+        run: node scripts/test_omega_language_hybrid.cjs
+      - name: Batch 03 regression
+        run: node scripts/test_omega_language_batch03.cjs
+      - name: Full test suite
+        run: npm test
