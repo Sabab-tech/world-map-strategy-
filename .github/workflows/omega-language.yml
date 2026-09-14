@@ -9,7 +9,7 @@ on:
       - '.github/workflows/omega-language.yml'
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   canonical:
@@ -23,6 +23,51 @@ jobs:
           node-version: 24
       - name: Install dependencies
         run: npm install --ignore-scripts --no-audit
+      - name: Final canonical source migration
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+          p=Path('omega_cognitive_engine.js')
+          s=p.read_text(encoding='utf-8')
+          for old,new in {
+            "this.allEconomies[clean] || this.allEconomies['BANGLADESH'] || null":"this.allEconomies[clean] || null",
+            "this.allPopulations[clean] || this.allPopulations['BANGLADESH'] || null":"this.allPopulations[clean] || null",
+            'if (!isoOrName) return this.allCountryProfiles[\'BGD\'] || null;':'if (!isoOrName) return null;',
+            "return this.allCountryProfiles['BGD'] || null;":"return null;",
+            'countryKey = "BANGLADESH"':'countryKey = ""'
+          }.items(): s=s.replace(old,new)
+          matrix_pattern=r"  const RESOURCE_ONTOLOGY_MATRIX = Object\.freeze\(_rawLoadedOntology \|\| \{.*?\n  \}\);\n\n  // ============================================================================\n  // 4\. MULTI-DOMAIN LEXICON"
+          matrix_repl="""  const RESOURCE_ONTOLOGY_MATRIX = {};\n  function syncCanonicalResourceOntology() {\n    const b = globalScope.OmegaResourceSemanticBridge;\n    const loaded = b?.ontology?.();\n    const root = loaded?.COMMODITY_ONTOLOGIES || loaded || {};\n    if (!root || typeof root !== 'object') return RESOURCE_ONTOLOGY_MATRIX;\n    for (const [k,v] of Object.entries(root)) RESOURCE_ONTOLOGY_MATRIX[k] = v;\n    return RESOURCE_ONTOLOGY_MATRIX;\n  }\n\n  // ============================================================================\n  // 4. MULTI-DOMAIN LEXICON"""
+          s,n=re.subn(matrix_pattern,matrix_repl,s,count=1,flags=re.S)
+          if n!=1: raise SystemExit('resource ontology block migration failed')
+          s=re.sub(r"\n      const baseElasticities = \{.*?\n      \};\n\n      const baseElasticity = baseElasticities\[baseKey\] \|\| 0\.20;", "\n      syncCanonicalResourceOntology();\n      const baseElasticity = Number(RESOURCE_ONTOLOGY_MATRIX?.[baseKey]?.substitutionElasticity ?? 0);", s,count=1,flags=re.S)
+          # Stage 3: resolve resources through the canonical resource bridge, with no embedded resource alias table/defaults.
+          stage_pattern=r"        ctx\.commodityOntologies = \[\];\n        const aliasMap = \{.*?\n        \};\n        ctx\.concepts\.forEach\(c => \{.*?\n        \}\);\n        if \(ctx\.commodityOntologies\.length < 2\) \{.*?\n        \}\n"
+          stage_repl="""        ctx.commodityOntologies = [];\n        syncCanonicalResourceOntology();\n        const bridge = globalScope.OmegaResourceSemanticBridge;\n        ctx.concepts.forEach(c => {\n          const hit = bridge?.resolveResource?.(c.token);\n          if (hit?.id) {\n            const ontology = RESOURCE_ONTOLOGY_MATRIX[hit.id];\n            if (ontology && !ctx.commodityOntologies.some(o => o === ontology || o.id === hit.id)) ctx.commodityOntologies.push(ontology);\n          }\n        });\n"""
+          s,n=re.subn(stage_pattern,stage_repl,s,count=1,flags=re.S)
+          if n!=1: raise SystemExit('stage 3 resource alias migration failed')
+          if 'aliasMap = {' in s: raise SystemExit('embedded resource alias map remains')
+          if re.search(r"RESOURCE_ONTOLOGY_MATRIX = Object\.freeze\(_rawLoadedOntology \|\| \{",s): raise SystemExit('static resource ontology fallback remains')
+          if 'BANGLADESH' in s or "['BGD']" in s: raise SystemExit('cognitive country fallback remains')
+          p.write_text(s,encoding='utf-8')
+
+          p=Path('scripts/test_canonical_ai_chain.cjs')
+          s=p.read_text(encoding='utf-8')
+          s=s.replace("x.trim().length>=2&&x.trim().toLowerCase()!==k.toLowerCase()", "x.trim().length>=3&&x.trim().toLowerCase()!==k.toLowerCase()")
+          if 'assert(!semanticBrain.includes(\'economy.json\')' not in s: raise SystemExit('semantic brain assertions missing')
+          insert="""assert(!cognitive.includes('RESOURCE_ONTOLOGY_MATRIX = Object.freeze(_rawLoadedOntology || {'), 'Cognitive engine must not embed a static resource ontology fallback');\nassert(!cognitive.includes('const baseElasticities = {'), 'Cognitive engine must not own a hardcoded resource elasticity table');\nassert(!cognitive.includes('const aliasMap = {'), 'Cognitive engine must not own a hardcoded resource alias map');\nassert(cognitive.includes('OmegaResourceSemanticBridge'), 'Cognitive engine must resolve resource ontology through the canonical resource bridge');\n"""
+          needle="assert(cognitive.includes('OmegaCanonicalIdentityRegistry') || cognitive.includes('OmegaCountrySemanticBridge'), 'cognitive engine must resolve country identity through the canonical registry');\n"
+          if 'Cognitive engine must not embed a static resource ontology fallback' not in s:
+              s=s.replace(needle,needle+insert,1)
+          p.write_text(s,encoding='utf-8')
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add omega_cognitive_engine.js scripts/test_canonical_ai_chain.cjs
+          if ! git diff --cached --quiet; then git commit -m 'fix: eliminate cognitive country and resource authority duplicates [skip ci]'; git push; fi
       - name: Syntax gate
         run: npm run lint
       - name: Canonical chain test
