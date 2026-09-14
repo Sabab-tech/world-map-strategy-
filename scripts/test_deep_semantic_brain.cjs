@@ -1,43 +1,58 @@
-(async () => {
-  const assert = require('node:assert/strict');
-  const fs = require('node:fs');
-  await import('../omega_country_semantic_bridge.js');
-  const countryRegistry = globalThis.OmegaCanonicalIdentityRegistry || globalThis.OmegaCountrySemanticBridge;
-  assert.ok(countryRegistry, 'Canonical country identity registry must initialize');
-  assert.equal(await countryRegistry.init(), true, 'Canonical country identity registry must load');
-  await import('../omega_resource_semantic_bridge.js');
-  const resourceBridge = globalThis.OmegaResourceSemanticBridge;
-  assert.ok(resourceBridge, 'Canonical resource bridge must initialize');
-  await resourceBridge.init?.();
-  await import('../offline_semantic_brain.js');
-  const brain = globalThis.OfflineSemanticBrain;
-  assert.ok(brain, 'OfflineSemanticBrain must initialize');
-  const datasets = ['resources.json','resources_2.json'].filter(fs.existsSync).map(f => JSON.parse(fs.readFileSync(f,'utf8')));
-  const vocabulary = JSON.parse(fs.readFileSync('offline_language_vocabulary.json','utf8'));
-  const runtime = brain.configure({datasets,vocabulary});
-  assert.equal(runtime.countries, countryRegistry.exportData().countries.length, 'Semantic Brain country count must come from canonical registry');
-  assert.ok(runtime.countries >= 190, `Expected complete global country registry, got ${runtime.countries}`);
-  const iron = runtime.resources.find(r => r.names.some(n => /iron/i.test(n)));
-  const oil = runtime.resources.find(r => r.names.some(n => /oil|petroleum|crude/i.test(n)));
-  assert.ok(iron, 'Runtime resource registry must contain an iron-like resource');
-  assert.ok(oil, 'Runtime resource registry must contain an oil-like resource');
-  function check(query, expected) {
-    const result = brain.parse(query);
-    assert.equal(result.entities.country.id, expected.country, `${query}: country`);
-    assert.equal(result.entities.resource.id, expected.resource, `${query}: resource`);
-    assert.equal(result.entities.asset.id, expected.asset, `${query}: asset`);
-    assert.equal(result.operation, expected.operation, `${query}: operation`);
-    assert.equal(result.executable, true, `${query}: executable`);
-  }
-  check('How many iron mines are in Bangladesh?', { country:'BGD', resource:iron.id, asset:'MINE', operation:'COUNT' });
-  check('বাংলাদেশে কয়টি লোহার খনি আছে?', { country:'BGD', resource:iron.id, asset:'MINE', operation:'COUNT' });
-  check('Where are the oil fields in Bangladesh?', { country:'BGD', resource:oil.id, asset:'OIL_FIELD', operation:'LOCATE' });
-  check('বাংলাদেশে তেল কোথায় আছে?', { country:'BGD', resource:oil.id, asset:null, operation:'LOCATE' });
-  check('Why is Bangladesh dependent on imported oil?', { country:'BGD', resource:oil.id, asset:null, operation:'ANALYZE_CAUSE' });
-  check('Should Bangladesh increase iron production?', { country:'BGD', resource:iron.id, asset:null, operation:'EVALUATE_POLICY' });
-  const unknown = brain.parse('How many mines are in Atlantis?');
-  assert.equal(unknown.entities.country.id, null);
-  assert.equal(unknown.executable, false);
-  assert.ok(unknown.unresolved.includes('COUNTRY'));
-  console.log('Runtime multilingual semantic brain tests: PASS', runtime);
-})().catch(error => { console.error(error); process.exitCode = 1; });
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import { pathToFileURL } from 'node:url';
+
+const root = new URL('../', import.meta.url);
+const readJson = name => JSON.parse(fs.readFileSync(new URL(name, root), 'utf8'));
+const datasets = {
+  countries: readJson('countries.json'),
+  economy: readJson('economy.json'),
+  population: readJson('population.json'),
+  resourceOntology: readJson('resource_ontology.json'),
+  relation: readJson('relation_generation_engine.json'),
+  resources: readJson('resources.json')
+};
+const vocabulary = readJson('offline_language_vocabulary.json');
+const semanticKnowledge = readJson('offline_semantic_knowledge.json');
+
+await import(pathToFileURL(new URL('../omega_country_semantic_bridge.js', import.meta.url)).href);
+const countryRegistry = globalThis.OmegaCanonicalIdentityRegistry || globalThis.OmegaCountrySemanticBridge;
+assert.ok(countryRegistry, 'Canonical country identity registry must initialize');
+assert.equal(await countryRegistry.init(), true, 'Canonical country identity registry must load');
+await import(pathToFileURL(new URL('../omega_resource_semantic_bridge.js', import.meta.url)).href);
+const resourceBridge = globalThis.OmegaResourceSemanticBridge;
+assert.ok(resourceBridge, 'Canonical resource bridge must initialize');
+assert.equal(await resourceBridge.init?.(), true, 'Canonical resource bridge must load');
+await import(pathToFileURL(new URL('../omega_production_semantic_runtime_v3.js', import.meta.url)).href);
+await import(pathToFileURL(new URL('../offline_semantic_brain.js', import.meta.url)).href);
+const brain = globalThis.OfflineSemanticBrain;
+assert.ok(brain, 'Offline Semantic Brain must initialize');
+const runtime = brain.configure({ datasets, vocabulary, semanticKnowledge });
+assert.equal(runtime.countries, countryRegistry.exportData().countries.length, 'Semantic Brain country count must come from canonical registry');
+assert.ok(runtime.countries >= 190, `Expected complete global country registry, got ${runtime.countries}`);
+
+const iron = runtime.resources.find(r => r.names.some(n => /iron/i.test(n)));
+const oil = runtime.resources.find(r => r.names.some(n => /oil|petroleum|crude/i.test(n)));
+assert.ok(iron, 'Runtime resource registry must contain an iron-like resource');
+assert.ok(oil, 'Runtime resource registry must contain an oil-like resource');
+
+function check(query, expected) {
+  const result = brain.parse(query);
+  assert.equal(result.entities.country?.id ?? null, expected.country ?? null, `${query}: country`);
+  assert.equal(result.entities.resource?.id ?? null, expected.resource ?? null, `${query}: resource`);
+  assert.equal(result.entities.asset?.id ?? null, expected.asset ?? null, `${query}: asset`);
+  assert.equal(result.operation, expected.operation, `${query}: operation`);
+  assert.equal(result.executable, true, `${query}: executable`);
+}
+
+check('How many iron mines are in Bangladesh?', { country:'BGD', resource:iron.id, asset:'MINE', operation:'COUNT' });
+check('বাংলাদেশে কয়টি লোহার খনি আছে?', { country:'BGD', resource:iron.id, asset:'MINE', operation:'COUNT' });
+check('Where are the oil fields in Bangladesh?', { country:'BGD', resource:oil.id, asset:'OIL_FIELD', operation:'LOCATE' });
+check('বাংলাদেশে তেল কোথায় আছে?', { country:'BGD', resource:oil.id, asset:null, operation:'LOCATE' });
+check('Why is Bangladesh dependent on imported oil?', { country:'BGD', resource:oil.id, asset:null, operation:'ANALYZE_CAUSE' });
+check('Should Bangladesh increase iron production?', { country:'BGD', resource:iron.id, asset:null, operation:'EVALUATE_POLICY' });
+const unknown = brain.parse('How many mines are in Atlantis?');
+assert.equal(unknown.entities.country?.id ?? null, null);
+assert.equal(unknown.executable, false);
+assert.ok(unknown.unresolved.includes('COUNTRY'));
+console.log('Runtime multilingual semantic brain tests: PASS', {countries:runtime.countries, resources:runtime.resources.length});
