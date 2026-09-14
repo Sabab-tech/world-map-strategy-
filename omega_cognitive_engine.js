@@ -662,13 +662,13 @@ const _omegaExport = (function (globalScope) {
     getEconomy(isoOrName) {
       this.init();
       const clean = String(isoOrName).toUpperCase().trim();
-      return this.allEconomies[clean] || this.allEconomies['BANGLADESH'] || null;
+      return this.allEconomies[clean] || null;
     },
 
     getPopulation(isoOrName) {
       this.init();
       const clean = String(isoOrName).toUpperCase().trim();
-      return this.allPopulations[clean] || this.allPopulations['BANGLADESH'] || null;
+      return this.allPopulations[clean] || null;
     }
   };
 
@@ -2318,7 +2318,7 @@ const _omegaExport = (function (globalScope) {
       };
     }
 
-    thinkMinisterQuestion(questionText, minister, countryKey = "BANGLADESH", countryDetails = {}) {
+    thinkMinisterQuestion(questionText, minister, countryKey = "", countryDetails = {}) {
       const isBengali = /[\u0980-\u09FF]/.test(questionText);
       const promptLower = (questionText || '').toLowerCase().trim();
 
@@ -2773,7 +2773,7 @@ const _omegaExport = (function (globalScope) {
       return true;
     }
 
-    async askMinisterWithAI(questionText, minister, countryKey = "BANGLADESH", countryDetails = {}) {
+    async askMinisterWithAI(questionText, minister, countryKey = "", countryDetails = {}) {
       const isBn = /[\u0980-\u09FF]/.test(questionText);
       const mId = minister ? minister.id : 'general';
       const mName = (minister && (minister.ministerName || minister.name)) || (countryDetails.ministers && countryDetails.ministers[mId] && countryDetails.ministers[mId].name) || 'Honorable Minister';
