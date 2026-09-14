@@ -1,3 +1,4 @@
+# Canonical verification is intentionally read-only. Source migration is complete.
 name: OMEGA Canonical AI Regression
 
 on:
