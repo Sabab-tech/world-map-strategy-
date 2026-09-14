@@ -96,7 +96,13 @@
     "lng": 90.3563,
     "minZoom": 3.8,
     "maxZoom": 9,
-    "importance": 3
+    "importance": 3,
+    "iso2": "BD",
+    "iso3": "BGD",
+    "aliases": [
+      "বাংলাদেশ",
+      "BGD"
+    ]
   },
   {
     "code": "BE",
@@ -186,7 +192,14 @@
     "lng": 10.4515,
     "minZoom": 4,
     "maxZoom": 8.5,
-    "importance": 5
+    "importance": 5,
+    "iso2": "DE",
+    "iso3": "DEU",
+    "aliases": [
+      "Deutschland",
+      "Federal Republic of Germany",
+      "DEU"
+    ]
   },
   {
     "code": "FR",

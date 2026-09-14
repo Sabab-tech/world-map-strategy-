@@ -198,32 +198,6 @@ const _omegaExport = (function (globalScope) {
   //    (What is a resource? How does it work? What does a lack vs enrichment mean?)
   // ============================================================================
 
-  function loadExternalResourceOntologyMatrix() {
-    let externalOntology = null;
-    const reqFn = typeof require === 'function' ? require : (typeof globalThis !== 'undefined' && typeof globalThis.require === 'function' ? globalThis.require : null);
-    if (reqFn) {
-      try {
-        const fs = reqFn('fs');
-        const path = reqFn('path');
-        const cwd = (typeof process !== 'undefined' && typeof process.cwd === 'function') ? process.cwd() : '.';
-        const candidates = [
-          path.resolve(cwd, 'resource_ontology.json'),
-          path.resolve(cwd, 'public', 'resource_ontology.json'),
-          path.resolve('.', 'resource_ontology.json')
-        ];
-        for (const c of candidates) {
-          if (fs.existsSync(c)) {
-            const parsed = JSON.parse(fs.readFileSync(c, 'utf8'));
-            externalOntology = parsed.COMMODITY_ONTOLOGIES || parsed;
-            break;
-          }
-        }
-      } catch (e) {}
-    }
-    return externalOntology;
-  }
-
-  const _rawLoadedOntology = loadExternalResourceOntologyMatrix();
 
   const RESOURCE_ONTOLOGY_MATRIX = {};
   function syncCanonicalResourceOntology() {
