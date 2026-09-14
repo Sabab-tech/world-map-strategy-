@@ -6,6 +6,7 @@
     "CRUDE_OIL": {
       "key": "CRUDE_OIL",
       "name": "Crude Petroleum & Hydrocarbons",
+      "aliases": ["Crude Petroleum & Hydrocarbons", "Crude Oil", "crude oil", "oil", "petroleum", "তেল", "খনিজ তেল", "পেট্রোলিয়াম"],
       "category": "ENERGY_HYDROCARBON",
       "physicalForm": "LIQUID",
       "upstreamProcess": "Deep Drilling, Subsea Extraction, Thermal EOR",
