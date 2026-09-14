@@ -165,15 +165,25 @@ jobs:
           import fs from 'node:fs/promises';
           const base = 'http://127.0.0.1:39079';
           const sleep = ms => new Promise(r => setTimeout(r, ms));
+          const pid = Number(process.env.OMEGA_SERVER_PID || 0);
           let health = null;
-          for (let i = 0; i < 120; i++) {
+          let lastError = null;
+          for (let i = 0; i < 480; i++) {
             try {
               const r = await fetch(`${base}/api/deep-core/health`, { cache: 'no-store' });
-              if (r.ok) { health = await r.json(); break; }
-            } catch (_) {}
+              const body = await r.json().catch(() => null);
+              if (r.ok && body?.ok) { health = body; break; }
+              lastError = new Error(`HTTP ${r.status}: ${JSON.stringify(body)}`);
+            } catch (e) { lastError = e; }
+            if (pid) {
+              try { process.kill(pid, 0); } catch (_) { break; }
+            }
             await sleep(250);
           }
-          if (!health?.ok) throw new Error('Deep Core server did not become healthy');
+          if (!health?.ok) {
+            const log = await fs.readFile('/tmp/omega-server.log', 'utf8').catch(() => '');
+            throw new Error(`Deep Core server did not become healthy. last=${lastError?.message || 'none'}\\nSERVER_LOG\\n${log}`);
+          }
           const diag = await (await fetch(`${base}/api/deep-core/diagnostics`, { cache: 'no-store' })).json();
           if (diag?.scan?.authority !== 'NODE_FILESYSTEM') throw new Error(`Server Deep Core authority mismatch: ${diag?.scan?.authority || 'UNKNOWN'}`);
           if (diag?.initialized !== true) throw new Error('Server Deep Core was not initialized');
