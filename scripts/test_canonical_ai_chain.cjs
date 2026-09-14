@@ -99,6 +99,10 @@ const semanticBrain = read('offline_semantic_brain.js');
 assert(!cognitive.includes('COUNTRY_ALIASES'), 'cognitive engine must not own a country alias table');
 assert(!cognitive.includes('let targetCountryIso = "BGD"'), 'cognitive engine must not contain a synthetic default country');
 assert(cognitive.includes('OmegaCanonicalIdentityRegistry') || cognitive.includes('OmegaCountrySemanticBridge'), 'cognitive engine must resolve country identity through the canonical registry');
+assert(!cognitive.includes('RESOURCE_ONTOLOGY_MATRIX = Object.freeze(_rawLoadedOntology || {'), 'Cognitive engine must not embed a static resource ontology fallback');
+assert(!cognitive.includes('const baseElasticities = {'), 'Cognitive engine must not own a hardcoded resource elasticity table');
+assert(!cognitive.includes('const aliasMap = {'), 'Cognitive engine must not own a hardcoded resource alias map');
+assert(cognitive.includes('OmegaResourceSemanticBridge'), 'Cognitive engine must resolve resource ontology through the canonical resource bridge');
 assert(semanticBrain.includes('function canonicalEntity(raw,type)'), 'Semantic Brain must expose canonical entity interpretation');
 assert(semanticBrain.includes("t==='COUNTRY'?countryRegistry():t==='RESOURCE'?resourceRegistry():null"), 'Semantic Brain COUNTRY/RESOURCE interpretation must delegate to canonical registries');
 assert(semanticBrain.includes('never stores country/resource world facts'), 'Semantic Brain must remain an interpreter, not a world-data store');
@@ -117,7 +121,7 @@ function collectIdentityStrings(value,out=new Set()){
     if(Array.isArray(v)){v.forEach(walk);return;}
     if(!v||typeof v!=='object')return;
     for(const[k,x]of Object.entries(v)){
-      if(typeof x==='string'&&identityKeys.has(k)&&x.trim().length>=2&&x.trim().toLowerCase()!==k.toLowerCase())out.add(x.trim().toLowerCase());
+      if(typeof x==='string'&&identityKeys.has(k)&&x.trim().length>=3&&x.trim().toLowerCase()!==k.toLowerCase())out.add(x.trim().toLowerCase());
       if(Array.isArray(x)&&aliasKeys.has(k))for(const a of x)if(typeof a==='string'&&a.trim().length>=2)out.add(a.trim().toLowerCase());
       if(x&&typeof x==='object'&&!Array.isArray(x))walk(x);
     }

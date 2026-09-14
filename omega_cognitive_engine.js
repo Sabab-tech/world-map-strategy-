@@ -179,18 +179,8 @@ const _omegaExport = (function (globalScope) {
       const techFactor = Math.min(1.5, Math.max(0.5, 0.7 + (countryTechIndex * 0.6)));
       const infraFactor = Math.min(1.4, Math.max(0.6, 0.6 + (infrastructureTier * 0.5)));
 
-      const baseElasticities = {
-        CRUDE_OIL: 0.15,
-        NATURAL_GAS: 0.22,
-        COPPER: 0.30,
-        LITHIUM: 0.25,
-        RARE_EARTHS: 0.08,
-        POTASH_PHOSPHATE: 0.05,
-        URANIUM: 0.10,
-        BAUXITE_ALUMINUM: 0.35
-      };
-
-      const baseElasticity = baseElasticities[baseKey] || 0.20;
+      syncCanonicalResourceOntology();
+      const baseElasticity = Number(RESOURCE_ONTOLOGY_MATRIX?.[baseKey]?.substitutionElasticity ?? 0);
       const dynamicElasticity = Number((baseElasticity * techFactor * (0.8 + 0.4 * industrialAdaptability)).toFixed(3));
       const dynamicGestationLagMultiplier = Number((1.0 / (techFactor * infraFactor)).toFixed(3));
       const dynamicCostMultiplier = Number((1.2 / techFactor).toFixed(3));
@@ -235,254 +225,15 @@ const _omegaExport = (function (globalScope) {
 
   const _rawLoadedOntology = loadExternalResourceOntologyMatrix();
 
-  const RESOURCE_ONTOLOGY_MATRIX = Object.freeze(_rawLoadedOntology || {
-    CRUDE_OIL: {
-      name: "Crude Petroleum & Hydrocarbons",
-      category: "ENERGY_HYDROCARBON",
-      physicalForm: "LIQUID",
-      upstreamProcess: "Deep Drilling, Subsea Extraction, Thermal EOR",
-      midstreamProcess: "Atmospheric & Vacuum Distillation, Fluid Catalytic Cracking, Hydrotreating",
-      refinedOutputs: ["REFINED_DIESEL", "JET_A1_FUEL", "GASOLINE", "NAPHTHA", "HEAVY_FUEL_OIL", "ASPHALT"],
-      keyUtilities: [
-        "Primary fuel for freight rail, maritime shipping, and road transport logistics",
-        "Essential feedstock for petrochemicals, synthetic polymers, and pharmaceuticals",
-        "Aviation and military mechanized force operational mobility",
-        "Backup thermal electricity generation"
-      ],
-      downstreamSectors: ["LOGISTICS_TRANSPORT", "DEFENSE_MOBILITY", "PETROCHEMICALS", "AGRICULTURE_MECHANIZATION"],
-      substitutionElasticity: 0.15,
-      substitutes: [
-        { name: "BIOFUELS", costPenalty: 1.45, conversionLagTicks: 15, maxCoverage: 0.20 },
-        { name: "SYNTHETIC_E_FUELS", costPenalty: 2.80, conversionLagTicks: 30, maxCoverage: 0.35 },
-        { name: "ELECTRIFICATION", costPenalty: 2.10, conversionLagTicks: 60, maxCoverage: 0.60 }
-      ],
-      lackConsequences: {
-        shortTerm: "Immediate spike in freight logistics costs, diesel rationing, public transport slowdown",
-        mediumTerm: "Supply chain gridlock, fertilizer delivery failure, industrial factory power curtailment",
-        catastrophic: "Total transport paralysis, food distribution collapse, mechanized military immobilization, blackouts"
-      },
-      enrichmentDynamics: {
-        strategicLeverage: "Ability to dictate terms to import-dependent nations, weaponize export quotas, petro-currency leverage",
-        sovereignWealth: "Massive export fiscal surplus, sovereign wealth fund capital accumulation",
-        hazards: "Dutch Disease (currency overvaluation crushing domestic manufacturing), commodity price volatility trap"
-      }
-    },
-
-    NATURAL_GAS: {
-      name: "Natural Gas & Methane",
-      category: "ENERGY_HYDROCARBON",
-      physicalForm: "GAS_OR_LNG",
-      upstreamProcess: "Hydraulic Fracturing, Conventional Gas Wells, Associated Gas Capture",
-      midstreamProcess: "Cryogenic Liquefaction (LNG), Regasification Terminals, Pipeline Compression",
-      refinedOutputs: ["ELECTRIC_POWER", "COMPRESSED_GAS", "AMMONIA_FERTILIZER", "METHANOL", "HYDROGEN"],
-      keyUtilities: [
-        "Baseload and peaking turbine electric grid power generation",
-        "Haber-Bosch process for agricultural Nitrogen/Ammonia fertilizers",
-        "Industrial high-temperature heat for steel, cement, and chemical synthesis",
-        "Domestic urban heating and industrial feedstock"
-      ],
-      downstreamSectors: ["ELECTRIC_GRID", "AGRICULTURE_FERTILIZER", "CHEMICAL_SYNTHESIS", "HEAVY_INDUSTRY"],
-      substitutionElasticity: 0.22,
-      substitutes: [
-        { name: "COAL_GASIFICATION", costPenalty: 1.60, conversionLagTicks: 25, maxCoverage: 0.40 },
-        { name: "GREEN_HYDROGEN", costPenalty: 3.20, conversionLagTicks: 45, maxCoverage: 0.50 },
-        { name: "NUCLEAR_BASELOAD", costPenalty: 2.50, conversionLagTicks: 80, maxCoverage: 0.70 }
-      ],
-      lackConsequences: {
-        shortTerm: "Electricity grid rolling blackouts, surging utility bills, heating shortages",
-        mediumTerm: "Fertilizer production shutdowns leading to next-season agricultural yield collapse",
-        catastrophic: "Complete chemical sector shutdown, severe food shortages, winter mortality spikes"
-      },
-      enrichmentDynamics: {
-        strategicLeverage: "Pipeline diplomacy, regional energy hegemony, long-term bilateral offtake locking",
-        sovereignWealth: "High-margin LNG export revenue and domestic cheap energy competitive advantage",
-        hazards: "Geopolitical encirclement, pipeline transit corridor vulnerability, decarbonization transition risks"
-      }
-    },
-
-    COPPER: {
-      name: "Refined Copper & Concentrates",
-      category: "STRATEGIC_BASE_METAL",
-      physicalForm: "SOLID_CATHODE_CONCENTRATE",
-      upstreamProcess: "Open-Pit Mining, Underground Block Caving, Froth Flotation",
-      midstreamProcess: "Smelting, Flash Furnaces, Electro-Refining (SX-EW) to 99.99% Cu Cathodes",
-      refinedOutputs: ["COPPER_WIRE_ROD", "TRANSFORMER_COILS", "BRASS_ALLOYS", "PRINTED_CIRCUIT_BOARDS"],
-      keyUtilities: [
-        "Fundamental conductor for power grid transmission, transformers, and switchgear",
-        "Electric vehicle motors, battery interconnects, and charging infrastructure",
-        "Electronic printed circuit boards (PCBs), microchip packaging, and data cables",
-        "Military munitions brass shell casings and radar waveguides"
-      ],
-      downstreamSectors: ["ELECTRICAL_GRID", "ELECTRONICS_SEMICONDUCTORS", "AUTOMOTIVE_EV", "DEFENSE_MUNITIONS"],
-      substitutionElasticity: 0.30,
-      substitutes: [
-        { name: "ALUMINUM_CONDUCTORS", costPenalty: 1.25, conversionLagTicks: 20, maxCoverage: 0.50, efficiencyLoss: 0.35 },
-        { name: "OPTICAL_FIBER_DATA", costPenalty: 1.10, conversionLagTicks: 10, maxCoverage: 0.80, efficiencyLoss: 0.0 }
-      ],
-      lackConsequences: {
-        shortTerm: "Transformer delivery delays, EV assembly line halts, electronics component inflation",
-        mediumTerm: "National power grid expansion stalls, renewable energy buildout halted, artillery shell production capped",
-        catastrophic: "Systemic electrification failure, defense munitions starvation, industrial manufacturing freeze"
-      },
-      enrichmentDynamics: {
-        strategicLeverage: "Critical gateway control over global green transition and electronics supply chains",
-        sovereignWealth: "Substantial mining royalties, smelting value-add industrial cluster development",
-        hazards: "Smelting environmental degradation, ore grade depletion, water conflict in arid mining zones"
-      }
-    },
-
-    LITHIUM: {
-      name: "Lithium Carbonate & Hydroxide",
-      category: "BATTERY_CRITICAL_MINERAL",
-      physicalForm: "CHEMICAL_SALT_REFINED",
-      upstreamProcess: "Saline Brine Evaporation, Spodumene Hard-Rock Open-Pit Mining",
-      midstreamProcess: "Acid Leaching, Carbonation, Hydroxide Crystallization for Battery Grade (>99.5%)",
-      refinedOutputs: ["BATTERY_CATHODES_NMC_LFP", "LUBRICATING_GREASES", "AEROSPACE_ALLOYS", "GLASS_CERAMICS"],
-      keyUtilities: [
-        "Active charge carrier in high-density Li-ion batteries for electric mobility",
-        "Utility-scale stationary battery energy storage systems (BESS)",
-        "Consumer electronics (smartphones, laptops, communication radios)",
-        "Specialized lightweight aerospace lithium-aluminum alloys"
-      ],
-      downstreamSectors: ["ENERGY_STORAGE", "AUTOMOTIVE_EV", "CONSUMER_ELECTRONICS", "DEFENSE_COMMUNICATIONS"],
-      substitutionElasticity: 0.25,
-      substitutes: [
-        { name: "SODIUM_ION_BATTERIES", costPenalty: 1.15, conversionLagTicks: 25, maxCoverage: 0.40, weightPenalty: 0.40 },
-        { name: "VANADIUM_FLOW_STORAGE", costPenalty: 1.50, conversionLagTicks: 30, maxCoverage: 0.30, weightPenalty: 3.0 }
-      ],
-      lackConsequences: {
-        shortTerm: "Battery cell factory output drops, EV production backlogs, storage project cancellations",
-        mediumTerm: "Grid energy storage blackout risks during peak renewable lulls, electronic device shortages",
-        catastrophic: "Failure of national clean energy transition targets, industrial battery sector insolvency"
-      },
-      enrichmentDynamics: {
-        strategicLeverage: "Creation of 'Lithium Cartels', forcing global automakers into joint-venture localization",
-        sovereignWealth: "Extreme profit margins during supply squeeze cycles, high tech capital inflow",
-        hazards: "Extreme commodity price cyclicality, technological substitution risks from non-lithium chemistries"
-      }
-    },
-
-    RARE_EARTHS: {
-      name: "Rare Earth Elements (Nd, Dy, Tb, Pr, etc.)",
-      category: "ADVANCED_TECH_CRITICAL",
-      physicalForm: "SEPARATED_OXIDES_AND_METALS",
-      upstreamProcess: "Monazite & Bastnäsite Mining, Ion-Adsorption Clay Leaching",
-      midstreamProcess: "Complex Multi-Stage Solvent Extraction (Hundreds of Stages), Metal Reduction",
-      refinedOutputs: ["NEODYMIUM_PERMANENT_MAGNETS", "MISSILE_GUIDANCE_ACTUATORS", "RADAR_TR_MODULES", "LASER_CRYSTALS"],
-      keyUtilities: [
-        "Ultra-high flux NdFeB permanent magnets for EV drivetrain traction motors and wind turbine generators",
-        "Precision missile guidance fins, torpedo steering, radar optics, and night-vision phosphors",
-        "Fluid catalytic cracking catalysts for petroleum refineries",
-        "High-performance lasers, sonar transducers, and stealth coatings"
-      ],
-      downstreamSectors: ["DEFENSE_AEROSPACE", "DEFENSE_PRECISION_WEAPONS", "WIND_ENERGY", "ADVANCED_ROBOTICS"],
-      substitutionElasticity: 0.08,
-      substitutes: [
-        { name: "FERRITE_MAGNETS", costPenalty: 0.60, conversionLagTicks: 15, maxCoverage: 0.20, powerLoss: 0.65 },
-        { name: "SYNCHRONOUS_RELUCTANCE", costPenalty: 1.40, conversionLagTicks: 40, maxCoverage: 0.35, sizePenalty: 0.50 }
-      ],
-      lackConsequences: {
-        shortTerm: "Stoppage of precision missile production lines, wind turbine generator delays",
-        mediumTerm: "EV motor production halt, military radar maintenance grounded, advanced optics shortages",
-        catastrophic: "Strategic defense technological inferiority, loss of guided munition production capability"
-      },
-      enrichmentDynamics: {
-        strategicLeverage: "Ultimate geopolitical chokepoint weapon: weaponized export bans can paralyze foreign defense industries",
-        sovereignWealth: "Downstream monopoly pricing power, national defense independence",
-        hazards: "Heavy toxic and radioactive thorium/radium tailings, foreign crash programs to engineer out REEs"
-      }
-    },
-
-    POTASH_PHOSPHATE: {
-      name: "Agricultural Fertilizers (Potash & Phosphate)",
-      category: "AGRO_STRATEGIC_MINERAL",
-      physicalForm: "GRANULAR_MINERAL_SALT",
-      upstreamProcess: "Deep Underground Potash Shaft Mining, Open-Cast Phosphate Rock Stripping",
-      midstreamProcess: "Flotation, Beneficiation, Phosphoric Acid Digestion, Granulation (DAP/MAP/MOP)",
-      refinedOutputs: ["NPK_COMPOUND_FERTILIZER", "DIAMMONIUM_PHOSPHATE", "ANIMAL_FEED_PHOSPHATES"],
-      keyUtilities: [
-        "Essential crop nutrient for root development, water retention, and drought resistance (Potassium)",
-        "Crucial for plant cellular energy transfer (ATP), photosynthesis, and seed maturation (Phosphorus)",
-        "Direct determinant of agricultural yield per hectare across staple grains (Wheat, Rice, Corn, Soy)"
-      ],
-      downstreamSectors: ["AGRICULTURE_CROPS", "FOOD_SECURITY", "ANIMAL_LIVESTOCK", "NATIONAL_SOVEREIGNTY"],
-      substitutionElasticity: 0.05,
-      substitutes: [
-        { name: "ORGANIC_MANURE_RECYCLING", costPenalty: 1.80, conversionLagTicks: 30, maxCoverage: 0.25 },
-        { name: "PRECISION_FERTIGATION", costPenalty: 1.50, conversionLagTicks: 20, maxCoverage: 0.20 }
-      ],
-      lackConsequences: {
-        shortTerm: "Sharp drop in soil nutrient application, skyrocketing wholesale crop prices",
-        mediumTerm: "National grain harvest yield collapses by 30% to 50%, livestock culling due to feed scarcity",
-        catastrophic: "Severe food rationing, mass bread riots, political instability, severe famine"
-      },
-      enrichmentDynamics: {
-        strategicLeverage: "Food diplomacy: holding the calories of neighboring and trading partner nations in hand",
-        sovereignWealth: "Guaranteed inelastic global demand, agricultural super-profits",
-        hazards: "Geopolitical sanctions targeting fertilizer trade, heavy logistics transport dependency"
-      }
-    },
-
-    URANIUM: {
-      name: "Uranium & Fissile Nuclear Fuel",
-      category: "STRATEGIC_NUCLEAR",
-      physicalForm: "YELLOWCAKE_AND_ENRICHED_GAS",
-      upstreamProcess: "In-Situ Recovery (ISR), Underground Mining, Acid Heap Leaching",
-      midstreamProcess: "Conversion to UF6, Centrifuge Gas Enrichment, UO2 Pellet Sintering, Fuel Assembly Fabrication",
-      refinedOutputs: ["ENRICHED_REACTOR_FUEL_LEU", "HIGH_ASSAY_HALEU", "MEDICAL_RADIOISOTOPES", "STRATEGIC_MATERIAL"],
-      keyUtilities: [
-        "High-density zero-carbon baseload gigawatt electricity generation",
-        "Naval nuclear propulsion for long-endurance submarines and carriers",
-        "Strategic deterrence foundation and medical cancer therapy isotopes"
-      ],
-      downstreamSectors: ["NUCLEAR_ELECTRIC_GRID", "NAVAL_DEFENSE", "MEDICAL_HEALTHCARE", "DEEP_DECARBONIZATION"],
-      substitutionElasticity: 0.10,
-      substitutes: [
-        { name: "COAL_BASELOAD", costPenalty: 1.30, conversionLagTicks: 20, maxCoverage: 0.50, carbonPenalty: 10.0 },
-        { name: "SMR_ADVANCED_REACTORS", costPenalty: 1.80, conversionLagTicks: 60, maxCoverage: 0.80 }
-      ],
-      lackConsequences: {
-        shortTerm: "Reactor refueling schedule disruptions, power grid capacity margins squeezed",
-        mediumTerm: "Shutdown of nuclear power plants, forced reliance on expensive emergency fossil peakers",
-        catastrophic: "Loss of 20-50% baseload electricity, extreme power shortages, naval fleet mobilization freeze"
-      },
-      enrichmentDynamics: {
-        strategicLeverage: "Nuclear fuel cycle sovereignty, alliance architecture anchoring, technological prestige",
-        sovereignWealth: "Extremely high energy density (1kg U-235 = 2.7 million kg coal energy equivalent)",
-        hazards: "Proliferation security overhead, high capital cost, non-proliferation sanctions risk"
-      }
-    },
-
-    BAUXITE_ALUMINUM: {
-      name: "Bauxite Ore & Primary Aluminum",
-      category: "STRATEGIC_BASE_METAL",
-      physicalForm: "ORE_AND_MOLTEN_INGOT",
-      upstreamProcess: "Open-Cast Bauxite Mining, Beneficiation",
-      midstreamProcess: "Bayer Process (Bauxite to Alumina), Hall-Héroult Electrolysis Smelting (Extremely Electricity-Intensive)",
-      refinedOutputs: ["ALUMINUM_SHEET", "EXTRUSIONS", "AEROSPACE_ALLOYS_7075", "ELECTRICAL_CABLES"],
-      keyUtilities: [
-        "Lightweight structural airframes for military fighter jets, transports, and civilian aircraft",
-        "Automotive lightweighting, armored vehicle hulls, and naval superstructures",
-        "High-voltage overhead power transmission cables and beverage/packaging containers"
-      ],
-      downstreamSectors: ["AEROSPACE_AVIATION", "DEFENSE_ARMOR", "POWER_TRANSMISSION", "CONSTRUCTION"],
-      substitutionElasticity: 0.35,
-      substitutes: [
-        { name: "CARBON_FIBER_COMPOSITES", costPenalty: 4.50, conversionLagTicks: 40, maxCoverage: 0.30 },
-        { name: "HIGH_STRENGTH_STEEL", costPenalty: 0.90, conversionLagTicks: 15, maxCoverage: 0.40, weightPenalty: 2.8 }
-      ],
-      lackConsequences: {
-        shortTerm: "Aircraft assembly delays, packaging costs spike, automotive manufacturing backlogs",
-        mediumTerm: "Overhead power grid stringing halts, military vehicle armor fabrication stops",
-        catastrophic: "Aviation industrial collapse, transport sector modernization halt"
-      },
-      enrichmentDynamics: {
-        strategicLeverage: "Control of the energy-to-metal conversion nexus (Aluminum is 'solid electricity')",
-        sovereignWealth: "Industrialization catalyst when paired with abundant domestic hydro or nuclear power",
-        hazards: "Heavy power grid load (15 MWh per ton of aluminum), red mud toxic residue"
-      }
-    }
-  });
+  const RESOURCE_ONTOLOGY_MATRIX = {};
+  function syncCanonicalResourceOntology() {
+    const b = globalScope.OmegaResourceSemanticBridge;
+    const loaded = b?.ontology?.();
+    const root = loaded?.COMMODITY_ONTOLOGIES || loaded || {};
+    if (!root || typeof root !== 'object') return RESOURCE_ONTOLOGY_MATRIX;
+    for (const [k,v] of Object.entries(root)) RESOURCE_ONTOLOGY_MATRIX[k] = v;
+    return RESOURCE_ONTOLOGY_MATRIX;
+  }
 
   // ============================================================================
   // 4. MULTI-DOMAIN LEXICON & SEMANTIC CONCEPT PARSER
@@ -647,7 +398,7 @@ const _omegaExport = (function (globalScope) {
 
     getCountryProfile(isoOrName) {
       this.init();
-      if (!isoOrName) return this.allCountryProfiles['BGD'] || null;
+      if (!isoOrName) return null;
       const clean = String(isoOrName).toUpperCase().trim();
       if (this.allCountryProfiles[clean]) return this.allCountryProfiles[clean];
 
@@ -656,7 +407,7 @@ const _omegaExport = (function (globalScope) {
           return p;
         }
       }
-      return this.allCountryProfiles['BGD'] || null;
+      return null;
     },
 
     getEconomy(isoOrName) {
@@ -1835,34 +1586,15 @@ const _omegaExport = (function (globalScope) {
       // Stage 3: Dynamic Commodity Ontology Lookup & Physical Understanding
       stages.push(createStage(3, "COMMODITY_UNDERSTANDING", (ctx, os) => {
         ctx.commodityOntologies = [];
-        const aliasMap = {
-          "PETROLEUM": "CRUDE_OIL",
-          "OIL": "CRUDE_OIL",
-          "DIESEL": "CRUDE_OIL",
-          "GAS": "NATURAL_GAS",
-          "GASOLINE": "CRUDE_OIL",
-          "POTASH": "POTASH_PHOSPHATE",
-          "PHOSPHATE": "POTASH_PHOSPHATE",
-          "BAUXITE": "BAUXITE_ALUMINUM",
-          "ALUMINUM": "BAUXITE_ALUMINUM",
-          "RARE_EARTHS": "RARE_EARTHS",
-          "REE": "RARE_EARTHS",
-          "LITHIUM": "LITHIUM",
-          "COPPER": "COPPER",
-          "URANIUM": "URANIUM"
-        };
+        syncCanonicalResourceOntology();
+        const bridge = globalScope.OmegaResourceSemanticBridge;
         ctx.concepts.forEach(c => {
-          const mappedKey = aliasMap[c.token] || c.token;
-          if (RESOURCE_ONTOLOGY_MATRIX[mappedKey]) {
-            if (!ctx.commodityOntologies.some(o => o.name === RESOURCE_ONTOLOGY_MATRIX[mappedKey].name)) {
-              ctx.commodityOntologies.push(RESOURCE_ONTOLOGY_MATRIX[mappedKey]);
-            }
+          const hit = bridge?.resolveResource?.(c.token);
+          if (hit?.id) {
+            const ontology = RESOURCE_ONTOLOGY_MATRIX[hit.id];
+            if (ontology && !ctx.commodityOntologies.some(o => o === ontology || o.id === hit.id)) ctx.commodityOntologies.push(ontology);
           }
         });
-        if (ctx.commodityOntologies.length < 2) {
-          if (!ctx.commodityOntologies.some(o => o === RESOURCE_ONTOLOGY_MATRIX.CRUDE_OIL)) ctx.commodityOntologies.push(RESOURCE_ONTOLOGY_MATRIX.CRUDE_OIL);
-          if (!ctx.commodityOntologies.some(o => o === RESOURCE_ONTOLOGY_MATRIX.COPPER)) ctx.commodityOntologies.push(RESOURCE_ONTOLOGY_MATRIX.COPPER);
-        }
         return ctx;
       }));
 
