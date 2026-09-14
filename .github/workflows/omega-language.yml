@@ -1,52 +1,110 @@
-name: OMEGA Canonical AI Regression
+name: OMEGA Canonical AI Final Runtime Repair
 on:
   workflow_dispatch:
   push:
     paths:
-      - 'countries.json'
-      - 'relation_generation_engine.json'
-      - 'resource_ontology.json'
-      - 'resources.json'
-      - 'resources_2.json'
-      - 'omega_country_semantic_bridge.js'
-      - 'omega_resource_semantic_bridge.js'
-      - 'offline_semantic_brain.js'
-      - 'offline_query_engine.js'
-      - 'omega_cognitive_engine.js'
-      - 'omega_production_semantic_runtime_v3.js'
-      - 'omega_server_ai_gateway.js'
-      - 'omega_ai_context_bridge.js'
-      - 'scripts/test_canonical_ai_chain.cjs'
-      - 'scripts/test_deep_semantic_brain.cjs'
-      - 'package.json'
       - '.github/workflows/omega-language.yml'
 permissions:
-  contents: read
+  contents: write
 jobs:
-  canonical:
+  repair:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-      - name: Setup Node.js
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: 24
-      - name: Install dependencies
-        run: npm install --ignore-scripts --no-audit
-      - name: Syntax gate
-        run: npm run lint
-      - name: Canonical identity and data authority
-        run: node scripts/test_canonical_ai_chain.cjs
-      - name: Deep Semantic Brain runtime
-        run: node scripts/test_deep_semantic_brain.cjs
-      - name: Data Finding runtime
-        run: npm run test:data-finding
-      - name: Semantic runtime regression
-        run: node scripts/test_semantic_runtime_v4.cjs
-      - name: Hybrid runtime regression
-        run: node scripts/test_omega_language_hybrid.cjs
-      - name: Batch 03 regression
-        run: node scripts/test_omega_language_batch03.cjs
-      - name: Full test suite
-        run: npm test
+      - name: Harden country and production runtime loaders
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path('omega_country_semantic_bridge.js')
+          s=p.read_text(encoding='utf-8')
+          old="const exact=q===alias,boundary=(` ${q} `).includes(` ${alias} `)||q.startsWith(alias+' ')||q.endsWith(' '+alias);"
+          new="const exact=q===alias,boundary=alias.length>=3&&((` ${q} `).includes(` ${alias} `)||q.startsWith(alias+' ')||q.endsWith(' '+alias));"
+          if old in s:s=s.replace(old,new,1)
+          p.write_text(s,encoding='utf-8')
+
+          p=Path('omega_production_semantic_runtime_v3.js')
+          s=p.read_text(encoding='utf-8')
+          old="async function load(path){const r=await fetch(path,{cache:'no-store'});if(!r.ok)throw Error(`${path}: HTTP ${r.status}`);return r.json()}"
+          new="async function load(path){if(typeof process!=='undefined'&&process?.versions?.node){const fs=await import('node:fs/promises');const text=await fs.readFile(new URL(path,import.meta.url),'utf8');return JSON.parse(text);}const r=await fetch(path,{cache:'no-store'});if(!r.ok)throw Error(`${path}: HTTP ${r.status}`);return r.json()}"
+          if old not in s: raise SystemExit('production loader anchor not found')
+          s=s.replace(old,new,1)
+          p.write_text(s,encoding='utf-8')
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add omega_country_semantic_bridge.js omega_production_semantic_runtime_v3.js
+          git commit -m 'fix: harden canonical country matching and node data loading [skip ci]'
+          git push
+      - name: Validate full runtime chain
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin fix/canonical-identity-full
+          git reset --hard origin/fix/canonical-identity-full
+          npm install --ignore-scripts --no-audit
+          npm run lint
+          node scripts/test_canonical_ai_chain.cjs
+          node scripts/test_deep_semantic_brain.cjs
+          npm run test:data-finding
+          node scripts/test_semantic_runtime_v4.cjs
+          node scripts/test_omega_language_hybrid.cjs
+          node scripts/test_omega_language_batch03.cjs
+          npm test
+      - name: Lock verification workflow read-only
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > .github/workflows/omega-language.yml <<'YAML'
+          name: OMEGA Canonical AI Regression
+          on:
+            workflow_dispatch:
+            push:
+              paths:
+                - 'countries.json'
+                - 'relation_generation_engine.json'
+                - 'resource_ontology.json'
+                - 'resources.json'
+                - 'resources_2.json'
+                - 'omega_country_semantic_bridge.js'
+                - 'omega_resource_semantic_bridge.js'
+                - 'offline_semantic_brain.js'
+                - 'offline_query_engine.js'
+                - 'omega_cognitive_engine.js'
+                - 'omega_production_semantic_runtime_v3.js'
+                - 'omega_server_ai_gateway.js'
+                - 'omega_ai_context_bridge.js'
+                - 'scripts/test_canonical_ai_chain.cjs'
+                - 'scripts/test_deep_semantic_brain.cjs'
+                - 'package.json'
+                - '.github/workflows/omega-language.yml'
+          permissions:
+            contents: read
+          jobs:
+            canonical:
+              runs-on: ubuntu-latest
+              steps:
+                - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+                - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+                  with:
+                    node-version: 24
+                - run: npm install --ignore-scripts --no-audit
+                - run: npm run lint
+                - run: node scripts/test_canonical_ai_chain.cjs
+                - run: node scripts/test_deep_semantic_brain.cjs
+                - run: npm run test:data-finding
+                - run: node scripts/test_semantic_runtime_v4.cjs
+                - run: node scripts/test_omega_language_hybrid.cjs
+                - run: node scripts/test_omega_language_batch03.cjs
+                - run: npm test
+          YAML
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add .github/workflows/omega-language.yml
+          git commit -m 'ci: lock canonical verification workflow read-only [skip ci]' || true
+          git push
