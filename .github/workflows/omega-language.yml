@@ -1,87 +1,52 @@
-name: OMEGA Canonical AI Resource Repair
+name: OMEGA Canonical AI Regression
 on:
   workflow_dispatch:
   push:
     paths:
+      - 'countries.json'
+      - 'relation_generation_engine.json'
+      - 'resource_ontology.json'
+      - 'resources.json'
+      - 'resources_2.json'
+      - 'omega_country_semantic_bridge.js'
+      - 'omega_resource_semantic_bridge.js'
+      - 'offline_semantic_brain.js'
+      - 'offline_query_engine.js'
+      - 'omega_cognitive_engine.js'
+      - 'omega_production_semantic_runtime_v3.js'
+      - 'omega_server_ai_gateway.js'
+      - 'omega_ai_context_bridge.js'
+      - 'scripts/test_canonical_ai_chain.cjs'
+      - 'scripts/test_deep_semantic_brain.cjs'
+      - 'package.json'
       - '.github/workflows/omega-language.yml'
 permissions:
-  contents: write
+  contents: read
 jobs:
-  repair:
+  canonical:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-      - name: Ensure canonical country inflection resolver
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 - <<'PY'
-          from pathlib import Path
-          import re
-          p=Path('omega_country_semantic_bridge.js')
-          s=p.read_text(encoding='utf-8')
-          if 'qTokens=q.split(/\\s+/).filter(Boolean)' not in s:
-              pattern=r"function rankMatches\(text,map,contextCountryId=null\)\{.*?\nfunction resolveCountry"
-              replacement="""function rankMatches(text,map,contextCountryId=null){const q=N(text);if(!q)return[];const qTokens=q.split(/\\s+/).filter(Boolean);const hits=[];for(const[alias,ids]of map.entries()){if(!alias||alias.length<2)continue;const exact=q===alias,boundary=(` ${q} `).includes(` ${alias} `)||q.startsWith(alias+' ')||q.endsWith(' '+alias);let tokenMatch=false;if(!exact&&!boundary){const aTokens=alias.split(/\\s+/).filter(Boolean);tokenMatch=aTokens.length>0&&aTokens.every(at=>at.length>=3&&qTokens.some(qt=>qt===at||qt.startsWith(at)));}if(!exact&&!boundary&&!tokenMatch)continue;for(const id of ids instanceof Set?[...ids]:[ids]){const sameContext=contextCountryId&&S(id).split(':')[0]===S(contextCountryId).toUpperCase();const base=exact?1:(boundary?.995:(.82+.12*(alias.length/Math.max(alias.length,q.length))));hits.push({id,alias,score:Math.min(1,base+(sameContext?.004:0))});}}hits.sort((a,b)=>b.score-a.score||b.alias.length-a.alias.length||String(a.id).localeCompare(String(b.id)));return hits;}\nfunction resolveCountry"""
-              s,n=re.subn(pattern,replacement,s,count=1,flags=re.S)
-              if n!=1: raise SystemExit('country resolver migration anchor not found')
-          p.write_text(s,encoding='utf-8')
-          PY
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add omega_country_semantic_bridge.js
-          git commit -m 'fix: support inflected country aliases from canonical registry [skip ci]' || true
-          git push
-      - name: Ensure canonical resource alias ingestion
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 - <<'PY'
-          from pathlib import Path
-          import re
-          p=Path('omega_resource_semantic_bridge.js')
-          s=p.read_text(encoding='utf-8')
-          if "['aliases','alias_names','altNames','alternateNames','forms','names']" not in s:
-              pattern=r"function registerResourceType\(raw,key=''\)\{.*?\n  function ingestOntology"
-              replacement="""function registerResourceType(raw,key=''){if(raw==null)return null;const id=TOKEN(first(raw,['id','key','resource_id','resourceTypeId'])||key);if(!id)return null;const names=[];if(O(raw))for(const k of ['name','resourceName','canonicalName','displayName','label','name_en','name_bn'])if(typeof raw[k]==='string'&&raw[k].trim())names.push(raw[k]);if(O(raw))for(const k of ['aliases','alias_names','altNames','alternateNames','forms','names'])for(const x of A(raw[k]))if(typeof x==='string'&&x.trim())names.push(x);names.push(key,id);const old=state.resources.get(id);const entry={id,names:[...new Set([...(old?.names||[]),...names])],raw:O(raw)?C(raw):{id:key,name:raw}};state.resources.set(id,entry);for(const n of entry.names){addAlias(state.resourceAliases,n,id);addAlias(state.resourceAliases,String(n).replace(/_/g,' '),id);}return entry;}\n  function ingestOntology"""
-              s,n=re.subn(pattern,replacement,s,count=1,flags=re.S)
-              if n!=1: raise SystemExit('resource alias migration anchor not found')
-          p.write_text(s,encoding='utf-8')
-          PY
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add omega_resource_semantic_bridge.js
-          git commit -m 'fix: ingest resource aliases from canonical data [skip ci]' || true
-          git push
-      - name: Ensure canonical crude oil aliases
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 - <<'PY'
-          from pathlib import Path
-          import re
-          p=Path('resource_ontology.json')
-          s=p.read_text(encoding='utf-8')
-          anchor='"CRUDE_OIL": {\n      "key": "CRUDE_OIL",\n      "name": "Crude Petroleum & Hydrocarbons",'
-          replacement='"CRUDE_OIL": {\n      "key": "CRUDE_OIL",\n      "name": "Crude Petroleum & Hydrocarbons",\n      "aliases": ["Crude Petroleum & Hydrocarbons", "Crude Oil", "crude oil", "oil", "petroleum", "তেল", "খনিজ তেল", "পেট্রোলিয়াম"],'
-          if anchor in s and '"aliases": ["Crude Petroleum & Hydrocarbons"' not in s.split('"NATURAL_GAS"',1)[0]:
-              s=s.replace(anchor,replacement,1)
-          p.write_text(s,encoding='utf-8')
-          PY
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add resource_ontology.json
-          git commit -m 'data: add canonical crude oil aliases [skip ci]' || true
-          git push
-      - name: Validate current branch
-        shell: bash
-        run: |
-          set -euo pipefail
-          git fetch origin fix/canonical-identity-full
-          git reset --hard origin/fix/canonical-identity-full
-          npm install --ignore-scripts --no-audit
-          npm run lint
-          node scripts/test_canonical_ai_chain.cjs
-          node scripts/test_deep_semantic_brain.cjs
-      - name: Lock workflow read-only
-        run: exit 0
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+      - name: Install dependencies
+        run: npm install --ignore-scripts --no-audit
+      - name: Syntax gate
+        run: npm run lint
+      - name: Canonical identity and data authority
+        run: node scripts/test_canonical_ai_chain.cjs
+      - name: Deep Semantic Brain runtime
+        run: node scripts/test_deep_semantic_brain.cjs
+      - name: Data Finding runtime
+        run: npm run test:data-finding
+      - name: Semantic runtime regression
+        run: node scripts/test_semantic_runtime_v4.cjs
+      - name: Hybrid runtime regression
+        run: node scripts/test_omega_language_hybrid.cjs
+      - name: Batch 03 regression
+        run: node scripts/test_omega_language_batch03.cjs
+      - name: Full test suite
+        run: npm test
