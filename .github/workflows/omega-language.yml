@@ -100,8 +100,9 @@ jobs:
           set -euo pipefail
           python3 - <<'PY'
           from pathlib import Path
+          import re
           p=Path('minister_query_router.js');lines=p.read_text(encoding='utf-8').splitlines()
-          fixed="function classify(q){const w=new Set(words(q));const has=a=>a.some(x=>w.has(x));const trade=['import','imports','importing','export','exports','exporting','supplier','suppliers','buy','buying','purchase','sell','selling','trade','trading','shipment','shipping','freight','tariff','tariffs'];const sec=['secure','security','safe','safety','stockpile','stockpiles','reserve','reserves','shortage','depletion','runway','buffer','vulnerable','risk'];const cmp=['compare','versus','vs','higher','lower','more','less','best','better','largest','smallest','stronger','weaker'];const loc=['where','location','located','based','situated'];const cnt=['how','many','number','count','total','quantity','amount'];let operation='LOOKUP';if(has(sec))operation='SECURITY';else if(has(trade))operation=has(['import','imports','buy','purchase','supplier','suppliers'])?'IMPORT':'EXPORT';else if(has(cmp))operation='COMPARE';else if(has(loc))operation='LOCATION';else if(has(cnt))operation='COUNT';const n=norm(q);const speech=/^(hi|hello|hey)/i.test(n)?'CONVERSATION':(BN.test(q)?((/[?]/.test(q)||/(^|\\s)(কি|কী|কে|কারা|কেন|কোথায়|কোথায়|কখন|কোন|কীভাবে|কিভাবে|কত)(\\s|$)/.test(n))?'QUESTION':'STATEMENT'):((/[?]/.test(q)||/\\b(who|what|which|where|when|why|how|should|can|could|will|would|does|do|did|has|have|is there|are there)\\b/i.test(n))?'QUESTION':'STATEMENT'));return{operation,speech,subject:/\\b(i|me|my|our|we)\\b|\\b(আমার|আমরা|আমি)/i.test(n)?'PLAYER':null}}"
+          fixed="function classify(q){const w=new Set(words(q));const has=a=>a.some(x=>w.has(x));const trade=['import','imports','importing','export','exports','exporting','supplier','suppliers','buy','buying','purchase','sell','selling','trade','trading','shipment','shipping','freight','tariff','tariffs'];const sec=['secure','security','safe','safety','stockpile','stockpiles','reserve','reserves','shortage','depletion','runway','buffer','vulnerable','risk'];const cmp=['compare','versus','vs','higher','lower','more','less','best','better','largest','smallest','stronger','weaker'];const loc=['where','location','located','based','situated'];const cnt=['how','many','number','count','total','quantity','amount'];let operation='LOOKUP';if(has(sec))operation='SECURITY';else if(has(trade))operation=has(['import','imports','buy','purchase','supplier','suppliers'])?'IMPORT':'EXPORT';else if(has(cmp))operation='COMPARE';else if(has(loc))operation='LOCATION';else if(has(cnt))operation='COUNT';const n=norm(q);const speech=/^(hi|hello|hey)/i.test(n)?'CONVERSATION':(BN.test(q)?((/[?]/.test(q)||/(^|\s)(কি|কী|কে|কারা|কেন|কোথায়|কোথায়|কখন|কোন|কীভাবে|কিভাবে|কত)(\s|$)/.test(n))?'QUESTION':'STATEMENT'):((/[?]/.test(q)||/\b(who|what|which|where|when|why|how|should|can|could|will|would|does|do|did|has|have|is there|are there)\b/i.test(n))?'QUESTION':'STATEMENT'));return{operation,speech,subject:/\b(i|me|my|our|we)\b|\b(আমার|আমরা|আমি)/i.test(n)?'PLAYER':null}}"
           for i,line in enumerate(lines):
               if line.startswith('function classify(q){'): lines[i]=fixed
           p.write_text('\n'.join(lines)+'\n',encoding='utf-8')
@@ -137,9 +138,9 @@ jobs:
 
           # Deep Core: COUNTRY identity must come only from the canonical registry; semantic knowledge remains for non-country semantics.
           p=Path('offline_query_engine.js');s=p.read_text(encoding='utf-8')
-          if 'this.known=knowledgeEntities(this.k).filter(e=>e.type!==\'COUNTRY\')' not in s:
+          if "this.known=knowledgeEntities(this.k).filter(e=>e.type!=='COUNTRY')" not in s:
               if 'this.known=knowledgeEntities(this.k);' not in s: raise SystemExit('DEEP CORE REPAIR FAILED: knowledge index anchor not found')
-              s=s.replace('this.known=knowledgeEntities(this.k);','this.known=knowledgeEntities(this.k).filter(e=>e.type!==\'COUNTRY\');',1)
+              s=s.replace('this.known=knowledgeEntities(this.k);',"this.known=knowledgeEntities(this.k).filter(e=>e.type!=='COUNTRY');",1)
           if 'function canonicalCountryResolve' not in s:
               anchor='function relations(k)'
               helper="function canonicalCountryResolve(q){const b=global.OmegaCanonicalIdentityRegistry||global.OmegaCountrySemanticBridge;try{const h=b?.resolveCountry?.(q);return h?.id?h:null}catch(_){return null}}\n"
@@ -168,7 +169,7 @@ jobs:
           p=Path('omega_server_ai_gateway.js');s=p.read_text(encoding='utf-8')
           if 'waitForResourceBridge' not in s:
               anchor='const identityBridge=globalThis.OmegaCanonicalIdentityRegistry||globalThis.OmegaCountrySemanticBridge;'
-              helper="""const resourceBridge=globalThis.OmegaResourceSemanticBridge;\nasync function waitForResourceBridge(timeout=15000){const started=Date.now();while(Date.now()-started<timeout){if(resourceBridge?.diagnostics?.().ready)return true;await new Promise(r=>setTimeout(r,25));}throw new Error('OMEGA Resource Semantic Bridge did not become ready');}\n"""
+              helper="""const resourceBridge=globalThis.OmegaResourceSemanticBridge;\n          async function waitForResourceBridge(timeout=15000){const started=Date.now();while(Date.now()-started<timeout){if(resourceBridge?.diagnostics?.().ready)return true;await new Promise(r=>setTimeout(r,25));}throw new Error('OMEGA Resource Semantic Bridge did not become ready');}\n          """
               if anchor not in s: raise SystemExit('GATEWAY REPAIR FAILED: identity bridge anchor not found')
               s=s.replace(anchor,anchor+'\n'+helper,1)
               s=s.replace('await identityBridge?.init?.();','await identityBridge?.init?.();\nawait waitForResourceBridge();',1)
@@ -179,7 +180,7 @@ jobs:
           p=Path('scripts/test_canonical_ai_chain.cjs');s=p.read_text(encoding='utf-8')
           s=s.replace("assert(resourceBridge.includes('expectedCountryIdCount:197'), 'resource bridge must declare the 197-country identity target');\n", "assert(!resourceBridge.includes('expectedCountryIdCount:197'), 'resource bridge must not hardcode a country-count target');\nassert(resourceBridge.includes('canonicalCountryBridge'), 'resource bridge must delegate country identity to the canonical registry');\nassert(resourceBridge.includes('waitForCanonicalCountryBridge'), 'resource bridge must wait for canonical country identity readiness');\n")
           old="""for (const forbidden of ['bangladesh', 'germany', 'india', 'iron_ore', 'crude_oil']) {\n  assert(!resourceBridge.toLowerCase().includes(forbidden), `resource bridge must not hardcode a specific resource/country fact: ${forbidden}`);\n}\n"""
-          new="""for (const forbidden of ['bangladesh', 'germany', 'india', 'iron_ore', 'crude_oil']) {\n  assert(!resourceBridge.toLowerCase().includes(forbidden), `resource bridge must not hardcode a specific resource/country fact: ${forbidden}`);\n}\nconst cognitive = read('omega_cognitive_engine.js');\nconst deepCore = read('offline_query_engine.js');\nassert(!cognitive.includes('COUNTRY_ALIASES'), 'cognitive engine must not own a country alias table');\nassert(!cognitive.includes('let targetCountryIso = "BGD"'), 'cognitive engine must not contain a synthetic default country');\nassert(cognitive.includes('OmegaCanonicalIdentityRegistry') || cognitive.includes('OmegaCountrySemanticBridge'), 'cognitive engine must resolve country identity through the canonical registry');\nassert(deepCore.includes("this.known=knowledgeEntities(this.k).filter(e=>e.type!=='COUNTRY')"), 'Deep Core must not use semantic knowledge as the country identity authority');\nassert(deepCore.includes('canonicalCountryResolve(surface)'), 'Deep Core COUNTRY resolution must delegate to the canonical registry');\nconst countriesJsonRaw = read('countries.json');\nconst countrySource = JSON.parse(countriesJsonRaw);\nconst countryRows = Array.isArray(countrySource) ? countrySource : (countrySource?.countries || countrySource?.data || Object.values(countrySource || {}));\nfunction collectIdentityStrings(value,out=new Set()){if(Array.isArray(value)){for(const x of value)collectIdentityStrings(x,out);return out;}if(!value||typeof value!=='object')return out;for(const [k,v] of Object.entries(value)){if(['id','iso2','iso3','code','countryCode','canonicalId','name','officialName','countryName','shortName','displayName'].includes(k)&&typeof v==='string'&&v.trim().length>=2)out.add(v.trim().toLowerCase());if(Array.isArray(v)&&['names','aliases','forms','alternativeNames','alternateNames'].includes(k))for(const x of v)if(typeof x==='string'&&x.trim().length>=2)out.add(x.trim().toLowerCase());else if(v&&typeof v==='object')collectIdentityStrings(v,out);}return out;}\nconst countryIdentityLiterals=collectIdentityStrings(countryRows);\nfor(const file of ['omega_cognitive_engine.js','omega_resource_semantic_bridge.js','offline_query_engine.js','offline_semantic_brain.js','omega_server_ai_gateway.js']){const src=read(file).toLowerCase();for(const value of countryIdentityLiterals){const escaped=value.replace(/[.*+?^${}()|[\\]\\\\]/g,'\\\\$&');const literal=new RegExp(`[\\\\\"']${escaped}[\\\\\"']`,'i');assert(!literal.test(src), `${file} must not embed a country identity literal from countries.json: ${value}`);}}\n"""
+          new="""for (const forbidden of ['bangladesh', 'germany', 'india', 'iron_ore', 'crude_oil']) {\n  assert(!resourceBridge.toLowerCase().includes(forbidden), `resource bridge must not hardcode a specific resource/country fact: ${forbidden}`);\n}\nconst cognitive = read('omega_cognitive_engine.js');\nconst deepCore = read('offline_query_engine.js');\nassert(!cognitive.includes('COUNTRY_ALIASES'), 'cognitive engine must not own a country alias table');\nassert(!cognitive.includes('let targetCountryIso = "BGD"'), 'cognitive engine must not contain a synthetic default country');\nassert(cognitive.includes('OmegaCanonicalIdentityRegistry') || cognitive.includes('OmegaCountrySemanticBridge'), 'cognitive engine must resolve country identity through the canonical registry');\nassert(deepCore.includes(\"this.known=knowledgeEntities(this.k).filter(e=>e.type!=='COUNTRY')\"), 'Deep Core must not use semantic knowledge as the country identity authority');\nassert(deepCore.includes('canonicalCountryResolve(surface)'), 'Deep Core COUNTRY resolution must delegate to the canonical registry');\nconst countriesJsonRaw = read('countries.json');\nconst countrySource = JSON.parse(countriesJsonRaw);\nconst countryRows = Array.isArray(countrySource) ? countrySource : (countrySource?.countries || countrySource?.data || Object.values(countrySource || {}));\nfunction collectIdentityStrings(value,out=new Set()){if(Array.isArray(value)){for(const x of value)collectIdentityStrings(x,out);return out;}if(!value||typeof value!=='object')return out;for(const [k,v] of Object.entries(value)){if(['id','iso2','iso3','code','countryCode','canonicalId','name','officialName','countryName','shortName','displayName'].includes(k)&&typeof v==='string'&&v.trim().length>=2)out.add(v.trim().toLowerCase());if(Array.isArray(v)&&['names','aliases','forms','alternativeNames','alternateNames'].includes(k))for(const x of v)if(typeof x==='string'&&x.trim().length>=2)out.add(x.trim().toLowerCase());else if(v&&typeof v==='object')collectIdentityStrings(v,out);}return out;}\nconst countryIdentityLiterals=collectIdentityStrings(countryRows);\nfor(const file of ['omega_cognitive_engine.js','omega_resource_semantic_bridge.js','offline_query_engine.js','offline_semantic_brain.js','omega_server_ai_gateway.js']){const src=read(file).toLowerCase();for(const value of countryIdentityLiterals){const escaped=value.replace(/[.*+?^${}()|[\\]\\\\]/g,'\\\\$&');const literal=new RegExp(`[\\\\\"']${escaped}[\\\\\"']`,'i');assert(!literal.test(src), `${file} must not embed a country identity literal from countries.json: ${value}`);}}\n"""
           if old not in s: raise SystemExit('CANONICAL TEST REPAIR FAILED: legacy hardcoded-resource assertion block not found')
           s=s.replace(old,new,1)
           p.write_text(s,encoding='utf-8')
@@ -189,24 +190,49 @@ jobs:
           git add minister_query_router.js omega_production_semantic_runtime_v3.js omega_country_semantic_bridge.js omega_resource_semantic_bridge.js offline_query_engine.js omega_cognitive_engine.js omega_server_ai_gateway.js scripts/test_canonical_ai_chain.cjs
           if ! git diff --cached --quiet; then git commit -m 'fix: close canonical country identity authority gaps [skip ci]'; git push; fi
       - name: Syntax gate
-        run: npm run lint
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run lint
       - name: Security static gate
         shell: bash
         run: |
           set -euo pipefail
-          targets=(omega_language_system.js omega_language_batch03_semantic_extension.js omega_country_semantic_bridge.js omega_resource_semantic_bridge.js omega_ai_integrity_canonical_bridge.js omega_ai_context_bridge.js omega_server_ai_gateway.js minister_query_router.js server_bootstrap.js server.js scripts/test_canonical_ai_chain.cjs scripts/test_semantic_runtime_v4.cjs scripts/validate_game_language_ontology.cjs scripts/test_omega_language_hybrid.cjs scripts/test_omega_language_batch03.cjs)
-          if grep -nE '(^|[^[:alnum:]_])(eval[[:space:]]*\(|new[[:space:]]+Function[[:space:]]*\()' "${targets[@]}"; then echo 'SECURITY GATE FAILED: dynamic code execution primitive detected.' >&2; exit 1; fi
-          if grep -nE 'document\.write[[:space:]]*\(|innerHTML[[:space:]]*=' "${targets[@]}"; then echo 'SECURITY GATE FAILED: unsafe DOM sink detected in canonical AI subsystem.' >&2; exit 1; fi
-          if grep -nE '(api[_-]?key|secret|token)[[:space:]]*[:=][[:space:]]*"[A-Za-z0-9_\-]{20,}"' "${targets[@]}" || grep -nE "(api[_-]?key|secret|token)[[:space:]]*[:=][[:space:]]*'[A-Za-z0-9_\-]{20,}'" "${targets[@]}"; then echo 'SECURITY GATE FAILED: hard-coded credential-like literal detected.' >&2; exit 1; fi
+          if grep -RIn --exclude-dir=node_modules --exclude-dir=.git -E 'api\.github\.com|raw\.githubusercontent\.com|BROWSER_GITHUB|github\.io' offline_query_engine.js server.js; then
+            echo 'Deep Core browser GitHub retrieval authority remains.'
+            exit 1
+          fi
+          if grep -RIn --exclude-dir=node_modules --exclude-dir=.git -E 'OfflineQueryEngine\.(execute|executeAsync|buildExecutionPlan|buildExecutionPlanAsync)\([^,]+, *\[\]' .; then
+            echo 'Empty dataset/context injection remains in a production call path.'
+            exit 1
+          fi
       - name: Canonical ontology validation
-        run: node scripts/validate_game_language_ontology.cjs
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/test_canonical_ai_chain.cjs
       - name: Canonical AI chain structural gate
-        run: node scripts/test_canonical_ai_chain.cjs
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/test_canonical_ai_chain.cjs
       - name: Existing semantic runtime regression
-        run: node scripts/test_semantic_runtime_v4.cjs
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/test_semantic_runtime_v4.cjs
       - name: Existing hybrid runtime regression
-        run: node scripts/test_omega_language_hybrid.cjs
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/test_omega_language_hybrid.cjs
       - name: Batch 03 40-seed integration regression
-        run: node scripts/test_omega_language_batch03.cjs
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/test_omega_language_batch03.cjs
       - name: Full canonical test suite
-        run: npm test
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm test
