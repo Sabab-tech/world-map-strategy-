@@ -1,13 +1,22 @@
 (async () => {
   const assert = require('node:assert/strict');
   const fs = require('node:fs');
+  await import('../omega_country_semantic_bridge.js');
+  const countryRegistry = globalThis.OmegaCanonicalIdentityRegistry || globalThis.OmegaCountrySemanticBridge;
+  assert.ok(countryRegistry, 'Canonical country identity registry must initialize');
+  assert.equal(await countryRegistry.init(), true, 'Canonical country identity registry must load');
+  await import('../omega_resource_semantic_bridge.js');
+  const resourceBridge = globalThis.OmegaResourceSemanticBridge;
+  assert.ok(resourceBridge, 'Canonical resource bridge must initialize');
+  await resourceBridge.init?.();
   await import('../offline_semantic_brain.js');
   const brain = globalThis.OfflineSemanticBrain;
   assert.ok(brain, 'OfflineSemanticBrain must initialize');
   const datasets = ['resources.json','resources_2.json'].filter(fs.existsSync).map(f => JSON.parse(fs.readFileSync(f,'utf8')));
   const vocabulary = JSON.parse(fs.readFileSync('offline_language_vocabulary.json','utf8'));
   const runtime = brain.configure({datasets,vocabulary});
-  assert.ok(runtime.countries >= 190, `Expected global country registry, got ${runtime.countries}`);
+  assert.equal(runtime.countries, countryRegistry.exportData().countries.length, 'Semantic Brain country count must come from canonical registry');
+  assert.ok(runtime.countries >= 190, `Expected complete global country registry, got ${runtime.countries}`);
   const iron = runtime.resources.find(r => r.names.some(n => /iron/i.test(n)));
   const oil = runtime.resources.find(r => r.names.some(n => /oil|petroleum|crude/i.test(n)));
   assert.ok(iron, 'Runtime resource registry must contain an iron-like resource');

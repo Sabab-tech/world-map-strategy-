@@ -1569,5 +1569,788 @@
       "Portugal",
       "PRT"
     ]
+  },
+  {
+    "code": "AG",
+    "name": "ANTIGUA AND BARBUDA",
+    "canonicalId": "AG",
+    "aliases": [
+      "ANTIGUA AND BARBUDA",
+      "AG"
+    ]
+  },
+  {
+    "code": "BS",
+    "name": "BAHAMAS",
+    "canonicalId": "BS",
+    "aliases": [
+      "BAHAMAS",
+      "BS"
+    ]
+  },
+  {
+    "code": "BB",
+    "name": "BARBADOS",
+    "canonicalId": "BB",
+    "aliases": [
+      "BARBADOS",
+      "BB"
+    ]
+  },
+  {
+    "code": "BY",
+    "name": "BELARUS",
+    "canonicalId": "BY",
+    "aliases": [
+      "BELARUS",
+      "BY"
+    ]
+  },
+  {
+    "code": "BZ",
+    "name": "BELIZE",
+    "canonicalId": "BZ",
+    "aliases": [
+      "BELIZE",
+      "BZ"
+    ]
+  },
+  {
+    "code": "BJ",
+    "name": "BENIN",
+    "canonicalId": "BJ",
+    "aliases": [
+      "BENIN",
+      "BJ"
+    ]
+  },
+  {
+    "code": "BT",
+    "name": "BHUTAN",
+    "canonicalId": "BT",
+    "aliases": [
+      "BHUTAN",
+      "BT"
+    ]
+  },
+  {
+    "code": "BO",
+    "name": "BOLIVIA",
+    "canonicalId": "BO",
+    "aliases": [
+      "BOLIVIA",
+      "BO"
+    ]
+  },
+  {
+    "code": "BA",
+    "name": "BOSNIA AND HERZEGOVINA",
+    "canonicalId": "BA",
+    "aliases": [
+      "BOSNIA AND HERZEGOVINA",
+      "BA"
+    ]
+  },
+  {
+    "code": "BW",
+    "name": "BOTSWANA",
+    "canonicalId": "BW",
+    "aliases": [
+      "BOTSWANA",
+      "BW"
+    ]
+  },
+  {
+    "code": "BN",
+    "name": "BRUNEI",
+    "canonicalId": "BN",
+    "aliases": [
+      "BRUNEI",
+      "BN"
+    ]
+  },
+  {
+    "code": "BG",
+    "name": "BULGARIA",
+    "canonicalId": "BG",
+    "aliases": [
+      "BULGARIA",
+      "BG"
+    ]
+  },
+  {
+    "code": "CV",
+    "name": "CABO VERDE",
+    "canonicalId": "CV",
+    "aliases": [
+      "CABO VERDE",
+      "CV"
+    ]
+  },
+  {
+    "code": "KH",
+    "name": "CAMBODIA",
+    "canonicalId": "KH",
+    "aliases": [
+      "CAMBODIA",
+      "KH"
+    ]
+  },
+  {
+    "code": "CF",
+    "name": "CENTRAL AFRICAN REPUBLIC",
+    "canonicalId": "CF",
+    "aliases": [
+      "CENTRAL AFRICAN REPUBLIC",
+      "CF"
+    ]
+  },
+  {
+    "code": "TD",
+    "name": "CHAD",
+    "canonicalId": "TD",
+    "aliases": [
+      "CHAD",
+      "TD"
+    ]
+  },
+  {
+    "code": "KM",
+    "name": "COMOROS",
+    "canonicalId": "KM",
+    "aliases": [
+      "COMOROS",
+      "KM"
+    ]
+  },
+  {
+    "code": "CR",
+    "name": "COSTA RICA",
+    "canonicalId": "CR",
+    "aliases": [
+      "COSTA RICA",
+      "CR"
+    ]
+  },
+  {
+    "code": "HR",
+    "name": "CROATIA",
+    "canonicalId": "HR",
+    "aliases": [
+      "CROATIA",
+      "HR"
+    ]
+  },
+  {
+    "code": "CY",
+    "name": "CYPRUS",
+    "canonicalId": "CY",
+    "aliases": [
+      "CYPRUS",
+      "CY"
+    ]
+  },
+  {
+    "code": "CZ",
+    "name": "CZECH REPUBLIC",
+    "canonicalId": "CZ",
+    "aliases": [
+      "CZECH REPUBLIC",
+      "CZ"
+    ]
+  },
+  {
+    "code": "DK",
+    "name": "DENMARK",
+    "canonicalId": "DK",
+    "aliases": [
+      "DENMARK",
+      "DK"
+    ]
+  },
+  {
+    "code": "DJ",
+    "name": "DJIBOUTI",
+    "canonicalId": "DJ",
+    "aliases": [
+      "DJIBOUTI",
+      "DJ"
+    ]
+  },
+  {
+    "code": "DM",
+    "name": "DOMINICA",
+    "canonicalId": "DM",
+    "aliases": [
+      "DOMINICA",
+      "DM"
+    ]
+  },
+  {
+    "code": "TL",
+    "name": "EAST TIMOR (TIMOR-LESTE)",
+    "canonicalId": "TL",
+    "aliases": [
+      "EAST TIMOR (TIMOR-LESTE)",
+      "TL"
+    ]
+  },
+  {
+    "code": "EC",
+    "name": "ECUADOR",
+    "canonicalId": "EC",
+    "aliases": [
+      "ECUADOR",
+      "EC"
+    ]
+  },
+  {
+    "code": "SV",
+    "name": "EL SALVADOR",
+    "canonicalId": "SV",
+    "aliases": [
+      "EL SALVADOR",
+      "SV"
+    ]
+  },
+  {
+    "code": "GQ",
+    "name": "EQUATORIAL GUINEA",
+    "canonicalId": "GQ",
+    "aliases": [
+      "EQUATORIAL GUINEA",
+      "GQ"
+    ]
+  },
+  {
+    "code": "ER",
+    "name": "ERITREA",
+    "canonicalId": "ER",
+    "aliases": [
+      "ERITREA",
+      "ER"
+    ]
+  },
+  {
+    "code": "EE",
+    "name": "ESTONIA",
+    "canonicalId": "EE",
+    "aliases": [
+      "ESTONIA",
+      "EE"
+    ]
+  },
+  {
+    "code": "SZ",
+    "name": "ESWATINI",
+    "canonicalId": "SZ",
+    "aliases": [
+      "ESWATINI",
+      "SZ"
+    ]
+  },
+  {
+    "code": "GM",
+    "name": "GAMBIA",
+    "canonicalId": "GM",
+    "aliases": [
+      "GAMBIA",
+      "GM"
+    ]
+  },
+  {
+    "code": "GE",
+    "name": "GEORGIA",
+    "canonicalId": "GE",
+    "aliases": [
+      "GEORGIA",
+      "GE"
+    ]
+  },
+  {
+    "code": "GD",
+    "name": "GRENADA",
+    "canonicalId": "GD",
+    "aliases": [
+      "GRENADA",
+      "GD"
+    ]
+  },
+  {
+    "code": "GT",
+    "name": "GUATEMALA",
+    "canonicalId": "GT",
+    "aliases": [
+      "GUATEMALA",
+      "GT"
+    ]
+  },
+  {
+    "code": "GN",
+    "name": "GUINEA",
+    "canonicalId": "GN",
+    "aliases": [
+      "GUINEA",
+      "GN"
+    ]
+  },
+  {
+    "code": "GW",
+    "name": "GUINEA-BISSAU",
+    "canonicalId": "GW",
+    "aliases": [
+      "GUINEA-BISSAU",
+      "GW"
+    ]
+  },
+  {
+    "code": "GY",
+    "name": "GUYANA",
+    "canonicalId": "GY",
+    "aliases": [
+      "GUYANA",
+      "GY"
+    ]
+  },
+  {
+    "code": "HN",
+    "name": "HONDURAS",
+    "canonicalId": "HN",
+    "aliases": [
+      "HONDURAS",
+      "HN"
+    ]
+  },
+  {
+    "code": "HU",
+    "name": "HUNGARY",
+    "canonicalId": "HU",
+    "aliases": [
+      "HUNGARY",
+      "HU"
+    ]
+  },
+  {
+    "code": "IE",
+    "name": "IRELAND",
+    "canonicalId": "IE",
+    "aliases": [
+      "IRELAND",
+      "IE"
+    ]
+  },
+  {
+    "code": "JM",
+    "name": "JAMAICA",
+    "canonicalId": "JM",
+    "aliases": [
+      "JAMAICA",
+      "JM"
+    ]
+  },
+  {
+    "code": "KI",
+    "name": "KIRIBATI",
+    "canonicalId": "KI",
+    "aliases": [
+      "KIRIBATI",
+      "KI"
+    ]
+  },
+  {
+    "code": "KP",
+    "name": "NORTH KOREA",
+    "canonicalId": "KP",
+    "aliases": [
+      "NORTH KOREA",
+      "KP"
+    ]
+  },
+  {
+    "code": "XK",
+    "name": "KOSOVO",
+    "canonicalId": "XK",
+    "aliases": [
+      "KOSOVO",
+      "XK"
+    ]
+  },
+  {
+    "code": "LA",
+    "name": "LAOS",
+    "canonicalId": "LA",
+    "aliases": [
+      "LAOS",
+      "LA"
+    ]
+  },
+  {
+    "code": "LV",
+    "name": "LATVIA",
+    "canonicalId": "LV",
+    "aliases": [
+      "LATVIA",
+      "LV"
+    ]
+  },
+  {
+    "code": "LS",
+    "name": "LESOTHO",
+    "canonicalId": "LS",
+    "aliases": [
+      "LESOTHO",
+      "LS"
+    ]
+  },
+  {
+    "code": "LR",
+    "name": "LIBERIA",
+    "canonicalId": "LR",
+    "aliases": [
+      "LIBERIA",
+      "LR"
+    ]
+  },
+  {
+    "code": "LI",
+    "name": "LIECHTENSTEIN",
+    "canonicalId": "LI",
+    "aliases": [
+      "LIECHTENSTEIN",
+      "LI"
+    ]
+  },
+  {
+    "code": "LT",
+    "name": "LITHUANIA",
+    "canonicalId": "LT",
+    "aliases": [
+      "LITHUANIA",
+      "LT"
+    ]
+  },
+  {
+    "code": "LU",
+    "name": "LUXEMBOURG",
+    "canonicalId": "LU",
+    "aliases": [
+      "LUXEMBOURG",
+      "LU"
+    ]
+  },
+  {
+    "code": "MW",
+    "name": "MALAWI",
+    "canonicalId": "MW",
+    "aliases": [
+      "MALAWI",
+      "MW"
+    ]
+  },
+  {
+    "code": "MT",
+    "name": "MALTA",
+    "canonicalId": "MT",
+    "aliases": [
+      "MALTA",
+      "MT"
+    ]
+  },
+  {
+    "code": "MH",
+    "name": "MARSHALL ISLANDS",
+    "canonicalId": "MH",
+    "aliases": [
+      "MARSHALL ISLANDS",
+      "MH"
+    ]
+  },
+  {
+    "code": "MR",
+    "name": "MAURITANIA",
+    "canonicalId": "MR",
+    "aliases": [
+      "MAURITANIA",
+      "MR"
+    ]
+  },
+  {
+    "code": "MU",
+    "name": "MAURITIUS",
+    "canonicalId": "MU",
+    "aliases": [
+      "MAURITIUS",
+      "MU"
+    ]
+  },
+  {
+    "code": "FM",
+    "name": "MICRONESIA",
+    "canonicalId": "FM",
+    "aliases": [
+      "MICRONESIA",
+      "FM"
+    ]
+  },
+  {
+    "code": "MD",
+    "name": "MOLDOVA",
+    "canonicalId": "MD",
+    "aliases": [
+      "MOLDOVA",
+      "MD"
+    ]
+  },
+  {
+    "code": "MN",
+    "name": "MONGOLIA",
+    "canonicalId": "MN",
+    "aliases": [
+      "MONGOLIA",
+      "MN"
+    ]
+  },
+  {
+    "code": "ME",
+    "name": "MONTENEGRO",
+    "canonicalId": "ME",
+    "aliases": [
+      "MONTENEGRO",
+      "ME"
+    ]
+  },
+  {
+    "code": "NA",
+    "name": "NAMIBIA",
+    "canonicalId": "NA",
+    "aliases": [
+      "NAMIBIA",
+      "NA"
+    ]
+  },
+  {
+    "code": "NR",
+    "name": "NAURU",
+    "canonicalId": "NR",
+    "aliases": [
+      "NAURU",
+      "NR"
+    ]
+  },
+  {
+    "code": "NI",
+    "name": "NICARAGUA",
+    "canonicalId": "NI",
+    "aliases": [
+      "NICARAGUA",
+      "NI"
+    ]
+  },
+  {
+    "code": "MK",
+    "name": "NORTH MACEDONIA",
+    "canonicalId": "MK",
+    "aliases": [
+      "NORTH MACEDONIA",
+      "MK"
+    ]
+  },
+  {
+    "code": "PW",
+    "name": "PALAU",
+    "canonicalId": "PW",
+    "aliases": [
+      "PALAU",
+      "PW"
+    ]
+  },
+  {
+    "code": "PA",
+    "name": "PANAMA",
+    "canonicalId": "PA",
+    "aliases": [
+      "PANAMA",
+      "PA"
+    ]
+  },
+  {
+    "code": "PY",
+    "name": "PARAGUAY",
+    "canonicalId": "PY",
+    "aliases": [
+      "PARAGUAY",
+      "PY"
+    ]
+  },
+  {
+    "code": "KN",
+    "name": "SAINT KITTS AND NEVIS",
+    "canonicalId": "KN",
+    "aliases": [
+      "SAINT KITTS AND NEVIS",
+      "KN"
+    ]
+  },
+  {
+    "code": "LC",
+    "name": "SAINT LUCIA",
+    "canonicalId": "LC",
+    "aliases": [
+      "SAINT LUCIA",
+      "LC"
+    ]
+  },
+  {
+    "code": "VC",
+    "name": "SAINT VINCENT AND THE GRENADINES",
+    "canonicalId": "VC",
+    "aliases": [
+      "SAINT VINCENT AND THE GRENADINES",
+      "VC"
+    ]
+  },
+  {
+    "code": "WS",
+    "name": "SAMOA",
+    "canonicalId": "WS",
+    "aliases": [
+      "SAMOA",
+      "WS"
+    ]
+  },
+  {
+    "code": "ST",
+    "name": "SAO TOME AND PRINCIPE",
+    "canonicalId": "ST",
+    "aliases": [
+      "SAO TOME AND PRINCIPE",
+      "ST"
+    ]
+  },
+  {
+    "code": "RS",
+    "name": "SERBIA",
+    "canonicalId": "RS",
+    "aliases": [
+      "SERBIA",
+      "RS"
+    ]
+  },
+  {
+    "code": "SC",
+    "name": "SEYCHELLES",
+    "canonicalId": "SC",
+    "aliases": [
+      "SEYCHELLES",
+      "SC"
+    ]
+  },
+  {
+    "code": "SL",
+    "name": "SIERRA LEONE",
+    "canonicalId": "SL",
+    "aliases": [
+      "SIERRA LEONE",
+      "SL"
+    ]
+  },
+  {
+    "code": "SK",
+    "name": "SLOVAKIA",
+    "canonicalId": "SK",
+    "aliases": [
+      "SLOVAKIA",
+      "SK"
+    ]
+  },
+  {
+    "code": "SI",
+    "name": "SLOVENIA",
+    "canonicalId": "SI",
+    "aliases": [
+      "SLOVENIA",
+      "SI"
+    ]
+  },
+  {
+    "code": "SB",
+    "name": "SOLOMON ISLANDS",
+    "canonicalId": "SB",
+    "aliases": [
+      "SOLOMON ISLANDS",
+      "SB"
+    ]
+  },
+  {
+    "code": "SO",
+    "name": "SOMALIA",
+    "canonicalId": "SO",
+    "aliases": [
+      "SOMALIA",
+      "SO"
+    ]
+  },
+  {
+    "code": "SR",
+    "name": "SURINAME",
+    "canonicalId": "SR",
+    "aliases": [
+      "SURINAME",
+      "SR"
+    ]
+  },
+  {
+    "code": "TW",
+    "name": "TAIWAN",
+    "canonicalId": "TW",
+    "aliases": [
+      "TAIWAN",
+      "TW"
+    ]
+  },
+  {
+    "code": "TG",
+    "name": "TOGO",
+    "canonicalId": "TG",
+    "aliases": [
+      "TOGO",
+      "TG"
+    ]
+  },
+  {
+    "code": "TO",
+    "name": "TONGA",
+    "canonicalId": "TO",
+    "aliases": [
+      "TONGA",
+      "TO"
+    ]
+  },
+  {
+    "code": "TT",
+    "name": "TRINIDAD AND TOBAGO",
+    "canonicalId": "TT",
+    "aliases": [
+      "TRINIDAD AND TOBAGO",
+      "TT"
+    ]
+  },
+  {
+    "code": "TV",
+    "name": "TUVALU",
+    "canonicalId": "TV",
+    "aliases": [
+      "TUVALU",
+      "TV"
+    ]
+  },
+  {
+    "code": "VU",
+    "name": "VANUATU",
+    "canonicalId": "VU",
+    "aliases": [
+      "VANUATU",
+      "VU"
+    ]
   }
 ]
