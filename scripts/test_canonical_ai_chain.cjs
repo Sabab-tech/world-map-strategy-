@@ -110,7 +110,22 @@ assert(deepCore.includes('OmegaResourceSemanticBridge'), 'Deep Core must referen
 const countriesJsonRaw = read('countries.json');
 const countrySource = JSON.parse(countriesJsonRaw);
 const countryRows = Array.isArray(countrySource) ? countrySource : (countrySource?.countries || countrySource?.data || Object.values(countrySource || {}));
-function collectIdentityStrings(value,out=new Set()){if(Array.isArray(value)){for(const x of value)collectIdentityStrings(x,out);return out;}if(!value||typeof value!=='object')return out;for(const [k,v]of Object.entries(value)){if(['id','iso2','iso3','code','countryCode','canonicalId','name','officialName','countryName','shortName','displayName'].includes(k)&&typeof v==='string'&&v.trim().length>=2)out.add(v.trim().toLowerCase());if(Array.isArray(v)&&['names','aliases','forms','alternativeNames','alternateNames'].includes(k))for(const x of v)if(typeof x==='string'&&x.trim().length>=2)out.add(x.trim().toLowerCase());else if(v&&typeof v==='object')collectIdentityStrings(v,out);}return out;}
+function collectIdentityStrings(value,out=new Set()){
+  const identityKeys=new Set(['id','iso2','iso3','code','countryCode','canonicalId','name','officialName','countryName','shortName','displayName']);
+  const aliasKeys=new Set(['names','aliases','forms','alternativeNames','alternateNames']);
+  const walk=v=>{
+    if(Array.isArray(v)){v.forEach(walk);return;}
+    if(!v||typeof v!=='object')return;
+    for(const[k,x]of Object.entries(v)){
+      if(typeof x==='string'&&identityKeys.has(k)&&x.trim().length>=2&&x.trim().toLowerCase()!==k.toLowerCase())out.add(x.trim().toLowerCase());
+      if(Array.isArray(x)&&aliasKeys.has(k))for(const a of x)if(typeof a==='string'&&a.trim().length>=2)out.add(a.trim().toLowerCase());
+      if(x&&typeof x==='object'&&!Array.isArray(x))walk(x);
+    }
+  };
+  walk(value);
+  return out;
+}
+
 const countryIdentityLiterals=collectIdentityStrings(countryRows);
 for(const file of ['omega_cognitive_engine.js','omega_resource_semantic_bridge.js','offline_query_engine.js','offline_semantic_brain.js','omega_server_ai_gateway.js']){const src=read(file).toLowerCase();for(const value of countryIdentityLiterals){const escaped=value.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');const literal=new RegExp(`[\\"']${escaped}[\\"']`,'i');assert(!literal.test(src), `${file} must not embed a country identity literal from countries.json: ${value}`);}}
 assert(!semanticBrain.includes('economy.json'), 'Semantic Brain must not directly read economy data');
