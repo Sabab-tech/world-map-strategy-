@@ -13,6 +13,21 @@ if (typeof nativeFetch === 'function' && !globalThis.__omegaGeminiFetchCompat) {
   globalThis.fetch = async function omegaGeminiFetch(input, init) {
     try {
       const raw = typeof input === 'string' ? input : input?.url;
+
+      if (raw && !/^[a-z][a-z\d+.-]*:/i.test(raw) && !raw.startsWith('//')) {
+        const localUrl = new URL(raw, import.meta.url);
+        if (localUrl.protocol === 'file:') {
+          const localPath = localUrl.pathname;
+          if (fs.existsSync(localPath) && fs.statSync(localPath).isFile()) {
+            const body = await fs.promises.readFile(localPath);
+            return new Response(body, {
+              status: 200,
+              headers: { 'content-type': localPath.endsWith('.json') ? 'application/json; charset=utf-8' : 'application/octet-stream' }
+            });
+          }
+        }
+      }
+
       if (raw && raw.includes('generativelanguage.googleapis.com') && raw.includes(':generateContent')) {
         const url = new URL(raw);
         const match = url.pathname.match(/\/models\/([^/:]+):generateContent$/);
