@@ -1,8 +1,11 @@
 name: OMEGA Canonical AI Final Migration
 on:
+  workflow_dispatch:
   push:
     paths:
       - '.github/workflows/omega-language.yml'
+      - 'countries.json'
+      - 'scripts/test_deep_semantic_brain.cjs'
 permissions:
   contents: write
 jobs:
@@ -13,59 +16,76 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: 24
-      - name: Migrate canonical country identity and resource authority
+      - name: Complete canonical country registry from source datasets
         shell: bash
         run: |
           set -euo pipefail
           python3 - <<'PY'
           from pathlib import Path
           import json
-          p=Path('omega_country_semantic_bridge.js')
-          s=p.read_text(encoding='utf-8')
-          old="function idOf(x,key=''){const i=O(x?.identity)?x.identity:(x||{});return S(i.iso2||i.countryCode||i.country_code||i.code||i.id||i.canonicalId||key).toUpperCase();}"
-          new="function idOf(x,key=''){const i=O(x?.identity)?x.identity:(x||{});return S(i.canonicalId||i.iso3||i.iso3Code||i.countryCode3||i.iso2||i.countryCode||i.country_code||i.code||i.id||key).toUpperCase();}"
-          if old not in s: raise SystemExit('canonical idOf anchor not found')
-          s=s.replace(old,new,1)
-          p.write_text(s,encoding='utf-8')
-
           c=Path('countries.json')
           rows=json.loads(c.read_text(encoding='utf-8'))
           if not isinstance(rows,list): rows=rows.get('countries',rows.get('data',[]))
+          relation=json.loads(Path('relation_generation_engine.json').read_text(encoding='utf-8'))
+          root=relation.get('RELATION_GENERATION_ENGINE',{}).get('srie_v2_asymmetrical_salience',{})
+          by_code={str(r.get('code') or r.get('iso2') or r.get('countryCode') or '').upper():r for r in rows if isinstance(r,dict)}
           changed=False
-          for row in rows:
-              if not isinstance(row,dict): continue
-              cid=row.get('canonicalId') or row.get('iso3') or row.get('iso2') or row.get('code')
-              if cid and row.get('canonicalId')!=cid:
-                  row['canonicalId']=cid
-                  changed=True
-              aliases=row.get('aliases')
-              if not isinstance(aliases,list): aliases=[]
-              vals=[row.get('name'),row.get('iso2'),row.get('iso3'),row.get('code')]
-              vals += [row.get('officialName'),row.get('shortName'),row.get('nativeName')]
-              for v in vals:
+          for r in rows:
+              if not isinstance(r,dict): continue
+              canonical=r.get('canonicalId') or r.get('iso3') or r.get('iso2') or r.get('code')
+              if canonical and r.get('canonicalId')!=canonical:
+                  r['canonicalId']=canonical; changed=True
+              aliases=r.get('aliases') if isinstance(r.get('aliases'),list) else []
+              for v in [r.get('name'),r.get('iso2'),r.get('iso3'),r.get('code'),r.get('officialName'),r.get('shortName'),r.get('nativeName')]:
                   if isinstance(v,str) and v.strip() and v not in aliases: aliases.append(v)
               aliases=[x for x in aliases if isinstance(x,str) and x.strip()]
-              if row.get('aliases')!=aliases:
-                  row['aliases']=aliases
-                  changed=True
+              if r.get('aliases')!=aliases: r['aliases']=aliases; changed=True
+          for key,v in root.items():
+              if not isinstance(v,dict): continue
+              code=str(v.get('country_code') or '').strip().upper()
+              name=str(v.get('country_name') or key or '').strip()
+              if not code or not name or code in by_code: continue
+              row={'code':code,'name':name,'canonicalId':code,'aliases':[name,code]}
+              rows.append(row); by_code[code]=row; changed=True
           if changed: c.write_text(json.dumps(rows,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
-
+          if len(rows)<190: raise SystemExit(f'canonical countries registry remains incomplete: {len(rows)} records')
+          PY
+      - name: Remove remaining cognitive country/resource fallbacks
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
           p=Path('omega_cognitive_engine.js')
           s=p.read_text(encoding='utf-8')
-          forbidden=['BANGLADESH','COUNTRY_ALIASES']
-          for marker in forbidden:
-              if marker in s: raise SystemExit(f'forbidden cognitive country marker remains: {marker}')
-          if 'Object.freeze(_rawLoadedOntology || {' in s or 'const RESOURCE_ONTOLOGY_MATRIX = Object.freeze(_rawLoadedOntology || {' in s:
-              import re
-              s,n=re.subn(r"const RESOURCE_ONTOLOGY_MATRIX = Object\.freeze\(_rawLoadedOntology \|\| \{.*?\n\s*\}\);\n", "const RESOURCE_ONTOLOGY_MATRIX = {};\nfunction syncCanonicalResourceOntology() {\n    const b = globalScope.OmegaResourceSemanticBridge;\n    const loaded = b?.ontology?.();\n    const root = loaded?.COMMODITY_ONTOLOGIES || loaded || {};\n    if (!root || typeof root !== 'object') return RESOURCE_ONTOLOGY_MATRIX;\n    for (const [k,v] of Object.entries(root)) RESOURCE_ONTOLOGY_MATRIX[k] = v;\n    return RESOURCE_ONTOLOGY_MATRIX;\n  }\n", s, count=1, flags=re.S)
-              if n!=1: raise SystemExit('static resource ontology block could not be removed')
+          replacements={
+            "this.allEconomies[clean] || this.allEconomies['BANGLADESH'] || null":"this.allEconomies[clean] || null",
+            "this.allPopulations[clean] || this.allPopulations['BANGLADESH'] || null":"this.allPopulations[clean] || null",
+            'countryKey = "BANGLADESH"':'countryKey = ""'
+          }
+          for old,new in replacements.items(): s=s.replace(old,new)
+          if 'BANGLADESH' in s or 'COUNTRY_ALIASES' in s: raise SystemExit('cognitive country fallback/alias remains')
+          s=re.sub(r"const RESOURCE_ONTOLOGY_MATRIX = Object\.freeze\(_rawLoadedOntology \|\| \{.*?\n\s*\}\);\n", "const RESOURCE_ONTOLOGY_MATRIX = {};\nfunction syncCanonicalResourceOntology() {\n    const b = globalScope.OmegaResourceSemanticBridge;\n    const loaded = b?.ontology?.();\n    const root = loaded?.COMMODITY_ONTOLOGIES || loaded || {};\n    if (!root || typeof root !== 'object') return RESOURCE_ONTOLOGY_MATRIX;\n    for (const [k,v] of Object.entries(root)) RESOURCE_ONTOLOGY_MATRIX[k] = v;\n    return RESOURCE_ONTOLOGY_MATRIX;\n  }\n", s, count=1, flags=re.S)
           p.write_text(s,encoding='utf-8')
           PY
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add omega_country_semantic_bridge.js countries.json omega_cognitive_engine.js
-          if ! git diff --cached --quiet; then git commit -m 'fix: finalize canonical identity and data authority migration [skip ci]'; git push; fi
+      - name: Repair Deep Semantic Brain runtime harness
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('scripts/test_deep_semantic_brain.cjs')
+          s=p.read_text(encoding='utf-8')
+          old="  await import('../offline_semantic_brain.js');\n  const brain = globalThis.OfflineSemanticBrain;"
+          new="  await import('../omega_country_semantic_bridge.js');\n  const countryRegistry = globalThis.OmegaCanonicalIdentityRegistry || globalThis.OmegaCountrySemanticBridge;\n  assert.ok(countryRegistry, 'Canonical country identity registry must initialize');\n  assert.equal(await countryRegistry.init(), true, 'Canonical country identity registry must load');\n  await import('../omega_resource_semantic_bridge.js');\n  const resourceBridge = globalThis.OmegaResourceSemanticBridge;\n  assert.ok(resourceBridge, 'Canonical resource bridge must initialize');\n  await resourceBridge.init?.();\n  await import('../offline_semantic_brain.js');\n  const brain = globalThis.OfflineSemanticBrain;"
+          if old not in s: raise SystemExit('semantic brain test initialization anchor missing')
+          s=s.replace(old,new,1)
+          s=s.replace("  const runtime = brain.configure({datasets,vocabulary});\n  assert.ok(runtime.countries >= 190, `Expected global country registry, got ${runtime.countries}`);", "  const runtime = brain.configure({datasets,vocabulary});\n  assert.equal(runtime.countries, countryRegistry.exportData().countries.length, 'Semantic Brain country count must come from canonical registry');\n  assert.ok(runtime.countries >= 190, `Expected complete global country registry, got ${runtime.countries}`);")
+          p.write_text(s,encoding='utf-8')
+          PY
       - name: Validate repaired source
+        shell: bash
         run: |
           set -euo pipefail
           git fetch origin fix/canonical-identity-full
@@ -73,7 +93,8 @@ jobs:
           npm install --ignore-scripts --no-audit
           npm run lint
           node scripts/test_canonical_ai_chain.cjs
-      - name: Restore read-only verification workflow
+          node scripts/test_deep_semantic_brain.cjs
+      - name: Lock workflow read-only
         shell: bash
         run: |
           set -euo pipefail
@@ -84,6 +105,7 @@ jobs:
             push:
               paths:
                 - 'countries.json'
+                - 'relation_generation_engine.json'
                 - 'omega_country_semantic_bridge.js'
                 - 'omega_resource_semantic_bridge.js'
                 - 'offline_semantic_brain.js'
@@ -118,6 +140,6 @@ jobs:
           YAML
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add .github/workflows/omega-language.yml
-          git commit -m 'ci: lock canonical verification workflow read-only [skip ci]' || true
+          git add countries.json omega_cognitive_engine.js scripts/test_deep_semantic_brain.cjs .github/workflows/omega-language.yml
+          git commit -m 'fix: complete canonical registry and semantic grounding [skip ci]' || true
           git push
