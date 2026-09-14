@@ -81,6 +81,30 @@ try {
   throw new Error(`[OMEGA BOOT] Canonical country export contract unavailable: ${e?.message || e}`);
 }
 
+await import('./omega_reasoning_dispatcher.js');
+try {
+  const originalDispatcher = globalThis.OmegaReasoningDispatcher;
+  if (originalDispatcher && typeof originalDispatcher.dispatch === 'function') {
+    let writableDispatch = originalDispatcher.dispatch;
+    const dispatcherAdapter = new Proxy(originalDispatcher, {
+      get(target, prop, receiver) {
+        if (prop === 'dispatch') return writableDispatch;
+        return Reflect.get(target, prop, receiver);
+      },
+      set(target, prop, value) {
+        if (prop === 'dispatch') {
+          writableDispatch = value;
+          return true;
+        }
+        return Reflect.set(target, prop, value);
+      }
+    });
+    globalThis.OmegaReasoningDispatcher = dispatcherAdapter;
+  }
+} catch (e) {
+  throw new Error(`[OMEGA BOOT] Reasoning dispatcher adapter unavailable: ${e?.message || e}`);
+}
+
 await import('./omega_server_ai_gateway.js');
 
 const CANONICAL_AI_SCRIPTS = Object.freeze([
