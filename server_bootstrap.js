@@ -3,7 +3,6 @@
  * Legacy semantic runtime v3.2 is compatibility-only and is never injected.
  */
 import fs from 'fs';
-import './omega_server_ai_gateway.js';
 
 const nativeFetch = globalThis.fetch;
 const MODEL_FALLBACK = 'gemini-3.7-flash';
@@ -40,6 +39,8 @@ if (typeof nativeFetch === 'function' && !globalThis.__omegaGeminiFetchCompat) {
     return nativeFetch(input, init);
   };
 }
+
+await import('./omega_server_ai_gateway.js');
 
 const CANONICAL_AI_SCRIPTS = Object.freeze([
   'omega_language_system.js',
