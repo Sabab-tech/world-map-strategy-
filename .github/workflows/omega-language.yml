@@ -9,7 +9,7 @@ on:
       - '.github/workflows/omega-language.yml'
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   canonical:
@@ -23,46 +23,6 @@ jobs:
           node-version: 24
       - name: Install dependencies
         run: npm install --ignore-scripts --no-audit
-      - name: Remove country fallbacks from cognitive engine
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 - <<'PY'
-          from pathlib import Path
-          p=Path('omega_cognitive_engine.js')
-          s=p.read_text(encoding='utf-8')
-          replacements={
-            "this.allEconomies[clean] || this.allEconomies['BANGLADESH'] || null":"this.allEconomies[clean] || null",
-            "this.allPopulations[clean] || this.allPopulations['BANGLADESH'] || null":"this.allPopulations[clean] || null",
-            'countryKey = "BANGLADESH"':'countryKey = ""'
-          }
-          for old,new in replacements.items(): s=s.replace(old,new)
-          if 'BANGLADESH' in s:
-              raise SystemExit('cognitive country fallback still contains BANGLADESH')
-          p.write_text(s,encoding='utf-8')
-          PY
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add omega_cognitive_engine.js
-          if ! git diff --cached --quiet; then git commit -m 'fix: remove hardcoded cognitive country fallback [skip ci]'; git push; fi
-      - name: Repair country identity scanner
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 - <<'PY'
-          from pathlib import Path
-          p=Path('scripts/test_canonical_ai_chain.cjs')
-          s=p.read_text(encoding='utf-8')
-          start=s.index('function collectIdentityStrings(')
-          end=s.index('\nconst countryIdentityLiterals=',start)
-          fn="""function collectIdentityStrings(value,out=new Set()){\n  const identityKeys=new Set(['id','iso2','iso3','code','countryCode','canonicalId','name','officialName','countryName','shortName','displayName']);\n  const aliasKeys=new Set(['names','aliases','forms','alternativeNames','alternateNames']);\n  const walk=v=>{\n    if(Array.isArray(v)){v.forEach(walk);return;}\n    if(!v||typeof v!=='object')return;\n    for(const[k,x]of Object.entries(v)){\n      if(typeof x==='string'&&identityKeys.has(k)&&x.trim().length>=2&&x.trim().toLowerCase()!==k.toLowerCase())out.add(x.trim().toLowerCase());\n      if(Array.isArray(x)&&aliasKeys.has(k))for(const a of x)if(typeof a==='string'&&a.trim().length>=2)out.add(a.trim().toLowerCase());\n      if(x&&typeof x==='object'&&!Array.isArray(x))walk(x);\n    }\n  };\n  walk(value);\n  return out;\n}\n"""
-          s=s[:start]+fn+s[end:]
-          p.write_text(s,encoding='utf-8')
-          PY
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add scripts/test_canonical_ai_chain.cjs
-          if ! git diff --cached --quiet; then git commit -m 'test: make country identity scanner data-aware [skip ci]'; git push; fi
       - name: Syntax gate
         run: npm run lint
       - name: Canonical chain test
