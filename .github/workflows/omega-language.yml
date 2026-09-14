@@ -1,4 +1,5 @@
 # Canonical verification is intentionally read-only. Source migration is complete.
+# This commit exists only to validate the current branch head after migration.
 name: OMEGA Canonical AI Regression
 
 on:
