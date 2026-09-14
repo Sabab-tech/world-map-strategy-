@@ -330,9 +330,8 @@ const _omegaExport = (function (globalScope) {
 
           const r2 = path.resolve(cwd, 'resources_2.json');
           if (fs.existsSync(r2)) this.datasets.resources2 = JSON.parse(fs.readFileSync(r2, 'utf8'));
-
-          const ont = path.resolve(cwd, 'resource_ontology.json');
-          if (fs.existsSync(ont)) this.datasets.ontology = JSON.parse(fs.readFileSync(ont, 'utf8'));
+          const rb=globalScope.OmegaResourceSemanticBridge;
+          if (rb?.ontology) this.datasets.ontology = rb.ontology();
 
           const ec = path.resolve(cwd, 'economy.json');
           if (fs.existsSync(ec)) this.datasets.economy = JSON.parse(fs.readFileSync(ec, 'utf8'));
@@ -2501,7 +2500,7 @@ const _omegaExport = (function (globalScope) {
               ministerName: mName,
               ministerRole: mRole,
               countryName: countryName,
-              countryCode: countryDetails.countryCode || 'BGD',
+              countryCode: countryDetails.countryCode || undefined,
               prompt: questionText,
               language: isBn ? 'bn' : 'en',
               gameState: {
@@ -2581,8 +2580,7 @@ const _omegaExport = (function (globalScope) {
     StrategicSearchEngine,
     DeepRedTeamCritic,
     GraphDecisionTraceBuilder,
-    loadExternalResourceOntologyMatrix,
-    reloadOntology: () => loadExternalResourceOntologyMatrix(),
+    reloadOntology: () => syncCanonicalResourceOntology(),
     reloadPolicies: () => sharedOSInstance.policyRegistry.initDefaultProfiles(),
     process: (prompt, intent, country, targetCountry, domain, persona) =>
       sharedOSInstance.processCognitiveRequest(prompt, intent, country, targetCountry, domain, persona),
