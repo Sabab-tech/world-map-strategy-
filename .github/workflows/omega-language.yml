@@ -71,11 +71,12 @@ jobs:
 
           engine.initializeRepository();
           const diagnostics = engine.diagnostics();
+          console.log('DEEP_CORE_DIAGNOSTICS', JSON.stringify(diagnostics, null, 2));
           if (!diagnostics?.scan || diagnostics.scan.authority !== 'NODE_FILESYSTEM') throw new Error(`Unexpected repository authority: ${diagnostics?.scan?.authority || 'UNKNOWN'}`);
           if (diagnostics.initialized !== true) throw new Error('Deep Core repository index did not initialize');
-          if (!Number(diagnostics.files) || !Number(diagnostics.records) || !Number(diagnostics.scan.loadedFiles)) throw new Error('Deep Core repository index contains no usable repository data');
+          if (!Number(diagnostics.files) || !Number(diagnostics.records)) throw new Error(`Deep Core repository index contains no usable indexed records: ${JSON.stringify(diagnostics)}`);
           const countryDataset = engine.catalog().find(x => String(x?.dataset || x?.name || '').toLowerCase() === 'countries.json');
-          if (!countryDataset) throw new Error('countries.json was not discovered by the Deep Core index');
+          if (!countryDataset) throw new Error(`countries.json was not discovered by the Deep Core index: ${JSON.stringify(diagnostics.catalog || [])}`);
 
           if (Array.isArray(diagnostics.scan.failedFiles) && diagnostics.scan.failedFiles.length) {
             console.log(`Repository scanner reported ${diagnostics.scan.failedFiles.length} non-loadable file(s); targeted Deep Core data-path validation continues.`);
@@ -83,14 +84,14 @@ jobs:
           }
 
           const lookup = engine.lookupId(id);
-          if (lookup.status !== 'RESOLVED' || !lookup.count) throw new Error(`Deep Core ID lookup failed for ${id}: ${lookup.status}`);
+          if (lookup.status !== 'RESOLVED' || !lookup.count) throw new Error(`Deep Core ID lookup failed for ${id}: ${lookup.status}; diagnostics=${JSON.stringify(diagnostics)}`);
 
           const search = engine.search(name);
-          if (search.status !== 'RESOLVED' || !search.count) throw new Error(`Deep Core search failed for ${name}: ${search.status}`);
+          if (search.status !== 'RESOLVED' || !search.count) throw new Error(`Deep Core search failed for ${name}: ${search.status}; diagnostics=${JSON.stringify(diagnostics)}`);
 
           const ir = { operation: 'IDENTIFY', language: 'en', entities: { country: { id, surface: name } } };
           const result = engine.execute(ir, { countryId: id }, 'en', { countryId: id });
-          if (!result?.ok || result.status !== 'VERIFIED_FACT') throw new Error(`Deep Core execute failed: ${result?.status || 'UNKNOWN'}`);
+          if (!result?.ok || result.status !== 'VERIFIED_FACT') throw new Error(`Deep Core execute failed: ${result?.status || 'UNKNOWN'}; diagnostics=${JSON.stringify(diagnostics)}`);
           if (!Array.isArray(result.evidence) || !result.evidence.length) throw new Error('Deep Core execution returned no evidence');
           for (const e of result.evidence) {
             if (!e.dataset || !e.physicalPath || !e.recordLocator || !e.authority) throw new Error('Deep Core evidence missing dataset/path/locator/authority');
