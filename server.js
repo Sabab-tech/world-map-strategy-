@@ -134,8 +134,9 @@ function deepCoreContext(req) {
 function buildDeepCoreIR(prompt, input = {}) { if (!OfflineSemanticBrain?.parse) throw new Error('OfflineSemanticBrain is unavailable'); return OfflineSemanticBrain.parse(prompt, input); }
 function executeDeepCorePrompt(prompt, input = {}) {
   const ir = buildDeepCoreIR(prompt, input);
-  const executionPlan = OfflineQueryEngine?.buildExecutionPlan ? OfflineQueryEngine.buildExecutionPlan(ir, [], input) : null;
-  const result = OfflineQueryEngine?.execute ? OfflineQueryEngine.execute(ir, [], ir.language || input.language || 'en', input) : { ok: false, status: 'DEEP_CORE_UNAVAILABLE', value: null, evidence: [] };
+  const runtimeDataContext = { ...input, ir, countryId: input.countryId || input.countryCode, countryCode: input.countryCode || input.countryId };
+  const executionPlan = OfflineQueryEngine?.buildExecutionPlan ? OfflineQueryEngine.buildExecutionPlan(ir, runtimeDataContext) : null;
+  const result = OfflineQueryEngine?.execute ? OfflineQueryEngine.execute(ir, runtimeDataContext, ir.language || input.language || 'en', input) : { ok: false, status: 'DEEP_CORE_UNAVAILABLE', value: null, evidence: [] };
   const evidenceLedger = OfflineQueryEngine?.buildEvidenceLedger ? OfflineQueryEngine.buildEvidenceLedger(result) : null;
   return { prompt, ir, searchStrategy: ir.searchStrategy || null, executionPlan, result, evidenceLedger, diagnostics: OfflineQueryEngine?.diagnostics ? OfflineQueryEngine.diagnostics() : null };
 }
@@ -143,7 +144,9 @@ function executeDeepCorePrompt(prompt, input = {}) {
 app.get('/api/deep-core/diagnostics', (req, res) => { try { res.json(OfflineQueryEngine.diagnostics()); } catch (e) { res.status(500).json({ ok: false, error: e.message }); } });
 app.get('/api/deep-core/catalog', (req, res) => { try { res.json({ ok: true, version: OfflineQueryEngine.VERSION, catalog: OfflineQueryEngine.catalog() }); } catch (e) { res.status(500).json({ ok: false, error: e.message }); } });
 app.get('/api/deep-core/schema', (req, res) => { try { const dataset = String(req.query.dataset || '').trim(); if (!dataset) return res.status(400).json({ ok: false, error: 'dataset query parameter is required' }); const schema = OfflineQueryEngine.schema(dataset); if (!schema) return res.status(404).json({ ok: false, status: 'DATASET_NOT_FOUND', dataset }); res.json({ ok: true, dataset, schema }); } catch (e) { res.status(500).json({ ok: false, error: e.message }); } });
-app.get('/api/deep-core/lookup', (req, res) => { try { const id = String(req.query.id || '').trim(); if (!id) return res.status(400).json({ ok: false, error: 'id query parameter is required' }); const result = OfflineQueryEngine.lookupId(id); res.status(result.status === 'NOT_FOUND' ? 404 : 200).json({ ok: result.status !== 'NOT_FOUND', ...result }); } catch (e) { res.status(500).json({ ok: false, error: e.message }); } });
+app.get('/api/deep-core/lookup', (req, res) => { try { const id = String(req.query.id || '').trim(); if (!id) return res.status(400).json({ ok: false, error: 'id query parameter is required' }); const result = OfflineQueryEngine.lookupId(id); res.status(result.status === 'IDENTITY_NOT_FOUND' ? 404 : 200).json({ ok: result.status !== 'IDENTITY_NOT_FOUND', ...result }); } catch (e) { res.status(500).json({ ok: false, error: e.message }); } });
+app.get('/api/deep-core/resolve', (req, res) => { try { const id = String(req.query.id || '').trim(), type = String(req.query.type || '').trim(); if (!id) return res.status(400).json({ ok: false, error: 'id query parameter is required' }); const result = OfflineQueryEngine.resolve({ id, type: type || undefined }); res.status(result.status === 'IDENTITY_NOT_FOUND' ? 404 : 200).json({ ok: result.status !== 'IDENTITY_NOT_FOUND', ...result }); } catch (e) { res.status(500).json({ ok: false, error: e.message }); } });
+app.get('/api/deep-core/search', (req, res) => { try { const q = String(req.query.q || '').trim(); if (!q) return res.status(400).json({ ok: false, error: 'q query parameter is required' }); const result = OfflineQueryEngine.search(q, { dataset: req.query.dataset, type: req.query.type, limit: req.query.limit }); res.status(result.status === 'NOT_FOUND' ? 404 : 200).json({ ok: result.status !== 'NOT_FOUND', ...result }); } catch (e) { res.status(500).json({ ok: false, error: e.message }); } });
 
 function respondDeepCoreQuery(req, res) {
   try {
@@ -156,7 +159,7 @@ function respondDeepCoreQuery(req, res) {
 
 app.get('/api/deep-core/query', respondDeepCoreQuery);
 app.post('/api/deep-core/query', respondDeepCoreQuery);
-app.post('/api/deep-core/plan', (req, res) => { try { const input = deepCoreContext(req), prompt = String(input.prompt || input.question || '').trim(); if (!prompt) return res.status(400).json({ ok: false, error: 'prompt or question is required' }); const ir = buildDeepCoreIR(prompt, input); const executionPlan = OfflineQueryEngine.buildExecutionPlan(ir, [], input); res.json({ ok: true, prompt, ir, searchStrategy: ir.searchStrategy || null, executionPlan, diagnostics: OfflineQueryEngine.diagnostics() }); } catch (e) { res.status(500).json({ ok: false, error: e.message }); } });
+app.post('/api/deep-core/plan', (req, res) => { try { const input = deepCoreContext(req), prompt = String(input.prompt || input.question || '').trim(); if (!prompt) return res.status(400).json({ ok: false, error: 'prompt or question is required' }); const ir = buildDeepCoreIR(prompt, input); const runtimeDataContext = { ...input, ir }; const executionPlan = OfflineQueryEngine.buildExecutionPlan(ir, runtimeDataContext); res.json({ ok: true, prompt, ir, searchStrategy: ir.searchStrategy || null, executionPlan, diagnostics: OfflineQueryEngine.diagnostics() }); } catch (e) { res.status(500).json({ ok: false, error: e.message }); } });
 app.post('/api/deep-core/refresh', (req, res) => { try { res.json({ ok: true, refresh: OfflineQueryEngine.refresh(), diagnostics: OfflineQueryEngine.diagnostics() }); } catch (e) { res.status(500).json({ ok: false, error: e.message }); } });
 
 function canonicalPlan(prompt, input = {}) {
