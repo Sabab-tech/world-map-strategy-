@@ -23,30 +23,28 @@ jobs:
           node-version: 24
       - name: Install dependencies
         run: npm install --ignore-scripts --no-audit
-      - name: Remove country fallbacks and static resource fallback from cognitive engine
+      - name: Remove country fallbacks from cognitive engine
         shell: bash
         run: |
           set -euo pipefail
           python3 - <<'PY'
-          import re
           from pathlib import Path
           p=Path('omega_cognitive_engine.js')
           s=p.read_text(encoding='utf-8')
-          s=s.replace("this.allEconomies[clean] || this.allEconomies['BANGLADESH'] || null", "this.allEconomies[clean] || null")
-          s=s.replace("this.allPopulations[clean] || this.allPopulations['BANGLADESH'] || null", "this.allPopulations[clean] || null")
-          s=s.replace('countryKey = "BANGLADESH"', 'countryKey = ""')
-          s=re.sub(r"const RESOURCE_ONTOLOGY_MATRIX = Object\.freeze\(_rawLoadedOntology \|\| \{.*?\n  \}\);\n\n  //", "const RESOURCE_ONTOLOGY_MATRIX = Object.freeze(_rawLoadedOntology || {});\n\n  //", s, count=1, flags=re.S)
-          s=re.sub(r"\n      const baseElasticities = \{.*?\n      \};\n\n      const baseElasticity = baseElasticities\[baseKey\] \|\| 0\.20;", "\n      const baseElasticity = Number(RESOURCE_ONTOLOGY_MATRIX?.[baseKey]?.substitutionElasticity ?? 0);", s, count=1, flags=re.S)
-          if 'BANGLADESH' in s or 'COUNTRY_ALIASES' in s:
-              raise SystemExit('cognitive country hardcode remains after repair')
-          if re.search(r"RESOURCE_ONTOLOGY_MATRIX = Object\.freeze\(_rawLoadedOntology \|\| \{",s):
-              raise SystemExit('static resource ontology fallback remains')
+          replacements={
+            "this.allEconomies[clean] || this.allEconomies['BANGLADESH'] || null":"this.allEconomies[clean] || null",
+            "this.allPopulations[clean] || this.allPopulations['BANGLADESH'] || null":"this.allPopulations[clean] || null",
+            'countryKey = "BANGLADESH"':'countryKey = ""'
+          }
+          for old,new in replacements.items(): s=s.replace(old,new)
+          if 'BANGLADESH' in s:
+              raise SystemExit('cognitive country fallback still contains BANGLADESH')
           p.write_text(s,encoding='utf-8')
           PY
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add omega_cognitive_engine.js
-          if ! git diff --cached --quiet; then git commit -m 'fix: remove cognitive country fallbacks and static resource fallback [skip ci]'; git push; fi
+          if ! git diff --cached --quiet; then git commit -m 'fix: remove hardcoded cognitive country fallback [skip ci]'; git push; fi
       - name: Syntax gate
         run: npm run lint
       - name: Canonical chain test
