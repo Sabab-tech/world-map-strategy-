@@ -47,7 +47,7 @@ if (typeof nativeFetch === 'function' && !globalThis.__omegaGeminiFetchCompat) {
   };
 }
 
-const countryBridgeModule = await import('./omega_country_semantic_bridge.js');
+await import('./omega_country_semantic_bridge.js');
 const canonicalCountryBridge = globalThis.OmegaCanonicalIdentityRegistry || globalThis.OmegaCountrySemanticBridge;
 if (!canonicalCountryBridge?.init) {
   throw new Error('[OMEGA BOOT] Canonical country identity bridge unavailable');
@@ -55,6 +55,30 @@ if (!canonicalCountryBridge?.init) {
 const canonicalCountryReady = await canonicalCountryBridge.init();
 if (canonicalCountryReady !== true || canonicalCountryBridge.diagnostics?.().ready !== true) {
   throw new Error('[OMEGA BOOT] Canonical country identity bridge failed to initialize');
+}
+
+try {
+  const originalExportData = typeof canonicalCountryBridge.exportData === 'function'
+    ? canonicalCountryBridge.exportData.bind(canonicalCountryBridge)
+    : null;
+  let exported = null;
+  try { exported = originalExportData ? originalExportData() : null; } catch (_) {}
+  if (!Array.isArray(exported?.countries)) {
+    const raw = JSON.parse(await fs.promises.readFile(new URL('./countries.json', import.meta.url), 'utf8'));
+    const rows = Array.isArray(raw) ? raw : (raw?.countries || raw?.data || Object.values(raw || {}));
+    const adapted = new Proxy(canonicalCountryBridge, {
+      get(target, prop, receiver) {
+        if (prop === 'exportData') {
+          return () => ({ ...(originalExportData ? (originalExportData() || {}) : {}), countries: rows });
+        }
+        return Reflect.get(target, prop, receiver);
+      }
+    });
+    globalThis.OmegaCanonicalIdentityRegistry = adapted;
+    globalThis.OmegaCountrySemanticBridge = adapted;
+  }
+} catch (e) {
+  throw new Error(`[OMEGA BOOT] Canonical country export contract unavailable: ${e?.message || e}`);
 }
 
 await import('./omega_server_ai_gateway.js');
