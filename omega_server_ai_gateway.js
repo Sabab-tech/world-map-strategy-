@@ -21,7 +21,11 @@ const brain=globalThis.OfflineSemanticBrain;
 const production=globalThis.OmegaProductionSemanticRuntime;
 const offline=globalThis.OfflineQueryEngine;
 const identityBridge=globalThis.OmegaCanonicalIdentityRegistry||globalThis.OmegaCountrySemanticBridge;
+const resourceBridge=globalThis.OmegaResourceSemanticBridge;
+          async function waitForResourceBridge(timeout=15000){const started=Date.now();while(Date.now()-started<timeout){if(resourceBridge?.diagnostics?.().ready)return true;await new Promise(r=>setTimeout(r,25));}throw new Error('OMEGA Resource Semantic Bridge did not become ready');}
+          
 await identityBridge?.init?.();
+await waitForResourceBridge();
 
 function active(){return store.getStore()||null;}
 function activePlan(){return active()?.canonicalSemanticPlan||null;}
@@ -191,5 +195,5 @@ if(!express.application.__omegaCanonicalAIPostPatchV22){
   express.application.post=function(path,...handlers){const key=String(path);if((key==='/api/ai/minister-consult'||key==='/api/ai/semantic-query')&&!handlers.some(h=>h===withCanonicalAIRequest))handlers=[withCanonicalAIRequest,...handlers];return originalPost.call(this,path,...handlers);};
   express.application.__omegaCanonicalAIPostPatchV22=true;
 }
-globalThis.OmegaServerAIGateway=Object.freeze({VERSION,withCanonicalAIRequest,diagnostics:()=>({version:VERSION,identityBridgeVersion:identityBridge?.VERSION||null,identityReady:!!identityBridge?.diagnostics?.().ready,identityDiagnostics:identityBridge?.diagnostics?.()||null,asyncContext:'AsyncLocalStorage',routePatch:true,canonicalPlanPassthrough:true,canonicalExplainPassthrough:true,deterministicResultExecution:true,groundedIdentityResult:true,partialCountryResolution:true,tokenAwareQuestionEntityExtraction:true,countryFallbackPolicy:'NO_SYNTHETIC_COUNTRY',cityIdentity:'CANONICAL_CITY_REGISTRY'})});
+globalThis.OmegaServerAIGateway=Object.freeze({VERSION,withCanonicalAIRequest,diagnostics:()=>({version:VERSION,identityBridgeVersion:identityBridge?.VERSION||null,identityReady:!!identityBridge?.diagnostics?.().ready,identityDiagnostics:identityBridge?.diagnostics?.()||null,asyncContext:'AsyncLocalStorage',routePatch:true,canonicalPlanPassthrough:true,canonicalExplainPassthrough:true,deterministicResultExecution:true,groundedIdentityResult:true,partialCountryResolution:true,tokenAwareQuestionEntityExtraction:true,countryFallbackPolicy:'NO_SYNTHETIC_COUNTRY',cityIdentity:'CANONICAL_CITY_REGISTRY',resourceBridgeReady:!!resourceBridge?.diagnostics?.().ready,resourceBridgeDiagnostics:resourceBridge?.diagnostics?.()||null,waitForResourceBridge:true})});
 console.log('[OMEGA Server AI Gateway] canonical identity transport v2.2.0 ready');

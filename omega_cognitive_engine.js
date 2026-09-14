@@ -2378,63 +2378,20 @@ const _omegaExport = (function (globalScope) {
       const cashVal = gameRes.cash !== undefined ? gameRes.cash : 51780572;
       const formattedCash = typeof window !== 'undefined' && window.formatGameNumber ? window.formatGameNumber(cashVal) : '$51.78M';
 
-      // 2. DYNAMIC TARGET COUNTRY RESOLUTION ACROSS 197 COUNTRIES
-      let targetCountryIso = "BGD";
-      const profileKeys = Object.keys(UniversalSovereignDataUniverse.allCountryProfiles || {});
-      
-      const COUNTRY_ALIASES = {
-        'bangladesh': 'BGD', 'বাংলাদেশ': 'BGD', 'bd': 'BGD', 'bgd': 'BGD',
-        'united states': 'USA', 'america': 'USA', 'usa': 'USA', 'us': 'USA', 'যুক্তরাষ্ট্র': 'USA', 'আমেরিকা': 'USA',
-        'china': 'CHN', 'চীন': 'CHN', 'chn': 'CHN',
-        'india': 'IND', 'ভারত': 'IND', 'ind': 'IND',
-        'russia': 'RUS', 'রাশিয়া': 'RUS', 'rus': 'RUS',
-        'saudi': 'SAU', 'সৌদি': 'SAU', 'sau': 'SAU', 'saudi arabia': 'SAU',
-        'chile': 'CHL', 'চিলি': 'CHL', 'chl': 'CHL',
-        'congo': 'COD', 'কঙ্গো': 'COD', 'cod': 'COD', 'drc': 'COD',
-        'australia': 'AUS', 'অস্ট্রেলিয়া': 'AUS', 'aus': 'AUS',
-        'japan': 'JPN', 'জাপান': 'JPN', 'jpn': 'JPN',
-        'germany': 'DEU', 'জার্মানি': 'DEU', 'deu': 'DEU',
-        'brazil': 'BRA', 'ব্রাজিল': 'BRA', 'bra': 'BRA',
-        'uk': 'GBR', 'britain': 'GBR', 'united kingdom': 'GBR', 'যুক্তরাজ্য': 'GBR', 'gbr': 'GBR',
-        'iran': 'IRN', 'ইরান': 'IRN', 'irn': 'IRN',
-        'pakistan': 'PAK', 'পাকিস্তান': 'PAK', 'pak': 'PAK',
-        'indonesia': 'IDN', 'ইন্দোনেশিয়া': 'IDN', 'idn': 'IDN',
-        'turkey': 'TUR', 'তুরস্ক': 'TUR', 'tur': 'TUR'
+      // 2. DYNAMIC TARGET COUNTRY RESOLUTION FROM THE CANONICAL IDENTITY REGISTRY
+      const canonicalCountryRegistry = globalScope.OmegaCanonicalIdentityRegistry || globalScope.OmegaCountrySemanticBridge || null;
+      const resolveCanonicalTargetCountry = (value) => {
+        try { return canonicalCountryRegistry?.resolveCountry?.(value) || null; } catch (_) { return null; }
       };
-
-      for (const [alias, iso] of Object.entries(COUNTRY_ALIASES)) {
-        if (promptLower.includes(alias)) {
-          targetCountryIso = iso;
-          break;
+      const countryQuery = promptLower || countryKey || '';
+      const resolvedCountry = resolveCanonicalTargetCountry(countryQuery) || resolveCanonicalTargetCountry(countryKey);
+      const targetCountryIso = resolvedCountry?.id || null;
+      if (!targetCountryIso && countryKey) {
+        const fallbackResolved = resolveCanonicalTargetCountry(countryKey);
+        if (fallbackResolved?.id) {
+          // Rebind from the same canonical registry; never synthesize a country identity here.
         }
       }
-
-      if (targetCountryIso === "BGD" && countryKey) {
-        const cKeyUpper = String(countryKey).toUpperCase().trim();
-        if (UniversalSovereignDataUniverse.allCountryProfiles[cKeyUpper]) {
-          targetCountryIso = cKeyUpper;
-        } else if (COUNTRY_ALIASES[countryKey.toLowerCase()]) {
-          targetCountryIso = COUNTRY_ALIASES[countryKey.toLowerCase()];
-        }
-      }
-
-      // Check all known profiles
-      for (const pKey of profileKeys) {
-        const pObj = UniversalSovereignDataUniverse.allCountryProfiles[pKey];
-        if (pObj && pObj.identity) {
-          const n = (pObj.identity.name || '').toLowerCase();
-          const on = (pObj.identity.officialName || '').toLowerCase();
-          if (promptLower.includes(n) || promptLower.includes(on)) {
-            targetCountryIso = pKey;
-            break;
-          }
-        }
-      }
-
-      const countryProfile = UniversalSovereignDataUniverse.getCountryProfile(targetCountryIso) || {};
-      const countryEconomy = UniversalSovereignDataUniverse.getEconomy(targetCountryIso) || {};
-      const countryPopulation = UniversalSovereignDataUniverse.getPopulation(targetCountryIso) || {};
-      const targetCountryName = countryProfile.identity?.name || countryDetails.name || countryKey || 'Bangladesh';
 
       // 3. DYNAMIC COMMODITY & MATERIAL ONTOLOGY EXTRACTION
       const COMMODITY_TAXONOMY = {
