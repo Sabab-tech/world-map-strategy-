@@ -47,6 +47,16 @@ if (typeof nativeFetch === 'function' && !globalThis.__omegaGeminiFetchCompat) {
   };
 }
 
+const countryBridgeModule = await import('./omega_country_semantic_bridge.js');
+const canonicalCountryBridge = globalThis.OmegaCanonicalIdentityRegistry || globalThis.OmegaCountrySemanticBridge;
+if (!canonicalCountryBridge?.init) {
+  throw new Error('[OMEGA BOOT] Canonical country identity bridge unavailable');
+}
+const canonicalCountryReady = await canonicalCountryBridge.init();
+if (canonicalCountryReady !== true || canonicalCountryBridge.diagnostics?.().ready !== true) {
+  throw new Error('[OMEGA BOOT] Canonical country identity bridge failed to initialize');
+}
+
 await import('./omega_server_ai_gateway.js');
 
 const CANONICAL_AI_SCRIPTS = Object.freeze([
