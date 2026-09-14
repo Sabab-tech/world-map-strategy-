@@ -64,7 +64,7 @@ assert(gateway.includes('waitForResourceBridge'), 'server gateway must wait for 
 assert(gateway.includes('resourceBridgeReady'), 'server gateway diagnostics must expose resource bridge readiness');
 assert(gateway.includes('resourceBridgeDiagnostics'), 'server gateway diagnostics must expose resource bridge diagnostics');
 
-assert(contextBridge.includes('function build(question, request={})'), 'context bridge must accept the exact request body');
+assert(/function build\(question,\s*request=\{\}(?:,\s*preResolved=null)?\)/.test(contextBridge), 'context bridge must accept the request body');
 assert(contextBridge.includes('canonicalSemanticPlan:packet.semanticPlan'), 'context bridge must attach canonical semantic plan');
 assert(contextBridge.includes('canonicalContextPacket:{'), 'context bridge must attach canonical context packet');
 assert(contextBridge.includes('reservesData'), 'context bridge must preserve reserves/telemetry context');
@@ -178,6 +178,4 @@ console.log(`Ontology entries: ${Object.keys(ontology.COMMODITY_ONTOLOGIES || {}
 console.log(`Canonical scripts: ${requiredScripts.length}`);
 console.log('40-stage cognitive bridge: structurally connected to server/Gemini');
 console.log('Contextual discourse: Batch 03 + universal runtime integration validated');
-console.log('Speaker-aware minister answers: active-minister context + deterministic direct-answer gate validated');
-console.log('Resource quantity: dedicated grounded evidence path + UNKNOWN-on-missing-data policy validated');
-console.log('Resource-country integration: countries.json + resource datasets + canonical bridge contract validated');
+console.log('Speaker-aware minister and grounded-data contracts: validated');
