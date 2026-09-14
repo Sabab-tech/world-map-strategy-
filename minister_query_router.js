@@ -28,3 +28,4 @@ function interceptEnter(ev){if(ev.key!=='Enter'||ev.shiftKey||ev.isComposing||ev
 function install(){if(typeof document==='undefined'||document.__OMEGA_CANONICAL_ENTRY_V14_1)return;document.__OMEGA_CANONICAL_ENTRY_V14_1=true;document.addEventListener('click',interceptSubmission,true);document.addEventListener('keydown',interceptEnter,true)}
 const API=Object.freeze({VERSION,QueryIntent,parse,normalize:norm,executeServerDeepCore:server,repositoryExecute,routeMinisterQuery:route,resolveKnowledgeQuery,detectIntent,learn,recall,ensureCanonicalBrowserStack:ensureStack,enqueue});global.MinisterQueryRouter=API;install();if(typeof module!=='undefined'&&module.exports)module.exports=API;
 })(typeof globalThis!=='undefined'?globalThis:window);
+// canonical migration trigger: no runtime behavior change
