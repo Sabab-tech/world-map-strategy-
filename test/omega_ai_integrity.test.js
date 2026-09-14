@@ -2,6 +2,11 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
 
+await import('../omega_country_semantic_bridge.js');
+const canonicalRegistry=globalThis.OmegaCanonicalIdentityRegistry;
+assert.ok(canonicalRegistry,'canonical country identity registry must load');
+assert.equal(await canonicalRegistry.init(),true,'canonical country identity registry must initialize');
+
 const brainSource=fs.readFileSync(new URL('../offline_semantic_brain.js',import.meta.url),'utf8');
 const engineSource=fs.readFileSync(new URL('../offline_query_engine.js',import.meta.url),'utf8');
 const integritySource=fs.readFileSync(new URL('../omega_ai_integrity_layer.js',import.meta.url),'utf8');
@@ -11,7 +16,7 @@ const knowledge=JSON.parse(fs.readFileSync(new URL('../offline_semantic_knowledg
 const resources=JSON.parse(fs.readFileSync(new URL('../resources.json',import.meta.url),'utf8'));
 assert.ok(Array.isArray(countries)&&countries.length>0,'countries.json must contain records');
 
-const sandbox={console,setInterval:()=>0,clearInterval:()=>{},Date,JSON,Object,Number,String,RegExp,Intl,Map,Array,Math,process};
+const sandbox={console,setInterval:()=>0,clearInterval:()=>{},Date,JSON,Object,Number,String,RegExp,Intl,Map,Array,Math,process,OmegaCanonicalIdentityRegistry:canonicalRegistry};
 sandbox.globalThis=sandbox;
 vm.runInNewContext(brainSource,sandbox,{filename:'offline_semantic_brain.js'});
 vm.runInNewContext(engineSource,sandbox,{filename:'offline_query_engine.js'});
@@ -20,7 +25,8 @@ const configured=sandbox.OfflineSemanticBrain.configure({
   datasets:[Object.assign({__datasetName:'countries.json'},countries),Object.assign({__datasetName:'resources.json'},resources)],
   knowledge
 });
-assert.equal(configured.countries,countries.length,'semantic brain must index every country record');
+assert.equal(configured.countries,countries.length,'semantic brain must expose every canonical country record');
+assert.equal(configured.identityAuthority,'OMEGA_CANONICAL_IDENTITY_BRIDGE');
 vm.runInNewContext(integritySource,sandbox,{filename:'omega_ai_integrity_layer.js'});
 const api=sandbox.OmegaAIIntegrity;
 assert.ok(api,'integrity API must load');
@@ -64,5 +70,6 @@ if(resourceCandidate){
 
 console.log('OMEGA strict entity integrity regression tests: PASS');
 console.log('Country records indexed:',configured.countries);
+console.log('Canonical country registry authority: PASS');
 console.log('Explicit country beats active-country context: PASS');
 console.log('Resource entity remains separate from country entity: PASS');
