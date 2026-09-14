@@ -85,19 +85,12 @@ await import('./omega_reasoning_dispatcher.js');
 try {
   const originalDispatcher = globalThis.OmegaReasoningDispatcher;
   if (originalDispatcher && typeof originalDispatcher.dispatch === 'function') {
-    let writableDispatch = originalDispatcher.dispatch;
-    const dispatcherAdapter = new Proxy(originalDispatcher, {
-      get(target, prop, receiver) {
-        if (prop === 'dispatch') return writableDispatch;
-        return Reflect.get(target, prop, receiver);
-      },
-      set(target, prop, value) {
-        if (prop === 'dispatch') {
-          writableDispatch = value;
-          return true;
-        }
-        return Reflect.set(target, prop, value);
-      }
+    const dispatcherAdapter = Object.create(originalDispatcher);
+    Object.defineProperty(dispatcherAdapter, 'dispatch', {
+      value: originalDispatcher.dispatch,
+      writable: true,
+      configurable: true,
+      enumerable: true
     });
     globalThis.OmegaReasoningDispatcher = dispatcherAdapter;
   }
