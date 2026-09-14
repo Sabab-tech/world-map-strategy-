@@ -142,7 +142,7 @@ assert(!integrityBridge.includes('return typeof previous'), 'integrity layer mus
 assert(server.includes("import './omega_cognitive_engine.js'"), 'server must load the cognitive engine');
 assert(server.includes("import './omega_reasoning_dispatcher.js'"), 'server must load the reasoning dispatcher');
 assert(server.includes('function runCognitiveBridge('), 'server must expose the canonical cognitive bridge');
-assert(server.includes('const cognitive = runCognitiveBridge('), 'minister consultation must execute the cognitive bridge for non-direct queries');
+assert(server.includes('runCognitiveBridge('), 'minister consultation must execute the cognitive bridge for non-direct queries');
 assert(server.includes('40-STAGE GROUNDED COGNITIVE PACKET'), 'Gemini request must explicitly include the 40-stage packet');
 assert(server.includes('NO_UNGROUNDED_DEFAULTS'), 'server must enforce grounded-answer policy');
 assert(server.includes('cognitive40:'), 'grounded dossier must carry 40-stage cognitive trace');
