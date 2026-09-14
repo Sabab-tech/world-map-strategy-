@@ -95,14 +95,12 @@ for (const forbidden of ['bangladesh', 'germany', 'india', 'iron_ore', 'crude_oi
 const cognitive = read('omega_cognitive_engine.js');
 const deepCore = read('offline_query_engine.js');
 const semanticBrain = read('offline_semantic_brain.js');
-const semanticBrain = read('offline_semantic_brain.js');
 assert(!cognitive.includes('COUNTRY_ALIASES'), 'cognitive engine must not own a country alias table');
 assert(!cognitive.includes('let targetCountryIso = "BGD"'), 'cognitive engine must not contain a synthetic default country');
 assert(cognitive.includes('OmegaCanonicalIdentityRegistry') || cognitive.includes('OmegaCountrySemanticBridge'), 'cognitive engine must resolve country identity through the canonical registry');
 assert(semanticBrain.includes('function canonicalEntity(raw,type)'), 'Semantic Brain must expose canonical entity interpretation');
 assert(semanticBrain.includes("t==='COUNTRY'?countryRegistry():t==='RESOURCE'?resourceRegistry():null"), 'Semantic Brain COUNTRY/RESOURCE interpretation must delegate to canonical registries');
 assert(semanticBrain.includes('never stores country/resource world facts'), 'Semantic Brain must remain an interpreter, not a world-data store');
-assert(semanticBrain.includes('function canonicalEntity(raw,type)'), 'Semantic Brain must expose canonical entity interpretation');
 assert(semanticBrain.includes("t==='COUNTRY'?countryRegistry():t==='RESOURCE'?resourceRegistry():null"), 'Semantic Brain COUNTRY/RESOURCE interpretation must delegate to canonical registries');
 assert(semanticBrain.includes('never stores country/resource world facts'), 'Semantic Brain must remain an interpreter, not a world-data store');
 assert(deepCore.includes("this.known=knowledgeEntities(this.k).filter(e=>e.type!=='COUNTRY'&&e.type!=='RESOURCE')"), 'Deep Core must not use semantic knowledge as country/resource identity authority');
@@ -115,6 +113,8 @@ const countryRows = Array.isArray(countrySource) ? countrySource : (countrySourc
 function collectIdentityStrings(value,out=new Set()){if(Array.isArray(value)){for(const x of value)collectIdentityStrings(x,out);return out;}if(!value||typeof value!=='object')return out;for(const [k,v] of Object.entries(value)){if(['id','iso2','iso3','code','countryCode','canonicalId','name','officialName','countryName','shortName','displayName'].includes(k)&&typeof v==='string'&&v.trim().length>=2)out.add(v.trim().toLowerCase());if(Array.isArray(v)&&['names','aliases','forms','alternativeNames','alternateNames'].includes(k))for(const x of v)if(typeof x==='string'&&x.trim().length>=2)out.add(x.trim().toLowerCase());else if(v&&typeof v==='object')collectIdentityStrings(v,out);}return out;}
 const countryIdentityLiterals=collectIdentityStrings(countryRows);
 for(const file of ['omega_cognitive_engine.js','omega_resource_semantic_bridge.js','offline_query_engine.js','offline_semantic_brain.js','omega_server_ai_gateway.js']){const src=read(file).toLowerCase();for(const value of countryIdentityLiterals){const escaped=value.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');const literal=new RegExp(`[\\"']${escaped}[\\"']`,'i');assert(!literal.test(src), `${file} must not embed a country identity literal from countries.json: ${value}`);}}
+assert(!semanticBrain.includes('economy.json'), 'Semantic Brain must not directly read economy data');
+assert(!semanticBrain.includes('population.json'), 'Semantic Brain must not directly read population data');
 assert(!semanticBrain.includes('economy.json'), 'Semantic Brain must not directly read economy data');
 assert(!semanticBrain.includes('population.json'), 'Semantic Brain must not directly read population data');
 assert(!semanticBrain.includes('economy.json'), 'Semantic Brain must not directly read economy data');
