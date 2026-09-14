@@ -11,6 +11,25 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Repair canonical country inflection resolver
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('omega_country_semantic_bridge.js')
+          s=p.read_text(encoding='utf-8')
+          old="""function rankMatches(text,map,contextCountryId=null){const q=N(text);if(!q)return[];const hits=[];for(const[alias,ids]of map.entries()){if(!alias||alias.length<2)continue;const exact=q===alias,boundary=(` ${q} `).includes(` ${alias} `)||q.startsWith(alias+' ')||q.endsWith(' '+alias);if(!exact&&!boundary)continue;for(const id of ids instanceof Set?[...ids]:[ids]){const sameContext=contextCountryId&&S(id).split(':')[0]===S(contextCountryId).toUpperCase();const base=exact?1:Math.min(.995,.76+alias.length/Math.max(100,q.length*2));hits.push({id,alias,score:Math.min(1,base+(sameContext?.004:0))});}}hits.sort((a,b)=>b.score-a.score||b.alias.length-a.alias.length||String(a.id).localeCompare(String(b.id)));return hits;}"""
+          new="""function rankMatches(text,map,contextCountryId=null){const q=N(text);if(!q)return[];const qTokens=q.split(/\\s+/).filter(Boolean);const hits=[];for(const[alias,ids]of map.entries()){if(!alias||alias.length<2)continue;const exact=q===alias,boundary=(` ${q} `).includes(` ${alias} `)||q.startsWith(alias+' ')||q.endsWith(' '+alias);let tokenMatch=false;if(!exact&&!boundary){const aTokens=alias.split(/\\s+/).filter(Boolean);tokenMatch=aTokens.length>0&&aTokens.every(at=>at.length>=3&&qTokens.some(qt=>qt===at||qt.startsWith(at)));}if(!exact&&!boundary&&!tokenMatch)continue;for(const id of ids instanceof Set?[...ids]:[ids]){const sameContext=contextCountryId&&S(id).split(':')[0]===S(contextCountryId).toUpperCase();const base=exact?1:(boundary?.995:(.82+.12*(alias.length/Math.max(alias.length,q.length))));hits.push({id,alias,score:Math.min(1,base+(sameContext?.004:0))});}}hits.sort((a,b)=>b.score-a.score||b.alias.length-a.alias.length||String(a.id).localeCompare(String(b.id)));return hits;}"""
+          if old not in s: raise SystemExit('country rankMatches anchor not found')
+          s=s.replace(old,new,1)
+          p.write_text(s,encoding='utf-8')
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add omega_country_semantic_bridge.js
+          git commit -m 'fix: resolve inflected country aliases from canonical data [skip ci]'
+          git push
       - name: Finalize canonical resource identity data
         shell: bash
         run: |
@@ -23,15 +42,8 @@ jobs:
           root=data.setdefault('COMMODITY_ONTOLOGIES',{})
           entry=root.get('IRON_ORE')
           if not isinstance(entry,dict):
-              root['IRON_ORE']={
-                'key':'IRON_ORE',
-                'name':'Iron Ore',
-                'aliases':['Iron Ore','iron ore','iron','লোহা','লোহার আকরিক'],
-                'category':'INDUSTRIAL_BASE_METAL',
-                'physicalForm':'SOLID_ORE'
-              }
+              root['IRON_ORE']={'key':'IRON_ORE','name':'Iron Ore','aliases':['Iron Ore','iron ore','iron','লোহা','লোহার আকরিক'],'category':'INDUSTRIAL_BASE_METAL','physicalForm':'SOLID_ORE'}
               p.write_text(json.dumps(data,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
-
           p=Path('omega_resource_semantic_bridge.js')
           s=p.read_text(encoding='utf-8')
           s=s.replace("if(declaredType){const rid=TOKEN(declaredType);if(rid)registerResourceType({id:rid,name:declaredName||key},rid);}","if(declaredType){const rid=TOKEN(declaredType);if(rid&&!state.resources.has(rid))registerResourceType({id:rid,name:declaredName||key},rid);}",1)
