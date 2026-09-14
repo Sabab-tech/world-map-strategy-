@@ -69,7 +69,8 @@ jobs:
           const engine = globalThis.OfflineQueryEngine;
           if (!engine) throw new Error('OfflineQueryEngine unavailable');
 
-          const diagnostics = engine.initializeRepository();
+          engine.initializeRepository();
+          const diagnostics = engine.diagnostics();
           if (!diagnostics?.scan || diagnostics.scan.authority !== 'NODE_FILESYSTEM') throw new Error(`Unexpected repository authority: ${diagnostics?.scan?.authority || 'UNKNOWN'}`);
           if (diagnostics.initialized !== true) throw new Error('Deep Core repository index did not initialize');
           if (!Number(diagnostics.files) || !Number(diagnostics.records) || !Number(diagnostics.scan.loadedFiles)) throw new Error('Deep Core repository index contains no usable repository data');
