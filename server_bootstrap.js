@@ -99,7 +99,6 @@ try {
 }
 
 await import('./omega_server_ai_gateway.js');
-await import('./omega_deep_core_integrity_guard.js');
 
 const CANONICAL_AI_SCRIPTS = Object.freeze([
   'omega_language_system.js',
