@@ -43,7 +43,7 @@ const assert = require('node:assert/strict');
   const diag = globalThis.OmegaDeepCoreIntegrityGuard.diagnostics();
   assert.equal(diag.status, 'BROKEN');
   assert.equal(diag.queryReady, false);
-  assert.equal(diag.reason, 'DATA_REPOSITORY_SCAN_FAILED');
+  assert.equal(diag.reason, 'DATA_INDEX_EMPTY');
   assert.equal(diag.repositoryScan.discovered, 87);
   assert.equal(diag.repositoryScan.loaded, 0);
   assert.equal(diag.repositoryScan.failed, 87);
@@ -53,13 +53,13 @@ const assert = require('node:assert/strict');
   const syncResult = globalThis.OfflineQueryEngine.execute({ operation: 'GET' });
   assert.equal(syncResult.status, 'DATA_UNAVAILABLE');
   assert.equal(syncResult.value, null);
-  assert.equal(syncResult.reason, 'DATA_REPOSITORY_SCAN_FAILED');
+  assert.equal(syncResult.reason, 'DATA_INDEX_EMPTY');
   assert.equal(syncResult.dataAccess.queryReady, false);
 
   const asyncResult = await globalThis.OfflineQueryEngine.executeAsync({ operation: 'GET' });
   assert.equal(asyncResult.status, 'DATA_UNAVAILABLE');
   assert.equal(asyncResult.value, null);
-  assert.equal(asyncResult.reason, 'DATA_REPOSITORY_SCAN_FAILED');
+  assert.equal(asyncResult.reason, 'DATA_INDEX_EMPTY');
 
   console.log('DEEP CORE FAIL-CLOSED TEST PASSED');
   console.log(JSON.stringify({
