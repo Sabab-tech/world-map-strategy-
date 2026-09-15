@@ -75,6 +75,32 @@ jobs:
           if (!data.DICTIONARY || typeof data.DICTIONARY !== 'object' || !Object.keys(data.DICTIONARY).length) throw new Error('offline_lexicon.json DICTIONARY is empty');
           console.log(`OFFLINE LEXICON JSON TEST PASSED; entries=${Object.keys(data.DICTIONARY).length}`);
           NODE
+      - name: Repair malformed resource semantic bridge only when required
+        if: github.event_name != 'pull_request'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('omega_resource_semantic_bridge.js')
+          text = p.read_text(encoding='utf-8')
+          bad = 'operation:p.operation};base.__omegaResourceBridgeV410=true;}return true;}'
+          good = 'operation:p.operation};};base.__omegaResourceBridgeV410=true;}return true;}'
+          if bad in text and good not in text:
+              p.write_text(text.replace(bad, good, 1), encoding='utf-8')
+              print('RESOURCE_SEMANTIC_BRIDGE_REPAIRED: restored install arrow-function closure')
+              git_changed = True
+          else:
+              git_changed = False
+              print('RESOURCE_SEMANTIC_BRIDGE_REPAIR: no malformed install closure detected')
+          if git_changed:
+              import subprocess
+              subprocess.run(['git','config','user.name','github-actions[bot]'], check=True)
+              subprocess.run(['git','config','user.email','41898282+github-actions[bot]@users.noreply.github.com'], check=True)
+              subprocess.run(['git','add','omega_resource_semantic_bridge.js'], check=True)
+              subprocess.run(['git','commit','-m','fix: restore resource bridge install closure [skip ci]'], check=True)
+              subprocess.run(['git','push'], check=True)
+          PY
       - name: Syntax gate
         shell: bash
         run: |
