@@ -9,18 +9,19 @@
   const A = v => Array.isArray(v) ? v : [];
   const O = v => v !== null && typeof v === 'object';
   const S = v => String(v == null ? '' : v).trim();
-  const U = v => S(v).toUpperCase();
 
   if (g.OmegaDeepCoreIntegrityGuard?.VERSION === VERSION) return;
 
   const offline = g.OfflineQueryEngine;
   const countryBridge = g.OmegaCanonicalIdentityRegistry || g.OmegaCountrySemanticBridge || null;
   const resourceBridge = g.OmegaResourceSemanticBridge || null;
+  let baseDiagnosticsFn = null;
 
   function snapshotDiagnostics() {
     let base = {};
     try {
-      if (offline && typeof offline.diagnostics === 'function') base = offline.diagnostics() || {};
+      if (baseDiagnosticsFn) base = baseDiagnosticsFn() || {};
+      else if (offline && typeof offline.diagnostics === 'function') base = offline.diagnostics() || {};
     } catch (error) {
       base = { diagnosticsError: error?.message || String(error) };
     }
@@ -70,14 +71,16 @@
       ready: countries > 0 && resources > 0 && records > 0 && rawOccurrences > 0
     };
 
-    const queryReady = repositoryScan.complete && identityIndex.ready && resourceReady !== false && !base?.diagnosticsError;
+    const queryReady = repositoryScan.complete && identityIndex.ready && resourceReady && !base?.diagnosticsError;
     const reason = queryReady
       ? null
       : repositoryScan.complete === false
         ? (failed.length ? 'DATA_REPOSITORY_SCAN_FAILED' : 'DATA_REPOSITORY_SCAN_INCOMPLETE')
         : identityIndex.ready === false
           ? 'DATA_INDEX_EMPTY'
-          : 'DATA_CORE_NOT_READY';
+          : !resourceReady
+            ? 'RESOURCE_BRIDGE_NOT_READY'
+            : 'DATA_CORE_NOT_READY';
 
     return {
       ...base,
@@ -114,6 +117,7 @@
     const originalExecuteAsync = typeof offline.executeAsync === 'function' ? offline.executeAsync.bind(offline) : null;
     const originalDiagnostics = typeof offline.diagnostics === 'function' ? offline.diagnostics.bind(offline) : null;
     const originalDiagnosticsAsync = typeof offline.diagnosticsAsync === 'function' ? offline.diagnosticsAsync.bind(offline) : null;
+    baseDiagnosticsFn = originalDiagnostics;
 
     offline.execute = function (...args) {
       if (!isReady()) return unavailableResult();
@@ -153,16 +157,31 @@
       const rawOccurrences = Number(base?.index?.rawOccurrences ?? base?.stats?.rawOccurrences ?? 0);
       const identityKeys = Number(base?.index?.identityKeys ?? base?.stats?.identityKeys ?? 0);
       const countries = (() => {
-        try { return Array.isArray(countryBridge?.exportData?.()?.countries) ? countryBridge.exportData().countries.length : 0; }
-        catch (_) { return 0; }
+        try {
+          const rows = countryBridge?.exportData?.()?.countries;
+          return Array.isArray(rows) ? rows.length : 0;
+        } catch (_) { return 0; }
       })();
       const resource = (() => {
         try {
           const d = resourceBridge?.diagnostics?.() || {};
-          return { types: Number(d.resourceTypeCount || 0), records: Number(d.resourceRecordCount || 0), ready: d.ready === true || d.exportReady === true };
-        } catch (_) { return { types: 0, records: 0, ready: false }; }
+          return {
+            types: Number(d.resourceTypeCount || 0),
+            records: Number(d.resourceRecordCount || 0),
+            ready: d.ready === true || d.exportReady === true
+          };
+        } catch (_) {
+          return { types: 0, records: 0, ready: false };
+        }
       })();
-      const queryReady = scan.complete === true && discovered === loaded && failed.length === 0 && records > 0 && rawOccurrences > 0 && countries > 0 && resource.types > 0;
+      const queryReady = scan.complete === true
+        && discovered === loaded
+        && failed.length === 0
+        && records > 0
+        && rawOccurrences > 0
+        && countries > 0
+        && resource.types > 0
+        && resource.ready === true;
       return {
         ...base,
         integrityGuard: { version: VERSION, enforced: true, policy: 'FAIL_CLOSED' },
@@ -187,20 +206,30 @@
           ready: countries > 0 && resource.types > 0 && records > 0 && rawOccurrences > 0
         },
         queryReady,
-        reason: queryReady ? null : (failed.length ? 'DATA_REPOSITORY_SCAN_FAILED' : (scan.complete !== true ? 'DATA_REPOSITORY_SCAN_INCOMPLETE' : 'DATA_INDEX_EMPTY'))
+        reason: queryReady
+          ? null
+          : failed.length
+            ? 'DATA_REPOSITORY_SCAN_FAILED'
+            : scan.complete !== true
+              ? 'DATA_REPOSITORY_SCAN_INCOMPLETE'
+              : records <= 0 || rawOccurrences <= 0 || countries <= 0 || resource.types <= 0
+                ? 'DATA_INDEX_EMPTY'
+                : 'RESOURCE_BRIDGE_NOT_READY'
       };
     };
 
     offline.diagnosticsAsync = async function () {
       try {
-        if (originalDiagnosticsAsync) {
-          await originalDiagnosticsAsync();
-        }
+        if (originalDiagnosticsAsync) await originalDiagnosticsAsync();
       } catch (_) {}
       return offline.diagnostics();
     };
 
-    Object.defineProperty(offline, '__omegaFailClosedGuardV1', { value: true, enumerable: false, configurable: false });
+    Object.defineProperty(offline, '__omegaFailClosedGuardV1', {
+      value: true,
+      enumerable: false,
+      configurable: false
+    });
   }
 
   g.OmegaDeepCoreIntegrityGuard = Object.freeze({
