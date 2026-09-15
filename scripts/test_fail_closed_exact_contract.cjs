@@ -1,0 +1,10 @@
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const source = fs.readFileSync('offline_query_engine.js', 'utf8');
+assert.equal(source.includes('DATA_UNAVAILABLE'), true, 'Deep Core must expose DATA_UNAVAILABLE');
+assert.equal(source.includes('repositoryScan'), true, 'Deep Core must expose repositoryScan');
+assert.equal(source.includes('identityIndex'), true, 'Deep Core must expose identityIndex');
+assert.equal(source.includes('queryReady'), true, 'Deep Core must expose queryReady');
+assert.equal(source.includes("status:'BROKEN'"), true, 'Deep Core must expose BROKEN');
+assert.equal(source.includes("reason:'DATA_INDEX_EMPTY'"), true, 'Deep Core must expose DATA_INDEX_EMPTY');
+console.log('FAIL-CLOSED CONTRACT STRUCTURE TEST PASSED');
