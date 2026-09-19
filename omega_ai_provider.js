@@ -116,7 +116,39 @@
     }
   }
 
+  function isAIEndpoint(input){
+    try{
+      const url=new URL(typeof input==='string'?input:(input?.url||''),typeof location!=='undefined'?location.href:undefined);
+      return url.pathname.endsWith('/api/ai/minister-consult')||url.pathname.endsWith('/api/ai/semantic-query');
+    }catch(_){return false;}
+  }
+  function installFetchBridge(){
+    if(global.__omegaAIProviderFetchBridgeInstalled||typeof global.fetch!=='function')return false;
+    const nativeFetch=global.fetch.bind(global);
+    global.__omegaAIProviderFetchBridgeInstalled=true;
+    global.fetch=async function(input,init={}){
+      const headers=init?.headers||{};
+      if(headers['X-OMEGA-AI-PROVIDER-INTERNAL']||headers['x-omega-ai-provider-internal'])return nativeFetch(input,init);
+      if(!isAIEndpoint(input))return nativeFetch(input,init);
+      let body={};
+      try{body=JSON.parse(String(init?.body||'{}'));}catch(_){}
+      const result=await instance.request({
+        ...body,
+        question:body.prompt||body.question||'',
+        evidence:body.canonicalContextPacket?.evidence||body.evidence||[],
+        context:body.canonicalContextPacket?.context||body.context||{},
+        gameState:body.canonicalContextPacket?.gameState||body.gameState||{},
+        history:body.canonicalContextPacket?.history||body.conversationHistory||[]
+      });
+      const payload=JSON.stringify(result);
+      if(typeof Response==='function')return new Response(payload,{status:200,headers:{'Content-Type':'application/json'}});
+      return {ok:true,status:200,json:async()=>JSON.parse(payload),text:async()=>payload};
+    };
+    return true;
+  }
+
   const instance=new Provider();
+  installFetchBridge();
   global.OmegaAIProvider=Object.freeze({
     VERSION,
     GeminiProvider,
