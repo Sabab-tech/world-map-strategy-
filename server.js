@@ -9,6 +9,10 @@ import './offline_query_engine.js';
 import './minister_query_router.js';
 import './omega_cognitive_engine.js';
 import './omega_reasoning_dispatcher.js';
+import './omega_ai_runtime_contract.js';
+import './omega_offline_ai_bridge.js';
+import './omega_ai_provider.js';
+import './omega_data_provider.js';
 
 const ProductionSemanticRuntime = globalThis.OmegaProductionSemanticRuntime;
 const OfflineSemanticBrain = globalThis.OfflineSemanticBrain;
@@ -35,6 +39,10 @@ const RESOURCE_BRIDGE_SCRIPT = '<script src="/omega_resource_semantic_bridge.js"
 const UNIVERSAL_AI_SCRIPT = '<script src="/omega_universal_ai_runtime.js"></script>';
 const LANGUAGE_SYSTEM_SCRIPT = '<script src="/omega_language_system.js"></script>';
 const LANGUAGE_BATCH03_SCRIPT = '<script src="/omega_language_batch03_semantic_extension.js"></script>';
+const AI_RUNTIME_CONTRACT_SCRIPT = '<script src="/omega_ai_runtime_contract.js"></script>';
+const OFFLINE_AI_BRIDGE_SCRIPT = '<script src="/omega_offline_ai_bridge.js"></script>';
+const AI_PROVIDER_SCRIPT = '<script src="/omega_ai_provider.js"></script>';
+const DATA_PROVIDER_SCRIPT = '<script src="/omega_data_provider.js"></script>';
 
 let cachedResourceProfiles = {}, resourceTypesRegistry = {};
 try {
@@ -107,7 +115,7 @@ function renderIndex(res, next) {
   fs.readFile(INDEX_PATH, 'utf8', (err, html) => {
     if (err) return next(err);
     let output = html;
-    const scripts = [LANGUAGE_SYSTEM_SCRIPT, LANGUAGE_BATCH03_SCRIPT, COUNTRY_BRIDGE_SCRIPT, RESOURCE_BRIDGE_SCRIPT, MINISTER_CAPABILITY_SCRIPT, MINISTER_STATE_SCRIPT, MINISTER_RECRUITMENT_SCRIPT, MINISTER_BOOTSTRAP_SCRIPT, MINISTER_RUNTIME_SCRIPT, COGNITIVE_SCRIPT, REASONING_SCRIPT, UNIVERSAL_AI_SCRIPT, AI_INTEGRITY_SCRIPT, HEALTH_LOGO_SCRIPT, UI_INTERACTION_GUARD_SCRIPT];
+    const scripts = [AI_RUNTIME_CONTRACT_SCRIPT, OFFLINE_AI_BRIDGE_SCRIPT, AI_PROVIDER_SCRIPT, DATA_PROVIDER_SCRIPT, LANGUAGE_SYSTEM_SCRIPT, LANGUAGE_BATCH03_SCRIPT, COUNTRY_BRIDGE_SCRIPT, RESOURCE_BRIDGE_SCRIPT, MINISTER_CAPABILITY_SCRIPT, MINISTER_STATE_SCRIPT, MINISTER_RECRUITMENT_SCRIPT, MINISTER_BOOTSTRAP_SCRIPT, MINISTER_RUNTIME_SCRIPT, COGNITIVE_SCRIPT, REASONING_SCRIPT, UNIVERSAL_AI_SCRIPT, AI_INTEGRITY_SCRIPT, HEALTH_LOGO_SCRIPT, UI_INTERACTION_GUARD_SCRIPT];
     for (const script of scripts) { const src = script.match(/src="([^"]+)"/)?.[1]; if (src && !output.includes(src)) output = output.replace('</body>', `    ${script}\n</body>`); }
     res.type('html').send(output);
   });
@@ -122,7 +130,7 @@ app.get('/api/minister-candidates', (req, res) => {
   catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
 
-app.get('/api/ai/status', (req, res) => { const hasKey = !!process.env.GEMINI_API_KEY; res.json({ ok: true, aiAvailable: hasKey, models: CANDIDATE_MODELS, primaryModel: CANDIDATE_MODELS[0], integrityLayer: '2.1.0', ministerStateSystem: '1.0.0', deepCore: OfflineQueryEngine?.VERSION || null, semanticRuntime: { authority: ProductionSemanticRuntime?.VERSION || null, diagnostics: ProductionSemanticRuntime?.diagnostics?.() || canonicalSemanticRuntime }, cognitiveBridge: { authority: OmegaReasoningDispatcher?.VERSION || null, full40: OmegaReasoningDispatcher?.full40 === true }, timestamp: new Date().toISOString() }); });
+app.get('/api/ai/status', (req, res) => { const hasKey = !!process.env.GEMINI_API_KEY; const providerDiagnostics = globalThis.OmegaOfflineAIBridge?.diagnostics?.() || null; res.json({ ok: true, aiAvailable: hasKey, models: CANDIDATE_MODELS, primaryModel: CANDIDATE_MODELS[0], integrityLayer: '2.1.0', ministerStateSystem: '1.0.0', deepCore: OfflineQueryEngine?.VERSION || null, semanticRuntime: { authority: ProductionSemanticRuntime?.VERSION || null, diagnostics: ProductionSemanticRuntime?.diagnostics?.() || canonicalSemanticRuntime }, cognitiveBridge: { authority: OmegaReasoningDispatcher?.VERSION || null, full40: OmegaReasoningDispatcher?.full40 === true }, hybridProvider: { authority: globalThis.OmegaAIProvider?.VERSION || null, offline: providerDiagnostics }, timestamp: new Date().toISOString() }); });
 
 app.post('/api/minister-state/diagnostics', (req, res) => { try { const registry = globalThis.OmegaMinisterStateRegistry; if (!registry) return res.status(503).json({ ok: false, error: 'Minister state registry unavailable' }); res.json(registry.consistencyCheck()); } catch (e) { res.status(500).json({ ok: false, error: e.message }); } });
 
