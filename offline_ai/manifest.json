@@ -1,0 +1,76 @@
+{
+  "schemaVersion": "1.0.0",
+  "version": "0.0.0-inspected-unsupported",
+  "id": "omega-offline-ai",
+  "status": "INSPECTED_NOT_ANDROID_COMPATIBLE",
+  "purpose": "OFFLINE_AI_PROVIDER_ONLY",
+  "runtime": {
+    "kind": "UNSUPPORTED_FOR_OMEGA_ANDROID",
+    "networkRequired": true,
+    "localInference": false
+  },
+  "model": {
+    "present": false,
+    "format": null,
+    "quantization": null,
+    "notes": "The supplied archive contains no proven local model or Android inference runtime."
+  },
+  "androidCompatibility": {
+    "status": "REJECTED_PENDING_NATIVE_ANDROID_RUNTIME",
+    "localInferenceSupported": false,
+    "architectures": [],
+    "minimumApiLevel": null,
+    "ramRequirementBytes": null,
+    "storageRequirementBytes": null,
+    "nativeLibraries": []
+  },
+  "packageInspection": {
+    "sourceArchive": "Antigravity (1).tar.gz",
+    "compressedSizeBytes": 171281032,
+    "compressedSizeMiB": 163.28,
+    "extractedRegularFileBytes": 528282304,
+    "extractedRegularFileMiB": 503.81,
+    "topLevelDirectory": "Antigravity-arm64",
+    "fileCount": 389,
+    "status": "DESKTOP_ELECTRON_APPLICATION",
+    "primaryExecutable": {
+      "path": "Antigravity-arm64/antigravity",
+      "format": "ELF 64-bit LSB pie executable",
+      "architecture": "ARM aarch64",
+      "platform": "GNU/Linux",
+      "dynamicLoader": "/lib/ld-linux-aarch64.so.1"
+    },
+    "runtimeBinary": {
+      "path": "Antigravity-arm64/resources/bin/language_server",
+      "format": "ELF 64-bit LSB pie executable",
+      "architecture": "ARM aarch64",
+      "platform": "GNU/Linux",
+      "dynamicLoader": "/lib/ld-linux-aarch64.so.1"
+    },
+    "desktopFrameworkEvidence": [
+      "Electron/Chromium shared libraries",
+      "resources/app.asar",
+      "chrome-sandbox",
+      "libEGL.so",
+      "libGLESv2.so",
+      "libvulkan.so.1",
+      "icudtl.dat",
+      "resources.pak",
+      "Chromium locale packages"
+    ],
+    "modelRuntimeSearch": {
+      "modelExtensionsFound": [],
+      "inferenceRuntimeNamesFound": [],
+      "androidBinariesFound": false
+    },
+    "streaming": "UNKNOWN",
+    "structuredToolCalling": "UNKNOWN",
+    "networkAccess": "NOT_PROVEN_OFFLINE",
+    "androidApiLevel": "UNKNOWN"
+  },
+  "distribution": {
+    "sourceControlledBinary": false,
+    "androidBundledAssetAllowedAfterCompatibilityProof": true,
+    "firstRunNetworkRequired": false
+  }
+}
