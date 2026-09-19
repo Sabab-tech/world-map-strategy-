@@ -1,0 +1,19 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "title":"OMEGA AI Contract",
+  "type":"object",
+  "required":["version","provider","mode","status","evidenceUsed"],
+  "properties":{
+    "version":{"type":"string"},
+    "provider":{"type":["string","null"],"enum":["gemini","offline",null]},
+    "mode":{"type":["string","null"],"enum":["online","offline",null]},
+    "status":{"type":"string"},
+    "text":{"type":"string"},
+    "structured":{"type":["object","null"]},
+    "evidenceUsed":{"type":"array"},
+    "fallbackFrom":{"type":["string","null"]},
+    "error":{"type":["string","null"]},
+    "metadata":{"type":"object"}
+  },
+  "additionalProperties":false
+}
