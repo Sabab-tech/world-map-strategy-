@@ -32,7 +32,7 @@
       if(typeof fetch!=='function')return C().createEnvelope({status:'AI_UNAVAILABLE',provider:'gemini',mode:'online',error:'fetch unavailable'});
       const response=await fetch(this.endpoint,{
         method:'POST',
-        headers:{'Content-Type':'application/json'},
+        headers:{'Content-Type':'application/json','X-OMEGA-AI-PROVIDER-INTERNAL':'1'},
         body:JSON.stringify({
           prompt:request.question,
           canonicalAuthority:'OMEGA_PRODUCTION_SEMANTIC_RUNTIME',
