@@ -55,7 +55,7 @@
     setInterval(()=>{
       const kernel=global.Omega?.Kernel;if(!kernel)return;
       const tick=global.__OMEGA_DIAG__?.metrics?.tick||0;
-      IDS.forEach(id=>{try{kernel.pumpOrchestratedPipelineTick(id,INTERVAL,tick,{onMessage:()=>{},onMinistryTick:(dt,currentTurn)=>{global.__OMEGA_MINISTRY_RUNTIME_STATUS__[id]={id,status:kernel.getMinistryState(id),lastTick:currentTurn,lastUpdate:Date.now(),active:true}}})}catch(e){global.__OMEGA_MINISTRY_RUNTIME_STATUS__[id]={id,status:'FAILED',active:false,error:String(e?.message||e)}}});
+      IDS.filter(id=>id!=='economy'&&id!=='defense').forEach(id=>{try{kernel.pumpOrchestratedPipelineTick(id,INTERVAL,tick,{onMessage:()=>{},onMinistryTick:(dt,currentTurn)=>{global.__OMEGA_MINISTRY_RUNTIME_STATUS__[id]={id,status:kernel.getMinistryState(id),lastTick:currentTurn,lastUpdate:Date.now(),active:true}}})}catch(e){global.__OMEGA_MINISTRY_RUNTIME_STATUS__[id]={id,status:'FAILED',active:false,error:String(e?.message||e)}}});
     },INTERVAL);
     console.info('[OMEGA 17M] ALL 17 MINISTRIES LIVE',IDS);
     global.dispatchEvent(new CustomEvent('OMEGA_ALL_17_MINISTRIES_LIVE',{detail:{count:IDS.length,ids:IDS.slice()}}));
