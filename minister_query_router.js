@@ -52,16 +52,7 @@ function liveMinisterContext(){
   const ministerRole=S(m.ministerRole||m.role||m.title||m.staticProfile?.role||'');
   return {ministerId,countryId,countryCode:countryId,ministryId,ministerName,ministerRole};
 }
-function liveMinisterContext(){
-  const ui=global.OmegaCabinetUI||{},m=ui.currentInterrogatedMinister||{};
-  const g=global.Game||{},s=g.state||{};
-  const ministerId=S(m.ministerId||m.id||m.staticProfile?.ministerId||m.staticProfile?.id||m.profile?.ministerId||m.profile?.id||s.activeMinisterId||global.OmegaMinisterState?.activeMinisterId||'');
-  const countryId=S(m.countryId||m.countryCode||m.staticProfile?.countryId||m.profile?.countryId||g.currentActiveCountry||s.countryId||s.playerCountryId||'').toUpperCase();
-  const ministryId=S(m.ministryId||m.ministry||m.staticProfile?.ministryId||m.profile?.ministryId||s.activeMinistryId||global.OmegaLayerManager?.activeMinistryId||'');
-  const ministerName=S(m.ministerName||m.name||m.displayName||m.staticProfile?.baseName||m.staticProfile?.name||'');
-  const ministerRole=S(m.ministerRole||m.role||m.title||m.staticProfile?.role||'');
-  return {ministerId,countryId,countryCode:countryId,ministryId,ministerName,ministerRole};
-}
+
 function interceptSubmission(ev){
   const b=ev?.target?.closest?.('#btn-submit-interrogation');
   if(!b)return false;
