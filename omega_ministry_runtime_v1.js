@@ -443,6 +443,7 @@
           active:s.active,
           ticks:s.ticks,
           sourceLevel:s.sourceStatus?.level||'UNKNOWN',
+          directEngine:((s.sourceStatus?.level||'')==='ENGINE_CONNECTED'),
           sourceCount:s.sourceStatus?.availableSources?.length||0,
           dependencies:Object.keys(s.dependencies||{}).length,
           expectedDependencies:SPECS[id].dependencies.length,
@@ -456,15 +457,20 @@
       const active=rows.filter(s=>s.active).length;
       const ticked=rows.filter(s=>s.ticks>0).length;
       const failed=rows.filter(s=>s.status==='FAILED'||s.failures>0).length;
-      const sourceConnected=rows.filter(s=>s.sourceStatus?.level!=='RUNTIME_CONNECTED').length;
+      const directEngineConnected=rows.filter(s=>s.sourceStatus?.level==='ENGINE_CONNECTED').length;
+      const worldStateConnected=rows.filter(s=>s.sourceStatus?.level==='WORLD_STATE_CONNECTED').length;
+      const runtimeOnly=rows.filter(s=>s.sourceStatus?.level==='RUNTIME_CONNECTED').length;
+      const sourceConnected=directEngineConnected+worldStateConnected;
       const ministerLinked=rows.filter(s=>!!s.minister).length;
+      const ministryRegistryConnected=!!global.OmegaMinisterStateRegistry;
       return {
         version:'2.0.0',
         initialized,
         count:IDS.length,
         active,ticked,failed,
-        sourceConnected,ministerLinked,
-        fullyRuntimeLinked:rows.filter(s=>s.active&&s.ticks>0).length
+        sourceConnected,directEngineConnected,worldStateConnected,runtimeOnly,
+        ministryRegistryConnected,ministerLinked,
+        fullyRuntimeLinked:rows.filter(s=>s.active&&s.ticks>0&&s.sourceStatus?.level!=='RUNTIME_CONNECTED').length
       };
     }
 
