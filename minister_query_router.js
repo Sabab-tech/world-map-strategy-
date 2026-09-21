@@ -27,7 +27,7 @@ function parse(q,ctx={}){
     contractVersion:'OMEGA-QUERY-IR-FAILURE',
     raw:S(q),
     normalized:norm(q),
-    language:/[\\u0980-\\u09ff]/.test(S(q))?'bn':'en',
+    language:/[\u0980-\u09ff]/.test(S(q))?'bn':'en',
     operation:'UNKNOWN',
     entities:{country:{status:'UNRESOLVED',id:null},resource:{status:'UNRESOLVED',id:null},minister:{status:'UNRESOLVED',id:null}},
     unresolved:['SEMANTIC_RUNTIME_UNAVAILABLE'],
@@ -42,6 +42,16 @@ function detectIntent(q,ctx={}){return legacyIntent(parse(q,ctx))}
 function learn(surface,mapping={},confidence=.95){const r=rt(),id=mapping.canonicalId||mapping.countryId||mapping.resourceId||mapping.ministerId,type=mapping.entityType||(mapping.countryId?'COUNTRY':mapping.resourceId?'RESOURCE':mapping.ministerId?'PERSON':null);try{return!!(r?.learn&&surface&&id&&type&&r.learn(surface,type,id,confidence))}catch(_){return false}}
 function recall(q){try{return rt()?.recall?.(q)||{}}catch(_){return{}}}
 async function enqueue(q,ctx={}){const question=S(q);if(!question)return{status:'EMPTY_QUERY',value:null,evidence:[]};const srv=await server(question,ctx);if(srv.server&&srv.status==='VERIFIED_FACT'){renderResult(srv,question);return srv}const local=await repositoryExecute(question,ctx);if(local?.status&&local.status!=='DEEP_CORE_ENGINE_UNAVAILABLE'){renderResult(local,question);return local}const out={...local,...srv,status:local?.status||srv.status,value:local?.value??srv.value??null,evidence:local?.evidence||srv.evidence||[]};renderResult(out,question);return out}
+function liveMinisterContext(){
+  const ui=global.OmegaCabinetUI||{},m=ui.currentInterrogatedMinister||{};
+  const g=global.Game||{},s=g.state||{};
+  const ministerId=S(m.ministerId||m.id||m.staticProfile?.ministerId||m.staticProfile?.id||m.profile?.ministerId||m.profile?.id||s.activeMinisterId||global.OmegaMinisterState?.activeMinisterId||'');
+  const countryId=S(m.countryId||m.countryCode||m.staticProfile?.countryId||m.profile?.countryId||g.currentActiveCountry||s.countryId||s.playerCountryId||'').toUpperCase();
+  const ministryId=S(m.ministryId||m.ministry||m.staticProfile?.ministryId||m.profile?.ministryId||s.activeMinistryId||global.OmegaLayerManager?.activeMinistryId||'');
+  const ministerName=S(m.ministerName||m.name||m.displayName||m.staticProfile?.baseName||m.staticProfile?.name||'');
+  const ministerRole=S(m.ministerRole||m.role||m.title||m.staticProfile?.role||'');
+  return {ministerId,countryId,countryCode:countryId,ministryId,ministerName,ministerRole};
+}
 function liveMinisterContext(){
   const ui=global.OmegaCabinetUI||{},m=ui.currentInterrogatedMinister||{};
   const g=global.Game||{},s=g.state||{};
