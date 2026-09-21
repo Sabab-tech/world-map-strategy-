@@ -39,6 +39,76 @@
     statistics:   { domain:'national_statistics', dependencies:['economy','finance','health','education'] }
   });
 
+
+
+  // Canonical -> existing Ministry Engine configuration bindings.
+  // These are configuration modules, not fabricated simulation data.
+  const ENGINE_BINDINGS = Object.freeze({
+    cabinet:['cabinet_council'],
+    defense:['defense'],
+    military:['defense'],
+    finance:['treasury_finance','taxes','central_bank'],
+    economy:['production','taxes','central_bank'],
+    trade:['trade'],
+    foreign:['foreign_affairs'],
+    intelligence:['intelligence_cyber'],
+    interior:['interior_security'],
+    transport:['infrastructure'],
+    resource:['energy_mining'],
+    health:['health_welfare'],
+    education:['education'],
+    technology:['science_research'],
+    projects:['mega_projects','laws'],
+    culture:[],
+    statistics:[]
+  });
+
+  const DOMAIN_ADAPTERS = Object.freeze({
+    cabinet:      (ctx)=>({ phase:'COORDINATE', inputs:Object.keys(ctx).filter(k=>ctx[k]!=null) }),
+    defense:      (ctx)=>({ phase:'PLAN', inputs:Object.keys(ctx).filter(k=>ctx[k]!=null) }),
+    military:     (ctx)=>({ phase:'READINESS', inputs:Object.keys(ctx).filter(k=>ctx[k]!=null) }),
+    finance:      (ctx)=>({ phase:'FISCAL_REVIEW', inputs:Object.keys(ctx).filter(k=>ctx[k]!=null) }),
+    economy:      (ctx)=>({ phase:'MACRO_REVIEW', inputs:Object.keys(ctx).filter(k=>ctx[k]!=null) }),
+    trade:        (ctx)=>({ phase:'COMMERCE_REVIEW', inputs:Object.keys(ctx).filter(k=>ctx[k]!=null) }),
+    foreign:      (ctx)=>({ phase:'DIPLOMATIC_REVIEW', inputs:Object.keys(ctx).filter(k=>ctx[k]!=null) }),
+    intelligence: (ctx)=>({ phase:'INTELLIGENCE_REVIEW', inputs:Object.keys(ctx).filter(k=>ctx[k]!=null) }),
+    interior:     (ctx)=>({ phase:'CIVIL_REVIEW', inputs:Object.keys(ctx).filter(k=>ctx[k]!=null) }),
+    transport:    (ctx)=>({ phase:'INFRASTRUCTURE_REVIEW', inputs:Object.keys(ctx).filter(k=>ctx[k]!=null) }),
+    resource:     (ctx)=>({ phase:'RESOURCE_REVIEW', inputs:Object.keys(ctx).filter(k=>ctx[k]!=null) }),
+    health:       (ctx)=>({ phase:'HEALTH_REVIEW', inputs:Object.keys(ctx).filter(k=>ctx[k]!=null) }),
+    education:    (ctx)=>({ phase:'HUMAN_CAPITAL_REVIEW', inputs:Object.keys(ctx).filter(k=>ctx[k]!=null) }),
+    technology:   (ctx)=>({ phase:'SCIENCE_REVIEW', inputs:Object.keys(ctx).filter(k=>ctx[k]!=null) }),
+    projects:     (ctx)=>({ phase:'PROJECT_REVIEW', inputs:Object.keys(ctx).filter(k=>ctx[k]!=null) }),
+    culture:      (ctx)=>({ phase:'CULTURE_REVIEW', inputs:Object.keys(ctx).filter(k=>ctx[k]!=null) }),
+    statistics:   (ctx)=>({ phase:'STATISTICS_REVIEW', inputs:Object.keys(ctx).filter(k=>ctx[k]!=null) })
+  });
+
+  function resolveEngineBinding(id){
+    const db=global.OmegaMinistry?.ministriesDatabase;
+    const ids=ENGINE_BINDINGS[id]||[];
+    const found=ids.filter(key=>!!db?.[key]).map(key=>({
+      id:key,
+      title:db[key]?.title||key,
+      category:db[key]?.category||null
+    }));
+    return {
+      expected:ids.slice(),
+      resolved:found,
+      nativeAdapter:found.length===0
+    };
+  }
+
+  function buildDomainContext(id){
+    const game=global.Game?.state||global.gameState||null;
+    const country=global.OmegaCabinetUI?.activeCountry||global.Game?.currentActiveCountry||null;
+    const binding=resolveEngineBinding(id);
+    return {
+      countryId:country ? String(country).toUpperCase() : null,
+      gameStateAvailable:!!game,
+      binding
+    };
+  }
+
   const SOURCE_KEYS = Object.freeze([
     'Omega','Game','OmegaCabinetUI','OmegaDataFindingSystem',
     'OmegaCanonicalIdentityRegistry','OmegaResourceSemanticBridge'
@@ -141,6 +211,9 @@
       const spec=SPECS[id]||{domain:'unknown',dependencies:[]};
       const s=states.get(id);
       const inputSources=discoverInputSources();
+      const domainContext=buildDomainContext(id);
+      const adapter=DOMAIN_ADAPTERS[id];
+      const domainExecution=adapter ? adapter(domainContext) : {phase:'UNIMPLEMENTED',inputs:[]};
       const dependencySnapshot=safeDependencyStates(states,kernel,spec.dependencies);
       const phase=['OBSERVE','VALIDATE','PROCESS','COMMIT'][Math.max(0,currentTurn||0)%4];
 
@@ -165,7 +238,9 @@
             tick:s.lastTick,
             active:s.active,
             inputSources:inputSources.slice(),
-            dependencies:{...dependencySnapshot}
+            dependencies:{...dependencySnapshot},
+            engineBinding:domainContext.binding,
+            domainExecution
           });
         }
         if(store.knowledgeGraph instanceof Map){
@@ -173,6 +248,8 @@
             domain:spec.domain,
             dependencies:{...dependencySnapshot},
             observedInputs:inputSources.slice(),
+            engineBinding:domainContext.binding,
+            domainExecution,
             revision:s.runtimeRevision
           });
         }
@@ -192,6 +269,8 @@
         runtimeRevision:s.runtimeRevision,
         inputSources:inputSources.slice(),
         dependencies:{...dependencySnapshot},
+        engineBinding:domainContext.binding,
+        domainExecution,
         timestamp:s.lastUpdate
       };
 
@@ -246,7 +325,7 @@
       return {count:IDS.length,active,ticked,failed,initialized};
     }
 
-    const api=Object.freeze({version:'1.0.0',ids:IDS,specs:SPECS,init,tick,handleMessage,getIds,getState,health});
+    const api=Object.freeze({version:'1.1.0',ids:IDS,specs:SPECS,engineBindings:ENGINE_BINDINGS,init,tick,handleMessage,getIds,getState,health,getEngineBinding:resolveEngineBinding});
     return api;
   }
 
