@@ -26,7 +26,7 @@
 })(typeof window!=='undefined'?window:globalThis);
 
 /* ============================================================================
- * OMEGA 17-MINISTRY LIVE ACTIVATION BRIDGE v2.0.0
+ * OMEGA 17-MINISTRY LIVE ACTIVATION BRIDGE v2.1.0
  * Compatibility shim for the canonical 17-ministry runtime controller.
  * Scheduling is owned by index.html's single engine loop. This file does not
  * create a second timer and therefore cannot double-tick ministries.
@@ -54,7 +54,7 @@
 
     global.__OMEGA_MINISTRY_RUNTIME_STATUS__=global.__OMEGA_MINISTRY_RUNTIME_STATUS__||{};
     global.__OMEGA_17_MINISTRY_ACTIVATION__={
-      version:'2.0.0',
+      version:'2.1.0',
       controllerVersion:runtime.version,
       ids:ids.slice(),
       scheduler:'OMEGA_ENGINE_LOOP',
