@@ -33,13 +33,13 @@ test('Omega AI Integrity Suite', async () => {
   // until its country dataset has finished loading and the registry reports ready.
   const canonicalRegistry = await loadCanonicalRegistry();
 
-  const brainSource = fs.readFileSync(new URL('../offline_semantic_brain.js', root), 'utf8');
-  const engineSource = fs.readFileSync(new URL('../offline_query_engine.js', root), 'utf8');
-  const integritySource = fs.readFileSync(new URL('../omega_ai_integrity_layer.js', root), 'utf8');
-  const resourceBridgeSource = fs.readFileSync(new URL('../omega_resource_semantic_bridge.js', root), 'utf8');
-  const countries = JSON.parse(fs.readFileSync(new URL('../countries.json', root), 'utf8'));
-  const knowledge = JSON.parse(fs.readFileSync(new URL('../offline_semantic_knowledge.json', root), 'utf8'));
-  const resources = JSON.parse(fs.readFileSync(new URL('../resources.json', root), 'utf8'));
+  const brainSource = fs.readFileSync(new URL('offline_semantic_brain.js', root), 'utf8');
+  const engineSource = fs.readFileSync(new URL('offline_query_engine.js', root), 'utf8');
+  const integritySource = fs.readFileSync(new URL('omega_ai_integrity_layer.js', root), 'utf8');
+  const resourceBridgeSource = fs.readFileSync(new URL('omega_resource_semantic_bridge.js', root), 'utf8');
+  const countries = JSON.parse(fs.readFileSync(new URL('countries.json', root), 'utf8'));
+  const knowledge = JSON.parse(fs.readFileSync(new URL('offline_semantic_knowledge.json', root), 'utf8'));
+  const resources = JSON.parse(fs.readFileSync(new URL('resources.json', root), 'utf8'));
 
   assert.ok(Array.isArray(countries) && countries.length > 0, 'countries.json must contain records');
 
