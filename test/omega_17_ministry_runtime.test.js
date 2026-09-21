@@ -125,6 +125,9 @@ test('OMEGA canonical 17-ministry runtime executes every ministry adapter', () =
   assert.ok(events.some(e => e.topic === 'OMEGA_17_MINISTRY_RUNTIME_READY'));
   const health = runtime.health();
   assert.equal(health.sourceConnected, 17, 'all 17 ministries must connect to a real state/engine source in the runtime environment');
+  assert.equal(health.runtimeOnly, 0, 'no ministry may remain runtime-only when the shared world-state is available');
+  assert.ok(health.directEngineConnected >= 3, 'cabinet/resource/education direct engines must remain connected');
+  assert.equal(health.ministryRegistryConnected, true, 'minister state registry must be available to the runtime');
   const matrix = runtime.getConnectionMatrix();
   assert.equal(matrix.length, 17);
   assert.ok(matrix.every(row => row.dependencies === row.expectedDependencies));
