@@ -99,15 +99,13 @@ test('OMEGA canonical 17-ministry runtime executes every ministry adapter', () =
 
 
 test('OMEGA boot wiring exposes all 17 ministries through the single scheduler', () => {
-  const root = new URL('../', import.meta.url);
   const indexHtml = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
   const selector = fs.readFileSync(new URL('../omega_live_minister_selector.js', import.meta.url), 'utf8');
 
-  assert.match(indexHtml, /omega_ministry_runtime_v1\\.js/);
+  assert.match(indexHtml, /omega_ministry_runtime_v1\.js/);
   for (const id of IDS) assert.ok(indexHtml.includes('"' + id + '"'), 'index must retain canonical ministry id: ' + id);
 
   const bridgeStart = selector.indexOf('OMEGA 17-MINISTRY LIVE ACTIVATION BRIDGE v2.0.0');
   assert.ok(bridgeStart >= 0, 'selector must use v2 canonical runtime shim');
   assert.equal(selector.slice(bridgeStart).includes('setInterval('), false, 'selector must not own a second ministry scheduler');
-  void root;
 });
