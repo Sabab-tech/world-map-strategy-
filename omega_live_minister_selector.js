@@ -26,39 +26,53 @@
 })(typeof window!=='undefined'?window:globalThis);
 
 /* ============================================================================
- * OMEGA 17-MINISTRY LIVE ACTIVATION BRIDGE v1.0.0
- * Purpose: register and continuously tick every canonical ministry at runtime.
- * Does not invent ministry-specific domain logic; it activates the existing kernel
- * pipeline so each ministry has a real lifecycle state and runtime tick.
+ * OMEGA 17-MINISTRY LIVE ACTIVATION BRIDGE v2.0.0
+ * Compatibility shim for the canonical 17-ministry runtime controller.
+ * Scheduling is owned by index.html's single engine loop. This file does not
+ * create a second timer and therefore cannot double-tick ministries.
  * ============================================================================ */
 (function(global){'use strict';
-  const IDS=['cabinet','defense','military','finance','economy','trade','foreign','intelligence','interior','transport','resource','health','education','technology','projects','culture','statistics'];
-  const INTERVAL=1000;
-  function activate(){
+  const runtime=global.OMEGA_MINISTRY_RUNTIME_V1||global.Omega?.MinistryRuntime;
+  function sync(){
+    if(!runtime || typeof runtime.init!=='function') return false;
     const kernel=global.Omega?.Kernel;
-    if(!kernel||typeof kernel.registerMinistry!=='function'||typeof kernel.pumpOrchestratedPipelineTick!=='function') return false;
-    IDS.forEach(id=>{try{kernel.registerMinistry(id)}catch(e){console.warn('[OMEGA 17M] registration failed',id,e)}});
+    if(!kernel) return false;
+    if(!runtime.init(kernel)) return false;
+
+    const ids=runtime.getIds();
     const manifest=global.GLOBAL_MINISTRY_MANIFEST;
-    if(Array.isArray(manifest)) manifest.forEach(m=>{if(m&&IDS.includes(String(m.id)))m.status='ACTIVE'});
+    if(Array.isArray(manifest)){
+      manifest.forEach(item=>{
+        if(item && ids.includes(String(item.id))) item.status='ACTIVE';
+      });
+    }
+
+    global.Omega=global.Omega||{};
     global.Omega.App=global.Omega.App||{};
-    global.Omega.App.MINISTRIES=Object.freeze(IDS.slice());
-    global.Omega.App.activeMinistries=Object.freeze(IDS.slice());
+    global.Omega.App.MINISTRIES=Object.freeze(ids.slice());
+    global.Omega.App.activeMinistries=Object.freeze(ids.slice());
+
     global.__OMEGA_MINISTRY_RUNTIME_STATUS__=global.__OMEGA_MINISTRY_RUNTIME_STATUS__||{};
-    const tick=global.__OMEGA_DIAG__?.metrics?.tick||0;
-    IDS.forEach(id=>{try{kernel.pumpOrchestratedPipelineTick(id,0,tick,{onMessage:()=>{},onMinistryTick:(dt,currentTurn)=>{const now=Date.now();global.__OMEGA_MINISTRY_RUNTIME_STATUS__[id]={id,status:kernel.getMinistryState(id),lastTick:currentTurn,lastUpdate:now,active:true}}})}catch(e){global.__OMEGA_MINISTRY_RUNTIME_STATUS__[id]={id,status:'FAILED',active:false,error:String(e?.message||e)}}});
+    global.__OMEGA_17_MINISTRY_ACTIVATION__={
+      version:'2.0.0',
+      controllerVersion:runtime.version,
+      ids:ids.slice(),
+      scheduler:'OMEGA_ENGINE_LOOP',
+      startedAt:global.__OMEGA_17_MINISTRY_ACTIVATION__?.startedAt||Date.now()
+    };
+
+    try{
+      global.dispatchEvent?.(new CustomEvent('OMEGA_ALL_17_MINISTRIES_LIVE',{
+        detail:{count:ids.length,ids:ids.slice(),scheduler:'OMEGA_ENGINE_LOOP'}
+      }));
+    }catch(_){}
+    console.info('[OMEGA 17M] ALL 17 MINISTRIES LIVE VIA CANONICAL RUNTIME',ids);
     return true;
   }
   function start(){
-    if(global.__OMEGA_17_MINISTRY_ACTIVATION__)return;
-    if(!activate()){setTimeout(start,250);return}
-    global.__OMEGA_17_MINISTRY_ACTIVATION__={version:'1.0.0',ids:IDS.slice(),interval:INTERVAL,startedAt:Date.now()};
-    setInterval(()=>{
-      const kernel=global.Omega?.Kernel;if(!kernel)return;
-      const tick=global.__OMEGA_DIAG__?.metrics?.tick||0;
-      IDS.filter(id=>id!=='economy'&&id!=='defense').forEach(id=>{try{kernel.pumpOrchestratedPipelineTick(id,INTERVAL,tick,{onMessage:()=>{},onMinistryTick:(dt,currentTurn)=>{global.__OMEGA_MINISTRY_RUNTIME_STATUS__[id]={id,status:kernel.getMinistryState(id),lastTick:currentTurn,lastUpdate:Date.now(),active:true}}})}catch(e){global.__OMEGA_MINISTRY_RUNTIME_STATUS__[id]={id,status:'FAILED',active:false,error:String(e?.message||e)}}});
-    },INTERVAL);
-    console.info('[OMEGA 17M] ALL 17 MINISTRIES LIVE',IDS);
-    global.dispatchEvent(new CustomEvent('OMEGA_ALL_17_MINISTRIES_LIVE',{detail:{count:IDS.length,ids:IDS.slice()}}));
+    if(sync()) return;
+    setTimeout(start,250);
   }
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',start,{once:true});
+  else start();
 })(typeof window!=='undefined'?window:globalThis);
