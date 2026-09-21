@@ -129,12 +129,165 @@ app.post('/api/minister-state/diagnostics', (req, res) => { try { const registry
 function deepCoreContext(req) {
   const source = req.method === 'GET' ? req.query : req.body;
   const body = source && typeof source === 'object' ? source : {};
-  return { ...body, countryId: body.countryId || body.countryCode, countryCode: body.countryCode || body.countryId };
+  return {
+    ...body,
+    countryId: body.countryId || body.countryCode,
+    countryCode: body.countryCode || body.countryId,
+    ministerId: body.ministerId || body.ministerID,
+    ministryId: body.ministryId || body.ministryID,
+    ministerName: body.ministerName || body.ministerDisplayName
+  };
 }
-function buildDeepCoreIR(prompt, input = {}) { if (!OfflineSemanticBrain?.parse) throw new Error('OfflineSemanticBrain is unavailable'); return OfflineSemanticBrain.parse(prompt, input); }
+function buildDeepCoreIR(prompt, input = {}) {
+  if (ProductionSemanticRuntime?.parse) {
+    try {
+      const canonical = ProductionSemanticRuntime.parse(prompt, {
+        countryCode: input.countryCode || input.countryId,
+        ministryId: input.ministryId,
+        ministerId: input.ministerId,
+        ministerName: input.ministerName
+      });
+      if (canonical?.targetDomain === 'MINISTER') return canonical;
+    } catch (e) {
+      console.warn('[Deep Core] Production minister semantic parse fallback:', e.message);
+    }
+  }
+  if (!OfflineSemanticBrain?.parse) throw new Error('OfflineSemanticBrain is unavailable');
+  return OfflineSemanticBrain.parse(prompt, input);
+}
+function findMinisterRecordLocation(ministerId) {
+  const id = String(ministerId || '').trim();
+  const db = cachedMinisters?.ministers_database || {};
+  for (const [category, list] of Object.entries(db)) {
+    if (!Array.isArray(list)) continue;
+    const index = list.findIndex(row => String(row?.id || '').trim() === id);
+    if (index >= 0) return { category, index };
+  }
+  return null;
+}
+function executeProductionMinisterQuery(prompt, input, ir) {
+  if (!ProductionSemanticRuntime?.buildAnswerPlan || ir?.targetDomain !== 'MINISTER') return null;
+  const identity = {
+    countryCode: input.countryCode || input.countryId,
+    ministryId: input.ministryId,
+    ministerId: input.ministerId,
+    ministerName: input.ministerName
+  };
+  let plan;
+  try {
+    plan = ProductionSemanticRuntime.buildAnswerPlan(
+      prompt,
+      identity,
+      input.gameState || input.worldState || {},
+      Array.isArray(input.history) ? input.history : []
+    );
+  } catch (e) {
+    return {
+      handled: true,
+      result: {
+        ok: false,
+        status: 'MINISTER_RUNTIME_EXECUTION_ERROR',
+        value: null,
+        evidence: [],
+        trace: [{ step: 'MINISTER_RUNTIME', status: 'EXECUTION_ERROR', error: e.message }]
+      }
+    };
+  }
+  const semantic = plan?.semantic || ir;
+  if (semantic?.targetDomain !== 'MINISTER') return null;
+  const base = plan?.result || {};
+  const ministerId = semantic?.entities?.minister?.id || input.ministerId || null;
+  if (!base?.ok) {
+    return {
+      handled: true,
+      result: {
+        ok: false,
+        status: base.reason || 'MINISTER_QUERY_UNRESOLVED',
+        value: base.value ?? null,
+        evidence: [],
+        trace: [
+          { step: 'QUESTION_INTERPRETATION', operation: semantic?.operation || null },
+          { step: 'MINISTER_IDENTITY_RESOLUTION', status: 'UNRESOLVED', ministerId: ministerId || null }
+        ],
+        dataAccess: { repositoryIndexed: true, authority: 'NODE_FILESYSTEM' }
+      }
+    };
+  }
+  const attribute = semantic?.attribute?.name || base?.attribute || null;
+  const location = findMinisterRecordLocation(ministerId);
+  const recordLocator = location
+    ? `ministers_database.${location.category}[${location.index}]`
+    : 'ministers_database';
+  const fieldPath = attribute && location
+    ? `ministers_database.${location.category}[${location.index}].${attribute}`
+    : attribute || null;
+  const evidence = [{
+    dataset: 'ministers.json',
+    physicalPath: 'ministers.json',
+    logicalDatasetId: 'ministers.json',
+    recordLocator,
+    fieldPath,
+    canonicalEntityId: ministerId,
+    entityType: 'MINISTER',
+    property: attribute,
+    rawValue: base.value,
+    operation: String(semantic?.operation || base?.operation || 'ATTRIBUTE').toUpperCase(),
+    relationPath: [],
+    authority: 'NODE_FILESYSTEM',
+    source: 'DEEP_CORE_PRODUCTION_MINISTER_EXECUTOR'
+  }];
+  return {
+    handled: true,
+    result: {
+      ok: true,
+      status: 'VERIFIED_FACT',
+      operation: base.operation || semantic.operation || 'ATTRIBUTE',
+      attribute,
+      value: base.value,
+      source: base.source || 'ministers.json',
+      evidence,
+      trace: [
+        { step: 'QUESTION_INTERPRETATION', operation: semantic.operation || null, attribute },
+        { step: 'MINISTER_IDENTITY_RESOLUTION', ministerId, status: 'RESOLVED', authority: 'OMEGA_PRODUCTION_SEMANTIC_RUNTIME' },
+        { step: 'RAW_RECORD_RESOLUTION', dataset: 'ministers.json', recordLocator },
+        { step: 'ATTRIBUTE_EXTRACTION', property: attribute },
+        { step: 'EVIDENCE_VALIDATION', status: 'VERIFIED_FACT' }
+      ],
+      dataAccess: { repositoryIndexed: true, authority: 'NODE_FILESYSTEM', dataset: 'ministers.json' }
+    }
+  };
+}
 function executeDeepCorePrompt(prompt, input = {}) {
   const ir = buildDeepCoreIR(prompt, input);
-  const runtimeDataContext = { ...input, ir, countryId: input.countryId || input.countryCode, countryCode: input.countryCode || input.countryId };
+  const runtimeDataContext = {
+    ...input,
+    ir,
+    countryId: input.countryId || input.countryCode,
+    countryCode: input.countryCode || input.countryId,
+    ministerId: input.ministerId,
+    ministryId: input.ministryId
+  };
+  const ministerExecution = executeProductionMinisterQuery(prompt, runtimeDataContext, ir);
+  if (ministerExecution?.handled) {
+    const result = ministerExecution.result;
+    const evidenceLedger = OfflineQueryEngine?.buildEvidenceLedger ? OfflineQueryEngine.buildEvidenceLedger(result) : null;
+    return {
+      prompt,
+      ir,
+      searchStrategy: ir.searchStrategy || null,
+      executionPlan: {
+        version: OfflineQueryEngine?.VERSION || null,
+        authority: 'NODE_FILESYSTEM',
+        route: 'PRODUCTION_SEMANTIC_RUNTIME -> MINISTER_ATTRIBUTE_EXECUTOR',
+        runtimeContextKeys: Object.keys(runtimeDataContext),
+        identity: { ministerId: ir?.entities?.minister?.id || input.ministerId || null },
+        operation: ir?.operation || null
+      },
+      result,
+      evidenceLedger,
+      diagnostics: OfflineQueryEngine?.diagnostics ? OfflineQueryEngine.diagnostics() : null
+    };
+  }
   const executionPlan = OfflineQueryEngine?.buildExecutionPlan ? OfflineQueryEngine.buildExecutionPlan(ir, runtimeDataContext) : null;
   const result = OfflineQueryEngine?.execute ? OfflineQueryEngine.execute(ir, runtimeDataContext, ir.language || input.language || 'en', input) : { ok: false, status: 'DEEP_CORE_UNAVAILABLE', value: null, evidence: [] };
   const evidenceLedger = OfflineQueryEngine?.buildEvidenceLedger ? OfflineQueryEngine.buildEvidenceLedger(result) : null;
