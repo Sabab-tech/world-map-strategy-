@@ -9,13 +9,32 @@ const asset=p=>{try{return typeof document!=='undefined'&&document.baseURI?new U
 const brain=()=>global.OfflineSemanticBrain||null,qe=()=>global.OfflineQueryEngine||null,rt=()=>global.OmegaProductionSemanticRuntime||null,integrity=()=>global.OmegaAIIntegrity||null;
 const QueryIntent=Object.freeze({RESOURCE_MINING_DISCOVERY:'RESOURCE_MINING_DISCOVERY',RESOURCE_SECURITY:'RESOURCE_SECURITY',RESOURCE_QUANTITY:'RESOURCE_QUANTITY',RESOURCE_LOCATION:'RESOURCE_LOCATION',COMPARE:'COMPARE',LOOKUP:'LOOKUP',COUNT:'COUNT',LOCATION:'LOCATION'});
 const loaded=new Set();
-function parse(q,ctx={}){try{if(brain()?.parse){const p=brain().parse(norm(q),ctx);if(p?.contractVersion)return p}}catch(_){}try{if(rt()?.parse)return rt().parse(norm(q),ctx,ctx.gameState||ctx.worldState||{},ctx.history||[])}catch(_){}return{contractVersion:'OMEGA-QUERY-IR-FAILURE',raw:S(q),normalized:norm(q),language:/[\u0980-\u09ff]/.test(S(q))?'bn':'en',operation:'UNKNOWN',entities:{country:{status:'UNRESOLVED',id:null},resource:{status:'UNRESOLVED',id:null}},unresolved:['SEMANTIC_RUNTIME_UNAVAILABLE'],executable:false}}
-function localExecute(p,ctx={}){try{if(qe()?.execute)return qe().execute(p,[],p.language||'en',{...ctx,countryId:p?.entities?.country?.id||ctx.countryId,resourceId:p?.entities?.resource?.id||ctx.resourceId})}catch(_){}return null}
-async function server(question,ctx={}){if(typeof fetch!=='function')return{status:'SERVER_FETCH_UNAVAILABLE',server:false,value:null,evidence:[]};try{const r=await fetch(asset('/api/deep-core/query'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:S(question),question:S(question),...ctx}),credentials:'same-origin'});const p=await r.json().catch(()=>({}));const result=p?.result||p;return{...p,result:p?.result||null,status:result?.status||p?.status||`HTTP_${r.status}`,value:result?.value??p?.value??null,evidence:result?.evidence||p?.evidence||[],server:r.ok===true,transportStatus:r.status}}catch(e){return{status:'SERVER_FETCH_FAILED',server:false,value:null,evidence:[],error:e?.message||String(e)}}}
-function renderResult(out,q){if(typeof document==='undefined')return;let host=document.getElementById('omega-deep-core-result'),input=document.getElementById('interrogation-input');if(!host){host=document.createElement('div');host.id='omega-deep-core-result';host.setAttribute('data-source','DEEP_CORE');host.style.cssText='margin-top:10px;padding:10px;border:1px solid rgba(0,229,255,.28);background:rgba(0,0,0,.28);border-radius:6px;color:#dbeafe;font:12px/1.5 Inter,Arial,sans-serif;white-space:pre-wrap;overflow-wrap:anywhere;max-height:320px;overflow:auto;';(input?.parentElement||document.body).appendChild(host)}host.textContent='';const st=S(out?.status||'UNKNOWN'),t=document.createElement('div');t.style.fontWeight='700';t.textContent=`DEEP CORE • ${st}`;host.appendChild(t);const v=document.createElement('div');v.textContent=out?.value===null||out?.value===undefined?'Result: null':`Result: ${typeof out.value==='object'?JSON.stringify(out.value):String(out.value)}`;host.appendChild(v);if(q){const z=document.createElement('div');z.style.opacity='.75';z.textContent=`Question: ${q}`;host.appendChild(z)}const scan=out?.dataAccess?.scan||out?.scan;if(scan){const z=document.createElement('div');z.style.marginTop='5px';z.textContent=`Scan: ${scan.mode||'?'} | ${scan.source||'?'} | ${scan.loadedFiles||0}/${scan.discoveredFiles||0}`;host.appendChild(z)}const ev=Array.isArray(out?.evidence)?out.evidence:[];if(ev.length){const e=document.createElement('div');e.style.marginTop='6px';e.textContent=ev.slice(0,10).map((x,i)=>`[${i+1}] ${x.dataset||'?'} → ${x.physicalPath||'?'} → ${x.recordLocator||'?'}${x.fieldPath?` → ${x.fieldPath}`:''}${x.canonicalEntityId?` → ${x.canonicalEntityId}`:''}`).join('\n');host.appendChild(e)}}
-function loadOnce(src){if(loaded.has(src))return Promise.resolve(true);if(typeof document==='undefined')return Promise.resolve(false);const existing=[...document.scripts].find(s=>s.src&&(s.src===asset(src)||s.src.endsWith('/'+src)));if(existing){loaded.add(src);return Promise.resolve(true)}return new Promise(ok=>{const s=document.createElement('script');s.src=asset(src);s.onload=()=>{loaded.add(src);ok(true)};s.onerror=()=>ok(false);document.head.appendChild(s)})}
-async function ensureStack(){await loadOnce('offline_query_engine.js');return !!qe()}
-async function repositoryExecute(question,ctx={}){await ensureStack();const p=parse(question,ctx),engine=qe();if(!engine)return{status:'DEEP_CORE_ENGINE_UNAVAILABLE',value:null,evidence:[],semantic:p};try{const r=engine.executeAsync?await engine.executeAsync(p,[],p.language||'en',ctx):engine.execute(p,[],p.language||'en',ctx);return{...r,semantic:p}}catch(e){return{status:'DEEP_CORE_EXECUTION_ERROR',value:null,evidence:[],error:e?.message||String(e),semantic:p}}}
+function parse(q,ctx={}){
+  try{
+    const canonical=rt()?.parse?.(norm(q),ctx,ctx.gameState||ctx.worldState||{},ctx.history||[]);
+    if(canonical?.targetDomain==='MINISTER') return canonical;
+  }catch(_){}
+  try{
+    if(brain()?.parse){
+      const p=brain().parse(norm(q),ctx);
+      if(p?.contractVersion)return p;
+    }
+  }catch(_){}
+  try{
+    if(rt()?.parse)return rt().parse(norm(q),ctx,ctx.gameState||ctx.worldState||{},ctx.history||[]);
+  }catch(_){}
+  return{
+    contractVersion:'OMEGA-QUERY-IR-FAILURE',
+    raw:S(q),
+    normalized:norm(q),
+    language:/[\\u0980-\\u09ff]/.test(S(q))?'bn':'en',
+    operation:'UNKNOWN',
+    entities:{country:{status:'UNRESOLVED',id:null},resource:{status:'UNRESOLVED',id:null},minister:{status:'UNRESOLVED',id:null}},
+    unresolved:['SEMANTIC_RUNTIME_UNAVAILABLE'],
+    executable:false
+  }
+}
+
 function legacyIntent(p){const a=U(p?.entities?.assetClass?.id||p?.assetClass||''),o=U(p?.operation||'LOOKUP');if(a)return QueryIntent.RESOURCE_MINING_DISCOVERY;if(o==='COUNT')return QueryIntent.COUNT;if(o==='LOCATE'||o==='LOCATION')return QueryIntent.LOCATION;if(o==='COMPARE')return QueryIntent.COMPARE;return o||QueryIntent.LOOKUP}
 function route(q,identity={},world={}){const ctx={...identity,...world,history:world.history||identity.history||[]},p=parse(q,ctx),r=localExecute(p,ctx)||{status:'ASYNC_ONLY',value:null,evidence:[]};return{version:VERSION,intent:legacyIntent(p),operation:p.operation||'UNKNOWN',domain:p.intent||p.targetDomain||'GENERAL',entities:Object.values(p.entities||{}).filter(e=>e?.id).map(e=>({type:e.type||null,id:e.id,confidence:e.confidence||null,source:e.source||null,surface:e.surface||null})),requiredData:Object.values(p.entities||{}).filter(e=>e?.id).map(e=>e.type||null).filter(Boolean),semantic:p,result:r,dataFound:r?.status==='VERIFIED_FACT',executable:p.executable!==false&&r?.status!=='NO_AUTHORITATIVE_EXECUTOR'}}
 function resolveKnowledgeQuery(q,ctx={}){const r=route(q,ctx,ctx);return{...r,country:r.semantic?.entities?.country||null,resource:r.semantic?.entities?.resource||null,operation:r.semantic?.operation||'UNKNOWN'}}
@@ -23,8 +42,36 @@ function detectIntent(q,ctx={}){return legacyIntent(parse(q,ctx))}
 function learn(surface,mapping={},confidence=.95){const r=rt(),id=mapping.canonicalId||mapping.countryId||mapping.resourceId||mapping.ministerId,type=mapping.entityType||(mapping.countryId?'COUNTRY':mapping.resourceId?'RESOURCE':mapping.ministerId?'PERSON':null);try{return!!(r?.learn&&surface&&id&&type&&r.learn(surface,type,id,confidence))}catch(_){return false}}
 function recall(q){try{return rt()?.recall?.(q)||{}}catch(_){return{}}}
 async function enqueue(q,ctx={}){const question=S(q);if(!question)return{status:'EMPTY_QUERY',value:null,evidence:[]};const srv=await server(question,ctx);if(srv.server&&srv.status==='VERIFIED_FACT'){renderResult(srv,question);return srv}const local=await repositoryExecute(question,ctx);if(local?.status&&local.status!=='DEEP_CORE_ENGINE_UNAVAILABLE'){renderResult(local,question);return local}const out={...local,...srv,status:local?.status||srv.status,value:local?.value??srv.value??null,evidence:local?.evidence||srv.evidence||[]};renderResult(out,question);return out}
-function interceptSubmission(ev){const b=ev?.target?.closest?.('#btn-submit-interrogation');if(!b)return false;const input=document.getElementById('interrogation-input'),q=S(input?.value);if(!q)return false;ev.preventDefault();ev.stopImmediatePropagation();if(input)input.value='';enqueue(q).catch(e=>renderResult({status:'ENTRY_FAILED',value:null,evidence:[],error:e?.message||String(e)},q));return true}
-function interceptEnter(ev){if(ev.key!=='Enter'||ev.shiftKey||ev.isComposing||ev.target?.id!=='interrogation-input')return false;const q=S(ev.target.value);if(!q)return false;ev.preventDefault();ev.stopImmediatePropagation();ev.target.value='';enqueue(q).catch(e=>renderResult({status:'ENTRY_FAILED',value:null,evidence:[],error:e?.message||String(e)},q));return true}
+function liveMinisterContext(){
+  const ui=global.OmegaCabinetUI||{},m=ui.currentInterrogatedMinister||{};
+  const g=global.Game||{},s=g.state||{};
+  const ministerId=S(m.ministerId||m.id||m.staticProfile?.ministerId||m.staticProfile?.id||m.profile?.ministerId||m.profile?.id||s.activeMinisterId||global.OmegaMinisterState?.activeMinisterId||'');
+  const countryId=S(m.countryId||m.countryCode||m.staticProfile?.countryId||m.profile?.countryId||g.currentActiveCountry||s.countryId||s.playerCountryId||'').toUpperCase();
+  const ministryId=S(m.ministryId||m.ministry||m.staticProfile?.ministryId||m.profile?.ministryId||s.activeMinistryId||global.OmegaLayerManager?.activeMinistryId||'');
+  const ministerName=S(m.ministerName||m.name||m.displayName||m.staticProfile?.baseName||m.staticProfile?.name||'');
+  const ministerRole=S(m.ministerRole||m.role||m.title||m.staticProfile?.role||'');
+  return {ministerId,countryId,countryCode:countryId,ministryId,ministerName,ministerRole};
+}
+function interceptSubmission(ev){
+  const b=ev?.target?.closest?.('#btn-submit-interrogation');
+  if(!b)return false;
+  const input=document.getElementById('interrogation-input'),q=S(input?.value);
+  if(!q)return false;
+  ev.preventDefault();ev.stopImmediatePropagation();
+  if(input)input.value='';
+  enqueue(q,liveMinisterContext()).catch(e=>renderResult({status:'ENTRY_FAILED',value:null,evidence:[],error:e?.message||String(e)},q));
+  return true;
+}
+function interceptEnter(ev){
+  if(ev.key!=='Enter'||ev.shiftKey||ev.isComposing||ev.target?.id!=='interrogation-input')return false;
+  const q=S(ev.target.value);
+  if(!q)return false;
+  ev.preventDefault();ev.stopImmediatePropagation();
+  ev.target.value='';
+  enqueue(q,liveMinisterContext()).catch(e=>renderResult({status:'ENTRY_FAILED',value:null,evidence:[],error:e?.message||String(e)},q));
+  return true;
+}
+
 function install(){if(typeof document==='undefined'||document.__OMEGA_CANONICAL_ENTRY_V14_1)return;document.__OMEGA_CANONICAL_ENTRY_V14_1=true;document.addEventListener('click',interceptSubmission,true);document.addEventListener('keydown',interceptEnter,true)}
 const API=Object.freeze({VERSION,QueryIntent,parse,normalize:norm,executeServerDeepCore:server,repositoryExecute,routeMinisterQuery:route,resolveKnowledgeQuery,detectIntent,learn,recall,ensureCanonicalBrowserStack:ensureStack,enqueue});global.MinisterQueryRouter=API;install();if(typeof module!=='undefined'&&module.exports)module.exports=API;
 })(typeof globalThis!=='undefined'?globalThis:window);
