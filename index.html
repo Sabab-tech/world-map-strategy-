@@ -904,12 +904,26 @@
                     } catch (peErr) { console.warn("Presentation Sync Warn", peErr); }
                 }
 
-                const MINISTRIES = ["economy", "defense"];
-                MINISTRIES.forEach(id => {
-                    if (typeof kernel.registerMinistry === "function") kernel.registerMinistry(id);
-                });
+                // [OMEGA 17M] Canonical runtime controller owns the complete ministry set.
+                const ministryRuntimeController = window.OMEGA_MINISTRY_RUNTIME_V1 || window.Omega?.MinistryRuntime || null;
+                const MINISTRIES = ministryRuntimeController && typeof ministryRuntimeController.getIds === "function"
+                    ? ministryRuntimeController.getIds()
+                    : ["cabinet","defense","military","finance","economy","trade","foreign","intelligence","interior","transport","resource","health","education","technology","projects","culture","statistics"];
+
+                if (ministryRuntimeController && typeof ministryRuntimeController.init === "function") {
+                    if (!ministryRuntimeController.init(kernel)) {
+                        throw new Error("17-Ministry Runtime Controller initialization failed.");
+                    }
+                    window.__LOG_EVENT__("MINISTRY_RUNTIME_17_CONTROLLER_READY");
+                } else {
+                    MINISTRIES.forEach(id => {
+                        if (typeof kernel.registerMinistry === "function") kernel.registerMinistry(id);
+                    });
+                    console.warn("[OMEGA] Canonical 17-Ministry Runtime Controller missing; kernel-only fallback active.");
+                }
+
                 // [FIX P3] Expose System Objects
-                window.Omega.App = { kernel, presentation, bridge: sharedBridge, state: "READY" };
+                window.Omega.App = { kernel, presentation, bridge: sharedBridge, state: "READY", ministryRuntime: ministryRuntimeController };
 
                 if (window.OmegaMinistry && typeof window.OmegaMinistry.createRuntime === "function") {
                     const ministryRuntime = window.OmegaMinistry.createRuntime();
@@ -931,7 +945,7 @@
                 let tick = 0;
 
                 // --- Event-Driven Update Architecture ---
-                const dirtyMinistries = new Set(["economy", "defense"]);
+                const dirtyMinistries = new Set(MINISTRIES);
                 let activeMinistryId = "economy";
                 let lastSimTickTime = performance.now();
                 const SIMULATION_TICK_INTERVAL = 1000; // 1s interval for macro simulation ticks
@@ -1001,7 +1015,14 @@
 
                     ministriesToProcess.forEach(id => {
                         if (typeof kernel.pumpOrchestratedPipelineTick === "function") {
-                            kernel.pumpOrchestratedPipelineTick(id, dt, tick, { onMessage: () => {} });
+                            kernel.pumpOrchestratedPipelineTick(id, dt, tick, {
+                                onMessage: (message) => {
+                                    ministryRuntimeController?.handleMessage?.(id, message);
+                                },
+                                onMinistryTick: (tickDt, currentTurn, store, blackboard) => {
+                                    ministryRuntimeController?.tick?.(id, tickDt, currentTurn, store, blackboard);
+                                }
+                            });
                         }
                     });
 
