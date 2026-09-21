@@ -1,4 +1,12 @@
-import assert from 'node:assert/strict';
+  const sharedState = {
+    economy: { BGD: { gdp: 500000000000, debt: 100000000000 } },
+    population: { BGD: { population_2015: 160000000 } },
+    society: { BGD: { stability: 70 } },
+    relations: { BGD: { USA: 65 } },
+    countryId: 'BGD',
+    playerCountryId: 'BGD'
+  };
+  const sandbox = {import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
 import test from 'node:test';
@@ -47,7 +55,32 @@ test('OMEGA canonical 17-ministry runtime executes every ministry adapter', () =
     },
     dispatchEvent(event) { events.push({ topic: event.type, payload: event.detail }); },
     Omega: { Kernel: kernel },
-    GLOBAL_MINISTRY_MANIFEST: IDS.map(id => ({ id, status: 'READY' }))
+    GLOBAL_MINISTRY_MANIFEST: IDS.map(id => ({ id, status: 'READY' })),
+    Game: { state: sharedState, currentActiveCountry: 'BGD' },
+    WorldEcosystemEngine: {
+      getCountryProfile() {
+        return {
+          government: { cabinetStability: 70 },
+          population: { happinessScore: 72, povertyRate: 18 },
+          geography: { borderLengthKm: 500 },
+          resources: { crude_oil: { reserveBbl: 1000000 } },
+          tech: { cyberAttackPower: 40 },
+          media: { pressFreedomIndex: 60 },
+          blocs: ['TEST_BLOC'],
+          influenceSphere: 'Test Sphere',
+          aiPersonality: { aggressiveExpansion: 30 },
+          economy: { gdp: 500000000000 }
+        };
+      }
+    },
+    ResourceMinistryEngine: {
+      getIntegratedResourceState() { return { inventory: { crude_oil: 1000000 } }; }
+    },
+    EducationEngine: {},
+    OmegaCabinetUI: { activeCountry: 'BGD' },
+    OmegaMinisterStateRegistry: {
+      getActiveMinister() { return null; }
+    }
   };
   sandbox.window = sandbox;
   sandbox.globalThis = sandbox;
@@ -57,13 +90,19 @@ test('OMEGA canonical 17-ministry runtime executes every ministry adapter', () =
 
   const runtime = sandbox.OMEGA_MINISTRY_RUNTIME_V1;
   assert.ok(runtime, 'runtime controller must load');
-  assert.equal(runtime.version, '1.0.0');
+  assert.equal(runtime.version, '2.0.0');
   assert.equal(JSON.stringify(runtime.getIds()), JSON.stringify(IDS));
 
   assert.equal(runtime.init(kernel), true);
   assert.equal(registered.length, IDS.length, 'exactly 17 canonical registrations expected');
 
   const stores = new Map();
+  const board = new Map();
+  const blackboard = {
+    writeAtomic(key, value) { board.set(key, value); },
+    read(key) { return board.get(key) || null; }
+  };
+
   for (const id of IDS) {
     const store = {
       policies: new Map(),
@@ -71,7 +110,7 @@ test('OMEGA canonical 17-ministry runtime executes every ministry adapter', () =
       goalStack: []
     };
     stores.set(id, store);
-    const telemetry = runtime.tick(id, 16.7, 42, store, null);
+    const telemetry = runtime.tick(id, 16.7, 42, store, blackboard);
     assert.equal(telemetry.id, id);
     assert.equal(telemetry.domain, runtime.specs[id].domain);
     assert.equal(telemetry.tick, 42);
@@ -92,7 +131,13 @@ test('OMEGA canonical 17-ministry runtime executes every ministry adapter', () =
   assert.equal(runtime.health().ticked, 17);
   assert.equal(runtime.health().failed, 0);
   assert.ok(events.some(e => e.topic === 'OMEGA_17_MINISTRY_RUNTIME_READY'));
-  assert.equal(events.filter(e => e.topic === 'OMEGA_MINISTRY_RUNTIME_TICK').length, 17);
+  const health = runtime.health();
+  assert.equal(health.sourceConnected, 17, 'all 17 ministries must connect to a real state/engine source in the runtime environment');
+  const matrix = runtime.getConnectionMatrix();
+  assert.equal(matrix.length, 17);
+  assert.ok(matrix.every(row => row.dependencies === row.expectedDependencies));
+  assert.ok(matrix.every(row => row.sourceLevel !== 'RUNTIME_CONNECTED'));
+  assert.equal(events.filter(e => e.topic === 'OMEGA_MINISTRY_RUNTIME_TICK').length, 34);
 
   console.log('OMEGA 17-ministry runtime test: PASS');
 });
