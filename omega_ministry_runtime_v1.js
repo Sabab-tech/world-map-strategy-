@@ -30,7 +30,7 @@
     intelligence: { domain:'intelligence_state', dependencies:['foreign','interior','defense'] },
     interior:    { domain:'civil_administration', dependencies:['finance','health','statistics'] },
     transport:    { domain:'infrastructure_logistics', dependencies:['economy','resource','projects'] },
-    resource:     { domain:'resource_governance', dependencies:['economy','transport','environment'] },
+    resource:     { domain:'resource_governance', dependencies:['economy','transport','projects'] },
     health:       { domain:'public_health', dependencies:['finance','interior','education','statistics'] },
     education:    { domain:'human_capital', dependencies:['finance','technology','health','economy'] },
     technology:   { domain:'science_technology', dependencies:['education','finance','defense'] },
@@ -100,6 +100,7 @@
     IDS.forEach(id=>states.set(id,makeInitialState(id)));
 
     let kernel=null;
+    let bridge=null;
     let initialized=false;
 
     function syncManifest(){
@@ -111,8 +112,10 @@
     }
 
     function init(nextKernel){
+      if(initialized && kernel && (!nextKernel || nextKernel===kernel)) return true;
       kernel = nextKernel || global.Omega?.Kernel || null;
       if(!kernel || typeof kernel.registerMinistry!=='function') return false;
+      bridge = typeof kernel.createBridge==='function' ? kernel.createBridge() : null;
 
       for(const id of IDS){
         kernel.registerMinistry(id);
@@ -212,7 +215,7 @@
       }
 
       try{
-        global.Omega?.Kernel?.createBridge?.().emitEvent?.('OMEGA_MINISTRY_RUNTIME_TICK',telemetry);
+        bridge?.emitEvent?.('OMEGA_MINISTRY_RUNTIME_TICK',telemetry);
       }catch(_){}
 
       publishEvent('OMEGA_MINISTRY_RUNTIME_TICK',telemetry);
