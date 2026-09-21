@@ -58,7 +58,7 @@ test('OMEGA canonical 17-ministry runtime executes every ministry adapter', () =
   const runtime = sandbox.OMEGA_MINISTRY_RUNTIME_V1;
   assert.ok(runtime, 'runtime controller must load');
   assert.equal(runtime.version, '1.0.0');
-  assert.deepEqual(runtime.getIds(), IDS);
+  assert.equal(JSON.stringify(runtime.getIds()), JSON.stringify(IDS));
 
   assert.equal(runtime.init(kernel), true);
   assert.equal(registered.length, IDS.length, 'exactly 17 canonical registrations expected');
