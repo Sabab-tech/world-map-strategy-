@@ -10,8 +10,19 @@ const packageJson = JSON.parse(read('package.json'));
 const server = read('server.js');
 const deepCore = read('offline_query_engine.js');
 const bootstrap = read('server_bootstrap.js');
+const ministerRouter = read('minister_query_router.js');
+
 
 assert(packageJson.dependencies?.express, 'express must be a declared runtime dependency');
+assert(ministerRouter.includes('function localExecute('), 'minister router local execution helper must exist');
+assert(ministerRouter.includes('async function server('), 'minister router server transport helper must exist');
+assert(ministerRouter.includes('function renderResult('), 'minister router result renderer must exist');
+assert(ministerRouter.includes('async function repositoryExecute('), 'minister router repository fallback helper must exist');
+assert(ministerRouter.includes('async function ensureStack('), 'minister router stack loader must exist');
+
+const routerLoad = spawnSync(process.execPath, ['--input-type=module', '-e', "await import('./minister_query_router.js'); if (!globalThis.MinisterQueryRouter?.enqueue || !globalThis.MinisterQueryRouter?.executeServerDeepCore) process.exit(1);"], { cwd: root, encoding: 'utf8' });
+assert(routerLoad.status === 0, `minister_query_router.js runtime load failed: ${routerLoad.stderr || routerLoad.stdout}`);
+
 assert(packageJson.scripts?.test?.includes('scripts/test_canonical_ai_chain.cjs'), 'canonical authority test must remain part of npm test');
 assert(packageJson.scripts?.build?.includes('npm run test:canonical'), 'canonical authority test must remain part of npm build');
 
