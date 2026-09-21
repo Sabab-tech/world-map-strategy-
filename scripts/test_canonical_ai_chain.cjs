@@ -10,8 +10,22 @@ const packageJson = JSON.parse(read('package.json'));
 const server = read('server.js');
 const deepCore = read('offline_query_engine.js');
 const bootstrap = read('server_bootstrap.js');
+const ministerRouter = read('minister_query_router.js');
+
 
 assert(packageJson.dependencies?.express, 'express must be a declared runtime dependency');
+assert(ministerRouter.includes('function localExecute('), 'minister router local execution helper must exist');
+assert(ministerRouter.includes('async function server('), 'minister router server transport helper must exist');
+assert(ministerRouter.includes('function renderResult('), 'minister router result renderer must exist');
+assert(ministerRouter.includes('async function repositoryExecute('), 'minister router repository fallback helper must exist');
+assert(ministerRouter.includes('async function ensureStack('), 'minister router stack loader must exist');
+
+const routerLoad = spawnSync(process.execPath, ['--input-type=module', '-e', "await import('./minister_query_router.js'); if (!globalThis.MinisterQueryRouter?.enqueue || !globalThis.MinisterQueryRouter?.executeServerDeepCore) process.exit(1);"], { cwd: root, encoding: 'utf8' });
+assert(routerLoad.status === 0, `minister_query_router.js runtime load failed: ${routerLoad.stderr || routerLoad.stdout}`);
+const routerTransport = spawnSync(process.execPath, ['--input-type=module', '-e', "globalThis.fetch = async (url, init) => { const body = JSON.parse(init.body); if (url !== '/api/deep-core/query') throw new Error('unexpected endpoint: ' + url); if (body.ministerId !== 'TEST_MINISTER' || body.ministryId !== 'finance' || body.countryCode !== 'BD') throw new Error('minister context was not forwarded'); return new Response(JSON.stringify({ ok: true, result: { status: 'VERIFIED_FACT', value: 61, evidence: [] } }), { status: 200, headers: { 'content-type': 'application/json' } }); }; await import('./minister_query_router.js'); const out = await globalThis.MinisterQueryRouter.executeServerDeepCore('How old are you?', { ministerId: 'TEST_MINISTER', ministryId: 'finance', countryCode: 'BD' }); if (out.status !== 'VERIFIED_FACT' || out.value !== 61) throw new Error(JSON.stringify(out));"], { cwd: root, encoding: 'utf8' });
+assert(routerTransport.status === 0, `minister router transport test failed: ${routerTransport.stderr || routerTransport.stdout}`);
+
+
 assert(packageJson.scripts?.test?.includes('scripts/test_canonical_ai_chain.cjs'), 'canonical authority test must remain part of npm test');
 assert(packageJson.scripts?.build?.includes('npm run test:canonical'), 'canonical authority test must remain part of npm build');
 

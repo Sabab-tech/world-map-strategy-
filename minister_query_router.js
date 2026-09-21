@@ -36,6 +36,134 @@ function parse(q,ctx={}){
 }
 
 function legacyIntent(p){const a=U(p?.entities?.assetClass?.id||p?.assetClass||''),o=U(p?.operation||'LOOKUP');if(a)return QueryIntent.RESOURCE_MINING_DISCOVERY;if(o==='COUNT')return QueryIntent.COUNT;if(o==='LOCATE'||o==='LOCATION')return QueryIntent.LOCATION;if(o==='COMPARE')return QueryIntent.COMPARE;return o||QueryIntent.LOOKUP}
+function localExecute(p,ctx={}){
+  try{
+    const engine=qe();
+    if(engine?.execute){
+      const runtimeContext={...ctx, ministerId:ctx.ministerId||p?.entities?.minister?.id||null, ministryId:ctx.ministryId||null};
+      return engine.execute(
+        p,
+        runtimeContext,
+        p.language||'en',
+        runtimeContext
+      );
+    }
+  }catch(_){}
+  return null;
+}
+async function server(question,ctx={}){
+  if(typeof fetch!=='function') return {status:'SERVER_FETCH_UNAVAILABLE',server:false,value:null,evidence:[]};
+  try{
+    const r=await fetch(asset('/api/deep-core/query'),{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        prompt:S(question),
+        question:S(question),
+        ...ctx,
+        ministerId:ctx.ministerId||null,
+        ministryId:ctx.ministryId||null,
+        countryId:ctx.countryId||ctx.countryCode||null,
+        countryCode:ctx.countryCode||ctx.countryId||null,
+        ministerName:ctx.ministerName||null,
+        ministerRole:ctx.ministerRole||null
+      }),
+      credentials:'same-origin'
+    });
+    const p=await r.json().catch(()=>({}));
+    const result=p?.result||p;
+    return {
+      ...p,
+      result:p?.result||null,
+      status:result?.status||p?.status||`HTTP_${r.status}`,
+      value:result?.value??p?.value??null,
+      evidence:result?.evidence||p?.evidence||[],
+      server:r.ok===true,
+      transportStatus:r.status
+    };
+  }catch(e){
+    return {status:'SERVER_FETCH_FAILED',server:false,value:null,evidence:[],error:e?.message||String(e)};
+  }
+}
+function renderResult(out,q){
+  if(typeof document==='undefined') return;
+  let host=document.getElementById('omega-deep-core-result');
+  const input=document.getElementById('interrogation-input');
+  if(!host){
+    host=document.createElement('div');
+    host.id='omega-deep-core-result';
+    host.setAttribute('data-source','DEEP_CORE');
+    host.style.cssText='margin-top:10px;padding:10px;border:1px solid rgba(0,229,255,.28);background:rgba(0,0,0,.28);border-radius:6px;color:#dbeafe;font:12px/1.5 Inter,Arial,sans-serif;white-space:pre-wrap;overflow-wrap:anywhere;max-height:320px;overflow:auto;';
+    (input?.parentElement||document.body).appendChild(host);
+  }
+  host.textContent='';
+  const st=S(out?.status||'UNKNOWN');
+  const t=document.createElement('div');
+  t.style.fontWeight='700';
+  t.textContent=`DEEP CORE • ${st}`;
+  host.appendChild(t);
+  const v=document.createElement('div');
+  v.textContent=out?.value===null||out?.value===undefined?'Result: null':`Result: ${typeof out.value==='object'?JSON.stringify(out.value):String(out.value)}`;
+  host.appendChild(v);
+  if(q){
+    const z=document.createElement('div');
+    z.style.opacity='.75';
+    z.textContent=`Question: ${q}`;
+    host.appendChild(z);
+  }
+  const scan=out?.dataAccess?.scan||out?.scan;
+  if(scan){
+    const z=document.createElement('div');
+    z.style.marginTop='5px';
+    z.textContent=`Scan: ${scan.mode||'?'} | ${scan.source||'?'} | ${scan.loadedFiles||0}/${scan.discoveredFiles||0}`;
+    host.appendChild(z);
+  }
+  const ev=Array.isArray(out?.evidence)?out.evidence:[];
+  if(ev.length){
+    const e=document.createElement('div');
+    e.style.marginTop='6px';
+    e.textContent=ev.slice(0,10).map((x,i)=>`[${i+1}] ${x.dataset||'?'} → ${x.physicalPath||'?'} → ${x.recordLocator||'?'}${x.fieldPath?` → ${x.fieldPath}`:''}${x.canonicalEntityId?` → ${x.canonicalEntityId}`:''}`).join('\n');
+    host.appendChild(e);
+  }
+  if(out?.error){
+    const err=document.createElement('div');
+    err.style.marginTop='6px';
+    err.style.opacity='.8';
+    err.textContent=`Runtime error: ${String(out.error)}`;
+    host.appendChild(err);
+  }
+}
+function loadOnce(src){
+  if(loaded.has(src)) return Promise.resolve(true);
+  if(typeof document==='undefined') return Promise.resolve(false);
+  const existing=[...document.scripts].find(s=>s.src&&(s.src===asset(src)||s.src.endsWith('/'+src)));
+  if(existing){loaded.add(src);return Promise.resolve(true);}
+  return new Promise(ok=>{
+    const s=document.createElement('script');
+    s.src=asset(src);
+    s.onload=()=>{loaded.add(src);ok(true);};
+    s.onerror=()=>ok(false);
+    document.head.appendChild(s);
+  });
+}
+async function ensureStack(){
+  await loadOnce('offline_query_engine.js');
+  return !!qe();
+}
+async function repositoryExecute(question,ctx={}){
+  await ensureStack();
+  const p=parse(question,ctx),engine=qe();
+  if(!engine) return {status:'DEEP_CORE_ENGINE_UNAVAILABLE',value:null,evidence:[],semantic:p};
+  try{
+    const runtimeContext={...ctx, ministerId:ctx.ministerId||p?.entities?.minister?.id||null, ministryId:ctx.ministryId||null};
+    const r=engine.executeAsync
+      ? await engine.executeAsync(p,runtimeContext,p.language||'en',runtimeContext)
+      : engine.execute(p,runtimeContext,p.language||'en',runtimeContext);
+    return {...r,semantic:p};
+  }catch(e){
+    return {status:'DEEP_CORE_EXECUTION_ERROR',value:null,evidence:[],error:e?.message||String(e),semantic:p};
+  }
+}
 function route(q,identity={},world={}){const ctx={...identity,...world,history:world.history||identity.history||[]},p=parse(q,ctx),r=localExecute(p,ctx)||{status:'ASYNC_ONLY',value:null,evidence:[]};return{version:VERSION,intent:legacyIntent(p),operation:p.operation||'UNKNOWN',domain:p.intent||p.targetDomain||'GENERAL',entities:Object.values(p.entities||{}).filter(e=>e?.id).map(e=>({type:e.type||null,id:e.id,confidence:e.confidence||null,source:e.source||null,surface:e.surface||null})),requiredData:Object.values(p.entities||{}).filter(e=>e?.id).map(e=>e.type||null).filter(Boolean),semantic:p,result:r,dataFound:r?.status==='VERIFIED_FACT',executable:p.executable!==false&&r?.status!=='NO_AUTHORITATIVE_EXECUTOR'}}
 function resolveKnowledgeQuery(q,ctx={}){const r=route(q,ctx,ctx);return{...r,country:r.semantic?.entities?.country||null,resource:r.semantic?.entities?.resource||null,operation:r.semantic?.operation||'UNKNOWN'}}
 function detectIntent(q,ctx={}){return legacyIntent(parse(q,ctx))}
