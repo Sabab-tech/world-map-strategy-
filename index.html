@@ -923,7 +923,7 @@
                 }
 
                 // [FIX P3] Expose System Objects
-                window.Omega.App = { kernel, presentation, bridge: sharedBridge, state: "READY", ministryRuntime: ministryRuntimeController, MINISTRIES: Object.freeze(MINISTRIES.slice()), activeMinistries: Object.freeze(MINISTRIES.slice()) };
+                window.Omega.App = { kernel, presentation, bridge: sharedBridge, state: "READY", ministryRuntime: ministryRuntimeController };
 
                 if (window.OmegaMinistry && typeof window.OmegaMinistry.createRuntime === "function") {
                     const ministryRuntime = window.OmegaMinistry.createRuntime();
