@@ -826,6 +826,7 @@
 <script src="resource_ministry_engine.js" defer></script>
 <script src="education_engine.js" defer></script>
 <script src="world_ecosystem_engine.js" defer></script>
+<script src="omega_simulation_runtime.js" defer></script>
 <script src="display_and_layer_system.js" defer></script>
 
 <script src="game-logic.js" defer></script>
@@ -929,7 +930,41 @@
                 }
 
                 // [FIX P3] Expose System Objects
-                window.Omega.App = { kernel, presentation, bridge: sharedBridge, state: "READY", ministryRuntime: ministryRuntimeController };
+                window.Omega.App = {
+                    kernel,
+                    presentation,
+                    bridge: sharedBridge,
+                    state: "READY",
+                    ministryRuntime: ministryRuntimeController,
+                    simulation: window.Omega && window.Omega.Simulation ? window.Omega.Simulation : null
+                };
+
+                // [OMEGA SIMULATION AUTHORITY] Establish one canonical orchestration path.
+                const simulationRuntime = window.Omega?.Simulation || null;
+                if (simulationRuntime && typeof simulationRuntime.configure === "function") {
+                    simulationRuntime.configure({
+                        state: window.Game?.state || window.gameState || {},
+                        worldEngine: window.WorldEcosystemEngine || null,
+                        interoperability: window.Omega?.MinistryInteroperability || window.OmegaMinistryInteroperability || null,
+                        ministryRuntime: ministryRuntimeController,
+                        ministryPump: ({ turn, stepDurationMs }) => {
+                            const results = [];
+                            MINISTRIES.forEach(id => {
+                                if (typeof kernel.pumpOrchestratedPipelineTick !== "function") return;
+                                const result = kernel.pumpOrchestratedPipelineTick(id, stepDurationMs, turn, {
+                                    onMessage: (message) => ministryRuntimeController?.handleMessage?.(id, message),
+                                    onMinistryTick: (tickDt, currentTurn, store, blackboard) => {
+                                        ministryRuntimeController?.tick?.(id, tickDt, currentTurn, store, blackboard);
+                                    }
+                                });
+                                results.push({ id, result: result ?? null });
+                            });
+                            return results;
+                        }
+                    });
+                    window.Omega.App.simulation = simulationRuntime;
+                    window.__LOG_EVENT__("SIMULATION_COORDINATOR_CONFIGURED");
+                }
 
                 if (window.OmegaMinistry && typeof window.OmegaMinistry.createRuntime === "function") {
                     const ministryRuntime = window.OmegaMinistry.createRuntime();
@@ -948,99 +983,58 @@
                 let isPaused = false;
                 let rafId = null;
                 let lastTime = performance.now();
-                let tick = 0;
+                let frameTick = 0;
 
-                // --- Event-Driven Update Architecture ---
-                const dirtyMinistries = new Set(MINISTRIES);
-                let activeMinistryId = "economy";
-                let lastSimTickTime = performance.now();
-                const SIMULATION_TICK_INTERVAL = 1000; // 1s interval for macro simulation ticks
-
-                const markMinistryDirty = (id) => {
-                    if (id) dirtyMinistries.add(id);
+                window.Omega.markMinistryDirty = (id) => {
+                    window.__LOG_EVENT__("MINISTRY_REFRESH_REQUEST:" + String(id || "ALL"));
                 };
-
-                const setActiveMinistry = (id) => {
-                    if (id) {
-                        activeMinistryId = id;
-                        dirtyMinistries.add(id);
-                    }
+                window.Omega.setActiveMinistry = (id) => {
+                    if (id) window.__LOG_EVENT__("MINISTRY_ACTIVE:" + String(id));
                 };
+                window.Omega.requestMinistryUpdate = window.Omega.markMinistryDirty;
 
-                // Expose event-driven hooks to Omega & Window
-                window.Omega.markMinistryDirty = markMinistryDirty;
-                window.Omega.setActiveMinistry = setActiveMinistry;
-                window.Omega.requestMinistryUpdate = markMinistryDirty;
-
-                // Event Listeners for reactive updates
-                window.addEventListener("MINISTRY_STATE_CHANGED", (e) => {
-                    const id = e.detail && (e.detail.ministryId || e.detail.id);
-                    if (id) markMinistryDirty(id);
-                });
-                window.addEventListener("MINISTRY_SELECTED", (e) => {
-                    const id = e.detail && (e.detail.ministryId || e.detail.id);
-                    if (id) setActiveMinistry(id);
-                });
-                window.addEventListener("RESOURCE_STATE_UPDATED", () => {
-                    markMinistryDirty("economy");
-                    markMinistryDirty("defense");
-                });
-                window.addEventListener("POLICY_VOTE_CAST", (e) => {
-                    const id = e.detail && e.detail.ministryId;
-                    if (id) markMinistryDirty(id);
-                    else MINISTRIES.forEach(m => markMinistryDirty(m));
-                });
-                window.addEventListener("DECISION_ENACTED", (e) => {
-                    const id = e.detail && e.detail.ministryId;
-                    if (id) markMinistryDirty(id);
-                });
+                window.addEventListener("MINISTRY_STATE_CHANGED", () => {});
+                window.addEventListener("MINISTRY_SELECTED", () => {});
+                window.addEventListener("RESOURCE_STATE_UPDATED", () => {});
+                window.addEventListener("POLICY_VOTE_CAST", () => {});
+                window.addEventListener("DECISION_ENACTED", () => {});
 
                 document.addEventListener("visibilitychange", () => {
                     isPaused = document.hidden;
+                    lastTime = performance.now();
                     window.__LOG_EVENT__(isPaused ? "CORE_SLEEP" : "CORE_WAKE");
                 });
 
                 function engineLoop(now) {
-                    if (isPaused) { rafId = requestAnimationFrame(engineLoop); return; }
-                    const dt = now - lastTime; lastTime = now; tick++;
-                    window.__OMEGA_DIAG__.metrics.tick = tick;
-
-                    const isSimTick = (now - lastSimTickTime) >= SIMULATION_TICK_INTERVAL;
-                    if (isSimTick) {
-                        lastSimTickTime = now;
+                    if (isPaused) {
+                        lastTime = now;
+                        rafId = requestAnimationFrame(engineLoop);
+                        return;
                     }
 
-                    // Event-Driven: Process only active, dirty, or periodic background macro ticks
-                    const ministriesToProcess = new Set();
-                    if (activeMinistryId) ministriesToProcess.add(activeMinistryId);
-                    dirtyMinistries.forEach(id => ministriesToProcess.add(id));
+                    const dt = Math.min(250, Math.max(0, now - lastTime));
+                    lastTime = now;
+                    frameTick += 1;
+                    window.__OMEGA_DIAG__.metrics.tick = frameTick;
 
-                    if (isSimTick) {
-                        MINISTRIES.forEach(id => ministriesToProcess.add(id));
-                    }
-
-                    ministriesToProcess.forEach(id => {
-                        if (typeof kernel.pumpOrchestratedPipelineTick === "function") {
-                            kernel.pumpOrchestratedPipelineTick(id, dt, tick, {
-                                onMessage: (message) => {
-                                    ministryRuntimeController?.handleMessage?.(id, message);
-                                },
-                                onMinistryTick: (tickDt, currentTurn, store, blackboard) => {
-                                    ministryRuntimeController?.tick?.(id, tickDt, currentTurn, store, blackboard);
-                                }
+                    const simulation = window.Omega?.Simulation;
+                    if (simulation && typeof simulation.frame === "function") {
+                        simulation.frame(dt).catch((error) => {
+                            window.__OMEGA_DIAG__.errors.push({
+                                msg: error?.message || String(error),
+                                type: "SIMULATION_RUNTIME"
                             });
-                        }
-                    });
+                            try { window.__LOG_EVENT__("SIMULATION_STEP_FAILED"); } catch (_) {}
+                        });
+                    }
 
-                    // Reset dirty set after processing
-                    dirtyMinistries.clear();
-
-                    if (tick === 1) {
+                    if (frameTick === 1) {
                         setTimeout(() => {
                             const mapInst = window.map || (window.Game && window.Game.Map && window.Game.Map.map);
                             if (mapInst && typeof mapInst.invalidateSize === 'function') mapInst.invalidateSize();
-                        }, 200); // [FIX P2] Delayed OMEGA_READY sync
+                        }, 200);
                     }
+
                     rafId = requestAnimationFrame(engineLoop);
                 }
 
