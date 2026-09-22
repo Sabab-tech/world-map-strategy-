@@ -155,10 +155,14 @@
       const raw=String(value??'').trim();
       if(!raw)return null;
       const registry=this.countryRegistry||global.OmegaCanonicalIdentityRegistry||global.OmegaCountrySemanticBridge||null;
+      const candidates=[raw,raw.replace(/_/g,' '),raw.replace(/[-_]+/g,' '),raw.replace(/\s+/g,' ').trim()];
       try{
-        const hit=registry?.resolveCountry?.(raw);
-        return hit?.id?String(hit.id).trim().toUpperCase():null;
-      }catch(_){return null;}
+        for(const candidate of [...new Set(candidates)]){
+          const hit=registry?.resolveCountry?.(candidate);
+          if(hit?.id)return String(hit.id).trim().toUpperCase();
+        }
+      }catch(_){}
+      return null;
     }
 
     validateDatasetShape(dataset,options={}){
@@ -236,8 +240,8 @@
       return {
         schemaVersion:1,
         domain:d,
-        countryCount:written.length,
-        countryIds:[...new Set(written)],
+        countryCount:result.countryCount,
+        countryIds:[...new Set(result.countryIds||[])],
         contract,
         authority:'OMEGA_MINISTRY_STATE_PROVIDER'
       };
