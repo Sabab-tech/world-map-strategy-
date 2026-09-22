@@ -56,7 +56,7 @@ _globalTarget.WorldEcosystemEngine = (() => {
     };
 
     // Global Strategic Commodity Market Baseline
-    const GLOBAL_MARKET = {
+    const DEFAULT_GLOBAL_MARKET = {
         crude_oil: { price: 82.50, trend: "STABLE", demandRatio: 1.02, supplyChainRisk: 32 },
         natural_gas: { price: 3.40, trend: "UP", demandRatio: 1.08, supplyChainRisk: 45 },
         lithium: { price: 18500, trend: "UP", demandRatio: 1.25, supplyChainRisk: 62 },
@@ -66,6 +66,7 @@ _globalTarget.WorldEcosystemEngine = (() => {
         uranium: { price: 85, trend: "UP", demandRatio: 1.15, supplyChainRisk: 55 },
         copper: { price: 8900, trend: "UP", demandRatio: 1.18, supplyChainRisk: 38 }
     };
+    const GLOBAL_MARKET = JSON.parse(JSON.stringify(DEFAULT_GLOBAL_MARKET));
 
     // Helper for deterministic geographic and trait hashing (replaces Math.random)
     function getDeterministicHash(id) {
@@ -92,6 +93,19 @@ _globalTarget.WorldEcosystemEngine = (() => {
             state.worldEcosystem.countryProfiles = {};
         }
         stateRegistry = state.worldEcosystem.countryProfiles;
+        if (!state.worldEcosystem.market || typeof state.worldEcosystem.market !== 'object') {
+            state.worldEcosystem.market = JSON.parse(JSON.stringify(DEFAULT_GLOBAL_MARKET));
+        }
+        Object.assign(GLOBAL_MARKET, state.worldEcosystem.market);
+        state.worldEcosystem.market = GLOBAL_MARKET;
+
+        if (!Array.isArray(state.worldEcosystem.causalEventLog)) state.worldEcosystem.causalEventLog = [];
+        causalEventLog = state.worldEcosystem.causalEventLog;
+        causalLogCounter = Number.isFinite(Number(state.worldEcosystem.causalLogCounter))
+            ? Number(state.worldEcosystem.causalLogCounter)
+            : 1;
+        state.worldEcosystem.causalLogCounter = causalLogCounter;
+
         if (!state.simulation || typeof state.simulation !== 'object') state.simulation = {};
         if (!state.simulation.subsystemTurns || typeof state.simulation.subsystemTurns !== 'object') {
             state.simulation.subsystemTurns = {};
@@ -101,6 +115,7 @@ _globalTarget.WorldEcosystemEngine = (() => {
             : Number.isFinite(Number(state.simulation.turn))
                 ? Number(state.simulation.turn)
                 : 0;
+        state.simulation.subsystemTurns.worldEcosystem = currentSimulationTick;
         return true;
     }
 
@@ -175,6 +190,7 @@ _globalTarget.WorldEcosystemEngine = (() => {
     };
 
     let causalLogCounter = 1;
+    let causalEventLog = [];
 
     /**
      * Initializes sovereign state profiles for countries with deterministic data derivation
@@ -330,7 +346,6 @@ _globalTarget.WorldEcosystemEngine = (() => {
     // -------------------------------------------------------------------------
     // 3. MULTI-NODE CAUSAL GRAPH ENGINE
     // -------------------------------------------------------------------------
-    const causalEventLog = [];
 
     /**
      * Executes a cascading multi-tier causal chain reaction across the world ecosystem.
