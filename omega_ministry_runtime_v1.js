@@ -195,7 +195,6 @@
         version:engine.engineVersion||registry?.version||null,
         independent:engine.independent===true
       }] : [],
-      nativeAdapter:false,
       independent:engine?.independent===true,
       legacyConfigReferences:(LEGACY_CONFIG_REFERENCES[id]||[]).slice()
     };
