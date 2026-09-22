@@ -189,7 +189,7 @@
       const p=String(path??'');
       if(!id||!p)return {status:AVAILABILITY.NOT_APPLICABLE,reason:'INVALID_ID_OR_PATH'};
       const state=this.root();
-      const value=this.get(id,p);
+      let value=this.get(id,p);
       if(value===undefined||value===null){
         const d=topDomain(p);
         const section=state?.[d];
@@ -200,10 +200,11 @@
         };
       }
       if(value && typeof value==='object' && value.status==='INVALID' && Object.prototype.hasOwnProperty.call(value,'value')){
-        return {status:AVAILABILITY.INVALID,reason:'SOURCE_MARKED_INVALID'};
+        return {value:null,status:AVAILABILITY.INVALID,reason:'SOURCE_MARKED_INVALID'};
       }
-      if(value && typeof value==='object' && value.estimated===true){
-        return {status:AVAILABILITY.ESTIMATED,reason:'SOURCE_MARKED_ESTIMATED'};
+      if(value && typeof value==='object' && value.estimated===true && Object.prototype.hasOwnProperty.call(value,'value')){
+        value=clone(value.value);
+        return {value,status:AVAILABILITY.ESTIMATED,reason:'SOURCE_MARKED_ESTIMATED'};
       }
 
       const observedTurn=Number(
@@ -215,9 +216,9 @@
       const currentTurn=Number(options.currentTurn ?? this.simulationTurn());
       const maxAge=Number.isFinite(Number(options.maxAgeTurns))?Number(options.maxAgeTurns):1;
       if(Number.isFinite(observedTurn)&&Number.isFinite(currentTurn)&&currentTurn-observedTurn>maxAge){
-        return {status:AVAILABILITY.STALE,reason:'SOURCE_TURN_TOO_OLD',observedTurn,currentTurn,maxAgeTurns:maxAge};
+        return {value:clone(value),status:AVAILABILITY.STALE,reason:'SOURCE_TURN_TOO_OLD',observedTurn,currentTurn,maxAgeTurns:maxAge};
       }
-      return {status:AVAILABILITY.AVAILABLE,reason:'OBSERVED'};
+      return {value:clone(value),status:AVAILABILITY.AVAILABLE,reason:'OBSERVED'};
     }
 
     getProvenance(countryId,path,options={}){
