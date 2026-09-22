@@ -787,3 +787,37 @@ test('architectural authority review can approve and resume a command without by
   assert.equal(executions,1);
   assert.equal(s.state.foreign[s.countryA].treaties[s.countryB].status,'APPROVED');
 });
+
+test('architectural scheduler defers authoritative mutation until its COMMIT boundary',()=>{
+  const s=createSandbox();
+  s.tickAll(1);
+  s.mesh.registerAction(ACTION_ID+'-DEFER',{
+    stateOwnerMinistry:'foreign'
+  });
+  s.mesh.registerAuthorityPolicy(ACTION_ID+'-DEFER',{
+    proposerMinistries:['trade'],
+    approverMinistries:['trade'],
+    executorMinistries:['foreign']
+  });
+  s.mesh.registerCommandHandler(ACTION_ID+'-DEFER','foreign',(command,{stateTransaction})=>{
+    const treaties=stateTransaction.get('foreign.treaties')||{};
+    treaties[s.countryB]={status:'STAGED'};
+    stateTransaction.set('foreign.treaties',treaties);
+    return {accepted:true};
+  });
+
+  const pending=s.mesh.dispatchCommand('trade',ACTION_ID+'-DEFER',s.countryA,{targetCountryId:s.countryB},{
+    turn:2,commandType:ACTION_ID+'-DEFER',commandId:'CMD-STAGED-1',
+    deferCommit:true,deferEventDispatch:true
+  });
+  assert.equal(pending.status,'STAGED');
+  assert.equal(s.state.foreign[s.countryA].treaties[s.countryB].status,'NOT_CONCLUDED');
+  assert.equal(s.mesh.instance.pendingCommands.size,1);
+
+  const committed=s.mesh.commitPendingCommands(2);
+  assert.equal(committed.length,1);
+  assert.equal(committed[0].status,'APPLIED');
+  assert.equal(committed[0].lifecycleStatus,'VERIFIED');
+  assert.equal(s.state.foreign[s.countryA].treaties[s.countryB].status,'STAGED');
+  assert.equal(s.mesh.instance.pendingCommands.size,0);
+});
