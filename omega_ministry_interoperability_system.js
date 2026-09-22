@@ -945,10 +945,15 @@
       if(publishedFacts['finance.required'])result.evidence.push({path:'finance.required',provenance:clone(required.provenance||null)});
       if(publishedFacts['finance.available'])result.evidence.push({path:'finance.available',provenance:clone(available.provenance||null)});
       if(required?.availability===AVAILABILITY.AVAILABLE&&available?.availability===AVAILABILITY.AVAILABLE){
-        const req=number(factValue(required)),av=number(factValue(available));
-        if(req!==null&&av!==null){
-          result.fundingGap=Math.max(0,req-av-(number(factValue(committed))||0)-(number(factValue(mandatory))||0));
+        const req=number(factValue(required));
+        const av=number(factValue(available));
+        const com=committed?.availability===AVAILABILITY.AVAILABLE?number(factValue(committed)):null;
+        const mand=mandatory?.availability===AVAILABILITY.AVAILABLE?number(factValue(mandatory)):null;
+        if(req!==null&&av!==null&&com!==null&&mand!==null){
+          result.fundingGap=Math.max(0,req-av-com-mand);
           result.status=result.fundingGap>0?'UNDERFUNDED':'FUNDED';
+        }else{
+          result.status='UNAVAILABLE';
         }
       }
       return result;
@@ -1672,7 +1677,17 @@
         unobserved+=Number(counts.UNOBSERVED||0);
         estimated+=Number(counts.ESTIMATED||0);
       }
-      const behaviorPass=this.metrics.sent>0&&this.metrics.delivered===this.metrics.sent&&this.metrics.rejected===0&&this.metrics.dropped===0;
+      const activeRoutes=[...this.connections.values()].filter(r=>r.messagesSent>0&&r.state==='ACTIVE').length;
+      let publishedSnapshots=0,staleSnapshots=0;
+      for(const snap of this.snapshots.values()){
+        if(countryId&&snap.countryId!==String(countryId).trim().toUpperCase())continue;
+        publishedSnapshots+=1;
+        if(Number.isFinite(Number(currentTurn))&&Number.isFinite(Number(snap.simulationTurn))&&Number(currentTurn)-Number(snap.simulationTurn)>this.maxSnapshotAgeTurns)staleSnapshots+=1;
+      }
+      const budgetRequestCount=countryId
+        ? this.getMinistryBriefing?.('finance',String(countryId).trim().toUpperCase(),{currentTurn})?.governmentLedger?.budgetRequests?.length||0
+        : 0;
+      const behaviorPass=this.metrics.sent>0&&this.metrics.delivered===this.metrics.sent&&this.metrics.dropped===0;
       return {
         version:VERSION,
         structure:{
@@ -1694,6 +1709,20 @@
         data:{
           status:'DIAGNOSTIC_ONLY',
           available,missing,stale,invalid,unobserved,estimated
+        },
+        routes:{
+          active:activeRoutes,
+          total:this.connections.size
+        },
+        snapshots:{
+          published:publishedSnapshots,
+          stale:staleSnapshots
+        },
+        governanceSignals:{
+          budgetRequests:budgetRequestCount,
+          projects:countryId?this._getProjectsForCountry(String(countryId).trim().toUpperCase()).length:0,
+          constraints:countryId?[...this.requestLedger.values()].filter(r=>r?.countryId===String(countryId).trim().toUpperCase()&&r?.kind===undefined&&Array.isArray(r)).length:0,
+          alerts:countryId?[...this.requestLedger.values()].filter(r=>r?.countryId===String(countryId).trim().toUpperCase()&&String(r?.kind||'')==='ALERT').length:0
         },
         requests:{
           pending:countryId?this.getPendingRequests(countryId).length:0,
