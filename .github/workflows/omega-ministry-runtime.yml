@@ -117,6 +117,11 @@ jobs:
           if (!interoperability.includes('createCase')) throw new Error('Workflow case engine missing');
           if (!interoperability.includes('registerAuthorityPolicy')) throw new Error('Authority policy layer missing');
           if (!interoperability.includes('resolveConflict')) throw new Error('Conflict resolution layer missing');
+          if (!interoperability.includes('evaluateGovernmentDecisions')) throw new Error('Canonical government decision evaluation missing');
+          if (!interoperability.includes('compileDecisionCommands')) throw new Error('Canonical decision-to-command compiler missing');
+          if (!interoperability.includes('scheduledEffects')) throw new Error('Scheduled-effect queue missing');
+          if (!interoperability.includes('commitJournal')) throw new Error('State/outbox commit journal missing');
+          if (!interoperability.includes('reconstructState')) throw new Error('Authoritative replay reconstruction missing');
           if (!runtime.includes('runTurn')) throw new Error('Canonical government orchestrator missing');
           if (!runtime.includes('GOVERNMENT_PHASES')) throw new Error('Deterministic government phase spine missing');
           if (!interoperability.includes('saveState')) throw new Error('Save/load state contract missing');
