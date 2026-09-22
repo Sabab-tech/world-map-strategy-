@@ -353,3 +353,93 @@ test('canonical government scheduler executes deterministic multi-phase turn spi
   assert.deepEqual(Array.from(result.deterministicOrder).sort(),IDS.slice().sort());
   assert.equal(runtime.getOrchestrationState().turn,43);
 });
+
+
+test('canonical world-turn runtime processes multiple country scopes through one global turn boundary',()=>{
+  const kernelStates=new Map(IDS.map(id=>[id,'RUNNING']));
+  const kernel={
+    registerMinistry(){},
+    getMinistryState(id){return kernelStates.get(id)||'STOPPED';},
+    createBridge(){return {emitEvent(){}};}
+  };
+  const sandbox={
+    console,Date,JSON,Object,Number,String,RegExp,Map,Set,WeakMap,CustomEvent,
+    dispatchEvent(){},
+    Omega:{Kernel:kernel},
+    GLOBAL_MINISTRY_MANIFEST:IDS.map(id=>({id,status:'READY'})),
+    Game:{
+      state:{
+        simulationTurn:1,
+        economy:{
+          'TST-A':{gdp:100},
+          'TST-B':{gdp:200}
+        }
+      },
+      currentActiveCountry:'TST-A'
+    },
+    OmegaCabinetUI:{activeCountry:'TST-A',ministersDB:{}},
+    OmegaMinistersDB:{},
+    ResourceMinistryEngine:{deposits:[],getIntegratedResourceState:()=>({inventory:{}})}
+  };
+  sandbox.window=sandbox;
+  sandbox.globalThis=sandbox;
+  loadBrowserScript('omega_ministry_registry.js',sandbox);
+  loadBrowserScript('omega_ministry_state_provider.js',sandbox);
+  loadBrowserScript('omega_ministry_domain_engines.js',sandbox);
+  loadBrowserScript('omega_ministry_runtime_v1.js',sandbox);
+  const runtime=sandbox.OMEGA_MINISTRY_RUNTIME_V1;
+  assert.equal(runtime.init(kernel),true);
+  const result=runtime.runWorldTurn(2,16.7,{countryIds:['TST-B','TST-A']});
+  assert.equal(result.mode,'WORLD_TURN');
+  assert.equal(result.turn,2);
+  assert.equal(result.countryCount,2);
+  assert.equal(result.processedCountries,2);
+  assert.equal(result.failedCountries,0);
+  assert.equal(result.status,'COMMITTED');
+  assert.deepEqual(result.deterministicCountryOrder,['TST-A','TST-B']);
+  assert.equal(result.countries.length,2);
+  for(const countryResult of result.countries){
+    assert.equal(countryResult.turn,2);
+    assert.equal(countryResult.status,'COMMITTED');
+    assert.equal(countryResult.phases.length,14);
+    assert.equal(Object.keys(countryResult.assessments).length,17);
+  }
+});
+
+test('production Game.Simulation is the single global simulation entry point',()=>{
+  const source=fs.readFileSync(new URL('../map-engine-2.js',import.meta.url),'utf8');
+  const simStart=source.indexOf('Game.Simulation = {');
+  const simEnd=source.indexOf('\n\nGame.Diplomacy',simStart);
+  assert.ok(simStart>=0&&simEnd>simStart);
+  const calls=[];
+  const sandbox={
+    console,Date,JSON,Object,Number,String,RegExp,Map,Set,WeakMap,Array,Math,
+    Game:{
+      state:{
+        simulationTurn:9,
+        economy:{'BD':{},'IN':{}}
+      },
+      worldState:{turn:9},
+      currentActiveCountry:'BD'
+    },
+    window:null,
+    Omega:{},
+    OMEGA_MINISTRY_RUNTIME_V1:{
+      runWorldTurn(turn,dt){
+        calls.push({turn,dt});
+        return {mode:'WORLD_TURN',turn,status:'COMMITTED'};
+      }
+    },
+    setTimeout(){return 1},
+    clearTimeout(){},
+    document:{getElementById(){return null}},
+    fetch:async()=>({ok:false,status:404,json:async()=>({})})
+  };
+  sandbox.window=sandbox;
+  sandbox.globalThis=sandbox;
+  vm.runInNewContext(source.slice(simStart,simEnd),sandbox,{filename:'map-engine-2.js:canonical-simulation'});
+  const result=sandbox.Game.Simulation.tick(16.7);
+  assert.equal(result.status,'COMMITTED');
+  assert.deepEqual(calls,[{turn:10,dt:16.7}]);
+  assert.equal(sandbox.Game.Simulation.getCurrentTurn(),9);
+});
