@@ -2708,6 +2708,7 @@
     registerArbitrationPolicy:(...args)=>apiInstance.registerArbitrationPolicy(...args),
     resolveConflict:(...args)=>apiInstance.resolveConflict(...args),
     processEventOutbox:(...args)=>apiInstance.processEventOutbox(...args),
+    commitPendingCommands:(...args)=>apiInstance.commitPendingCommands(...args),
     getEventLog:(...args)=>apiInstance.getEventLog(...args),
     replayEvents:(...args)=>apiInstance.replayEvents(...args),
     registerCommandHandler:(...args)=>apiInstance.registerCommandHandler(...args),
