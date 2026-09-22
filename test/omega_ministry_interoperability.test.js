@@ -174,9 +174,7 @@ test('C+D: every route transports and target engines actually process packets',(
       const route=s.mesh.getConnection(source,target);
       assert.equal(route.messagesSent,1,source+'->'+target+' sent');
       assert.equal(route.messagesDelivered,1,source+'->'+target+' delivered');
-      assert.equal(route.messagesAccepted,1,source+'->'+target+' accepted '+JSON.stringify(s.mesh.getDelivery(
-        s.mesh.getMinistryInbox(s.countryA,target)[0]?.messageId||''
-      )));
+      assert.equal(route.messagesAccepted,1,source+'->'+target+' accepted');
       const engine=s.sandbox.OmegaMinistryDomainEngines.get(target);
       assert.equal(engine.getCoordinationState(s.countryA).processedCount>=1,true);
     }
