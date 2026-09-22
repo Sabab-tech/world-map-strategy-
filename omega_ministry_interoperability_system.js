@@ -1831,6 +1831,11 @@
         });
 
         if(result?.accepted!==false){
+          for(const staged of stagedEvents){
+            if(!Object.prototype.hasOwnProperty.call(EVENT_TYPES,String(staged.eventType))){
+              throw new Error('NON_CANONICAL_EVENT:'+String(staged.eventType));
+            }
+          }
           row.transaction=stateTransaction.commit();
           if(row.transaction?.status==='ALREADY_PROCESSED'){
             row.status='ALREADY_PROCESSED';
