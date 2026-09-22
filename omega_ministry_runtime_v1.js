@@ -74,6 +74,16 @@
     return global.OmegaMinistryInteroperability || global.Omega?.MinistryInteroperability || global.OmegaMinistryMesh || null;
   }
 
+  function pickCountryBucket(context,section){
+    const source=context?.gameState?.[section];
+    if(!source || typeof source!=='object') return null;
+    const id=String(context?.countryId||'').trim().toUpperCase();
+    if(id && source[id]!=null) return source[id];
+    const raw=context?.countryId;
+    if(raw && source[raw]!=null) return source[raw];
+    return null;
+  }
+
   function discoverInputSources(){
     const hits=[];
     for(const key of SOURCE_KEYS){
