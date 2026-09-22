@@ -246,6 +246,62 @@
       return clone(this.transactionLedger.get(String(transactionId||''))||null);
     }
 
+    reconstructState(baseState=null,options={}){
+      const source=baseState&&typeof baseState==='object'
+        ?clone(baseState)
+        :clone(this.root()||{});
+      const from=Number.isFinite(Number(options.fromTurn))?Number(options.fromTurn):-Infinity;
+      const to=Number.isFinite(Number(options.toTurn))?Number(options.toTurn):Infinity;
+      const rows=[...this.transactionLedger.values()]
+        .filter(row=>row&&row.status!=='CONFLICT'&&Number(row.simulationTurn)>=from&&Number(row.simulationTurn)<=to)
+        .sort((a,b)=>Number(a.simulationTurn)-Number(b.simulationTurn)||String(a.transactionId).localeCompare(String(b.transactionId)));
+      const apply=(state,transaction)=>{
+        for(const operation of transaction.operations||[]){
+          const pieces=String(operation.path||'').split('.');
+          const domainAlias={resourceSummary:'resource',resourceInventory:'resource',resourceDeposits:'resourceDeposits'};
+          const declaredDomain=pieces.shift();
+          if(!declaredDomain||!pieces.length)continue;
+          const domain=domainAlias[declaredDomain]||declaredDomain;
+          if(domain==='resourceDeposits'){
+            if(!state.resource||typeof state.resource!=='object')state.resource={};
+            domainKey='resource';
+          }else{
+            domainKey=domain;
+          }
+          if(!state[domainKey]||typeof state[domainKey]!=='object')state[domainKey]={};
+          const countryId=normalizeCountryId(transaction.countryId);
+          if(!state[domainKey][countryId]||typeof state[domainKey][countryId]!=='object')state[domainKey][countryId]={};
+          let cursor=state[domainKey][countryId];
+          for(let i=0;i<pieces.length-1;i++){
+            const part=pieces[i];
+            if(!cursor[part]||typeof cursor[part]!=='object')cursor[part]={};
+            cursor=cursor[part];
+          }
+          const leaf=pieces[pieces.length-1];
+          if(operation.op==='DELETE')delete cursor[leaf];
+          else if(operation.op==='SET')cursor[leaf]=clone(operation.after);
+        }
+      };
+      for(const transaction of rows)apply(source,transaction);
+      return {
+        schemaVersion:1,
+        mode:'AUTHORITATIVE_TRANSACTION_REPLAY',
+        fromTurn:options.fromTurn??null,
+        toTurn:options.toTurn??null,
+        appliedTransactionCount:rows.length,
+        appliedTransactions:rows.map(row=>({
+          transactionId:row.transactionId,
+          commandId:row.commandId,
+          ownerMinistry:row.ownerMinistry,
+          countryId:row.countryId,
+          simulationTurn:row.simulationTurn,
+          changed:row.changed===true
+        })),
+        state:source,
+        digest:hash(source)
+      };
+    }
+
     exportState(){
       return {
         schemaVersion:1,
@@ -286,6 +342,7 @@
     getTransaction:id=>instance.getTransaction(id),
     saveState:()=>instance.exportState(),
     loadState:s=>instance.importState(s),
+    reconstructState:(baseState,options)=>instance.reconstructState(baseState,options),
     diagnostics:()=>instance.diagnostics()
   });
 
