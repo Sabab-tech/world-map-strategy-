@@ -81,7 +81,28 @@ _globalTarget.WorldEcosystemEngine = (() => {
     // -------------------------------------------------------------------------
     // 2. SOVEREIGN COUNTRY WORLD STATE REGISTRY WITH EPISTEMIC INTEGRITY
     // -------------------------------------------------------------------------
-    const stateRegistry = {};
+    let stateRegistry = {};
+    let authoritativeState = null;
+
+    function setAuthoritativeState(state) {
+        if (!state || typeof state !== 'object') throw new Error("WORLD_AUTHORITY_STATE_REQUIRED");
+        authoritativeState = state;
+        if (!state.worldEcosystem || typeof state.worldEcosystem !== 'object') state.worldEcosystem = {};
+        if (!state.worldEcosystem.countryProfiles || typeof state.worldEcosystem.countryProfiles !== 'object') {
+            state.worldEcosystem.countryProfiles = {};
+        }
+        stateRegistry = state.worldEcosystem.countryProfiles;
+        if (!state.simulation || typeof state.simulation !== 'object') state.simulation = {};
+        if (!state.simulation.subsystemTurns || typeof state.simulation.subsystemTurns !== 'object') {
+            state.simulation.subsystemTurns = {};
+        }
+        currentSimulationTick = Number.isFinite(Number(state.simulation.subsystemTurns.worldEcosystem))
+            ? Number(state.simulation.subsystemTurns.worldEcosystem)
+            : Number.isFinite(Number(state.simulation.turn))
+                ? Number(state.simulation.turn)
+                : 0;
+        return true;
+    }
 
     /**
      * Epistemic metric resolver: distinguishes between verified numbers,
@@ -569,10 +590,23 @@ _globalTarget.WorldEcosystemEngine = (() => {
     // -------------------------------------------------------------------------
     let currentSimulationTick = 0;
 
-    function processSimulationTick(dt) {
-        currentSimulationTick++;
+    function processSimulationTick(dt, targetTurn) {
+        const requestedTurn = Number.isFinite(Number(targetTurn))
+            ? Number(targetTurn)
+            : currentSimulationTick + 1;
+        if (requestedTurn <= currentSimulationTick) {
+            return {
+                tick: currentSimulationTick,
+                advanced: false,
+                countriesProcessed: Object.keys(stateRegistry).length
+            };
+        }
+        currentSimulationTick = requestedTurn;
+        if (authoritativeState?.simulation?.subsystemTurns) {
+            authoritativeState.simulation.subsystemTurns.worldEcosystem = currentSimulationTick;
+        }
 
-        // Every 50 Ticks (Monthly Economic & Resource Cycle)
+        // Every 50 simulation turns (Monthly Economic & Resource Cycle)
         if (currentSimulationTick % 50 === 0) {
             Object.keys(stateRegistry).forEach(code => {
                 const prof = stateRegistry[code];
@@ -636,6 +670,8 @@ _globalTarget.WorldEcosystemEngine = (() => {
         STRATEGIC_BLOCS,
         CHOKEPOINTS,
         GLOBAL_MARKET,
+        setAuthoritativeState,
+        getAuthoritativeState: () => authoritativeState,
         getCountryProfile: initCountryProfile,
         computeEmergentRelation,
         triggerCausalCascade,
