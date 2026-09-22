@@ -263,6 +263,7 @@
       this.provider=options.provider||null;
       this.policy=options.policy||null;
       this.decisionFramework=options.decisionFramework||null;
+      this.stateTransaction=options.stateTransaction||null;
       this.kernel=null;
       this.bridge=null;
       this.ids=normalizeIds(this.registry);
@@ -300,6 +301,7 @@
       this.provider=options.provider||this.provider||global.OmegaMinistryStateProvider?.instance||null;
       this.policy=options.policy||this.policy||global.OmegaMinistryInformationPolicy?.instance||null;
       this.decisionFramework=options.decisionFramework||this.decisionFramework||global.OmegaMinistryDecisionFramework?.instance||null;
+      this.stateTransaction=options.stateTransaction||this.stateTransaction||global.OmegaMinistryStateTransaction||null;
       this.ids=normalizeIds(this.registry);
       this.maxInbox=Number.isFinite(Number(options.maxInbox))?Number(options.maxInbox):this.maxInbox;
       this.maxHistory=Number.isFinite(Number(options.maxHistory))?Number(options.maxHistory):this.maxHistory;
@@ -1416,14 +1418,24 @@
       try{
         row.status='PROCESSING';
         row.statusHistory.push({status:'PROCESSING',simulationTurn:turn});
+        const transactionFactory=this.stateTransaction||global.OmegaMinistryStateTransaction||null;
+        const stateTransaction=transactionFactory?.create
+          ? transactionFactory.create(handler.ownerMinistry,country,turn,commandId)
+          : null;
         const result=handler.handler(deepFreeze(clone(command)),{
           countryId:country,
           simulationTurn:turn,
           stateProvider:this.provider,
+          stateTransaction,
           emitEvent:(eventType,eventPayload={},eventOptions={})=>this.emitEvent(eventType,country,handler.ownerMinistry,eventPayload,{...eventOptions,turn,causationId:commandId})
         });
+        if(result?.accepted!==false && stateTransaction){
+          row.transaction=stateTransaction.commit();
+        }
         row.result=clone(result);
         row.status=result?.accepted===false?'FAILED':'APPLIED';
+        row.stateChanged=Boolean(row.transaction?.changed);
+        if(row.transaction?.afterRevision)row.stateRevisionAfter=row.transaction.afterRevision;
         row.statusHistory.push({status:row.status,simulationTurn:turn});
         if(result?.eventType)this.emitEvent(result.eventType,country,handler.ownerMinistry,result.eventPayload||{},{
           turn,causationId:commandId,provenance:result.provenance||null
