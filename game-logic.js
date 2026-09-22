@@ -7,6 +7,16 @@
 const canonicalGameState = window.Game?.state || (window.Game ? (window.Game.state = {}) : (window.gameState || {}));
 canonicalGameState.population = canonicalGameState.population || {};
 canonicalGameState.economy = canonicalGameState.economy || {};
+const runtimeData = canonicalGameState.runtimeData || {};
+const priorWorldState = window.Game?.worldState || {};
+runtimeData.worldState = runtimeData.worldState || priorWorldState;
+canonicalGameState.runtimeData = runtimeData;
+Object.defineProperty(window.Game,'worldState',{
+  configurable:true,
+  enumerable:false,
+  get(){return runtimeData.worldState;},
+  set(value){if(value&&typeof value==='object')runtimeData.worldState=value;}
+});
 const derivedState = canonicalGameState.derivedState || {};
 const derivedRelations = derivedState.relations || canonicalGameState.relations || {};
 derivedState.relations = derivedRelations;
@@ -30,6 +40,7 @@ window.OmegaGameStateContract = Object.freeze({
     compatibilityAlias:'gameState',
     countryIdentity:'OMEGA_CANONICAL_IDENTITY_BRIDGE',
     derivedDomains:Object.freeze(['relations']),
+    runtimeMetadataDomains:Object.freeze(['worldState','relationEngine','ministersDB']),
     countryScopedDomains:true,
     noImplicitDefaults:true
 });
