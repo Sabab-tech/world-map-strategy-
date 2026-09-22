@@ -1032,7 +1032,7 @@
         const b=JSON.stringify({v:prev?.value,a:prev?.availability,r:prev?.stateRevision});
         if(a!==b)changedPaths.push(path);
       }
-      if(changedPaths.length || !previous){
+      if(previous && changedPaths.length){
         const dirty={
           countryId,ministryId,
           simulationTurn:snapshot.simulationTurn,
