@@ -146,6 +146,11 @@ function createSandbox(options={}){
         'TRANSPORT_CAPACITY'
       ]
     });
+    mesh.registerAuthorityPolicy(ACTION_ID,{
+      proposerMinistries:['trade'],
+      approverMinistries:['trade'],
+      reviewRequired:false
+    });
   }
 
   return {sandbox,rows,countryA,countryB,state,ids,runtime,mesh,kernel,store,blackboard,tick,tickAll,registerTradeAction};
@@ -607,3 +612,88 @@ test('W: declarative production action is available from the ministry knowledge 
   assert.ok(def.requirements.some(r=>r.id==='intelligence.threats'));
 });
 
+
+test('architectural transaction concurrency rejects stale writers and permits retry',()=>{
+  const s=createSandbox();
+  const authority=s.sandbox.OmegaAuthoritativeStateAuthority.instance;
+  const first=s.sandbox.OmegaMinistryStateTransaction.create('foreign',s.countryA,2,'TX-A',authority);
+  const second=s.sandbox.OmegaMinistryStateTransaction.create('foreign',s.countryA,2,'TX-B',authority);
+  const treaties=first.get('foreign.treaties')||{};
+  treaties[s.countryB]={status:'SIGNED'};
+  first.set('foreign.treaties',treaties);
+  const committed=first.commit();
+  assert.equal(committed.changed,true);
+  const secondTreaties=second.get('foreign.treaties')||{};
+  secondTreaties[s.countryB]={status:'SUSPENDED'};
+  second.set('foreign.treaties',secondTreaties);
+  assert.throws(()=>second.commit(),/STATE_REVISION_CONFLICT/);
+
+  const retry=s.sandbox.OmegaMinistryStateTransaction.create('foreign',s.countryA,3,'TX-C',authority);
+  const retryTreaties=retry.get('foreign.treaties')||{};
+  retryTreaties[s.countryB]={status:'SUSPENDED'};
+  retry.set('foreign.treaties',retryTreaties);
+  assert.equal(retry.commit().changed,true);
+});
+
+test('architectural event outbox preserves state/event ordering and causal reaction routing',()=>{
+  const s=createSandbox();
+  s.tickAll(1);
+  s.registerTradeAction();
+  let received=0;
+  s.mesh.subscribeEvent('TREATY_SIGNED','trade',(event)=>{
+    received+=1;
+    assert.equal(event.sourceMinistryId,'foreign');
+    assert.equal(event.stateRevision!==null,true);
+    return {accepted:true};
+  });
+  s.mesh.registerCausalRule('TREATY_TO_TRADE',{
+    eventTypes:['TREATY_SIGNED'],
+    sourceMinistries:['foreign'],
+    targetMinistries:['trade'],
+    createReaction:(event)=>({
+      sourceMinistryId:event.sourceMinistryId,
+      targetMinistries:['trade'],
+      payload:{causedBy:event.eventId}
+    })
+  });
+  s.mesh.registerCommandHandler(ACTION_ID,'foreign',(command,{stateTransaction,emitEvent})=>{
+    const treaties=stateTransaction.get('foreign.treaties')||{};
+    treaties[s.countryB]={status:'SIGNED'};
+    stateTransaction.set('foreign.treaties',treaties);
+    emitEvent('TREATY_SIGNED',{targetCountryId:s.countryB});
+    return {accepted:true};
+  });
+  const command=s.mesh.dispatchCommand('trade',ACTION_ID,s.countryA,{targetCountryId:s.countryB},{turn:2,commandType:ACTION_ID});
+  assert.equal(command.status,'APPLIED');
+  assert.equal(received,1);
+  assert.ok(s.mesh.instance.eventOutbox.size>=1);
+  assert.ok(s.mesh.instance.reactionQueue.length>=1);
+  const reactions=s.mesh.processReactionQueue(2);
+  assert.equal(reactions[0].status,'DISPATCHED');
+  assert.equal(s.mesh.getMinistryInbox(s.countryA,'trade').length>0,true);
+  assert.equal(s.mesh.getEventLog({countryId:s.countryA,fromTurn:2,toTurn:2}).length>=2,true);
+});
+
+test('architectural workflow and authority lifecycle remain explicit without prefilled government data',()=>{
+  const s=createSandbox();
+  s.mesh.registerWorkflow('POLICY_CASE',{
+    states:['ASSESSING','REVIEW','APPROVED','EXECUTING','CLOSED'],
+    transitions:{
+      ASSESSING:['REVIEW'],
+      REVIEW:['APPROVED'],
+      APPROVED:['EXECUTING'],
+      EXECUTING:['CLOSED']
+    },
+    approvalStages:['REVIEW']
+  });
+  const row=s.mesh.createCase({
+    workflowId:'POLICY_CASE',
+    countryId:s.countryA,
+    ownerMinistry:'cabinet'
+  });
+  assert.equal(row.status,'ASSESSING');
+  assert.equal(s.mesh.advanceCase(row.caseId,'REVIEW').status,'REVIEW');
+  assert.equal(s.mesh.advanceCase(row.caseId,'APPROVED',{approvalState:'APPROVED'}).approvalState,'APPROVED');
+  assert.equal(s.mesh.advanceCase(row.caseId,'EXECUTING').status,'EXECUTING');
+  assert.equal(s.mesh.advanceCase(row.caseId,'CLOSED').status,'CLOSED');
+});
