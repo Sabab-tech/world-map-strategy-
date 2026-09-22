@@ -81,6 +81,8 @@ function createSandbox(options={}){
   sandbox.Omega={};
 
   loadBrowserScript('omega_ministry_registry.js',sandbox);
+  loadBrowserScript('omega_ministry_knowledge_contract.js',sandbox);
+  loadBrowserScript('omega_authoritative_state_authority.js',sandbox);
   loadBrowserScript('omega_ministry_state_provider.js',sandbox);
   sandbox.Omega.MinistryStateProvider.instance=sandbox.Omega.MinistryStateProvider.create({
     stateSource:state,
@@ -503,3 +505,71 @@ function stripTelemetry(value){
 console.log('OMEGA GOVERNMENT INTEROPERABILITY TEST MATRIX READY');
 console.log('Tests:',20);
 console.log('Canonical ministry count:',MINISTRY_COUNT);
+
+
+test('T2: actual repository economy data crosses raw JSON -> authoritative state -> provider -> ministry -> interoperability',()=>{
+  const economy=JSON.parse(fs.readFileSync(new URL('../economy.json',import.meta.url),'utf8'));
+  const ids=Object.keys(economy).filter(Boolean);
+  assert.ok(ids.length>0);
+  const countryId=String(ids[0]).toUpperCase();
+  const state={simulationTurn:1,economy};
+  const s=createSandbox({countryA:countryId,countryB:countryId==='AA'?'BB':'AA',state});
+  s.tick('economy',1);
+  const publicState=s.mesh.getPeerState('cabinet','economy',countryId,{currentTurn:1});
+  const fact=publicState.publishedFacts['economy.gdp'];
+  assert.equal(fact.availability,'AVAILABLE');
+  assert.equal(fact.value,economy[ids[0]].gdp);
+  assert.equal(fact.provenance.sourceType,'AUTHORITATIVE_RUNTIME_STATE');
+  assert.ok(fact.stateRevision);
+});
+
+test('T3: incomplete fiscal data stays explicitly unavailable and does not become zero',()=>{
+  const s=createSandbox({state:{simulationTurn:1}});
+  s.tick('finance',1);
+  const finance=s.mesh.getPeerState('trade','finance',s.countryA,{currentTurn:1});
+  assert.equal(finance.publishedFacts['finance.reserves'].availability,'UNAVAILABLE');
+  assert.notEqual(finance.publishedFacts['finance.reserves'].value,0);
+});
+
+test('U2: state mutation is owner-bound through the canonical authority, then marks publication dirty',()=>{
+  const s=createSandbox();
+  s.tickAll(1);
+  s.registerTradeAction();
+  s.mesh.registerCommandHandler(ACTION_ID,'foreign',(command,{stateTransaction})=>{
+    const treaties=stateTransaction.get('foreign.treaties')||{};
+    treaties[s.countryB]={status:'SIGNED'};
+    stateTransaction.set('foreign.treaties',treaties);
+    return {accepted:true};
+  });
+  const before=s.mesh.getPeerState('trade','foreign',s.countryA,{currentTurn:1}).publishedFacts['foreign.treaties'].value[s.countryB].status;
+  const cmd=s.mesh.dispatchCommand('trade',ACTION_ID,s.countryA,{targetCountryId:s.countryB},{turn:2,commandType:ACTION_ID});
+  assert.equal(cmd.stateChanged,true);
+  assert.equal(s.state.foreign[s.countryA].treaties[s.countryB].status,'SIGNED');
+  assert.notEqual(before,'SIGNED');
+  const dirty=s.mesh.getDirtyPublications(s.countryA,'foreign');
+  assert.ok(dirty.length>=1);
+});
+
+test('V2: authoritative revision drift is exposed as STALE until source republishes',()=>{
+  const s=createSandbox();
+  s.tickAll(1);
+  s.state.foreign[s.countryA].treaties[s.countryB]={status:'SIGNED'};
+  const stale=s.mesh.getPeerState('trade','foreign',s.countryA,{currentTurn:1});
+  assert.equal(stale.freshness.status,'STALE');
+  assert.equal(stale.publishedFacts['foreign.treaties'].availability,'STALE');
+  s.tick('foreign',2);
+  const fresh=s.mesh.getPeerState('trade','foreign',s.countryA,{currentTurn:2});
+  assert.equal(fresh.publishedFacts['foreign.treaties'].availability,'AVAILABLE');
+});
+
+test('W: declarative production action is available from the ministry knowledge contract',()=>{
+  const s=createSandbox();
+  const def=s.mesh.instance.decisionFramework.getAction('CONCLUDE_TRADE_AGREEMENT');
+  assert.ok(def);
+  assert.ok(def.requirements.some(r=>r.id==='foreign.relations'));
+  assert.ok(def.requirements.some(r=>r.id==='foreign.treaties'));
+  assert.ok(def.requirements.some(r=>r.id==='finance.reserves'));
+  assert.ok(def.requirements.some(r=>r.id==='transport.logistics'));
+  assert.ok(def.requirements.some(r=>r.id==='intelligence.threats'));
+});
+
