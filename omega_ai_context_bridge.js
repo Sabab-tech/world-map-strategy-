@@ -90,7 +90,8 @@
     if(interoperability && ministryId && typeof interoperability.getContext==='function'){
       try{
         ministryInteroperability=clone(interoperability.getContext(ministryId,{
-          turn:gs.turn||gs.currentTurn||null,
+          countryId,
+          turn:gs.turn||gs.currentTurn||interoperability.lastTurn||null,
           dt:0
         }));
       }catch(_){}
