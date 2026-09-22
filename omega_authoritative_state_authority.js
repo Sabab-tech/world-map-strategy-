@@ -258,16 +258,10 @@
       const apply=(state,transaction)=>{
         for(const operation of transaction.operations||[]){
           const pieces=String(operation.path||'').split('.');
-          const domainAlias={resourceSummary:'resource',resourceInventory:'resource',resourceDeposits:'resourceDeposits'};
+          const domainAlias={resourceSummary:'resource',resourceInventory:'resource',resourceDeposits:'resource'};
           const declaredDomain=pieces.shift();
           if(!declaredDomain||!pieces.length)continue;
-          const domain=domainAlias[declaredDomain]||declaredDomain;
-          if(domain==='resourceDeposits'){
-            if(!state.resource||typeof state.resource!=='object')state.resource={};
-            domainKey='resource';
-          }else{
-            domainKey=domain;
-          }
+          const domainKey=domainAlias[declaredDomain]||declaredDomain;
           if(!state[domainKey]||typeof state[domainKey]!=='object')state[domainKey]={};
           const countryId=normalizeCountryId(transaction.countryId);
           if(!state[domainKey][countryId]||typeof state[domainKey][countryId]!=='object')state[domainKey][countryId]={};
