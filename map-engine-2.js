@@ -347,22 +347,20 @@ Game.Diplomacy = {
 Game.DataLoader = {
     async loadAssets() {
         try {
+            // Population/economy are owned by the canonical game database loader.
+            if (typeof window.initializeWorldGameDatabase === 'function') {
+                await window.initializeWorldGameDatabase();
+            } else {
+                throw new Error('CANONICAL_GAME_DATABASE_LOADER_UNAVAILABLE');
+            }
+
             const fetcher = window.fetchResilient || (async (f) => {
                 const res = await fetch(f + '?v=' + Date.now());
                 return res.ok ? await res.json() : null;
             });
 
-            const popData = await fetcher('population.json');
-            if (popData && typeof popData === 'object') {
-                Game.state.population = popData;
-            }
-
-            const econData = await fetcher('economy.json');
-            if (econData && typeof econData === 'object') {
-                Game.state.economy = econData;
-            }
-
-            // Load relation generation engine and baseline relations
+            // Derived diplomatic inputs remain non-authoritative until the
+            // Foreign Ministry simulation state exists in the canonical domain.
             const [rgeData, relData, minData] = await Promise.all([
                 fetcher('relation_generation_engine.json'),
                 fetcher('relations.json'),
@@ -374,8 +372,8 @@ Game.DataLoader = {
                 if (Game.Diplomacy) Game.Diplomacy._rgeEngine = rgeData.RELATION_GENERATION_ENGINE;
             }
 
-            if (relData && typeof relData === 'object') {
-                if (Game.Diplomacy) Game.Diplomacy._legacyRelations = relData;
+            if (relData && typeof relData === 'object' && Game.Diplomacy) {
+                Game.Diplomacy._legacyRelations = relData;
             }
 
             if (minData && minData.ministers_database) {
@@ -390,57 +388,36 @@ Game.DataLoader = {
                 Game.Diplomacy.generateAllBilateralRelations();
             }
 
-            const relSelector = (Game.dom && Game.dom.relSelector) || document.getElementById('relation-selector'); 
+            const relSelector = (Game.dom && Game.dom.relSelector) || document.getElementById('relation-selector');
             if (relSelector && Game.state.economy) {
                 relSelector.innerHTML = '<option value="NONE">-- Select Target --</option>';
                 Object.keys(Game.state.economy).sort().forEach(countryKey => {
                     const opt = document.createElement('option');
                     opt.value = countryKey;
-                    opt.innerText = countryKey.replace(/_/g, " ");
+                    const identity = (window.OmegaCanonicalIdentityRegistry || window.OmegaCountrySemanticBridge)?.resolveCountry?.(countryKey);
+                    opt.innerText = identity?.raw?.name || countryKey.replace(/_/g, ' ');
                     relSelector.appendChild(opt);
-                });
-            }
-
-            // ম্যাপ লোড হওয়ার পর ডাইনামিক্যালি প্রতিটি দেশের জন্য সিমুলেশন ডাটা জেনারেট করা হয়
-            if (Game.state.economy) {
-                Object.keys(Game.state.economy).forEach(countryKey => {
-                    const econ = Game.state.economy[countryKey];
-                    if (!econ) return;
-                    let ai_type = "survival";
-                    if (econ.gdp > 500000000000) { 
-                        ai_type = "greedy";
-                    }
-                    if (countryKey === "CHINA" || countryKey === "USA" || countryKey === "RUSSIA") {
-                        ai_type = "aggressive";
-                    }
-                    if (countryKey === "BANGLADESH") {
-                        ai_type = "survival";
-                    }
-                    econ.ai = ai_type;
-                    econ.money = econ.money || 500;
-                    econ.debt = econ.debt || 0;
-                    econ.stock = econ.stock || {"food": 100, "oil": 80, "metal": 90};
-                    econ.production = econ.production || 120;
-                    econ.trade_power = econ.trade_power || 100;
                 });
             }
 
             const countryConfig = await fetcher('countries.json');
             if (Array.isArray(countryConfig)) {
-                countryConfig.forEach(c => {
-                    if (c && c.name) {
-                        Game.countryLookup[Game.normalizeName(c.name)] = c;
-                    }
-                });
+                for (const country of countryConfig) {
+                    if (country?.name) Game.countryLookup[Game.normalizeName(country.name)] = country;
+                }
             }
 
             const geoData = await fetcher('world.json');
-            if (geoData && geoData.type) {
-                Game.Map.renderGeoJSON(geoData);
-            }
+            if (geoData && geoData.type) Game.Map.renderGeoJSON(geoData);
 
+            window.dispatchEvent?.(new CustomEvent('OMEGA_DERIVED_DATA_READY', {
+                detail: { relationState: 'DERIVED_ONLY' }
+            }));
         } catch (error) {
-            console.error("❌ ডাটা পাইপলাইন এরর:", error);
+            console.error('[OMEGA] Derived data pipeline error:', error);
+            window.dispatchEvent?.(new CustomEvent('OMEGA_DERIVED_DATA_FAILURE', {
+                detail: { error: String(error?.message || error) }
+            }));
         }
     }
 };
