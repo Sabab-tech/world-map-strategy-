@@ -444,6 +444,8 @@
     Availability:AVAILABILITY,
     create:(options={})=>new MinistryStateProvider(options),
     inputContract:clone(DATASET_INPUT_CONTRACT),
+    validateDatasetShape:(dataset,options={})=>api.instance.validateDatasetShape(dataset,options),
+    hydrateDataset:(dataset,domain,options={})=>api.instance.hydrateDataset(dataset,domain,options),
     instance:new MinistryStateProvider()
   };
 
