@@ -328,6 +328,8 @@
       this.checkpointInterval=Math.max(0,finite(options.checkpointInterval,0));
       this.autoCheckpointCounter=0;
       this.hooks={};
+      this.frameInProgress=false;
+      this.pendingRealDeltaMs=0;
       this.installDefaultHandlers();
     }
 
@@ -479,6 +481,9 @@
 
     createSession(options={}){
       const countryId=String(options.playerCountryId||options.countryId||this.getPlayerCountryId()||'').trim().toUpperCase();
+      this.clock.stop();
+      this.clock.turn=finite(options.startTurn,this.clock.turn);
+      this.clock.simulationTimeMs=finite(options.simulationTimeMs,this.clock.turn*this.clock.stepDurationMs);
       const session={
         schemaVersion:SESSION_VERSION,
         sessionId:String(options.sessionId||('OMEGA-SESSION-'+Math.max(0,this.clock.turn+1))),
@@ -488,9 +493,6 @@
         lastCommittedTurn:this.clock.turn
       };
       this.world.setSession(session);
-      this.clock.stop();
-      this.clock.turn=finite(options.startTurn,this.clock.turn);
-      this.clock.simulationTimeMs=finite(options.simulationTimeMs,this.clock.turn*this.clock.stepDurationMs);
       this.clock.accumulatorMs=0;
       this.status='READY';
       this.lastError=null;
@@ -556,12 +558,24 @@
     }
 
     async frame(realDeltaMs){
+      const delta=Math.max(0,finite(realDeltaMs,0));
+      if(this.frameInProgress){
+        this.pendingRealDeltaMs+=delta;
+        return {steps:0,turn:this.clock.turn,status:this.status,busy:true};
+      }
       if(this.status!=='RUNNING')return {steps:0,turn:this.clock.turn,status:this.status};
-      this.world.hydrateCompatibility();
-      const steps=this.clock.consumeRealDelta(realDeltaMs);
-      let last=null;
-      for(let i=0;i<steps;i++)last=await this.step();
-      return {steps,turn:this.clock.turn,last};
+      this.frameInProgress=true;
+      try{
+        this.world.hydrateCompatibility();
+        const combinedDelta=delta+this.pendingRealDeltaMs;
+        this.pendingRealDeltaMs=0;
+        const steps=this.clock.consumeRealDelta(combinedDelta);
+        let last=null;
+        for(let i=0;i<steps;i++)last=await this.step();
+        return {steps,turn:this.clock.turn,last};
+      }finally{
+        this.frameInProgress=false;
+      }
     }
 
     async advance(turns=1){
