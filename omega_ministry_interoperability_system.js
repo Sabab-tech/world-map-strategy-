@@ -216,6 +216,7 @@
       this.reactionQueue=[];
       this.commands=new Map();
       this.commandHandlers=new Map();
+      this.pendingCommands=new Map();
       this.authorityPolicies=new Map();
       this.arbitrationPolicies=new Map();
       this.workflowDefinitions=new Map();
@@ -1859,6 +1860,108 @@
       );
     }
 
+    _finalizePreparedCommand(prepared,options={}){
+      const row=prepared?.row;
+      const stateTransaction=prepared?.stateTransaction;
+      const stagedEvents=Array.isArray(prepared?.stagedEvents)?prepared.stagedEvents:[];
+      const turn=Number.isFinite(Number(prepared?.turn))?Number(prepared.turn):this.lastTurn;
+      const owner=String(prepared?.ownerMinistry||row?.stateOwnerMinistryId||'');
+      if(!row||!stateTransaction)throw new Error('PREPARED_COMMAND_INVALID');
+
+      try{
+        row.transaction=stateTransaction.commit();
+        if(row.transaction?.status==='ALREADY_PROCESSED'){
+          row.status='ALREADY_PROCESSED';
+          row.lifecycleStatus='VERIFIED';
+          row.stateChanged=false;
+          this.pendingCommands.delete(String(row.commandId));
+          return clone(row);
+        }
+
+        row.lifecycleStatus='COMMITTED';
+        row.statusHistory.push({status:'COMMITTED',simulationTurn:turn});
+        row.result=clone(prepared.result);
+        row.status=prepared.result?.accepted===false?'FAILED':'APPLIED';
+        row.stateChanged=Boolean(row.transaction?.changed);
+
+        const authority=this.authority||global.OmegaAuthoritativeStateAuthority?.instance||global.Omega?.AuthoritativeStateAuthority?.instance||null;
+        const authoritativeDomainRevision=row.stateChanged
+          ?(authority?.revision?.(row.countryId,owner)||row.transaction?.afterRevision||null)
+          :null;
+        if(authoritativeDomainRevision)row.stateRevisionAfter=authoritativeDomainRevision;
+
+        if(row.stateChanged){
+          row.requiresRepublish=true;
+          this.dirtyPublications.set(snapshotKey(row.countryId,owner),{
+            countryId:row.countryId,
+            ministryId:owner,
+            simulationTurn:turn,
+            stateRevision:authoritativeDomainRevision,
+            changedPaths:(row.transaction.operations||[]).map(op=>op.path).slice(0,64),
+            causationId:row.commandId
+          });
+          this.emitEvent(EVENT_TYPES.MINISTRY_STATE_CHANGED,row.countryId,owner,{
+            commandId:row.commandId,
+            stateRevision:authoritativeDomainRevision,
+            changedPaths:(row.transaction.operations||[]).map(op=>op.path)
+          },{
+            turn,
+            causationId:row.commandId,
+            stateRevision:authoritativeDomainRevision,
+            deferDispatch:true
+          });
+        }
+
+        for(const staged of stagedEvents){
+          this.emitEvent(staged.eventType,row.countryId,owner,staged.payload,{
+            ...staged.options,
+            stateRevision:authoritativeDomainRevision,
+            deferDispatch:true
+          });
+        }
+
+        this.pendingCommands.delete(String(row.commandId));
+        if(options.processEventOutbox===true)this.processEventOutbox(turn);
+        row.lifecycleStatus='VERIFIED';
+        row.statusHistory.push({
+          status:'VERIFIED',
+          simulationTurn:turn,
+          reason:row.stateChanged?'STATE_AND_EVENT_OUTBOX_PERSISTED':'NO_STATE_CHANGE'
+        });
+        return clone(row);
+      }catch(error){
+        if(String(error?.message||error).startsWith('STATE_REVISION_CONFLICT:')){
+          row.lifecycleStatus='CONFLICT';
+          row.statusHistory.push({status:'CONFLICT',simulationTurn:turn,reason:String(error.message||error)});
+          row.arbitration=this.resolveConflict({
+            scope:row.actionId,
+            actionId:row.actionId,
+            countryId:row.countryId,
+            commandId:row.commandId,
+            reason:String(error.message||error)
+          });
+        }
+        row.status='FAILED';
+        row.result={error:String(error?.message||error)};
+        row.statusHistory.push({status:'FAILED',simulationTurn:turn});
+        this.metrics.failed+=1;
+        this.pendingCommands.delete(String(row.commandId));
+        return clone(row);
+      }
+    }
+
+    commitPendingCommands(turn=this.lastTurn,options={}){
+      const targetTurn=Number.isFinite(Number(turn))?Number(turn):this.lastTurn;
+      const rows=[...this.pendingCommands.values()]
+        .filter(row=>Number(row.turn)<=targetTurn)
+        .sort((a,b)=>Number(a.turn)-Number(b.turn)||String(a.row.commandId).localeCompare(String(b.row.commandId)));
+      const committed=[];
+      for(const prepared of rows){
+        committed.push(this._finalizePreparedCommand(prepared,options));
+      }
+      return committed;
+    }
+
     registerCommandHandler(commandType,ownerMinistry,handler){
       const owner=String(ownerMinistry||'');
       if(!this.ids.includes(owner))throw new Error('COMMAND_OWNER_UNKNOWN:'+owner);
@@ -2002,51 +2105,39 @@
               throw new Error('NON_CANONICAL_EVENT:'+String(staged.eventType));
             }
           }
-          row.transaction=stateTransaction.commit();
-          if(row.transaction?.status==='ALREADY_PROCESSED'){
-            row.status='ALREADY_PROCESSED';
-            row.lifecycleStatus='VERIFIED';
-            row.stateChanged=false;
+
+          row.result=clone(result);
+
+          const prepared={
+            row,
+            stateTransaction,
+            stagedEvents:clone(stagedEvents),
+            result:clone(result),
+            turn,
+            ownerMinistry:handler.ownerMinistry
+          };
+
+          if(options.deferCommit===true){
+            row.lifecycleStatus='READY_TO_COMMIT';
+            row.status='STAGED';
+            row.pendingCommit=true;
+            row.statusHistory.push({status:'READY_TO_COMMIT',simulationTurn:turn});
+            this.pendingCommands.set(commandId,prepared);
             return clone(row);
           }
-          transition('COMMITTED');
+
+          return this._finalizePreparedCommand(prepared,{
+            processEventOutbox:options.deferEventDispatch!==true
+          });
         }else{
           stateTransaction.rollback();
+          row.result=clone(result);
+          row.status='FAILED';
+          row.lifecycleStatus='FAILED';
+          row.statusHistory.push({status:'FAILED',simulationTurn:turn,reason:'HANDLER_REJECTED'});
+          this.pendingCommands.delete(commandId);
+          return clone(row);
         }
-
-        row.result=clone(result);
-        row.status=result?.accepted===false?'FAILED':'APPLIED';
-        row.stateChanged=Boolean(row.transaction?.changed);
-        const authoritativeDomainRevision=row.stateChanged
-          ? (authority?.revision?.(country,handler.ownerMinistry)||row.transaction?.afterRevision||null)
-          : null;
-        if(authoritativeDomainRevision)row.stateRevisionAfter=authoritativeDomainRevision;
-
-        if(row.stateChanged){
-          row.requiresRepublish=true;
-          this.dirtyPublications.set(snapshotKey(country,handler.ownerMinistry),{
-            countryId:country,
-            ministryId:handler.ownerMinistry,
-            simulationTurn:turn,
-            stateRevision:authoritativeDomainRevision,
-            changedPaths:(row.transaction.operations||[]).map(op=>op.path).slice(0,64),
-            causationId:commandId
-          });
-          this.emitEvent(EVENT_TYPES.MINISTRY_STATE_CHANGED,country,handler.ownerMinistry,{
-            commandId,stateRevision:authoritativeDomainRevision,changedPaths:(row.transaction.operations||[]).map(op=>op.path)
-          },{turn,causationId:commandId,stateRevision:authoritativeDomainRevision,deferDispatch:true});
-        }
-
-        // Transactional events are persisted only after the state commit succeeds.
-        for(const staged of stagedEvents){
-          this.emitEvent(staged.eventType,country,handler.ownerMinistry,staged.payload,{
-            ...staged.options,stateRevision:authoritativeDomainRevision,deferDispatch:true
-          });
-        }
-        if(options.deferEventDispatch!==true)this.processEventOutbox(turn);
-
-        transition('VERIFIED',row.stateChanged?'STATE_AND_EVENT_OUTBOX_PERSISTED':'NO_STATE_CHANGE');
-        return clone(row);
       }catch(error){
         if(String(error?.message||error).startsWith('STATE_REVISION_CONFLICT:')){
           transition('CONFLICT',String(error.message));
@@ -2464,6 +2555,12 @@
         eventDeliveryLedger:clone(Object.fromEntries(this.eventDeliveryLedger)),
         reactionQueue:clone(this.reactionQueue),
         cases:clone(Object.fromEntries(this.cases)),
+        pendingCommands:[...this.pendingCommands.values()].map(p=>({
+          commandId:p.row.commandId,
+          turn:p.turn,
+          status:p.row.status,
+          lifecycleStatus:p.row.lifecycleStatus
+        })),
         dirtyPublications:clone(Object.fromEntries(this.dirtyPublications)),
         authorityState:this.authority?.exportState?.()||null
       };
@@ -2490,6 +2587,7 @@
       this.eventDeliveryLedger=new Map(Object.entries(state.eventDeliveryLedger||{}).map(([k,v])=>[k,clone(v)]));
       this.reactionQueue=clone(state.reactionQueue||[]);
       this.cases=new Map(Object.entries(state.cases||{}).map(([k,v])=>[k,clone(v)]));
+      this.pendingCommands=new Map();
       this.commands=new Map(Object.entries(state.commands||{}).map(([k,v])=>[k,clone(v)]));
       this.dirtyPublications=new Map(Object.entries(state.dirtyPublications||{}).map(([k,v])=>[k,clone(v)]));
       if(state.authorityState&&this.authority?.importState)this.authority.importState(state.authorityState);
