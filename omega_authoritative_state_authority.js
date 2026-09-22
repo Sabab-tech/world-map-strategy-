@@ -276,9 +276,14 @@
       const source=suppliedBase
         ?clone(baseState)
         :(checkpoint?clone(checkpoint.state):{});
-      const replayFrom=checkpoint?Number(checkpoint.turn):from;
       const rows=[...this.transactionLedger.values()]
-        .filter(row=>row&&row.status!=='CONFLICT'&&Number(row.simulationTurn)>replayFrom&&Number(row.simulationTurn)<=to)
+        .filter(row=>{
+          if(!row||row.status==='CONFLICT')return false;
+          const turn=Number(row.simulationTurn);
+          if(!Number.isFinite(turn)||turn>to)return false;
+          if(checkpoint)return turn>Number(checkpoint.turn);
+          return turn>=from;
+        })
         .sort((a,b)=>Number(a.simulationTurn)-Number(b.simulationTurn)||String(a.transactionId).localeCompare(String(b.transactionId)));
       const apply=(state,transaction)=>{
         for(const operation of transaction.operations||[]){
