@@ -303,6 +303,7 @@
       this.ids=normalizeIds(this.registry);
       this.maxInbox=Number.isFinite(Number(options.maxInbox))?Number(options.maxInbox):this.maxInbox;
       this.maxHistory=Number.isFinite(Number(options.maxHistory))?Number(options.maxHistory):this.maxHistory;
+      this.maxSnapshotAgeTurns=Number.isFinite(Number(options.maxSnapshotAgeTurns))?Number(options.maxSnapshotAgeTurns):this.maxSnapshotAgeTurns;
       this._rebuildTopology();
       return this;
     }
