@@ -1,5 +1,5 @@
 /*
- * OMEGA CANONICAL 17-MINISTRY RUNTIME CONTROLLER v1.2.0
+ * OMEGA CANONICAL 17-MINISTRY RUNTIME CONTROLLER v1.3.0
  *
  * Runtime responsibility:
  *   - own the canonical ministry set
