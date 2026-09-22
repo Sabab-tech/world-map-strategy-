@@ -1544,7 +1544,7 @@
         if(direction==='OUTBOUND')return row.source===id;
         if(direction==='INBOUND')return row.target===id;
         return row.source===id||row.target===id;
-      }).map(clone);
+      }).map(value=>clone(value));
     }
 
     publishFiscalStatus(ministryId,status={},options={}){
