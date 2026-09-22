@@ -139,23 +139,28 @@
       const owner=String(transaction.ownerMinistry||'');
       if(!owner)throw new Error('STATE_OWNER_REQUIRED');
       const operations=Array.isArray(transaction.operations)?transaction.operations:[];
-      const beforeDigest=hash(state);
+      const stagedDomains=new Map();
       const applied=[];
 
+      // Preflight and stage every operation on cloned country-domain buckets.
+      // Nothing in authoritative state is mutated until the entire transaction validates.
       for(const operation of operations){
         const path=String(operation?.path||'');
         const pieces=path.split('.');
         const domain=pieces.shift();
-        if(!domain||domain!==owner&&!(owner==='resource'&&['resourceSummary','resourceInventory','resourceDeposits'].includes(domain))){
+        if(!domain||pieces.length===0||!(domain===owner||(owner==='resource'&&['resourceSummary','resourceInventory','resourceDeposits'].includes(domain)))){
           throw new Error('STATE_PATH_NOT_OWNED_BY_MINISTRY:'+path);
         }
-        const aliases={
-          resourceSummary:'resource',
-          resourceInventory:'resource',
-          resourceDeposits:'resource'
-        };
+        if(operation.op!=='SET'&&operation.op!=='DELETE')throw new Error('UNKNOWN_STATE_OPERATION:'+operation.op);
+        const aliases={resourceSummary:'resource',resourceInventory:'resource',resourceDeposits:'resource'};
         const actualDomain=aliases[domain]||domain;
-        const bucket=this.countryContainer(id,actualDomain,true);
+        let bucket=stagedDomains.get(actualDomain);
+        if(!bucket){
+          const existingDomain=state[actualDomain];
+          const existingBucket=existingDomain&&typeof existingDomain==='object'?existingDomain[id]:undefined;
+          bucket=existingBucket&&typeof existingBucket==='object'?clone(existingBucket):{};
+          stagedDomains.set(actualDomain,bucket);
+        }
         let cursor=bucket;
         for(let i=0;i<pieces.length-1;i++){
           const part=pieces[i];
@@ -165,12 +170,17 @@
         const leaf=pieces[pieces.length-1];
         const before=clone(cursor[leaf]);
         if(operation.op==='DELETE')delete cursor[leaf];
-        else if(operation.op==='SET')cursor[leaf]=clone(operation.after);
-        else throw new Error('UNKNOWN_STATE_OPERATION:'+operation.op);
+        else cursor[leaf]=clone(operation.after);
         applied.push({op:operation.op,path,before,after:clone(cursor[leaf])});
       }
 
-      const afterDigest=hash(state);
+      // Atomic publish of staged country buckets after all validation/application succeeded.
+      for(const [domain,bucket] of stagedDomains.entries()){
+        if(!state[domain]||typeof state[domain]!=='object')state[domain]={};
+        state[domain][id]=bucket;
+      }
+
+            const afterDigest=hash(state);
       const transactionId=String(transaction.transactionId||('OMI-TX-'+transaction.turn+'-'+owner+'-'+transaction.commandId));
       const record={
         transactionId,
