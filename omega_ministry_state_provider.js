@@ -240,8 +240,8 @@
 
     describe(countryId,path,options={}){
       const id=normalizeId(countryId);
-      const value=this.get(id,path);
       const availability=this.getAvailability(id,path,options);
+      const value=availability.value!==undefined?availability.value:this.get(id,path);
       return {
         countryId:id,
         path:String(path??''),
