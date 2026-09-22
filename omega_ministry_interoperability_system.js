@@ -1721,6 +1721,15 @@
       return this.diagnostics(countryId,currentTurn);
     }
 
+    advanceTurn(turn){
+      const n=Number(turn);
+      if(!Number.isFinite(n))return this.lastTurn;
+      this.lastTurn=Math.max(this.lastTurn,n);
+      this._expireTurn(this.lastTurn);
+      this._invalidateKnowledgeCache();
+      return this.lastTurn;
+    }
+
     saveState(){
       return this.exportState();
     }
