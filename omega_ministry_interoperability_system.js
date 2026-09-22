@@ -284,6 +284,7 @@
       this._knowledgeCache=null;
       this.maxInbox=Number.isFinite(Number(options.maxInbox))?Number(options.maxInbox):DEFAULT_MAX_INBOX;
       this.maxHistory=Number.isFinite(Number(options.maxHistory))?Number(options.maxHistory):DEFAULT_MAX_HISTORY;
+      this.maxSnapshotAgeTurns=Number.isFinite(Number(options.maxSnapshotAgeTurns))?Number(options.maxSnapshotAgeTurns):1;
       this.metrics={
         sent:0,delivered:0,accepted:0,rejected:0,duplicate:0,
         dropped:0,expired:0,failed:0,processed:0,
