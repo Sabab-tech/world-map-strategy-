@@ -102,7 +102,7 @@ jobs:
           const test = await fs.readFile('test/omega_17_ministry_runtime.test.js','utf8');
           const meshTest = await fs.readFile('test/omega_ministry_interoperability.test.js','utf8');
 
-          if (!runtime.includes("const VERSION='1.2.0'")) throw new Error('Runtime version contract is not 1.2.0');
+          if (!runtime.includes("const VERSION='1.3.0'")) throw new Error('Runtime version contract is not 1.3.0');
           if (!interoperability.includes("const VERSION='2.0.0'")) throw new Error('Interoperability version contract is not 2.0.0');
           if (!interoperability.includes('deliveryLedger')) throw new Error('Canonical delivery ledger missing');
           if (!interoperability.includes('publishedFacts')) throw new Error('Public-state projection contract missing');
@@ -112,6 +112,13 @@ jobs:
           if (!interoperability.includes('dirtyPublications')) throw new Error('State-change republish ledger missing');
           if (!interoperability.includes('MINISTRY_KNOWLEDGE_CONTRACT')) throw new Error('Declarative ministry knowledge contract missing');
           if (!interoperability.includes('emitEvent')) throw new Error('Semantic event system missing');
+          if (!interoperability.includes('eventOutbox')) throw new Error('Durable event outbox missing');
+          if (!interoperability.includes('registerCausalRule')) throw new Error('Causal rule engine missing');
+          if (!interoperability.includes('createCase')) throw new Error('Workflow case engine missing');
+          if (!interoperability.includes('registerAuthorityPolicy')) throw new Error('Authority policy layer missing');
+          if (!interoperability.includes('resolveConflict')) throw new Error('Conflict resolution layer missing');
+          if (!runtime.includes('runTurn')) throw new Error('Canonical government orchestrator missing');
+          if (!runtime.includes('GOVERNMENT_PHASES')) throw new Error('Deterministic government phase spine missing');
           if (!interoperability.includes('saveState')) throw new Error('Save/load state contract missing');
           if (!interoperability.includes('this.ids.length*this.ids.length')) throw new Error('Dynamic NxN mesh topology generation missing');
           if (!meshTest.includes("every route transports")) throw new Error('Expanded route transport test missing');
