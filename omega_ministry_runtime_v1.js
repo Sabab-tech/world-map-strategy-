@@ -388,6 +388,8 @@
         domainExecution=engine.execute(domainContext);
       }catch(err){
         s.failures+=1;
+        s.status='FAILED';
+        s.active=false;
         s.errors.push(String(err?.message||err));
         if(s.errors.length>8) s.errors.shift();
         throw err;
