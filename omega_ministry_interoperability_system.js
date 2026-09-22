@@ -39,7 +39,8 @@
     ACK:'ACK',
     BUDGET_REQUEST:'BUDGET_REQUEST',
     PROJECT_STATUS:'PROJECT_STATUS',
-    CONSTRAINT_UPDATE:'CONSTRAINT_UPDATE'
+    CONSTRAINT_UPDATE:'CONSTRAINT_UPDATE',
+    FISCAL_STATUS:'FISCAL_STATUS'
   });
 
   const CONNECTION_STATES = Object.freeze({
@@ -137,6 +138,7 @@
       this.budgetRequests=new Map();
       this.projectSignals=new Map();
       this.constraints=new Map();
+      this.fiscalReports=new Map();
       this.routeSequence=0;
       this.attached=false;
       this.bridge=null;
@@ -421,6 +423,8 @@
         this._recordProjectSignal(unwrapped);
       }else if(unwrapped.messageType===MESSAGE_TYPES.CONSTRAINT_UPDATE){
         this._recordConstraint(unwrapped);
+      }else if(unwrapped.messageType===MESSAGE_TYPES.FISCAL_STATUS){
+        this._recordFiscalStatus(unwrapped);
       }else if(unwrapped.messageType===MESSAGE_TYPES.ALERT){
         this._recordAlert(unwrapped);
       }
@@ -484,6 +488,21 @@
       });
       while(list.length>100) list.shift();
       this.projectSignals.set(source,list);
+    }
+
+    _recordFiscalStatus(message){
+      const source=message.source;
+      this.fiscalReports.set(source,{
+        messageId:message.messageId,
+        ministryId:source,
+        turn:message.turn,
+        budget:number(message.payload?.budget),
+        allocated:number(message.payload?.allocated),
+        committed:number(message.payload?.committed),
+        available:number(message.payload?.available),
+        currency:message.payload?.currency??null,
+        evidence:clone(message.payload?.evidence||null)
+      });
     }
 
     _recordConstraint(message){
@@ -561,6 +580,14 @@
       const policies=toArray(store?.policies);
       const decisions=toArray(store?.decisions);
       const needs=clone(store?.needsModel||null);
+      const reportedFiscal=this.fiscalReports.get(ministryId)||null;
+      if(reportedFiscal){
+        if(reportedFiscal.budget!==null) fiscal.budget=reportedFiscal.budget;
+        if(reportedFiscal.allocated!==null) fiscal.allocated=reportedFiscal.allocated;
+        if(reportedFiscal.committed!==null) fiscal.committed=reportedFiscal.committed;
+        if(reportedFiscal.available!==null) fiscal.available=reportedFiscal.available;
+        if(reportedFiscal.currency!==null) fiscal.currency=reportedFiscal.currency;
+      }
       const pendingBudgetRequests=(this.budgetRequests.get(ministryId)||[]).filter(x=>String(x.status).toUpperCase()!=='CLOSED');
       const requestedBudget=pendingBudgetRequests.reduce((sum,item)=>{
         const amount=number(item.amount);
@@ -841,7 +868,38 @@
       };
     }
 
+    publishFiscalStatus(ministryId,status,options={}){
+      const ministryId0=String(ministryId);
+      this._recordFiscalStatus({
+        source:ministryId0,
+        messageId:'LOCAL-FISCAL-'+ministryId0+'-'+this.lastTurn,
+        turn:Number.isFinite(Number(options.turn))?Number(options.turn):this.lastTurn,
+        payload:status||{}
+      });
+      return this.send(
+        ministryId0,
+        String(options.target||'finance'),
+        options.topic||'ministry.fiscal.status',
+        {
+          budget:number(status?.budget),
+          allocated:number(status?.allocated),
+          committed:number(status?.committed),
+          available:number(status?.available),
+          currency:status?.currency??null,
+          evidence:clone(status?.evidence||null)
+        },
+        { ...options, messageType:MESSAGE_TYPES.FISCAL_STATUS }
+      );
+    }
+
     recordBudgetRequest(ministryId,request,options={}){
+      const source=String(ministryId);
+      this._recordBudgetRequest({
+        source,
+        messageId:'LOCAL-BUDGET-'+source+'-'+this.lastTurn+'-'+String((this.budgetRequests.get(source)||[]).length+1),
+        turn:Number.isFinite(Number(options.turn))?Number(options.turn):this.lastTurn,
+        payload:request||{}
+      });
       return this.send(
         String(ministryId),
         String(options.target||'finance'),
@@ -859,6 +917,13 @@
     }
 
     publishProjectStatus(ministryId,status,options={}){
+      const source=String(ministryId);
+      this._recordProjectSignal({
+        source,
+        messageId:'LOCAL-PROJECT-'+source+'-'+this.lastTurn+'-'+String((this.projectSignals.get(source)||[]).length+1),
+        turn:Number.isFinite(Number(options.turn))?Number(options.turn):this.lastTurn,
+        payload:status||{}
+      });
       return this.send(
         String(ministryId),
         String(options.target||'cabinet'),
@@ -876,6 +941,13 @@
     }
 
     publishConstraint(ministryId,constraint,options={}){
+      const source=String(ministryId);
+      this._recordConstraint({
+        source,
+        messageId:'LOCAL-CONSTRAINT-'+source+'-'+this.lastTurn+'-'+String((this.constraints.get(source)||[]).length+1),
+        turn:Number.isFinite(Number(options.turn))?Number(options.turn):this.lastTurn,
+        payload:constraint||{}
+      });
       return this.send(
         String(ministryId),
         String(options.target||'cabinet'),
@@ -935,6 +1007,7 @@
         budgetRequests:[...this.budgetRequests.entries()],
         projectSignals:[...this.projectSignals.entries()],
         constraints:[...this.constraints.entries()],
+        fiscalReports:[...this.fiscalReports.entries()],
         metrics:this.metrics,
         lastTurn:this.lastTurn
       });
@@ -952,6 +1025,7 @@
       this.budgetRequests=new Map(Array.isArray(data.budgetRequests)?data.budgetRequests.map(([k,v])=>[k,clone(v)]):[]);
       this.projectSignals=new Map(Array.isArray(data.projectSignals)?data.projectSignals.map(([k,v])=>[k,clone(v)]):[]);
       this.constraints=new Map(Array.isArray(data.constraints)?data.constraints.map(([k,v])=>[k,clone(v)]):[]);
+      this.fiscalReports=new Map(Array.isArray(data.fiscalReports)?data.fiscalReports.map(([k,v])=>[k,clone(v)]):[]);
       this.metrics={...this.metrics,...clone(data.metrics||{})};
     }
   }
