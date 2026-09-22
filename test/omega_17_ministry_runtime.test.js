@@ -119,7 +119,7 @@ test('the production Game.Simulation adapter delegates to the canonical governme
       getCountryId(value){return String(value||'').toUpperCase();}
     },
     OMEGA_MINISTRY_RUNTIME_V1:{
-      runTurn(turn,dt,store){calls.push({turn,dt,store});return {turn,status:'COMMITTED'};}
+      runWorldTurn(turn,dt){calls.push({turn,dt});return {mode:'WORLD_TURN',turn,status:'COMMITTED'};}
     },
     document:{addEventListener(){},querySelectorAll(){return[]},getElementById(){return null}},
     setTimeout(){return 1},
@@ -137,7 +137,6 @@ test('the production Game.Simulation adapter delegates to the canonical governme
   assert.equal(result.status,'COMMITTED');
   assert.equal(calls.length,1);
   assert.equal(calls[0].turn,8);
-  assert.equal(calls[0].store.countryId,'BD');
   assert.ok(!source.includes('Math.random()'), 'legacy random simulation authority must not remain in Game.Simulation.tick');
 });
 
@@ -145,6 +144,7 @@ test('the production HTML loop has one canonical ministry simulation authority a
   const html=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');
   assert.ok(html.includes('Game.Simulation.tick(dt)'));
   assert.ok(html.includes('OMEGA_MINISTRY_RUNTIME_V1'));
+  assert.ok(html.includes('runWorldTurn'));
   assert.ok(html.includes('OMEGA_DATA_CONTRACT_READY'));
   assert.ok(html.includes('if (!dataContractReady)'));
   assert.equal(/kernel\.pumpOrchestratedPipelineTick\(id, dt, tick/.test(html),false);
