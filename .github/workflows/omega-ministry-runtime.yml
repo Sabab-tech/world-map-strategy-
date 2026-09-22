@@ -35,6 +35,7 @@ jobs:
           node --check omega_ministry_state_provider.js
           node --check omega_ministry_information_policy.js
           node --check omega_ministry_decision_framework.js
+          node --check omega_ministry_state_transaction.js
           node --check omega_ministry_domain_engines.js
           node --check omega_ministry_interoperability_system.js
           node --check omega_ministry_runtime_v1.js
@@ -68,7 +69,9 @@ jobs:
           if (!interoperability.includes('emitEvent')) throw new Error('Semantic event system missing');
           if (!interoperability.includes('saveState')) throw new Error('Save/load state contract missing');
           if (!interoperability.includes("IDS.length*IDS.length")) throw new Error('17x17 mesh topology generation missing');
-          if (!meshTest.includes('17 unique engines')) throw new Error('Expanded structural test matrix missing');
+          if (!meshTest.includes("every route transports")) throw new Error('Expanded route transport test missing');
+          if (!meshTest.includes("relationship is not substituted for treaty status")) throw new Error('Treaty semantic separation test missing');
+          if (!meshTest.includes("command -> authoritative owner")) throw new Error('Command propagation test missing');
           if (!runtime.includes("version:VERSION")) throw new Error('Runtime API does not expose the canonical version token');
           if (!runtime.includes('saveState')) throw new Error('Runtime save/load API missing');
           if (!test.includes('const IDS')) throw new Error('Canonical runtime test missing');
