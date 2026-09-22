@@ -195,9 +195,16 @@ test('OMEGA canonical 17-ministry runtime is independently engine-backed and bin
   sandbox.window=sandbox;
   sandbox.globalThis=sandbox;
 
+  loadBrowserScript('omega_country_semantic_bridge.js',sandbox);
   loadBrowserScript('omega_ministry_registry.js',sandbox);
+  loadBrowserScript('omega_ministry_knowledge_contract.js',sandbox);
+  loadBrowserScript('omega_ministry_information_policy.js',sandbox);
+  loadBrowserScript('omega_ministry_decision_framework.js',sandbox);
+  loadBrowserScript('omega_ministry_state_transaction.js',sandbox);
+  loadBrowserScript('omega_authoritative_state_authority.js',sandbox);
   loadBrowserScript('omega_ministry_state_provider.js',sandbox);
   loadBrowserScript('omega_ministry_domain_engines.js',sandbox);
+  loadBrowserScript('omega_ministry_interoperability_system.js',sandbox);
   loadBrowserScript('omega_ministry_runtime_v1.js',sandbox);
 
   const engines=sandbox.OmegaMinistryDomainEngines;
@@ -398,8 +405,8 @@ test('canonical world-turn runtime processes multiple country scopes through one
       state:{
         simulationTurn:1,
         economy:{
-          'TST-A':{gdp:100},
-          'TST-B':{gdp:200}
+          'BD':{gdp:100},
+          'IN':{gdp:200}
         }
       },
       currentActiveCountry:'TST-A'
@@ -423,7 +430,7 @@ test('canonical world-turn runtime processes multiple country scopes through one
   assert.equal(result.processedCountries,2);
   assert.equal(result.failedCountries,0);
   assert.equal(result.status,'COMMITTED');
-  assert.deepEqual(result.deterministicCountryOrder,['TST-A','TST-B']);
+  assert.deepEqual(result.deterministicCountryOrder,['BD','IN']);
   assert.equal(result.countries.length,2);
   for(const countryResult of result.countries){
     assert.equal(countryResult.turn,2);
