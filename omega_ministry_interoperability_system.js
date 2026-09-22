@@ -1871,6 +1871,7 @@
       try{
         row.transaction=stateTransaction.commit();
         if(row.transaction?.status==='ALREADY_PROCESSED'){
+          row.pendingCommit=false;
           row.status='ALREADY_PROCESSED';
           row.lifecycleStatus='VERIFIED';
           row.stateChanged=false;
@@ -1878,6 +1879,7 @@
           return clone(row);
         }
 
+        row.pendingCommit=false;
         row.lifecycleStatus='COMMITTED';
         row.statusHistory.push({status:'COMMITTED',simulationTurn:turn});
         row.result=clone(prepared.result);
@@ -2559,7 +2561,13 @@
           commandId:p.row.commandId,
           turn:p.turn,
           status:p.row.status,
-          lifecycleStatus:p.row.lifecycleStatus
+          lifecycleStatus:p.row.lifecycleStatus,
+          ownerMinistry:p.ownerMinistry,
+          countryId:p.row.countryId,
+          expectedRevision:p.stateTransaction?.expectedRevision??null,
+          operations:clone(p.stateTransaction?.operations||[]),
+          stagedEvents:clone(p.stagedEvents||[]),
+          result:clone(p.result)
         })),
         dirtyPublications:clone(Object.fromEntries(this.dirtyPublications)),
         authorityState:this.authority?.exportState?.()||null
@@ -2589,6 +2597,33 @@
       this.cases=new Map(Object.entries(state.cases||{}).map(([k,v])=>[k,clone(v)]));
       this.pendingCommands=new Map();
       this.commands=new Map(Object.entries(state.commands||{}).map(([k,v])=>[k,clone(v)]));
+      const pendingRows=Array.isArray(state.pendingCommands)?state.pendingCommands:[];
+      const authority=this.authority||global.OmegaAuthoritativeStateAuthority?.instance||global.Omega?.AuthoritativeStateAuthority?.instance||null;
+      const transactionFactory=this.stateTransaction||global.OmegaMinistryStateTransaction||null;
+      for(const pending of pendingRows){
+        try{
+          const row=this.commands.get(String(pending.commandId));
+          if(!row||row.status!=='STAGED')continue;
+          const tx=transactionFactory?.create?.(
+            String(pending.ownerMinistry||row.stateOwnerMinistryId||''),
+            String(pending.countryId||row.countryId||''),
+            Number(pending.turn)||row.simulationTurn||this.lastTurn,
+            String(pending.commandId),
+            authority
+          );
+          if(!tx)continue;
+          if(pending.expectedRevision!==undefined)tx.expectedRevision=pending.expectedRevision;
+          tx.operations=clone(pending.operations||[]);
+          this.pendingCommands.set(String(pending.commandId),{
+            row,
+            stateTransaction:tx,
+            stagedEvents:clone(pending.stagedEvents||[]),
+            result:clone(pending.result),
+            turn:Number(pending.turn)||row.simulationTurn||this.lastTurn,
+            ownerMinistry:String(pending.ownerMinistry||row.stateOwnerMinistryId||'')
+          });
+        }catch(_){}
+      }
       this.dirtyPublications=new Map(Object.entries(state.dirtyPublications||{}).map(([k,v])=>[k,clone(v)]));
       if(state.authorityState&&this.authority?.importState)this.authority.importState(state.authorityState);
       this._receivedMessageIds=new Set();
