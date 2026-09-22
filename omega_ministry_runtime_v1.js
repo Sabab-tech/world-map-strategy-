@@ -329,6 +329,12 @@
         dependencies:{...dependencySnapshot},
         engineBinding:resolveEngineBinding(id),
         domainExecution,
+        interoperability:interoperability && typeof interoperability.getConnection==='function'
+          ? {
+              ministryConnections:interoperability.connectionsFor?.(id,'ALL')?.length ?? 0,
+              publishedSnapshot:!!interoperability.getPeerState?.(id,id)
+            }
+          : null,
         timestamp:s.lastUpdate
       };
 
@@ -421,7 +427,10 @@
         independent,
         uniqueInstances,
         initialized,
-        engineRegistryHealthy:registryHealth.ok
+        engineRegistryHealthy:registryHealth.ok,
+        interoperability:interoperability && typeof interoperability.health==='function'
+          ? interoperability.health()
+          : null
       };
     }
 
