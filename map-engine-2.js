@@ -193,8 +193,7 @@ Game.getGameFriendlyName = function(name) {
     return mapping[name.toLowerCase().trim()] || name;
 };
 
-// রিয়েল-টাইম এআই সিমুলেশন ইঞ্জিন
-Game.Simulation = {
+// রিয়েল-টাইম canonical simulation adapter
 Game.Simulation = {
     tick(dt=0){
         const runtime=window.OMEGA_MINISTRY_RUNTIME_V1||window.Omega?.MinistryRuntime||null;
