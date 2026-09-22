@@ -243,7 +243,8 @@ Game.Diplomacy = {
         const countries = Object.keys(Game.state.economy);
         if (countries.length === 0) return;
 
-        Game.state.relations = Game.state.relations || {};
+        Game.derivedState = Game.derivedState || {};
+        Game.derivedState.relations = Game.derivedState.relations || {};
         
         // RGE Engine Integration (relation_generation_engine.json)
         const rge = this._rgeEngine || (Game.runtimeData?.relationEngine && Game.runtimeData.relationEngine.RELATION_GENERATION_ENGINE) || null;
@@ -257,7 +258,7 @@ Game.Diplomacy = {
         }
 
         countries.forEach(c1 => {
-            Game.state.relations[c1] = Game.state.relations[c1] || {};
+            Game.derivedState.relations[c1] = Game.derivedState.relations[c1] || {};
             const salienceA = salience[c1] || salience[c1.replace(/_/g, " ")] || null;
             const paramsA = salienceA ? salienceA.parameters : null;
 
@@ -330,7 +331,7 @@ Game.Diplomacy = {
                 
                 const finalScore = clamp(overall);
 
-                Game.state.relations[c1][c2] = {
+                Game.derivedState.relations[c1][c2] = {
                     overall: finalScore,
                     border_tension: clamp(50 - finalScore * 0.5),
                     military_threat: clamp(40 - finalScore * 0.4),
@@ -339,7 +340,7 @@ Game.Diplomacy = {
                 };
             });
         });
-        window.GameRelationsDatabase = Game.state.relations;
+        window.GameRelationsDatabase = Game.derivedState.relations;
         console.log(`✅ [RGE Engine] Generated Bilateral Relations for ${countries.length} nations using relation_generation_engine.json & relations.json.`);
     }
 };
