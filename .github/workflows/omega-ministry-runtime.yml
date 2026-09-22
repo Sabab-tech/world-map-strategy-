@@ -49,7 +49,8 @@ jobs:
           const engines = await fs.readFile('omega_ministry_domain_engines.js','utf8');
           const test = await fs.readFile('test/omega_17_ministry_runtime.test.js','utf8');
 
-          if (!runtime.includes("version:'1.2.0'")) throw new Error('Runtime version contract is not 1.2.0');
+          if (!runtime.includes("const VERSION='1.2.0'")) throw new Error('Runtime version contract is not 1.2.0');
+          if (!runtime.includes("version:VERSION")) throw new Error('Runtime API does not expose the canonical version token');
           if (!engines.includes("const VERSION='1.0.0'")) throw new Error('Engine version contract is not 1.0.0');
           if (runtime.includes('nativeAdapter')) throw new Error('Legacy native-adapter execution path remains');
           if ((engines.match(/class .*Engine extends IndependentMinistryEngine/g) || []).length !== 17) {
