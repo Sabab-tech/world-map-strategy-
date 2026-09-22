@@ -845,7 +845,7 @@
       let verification=null;
       try{
         verification={
-          runtime:this.health(),
+          runtime:health(),
           interoperability:interoperability?.diagnostics?.(null,turn)||null,
           schedule
         };
