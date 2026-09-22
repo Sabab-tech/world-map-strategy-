@@ -177,15 +177,13 @@
       if(Array.isArray(dataset)){
         dataset.forEach(row=>{
           const id=this.canonicalCountryId(row?.countryId||row?.countryCode||row?.country_code||row?.iso2||row?.iso3||row?.code||row?.id||row?.name||row?.countryName||row?.country_name);
-          if(id)rows.push([id,clone(row)]);
+          if(id)rows.push([id,clone(row),'']);
         });
       }else if(dataset&&typeof dataset==='object'){
         for(const [key,row] of Object.entries(dataset)){
           const id=this.canonicalCountryId(row?.countryId||row?.countryCode||row?.country_code||row?.iso2||row?.iso3||row?.code||row?.id||row?.name||row?.countryName||row?.country_name||key);
           if(id){
-            const cloned=clone(row);
-            if(cloned&&typeof cloned==='object'&&!Array.isArray(cloned))cloned.__sourceKey=String(key);
-            rows.push([id,cloned]);
+            rows.push([id,clone(row),String(key)]);
           }
         }
       }
@@ -193,11 +191,11 @@
       if(!state[d]||typeof state[d]!=='object')state[d]={};
       const written=[];
       const aliases=new Map();
-      for(const [id,row] of rows){
+      for(const [id,row,sourceKey=''] of rows){
         state[d][id]=row;
         written.push(id);
-        const sourceKey=String(row?.__sourceKey||'').trim();
-        if(sourceKey&&sourceKey!==id)aliases.set(sourceKey,id);
+        const rawKey=String(sourceKey||'').trim();
+        if(rawKey&&rawKey!==id)aliases.set(rawKey,id);
       }
       // Non-enumerable compatibility aliases keep legacy UI reads working without
       // duplicating authoritative country records or polluting canonical iteration.
