@@ -13,12 +13,6 @@
   const DEFAULT_MAX_INBOX=256;
   const DEFAULT_MAX_HISTORY=128;
 
-  const FALLBACK_IDS=Object.freeze([
-    'cabinet','defense','military','finance','economy','trade','foreign',
-    'intelligence','interior','transport','resource','health','education',
-    'technology','projects','culture','statistics'
-  ]);
-
   const AVAILABILITY=Object.freeze({
     AVAILABLE:'AVAILABLE',
     UNOBSERVED:'UNOBSERVED',
@@ -95,73 +89,11 @@
     MINISTRY_STATE_CHANGED:'MINISTRY_STATE_CHANGED'
   });
 
-  const STANDARD_PUBLIC_PATHS=Object.freeze({
-    cabinet:[
-      'store.policies','store.decisions'
-    ],
-    finance:[
-      'finance.budget','finance.allocated','finance.committed','finance.available',
-      'finance.reserves','finance.taxRevenue','finance.revenue','finance.spending',
-      'finance.encumbered','finance.capitalExpenditure','finance.operatingExpenditure',
-      'finance.emergencyAllocation','finance.mandatoryObligations','finance.required',
-      'finance.ministryAllocations'
-    ],
-    economy:[
-      'economy.gdp','economy.debt','economy.inflation','economy.unemployment',
-      'economy.production','economy.revenue','economy.reserves'
-    ],
-    trade:[
-      'trade.relations','trade.balance','trade.exports','trade.imports',
-      'trade.policy','trade.negotiations'
-    ],
-    foreign:[
-      'foreign.relations','foreign.treaties','foreign.negotiations',
-      'foreign.sanctions','foreign.embassies'
-    ],
-    intelligence:[
-      'intelligence.threats','intelligence.state','intelligence.cyber',
-      'intelligence.sources'
-    ],
-    defense:[
-      'defense.procurement','defense.readiness'
-    ],
-    military:[
-      'military.combat','military.readiness','military.forceStructure','military.logistics'
-    ],
-    interior:[
-      'interior.stability','interior.corruption','interior.security'
-    ],
-    transport:[
-      'transport.infrastructure','transport.logistics','transport.ports','transport.rail'
-    ],
-    resource:[
-      'resourceSummary','resourceInventory','resourceDeposits'
-    ],
-    health:[
-      'health.state','health.welfare','health.hospitals'
-    ],
-    education:[
-      'education.state','education.research','education.enrollment'
-    ],
-    technology:[
-      'technology.research','technology.innovation','technology.patents','technology.rnd'
-    ],
-    projects:[
-      'projects.registry','projects.legal','projects.requiredFunding','projects.cost','projects.allocatedFunding',
-      'projects.committedFunding','projects.spentFunding','projects.remainingFunding',
-      'projects.completion','projects.startDate','projects.targetDate',
-      'projects.dependencies','projects.blockers','projects.requiredApprovals',
-      'projects.linkedMinistries'
-    ],
-    culture:[
-      'culture.state','culture.media','culture.social'
-    ],
-    statistics:[
-      'country.identity','statistics.observations','statistics.indicators',
-      'statistics.sampleSize'
-    ]
-  });
+  const STANDARD_PUBLIC_PATHS=Object.freeze(Object.fromEntries(Object.entries(globalThis.OmegaMinistryKnowledgeContract?.definitions||{}).map(([id,def])=>[id,def.publish])));
 
+  /* Legacy name retained only as an internal alias; the canonical knowledge contract is authoritative. */
+  const MINISTRY_KNOWLEDGE_CONTRACT=globalThis.OmegaMinistryKnowledgeContract||null;
+  
   function clone(value,seen=new WeakMap()){
     if(value===null||typeof value!=='object')return value;
     if(seen.has(value))return seen.get(value);
@@ -264,6 +196,8 @@
       this.policy=options.policy||null;
       this.decisionFramework=options.decisionFramework||null;
       this.stateTransaction=options.stateTransaction||null;
+      this.authority=options.authority||null;
+      this.dirtyPublications=new Map();
       this.kernel=null;
       this.bridge=null;
       this.ids=normalizeIds(this.registry);
@@ -302,6 +236,9 @@
       this.policy=options.policy||this.policy||global.OmegaMinistryInformationPolicy?.instance||null;
       this.decisionFramework=options.decisionFramework||this.decisionFramework||global.OmegaMinistryDecisionFramework?.instance||null;
       this.stateTransaction=options.stateTransaction||this.stateTransaction||global.OmegaMinistryStateTransaction||null;
+      this.authority=options.authority||this.authority||global.OmegaAuthoritativeStateAuthority?.instance||global.Omega?.AuthoritativeStateAuthority?.instance||null;
+      if(!this.registry)throw new Error('OMEGA_MINISTRY_REGISTRY_REQUIRED');
+      if(!MINISTRY_KNOWLEDGE_CONTRACT)throw new Error('OMEGA_MINISTRY_KNOWLEDGE_CONTRACT_REQUIRED');
       this.ids=normalizeIds(this.registry);
       this.maxInbox=Number.isFinite(Number(options.maxInbox))?Number(options.maxInbox):this.maxInbox;
       this.maxHistory=Number.isFinite(Number(options.maxHistory))?Number(options.maxHistory):this.maxHistory;
@@ -424,6 +361,10 @@
     }
 
     _sourceRevision(countryId,ministryId,context,execution){
+      if(this.authority&&typeof this.authority.revision==='function'){
+        const revision=this.authority.revision(countryId,ministryId);
+        if(revision!==null&&revision!==undefined)return String(revision);
+      }
       if(this.provider&&typeof this.provider.getRevision==='function'){
         const revision=this.provider.getRevision(countryId,ministryId);
         if(revision!==null&&revision!==undefined)return String(revision);
@@ -810,7 +751,8 @@
       const execution=packet.domainExecution||{};
       const context=packet.context||{};
       const observed=execution.observedInputs||{};
-      const configuredPaths=[...(Array.isArray(engine?.inputs)?engine.inputs:[]),...(STANDARD_PUBLIC_PATHS[ministryId]||[])];
+      const contract=MINISTRY_KNOWLEDGE_CONTRACT.get?.(ministryId)||MINISTRY_KNOWLEDGE_CONTRACT.definitions?.[ministryId]||null;
+      const configuredPaths=[...(Array.isArray(engine?.inputs)?engine.inputs:[]),...(Array.isArray(contract?.publish)?contract.publish:STANDARD_PUBLIC_PATHS[ministryId]||[])];
       const isOwnedPath=path=>{
         const p=String(path||'');
         if(p==='country.identity')return ministryId==='statistics';
@@ -827,6 +769,7 @@
         const visibility=this._factVisibility(ministryId,path);
         const sourceRevision=this.provider?.getRevision?.(countryId,ministryId)??null;
         const fact={
+          role:MINISTRY_KNOWLEDGE_CONTRACT.getFactMeta?.(ministryId,path)?.role||'INFORMATIONAL',
           value:described.value===undefined?null:clone(described.value),
           availability:described.availability||AVAILABILITY.UNAVAILABLE,
           availabilityReason:described.availabilityReason||null,
@@ -930,33 +873,35 @@
       const available=publishedFacts['finance.available']||null;
       const committed=publishedFacts['finance.committed']||publishedFacts['projects.committedFunding']||null;
       const mandatory=publishedFacts['finance.mandatoryObligations']||null;
+      const budgetRequests=this._getBudgetRequestsForCountry(countryId,ministryId);
+      const latestRequest=budgetRequests.length?budgetRequests[budgetRequests.length-1]:null;
       const result={
         status:'UNAVAILABLE',
-        requirement:null,
-        requested:null,
-        required:null,
-        committed:null,
-        available:null,
+        requestState:latestRequest?{status:'REQUESTED',requestId:latestRequest.requestId||null,amount:latestRequest.requestedAmount??null}:null,
+        requested:latestRequest?.requestedAmount??null,
+        required:required?clone(required):null,
+        committed:committed?clone(committed):null,
+        available:available?clone(available):null,
+        mandatoryObligations:mandatory?clone(mandatory):null,
         fundingGap:null,
-        priority:null,
-        urgency:null,
+        netAvailable:null,
+        priority:latestRequest?.priority??null,
+        urgency:latestRequest?.urgency??null,
         evidence:[]
       };
-      const fields=[['required',required],['available',available],['committed',committed],['mandatoryObligations',mandatory]];
-      for(const [name,fact] of fields)if(fact)result[name]=clone(fact);
-      if(publishedFacts['finance.required'])result.evidence.push({path:'finance.required',provenance:clone(required.provenance||null)});
-      if(publishedFacts['finance.available'])result.evidence.push({path:'finance.available',provenance:clone(available.provenance||null)});
-      if(required?.availability===AVAILABILITY.AVAILABLE&&available?.availability===AVAILABILITY.AVAILABLE){
-        const req=number(factValue(required));
-        const av=number(factValue(available));
-        const com=committed?.availability===AVAILABILITY.AVAILABLE?number(factValue(committed)):null;
-        const mand=mandatory?.availability===AVAILABILITY.AVAILABLE?number(factValue(mandatory)):null;
-        if(req!==null&&av!==null&&com!==null&&mand!==null){
-          result.fundingGap=Math.max(0,req-av-com-mand);
-          result.status=result.fundingGap>0?'UNDERFUNDED':'FUNDED';
-        }else{
-          result.status='UNAVAILABLE';
-        }
+      for(const fact of [required,available,committed,mandatory])if(fact?.provenance)result.evidence.push({path:fact.path,provenance:clone(fact.provenance)});
+      const req=required?.availability==='AVAILABLE'?number(factValue(required)):null;
+      const av=available?.availability==='AVAILABLE'?number(factValue(available)):null;
+      const com=committed?.availability==='AVAILABLE'?number(factValue(committed)):null;
+      const mand=mandatory?.availability==='AVAILABLE'?number(factValue(mandatory)):null;
+      if(req!==null&&av!==null&&com!==null&&mand!==null){
+        result.netAvailable=av-com-mand;
+        result.fundingGap=Math.max(0,req-result.netAvailable);
+        result.status=result.netAvailable<0?'OVERCOMMITTED':(result.fundingGap>0?'UNDERFUNDED':'FUNDED');
+      }else if(latestRequest){
+        result.status='REQUESTED';
+      }else{
+        result.status='UNKNOWN';
       }
       return result;
     }
@@ -1005,7 +950,7 @@
       };
       Object.assign(existing,{
         messageId,turn,ownerMinistry:payload?.ownerMinistry||source,
-        status:payload?.status??null,phase:payload?.phase??null,
+        status:payload?.status??null,visibility:this._factVisibility(source,'projects.status'),phase:payload?.phase??null,
         cost:number(payload?.cost),allocatedFunding:number(payload?.allocatedFunding),
         committedFunding:number(payload?.committedFunding),spentFunding:number(payload?.spentFunding),
         remainingFunding:number(payload?.remainingFunding),
@@ -1044,7 +989,7 @@
       const key='CONSTRAINT:'+countryId+':'+source;
       const list=this.requestLedger.get(key)||[];
       list.push({messageId,countryId,sourceMinistryId:source,turn,
-        severity:String(payload?.severity||'INFO'),code:payload?.code??null,
+        severity:String(payload?.severity||'INFO'),visibility:this._factVisibility(source,'constraints.'+String(payload?.code||'generic')),code:payload?.code??null,
         description:payload?.description??null,blocking:payload?.blocking===true,
         evidence:clone(payload?.evidence||null)});
       while(list.length>this.maxHistory)list.shift();
@@ -1056,7 +1001,7 @@
       const key='ALERT:'+countryId+':'+source;
       const list=this.requestLedger.get(key)||[];
       list.push({messageId,countryId,sourceMinistryId:source,turn,
-        priority:String(payload?.priority||'NORMAL'),topic:payload?.topic??null,
+        priority:String(payload?.priority||'NORMAL'),visibility:this._factVisibility(source,'alerts.'+String(payload?.topic||'generic')),topic:payload?.topic??null,
         payload:clone(payload)});
       while(list.length>this.maxHistory)list.shift();
       this.requestLedger.set(key,list);
@@ -1075,11 +1020,59 @@
       return clone(list.slice(-10));
     }
 
+    _markDirtyPublication(snapshot,previous=null,transaction=null){
+      const countryId=snapshot.countryId;
+      const ministryId=snapshot.ministryId;
+      const key=snapshotKey(countryId,ministryId);
+      const previousFacts=previous?.publishedFacts||{};
+      const changedPaths=[];
+      for(const [path,fact] of Object.entries(snapshot.publishedFacts||{})){
+        const prev=previousFacts[path];
+        const a=JSON.stringify({v:fact?.value,a:fact?.availability,r:fact?.stateRevision});
+        const b=JSON.stringify({v:prev?.value,a:prev?.availability,r:prev?.stateRevision});
+        if(a!==b)changedPaths.push(path);
+      }
+      if(changedPaths.length || !previous){
+        const dirty={
+          countryId,ministryId,
+          simulationTurn:snapshot.simulationTurn,
+          stateRevision:snapshot.stateRevision,
+          changedPaths,
+          causationId:transaction?.commandId||null
+        };
+        this.dirtyPublications.set(key,dirty);
+        const targets=this.ids.filter(id=>id!==ministryId);
+        for(const target of targets){
+          try{
+            this.send(ministryId,target,'ministry.state.changed',{
+              stateRevision:snapshot.stateRevision,
+              simulationTurn:snapshot.simulationTurn,
+              changedPaths:changedPaths.slice(0,64),
+              dataAvailability:clone(snapshot.dataAvailability)
+            },{
+              countryId,
+              turn:snapshot.simulationTurn,
+              messageType:MESSAGE_TYPES.STATE_UPDATE,
+              priority:'NORMAL',
+              causationId:transaction?.commandId||null,
+              provenance:snapshot.provenance
+            });
+          }catch(error){
+            this.metrics.failed+=1;
+          }
+        }
+      }
+      return changedPaths;
+    }
+
     publishState(ministryId,packet={}){
       const id=String(ministryId||'');
       if(!this.ids.includes(id))throw new Error('UNKNOWN_MINISTRY:'+id);
+      const key=snapshotKey((packet.context?.countryId||snapshot?.countryId),id);
+      const previous=this.snapshots.get(key)||null;
       const snapshot=this._compilePublicSnapshot(id,packet);
       this.snapshots.set(snapshotKey(snapshot.countryId,id),snapshot);
+      this._markDirtyPublication(snapshot,previous,packet.transaction||null);
       this.metrics.statePublications+=1;
       this.lastTurn=Math.max(this.lastTurn,snapshot.simulationTurn);
       this._invalidateKnowledgeCache();
@@ -1116,6 +1109,25 @@
       };
     }
 
+    _filterRecordList(viewer,source,rows){
+      return (rows||[]).filter(row=>{
+        const visibility=row?.visibility||VISIBILITY.GOVERNMENT_INTERNAL;
+        return this.policy?.canRead?.(viewer,source,visibility)!==false;
+      }).map(row=>clone(row));
+    }
+
+    _filterNeeds(viewer,source,needs){
+      if(!needs)return null;
+      const out=clone(needs);
+      for(const key of ['required','committed','available','mandatoryObligations']){
+        const fact=out[key];
+        if(fact && this.policy?.canRead?.(viewer,source,fact.visibility)!==true){
+          out[key]={...clone(fact),value:null,availability:AVAILABILITY.UNAVAILABLE,availabilityReason:'ACCESS_RESTRICTED',access:{granted:false}};
+        }
+      }
+      return out;
+    }
+
     _filterSnapshotFor(viewer,source,snapshot,currentTurn){
       if(!snapshot)return this._emptyPublicState(snapshot?.countryId||null,source,currentTurn);
       const out=clone(snapshot);
@@ -1146,6 +1158,10 @@
       out.publishedFacts=filtered;
       out.fiscal=this._filterGrouped(out.fiscal,filtered);
       out.projects=this._filterGrouped(out.projects,filtered);
+      out.needs=this._filterNeeds(viewer,source,out.needs);
+      out.requests={...out.requests,budget:this._filterRecordList(viewer,source,out.requests?.budget)};
+      out.constraints=this._filterRecordList(viewer,source,out.constraints);
+      out.alerts=this._filterRecordList(viewer,source,out.alerts);
       out.dataAvailability=summarizeAvailability(filtered);
       out.knownDataGaps=Object.entries(filtered).filter(([,f])=>f.availability!==AVAILABILITY.AVAILABLE).map(([path,f])=>({path,availability:f.availability,reason:f.availabilityReason}));
       const staleCount=Object.values(filtered).filter(f=>f.availability===AVAILABILITY.STALE).length;
@@ -1175,7 +1191,20 @@
       const c=String(countryId||'').trim().toUpperCase();
       if(!this.ids.includes(viewer)||!this.ids.includes(target)||!c)return null;
       const snapshot=this.snapshots.get(snapshotKey(c,target));
-      return this._filterSnapshotFor(viewer,target,snapshot,options.currentTurn??this.lastTurn);
+      const currentTurn=options.currentTurn??this.lastTurn;
+      const filtered=this._filterSnapshotFor(viewer,target,snapshot,currentTurn);
+      if(snapshot && this.authority?.revision){
+        const authoritativeRevision=this.authority.revision(c,target);
+        if(authoritativeRevision && snapshot.stateRevision && String(authoritativeRevision)!==String(snapshot.stateRevision)){
+          for(const fact of Object.values(filtered.publishedFacts||{})){
+            if(fact.availability===AVAILABILITY.AVAILABLE)fact.availability=AVAILABILITY.STALE;
+            fact.availabilityReason='AUTHORITATIVE_REVISION_AHEAD_OF_PUBLICATION';
+          }
+          filtered.freshness={status:AVAILABILITY.STALE,reason:'AUTHORITATIVE_REVISION_AHEAD_OF_PUBLICATION'};
+          filtered.knownDataGaps=Object.entries(filtered.publishedFacts||{}).filter(([,f])=>f.availability!==AVAILABILITY.AVAILABLE).map(([path,f])=>({path,availability:f.availability,reason:f.availabilityReason}));
+        }
+      }
+      return filtered;
     }
 
     _getKnowledgeReadModel(requesterId,countryId,currentTurn){
@@ -1422,8 +1451,9 @@
         row.status='PROCESSING';
         row.statusHistory.push({status:'PROCESSING',simulationTurn:turn});
         const transactionFactory=this.stateTransaction||global.OmegaMinistryStateTransaction||null;
+        const authority=this.authority||global.OmegaAuthoritativeStateAuthority?.instance||global.Omega?.AuthoritativeStateAuthority?.instance||null;
         const stateTransaction=transactionFactory?.create
-          ? transactionFactory.create(handler.ownerMinistry,country,turn,commandId)
+          ? transactionFactory.create(handler.ownerMinistry,country,turn,commandId,authority)
           : null;
         if(!stateTransaction){
           throw new Error('AUTHORITATIVE_STATE_TRANSACTION_UNAVAILABLE');
@@ -1444,6 +1474,20 @@
         row.status=result?.accepted===false?'FAILED':'APPLIED';
         row.stateChanged=Boolean(row.transaction?.changed);
         if(row.transaction?.afterRevision)row.stateRevisionAfter=row.transaction.afterRevision;
+        if(row.stateChanged){
+          row.requiresRepublish=true;
+          this._markDirtyPublication({
+            countryId:country,
+            ministryId:handler.ownerMinistry,
+            simulationTurn:turn,
+            stateRevision:row.transaction.afterRevision,
+            publishedFacts:{},
+            dataAvailability:{}
+          },null,row.transaction);
+          this.emitEvent(EVENT_TYPES.MINISTRY_STATE_CHANGED,country,handler.ownerMinistry,{
+            commandId,stateRevision:row.transaction.afterRevision,changedPaths:(row.transaction.operations||[]).map(op=>op.path)
+          },{turn,causationId:commandId});
+        }
         row.statusHistory.push({status:row.status,simulationTurn:turn});
         if(result?.eventType)this.emitEvent(result.eventType,country,handler.ownerMinistry,result.eventPayload||{},{
           turn,causationId:commandId,provenance:result.provenance||null
@@ -1516,6 +1560,24 @@
       try{this.bridge?.emitEvent?.(type,payload);}catch(_){}
       try{global.dispatchEvent?.(new CustomEvent(type,{detail:clone(payload)}));}catch(_){}
       return null;
+    }
+
+    getDirtyPublications(countryId=null,ministryId=null){
+      const out=[];
+      const c=countryId?String(countryId).trim().toUpperCase():null;
+      for(const [key,row] of this.dirtyPublications.entries()){
+        if(c&&row.countryId!==c)continue;
+        if(ministryId&&row.ministryId!==String(ministryId))continue;
+        out.push(clone(row));
+      }
+      return out;
+    }
+
+    consumeDirtyPublication(countryId,ministryId){
+      const key=snapshotKey(String(countryId||'').trim().toUpperCase(),String(ministryId||''));
+      const row=this.dirtyPublications.get(key)||null;
+      if(row)this.dirtyPublications.delete(key);
+      return row?clone(row):null;
     }
 
     getPendingRequests(countryId,requesterMinistry=null){
@@ -1757,6 +1819,9 @@
         events:{
           total:this.events.size
         },
+        authority:this.authority?.diagnostics?.()||null,
+        knowledgeContract:{version:MINISTRY_KNOWLEDGE_CONTRACT.VERSION||null,ministries:MINISTRY_KNOWLEDGE_CONTRACT.size?.()||this.ids.length},
+        republish:{dirty:this.dirtyPublications.size},
         countryId:countryId?String(countryId).trim().toUpperCase():null,
         simulationTurn:currentTurn,
         notes:[
@@ -1807,7 +1872,9 @@
         },
         metrics:clone(this.metrics),
         inboxes,snapshots,deliveryLedger:delivery,requestLedger:requests,
-        events,commands
+        events,commands,
+        dirtyPublications:clone(Object.fromEntries(this.dirtyPublications)),
+        authorityState:this.authority?.exportState?.()||null
       };
     }
 
@@ -1827,6 +1894,8 @@
       this.requestLedger=new Map(Object.entries(state.requestLedger||{}).map(([k,v])=>[k,clone(v)]));
       this.events=new Map(Object.entries(state.events||{}).map(([k,v])=>[k,clone(v)]));
       this.commands=new Map(Object.entries(state.commands||{}).map(([k,v])=>[k,clone(v)]));
+      this.dirtyPublications=new Map(Object.entries(state.dirtyPublications||{}).map(([k,v])=>[k,clone(v)]));
+      if(state.authorityState&&this.authority?.importState)this.authority.importState(state.authorityState);
       this._receivedMessageIds=new Set();
       for(const [id,row] of this.deliveryLedger.entries())if(['ACCEPTED','PROCESSING','PROCESSED','RESPONDED'].includes(row.status))this._receivedMessageIds.add(id);
       this._invalidateKnowledgeCache();
@@ -1906,6 +1975,8 @@
     getCommand:(...args)=>apiInstance.getCommand(...args),
     getEvent:(...args)=>apiInstance.getEvent(...args),
     getPendingRequests:(...args)=>apiInstance.getPendingRequests(...args),
+    getDirtyPublications:(...args)=>apiInstance.getDirtyPublications(...args),
+    consumeDirtyPublication:(...args)=>apiInstance.consumeDirtyPublication(...args),
     saveState:()=>apiInstance.saveState(),
     loadState:state=>apiInstance.loadState(state),
     export:()=>apiInstance.export(),
