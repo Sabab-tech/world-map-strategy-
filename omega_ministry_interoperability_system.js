@@ -207,8 +207,20 @@
       this.deliveryLedger=new Map();
       this.requestLedger=new Map();
       this.events=new Map();
+      this.eventOutbox=new Map();
+      this.eventSubscriptions=new Map();
+      this.eventDeliveryLedger=new Map();
+      this.messageProtocols=new Map();
+      this.causalRules=new Map();
+      this.reactionQueue=[];
       this.commands=new Map();
       this.commandHandlers=new Map();
+      this.authorityPolicies=new Map();
+      this.arbitrationPolicies=new Map();
+      this.workflowDefinitions=new Map();
+      this.cases=new Map();
+      this._caseSequence=0;
+      this._reactionSequence=0;
       this._receivedMessageIds=new Set();
       this._requestSequence=0;
       this._messageSequence=0;
@@ -438,6 +450,17 @@
         throw new Error('MESH_ROUTE_UNAVAILABLE');
       }
 
+      const messageType=String(options.messageType||MESSAGE_TYPES.STATE_UPDATE);
+      const protocol=this.messageProtocols.get(messageType)||null;
+      if(protocol){
+        const required=Array.isArray(protocol.requiredFields)?protocol.requiredFields:[];
+        const candidate={sourceMinistryId:src,targetMinistryId:dst,countryId,topic,payload,messageType};
+        const missing=required.filter(field=>candidate[field]===undefined||candidate[field]===null||candidate[field]==='');
+        if(missing.length)throw new Error('MESSAGE_SCHEMA_INVALID:'+messageType+':'+missing.join(','));
+        if(Array.isArray(protocol.allowedSources)&&!protocol.allowedSources.includes(src))throw new Error('MESSAGE_SOURCE_FORBIDDEN:'+messageType);
+        if(Array.isArray(protocol.allowedTargets)&&!protocol.allowedTargets.includes(dst))throw new Error('MESSAGE_TARGET_FORBIDDEN:'+messageType);
+      }
+
       const messageId=String(options.messageId||this._deterministicMessageId(countryId,turn,src,dst));
       if(this.deliveryLedger.has(messageId)){
         this.metrics.duplicate+=1;
@@ -457,7 +480,7 @@
         source:src,
         target:dst,
         countryId,
-        messageType:String(options.messageType||MESSAGE_TYPES.STATE_UPDATE),
+        messageType,
         topic:String(topic||'MINISTRY_INFORMATION'),
         priority:String(options.priority||'NORMAL'),
         simulationTurn:turn,
@@ -1412,6 +1435,278 @@
       return framework.registerAction(actionId,definition);
     }
 
+    registerMessageProtocol(messageType,definition={}){
+      const type=String(messageType||'').trim();
+      if(!type)throw new Error('MESSAGE_TYPE_REQUIRED');
+      if(!definition||typeof definition!=='object')throw new Error('MESSAGE_PROTOCOL_REQUIRED');
+      const normalized={
+        messageType:type,
+        requiredFields:Array.isArray(definition.requiredFields)?definition.requiredFields.map(String):[],
+        allowedSources:Array.isArray(definition.allowedSources)?definition.allowedSources.map(String):null,
+        allowedTargets:Array.isArray(definition.allowedTargets)?definition.allowedTargets.map(String):null,
+        timeoutTurns:Number.isFinite(Number(definition.timeoutTurns))?Number(definition.timeoutTurns):null,
+        retryPolicy:clone(definition.retryPolicy||null),
+        priority:String(definition.priority||'NORMAL')
+      };
+      this.messageProtocols.set(type,Object.freeze(normalized));
+      return clone(normalized);
+    }
+
+    subscribeEvent(eventType,ministryId,handler=null,options={}){
+      const type=String(eventType||'').trim();
+      const ministry=String(ministryId||'').trim();
+      if(!type||!this.ids.includes(ministry))throw new Error('INVALID_EVENT_SUBSCRIPTION');
+      if(handler!==null&&typeof handler!=='function')throw new Error('EVENT_HANDLER_REQUIRED');
+      const key=type+'::'+ministry;
+      this.eventSubscriptions.set(key,{
+        eventType:type,ministryId:ministry,handler,
+        enabled:options.enabled!==false,
+        priority:Number.isFinite(Number(options.priority))?Number(options.priority):0
+      });
+      return {eventType:type,ministryId:ministry,enabled:options.enabled!==false};
+    }
+
+    unsubscribeEvent(eventType,ministryId){
+      return this.eventSubscriptions.delete(String(eventType||'')+'::'+String(ministryId||''));
+    }
+
+    registerCausalRule(ruleId,definition={}){
+      const id=String(ruleId||'').trim();
+      if(!id)throw new Error('CAUSAL_RULE_ID_REQUIRED');
+      const rule={
+        ruleId:id,
+        eventTypes:Array.isArray(definition.eventTypes)?definition.eventTypes.map(String):[],
+        sourceMinistries:Array.isArray(definition.sourceMinistries)?definition.sourceMinistries.map(String):[],
+        targetMinistries:Array.isArray(definition.targetMinistries)?definition.targetMinistries.map(String):[],
+        condition:typeof definition.condition==='function'?definition.condition:null,
+        createReaction:typeof definition.createReaction==='function'?definition.createReaction:null,
+        enabled:definition.enabled!==false
+      };
+      this.causalRules.set(id,rule);
+      return {ruleId:id,enabled:rule.enabled};
+    }
+
+    evaluateCausalRules(event){
+      const created=[];
+      for(const rule of this.causalRules.values()){
+        if(!rule.enabled)continue;
+        if(rule.eventTypes.length&&!rule.eventTypes.includes(String(event?.eventType)))continue;
+        if(rule.sourceMinistries.length&&!rule.sourceMinistries.includes(String(event?.sourceMinistryId)))continue;
+        let matches=true;
+        try{if(rule.condition)matches=rule.condition(clone(event),this.getContext(event.countryId||'',{}))!==false;}catch(error){matches=false;}
+        if(!matches)continue;
+        let task=null;
+        try{task=rule.createReaction?rule.createReaction(clone(event)):{targetMinistries:rule.targetMinistries};}catch(error){task=null;}
+        if(!task)continue;
+        this._reactionSequence+=1;
+        const reaction={
+          reactionId:'OMEGA-REACTION-'+String(event.simulationTurn||0)+'-'+String(this._reactionSequence),
+          ruleId:rule.ruleId,eventId:event.eventId,countryId:event.countryId,
+          simulationTurn:event.simulationTurn,targetMinistries:clone(task.targetMinistries||rule.targetMinistries||[]),
+          actionId:task.actionId||null,commandType:task.commandType||null,payload:clone(task.payload||{}),
+          status:'QUEUED',causationId:event.eventId,correlationId:event.correlationId||event.eventId
+        };
+        this.reactionQueue.push(reaction);
+        created.push(clone(reaction));
+      }
+      while(this.reactionQueue.length>this.maxHistory)this.reactionQueue.shift();
+      return created;
+    }
+
+    processReactionQueue(turn=this.lastTurn,limit=this.maxHistory){
+      const processed=[];
+      let count=0;
+      while(this.reactionQueue.length&&count<Number(limit)){
+        const task=this.reactionQueue[0];
+        if(Number(task.simulationTurn)>Number(turn))break;
+        this.reactionQueue.shift();
+        count+=1;
+        try{
+          const targets=Array.isArray(task.targetMinistries)?task.targetMinistries:[];
+          for(const target of targets){
+            if(!this.ids.includes(String(target)))throw new Error('REACTION_TARGET_UNKNOWN:'+String(target));
+            this.send(task.sourceMinistryId||'cabinet',String(target),'government.causal.reaction',task.payload,{
+              countryId:task.countryId,turn:Number(turn),messageType:MESSAGE_TYPES.REQUEST,
+              correlationId:task.correlationId,causationId:task.causationId
+            });
+          }
+          task.status='DISPATCHED';
+        }catch(error){
+          task.status='FAILED';
+          task.error=String(error?.message||error);
+        }
+        processed.push(clone(task));
+      }
+      return processed;
+    }
+
+    registerWorkflow(workflowId,definition={}){
+      const id=String(workflowId||'').trim();
+      if(!id)throw new Error('WORKFLOW_ID_REQUIRED');
+      const normalized={
+        workflowId:id,
+        caseType:definition.caseType||null,
+        states:Array.isArray(definition.states)?definition.states.map(String):[],
+        transitions:clone(definition.transitions||{}),
+        requiredParticipants:Array.isArray(definition.requiredParticipants)?definition.requiredParticipants.map(String):[],
+        approvalStages:Array.isArray(definition.approvalStages)?definition.approvalStages.map(String):[]
+      };
+      this.workflowDefinitions.set(id,normalized);
+      return clone(normalized);
+    }
+
+    createCase(definition={}){
+      const owner=String(definition.ownerMinistry||'cabinet');
+      const countryId=String(definition.countryId||'').trim().toUpperCase();
+      if(!this.ids.includes(owner)||!countryId)throw new Error('INVALID_CASE_SCOPE');
+      this._caseSequence+=1;
+      const caseId=String(definition.caseId||('OMEGA-CASE-'+String(this._caseSequence)));
+      if(this.cases.has(caseId))return clone(this.cases.get(caseId));
+      const workflowId=definition.workflowId?String(definition.workflowId):null;
+      const workflow=workflowId?this.workflowDefinitions.get(workflowId):null;
+      const initialStatus=definition.status||workflow?.states?.[0]||'CREATED';
+      const row={
+        schemaVersion:1,caseId,type:definition.type||workflow?.caseType||'GOVERNMENT_CASE',
+        countryId,ownerMinistry:owner,participants:Array.isArray(definition.participants)?definition.participants.map(String):[],
+        workflowId,status:initialStatus,statusHistory:[{status:initialStatus,simulationTurn:Number(definition.turn)||this.lastTurn}],
+        currentStage:definition.currentStage||initialStatus,approvalState:'PENDING',
+        correlationId:definition.correlationId||null,causationId:definition.causationId||null,
+        context:clone(definition.context||{}),outputs:[],createdTurn:Number(definition.turn)||this.lastTurn,
+        updatedTurn:Number(definition.turn)||this.lastTurn
+      };
+      this.cases.set(caseId,row);
+      return clone(row);
+    }
+
+    advanceCase(caseId,nextStatus,metadata={}){
+      const row=this.cases.get(String(caseId||''));
+      if(!row)throw new Error('CASE_NOT_FOUND');
+      const workflow=row.workflowId?this.workflowDefinitions.get(row.workflowId):null;
+      const transitions=workflow?.transitions||{};
+      const allowed=Array.isArray(transitions[row.status])?transitions[row.status]:null;
+      if(allowed&&!allowed.includes(String(nextStatus)))throw new Error('CASE_TRANSITION_NOT_ALLOWED:'+row.status+'->'+String(nextStatus));
+      row.status=String(nextStatus);
+      row.currentStage=String(nextStatus);
+      row.updatedTurn=Number(metadata.turn??this.lastTurn);
+      row.statusHistory.push({status:row.status,simulationTurn:row.updatedTurn,reason:metadata.reason||null});
+      if(metadata.approvalState)row.approvalState=String(metadata.approvalState);
+      if(metadata.output!==undefined)row.outputs.push(clone(metadata.output));
+      if(row.statusHistory.length>this.maxHistory)row.statusHistory.shift();
+      return clone(row);
+    }
+
+    getCase(caseId){return clone(this.cases.get(String(caseId||''))||null);}
+
+    registerAuthorityPolicy(actionId,definition={}){
+      const id=String(actionId||'').trim();
+      if(!id)throw new Error('AUTHORITY_POLICY_ID_REQUIRED');
+      this.authorityPolicies.set(id,clone({
+        actionId:id,
+        proposerMinistries:Array.isArray(definition.proposerMinistries)?definition.proposerMinistries.map(String):[],
+        reviewerMinistries:Array.isArray(definition.reviewerMinistries)?definition.reviewerMinistries.map(String):[],
+        approverMinistries:Array.isArray(definition.approverMinistries)?definition.approverMinistries.map(String):[],
+        executorMinistries:Array.isArray(definition.executorMinistries)?definition.executorMinistries.map(String):[],
+        overrideMinistries:Array.isArray(definition.overrideMinistries)?definition.overrideMinistries.map(String):[],
+        reviewRequired:definition.reviewRequired===true
+      }));
+      return clone(this.authorityPolicies.get(id));
+    }
+
+    authorizeCommand(command,actor={}){
+      const actionId=String(command?.actionId||'');
+      const policy=this.authorityPolicies.get(actionId);
+      const actorMinistry=String(actor.ministryId||command?.sourceMinistryId||'');
+      if(!policy)return {authorized:true,status:'AUTO_AUTHORIZED',reason:'NO_AUTHORITY_POLICY_REGISTERED',actorMinistry};
+      const proposerOk=!policy.proposerMinistries.length||policy.proposerMinistries.includes(actorMinistry);
+      if(!proposerOk)return {authorized:false,status:'REJECTED',reason:'PROPOSER_NOT_AUTHORIZED',actorMinistry};
+      if(policy.reviewRequired)return {authorized:false,status:'REVIEW_REQUIRED',reason:'HUMAN_OR_CABINET_REVIEW_REQUIRED',actorMinistry};
+      const approverOk=!policy.approverMinistries.length||policy.approverMinistries.includes(actorMinistry)||policy.approverMinistries.includes('cabinet');
+      return approverOk
+        ? {authorized:true,status:'AUTHORIZED',reason:'POLICY_MATCH',actorMinistry}
+        : {authorized:false,status:'REJECTED',reason:'APPROVER_NOT_AUTHORIZED',actorMinistry};
+    }
+
+    registerArbitrationPolicy(scope,definition={}){
+      const key=String(scope||'').trim()||'GLOBAL';
+      this.arbitrationPolicies.set(key,clone(definition||{}));
+      return clone(this.arbitrationPolicies.get(key));
+    }
+
+    resolveConflict(conflict={},options={}){
+      const scope=String(conflict.scope||conflict.actionId||'GLOBAL');
+      const policy=this.arbitrationPolicies.get(scope)||this.arbitrationPolicies.get('GLOBAL')||null;
+      if(policy?.resolution&&['RETRY','REBASE','REJECT','ESCALATE'].includes(String(policy.resolution)))return {
+        status:'RESOLVED_BY_POLICY',resolution:String(policy.resolution),scope,conflict:clone(conflict)
+      };
+      return {
+        status:'ESCALATE',resolution:'ESCALATE',scope,
+        target:options.escalationTarget||'cabinet',
+        conflict:clone(conflict)
+      };
+    }
+
+    _deliverEventTransport(event){
+      try{this.bridge?.emitEvent?.(event.eventType,event);}catch(error){event.transportError=String(error?.message||error);this.metrics.failed+=1;}
+      try{global.dispatchEvent?.(new CustomEvent(event.eventType,{detail:clone(event)}));}catch(error){event.browserEventError=String(error?.message||error);}
+    }
+
+    processEventOutbox(turn=this.lastTurn,limit=this.maxHistory){
+      const processed=[];
+      const n=Number.isFinite(Number(turn))?Number(turn):this.lastTurn;
+      for(const row of this.eventOutbox.values()){
+        if(processed.length>=Number(limit))break;
+        if(!['PENDING','FAILED','DISPATCHING'].includes(String(row.status)))continue;
+        if(Number(row.nextEligibleTurn??0)>n)continue;
+        row.status='DISPATCHING';
+        row.attempts=Number(row.attempts||0)+1;
+        row.lastAttemptTurn=n;
+        let failed=false;
+        const subscriptions=[...this.eventSubscriptions.values()]
+          .filter(s=>s.enabled!==false&&(s.eventType===row.event.eventType||s.eventType==='*'))
+          .sort((a,b)=>Number(a.priority)-Number(b.priority)||String(a.ministryId).localeCompare(String(b.ministryId)));
+        for(const sub of subscriptions){
+          const deliveryKey=row.event.eventId+'::'+sub.ministryId;
+          const delivery=this.eventDeliveryLedger.get(deliveryKey)||{
+            eventId:row.event.eventId,ministryId:sub.ministryId,statusHistory:[],attempts:0
+          };
+          if(delivery.status==='DELIVERED')continue;
+          delivery.attempts+=1;
+          delivery.statusHistory.push({status:'PROCESSING',simulationTurn:n});
+          try{
+            if(sub.handler){
+              const result=sub.handler(clone(row.event),{ministryId:sub.ministryId,simulationTurn:n,interoperability:this});
+              if(result?.accepted===false)throw new Error(String(result.reason||'EVENT_HANDLER_REJECTED'));
+              delivery.status='DELIVERED';
+            }else{
+              this.send(String(row.event.sourceMinistryId),sub.ministryId,'event.'+row.event.eventType,{
+                event:clone(row.event)
+              },{
+                countryId:row.event.countryId,turn:n,messageType:MESSAGE_TYPES.STATE_UPDATE,
+                correlationId:row.event.correlationId||row.event.eventId,causationId:row.event.eventId
+              });
+              delivery.status='DELIVERED';
+            }
+            delivery.statusHistory.push({status:'DELIVERED',simulationTurn:n});
+          }catch(error){
+            failed=true;
+            delivery.status='FAILED';
+            delivery.error=String(error?.message||error);
+            delivery.statusHistory.push({status:'FAILED',simulationTurn:n});
+          }
+          this.eventDeliveryLedger.set(deliveryKey,delivery);
+        }
+        this._deliverEventTransport(row.event);
+        const reactions=this.evaluateCausalRules(row.event);
+        row.reactionIds=reactions.map(r=>r.reactionId);
+        row.status=failed?'FAILED':'DISPATCHED';
+        row.completedTurn=failed?null:n;
+        row.error=failed?row.error||'EVENT_SUBSCRIBER_FAILURE':null;
+        if(failed)row.nextEligibleTurn=n+Math.max(1,Math.min(16,2**Math.min(4,row.attempts-1)));
+        processed.push(clone(row));
+      }
+      return processed;
+    }
+
     registerCommandHandler(commandType,ownerMinistry,handler){
       const owner=String(ownerMinistry||'');
       if(!this.ids.includes(owner))throw new Error('COMMAND_OWNER_UNKNOWN:'+owner);
@@ -1427,6 +1722,10 @@
       const turn=Number.isFinite(Number(options.turn))?Number(options.turn):this.lastTurn;
       this._commandSequence+=1;
       const commandId=String(options.commandId||('OMI-CMD-'+String(turn)+'-'+String(this._commandSequence)));
+
+      const existing=this.commands.get(commandId);
+      if(existing)return clone({...existing,duplicate:true,status:'ALREADY_PROCESSED'});
+
       const commandType=String(options.commandType||actionId||'');
       const handler=this.commandHandlers.get(commandType)||null;
       const action=this.decisionFramework?.getAction?.(String(actionId||''))||null;
@@ -1436,7 +1735,7 @@
       if(options.ownerMinistry&&handler&&String(options.ownerMinistry)!==handler.ownerMinistry)throw new Error('COMMAND_OWNER_MISMATCH');
 
       const command=Object.freeze({
-        schemaVersion:1,
+        schemaVersion:2,
         commandId,
         commandType,
         actionId:String(actionId||''),
@@ -1453,14 +1752,23 @@
       const row={
         ...clone(command),
         status:'CREATED',
-        statusHistory:[{status:'CREATED',simulationTurn:turn}],
+        lifecycleStatus:'PROPOSED',
+        statusHistory:[{status:'PROPOSED',simulationTurn:turn}],
         result:null,
-        requiresRepublish:true
+        requiresRepublish:false,
+        approval:null,
+        transaction:null
       };
       this.commands.set(commandId,row);
       this.metrics.commands+=1;
 
+      const transition=(status,reason=null)=>{
+        row.lifecycleStatus=String(status);
+        row.statusHistory.push({status:row.lifecycleStatus,simulationTurn:turn,reason});
+      };
+
       if(!handler){
+        transition('VALIDATED','NO_EXECUTION_HANDLER_REGISTERED');
         row.status='UNHANDLED';
         row.statusHistory.push({status:'UNHANDLED',simulationTurn:turn,reason:'AUTHORITATIVE_HANDLER_NOT_REGISTERED'});
         this._emit('OMEGA_COMMAND_UNHANDLED',{commandId,commandType,sourceMinistryId:source,countryId},turn);
@@ -1468,28 +1776,53 @@
       }
 
       try{
-        row.status='PROCESSING';
-        row.statusHistory.push({status:'PROCESSING',simulationTurn:turn});
+        transition('VALIDATED');
+        const approval=this.authorizeCommand(command,{ministryId:options.approvingMinistryId||source});
+        row.approval=clone(approval);
+        transition(approval.authorized?'APPROVED':approval.status,approval.reason);
+        if(!approval.authorized){
+          row.status=approval.status;
+          row.requiresRepublish=false;
+          return clone(row);
+        }
+        transition('AUTHORIZED',approval.reason);
+
+        const stagedEvents=[];
+        transition('EXECUTING');
         const transactionFactory=this.stateTransaction||global.OmegaMinistryStateTransaction||null;
         const authority=this.authority||global.OmegaAuthoritativeStateAuthority?.instance||global.Omega?.AuthoritativeStateAuthority?.instance||null;
         const stateTransaction=transactionFactory?.create
           ? transactionFactory.create(handler.ownerMinistry,country,turn,commandId,authority)
           : null;
-        if(!stateTransaction){
-          throw new Error('AUTHORITATIVE_STATE_TRANSACTION_UNAVAILABLE');
-        }
+        if(!stateTransaction)throw new Error('AUTHORITATIVE_STATE_TRANSACTION_UNAVAILABLE');
+
         const result=handler.handler(deepFreeze(clone(command)),{
           countryId:country,
           simulationTurn:turn,
           stateProvider:this.provider,
           stateTransaction,
-          emitEvent:(eventType,eventPayload={},eventOptions={})=>this.emitEvent(eventType,country,handler.ownerMinistry,eventPayload,{...eventOptions,turn,causationId:commandId})
+          emitEvent:(eventType,eventPayload={},eventOptions={})=>{
+            stagedEvents.push({
+              eventType,payload:clone(eventPayload),
+              options:{...clone(eventOptions),turn,causationId:commandId}
+            });
+            return {staged:true,eventType:String(eventType)};
+          }
         });
-        if(result?.accepted!==false && stateTransaction){
+
+        if(result?.accepted!==false){
           row.transaction=stateTransaction.commit();
-        }else if(stateTransaction){
+          if(row.transaction?.status==='ALREADY_PROCESSED'){
+            row.status='ALREADY_PROCESSED';
+            row.lifecycleStatus='VERIFIED';
+            row.stateChanged=false;
+            return clone(row);
+          }
+          transition('COMMITTED');
+        }else{
           stateTransaction.rollback();
         }
+
         row.result=clone(result);
         row.status=result?.accepted===false?'FAILED':'APPLIED';
         row.stateChanged=Boolean(row.transaction?.changed);
@@ -1497,6 +1830,7 @@
           ? (authority?.revision?.(country,handler.ownerMinistry)||row.transaction?.afterRevision||null)
           : null;
         if(authoritativeDomainRevision)row.stateRevisionAfter=authoritativeDomainRevision;
+
         if(row.stateChanged){
           row.requiresRepublish=true;
           this.dirtyPublications.set(snapshotKey(country,handler.ownerMinistry),{
@@ -1514,14 +1848,27 @@
           );
           this.emitEvent(EVENT_TYPES.MINISTRY_STATE_CHANGED,country,handler.ownerMinistry,{
             commandId,stateRevision:authoritativeDomainRevision,changedPaths:(row.transaction.operations||[]).map(op=>op.path)
-          },{turn,causationId:commandId,stateRevision:authoritativeDomainRevision});
+          },{turn,causationId:commandId,stateRevision:authoritativeDomainRevision,deferDispatch:true});
         }
-        row.statusHistory.push({status:row.status,simulationTurn:turn});
-        if(result?.eventType)this.emitEvent(result.eventType,country,handler.ownerMinistry,result.eventPayload||{},{
-          turn,causationId:commandId,provenance:result.provenance||null
-        });
+
+        // Transactional events are persisted only after the state commit succeeds.
+        for(const staged of stagedEvents){
+          this.emitEvent(staged.eventType,country,handler.ownerMinistry,staged.payload,{
+            ...staged.options,stateRevision:authoritativeDomainRevision,deferDispatch:true
+          });
+        }
+        this.processEventOutbox(turn);
+
+        transition('VERIFIED',row.stateChanged?'STATE_AND_EVENT_OUTBOX_PERSISTED':'NO_STATE_CHANGE');
         return clone(row);
       }catch(error){
+        if(String(error?.message||error).startsWith('STATE_REVISION_CONFLICT:')){
+          transition('CONFLICT',String(error.message));
+          row.arbitration=this.resolveConflict({
+            scope:command.actionId,actionId:command.actionId,countryId:country,
+            commandId,reason:String(error.message)
+          });
+        }
         row.status='FAILED';
         row.result={error:String(error?.message||error)};
         row.statusHistory.push({status:'FAILED',simulationTurn:turn});
@@ -1551,11 +1898,11 @@
       if(!Object.prototype.hasOwnProperty.call(EVENT_TYPES,type))throw new Error('NON_CANONICAL_EVENT:'+type);
       if(!this.ids.includes(source)||!country)throw new Error('INVALID_EVENT_SCOPE');
       const turn=Number.isFinite(Number(options.turn))?Number(options.turn):this.lastTurn;
-      this._eventSequence+=1;
-      const eventId=String(options.eventId||('OMEGA-EVT-'+String(turn)+'-'+String(this._eventSequence)));
+      const eventId=String(options.eventId||('OMEGA-EVT-'+String(turn)+'-'+String(++this._eventSequence)));
       if(this.events.has(eventId))return clone(this.events.get(eventId));
+
       const event={
-        schemaVersion:1,eventId,eventType:type,countryId:country,
+        schemaVersion:2,eventId,eventType:type,countryId:country,
         sourceMinistryId:source,simulationTurn:turn,
         causationId:options.causationId?String(options.causationId):null,
         correlationId:options.correlationId?String(options.correlationId):null,
@@ -1565,19 +1912,14 @@
         timestamp:Date.now(),timestampIsTelemetry:true
       };
       this.events.set(eventId,event);
-      while(this.events.size>this.maxHistory){
-        const firstKey=this.events.keys().next().value;
-        if(firstKey)this.events.delete(firstKey);else break;
-      }
+      this.eventOutbox.set(eventId,{
+        event:clone(event),status:'PENDING',attempts:0,lastAttemptTurn:null,nextEligibleTurn:turn,
+        completedTurn:null,error:null,reactionIds:[]
+      });
       this.metrics.events+=1;
-      try{this.bridge?.emitEvent?.(type,event);}catch(error){
-        event.transportError=String(error?.message||error);
-        this.metrics.failed+=1;
-      }
-      try{global.dispatchEvent?.(new CustomEvent(type,{detail:clone(event)}));}catch(error){
-        event.browserEventError=String(error?.message||error);
-      }
       this._invalidateKnowledgeCache();
+
+      if(options.deferDispatch!==true)this.processEventOutbox(turn);
       return clone(event);
     }
 
@@ -1909,6 +2251,10 @@
         metrics:clone(this.metrics),
         inboxes,snapshots,deliveryLedger:delivery,requestLedger:requests,
         events,commands,
+        eventOutbox:clone(Object.fromEntries(this.eventOutbox)),
+        eventDeliveryLedger:clone(Object.fromEntries(this.eventDeliveryLedger)),
+        reactionQueue:clone(this.reactionQueue),
+        cases:clone(Object.fromEntries(this.cases)),
         dirtyPublications:clone(Object.fromEntries(this.dirtyPublications)),
         authorityState:this.authority?.exportState?.()||null
       };
@@ -1929,6 +2275,10 @@
       this.deliveryLedger=new Map(Object.entries(state.deliveryLedger||{}).map(([k,v])=>[k,clone(v)]));
       this.requestLedger=new Map(Object.entries(state.requestLedger||{}).map(([k,v])=>[k,clone(v)]));
       this.events=new Map(Object.entries(state.events||{}).map(([k,v])=>[k,clone(v)]));
+      this.eventOutbox=new Map(Object.entries(state.eventOutbox||{}).map(([k,v])=>[k,clone(v)]));
+      this.eventDeliveryLedger=new Map(Object.entries(state.eventDeliveryLedger||{}).map(([k,v])=>[k,clone(v)]));
+      this.reactionQueue=clone(state.reactionQueue||[]);
+      this.cases=new Map(Object.entries(state.cases||{}).map(([k,v])=>[k,clone(v)]));
       this.commands=new Map(Object.entries(state.commands||{}).map(([k,v])=>[k,clone(v)]));
       this.dirtyPublications=new Map(Object.entries(state.dirtyPublications||{}).map(([k,v])=>[k,clone(v)]));
       if(state.authorityState&&this.authority?.importState)this.authority.importState(state.authorityState);
