@@ -155,7 +155,9 @@ function formatPopulationNumber(num) {
     };
 })();
 // ১. পবুলেশন ও ইকোনমি জেসন ডেটা লোডার এবং রিলেশন ড্রপডাউন সিঙ্ক
-window.initializeWorldGameDatabase = async function() {
+window.initializeWorldGameDatabase = function() {
+    if (window.__OMEGA_WORLD_DB_PROMISE__) return window.__OMEGA_WORLD_DB_PROMISE__;
+    window.__OMEGA_WORLD_DB_PROMISE__ = (async function() {
     try {
         const fetcher = window.fetchResilient || (async (f) => {
             const res = await fetch(f + '?v=' + Date.now());
@@ -211,7 +213,10 @@ window.initializeWorldGameDatabase = async function() {
     } catch (err) {
         console.error('Canonical database load failed:', err);
         window.dispatchEvent?.(new CustomEvent('OMEGA_DATA_CONTRACT_FAILURE',{detail:{error:String(err?.message||err)}}));
+        throw err;
     }
+    })();
+    return window.__OMEGA_WORLD_DB_PROMISE__;
 };
 
 // ৩. কমান্ড হাব মোডাল ৩-লেয়ার কন্ট্রোল
