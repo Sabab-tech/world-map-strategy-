@@ -316,7 +316,7 @@
         domain:this.domain,
         phase:this.phase,
         revision:this._revision,
-        countryId:normalizeCountryId(prepared)||null,
+        countryId:normalizeCountryId(context)||null,
         tick:Number.isFinite(prepared.turn)?prepared.turn:null,
         dt:Number.isFinite(prepared.dt)?prepared.dt:null,
         inputContract:this.inputs.slice(),
@@ -339,10 +339,10 @@
           coordination:buildCoordinationSummary(context),
           knowledgeState:{
             revision:Number(this._coordinationState(normalizeCountryId(context),false)?.knowledgeRevision||0),
-            processedMessages:Number(this._coordinationState(normalizeCountryId(prepared),false)?.processedCount||0),
-            attentionScore:Number(this._coordinationState(normalizeCountryId(prepared),false)?.attentionScore||0),
-            openTasks:(this._coordinationState(normalizeCountryId(prepared),false)?.openTasks||[]).length,
-            uncertaintyCount:Number(this._coordinationState(normalizeCountryId(prepared),false)?.uncertaintyCount||0)
+            processedMessages:Number(this._coordinationState(normalizeCountryId(context),false)?.processedCount||0),
+            attentionScore:Number(this._coordinationState(normalizeCountryId(context),false)?.attentionScore||0),
+            openTasks:(this._coordinationState(normalizeCountryId(context),false)?.openTasks||[]).length,
+            uncertaintyCount:Number(this._coordinationState(normalizeCountryId(context),false)?.uncertaintyCount||0)
           }
         }
       };
