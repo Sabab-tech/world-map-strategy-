@@ -8,7 +8,7 @@ const IDS=[
   'intelligence','interior','transport','resource','health','education',
   'technology','projects','culture','statistics'
 ];
-const RUNTIME_VERSION='1.2.0';
+const RUNTIME_VERSION='1.3.0';
 const ENGINE_VERSION='1.0.0';
 
 function loadBrowserScript(path,sandbox){
@@ -229,4 +229,44 @@ test('OMEGA canonical 17-ministry runtime is independently engine-backed and bin
   console.log('Runtime independent engines:',health.independent);
   console.log('Legacy config references validated: PASS');
   console.log('Runtime version contract:',runtime.version);
+});
+
+test('canonical government scheduler executes deterministic multi-phase turn spine',()=>{
+  const kernelStates=new Map(IDS.map(id=>[id,'RUNNING']));
+  const kernel={
+    registerMinistry(){},
+    getMinistryState(id){return kernelStates.get(id)||'STOPPED';},
+    createBridge(){return {emitEvent(){}};}
+  };
+  const sandbox={
+    console,Date,JSON,Object,Number,Math,Map,Set,WeakMap,CustomEvent,
+    dispatchEvent(){},
+    Omega:{Kernel:kernel},
+    GLOBAL_MINISTRY_MANIFEST:IDS.map(id=>({id,status:'READY'})),
+    Game:{state:{economy:{BANGLADESH:{gdp:100}}},currentActiveCountry:'BANGLADESH'},
+    OmegaCabinetUI:{activeCountry:'BANGLADESH',ministersDB:{}},
+    OmegaMinistersDB:{},
+    ResourceMinistryEngine:{deposits:[],getIntegratedResourceState:()=>({inventory:{}})}
+  };
+  sandbox.window=sandbox;
+  sandbox.globalThis=sandbox;
+  loadBrowserScript('omega_ministry_registry.js',sandbox);
+  loadBrowserScript('omega_ministry_state_provider.js',sandbox);
+  loadBrowserScript('omega_ministry_domain_engines.js',sandbox);
+  loadBrowserScript('omega_ministry_runtime_v1.js',sandbox);
+
+  const runtime=sandbox.OMEGA_MINISTRY_RUNTIME_V1;
+  assert.equal(runtime.init(kernel),true);
+
+  const result=runtime.runTurn(43,16.7,{countryId:'BANGLADESH'},null);
+  assert.equal(result.turn,43);
+  assert.equal(result.status,'COMMITTED');
+  assert.deepEqual(result.phases.map(row=>row.phase),[
+    'TURN_START','WORLD_UPDATE','OBSERVE','INFORMATION','ASSESS',
+    'COORDINATE','DECIDE','AUTHORIZE','EXECUTE','COMMIT',
+    'PUBLISH','REACT','VERIFY','TURN_END'
+  ]);
+  assert.equal(Object.keys(result.assessments).length,17);
+  assert.deepEqual(result.deterministicOrder,IDS);
+  assert.equal(runtime.getOrchestrationState().turn,43);
 });
