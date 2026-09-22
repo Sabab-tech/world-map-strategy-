@@ -1119,7 +1119,7 @@
           const f=clone(fact);
           f.access={granted:true};
           if(String(f.availability)==='AVAILABLE'&&Number.isFinite(Number(currentTurn))&&Number.isFinite(Number(f.simulationTurn))){
-            const maxAge=1;
+            const maxAge=this.maxSnapshotAgeTurns;
             if(Number(currentTurn)-Number(f.simulationTurn)>maxAge){
               f.availability=AVAILABILITY.STALE;
               f.availabilityReason='CONSUMER_CURRENT_TURN_EXCEEDS_PUBLICATION_WINDOW';
