@@ -1381,6 +1381,9 @@
       const commandType=String(options.commandType||actionId||'');
       const handler=this.commandHandlers.get(commandType)||null;
       const action=this.decisionFramework?.getAction?.(String(actionId||''))||null;
+      if(handler && !this.stateTransaction && !global.OmegaMinistryStateTransaction){
+        throw new Error('AUTHORITATIVE_STATE_TRANSACTION_UNAVAILABLE');
+      }
       if(options.ownerMinistry&&handler&&String(options.ownerMinistry)!==handler.ownerMinistry)throw new Error('COMMAND_OWNER_MISMATCH');
 
       const command=Object.freeze({
@@ -1422,6 +1425,9 @@
         const stateTransaction=transactionFactory?.create
           ? transactionFactory.create(handler.ownerMinistry,country,turn,commandId)
           : null;
+        if(!stateTransaction){
+          throw new Error('AUTHORITATIVE_STATE_TRANSACTION_UNAVAILABLE');
+        }
         const result=handler.handler(deepFreeze(clone(command)),{
           countryId:country,
           simulationTurn:turn,
@@ -1431,6 +1437,8 @@
         });
         if(result?.accepted!==false && stateTransaction){
           row.transaction=stateTransaction.commit();
+        }else if(stateTransaction){
+          stateTransaction.rollback();
         }
         row.result=clone(result);
         row.status=result?.accepted===false?'FAILED':'APPLIED';
@@ -1887,6 +1895,7 @@
     dispatchCommand:(...args)=>apiInstance.dispatchCommand(...args),
     executeCommand:(...args)=>apiInstance.executeCommand(...args),
     emitEvent:(...args)=>apiInstance.emitEvent(...args),
+    advanceTurn:(...args)=>apiInstance.advanceTurn(...args),
     publishFiscalStatus:(...args)=>apiInstance.publishFiscalStatus(...args),
     recordBudgetRequest:(...args)=>apiInstance.recordBudgetRequest(...args),
     publishProjectStatus:(...args)=>apiInstance.publishProjectStatus(...args),
