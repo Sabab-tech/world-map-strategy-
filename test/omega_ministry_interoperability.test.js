@@ -191,10 +191,26 @@ test('E+F: duplicate and invalid messages are rejected safely',()=>{
   assert.equal(duplicate.ok,true);
   assert.equal(duplicate.duplicate,true);
 
-  const malformed={...msg,sourceMinistryId:'intruder',source:'intruder'};
-  const rejected=s.mesh.acceptMessage(s.countryA,'trade',malformed,1);
-  assert.equal(rejected.ok,false);
-  assert.equal(rejected.status,'REJECTED');
+  const malformedSource={...msg,sourceMinistryId:'intruder',source:'intruder'};
+  const rejectedSource=s.mesh.acceptMessage(s.countryA,'trade',malformedSource,1);
+  assert.equal(rejectedSource.ok,false);
+  assert.equal(rejectedSource.status,'REJECTED');
+
+  const malformedTarget={...msg,targetMinistryId:'cabinet',target:'cabinet'};
+  const rejectedTarget=s.mesh.acceptMessage(s.countryA,'trade',malformedTarget,1);
+  assert.equal(rejectedTarget.ok,false);
+  assert.equal(rejectedTarget.status,'REJECTED');
+
+  const expired=s.mesh.send('finance','trade','expiry.test',{value:1},{countryId:s.countryA,turn:1,expiryTurn:1});
+  s.mesh.advanceTurn(2);
+  const expiredResult=s.mesh.acceptMessage(s.countryA,'trade',expired,2);
+  assert.equal(expiredResult.ok,false);
+  assert.equal(expiredResult.status,'EXPIRED');
+
+  const acknowledged=s.mesh.send('finance','trade','ack.test',{value:1},{countryId:s.countryA,turn:3});
+  const ack=s.mesh.acknowledge('trade',acknowledged,{countryId:s.countryA,turn:3});
+  assert.equal(ack.messageType,'ACK');
+  assert.equal(ack.correlationId,acknowledged.messageId);
 });
 
 test('G: request/response lifecycle remains correlated and durable',()=>{
@@ -306,7 +322,6 @@ test('O: country A and country B state remain isolated',()=>{
     }
   });
   s.tick('finance',1);
-  s.state.simulationTurn=1;
   s.sandbox.Game.currentActiveCountry='BB';
   s.sandbox.OmegaCabinetUI.activeCountry='BB';
   s.runtime.tick('finance',16.7,1,s.store,s.blackboard);
@@ -321,22 +336,17 @@ test('U: command -> authoritative owner -> canonical event -> republish -> peer 
   const s=createSandbox();
   s.tickAll(1);
   s.registerTradeAction();
-  s.mesh.registerCommandHandler(ACTION_ID,'foreign',(command,{stateProvider,emitEvent})=>{
-    const country=command.countryId;
+  s.mesh.registerCommandHandler(ACTION_ID,'foreign',(command,{stateTransaction,emitEvent})=>{
+    if(!stateTransaction)return {accepted:false,reason:'STATE_TRANSACTION_UNAVAILABLE'};
     const target=s.countryB;
-    const foreignState=stateProvider.root().foreign?.[country];
-    if(!foreignState)return {accepted:false,reason:'FOREIGN_STATE_UNAVAILABLE'};
-    foreignState.treaties=foreignState.treaties||{};
-    foreignState.treaties[target]={status:'SIGNED'};
+    const treaties=stateTransaction.get('foreign.treaties')||{};
+    treaties[target]={status:'SIGNED'};
+    stateTransaction.set('foreign.treaties',treaties);
     emitEvent('TREATY_SIGNED',{
       targetCountryId:target,
       agreementId:'TEST-AGREEMENT-1'
     });
-    return {
-      accepted:true,
-      eventType:'TREATY_SIGNED',
-      eventPayload:{targetCountryId:target,agreementId:'TEST-AGREEMENT-1'}
-    };
+    return {accepted:true};
   });
 
   const command=s.mesh.dispatchCommand('trade',ACTION_ID,s.countryA,{
@@ -344,16 +354,16 @@ test('U: command -> authoritative owner -> canonical event -> republish -> peer 
   },{turn:2,commandType:ACTION_ID});
   assert.equal(command.status,'APPLIED');
   assert.equal(command.stateOwnerMinistryId,'foreign');
-  assert.equal(s.mesh.getEvent(command.commandId),null);
+  assert.equal(command.stateChanged,true);
+  assert.equal(command.transaction.changed,true);
 
-  const foreignEvent=[...s.mesh.events?.values?.()||[]][0]||null;
-  assert.ok(foreignEvent);
-  assert.equal(foreignEvent.eventType,'TREATY_SIGNED');
+  const foreignEvents=[...s.mesh.instance.events.values()].filter(event=>event.eventType==='TREATY_SIGNED');
+  assert.ok(foreignEvents.length>=1);
 
   s.tick('foreign',2);
   const tradeForeign=s.mesh.getPeerState('trade','foreign',s.countryA,{currentTurn:2});
   assert.equal(tradeForeign.publishedFacts['foreign.treaties'].value[s.countryB].status,'SIGNED');
-  assert.ok(s.mesh.getCommand(command.commandId).requiresRepublish);
+  assert.equal(s.mesh.getCommand(command.commandId).requiresRepublish,true);
 });
 
 test('P: ministry cannot directly mutate another ministry private coordination state',()=>{
@@ -434,6 +444,27 @@ test('T: actual repository country data crosses the canonical provider -> minist
   assert.equal(identity.availability,'AVAILABLE');
   assert.equal(identity.provenance.sourceType,'AUTHORITATIVE_RUNTIME_STATE');
   assert.equal(identity.value.code||identity.value.id,first.code);
+});
+
+test('N2: relationship is not substituted for treaty status',()=>{
+  const s=createSandbox();
+  s.tickAll(1);
+  s.registerTradeAction();
+  const sourceSnapshot=s.mesh.getPeerState('trade','foreign',s.countryA,{currentTurn:1});
+  const altered=JSON.parse(JSON.stringify(sourceSnapshot));
+  delete altered.publishedFacts['foreign.treaties'].value[s.countryB];
+  const briefing=s.mesh.getMinistryBriefing('trade',s.countryA,{currentTurn:1});
+  briefing.peerStates.foreign=altered;
+  const framework=s.sandbox.Omega.MinistryDecisionFramework.instance;
+  const decision=framework.evaluate({
+    ministryId:'trade',
+    actionId:ACTION_ID,
+    countryId:s.countryA,
+    currentTurn:1,
+    briefing
+  });
+  assert.equal(decision.status,'UNKNOWN');
+  assert.ok(decision.missing.some(item=>item.requirement?.id==='foreign.treaties'));
 });
 
 function stripTelemetry(value){
