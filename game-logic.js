@@ -188,8 +188,13 @@ window.initializeWorldGameDatabase = function() {
         }
 
         if (window.ResourceMinistryEngine && typeof window.ResourceMinistryEngine.init === 'function') {
-            await window.ResourceMinistryEngine.init();
-            console.log('Resource Ministry Engine GSRSK Database Sync Ready.');
+            try {
+                await window.ResourceMinistryEngine.init();
+                console.log('Resource Ministry Engine GSRSK Database Sync Ready.');
+            } catch (resourceError) {
+                console.warn('Resource Ministry Engine unavailable; government simulation remains running with resource data marked unavailable.', resourceError);
+                window.dispatchEvent?.(new CustomEvent('OMEGA_RESOURCE_DATA_DEGRADED',{detail:{error:String(resourceError?.message||resourceError)}}));
+            }
         }
 
         const relSelector = document.getElementById('relation-selector');
@@ -205,7 +210,7 @@ window.initializeWorldGameDatabase = function() {
         }
         if (window.updateGlobalResourceHUD) window.updateGlobalResourceHUD();
         authority.lockInitialization?.(Number(window.Game.state.simulationTurn??window.Game.worldState?.turn??0));
-        window.__OMEGA_DATA_READY__ = true;
+        window.__OMEGA_BASE_DATA_READY__ = true;
         window.dispatchEvent?.(new CustomEvent('OMEGA_BASE_DATA_READY',{detail:{
             schemaVersion:window.OmegaGameStateContract.schemaVersion,
             countryCount:Object.keys(window.Game.state.economy||{}).length
