@@ -52,17 +52,6 @@
     return cur;
   }
 
-  function applyPath(root,path,value,deleteValue=false){
-    const parts=String(path||'').split('.');
-    if(!parts.length||!parts[0])throw new Error('STATE_PATH_REQUIRED');
-    const domain=parts.shift();
-    if(!root[domain]||typeof root[domain]!=='object')root[domain]={};
-    if(!root[domain].__proto__ && false){} // keep object shape explicit without adding runtime branches
-    const bucket=root[domain];
-    const countryId=arguments[4];
-    return {domain,bucket,countryId,parts,value,deleteValue};
-  }
-
   class AuthoritativeStateAuthority{
     constructor(options={}){
       this.version=VERSION;
@@ -139,7 +128,41 @@
       const owner=String(transaction.ownerMinistry||'');
       if(!owner)throw new Error('STATE_OWNER_REQUIRED');
       const operations=Array.isArray(transaction.operations)?transaction.operations:[];
+      const transactionId=String(transaction.transactionId||('OMI-TX-'+transaction.turn+'-'+owner+'-'+transaction.commandId));
+
+      // Semantic idempotency: the same committed command is never applied twice.
+      const existing=this.transactionLedger.get(transactionId);
+      if(existing){
+        return Object.freeze({...clone(existing),duplicate:true,status:'ALREADY_PROCESSED'});
+      }
+
+      const aliases={resourceSummary:'resource',resourceInventory:'resource',resourceDeposits:'resource'};
+      const firstDomain=String(operations[0]?.path||'').split('.')[0]||owner;
+      const primaryDomain=aliases[firstDomain]||firstDomain;
+      const currentRevision=this.revision(id,primaryDomain);
+      const expectedRevision=transaction.expectedRevision===undefined
+        ? currentRevision
+        : transaction.expectedRevision;
+
+      // Optimistic concurrency: the writer must commit against the revision it observed.
+      if(String(expectedRevision??'NULL')!==String(currentRevision??'NULL')){
+        const conflict={
+          transactionId,
+          commandId:String(transaction.commandId||''),
+          ownerMinistry:owner,
+          countryId:id,
+          simulationTurn:Number(transaction.turn)||0,
+          status:'CONFLICT',
+          conflictType:'OPTIMISTIC_CONCURRENCY',
+          expectedRevision:expectedRevision??null,
+          currentRevision:currentRevision??null
+        };
+        this.transactionLedger.set(transactionId,clone(conflict));
+        throw new Error('STATE_REVISION_CONFLICT:'+String(expectedRevision??'NULL')+':'+String(currentRevision??'NULL'));
+      }
+
       const beforeDigest=hash(state);
+      const beforeDomainRevision=currentRevision;
       const stagedDomains=new Map();
       const applied=[];
 
@@ -182,7 +205,7 @@
       }
 
             const afterDigest=hash(state);
-      const transactionId=String(transaction.transactionId||('OMI-TX-'+transaction.turn+'-'+owner+'-'+transaction.commandId));
+      const afterDomainRevision=this.revision(id,primaryDomain);
       const record={
         transactionId,
         commandId:String(transaction.commandId||''),
@@ -191,8 +214,9 @@
         simulationTurn:Number(transaction.turn)||0,
         changed:beforeDigest!==afterDigest,
         operations:applied,
-        beforeRevision:'CONTENT:'+beforeDigest,
-        afterRevision:'CONTENT:'+afterDigest
+        beforeRevision:beforeDomainRevision,
+        afterRevision:afterDomainRevision,
+        expectedRevision:expectedRevision??null
       };
       this.transactionLedger.set(transactionId,clone(record));
       while(this.transactionLedger.size>256){
