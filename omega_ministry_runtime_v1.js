@@ -1,5 +1,5 @@
 /*
- * OMEGA CANONICAL 17-MINISTRY RUNTIME CONTROLLER v1.2.0
+ * OMEGA CANONICAL 17-MINISTRY RUNTIME CONTROLLER v1.3.0
  *
  * Runtime responsibility:
  *   - own the canonical ministry set
@@ -14,7 +14,7 @@
 (function(global){
   'use strict';
 
-  const VERSION='1.2.0';
+  const VERSION='1.3.0';
 
   const IDS=Object.freeze(
     Array.isArray(global.OmegaMinistryRegistry?.ids)
@@ -22,6 +22,40 @@
       : []
   );
   if(!IDS.length) throw new Error('OMEGA_MINISTRY_REGISTRY_REQUIRED');
+
+  const GOVERNMENT_PHASES=Object.freeze([
+    'TURN_START',
+    'WORLD_UPDATE',
+    'OBSERVE',
+    'INFORMATION',
+    'ASSESS',
+    'COORDINATE',
+    'DECIDE',
+    'AUTHORIZE',
+    'EXECUTE',
+    'COMMIT',
+    'PUBLISH',
+    'REACT',
+    'VERIFY',
+    'TURN_END'
+  ]);
+
+  const PHASE_BARRIERS=Object.freeze({
+    TURN_START:[],
+    WORLD_UPDATE:['TURN_START'],
+    OBSERVE:['WORLD_UPDATE'],
+    INFORMATION:['OBSERVE'],
+    ASSESS:['INFORMATION'],
+    COORDINATE:['ASSESS'],
+    DECIDE:['COORDINATE'],
+    AUTHORIZE:['DECIDE'],
+    EXECUTE:['AUTHORIZE'],
+    COMMIT:['EXECUTE'],
+    PUBLISH:['COMMIT'],
+    REACT:['PUBLISH'],
+    VERIFY:['REACT'],
+    TURN_END:['VERIFY']
+  });
 
   const SPECS=Object.freeze({
     cabinet:{domain:'executive_coordination',dependencies:IDS.filter(id=>id!=='cabinet').slice(0,4)},
@@ -77,6 +111,27 @@
 
   function getStateProvider(){
     return global.OmegaMinistryStateProvider?.instance || global.Omega?.MinistryStateProvider?.instance || null;
+  }
+
+  function canonicalCountryId(value){
+    const raw=String(value??'').trim();
+    if(!raw)return null;
+    const registry=global.OmegaCanonicalIdentityRegistry||global.OmegaCountrySemanticBridge||null;
+    try{
+      const resolved=registry?.canonicalCountryId?.(raw)||registry?.resolveCountry?.(raw)?.id;
+      if(resolved)return String(resolved).trim().toUpperCase();
+    }catch(_){}
+    return raw.toUpperCase();
+  }
+
+  function syncSimulationClock(turn){
+    const n=Number(turn);
+    if(!Number.isFinite(n))return null;
+    const state=global.Game?.state||global.gameState||null;
+    if(state)state.simulationTurn=n;
+    if(global.Game?.worldState)global.Game.worldState.turn=n;
+    if(global.Game?.Simulation)global.Game.Simulation.currentTurn=n;
+    return n;
   }
 
   function putContextPath(root,path,value){
@@ -167,16 +222,19 @@
     const provider=getStateProvider();
     const state=provider?.root?.() || global.Game?.state || global.gameState || {};
     const interop=getInteroperability();
-    const countryId=String(
+    const countryIdRaw=String(
       store?.countryId ||
       global.OmegaSimulation?.activeCountryId ||
       global.OmegaCabinetUI?.activeCountry ||
       global.Game?.currentActiveCountry ||
       global.CountryIOS?.activeCountry ||
+      state?.playerCountryId ||
       state?.countryCode ||
       state?.countryId ||
       ''
-    ).trim().toUpperCase() || null;
+    );
+    const canonicalId=canonicalCountryId(countryIdRaw);
+    const countryId=canonicalId||null;
 
     const engine=getEngineRegistry()?.get?.(id);
     const domainContext={
@@ -271,6 +329,8 @@
     let initialized=false;
     let registryHealth={ok:false,reason:'NOT_INITIALIZED'};
     let interoperability=getInteroperability();
+    let lastOrchestration=null;
+    let lastWorldOrchestration=null;
 
     function syncManifest(){
       const manifest=global.GLOBAL_MINISTRY_MANIFEST;
@@ -290,6 +350,8 @@
 
       bridge=typeof kernel.createBridge==='function' ? kernel.createBridge():null;
       interoperability=getInteroperability();
+      const authority=global.OmegaAuthoritativeStateAuthority?.instance||global.Omega?.AuthoritativeStateAuthority?.instance||null;
+      if(authority&&global.Game?.state&&!authority.bind(global.Game.state))return false;
       if(interoperability && typeof interoperability.init==='function' && !interoperability.init(bridge)) return false;
 
       for(const id of IDS){
@@ -320,7 +382,7 @@
       return true;
     }
 
-    function tick(id,dt,currentTurn,store,blackboard){
+    function tick(id,dt,currentTurn,store,blackboard,options={}){
       if(!IDS.includes(String(id))) return null;
       const interop=getInteroperability();
       const engine=getEngineRegistry()?.get?.(id);
@@ -335,15 +397,16 @@
       const spec=SPECS[id]||{domain:'unknown',dependencies:[]};
       const s=states.get(id);
       const inputSources=discoverInputSources();
-      const domainContext=buildDomainContext(id,dt,currentTurn,store);
+      const domainContext=options.contextOverride||buildDomainContext(id,dt,currentTurn,store);
       const countryId=domainContext.countryId;
       const dependencySnapshot=safeDependencyStates(states,kernel,spec.dependencies);
-      const phase=['OBSERVE','VALIDATE','PROCESS','COMMIT'][Math.max(0,currentTurn||0)%4];
+      // Direct tick is a ministry execution primitive. Turn lifecycle ownership belongs to runTurn().
+      const phase=String(options.phase||'ASSESS');
       let domainExecution;
 
-      if(interop && typeof interop.advanceTurn==='function')interop.advanceTurn(currentTurn);
+      if(options.advanceInterop!==false&&interop && typeof interop.advanceTurn==='function')interop.advanceTurn(currentTurn);
 
-      if(interop && countryId && typeof interop.drainInbox==='function'){
+      if(options.processInbox!==false&&interop && countryId && typeof interop.drainInbox==='function'){
         interop.drainInbox(countryId,id,(message)=>{
           handleMessage(id,message);
         },100);
@@ -353,6 +416,8 @@
         domainExecution=engine.execute(domainContext);
       }catch(err){
         s.failures+=1;
+        s.status='FAILED';
+        s.active=false;
         s.errors.push(String(err?.message||err));
         if(s.errors.length>8) s.errors.shift();
         throw err;
@@ -369,7 +434,7 @@
       s.dependencies=dependencySnapshot;
       s.phase=phase;
 
-      if(interoperability && typeof interoperability.publishState==='function' && countryId){
+      if(options.publish!==false&&interoperability && typeof interoperability.publishState==='function' && countryId){
         interoperability.publishState(id,{
           domain:spec.domain,
           domainExecution,
@@ -404,14 +469,9 @@
         timestamp:s.lastUpdate
       };
 
-      if(store){
-        if(store.policies instanceof Map) store.policies.set('__omega_runtime__',telemetry);
-        if(store.knowledgeGraph instanceof Map) store.knowledgeGraph.set('__omega_runtime_domain__',domainExecution);
-        if(Array.isArray(store.goalStack) && store.goalStack.length<32){
-          const marker='RUNTIME:'+id;
-          if(!store.goalStack.includes(marker)) store.goalStack.push(marker);
-        }
-      }
+      // Runtime telemetry is emitted through dedicated runtime/blackboard sinks.
+      // The canonical application store is not a telemetry destination and must not be
+      // mutated by the ministry runtime as an execution side effect.
 
       global.__OMEGA_MINISTRY_RUNTIME_STATUS__=global.__OMEGA_MINISTRY_RUNTIME_STATUS__||{};
       global.__OMEGA_MINISTRY_RUNTIME_STATUS__[id]=telemetry;
@@ -432,9 +492,480 @@
         if(s.errors.length>8) s.errors.shift();
       }
 
-      try{ bridge?.emitEvent?.('OMEGA_MINISTRY_RUNTIME_TICK',telemetry); }catch(_){}
-      publishEvent('OMEGA_MINISTRY_RUNTIME_TICK',telemetry);
+      if(options.emitRuntimeEvent!==false){
+        try{ bridge?.emitEvent?.('OMEGA_MINISTRY_RUNTIME_TICK',telemetry); }catch(_){}
+        publishEvent('OMEGA_MINISTRY_RUNTIME_TICK',telemetry);
+      }
       return telemetry;
+    }
+
+    function createDependencyPlan(){
+      const graph=new Map(IDS.map(id=>[id,new Set((SPECS[id]?.dependencies||[]).filter(dep=>IDS.includes(dep)))]));
+      const indexById=new Map();
+      const lowById=new Map();
+      const stack=[];
+      const onStack=new Set();
+      const components=[];
+      let index=0;
+
+      const visit=(id)=>{
+        indexById.set(id,index);
+        lowById.set(id,index);
+        index+=1;
+        stack.push(id);
+        onStack.add(id);
+        for(const dep of graph.get(id)||[]){
+          if(!indexById.has(dep)){
+            visit(dep);
+            lowById.set(id,Math.min(lowById.get(id),lowById.get(dep)));
+          }else if(onStack.has(dep)){
+            lowById.set(id,Math.min(lowById.get(id),indexById.get(dep)));
+          }
+        }
+        if(lowById.get(id)===indexById.get(id)){
+          const component=[];
+          while(stack.length){
+            const member=stack.pop();
+            onStack.delete(member);
+            component.push(member);
+            if(member===id)break;
+          }
+          component.sort((a,b)=>IDS.indexOf(a)-IDS.indexOf(b));
+          components.push(component);
+        }
+      };
+
+      for(const id of IDS)if(!indexById.has(id))visit(id);
+
+      const componentOf=new Map();
+      components.forEach((component,componentId)=>component.forEach(id=>componentOf.set(id,componentId)));
+
+      const outgoing=new Map(components.map((_,i)=>[i,new Set()]));
+      const indegree=new Map(components.map((_,i)=>[i,0]));
+      for(const [id,deps] of graph.entries()){
+        const from=componentOf.get(id);
+        for(const dep of deps){
+          const to=componentOf.get(dep);
+          if(from===to)continue;
+          if(!outgoing.get(to).has(from)){
+            outgoing.get(to).add(from);
+            indegree.set(from,indegree.get(from)+1);
+          }
+        }
+      }
+
+      const ready=components
+        .map((component,componentId)=>({componentId,component}))
+        .filter(row=>indegree.get(row.componentId)===0)
+        .sort((a,b)=>IDS.indexOf(a.component[0])-IDS.indexOf(b.component[0]));
+
+      const orderedComponents=[];
+      while(ready.length){
+        const row=ready.shift();
+        orderedComponents.push(row);
+        for(const next of outgoing.get(row.componentId)||[]){
+          indegree.set(next,indegree.get(next)-1);
+          if(indegree.get(next)===0){
+            ready.push({componentId:next,component:components[next]});
+            ready.sort((a,b)=>IDS.indexOf(a.component[0])-IDS.indexOf(b.component[0]));
+          }
+        }
+      }
+
+      if(orderedComponents.length!==components.length)throw new Error('MINISTRY_DEPENDENCY_GRAPH_INVALID');
+      const groups=orderedComponents.map(row=>row.component.slice());
+      const order=groups.flat();
+      return {
+        schemaVersion:1,
+        order,
+        groups,
+        cycles:groups.filter(group=>{
+          if(group.length>1)return true;
+          const only=group[0];
+          return graph.get(only)?.has(only)===true;
+        }),
+        dependencies:Object.fromEntries(IDS.map(id=>[id,[...(graph.get(id)||new Set())]]))
+      };
+    }
+
+    function createSchedule(currentTurn){
+      const turn=Number(currentTurn);
+      if(!Number.isFinite(turn))throw new Error('SIMULATION_TURN_REQUIRED');
+      const dependencyPlan=createDependencyPlan();
+      return {
+        schemaVersion:1,
+        turn,
+        deterministicOrder:dependencyPlan.order.slice(),
+        dependencyPlan:clone(dependencyPlan),
+        phases:GOVERNMENT_PHASES.map((id,index)=>({
+          id,
+          order:index,
+          barriers:PHASE_BARRIERS[id].slice(),
+          ministryOrder:dependencyPlan.order.slice()
+        }))
+      };
+    }
+
+    function emitGovernmentPhase(turn,phase,status,detail={}){
+      publishEvent('OMEGA_GOVERNMENT_PHASE',{
+        schemaVersion:1,
+        turn,
+        phase,
+        status,
+        detail:clone(detail)
+      });
+    }
+
+    function runTurn(currentTurn,dt,store,blackboard,options={}){
+      if(!initialized)throw new Error('OMEGA_GOVERNMENT_RUNTIME_NOT_INITIALIZED');
+      const turn=Number(currentTurn);
+      if(!Number.isFinite(turn))throw new Error('SIMULATION_TURN_REQUIRED');
+      if(lastOrchestration&&turn<Number(lastOrchestration.turn))throw new Error('SIMULATION_TURN_REGRESSION');
+      if(lastOrchestration&&turn===Number(lastOrchestration.turn)&&options.allowRepeat!==true)return clone(lastOrchestration);
+      syncSimulationClock(turn);
+      const delta=Number.isFinite(Number(dt))?Number(dt):0;
+      const schedule=createSchedule(turn);
+      const phaseResults=[];
+      const observations=new Map();
+      const assessments=new Map();
+      const decisions=[];
+      const commands=[];
+      const failures=[];
+
+      const phase=(id,status,detail={})=>{
+        const row={phase:id,status,turn,detail:clone(detail)};
+        phaseResults.push(row);
+        emitGovernmentPhase(turn,id,status,detail);
+        return row;
+      };
+
+      try{
+        if(interoperability?.advanceTurn)interoperability.advanceTurn(turn);
+      }catch(error){
+        failures.push({phase:'TURN_START',scope:'GLOBAL',error:String(error?.message||error)});
+      }
+      phase('TURN_START',failures.length?'DEGRADED':'COMMITTED');
+
+      try{
+        if(typeof options.worldUpdate==='function')options.worldUpdate({turn,dt:delta,phase:'WORLD_UPDATE'});
+        phase('WORLD_UPDATE','COMMITTED');
+      }catch(error){
+        failures.push({phase:'WORLD_UPDATE',scope:'WORLD',error:String(error?.message||error)});
+        phase('WORLD_UPDATE','FAILED',{error:String(error?.message||error)});
+      }
+
+      for(const id of schedule.deterministicOrder){
+        try{
+          observations.set(id,buildDomainContext(id,delta,turn,store));
+        }catch(error){
+          failures.push({phase:'OBSERVE',scope:id,error:String(error?.message||error)});
+        }
+      }
+      phase('OBSERVE',failures.some(x=>x.phase==='OBSERVE')?'DEGRADED':'COMMITTED',{
+        observedMinistries:observations.size
+      });
+
+      for(const id of schedule.deterministicOrder){
+        const context=observations.get(id);
+        const countryId=context?.countryId;
+        if(!context||!countryId)continue;
+        try{
+          interoperability?.drainInbox?.(countryId,id,(message)=>handleMessage(id,message),100);
+        }catch(error){
+          failures.push({phase:'INFORMATION',scope:id,error:String(error?.message||error)});
+        }
+      }
+      phase('INFORMATION',failures.some(x=>x.phase==='INFORMATION')?'DEGRADED':'COMMITTED');
+
+      for(const id of schedule.deterministicOrder){
+        try{
+          const freshContext=buildDomainContext(id,delta,turn,store);
+          const result=tick(id,delta,turn,store,blackboard,{
+            phase:'ASSESS',
+            contextOverride:freshContext,
+            processInbox:false,
+            advanceInterop:false,
+            publish:false,
+            emitRuntimeEvent:false
+          });
+          assessments.set(id,{context:freshContext,execution:result});
+        }catch(error){
+          failures.push({phase:'ASSESS',scope:id,error:String(error?.message||error)});
+        }
+      }
+      phase('ASSESS',failures.some(x=>x.phase==='ASSESS')?'DEGRADED':'COMMITTED',{
+        assessedMinistries:assessments.size
+      });
+
+      const coordination={};
+      let governmentCoordination=null;
+      for(const id of schedule.deterministicOrder){
+        const context=assessments.get(id)?.context;
+        const countryId=context?.countryId;
+        if(!countryId)continue;
+        try{
+          coordination[id]=interoperability?.getContext?.(id,{countryId,turn,dt:delta})||null;
+        }catch(error){
+          failures.push({phase:'COORDINATE',scope:id,error:String(error?.message||error)});
+        }
+      }
+      const coordinationCountry=store?.countryId||observations.get('cabinet')?.countryId||null;
+      try{
+        if(coordinationCountry&&interoperability?.coordinateGovernment){
+          governmentCoordination=interoperability.coordinateGovernment(coordinationCountry,{currentTurn:turn});
+        }
+      }catch(error){
+        failures.push({phase:'COORDINATE',scope:'CABINET',error:String(error?.message||error)});
+      }
+      phase('COORDINATE',failures.some(x=>x.phase==='COORDINATE')?'DEGRADED':'COMMITTED',{
+        coordinatedMinistries:Object.keys(coordination).length,
+        cabinetReady:governmentCoordination?.status==='READY'
+      });
+
+      try{
+        const automatic=interoperability?.evaluateGovernmentDecisions?.(coordinationCountry||observations.get('cabinet')?.countryId,{
+          currentTurn:turn
+        });
+        if(Array.isArray(automatic?.evaluated))decisions.push(...clone(automatic.evaluated));
+      }catch(error){
+        failures.push({phase:'DECIDE',scope:'GOVERNMENT',error:String(error?.message||error)});
+      }
+
+      if(typeof options.decide==='function'){
+        try{
+          const result=options.decide({
+            turn,dt:delta,coordination:clone(coordination),
+            governmentCoordination:clone(governmentCoordination),
+            decisions:clone(decisions),
+            ministries:schedule.deterministicOrder.slice()
+          });
+          if(Array.isArray(result))decisions.push(...clone(result));
+          else if(result!==undefined)decisions.push(clone(result));
+        }catch(error){
+          failures.push({phase:'DECIDE',scope:'GOVERNMENT',error:String(error?.message||error)});
+        }
+      }
+      phase('DECIDE',failures.some(x=>x.phase==='DECIDE')?'DEGRADED':'COMMITTED',{decisionCount:decisions.length});
+
+      if(typeof options.authorize==='function'){
+        try{
+          options.authorize({turn,dt:delta,decisions:clone(decisions),coordination:clone(coordination),governmentCoordination:clone(governmentCoordination)});
+        }catch(error){
+          failures.push({phase:'AUTHORIZE',scope:'GOVERNMENT',error:String(error?.message||error)});
+        }
+      }
+      phase('AUTHORIZE',failures.some(x=>x.phase==='AUTHORIZE')?'DEGRADED':'COMMITTED');
+
+      let scheduledCommands=[];
+      try{
+        scheduledCommands=interoperability?.processScheduledEffects?.(turn,256)||[];
+      }catch(error){
+        failures.push({phase:'EXECUTE',scope:'SCHEDULED_EFFECTS',error:String(error?.message||error)});
+      }
+
+      let commandRequests=Array.isArray(options.commands)?clone(options.commands):[];
+      try{
+        const compiled=interoperability?.compileDecisionCommands?.(decisions,{turn})||[];
+        commandRequests=[...commandRequests,...compiled];
+      }catch(error){
+        failures.push({phase:'EXECUTE',scope:'COMMAND_COMPILER',error:String(error?.message||error)});
+      }
+      for(const request of commandRequests){
+        try{
+          const source=String(request?.sourceMinistryId||'');
+          const actionId=String(request?.actionId||request?.commandType||'');
+          const countryId=String(request?.countryId||store?.countryId||'').trim().toUpperCase();
+          if(!source||!actionId||!countryId)throw new Error('COMMAND_REQUEST_SCOPE_INVALID');
+          const result=interoperability.dispatchCommand(source,actionId,countryId,request.payload||{},{
+            ...request.options,
+            turn,
+            commandType:request.commandType||actionId,
+            deferCommit:true,
+            deferEventDispatch:true
+          });
+          commands.push(clone(result));
+        }catch(error){
+          failures.push({phase:'EXECUTE',scope:request?.sourceMinistryId||'unknown',error:String(error?.message||error)});
+        }
+      }
+      for(const scheduled of scheduledCommands){
+        if(scheduled?.status==='STAGED')commands.push(clone(scheduled));
+        else if(scheduled?.status==='FAILED'){
+          failures.push({phase:'EXECUTE',scope:'SCHEDULED_EFFECTS',error:String(scheduled?.result?.error||scheduled?.error||'SCHEDULED_EFFECT_FAILED')});
+        }
+      }
+      phase('EXECUTE',failures.some(x=>x.phase==='EXECUTE')?'DEGRADED':'COMMITTED',{commandCount:commands.length,scheduledEffects:scheduledCommands.length});
+
+      let committedCommandRows=[];
+      try{
+        committedCommandRows=interoperability?.commitPendingCommands?.(turn)||[];
+        const committedById=new Map(committedCommandRows.map(row=>[String(row.commandId),row]));
+        for(let i=0;i<commands.length;i++){
+          const id=String(commands[i]?.commandId||'');
+          if(committedById.has(id))commands[i]=clone(committedById.get(id));
+        }
+      }catch(error){
+        failures.push({phase:'COMMIT',scope:'GOVERNMENT',error:String(error?.message||error)});
+      }
+
+      phase('COMMIT',failures.some(x=>x.phase==='COMMIT')||commands.some(row=>row.status==='FAILED')?'DEGRADED':'COMMITTED',{
+        preparedCommands:commands.length,
+        committedCommands:commands.filter(row=>row.lifecycleStatus==='COMMITTED'||row.lifecycleStatus==='VERIFIED').length
+      });
+
+      for(const [id,result] of assessments.entries()){
+        const context=result.context;
+        const countryId=context?.countryId;
+        if(!countryId||!interoperability?.publishState)continue;
+        try{
+          interoperability.publishState(id,{
+            domain:SPECS[id]?.domain||null,
+            domainExecution:result.execution?.domainExecution||result.execution,
+            context,
+            store,
+            runtimeState:states.get(id),
+            turn,
+            deferEventDispatch:true
+          });
+        }catch(error){
+          failures.push({phase:'PUBLISH',scope:id,error:String(error?.message||error)});
+        }
+      }
+      phase('PUBLISH',failures.some(x=>x.phase==='PUBLISH')?'DEGRADED':'COMMITTED');
+
+      let reactions=[];
+      try{
+        interoperability?.processEventOutbox?.(turn);
+        reactions=interoperability?.processReactionQueue?.(turn)||[];
+      }catch(error){
+        failures.push({phase:'REACT',scope:'GOVERNMENT',error:String(error?.message||error)});
+      }
+      phase('REACT',failures.some(x=>x.phase==='REACT')?'DEGRADED':'COMMITTED',{reactionCount:reactions.length});
+
+      let verification=null;
+      try{
+        verification={
+          runtime:health(),
+          interoperability:interoperability?.diagnostics?.(null,turn)||null,
+          schedule
+        };
+      }catch(error){
+        failures.push({phase:'VERIFY',scope:'GOVERNMENT',error:String(error?.message||error)});
+      }
+      phase('VERIFY',failures.some(x=>x.phase==='VERIFY')?'DEGRADED':'COMMITTED');
+
+      phase('TURN_END',failures.length?'DEGRADED':'COMMITTED',{
+        failures:failures.length,
+        processedMinistries:assessments.size
+      });
+
+      if(failures.length&&interoperability?.recordFailure){
+        for(const failure of failures){
+          try{
+            interoperability.recordFailure(
+              failure.scope||'GLOBAL',
+              failure.phase||'UNKNOWN',
+              turn,
+              failure.error||'UNKNOWN_FAILURE',
+              'RETRY',
+              {orchestrator:'OMEGA_MINISTRY_RUNTIME_V1'}
+            );
+          }catch(_){}
+        }
+      }
+
+      lastOrchestration={
+        schemaVersion:2,
+        turn,
+        dt:delta,
+        status:failures.length?'DEGRADED':'COMMITTED',
+        deterministicOrder:schedule.deterministicOrder.slice(),
+        phases:phaseResults,
+        assessments:Object.fromEntries([...assessments.entries()].map(([id,row])=>[id,{
+          revision:row.execution?.runtimeRevision??null,
+          engineRevision:row.execution?.domainExecution?.revision??null
+        }])),
+        coordination:clone(governmentCoordination),
+        decisions:clone(decisions),
+        commands:clone(commands),
+        reactions:clone(reactions),
+        verification:clone(verification),
+        failures:clone(failures)
+      };
+      return clone(lastOrchestration);
+    }
+
+    function resolveSimulationCountries(options={}){
+      const registry=global.OmegaCanonicalIdentityRegistry||global.OmegaCountrySemanticBridge||null;
+      const explicit=Array.isArray(options.countryIds)&&options.countryIds.length?options.countryIds:null;
+      const canonical=registry?.listCountryIds?.()||[];
+      const source=explicit||(
+        canonical.length
+          ?canonical
+          :Object.keys(global.Game?.state?.economy||{})
+      );
+      const resolved=[];
+      const seen=new Set();
+      const add=value=>{
+        const raw=String(value??'').trim();
+        if(!raw)return;
+        let id=null;
+        try{
+          id=String(registry?.canonicalCountryId?.(raw)||registry?.resolveCountry?.(raw)?.id||'').trim().toUpperCase()||null;
+        }catch(_){}
+        if(!id&&canonical.length&&explicit)throw new Error('SIMULATION_COUNTRY_ID_UNRESOLVED:'+raw);
+        if(!id)id=raw.toUpperCase();
+        if(id&&!seen.has(id)){seen.add(id);resolved.push(id);}
+      };
+      for(const value of source)add(value);
+      if(!resolved.length&&explicit)throw new Error('SIMULATION_COUNTRY_SET_EMPTY');
+      if(!resolved.length)add(global.Game?.currentActiveCountry||global.CountryIOS?.activeCountry||global.OmegaCabinetUI?.activeCountry||global.Game?.state?.playerCountryId||global.Game?.state?.countryId);
+      resolved.sort((a,b)=>a.localeCompare(b));
+      return resolved;
+    }
+
+    function runWorldTurn(currentTurn,dt,options={}){
+      if(!initialized)throw new Error('OMEGA_GOVERNMENT_RUNTIME_NOT_INITIALIZED');
+      const turn=Number(currentTurn);
+      if(!Number.isFinite(turn))throw new Error('SIMULATION_TURN_REQUIRED');
+      if(lastWorldOrchestration&&turn<Number(lastWorldOrchestration.turn))throw new Error('SIMULATION_TURN_REGRESSION');
+      if(lastWorldOrchestration&&turn===Number(lastWorldOrchestration.turn)&&options.allowRepeat!==true)return clone(lastWorldOrchestration);
+      const countries=resolveSimulationCountries(options);
+      if(!countries.length)throw new Error('SIMULATION_COUNTRY_SET_EMPTY');
+
+      const results=[];
+      for(let index=0;index<countries.length;index++){
+        const countryId=countries[index];
+        const store={...(clone(options.store||{})),countryId};
+        const countryCommands=Array.isArray(options.commands)
+          ?options.commands.filter(command=>!command?.countryId||String(command.countryId).trim().toUpperCase()===countryId)
+          :options.commands;
+        const result=runTurn(turn,dt,store,options.blackboard,{
+          ...options,
+          countryId,
+          countryIds:undefined,
+          commands:countryCommands,
+          allowRepeat:true,
+          worldUpdate:index===0?options.worldUpdate:undefined
+        });
+        results.push(result);
+      }
+
+      const failedCountries=results.filter(row=>row?.status==='DEGRADED').length;
+      lastWorldOrchestration={
+        schemaVersion:3,
+        mode:'WORLD_TURN',
+        turn,
+        dt:Number.isFinite(Number(dt))?Number(dt):0,
+        countryCount:countries.length,
+        deterministicCountryOrder:countries.slice(),
+        countries:clone(results),
+        processedCountries:results.length,
+        failedCountries,
+        status:failedCountries?'DEGRADED':'COMMITTED'
+      };
+      lastOrchestration=clone(lastWorldOrchestration);
+      return clone(lastWorldOrchestration);
     }
 
     function handleMessage(id,message){
@@ -473,12 +1004,20 @@
       }
     }
 
+    function getCurrentTurn(){
+      const state=global.Game?.state||global.gameState||{};
+      const n=Number(state.simulationTurn??global.Game?.worldState?.turn??0);
+      return Number.isFinite(n)?n:0;
+    }
+
     function getIds(){ return IDS.slice(); }
 
     function getState(id){
       const s=states.get(String(id));
       return s ? clone(s):null;
     }
+
+    function getWorldOrchestrationState(){ return clone(lastWorldOrchestration); }
 
     function getEngine(id){ return getEngineRegistry()?.get?.(String(id))||null; }
 
@@ -493,7 +1032,9 @@
         version:VERSION,
         ministries:Object.fromEntries([...states.entries()].map(([id,state])=>[id,clone(state)])),
         engines:engineStates,
-        interoperability:interoperability?.saveState?.()||null
+        interoperability:interoperability?.saveState?.()||null,
+        orchestration:lastOrchestration?clone(lastOrchestration):null,
+        worldOrchestration:lastWorldOrchestration?clone(lastWorldOrchestration):null
       };
     }
 
@@ -514,6 +1055,8 @@
         }
       }
       if(snapshot.interoperability&&interoperability?.loadState)interoperability.loadState(snapshot.interoperability);
+      lastOrchestration=clone(snapshot.orchestration||null);
+      lastWorldOrchestration=clone(snapshot.worldOrchestration||null);
       return true;
     }
 
@@ -554,9 +1097,20 @@
       getState,
       getEngine,
       health,
+      createSchedule,
+      runTurn,
+      runWorldTurn,
+      resolveSimulationCountries,
+      getWorldOrchestrationState,
+      getOrchestrationState:()=>clone(lastOrchestration),
+      createDependencyPlan,
+      getCurrentTurn,
+      syncSimulationClock,
       saveState,
       loadState,
-      getEngineBinding:resolveEngineBinding
+      getEngineBinding:resolveEngineBinding,
+      GOVERNMENT_PHASES,
+      PHASE_BARRIERS
     });
 
     return api;

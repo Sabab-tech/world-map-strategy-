@@ -81,6 +81,8 @@ function createSandbox(options={}){
   sandbox.Omega={};
 
   loadBrowserScript('omega_ministry_registry.js',sandbox);
+  loadBrowserScript('omega_ministry_knowledge_contract.js',sandbox);
+  loadBrowserScript('omega_authoritative_state_authority.js',sandbox);
   loadBrowserScript('omega_ministry_state_provider.js',sandbox);
   sandbox.Omega.MinistryStateProvider.instance=sandbox.Omega.MinistryStateProvider.create({
     stateSource:state,
@@ -143,6 +145,11 @@ function createSandbox(options={}){
         'FISCAL_CONDITION',
         'TRANSPORT_CAPACITY'
       ]
+    });
+    mesh.registerAuthorityPolicy(ACTION_ID,{
+      proposerMinistries:['trade'],
+      approverMinistries:['trade'],
+      reviewRequired:false
     });
   }
 
@@ -503,3 +510,471 @@ function stripTelemetry(value){
 console.log('OMEGA GOVERNMENT INTEROPERABILITY TEST MATRIX READY');
 console.log('Tests:',20);
 console.log('Canonical ministry count:',MINISTRY_COUNT);
+
+
+test('T2: actual repository economy data crosses raw JSON -> authoritative state -> provider -> ministry -> interoperability',()=>{
+  const economy=JSON.parse(fs.readFileSync(new URL('../economy.json',import.meta.url),'utf8'));
+  const ids=Object.keys(economy).filter(Boolean);
+  assert.ok(ids.length>0);
+  const countryId=String(ids[0]).toUpperCase();
+  const state={simulationTurn:1,economy};
+  const s=createSandbox({countryA:countryId,countryB:countryId==='AA'?'BB':'AA',state});
+  s.tick('economy',1);
+  const publicState=s.mesh.getPeerState('cabinet','economy',countryId,{currentTurn:1});
+  const fact=publicState.publishedFacts['economy.gdp'];
+  assert.equal(fact.availability,'AVAILABLE');
+  assert.equal(fact.value,economy[ids[0]].gdp);
+  assert.equal(fact.provenance.sourceType,'AUTHORITATIVE_RUNTIME_STATE');
+  assert.ok(fact.stateRevision);
+});
+
+test('T3: incomplete fiscal data stays explicitly unavailable and does not become zero',()=>{
+  const s=createSandbox({state:{simulationTurn:1}});
+  s.tick('finance',1);
+  const finance=s.mesh.getPeerState('trade','finance',s.countryA,{currentTurn:1});
+  assert.equal(finance.publishedFacts['finance.reserves'].availability,'UNOBSERVED');
+  assert.notEqual(finance.publishedFacts['finance.reserves'].value,0);
+});
+
+test('U2: state mutation is owner-bound through the canonical authority, then marks publication dirty',()=>{
+  const s=createSandbox();
+  s.tickAll(1);
+  s.registerTradeAction();
+  s.mesh.registerCommandHandler(ACTION_ID,'foreign',(command,{stateTransaction})=>{
+    const treaties=stateTransaction.get('foreign.treaties')||{};
+    treaties[s.countryB]={status:'SIGNED'};
+    stateTransaction.set('foreign.treaties',treaties);
+    return {accepted:true};
+  });
+  const before=s.mesh.getPeerState('trade','foreign',s.countryA,{currentTurn:1}).publishedFacts['foreign.treaties'].value[s.countryB].status;
+  const cmd=s.mesh.dispatchCommand('trade',ACTION_ID,s.countryA,{targetCountryId:s.countryB},{turn:2,commandType:ACTION_ID});
+  assert.equal(cmd.stateChanged,true);
+  assert.equal(s.state.foreign[s.countryA].treaties[s.countryB].status,'SIGNED');
+  assert.notEqual(before,'SIGNED');
+  const dirty=s.mesh.getDirtyPublications(s.countryA,'foreign');
+  assert.ok(dirty.length>=1);
+});
+
+test('U3: failed authoritative transaction is atomic',()=>{
+  const s=createSandbox();
+  const authority=s.sandbox.OmegaAuthoritativeStateAuthority.instance;
+  const before=authority.read(s.countryA,'foreign.treaties');
+  const tx=s.sandbox.OmegaMinistryStateTransaction.create(
+    'foreign',s.countryA,2,'ATOMIC-FAIL-1',authority
+  );
+  tx.operations.push(
+    {op:'SET',path:'foreign.treaties',after:{[s.countryB]:{status:'SIGNED'}}},
+    {op:'INVALID',path:'foreign.relations',after:{[s.countryB]:99}}
+  );
+  assert.throws(()=>tx.commit(),/UNKNOWN_STATE_OPERATION/);
+  assert.deepEqual(authority.read(s.countryA,'foreign.treaties'),before);
+});
+
+test('U4: domain revision used for dirty publication matches source publication revision',()=>{
+  const s=createSandbox();
+  s.tickAll(1);
+  s.registerTradeAction();
+  s.mesh.registerCommandHandler(ACTION_ID,'foreign',(command,{stateTransaction})=>{
+    const treaties=stateTransaction.get('foreign.treaties')||{};
+    treaties[s.countryB]={status:'SIGNED'};
+    stateTransaction.set('foreign.treaties',treaties);
+    return {accepted:true};
+  });
+  const cmd=s.mesh.dispatchCommand('trade',ACTION_ID,s.countryA,{targetCountryId:s.countryB},{turn:2,commandType:ACTION_ID});
+  assert.equal(cmd.stateChanged,true);
+  const dirtyBefore=s.mesh.getDirtyPublications(s.countryA,'foreign');
+  assert.equal(dirtyBefore.length,1);
+  assert.equal(cmd.stateRevisionAfter,dirtyBefore[0].stateRevision);
+  s.tick('foreign',2);
+  assert.equal(s.mesh.getDirtyPublications(s.countryA,'foreign').length,0);
+});
+
+test('V2: authoritative revision drift is exposed as STALE until source republishes',()=>{
+  const s=createSandbox();
+  s.tickAll(1);
+  s.state.foreign[s.countryA].treaties[s.countryB]={status:'SIGNED'};
+  const stale=s.mesh.getPeerState('trade','foreign',s.countryA,{currentTurn:1});
+  assert.equal(stale.freshness.status,'STALE');
+  assert.equal(stale.publishedFacts['foreign.treaties'].availability,'STALE');
+  s.tick('foreign',2);
+  const fresh=s.mesh.getPeerState('trade','foreign',s.countryA,{currentTurn:2});
+  assert.equal(fresh.publishedFacts['foreign.treaties'].availability,'AVAILABLE');
+});
+
+test('W: declarative production action is available from the ministry knowledge contract',()=>{
+  const s=createSandbox();
+  const def=s.mesh.instance.decisionFramework.getAction('CONCLUDE_TRADE_AGREEMENT');
+  assert.ok(def);
+  assert.ok(def.requirements.some(r=>r.id==='foreign.relations'));
+  assert.ok(def.requirements.some(r=>r.id==='foreign.treaties'));
+  assert.ok(def.requirements.some(r=>r.id==='finance.reserves'));
+  assert.ok(def.requirements.some(r=>r.id==='transport.logistics'));
+  assert.ok(def.requirements.some(r=>r.id==='intelligence.threats'));
+});
+
+
+test('architectural transaction concurrency rejects stale writers and permits retry',()=>{
+  const s=createSandbox();
+  const authority=s.sandbox.OmegaAuthoritativeStateAuthority.instance;
+  const first=s.sandbox.OmegaMinistryStateTransaction.create('foreign',s.countryA,2,'TX-A',authority);
+  const second=s.sandbox.OmegaMinistryStateTransaction.create('foreign',s.countryA,2,'TX-B',authority);
+  const treaties=first.get('foreign.treaties')||{};
+  treaties[s.countryB]={status:'SIGNED'};
+  first.set('foreign.treaties',treaties);
+  const committed=first.commit();
+  assert.equal(committed.changed,true);
+  const secondTreaties=second.get('foreign.treaties')||{};
+  secondTreaties[s.countryB]={status:'SUSPENDED'};
+  second.set('foreign.treaties',secondTreaties);
+  assert.throws(()=>second.commit(),/STATE_REVISION_CONFLICT/);
+
+  const retry=s.sandbox.OmegaMinistryStateTransaction.create('foreign',s.countryA,3,'TX-C',authority);
+  const retryTreaties=retry.get('foreign.treaties')||{};
+  retryTreaties[s.countryB]={status:'SUSPENDED'};
+  retry.set('foreign.treaties',retryTreaties);
+  assert.equal(retry.commit().changed,true);
+});
+
+test('architectural event outbox preserves state/event ordering and causal reaction routing',()=>{
+  const s=createSandbox();
+  s.tickAll(1);
+  s.registerTradeAction();
+  let received=0;
+  s.mesh.subscribeEvent('TREATY_SIGNED','trade',(event)=>{
+    received+=1;
+    assert.equal(event.sourceMinistryId,'foreign');
+    assert.equal(event.stateRevision!==null,true);
+    return {accepted:true};
+  });
+  s.mesh.registerCausalRule('TREATY_TO_TRADE',{
+    eventTypes:['TREATY_SIGNED'],
+    sourceMinistries:['foreign'],
+    targetMinistries:['trade'],
+    createReaction:(event)=>({
+      sourceMinistryId:event.sourceMinistryId,
+      targetMinistries:['trade'],
+      payload:{causedBy:event.eventId}
+    })
+  });
+  s.mesh.registerCommandHandler(ACTION_ID,'foreign',(command,{stateTransaction,emitEvent})=>{
+    const treaties=stateTransaction.get('foreign.treaties')||{};
+    treaties[s.countryB]={status:'SIGNED'};
+    stateTransaction.set('foreign.treaties',treaties);
+    emitEvent('TREATY_SIGNED',{targetCountryId:s.countryB});
+    return {accepted:true};
+  });
+  const command=s.mesh.dispatchCommand('trade',ACTION_ID,s.countryA,{targetCountryId:s.countryB},{turn:2,commandType:ACTION_ID});
+  assert.equal(command.status,'APPLIED');
+  assert.equal(received,1);
+  assert.ok(s.mesh.instance.eventOutbox.size>=1);
+  assert.ok(s.mesh.instance.reactionQueue.length>=1);
+  const reactions=s.mesh.processReactionQueue(2);
+  assert.equal(reactions[0].status,'DISPATCHED');
+  assert.equal(s.mesh.getMinistryInbox(s.countryA,'trade').length>0,true);
+  assert.equal(s.mesh.getEventLog({countryId:s.countryA,fromTurn:2,toTurn:2}).length>=2,true);
+});
+
+test('architectural workflow and authority lifecycle remain explicit without prefilled government data',()=>{
+  const s=createSandbox();
+  s.mesh.registerWorkflow('POLICY_CASE',{
+    states:['ASSESSING','REVIEW','APPROVED','EXECUTING','CLOSED'],
+    transitions:{
+      ASSESSING:['REVIEW'],
+      REVIEW:['APPROVED'],
+      APPROVED:['EXECUTING'],
+      EXECUTING:['CLOSED']
+    },
+    approvalStages:['REVIEW']
+  });
+  const row=s.mesh.createCase({
+    workflowId:'POLICY_CASE',
+    countryId:s.countryA,
+    ownerMinistry:'cabinet'
+  });
+  assert.equal(row.status,'ASSESSING');
+  assert.equal(s.mesh.advanceCase(row.caseId,'REVIEW').status,'REVIEW');
+  assert.equal(s.mesh.advanceCase(row.caseId,'APPROVED',{approvalState:'APPROVED'}).approvalState,'APPROVED');
+  assert.equal(s.mesh.advanceCase(row.caseId,'EXECUTING').status,'EXECUTING');
+  assert.equal(s.mesh.advanceCase(row.caseId,'CLOSED').status,'CLOSED');
+});
+
+test('architectural command idempotency returns the committed command without re-execution',()=>{
+  const s=createSandbox();
+  s.tickAll(1);
+  s.registerTradeAction();
+  let executions=0;
+  s.mesh.registerCommandHandler(ACTION_ID,'foreign',(command,{stateTransaction})=>{
+    executions+=1;
+    const treaties=stateTransaction.get('foreign.treaties')||{};
+    treaties[s.countryB]={status:'SIGNED'};
+    stateTransaction.set('foreign.treaties',treaties);
+    return {accepted:true};
+  });
+  const first=s.mesh.dispatchCommand('trade',ACTION_ID,s.countryA,{targetCountryId:s.countryB},{
+    turn:2,commandType:ACTION_ID,commandId:'CMD-IDEMPOTENT-1'
+  });
+  const second=s.mesh.dispatchCommand('trade',ACTION_ID,s.countryA,{targetCountryId:s.countryB},{
+    turn:2,commandType:ACTION_ID,commandId:'CMD-IDEMPOTENT-1'
+  });
+  assert.equal(first.status,'APPLIED');
+  assert.equal(second.status,'ALREADY_PROCESSED');
+  assert.equal(executions,1);
+});
+
+test('architectural message protocol validates canonical schema fields before delivery',()=>{
+  const s=createSandbox();
+  s.mesh.registerMessageProtocol('PROTOCOL_TEST',{
+    schema:{required:['payload.requestType']},
+    allowedSources:['trade'],
+    allowedTargets:['foreign']
+  });
+  assert.throws(()=>s.mesh.send('trade','foreign','protocol.test',{},{
+    countryId:s.countryA,turn:2,messageType:'PROTOCOL_TEST'
+  }),/MESSAGE_SCHEMA_INVALID/);
+  const message=s.mesh.send('trade','foreign','protocol.test',{requestType:'REVIEW'},{
+    countryId:s.countryA,turn:2,messageType:'PROTOCOL_TEST',idempotencyKey:'PROTO-1'
+  });
+  assert.equal(message.messageType,'PROTOCOL_TEST');
+  assert.equal(s.mesh.getDelivery(message.messageId).message.messageType,'PROTOCOL_TEST');
+});
+
+test('architectural knowledge contract exposes capability and authority as separate institutional views',()=>{
+  const s=createSandbox();
+  const contract=s.sandbox.OmegaMinistryKnowledgeContract;
+  const capability=contract.getCapability('trade');
+  const authority=contract.getActionAuthority('CONCLUDE_TRADE_AGREEMENT');
+  assert.equal(capability.ministryId,'trade');
+  assert.ok(capability.consume.includes('foreign'));
+  assert.equal(authority.stateOwnerMinistry,'foreign');
+  assert.equal(authority.approvalRequirements.length,0);
+  assert.equal(contract.canPerform('trade','CONCLUDE_TRADE_AGREEMENT'),true);
+});
+
+test('architectural authority review can approve and resume a command without bypassing the state boundary',()=>{
+  const s=createSandbox();
+  s.tickAll(1);
+  s.mesh.registerAction(ACTION_ID+'-REVIEW',{
+    stateOwnerMinistry:'foreign',
+    approvalRequirements:['foreign.authority']
+  });
+  s.mesh.registerAuthorityPolicy(ACTION_ID+'-REVIEW',{
+    proposerMinistries:['trade'],
+    reviewerMinistries:['cabinet'],
+    approverMinistries:['cabinet'],
+    executorMinistries:['foreign'],
+    reviewRequired:true
+  });
+  let executions=0;
+  s.mesh.registerCommandHandler(ACTION_ID+'-REVIEW','foreign',(command,{stateTransaction})=>{
+    executions+=1;
+    const treaties=stateTransaction.get('foreign.treaties')||{};
+    treaties[s.countryB]={status:'APPROVED'};
+    stateTransaction.set('foreign.treaties',treaties);
+    return {accepted:true};
+  });
+
+  const pending=s.mesh.dispatchCommand('trade',ACTION_ID+'-REVIEW',s.countryA,{targetCountryId:s.countryB},{
+    turn:2,commandType:ACTION_ID+'-REVIEW',commandId:'CMD-REVIEW-1'
+  });
+  assert.equal(pending.status,'REVIEW_REQUIRED');
+  assert.ok(pending.caseId);
+  assert.equal(executions,0);
+
+  const approved=s.mesh.approveCommand('CMD-REVIEW-1',{ministryId:'cabinet',turn:2});
+  assert.equal(approved.status,'APPROVED');
+  const committed=s.mesh.executeApprovedCommand('CMD-REVIEW-1',{ministryId:'foreign',executorMinistryId:'foreign',turn:2});
+  assert.equal(committed.status,'APPLIED');
+  assert.equal(executions,1);
+  assert.equal(s.state.foreign[s.countryA].treaties[s.countryB].status,'APPROVED');
+});
+
+test('architectural scheduler defers authoritative mutation until its COMMIT boundary',()=>{
+  const s=createSandbox();
+  s.tickAll(1);
+  s.mesh.registerAction(ACTION_ID+'-DEFER',{
+    stateOwnerMinistry:'foreign'
+  });
+  s.mesh.registerAuthorityPolicy(ACTION_ID+'-DEFER',{
+    proposerMinistries:['trade'],
+    approverMinistries:['trade'],
+    executorMinistries:['foreign']
+  });
+  s.mesh.registerCommandHandler(ACTION_ID+'-DEFER','foreign',(command,{stateTransaction})=>{
+    const treaties=stateTransaction.get('foreign.treaties')||{};
+    treaties[s.countryB]={status:'STAGED'};
+    stateTransaction.set('foreign.treaties',treaties);
+    return {accepted:true};
+  });
+
+  const pending=s.mesh.dispatchCommand('trade',ACTION_ID+'-DEFER',s.countryA,{targetCountryId:s.countryB},{
+    turn:2,commandType:ACTION_ID+'-DEFER',commandId:'CMD-STAGED-1',
+    deferCommit:true,deferEventDispatch:true
+  });
+  assert.equal(pending.status,'STAGED');
+  assert.equal(s.state.foreign[s.countryA].treaties[s.countryB].status,'NOT_CONCLUDED');
+  assert.equal(s.mesh.instance.pendingCommands.size,1);
+
+  const committed=s.mesh.commitPendingCommands(2);
+  assert.equal(committed.length,1);
+  assert.equal(committed[0].status,'APPLIED');
+  assert.equal(committed[0].lifecycleStatus,'VERIFIED');
+  assert.equal(s.state.foreign[s.countryA].treaties[s.countryB].status,'STAGED');
+  assert.equal(s.mesh.instance.pendingCommands.size,0);
+});
+
+
+test('architectural dependency scheduler derives deterministic dependency groups and records cycles explicitly',()=>{
+  const s=createSandbox();
+  const plan=s.runtime.createDependencyPlan();
+  assert.equal(plan.order.length,MINISTRY_COUNT);
+  assert.equal(new Set(plan.order).size,MINISTRY_COUNT);
+  assert.ok(Array.isArray(plan.groups));
+  assert.ok(Array.isArray(plan.cycles));
+  assert.ok(plan.cycles.length>=1,'the current ministry graph contains intentional dependency cycles');
+  for(const ministry of s.ids){
+    for(const dependency of plan.dependencies[ministry]||[]){
+      const sameGroup=plan.groups.some(group=>group.includes(ministry)&&group.includes(dependency));
+      const ministryIndex=plan.order.indexOf(ministry);
+      const dependencyIndex=plan.order.indexOf(dependency);
+      assert.ok(sameGroup||dependencyIndex<ministryIndex);
+    }
+  }
+});
+
+test('architectural DECIDE phase evaluates declarative ministry actions without requiring hardcoded policy data',()=>{
+  const s=createSandbox();
+  s.tickAll(1);
+  const result=s.mesh.evaluateGovernmentDecisions(s.countryA,{currentTurn:1});
+  assert.equal(result.countryId,s.countryA);
+  assert.equal(result.simulationTurn,1);
+  assert.ok(Array.isArray(result.evaluated));
+  assert.ok(result.evaluated.some(row=>row.actionId==='CONCLUDE_TRADE_AGREEMENT'));
+});
+
+test('architectural delayed-effect scheduler promotes due effects into the canonical COMMIT pipeline',()=>{
+  const s=createSandbox();
+  s.mesh.registerAction(ACTION_ID+'-EFFECT',{stateOwnerMinistry:'foreign'});
+  s.mesh.registerAuthorityPolicy(ACTION_ID+'-EFFECT',{
+    proposerMinistries:['trade'],approverMinistries:['trade'],executorMinistries:['foreign']
+  });
+  s.mesh.registerCommandHandler(ACTION_ID+'-EFFECT','foreign',(command,{stateTransaction})=>{
+    const treaties=stateTransaction.get('foreign.treaties')||{};
+    treaties[s.countryB]={status:'DELAYED'};
+    stateTransaction.set('foreign.treaties',treaties);
+    return {accepted:true};
+  });
+  const effect=s.mesh.scheduleEffect({
+    effectId:'EFFECT-1',
+    sourceMinistryId:'trade',
+    actionId:ACTION_ID+'-EFFECT',
+    commandType:ACTION_ID+'-EFFECT',
+    countryId:s.countryA,
+    dueTurn:5,
+    payload:{targetCountryId:s.countryB},
+    createdTurn:1
+  });
+  assert.equal(effect.status,'SCHEDULED');
+  assert.equal(s.mesh.processScheduledEffects(4).length,0);
+  const prepared=s.mesh.processScheduledEffects(5);
+  assert.equal(prepared.length,1);
+  assert.equal(prepared[0].status,'PREPARED');
+  assert.equal(s.state.foreign[s.countryA].treaties[s.countryB].status,'NOT_CONCLUDED');
+  const committed=s.mesh.commitPendingCommands(5);
+  assert.equal(committed[0].status,'APPLIED');
+  assert.equal(s.state.foreign[s.countryA].treaties[s.countryB].status,'DELAYED');
+});
+
+test('architectural commit journal links authoritative commit to recoverable event outbox materialization',()=>{
+  const s=createSandbox();
+  s.tickAll(1);
+  s.registerTradeAction();
+  s.mesh.registerCommandHandler(ACTION_ID,'foreign',(command,{stateTransaction,emitEvent})=>{
+    const treaties=stateTransaction.get('foreign.treaties')||{};
+    treaties[s.countryB]={status:'JOURNALED'};
+    stateTransaction.set('foreign.treaties',treaties);
+    emitEvent('TREATY_SIGNED',{targetCountryId:s.countryB});
+    return {accepted:true};
+  });
+  const cmd=s.mesh.dispatchCommand('trade',ACTION_ID,s.countryA,{targetCountryId:s.countryB},{
+    turn:2,commandType:ACTION_ID,commandId:'CMD-JOURNAL-1'
+  });
+  assert.equal(cmd.status,'APPLIED');
+  const journal=s.mesh.instance.commitJournal.get('OMEGA-CJ-CMD-JOURNAL-1');
+  assert.equal(journal.status,'COMMITTED');
+  assert.equal(journal.stateCommitted,true);
+  assert.equal(journal.outboxReconciled,true);
+  assert.ok([...s.mesh.instance.eventOutbox.values()].some(row=>row.event.causationId==='CMD-JOURNAL-1'||row.event.eventId.startsWith('OMEGA-CMD-EVENT-CMD-JOURNAL-1')));
+});
+
+test('architectural transaction replay reconstructs authoritative state from committed write history',()=>{
+  const s=createSandbox();
+  s.mesh.registerAction(ACTION_ID+'-REPLAY',{stateOwnerMinistry:'foreign'});
+  s.mesh.registerAuthorityPolicy(ACTION_ID+'-REPLAY',{
+    proposerMinistries:['trade'],approverMinistries:['trade'],executorMinistries:['foreign']
+  });
+  s.mesh.registerCommandHandler(ACTION_ID+'-REPLAY','foreign',(command,{stateTransaction})=>{
+    stateTransaction.set('foreign.relations',{[s.countryB]:99});
+    return {accepted:true};
+  });
+  const cmd=s.mesh.dispatchCommand('trade',ACTION_ID+'-REPLAY',s.countryA,{},{
+    turn:3,commandType:ACTION_ID+'-REPLAY',commandId:'CMD-REPLAY-1'
+  });
+  assert.equal(cmd.status,'APPLIED');
+  const replay=s.sandbox.OmegaAuthoritativeStateAuthority.instance.reconstructState({},{
+    fromTurn:3,toTurn:3
+  });
+  assert.equal(replay.appliedTransactionCount,1);
+  assert.equal(replay.state.foreign[s.countryA].relations[s.countryB],99);
+  assert.ok(replay.digest);
+});
+test('architectural replay uses an explicit base or checkpoint and never re-applies onto the live current state by default',()=>{
+  const s=createSandbox();
+  s.mesh.registerAction(ACTION_ID+'-REPLAY-BASE',{stateOwnerMinistry:'foreign'});
+  s.mesh.registerAuthorityPolicy(ACTION_ID+'-REPLAY-BASE',{
+    proposerMinistries:['trade'],approverMinistries:['trade'],executorMinistries:['foreign']
+  });
+  s.mesh.registerCommandHandler(ACTION_ID+'-REPLAY-BASE','foreign',(command,{stateTransaction})=>{
+    stateTransaction.set('foreign.relations',{[s.countryB]:77});
+    return {accepted:true};
+  });
+  const cmd=s.mesh.dispatchCommand('trade',ACTION_ID+'-REPLAY-BASE',s.countryA,{},{
+    turn:6,commandType:ACTION_ID+'-REPLAY-BASE',commandId:'CMD-REPLAY-BASE-1'
+  });
+  assert.equal(cmd.status,'APPLIED');
+  const replay=s.sandbox.OmegaAuthoritativeStateAuthority.instance.reconstructState(undefined,{fromTurn:6,toTurn:6});
+  assert.equal(replay.state.foreign?.[s.countryA]?.relations?.[s.countryB],77);
+  assert.equal(replay.appliedTransactionCount,1);
+});
+test('architectural recovery preserves a prepared transaction across save/load',()=>{
+  const s=createSandbox();
+  s.tickAll(1);
+  s.mesh.registerAction(ACTION_ID+'-RECOVER',{
+    stateOwnerMinistry:'foreign'
+  });
+  s.mesh.registerAuthorityPolicy(ACTION_ID+'-RECOVER',{
+    proposerMinistries:['trade'],
+    approverMinistries:['trade'],
+    executorMinistries:['foreign']
+  });
+  s.mesh.registerCommandHandler(ACTION_ID+'-RECOVER','foreign',(command,{stateTransaction})=>{
+    const treaties=stateTransaction.get('foreign.treaties')||{};
+    treaties[s.countryB]={status:'RECOVERED'};
+    stateTransaction.set('foreign.treaties',treaties);
+    return {accepted:true};
+  });
+
+  const pending=s.mesh.dispatchCommand('trade',ACTION_ID+'-RECOVER',s.countryA,{targetCountryId:s.countryB},{
+    turn:2,commandType:ACTION_ID+'-RECOVER',commandId:'CMD-RECOVER-1',
+    deferCommit:true,deferEventDispatch:true
+  });
+  assert.equal(pending.status,'STAGED');
+  const snapshot=s.mesh.instance.saveState();
+  assert.equal(Array.isArray(snapshot.pendingCommands),true);
+  assert.equal(snapshot.pendingCommands.length,1);
+
+  s.mesh.instance.loadState(snapshot);
+  assert.equal(s.mesh.instance.pendingCommands.size,1);
+  const committed=s.mesh.commitPendingCommands(2);
+  assert.equal(committed[0].status,'APPLIED');
+  assert.equal(s.state.foreign[s.countryA].treaties[s.countryB].status,'RECOVERED');
+});

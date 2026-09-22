@@ -98,7 +98,7 @@
 
     listActions(){return [...this.actions.keys()];}
 
-    _fact(briefing,requirement,countryId,currentTurn){
+    _fact(briefing,requirement,countryId,currentTurn,targetCountryId=null){
       const source=String(requirement.ministryId||requirement.sourceMinistry||'');
       const peer=briefing?.peerStates?.[source]||briefing?.peers?.[source]||null;
       if(!peer)return {requirement,availability:'UNOBSERVED',status:'MISSING',reason:'SOURCE_MINISTRY_SNAPSHOT_UNOBSERVED'};
@@ -111,7 +111,7 @@
       let availability=String(fact.availability||'UNOBSERVED');
       let value=fact.value;
       if(requirement.entityScoped){
-        value=entityValue(value,requirement.entityId||countryId);
+        value=entityValue(value,requirement.entityId||targetCountryId||countryId);
         if(value===undefined)availability='UNAVAILABLE';
       }
       return {
@@ -127,7 +127,8 @@
         provenance:clone(fact.provenance||null),
         visibility:fact.visibility||'GOVERNMENT_INTERNAL',
         access:{granted:true},
-        currentTurn
+        currentTurn,
+        targetCountryId:targetCountryId||null
       };
     }
 
@@ -172,7 +173,7 @@
 
       let requirementIndex=0;
       for(const requirement of requirements){
-        const result=this._fact(input.briefing||{},requirement,countryId,input.currentTurn??null);
+        const result=this._fact(input.briefing||{},requirement,countryId,input.currentTurn??null,input.targetCountryId||null);
         const key=String(requirement.id||requirement.path||requirement.ministryId||('requirement:'+String(requirementIndex++)));
         evidence.push({...result,requirement:clone(requirement)});
         evidenceById.set(key,result);

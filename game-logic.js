@@ -2,11 +2,48 @@
    GLOBAL GEOPOLITICAL SIMULATOR - gameplay-logic master file (game-logic.js)
    ============================================================================ */
 
-// Global Geopolitical State Container (Real Sovereign & Epistemic State)
-window.gameState = {
-    population: {},
-    economy: {}
-};
+// Canonical Geopolitical State Container.
+// Game.state is the sole authoritative object; gameState is a compatibility alias only.
+const canonicalGameState = window.Game?.state || (window.Game ? (window.Game.state = {}) : (window.gameState || {}));
+canonicalGameState.population = canonicalGameState.population || {};
+canonicalGameState.economy = canonicalGameState.economy || {};
+const runtimeData = canonicalGameState.runtimeData || {};
+const priorWorldState = window.Game?.worldState || {};
+runtimeData.worldState = runtimeData.worldState || priorWorldState;
+canonicalGameState.runtimeData = runtimeData;
+Object.defineProperty(window.Game,'worldState',{
+  configurable:true,
+  enumerable:false,
+  get(){return runtimeData.worldState;},
+  set(value){if(value&&typeof value==='object')runtimeData.worldState=value;}
+});
+const derivedState = canonicalGameState.derivedState || {};
+const derivedRelations = derivedState.relations || canonicalGameState.relations || {};
+derivedState.relations = derivedRelations;
+canonicalGameState.derivedState = derivedState;
+Object.defineProperty(canonicalGameState,'relations',{
+  configurable:true,
+  enumerable:true,
+  get(){return derivedRelations;},
+  set(value){
+    if(value&&typeof value==='object'){
+      for(const key of Object.keys(derivedRelations))delete derivedRelations[key];
+      Object.assign(derivedRelations,value);
+    }
+  }
+});
+window.gameState = canonicalGameState;
+
+window.OmegaGameStateContract = Object.freeze({
+    schemaVersion:1,
+    authority:'Game.state',
+    compatibilityAlias:'gameState',
+    countryIdentity:'OMEGA_CANONICAL_IDENTITY_BRIDGE',
+    derivedDomains:Object.freeze(['relations']),
+    runtimeMetadataDomains:Object.freeze(['worldState','relationEngine','ministersDB']),
+    countryScopedDomains:true,
+    noImplicitDefaults:true
+});
 
 // Canonical State Resource Accessor (Safe, non-authoritative HUD bridge)
 window.updateGlobalResourceHUD = function(countryKey) {
@@ -99,48 +136,92 @@ function formatPopulationNumber(num) {
     return Math.floor(num).toString();
 }
 
+(function installCanonicalCountryIdResolver(){
+    const game=window.Game;
+    if(!game)return;
+    const legacy=typeof game.getCountryId==='function'
+        ? game.getCountryId.bind(game)
+        : (name=>String(name||'').toUpperCase().replace(/[-\s]/g,'_').replace(/[^A-Z0-9_]/g,'').trim());
+    game.getLegacyCountryId=game.getLegacyCountryId||legacy;
+    game.getCountryId=function(value){
+        const bridge=window.OmegaCanonicalIdentityRegistry||window.OmegaCountrySemanticBridge;
+        try{
+            const id=bridge?.canonicalCountryId?.(value);
+            if(id)return String(id).toUpperCase();
+            const resolved=bridge?.resolveCountry?.(value);
+            if(resolved?.id)return String(resolved.id).toUpperCase();
+        }catch(_){}
+        return legacy(value);
+    };
+})();
 // ১. পবুলেশন ও ইকোনমি জেসন ডেটা লোডার এবং রিলেশন ড্রপডাউন সিঙ্ক
-window.initializeWorldGameDatabase = async function() {
+window.initializeWorldGameDatabase = function() {
+    if (window.__OMEGA_WORLD_DB_PROMISE__) return window.__OMEGA_WORLD_DB_PROMISE__;
+    window.__OMEGA_WORLD_DB_PROMISE__ = (async function() {
     try {
         const fetcher = window.fetchResilient || (async (f) => {
             const res = await fetch(f + '?v=' + Date.now());
             return res.ok ? await res.json() : null;
         });
 
+        const identity=window.OmegaCanonicalIdentityRegistry||window.OmegaCountrySemanticBridge;
+        if(identity?.init) {
+            const ready=await identity.init();
+            if(ready!==true) throw new Error('CANONICAL_COUNTRY_IDENTITY_NOT_READY');
+        }
+
+        const provider=window.OmegaMinistryStateProvider?.instance||window.Omega?.MinistryStateProvider?.instance||null;
+        const authority=window.OmegaAuthoritativeStateAuthority?.instance||window.Omega?.AuthoritativeStateAuthority?.instance||null;
+        if(!provider)throw new Error('MINISTRY_STATE_PROVIDER_UNAVAILABLE');
+        if(!authority?.bind?.(window.Game.state))throw new Error('AUTHORITATIVE_GAME_STATE_BIND_FAILED');
+
         const popData = await fetcher('population.json');
         if (popData) {
-            window.gameState.population = popData;
-            console.log("Population Engine Database Sync Ready.");
+            provider.hydrateDataset(popData,'population',{strict:true});
+            console.log('Population Engine Database Sync Ready.');
         }
 
         const econData = await fetcher('economy.json');
         if (econData) {
-            window.gameState.economy = econData;
-            console.log("Economy Engine Database Sync Ready.");
+            provider.hydrateDataset(econData,'economy',{strict:true});
+            console.log('Economy Engine Database Sync Ready.');
         }
 
         if (window.ResourceMinistryEngine && typeof window.ResourceMinistryEngine.init === 'function') {
-            await window.ResourceMinistryEngine.init();
-            console.log("Resource Ministry Engine GSRSK Database Sync Ready.");
+            try {
+                await window.ResourceMinistryEngine.init();
+                console.log('Resource Ministry Engine GSRSK Database Sync Ready.');
+            } catch (resourceError) {
+                console.warn('Resource Ministry Engine unavailable; government simulation remains running with resource data marked unavailable.', resourceError);
+                window.dispatchEvent?.(new CustomEvent('OMEGA_RESOURCE_DATA_DEGRADED',{detail:{error:String(resourceError?.message||resourceError)}}));
+            }
         }
 
-        // রিলেশন সিলেকশন বক্স ডাটা দিয়ে পূর্ণ করা
         const relSelector = document.getElementById('relation-selector');
-        if (relSelector && window.gameState.economy) {
+        if (relSelector && window.Game.state.economy) {
             relSelector.innerHTML = '<option value="NONE">-- Select Focus Country --</option>';
-            Object.keys(window.gameState.economy).sort().forEach(countryKey => {
+            Object.keys(window.Game.state.economy).sort().forEach(countryKey => {
                 const opt = document.createElement('option');
                 opt.value = countryKey;
-                opt.innerText = countryKey.replace(/_/g, " ");
+                const record=identity?.resolveCountry?.(countryKey);
+                opt.innerText = record?.raw?.name || countryKey.replace(/_/g, ' ');
                 relSelector.appendChild(opt);
             });
         }
-        if (window.updateGlobalResourceHUD) {
-            window.updateGlobalResourceHUD();
-        }
+        if (window.updateGlobalResourceHUD) window.updateGlobalResourceHUD();
+        authority.lockInitialization?.(Number(window.Game.state.simulationTurn??window.Game.worldState?.turn??0));
+        window.__OMEGA_BASE_DATA_READY__ = true;
+        window.dispatchEvent?.(new CustomEvent('OMEGA_BASE_DATA_READY',{detail:{
+            schemaVersion:window.OmegaGameStateContract.schemaVersion,
+            countryCount:Object.keys(window.Game.state.economy||{}).length
+        }}));
     } catch (err) {
-        console.warn("Database load notice (handled):", err);
+        console.error('Canonical database load failed:', err);
+        window.dispatchEvent?.(new CustomEvent('OMEGA_DATA_CONTRACT_FAILURE',{detail:{error:String(err?.message||err)}}));
+        throw err;
     }
+    })();
+    return window.__OMEGA_WORLD_DB_PROMISE__;
 };
 
 // ৩. কমান্ড হাব মোডাল ৩-লেয়ার কন্ট্রোল

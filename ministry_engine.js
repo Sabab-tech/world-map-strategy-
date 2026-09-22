@@ -430,7 +430,8 @@ window.OmegaCabinetUI = {
     },
 
     getMinisterProfile(ministryId, countryKey) {
-        const db = this.ministersDB || window.OmegaMinistersDB || (window.Game && window.Game.state && window.Game.state.ministersDB);
+        const db = this.ministersDB || window.OmegaMinistersDB ||
+            (window.Game && window.Game.runtimeData && window.Game.runtimeData.ministersDB) || null;
         const region = this.getRegionForCountry(countryKey);
         const dept = this.getDepartmentMapping(ministryId);
         const indexKey = `${(countryKey || 'USA')}_${ministryId}`;

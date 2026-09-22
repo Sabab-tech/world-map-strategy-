@@ -34,8 +34,8 @@ Game.config = {
     }
 };
 
-// গেম ওয়ার্ল্ডের সামগ্রিক সিমুলেশন স্টেট
-Game.worldState = {
+// Compatibility runtime metadata. game-logic.js binds this through the canonical Game.state boundary.
+Game.worldState = Game.worldState || {
     inflation: 1.0,
     bank_liquidity: 1000,
     turn: 1
@@ -193,89 +193,22 @@ Game.getGameFriendlyName = function(name) {
     return mapping[name.toLowerCase().trim()] || name;
 };
 
-// রিয়েল-টাইম এআই সিমুলেশন ইঞ্জিন
+// রিয়েল-টাইম canonical simulation adapter
 Game.Simulation = {
-    tick() {
-        // ১. ওয়ার্ল্ড ইনফ্লেশন এবং টার্ন আপডেট
-        Game.worldState.inflation *= (1 + Game.config.world.inflation_base * (0.8 + Math.random() * 0.4));
-        Game.worldState.turn += 1;
-        
-        // ২. ব্যাংকিং লোন ইন্টারেস্ট বৃদ্ধি (ক্রমান্বয়ে ও ধীরে ধীরে বাড়বে)
-        Object.keys(Game.state.economy).forEach(key => {
-            const econ = Game.state.economy[key];
-            if (econ.debt > 0) {
-                econ.debt *= (1 + Game.config.bank.interest * 0.1); 
-            }
-        });
-        
-        // ৩. ডাইনামিক এআই আচরণ মেকানিক্স (কূটনৈতিক সম্পর্ক বৈরী গেলেই কেবল যুদ্ধ ওঠে)
-        const countries = Object.keys(Game.state.economy);
-        const activeCountryKey = countries[Math.floor(Math.random() * countries.length)];
-        const n = Game.state.economy[activeCountryKey];
-        
-        if (n) {
-            const roll = Math.random();
-            const profile = Game.config.ai[n.ai || "survival"];
-            
-            // যুদ্ধের সম্ভাবনা বহুগুণ কমিয়ে রিয়ালিস্টিক করা হলো
-            if (roll < (profile.war * 0.02)) { 
-                // শত্রুভাবাপন্ন দেশ খোঁজার লজিক
-                const relationList = Game.state.relations[activeCountryKey];
-                let hostileTargets = [];
-                
-                if (relationList) {
-                    Object.keys(relationList).forEach(targetKey => {
-                        if (relationList[targetKey] && relationList[targetKey].overall < -50) {
-                            hostileTargets.push(targetKey);
-                        }
-                    });
-                }
-                
-                // কেবল শত্রুভাবাপন্ন দেশ থাকলেই যুদ্ধ হবে, অন্যথায় দেশ শান্তিতে বাণিজ্য করবে
-                if (hostileTargets.length > 0) {
-                    const targetKey = hostileTargets[Math.floor(Math.random() * hostileTargets.length)];
-                    const target = Game.state.economy[targetKey];
-                    
-                    if (target) {
-                        n.production *= (1 - Game.config.war.production_drop);
-                        target.production *= (1 - Game.config.war.production_drop);
-                        n.trade_power *= (1 - Game.config.war.trade_drop);
-                        target.trade_power *= (1 - Game.config.war.trade_drop);
-                        
-                        console.log(`⚔️ Geopolitical WAR declared: ${activeCountryKey} vs ${targetKey} due to hostile relations!`);
-                        Game.Simulation.visualizeWar(activeCountryKey, targetKey);
-                    }
-                } else {
-                    // শত্রু না থাকলে শান্তিতে বাণিজ্য করবে এবং অর্থ উপার্জন করবে
-                    n.money += n.trade_power * 0.15 * Game.worldState.inflation;
-                }
-            } else if (roll < profile.war + profile.trade) {
-                // সাধারণ বাণিজ্য আচরণ
-                n.money += n.trade_power * 0.1 * Game.worldState.inflation;
-            } else {
-                // ব্যাংক থেকে লোন নেওয়া (যদি দেশটিতে টাকার ঘাটতি বা ক্রাইসিস থাকে)
-                if (n.money < 200) {
-                    const amount = 50;
-                    Game.worldState.bank_liquidity -= amount;
-                    n.money += amount;
-                    n.debt += amount;
-                    console.log(`🏦 Strategic Bank Loan: ${activeCountryKey} took a loan of $50.`);
-                } else {
-                    // টাকা পর্যাপ্ত থাকলে অর্থনৈতিক উন্নয়ন
-                    n.production *= 1.02; 
-                }
-            }
-        }
-        
-        // ৪. মেগা টেকনোলজি ইভেন্ট (১% অত্যন্ত বিরল চান্স)
-        if (Math.random() < 0.01) {
-            countries.forEach(key => {
-                Game.state.economy[key].production *= Game.config.tech.industrial.production;
-            });
-            console.log("🧬 GLOBAL INDUSTRIAL REVOLUTION ACTIVE");
-        }
+    tick(dt=0){
+        const runtime=window.OMEGA_MINISTRY_RUNTIME_V1||window.Omega?.MinistryRuntime||null;
+        if(!runtime?.runWorldTurn)throw new Error('CANONICAL_WORLD_RUNTIME_UNAVAILABLE');
+        const current=Number(
+            Game.state?.simulationTurn ??
+            Game.worldState?.turn ??
+            0
+        );
+        const nextTurn=Math.max(1,Number.isFinite(current)?current+1:1);
+        return runtime.runWorldTurn(nextTurn,Number.isFinite(Number(dt))?Number(dt):0);
     },
-    
+    getCurrentTurn(){
+        return Number(Game.state?.simulationTurn??Game.worldState?.turn??0);
+    },
     // borer লাল ফ্ল্যাশ করার ভিজ্যুয়াল গাইড
     visualizeWar(attacker, defender) {
         if (!Game.geojsonLayer) return;
@@ -295,24 +228,21 @@ Game.Simulation = {
 };
 
 Game.Diplomacy = {
-    _legacyRelations: {
-        "BANGLADESH": { "INDIA": { hist: 40, dipl: 45 }, "PAKISTAN": { hist: -30, dipl: -20 }, "CHINA": { hist: 25, dipl: 35 } },
-        "INDIA": { "PAKISTAN": { hist: -95, dipl: -90 }, "BANGLADESH": { hist: 40, dipl: 45 }, "CHINA": { hist: -40, dipl: -45 } },
-        "PAKISTAN": { "CHINA": { hist: 45, dipl: 50 }, "INDIA": { hist: -95, dipl: -90 } },
-        "CHINA": { "UNITED_STATES_OF_AMERICA": { hist: -25, dipl: -35 }, "RUSSIA": { hist: 30, dipl: 40 }, "PAKISTAN": { hist: 45, dipl: 50 } },
-        "UNITED_STATES_OF_AMERICA": { "UNITED_KINGDOM": { hist: 45, dipl: 50 }, "ISRAEL": { hist: 40, dipl: 50 }, "RUSSIA": { hist: -80, dipl: -85 } },
-        "RUSSIA": { "CHINA": { hist: 30, dipl: 40 }, "UKRAINE": { hist: -95, dipl: -95 } }
-    },
+    _legacyRelations: null,
 
     generateAllBilateralRelations() {
         const countries = Object.keys(Game.state.economy);
         if (countries.length === 0) return;
 
-        Game.state.relations = Game.state.relations || {};
+        Game.derivedState = Game.derivedState || {};
+        Game.derivedState.relations = Game.derivedState.relations || {};
         
         // RGE Engine Integration (relation_generation_engine.json)
-        const rge = this._rgeEngine || (Game.state.relationEngine && Game.state.relationEngine.RELATION_GENERATION_ENGINE) || null;
-        const weights = (rge && rge.weights) ? rge.weights : { historical: 0.15, diplomatic: 0.15, economic: 0.15, military: 0.10, strategic: 0.15, cultural: 0.10, intelligence: 0.05, societal: 0.05, international: 0.10 };
+        const rge = this._rgeEngine || (Game.runtimeData?.relationEngine && Game.runtimeData.relationEngine.RELATION_GENERATION_ENGINE) || null;
+        if (!rge || typeof rge.weights !== 'object' || !rge.weights) {
+            return { status: 'UNAVAILABLE', reason: 'RELATION_ENGINE_INPUT_MISSING', source: 'relation_generation_engine.json' };
+        }
+        const weights = rge.weights;
         const salience = (rge && rge.srie_v2_asymmetrical_salience) ? rge.srie_v2_asymmetrical_salience : {};
 
         function clamp(v) { return Math.max(-100, Math.min(100, Math.floor(v || 0))); }
@@ -322,7 +252,7 @@ Game.Diplomacy = {
         }
 
         countries.forEach(c1 => {
-            Game.state.relations[c1] = Game.state.relations[c1] || {};
+            Game.derivedState.relations[c1] = Game.derivedState.relations[c1] || {};
             const salienceA = salience[c1] || salience[c1.replace(/_/g, " ")] || null;
             const paramsA = salienceA ? salienceA.parameters : null;
 
@@ -395,7 +325,7 @@ Game.Diplomacy = {
                 
                 const finalScore = clamp(overall);
 
-                Game.state.relations[c1][c2] = {
+                Game.derivedState.relations[c1][c2] = {
                     overall: finalScore,
                     border_tension: clamp(50 - finalScore * 0.5),
                     military_threat: clamp(40 - finalScore * 0.4),
@@ -404,30 +334,30 @@ Game.Diplomacy = {
                 };
             });
         });
-        window.GameRelationsDatabase = Game.state.relations;
+        window.GameRelationsDatabase = Game.derivedState.relations;
         console.log(`✅ [RGE Engine] Generated Bilateral Relations for ${countries.length} nations using relation_generation_engine.json & relations.json.`);
     }
 };
 
 Game.DataLoader = {
-    async loadAssets() {
+    loadAssets() {
+        if (window.__OMEGA_DERIVED_DATA_PROMISE__) return window.__OMEGA_DERIVED_DATA_PROMISE__;
+        window.__OMEGA_DERIVED_DATA_PROMISE__ = (async function(){
         try {
+            // Population/economy are owned by the canonical game database loader.
+            if (typeof window.initializeWorldGameDatabase === 'function') {
+                await window.initializeWorldGameDatabase();
+            } else {
+                throw new Error('CANONICAL_GAME_DATABASE_LOADER_UNAVAILABLE');
+            }
+
             const fetcher = window.fetchResilient || (async (f) => {
                 const res = await fetch(f + '?v=' + Date.now());
                 return res.ok ? await res.json() : null;
             });
 
-            const popData = await fetcher('population.json');
-            if (popData && typeof popData === 'object') {
-                Game.state.population = popData;
-            }
-
-            const econData = await fetcher('economy.json');
-            if (econData && typeof econData === 'object') {
-                Game.state.economy = econData;
-            }
-
-            // Load relation generation engine and baseline relations
+            // Derived diplomatic inputs remain non-authoritative until the
+            // Foreign Ministry simulation state exists in the canonical domain.
             const [rgeData, relData, minData] = await Promise.all([
                 fetcher('relation_generation_engine.json'),
                 fetcher('relations.json'),
@@ -435,17 +365,19 @@ Game.DataLoader = {
             ]);
 
             if (rgeData && rgeData.RELATION_GENERATION_ENGINE) {
-                Game.state.relationEngine = rgeData;
+                Game.runtimeData = Game.runtimeData || {};
+                Game.runtimeData.relationEngine = rgeData;
                 if (Game.Diplomacy) Game.Diplomacy._rgeEngine = rgeData.RELATION_GENERATION_ENGINE;
             }
 
-            if (relData && typeof relData === 'object') {
-                if (Game.Diplomacy) Game.Diplomacy._legacyRelations = relData;
+            if (relData && typeof relData === 'object' && Game.Diplomacy) {
+                Game.Diplomacy._legacyRelations = relData;
             }
 
             if (minData && minData.ministers_database) {
                 window.OmegaMinistersDB = minData.ministers_database;
-                Game.state.ministersDB = minData.ministers_database;
+                Game.runtimeData = Game.runtimeData || {};
+                Game.runtimeData.ministersDB = minData.ministers_database;
                 if (window.OmegaCabinetUI && typeof window.OmegaCabinetUI.syncMinistersDatabase === 'function') {
                     window.OmegaCabinetUI.syncMinistersDatabase(minData.ministers_database);
                 }
@@ -455,58 +387,44 @@ Game.DataLoader = {
                 Game.Diplomacy.generateAllBilateralRelations();
             }
 
-            const relSelector = (Game.dom && Game.dom.relSelector) || document.getElementById('relation-selector'); 
+            const relSelector = (Game.dom && Game.dom.relSelector) || document.getElementById('relation-selector');
             if (relSelector && Game.state.economy) {
                 relSelector.innerHTML = '<option value="NONE">-- Select Target --</option>';
                 Object.keys(Game.state.economy).sort().forEach(countryKey => {
                     const opt = document.createElement('option');
                     opt.value = countryKey;
-                    opt.innerText = countryKey.replace(/_/g, " ");
+                    const identity = (window.OmegaCanonicalIdentityRegistry || window.OmegaCountrySemanticBridge)?.resolveCountry?.(countryKey);
+                    opt.innerText = identity?.raw?.name || countryKey.replace(/_/g, ' ');
                     relSelector.appendChild(opt);
-                });
-            }
-
-            // ম্যাপ লোড হওয়ার পর ডাইনামিক্যালি প্রতিটি দেশের জন্য সিমুলেশন ডাটা জেনারেট করা হয়
-            if (Game.state.economy) {
-                Object.keys(Game.state.economy).forEach(countryKey => {
-                    const econ = Game.state.economy[countryKey];
-                    if (!econ) return;
-                    let ai_type = "survival";
-                    if (econ.gdp > 500000000000) { 
-                        ai_type = "greedy";
-                    }
-                    if (countryKey === "CHINA" || countryKey === "USA" || countryKey === "RUSSIA") {
-                        ai_type = "aggressive";
-                    }
-                    if (countryKey === "BANGLADESH") {
-                        ai_type = "survival";
-                    }
-                    econ.ai = ai_type;
-                    econ.money = econ.money || 500;
-                    econ.debt = econ.debt || 0;
-                    econ.stock = econ.stock || {"food": 100, "oil": 80, "metal": 90};
-                    econ.production = econ.production || 120;
-                    econ.trade_power = econ.trade_power || 100;
                 });
             }
 
             const countryConfig = await fetcher('countries.json');
             if (Array.isArray(countryConfig)) {
-                countryConfig.forEach(c => {
-                    if (c && c.name) {
-                        Game.countryLookup[Game.normalizeName(c.name)] = c;
-                    }
-                });
+                for (const country of countryConfig) {
+                    if (country?.name) Game.countryLookup[Game.normalizeName(country.name)] = country;
+                }
             }
 
             const geoData = await fetcher('world.json');
-            if (geoData && geoData.type) {
-                Game.Map.renderGeoJSON(geoData);
-            }
+            if (geoData && geoData.type) Game.Map.renderGeoJSON(geoData);
 
+            window.__OMEGA_DATA_READY__ = true;
+            window.dispatchEvent?.(new CustomEvent('OMEGA_DATA_CONTRACT_READY', {
+                detail: {
+                    schemaVersion:window.OmegaGameStateContract?.schemaVersion||1,
+                    relationState:'DERIVED_ONLY'
+                }
+            }));
         } catch (error) {
-            console.error("❌ ডাটা পাইপলাইন এরর:", error);
+            console.error('[OMEGA] Derived data pipeline error:', error);
+            window.dispatchEvent?.(new CustomEvent('OMEGA_DERIVED_DATA_FAILURE', {
+                detail: { error: String(error?.message || error) }
+            }));
+            throw error;
         }
+        })();
+        return window.__OMEGA_DERIVED_DATA_PROMISE__;
     }
 };
 
@@ -1862,9 +1780,9 @@ Game.Map.setMapMetric = function(metric) {
         values.push(val);
     });
 
-    const validVals = values.filter(v => typeof v === 'number' && !isNaN(v));
+    const validVals = values.filter(v => typeof v === 'number' && Number.isFinite(v));
     const min = validVals.length > 0 ? Math.min(...validVals) : 0;
-    const max = validVals.length > 0 ? Math.max(...validVals) : 100;
+    const max = validVals.length > 0 ? Math.max(...validVals) : 0;
     const range = (max - min) || 1;
 
     const fmt = (v) => {
@@ -1909,21 +1827,24 @@ Game.Map.getCountryMetricValue = function(countryName, metric) {
     const pop = (Game.state && Game.state.population && Game.state.population[cId]) || {};
     const loc = (Game.locationsRegistry && Game.locationsRegistry[cId]) || {};
 
-    const gdp = econ.gdp || 50000000000;
-    const popVal = pop.population_2015 || 15000000;
+    const gdp = Number.isFinite(Number(econ.gdp)) ? Number(econ.gdp) : null;
+    const popVal = Number.isFinite(Number(pop.population_2015)) ? Number(pop.population_2015) : null;
 
     switch (metric) {
         case 'GDP': return gdp;
-        case 'GDP_PER_CAPITA': return gdp / (popVal || 1);
-        case 'TREASURY': return econ.treasury || (gdp * 0.08);
-        case 'DEBT': return (econ.debt || (gdp * 0.4)) / (gdp || 1);
+        case 'GDP_PER_CAPITA': return (gdp !== null && popVal) ? gdp / popVal : null;
+        case 'TREASURY': return Number.isFinite(Number(econ.treasury)) ? Number(econ.treasury) : null;
+        case 'DEBT': return (gdp !== null && gdp !== 0 && Number.isFinite(Number(econ.debt))) ? Number(econ.debt) / gdp : null;
         case 'POPULATION': return popVal;
-        case 'EMPLOYMENT': return econ.employment_rate || 92;
-        case 'RESOURCE_WEALTH': return (loc.resource_count || 5) * 1000 + (gdp * 0.001);
-        case 'ENERGY': return econ.energy_capacity || 15;
-        case 'MILITARY': return (econ.military_power || 65);
-        case 'STABILITY': return (econ.stability || 75);
-        default: return 0;
+        case 'EMPLOYMENT': return Number.isFinite(Number(econ.employment_rate)) ? Number(econ.employment_rate) : null;
+        case 'RESOURCE_WEALTH': {
+            const count=Number.isFinite(Number(loc.resource_count)) ? Number(loc.resource_count) : null;
+            return (count !== null && gdp !== null) ? count*1000 + gdp*0.001 : null;
+        }
+        case 'ENERGY': return Number.isFinite(Number(econ.energy_capacity)) ? Number(econ.energy_capacity) : null;
+        case 'MILITARY': return Number.isFinite(Number(econ.military_power)) ? Number(econ.military_power) : null;
+        case 'STABILITY': return Number.isFinite(Number(econ.stability)) ? Number(econ.stability) : null;
+        default: return null;
     }
 };
 
@@ -1995,7 +1916,7 @@ window.loadGameCities = async function() {
 
     try {
         if (Game.DataLoader && typeof Game.DataLoader.loadAssets === 'function') {
-            Game.DataLoader.loadAssets();
+            await Game.DataLoader.loadAssets();
         }
     } catch (aErr) {
         console.error("DataLoader error:", aErr);

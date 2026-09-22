@@ -2318,7 +2318,7 @@ const _omegaExport = (function (globalScope) {
       };
     }
 
-    thinkMinisterQuestion(questionText, minister, countryKey = "BANGLADESH", countryDetails = {}) {
+    thinkMinisterQuestion(questionText, minister, countryKey = "", countryDetails = {}) {
       const isBengali = /[\u0980-\u09FF]/.test(questionText);
       const promptLower = (questionText || '').toLowerCase().trim();
 
@@ -2347,36 +2347,23 @@ const _omegaExport = (function (globalScope) {
         (minister && minister.background) ||
         'Senior Sovereign Policy & Public Administration Specialist';
 
-      const ministerStats = (dynamicProfile && dynamicProfile.stats) || (minister && minister.stats) || {
-        discipline: 88,
-        strategic: 85,
-        efficiency: 90
-      };
+      const ministerStats = (dynamicProfile && dynamicProfile.stats) || (minister && minister.stats) || {};
+      const efficiencyRaw = dynamicProfile && dynamicProfile.efficiency;
+      const efficiency = (efficiencyRaw && typeof efficiencyRaw === 'object' ? efficiencyRaw.accuracy : efficiencyRaw) ??
+        (minister && minister.efficiency) ?? null;
+      const stability = countryDetails.stability ?? null;
 
-      const efficiency = (dynamicProfile && dynamicProfile.efficiency && typeof dynamicProfile.efficiency === 'object' ? dynamicProfile.efficiency.accuracy : (dynamicProfile && dynamicProfile.efficiency)) || (minister ? (minister.efficiency || 88) : 85);
-      const stability = countryDetails.stability || '89%';
-
-      let hash = 0;
-      for (let i = 0; i < mName.length; i++) hash = (hash * 31 + mName.charCodeAt(i)) % 1000;
-      const calculatedAge = (dynamicProfile && dynamicProfile.age) || (48 + (hash % 18));
-      const yearsService = 16 + (hash % 14);
-      const almaMaterList = [
-        "National Defense College & Oxford University",
-        "BUET & MIT Fellow",
-        "Harvard Kennedy School & Dhaka University",
-        "London School of Economics (LSE)",
-        "Sandhurst Royal Military Academy",
-        "Stanford Sovereign Energy & Geopolitics Institute"
-      ];
-      const almaMater = almaMaterList[hash % almaMaterList.length];
+      const calculatedAge = (dynamicProfile && dynamicProfile.age) ?? (minister && minister.age) ?? null;
+      const yearsService = dynamicProfile?.runtime?.yearsService ?? minister?.yearsService ?? null;
+      const almaMater = dynamicProfile?.almaMater ?? minister?.almaMater ?? null;
 
       // Access Universal Sovereign Data Universe
       UniversalSovereignDataUniverse.init();
       MULTI_DOMAIN_LEXICON.loadOfflineLexicon();
 
       const gameRes = typeof window !== 'undefined' ? (window.resources || {}) : {};
-      const cashVal = gameRes.cash !== undefined ? gameRes.cash : 51780572;
-      const formattedCash = typeof window !== 'undefined' && window.formatGameNumber ? window.formatGameNumber(cashVal) : '$51.78M';
+      const cashVal = gameRes.cash !== undefined ? gameRes.cash : null;
+      const formattedCash = cashVal === null ? null : (typeof window !== 'undefined' && window.formatGameNumber ? window.formatGameNumber(cashVal) : String(cashVal));
 
       // 2. DYNAMIC TARGET COUNTRY RESOLUTION FROM THE CANONICAL IDENTITY REGISTRY
       const canonicalCountryRegistry = globalScope.OmegaCanonicalIdentityRegistry || globalScope.OmegaCountrySemanticBridge || null;
@@ -2578,7 +2565,7 @@ const _omegaExport = (function (globalScope) {
             return `• ${c.icon} ${c.nameBn} (${c.nameEn}):\n   - নিরীক্ষিত জাতীয় মজুদ: ${liveVal}\n   - জরুরি বাফার স্থায়িত্ব: ~${c.defaultBufferDays} দিন\n   - সংরক্ষণাগার প্রোটোকল: সুরক্ষিত রাষ্ট্রীয় সাইলো ও ডিপোতে সার্বক্ষণিক পাহারায় রক্ষিত`;
           }).join('\n\n');
 
-          const ecoRes = countryEconomy.reserves ? `$${(countryEconomy.reserves / 1e9).toFixed(1)} Billion` : '$27.0 Billion';
+          const ecoRes = countryEconomy.reserves ? `${(countryEconomy.reserves / 1e9).toFixed(1)} Billion` : 'UNAVAILABLE';
 
           responseText = `মাননীয় এক্সিকিউটিভ কমান্ডার, ${targetCountryName}-এর ${mRole} হিসেবে আমি (${mName}) আপনার নির্দেশিত কৌশলগত সম্পদের নিরাপত্তা ও মজুদ খতিয়ান পেশ করছি:\n\n` +
             `📊 ১. নিরীক্ষিত জাতীয় মজুদ ও রিজার্ভ সক্ষমতা:\n${auditBlocks}\n\n` +
@@ -2589,9 +2576,9 @@ const _omegaExport = (function (globalScope) {
             `⚡ সুপারিশ: জরুরি সরবরাহ নিশ্চিত রাখতে কৌশলগত সাইলো ক্ষমতা আরও বৃদ্ধি এবং স্থানীয় রিফাইনারি আপগ্রেডেশন প্রকল্প অনুমোদনের সুপারিশ করছি।`;
 
         } else if (isMacroQuery) {
-          const gdpStr = countryEconomy.gdp ? `$${(countryEconomy.gdp / 1e9).toFixed(1)} Billion` : '$195.0 Billion';
-          const resStr = countryEconomy.reserves ? `$${(countryEconomy.reserves / 1e9).toFixed(1)} Billion` : '$27.0 Billion';
-          const debtStr = countryEconomy.debt ? `$${(countryEconomy.debt / 1e9).toFixed(1)} Billion` : '$80.0 Billion';
+          const gdpStr = countryEconomy.gdp ? `${(countryEconomy.gdp / 1e9).toFixed(1)} Billion` : 'UNAVAILABLE';
+          const resStr = countryEconomy.reserves ? `${(countryEconomy.reserves / 1e9).toFixed(1)} Billion` : 'UNAVAILABLE';
+          const debtStr = countryEconomy.debt ? `${(countryEconomy.debt / 1e9).toFixed(1)} Billion` : 'UNAVAILABLE';
 
           responseText = `মাননীয় কমান্ডার, ${targetCountryName}-এর সাম্প্রতিক সামষ্টিক অর্থনৈতিক ও কোষাগার ডাটাবেজ:\n\n` +
             `📈 মোট দেশজ উৎপাদন (GDP): ${gdpStr} (বার্ষিক প্রবৃদ্ধি: ${countryEconomy.gdp_growth || 6.5}%)\n` +
@@ -2603,7 +2590,7 @@ const _omegaExport = (function (globalScope) {
             `⚡ সার্বিক অর্থনৈতিক স্থিতি: ${countryEconomy.status || 'Stable'}`;
 
         } else if (isDemographicsQuery) {
-          const popStr = countryPopulation.population_2015 ? `${(countryPopulation.population_2015 / 1e6).toFixed(1)} Million` : '165.0 Million';
+          const popStr = countryPopulation.population_2015 ? `${(countryPopulation.population_2015 / 1e6).toFixed(1)} Million` : 'UNAVAILABLE';
 
           responseText = `মাননীয় কমান্ডার, ${targetCountryName}-এর জনসংখ্যা ও জনমিতিক প্যারামিটার:\n\n` +
             `👥 মোট জাতীয় জনসংখ্যা: ${popStr}\n` +
@@ -2664,28 +2651,28 @@ const _omegaExport = (function (globalScope) {
 
           const regStr = adminRegions.length > 0
             ? adminRegions.map(r => `  • ${r.name} (${r.regionId}): ${(r.resourceTags || []).join(', ')}`).join('\n')
-            : '  • Central sovereign resource zone active';
+            : '  • Administrative resource-region data: UNAVAILABLE';
 
           responseText = `Executive Commander, audited Geological Balance Sheet for ${cTarget.nameEn} in ${targetCountryName} (${targetCountryIso}):\n\n` +
             `⛏️ 1. Active Extraction Facilities & Mine Sites:\n` +
             (specificMines.length > 0
               ? `  • Primary Mine Complex Sites (${specificMines.length} discovered/active): ${specificMines.join('; ')}\n`
-              : `  • Extraction Status: Active underground extraction complexes and surveyed geological blocks currently operating.\n`) +
+              : `  • Extraction Status: UNAVAILABLE (no verified mine-site dataset published).\n`) +
             (basinText || '') +
             (mineralText || '') + '\n' +
             `🏛️ 2. Designated Administrative Resource Districts:\n${regStr}\n\n` +
             `⚙️ 3. Downstream Refining & Industrial Capacity:\n` +
             (Object.keys(industrialCapacities).length > 0
               ? Object.entries(industrialCapacities).map(([k, v]) => `  • ${k}: ${typeof v === 'object' ? JSON.stringify(v) : v}`).join('\n')
-              : `  • Domestic refineries and metallurgy complexes are operating at balanced capacity.`) + '\n\n' +
+              : `  • Downstream refining/industrial capacity: UNAVAILABLE.`) + '\n\n' +
             `⚡ Ministerial Strategic Recommendation: Authorize expansion of commercial extraction concessions and secure deep seismic exploratory drilling blocks.`;
 
         } else if (isSecurityStockpileQuery || (matchedCommodities.length > 0 && isAmountQuery)) {
           const targets = matchedCommodities.length > 0 ? matchedCommodities : [COMMODITY_TAXONOMY.oil, COMMODITY_TAXONOMY.rare_earth];
 
           const auditBlocks = targets.map(c => {
-            let liveVal = gameRes[c.key] !== undefined ? `${Number(gameRes[c.key]).toLocaleString()} ${c.unit}` : `Strategic Silo Reserve Intact`;
-            return `• ${c.icon} ${c.nameEn} (${c.category}):\n   - Audited Inventory Balance: ${liveVal}\n   - Emergency Consumption Runway: ~${c.defaultBufferDays} days\n   - Physical Storage Security: Fortified underground bunkers and coastal storage depots under 24/7 security`;
+            let liveVal = gameRes[c.key] !== undefined ? `${Number(gameRes[c.key]).toLocaleString()} ${c.unit}` : 'UNAVAILABLE';
+            return `• ${c.icon} ${c.nameEn} (${c.category}):\n   - Audited Inventory Balance: ${liveVal}\n   - Emergency Consumption Runway: UNAVAILABLE\n   - Physical Storage Security: UNAVAILABLE`;
           }).join('\n\n');
 
           const ecoRes = countryEconomy.reserves ? `$${(countryEconomy.reserves / 1e9).toFixed(1)} Billion` : '$27.0 Billion';
@@ -2693,9 +2680,9 @@ const _omegaExport = (function (globalScope) {
           responseText = `Executive Commander, as ${mRole} of ${targetCountryName}, I (${mName}) have synthesized the complete sovereign resource security audit for your inquiry:\n\n` +
             `📊 1. Audited Sovereign Inventory & Strategic Stockpiles:\n${auditBlocks}\n\n` +
             `🛡️ 2. Stockpile Security & Physical Integrity Assessment:\n` +
-            `  1. Strategic Petroleum Reserves (SPR) and hydrocarbon storage silos are 100% physically secure and protected against supply shocks.\n` +
-            `  2. Critical mineral stockpiles and processing corridors operate under strict sovereign jurisdiction.\n` +
-            `  3. National Foreign Exchange Reserves (${ecoRes}) and treasury liquidity (${formattedCash}) provide complete fiscal resilience against external trade embargoes.\n\n` +
+            `  1. Strategic reserve physical security assessment: UNAVAILABLE.\n` +
+            `  2. Critical mineral stockpile and corridor security: UNAVAILABLE.\n` +
+            `  3. National Foreign Exchange Reserves (${ecoRes}) and treasury liquidity (${formattedCash ?? 'UNAVAILABLE'}): evidence insufficient for a resilience conclusion.\n\n` +
             `⚡ Strategic Recommendation: Expand domestic silo holding capacity and accelerate bilateral import redundancy agreements.`;
 
         } else if (isMacroQuery) {
@@ -2704,28 +2691,29 @@ const _omegaExport = (function (globalScope) {
           const debtStr = countryEconomy.debt ? `$${(countryEconomy.debt / 1e9).toFixed(1)} Billion` : '$80.0 Billion';
 
           responseText = `Executive Commander, live macroeconomic intelligence profile for ${targetCountryName}:\n\n` +
-            `📈 Gross Domestic Product (GDP): ${gdpStr} (Annual Growth: ${countryEconomy.gdp_growth || 6.5}%)\n` +
+            `📈 Gross Domestic Product (GDP): ${gdpStr} (Annual Growth: ${countryEconomy.gdp_growth ?? 'UNAVAILABLE'}%)\n` +
             `💵 Sovereign Foreign Exchange Reserves: ${resStr}\n` +
-            `📊 Headline Inflation: ${countryEconomy.inflation || 6.2}%\n` +
-            `👥 Unemployment Rate: ${countryEconomy.unemployment_rate || 4.4}%\n` +
+            `📊 Headline Inflation: ${countryEconomy.inflation ?? 'UNAVAILABLE'}%\n` +
+            `👥 Unemployment Rate: ${countryEconomy.unemployment_rate ?? 'UNAVAILABLE'}%\n` +
             `🏛️ Total Sovereign Debt: ${debtStr}\n` +
             `💰 Treasury Liquid Cash: ${formattedCash}\n` +
-            `⚡ Sovereign Economic Rating: ${countryEconomy.status || 'Stable'}`;
+            `⚡ Sovereign Economic Rating: ${countryEconomy.status ?? 'UNAVAILABLE'}`;
 
         } else if (isDemographicsQuery) {
           const popStr = countryPopulation.population_2015 ? `${(countryPopulation.population_2015 / 1e6).toFixed(1)} Million` : '165.0 Million';
 
           responseText = `Executive Commander, demographic and population profile for ${targetCountryName}:\n\n` +
             `👥 Total Sovereign Population: ${popStr}\n` +
-            `📈 Annual Growth Rate: ${countryPopulation.annual_growth_rate || 1.1}%\n` +
-            `👶 Crude Birth Rate: ${countryPopulation.birth_rate || 19.2} per 1,000\n` +
-            `⚰️ Crude Death Rate: ${countryPopulation.death_rate || 5.5} per 1,000\n` +
-            `🏙️ Urbanization Ratio: ${countryPopulation.urbanization_rate || 34.5}%\n` +
-            `⚖️ Gender Balance: Male ${countryPopulation.male_percent || 50.4}%, Female ${countryPopulation.female_percent || 49.6}%`;
+            `📈 Annual Growth Rate: ${countryPopulation.annual_growth_rate ?? 'UNAVAILABLE'}%\n` +
+            `👶 Crude Birth Rate: ${countryPopulation.birth_rate ?? 'UNAVAILABLE'} per 1,000\n` +
+            `⚰️ Crude Death Rate: ${countryPopulation.death_rate ?? 'UNAVAILABLE'} per 1,000\n` +
+            `🏙️ Urbanization Ratio: ${countryPopulation.urbanization_rate ?? 'UNAVAILABLE'}%\n` +
+            `⚖️ Gender Balance: Male ${countryPopulation.male_percent ?? 'UNAVAILABLE'}%, Female ${countryPopulation.female_percent ?? 'UNAVAILABLE'}%`;
 
         } else { throw new Error('LEGACY_CANNED_RESPONSE_DISABLED'); }
 
-        impactText = `Cognitive Confidence: ${confidence}% • Macro Impact: +${(efficiency * 0.025 + 0.8).toFixed(1)}% • Epistemic State: VERIFIED_DATA`;
+        const efficiencyImpact = Number.isFinite(Number(efficiency)) ? `+${(Number(efficiency) * 0.025 + 0.8).toFixed(1)}%` : 'UNAVAILABLE';
+        impactText = `Cognitive Confidence: ${Number.isFinite(Number(confidence)) ? confidence+'%' : 'UNAVAILABLE'} • Macro Impact: ${efficiencyImpact} • Epistemic State: VERIFIED_DATA only where source data is available`;
       }
 
       // Record thought into persistent 8-layer deep memory
@@ -2773,7 +2761,7 @@ const _omegaExport = (function (globalScope) {
       return true;
     }
 
-    async askMinisterWithAI(questionText, minister, countryKey = "BANGLADESH", countryDetails = {}) {
+    async askMinisterWithAI(questionText, minister, countryKey = "", countryDetails = {}) {
       const isBn = /[\u0980-\u09FF]/.test(questionText);
       const mId = minister ? minister.id : 'general';
       const mName = (minister && (minister.ministerName || minister.name)) || (countryDetails.ministers && countryDetails.ministers[mId] && countryDetails.ministers[mId].name) || 'Honorable Minister';
@@ -2795,7 +2783,13 @@ const _omegaExport = (function (globalScope) {
               ministerName: mName,
               ministerRole: mRole,
               countryName: countryName,
-              countryCode: countryDetails.countryCode || 'BGD',
+              countryCode: countryDetails.countryCode || countryKey || null,
+              ministryInteroperability: (() => {
+                const interop = globalScope.OmegaMinistryInteroperability || globalScope.Omega?.MinistryInteroperability || null;
+                const cid = String(countryDetails.countryCode || countryKey || '').trim().toUpperCase();
+                try { return interop && cid && mId ? interop.getContext(mId,{countryId:cid,turn:countryDetails.simulationTurn}) : null; }
+                catch (_) { return null; }
+              })(),
               prompt: questionText,
               language: isBn ? 'bn' : 'en',
               gameState: {
@@ -2829,16 +2823,59 @@ const _omegaExport = (function (globalScope) {
     }
 
     queryCrossMinistry(requesterMinistry, targetMinistry, queryType, payload = {}) {
-      const adapter = this.domainAdapters.get(targetMinistry.toUpperCase());
+      const adapter = this.domainAdapters.get(String(targetMinistry||'').toUpperCase());
       if (adapter && typeof adapter.handleCrossMinistryQuery === 'function') {
         return adapter.handleCrossMinistryQuery(requesterMinistry, queryType, payload);
       }
-      return {
-        responder: targetMinistry,
-        status: 'ACKNOWLEDGED',
-        evidence: 'Standard inter-ministry cognitive advisory response.',
-        confidence: 0.85
-      };
+
+      const interop=globalScope.OmegaMinistryInteroperability || globalScope.Omega?.MinistryInteroperability || null;
+      const countryId=String(payload.countryId||payload.countryCode||'').trim().toUpperCase();
+      const requester=String(requesterMinistry||'').trim();
+      const target=String(targetMinistry||'').trim();
+      if(!interop||!countryId||!requester||!target){
+        return {
+          responder:target,
+          status:'UNAVAILABLE',
+          evidenceAvailability:'UNAVAILABLE',
+          reason:'INTEROPERABILITY_CONTEXT_UNAVAILABLE',
+          evidence:null,
+          confidence:null
+        };
+      }
+
+      const actionId=String(payload.actionId||queryType||'').trim();
+      try{
+        if(payload.evaluateAction===true || payload.actionId){
+          const decision=interop.evaluateAction(requester,actionId,{countryId,currentTurn:payload.currentTurn});
+          return {
+            responder:target,
+            requester,
+            countryId,
+            queryType,
+            status:decision.status||'UNKNOWN',
+            evidence:decision.evidence||[],
+            missing:decision.missing||[],
+            blockers:decision.blockers||[],
+            warnings:decision.warnings||[],
+            confidence:null,
+            source:'OMEGA_MINISTRY_INTEROPERABILITY'
+          };
+        }
+        const state=interop.createPort(requester,countryId).getPeer(target,{currentTurn:payload.currentTurn});
+        return {
+          responder:target,
+          requester,
+          countryId,
+          queryType,
+          status:state?.availability=== 'UNOBSERVED' ? 'UNOBSERVED' : 'OBSERVED',
+          evidenceAvailability:state?.availability||'UNOBSERVED',
+          state,
+          confidence:null,
+          source:'OMEGA_MINISTRY_INTEROPERABILITY'
+        };
+      }catch(error){
+        return {responder:target,requester,countryId,queryType,status:'FAILED',reason:String(error?.message||error),confidence:null};
+      }
     }
 
     getStagesInfo() {

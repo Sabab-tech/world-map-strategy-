@@ -14,10 +14,47 @@ function countryBridge(){return global.OmegaCanonicalIdentityRegistry||global.Om
 function resourceBridge(){return global.OmegaResourceSemanticBridge||null}
 function ministerBridge(){return global.OmegaMinisterStateRegistry||null}
 function canonicalMinisterIdentity(input={}){return Object.freeze({countryCode:S(input.countryCode||input.country||'').toUpperCase(),countryName:S(input.countryName||''),ministryId:S(input.ministryId||input.portfolioId||'').toUpperCase(),ministerId:S(input.ministerId||input.id||''),name:S(input.ministerName||input.name||''),role:S(input.ministerRole||input.role||''),age:Number.isFinite(Number(input.age))?Number(input.age):null,background:S(input.background||''),ideology:S(input.ideology||''),efficiency:Number.isFinite(Number(input.efficiency))?Number(input.efficiency):null,profileSource:S(input.profileSource||'')})}
-function explicitCountry(question){const b=countryBridge();try{const r=b?.resolveCountry?.(question);if(r?.id)return {...r,type:'COUNTRY',confidence:Number(r.confidence||1)}}catch(_){ }try{const rows=Array.isArray(b?.exportData?.()?.countries)?b.exportData().countries:[];const q=N(question);let best=null;for(const row of rows){const id=S(row?.id).toUpperCase();if(!id)continue;const names=[...(Array.isArray(row?.names)?row.names:[]),row?.name,row?.officialName].filter(Boolean);for(const raw of names){const n=N(raw);if(!n)continue;const exact=q===n,contains=q.includes(n),score=exact?1:contains?Math.min(.995,.90+n.length/Math.max(1,q.length*8)):0;if(score>0&&(!best||score>best.confidence))best={id,type:'COUNTRY',confidence:score,surface:raw,raw:clone(row),source:'CANONICAL_COUNTRY_DATA'}}}return best}catch(_){return null}}
+function explicitCountry(question,identity=null){
+const b=countryBridge();
+try{
+  const r=b?.resolveCountry?.(question);
+  if(r?.id)return {...r,type:'COUNTRY',confidence:Number(r.confidence||1)};
+  // A duplicate country name is intentionally ambiguous in the global registry.
+  // An already-bound minister/country context is the only safe way to disambiguate it.
+  if(r?.source==='AMBIGUOUS_COUNTRY_IDENTITY'&&identity?.countryCode){
+    const boundId=S(identity.countryCode).toUpperCase();
+    const boundName=N(identity.countryName||'');
+    const asked=N(question);
+    if(boundId&&boundName&&(asked===boundName||asked.includes(boundName))){
+      return {
+        id:boundId,type:'COUNTRY',confidence:1,surface:identity.countryName||boundId,
+        raw:null,source:'CONTEXT_DISAMBIGUATED_COUNTRY'
+      };
+    }
+  }
+}catch(_){}
+try{
+  const rows=Array.isArray(b?.exportData?.()?.countries)?b.exportData().countries:[];
+  const q=N(question);
+  let best=null;
+  for(const row of rows){
+    const id=S(row?.id).toUpperCase();
+    if(!id)continue;
+    const names=[...(Array.isArray(row?.names)?row.names:[]),row?.name,row?.officialName].filter(Boolean);
+    for(const raw of names){
+      const n=N(raw);if(!n)continue;
+      const exact=q===n,contains=q.includes(n);
+      let score=exact?1:contains?Math.min(.995,.90+n.length/Math.max(1,q.length*8)):0;
+      if(identity?.countryCode&&S(identity.countryCode).toUpperCase()===id)score=Math.min(1,score+.005);
+      if(score>0&&(!best||score>best.confidence))best={id,type:'COUNTRY',confidence:score,surface:raw,raw:clone(row),source:'CANONICAL_COUNTRY_DATA'};
+    }
+  }
+  return best;
+}catch(_){return null}
+}
 function explicitResource(question){const b=resourceBridge();try{const r=b?.resolveResource?.(question);if(r?.id)return {...r,type:'RESOURCE',confidence:Number(r.confidence||1)}}catch(_){ }try{const rb=b?.exportData?.();const rows=Array.isArray(rb?.resources)?rb.resources:[];const q=N(question);let best=null;for(const row of rows){const id=S(row?.id||row?.resourceId||row?.key).toUpperCase();if(!id)continue;const names=[row?.name,row?.resourceName,row?.canonicalName,row?.displayName,...(Array.isArray(row?.names)?row.names:[])].filter(Boolean);for(const raw of names){const n=N(raw);if(!n)continue;const exact=q===n,contains=q.includes(n),score=exact?1:contains?Math.min(.995,.90+n.length/Math.max(1,q.length*8)):0;if(score>0&&(!best||score>best.confidence))best={id,type:'RESOURCE',confidence:score,surface:raw,raw:clone(row),source:'CANONICAL_RESOURCE_DATA'}}}return best}catch(_){return null}}
 function baseParse(question,identity,world,history){const rt=runtime();try{if(rt?.parse)return rt.parse(question,identity,world,history)}catch(_){ }try{if(brain()?.parse)return brain().parse(question,{...identity,gameState:world})}catch(_){ }return{language:BN(question)?'bn':'en',raw:S(question),normalized:N(question),operation:'UNKNOWN',targetDomain:'GENERAL',entities:{country:null,resource:null,minister:null},unresolved:['SEMANTIC_RUNTIME_UNAVAILABLE'],executable:false}}
-function repairSemantic(question,identity,world,history){const p=baseParse(question,identity,world,history)||{};const country=explicitCountry(question);const resource=explicitResource(question);const entities={...(p.entities||{})};if(country)entities.country=country;else if(entities.country?.id&&identity?.countryCode&&S(entities.country.id).toUpperCase()===S(identity.countryCode).toUpperCase()&&!new RegExp(N(identity.countryName||''),'i').test(N(question))){entities.country=null}
+function repairSemantic(question,identity,world,history){const p=baseParse(question,identity,world,history)||{};const country=explicitCountry(question,identity);const resource=explicitResource(question);const entities={...(p.entities||{})};if(country)entities.country=country;else if(entities.country?.id&&identity?.countryCode&&S(entities.country.id).toUpperCase()===S(identity.countryCode).toUpperCase()&&!new RegExp(N(identity.countryName||''),'i').test(N(question))){entities.country=null}
 if(resource)entities.resource=resource;
 let operation=S(p.operation||'UNKNOWN').toUpperCase();if((country||resource)&&(!operation||operation==='UNKNOWN'||operation==='GENERAL'||operation==='LOOKUP'))operation='IDENTIFY';
 let target=resource&&country?'COUNTRY_RESOURCE':resource?'RESOURCE':country?'COUNTRY':p.targetDomain||'GENERAL';

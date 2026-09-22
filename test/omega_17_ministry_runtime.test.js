@@ -8,7 +8,7 @@ const IDS=[
   'intelligence','interior','transport','resource','health','education',
   'technology','projects','culture','statistics'
 ];
-const RUNTIME_VERSION='1.2.0';
+const RUNTIME_VERSION='1.3.0';
 const ENGINE_VERSION='1.0.0';
 
 function loadBrowserScript(path,sandbox){
@@ -70,6 +70,93 @@ function fixtureForEngine(engine){
   return ctx;
 }
 
+test('OMEGA data contract canonicalizes name-keyed repository datasets without duplicating authoritative country records',async()=>{
+  const countries=JSON.parse(fs.readFileSync(new URL('../countries.json',import.meta.url),'utf8'));
+  const cities=JSON.parse(fs.readFileSync(new URL('../cities.json',import.meta.url),'utf8'));
+  const economy=JSON.parse(fs.readFileSync(new URL('../economy.json',import.meta.url),'utf8'));
+  const events=[];
+  const files={'countries.json':countries,'cities.json':cities,'economy.json':economy};
+  const sandbox={
+    console,Date,JSON,Object,Number,String,RegExp,Map,Set,WeakMap,Array,Math,Promise,URL,
+    fetch:async path=>({ok:true,json:async()=>files[String(path).replace(/^\//,'').replace(/\?.*$/,'')]}),
+    CustomEvent:class CustomEvent{constructor(type,init={}){this.type=type;this.detail=init.detail;}},
+    dispatchEvent(event){events.push(event);return true},
+    addEventListener(){},removeEventListener(){},
+    Game:{state:{},currentActiveCountry:'Bangladesh'},
+    Omega:{}
+  };
+  sandbox.window=sandbox;
+  sandbox.globalThis=sandbox;
+  loadBrowserScript('omega_country_semantic_bridge.js',sandbox);
+  loadBrowserScript('omega_ministry_registry.js',sandbox);
+  loadBrowserScript('omega_ministry_state_transaction.js',sandbox);
+  loadBrowserScript('omega_authoritative_state_authority.js',sandbox);
+  const bridge=sandbox.OmegaCanonicalIdentityRegistry;
+  assert.ok(bridge);
+  assert.equal(await bridge.init(),true);
+  const providerSource=fs.readFileSync(new URL('../omega_ministry_state_provider.js',import.meta.url),'utf8');
+  vm.runInNewContext(providerSource,sandbox,{filename:'omega_ministry_state_provider.js'});
+  sandbox.OmegaAuthoritativeStateAuthority.instance.bind(sandbox.Game.state);
+  const provider=sandbox.Omega.MinistryStateProvider.create({stateSource:sandbox.Game.state});
+  sandbox.Omega.MinistryStateProvider.instance=provider;
+  const contract=provider.validateDatasetShape(economy,{strict:true});
+  assert.equal(contract.valid,true);
+  const result=provider.hydrateDataset(economy,'economy',{strict:true});
+  const bd=String(countries.find(row=>row.name==='Bangladesh').code).toUpperCase();
+  assert.ok(sandbox.Game.state.economy[bd]);
+  assert.equal(sandbox.Game.state.economy[bd].gdp,economy.BANGLADESH.gdp);
+  assert.equal(Object.keys(sandbox.Game.state.economy).includes('BANGLADESH'),false);
+  assert.equal(sandbox.Game.state.economy.BANGLADESH.gdp,economy.BANGLADESH.gdp);
+  assert.equal(result.countryIds.includes(bd),true);
+  assert.ok(result.unresolvedCount>0);
+  assert.equal(result.simulationReady,false);
+});
+
+test('the production Game.Simulation adapter delegates to the canonical government runtime instead of owning legacy simulation mutations',()=>{
+  const source=fs.readFileSync(new URL('../map-engine-2.js',import.meta.url),'utf8');
+  const calls=[];
+  const sandbox={
+    console,Date,JSON,Object,Number,String,RegExp,Map,Set,WeakMap,Array,Math,Promise,URL,
+    window:null,
+    Game:{
+      state:{simulationTurn:7,economy:{}},
+      worldState:{turn:7},
+      currentActiveCountry:'BD',
+      getCountryId(value){return String(value||'').toUpperCase();}
+    },
+    OMEGA_MINISTRY_RUNTIME_V1:{
+      runWorldTurn(turn,dt){calls.push({turn,dt});return {mode:'WORLD_TURN',turn,status:'COMMITTED'};}
+    },
+    document:{addEventListener(){},querySelectorAll(){return[]},getElementById(){return null}},
+    setTimeout(){return 1},
+    clearTimeout(){},
+    ResourceMinistryEngine:{},
+    Omega:{}
+  };
+  sandbox.window=sandbox;
+  sandbox.globalThis=sandbox;
+  const simStart=source.indexOf('Game.Simulation = {');
+  const simEnd=source.indexOf('\n\nGame.Diplomacy',simStart);
+  assert.ok(simStart>=0&&simEnd>simStart,'canonical Game.Simulation adapter must be present');
+  vm.runInNewContext(source.slice(simStart,simEnd),sandbox,{filename:'map-engine-2.js:canonical-simulation'});
+  const result=sandbox.Game.Simulation.tick(16.7);
+  assert.equal(result.status,'COMMITTED');
+  assert.equal(calls.length,1);
+  assert.equal(calls[0].turn,8);
+  assert.ok(!source.includes('Math.random()'), 'legacy random simulation authority must not remain in Game.Simulation.tick');
+});
+
+test('the production HTML loop has one canonical ministry simulation authority and waits for the data contract',()=>{
+  const html=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');
+  assert.ok(html.includes('Game.Simulation.tick(dt)'));
+  assert.ok(html.includes('OMEGA_MINISTRY_RUNTIME_V1'));
+  assert.ok(html.includes('runWorldTurn'));
+  assert.ok(html.includes('OMEGA_DATA_CONTRACT_READY'));
+  assert.ok(html.includes('if (!dataContractReady)'));
+  assert.equal(/kernel\.pumpOrchestratedPipelineTick\(id, dt, tick/.test(html),false);
+  assert.equal(/ministryRuntimeController\?\.tick\?\.\(id, tickDt, currentTurn/.test(html),false);
+  assert.ok(html.includes('Canonical ministry mutation is owned'));
+});
 test('OMEGA canonical 17-ministry runtime is independently engine-backed and binding-aware',()=>{
   const events=[];
   const kernelStates=new Map(IDS.map(id=>[id,'RUNNING']));
@@ -114,9 +201,16 @@ test('OMEGA canonical 17-ministry runtime is independently engine-backed and bin
   sandbox.window=sandbox;
   sandbox.globalThis=sandbox;
 
+  loadBrowserScript('omega_country_semantic_bridge.js',sandbox);
   loadBrowserScript('omega_ministry_registry.js',sandbox);
+  loadBrowserScript('omega_ministry_knowledge_contract.js',sandbox);
+  loadBrowserScript('omega_ministry_information_policy.js',sandbox);
+  loadBrowserScript('omega_ministry_decision_framework.js',sandbox);
+  loadBrowserScript('omega_ministry_state_transaction.js',sandbox);
+  loadBrowserScript('omega_authoritative_state_authority.js',sandbox);
   loadBrowserScript('omega_ministry_state_provider.js',sandbox);
   loadBrowserScript('omega_ministry_domain_engines.js',sandbox);
+  loadBrowserScript('omega_ministry_interoperability_system.js',sandbox);
   loadBrowserScript('omega_ministry_runtime_v1.js',sandbox);
 
   const engines=sandbox.OmegaMinistryDomainEngines;
@@ -179,9 +273,9 @@ test('OMEGA canonical 17-ministry runtime is independently engine-backed and bin
     assert.ok(telemetry.domainExecution.availableInputCount>=0);
     assert.ok(telemetry.domainExecution.availableInputCount<=telemetry.domainExecution.requiredInputCount);
     assert.ok(Array.isArray(telemetry.domainExecution.missingInputs));
-    assert.equal(store.policies.get('__omega_runtime__').engineId,id);
-    assert.equal(store.knowledgeGraph.get('__omega_runtime_domain__').engineId,id);
-    assert.ok(store.goalStack.includes('RUNTIME:'+id));
+    assert.equal(store.policies.size,0,'runtime telemetry must not mutate store.policies');
+    assert.equal(store.knowledgeGraph.size,0,'runtime telemetry must not mutate store.knowledgeGraph');
+    assert.deepEqual(store.goalStack,[],'runtime telemetry must not mutate store.goalStack');
     assert.equal(runtime.getState(id).ticks,1);
   }
 
@@ -229,4 +323,202 @@ test('OMEGA canonical 17-ministry runtime is independently engine-backed and bin
   console.log('Runtime independent engines:',health.independent);
   console.log('Legacy config references validated: PASS');
   console.log('Runtime version contract:',runtime.version);
+});
+
+test('canonical government scheduler executes deterministic multi-phase turn spine',()=>{
+  const kernelStates=new Map(IDS.map(id=>[id,'RUNNING']));
+  const kernel={
+    registerMinistry(){},
+    getMinistryState(id){return kernelStates.get(id)||'STOPPED';},
+    createBridge(){return {emitEvent(){}};}
+  };
+  const sandbox={
+    console,Date,JSON,Object,Number,Math,Map,Set,WeakMap,CustomEvent,
+    dispatchEvent(){},
+    Omega:{Kernel:kernel},
+    GLOBAL_MINISTRY_MANIFEST:IDS.map(id=>({id,status:'READY'})),
+    Game:{state:{economy:{BANGLADESH:{gdp:100}}},currentActiveCountry:'BANGLADESH'},
+    OmegaCabinetUI:{activeCountry:'BANGLADESH',ministersDB:{}},
+    OmegaMinistersDB:{},
+    ResourceMinistryEngine:{deposits:[],getIntegratedResourceState:()=>({inventory:{}})}
+  };
+  sandbox.window=sandbox;
+  sandbox.globalThis=sandbox;
+  loadBrowserScript('omega_ministry_registry.js',sandbox);
+  loadBrowserScript('omega_authoritative_state_authority.js',sandbox);
+  loadBrowserScript('omega_ministry_state_transaction.js',sandbox);
+  loadBrowserScript('omega_ministry_state_provider.js',sandbox);
+  loadBrowserScript('omega_ministry_domain_engines.js',sandbox);
+  loadBrowserScript('omega_ministry_runtime_v1.js',sandbox);
+
+  const runtime=sandbox.OMEGA_MINISTRY_RUNTIME_V1;
+  assert.equal(runtime.init(kernel),true);
+
+  const result=runtime.runTurn(43,16.7,{countryId:'BANGLADESH'},null);
+  assert.equal(result.turn,43);
+  assert.equal(result.status,'COMMITTED');
+  assert.deepEqual(result.phases.map(row=>row.phase),[
+    'TURN_START','WORLD_UPDATE','OBSERVE','INFORMATION','ASSESS',
+    'COORDINATE','DECIDE','AUTHORIZE','EXECUTE','COMMIT',
+    'PUBLISH','REACT','VERIFY','TURN_END'
+  ]);
+  assert.equal(Object.keys(result.assessments).length,17);
+  const dependencyPlan=runtime.createDependencyPlan();
+  assert.deepEqual(Array.from(result.deterministicOrder),Array.from(dependencyPlan.order));
+  assert.deepEqual(Array.from(result.deterministicOrder).sort(),IDS.slice().sort());
+  assert.equal(runtime.getOrchestrationState().turn,43);
+});
+
+
+test('canonical country registry merges same-name ISO-2/ISO-3 duplicates into one sovereign identity',async()=>{
+  const sandbox={
+    console,Date,JSON,Object,Number,String,RegExp,Map,Set,WeakMap,Array,Math,Promise,URL,
+    fetch:async path=>{
+      const key=String(path).replace(/^\//,'').replace(/\?.*$/,'');
+      if(key==='countries.json')return{ok:true,json:async()=>[
+        {code:'PRT',name:'Portugal',lat:38.7,lng:-9.1},
+        {code:'PT',name:'Portugal',lat:39.4,lng:-8.2},
+        {code:'AGO',name:'Angola',lat:-11.2,lng:17.8},
+        {code:'AO',name:'Angola',lat:-11.2,lng:17.8}
+      ]};
+      if(key==='cities.json')return{ok:true,json:async()=>({})};
+      return{ok:true,json:async()=>({})};
+    },
+    CustomEvent:class{constructor(type,init={}){this.type=type;this.detail=init.detail}},
+    dispatchEvent(){return true},addEventListener(){},removeEventListener(){},
+    Game:{state:{},currentActiveCountry:'PT'},Omega:{}
+  };
+  sandbox.window=sandbox;sandbox.globalThis=sandbox;
+  loadBrowserScript('omega_country_semantic_bridge.js',sandbox);
+  const registry=sandbox.OmegaCanonicalIdentityRegistry;
+  assert.equal(await registry.init(),true);
+  const ids=registry.listCountryIds();
+  assert.equal(ids.filter(id=>id==='PT').length,1);
+  assert.equal(ids.includes('PRT'),false);
+  assert.equal(ids.filter(id=>id==='AO').length,1);
+  assert.equal(ids.includes('AGO'),false);
+  assert.equal(registry.resolveCountry('Portugal').id,'PT');
+  assert.equal(registry.resolveCountry('PRT').id,'PT');
+  assert.equal(registry.resolveCountry('Angola').id,'AO');
+  assert.equal(registry.resolveCountry('AGO').id,'AO');
+  assert.equal(registry.diagnostics().duplicateCountryMerges.length,2);
+});
+test('canonical dataset contract accepts a single country record and rejects unknown country identities in strict mode',async()=>{
+  const sandbox={
+    console,Date,JSON,Object,Number,String,RegExp,Map,Set,WeakMap,Array,Math,Promise,URL,
+    fetch:async path=>{
+      const key=String(path).replace(/^\//,'').replace(/\?.*$/,'');
+      if(key==='countries.json')return{ok:true,json:async()=>[{code:'BD',name:'Bangladesh'}]};
+      if(key==='cities.json')return{ok:true,json:async()=>({})};
+      return{ok:true,json:async()=>({})};
+    },
+    CustomEvent:class{constructor(type,init={}){this.type=type;this.detail=init.detail}},
+    dispatchEvent(){return true},addEventListener(){},removeEventListener(){},
+    Game:{state:{},currentActiveCountry:'BD'},Omega:{},OmegaCabinetUI:{}
+  };
+  sandbox.window=sandbox;sandbox.globalThis=sandbox;
+  loadBrowserScript('omega_country_semantic_bridge.js',sandbox);
+  assert.equal(await sandbox.OmegaCanonicalIdentityRegistry.init(),true);
+  loadBrowserScript('omega_ministry_registry.js',sandbox);
+  loadBrowserScript('omega_authoritative_state_authority.js',sandbox);
+  loadBrowserScript('omega_ministry_state_provider.js',sandbox);
+  const provider=sandbox.Omega.MinistryStateProvider.create({stateSource:sandbox.Game.state});
+  sandbox.Omega.MinistryStateProvider.instance=provider;
+  const single={countryId:'BD',metric:12};
+  assert.equal(provider.validateDatasetShape(single,{strict:true}).valid,true);
+  assert.equal(provider.hydrateDataset(single,'statistics',{strict:true}).countryCount,1);
+  assert.equal(sandbox.Game.state.statistics.BD.metric,12);
+  const unresolved=provider.validateDatasetShape({MARS:{metric:1}},{strict:true});
+  assert.equal(unresolved.valid,true);
+  assert.deepEqual(Array.from(unresolved.unresolvedCountryKeys),['MARS']);
+  assert.equal(unresolved.identityCoverage,0);
+  assert.throws(()=>provider.validateDatasetShape({MARS:{metric:1}},{strict:true,requireCompleteIdentity:true}),/DATASET_IDENTITY_INCOMPLETE/);
+});
+test('canonical world-turn runtime processes multiple country scopes through one global turn boundary',()=>{
+  const kernelStates=new Map(IDS.map(id=>[id,'RUNNING']));
+  const kernel={
+    registerMinistry(){},
+    getMinistryState(id){return kernelStates.get(id)||'STOPPED';},
+    createBridge(){return {emitEvent(){}};}
+  };
+  const sandbox={
+    console,Date,JSON,Object,Number,String,RegExp,Map,Set,WeakMap,CustomEvent,
+    dispatchEvent(){},
+    Omega:{Kernel:kernel},
+    GLOBAL_MINISTRY_MANIFEST:IDS.map(id=>({id,status:'READY'})),
+    Game:{
+      state:{
+        simulationTurn:1,
+        economy:{
+          'BD':{gdp:100},
+          'IN':{gdp:200}
+        }
+      },
+      currentActiveCountry:'BD'
+    },
+    OmegaCabinetUI:{activeCountry:'TST-A',ministersDB:{}},
+    OmegaMinistersDB:{},
+    ResourceMinistryEngine:{deposits:[],getIntegratedResourceState:()=>({inventory:{}})}
+  };
+  sandbox.window=sandbox;
+  sandbox.globalThis=sandbox;
+  loadBrowserScript('omega_ministry_registry.js',sandbox);
+  loadBrowserScript('omega_ministry_state_provider.js',sandbox);
+  loadBrowserScript('omega_ministry_domain_engines.js',sandbox);
+  loadBrowserScript('omega_ministry_runtime_v1.js',sandbox);
+  const runtime=sandbox.OMEGA_MINISTRY_RUNTIME_V1;
+  assert.equal(runtime.init(kernel),true);
+  const result=runtime.runWorldTurn(2,16.7,{countryIds:['IN','BD']});
+  assert.equal(result.mode,'WORLD_TURN');
+  assert.equal(result.turn,2);
+  assert.equal(result.countryCount,2);
+  assert.equal(result.processedCountries,2);
+  assert.equal(result.failedCountries,0);
+  assert.equal(result.status,'COMMITTED');
+  assert.deepEqual(Array.from(result.deterministicCountryOrder),['BD','IN']);
+  assert.equal(result.countries.length,2);
+  for(const countryResult of result.countries){
+    assert.equal(countryResult.turn,2);
+    assert.equal(countryResult.status,'COMMITTED');
+    assert.equal(countryResult.phases.length,14);
+    assert.equal(Object.keys(countryResult.assessments).length,17);
+  }
+});
+
+test('production Game.Simulation is the single global simulation entry point',()=>{
+  const source=fs.readFileSync(new URL('../map-engine-2.js',import.meta.url),'utf8');
+  const simStart=source.indexOf('Game.Simulation = {');
+  const simEnd=source.indexOf('\n\nGame.Diplomacy',simStart);
+  assert.ok(simStart>=0&&simEnd>simStart);
+  const calls=[];
+  const sandbox={
+    console,Date,JSON,Object,Number,String,RegExp,Map,Set,WeakMap,Array,Math,
+    Game:{
+      state:{
+        simulationTurn:9,
+        economy:{'BD':{},'IN':{}}
+      },
+      worldState:{turn:9},
+      currentActiveCountry:'BD'
+    },
+    window:null,
+    Omega:{},
+    OMEGA_MINISTRY_RUNTIME_V1:{
+      runWorldTurn(turn,dt){
+        calls.push({turn,dt});
+        return {mode:'WORLD_TURN',turn,status:'COMMITTED'};
+      }
+    },
+    setTimeout(){return 1},
+    clearTimeout(){},
+    document:{getElementById(){return null}},
+    fetch:async()=>({ok:false,status:404,json:async()=>({})})
+  };
+  sandbox.window=sandbox;
+  sandbox.globalThis=sandbox;
+  vm.runInNewContext(source.slice(simStart,simEnd),sandbox,{filename:'map-engine-2.js:canonical-simulation'});
+  const result=sandbox.Game.Simulation.tick(16.7);
+  assert.equal(result.status,'COMMITTED');
+  assert.deepEqual(calls,[{turn:10,dt:16.7}]);
+  assert.equal(sandbox.Game.Simulation.getCurrentTurn(),9);
 });
