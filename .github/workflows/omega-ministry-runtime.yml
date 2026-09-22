@@ -99,6 +99,7 @@ jobs:
           const runtime = await fs.readFile('omega_ministry_runtime_v1.js','utf8');
           const engines = await fs.readFile('omega_ministry_domain_engines.js','utf8');
           const interoperability = await fs.readFile('omega_ministry_interoperability_system.js','utf8');
+          const authority = await fs.readFile('omega_authoritative_state_authority.js','utf8');
           const provider = await fs.readFile('omega_ministry_state_provider.js','utf8');
           const bridge = await fs.readFile('omega_country_semantic_bridge.js','utf8');
           const gameLogic = await fs.readFile('game-logic.js','utf8');
@@ -126,7 +127,8 @@ jobs:
           if (!interoperability.includes('compileDecisionCommands')) throw new Error('Canonical decision-to-command compiler missing');
           if (!interoperability.includes('scheduledEffects')) throw new Error('Scheduled-effect queue missing');
           if (!interoperability.includes('commitJournal')) throw new Error('State/outbox commit journal missing');
-          if (!interoperability.includes('reconstructState')) throw new Error('Authoritative replay reconstruction missing');
+          if (!authority.includes('reconstructState')) throw new Error('Authoritative replay reconstruction missing');
+          if (!authority.includes('hydrateCountryDomain')) throw new Error('Authoritative hydration boundary missing');
           if (!runtime.includes('runTurn')) throw new Error('Canonical government orchestrator missing');
           if (!runtime.includes('runWorldTurn')) throw new Error('Canonical world-turn orchestrator missing');
           if (!runtime.includes('resolveSimulationCountries')) throw new Error('World country-scope resolver missing');
