@@ -683,7 +683,7 @@
         return {ok:true,duplicate:true,status:DELIVERY_STATUS.DUPLICATE,message:clone(unwrapped)};
       }
 
-      if(Number.isFinite(Number(unwrapped.expiryTurn))&&currentTurn>Number(unwrapped.expiryTurn)){
+      if(unwrapped.expiryTurn!==null&&unwrapped.expiryTurn!==undefined&&Number.isFinite(Number(unwrapped.expiryTurn))&&currentTurn>Number(unwrapped.expiryTurn)){
         this._transitionDelivery(unwrapped.messageId,DELIVERY_STATUS.EXPIRED,currentTurn,'EXPIRY_TURN_REACHED');
         route.messagesRejected+=1;
         this.metrics.expired+=1;
@@ -745,7 +745,7 @@
     _expireTurn(turn){
       for(const row of this.requestLedger.values()){
         if([REQUEST_STATUS.RESPONDED,REQUEST_STATUS.EXPIRED,REQUEST_STATUS.FAILED,REQUEST_STATUS.REJECTED].includes(row.status))continue;
-        if(Number.isFinite(Number(row.expiryTurn))&&Number(turn)>Number(row.expiryTurn)){
+        if(row.expiryTurn!==null&&row.expiryTurn!==undefined&&Number.isFinite(Number(row.expiryTurn))&&Number(turn)>Number(row.expiryTurn)){
           row.status=REQUEST_STATUS.EXPIRED;
           row.statusHistory.push({status:REQUEST_STATUS.EXPIRED,simulationTurn:Number(turn)});
           this.metrics.expired+=1;
@@ -755,7 +755,7 @@
       for(const [key,inbox] of this.inboxes.entries()){
         const kept=[];
         for(const message of inbox){
-          if(Number.isFinite(Number(message.expiryTurn))&&Number(turn)>Number(message.expiryTurn)){
+          if(message.expiryTurn!==null&&message.expiryTurn!==undefined&&Number.isFinite(Number(message.expiryTurn))&&Number(turn)>Number(message.expiryTurn)){
             this._transitionDelivery(message.messageId,DELIVERY_STATUS.EXPIRED,Number(turn),'INBOX_MESSAGE_EXPIRED');
             this.metrics.expired+=1;
           }else kept.push(message);
