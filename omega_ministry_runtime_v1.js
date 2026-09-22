@@ -113,6 +113,27 @@
     return global.OmegaMinistryStateProvider?.instance || global.Omega?.MinistryStateProvider?.instance || null;
   }
 
+  function canonicalCountryId(value){
+    const raw=String(value??'').trim();
+    if(!raw)return null;
+    const registry=global.OmegaCanonicalIdentityRegistry||global.OmegaCountrySemanticBridge||null;
+    try{
+      const resolved=registry?.canonicalCountryId?.(raw)||registry?.resolveCountry?.(raw)?.id;
+      if(resolved)return String(resolved).trim().toUpperCase();
+    }catch(_){}
+    return raw.toUpperCase();
+  }
+
+  function syncSimulationClock(turn){
+    const n=Number(turn);
+    if(!Number.isFinite(n))return null;
+    const state=global.Game?.state||global.gameState||null;
+    if(state)state.simulationTurn=n;
+    if(global.Game?.worldState)global.Game.worldState.turn=n;
+    if(global.Game?.Simulation)global.Game.Simulation.currentTurn=n;
+    return n;
+  }
+
   function putContextPath(root,path,value){
     const parts=String(path||'').split('.');
     let cursor=root;
@@ -201,16 +222,21 @@
     const provider=getStateProvider();
     const state=provider?.root?.() || global.Game?.state || global.gameState || {};
     const interop=getInteroperability();
-    const countryId=String(
+    const countryIdRaw=String(
+      store?.countryId ||
+      global.OmegaSimulation?.activeCountryId ||
       store?.countryId ||
       global.OmegaSimulation?.activeCountryId ||
       global.OmegaCabinetUI?.activeCountry ||
       global.Game?.currentActiveCountry ||
       global.CountryIOS?.activeCountry ||
+      state?.playerCountryId ||
       state?.countryCode ||
       state?.countryId ||
       ''
-    ).trim().toUpperCase() || null;
+    );
+    const canonicalId=canonicalCountryId(countryIdRaw);
+    const countryId=canonicalId||null;
 
     const engine=getEngineRegistry()?.get?.(id);
     const domainContext={
@@ -325,6 +351,8 @@
 
       bridge=typeof kernel.createBridge==='function' ? kernel.createBridge():null;
       interoperability=getInteroperability();
+      const authority=global.OmegaAuthoritativeStateAuthority?.instance||global.Omega?.AuthoritativeStateAuthority?.instance||null;
+      if(authority&&global.Game?.state&&!authority.bind(global.Game.state))return false;
       if(interoperability && typeof interoperability.init==='function' && !interoperability.init(bridge)) return false;
 
       for(const id of IDS){
@@ -595,6 +623,7 @@
       if(!Number.isFinite(turn))throw new Error('SIMULATION_TURN_REQUIRED');
       if(lastOrchestration&&turn<Number(lastOrchestration.turn))throw new Error('SIMULATION_TURN_REGRESSION');
       if(lastOrchestration&&turn===Number(lastOrchestration.turn)&&options.allowRepeat!==true)return clone(lastOrchestration);
+      syncSimulationClock(turn);
       const delta=Number.isFinite(Number(dt))?Number(dt):0;
       const schedule=createSchedule(turn);
       const phaseResults=[];
@@ -903,6 +932,12 @@
       }
     }
 
+    function getCurrentTurn(){
+      const state=global.Game?.state||global.gameState||{};
+      const n=Number(state.simulationTurn??global.Game?.worldState?.turn??0);
+      return Number.isFinite(n)?n:0;
+    }
+
     function getIds(){ return IDS.slice(); }
 
     function getState(id){
@@ -990,6 +1025,8 @@
       runTurn,
       getOrchestrationState:()=>clone(lastOrchestration),
       createDependencyPlan,
+      getCurrentTurn,
+      syncSimulationClock,
       saveState,
       loadState,
       getEngineBinding:resolveEngineBinding,
