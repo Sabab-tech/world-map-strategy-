@@ -1,14 +1,13 @@
 /*
- * OMEGA MINISTRY STATE TRANSACTION SYSTEM v1.0.0
+ * OMEGA MINISTRY STATE TRANSACTION SYSTEM v2.0.0
  *
- * Deterministic write boundary for authoritative country-scoped state.
- * Commands may mutate only the state owned by their registered ministry.
- * Real timestamps are never used for simulation decisions.
+ * Staged write plan for the canonical authoritative state authority.
+ * A transaction never owns game state and never writes it directly.
  */
 (function(global){
   'use strict';
 
-  const VERSION='1.0.0';
+  const VERSION='2.0.0';
 
   function clone(value,seen=new WeakMap()){
     if(value===null||typeof value!=='object')return value;
@@ -19,30 +18,16 @@
     return out;
   }
 
-  function stable(value){
-    if(value===null||typeof value!=='object')return JSON.stringify(value);
-    if(Array.isArray(value))return '['+value.map(stable).join(',')+']';
-    const keys=Object.keys(value).sort();
-    return '{'+keys.map(k=>JSON.stringify(k)+':'+stable(value[k])).join(',')+'}';
-  }
-
-  function hash(value){
-    const input=stable(value);
-    let h=2166136261;
-    for(let i=0;i<input.length;i++){h^=input.charCodeAt(i);h=Math.imul(h,16777619);}
-    return ('00000000'+(h>>>0).toString(16)).slice(-8);
-  }
-
   function validId(value){return String(value??'').trim().length>0;}
 
   class StateTransaction{
-    constructor(stateSource,ownerMinistry,countryId,turn,commandId){
+    constructor(ownerMinistry,countryId,turn,commandId,authority){
       this.version=VERSION;
-      this.state=stateSource||global.Game?.state||global.gameState||null;
       this.ownerMinistry=String(ownerMinistry||'');
       this.countryId=String(countryId||'').trim().toUpperCase();
       this.turn=Number.isFinite(Number(turn))?Number(turn):0;
       this.commandId=String(commandId||'');
+      this.authority=authority||global.OmegaAuthoritativeStateAuthority?.instance||global.Omega?.AuthoritativeStateAuthority?.instance||null;
       this.transactionId='OMI-TX-'+this.turn+'-'+this.ownerMinistry+'-'+this.commandId;
       this.operations=[];
       this.closed=false;
@@ -50,7 +35,9 @@
 
     _assertOpen(){
       if(this.closed)throw new Error('STATE_TRANSACTION_CLOSED');
-      if(!this.state)throw new Error('AUTHORITATIVE_STATE_UNAVAILABLE');
+      if(!this.authority||typeof this.authority.read!=='function'||typeof this.authority.commitTransaction!=='function'){
+        throw new Error('AUTHORITATIVE_STATE_AUTHORITY_UNAVAILABLE');
+      }
       if(!validId(this.ownerMinistry)||!validId(this.countryId))throw new Error('INVALID_TRANSACTION_SCOPE');
       if(!this.commandId)throw new Error('COMMAND_ID_REQUIRED');
     }
@@ -59,28 +46,10 @@
       const p=String(path||'').trim();
       if(!p)throw new Error('STATE_PATH_REQUIRED');
       const first=p.split('.')[0];
-      const aliases={
-        resourceSummary:'resource',
-        resourceInventory:'resource',
-        resourceDeposits:'resource'
-      };
+      const aliases={resourceSummary:'resource',resourceInventory:'resource',resourceDeposits:'resource'};
       const owner=aliases[first]||first;
       if(owner!==this.ownerMinistry)throw new Error('STATE_PATH_NOT_OWNED_BY_MINISTRY:'+p);
       return p;
-    }
-
-    _countryContainer(path,create){
-      const parts=String(path).split('.');
-      const domain=parts.shift();
-      if(!this.state[domain]||typeof this.state[domain]!=='object'){
-        if(!create)return null;
-        this.state[domain]={};
-      }
-      if(!this.state[domain][this.countryId]||typeof this.state[domain][this.countryId]!=='object'){
-        if(!create)return null;
-        this.state[domain][this.countryId]={};
-      }
-      return {domain,container:this.state[domain][this.countryId],parts};
     }
 
     set(path,value){
@@ -104,54 +73,25 @@
       const p=String(path||'');
       const staged=[...this.operations].reverse().find(op=>op.path===p);
       if(staged)return clone(staged.after);
-      const ref=this._countryContainer(p,false);
-      if(!ref)return undefined;
-      let cur=ref.container;
-      for(const part of ref.parts){
-        if(cur==null||!Object.prototype.hasOwnProperty.call(Object(cur),part))return undefined;
-        cur=cur[part];
-      }
-      return clone(cur);
+      return this.authority.read(this.countryId,p);
     }
 
     commit(){
       this._assertOpen();
-      const beforeDigest=hash(this.state);
-      const applied=[];
-      for(const operation of this.operations){
-        const ref=this._countryContainer(operation.path,true);
-        let cur=ref.container;
-        for(let i=0;i<ref.parts.length-1;i++){
-          const part=ref.parts[i];
-          if(!cur[part]||typeof cur[part]!=='object')cur[part]={};
-          cur=cur[part];
-        }
-        const leaf=ref.parts[ref.parts.length-1];
-        if(operation.op==='SET')cur[leaf]=clone(operation.after);
-        else if(operation.op==='DELETE')delete cur[leaf];
-        applied.push({
-          op:operation.op,
-          path:operation.path,
-          before:clone(operation.before),
-          after:clone(operation.after)
-        });
-      }
-      const afterDigest=hash(this.state);
-      this.closed=true;
-      return Object.freeze({
+      const result=this.authority.commitTransaction({
         transactionId:this.transactionId,
-        commandId:this.commandId,
         ownerMinistry:this.ownerMinistry,
         countryId:this.countryId,
-        simulationTurn:this.turn,
-        changed:beforeDigest!==afterDigest,
-        operations:clone(applied),
-        beforeRevision:'CONTENT:'+beforeDigest,
-        afterRevision:'CONTENT:'+afterDigest
+        turn:this.turn,
+        commandId:this.commandId,
+        operations:clone(this.operations)
       });
+      this.closed=true;
+      return clone(result);
     }
 
     rollback(){
+      if(this.closed)return true;
       this.closed=true;
       this.operations=[];
       return true;
@@ -160,10 +100,10 @@
 
   const api=Object.freeze({
     VERSION,
-    create:(ownerMinistry,countryId,turn,commandId,stateSource)=>new StateTransaction(
-      stateSource||global.Game?.state||global.gameState||null,
-      ownerMinistry,countryId,turn,commandId
-    )
+    create:(ownerMinistry,countryId,turn,commandId,authority)=>{
+      const bound=authority||global.OmegaAuthoritativeStateAuthority?.instance||global.Omega?.AuthoritativeStateAuthority?.instance||null;
+      return new StateTransaction(ownerMinistry,countryId,turn,commandId,bound);
+    }
   });
 
   global.Omega=global.Omega||{};
