@@ -1,0 +1,62 @@
+name: OMEGA Ministry Runtime
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  independent-ministry-runtime:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install runtime dependencies
+        run: npm install --ignore-scripts --no-audit
+
+      - name: Syntax gate for ministry runtime
+        run: |
+          set -euo pipefail
+          node --check omega_ministry_domain_engines.js
+          node --check omega_ministry_runtime_v1.js
+          node --check test/omega_17_ministry_runtime.test.js
+
+      - name: Independent 17-ministry runtime proof
+        run: |
+          set -euo pipefail
+          npm run test:ministries
+
+      - name: Required proof assertions
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs/promises';
+          const runtime = await fs.readFile('omega_ministry_runtime_v1.js','utf8');
+          const engines = await fs.readFile('omega_ministry_domain_engines.js','utf8');
+          const test = await fs.readFile('test/omega_17_ministry_runtime.test.js','utf8');
+
+          if (!runtime.includes("version:'1.2.0'")) throw new Error('Runtime version contract is not 1.2.0');
+          if (!engines.includes("const VERSION='1.0.0'")) throw new Error('Engine version contract is not 1.0.0');
+          if (runtime.includes('nativeAdapter')) throw new Error('Legacy native-adapter execution path remains');
+          if ((engines.match(/class .*Engine extends IndependentMinistryEngine/g) || []).length !== 17) {
+            throw new Error('Expected 17 independent concrete ministry engines');
+          }
+          if (!test.includes('unique engine instance')) throw new Error('Unique-engine regression assertion missing');
+          if (!test.includes('legacy config reference')) throw new Error('Binding-aware legacy reference assertion missing');
+          console.log('CI OMEGA MINISTRY PROOF: PASS');
+          NODE
