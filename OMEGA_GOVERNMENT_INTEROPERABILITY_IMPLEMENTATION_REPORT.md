@@ -78,3 +78,10 @@ Latest accepted Ministry Runtime workflow:
 
 Main baseline comparison:
 - Main at commit 79aee704d5dfcc0145c61f28ee821612eb30c503 already had failing OMEGA Language System runs before this interoperability work.
+
+## FINAL HARDENING EVIDENCE
+
+- Strict country-scope provider hardening commit: 421f94b369d6c7b41c125998f0d36adec8fb2dca.
+- Regression-test commit: ec10cdd7c07fe6a8a150bd9413f00bf00180ae05.
+- Ministry Runtime CI verified the provider hardening against the canonical ministry stack via the PR merge-ref workflow.
+- PR #13 targets main and contains only the provider hardening/test documentation delta.

@@ -465,6 +465,29 @@ test('N2: relationship is not substituted for treaty status',()=>{
 
 
 
+test('V: country-scoped provider cannot fall back to global domain state',()=>{
+  const state={
+    simulationTurn:1,
+    finance:{
+      AA:{reserves:10},
+      reserves:999999
+    }
+  };
+  const s=createSandbox({countryA:'AA',countryB:'BB',state});
+  s.tick('finance',1);
+  const aa=s.mesh.getPeerState('trade','finance','AA',{currentTurn:1});
+  assert.equal(aa.publishedFacts['finance.reserves'].value,10);
+  assert.equal(aa.publishedFacts['finance.reserves'].availability,'AVAILABLE');
+
+  s.store.countryId='BB';
+  s.sandbox.Game.currentActiveCountry='BB';
+  s.sandbox.OmegaCabinetUI.activeCountry='BB';
+  s.runtime.tick('finance',16.7,1,s.store,s.blackboard);
+  const bb=s.mesh.getPeerState('trade','finance','BB',{currentTurn:1});
+  assert.equal(bb.publishedFacts['finance.reserves'].value,null);
+  assert.equal(bb.publishedFacts['finance.reserves'].availability,'UNAVAILABLE');
+});
+
 function stripTelemetry(value){
   if(value===null||value===undefined)return value;
   if(Array.isArray(value))return value.map(stripTelemetry);
