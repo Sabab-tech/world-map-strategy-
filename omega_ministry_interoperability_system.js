@@ -556,6 +556,11 @@
       const turn=Number.isFinite(Number(options.turn))?Number(options.turn):this.lastTurn;
       this._requestSequence+=1;
       const requestId=String(options.requestId||('OMI-REQ-'+String(turn)+'-'+String(this._requestSequence)));
+      const prior=[...this.requestLedger.values()].find(row=>row&&row.requestId===requestId&&row.messageId);
+      if(prior){
+        const existing=this.deliveryLedger.get(String(prior.messageId));
+        if(existing?.message)return clone(existing.message);
+      }
       const correlationId=String(options.correlationId||requestId);
       const message=this.send(source,target,topic,payload,{
         ...options,
@@ -1393,6 +1398,35 @@
       });
     }
 
+    coordinateGovernment(countryId,options={}){
+      const country=String(countryId||'').trim().toUpperCase();
+      if(!country)throw new Error('COUNTRY_ID_REQUIRED');
+      const turn=Number.isFinite(Number(options.currentTurn))?Number(options.currentTurn):this.lastTurn;
+      const cabinet=this.getMinistryBriefing('cabinet',country,{currentTurn:turn});
+      const agenda=[];
+      for(const request of cabinet.governmentLedger?.budgetRequests||[]){
+        agenda.push({type:'BUDGET_REQUEST',requestId:request.requestId||request.messageId||null,sourceMinistryId:request.sourceMinistryId||null,status:request.status||'OPEN'});
+      }
+      for(const item of cabinet.governmentLedger?.constraints||[]){
+        agenda.push({type:'CONSTRAINT',code:item.code||null,sourceMinistryId:item.sourceMinistryId||null,blocking:item.blocking===true});
+      }
+      for(const item of cabinet.governmentLedger?.alerts||[]){
+        agenda.push({type:'ALERT',topic:item.topic||null,sourceMinistryId:item.sourceMinistryId||null,priority:item.priority||'NORMAL'});
+      }
+      return {
+        schemaVersion:1,
+        countryId:country,
+        simulationTurn:turn,
+        status:'READY',
+        participatingMinistries:this.ids.slice(),
+        agenda:agenda.slice(0,this.maxHistory),
+        pendingRequests:(cabinet.governmentLedger?.pendingRequests||[]).slice(-this.maxHistory),
+        staleSnapshots:(cabinet.governmentLedger?.staleSnapshots||[]).slice(),
+        knownDataGaps:(cabinet.knownDataGaps||[]).slice(0,this.maxHistory),
+        decisionContext:{available:true,source:'CABINET_GOVERNMENT_READ_MODEL'}
+      };
+    }
+
     createPort(source,countryId){
       const src=String(source||'');
       const c=String(countryId||'').trim().toUpperCase();
@@ -1642,6 +1676,9 @@
         return {authorized:false,status:'REVIEW_REQUIRED',reason:'DECLARATIVE_APPROVAL_REQUIREMENTS_UNRESOLVED',actorMinistry,approvalRequirements:approvalRequirements.slice()};
       }
       if(!policy)return {authorized:true,status:'AUTO_AUTHORIZED',reason:'NO_AUTHORITY_POLICY_REGISTERED',actorMinistry};
+      const executorMinistry=String(actor.executorMinistryId||command?.stateOwnerMinistryId||'');
+      const executorOk=!policy.executorMinistries.length||policy.executorMinistries.includes(executorMinistry);
+      if(!executorOk)return {authorized:false,status:'REJECTED',reason:'EXECUTOR_NOT_AUTHORIZED',actorMinistry,executorMinistry};
       const proposerOk=!policy.proposerMinistries.length||policy.proposerMinistries.includes(actorMinistry);
       if(!proposerOk)return {authorized:false,status:'REJECTED',reason:'PROPOSER_NOT_AUTHORIZED',actorMinistry};
       if(policy.reviewRequired)return {authorized:false,status:'REVIEW_REQUIRED',reason:'HUMAN_OR_CABINET_REVIEW_REQUIRED',actorMinistry};
@@ -1871,11 +1908,6 @@
             changedPaths:(row.transaction.operations||[]).map(op=>op.path).slice(0,64),
             causationId:commandId
           });
-          this._broadcastStateChangeNotice(
-            country,handler.ownerMinistry,turn,authoritativeDomainRevision,
-            (row.transaction.operations||[]).map(op=>op.path),
-            commandId,row.provenance||null
-          );
           this.emitEvent(EVENT_TYPES.MINISTRY_STATE_CHANGED,country,handler.ownerMinistry,{
             commandId,stateRevision:authoritativeDomainRevision,changedPaths:(row.transaction.operations||[]).map(op=>op.path)
           },{turn,causationId:commandId,stateRevision:authoritativeDomainRevision,deferDispatch:true});
@@ -1887,7 +1919,7 @@
             ...staged.options,stateRevision:authoritativeDomainRevision,deferDispatch:true
           });
         }
-        this.processEventOutbox(turn);
+        if(options.deferEventDispatch!==true)this.processEventOutbox(turn);
 
         transition('VERIFIED',row.stateChanged?'STATE_AND_EVENT_OUTBOX_PERSISTED':'NO_STATE_CHANGE');
         return clone(row);
@@ -2399,6 +2431,7 @@
     getPeerState:(...args)=>apiInstance.getPeerState(...args),
     getMinistryBriefing:(...args)=>apiInstance.getMinistryBriefing(...args),
     getContext:(...args)=>apiInstance.getContext(...args),
+    coordinateGovernment:(...args)=>apiInstance.coordinateGovernment(...args),
     evaluateAction:(...args)=>apiInstance.evaluateAction(...args),
     registerAction:(...args)=>apiInstance.registerAction(...args),
     registerAction:(...args)=>apiInstance.registerAction(...args),
