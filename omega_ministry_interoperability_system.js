@@ -40,7 +40,8 @@
     FISCAL_STATUS:'FISCAL_STATUS',
     BUDGET_REQUEST:'BUDGET_REQUEST',
     PROJECT_STATUS:'PROJECT_STATUS',
-    CONSTRAINT_UPDATE:'CONSTRAINT_UPDATE'
+    CONSTRAINT_UPDATE:'CONSTRAINT_UPDATE',
+    EVENT:'EVENT'
   });
 
   const DELIVERY_STATUS=Object.freeze({
@@ -1053,7 +1054,13 @@
     }
 
     _broadcastStateChangeNotice(countryId,ministryId,turn,stateRevision,changedPaths=[],causationId=null,provenance=null){
-      const targets=this.ids.filter(id=>id!==String(ministryId));
+      const source=String(ministryId);
+      const contract=MINISTRY_KNOWLEDGE_CONTRACT;
+      const targets=this.ids.filter(id=>{
+        if(id===source)return false;
+        const watch=contract?.get?.(id)?.watch;
+        return Array.isArray(watch)&&watch.includes(source);
+      });
       for(const target of targets){
         try{
           this.send(String(ministryId),target,'ministry.state.changed',{
@@ -1493,7 +1500,18 @@
         if(rule.eventTypes.length&&!rule.eventTypes.includes(String(event?.eventType)))continue;
         if(rule.sourceMinistries.length&&!rule.sourceMinistries.includes(String(event?.sourceMinistryId)))continue;
         let matches=true;
-        try{if(rule.condition)matches=rule.condition(clone(event),this.getContext(event.countryId||'',{}))!==false;}catch(error){matches=false;}
+        try{
+          if(rule.condition){
+            const conditionContext={
+              countryId:event.countryId||null,
+              simulationTurn:event.simulationTurn??this.lastTurn,
+              event:clone(event),
+              interoperability:this,
+              getContext:(ministryId,options={})=>this.getContext(ministryId,{...options,countryId:event.countryId,turn:event.simulationTurn})
+            };
+            matches=rule.condition(clone(event),conditionContext)!==false;
+          }
+        }catch(error){matches=false;}
         if(!matches)continue;
         let task=null;
         try{task=rule.createReaction?rule.createReaction(clone(event)):{targetMinistries:rule.targetMinistries};}catch(error){task=null;}
@@ -1523,10 +1541,12 @@
         count+=1;
         try{
           const targets=Array.isArray(task.targetMinistries)?task.targetMinistries:[];
+          const source=String(task.sourceMinistryId||'cabinet');
+          if(!this.ids.includes(source))throw new Error('REACTION_SOURCE_UNKNOWN:'+source);
           for(const target of targets){
             if(!this.ids.includes(String(target)))throw new Error('REACTION_TARGET_UNKNOWN:'+String(target));
-            this.send(task.sourceMinistryId||'cabinet',String(target),'government.causal.reaction',task.payload,{
-              countryId:task.countryId,turn:Number(turn),messageType:MESSAGE_TYPES.REQUEST,
+            this.send(source,String(target),'government.causal.reaction',task.payload,{
+              countryId:task.countryId,turn:Number(turn),messageType:MESSAGE_TYPES.EVENT,
               correlationId:task.correlationId,causationId:task.causationId
             });
           }
@@ -1695,7 +1715,7 @@
           }
           this.eventDeliveryLedger.set(deliveryKey,delivery);
         }
-        this._deliverEventTransport(row.event);
+          this._deliverEventTransport(row.event);
         const reactions=this.evaluateCausalRules(row.event);
         row.reactionIds=reactions.map(r=>r.reactionId);
         row.status=failed?'FAILED':'DISPATCHED';
@@ -1948,6 +1968,28 @@
       const row=this.dirtyPublications.get(key)||null;
       if(row)this.dirtyPublications.delete(key);
       return row?clone(row):null;
+    }
+
+    getEventLog(options={}){
+      const from=Number.isFinite(Number(options.fromTurn))?Number(options.fromTurn):-Infinity;
+      const to=Number.isFinite(Number(options.toTurn))?Number(options.toTurn):Infinity;
+      const country=options.countryId?String(options.countryId).trim().toUpperCase():null;
+      return [...this.events.values()]
+        .filter(event=>(country===null||event.countryId===country)&&Number(event.simulationTurn)>=from&&Number(event.simulationTurn)<=to)
+        .sort((a,b)=>Number(a.simulationTurn)-Number(b.simulationTurn)||String(a.eventId).localeCompare(String(b.eventId)))
+        .map(clone);
+    }
+
+    replayEvents(options={}){
+      const events=this.getEventLog(options);
+      return {
+        mode:'REPLAY_READONLY',
+        fromTurn:options.fromTurn??null,
+        toTurn:options.toTurn??null,
+        countryId:options.countryId?String(options.countryId).trim().toUpperCase():null,
+        eventCount:events.length,
+        events
+      };
     }
 
     getPendingRequests(countryId,requesterMinistry=null){
@@ -2246,7 +2288,8 @@
         lastTurn:this.lastTurn,
         sequences:{
           message:this._messageSequence,request:this._requestSequence,
-          event:this._eventSequence,command:this._commandSequence
+          event:this._eventSequence,command:this._commandSequence,
+          reaction:this._reactionSequence,case:this._caseSequence
         },
         metrics:clone(this.metrics),
         inboxes,snapshots,deliveryLedger:delivery,requestLedger:requests,
@@ -2269,6 +2312,8 @@
       this._requestSequence=number(state.sequences?.request)||0;
       this._eventSequence=number(state.sequences?.event)||0;
       this._commandSequence=number(state.sequences?.command)||0;
+      this._reactionSequence=number(state.sequences?.reaction)||0;
+      this._caseSequence=number(state.sequences?.case)||0;
       this.metrics={...this.metrics,...clone(state.metrics||{})};
       for(const id of this.ids)this.inboxes.set(id,clone(state.inboxes?.[id]||[]).slice(0,this.maxInbox));
       this.snapshots=new Map(Object.entries(state.snapshots||{}).map(([k,v])=>[k,clone(v)]));
@@ -2346,6 +2391,24 @@
     getContext:(...args)=>apiInstance.getContext(...args),
     evaluateAction:(...args)=>apiInstance.evaluateAction(...args),
     registerAction:(...args)=>apiInstance.registerAction(...args),
+    registerAction:(...args)=>apiInstance.registerAction(...args),
+    registerMessageProtocol:(...args)=>apiInstance.registerMessageProtocol(...args),
+    subscribeEvent:(...args)=>apiInstance.subscribeEvent(...args),
+    unsubscribeEvent:(...args)=>apiInstance.unsubscribeEvent(...args),
+    registerCausalRule:(...args)=>apiInstance.registerCausalRule(...args),
+    evaluateCausalRules:(...args)=>apiInstance.evaluateCausalRules(...args),
+    processReactionQueue:(...args)=>apiInstance.processReactionQueue(...args),
+    registerWorkflow:(...args)=>apiInstance.registerWorkflow(...args),
+    createCase:(...args)=>apiInstance.createCase(...args),
+    advanceCase:(...args)=>apiInstance.advanceCase(...args),
+    getCase:(...args)=>apiInstance.getCase(...args),
+    registerAuthorityPolicy:(...args)=>apiInstance.registerAuthorityPolicy(...args),
+    authorizeCommand:(...args)=>apiInstance.authorizeCommand(...args),
+    registerArbitrationPolicy:(...args)=>apiInstance.registerArbitrationPolicy(...args),
+    resolveConflict:(...args)=>apiInstance.resolveConflict(...args),
+    processEventOutbox:(...args)=>apiInstance.processEventOutbox(...args),
+    getEventLog:(...args)=>apiInstance.getEventLog(...args),
+    replayEvents:(...args)=>apiInstance.replayEvents(...args),
     registerCommandHandler:(...args)=>apiInstance.registerCommandHandler(...args),
     dispatchCommand:(...args)=>apiInstance.dispatchCommand(...args),
     executeCommand:(...args)=>apiInstance.executeCommand(...args),
