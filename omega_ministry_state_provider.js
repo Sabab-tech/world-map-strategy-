@@ -145,23 +145,43 @@
       return normalizeId(value)||null;
     }
 
+    _looksLikeCountryRecord(value){
+      if(!value||typeof value!=='object'||Array.isArray(value))return false;
+      return ['countryId','countryCode','country_code','iso2','iso3','code','id','name','countryName','country_name']
+        .some(key=>value[key]!==undefined&&value[key]!==null&&String(value[key]).trim()!=='');
+    }
+
+    _strictCanonicalCountryId(value){
+      const raw=String(value??'').trim();
+      if(!raw)return null;
+      const registry=this.countryRegistry||global.OmegaCanonicalIdentityRegistry||global.OmegaCountrySemanticBridge||null;
+      try{
+        const hit=registry?.resolveCountry?.(raw);
+        return hit?.id?String(hit.id).trim().toUpperCase():null;
+      }catch(_){return null;}
+    }
+
     validateDatasetShape(dataset,options={}){
       const contract=DATASET_INPUT_CONTRACT;
       const value=dataset;
       const errors=[];
       if(value===null||value===undefined)errors.push('DATASET_EMPTY');
+      const checkRow=(row,label)=>{
+        if(!row||typeof row!=='object'||Array.isArray(row)){errors.push(label+'_NOT_OBJECT');return;}
+        const candidate=row.countryId||row.countryCode||row.country_code||row.iso2||row.iso3||row.code||row.id||row.name||row.countryName||row.country_name||null;
+        if(!this._strictCanonicalCountryId(candidate))errors.push(label+'_COUNTRY_ID_NOT_CANONICAL');
+      };
       if(Array.isArray(value)){
-        value.forEach((row,index)=>{
-          if(!row||typeof row!=='object')errors.push('ROW_'+index+'_NOT_OBJECT');
-          else if(!this.canonicalCountryId(row.countryId||row.countryCode||row.country_code||row.iso2||row.iso3||row.code||row.id||row.name||row.countryName||row.country_name)){
-            errors.push('ROW_'+index+'_COUNTRY_ID_UNRESOLVED');
-          }
-        });
+        value.forEach((row,index)=>checkRow(row,'ROW_'+index));
       }else if(typeof value==='object'){
-        for(const [key,row] of Object.entries(value)){
-          if(!row||typeof row!=='object'){errors.push('KEY_'+key+'_VALUE_NOT_OBJECT');continue;}
-          const resolved=this.canonicalCountryId(row.countryId||row.countryCode||row.country_code||row.iso2||row.iso3||row.code||row.id||row.name||row.countryName||row.country_name||key);
-          if(!resolved)errors.push('KEY_'+key+'_COUNTRY_ID_UNRESOLVED');
+        if(this._looksLikeCountryRecord(value)){
+          checkRow(value,'ROOT_RECORD');
+        }else{
+          for(const [key,row] of Object.entries(value)){
+            if(!row||typeof row!=='object'||Array.isArray(row)){errors.push('KEY_'+key+'_VALUE_NOT_OBJECT');continue;}
+            const candidate=row.countryId||row.countryCode||row.country_code||row.iso2||row.iso3||row.code||row.id||row.name||row.countryName||row.country_name||key;
+            if(!this._strictCanonicalCountryId(candidate))errors.push('KEY_'+key+'_COUNTRY_ID_NOT_CANONICAL');
+          }
         }
       }else errors.push('DATASET_NOT_OBJECT_OR_ARRAY');
       const result={...contract,valid:errors.length===0,errors};
@@ -176,14 +196,17 @@
       const rows=[];
       if(Array.isArray(dataset)){
         dataset.forEach(row=>{
-          const id=this.canonicalCountryId(row?.countryId||row?.countryCode||row?.country_code||row?.iso2||row?.iso3||row?.code||row?.id||row?.name||row?.countryName||row?.country_name);
+          const id=this._strictCanonicalCountryId(row?.countryId||row?.countryCode||row?.country_code||row?.iso2||row?.iso3||row?.code||row?.id||row?.name||row?.countryName||row?.country_name);
           if(id)rows.push([id,clone(row),'']);
         });
       }else if(dataset&&typeof dataset==='object'){
-        for(const [key,row] of Object.entries(dataset)){
-          const id=this.canonicalCountryId(row?.countryId||row?.countryCode||row?.country_code||row?.iso2||row?.iso3||row?.code||row?.id||row?.name||row?.countryName||row?.country_name||key);
-          if(id){
-            rows.push([id,clone(row),String(key)]);
+        if(this._looksLikeCountryRecord(dataset)){
+          const id=this._strictCanonicalCountryId(dataset.countryId||dataset.countryCode||dataset.country_code||dataset.iso2||dataset.iso3||dataset.code||dataset.id||dataset.name||dataset.countryName||dataset.country_name);
+          if(id)rows.push([id,clone(dataset),'']);
+        }else{
+          for(const [key,row] of Object.entries(dataset)){
+            const id=this._strictCanonicalCountryId(row?.countryId||row?.countryCode||row?.country_code||row?.iso2||row?.iso3||row?.code||row?.id||row?.name||row?.countryName||row?.country_name||key);
+            if(id)rows.push([id,clone(row),String(key)]);
           }
         }
       }
