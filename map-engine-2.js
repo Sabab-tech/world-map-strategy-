@@ -34,8 +34,8 @@ Game.config = {
     }
 };
 
-// গেম ওয়ার্ল্ডের সামগ্রিক সিমুলেশন স্টেট
-Game.worldState = {
+// Compatibility runtime metadata. game-logic.js binds this through the canonical Game.state boundary.
+Game.worldState = Game.worldState || {
     inflation: 1.0,
     bank_liquidity: 1000,
     turn: 1
@@ -246,7 +246,7 @@ Game.Diplomacy = {
         Game.state.relations = Game.state.relations || {};
         
         // RGE Engine Integration (relation_generation_engine.json)
-        const rge = this._rgeEngine || (Game.state.relationEngine && Game.state.relationEngine.RELATION_GENERATION_ENGINE) || null;
+        const rge = this._rgeEngine || (Game.runtimeData?.relationEngine && Game.runtimeData.relationEngine.RELATION_GENERATION_ENGINE) || null;
         const weights = (rge && rge.weights) ? rge.weights : { historical: 0.15, diplomatic: 0.15, economic: 0.15, military: 0.10, strategic: 0.15, cultural: 0.10, intelligence: 0.05, societal: 0.05, international: 0.10 };
         const salience = (rge && rge.srie_v2_asymmetrical_salience) ? rge.srie_v2_asymmetrical_salience : {};
 
@@ -368,7 +368,8 @@ Game.DataLoader = {
             ]);
 
             if (rgeData && rgeData.RELATION_GENERATION_ENGINE) {
-                Game.state.relationEngine = rgeData;
+                Game.runtimeData = Game.runtimeData || {};
+                Game.runtimeData.relationEngine = rgeData;
                 if (Game.Diplomacy) Game.Diplomacy._rgeEngine = rgeData.RELATION_GENERATION_ENGINE;
             }
 
@@ -378,7 +379,8 @@ Game.DataLoader = {
 
             if (minData && minData.ministers_database) {
                 window.OmegaMinistersDB = minData.ministers_database;
-                Game.state.ministersDB = minData.ministers_database;
+                Game.runtimeData = Game.runtimeData || {};
+                Game.runtimeData.ministersDB = minData.ministers_database;
                 if (window.OmegaCabinetUI && typeof window.OmegaCabinetUI.syncMinistersDatabase === 'function') {
                     window.OmegaCabinetUI.syncMinistersDatabase(minData.ministers_database);
                 }
