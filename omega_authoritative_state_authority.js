@@ -59,6 +59,8 @@
       this.transactionLedger=new Map();
       this.revisionLedger=new Map();
       this.checkpointLedger=new Map();
+      this.initializationOpen=true;
+      this.initializationTurn=null;
     }
 
     root(){
@@ -247,6 +249,46 @@
       return clone(this.transactionLedger.get(String(transactionId||''))||null);
     }
 
+    hydrateCountryDomain(domain,rows,options={}){
+      if(this.initializationOpen!==true&&!options.allowHotPlug)throw new Error('STATE_INITIALIZATION_LOCKED');
+      const state=this.root();
+      if(!state)throw new Error('AUTHORITATIVE_STATE_UNAVAILABLE');
+      const d=String(domain||'').trim();
+      if(!d)throw new Error('STATE_DOMAIN_REQUIRED');
+      if(!Array.isArray(rows))throw new Error('STATE_HYDRATION_ROWS_REQUIRED');
+      const countryIds=new Set();
+      for(const row of rows){
+        const countryId=normalizeCountryId(row?.countryId);
+        if(countryIds.has(countryId))throw new Error('STATE_HYDRATION_DUPLICATE_COUNTRY:'+countryId);
+        countryIds.add(countryId);
+        if(row?.value===undefined)throw new Error('STATE_HYDRATION_VALUE_REQUIRED:'+countryId);
+      }
+      if(!state[d]||typeof state[d]!=='object')state[d]={};
+      if(options.replace!==false)state[d]={};
+      const written=[];
+      for(const row of rows){
+        const id=normalizeCountryId(row.countryId);
+        state[d][id]=clone(row.value);
+        written.push(id);
+        this.revisionLedger.set(id+'::'+d,'CONTENT:'+hash(this.readDomain(id,d)));
+      }
+      return {
+        schemaVersion:1,
+        domain:d,
+        countryCount:written.length,
+        countryIds:written.slice(),
+        mode:'INITIAL_AUTHORITATIVE_HYDRATION',
+        simulationTurn:this.initializationTurn
+      };
+    }
+
+    lockInitialization(turn=0){
+      const n=Number(turn);
+      this.initializationTurn=Number.isFinite(n)?n:null;
+      this.initializationOpen=false;
+      return true;
+    }
+
     createCheckpoint(turn,stateSnapshot=null){
       const n=Number(turn);
       if(!Number.isFinite(n))throw new Error('CHECKPOINT_TURN_REQUIRED');
@@ -333,7 +375,8 @@
         version:VERSION,
         revisions:clone(Object.fromEntries(this.revisionLedger)),
         transactions:clone(Object.fromEntries(this.transactionLedger)),
-        checkpoints:clone(Object.fromEntries([...this.checkpointLedger.entries()].map(([k,v])=>[String(k),v])))
+        checkpoints:clone(Object.fromEntries([...this.checkpointLedger.entries()].map(([k,v])=>[String(k),v]))),
+        initialization:{open:this.initializationOpen,turn:this.initializationTurn}
       };
     }
 
@@ -342,6 +385,8 @@
       this.revisionLedger=new Map(Object.entries(snapshot.revisions||{}));
       this.transactionLedger=new Map(Object.entries(snapshot.transactions||{}));
       this.checkpointLedger=new Map(Object.entries(snapshot.checkpoints||{}).map(([k,v])=>[Number(k),clone(v)]));
+      this.initializationOpen=snapshot.initialization?.open!==false;
+      this.initializationTurn=snapshot.initialization?.turn??null;
       return true;
     }
 
@@ -369,6 +414,8 @@
     getTransaction:id=>instance.getTransaction(id),
     createCheckpoint:(turn,state)=>instance.createCheckpoint(turn,state),
     getCheckpoint:turn=>instance.getCheckpoint(turn),
+    hydrateCountryDomain:(domain,rows,options)=>instance.hydrateCountryDomain(domain,rows,options),
+    lockInitialization:turn=>instance.lockInitialization(turn),
     saveState:()=>instance.exportState(),
     loadState:s=>instance.importState(s),
     reconstructState:(baseState,options)=>instance.reconstructState(baseState,options),
