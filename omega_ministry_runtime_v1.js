@@ -284,6 +284,7 @@
 
     function tick(id,dt,currentTurn,store,blackboard){
       if(!IDS.includes(String(id))) return null;
+      const interop=getInteroperability();
       const engine=getEngineRegistry()?.get?.(id);
       if(!engine || engine.id!==id || engine.independent!==true || typeof engine.execute!=='function'){
         const s=states.get(id);
