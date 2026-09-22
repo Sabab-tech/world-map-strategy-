@@ -542,6 +542,13 @@
         sourceFields:Object.keys(observed).filter(k=>/budget|spending|reserve|revenue|debt/i.test(k))
       };
 
+      const facts={};
+      for(const [key,value] of Object.entries(observed)){
+        if(/relation|treat|sanction|logistic|threat|readiness|procurement|production|inflation|unemployment|enrollment|research|innovation|hospital|stability|corruption|security/i.test(key)){
+          facts[key]=clone(value);
+        }
+      }
+
       const projectRegistry=first(observed,['projects.registry']);
       const latestProjectSignal=this.projectSignals.get(ministryId)?.slice(-1)[0]||null;
       const projects={
@@ -555,6 +562,15 @@
       const decisions=toArray(store?.decisions);
       const needs=clone(store?.needsModel||null);
       const pendingBudgetRequests=(this.budgetRequests.get(ministryId)||[]).filter(x=>String(x.status).toUpperCase()!=='CLOSED');
+      const requestedBudget=pendingBudgetRequests.reduce((sum,item)=>{
+        const amount=number(item.amount);
+        return sum+(amount===null?0:amount);
+      },0);
+      fiscal.requestedBudget=requestedBudget;
+      fiscal.budgetNeedStatus=requestedBudget>0?'REQUESTED':'NONE';
+      fiscal.budgetPressure=fiscal.budget!==null && fiscal.budget!==0
+        ? Number((requestedBudget/fiscal.budget).toFixed(6))
+        : null;
       const latestConstraints=this.constraints.get(ministryId)?.slice(-10)||[];
       const latestAlerts=this.alerts.get(ministryId)?.slice(-10)||[];
 
@@ -585,7 +601,8 @@
           lastDt:number(runtimeState.lastDt),
           inputCompleteness:number(execution.derived?.inputCompleteness),
           missingInputs:clone(execution.missingInputs||[]),
-          engineRevision:number(execution.revision)||null
+          engineRevision:number(execution.revision)||null,
+          facts
         }
       });
 
@@ -768,27 +785,23 @@
       const blockers=[];
 
       const treaty=first(foreign,[
-        'operations.treatyStatus',
-        'diplomacy.treatyStatus',
-        'projects.treatyStatus'
+        'operations.facts.foreign.treaties',
+        'operations.facts.trade.relations'
       ]);
       const sanctions=first(foreign,[
-        'operations.sanctions',
-        'diplomacy.sanctions'
+        'operations.facts.foreign.sanctions'
       ]);
       const relation=first(foreign,[
-        'relations.score',
-        'operations.relationScore'
+        'operations.facts.foreign.relations',
+        'operations.facts.trade.relations'
       ]);
-      const tradeBalance=trade?.fiscal?.revenue ?? first(trade?.operations||{},['tradeBalance']);
+      const tradeBalance=trade?.fiscal?.revenue ?? first(trade?.operations?.facts||{},['trade.balance','trade.exports']);
       const logistics=first(transport,[
-        'operations.logisticsCapacity',
-        'operations.logisticsState'
+        'operations.facts.transport.logistics'
       ]);
       const fiscalReserves=finance?.fiscal?.reserves ?? null;
       const threat=first(intelligence,[
-        'operations.externalThreat',
-        'operations.threatLevel'
+        'operations.facts.intelligence.threats'
       ]);
 
       const checks=[
