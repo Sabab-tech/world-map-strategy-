@@ -217,7 +217,7 @@
   function normalizeIds(registry){
     const ids=Array.isArray(registry?.ids)?registry.ids.map(String).filter(Boolean):
       Array.isArray(registry?.list?.())?registry.list().map(String).filter(Boolean):[];
-    return [...new Set(ids.length?ids:FALLBACK_IDS)];
+    return [...new Set(ids)];
   }
 
   function snapshotKey(countryId,ministryId){
