@@ -124,8 +124,8 @@ test('OMEGA canonical 17-ministry runtime is independently engine-backed and bin
   assert.ok(runtime,'runtime controller must load');
   assert.equal(engines.version,ENGINE_VERSION);
   assert.equal(runtime.version,RUNTIME_VERSION);
-  assert.deepEqual(runtime.getIds(),IDS);
-  assert.deepEqual(engines.ids,IDS);
+  assert.deepEqual(Array.from(runtime.getIds()),IDS);
+  assert.deepEqual(Array.from(engines.ids),IDS);
 
   const engineObjects=IDS.map(id=>engines.get(id));
   assert.equal(new Set(engineObjects).size,IDS.length,'every ministry must own a unique engine instance');
@@ -150,11 +150,14 @@ test('OMEGA canonical 17-ministry runtime is independently engine-backed and bin
     const engine=runtime.getEngine(id);
     assert.strictEqual(engine,engines.get(id));
     assert.equal(runtime.getEngineBinding(id).independent,true);
-    assert.deepEqual(runtime.getEngineBinding(id).resolved,[{
-      id,
-      version:ENGINE_VERSION,
-      independent:true
-    }]);
+    assert.deepEqual(
+      JSON.parse(JSON.stringify(runtime.getEngineBinding(id).resolved)),
+      [{
+        id,
+        version:ENGINE_VERSION,
+        independent:true
+      }]
+    );
 
     const store={
       policies:new Map(),
