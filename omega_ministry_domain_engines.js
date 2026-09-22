@@ -138,6 +138,7 @@
       this.id=config.id;
       this.domain=config.domain;
       this.phase=config.phase;
+      this.engineVersion=VERSION;
       this.inputs=Object.freeze(config.inputs.slice());
       this._revision=0;
       this._lastExecution=null;
