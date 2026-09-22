@@ -195,87 +195,23 @@ Game.getGameFriendlyName = function(name) {
 
 // রিয়েল-টাইম এআই সিমুলেশন ইঞ্জিন
 Game.Simulation = {
-    tick() {
-        // ১. ওয়ার্ল্ড ইনফ্লেশন এবং টার্ন আপডেট
-        Game.worldState.inflation *= (1 + Game.config.world.inflation_base * (0.8 + Math.random() * 0.4));
-        Game.worldState.turn += 1;
-        
-        // ২. ব্যাংকিং লোন ইন্টারেস্ট বৃদ্ধি (ক্রমান্বয়ে ও ধীরে ধীরে বাড়বে)
-        Object.keys(Game.state.economy).forEach(key => {
-            const econ = Game.state.economy[key];
-            if (econ.debt > 0) {
-                econ.debt *= (1 + Game.config.bank.interest * 0.1); 
-            }
+Game.Simulation = {
+    tick(dt=0){
+        const runtime=window.OMEGA_MINISTRY_RUNTIME_V1||window.Omega?.MinistryRuntime||null;
+        if(!runtime?.runTurn)throw new Error('CANONICAL_MINISTRY_RUNTIME_UNAVAILABLE');
+        const current=Number(
+            Game.state?.simulationTurn ??
+            Game.worldState?.turn ??
+            0
+        );
+        const nextTurn=Math.max(1,Number.isFinite(current)?current+1:1);
+        return runtime.runTurn(nextTurn,Number.isFinite(Number(dt))?Number(dt):0,{
+            countryId:Game.currentActiveCountry||window.CountryIOS?.activeCountry||window.OmegaCabinetUI?.activeCountry||null
         });
-        
-        // ৩. ডাইনামিক এআই আচরণ মেকানিক্স (কূটনৈতিক সম্পর্ক বৈরী গেলেই কেবল যুদ্ধ ওঠে)
-        const countries = Object.keys(Game.state.economy);
-        const activeCountryKey = countries[Math.floor(Math.random() * countries.length)];
-        const n = Game.state.economy[activeCountryKey];
-        
-        if (n) {
-            const roll = Math.random();
-            const profile = Game.config.ai[n.ai || "survival"];
-            
-            // যুদ্ধের সম্ভাবনা বহুগুণ কমিয়ে রিয়ালিস্টিক করা হলো
-            if (roll < (profile.war * 0.02)) { 
-                // শত্রুভাবাপন্ন দেশ খোঁজার লজিক
-                const relationList = Game.state.relations[activeCountryKey];
-                let hostileTargets = [];
-                
-                if (relationList) {
-                    Object.keys(relationList).forEach(targetKey => {
-                        if (relationList[targetKey] && relationList[targetKey].overall < -50) {
-                            hostileTargets.push(targetKey);
-                        }
-                    });
-                }
-                
-                // কেবল শত্রুভাবাপন্ন দেশ থাকলেই যুদ্ধ হবে, অন্যথায় দেশ শান্তিতে বাণিজ্য করবে
-                if (hostileTargets.length > 0) {
-                    const targetKey = hostileTargets[Math.floor(Math.random() * hostileTargets.length)];
-                    const target = Game.state.economy[targetKey];
-                    
-                    if (target) {
-                        n.production *= (1 - Game.config.war.production_drop);
-                        target.production *= (1 - Game.config.war.production_drop);
-                        n.trade_power *= (1 - Game.config.war.trade_drop);
-                        target.trade_power *= (1 - Game.config.war.trade_drop);
-                        
-                        console.log(`⚔️ Geopolitical WAR declared: ${activeCountryKey} vs ${targetKey} due to hostile relations!`);
-                        Game.Simulation.visualizeWar(activeCountryKey, targetKey);
-                    }
-                } else {
-                    // শত্রু না থাকলে শান্তিতে বাণিজ্য করবে এবং অর্থ উপার্জন করবে
-                    n.money += n.trade_power * 0.15 * Game.worldState.inflation;
-                }
-            } else if (roll < profile.war + profile.trade) {
-                // সাধারণ বাণিজ্য আচরণ
-                n.money += n.trade_power * 0.1 * Game.worldState.inflation;
-            } else {
-                // ব্যাংক থেকে লোন নেওয়া (যদি দেশটিতে টাকার ঘাটতি বা ক্রাইসিস থাকে)
-                if (n.money < 200) {
-                    const amount = 50;
-                    Game.worldState.bank_liquidity -= amount;
-                    n.money += amount;
-                    n.debt += amount;
-                    console.log(`🏦 Strategic Bank Loan: ${activeCountryKey} took a loan of $50.`);
-                } else {
-                    // টাকা পর্যাপ্ত থাকলে অর্থনৈতিক উন্নয়ন
-                    n.production *= 1.02; 
-                }
-            }
-        }
-        
-        // ৪. মেগা টেকনোলজি ইভেন্ট (১% অত্যন্ত বিরল চান্স)
-        if (Math.random() < 0.01) {
-            countries.forEach(key => {
-                Game.state.economy[key].production *= Game.config.tech.industrial.production;
-            });
-            console.log("🧬 GLOBAL INDUSTRIAL REVOLUTION ACTIVE");
-        }
     },
-    
+    getCurrentTurn(){
+        return Number(Game.state?.simulationTurn??Game.worldState?.turn??0);
+    },
     // borer লাল ফ্ল্যাশ করার ভিজ্যুয়াল গাইড
     visualizeWar(attacker, defender) {
         if (!Game.geojsonLayer) return;
