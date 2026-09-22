@@ -62,6 +62,8 @@
     return first || null;
   }
 
+  const DATASET_DOMAIN_MAP=Object.freeze({economy:'economy.json',population:'population.json'});
+
   const COUNTRY_SCOPED_DOMAINS=Object.freeze(new Set([
     'finance','economy','trade','foreign','intelligence','defense','military',
     'interior','transport','resource','health','education','technology',
@@ -79,7 +81,24 @@
     }
 
     root(){
-      return this.stateSource || global.Game?.state || global.gameState || global.Omega?.World?.state || {};
+      return this.stateSource || global.OmegaAuthoritativeStateAuthority?.instance?.root?.() ||
+        global.Omega?.AuthoritativeStateAuthority?.instance?.root?.() ||
+        global.Game?.state || global.gameState || global.Omega?.World?.state || {};
+    }
+
+    authority(){
+      return global.OmegaAuthoritativeStateAuthority?.instance ||
+        global.Omega?.AuthoritativeStateAuthority?.instance || null;
+    }
+
+    _canonicalDatasetRecord(countryId,domain){
+      const dataset=DATASET_DOMAIN_MAP[String(domain||'')];
+      if(!dataset)return null;
+      const registry=global.OmegaCanonicalIdentityRegistry||global.OmegaCountrySemanticBridge||null;
+      try{
+        const record=registry?.getDatasetRecord?.(dataset,countryId);
+        return record===undefined?null:clone(record);
+      }catch(_){return null;}
     }
 
     simulationTurn(){
@@ -117,7 +136,18 @@
     _directPath(countryId,path){
       const state=this.root();
       const rawPath=String(path??'');
-      if(!rawPath)return undefined;
+      if(!rawPath)return undefined;      const datasetParts=rawPath.split('.');
+      const datasetDomain=datasetParts[0];
+      const datasetRecord=this._canonicalDatasetRecord(countryId,datasetDomain);
+      if(datasetRecord!==null){
+        let datasetValue=datasetRecord;
+        for(const part of datasetParts.slice(1)){
+          if(datasetValue==null||!Object.prototype.hasOwnProperty.call(Object(datasetValue),part)) { datasetValue=undefined; break; }
+          datasetValue=datasetValue[part];
+        }
+        if(datasetValue!==undefined)return datasetValue;
+      }
+
       if(rawPath==='countryRecord'||rawPath==='country.identity')return this.countryRecord(countryId);
 
       const parts=rawPath.split('.');
@@ -189,6 +219,11 @@
     getRevision(countryId,domain){
       const id=normalizeId(countryId);
       const d=String(domain??'').trim();
+      const authority=this.authority();
+      if(authority?.revision){
+        const revision=authority.revision(id,d);
+        if(revision!==null&&revision!==undefined)return String(revision);
+      }
       const state=this.root();
       const override=readPath(this.revisionOverrides,[id,d].join('.')) ??
         readPath(state,['stateRevisions',id,d].join('.')) ??
@@ -250,7 +285,7 @@
         countryId:id||null,
         fieldPath:p||null,
         sourceType:repositoryIdentity?'CANONICAL_REPOSITORY_DATA':'AUTHORITATIVE_RUNTIME_STATE',
-        source:repositoryIdentity?'countries.json / canonical country registry':'Game.state / canonical repository authority',
+        source:repositoryIdentity?'countries.json / canonical country registry':(DATASET_DOMAIN_MAP[topDomain(p)]||'AUTHORITATIVE_STATE_AUTHORITY'),
         sourceRevision:this.getRevision(id,topDomain(p)),
         simulationTurn:this.simulationTurn(),
         availability:availability.status,
