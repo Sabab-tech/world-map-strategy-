@@ -70,6 +70,10 @@
 
   function now(){ return Date.now(); }
 
+  function getInteroperability(){
+    return global.OmegaMinistryInteroperability || global.Omega?.MinistryInteroperability || global.OmegaMinistryMesh || null;
+  }
+
   function discoverInputSources(){
     const hits=[];
     for(const key of SOURCE_KEYS){
@@ -170,7 +174,10 @@
       resourceEngineState,
       ministers:global.OmegaMinistersDB||global.OmegaCabinetUI?.ministersDB||null,
       educationEngine:global.EducationEngine||null,
-      store:store||null
+      store:store||null,
+      interoperability:interoperability && typeof interoperability.getContext==='function'
+        ? interoperability.getContext(id,{turn:currentTurn,dt,store})
+        : null
     };
   }
 
@@ -208,6 +215,7 @@
     let bridge=null;
     let initialized=false;
     let registryHealth={ok:false,reason:'NOT_INITIALIZED'};
+    let interoperability=getInteroperability();
 
     function syncManifest(){
       const manifest=global.GLOBAL_MINISTRY_MANIFEST;
@@ -226,6 +234,8 @@
       if(!registryHealth.ok) return false;
 
       bridge=typeof kernel.createBridge==='function' ? kernel.createBridge():null;
+      interoperability=getInteroperability();
+      if(interoperability && typeof interoperability.init==='function' && !interoperability.init(bridge)) return false;
 
       for(const id of IDS){
         kernel.registerMinistry(id);
@@ -276,6 +286,16 @@
 
       try{
         domainExecution=engine.execute(domainContext);
+        if(interoperability && typeof interoperability.publishState==='function'){
+          interoperability.publishState(id,{
+            domain:spec.domain,
+            domainExecution,
+            context:domainContext,
+            store,
+            runtimeState:s,
+            turn:currentTurn
+          });
+        }
       }catch(err){
         s.failures+=1;
         s.errors.push(String(err?.message||err));
@@ -347,7 +367,31 @@
 
     function handleMessage(id,message){
       if(!IDS.includes(String(id))) return false;
-      states.get(id).handledMessages+=1;
+      const targetId=String(id);
+      const interop=getInteroperability();
+      let accepted={ok:true,message};
+      if(interop && typeof interop.acceptMessage==='function'){
+        accepted=interop.acceptMessage(targetId,message);
+        if(!accepted?.ok) return false;
+      }
+      const engine=getEngineRegistry()?.get?.(targetId)||null;
+      if(engine && typeof engine.handleMessage==='function'){
+        try{
+          engine.handleMessage(accepted.message || message,{
+            ministryId:targetId,
+            interoperability:interop && typeof interop.getContext==='function'
+              ? interop.getContext(targetId,{turn:accepted.message?.turn ?? null,dt:0})
+              : null
+          });
+        }catch(err){
+          const s=states.get(targetId);
+          s.failures+=1;
+          s.errors.push(String(err?.message||err));
+          if(s.errors.length>8) s.errors.shift();
+          return false;
+        }
+      }
+      states.get(targetId).handledMessages+=1;
       return true;
     }
 
