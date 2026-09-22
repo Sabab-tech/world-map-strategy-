@@ -404,14 +404,9 @@
         timestamp:s.lastUpdate
       };
 
-      if(store){
-        if(store.policies instanceof Map) store.policies.set('__omega_runtime__',telemetry);
-        if(store.knowledgeGraph instanceof Map) store.knowledgeGraph.set('__omega_runtime_domain__',domainExecution);
-        if(Array.isArray(store.goalStack) && store.goalStack.length<32){
-          const marker='RUNTIME:'+id;
-          if(!store.goalStack.includes(marker)) store.goalStack.push(marker);
-        }
-      }
+      // Runtime telemetry is emitted through dedicated runtime/blackboard sinks.
+      // The canonical application store is not a telemetry destination and must not be
+      // mutated by the ministry runtime as an execution side effect.
 
       global.__OMEGA_MINISTRY_RUNTIME_STATUS__=global.__OMEGA_MINISTRY_RUNTIME_STATUS__||{};
       global.__OMEGA_MINISTRY_RUNTIME_STATUS__[id]=telemetry;
