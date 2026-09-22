@@ -15,6 +15,23 @@
     if(!tr||tr.status!=='ACTIVE')throw Error('RECEIVER_NOT_ACTIVE');
     if(String(sr.countryId)!==String(tr.countryId))throw Error('CROSS_COUNTRY_MESSAGE_REQUIRES_EXPLICIT_DIPLOMATIC_CHANNEL');
     const message={messageId:options.messageId||id(),senderMinisterId:String(senderMinisterId),receiverMinisterId:String(receiverMinisterId),countryId:String(tr.countryId),ministryId:String(tr.ministryId),messageType:String(options.messageType||'INFORMATION'),priority:String(options.priority||'NORMAL'),topic:text(topic),payload,timestamp:options.timestamp??Date.now(),expiry:options.expiry??0};
+    const interop=global.OmegaMinistryInteroperability || global.Omega?.MinistryInteroperability || null;
+    if(interop && typeof interop.send==='function' && sr.ministryId && tr.ministryId){
+      try{
+        interop.send(String(sr.ministryId),String(tr.ministryId),message.topic,{
+          ministerMessage:message
+        },{
+          messageId:message.messageId,
+          messageType:message.messageType==='REQUEST'?'REQUEST':'STATE_UPDATE',
+          priority:message.priority,
+          countryId:message.countryId,
+          turn:sr.lastUpdateTick??null,
+          expiry:message.expiry
+        });
+      }catch(error){
+        try{ console.warn('[OMEGA Minister Communication] interoperability delivery fallback:',error); }catch(_){}
+      }
+    }
     try{global.dispatchEvent?.(new CustomEvent('MINISTER_MESSAGE_DELIVERED',{detail:message}))}catch(_){}
     return Object.freeze(message);
   }
