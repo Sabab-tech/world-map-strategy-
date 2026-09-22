@@ -662,7 +662,8 @@
             context,
             store,
             runtimeState:states.get(id),
-            turn
+            turn,
+            deferEventDispatch:true
           });
         }catch(error){
           failures.push({phase:'PUBLISH',scope:id,error:String(error?.message||error)});
