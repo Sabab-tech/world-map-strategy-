@@ -1636,6 +1636,11 @@
       const actionId=String(command?.actionId||'');
       const policy=this.authorityPolicies.get(actionId);
       const actorMinistry=String(actor.ministryId||command?.sourceMinistryId||'');
+      const action=this.decisionFramework?.getAction?.(actionId)||null;
+      const approvalRequirements=Array.isArray(action?.approvalRequirements)?action.approvalRequirements:[];
+      if(!policy&&approvalRequirements.length){
+        return {authorized:false,status:'REVIEW_REQUIRED',reason:'DECLARATIVE_APPROVAL_REQUIREMENTS_UNRESOLVED',actorMinistry,approvalRequirements:approvalRequirements.slice()};
+      }
       if(!policy)return {authorized:true,status:'AUTO_AUTHORIZED',reason:'NO_AUTHORITY_POLICY_REGISTERED',actorMinistry};
       const proposerOk=!policy.proposerMinistries.length||policy.proposerMinistries.includes(actorMinistry);
       if(!proposerOk)return {authorized:false,status:'REJECTED',reason:'PROPOSER_NOT_AUTHORIZED',actorMinistry};
