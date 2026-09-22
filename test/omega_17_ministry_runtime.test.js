@@ -179,9 +179,9 @@ test('OMEGA canonical 17-ministry runtime is independently engine-backed and bin
     assert.ok(telemetry.domainExecution.availableInputCount>=0);
     assert.ok(telemetry.domainExecution.availableInputCount<=telemetry.domainExecution.requiredInputCount);
     assert.ok(Array.isArray(telemetry.domainExecution.missingInputs));
-    assert.equal(store.policies.get('__omega_runtime__').engineId,id);
-    assert.equal(store.knowledgeGraph.get('__omega_runtime_domain__').engineId,id);
-    assert.ok(store.goalStack.includes('RUNTIME:'+id));
+    assert.equal(store.policies.size,0,'runtime telemetry must not mutate store.policies');
+    assert.equal(store.knowledgeGraph.size,0,'runtime telemetry must not mutate store.knowledgeGraph');
+    assert.deepEqual(store.goalStack,[],'runtime telemetry must not mutate store.goalStack');
     assert.equal(runtime.getState(id).ticks,1);
   }
 
