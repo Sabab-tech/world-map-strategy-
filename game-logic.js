@@ -177,6 +177,7 @@ window.initializeWorldGameDatabase = async function() {
             });
         }
         if (window.updateGlobalResourceHUD) window.updateGlobalResourceHUD();
+        window.__OMEGA_DATA_READY__ = true;
         window.dispatchEvent?.(new CustomEvent('OMEGA_DATA_CONTRACT_READY',{detail:{
             schemaVersion:window.OmegaGameStateContract.schemaVersion,
             countryCount:Object.keys(window.Game.state.economy||{}).length
