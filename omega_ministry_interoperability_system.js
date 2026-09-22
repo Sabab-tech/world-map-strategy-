@@ -296,7 +296,9 @@
           else if(route.source!==source||route.target!==target||route.enabled!==true)invalid.push(key);
         }
       }
-      const engineRegistry=this.registry||global.OmegaMinistryDomainEngines;
+      // Ministry identity/route registry and executable domain-engine registry are different contracts.
+      // Diagnostics must validate independence against the executable engine registry.
+      const engineRegistry=global.OmegaMinistryDomainEngines||global.Omega?.MinistryDomainEngines||null;
       const engines=this.ids.map(id=>engineRegistry?.get?.(id)||null);
       const uniqueInstances=new Set(engines.filter(Boolean)).size;
       const enginesOk=engines.length===this.ids.length&&engines.every(e=>e&&e.id&&e.independent===true&&typeof e.execute==='function')&&uniqueInstances===this.ids.length;
