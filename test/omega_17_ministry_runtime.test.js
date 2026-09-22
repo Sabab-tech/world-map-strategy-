@@ -339,6 +339,8 @@ test('canonical government scheduler executes deterministic multi-phase turn spi
   sandbox.window=sandbox;
   sandbox.globalThis=sandbox;
   loadBrowserScript('omega_ministry_registry.js',sandbox);
+  loadBrowserScript('omega_authoritative_state_authority.js',sandbox);
+  loadBrowserScript('omega_ministry_state_transaction.js',sandbox);
   loadBrowserScript('omega_ministry_state_provider.js',sandbox);
   loadBrowserScript('omega_ministry_domain_engines.js',sandbox);
   loadBrowserScript('omega_ministry_runtime_v1.js',sandbox);
@@ -409,7 +411,7 @@ test('canonical world-turn runtime processes multiple country scopes through one
           'IN':{gdp:200}
         }
       },
-      currentActiveCountry:'TST-A'
+      currentActiveCountry:'BD'
     },
     OmegaCabinetUI:{activeCountry:'TST-A',ministersDB:{}},
     OmegaMinistersDB:{},
@@ -423,14 +425,14 @@ test('canonical world-turn runtime processes multiple country scopes through one
   loadBrowserScript('omega_ministry_runtime_v1.js',sandbox);
   const runtime=sandbox.OMEGA_MINISTRY_RUNTIME_V1;
   assert.equal(runtime.init(kernel),true);
-  const result=runtime.runWorldTurn(2,16.7,{countryIds:['TST-B','TST-A']});
+  const result=runtime.runWorldTurn(2,16.7,{countryIds:['IN','BD']});
   assert.equal(result.mode,'WORLD_TURN');
   assert.equal(result.turn,2);
   assert.equal(result.countryCount,2);
   assert.equal(result.processedCountries,2);
   assert.equal(result.failedCountries,0);
   assert.equal(result.status,'COMMITTED');
-  assert.deepEqual(result.deterministicCountryOrder,['BD','IN']);
+  assert.deepEqual(Array.from(result.deterministicCountryOrder),['BD','IN']);
   assert.equal(result.countries.length,2);
   for(const countryResult of result.countries){
     assert.equal(countryResult.turn,2);
