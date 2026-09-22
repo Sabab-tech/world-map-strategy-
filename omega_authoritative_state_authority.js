@@ -1,0 +1,255 @@
+/*
+ * OMEGA AUTHORITATIVE STATE AUTHORITY v1.0.0
+ *
+ * Single write boundary for the canonical country-scoped game state.
+ * The authority owns the state object; transactions are only staged write plans.
+ * No ministry engine receives direct write access to another ministry's state.
+ */
+(function(global){
+  'use strict';
+
+  const VERSION='1.0.0';
+
+  function clone(value,seen=new WeakMap()){
+    if(value===null||typeof value!=='object')return value;
+    if(seen.has(value))return seen.get(value);
+    if(Array.isArray(value)){const out=[];seen.set(value,out);for(const v of value)out.push(clone(v,seen));return out;}
+    const out={};seen.set(value,out);
+    for(const k of Object.keys(value)){
+      if(k==='__proto__'||k==='constructor')continue;
+      const v=value[k];
+      if(v!==undefined&&typeof v!=='function')out[k]=clone(v,seen);
+    }
+    return out;
+  }
+
+  function stable(value){
+    if(value===null||typeof value!=='object')return JSON.stringify(value);
+    if(Array.isArray(value))return '['+value.map(stable).join(',')+']';
+    const keys=Object.keys(value).sort();
+    return '{'+keys.map(k=>JSON.stringify(k)+':'+stable(value[k])).join(',')+'}';
+  }
+
+  function hash(value){
+    const input=stable(value);
+    let h=2166136261;
+    for(let i=0;i<input.length;i++){h^=input.charCodeAt(i);h=Math.imul(h,16777619);}
+    return ('00000000'+(h>>>0).toString(16)).slice(-8);
+  }
+
+  function normalizeCountryId(value){
+    const id=String(value??'').trim().toUpperCase();
+    if(!id)throw new Error('COUNTRY_ID_REQUIRED');
+    return id;
+  }
+
+  function readPath(root,path){
+    let cur=root;
+    for(const part of String(path||'').split('.')){
+      if(cur==null||!Object.prototype.hasOwnProperty.call(Object(cur),part))return undefined;
+      cur=cur[part];
+    }
+    return cur;
+  }
+
+  function applyPath(root,path,value,deleteValue=false){
+    const parts=String(path||'').split('.');
+    if(!parts.length||!parts[0])throw new Error('STATE_PATH_REQUIRED');
+    const domain=parts.shift();
+    if(!root[domain]||typeof root[domain]!=='object')root[domain]={};
+    if(!root[domain].__proto__ && false){} // keep object shape explicit without adding runtime branches
+    const bucket=root[domain];
+    const countryId=arguments[4];
+    return {domain,bucket,countryId,parts,value,deleteValue};
+  }
+
+  class AuthoritativeStateAuthority{
+    constructor(options={}){
+      this.version=VERSION;
+      this.stateSource=options.stateSource||null;
+      this.transactionLedger=new Map();
+      this.revisionLedger=new Map();
+    }
+
+    root(){
+      return this.stateSource||global.Game?.state||global.gameState||global.Omega?.World?.state||null;
+    }
+
+    bind(stateSource){
+      if(stateSource)this.stateSource=stateSource;
+      return !!this.root();
+    }
+
+    countryContainer(countryId,domain,create=false){
+      const state=this.root();
+      if(!state)throw new Error('AUTHORITATIVE_STATE_UNAVAILABLE');
+      const id=normalizeCountryId(countryId);
+      if(!state[domain]||typeof state[domain]!=='object'){
+        if(!create)return null;
+        state[domain]={};
+      }
+      if(!state[domain][id]||typeof state[domain][id]!=='object'){
+        if(!create)return null;
+        state[domain][id]={};
+      }
+      return state[domain][id];
+    }
+
+    read(countryId,path){
+      const id=normalizeCountryId(countryId);
+      const parts=String(path||'').split('.');
+      if(!parts[0])return undefined;
+      const bucket=this.countryContainer(id,parts.shift(),false);
+      if(!bucket)return undefined;
+      let cur=bucket;
+      for(const part of parts){
+        if(cur==null||!Object.prototype.hasOwnProperty.call(Object(cur),part))return undefined;
+        cur=cur[part];
+      }
+      return clone(cur);
+    }
+
+    readDomain(countryId,domain){
+      const bucket=this.countryContainer(countryId,String(domain||''),false);
+      return bucket?clone(bucket):null;
+    }
+
+    revision(countryId,domain){
+      const id=normalizeCountryId(countryId);
+      const d=String(domain||'').trim();
+      const key=id+'::'+d;
+      const current=this.readDomain(id,d);
+      if(current===null)return null;
+      const rev='CONTENT:'+hash(current);
+      this.revisionLedger.set(key,rev);
+      return rev;
+    }
+
+    begin(ownerMinistry,countryId,turn,commandId){
+      const transactionFactory=global.OmegaMinistryStateTransaction;
+      if(!transactionFactory?.create)throw new Error('STATE_TRANSACTION_SYSTEM_UNAVAILABLE');
+      return transactionFactory.create(ownerMinistry,normalizeCountryId(countryId),turn,commandId,this);
+    }
+
+    commitTransaction(transaction){
+      if(!transaction||typeof transaction!=='object')throw new Error('INVALID_STATE_TRANSACTION');
+      const state=this.root();
+      if(!state)throw new Error('AUTHORITATIVE_STATE_UNAVAILABLE');
+      const id=normalizeCountryId(transaction.countryId);
+      const owner=String(transaction.ownerMinistry||'');
+      if(!owner)throw new Error('STATE_OWNER_REQUIRED');
+      const operations=Array.isArray(transaction.operations)?transaction.operations:[];
+      const beforeDigest=hash(state);
+      const applied=[];
+
+      for(const operation of operations){
+        const path=String(operation?.path||'');
+        const pieces=path.split('.');
+        const domain=pieces.shift();
+        if(!domain||domain!==owner&&!(owner==='resource'&&['resourceSummary','resourceInventory','resourceDeposits'].includes(domain))){
+          throw new Error('STATE_PATH_NOT_OWNED_BY_MINISTRY:'+path);
+        }
+        const aliases={
+          resourceSummary:'resource',
+          resourceInventory:'resource',
+          resourceDeposits:'resource'
+        };
+        const actualDomain=aliases[domain]||domain;
+        const bucket=this.countryContainer(id,actualDomain,true);
+        let cursor=bucket;
+        for(let i=0;i<pieces.length-1;i++){
+          const part=pieces[i];
+          if(!cursor[part]||typeof cursor[part]!=='object')cursor[part]={};
+          cursor=cursor[part];
+        }
+        const leaf=pieces[pieces.length-1];
+        const before=clone(cursor[leaf]);
+        if(operation.op==='DELETE')delete cursor[leaf];
+        else if(operation.op==='SET')cursor[leaf]=clone(operation.after);
+        else throw new Error('UNKNOWN_STATE_OPERATION:'+operation.op);
+        applied.push({op:operation.op,path,before,after:clone(cursor[leaf])});
+      }
+
+      const afterDigest=hash(state);
+      const transactionId=String(transaction.transactionId||('OMI-TX-'+transaction.turn+'-'+owner+'-'+transaction.commandId));
+      const record={
+        transactionId,
+        commandId:String(transaction.commandId||''),
+        ownerMinistry:owner,
+        countryId:id,
+        simulationTurn:Number(transaction.turn)||0,
+        changed:beforeDigest!==afterDigest,
+        operations:applied,
+        beforeRevision:'CONTENT:'+beforeDigest,
+        afterRevision:'CONTENT:'+afterDigest
+      };
+      this.transactionLedger.set(transactionId,clone(record));
+      while(this.transactionLedger.size>256){
+        const first=this.transactionLedger.keys().next().value;
+        if(first)this.transactionLedger.delete(first);else break;
+      }
+      if(record.changed){
+        for(const operation of applied){
+          const domain=String(operation.path).split('.')[0];
+          const actual=({
+            resourceSummary:'resource',
+            resourceInventory:'resource',
+            resourceDeposits:'resource'
+          })[domain]||domain;
+          this.revisionLedger.set(id+'::'+actual,'CONTENT:'+hash(this.readDomain(id,actual)));
+        }
+      }
+      return Object.freeze(record);
+    }
+
+    getTransaction(transactionId){
+      return clone(this.transactionLedger.get(String(transactionId||''))||null);
+    }
+
+    exportState(){
+      return {
+        schemaVersion:1,
+        version:VERSION,
+        revisions:clone(Object.fromEntries(this.revisionLedger)),
+        transactions:clone(Object.fromEntries(this.transactionLedger))
+      };
+    }
+
+    importState(snapshot){
+      if(!snapshot||typeof snapshot!=='object')throw new Error('INVALID_STATE_AUTHORITY_SAVE');
+      this.revisionLedger=new Map(Object.entries(snapshot.revisions||{}));
+      this.transactionLedger=new Map(Object.entries(snapshot.transactions||{}));
+      return true;
+    }
+
+    diagnostics(){
+      return {
+        version:VERSION,
+        stateAvailable:!!this.root(),
+        transactionRecords:this.transactionLedger.size,
+        revisionRecords:this.revisionLedger.size
+      };
+    }
+  }
+
+  const instance=new AuthoritativeStateAuthority();
+  const api=Object.freeze({
+    VERSION,
+    instance,
+    bind:state=>instance.bind(state),
+    root:()=>instance.root(),
+    read:(countryId,path)=>instance.read(countryId,path),
+    readDomain:(countryId,domain)=>instance.readDomain(countryId,domain),
+    revision:(countryId,domain)=>instance.revision(countryId,domain),
+    begin:(owner,country,turn,commandId)=>instance.begin(owner,country,turn,commandId),
+    commitTransaction:tx=>instance.commitTransaction(tx),
+    getTransaction:id=>instance.getTransaction(id),
+    saveState:()=>instance.exportState(),
+    loadState:s=>instance.importState(s),
+    diagnostics:()=>instance.diagnostics()
+  });
+
+  global.Omega=global.Omega||{};
+  global.Omega.AuthoritativeStateAuthority=api;
+  global.OmegaAuthoritativeStateAuthority=api;
+})(typeof window!=='undefined'?window:globalThis);
