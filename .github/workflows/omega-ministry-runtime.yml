@@ -31,6 +31,7 @@ jobs:
       - name: Syntax gate for ministry runtime
         run: |
           set -euo pipefail
+          node --check server_bootstrap.js
           node --check omega_ministry_registry.js
           node --check omega_ministry_state_provider.js
           node --check omega_ministry_information_policy.js
@@ -47,6 +48,44 @@ jobs:
         run: |
           set -euo pipefail
           npm run test:ministries
+
+
+      - name: Production server boot and canonical script injection smoke
+        run: |
+          set -euo pipefail
+          PORT=31337 node server_bootstrap.js >/tmp/omega-server.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill $SERVER_PID >/dev/null 2>&1 || true' EXIT
+          READY=0
+          for i in $(seq 1 20); do
+            if curl -fsS http://127.0.0.1:31337/api/ai/status >/tmp/omega-ai-status.json 2>/dev/null; then READY=1; break; fi
+            sleep 1
+          done
+          if [ "$READY" -ne 1 ]; then
+            cat /tmp/omega-server.log
+            exit 1
+          fi
+          curl -fsS http://127.0.0.1:31337/ >/tmp/omega-index.html
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs/promises';
+          const html = await fs.readFile('/tmp/omega-index.html','utf8');
+          for (const required of [
+            'omega_ministry_registry.js',
+            'omega_ministry_state_provider.js',
+            'omega_ministry_information_policy.js',
+            'omega_ministry_decision_framework.js',
+            'omega_ministry_state_transaction.js',
+            'omega_ministry_domain_engines.js',
+            'omega_ministry_interoperability_system.js',
+            'omega_ministry_runtime_v1.js',
+            'omega_ai_context_bridge.js'
+          ]) {
+            if (!html.includes(required)) throw new Error('Canonical script missing from production HTML: '+required);
+          }
+          const status = JSON.parse(await fs.readFile('/tmp/omega-ai-status.json','utf8'));
+          if (status.ok !== true) throw new Error('Production /api/ai/status is not healthy');
+          console.log('CI PRODUCTION BOOT SMOKE: PASS');
+          NODE
 
       - name: Required proof assertions
         run: |
@@ -68,7 +107,7 @@ jobs:
           if (!interoperability.includes('dispatchCommand')) throw new Error('Command system missing');
           if (!interoperability.includes('emitEvent')) throw new Error('Semantic event system missing');
           if (!interoperability.includes('saveState')) throw new Error('Save/load state contract missing');
-          if (!interoperability.includes("IDS.length*IDS.length")) throw new Error('17x17 mesh topology generation missing');
+          if (!interoperability.includes('this.ids.length*this.ids.length')) throw new Error('Dynamic NxN mesh topology generation missing');
           if (!meshTest.includes("every route transports")) throw new Error('Expanded route transport test missing');
           if (!meshTest.includes("relationship is not substituted for treaty status")) throw new Error('Treaty semantic separation test missing');
           if (!meshTest.includes("command -> authoritative owner")) throw new Error('Command propagation test missing');
