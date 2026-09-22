@@ -262,8 +262,19 @@
           this.decisionFramework.registerAction(actionId,definition);
         }
       }
+      this._registerCanonicalMessageProtocols();
       this._rebuildTopology();
       return this;
+    }
+
+    _registerCanonicalMessageProtocols(){
+      const required=['sourceMinistryId','targetMinistryId','countryId','topic','messageType'];
+      for(const type of Object.values(MESSAGE_TYPES)){
+        this.registerMessageProtocol(type,{
+          requiredFields:required,
+          schema:{type:'object',required}
+        });
+      }
     }
 
     _rebuildTopology(){
@@ -2458,7 +2469,6 @@
     getContext:(...args)=>apiInstance.getContext(...args),
     coordinateGovernment:(...args)=>apiInstance.coordinateGovernment(...args),
     evaluateAction:(...args)=>apiInstance.evaluateAction(...args),
-    registerAction:(...args)=>apiInstance.registerAction(...args),
     registerAction:(...args)=>apiInstance.registerAction(...args),
     registerMessageProtocol:(...args)=>apiInstance.registerMessageProtocol(...args),
     subscribeEvent:(...args)=>apiInstance.subscribeEvent(...args),
