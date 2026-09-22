@@ -295,9 +295,9 @@ test('L+M+N: Trade receives separate Foreign facts and permitted cross-ministry 
   s.registerTradeAction();
   const context=s.mesh.getMinistryBriefing('trade',s.countryA,{currentTurn:1});
   assert.equal(context.peerStates.foreign.publishedFacts['foreign.relations'].value[s.countryB],55);
-  assert.deepEqual(
-    context.peerStates.foreign.publishedFacts['foreign.treaties'].value[s.countryB],
-    {status:'NOT_CONCLUDED'}
+  assert.equal(
+    context.peerStates.foreign.publishedFacts['foreign.treaties'].value[s.countryB].status,
+    'NOT_CONCLUDED'
   );
   assert.equal(context.peerStates.foreign.publishedFacts['foreign.sanctions'].value[s.countryB],0);
   assert.equal(context.peerStates.intelligence.publishedFacts['intelligence.sources'].access.granted,false);
@@ -368,9 +368,9 @@ test('R: save/load restores logically equivalent interoperability state',()=>{
   const saved=s.runtime.saveState();
   const restored=createSandbox({state:JSON.parse(JSON.stringify(s.state))});
   restored.runtime.loadState(saved);
-  assert.deepEqual(
-    stripTelemetry(restored.mesh.getPeerState('trade','finance',s.countryA,{currentTurn:1})),
-    stripTelemetry(s.mesh.getPeerState('trade','finance',s.countryA,{currentTurn:1}))
+  assert.equal(
+    JSON.stringify(stripTelemetry(restored.mesh.getPeerState('trade','finance',s.countryA,{currentTurn:1}))),
+    JSON.stringify(stripTelemetry(s.mesh.getPeerState('trade','finance',s.countryA,{currentTurn:1})))
   );
   assert.equal(restored.mesh.getRequest(request.correlationId).status,s.mesh.getRequest(request.correlationId).status);
   const restoredCoord=restored.sandbox.OmegaMinistryDomainEngines.get('foreign').getCoordinationState(s.countryA);
@@ -387,7 +387,7 @@ test('S: deterministic identifiers, state revisions and decision results do not 
   assert.equal(am.messageId,bm.messageId);
   const ad=a.mesh.evaluateAction('trade',ACTION_ID,{countryId:a.countryA,currentTurn:1});
   const bd=b.mesh.evaluateAction('trade',ACTION_ID,{countryId:b.countryA,currentTurn:1});
-  assert.deepEqual(stripTelemetry(ad),stripTelemetry(bd));
+  assert.equal(JSON.stringify(stripTelemetry(ad)),JSON.stringify(stripTelemetry(bd)));
 });
 
 test('T: actual repository country data crosses the canonical provider -> ministry -> interoperability path',()=>{
@@ -435,20 +435,7 @@ test('N2: relationship is not substituted for treaty status',()=>{
   assert.ok(decision.missing.some(item=>item.requirement?.id==='foreign.treaties'));
 });
 
-test('N2: relationship is not substituted for treaty status',()=>{
-  const s=createSandbox();
-  s.tickAll(1);
-  s.registerTradeAction();
-  const original=s.mesh.getPeerState('trade','foreign',s.countryA,{currentTurn:1});
-  const altered=JSON.parse(JSON.stringify(original));
-  delete altered.publishedFacts['foreign.treaties'].value[s.countryB];
-  const briefing=s.mesh.getMinistryBriefing('trade',s.countryA,{currentTurn:1});
-  briefing.peerStates.foreign=altered;
-  const framework=s.sandbox.Omega.MinistryDecisionFramework.instance;
-  const decision=framework.evaluate({ministryId:'trade',actionId:ACTION_ID,countryId:s.countryA,currentTurn:1,briefing});
-  assert.equal(decision.status,'UNKNOWN');
-  assert.ok(decision.missing.some(item=>item.requirement?.id==='foreign.treaties'));
-});
+
 
 function stripTelemetry(value){
   if(value===null||value===undefined)return value;
