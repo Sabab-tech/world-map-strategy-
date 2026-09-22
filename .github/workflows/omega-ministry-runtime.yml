@@ -34,6 +34,7 @@ jobs:
           node --check omega_ministry_domain_engines.js
           node --check omega_ministry_interoperability_system.js
           node --check omega_ministry_runtime_v1.js
+          node --check omega_ai_context_bridge.js
           node --check test/omega_17_ministry_runtime.test.js
           node --check test/omega_ministry_interoperability.test.js
 
