@@ -111,6 +111,12 @@
     return first(context,paths);
   }
 
+  function fact(snapshot,key){
+    return snapshot?.operations?.facts && Object.prototype.hasOwnProperty.call(snapshot.operations.facts,key)
+      ? snapshot.operations.facts[key]
+      : null;
+  }
+
   function collectionCount(value){
     if(Array.isArray(value)) return value.length;
     if(value instanceof Map || value instanceof Set) return value.size;
@@ -868,25 +874,13 @@
       const missing=[];
       const blockers=[];
 
-      const treaty=first(foreign,[
-        'operations.facts.foreign.treaties',
-        'operations.facts.trade.relations'
-      ]);
-      const sanctions=first(foreign,[
-        'operations.facts.foreign.sanctions'
-      ]);
-      const relation=first(foreign,[
-        'operations.facts.foreign.relations',
-        'operations.facts.trade.relations'
-      ]);
-      const tradeBalance=trade?.fiscal?.revenue ?? first(trade?.operations?.facts||{},['trade.balance','trade.exports']);
-      const logistics=first(transport,[
-        'operations.facts.transport.logistics'
-      ]);
+      const treaty=fact(foreign,'foreign.treaties') ?? fact(trade,'trade.relations');
+      const sanctions=fact(foreign,'foreign.sanctions');
+      const relation=fact(foreign,'foreign.relations') ?? fact(trade,'trade.relations');
+      const tradeBalance=trade?.fiscal?.revenue ?? fact(trade,'trade.balance') ?? fact(trade,'trade.exports');
+      const logistics=fact(transport,'transport.logistics');
       const fiscalReserves=finance?.fiscal?.reserves ?? null;
-      const threat=first(intelligence,[
-        'operations.facts.intelligence.threats'
-      ]);
+      const threat=fact(intelligence,'intelligence.threats');
 
       const checks=[
         ['foreign.treatyStatus',treaty],
