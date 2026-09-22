@@ -822,6 +822,111 @@ test('architectural scheduler defers authoritative mutation until its COMMIT bou
   assert.equal(s.mesh.instance.pendingCommands.size,0);
 });
 
+
+test('architectural dependency scheduler derives deterministic dependency groups and records cycles explicitly',()=>{
+  const s=createSandbox();
+  const plan=s.runtime.createDependencyPlan();
+  assert.equal(plan.order.length,MINISTRY_COUNT);
+  assert.equal(new Set(plan.order).size,MINISTRY_COUNT);
+  assert.ok(Array.isArray(plan.groups));
+  assert.ok(Array.isArray(plan.cycles));
+  assert.ok(plan.cycles.length>=1,'the current ministry graph contains intentional dependency cycles');
+  for(const ministry of s.ids){
+    for(const dependency of plan.dependencies[ministry]||[]){
+      const sameGroup=plan.groups.some(group=>group.includes(ministry)&&group.includes(dependency));
+      const ministryIndex=plan.order.indexOf(ministry);
+      const dependencyIndex=plan.order.indexOf(dependency);
+      assert.ok(sameGroup||dependencyIndex<ministryIndex);
+    }
+  }
+});
+
+test('architectural DECIDE phase evaluates declarative ministry actions without requiring hardcoded policy data',()=>{
+  const s=createSandbox();
+  s.tickAll(1);
+  const result=s.mesh.evaluateGovernmentDecisions(s.countryA,{currentTurn:1});
+  assert.equal(result.countryId,s.countryA);
+  assert.equal(result.simulationTurn,1);
+  assert.ok(Array.isArray(result.evaluated));
+  assert.ok(result.evaluated.some(row=>row.actionId==='CONCLUDE_TRADE_AGREEMENT'));
+});
+
+test('architectural delayed-effect scheduler promotes due effects into the canonical COMMIT pipeline',()=>{
+  const s=createSandbox();
+  s.mesh.registerAction(ACTION_ID+'-EFFECT',{stateOwnerMinistry:'foreign'});
+  s.mesh.registerAuthorityPolicy(ACTION_ID+'-EFFECT',{
+    proposerMinistries:['trade'],approverMinistries:['trade'],executorMinistries:['foreign']
+  });
+  s.mesh.registerCommandHandler(ACTION_ID+'-EFFECT','foreign',(command,{stateTransaction})=>{
+    const treaties=stateTransaction.get('foreign.treaties')||{};
+    treaties[s.countryB]={status:'DELAYED'};
+    stateTransaction.set('foreign.treaties',treaties);
+    return {accepted:true};
+  });
+  const effect=s.mesh.scheduleEffect({
+    effectId:'EFFECT-1',
+    sourceMinistryId:'trade',
+    actionId:ACTION_ID+'-EFFECT',
+    commandType:ACTION_ID+'-EFFECT',
+    countryId:s.countryA,
+    dueTurn:5,
+    payload:{targetCountryId:s.countryB},
+    createdTurn:1
+  });
+  assert.equal(effect.status,'SCHEDULED');
+  assert.equal(s.mesh.processScheduledEffects(4).length,0);
+  const prepared=s.mesh.processScheduledEffects(5);
+  assert.equal(prepared.length,1);
+  assert.equal(prepared[0].status,'PREPARED');
+  assert.equal(s.state.foreign[s.countryA].treaties[s.countryB],undefined);
+  const committed=s.mesh.commitPendingCommands(5);
+  assert.equal(committed[0].status,'APPLIED');
+  assert.equal(s.state.foreign[s.countryA].treaties[s.countryB].status,'DELAYED');
+});
+
+test('architectural commit journal links authoritative commit to recoverable event outbox materialization',()=>{
+  const s=createSandbox();
+  s.tickAll(1);
+  s.registerTradeAction();
+  s.mesh.registerCommandHandler(ACTION_ID,'foreign',(command,{stateTransaction,emitEvent})=>{
+    const treaties=stateTransaction.get('foreign.treaties')||{};
+    treaties[s.countryB]={status:'JOURNALED'};
+    stateTransaction.set('foreign.treaties',treaties);
+    emitEvent('TREATY_SIGNED',{targetCountryId:s.countryB});
+    return {accepted:true};
+  });
+  const cmd=s.mesh.dispatchCommand('trade',ACTION_ID,s.countryA,{targetCountryId:s.countryB},{
+    turn:2,commandType:ACTION_ID,commandId:'CMD-JOURNAL-1'
+  });
+  assert.equal(cmd.status,'APPLIED');
+  const journal=s.mesh.instance.commitJournal.get('OMEGA-CJ-CMD-JOURNAL-1');
+  assert.equal(journal.status,'COMMITTED');
+  assert.equal(journal.stateCommitted,true);
+  assert.equal(journal.outboxReconciled,true);
+  assert.ok([...s.mesh.instance.eventOutbox.values()].some(row=>row.event.causationId==='CMD-JOURNAL-1'||row.event.eventId.startsWith('OMEGA-CMD-EVENT-CMD-JOURNAL-1')));
+});
+
+test('architectural transaction replay reconstructs authoritative state from committed write history',()=>{
+  const s=createSandbox();
+  s.mesh.registerAction(ACTION_ID+'-REPLAY',{stateOwnerMinistry:'foreign'});
+  s.mesh.registerAuthorityPolicy(ACTION_ID+'-REPLAY',{
+    proposerMinistries:['trade'],approverMinistries:['trade'],executorMinistries:['foreign']
+  });
+  s.mesh.registerCommandHandler(ACTION_ID+'-REPLAY','foreign',(command,{stateTransaction})=>{
+    stateTransaction.set('foreign.relations',{[s.countryB]:99});
+    return {accepted:true};
+  });
+  const cmd=s.mesh.dispatchCommand('trade',ACTION_ID+'-REPLAY',s.countryA,{},{
+    turn:3,commandType:ACTION_ID+'-REPLAY',commandId:'CMD-REPLAY-1'
+  });
+  assert.equal(cmd.status,'APPLIED');
+  const replay=s.sandbox.OmegaAuthoritativeStateAuthority.instance.reconstructState({},{
+    fromTurn:3,toTurn:3
+  });
+  assert.equal(replay.appliedTransactionCount,1);
+  assert.equal(replay.state.foreign[s.countryA].relations[s.countryB],99);
+  assert.ok(replay.digest);
+});
 test('architectural recovery preserves a prepared transaction across save/load',()=>{
   const s=createSandbox();
   s.tickAll(1);
