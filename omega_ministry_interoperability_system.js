@@ -1061,8 +1061,10 @@
           causationId:transaction?.commandId||null
         };
         this.dirtyPublications.set(key,dirty);
-        this._broadcastStateChangeNotice(countryId,ministryId,snapshot.simulationTurn,snapshot.stateRevision,changedPaths,transaction?.commandId||null,snapshot.provenance);
-        }
+        this._broadcastStateChangeNotice(
+          countryId,ministryId,snapshot.simulationTurn,snapshot.stateRevision,
+          changedPaths,transaction?.commandId||null,snapshot.provenance
+        );
       }
       return changedPaths;
     }
@@ -1070,7 +1072,8 @@
     publishState(ministryId,packet={}){
       const id=String(ministryId||'');
       if(!this.ids.includes(id))throw new Error('UNKNOWN_MINISTRY:'+id);
-      const key=snapshotKey((packet.context?.countryId||snapshot?.countryId),id);
+      const publishCountryId=String(packet.context?.countryId||'').trim().toUpperCase();
+      const key=snapshotKey(publishCountryId,id);
       const previous=this.snapshots.get(key)||null;
       const snapshot=this._compilePublicSnapshot(id,packet);
       this.snapshots.set(snapshotKey(snapshot.countryId,id),snapshot);
