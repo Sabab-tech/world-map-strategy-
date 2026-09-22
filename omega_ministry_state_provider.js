@@ -171,11 +171,16 @@
       const contract=DATASET_INPUT_CONTRACT;
       const value=dataset;
       const errors=[];
+      const unresolvedCountryKeys=[];
       if(value===null||value===undefined)errors.push('DATASET_EMPTY');
+      const checkIdentity=(candidate,label)=>{
+        const raw=String(candidate??'').trim();
+        if(!raw||!this._strictCanonicalCountryId(raw))unresolvedCountryKeys.push(raw||label);
+      };
       const checkRow=(row,label)=>{
         if(!row||typeof row!=='object'||Array.isArray(row)){errors.push(label+'_NOT_OBJECT');return;}
         const candidate=row.countryId||row.countryCode||row.country_code||row.iso2||row.iso3||row.code||row.id||row.name||row.countryName||row.country_name||null;
-        if(!this._strictCanonicalCountryId(candidate))errors.push(label+'_COUNTRY_ID_NOT_CANONICAL');
+        checkIdentity(candidate,label);
       };
       if(Array.isArray(value)){
         value.forEach((row,index)=>checkRow(row,'ROW_'+index));
@@ -186,31 +191,16 @@
           for(const [key,row] of Object.entries(value)){
             if(!row||typeof row!=='object'||Array.isArray(row)){errors.push('KEY_'+key+'_VALUE_NOT_OBJECT');continue;}
             const candidate=row.countryId||row.countryCode||row.country_code||row.iso2||row.iso3||row.code||row.id||row.name||row.countryName||row.country_name||key;
-            if(!this._strictCanonicalCountryId(candidate))errors.push('KEY_'+key+'_COUNTRY_ID_NOT_CANONICAL');
+            checkIdentity(candidate,key);
           }
         }
       }else errors.push('DATASET_NOT_OBJECT_OR_ARRAY');
-      const unresolvedCountryKeys=[];
-      const collectIdentity=value=>{
-        const raw=String(value??'').trim();
-        if(raw&&!this._strictCanonicalCountryId(raw))unresolvedCountryKeys.push(raw);
-      };
-      if(Array.isArray(value)){
-        value.forEach(row=>collectIdentity(row?.countryId||row?.countryCode||row?.country_code||row?.iso2||row?.iso3||row?.code||row?.id||row?.name||row?.countryName||row?.country_name));
-      }else if(value&&typeof value==='object'&&!this._looksLikeCountryRecord(value)){
-        for(const [key,row] of Object.entries(value)){
-          if(row&&typeof row==='object'&&!Array.isArray(row)){
-            collectIdentity(row.countryId||row.countryCode||row.country_code||row.iso2||row.iso3||row.code||row.id||row.name||row.countryName||row.country_name||key);
-          }
-        }
-      }
-      const totalRecords=Array.isArray(value)?value.length:(value&&typeof value==='object'?(
-        this._looksLikeCountryRecord(value)?1:Object.keys(value).length
-      ):0);
-      const identityCoverage=totalRecords?Math.max(0,(totalRecords-new Set(unresolvedCountryKeys).size)/totalRecords):1;
-      const result={...contract,valid:errors.length===0,errors,unresolvedCountryKeys:[...new Set(unresolvedCountryKeys)],identityCoverage};
+      const uniqueUnresolved=[...new Set(unresolvedCountryKeys)];
+      const totalRecords=Array.isArray(value)?value.length:(value&&typeof value==='object'?(this._looksLikeCountryRecord(value)?1:Object.keys(value).length):0);
+      const identityCoverage=totalRecords?Math.max(0,(totalRecords-uniqueUnresolved.length)/totalRecords):1;
+      const result={...contract,valid:errors.length===0,errors,unresolvedCountryKeys:uniqueUnresolved,identityCoverage};
       if(options.strict&&errors.length)throw new Error('DATASET_CONTRACT_INVALID:'+errors.join(','));
-      if(options.requireCompleteIdentity&&unresolvedCountryKeys.length)throw new Error('DATASET_IDENTITY_INCOMPLETE:'+[...new Set(unresolvedCountryKeys)].slice(0,25).join(','));
+      if(options.requireCompleteIdentity&&uniqueUnresolved.length)throw new Error('DATASET_IDENTITY_INCOMPLETE:'+uniqueUnresolved.slice(0,25).join(','));
       return result;
     }
 
