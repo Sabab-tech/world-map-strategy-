@@ -478,7 +478,9 @@
   for(const id of IDS){
     const Ctor=CLASS_MAP[id];
     if(typeof Ctor!=='function') throw new Error('Missing independent ministry engine class: '+id);
-    registry.set(id,Object.freeze(new Ctor(CONFIGS[id])));
+    const engine=new Ctor(CONFIGS[id]);
+    Object.preventExtensions(engine);
+    registry.set(id,engine);
   }
 
   function get(id){ return registry.get(String(id))||null; }
