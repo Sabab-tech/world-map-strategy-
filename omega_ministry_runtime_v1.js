@@ -166,7 +166,7 @@
     const domainSections={};
     for(const domainId of IDS){
       if(domainId==='cabinet') continue;
-      domainSections[domainId]=pickCountryBucket({gameState},domainId);
+      domainSections[domainId]=pickCountryBucket({gameState,countryId},domainId);
     }
     try{
       if(resourceEngine && typeof resourceEngine.getIntegratedResourceState==='function' && countryId){
