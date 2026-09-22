@@ -746,7 +746,7 @@ test('architectural knowledge contract exposes capability and authority as separ
   assert.equal(capability.ministryId,'trade');
   assert.ok(capability.consume.includes('foreign'));
   assert.equal(authority.stateOwnerMinistry,'foreign');
-  assert.deepEqual(authority.approvalRequirements,[]);
+  assert.equal(authority.approvalRequirements.length,0);
   assert.equal(contract.canPerform('trade','CONCLUDE_TRADE_AGREEMENT'),true);
 });
 
