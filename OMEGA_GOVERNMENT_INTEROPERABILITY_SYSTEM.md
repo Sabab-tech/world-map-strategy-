@@ -1,173 +1,388 @@
-# OMEGA Government Interoperability System
+# OMEGA Government Interoperability System v2
 
-## Purpose
+## Status
 
-The Government Interoperability System is the canonical cross-ministry coordination layer for OMEGA.
+The canonical government interoperability stack now consists of a dynamic ministry registry, a read-only country-scoped state provider, information visibility policy, generic evidence-driven decision framework, authoritative state transaction boundary, independent ministry engines, the interoperability system, and the canonical ministry runtime.
 
-The 17 ministries remain independent domain engines. Independence means:
+The system separates **architecture readiness** from **simulation data completeness**. Missing future simulation data is represented explicitly and is never replaced with synthetic production values.
 
-- each ministry owns and changes only its own domain state;
-- a ministry never reaches into another ministry's private state to mutate it;
-- all cross-ministry communication travels through the interoperability layer;
-- every ministry receives a compact, validated national situational picture.
-
-## Canonical ministry set
-
-The system uses the same 17 IDs as the canonical ministry runtime:
-
-`cabinet, defense, military, finance, economy, trade, foreign, intelligence, interior, transport, resource, health, education, technology, projects, culture, statistics`
-
-## Full topology
-
-The communication topology is generated from the canonical ID set, not maintained as 289 hand-written routes.
-
-- 17 x 17 logical connection cells = 289
-- cross-ministry directed routes = 17 x 16 = 272
-- loopback routes = 17
-
-Every source ministry has a valid route to every target ministry.
-
-The topology is a communication capability. It does not force every ministry to send messages on every tick.
-
-## Runtime flow
+## Authority boundaries
 
 ```
-OMEGA Kernel
-  -> Ministry Runtime Controller
-      -> 17 Independent Domain Engines
-          -> Government Interoperability System
-              -> Target Ministry Inbox
-                  -> Target Domain Engine
-                      -> Target-owned state change
-                          -> Published public state
-                              -> National situational picture
+Canonical Identity / Repository Data
+          ↓
+Read-only State Provider
+          ↓
+Authoritative World/Game State
+          ↓
+17 Independent Ministry Engines
+          ↓
+Government Interoperability System
+          ↓
+Public Ministry State Projections
+          ↓
+Ministry Decision Context
+          ↓
+Command → State Owner Transaction → Canonical Event
+          ↓
+Authoritative State Change
+          ↓
+Republish → Peer Observation
 ```
 
-## Knowledge model
+The interoperability system is not a second source of truth for country, finance, project, treaty, resource, military, or minister identity.
 
-The system separates three things.
+## Ministry registry
 
-### Private domain state
+The canonical registry contains 17 ministry IDs and is the topology authority.
 
-Only the owning ministry can change it.
+Runtime topology is generated as:
 
-### Public ministry state
+`N × N`
 
-A ministry publishes facts that other ministries are allowed to observe. The published snapshot contains, when available:
+For the current registry:
 
-- fiscal position
-- spending / reserves / revenue / debt
-- project counts and committed budget
-- policy and decision record counts
-- requests
+- 17 ministries
+- 289 logical directed connection cells
+- 272 cross-ministry directed routes
+- 17 loopback routes
+
+The runtime does not contain hard-coded per-route implementations and does not use the number 289 as a runtime constant.
+
+## Communication
+
+The system supports:
+
+- unicast
+- broadcast
+- request
+- response
+- acknowledgement
+- alert
+- state update
+- fiscal status
+- budget request
+- project status
+- constraint update
+- policy update
+
+Every message is country-scoped and carries source/target ministry IDs, message ID, simulation turn, source-state revision, topic, type, priority, payload, correlation/causation IDs where applicable, expiry information, and provenance.
+
+Real timestamps are telemetry only.
+
+## Canonical delivery ledger
+
+There is exactly one logical delivery ledger in the interoperability system.
+
+Each message can move through:
+
+`CREATED → DELIVERED → ACCEPTED → PROCESSING → PROCESSED`
+
+or to explicit terminal states such as:
+
+`REJECTED`, `DUPLICATE`, `EXPIRED`, `FAILED`
+
+Requests maintain their own lifecycle:
+
+`CREATED`, `DELIVERED`, `ACCEPTED`, `PROCESSING`, `RESPONDED`, `EXPIRED`, `FAILED`
+
+The Kernel may remain an infrastructure/orchestration provider, but it is not a competing authoritative delivery ledger.
+
+## Public ministry state
+
+A ministry publishes a compact public projection rather than leaking private internal state.
+
+The public contract includes, where applicable:
+
+`ministryId`
+`countryId`
+`simulationTurn`
+`stateRevision`
+`status`
+`active`
+`domain`
+`fiscal`
+`projects`
+`needs`
+`requests`
+`constraints`
+`alerts`
+`operations`
+`publishedFacts`
+`dataAvailability`
+`provenance`
+
+Each published fact carries availability and provenance metadata.
+
+## Missing data
+
+Supported availability states:
+
+`AVAILABLE`
+`UNOBSERVED`
+`UNAVAILABLE`
+`STALE`
+`INVALID`
+`NOT_APPLICABLE`
+`ESTIMATED`
+
+The system does not transform missing values into zero.
+
+Examples:
+
+- missing reserves ≠ reserves 0
+- missing debt ≠ debt 0
+- missing projects ≠ zero projects
+- missing treaty ≠ no treaty
+- missing readiness ≠ zero readiness
+
+Estimated data is explicitly labeled and is not silently upgraded to verified.
+
+## State provider
+
+`omega_ministry_state_provider.js` is the country-scoped read boundary.
+
+It exposes:
+
+`get(countryId, path)`
+`getSnapshot(countryId, domain)`
+`getRevision(countryId, domain)`
+`getAvailability(countryId, path)`
+`getProvenance(countryId, path)`
+
+The provider can consume the authoritative game state and canonical repository identity without forcing ministry engines to know the physical JSON layout of future datasets.
+
+This makes future hydration hot-pluggable.
+
+## Information policy
+
+Published facts are classified as:
+
+`PUBLIC`
+`GOVERNMENT_INTERNAL`
+`RESTRICTED`
+`CLASSIFIED`
+
+For example, an Intelligence source path can remain classified while a derived threat assessment is publishable to ministries that are permitted to receive it.
+
+A ministry therefore receives a controlled institutional view, not an omniscient copy of every internal object.
+
+## Ministry execution context
+
+Each ministry can receive:
+
+`ownState`
+`peerStates`
+`nationalState`
+`governmentLedger`
+`incomingMessages`
+`pendingRequests`
+`alerts`
+`constraints`
+`knownDataGaps`
+`decisionContext`
+
+The context is dynamically generated from the same generic contracts.
+
+## Government ledger
+
+The government read model tracks, where data exists:
+
+- ministry fiscal positions
+- budget requests
+- project signals
 - constraints
 - alerts
-- domain facts such as diplomatic relations, treaty records, logistics, threats, readiness, production, research, health and education signals
+- stale snapshots
+- pending inter-ministry requests
 
-Unknown data remains unknown.
+A budget request remains a request.
 
-### Government situational picture
+It is not automatically promoted to a requirement, funding gap, or approved allocation.
 
-Every ministry receives the current published snapshot of all 17 ministries plus the government-wide ledger of:
+Future fiscal fields are already part of the contract, including allocation, commitment, spending, encumbrance, capital/operating expenditure, emergency allocation, mandatory obligations, and required funding. They can remain unavailable until an authoritative fiscal subsystem is implemented.
 
-- ministry financial positions
-- open budget requests
-- project status signals
-- current constraints
-- alerts
+## Project contract
 
-The read model is revision-cached so a full national picture is not rebuilt and deep-cloned unnecessarily on every tick.
+The public project model can carry:
 
-## Message protocol
+`projectId`
+`ownerMinistry`
+`countryId`
+`projectType`
+`status`
+`phase`
+`cost`
+`allocatedFunding`
+`committedFunding`
+`spentFunding`
+`remainingFunding`
+`completion`
+`startDate`
+`targetDate`
+`dependencies`
+`blockers`
+`requiredApprovals`
+`linkedMinistries`
 
-Messages use a common envelope containing:
+Missing project fields stay unavailable.
 
-- protocol version
-- unique message ID
-- source
-- target
-- topic
-- message type
-- priority
-- turn
-- correlation ID
-- causation ID
-- country ID
-- payload
-- timestamp
-- expiry
+## Generic decision framework
 
-Supported message classes include:
+`omega_ministry_decision_framework.js` provides a generic action definition and evidence evaluator.
 
-`STATE_UPDATE`, `POLICY_UPDATE`, `REQUEST`, `RESPONSE`, `ALERT`, `ACK`, `BUDGET_REQUEST`, `PROJECT_STATUS`, `CONSTRAINT_UPDATE`, `FISCAL_STATUS`
+An action can define:
 
-## Requests and decisions
+- required information
+- optional information
+- blocking conditions
+- warning conditions
+- approval requirements
+- state owner
+- affected ministries
+- affected state domains
+- expected outputs
+- downstream effects
 
-Ministries can request information from any other ministry through the same full mesh.
+The evaluator returns evidence-linked states such as:
 
-The system tracks request/response correlation and exposes decision context to a ministry port.
+`OBSERVED`
+`CONDITIONALLY_ASSESSABLE`
+`BLOCKED`
+`UNKNOWN`
 
-For example, Trade can ask for a trade-agreement context that combines published evidence from Foreign Affairs, Transport, Finance and Intelligence. The result distinguishes:
+It is not a Trade-only special case.
 
-- observed evidence
-- missing evidence
-- explicit blockers
-- conditionally assessable situations
+## Trade agreement example
 
-The system does not invent facts to make an action look possible.
+A trade action can require independent facts from:
 
-## Fiscal and project coordination
+- Foreign Affairs: relations
+- Foreign Affairs: treaties
+- Foreign Affairs: negotiations
+- Foreign Affairs: sanctions
+- Economy: production
+- Finance: reserves / fiscal information
+- Transport: logistics
+- Intelligence: permitted threat assessment
+- Trade: own trade balance
 
-A ministry can publish:
+Relationship state is never substituted for treaty state.
 
-- current fiscal position
-- budget need / request
-- project count
-- active project count
-- committed project budget
-- project blockers
-- constraints
+Missing treaty information therefore produces an unknown/missing requirement rather than a fabricated conclusion.
 
-That information becomes visible to the other ministries through the government situational read model.
+## Commands, state transactions and events
 
-## Security and independence
+A ministry decision can emit a command.
 
-The system enforces source/target validation and message ID deduplication.
+The command is processed by its registered authoritative state owner.
 
-A ministry communication port is bound to its source identity. It cannot claim to be another ministry.
+The state owner receives a deterministic state transaction and can only change owned paths.
 
-The interoperability layer transports information. It does not authorize one ministry to mutate another ministry's private state.
+The transaction then produces the authoritative state mutation.
 
-## Integration points
+Canonical events are emitted from that state-changing path, such as:
 
-Canonical files:
+`TREATY_SIGNED`
+`BUDGET_REQUESTED`
+`PROJECT_STARTED`
+`PROJECT_BLOCKED`
+`PROJECT_COMPLETED`
+`FISCAL_CONDITION_CHANGED`
+`TRANSPORT_CAPACITY_CHANGED`
+`THREAT_ASSESSMENT_CHANGED`
+`RESOURCE_STATE_CHANGED`
 
-- `omega_ministry_interoperability_system.js`
-- `omega_ministry_runtime_v1.js`
-- `omega_ministry_domain_engines.js`
-- `omega_kernel.js`
-- `omega_ai_context_bridge.js`
-- `minister_communication_engine.js`
+The changed authority is republished on the next state publication cycle, allowing other ministries to observe the resulting state.
 
-The browser runtime already invokes the canonical ministry controller through the Kernel orchestration loop.
+## Save/load
 
-The canonical AI context bridge now carries the ministry interoperability context into the AI semantic packet, so minister-facing AI can receive the same cross-government knowledge rather than a separate, stale universe.
+Runtime state persistence includes:
+
+- ministry runtime state
+- engine coordination state
+- public snapshots
+- inboxes
+- delivery ledger
+- request ledger
+- events
+- commands
+- deterministic sequence counters
+- metrics
+
+The goal is logically equivalent restoration rather than UI-only persistence.
+
+## Determinism and offline operation
+
+Simulation turns, revisions, commands and events are the simulation inputs.
+
+Wall-clock timestamps are telemetry only and are not used to decide simulation outcomes.
+
+The interoperability system does not require an external LLM or internet connection.
+
+Online AI can enrich minister reasoning, but the government information system is local-state driven.
+
+## Performance
+
+The system uses:
+
+- compact public snapshots
+- revisioned read-model caching
+- bounded inboxes
+- bounded history
+- event-driven traffic
+- deterministic invalidation
+
+Full mesh connectivity therefore does not mean 17 × 17 messages every frame.
+
+## Diagnostics
+
+Diagnostics separate:
+
+`STRUCTURE PASS`
+
+from:
+
+`BEHAVIOR PASS`
+
+and separately report data coverage:
+
+`AVAILABLE`
+`UNAVAILABLE`
+`STALE`
+`INVALID`
+`UNOBSERVED`
+`ESTIMATED`
+
+The system does not report “full simulation ready” merely because the architecture exists.
 
 ## Verification
 
-The ministry runtime CI verifies:
+The canonical Ministry Runtime workflow verifies:
 
 - 17 independent engines
 - 17 unique engine instances
-- 289 logical connection cells
-- 272 cross-ministry directed routes
-- 17 loopback routes
-- pairwise send/receive routing
-- duplicate-safe delivery
-- ministry request/response handling
-- budget request visibility
-- project status visibility
-- national situational awareness for all 17 ministries
-- Trade decision-context evidence
+- dynamic NxN topology
+- route delivery
+- target processing
+- duplicate protection
+- invalid source/target rejection
+- expiry handling
+- ACKs
+- request/response lifecycle
+- budget visibility
+- project visibility
+- missing-data semantics
+- stale-state detection
+- country isolation
+- ministry independence
+- generic trade evidence
+- treaty/relationship separation
+- hot-plug data
+- save/load
+- deterministic decision results
+- actual repository country data path
+- authoritative command → state transaction → event → republish flow
+- production server boot and canonical script injection
 
-The interoperability system is infrastructure. It does not replace the ministry-specific domain logic that generates the underlying facts.
+The architecture is intended to accept future fiscal, economic, diplomatic, military, social, transport, education, health, technology, resource and project datasets without rewriting the ministry topology or multiplying engine classes by country.
