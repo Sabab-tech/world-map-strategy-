@@ -1699,6 +1699,16 @@
       const actorMinistry=String(actor.ministryId||command?.sourceMinistryId||'');
       const action=this.decisionFramework?.getAction?.(actionId)||null;
       const approvalRequirements=Array.isArray(action?.approvalRequirements)?action.approvalRequirements:[];
+      const priorApproval=command?.approvalOverride&&typeof command.approvalOverride==='object'?command.approvalOverride:null;
+      if(priorApproval?.status==='APPROVED_BY_AUTHORITY'&&policy){
+        const approver=String(priorApproval.approverMinistryId||'');
+        const authorizedApprover=policy.approverMinistries.includes(approver)||policy.reviewerMinistries.includes(approver)||approver==='cabinet';
+        const executorMinistry=String(actor.executorMinistryId||command?.stateOwnerMinistryId||'');
+        const executorOk=!policy.executorMinistries.length||policy.executorMinistries.includes(executorMinistry);
+        if(authorizedApprover&&executorOk){
+          return {authorized:true,status:'AUTHORIZED',reason:'PRIOR_AUTHORITY_APPROVAL',actorMinistry,approverMinistryId:approver};
+        }
+      }
       if(!policy&&approvalRequirements.length){
         return {authorized:false,status:'REVIEW_REQUIRED',reason:'DECLARATIVE_APPROVAL_REQUIREMENTS_UNRESOLVED',actorMinistry,approvalRequirements:approvalRequirements.slice()};
       }
@@ -1798,6 +1808,56 @@
       return processed;
     }
 
+    approveCommand(commandId,actor={}){
+      const id=String(commandId||'');
+      const row=this.commands.get(id);
+      if(!row)throw new Error('COMMAND_NOT_FOUND');
+      if(String(row.status)!=='REVIEW_REQUIRED'&&String(row.lifecycleStatus)!=='REVIEW_REQUIRED')return clone(row);
+      const policy=this.authorityPolicies.get(String(row.actionId||''));
+      if(!policy)throw new Error('AUTHORITY_POLICY_REQUIRED_FOR_REVIEW');
+      const reviewer=String(actor.ministryId||actor.reviewerMinistryId||'');
+      const canReview=policy.reviewerMinistries.includes(reviewer)||policy.approverMinistries.includes(reviewer)||reviewer==='cabinet';
+      if(!canReview)throw new Error('REVIEWER_NOT_AUTHORIZED');
+      const turn=Number.isFinite(Number(actor.turn))?Number(actor.turn):this.lastTurn;
+      row.approval={
+        ...(row.approval||{}),
+        authorized:true,
+        status:'APPROVED_BY_AUTHORITY',
+        approverMinistryId:reviewer,
+        approvedTurn:turn
+      };
+      row.lifecycleStatus='APPROVED';
+      row.status='APPROVED';
+      row.statusHistory.push({status:'APPROVED',simulationTurn:turn,reason:'AUTHORITY_REVIEW_COMPLETED'});
+      return clone(row);
+    }
+
+    executeApprovedCommand(commandId,actor={}){
+      const id=String(commandId||'');
+      const row=this.commands.get(id);
+      if(!row)throw new Error('COMMAND_NOT_FOUND');
+      if(String(row.status)!=='APPROVED'||row.approval?.status!=='APPROVED_BY_AUTHORITY'){
+        throw new Error('COMMAND_NOT_APPROVED');
+      }
+      return this.dispatchCommand(
+        row.sourceMinistryId,
+        row.actionId,
+        row.countryId,
+        clone(row.payload||{}),
+        {
+          turn:Number.isFinite(Number(actor.turn))?Number(actor.turn):row.simulationTurn,
+          commandType:row.commandType,
+          commandId:id,
+          correlationId:row.correlationId,
+          causationId:row.causationId,
+          approvalOverride:clone(row.approval),
+          approvingMinistryId:row.approval.approverMinistryId,
+          executorMinistryId:actor.executorMinistryId||row.stateOwnerMinistryId,
+          provenance:clone(row.provenance||null)
+        }
+      );
+    }
+
     registerCommandHandler(commandType,ownerMinistry,handler){
       const owner=String(ownerMinistry||'');
       if(!this.ids.includes(owner))throw new Error('COMMAND_OWNER_UNKNOWN:'+owner);
@@ -1821,6 +1881,13 @@
         String(existing.lifecycleStatus)==='COMMITTED'
       )){
         return clone({...existing,duplicate:true,status:'ALREADY_PROCESSED'});
+      }
+      if(existing&&(
+        String(existing.status)==='REVIEW_REQUIRED' ||
+        String(existing.lifecycleStatus)==='REVIEW_REQUIRED' ||
+        String(existing.lifecycleStatus)==='APPROVED'
+      )){
+        return clone({...existing,duplicate:true,status:'PENDING_APPROVAL'});
       }
       if(existing)this.commands.delete(commandId);
 
@@ -1881,6 +1948,20 @@
         if(!approval.authorized){
           row.status=approval.status;
           row.requiresRepublish=false;
+          if(approval.status==='REVIEW_REQUIRED'){
+            row.caseId=this.createCase({
+              caseId:'COMMAND-REVIEW-'+commandId,
+              type:'COMMAND_AUTHORIZATION_REVIEW',
+              workflowId:options.workflowId||null,
+              countryId:country,
+              ownerMinistry:'cabinet',
+              participants:[source,handler.ownerMinistry],
+              turn,
+              correlationId:command.correlationId,
+              causationId:command.causationId,
+              context:{commandId,actionId:String(actionId||''),approvalRequirements:clone(approval.approvalRequirements||[])}
+            }).caseId;
+          }
           return clone(row);
         }
         transition('AUTHORIZED',approval.reason);
@@ -2481,6 +2562,8 @@
     advanceCase:(...args)=>apiInstance.advanceCase(...args),
     getCase:(...args)=>apiInstance.getCase(...args),
     registerAuthorityPolicy:(...args)=>apiInstance.registerAuthorityPolicy(...args),
+    approveCommand:(...args)=>apiInstance.approveCommand(...args),
+    executeApprovedCommand:(...args)=>apiInstance.executeApprovedCommand(...args),
     authorizeCommand:(...args)=>apiInstance.authorizeCommand(...args),
     registerArbitrationPolicy:(...args)=>apiInstance.registerArbitrationPolicy(...args),
     resolveConflict:(...args)=>apiInstance.resolveConflict(...args),
