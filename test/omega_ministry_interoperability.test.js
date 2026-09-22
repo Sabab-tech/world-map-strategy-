@@ -342,24 +342,16 @@ test('U: command -> authoritative owner -> canonical event -> republish -> peer 
     const treaties=stateTransaction.get('foreign.treaties')||{};
     treaties[target]={status:'SIGNED'};
     stateTransaction.set('foreign.treaties',treaties);
-    emitEvent('TREATY_SIGNED',{
-      targetCountryId:target,
-      agreementId:'TEST-AGREEMENT-1'
-    });
+    emitEvent('TREATY_SIGNED',{targetCountryId:target,agreementId:'TEST-AGREEMENT-1'});
     return {accepted:true};
   });
-
-  const command=s.mesh.dispatchCommand('trade',ACTION_ID,s.countryA,{
-    targetCountryId:s.countryB
-  },{turn:2,commandType:ACTION_ID});
+  const command=s.mesh.dispatchCommand('trade',ACTION_ID,s.countryA,{targetCountryId:s.countryB},{turn:2,commandType:ACTION_ID});
   assert.equal(command.status,'APPLIED');
   assert.equal(command.stateOwnerMinistryId,'foreign');
   assert.equal(command.stateChanged,true);
   assert.equal(command.transaction.changed,true);
-
   const foreignEvents=[...s.mesh.instance.events.values()].filter(event=>event.eventType==='TREATY_SIGNED');
   assert.ok(foreignEvents.length>=1);
-
   s.tick('foreign',2);
   const tradeForeign=s.mesh.getPeerState('trade','foreign',s.countryA,{currentTurn:2});
   assert.equal(tradeForeign.publishedFacts['foreign.treaties'].value[s.countryB].status,'SIGNED');
