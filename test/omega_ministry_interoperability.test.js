@@ -239,6 +239,15 @@ test('OMEGA full ministry interoperability system builds and verifies a real 17x
   assert.equal(tradeDecisionContext.blockers.length,0);
   assert.equal(tradeDecisionContext.evidence.length>=5,true);
 
+  for(const ministryId of IDS){
+    const ministryContext=mesh.getContext(ministryId,{turn:6,dt:16.7});
+    assert.equal(Object.keys(ministryContext.nationalPicture).length,17);
+    assert.equal(ministryContext.nationalPicture.finance?.ministryId,'finance');
+    assert.equal(ministryContext.nationalPicture.projects?.ministryId,'projects');
+    assert.equal(ministryContext.nationalPicture.education?.ministryId,'education');
+    assert.equal(ministryContext.government.budgetNeeds.some(x=>x.ministryId==='education'),true);
+  }
+
   const runtimeContext=mesh.getContext('trade',{turn:6,dt:16.7});
   assert.equal(runtimeContext.ministryId,'trade');
   assert.equal(Object.keys(runtimeContext.nationalPicture).length,17);
