@@ -1371,7 +1371,7 @@
         acknowledge(message,options={}){return self.acknowledge(src,message,{...options,countryId:c});},
         getPeer(target,options={}){return self.getPeerState(src,target,c,{currentTurn:options.currentTurn??self.lastTurn});},
         getNationalBriefing(options={}){return self.getMinistryBriefing(src,c,options);},
-        getDecisionContext(actionId,options={}){return self.evaluateAction(src,actionId,{...options,countryId:c});},
+        getDecisionContext(actionId,options={}){return self.evaluateAction(src,actionId,{...options,countryId:c,targetCountryId:options.targetCountryId||options.entityId||null});},
         dispatchCommand(actionId,payload={},options={}){return self.dispatchCommand(src,actionId,c,payload,options);},
         emitEvent(eventType,payload={},options={}){return self.emitEvent(eventType,c,src,payload,options);}
       });
@@ -1391,6 +1391,7 @@
         actionId:String(actionId||''),
         countryId,
         currentTurn:options.currentTurn??this.lastTurn,
+        targetCountryId:options.targetCountryId||options.entityId||null,
         briefing,
         requirements:Array.isArray(options.requirements)?options.requirements:undefined
       });
