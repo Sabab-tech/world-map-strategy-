@@ -301,6 +301,14 @@
       const phase=['OBSERVE','VALIDATE','PROCESS','COMMIT'][Math.max(0,currentTurn||0)%4];
       let domainExecution;
 
+      // Drain any interoperability packets not delivered through the kernel
+      // transport adapter. The mesh itself remains the canonical delivery ledger.
+      if(interop && typeof interop.drainInbox==='function'){
+        interop.drainInbox(id,(message)=>{
+          handleMessage(id,message);
+        },100);
+      }
+
       try{
         domainExecution=engine.execute(domainContext);
         if(interoperability && typeof interoperability.publishState==='function'){
