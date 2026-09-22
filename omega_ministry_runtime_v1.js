@@ -638,6 +638,7 @@
             ...request.options,
             turn,
             commandType:request.commandType||actionId,
+            deferCommit:true,
             deferEventDispatch:true
           });
           commands.push(clone(result));
@@ -647,7 +648,20 @@
       }
       phase('EXECUTE',failures.some(x=>x.phase==='EXECUTE')?'DEGRADED':'COMMITTED',{commandCount:commands.length});
 
-      phase('COMMIT',commands.some(row=>row.status==='FAILED')?'DEGRADED':'COMMITTED',{
+      let committedCommandRows=[];
+      try{
+        committedCommandRows=interoperability?.commitPendingCommands?.(turn)||[];
+        const committedById=new Map(committedCommandRows.map(row=>[String(row.commandId),row]));
+        for(let i=0;i<commands.length;i++){
+          const id=String(commands[i]?.commandId||'');
+          if(committedById.has(id))commands[i]=clone(committedById.get(id));
+        }
+      }catch(error){
+        failures.push({phase:'COMMIT',scope:'GOVERNMENT',error:String(error?.message||error)});
+      }
+
+      phase('COMMIT',failures.some(x=>x.phase==='COMMIT')||commands.some(row=>row.status==='FAILED')?'DEGRADED':'COMMITTED',{
+        preparedCommands:commands.length,
         committedCommands:commands.filter(row=>row.lifecycleStatus==='COMMITTED'||row.lifecycleStatus==='VERIFIED').length
       });
 
