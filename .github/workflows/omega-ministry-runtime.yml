@@ -34,6 +34,8 @@ jobs:
           node --check server_bootstrap.js
           node --check omega_ministry_registry.js
           node --check omega_ministry_state_provider.js
+          node --check omega_ministry_knowledge_contract.js
+          node --check omega_authoritative_state_authority.js
           node --check omega_ministry_information_policy.js
           node --check omega_ministry_decision_framework.js
           node --check omega_ministry_state_transaction.js
@@ -72,6 +74,8 @@ jobs:
           for (const required of [
             'omega_ministry_registry.js',
             'omega_ministry_state_provider.js',
+            'omega_ministry_knowledge_contract.js',
+            'omega_authoritative_state_authority.js',
             'omega_ministry_information_policy.js',
             'omega_ministry_decision_framework.js',
             'omega_ministry_state_transaction.js',
@@ -105,6 +109,8 @@ jobs:
           if (!interoperability.includes('stateRevision')) throw new Error('State revision contract missing');
           if (!interoperability.includes('UNOBSERVED')) throw new Error('Missing-data semantics missing');
           if (!interoperability.includes('dispatchCommand')) throw new Error('Command system missing');
+          if (!interoperability.includes('dirtyPublications')) throw new Error('State-change republish ledger missing');
+          if (!interoperability.includes('MINISTRY_KNOWLEDGE_CONTRACT')) throw new Error('Declarative ministry knowledge contract missing');
           if (!interoperability.includes('emitEvent')) throw new Error('Semantic event system missing');
           if (!interoperability.includes('saveState')) throw new Error('Save/load state contract missing');
           if (!interoperability.includes('this.ids.length*this.ids.length')) throw new Error('Dynamic NxN mesh topology generation missing');
