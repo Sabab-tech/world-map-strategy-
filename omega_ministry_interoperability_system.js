@@ -1134,7 +1134,7 @@
         this.emitEvent(EVENT_TYPES.MINISTRY_STATE_PUBLISHED,snapshot.countryId,id,{
           countryId:snapshot.countryId,
           ministryId:id,
-          simulationTurn:turn,
+          simulationTurn:snapshot.simulationTurn,
           stateRevision:snapshot.stateRevision,
           dataAvailability:snapshot.dataAvailability
         },{turn:snapshot.simulationTurn,stateRevision:snapshot.stateRevision,deferDispatch:true});
