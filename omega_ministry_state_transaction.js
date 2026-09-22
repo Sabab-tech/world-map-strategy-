@@ -29,6 +29,7 @@
       this.commandId=String(commandId||'');
       this.authority=authority||global.OmegaAuthoritativeStateAuthority?.instance||global.Omega?.AuthoritativeStateAuthority?.instance||null;
       this.transactionId='OMI-TX-'+this.turn+'-'+this.ownerMinistry+'-'+this.commandId;
+      this.expectedRevision=authority?.revision?.(this.countryId,this.ownerMinistry)??null;
       this.operations=[];
       this.closed=false;
     }
@@ -84,9 +85,11 @@
         countryId:this.countryId,
         turn:this.turn,
         commandId:this.commandId,
+        expectedRevision:this.expectedRevision,
         operations:clone(this.operations)
       });
       this.closed=true;
+      if(result?.status==='CONFLICT')throw new Error('STATE_REVISION_CONFLICT');
       return clone(result);
     }
 
