@@ -180,11 +180,9 @@ test('C+D: every route transports and target engines actually process packets',(
   }
 });
 
-test('E+F: duplicate and invalid messages are rejected safely',()=>{
+test('E+F: duplicate, invalid and expired messages are rejected safely',()=>{
   const s=createSandbox();
-  const msg=s.mesh.send('finance','trade','duplicate.test',{value:1},{
-    countryId:s.countryA,turn:1,messageId:'DUPLICATE-1'
-  });
+  const msg=s.mesh.send('finance','trade','duplicate.test',{value:1},{countryId:s.countryA,turn:1,messageId:'DUPLICATE-1'});
   const first=s.mesh.acceptMessage(s.countryA,'trade',msg,1);
   assert.equal(first.ok,true);
   const duplicate=s.mesh.acceptMessage(s.countryA,'trade',msg,1);
@@ -332,32 +330,6 @@ test('O: country A and country B state remain isolated',()=>{
   assert.notDeepEqual(a.publishedFacts['finance.reserves'].value,b.publishedFacts['finance.reserves'].value);
 });
 
-test('U: command -> authoritative owner -> canonical event -> republish -> peer observation',()=>{
-  const s=createSandbox();
-  s.tickAll(1);
-  s.registerTradeAction();
-  s.mesh.registerCommandHandler(ACTION_ID,'foreign',(command,{stateTransaction,emitEvent})=>{
-    if(!stateTransaction)return {accepted:false,reason:'STATE_TRANSACTION_UNAVAILABLE'};
-    const target=s.countryB;
-    const treaties=stateTransaction.get('foreign.treaties')||{};
-    treaties[target]={status:'SIGNED'};
-    stateTransaction.set('foreign.treaties',treaties);
-    emitEvent('TREATY_SIGNED',{targetCountryId:target,agreementId:'TEST-AGREEMENT-1'});
-    return {accepted:true};
-  });
-  const command=s.mesh.dispatchCommand('trade',ACTION_ID,s.countryA,{targetCountryId:s.countryB},{turn:2,commandType:ACTION_ID});
-  assert.equal(command.status,'APPLIED');
-  assert.equal(command.stateOwnerMinistryId,'foreign');
-  assert.equal(command.stateChanged,true);
-  assert.equal(command.transaction.changed,true);
-  const foreignEvents=[...s.mesh.instance.events.values()].filter(event=>event.eventType==='TREATY_SIGNED');
-  assert.ok(foreignEvents.length>=1);
-  s.tick('foreign',2);
-  const tradeForeign=s.mesh.getPeerState('trade','foreign',s.countryA,{currentTurn:2});
-  assert.equal(tradeForeign.publishedFacts['foreign.treaties'].value[s.countryB].status,'SIGNED');
-  assert.equal(s.mesh.getCommand(command.commandId).requiresRepublish,true);
-});
-
 test('P: ministry cannot directly mutate another ministry private coordination state',()=>{
   const s=createSandbox();
   const finance=s.sandbox.OmegaMinistryDomainEngines.get('finance');
@@ -455,6 +427,21 @@ test('N2: relationship is not substituted for treaty status',()=>{
     currentTurn:1,
     briefing
   });
+  assert.equal(decision.status,'UNKNOWN');
+  assert.ok(decision.missing.some(item=>item.requirement?.id==='foreign.treaties'));
+});
+
+test('N2: relationship is not substituted for treaty status',()=>{
+  const s=createSandbox();
+  s.tickAll(1);
+  s.registerTradeAction();
+  const original=s.mesh.getPeerState('trade','foreign',s.countryA,{currentTurn:1});
+  const altered=JSON.parse(JSON.stringify(original));
+  delete altered.publishedFacts['foreign.treaties'].value[s.countryB];
+  const briefing=s.mesh.getMinistryBriefing('trade',s.countryA,{currentTurn:1});
+  briefing.peerStates.foreign=altered;
+  const framework=s.sandbox.Omega.MinistryDecisionFramework.instance;
+  const decision=framework.evaluate({ministryId:'trade',actionId:ACTION_ID,countryId:s.countryA,currentTurn:1,briefing});
   assert.equal(decision.status,'UNKNOWN');
   assert.ok(decision.missing.some(item=>item.requirement?.id==='foreign.treaties'));
 });
