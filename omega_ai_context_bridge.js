@@ -85,6 +85,16 @@
     const countryId=text(overrides.countryCode||overrides.countryId||gs.countryCode||gs.countryId||gs.playerCountryId||ui.activeCountry||'');
     const ministryId=text(overrides.ministryId||m.ministryId||ui.currentMinistryId||gs.activeMinistryId||'');
     const direct=registry&&countryId&&ministryId&&typeof registry.getActiveMinister==='function'?registry.getActiveMinister(countryId,ministryId):null;
+    const interoperability=global.OmegaMinistryInteroperability || global.Omega?.MinistryInteroperability || null;
+    let ministryInteroperability=null;
+    if(interoperability && ministryId && typeof interoperability.getContext==='function'){
+      try{
+        ministryInteroperability=clone(interoperability.getContext(ministryId,{
+          turn:gs.turn||gs.currentTurn||null,
+          dt:0
+        }));
+      }catch(_){}
+    }
     return {
       countryId,
       countryName:text(overrides.countryName||gs.countryName||gs.country?.name||ui.activeCountry||''),
@@ -95,7 +105,8 @@
       language:text(overrides.language||global.OmegaLanguageSystem?.getContext?.()?.language||''),
       gameState:clone(overrides.gameState||gs)||{},
       reservesData:clone(overrides.reservesData||gs.reservesData||null),
-      timeHorizon:overrides.timeHorizon??gs.timeHorizon??null
+      timeHorizon:overrides.timeHorizon??gs.timeHorizon??null,
+      ministryInteroperability
     };
   }
 
