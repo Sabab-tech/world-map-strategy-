@@ -2318,7 +2318,7 @@ const _omegaExport = (function (globalScope) {
       };
     }
 
-    thinkMinisterQuestion(questionText, minister, countryKey = "BANGLADESH", countryDetails = {}) {
+    thinkMinisterQuestion(questionText, minister, countryKey = "", countryDetails = {}) {
       const isBengali = /[\u0980-\u09FF]/.test(questionText);
       const promptLower = (questionText || '').toLowerCase().trim();
 
@@ -2347,36 +2347,23 @@ const _omegaExport = (function (globalScope) {
         (minister && minister.background) ||
         'Senior Sovereign Policy & Public Administration Specialist';
 
-      const ministerStats = (dynamicProfile && dynamicProfile.stats) || (minister && minister.stats) || {
-        discipline: 88,
-        strategic: 85,
-        efficiency: 90
-      };
+      const ministerStats = (dynamicProfile && dynamicProfile.stats) || (minister && minister.stats) || {};
+      const efficiencyRaw = dynamicProfile && dynamicProfile.efficiency;
+      const efficiency = (efficiencyRaw && typeof efficiencyRaw === 'object' ? efficiencyRaw.accuracy : efficiencyRaw) ??
+        (minister && minister.efficiency) ?? null;
+      const stability = countryDetails.stability ?? null;
 
-      const efficiency = (dynamicProfile && dynamicProfile.efficiency && typeof dynamicProfile.efficiency === 'object' ? dynamicProfile.efficiency.accuracy : (dynamicProfile && dynamicProfile.efficiency)) || (minister ? (minister.efficiency || 88) : 85);
-      const stability = countryDetails.stability || '89%';
-
-      let hash = 0;
-      for (let i = 0; i < mName.length; i++) hash = (hash * 31 + mName.charCodeAt(i)) % 1000;
-      const calculatedAge = (dynamicProfile && dynamicProfile.age) || (48 + (hash % 18));
-      const yearsService = 16 + (hash % 14);
-      const almaMaterList = [
-        "National Defense College & Oxford University",
-        "BUET & MIT Fellow",
-        "Harvard Kennedy School & Dhaka University",
-        "London School of Economics (LSE)",
-        "Sandhurst Royal Military Academy",
-        "Stanford Sovereign Energy & Geopolitics Institute"
-      ];
-      const almaMater = almaMaterList[hash % almaMaterList.length];
+      const calculatedAge = (dynamicProfile && dynamicProfile.age) ?? (minister && minister.age) ?? null;
+      const yearsService = dynamicProfile?.runtime?.yearsService ?? minister?.yearsService ?? null;
+      const almaMater = dynamicProfile?.almaMater ?? minister?.almaMater ?? null;
 
       // Access Universal Sovereign Data Universe
       UniversalSovereignDataUniverse.init();
       MULTI_DOMAIN_LEXICON.loadOfflineLexicon();
 
       const gameRes = typeof window !== 'undefined' ? (window.resources || {}) : {};
-      const cashVal = gameRes.cash !== undefined ? gameRes.cash : 51780572;
-      const formattedCash = typeof window !== 'undefined' && window.formatGameNumber ? window.formatGameNumber(cashVal) : '$51.78M';
+      const cashVal = gameRes.cash !== undefined ? gameRes.cash : null;
+      const formattedCash = cashVal === null ? null : (typeof window !== 'undefined' && window.formatGameNumber ? window.formatGameNumber(cashVal) : String(cashVal));
 
       // 2. DYNAMIC TARGET COUNTRY RESOLUTION FROM THE CANONICAL IDENTITY REGISTRY
       const canonicalCountryRegistry = globalScope.OmegaCanonicalIdentityRegistry || globalScope.OmegaCountrySemanticBridge || null;
@@ -2773,7 +2760,7 @@ const _omegaExport = (function (globalScope) {
       return true;
     }
 
-    async askMinisterWithAI(questionText, minister, countryKey = "BANGLADESH", countryDetails = {}) {
+    async askMinisterWithAI(questionText, minister, countryKey = "", countryDetails = {}) {
       const isBn = /[\u0980-\u09FF]/.test(questionText);
       const mId = minister ? minister.id : 'general';
       const mName = (minister && (minister.ministerName || minister.name)) || (countryDetails.ministers && countryDetails.ministers[mId] && countryDetails.ministers[mId].name) || 'Honorable Minister';
@@ -2795,7 +2782,13 @@ const _omegaExport = (function (globalScope) {
               ministerName: mName,
               ministerRole: mRole,
               countryName: countryName,
-              countryCode: countryDetails.countryCode || 'BGD',
+              countryCode: countryDetails.countryCode || countryKey || null,
+              ministryInteroperability: (() => {
+                const interop = globalScope.OmegaMinistryInteroperability || globalScope.Omega?.MinistryInteroperability || null;
+                const cid = String(countryDetails.countryCode || countryKey || '').trim().toUpperCase();
+                try { return interop && cid && mId ? interop.getContext(mId,{countryId:cid,turn:countryDetails.simulationTurn}) : null; }
+                catch (_) { return null; }
+              })(),
               prompt: questionText,
               language: isBn ? 'bn' : 'en',
               gameState: {
@@ -2829,16 +2822,59 @@ const _omegaExport = (function (globalScope) {
     }
 
     queryCrossMinistry(requesterMinistry, targetMinistry, queryType, payload = {}) {
-      const adapter = this.domainAdapters.get(targetMinistry.toUpperCase());
+      const adapter = this.domainAdapters.get(String(targetMinistry||'').toUpperCase());
       if (adapter && typeof adapter.handleCrossMinistryQuery === 'function') {
         return adapter.handleCrossMinistryQuery(requesterMinistry, queryType, payload);
       }
-      return {
-        responder: targetMinistry,
-        status: 'ACKNOWLEDGED',
-        evidence: 'Standard inter-ministry cognitive advisory response.',
-        confidence: 0.85
-      };
+
+      const interop=globalScope.OmegaMinistryInteroperability || globalScope.Omega?.MinistryInteroperability || null;
+      const countryId=String(payload.countryId||payload.countryCode||'').trim().toUpperCase();
+      const requester=String(requesterMinistry||'').trim();
+      const target=String(targetMinistry||'').trim();
+      if(!interop||!countryId||!requester||!target){
+        return {
+          responder:target,
+          status:'UNAVAILABLE',
+          evidenceAvailability:'UNAVAILABLE',
+          reason:'INTEROPERABILITY_CONTEXT_UNAVAILABLE',
+          evidence:null,
+          confidence:null
+        };
+      }
+
+      const actionId=String(payload.actionId||queryType||'').trim();
+      try{
+        if(payload.evaluateAction===true || payload.actionId){
+          const decision=interop.evaluateAction(requester,actionId,{countryId,currentTurn:payload.currentTurn});
+          return {
+            responder:target,
+            requester,
+            countryId,
+            queryType,
+            status:decision.status||'UNKNOWN',
+            evidence:decision.evidence||[],
+            missing:decision.missing||[],
+            blockers:decision.blockers||[],
+            warnings:decision.warnings||[],
+            confidence:null,
+            source:'OMEGA_MINISTRY_INTEROPERABILITY'
+          };
+        }
+        const state=interop.createPort(requester,countryId).getPeer(target,{currentTurn:payload.currentTurn});
+        return {
+          responder:target,
+          requester,
+          countryId,
+          queryType,
+          status:state?.availability=== 'UNOBSERVED' ? 'UNOBSERVED' : 'OBSERVED',
+          evidenceAvailability:state?.availability||'UNOBSERVED',
+          state,
+          confidence:null,
+          source:'OMEGA_MINISTRY_INTEROPERABILITY'
+        };
+      }catch(error){
+        return {responder:target,requester,countryId,queryType,status:'FAILED',reason:String(error?.message||error),confidence:null};
+      }
     }
 
     getStagesInfo() {
