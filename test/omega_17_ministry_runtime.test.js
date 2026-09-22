@@ -197,9 +197,12 @@ test('OMEGA canonical 17-ministry runtime is independently engine-backed and bin
   const legacyRefs=runtime.legacyConfigReferences;
   for(const id of IDS){
     for(const legacyId of legacyRefs[id]){
-      assert.match(
-        databaseSource,
-        new RegExp('(?:^|\\n)\\s*'+legacyId.replace(/[.*+?^()|[\\]\\\\]/g,'\\\\$&')+'\\s*:\\s*\\{'),
+      const exists=databaseSource
+        .split('\n')
+        .some(line=>line.trim().startsWith(legacyId+': {'));
+      assert.equal(
+        exists,
+        true,
         'legacy config reference '+legacyId+' for '+id+' must resolve to a real existing database entry'
       );
     }
