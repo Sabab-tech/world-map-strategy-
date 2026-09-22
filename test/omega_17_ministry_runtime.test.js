@@ -395,7 +395,11 @@ test('canonical dataset contract accepts a single country record and rejects unk
   assert.equal(provider.validateDatasetShape(single,{strict:true}).valid,true);
   assert.equal(provider.hydrateDataset(single,'statistics',{strict:true}).countryCount,1);
   assert.equal(sandbox.Game.state.statistics.BD.metric,12);
-  assert.throws(()=>provider.validateDatasetShape({MARS:{metric:1}},{strict:true}),/DATASET_CONTRACT_INVALID/);
+  const unresolved=provider.validateDatasetShape({MARS:{metric:1}},{strict:true});
+  assert.equal(unresolved.valid,true);
+  assert.deepEqual(Array.from(unresolved.unresolvedCountryKeys),['MARS']);
+  assert.equal(unresolved.identityCoverage,0);
+  assert.throws(()=>provider.validateDatasetShape({MARS:{metric:1}},{strict:true,requireCompleteIdentity:true}),/DATASET_IDENTITY_INCOMPLETE/);
 });
 test('canonical world-turn runtime processes multiple country scopes through one global turn boundary',()=>{
   const kernelStates=new Map(IDS.map(id=>[id,'RUNNING']));
