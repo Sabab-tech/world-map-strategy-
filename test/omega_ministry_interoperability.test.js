@@ -550,6 +550,40 @@ test('U2: state mutation is owner-bound through the canonical authority, then ma
   assert.ok(dirty.length>=1);
 });
 
+test('U3: failed authoritative transaction is atomic',()=>{
+  const s=createSandbox();
+  const authority=s.sandbox.OmegaAuthoritativeStateAuthority.instance;
+  const before=authority.read(s.countryA,'foreign.treaties');
+  const tx=s.sandbox.OmegaMinistryStateTransaction.create(
+    'foreign',s.countryA,2,'ATOMIC-FAIL-1',authority
+  );
+  tx.operations.push(
+    {op:'SET',path:'foreign.treaties',after:{[s.countryB]:{status:'SIGNED'}}},
+    {op:'INVALID',path:'foreign.relations',after:{[s.countryB]:99}}
+  );
+  assert.throws(()=>tx.commit(),/UNKNOWN_STATE_OPERATION/);
+  assert.deepEqual(authority.read(s.countryA,'foreign.treaties'),before);
+});
+
+test('U4: domain revision used for dirty publication matches source publication revision',()=>{
+  const s=createSandbox();
+  s.tickAll(1);
+  s.registerTradeAction();
+  s.mesh.registerCommandHandler(ACTION_ID,'foreign',(command,{stateTransaction})=>{
+    const treaties=stateTransaction.get('foreign.treaties')||{};
+    treaties[s.countryB]={status:'SIGNED'};
+    stateTransaction.set('foreign.treaties',treaties);
+    return {accepted:true};
+  });
+  const cmd=s.mesh.dispatchCommand('trade',ACTION_ID,s.countryA,{targetCountryId:s.countryB},{turn:2,commandType:ACTION_ID});
+  assert.equal(cmd.stateChanged,true);
+  const dirtyBefore=s.mesh.getDirtyPublications(s.countryA,'foreign');
+  assert.equal(dirtyBefore.length,1);
+  assert.equal(cmd.stateRevisionAfter,dirtyBefore[0].stateRevision);
+  s.tick('foreign',2);
+  assert.equal(s.mesh.getDirtyPublications(s.countryA,'foreign').length,0);
+});
+
 test('V2: authoritative revision drift is exposed as STALE until source republishes',()=>{
   const s=createSandbox();
   s.tickAll(1);
