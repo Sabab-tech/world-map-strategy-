@@ -22,6 +22,14 @@ const INDEX_PATH = path.join(__dirname, 'index.html');
 const CANDIDATE_MODELS = ['gemini-2.5-flash','gemini-2.0-flash'];
 const AI_INTEGRITY_SCRIPT = '<script src="/omega_ai_integrity_layer.js"></script>';
 const HEALTH_LOGO_SCRIPT = '<script src="/health-ministry-logo.js"></script>';
+const MINISTRY_REGISTRY_SCRIPT = '<script src="/omega_ministry_registry.js"></script>';
+const MINISTRY_STATE_PROVIDER_SCRIPT = '<script src="/omega_ministry_state_provider.js"></script>';
+const MINISTRY_INFORMATION_POLICY_SCRIPT = '<script src="/omega_ministry_information_policy.js"></script>';
+const MINISTRY_DECISION_FRAMEWORK_SCRIPT = '<script src="/omega_ministry_decision_framework.js"></script>';
+const MINISTRY_STATE_TRANSACTION_SCRIPT = '<script src="/omega_ministry_state_transaction.js"></script>';
+const MINISTRY_INTEROPERABILITY_SCRIPT = '<script src="/omega_ministry_interoperability_system.js"></script>';
+const MINISTRY_DOMAIN_ENGINES_SCRIPT = '<script src="/omega_ministry_domain_engines.js"></script>';
+const MINISTRY_RUNTIME_V1_SCRIPT = '<script src="/omega_ministry_runtime_v1.js"></script>';
 const MINISTER_CAPABILITY_SCRIPT = '<script src="/minister_capability_engine.js"></script>';
 const MINISTER_STATE_SCRIPT = '<script src="/omega_minister_state_system.js"></script>';
 const MINISTER_RECRUITMENT_SCRIPT = '<script src="/minister_recruitment_engine.js"></script>';
@@ -107,7 +115,14 @@ function renderIndex(res, next) {
   fs.readFile(INDEX_PATH, 'utf8', (err, html) => {
     if (err) return next(err);
     let output = html;
-    const scripts = [LANGUAGE_SYSTEM_SCRIPT, LANGUAGE_BATCH03_SCRIPT, COUNTRY_BRIDGE_SCRIPT, RESOURCE_BRIDGE_SCRIPT, MINISTER_CAPABILITY_SCRIPT, MINISTER_STATE_SCRIPT, MINISTER_RECRUITMENT_SCRIPT, MINISTER_BOOTSTRAP_SCRIPT, MINISTER_RUNTIME_SCRIPT, COGNITIVE_SCRIPT, REASONING_SCRIPT, UNIVERSAL_AI_SCRIPT, AI_INTEGRITY_SCRIPT, HEALTH_LOGO_SCRIPT, UI_INTERACTION_GUARD_SCRIPT];
+    const scripts = [
+      LANGUAGE_SYSTEM_SCRIPT, LANGUAGE_BATCH03_SCRIPT, COUNTRY_BRIDGE_SCRIPT, RESOURCE_BRIDGE_SCRIPT,
+      MINISTRY_REGISTRY_SCRIPT, MINISTRY_STATE_PROVIDER_SCRIPT, MINISTRY_INFORMATION_POLICY_SCRIPT,
+      MINISTRY_DECISION_FRAMEWORK_SCRIPT, MINISTRY_STATE_TRANSACTION_SCRIPT, MINISTRY_DOMAIN_ENGINES_SCRIPT,
+      MINISTRY_INTEROPERABILITY_SCRIPT, MINISTRY_RUNTIME_V1_SCRIPT, MINISTER_CAPABILITY_SCRIPT, MINISTER_STATE_SCRIPT,
+      MINISTER_RECRUITMENT_SCRIPT, MINISTER_BOOTSTRAP_SCRIPT, MINISTER_RUNTIME_SCRIPT, COGNITIVE_SCRIPT,
+      REASONING_SCRIPT, UNIVERSAL_AI_SCRIPT, AI_INTEGRITY_SCRIPT, HEALTH_LOGO_SCRIPT, UI_INTERACTION_GUARD_SCRIPT
+    ];
     for (const script of scripts) { const src = script.match(/src="([^"]+)"/)?.[1]; if (src && !output.includes(src)) output = output.replace('</body>', `    ${script}\n</body>`); }
     res.type('html').send(output);
   });

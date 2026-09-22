@@ -7,14 +7,55 @@
   if(global.OmegaMinisterCommunication?.version==='2.0.0') return;
   const registry=()=>global.OmegaMinisterState?.registry||global.OmegaMinisterStateRegistry||null;
   const text=v=>v==null?'':String(v);
-  const id=()=>`MSG-${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
+  let localSequence=0;
   function get(id0){const r=registry();if(!r)throw Error('MINISTER_STATE_REGISTRY_UNAVAILABLE');const profile=r.getMinister(id0),runtime=r.getRuntime(id0);if(!profile)throw Error('MINISTER_NOT_FOUND');return {profile,runtime};}
   function send(senderMinisterId,receiverMinisterId,topic,payload={},options={}){
     const s=get(senderMinisterId),t=get(receiverMinisterId),sr=s.runtime,tr=t.runtime;
     if(!sr||sr.status!=='ACTIVE')throw Error('SENDER_NOT_ACTIVE');
     if(!tr||tr.status!=='ACTIVE')throw Error('RECEIVER_NOT_ACTIVE');
     if(String(sr.countryId)!==String(tr.countryId))throw Error('CROSS_COUNTRY_MESSAGE_REQUIRES_EXPLICIT_DIPLOMATIC_CHANNEL');
-    const message={messageId:options.messageId||id(),senderMinisterId:String(senderMinisterId),receiverMinisterId:String(receiverMinisterId),countryId:String(tr.countryId),ministryId:String(tr.ministryId),messageType:String(options.messageType||'INFORMATION'),priority:String(options.priority||'NORMAL'),topic:text(topic),payload,timestamp:options.timestamp??Date.now(),expiry:options.expiry??0};
+
+    const interop=global.OmegaMinistryInteroperability || global.Omega?.MinistryInteroperability || null;
+    if(!interop||typeof interop.send!=='function')throw Error('MINISTRY_INTEROPERABILITY_UNAVAILABLE');
+
+    const turn=Number.isFinite(Number(options.simulationTurn))
+      ?Number(options.simulationTurn)
+      :Number.isFinite(Number(sr.simulationTurn))
+        ?Number(sr.simulationTurn)
+        :Number.isFinite(Number(sr.currentTurn))
+          ?Number(sr.currentTurn)
+          :0;
+    const routed=interop.send(
+      String(sr.ministryId),
+      String(tr.ministryId),
+      text(topic),
+      {ministerMessage:{
+        senderMinisterId:String(senderMinisterId),
+        receiverMinisterId:String(receiverMinisterId),
+        countryId:String(tr.countryId),
+        topic:text(topic),
+        payload
+      }},
+      {
+        ...options,
+        countryId:String(tr.countryId),
+        turn,
+        messageType:String(options.messageType||'STATE_UPDATE')
+      }
+    );
+    const message={
+      messageId:routed.messageId,
+      senderMinisterId:String(senderMinisterId),
+      receiverMinisterId:String(receiverMinisterId),
+      countryId:String(tr.countryId),
+      ministryId:String(tr.ministryId),
+      messageType:routed.messageType,
+      priority:routed.priority,
+      topic:routed.topic,
+      payload,
+      timestamp:routed.timestamp,
+      expiryTurn:routed.expiryTurn
+    };
     try{global.dispatchEvent?.(new CustomEvent('MINISTER_MESSAGE_DELIVERED',{detail:message}))}catch(_){}
     return Object.freeze(message);
   }

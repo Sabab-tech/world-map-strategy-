@@ -16,11 +16,12 @@
 
   const VERSION='1.2.0';
 
-  const IDS=Object.freeze([
-    'cabinet','defense','military','finance','economy','trade','foreign',
-    'intelligence','interior','transport','resource','health','education',
-    'technology','projects','culture','statistics'
-  ]);
+  const IDS=Object.freeze(
+    Array.isArray(global.OmegaMinistryRegistry?.ids)
+      ? global.OmegaMinistryRegistry.ids.map(String)
+      : []
+  );
+  if(!IDS.length) throw new Error('OMEGA_MINISTRY_REGISTRY_REQUIRED');
 
   const SPECS=Object.freeze({
     cabinet:{domain:'executive_coordination',dependencies:IDS.filter(id=>id!=='cabinet').slice(0,4)},
@@ -69,6 +70,36 @@
   ]);
 
   function now(){ return Date.now(); }
+
+  function getInteroperability(){
+    return global.OmegaMinistryInteroperability || global.Omega?.MinistryInteroperability || global.OmegaMinistryMesh || null;
+  }
+
+  function getStateProvider(){
+    return global.OmegaMinistryStateProvider?.instance || global.Omega?.MinistryStateProvider?.instance || null;
+  }
+
+  function putContextPath(root,path,value){
+    const parts=String(path||'').split('.');
+    let cursor=root;
+    for(let i=0;i<parts.length-1;i++){
+      const part=parts[i];
+      if(!cursor[part]||typeof cursor[part]!=='object')cursor[part]={};
+      cursor=cursor[part];
+    }
+    if(parts.length)cursor[parts[parts.length-1]]=value;
+    return root;
+  }
+
+  function pickCountryBucket(context,section){
+    const source=context?.gameState?.[section];
+    if(!source || typeof source!=='object') return null;
+    const id=String(context?.countryId||'').trim().toUpperCase();
+    if(id && source[id]!=null) return source[id];
+    const raw=context?.countryId;
+    if(raw && source[raw]!=null) return source[raw];
+    return null;
+  }
 
   function discoverInputSources(){
     const hits=[];
@@ -133,45 +164,76 @@
   }
 
   function buildDomainContext(id,dt,currentTurn,store){
-    const gameState=global.Game?.state||global.gameState||null;
+    const provider=getStateProvider();
+    const state=provider?.root?.() || global.Game?.state || global.gameState || {};
+    const interop=getInteroperability();
     const countryId=String(
+      store?.countryId ||
+      global.OmegaSimulation?.activeCountryId ||
       global.OmegaCabinetUI?.activeCountry ||
       global.Game?.currentActiveCountry ||
       global.CountryIOS?.activeCountry ||
-      gameState?.countryCode ||
-      gameState?.countryId ||
+      state?.countryCode ||
+      state?.countryId ||
       ''
     ).trim().toUpperCase() || null;
 
-    const economy=(gameState?.economy && countryId && (gameState.economy[countryId]||gameState.economy[global.Game?.currentActiveCountry]))||null;
-    const population=(gameState?.population && countryId && (gameState.population[countryId]||gameState.population[global.Game?.currentActiveCountry]))||null;
-    const relations=(gameState?.relations && countryId && (gameState.relations[countryId]||gameState.relations[global.Game?.currentActiveCountry]))||null;
-    const resourceEngine=global.ResourceMinistryEngine||null;
-    let resourceEngineState=null;
+    const engine=getEngineRegistry()?.get?.(id);
+    const domainContext={
+      ministryId:id,
+      countryId,
+      turn:Number.isFinite(Number(currentTurn))?Number(currentTurn):null,
+      dt:Number.isFinite(Number(dt))?Number(dt):0,
+      countryRecord:provider?.countryRecord?.(countryId)||null,
+      stateProvider:provider||null,
+      ministers:global.OmegaMinistersDB||global.OmegaCabinetUI?.ministersDB||null,
+      store:store||null,
+      interoperability:interop && countryId && typeof interop.getContext==='function'
+        ? interop.getContext(id,{countryId,turn:currentTurn,dt,store})
+        : null
+    };
+
+    const paths=Array.isArray(engine?.inputs)?engine.inputs:[];
+    for(const path of paths){
+      let value;
+      let described=null;
+      try{
+        if(provider?.describe){
+          described=provider.describe(countryId,path,{currentTurn});
+          if(described.availability!=='UNOBSERVED'&&described.availability!=='UNAVAILABLE'&&described.availability!=='NOT_APPLICABLE'){
+            value=described.value;
+          }else if(described.value!==null&&described.value!==undefined){
+            value=described.value;
+          }
+        }
+      }catch(_){}
+      if(value===undefined){
+        const direct=readContextPath(domainContext,path);
+        if(direct!==undefined)value=direct;
+      }
+      if(value!==undefined)putContextPath(domainContext,path,value);
+    }
+
+    // Backward-compatible derived resource state comes through the provider,
+    // never as a second authoritative resource database.
     try{
-      if(resourceEngine && typeof resourceEngine.getIntegratedResourceState==='function' && countryId){
-        resourceEngineState=resourceEngine.getIntegratedResourceState(countryId);
+      if(domainContext.resourceEngineState===undefined && provider?.get){
+        const resourceState=provider.get(countryId,'resourceEngineState');
+        if(resourceState!==undefined)domainContext.resourceEngineState=resourceState;
       }
     }catch(_){}
 
-    return {
-      ministryId:id,
-      countryId,
-      turn:Number.isFinite(currentTurn)?currentTurn:null,
-      dt:Number.isFinite(dt)?dt:0,
-      gameState,
-      countryRecord:null,
-      economy,
-      population,
-      relations,
-      resourceSummary:gameState?.resources||gameState?.resource||null,
-      resourceInventory:resourceEngineState?.inventory||null,
-      resourceDeposits:resourceEngine?.deposits||null,
-      resourceEngineState,
-      ministers:global.OmegaMinistersDB||global.OmegaCabinetUI?.ministersDB||null,
-      educationEngine:global.EducationEngine||null,
-      store:store||null
-    };
+    return domainContext;
+  }
+
+  function readContextPath(root,path){
+    if(root==null||!path)return undefined;
+    let cur=root;
+    for(const part of String(path).split('.')){
+      if(cur==null||!Object.prototype.hasOwnProperty.call(Object(cur),part))return undefined;
+      cur=cur[part];
+    }
+    return cur;
   }
 
   function safeDependencyStates(states,kernel,deps){
@@ -208,6 +270,7 @@
     let bridge=null;
     let initialized=false;
     let registryHealth={ok:false,reason:'NOT_INITIALIZED'};
+    let interoperability=getInteroperability();
 
     function syncManifest(){
       const manifest=global.GLOBAL_MINISTRY_MANIFEST;
@@ -226,6 +289,8 @@
       if(!registryHealth.ok) return false;
 
       bridge=typeof kernel.createBridge==='function' ? kernel.createBridge():null;
+      interoperability=getInteroperability();
+      if(interoperability && typeof interoperability.init==='function' && !interoperability.init(bridge)) return false;
 
       for(const id of IDS){
         kernel.registerMinistry(id);
@@ -257,6 +322,7 @@
 
     function tick(id,dt,currentTurn,store,blackboard){
       if(!IDS.includes(String(id))) return null;
+      const interop=getInteroperability();
       const engine=getEngineRegistry()?.get?.(id);
       if(!engine || engine.id!==id || engine.independent!==true || typeof engine.execute!=='function'){
         const s=states.get(id);
@@ -270,9 +336,18 @@
       const s=states.get(id);
       const inputSources=discoverInputSources();
       const domainContext=buildDomainContext(id,dt,currentTurn,store);
+      const countryId=domainContext.countryId;
       const dependencySnapshot=safeDependencyStates(states,kernel,spec.dependencies);
       const phase=['OBSERVE','VALIDATE','PROCESS','COMMIT'][Math.max(0,currentTurn||0)%4];
       let domainExecution;
+
+      if(interop && typeof interop.advanceTurn==='function')interop.advanceTurn(currentTurn);
+
+      if(interop && countryId && typeof interop.drainInbox==='function'){
+        interop.drainInbox(countryId,id,(message)=>{
+          handleMessage(id,message);
+        },100);
+      }
 
       try{
         domainExecution=engine.execute(domainContext);
@@ -294,6 +369,17 @@
       s.dependencies=dependencySnapshot;
       s.phase=phase;
 
+      if(interoperability && typeof interoperability.publishState==='function' && countryId){
+        interoperability.publishState(id,{
+          domain:spec.domain,
+          domainExecution,
+          context:domainContext,
+          store,
+          runtimeState:s,
+          turn:currentTurn
+        });
+      }
+
       const telemetry={
         id,
         domain:spec.domain,
@@ -309,6 +395,12 @@
         dependencies:{...dependencySnapshot},
         engineBinding:resolveEngineBinding(id),
         domainExecution,
+        interoperability:interoperability && typeof interoperability.getConnection==='function'
+          ? {
+              ministryConnections:interoperability.connectionsFor?.(id,'ALL')?.length ?? 0,
+              publishedSnapshot:!!interoperability.getPeerState?.(id,id)
+            }
+          : null,
         timestamp:s.lastUpdate
       };
 
@@ -347,8 +439,38 @@
 
     function handleMessage(id,message){
       if(!IDS.includes(String(id))) return false;
-      states.get(id).handledMessages+=1;
-      return true;
+      const targetId=String(id);
+      const interop=getInteroperability();
+      const countryId=String(message?.countryId||'').trim().toUpperCase();
+      const currentTurn=Number.isFinite(Number(message?.simulationTurn??message?.turn))
+        ? Number(message.simulationTurn??message.turn)
+        : (interop?.lastTurn||0);
+      const engine=getEngineRegistry()?.get?.(targetId)||null;
+      if(!engine || typeof engine.handleMessage!=='function'){
+        return false;
+      }
+
+      if(interop && typeof interop.processIncoming==='function'){
+        const result=interop.processIncoming(countryId,targetId,message,currentTurn,(accepted)=>{
+          const coordinationContext=interop.getContext?.(targetId,{countryId,turn:currentTurn,dt:0})||null;
+          return engine.handleMessage(accepted,coordinationContext);
+        });
+        if(!result?.ok)return false;
+        states.get(targetId).handledMessages+=1;
+        return true;
+      }
+
+      try{
+        engine.handleMessage(message,{ministryId:targetId,countryId,interoperability:null});
+        states.get(targetId).handledMessages+=1;
+        return true;
+      }catch(err){
+        const state=states.get(targetId);
+        state.failures+=1;
+        state.errors.push(String(err?.message||err));
+        if(state.errors.length>8)state.errors.shift();
+        return false;
+      }
     }
 
     function getIds(){ return IDS.slice(); }
@@ -359,6 +481,41 @@
     }
 
     function getEngine(id){ return getEngineRegistry()?.get?.(String(id))||null; }
+
+    function saveState(){
+      const engineStates={};
+      for(const id of IDS){
+        const engine=getEngineRegistry()?.get?.(id);
+        if(engine&&typeof engine.exportState==='function')engineStates[id]=engine.exportState();
+      }
+      return {
+        schemaVersion:2,
+        version:VERSION,
+        ministries:Object.fromEntries([...states.entries()].map(([id,state])=>[id,clone(state)])),
+        engines:engineStates,
+        interoperability:interoperability?.saveState?.()||null
+      };
+    }
+
+    function loadState(snapshot){
+      if(!snapshot||typeof snapshot!=='object')throw new Error('INVALID_MINISTRY_RUNTIME_SAVE');
+      if(Array.isArray(snapshot.ids)&&snapshot.ids.some(id=>!IDS.includes(String(id))))throw new Error('MINISTRY_RUNTIME_REGISTRY_MISMATCH');
+      if(snapshot.ministries){
+        for(const id of IDS){
+          if(snapshot.ministries[id])Object.assign(states.get(id),clone(snapshot.ministries[id]));
+        }
+      }
+      const engines=getEngineRegistry();
+      if(snapshot.engines&&engines){
+        for(const id of IDS){
+          const engine=engines.get?.(id);
+          const saved=snapshot.engines[id];
+          if(engine&&saved&&typeof engine.importState==='function')engine.importState(saved);
+        }
+      }
+      if(snapshot.interoperability&&interoperability?.loadState)interoperability.loadState(snapshot.interoperability);
+      return true;
+    }
 
     function health(){
       const rows=IDS.map(id=>states.get(id));
@@ -377,7 +534,10 @@
         independent,
         uniqueInstances,
         initialized,
-        engineRegistryHealthy:registryHealth.ok
+        engineRegistryHealthy:registryHealth.ok,
+        interoperability:interoperability && typeof interoperability.health==='function'
+          ? interoperability.health()
+          : null
       };
     }
 
@@ -394,6 +554,8 @@
       getState,
       getEngine,
       health,
+      saveState,
+      loadState,
       getEngineBinding:resolveEngineBinding
     });
 

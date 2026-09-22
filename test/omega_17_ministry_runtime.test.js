@@ -114,6 +114,8 @@ test('OMEGA canonical 17-ministry runtime is independently engine-backed and bin
   sandbox.window=sandbox;
   sandbox.globalThis=sandbox;
 
+  loadBrowserScript('omega_ministry_registry.js',sandbox);
+  loadBrowserScript('omega_ministry_state_provider.js',sandbox);
   loadBrowserScript('omega_ministry_domain_engines.js',sandbox);
   loadBrowserScript('omega_ministry_runtime_v1.js',sandbox);
 
