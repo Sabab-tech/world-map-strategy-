@@ -228,14 +228,7 @@ Game.Simulation = {
 };
 
 Game.Diplomacy = {
-    _legacyRelations: {
-        "BANGLADESH": { "INDIA": { hist: 40, dipl: 45 }, "PAKISTAN": { hist: -30, dipl: -20 }, "CHINA": { hist: 25, dipl: 35 } },
-        "INDIA": { "PAKISTAN": { hist: -95, dipl: -90 }, "BANGLADESH": { hist: 40, dipl: 45 }, "CHINA": { hist: -40, dipl: -45 } },
-        "PAKISTAN": { "CHINA": { hist: 45, dipl: 50 }, "INDIA": { hist: -95, dipl: -90 } },
-        "CHINA": { "UNITED_STATES_OF_AMERICA": { hist: -25, dipl: -35 }, "RUSSIA": { hist: 30, dipl: 40 }, "PAKISTAN": { hist: 45, dipl: 50 } },
-        "UNITED_STATES_OF_AMERICA": { "UNITED_KINGDOM": { hist: 45, dipl: 50 }, "ISRAEL": { hist: 40, dipl: 50 }, "RUSSIA": { hist: -80, dipl: -85 } },
-        "RUSSIA": { "CHINA": { hist: 30, dipl: 40 }, "UKRAINE": { hist: -95, dipl: -95 } }
-    },
+    _legacyRelations: null,
 
     generateAllBilateralRelations() {
         const countries = Object.keys(Game.state.economy);
@@ -246,7 +239,10 @@ Game.Diplomacy = {
         
         // RGE Engine Integration (relation_generation_engine.json)
         const rge = this._rgeEngine || (Game.runtimeData?.relationEngine && Game.runtimeData.relationEngine.RELATION_GENERATION_ENGINE) || null;
-        const weights = (rge && rge.weights) ? rge.weights : { historical: 0.15, diplomatic: 0.15, economic: 0.15, military: 0.10, strategic: 0.15, cultural: 0.10, intelligence: 0.05, societal: 0.05, international: 0.10 };
+        if (!rge || typeof rge.weights !== 'object' || !rge.weights) {
+            return { status: 'UNAVAILABLE', reason: 'RELATION_ENGINE_INPUT_MISSING', source: 'relation_generation_engine.json' };
+        }
+        const weights = rge.weights;
         const salience = (rge && rge.srie_v2_asymmetrical_salience) ? rge.srie_v2_asymmetrical_salience : {};
 
         function clamp(v) { return Math.max(-100, Math.min(100, Math.floor(v || 0))); }
