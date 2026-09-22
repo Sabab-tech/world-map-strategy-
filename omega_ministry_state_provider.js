@@ -62,7 +62,20 @@
     return first || null;
   }
 
-  const DATASET_DOMAIN_MAP=Object.freeze({economy:'economy.json',population:'population.json'});
+  const DATASET_DOMAIN_MAP=Object.freeze({
+    economy:'economy.json',
+    population:'population.json'
+  });
+  const DATASET_INPUT_CONTRACT=Object.freeze({
+    schemaVersion:1,
+    identityAuthority:'OMEGA_CANONICAL_IDENTITY_BRIDGE',
+    acceptedShapes:['COUNTRY_KEYED_OBJECT','COUNTRY_RECORD_ARRAY','COUNTRY_RECORD_OBJECT'],
+    canonicalCountryField:'countryId',
+    acceptedCountryFields:Object.freeze(['countryId','countryCode','country_code','iso2','iso3','code','id','name','countryName','country_name']),
+    countryKeyedObjects:true,
+    valuesAreOpaque:true,
+    noImplicitDefaults:true
+  });
 
   const COUNTRY_SCOPED_DOMAINS=Object.freeze(new Set([
     'finance','economy','trade','foreign','intelligence','defense','military',
@@ -119,6 +132,74 @@
         if(Array.isArray(exported?.countries))return exported.countries;
       }catch(_){}
       return [];
+    }
+
+    canonicalCountryId(value){
+      const registry=this.countryRegistry||global.OmegaCanonicalIdentityRegistry||global.OmegaCountrySemanticBridge;
+      try{
+        const hit=registry?.canonicalCountryId?.(value);
+        if(hit)return String(hit).toUpperCase();
+        const resolved=registry?.resolveCountry?.(value);
+        if(resolved?.id)return String(resolved.id).toUpperCase();
+      }catch(_){}
+      return normalizeId(value)||null;
+    }
+
+    validateDatasetShape(dataset,options={}){
+      const contract=DATASET_INPUT_CONTRACT;
+      const value=dataset;
+      const errors=[];
+      if(value===null||value===undefined)errors.push('DATASET_EMPTY');
+      if(Array.isArray(value)){
+        value.forEach((row,index)=>{
+          if(!row||typeof row!=='object')errors.push('ROW_'+index+'_NOT_OBJECT');
+          else if(!this.canonicalCountryId(row.countryId||row.countryCode||row.country_code||row.iso2||row.iso3||row.code||row.id||row.name||row.countryName||row.country_name)){
+            errors.push('ROW_'+index+'_COUNTRY_ID_UNRESOLVED');
+          }
+        });
+      }else if(typeof value==='object'){
+        for(const [key,row] of Object.entries(value)){
+          if(!row||typeof row!=='object'){errors.push('KEY_'+key+'_VALUE_NOT_OBJECT');continue;}
+          const resolved=this.canonicalCountryId(row.countryId||row.countryCode||row.country_code||row.iso2||row.iso3||row.code||row.id||row.name||row.countryName||row.country_name||key);
+          if(!resolved)errors.push('KEY_'+key+'_COUNTRY_ID_UNRESOLVED');
+        }
+      }else errors.push('DATASET_NOT_OBJECT_OR_ARRAY');
+      const result={...contract,valid:errors.length===0,errors};
+      if(options.strict&&errors.length)throw new Error('DATASET_CONTRACT_INVALID:'+errors.join(','));
+      return result;
+    }
+
+    hydrateDataset(dataset,domain,options={}){
+      const d=String(domain||'').trim();
+      if(!d)throw new Error('DATASET_DOMAIN_REQUIRED');
+      const contract=this.validateDatasetShape(dataset,{strict:options.strict===true});
+      const rows=[];
+      if(Array.isArray(dataset)){
+        dataset.forEach(row=>{
+          const id=this.canonicalCountryId(row?.countryId||row?.countryCode||row?.country_code||row?.iso2||row?.iso3||row?.code||row?.id||row?.name||row?.countryName||row?.country_name);
+          if(id)rows.push([id,clone(row)]);
+        });
+      }else if(dataset&&typeof dataset==='object'){
+        for(const [key,row] of Object.entries(dataset)){
+          const id=this.canonicalCountryId(row?.countryId||row?.countryCode||row?.country_code||row?.iso2||row?.iso3||row?.code||row?.id||row?.name||row?.countryName||row?.country_name||key);
+          if(id)rows.push([id,clone(row)]);
+        }
+      }
+      const state=this.root();
+      if(!state[d]||typeof state[d]!=='object')state[d]={};
+      const written=[];
+      for(const [id,row] of rows){
+        state[d][id]=row;
+        written.push(id);
+      }
+      return {
+        schemaVersion:1,
+        domain:d,
+        countryCount:written.length,
+        countryIds:[...new Set(written)],
+        contract,
+        authority:'OMEGA_MINISTRY_STATE_PROVIDER'
+      };
     }
 
     countryRecord(countryId){
@@ -317,6 +398,10 @@
       return {countryId:id,simulationTurn:this.simulationTurn(),values};
     }
 
+    getInputContract(){
+      return clone(DATASET_INPUT_CONTRACT);
+    }
+
     diagnostics(countryId=null,paths=[]){
       const checks=[];
       if(countryId && paths.length){
@@ -339,6 +424,7 @@
     VERSION,
     Availability:AVAILABILITY,
     create:(options={})=>new MinistryStateProvider(options),
+    inputContract:clone(DATASET_INPUT_CONTRACT),
     instance:new MinistryStateProvider()
   };
 
