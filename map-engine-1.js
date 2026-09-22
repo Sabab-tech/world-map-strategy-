@@ -463,8 +463,8 @@ var Game = window.Game = {
 
         const config = Game.findCountryConfig ? Game.findCountryConfig(countryName) : null;
         const id = Game.getCountryId ? Game.getCountryId(countryName) : countryName.toUpperCase();
-        const econ = (Game.state && Game.state.economy && Game.state.economy[id]) || { gdp: 500000000, debt: 100000000 };
-        const pop = (Game.state && Game.state.population && Game.state.population[id]) || { population_2015: 50000000 };
+        const econ = (Game.state && Game.state.economy && Game.state.economy[id]) || null;
+        const pop = (Game.state && Game.state.population && Game.state.population[id]) || null;
 
         // 1. Update floating country selection pill with Eye icon (👁️) button
         const selBar = document.getElementById('country-selection-bar');
@@ -496,7 +496,7 @@ var Game = window.Game = {
         if (elPop) elPop.innerText = this.formatPopulationNumber(pop.population_2015);
 
         const elGdp = document.getElementById('card-stat-gdp');
-        if (elGdp) elGdp.innerText = this.formatGameNumber(econ.gdp);
+        if (elGdp) elGdp.innerText = econ?.gdp !== undefined ? this.formatGameNumber(econ.gdp) : 'DATA UNAVAILABLE';
 
         const elStab = document.getElementById('card-stat-stability');
         if (elStab) elStab.innerText = `92%`;
