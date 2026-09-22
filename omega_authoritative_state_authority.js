@@ -139,6 +139,7 @@
       const owner=String(transaction.ownerMinistry||'');
       if(!owner)throw new Error('STATE_OWNER_REQUIRED');
       const operations=Array.isArray(transaction.operations)?transaction.operations:[];
+      const beforeDigest=hash(state);
       const stagedDomains=new Map();
       const applied=[];
 
