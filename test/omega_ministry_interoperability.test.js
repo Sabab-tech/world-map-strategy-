@@ -346,6 +346,34 @@ test('P: ministry cannot directly mutate another ministry private coordination s
   assert.equal(economy.getCoordinationState(s.countryA).processedCount,before+1);
 });
 
+test('U: command -> authoritative owner -> canonical event -> republish -> peer observation',()=>{
+  const s=createSandbox();
+  s.tickAll(1);
+  s.registerTradeAction();
+  s.mesh.registerCommandHandler(ACTION_ID,'foreign',(command,{stateTransaction,emitEvent})=>{
+    if(!stateTransaction)return {accepted:false,reason:'STATE_TRANSACTION_UNAVAILABLE'};
+    const target=s.countryB;
+    const treaties=stateTransaction.get('foreign.treaties')||{};
+    treaties[target]={status:'SIGNED'};
+    stateTransaction.set('foreign.treaties',treaties);
+    emitEvent('TREATY_SIGNED',{targetCountryId:target,agreementId:'TEST-AGREEMENT-1'});
+    return {accepted:true};
+  });
+  const command=s.mesh.dispatchCommand(
+    'trade',ACTION_ID,s.countryA,{targetCountryId:s.countryB},
+    {turn:2,commandType:ACTION_ID}
+  );
+  assert.equal(command.status,'APPLIED');
+  assert.equal(command.stateOwnerMinistryId,'foreign');
+  assert.equal(command.stateChanged,true);
+  assert.equal(command.transaction.changed,true);
+  const foreignEvents=[...s.mesh.instance.events.values()].filter(event=>event.eventType==='TREATY_SIGNED');
+  assert.ok(foreignEvents.length>=1);
+  s.tick('foreign',2);
+  const tradeForeign=s.mesh.getPeerState('trade','foreign',s.countryA,{currentTurn:2});
+  assert.equal(tradeForeign.publishedFacts['foreign.treaties'].value[s.countryB].status,'SIGNED');
+});
+
 test('Q: newly populated data is hot-plugged on the next publication',()=>{
   const s=createSandbox();
   delete s.state.finance[s.countryA].available;
@@ -410,7 +438,7 @@ test('T: actual repository country data crosses the canonical provider -> minist
   const publicState=s.mesh.getPeerState('cabinet','statistics',s.countryA,{currentTurn:1});
   const identity=publicState.publishedFacts['country.identity'];
   assert.equal(identity.availability,'AVAILABLE');
-  assert.equal(identity.provenance.sourceType,'AUTHORITATIVE_RUNTIME_STATE');
+  assert.equal(identity.provenance.sourceType,'CANONICAL_REPOSITORY_DATA');
   assert.equal(identity.value.code||identity.value.id,first.code);
 });
 
