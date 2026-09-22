@@ -336,6 +336,7 @@
       const s=states.get(id);
       const inputSources=discoverInputSources();
       const domainContext=buildDomainContext(id,dt,currentTurn,store);
+      const countryId=domainContext.countryId;
       const dependencySnapshot=safeDependencyStates(states,kernel,spec.dependencies);
       const phase=['OBSERVE','VALIDATE','PROCESS','COMMIT'][Math.max(0,currentTurn||0)%4];
       let domainExecution;
@@ -481,6 +482,41 @@
 
     function getEngine(id){ return getEngineRegistry()?.get?.(String(id))||null; }
 
+    function saveState(){
+      const engineStates={};
+      for(const id of IDS){
+        const engine=getEngineRegistry()?.get?.(id);
+        if(engine&&typeof engine.exportState==='function')engineStates[id]=engine.exportState();
+      }
+      return {
+        schemaVersion:2,
+        version:VERSION,
+        ministries:Object.fromEntries([...states.entries()].map(([id,state])=>[id,clone(state)])),
+        engines:engineStates,
+        interoperability:interoperability?.saveState?.()||null
+      };
+    }
+
+    function loadState(snapshot){
+      if(!snapshot||typeof snapshot!=='object')throw new Error('INVALID_MINISTRY_RUNTIME_SAVE');
+      if(Array.isArray(snapshot.ids)&&snapshot.ids.some(id=>!IDS.includes(String(id))))throw new Error('MINISTRY_RUNTIME_REGISTRY_MISMATCH');
+      if(snapshot.ministries){
+        for(const id of IDS){
+          if(snapshot.ministries[id])Object.assign(states.get(id),clone(snapshot.ministries[id]));
+        }
+      }
+      const engines=getEngineRegistry();
+      if(snapshot.engines&&engines){
+        for(const id of IDS){
+          const engine=engines.get?.(id);
+          const saved=snapshot.engines[id];
+          if(engine&&saved&&typeof engine.importState==='function')engine.importState(saved);
+        }
+      }
+      if(snapshot.interoperability&&interoperability?.loadState)interoperability.loadState(snapshot.interoperability);
+      return true;
+    }
+
     function health(){
       const rows=IDS.map(id=>states.get(id));
       const active=rows.filter(s=>s.active).length;
@@ -518,6 +554,8 @@
       getState,
       getEngine,
       health,
+      saveState,
+      loadState,
       getEngineBinding:resolveEngineBinding
     });
 
