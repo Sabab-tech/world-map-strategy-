@@ -1010,38 +1010,47 @@
                     const isSimTick = (now - lastSimTickTime) >= SIMULATION_TICK_INTERVAL;
                     if (isSimTick) {
                         lastSimTickTime = now;
-                    }
-
-                    // Event-Driven: Process only active, dirty, or periodic background macro ticks
-                    const ministriesToProcess = new Set();
-                    if (activeMinistryId) ministriesToProcess.add(activeMinistryId);
-                    dirtyMinistries.forEach(id => ministriesToProcess.add(id));
-
-                    if (isSimTick) {
-                        MINISTRIES.forEach(id => ministriesToProcess.add(id));
-                    }
-
-                    ministriesToProcess.forEach(id => {
-                        if (typeof kernel.pumpOrchestratedPipelineTick === "function") {
-                            kernel.pumpOrchestratedPipelineTick(id, dt, tick, {
-                                onMessage: (message) => {
-                                    ministryRuntimeController?.handleMessage?.(id, message);
-                                },
-                                onMinistryTick: (tickDt, currentTurn, store, blackboard) => {
-                                    ministryRuntimeController?.tick?.(id, tickDt, currentTurn, store, blackboard);
-                                }
+                        try {
+                            const runtime = window.OMEGA_MINISTRY_RUNTIME_V1 || window.Omega?.MinistryRuntime || null;
+                            if (!runtime?.runTurn) throw new Error("Canonical OMEGA government runtime unavailable.");
+                            const simulation = window.Game?.Simulation;
+                            if (simulation?.tick) {
+                                const result = simulation.tick(dt);
+                                window.__OMEGA_DIAG__.lastGovernmentTurn = result?.turn ?? runtime.getCurrentTurn?.() ?? null;
+                                window.__OMEGA_DIAG__.lastGovernmentStatus = result?.status ?? null;
+                            } else {
+                                const current = Number(runtime.getCurrentTurn?.() ?? window.Game?.state?.simulationTurn ?? window.Game?.worldState?.turn ?? 0);
+                                const next = Math.max(1, Number.isFinite(current) ? current + 1 : 1);
+                                const result = runtime.runTurn(next, dt, {
+                                    countryId: window.Game?.currentActiveCountry ||
+                                        window.CountryIOS?.activeCountry ||
+                                        window.OmegaCabinetUI?.activeCountry ||
+                                        window.Game?.state?.playerCountryId ||
+                                        window.Game?.state?.countryId ||
+                                        null
+                                });
+                                window.__OMEGA_DIAG__.lastGovernmentTurn = result?.turn ?? next;
+                                window.__OMEGA_DIAG__.lastGovernmentStatus = result?.status ?? null;
+                            }
+                        } catch (err) {
+                            window.__OMEGA_DIAG__.errors.push({
+                                msg: err?.message || String(err),
+                                type: "GOVERNMENT_RUNTIME"
                             });
+                            if (window.__OMEGA_DIAG__.errors.length > 100) window.__OMEGA_DIAG__.errors.shift();
+                            console.error("[OMEGA GOVERNMENT RUNTIME]", err);
                         }
-                    });
+                    }
 
-                    // Reset dirty set after processing
+                    // Dirty flags are UI/update hints only. Canonical ministry mutation is owned
+                    // exclusively by Game.Simulation -> OMEGA_MINISTRY_RUNTIME_V1.runTurn().
                     dirtyMinistries.clear();
 
                     if (tick === 1) {
                         setTimeout(() => {
                             const mapInst = window.map || (window.Game && window.Game.Map && window.Game.Map.map);
                             if (mapInst && typeof mapInst.invalidateSize === 'function') mapInst.invalidateSize();
-                        }, 200); // [FIX P2] Delayed OMEGA_READY sync
+                        }, 200);
                     }
                     rafId = requestAnimationFrame(engineLoop);
                 }
