@@ -59,6 +59,35 @@
   factMeta.transport['transport.logistics']={role:roles.DECISION_INPUT};
   factMeta.intelligence['intelligence.threats']={role:roles.DECISION_INPUT};
 
+  const actionDefinitions={
+    CONCLUDE_TRADE_AGREEMENT:{
+      actionId:'CONCLUDE_TRADE_AGREEMENT',
+      authority:'TRADE_MINISTRY',
+      stateOwnerMinistry:'foreign',
+      requirements:[
+        {id:'foreign.relations',ministryId:'foreign',path:'foreign.relations',entityScoped:true,role:roles.REQUIRED},
+        {id:'foreign.treaties',ministryId:'foreign',path:'foreign.treaties',entityScoped:true,role:roles.REQUIRED},
+        {id:'foreign.negotiations',ministryId:'foreign',path:'foreign.negotiations',entityScoped:true,required:false,role:roles.OPTIONAL},
+        {id:'foreign.sanctions',ministryId:'foreign',path:'foreign.sanctions',entityScoped:true,role:roles.REQUIRED},
+        {id:'economy.production',ministryId:'economy',path:'economy.production',role:roles.REQUIRED},
+        {id:'finance.reserves',ministryId:'finance',path:'finance.reserves',role:roles.REQUIRED},
+        {id:'transport.logistics',ministryId:'transport',path:'transport.logistics',role:roles.REQUIRED},
+        {id:'intelligence.threats',ministryId:'intelligence',path:'intelligence.threats',role:roles.REQUIRED},
+        {id:'trade.balance',ministryId:'trade',path:'trade.balance',required:false,role:roles.INFORMATIONAL},
+        {id:'trade.exports',ministryId:'trade',path:'trade.exports',required:false,role:roles.INFORMATIONAL},
+        {id:'trade.imports',ministryId:'trade',path:'trade.imports',required:false,role:roles.INFORMATIONAL}
+      ],
+      affectedMinistries:['trade','foreign','economy','finance','transport'],
+      affectedStateDomains:['foreign','trade','economy','finance','transport'],
+      approvalRequirements:[],
+      expectedOutputs:['TRADE_POLICY_DECISION'],
+      downstreamEffects:[
+        {type:'STATE_REVIEW_REQUEST',targetMinistries:['foreign','economy','finance','transport']},
+        {type:'PUBLIC_STATE_REPUBLISH',sourceMinistry:'foreign'}
+      ]
+    }
+  };
+
   const api=Object.freeze({
     VERSION,
     roles:Object.freeze({...roles}),
@@ -68,9 +97,12 @@
       watch:Object.freeze(def.watch.slice()),
       actions:Object.freeze(def.actions.slice())
     })]))),
+    actionDefinitions:Object.freeze(Object.fromEntries(Object.entries(actionDefinitions).map(([id,def])=>[id,Object.freeze({...def,requirements:Object.freeze(def.requirements.map(r=>Object.freeze({...r})))} )]))),
     factMeta:Object.freeze(Object.fromEntries(Object.entries(factMeta).map(([id,meta])=>[id,Object.freeze({...meta})]))),
     get:id=>definitions[String(id)]||null,
     getFactMeta:(ministry,path)=>factMeta[String(ministry)]?.[String(path)]||{role:roles.INFORMATIONAL},
+    getAction:id=>actionDefinitions[String(id)]||null,
+    actions:()=>Object.keys(actionDefinitions),
     list:()=>Object.keys(definitions),
     size:()=>Object.keys(definitions).length
   });
