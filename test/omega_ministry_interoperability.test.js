@@ -3,129 +3,91 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 import test from 'node:test';
 
-const IDS=[
-  'cabinet','defense','military','finance','economy','trade','foreign',
-  'intelligence','interior','transport','resource','health','education',
-  'technology','projects','culture','statistics'
-];
+const MINISTRY_COUNT=17;
+const ACTION_ID='CONCLUDE_TRADE_AGREEMENT_TEST';
+
+function readRepositoryCountries(){
+  return JSON.parse(fs.readFileSync(new URL('../countries.json',import.meta.url),'utf8'));
+}
 
 function loadBrowserScript(path,sandbox){
   const source=fs.readFileSync(new URL('../'+path,import.meta.url),'utf8');
   vm.runInNewContext(source,sandbox,{filename:path});
 }
 
-function makeSandbox(){
-  const listeners=new Map();
-  let perf=0;
-  const gameState={
+function createSandbox(options={}){
+  const rows=readRepositoryCountries();
+  const countryA=options.countryA||'TST-A';
+  const countryB=options.countryB||'TST-B';
+  const state=options.state||{
+    simulationTurn:1,
     economy:{
-      BANGLADESH:{
-        gdp:100,
-        debt:20,
-        budget:15,
-        inflation:4,
-        unemployment:5,
-        production:80
+      [countryA]:{gdp:100,debt:20,production:80,inflation:4,unemployment:5}
+    },
+    finance:{
+      [countryA]:{reserves:50,taxRevenue:40,spending:30,budget:70}
+    },
+    foreign:{
+      [countryA]:{
+        relations:{[countryB]:55},
+        treaties:{[countryB]:{status:'NOT_CONCLUDED'}},
+        sanctions:{[countryB]:0},
+        negotiations:{[countryB]:{status:'OPEN'}}
       }
     },
-    population:{BANGLADESH:{total:100000000}},
-    relations:{BANGLADESH:{INDIA:{score:55}}},
-    resources:{BANGLADESH:{oil:10}},
-    finance:{BANGLADESH:{reserves:50,taxRevenue:40,spending:30}},
-    foreign:{BANGLADESH:{relations:70,treaties:{count:2,concluded:true},sanctions:0,embassies:3}},
-    transport:{BANGLADESH:{logistics:80,infrastructure:{roads:70},ports:2,rail:1}},
-    intelligence:{BANGLADESH:{threats:10,state:{coverage:75},cyber:{readiness:60}}},
-    defense:{BANGLADESH:{procurement:{queue:2},readiness:78}},
-    military:{BANGLADESH:{combat:{active:false},readiness:75,forceStructure:{army:1},logistics:{score:70}}},
-    trade:{BANGLADESH:{relations:{INDIA:55},balance:5,exports:20,imports:15}},
-    interior:{BANGLADESH:{stability:75,corruption:25,security:80}},
-    resource:{BANGLADESH:{inventory:{oil:10}}},
-    health:{BANGLADESH:{state:{coverage:80},welfare:{coverage:75},hospitals:100}},
-    education:{BANGLADESH:{state:{literacy:80},research:{programs:5},enrollment:70}},
-    technology:{BANGLADESH:{research:{programs:5},innovation:{index:60},patents:12,rnd:10}},
-    projects:{BANGLADESH:{registry:{p1:{status:'active'},p2:{status:'planned'}},legal:{clearance:true},budget:10,transport:{link:1}}},
-    culture:{BANGLADESH:{state:{cohesion:70},media:{reach:80},social:{cohesion:65}}},
-    statistics:{BANGLADESH:{sampleSize:100}}
+    trade:{
+      [countryA]:{relations:{[countryB]:55},balance:5,exports:20,imports:15}
+    },
+    transport:{
+      [countryA]:{logistics:80,infrastructure:{roads:70},ports:2,rail:1}
+    },
+    intelligence:{
+      [countryA]:{threats:{[countryB]:10},state:{coverage:75},cyber:{readiness:60}}
+    },
+    defense:{[countryA]:{procurement:{queue:2},readiness:78}},
+    military:{[countryA]:{combat:{active:false},readiness:75,forceStructure:{army:1},logistics:{score:70}}},
+    interior:{[countryA]:{stability:75,corruption:25,security:80}},
+    resource:{[countryA]:{inventory:{oil:10}}},
+    health:{[countryA]:{state:{coverage:80},welfare:{coverage:75},hospitals:100}},
+    education:{[countryA]:{state:{literacy:80},research:{programs:5},enrollment:70}},
+    technology:{[countryA]:{research:{programs:5},innovation:{index:60},patents:12,rnd:10}},
+    projects:{[countryA]:{registry:{p1:{status:'active'},p2:{status:'planned'}},legal:{clearance:true}}},
+    culture:{[countryA]:{state:{cohesion:70},media:{reach:80},social:{cohesion:65}}},
+    statistics:{[countryA]:{observations:{sampleSize:100}}},
+    population:{[countryA]:{total:100000000}}
   };
 
+  const listeners=new Map();
   const sandbox={
     console,
-    Date,
-    JSON,
-    Object,
-    Number,
-    String,
-    RegExp,
-    Map,
-    Set,
-    WeakMap,
-    Array,
-    Math,
-    Promise,
-    URL,
-    Intl,
-    Error,
-    TypeError,
-    queueMicrotask:fn=>Promise.resolve().then(fn),
-    setTimeout,
-    clearTimeout,
-    setInterval:()=>1,
-    clearInterval:()=>{},
-    performance:{now:()=>++perf},
-    CustomEvent:class CustomEvent{
-      constructor(type,init={}){this.type=type;this.detail=init.detail;}
-    },
-    dispatchEvent(event){
-      for(const fn of listeners.get(event.type)||[]) fn(event);
-      return true;
-    },
-    addEventListener(type,fn){
-      const set=listeners.get(type)||new Set();
-      set.add(fn);
-      listeners.set(type,set);
-    },
-    gameState,
-    Game:{
-      state:{...gameState,countryId:'BANGLADESH',playerCountryId:'BANGLADESH'},
-      currentActiveCountry:'BANGLADESH'
-    },
-    OmegaCabinetUI:{activeCountry:'BANGLADESH',ministersDB:{}},
+    Date,JSON,Object,Number,String,RegExp,Map,Set,WeakMap,Array,Math,Promise,
+    URL,Intl,Error,TypeError,EventTarget,
+    setTimeout,clearTimeout,setInterval:()=>1,clearInterval:()=>{},
+    performance:{now:()=>0},
+    CustomEvent:class CustomEvent{constructor(type,init={}){this.type=type;this.detail=init.detail;}},
+    dispatchEvent(event){for(const fn of listeners.get(event.type)||[])fn(event);return true;},
+    addEventListener(type,fn){const set=listeners.get(type)||new Set();set.add(fn);listeners.set(type,set);},
+    gameState:state,
+    Game:{state,countryId:countryA,currentActiveCountry:countryA},
+    OmegaCabinetUI:{activeCountry:countryA,ministersDB:{}},
     OmegaMinistersDB:{},
     ResourceMinistryEngine:{
       deposits:[],
-      getIntegratedResourceState:()=>({inventory:{crude_oil:10,refined_steel:20,enriched_uranium:1}})
-    },
-    EducationEngine:{}
-  };
-  sandbox.Omega={};
-  sandbox.window=sandbox;
-  sandbox.globalThis=sandbox;
-  return sandbox;
-}
-
-function makeCallback(sandbox){
-  const runtime=sandbox.OMEGA_MINISTRY_RUNTIME_V1;
-  return {
-    onMessage(message){
-      runtime.handleMessage(message.receiver || message.target, message);
-    },
-    onMinistryTick(dt,turn,store,blackboard){
-      runtime.tick(''+this.__id,dt,turn,store,blackboard);
+      getIntegratedResourceState:(countryId)=>state.resource?.[countryId]?{inventory:state.resource[countryId].inventory||{}}:null
     }
   };
-}
+  sandbox.window=sandbox;
+  sandbox.globalThis=sandbox;
+  sandbox.Omega={};
 
-function pump(sandbox,id,turn){
-  const runtime=sandbox.OMEGA_MINISTRY_RUNTIME_V1;
-  const kernel=sandbox.Omega.Kernel;
-  kernel.pumpOrchestratedPipelineTick(id,16.7,turn,{
-    onMessage:(message)=>runtime.handleMessage(id,message),
-    onMinistryTick:(dt,currentTurn,store,blackboard)=>runtime.tick(id,dt,currentTurn,store,blackboard)
+  loadBrowserScript('omega_ministry_registry.js',sandbox);
+  loadBrowserScript('omega_ministry_state_provider.js',sandbox);
+  sandbox.Omega.MinistryStateProvider.instance=sandbox.Omega.MinistryStateProvider.create({
+    stateSource:state,
+    countryRows:rows
   });
-}
-
-test('OMEGA full ministry interoperability system builds and verifies a real 17x17 directed mesh',()=>{
-  const sandbox=makeSandbox();
+  loadBrowserScript('omega_ministry_information_policy.js',sandbox);
+  loadBrowserScript('omega_ministry_decision_framework.js',sandbox);
   loadBrowserScript('omega_kernel.js',sandbox);
   loadBrowserScript('omega_ministry_domain_engines.js',sandbox);
   loadBrowserScript('omega_ministry_interoperability_system.js',sandbox);
@@ -134,138 +96,315 @@ test('OMEGA full ministry interoperability system builds and verifies a real 17x
   const runtime=sandbox.OMEGA_MINISTRY_RUNTIME_V1;
   const mesh=sandbox.Omega.MinistryInteroperability;
   const kernel=sandbox.Omega.Kernel;
+  runtime.init(kernel);
 
-  assert.ok(mesh);
-  assert.equal(runtime.init(kernel),true);
+  const store={countryId:countryA,policies:new Map(),decisions:new Map()};
+  const blackboard={writeAtomic(){}};
+  const ids=sandbox.OmegaMinistryRegistry.ids.slice();
 
-  const topology=mesh.verifyFullMesh();
-  assert.equal(topology.ok,true);
-  assert.equal(topology.ministries,17);
-  assert.equal(topology.connectionCells,289);
-  assert.equal(topology.crossMinistryConnections,272);
-  assert.equal(topology.loopbackConnections,17);
-
-  for(const id of IDS) pump(sandbox,id,1);
-
-  const initialHealth=mesh.health();
-  assert.equal(initialHealth.meshOk,true);
-  assert.equal(initialHealth.publishedMinistries,17);
-  assert.equal(runtime.health().interoperability.connections,289);
-
-  let sent=0;
-  for(const source of IDS){
-    const port=mesh.createPort(source);
-    for(const target of IDS){
-      const msg=port.send(target,'mesh.integration.probe',{source,target,probe:true},{
-        messageType:'STATE_UPDATE',
-        countryId:'BANGLADESH',
-        turn:2
-      });
-      assert.equal(msg.source,source);
-      assert.equal(msg.target,target);
-      sent+=1;
-    }
-  }
-  assert.equal(sent,289);
-
-  for(const id of IDS) pump(sandbox,id,2);
-
-  for(const source of IDS){
-    for(const target of IDS){
-      const route=mesh.getConnection(source,target);
-      assert.equal(route.messagesSent,1,source+'->'+target+' send');
-      assert.equal(route.messagesReceived,1,source+'->'+target+' receive');
-    }
+  function tick(id,turn=state.simulationTurn){
+    state.simulationTurn=turn;
+    sandbox.Game.currentActiveCountry=countryA;
+    sandbox.OmegaCabinetUI.activeCountry=countryA;
+    return runtime.tick(id,16.7,turn,store,blackboard);
   }
 
-  const postTransport=mesh.health();
-  assert.equal(postTransport.metrics.sent,289);
-  assert.equal(postTransport.metrics.received,289);
-  assert.equal(postTransport.metrics.rejected,0);
-  assert.equal(postTransport.metrics.dropped,0);
-
-  const finance=mesh.createPort('finance');
-  const trade=mesh.createPort('trade');
-  const request=finance.request('trade','trade.agreement.context.request',{
-    targetCountry:'INDIA',
-    requestedFacts:['foreign.treaties','foreign.relations','foreign.sanctions','transport.logistics','finance.reserves','intelligence.threats']
-  },{countryId:'BANGLADESH',turn:3});
-
-  pump(sandbox,'trade',3);
-  const tradeEngine=sandbox.OmegaMinistryDomainEngines.get('trade');
-  assert.equal(tradeEngine.getCoordinationState().pendingRequests.length>0,true);
-
-  const response=trade.reply(request,'trade.agreement.context.response',{
-    treatyObserved:true,
-    foreignRelationshipObserved:true,
-    logisticsObserved:true
-  },{countryId:'BANGLADESH',turn:4});
-
-  assert.equal(response.source,'trade');
-  assert.equal(response.target,'finance');
-  pump(sandbox,'finance',4);
-  assert.equal(mesh.getMinistryInbox('finance').some(m=>m.messageId===response.messageId),true);
-
-  mesh.recordBudgetRequest('education',{
-    amount:12,
-    currency:'B',
-    purpose:'education-capacity',
-    urgency:'HIGH',
-    evidence:{source:'education.engine'}
-  },{countryId:'BANGLADESH',turn:5,target:'finance'});
-  pump(sandbox,'finance',5);
-
-  mesh.publishProjectStatus('projects',{
-    projectCount:2,
-    activeCount:1,
-    committedBudget:10,
-    status:'UPDATED',
-    blockers:[]
-  },{countryId:'BANGLADESH',turn:5,target:'cabinet'});
-  pump(sandbox,'cabinet',5);
-
-  const tradeBriefing=mesh.getMinistryBriefing('trade');
-  assert.equal(Object.keys(tradeBriefing.peers).length,17);
-  assert.equal(tradeBriefing.peers.finance.fiscal.reserves,50);
-  assert.equal(tradeBriefing.peers.foreign.operations.facts['foreign.treaties'].concluded,true);
-  assert.equal(tradeBriefing.peers.transport.operations.facts['transport.logistics'],80);
-  assert.equal(tradeBriefing.peers.intelligence.operations.facts['intelligence.threats'],10);
-  assert.equal(tradeBriefing.government.budgetNeeds.some(x=>x.ministryId==='education'),true);
-  assert.equal(tradeBriefing.government.projects.some(x=>x.ministryId==='projects' && x.knownCount===2),true);
-
-  const tradeDecisionContext=mesh.evaluateAction('trade','CONCLUDE_TRADE_AGREEMENT');
-  assert.equal(tradeDecisionContext.status,'OBSERVED');
-  assert.equal(tradeDecisionContext.missing.length,0);
-  assert.equal(tradeDecisionContext.blockers.length,0);
-  assert.equal(tradeDecisionContext.evidence.length>=5,true);
-
-  for(const ministryId of IDS){
-    const ministryContext=mesh.getContext(ministryId,{turn:6,dt:16.7});
-    assert.equal(Object.keys(ministryContext.nationalPicture).length,17);
-    assert.equal(ministryContext.nationalPicture.finance?.ministryId,'finance');
-    assert.equal(ministryContext.nationalPicture.projects?.ministryId,'projects');
-    assert.equal(ministryContext.nationalPicture.education?.ministryId,'education');
-    assert.equal(ministryContext.government.budgetNeeds.some(x=>x.ministryId==='education'),true);
+  function tickAll(turn=state.simulationTurn){
+    return ids.map(id=>tick(id,turn));
   }
 
-  const runtimeContext=mesh.getContext('trade',{turn:6,dt:16.7});
-  assert.equal(runtimeContext.ministryId,'trade');
-  assert.equal(Object.keys(runtimeContext.nationalPicture).length,17);
-  assert.equal(runtimeContext.government.budgetNeeds.some(x=>x.ministryId==='education'),true);
-  assert.equal(typeof runtimeContext.mesh.send,'function');
-  assert.equal(typeof runtimeContext.mesh.request,'function');
-  assert.equal(typeof runtimeContext.mesh.getDecisionContext,'function');
+  function registerTradeAction(){
+    mesh.registerAction(ACTION_ID,{
+      stateOwnerMinistry:'foreign',
+      requirements:[
+        {id:'foreign.relations',ministryId:'foreign',path:'foreign.relations',entityScoped:true,entityId:countryB},
+        {id:'foreign.treaties',ministryId:'foreign',path:'foreign.treaties',entityScoped:true,entityId:countryB},
+        {id:'foreign.sanctions',ministryId:'foreign',path:'foreign.sanctions',entityScoped:true,entityId:countryB},
+        {id:'economy.production',ministryId:'economy',path:'economy.production'},
+        {id:'finance.reserves',ministryId:'finance',path:'finance.reserves'},
+        {id:'transport.logistics',ministryId:'transport',path:'transport.logistics'},
+        {id:'intelligence.threats',ministryId:'intelligence',path:'intelligence.threats',entityScoped:true,entityId:countryB},
+        {id:'trade.balance',ministryId:'trade',path:'trade.balance'}
+      ],
+      blockingConditions:[
+        {fact:'foreign.sanctions',operator:'GT',value:0}
+      ],
+      warningConditions:[
+        {fact:'trade.balance',operator:'LT',value:0}
+      ],
+      affectedMinistries:['foreign','economy','finance','transport','intelligence'],
+      affectedStateDomains:['foreign','trade','economy','finance'],
+      approvalRequirements:['foreign.authority'],
+      expectedOutputs:['trade.agreement.command'],
+      downstreamEffects:[
+        'FOREIGN_TREATY_STATE',
+        'TRADE_BALANCE',
+        'FISCAL_CONDITION',
+        'TRANSPORT_CAPACITY'
+      ]
+    });
+  }
 
-  const engineCoordination=tradeEngine.getCoordinationState();
-  assert.equal(engineCoordination.processedCount>=18,true);
-  assert.equal(Array.isArray(engineCoordination.received),true);
+  return {sandbox,rows,countryA,countryB,state,ids,runtime,mesh,kernel,store,blackboard,tick,tickAll,registerTradeAction};
+}
 
-  console.log('OMEGA MINISTRY INTEROPERABILITY SYSTEM TEST: PASS');
-  console.log('Ministries:',17);
-  console.log('Logical connection cells:',289);
-  console.log('Cross-ministry directed routes:',272);
-  console.log('Loopback routes:',17);
-  console.log('Pairwise transport verified:',289+'/289');
-  console.log('Government situational snapshots:',mesh.health().publishedMinistries+'/17');
-  console.log('Trade decision-context evidence:',tradeDecisionContext.evidence.length);
+test('A+B: registry and 17 independent engines are authoritative',()=>{
+  const s=createSandbox();
+  assert.equal(s.ids.length,MINISTRY_COUNT);
+  assert.equal(new Set(s.ids).size,MINISTRY_COUNT);
+  const health=s.runtime.health();
+  assert.equal(health.independent,MINISTRY_COUNT);
+  assert.equal(health.uniqueInstances,MINISTRY_COUNT);
+  assert.equal(health.engineRegistryHealthy,true);
 });
+
+test('C+D: every route transports and target engines actually process packets',()=>{
+  const s=createSandbox();
+  const turn=1;
+  for(const source of s.ids){
+    const port=s.mesh.createPort(source,s.countryA);
+    for(const target of s.ids)port.send(target,'mesh.probe',{probe:true},{
+      messageType:'STATE_UPDATE',turn,countryId:s.countryA
+    });
+  }
+  for(const id of s.ids)s.tick(id,turn);
+  for(const source of s.ids){
+    for(const target of s.ids){
+      const route=s.mesh.getConnection(source,target);
+      assert.equal(route.messagesSent,1,source+'->'+target+' sent');
+      assert.equal(route.messagesDelivered,1,source+'->'+target+' delivered');
+      assert.equal(route.messagesAccepted,1,source+'->'+target+' accepted');
+      const engine=s.sandbox.OmegaMinistryDomainEngines.get(target);
+      assert.equal(engine.getCoordinationState(s.countryA).processedCount>=1,true);
+    }
+  }
+});
+
+test('E+F: duplicate and invalid messages are rejected safely',()=>{
+  const s=createSandbox();
+  const msg=s.mesh.send('finance','trade','duplicate.test',{value:1},{
+    countryId:s.countryA,turn:1,messageId:'DUPLICATE-1'
+  });
+  const first=s.mesh.acceptMessage(s.countryA,'trade',msg,1);
+  assert.equal(first.ok,true);
+  const duplicate=s.mesh.acceptMessage(s.countryA,'trade',msg,1);
+  assert.equal(duplicate.ok,true);
+  assert.equal(duplicate.duplicate,true);
+
+  const malformed={...msg,sourceMinistryId:'intruder',source:'intruder'};
+  const rejected=s.mesh.acceptMessage(s.countryA,'trade',malformed,1);
+  assert.equal(rejected.ok,false);
+  assert.equal(rejected.status,'REJECTED');
+});
+
+test('G: request/response lifecycle remains correlated and durable',()=>{
+  const s=createSandbox();
+  const request=s.mesh.request('finance','trade','trade.context.request',{
+    requestedFacts:['trade.balance']
+  },{countryId:s.countryA,turn:1,expiryTurn:4});
+  const delivered=s.mesh.getRequest(request.correlationId);
+  assert.equal(delivered.status,'DELIVERED');
+  s.runtime.handleMessage('trade',request);
+  assert.equal(s.mesh.getRequest(request.correlationId).status,'PROCESSING');
+  const response=s.mesh.reply('trade',request,'trade.context.response',{
+    tradeBalanceObserved:true
+  },{countryId:s.countryA,turn:2});
+  assert.equal(response.correlationId,request.correlationId);
+  assert.equal(s.mesh.getRequest(request.correlationId).status,'RESPONDED');
+});
+
+test('H+16: budget requests remain requests, not invented requirements, and appear in government ledger',()=>{
+  const s=createSandbox();
+  s.mesh.recordBudgetRequest('education',{
+    requestedAmount:500,
+    requiredAmount:null,
+    fundingGap:null,
+    priority:'HIGH',
+    urgency:'HIGH',
+    purpose:'future-capacity'
+  },{countryId:s.countryA,turn:2,target:'finance'});
+  const financeBriefing=s.mesh.getMinistryBriefing('finance',s.countryA,{currentTurn:2});
+  const cabinetBriefing=s.mesh.getMinistryBriefing('cabinet',s.countryA,{currentTurn:2});
+  const row=financeBriefing.governmentLedger.budgetRequests.find(x=>x.sourceMinistryId==='education');
+  assert.ok(row);
+  assert.equal(row.requestedAmount,500);
+  assert.equal(row.requiredAmount,null);
+  assert.equal(row.fundingGap,null);
+  assert.ok(cabinetBriefing.governmentLedger.budgetRequests.some(x=>x.sourceMinistryId==='education'));
+});
+
+test('I+17: project signal is visible without treating missing fields as zero',()=>{
+  const s=createSandbox();
+  s.mesh.publishProjectStatus('projects',{
+    projectId:'PROJECT-1',
+    status:'BLOCKED',
+    phase:'PLANNING',
+    cost:null,
+    committedFunding:null,
+    blockers:['approval']
+  },{countryId:s.countryA,turn:2});
+  const trade=s.mesh.getMinistryBriefing('trade',s.countryA,{currentTurn:2});
+  const project=s.mesh.getMinistryBriefing('cabinet',s.countryA,{currentTurn:2}).governmentLedger.projects.find(x=>x.projectId==='PROJECT-1');
+  assert.ok(project);
+  assert.equal(project.cost,null);
+  assert.equal(project.committedFunding,null);
+  assert.ok(trade.governmentLedger.projects.some(x=>x.projectId==='PROJECT-1'));
+});
+
+test('J: missing data remains explicit and never becomes zero',()=>{
+  const s=createSandbox();
+  delete s.state.finance[s.countryA].reserves;
+  delete s.state.projects[s.countryA].registry;
+  s.tick('finance',3);
+  s.tick('projects',3);
+  const finance=s.mesh.getPeerState('trade','finance',s.countryA,{currentTurn:3});
+  const projects=s.mesh.getPeerState('trade','projects',s.countryA,{currentTurn:3});
+  assert.equal(finance.publishedFacts['finance.reserves'].value,null);
+  assert.equal(finance.publishedFacts['finance.reserves'].availability,'UNAVAILABLE');
+  assert.notEqual(finance.publishedFacts['finance.reserves'].value,0);
+  assert.equal(projects.projects.knownCount,null);
+  assert.ok(['UNAVAILABLE','UNOBSERVED'].includes(projects.publishedFacts['projects.registry'].availability));
+});
+
+test('K+11: stale state is explicitly marked stale',()=>{
+  const s=createSandbox();
+  s.tick('finance',1);
+  const stale=s.mesh.getPeerState('trade','finance',s.countryA,{currentTurn:3});
+  assert.equal(stale.publishedFacts['finance.reserves'].availability,'STALE');
+  assert.equal(stale.freshness.status,'STALE');
+});
+
+test('L+M+N: Trade receives separate Foreign facts and permitted cross-ministry evidence',()=>{
+  const s=createSandbox();
+  s.tickAll(1);
+  s.registerTradeAction();
+  const context=s.mesh.getMinistryBriefing('trade',s.countryA,{currentTurn:1});
+  assert.equal(context.peerStates.foreign.publishedFacts['foreign.relations'].value[s.countryB],55);
+  assert.deepEqual(
+    context.peerStates.foreign.publishedFacts['foreign.treaties'].value[s.countryB],
+    {status:'NOT_CONCLUDED'}
+  );
+  assert.equal(context.peerStates.foreign.publishedFacts['foreign.sanctions'].value[s.countryB],0);
+  assert.equal(context.peerStates.intelligence.publishedFacts['intelligence.sources'].access.granted,false);
+  const decision=s.mesh.evaluateAction('trade',ACTION_ID,{countryId:s.countryA,currentTurn:1});
+  assert.equal(decision.status,'OBSERVED');
+  assert.equal(decision.missing.length,0);
+  assert.equal(decision.blockers.length,0);
+  assert.equal(decision.evidence.length,8);
+});
+
+test('O: country A and country B state remain isolated',()=>{
+  const s=createSandbox({
+    countryA:'AA',
+    countryB:'BB',
+    state:{
+      simulationTurn:1,
+      finance:{
+        AA:{reserves:10},
+        BB:{reserves:900}
+      }
+    }
+  });
+  s.tick('finance',1);
+  const a=s.mesh.getPeerState('trade','finance','AA',{currentTurn:1});
+  const b=s.mesh.getPeerState('trade','finance','BB',{currentTurn:1});
+  assert.equal(a.publishedFacts['finance.reserves'].value,10);
+  assert.equal(b.publishedFacts['finance.reserves'].value,900);
+  assert.notDeepEqual(a.publishedFacts['finance.reserves'].value,b.publishedFacts['finance.reserves'].value);
+});
+
+test('P: ministry cannot directly mutate another ministry private coordination state',()=>{
+  const s=createSandbox();
+  const finance=s.sandbox.OmegaMinistryDomainEngines.get('finance');
+  const economy=s.sandbox.OmegaMinistryDomainEngines.get('economy');
+  const before=economy.getCoordinationState(s.countryA).processedCount;
+  assert.equal(finance._coordination,undefined);
+  assert.equal(economy.getCoordinationState(s.countryA).processedCount,before);
+  s.mesh.send('finance','economy','coordination.probe',{x:1},{countryId:s.countryA,turn:1});
+  s.runtime.handleMessage('economy',s.mesh.getMinistryInbox(s.countryA,'economy')[0]);
+  assert.equal(economy.getCoordinationState(s.countryA).processedCount,before+1);
+});
+
+test('Q: newly populated data is hot-plugged on the next publication',()=>{
+  const s=createSandbox();
+  delete s.state.finance[s.countryA].available;
+  s.tick('finance',1);
+  let first=s.mesh.getPeerState('trade','finance',s.countryA,{currentTurn:1});
+  assert.equal(first.publishedFacts['finance.available'].availability,'UNAVAILABLE');
+  s.state.finance[s.countryA].available=42;
+  s.tick('finance',2);
+  const second=s.mesh.getPeerState('trade','finance',s.countryA,{currentTurn:2});
+  assert.equal(second.publishedFacts['finance.available'].availability,'AVAILABLE');
+  assert.equal(second.publishedFacts['finance.available'].value,42);
+});
+
+test('R: save/load restores logically equivalent interoperability state',()=>{
+  const s=createSandbox();
+  s.tickAll(1);
+  const request=s.mesh.request('trade','foreign','foreign.state.request',{targetCountry:s.countryB},{
+    countryId:s.countryA,turn:2,expiryTurn:5
+  });
+  const saved=s.runtime.saveState();
+  const restored=createSandbox({state:JSON.parse(JSON.stringify(s.state))});
+  restored.runtime.loadState(saved);
+  assert.deepEqual(
+    stripTelemetry(restored.mesh.getPeerState('trade','finance',s.countryA,{currentTurn:1})),
+    stripTelemetry(s.mesh.getPeerState('trade','finance',s.countryA,{currentTurn:1}))
+  );
+  assert.equal(restored.mesh.getRequest(request.correlationId).status,s.mesh.getRequest(request.correlationId).status);
+  const restoredCoord=restored.sandbox.OmegaMinistryDomainEngines.get('foreign').getCoordinationState(s.countryA);
+  assert.equal(restoredCoord.processedCount,s.sandbox.OmegaMinistryDomainEngines.get('foreign').getCoordinationState(s.countryA).processedCount);
+});
+
+test('S: deterministic identifiers, state revisions and decision results do not depend on wall-clock time',()=>{
+  const a=createSandbox();
+  const b=createSandbox();
+  a.tickAll(1);b.tickAll(1);
+  a.registerTradeAction();b.registerTradeAction();
+  const am=a.mesh.send('trade','foreign','deterministic.test',{v:1},{countryId:a.countryA,turn:2});
+  const bm=b.mesh.send('trade','foreign','deterministic.test',{v:1},{countryId:b.countryA,turn:2});
+  assert.equal(am.messageId,bm.messageId);
+  const ad=a.mesh.evaluateAction('trade',ACTION_ID,{countryId:a.countryA,currentTurn:1});
+  const bd=b.mesh.evaluateAction('trade',ACTION_ID,{countryId:b.countryA,currentTurn:1});
+  assert.deepEqual(stripTelemetry(ad),stripTelemetry(bd));
+});
+
+test('T: actual repository country data crosses the canonical provider -> ministry -> interoperability path',()=>{
+  const rows=readRepositoryCountries();
+  assert.ok(Array.isArray(rows)&&rows.length>0);
+  const first=rows[0];
+  const last=rows[rows.length-1];
+  const state={
+    simulationTurn:1,
+    statistics:{[String(first.code).toUpperCase()]:{
+      observations:{source:'countries.json'}
+    }}
+  };
+  const s=createSandbox({
+    countryA:String(first.code).toUpperCase(),
+    countryB:String(last.code).toUpperCase(),
+    state
+  });
+  s.tick('statistics',1);
+  const publicState=s.mesh.getPeerState('cabinet','statistics',s.countryA,{currentTurn:1});
+  const identity=publicState.publishedFacts['country.identity'];
+  assert.equal(identity.availability,'AVAILABLE');
+  assert.equal(identity.provenance.sourceType,'AUTHORITATIVE_RUNTIME_STATE');
+  assert.equal(identity.value.code||identity.value.id,first.code);
+});
+
+function stripTelemetry(value){
+  if(value===null||value===undefined)return value;
+  if(Array.isArray(value))return value.map(stripTelemetry);
+  if(typeof value!=='object')return value;
+  const out={};
+  for(const [k,v] of Object.entries(value)){
+    if(k==='timestamp'||k==='publishedAt'||k==='timestampIsTelemetry')continue;
+    out[k]=stripTelemetry(v);
+  }
+  return out;
+}
+
+console.log('OMEGA GOVERNMENT INTEROPERABILITY TEST MATRIX READY');
+console.log('Tests:',20);
+console.log('Canonical ministry count:',MINISTRY_COUNT);
