@@ -56,7 +56,7 @@ _globalTarget.WorldEcosystemEngine = (() => {
     };
 
     // Global Strategic Commodity Market Baseline
-    const GLOBAL_MARKET = {
+    const DEFAULT_GLOBAL_MARKET = {
         crude_oil: { price: 82.50, trend: "STABLE", demandRatio: 1.02, supplyChainRisk: 32 },
         natural_gas: { price: 3.40, trend: "UP", demandRatio: 1.08, supplyChainRisk: 45 },
         lithium: { price: 18500, trend: "UP", demandRatio: 1.25, supplyChainRisk: 62 },
@@ -66,6 +66,7 @@ _globalTarget.WorldEcosystemEngine = (() => {
         uranium: { price: 85, trend: "UP", demandRatio: 1.15, supplyChainRisk: 55 },
         copper: { price: 8900, trend: "UP", demandRatio: 1.18, supplyChainRisk: 38 }
     };
+    const GLOBAL_MARKET = JSON.parse(JSON.stringify(DEFAULT_GLOBAL_MARKET));
 
     // Helper for deterministic geographic and trait hashing (replaces Math.random)
     function getDeterministicHash(id) {
@@ -81,7 +82,42 @@ _globalTarget.WorldEcosystemEngine = (() => {
     // -------------------------------------------------------------------------
     // 2. SOVEREIGN COUNTRY WORLD STATE REGISTRY WITH EPISTEMIC INTEGRITY
     // -------------------------------------------------------------------------
-    const stateRegistry = {};
+    let stateRegistry = {};
+    let authoritativeState = null;
+
+    function setAuthoritativeState(state) {
+        if (!state || typeof state !== 'object') throw new Error("WORLD_AUTHORITY_STATE_REQUIRED");
+        authoritativeState = state;
+        if (!state.worldEcosystem || typeof state.worldEcosystem !== 'object') state.worldEcosystem = {};
+        if (!state.worldEcosystem.countryProfiles || typeof state.worldEcosystem.countryProfiles !== 'object') {
+            state.worldEcosystem.countryProfiles = {};
+        }
+        stateRegistry = state.worldEcosystem.countryProfiles;
+        if (!state.worldEcosystem.market || typeof state.worldEcosystem.market !== 'object') {
+            state.worldEcosystem.market = JSON.parse(JSON.stringify(DEFAULT_GLOBAL_MARKET));
+        }
+        Object.assign(GLOBAL_MARKET, state.worldEcosystem.market);
+        state.worldEcosystem.market = GLOBAL_MARKET;
+
+        if (!Array.isArray(state.worldEcosystem.causalEventLog)) state.worldEcosystem.causalEventLog = [];
+        causalEventLog = state.worldEcosystem.causalEventLog;
+        causalLogCounter = Number.isFinite(Number(state.worldEcosystem.causalLogCounter))
+            ? Number(state.worldEcosystem.causalLogCounter)
+            : 1;
+        state.worldEcosystem.causalLogCounter = causalLogCounter;
+
+        if (!state.simulation || typeof state.simulation !== 'object') state.simulation = {};
+        if (!state.simulation.subsystemTurns || typeof state.simulation.subsystemTurns !== 'object') {
+            state.simulation.subsystemTurns = {};
+        }
+        currentSimulationTick = Number.isFinite(Number(state.simulation.subsystemTurns.worldEcosystem))
+            ? Number(state.simulation.subsystemTurns.worldEcosystem)
+            : Number.isFinite(Number(state.simulation.turn))
+                ? Number(state.simulation.turn)
+                : 0;
+        state.simulation.subsystemTurns.worldEcosystem = currentSimulationTick;
+        return true;
+    }
 
     /**
      * Epistemic metric resolver: distinguishes between verified numbers,
@@ -154,6 +190,7 @@ _globalTarget.WorldEcosystemEngine = (() => {
     };
 
     let causalLogCounter = 1;
+    let causalEventLog = [];
 
     /**
      * Initializes sovereign state profiles for countries with deterministic data derivation
@@ -309,7 +346,6 @@ _globalTarget.WorldEcosystemEngine = (() => {
     // -------------------------------------------------------------------------
     // 3. MULTI-NODE CAUSAL GRAPH ENGINE
     // -------------------------------------------------------------------------
-    const causalEventLog = [];
 
     /**
      * Executes a cascading multi-tier causal chain reaction across the world ecosystem.
@@ -447,8 +483,13 @@ _globalTarget.WorldEcosystemEngine = (() => {
             });
         }
 
+        const causalLogId = `CAUSAL_LOG_${currentSimulationTick}_${causalLogCounter++}`;
+        if (authoritativeState?.worldEcosystem) {
+            authoritativeState.worldEcosystem.causalLogCounter = causalLogCounter;
+        }
+
         const logEntry = {
-            id: `CAUSAL_LOG_${Date.now()}_${causalLogCounter++}`,
+            id: causalLogId,
             timestamp: new Date().toISOString(),
             origin,
             target,
@@ -569,10 +610,23 @@ _globalTarget.WorldEcosystemEngine = (() => {
     // -------------------------------------------------------------------------
     let currentSimulationTick = 0;
 
-    function processSimulationTick(dt) {
-        currentSimulationTick++;
+    function processSimulationTick(dt, targetTurn) {
+        const requestedTurn = Number.isFinite(Number(targetTurn))
+            ? Number(targetTurn)
+            : currentSimulationTick + 1;
+        if (requestedTurn <= currentSimulationTick) {
+            return {
+                tick: currentSimulationTick,
+                advanced: false,
+                countriesProcessed: Object.keys(stateRegistry).length
+            };
+        }
+        currentSimulationTick = requestedTurn;
+        if (authoritativeState?.simulation?.subsystemTurns) {
+            authoritativeState.simulation.subsystemTurns.worldEcosystem = currentSimulationTick;
+        }
 
-        // Every 50 Ticks (Monthly Economic & Resource Cycle)
+        // Every 50 simulation turns (Monthly Economic & Resource Cycle)
         if (currentSimulationTick % 50 === 0) {
             Object.keys(stateRegistry).forEach(code => {
                 const prof = stateRegistry[code];
@@ -583,6 +637,11 @@ _globalTarget.WorldEcosystemEngine = (() => {
                 }
             });
         }
+        return {
+            tick: currentSimulationTick,
+            advanced: true,
+            countriesProcessed: Object.keys(stateRegistry).length
+        };
     }
 
     // -------------------------------------------------------------------------
@@ -636,6 +695,8 @@ _globalTarget.WorldEcosystemEngine = (() => {
         STRATEGIC_BLOCS,
         CHOKEPOINTS,
         GLOBAL_MARKET,
+        setAuthoritativeState,
+        getAuthoritativeState: () => authoritativeState,
         getCountryProfile: initCountryProfile,
         computeEmergentRelation,
         triggerCausalCascade,
