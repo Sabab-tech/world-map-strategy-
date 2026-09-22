@@ -117,9 +117,9 @@
     if(value && typeof value.toArray==='function'){
       try{ return clone(value.toArray()); }catch(_){}
     }
-    if(value instanceof Map) return [...value.values()].map(clone);
-    if(value instanceof Set) return [...value.values()].map(clone);
-    if(value && typeof value==='object') return Object.values(value).map(clone);
+    if(value instanceof Map) return [...value.values()].map(value=>clone(value));
+    if(value instanceof Set) return [...value.values()].map(value=>clone(value));
+    if(value && typeof value==='object') return Object.values(value).map(value=>clone(value));
     return [];
   }
 
@@ -1005,7 +1005,7 @@
         .filter(r=>direction==='ALL' ? (r.source===ministryId||r.target===ministryId)
           : direction==='OUTBOUND' ? r.source===ministryId
           : r.target===ministryId)
-        .map(clone);
+        .map(value=>clone(value));
     }
 
     getConnection(source,target){
