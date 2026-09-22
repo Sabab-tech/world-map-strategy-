@@ -12,14 +12,81 @@ const N=v=>S(v).normalize('NFKC').replace(/[?!,.:;'\"“”‘’(){}[\]<>—–
 const O=v=>v&&typeof v==='object'&&!Array.isArray(v);
 const A=v=>Array.isArray(v)?v:[];
 const isNode=typeof process!=='undefined'&&!!process?.versions?.node&&typeof window==='undefined';
-const state={ready:false,error:null,loadedAt:null,promise:null,countries:new Map(),countryAliases:new Map(),cities:new Map(),cityAliases:new Map(),datasets:new Map(),sourceCounts:{}};
+const state={ready:false,error:null,loadedAt:null,promise:null,countries:new Map(),countryAliases:new Map(),cities:new Map(),cityAliases:new Map(),datasets:new Map(),sourceCounts:{},duplicateCountryMerges:[]};
 const dfsState={ready:false,error:null,knowledge:null,meta:[],registry:new Map(),capabilities:new Map(),entityIndex:new Map(),fieldIndex:new Map(),promise:null,context:{}};
 function rows(r){if(Array.isArray(r))return r;if(Array.isArray(r?.countries))return r.countries;if(Array.isArray(r?.data))return r.data;if(O(r))return Object.entries(r).map(([k,v])=>O(v)?({...v,__sourceKey:k}):({id:k,name:v,__sourceKey:k}));return[];}
 function idOf(x,key=''){const i=O(x?.identity)?x.identity:(x||{});return S(i.iso2||i.countryCode||i.country_code||i.code||i.id||i.canonicalId||key).toUpperCase();}
 function nameOf(x,key=''){const i=O(x?.identity)?x.identity:(x||{});return S(i.name||i.countryName||i.country_name||i.shortName||i.displayName||i.officialName||x?.name||key);}
+function isTwoLetterCountryId(id){return /^[A-Z]{2}$/.test(S(id).toUpperCase());}
+function mergeCountryAliasSets(fromId,toId){for(const[alias,ids]of state.countryAliases.entries()){if(!(ids instanceof Set)||!ids.has(fromId))continue;ids.delete(fromId);ids.add(toId);if(!ids.size)state.countryAliases.delete(alias);}}
+function mergeCountryRecords(fromId,toId,preferredRecord=null){
+  const from=state.countries.get(fromId);
+  if(!from)return state.countries.get(toId)||null;
+  const to=state.countries.get(toId);
+  if(!to){
+    from.id=toId;
+    state.countries.set(toId,from);
+    mergeCountryAliasSets(fromId,toId);
+    return from;
+  }
+  to.names=[...new Set([...(to.names||[]),...(from.names||[])].filter(Boolean))];
+  to.sources=[...new Set([...(to.sources||[]),...(from.sources||[])].filter(Boolean))];
+  to.cities=[...(to.cities||[]),...(from.cities||[])];
+  to.datasets=Object.assign(Object.create(null),from.datasets||{},to.datasets||{});
+  to.countryCodes=[...new Set([...(to.countryCodes||[]),...(from.countryCodes||[]),fromId,toId].filter(Boolean))];
+  if(preferredRecord&&preferredRecord!==to.raw)to.raw=preferredRecord;
+  state.countries.delete(fromId);
+  mergeCountryAliasSets(fromId,toId);
+  return to;
+}
+function canonicalIdForCountryRecord(candidateId,name){
+  const candidate=S(candidateId).toUpperCase(), alias=N(name);
+  const existingIds=[...(state.countryAliases.get(alias)||new Set())].map(v=>S(v).toUpperCase()).filter(Boolean);
+  if(!existingIds.length)return candidate;
+  if(existingIds.includes(candidate)&&isTwoLetterCountryId(candidate))return candidate;
+  const twoLetter=[...existingIds].find(isTwoLetterCountryId);
+  if(twoLetter)return twoLetter;
+  if(isTwoLetterCountryId(candidate))return candidate;
+  return existingIds.slice().sort((a,b)=>a.length-b.length||a.localeCompare(b))[0];
+}
 function addCountryAlias(id,v){const n=N(v),canonical=S(id).toUpperCase();if(!n||!canonical)return;const set=state.countryAliases.get(n)||new Set();set.add(canonical);state.countryAliases.set(n,set);}
-function registerCountry(x,key='',source='countries.json',allowCreate=true){if(!O(x))return null;const id=idOf(x,key),name=nameOf(x,key);if(!id||!name)return null;if(!allowCreate&&!state.countries.has(id))return null;const old=state.countries.get(id)||{id,names:[],officialName:'',sources:[],cities:[],raw:null,datasets:Object.create(null)};const aliases=[...A(x.aliases),...A(x.alias_names),...A(x.altNames),...A(x.alternateNames)];old.names=[...new Set([...old.names,name,S(x.officialName),S(x.shortName),S(x.displayName),S(x.nativeName),...aliases].filter(Boolean))];if(S(x.officialName))old.officialName=S(x.officialName);old.sources=[...new Set([...old.sources,source].filter(Boolean))];old.raw=old.raw||x;if(source)old.datasets[source]=x;state.countries.set(id,old);for(const n of old.names)addCountryAlias(id,n);for(const k of ['iso2','iso3','isoCode','countryCode','country_code','code','id','canonicalId'])if(S(x?.[k]))addCountryAlias(id,x[k]);return old;}
-function ingestCountries(r){const a=rows(r);state.sourceCounts.countries=a.length;for(const x of a)registerCountry(x,x?.__sourceKey||'','countries.json',true);}
+function registerCountry(x,key='',source='countries.json',allowCreate=true){
+  if(!O(x))return null;
+  const candidateId=idOf(x,key),name=nameOf(x,key);
+  if(!candidateId||!name)return null;
+  const canonicalId=canonicalIdForCountryRecord(candidateId,name);
+  const duplicateCandidate=canonicalId!==candidateId;
+  if(!allowCreate&&!state.countries.has(canonicalId))return null;
+  if(duplicateCandidate){
+    if(!state.countries.has(canonicalId)&&state.countries.has(candidateId))mergeCountryRecords(candidateId,canonicalId,x);
+    else if(state.countries.has(candidateId)&&candidateId!==canonicalId)mergeCountryRecords(candidateId,canonicalId,null);
+    state.duplicateCountryMerges.push({source,rawId:candidateId,canonicalId,name});
+  }
+  let old=state.countries.get(canonicalId)||{id:canonicalId,names:[],officialName:'',sources:[],cities:[],raw:null,datasets:Object.create(null),countryCodes:[]};
+  const aliases=[...A(x.aliases),...A(x.alias_names),...A(x.altNames),...A(x.alternateNames)];
+  old.names=[...new Set([...old.names,name,S(x.officialName),S(x.shortName),S(x.displayName),S(x.nativeName),...aliases].filter(Boolean))];
+  old.countryCodes=[...new Set([...(old.countryCodes||[]),candidateId,S(x.iso2),S(x.iso3),S(x.isoCode),S(x.countryCode),S(x.country_code),S(x.code),S(x.id),S(x.canonicalId)].filter(Boolean))];
+  if(S(x.officialName))old.officialName=S(x.officialName);
+  old.sources=[...new Set([...old.sources,source].filter(Boolean))];
+  // A deterministic two-letter canonical record wins over an ISO-3 duplicate.
+  if(!old.raw||isTwoLetterCountryId(candidateId)&&!isTwoLetterCountryId(old.id))old.raw=x;
+  if(source)old.datasets[source]=x;
+  state.countries.set(canonicalId,old);
+  for(const n of old.names)addCountryAlias(canonicalId,n);
+  for(const code of old.countryCodes)addCountryAlias(canonicalId,code);
+  return old;
+}
+function ingestCountries(r){
+  const a=rows(r);
+  // Process ISO-2 records first so canonical identity is stable even if the source
+  // contains a later ISO-3 duplicate for the same country name.
+  a.slice().sort((left,right)=>{
+    const l=isTwoLetterCountryId(idOf(left,left?.__sourceKey||''))?0:1;
+    const r=isTwoLetterCountryId(idOf(right,right?.__sourceKey||''))?0:1;
+    return l-r;
+  }).forEach(x=>registerCountry(x,x?.__sourceKey||'','countries.json',true));
+  state.sourceCounts.countries=a.length;
+}
 function cityObject(v,role=''){if(!O(v)||!S(v.name))return null;const city={...v,name:S(v.name),role:S(v.role||role||v.type||'').toUpperCase()};city.countryId=S(v.countryId||v.countryCode||v.iso2||v.iso3||'').toUpperCase();return city;}
 function canonicalCityId(countryId,name){return`${S(countryId).toUpperCase()}:${N(name).replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'')}`;}
 function addCityAlias(id,v){const n=N(v);if(!n||!id)return;const set=state.cityAliases.get(n)||new Set();set.add(id);state.cityAliases.set(n,set);}
@@ -27,7 +94,7 @@ function ingestCities(r){const a=rows(r);state.sourceCounts.cities=a.length;for(
 function ingestRelations(r){const root=r?.RELATION_GENERATION_ENGINE?.srie_v2_asymmetrical_salience||r?.srie_v2_asymmetrical_salience||{};let count=0;for(const[k,v]of Object.entries(root)){if(!O(v))continue;const id=S(v.country_code||k).toUpperCase(),country=state.countries.get(id);if(country){country.sources=[...new Set([...(country.sources||[]),'relation_generation_engine.json'])];country.datasets['relation_generation_engine.json']=v;for(const alias of [v.country_name,k])if(S(alias))addCountryAlias(id,alias);count++;}}state.sourceCounts.relations=count;}
 function ingestRawDataset(r,source){if(r===undefined||r===null)return;state.datasets.set(source,r);state.sourceCounts[source]=1;}
 async function loadJson(p,optional=false){try{if(isNode){const fs=await import('node:fs/promises');const base=S(process.env.OMEGA_ROOT||process.cwd());const text=await fs.readFile(`${base}/${p}`,'utf8');return JSON.parse(text);}const r=await fetch(p,{cache:'no-store'});if(!r.ok){if(optional)return null;throw Error(`${p}: HTTP ${r.status}`);}return await r.json();}catch(e){if(optional)return null;throw e;}}
-async function init(){if(state.promise)return state.promise;state.promise=(async()=>{state.ready=false;state.error=null;try{const files=[['countries.json',false],['cities.json',false],['resources.json',true],['resources_2.json',true],['resource_ontology.json',true],['relation_generation_engine.json',true],['economy.json',true],['population.json',true]];const loaded=await Promise.all(files.map(([p,o])=>loadJson(p,o)));state.datasets.clear();state.countries.clear();state.countryAliases.clear();state.cities.clear();state.cityAliases.clear();state.sourceCounts={};for(let i=0;i<files.length;i++)if(loaded[i]!==null&&loaded[i]!==undefined)state.datasets.set(files[i][0],loaded[i]);ingestCountries(loaded[0]);if(loaded[5])ingestRelations(loaded[5]);ingestCities(loaded[1]);for(let i=2;i<files.length;i++)if(i!==5)ingestRawDataset(loaded[i],files[i][0]);state.loadedAt=Date.now();state.ready=true;installRuntimeBridges();return true;}catch(e){state.error=String(e);state.ready=false;console.error('[OMEGA Canonical Identity]',e);return false;}})();return state.promise;}
+async function init(){if(state.promise)return state.promise;state.promise=(async()=>{state.ready=false;state.error=null;try{const files=[['countries.json',false],['cities.json',false],['resources.json',true],['resources_2.json',true],['resource_ontology.json',true],['relation_generation_engine.json',true],['economy.json',true],['population.json',true]];const loaded=await Promise.all(files.map(([p,o])=>loadJson(p,o)));state.datasets.clear();state.countries.clear();state.countryAliases.clear();state.cities.clear();state.cityAliases.clear();state.sourceCounts={};state.duplicateCountryMerges=[];for(let i=0;i<files.length;i++)if(loaded[i]!==null&&loaded[i]!==undefined)state.datasets.set(files[i][0],loaded[i]);ingestCountries(loaded[0]);if(loaded[5])ingestRelations(loaded[5]);ingestCities(loaded[1]);for(let i=2;i<files.length;i++)if(i!==5)ingestRawDataset(loaded[i],files[i][0]);state.loadedAt=Date.now();state.ready=true;installRuntimeBridges();return true;}catch(e){state.error=String(e);state.ready=false;console.error('[OMEGA Canonical Identity]',e);return false;}})();return state.promise;}
 function rankMatches(text,map,contextCountryId=null){const q=N(text);if(!q)return[];const hits=[];for(const[alias,ids]of map.entries()){if(!alias||alias.length<2)continue;const exact=q===alias,boundary=(` ${q} `).includes(` ${alias} `)||q.startsWith(alias+' ')||q.endsWith(' '+alias);if(!exact&&!boundary)continue;for(const id of ids instanceof Set?[...ids]:[ids]){const sameContext=contextCountryId&&S(id).split(':')[0]===S(contextCountryId).toUpperCase();const base=exact?1:Math.min(.995,.76+alias.length/Math.max(100,q.length*2));hits.push({id,alias,score:Math.min(1,base+(sameContext?.004:0))});}}hits.sort((a,b)=>b.score-a.score||b.alias.length-a.alias.length||String(a.id).localeCompare(String(b.id)));return hits;}
 function resolveCountry(q){const hits=rankMatches(q,state.countryAliases);if(!hits.length)return null;const best=hits[0],sameAlias=hits.filter(x=>x.alias===best.alias),uniqueIds=[...new Set(sameAlias.map(x=>x.id))];if(uniqueIds.length>1)return{id:null,type:'COUNTRY',confidence:best.score,surface:best.alias,source:'AMBIGUOUS_COUNTRY_IDENTITY',candidates:sameAlias.map(x=>({id:x.id,surface:x.alias,confidence:x.score})),raw:null};const id=S(best.id).toUpperCase();return{id,type:'COUNTRY',confidence:best.score,surface:best.alias,source:'OMEGA_CANONICAL_COUNTRY_REGISTRY',raw:state.countries.get(id)||null};}
 function resolveCity(q,contextCountryId=null){const hits=rankMatches(q,state.cityAliases,contextCountryId);if(!hits.length)return null;const best=hits[0],second=hits[1];if(second&&best.alias===second.alias&&best.id!==second.id&&best.score===second.score)return{id:null,type:'CITY',confidence:best.score,surface:best.alias,source:'AMBIGUOUS_CITY_IDENTITY',candidates:hits.filter(x=>x.alias===best.alias).map(x=>({id:x.id,confidence:x.score})),raw:null};const[countryId]=S(best.id).split(':');return{id:best.id,type:'CITY',confidence:best.score,surface:best.alias,countryId,source:'OMEGA_CANONICAL_CITY_REGISTRY',raw:state.cities.get(countryId)?.get(best.id)||null};}
@@ -93,7 +160,7 @@ function dfsSelfTest(){return{ok:dfsState.ready===true&&dfsState.meta.length>0,s
 function contextSet(context={}){dfsState.context=O(context)?{...context}:{};return{ok:true,keys:Object.keys(dfsState.context)};}
 function installRuntimeBridges(){g.OmegaCanonicalIdentityRegistry=g.OmegaCanonicalIdentityRegistry||{VERSION,init,resolveCountry,resolveCity,resolve,countryBrief,canonicalizePlan,diagnostics:()=>({VERSION,ready:state.ready,countryCount:state.countries.size,cityCount:[...state.cities.values()].reduce((n,m)=>n+m.size,0),datasets:[...state.datasets.keys()]})};g.OmegaCountrySemanticBridge=g.OmegaCountrySemanticBridge||g.OmegaCanonicalIdentityRegistry;g.OmegaDataFindingSystem={VERSION:DFS_VERSION,init:dfsInit,plan:dfsPlan,execute:dfsExecute,diagnostics:dfsDiagnostics,selfTest:dfsSelfTest,contextSet};}
 async function initRuntime(){return init();}
-function diagnostics(){return{VERSION,ready:state.ready,error:state.error||null,loadedAt:state.loadedAt,countryCount:state.countries.size,cityCount:[...state.cities.values()].reduce((n,m)=>n+m.size,0),datasets:[...state.datasets.keys()],sourceCounts:{...state.sourceCounts},dataFinding:dfsDiagnostics(),authority:'countries.json'}}
+function diagnostics(){return{VERSION,ready:state.ready,error:state.error||null,loadedAt:state.loadedAt,countryCount:state.countries.size,cityCount:[...state.cities.values()].reduce((n,m)=>n+m.size,0),datasets:[...state.datasets.keys()],sourceCounts:{...state.sourceCounts},duplicateCountryMerges:state.duplicateCountryMerges.slice(),dataFinding:dfsDiagnostics(),authority:'countries.json'}}
 g.OmegaCanonicalIdentityRegistry=g.OmegaCanonicalIdentityRegistry||{VERSION,init,resolveCountry,resolveCity,resolve,countryBrief,canonicalizePlan,canonicalCountryId,getDatasetRecord,listCountryIds,diagnostics};
 g.OmegaCountrySemanticBridge=g.OmegaCountrySemanticBridge||g.OmegaCanonicalIdentityRegistry;
 g.OmegaDataFindingSystem=g.OmegaDataFindingSystem||{VERSION:DFS_VERSION,init:dfsInit,plan:dfsPlan,execute:dfsExecute,diagnostics:dfsDiagnostics,selfTest:dfsSelfTest,contextSet};
