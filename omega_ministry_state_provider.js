@@ -62,6 +62,12 @@
     return first || null;
   }
 
+  const COUNTRY_SCOPED_DOMAINS=Object.freeze(new Set([
+    'finance','economy','trade','foreign','intelligence','defense','military',
+    'interior','transport','resource','health','education','technology',
+    'projects','culture','statistics','population','relations','cities'
+  ]));
+
   class MinistryStateProvider{
     constructor(options={}){
       this.version=VERSION;
@@ -114,31 +120,35 @@
       if(!rawPath)return undefined;
       if(rawPath==='countryRecord'||rawPath==='country.identity')return this.countryRecord(countryId);
 
-      const direct=readPath(state,rawPath);
-      if(direct!==undefined){
-        const first=topDomain(rawPath);
-        const bucket=state?.[first];
-        if(bucket && typeof bucket==='object' && countryId && bucket[countryId]!==undefined){
-          let cur=bucket[countryId];
-          const rest=rawPath.split('.').slice(1);
-          for(const part of rest){if(cur==null||!Object.prototype.hasOwnProperty.call(Object(cur),part))return undefined;cur=cur[part];}
-          return cur;
-        }
-        return direct;
-      }
-
       const parts=rawPath.split('.');
-      const first=parts.shift();
-      if(!first)return undefined;
-      const section=state?.[first];
-      if(section && typeof section==='object' && countryId && Object.prototype.hasOwnProperty.call(section,countryId)){
-        let cur=section[countryId];
-        for(const part of parts){if(cur==null||!Object.prototype.hasOwnProperty.call(Object(cur),part))return undefined;cur=cur[part];}
+      const domain=parts.shift();
+      if(!domain)return undefined;
+      const section=state?.[domain];
+
+      if(COUNTRY_SCOPED_DOMAINS.has(domain)){
+        if(!section||typeof section!=='object'||!countryId)return undefined;
+        let countryBucket=section[countryId];
+        if(countryBucket===undefined){
+          const key=Object.keys(section).find(k=>String(k).toUpperCase()===String(countryId).toUpperCase());
+          if(key!==undefined)countryBucket=section[key];
+        }
+        if(countryBucket===undefined||countryBucket===null)return undefined;
+        let cur=countryBucket;
+        for(const part of parts){
+          if(cur==null||!Object.prototype.hasOwnProperty.call(Object(cur),part))return undefined;
+          cur=cur[part];
+        }
         return cur;
       }
-      return undefined;
-    }
 
+      let cur=state?.[domain];
+      if(cur===undefined)return undefined;
+      for(const part of parts){
+        if(cur==null||!Object.prototype.hasOwnProperty.call(Object(cur),part))return undefined;
+        cur=cur[part];
+      }
+      return cur;
+    }
     _specialPath(countryId,path){
       if(path==='resourceSummary'){
         const state=this.root();
