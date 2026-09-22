@@ -103,6 +103,7 @@ jobs:
           const bridge = await fs.readFile('omega_country_semantic_bridge.js','utf8');
           const gameLogic = await fs.readFile('game-logic.js','utf8');
           const gameLoop = await fs.readFile('index.html','utf8');
+          const gameSimulation = await fs.readFile('map-engine-2.js','utf8');
           const test = await fs.readFile('test/omega_17_ministry_runtime.test.js','utf8');
           const meshTest = await fs.readFile('test/omega_ministry_interoperability.test.js','utf8');
 
@@ -127,15 +128,23 @@ jobs:
           if (!interoperability.includes('commitJournal')) throw new Error('State/outbox commit journal missing');
           if (!interoperability.includes('reconstructState')) throw new Error('Authoritative replay reconstruction missing');
           if (!runtime.includes('runTurn')) throw new Error('Canonical government orchestrator missing');
+          if (!runtime.includes('runWorldTurn')) throw new Error('Canonical world-turn orchestrator missing');
+          if (!runtime.includes('resolveSimulationCountries')) throw new Error('World country-scope resolver missing');
           if (!runtime.includes('canonicalCountryId')) throw new Error('Canonical country identity binding missing');
           if (!runtime.includes('syncSimulationClock')) throw new Error('Canonical simulation clock binding missing');
           if (!provider.includes('DATASET_INPUT_CONTRACT')) throw new Error('Canonical dataset input contract missing');
           if (!provider.includes('hydrateDataset')) throw new Error('Canonical dataset hydration missing');
+          if (!provider.includes('hydrateCountryDomain')) throw new Error('Provider must hydrate through state authority');
+          if (!provider.includes('_strictCanonicalCountryId')) throw new Error('Strict canonical country identity validation missing');
           if (!bridge.includes('getDatasetRecord')) throw new Error('Canonical dataset resolver missing');
           if (!gameLogic.includes('window.gameState = canonicalGameState')) throw new Error('Game state authority split remains');
+          if (!gameLogic.includes('derivedState')) throw new Error('Derived state boundary missing');
+          if (!gameLogic.includes('runtimeData')) throw new Error('Runtime metadata boundary missing');
           if (!gameLogic.includes('provider.hydrateDataset')) throw new Error('Game data loader bypasses canonical provider');
-          if (!gameLoop.includes('Game.Simulation.tick(dt)')) throw new Error('Production game loop does not call canonical simulation adapter');
+          if (!gameLoop.includes('window.Game.Simulation.tick(dt)')) throw new Error('Production game loop does not call canonical simulation adapter');
           if (gameLoop.includes('kernel.pumpOrchestratedPipelineTick(id, dt, tick')) throw new Error('Legacy per-ministry canonical loop remains active');
+          if (gameLoop.includes('ministryRuntimeController?.tick?.(id, tickDt, currentTurn')) throw new Error('Direct ministry tick loop remains active');
+          if (!gameSimulation.includes('runWorldTurn')) throw new Error('Production simulation adapter must call canonical world turn');
           if (!runtime.includes('GOVERNMENT_PHASES')) throw new Error('Deterministic government phase spine missing');
           if (!interoperability.includes('saveState')) throw new Error('Save/load state contract missing');
           if (!interoperability.includes('this.ids.length*this.ids.length')) throw new Error('Dynamic NxN mesh topology generation missing');
