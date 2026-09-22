@@ -282,7 +282,7 @@ test('J: missing data remains explicit and never becomes zero',()=>{
   const finance=s.mesh.getPeerState('trade','finance',s.countryA,{currentTurn:3});
   const projects=s.mesh.getPeerState('trade','projects',s.countryA,{currentTurn:3});
   assert.equal(finance.publishedFacts['finance.reserves'].value,null);
-  assert.equal(finance.publishedFacts['finance.reserves'].availability,'UNAVAILABLE');
+  assert.equal(finance.publishedFacts['finance.reserves'].availability,'UNOBSERVED');
   assert.notEqual(finance.publishedFacts['finance.reserves'].value,0);
   assert.equal(projects.projects.knownCount,null);
   assert.ok(['UNAVAILABLE','UNOBSERVED'].includes(projects.publishedFacts['projects.registry'].availability));
