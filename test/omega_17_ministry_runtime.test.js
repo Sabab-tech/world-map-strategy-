@@ -193,7 +193,13 @@ test('OMEGA canonical 17-ministry runtime is independently engine-backed and bin
   assert.equal(health.uniqueInstances,17);
   assert.equal(health.engineRegistryHealthy,true);
   assert.ok(events.some(e=>e.topic==='OMEGA_17_MINISTRY_RUNTIME_READY'));
-  assert.equal(events.filter(e=>e.topic==='OMEGA_MINISTRY_RUNTIME_TICK').length,17);
+  const tickEvents=events.filter(e=>e.topic==='OMEGA_MINISTRY_RUNTIME_TICK');
+  assert.equal(tickEvents.length,34);
+  assert.equal(
+    new Set(tickEvents.map(e=>e.payload?.id).filter(Boolean)).size,
+    17,
+    'both runtime event sinks must report all 17 ministries'
+  );
 
   const ministrySource=fs.readFileSync(new URL('../ministry_engine.js',import.meta.url),'utf8');
   const databaseOffset=ministrySource.indexOf('ministriesDatabase:');
