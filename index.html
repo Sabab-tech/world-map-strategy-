@@ -937,7 +937,7 @@
 
                 // Legacy OmegaMinistry.createRuntime is intentionally not initialized here.
                 // Canonical ministry domain execution has exactly one authority:
-                // Game.Simulation -> OMEGA_MINISTRY_RUNTIME_V1.runTurn().
+                // Game.Simulation -> OMEGA_MINISTRY_RUNTIME_V1.runWorldTurn().
                 if (window.OMEGA_UI_ADAPTER) {
                     window.OMEGA_UI_ADAPTER.init(ministryRuntimeController, sharedBridge, presentation);
                     window.__LOG_EVENT__("UI_ADAPTER_CANONICAL_RUNTIME_BOUND");
@@ -945,7 +945,7 @@
 
                 let isPaused = false;
                 let rafId = null;
-                let dataContractReady = window.__OMEGA_DATA_READY__ === true;
+                let dataContractReady = false;
                 window.addEventListener('OMEGA_DATA_CONTRACT_READY', () => { dataContractReady = true; });
                 window.addEventListener('OMEGA_DATA_CONTRACT_FAILURE', (e) => {
                     dataContractReady = false;
@@ -1021,26 +1021,12 @@
                         }
                         try {
                             const runtime = window.OMEGA_MINISTRY_RUNTIME_V1 || window.Omega?.MinistryRuntime || null;
-                            if (!runtime?.runTurn) throw new Error("Canonical OMEGA government runtime unavailable.");
+                            if (!runtime?.runWorldTurn) throw new Error("Canonical OMEGA world runtime unavailable.");
                             const simulation = window.Game?.Simulation;
-                            if (simulation?.tick) {
-                                const result = window.Game.Simulation.tick(dt);
-                                window.__OMEGA_DIAG__.lastGovernmentTurn = result?.turn ?? runtime.getCurrentTurn?.() ?? null;
-                                window.__OMEGA_DIAG__.lastGovernmentStatus = result?.status ?? null;
-                            } else {
-                                const current = Number(runtime.getCurrentTurn?.() ?? window.Game?.state?.simulationTurn ?? window.Game?.worldState?.turn ?? 0);
-                                const next = Math.max(1, Number.isFinite(current) ? current + 1 : 1);
-                                const result = runtime.runTurn(next, dt, {
-                                    countryId: window.Game?.currentActiveCountry ||
-                                        window.CountryIOS?.activeCountry ||
-                                        window.OmegaCabinetUI?.activeCountry ||
-                                        window.Game?.state?.playerCountryId ||
-                                        window.Game?.state?.countryId ||
-                                        null
-                                });
-                                window.__OMEGA_DIAG__.lastGovernmentTurn = result?.turn ?? next;
-                                window.__OMEGA_DIAG__.lastGovernmentStatus = result?.status ?? null;
-                            }
+                            if (!simulation?.tick) throw new Error("Canonical Game.Simulation adapter unavailable.");
+                            const result = window.Game.Simulation.tick(dt);
+                            window.__OMEGA_DIAG__.lastGovernmentTurn = result?.turn ?? runtime.getCurrentTurn?.() ?? null;
+                            window.__OMEGA_DIAG__.lastGovernmentStatus = result?.status ?? null;
                         } catch (err) {
                             window.__OMEGA_DIAG__.errors.push({
                                 msg: err?.message || String(err),
@@ -1052,7 +1038,7 @@
                     }
 
                     // Dirty flags are UI/update hints only. Canonical ministry mutation is owned
-                    // exclusively by Game.Simulation -> OMEGA_MINISTRY_RUNTIME_V1.runTurn().
+                    // exclusively by Game.Simulation -> OMEGA_MINISTRY_RUNTIME_V1.runWorldTurn().
                     dirtyMinistries.clear();
 
                     if (tick === 1) {
