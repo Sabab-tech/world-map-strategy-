@@ -346,7 +346,9 @@ Game.Diplomacy = {
 };
 
 Game.DataLoader = {
-    async loadAssets() {
+    loadAssets() {
+        if (window.__OMEGA_DERIVED_DATA_PROMISE__) return window.__OMEGA_DERIVED_DATA_PROMISE__;
+        window.__OMEGA_DERIVED_DATA_PROMISE__ = (async function(){
         try {
             // Population/economy are owned by the canonical game database loader.
             if (typeof window.initializeWorldGameDatabase === 'function') {
@@ -413,15 +415,22 @@ Game.DataLoader = {
             const geoData = await fetcher('world.json');
             if (geoData && geoData.type) Game.Map.renderGeoJSON(geoData);
 
-            window.dispatchEvent?.(new CustomEvent('OMEGA_DERIVED_DATA_READY', {
-                detail: { relationState: 'DERIVED_ONLY' }
+            window.__OMEGA_DATA_READY__ = true;
+            window.dispatchEvent?.(new CustomEvent('OMEGA_DATA_CONTRACT_READY', {
+                detail: {
+                    schemaVersion:window.OmegaGameStateContract?.schemaVersion||1,
+                    relationState:'DERIVED_ONLY'
+                }
             }));
         } catch (error) {
             console.error('[OMEGA] Derived data pipeline error:', error);
             window.dispatchEvent?.(new CustomEvent('OMEGA_DERIVED_DATA_FAILURE', {
                 detail: { error: String(error?.message || error) }
             }));
+            throw error;
         }
+        })();
+        return window.__OMEGA_DERIVED_DATA_PROMISE__;
     }
 };
 
