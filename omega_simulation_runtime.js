@@ -205,6 +205,12 @@
       this.items=Array.isArray(snapshot?.items)?clone(snapshot.items):[];
       this.history=Array.isArray(snapshot?.history)?clone(snapshot.history):[];
     }
+
+    reset(){
+      this.sequence=0;
+      this.items=[];
+      this.history=[];
+    }
   }
 
   class SimulationEventLedger{
@@ -251,6 +257,11 @@
     restore(snapshot){
       this.sequence=finite(snapshot?.sequence,0);
       this.events=Array.isArray(snapshot?.events)?clone(snapshot.events):[];
+    }
+
+    reset(){
+      this.sequence=0;
+      this.events=[];
     }
   }
 
@@ -493,6 +504,8 @@
         lastCommittedTurn:this.clock.turn
       };
       this.world.setSession(session);
+      this.commandQueue.reset();
+      this.events.reset();
       this.clock.accumulatorMs=0;
       this.status='READY';
       this.lastError=null;
@@ -686,6 +699,10 @@
       this.events.restore(snapshot.events);
       if(snapshot.ministryRuntime&&this.ministryRuntime?.loadState)this.ministryRuntime.loadState(snapshot.ministryRuntime);
       if(snapshot.interoperability&&this.interoperability?.loadState)this.interoperability.loadState(snapshot.interoperability);
+      if(snapshot.worldEngine&&this.worldEngine?.setAuthoritativeState){
+        this.worldEngine.setAuthoritativeState(this.world.state);
+        if(this.worldEngine.importSaveState)this.worldEngine.importSaveState(snapshot.worldEngine);
+      }
       this.status=String(snapshot.status||this.world.state.simulation?.session?.status||'READY');
       this.lastError=null;
       return this.diagnostics();
