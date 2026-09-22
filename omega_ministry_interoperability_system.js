@@ -217,12 +217,17 @@
       this.commands=new Map();
       this.commandHandlers=new Map();
       this.pendingCommands=new Map();
+      this.scheduledEffects=new Map();
+      this.failureLedger=new Map();
+      this.commitJournal=new Map();
       this.authorityPolicies=new Map();
       this.arbitrationPolicies=new Map();
       this.workflowDefinitions=new Map();
       this.cases=new Map();
       this._caseSequence=0;
       this._reactionSequence=0;
+      this._effectSequence=0;
+      this._failureSequence=0;
       this._receivedMessageIds=new Set();
       this._requestSequence=0;
       this._messageSequence=0;
@@ -1503,6 +1508,137 @@
       return framework.registerAction(actionId,definition);
     }
 
+    evaluateGovernmentDecisions(countryId,options={}){
+      const country=String(countryId||'').trim().toUpperCase();
+      const turn=Number.isFinite(Number(options.currentTurn))?Number(options.currentTurn):this.lastTurn;
+      if(!country)throw new Error('COUNTRY_ID_REQUIRED');
+      const evaluations=[];
+      for(const ministryId of this.ids){
+        const actions=MINISTRY_KNOWLEDGE_CONTRACT?.get?.(ministryId)?.actions||[];
+        for(const actionId of actions){
+          evaluations.push(this.evaluateAction(ministryId,actionId,{
+            countryId:country,
+            currentTurn:turn,
+            targetCountryId:options.targetCountryId||null
+          }));
+        }
+      }
+      return {
+        schemaVersion:1,
+        countryId:country,
+        simulationTurn:turn,
+        evaluated:evaluations,
+        actionable:evaluations.filter(row=>['OBSERVED','CONDITIONALLY_ASSESSABLE'].includes(String(row.status)))
+      };
+    }
+
+    compileDecisionCommands(decisions=[],options={}){
+      const rows=Array.isArray(decisions)?decisions:[decisions];
+      const compiled=[];
+      for(const decision of rows){
+        const spec=decision?.commandSpec||decision?.command||null;
+        if(!spec||typeof spec!=='object')continue;
+        const sourceMinistryId=String(spec.sourceMinistryId||decision.ministryId||'');
+        const countryId=String(spec.countryId||decision.countryId||'').trim().toUpperCase();
+        const actionId=String(spec.actionId||decision.actionId||'');
+        if(!sourceMinistryId||!countryId||!actionId)continue;
+        compiled.push({
+          sourceMinistryId,countryId,actionId,
+          commandType:String(spec.commandType||actionId),
+          payload:clone(spec.payload||{}),
+          options:{...(clone(spec.options||{})),...(clone(options||{}))},
+          decisionId:decision.decisionId||null
+        });
+      }
+      return compiled;
+    }
+
+    scheduleEffect(definition={}){
+      const source=String(definition.sourceMinistryId||'');
+      const actionId=String(definition.actionId||'');
+      const countryId=String(definition.countryId||'').trim().toUpperCase();
+      const dueTurn=Number(definition.dueTurn);
+      if(!this.ids.includes(source)||!countryId||!actionId||!Number.isFinite(dueTurn))throw new Error('INVALID_SCHEDULED_EFFECT');
+      this._effectSequence+=1;
+      const effectId=String(definition.effectId||('OMEGA-EFFECT-'+String(dueTurn)+'-'+String(this._effectSequence)));
+      if(this.scheduledEffects.has(effectId))return clone(this.scheduledEffects.get(effectId));
+      const row={
+        schemaVersion:1,effectId,sourceMinistryId:source,actionId,
+        commandType:String(definition.commandType||actionId),countryId,dueTurn,
+        payload:clone(definition.payload||{}),
+        correlationId:definition.correlationId?String(definition.correlationId):null,
+        causationId:definition.causationId?String(definition.causationId):null,
+        status:'SCHEDULED',
+        createdTurn:Number.isFinite(Number(definition.createdTurn))?Number(definition.createdTurn):this.lastTurn,
+        attempts:0,lastAttemptTurn:null,error:null
+      };
+      this.scheduledEffects.set(effectId,row);
+      return clone(row);
+    }
+
+    processScheduledEffects(turn=this.lastTurn,limit=this.maxHistory){
+      const n=Number.isFinite(Number(turn))?Number(turn):this.lastTurn;
+      const rows=[...this.scheduledEffects.values()]
+        .filter(row=>row.status==='SCHEDULED'&&Number(row.dueTurn)<=n)
+        .sort((a,b)=>Number(a.dueTurn)-Number(b.dueTurn)||String(a.effectId).localeCompare(String(b.effectId)))
+        .slice(0,Number(limit));
+      const processed=[];
+      for(const effect of rows){
+        effect.attempts=Number(effect.attempts||0)+1;
+        effect.lastAttemptTurn=n;
+        try{
+          const command=this.dispatchCommand(
+            effect.sourceMinistryId,effect.actionId,effect.countryId,clone(effect.payload||{}),
+            {
+              commandType:effect.commandType,turn:n,
+              commandId:'OMEGA-EFFECT-CMD-'+effect.effectId,
+              correlationId:effect.correlationId||effect.effectId,
+              causationId:effect.causationId||effect.effectId,
+              deferCommit:true,deferEventDispatch:true
+            }
+          );
+          if(command.status==='STAGED')effect.status='PREPARED';
+          else if(['REVIEW_REQUIRED','PENDING_APPROVAL'].includes(String(command.status)))effect.status='WAITING_AUTHORIZATION';
+          else if(['ALREADY_PROCESSED','APPLIED'].includes(String(command.status)))effect.status='COMPLETED';
+          else {effect.status='FAILED';effect.error=command.result?.error||command.status||'EFFECT_COMMAND_FAILED';}
+        }catch(error){
+          effect.status='FAILED';
+          effect.error=String(error?.message||error);
+          this.metrics.failed+=1;
+        }
+        if(effect.status==='COMPLETED'||effect.status==='FAILED')this.scheduledEffects.delete(effect.effectId);
+        processed.push(clone(effect));
+      }
+      return processed;
+    }
+
+    recordFailure(scope,phase,turn,error,recovery='RETRY',metadata={}){
+      this._failureSequence+=1;
+      const failureId=String(metadata.failureId||('OMEGA-FAIL-'+String(turn||0)+'-'+String(this._failureSequence)));
+      const row={
+        failureId,scope:String(scope||'GLOBAL'),phase:String(phase||'UNKNOWN'),
+        simulationTurn:Number.isFinite(Number(turn))?Number(turn):this.lastTurn,
+        error:String(error?.message||error||'UNKNOWN_FAILURE'),
+        recovery:String(recovery||'RETRY'),status:'OPEN',metadata:clone(metadata||{}),
+        recordedAt:Date.now()
+      };
+      this.failureLedger.set(failureId,row);
+      while(this.failureLedger.size>this.maxHistory){
+        const first=this.failureLedger.keys().next().value;
+        if(first)this.failureLedger.delete(first);else break;
+      }
+      return clone(row);
+    }
+
+    resolveFailure(failureId,status='RESOLVED',metadata={}){
+      const row=this.failureLedger.get(String(failureId||''));
+      if(!row)return null;
+      row.status=String(status||'RESOLVED');
+      row.resolvedTurn=this.lastTurn;
+      row.resolution=clone(metadata||{});
+      return clone(row);
+    }
+
     registerMessageProtocol(messageType,definition={}){
       const type=String(messageType||'').trim();
       if(!type)throw new Error('MESSAGE_TYPE_REQUIRED');
@@ -1860,13 +1996,80 @@
       );
     }
 
+    _materializeStagedEvents(journal){
+      const stagedEvents=Array.isArray(journal?.stagedEvents)?journal.stagedEvents:[];
+      const materialized=[];
+      for(let index=0;index<stagedEvents.length;index++){
+        const staged=stagedEvents[index];
+        materialized.push(this.emitEvent(
+          staged.eventType,
+          journal.countryId,
+          journal.ownerMinistry,
+          staged.payload,
+          {
+            ...(clone(staged.options||{})),
+            eventId:'OMEGA-CMD-EVENT-'+String(journal.commandId)+'-'+String(index+1),
+            turn:journal.turn,
+            stateRevision:journal.stateRevision||null,
+            deferDispatch:true
+          }
+        ));
+      }
+      return materialized;
+    }
+
+    _reconcileCommitJournal(){
+      for(const journal of this.commitJournal.values()){
+        if(journal.status==='ABORTED')continue;
+        if(journal.status==='PREPARED'){
+          const txRecord=this.authority?.getTransaction?.(journal.transactionId)||null;
+          if(txRecord&&txRecord.status!=='CONFLICT'){
+            journal.status='COMMITTED';
+            journal.stateCommitted=true;
+            journal.stateRevision=txRecord.afterRevision??null;
+            journal.reconciledAtTurn=this.lastTurn;
+          }else if(txRecord?.status==='CONFLICT'){
+            journal.status='ABORTED';
+            journal.stateCommitted=false;
+          }
+        }
+        if(journal.status==='COMMITTED'&&journal.outboxReconciled!==true){
+          try{
+            this._materializeStagedEvents(journal);
+            journal.outboxReconciled=true;
+            journal.error=null;
+          }catch(error){
+            journal.outboxReconciled=false;
+            journal.error=String(error?.message||error);
+          }
+        }
+      }
+    }
+
     _finalizePreparedCommand(prepared,options={}){
       const row=prepared?.row;
       const stateTransaction=prepared?.stateTransaction;
-      const stagedEvents=Array.isArray(prepared?.stagedEvents)?prepared.stagedEvents:[];
+      const stagedEvents=Array.isArray(prepared?.stagedEvents)?prepared?.stagedEvents:[];
       const turn=Number.isFinite(Number(prepared?.turn))?Number(prepared.turn):this.lastTurn;
       const owner=String(prepared?.ownerMinistry||row?.stateOwnerMinistryId||'');
       if(!row||!stateTransaction)throw new Error('PREPARED_COMMAND_INVALID');
+
+      const journal={
+        schemaVersion:1,
+        journalId:'OMEGA-CJ-'+String(row.commandId),
+        commandId:String(row.commandId),
+        transactionId:String(stateTransaction.transactionId||''),
+        countryId:row.countryId,
+        ownerMinistry:owner,
+        turn,
+        stagedEvents:clone(stagedEvents),
+        status:'PREPARED',
+        stateCommitted:false,
+        stateRevision:null,
+        outboxReconciled:false,
+        error:null
+      };
+      this.commitJournal.set(journal.journalId,journal);
 
       try{
         row.transaction=stateTransaction.commit();
@@ -1892,6 +2095,10 @@
           :null;
         if(authoritativeDomainRevision)row.stateRevisionAfter=authoritativeDomainRevision;
 
+        journal.status='COMMITTED';
+        journal.stateCommitted=true;
+        journal.stateRevision=row.stateRevisionAfter||row.transaction?.afterRevision||null;
+
         if(row.stateChanged){
           row.requiresRepublish=true;
           this.dirtyPublications.set(snapshotKey(row.countryId,owner),{
@@ -1914,13 +2121,9 @@
           });
         }
 
-        for(const staged of stagedEvents){
-          this.emitEvent(staged.eventType,row.countryId,owner,staged.payload,{
-            ...staged.options,
-            stateRevision:authoritativeDomainRevision,
-            deferDispatch:true
-          });
-        }
+        journal.stateRevision=authoritativeDomainRevision||journal.stateRevision||null;
+        this._materializeStagedEvents({...journal,stateRevision:journal.stateRevision});
+        journal.outboxReconciled=true;
 
         this.pendingCommands.delete(String(row.commandId));
         if(options.processEventOutbox===true)this.processEventOutbox(turn);
@@ -1947,6 +2150,9 @@
         row.result={error:String(error?.message||error)};
         row.statusHistory.push({status:'FAILED',simulationTurn:turn});
         this.metrics.failed+=1;
+        journal.status='ABORTED';
+        journal.stateCommitted=false;
+        journal.error=String(error?.message||error);
         this.pendingCommands.delete(String(row.commandId));
         return clone(row);
       }
@@ -2274,6 +2480,19 @@
       return row?clone(row):null;
     }
 
+    getScheduledEffects(countryId=null){
+      const c=countryId?String(countryId).trim().toUpperCase():null;
+      return [...this.scheduledEffects.values()]
+        .filter(row=>!c||row.countryId===c)
+        .map(row=>clone(row));
+    }
+
+    getFailures(status=null){
+      return [...this.failureLedger.values()]
+        .filter(row=>!status||row.status===String(status))
+        .map(row=>clone(row));
+    }
+
     getConnection(source,target){
       const row=this._route(source,target);
       return row?clone(row):null;
@@ -2548,7 +2767,8 @@
         sequences:{
           message:this._messageSequence,request:this._requestSequence,
           event:this._eventSequence,command:this._commandSequence,
-          reaction:this._reactionSequence,case:this._caseSequence
+          reaction:this._reactionSequence,case:this._caseSequence,
+          effect:this._effectSequence,failure:this._failureSequence
         },
         metrics:clone(this.metrics),
         inboxes,snapshots,deliveryLedger:delivery,requestLedger:requests,
@@ -2556,6 +2776,9 @@
         eventOutbox:clone(Object.fromEntries(this.eventOutbox)),
         eventDeliveryLedger:clone(Object.fromEntries(this.eventDeliveryLedger)),
         reactionQueue:clone(this.reactionQueue),
+        scheduledEffects:clone(Object.fromEntries(this.scheduledEffects)),
+        failureLedger:clone(Object.fromEntries(this.failureLedger)),
+        commitJournal:clone(Object.fromEntries(this.commitJournal)),
         cases:clone(Object.fromEntries(this.cases)),
         pendingCommands:[...this.pendingCommands.values()].map(p=>({
           commandId:p.row.commandId,
@@ -2585,6 +2808,8 @@
       this._commandSequence=number(state.sequences?.command)||0;
       this._reactionSequence=number(state.sequences?.reaction)||0;
       this._caseSequence=number(state.sequences?.case)||0;
+      this._effectSequence=number(state.sequences?.effect)||0;
+      this._failureSequence=number(state.sequences?.failure)||0;
       this.metrics={...this.metrics,...clone(state.metrics||{})};
       for(const id of this.ids)this.inboxes.set(id,clone(state.inboxes?.[id]||[]).slice(0,this.maxInbox));
       this.snapshots=new Map(Object.entries(state.snapshots||{}).map(([k,v])=>[k,clone(v)]));
@@ -2594,6 +2819,9 @@
       this.eventOutbox=new Map(Object.entries(state.eventOutbox||{}).map(([k,v])=>[k,clone(v)]));
       this.eventDeliveryLedger=new Map(Object.entries(state.eventDeliveryLedger||{}).map(([k,v])=>[k,clone(v)]));
       this.reactionQueue=clone(state.reactionQueue||[]);
+      this.scheduledEffects=new Map(Object.entries(state.scheduledEffects||{}).map(([k,v])=>[k,clone(v)]));
+      this.failureLedger=new Map(Object.entries(state.failureLedger||{}).map(([k,v])=>[k,clone(v)]));
+      this.commitJournal=new Map(Object.entries(state.commitJournal||{}).map(([k,v])=>[k,clone(v)]));
       this.cases=new Map(Object.entries(state.cases||{}).map(([k,v])=>[k,clone(v)]));
       this.pendingCommands=new Map();
       this.commands=new Map(Object.entries(state.commands||{}).map(([k,v])=>[k,clone(v)]));
@@ -2626,6 +2854,7 @@
       }
       this.dirtyPublications=new Map(Object.entries(state.dirtyPublications||{}).map(([k,v])=>[k,clone(v)]));
       if(state.authorityState&&this.authority?.importState)this.authority.importState(state.authorityState);
+      this._reconcileCommitJournal();
       this._receivedMessageIds=new Set();
       for(const [id,row] of this.deliveryLedger.entries())if(['ACCEPTED','PROCESSING','PROCESSED','RESPONDED'].includes(row.status))this._receivedMessageIds.add(id);
       this._invalidateKnowledgeCache();
@@ -2697,6 +2926,14 @@
     registerCausalRule:(...args)=>apiInstance.registerCausalRule(...args),
     evaluateCausalRules:(...args)=>apiInstance.evaluateCausalRules(...args),
     processReactionQueue:(...args)=>apiInstance.processReactionQueue(...args),
+    evaluateGovernmentDecisions:(...args)=>apiInstance.evaluateGovernmentDecisions(...args),
+    compileDecisionCommands:(...args)=>apiInstance.compileDecisionCommands(...args),
+    scheduleEffect:(...args)=>apiInstance.scheduleEffect(...args),
+    processScheduledEffects:(...args)=>apiInstance.processScheduledEffects(...args),
+    getScheduledEffects:(...args)=>apiInstance.getScheduledEffects(...args),
+    recordFailure:(...args)=>apiInstance.recordFailure(...args),
+    resolveFailure:(...args)=>apiInstance.resolveFailure(...args),
+    getFailures:(...args)=>apiInstance.getFailures(...args),
     registerWorkflow:(...args)=>apiInstance.registerWorkflow(...args),
     createCase:(...args)=>apiInstance.createCase(...args),
     advanceCase:(...args)=>apiInstance.advanceCase(...args),
