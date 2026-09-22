@@ -949,6 +949,15 @@
 
                 let isPaused = false;
                 let rafId = null;
+                let dataContractReady = window.__OMEGA_DATA_READY__ === true;
+                window.addEventListener('OMEGA_DATA_CONTRACT_READY', () => { dataContractReady = true; });
+                window.addEventListener('OMEGA_DATA_CONTRACT_FAILURE', (e) => {
+                    dataContractReady = false;
+                    window.__OMEGA_DIAG__.errors.push({
+                        msg: e.detail?.error || 'Canonical data contract failed',
+                        type: 'DATA_CONTRACT'
+                    });
+                });
                 let lastTime = performance.now();
                 let tick = 0;
 
@@ -1010,6 +1019,10 @@
                     const isSimTick = (now - lastSimTickTime) >= SIMULATION_TICK_INTERVAL;
                     if (isSimTick) {
                         lastSimTickTime = now;
+                        if (!dataContractReady) {
+                            rafId = requestAnimationFrame(engineLoop);
+                            return;
+                        }
                         try {
                             const runtime = window.OMEGA_MINISTRY_RUNTIME_V1 || window.Omega?.MinistryRuntime || null;
                             if (!runtime?.runTurn) throw new Error("Canonical OMEGA government runtime unavailable.");
