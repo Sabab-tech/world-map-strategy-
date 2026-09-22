@@ -103,7 +103,8 @@
       'finance.budget','finance.allocated','finance.committed','finance.available',
       'finance.reserves','finance.taxRevenue','finance.revenue','finance.spending',
       'finance.encumbered','finance.capitalExpenditure','finance.operatingExpenditure',
-      'finance.emergencyAllocation','finance.mandatoryObligations'
+      'finance.emergencyAllocation','finance.mandatoryObligations','finance.required',
+      'finance.ministryAllocations'
     ],
     economy:[
       'economy.gdp','economy.debt','economy.inflation','economy.unemployment',
@@ -146,7 +147,7 @@
       'technology.research','technology.innovation','technology.patents','technology.rnd'
     ],
     projects:[
-      'projects.registry','projects.legal','projects.cost','projects.allocatedFunding',
+      'projects.registry','projects.legal','projects.requiredFunding','projects.cost','projects.allocatedFunding',
       'projects.committedFunding','projects.spentFunding','projects.remainingFunding',
       'projects.completion','projects.startDate','projects.targetDate',
       'projects.dependencies','projects.blockers','projects.requiredApprovals',
