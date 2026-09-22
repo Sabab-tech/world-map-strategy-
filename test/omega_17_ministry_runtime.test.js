@@ -349,7 +349,7 @@ test('canonical government scheduler executes deterministic multi-phase turn spi
   ]);
   assert.equal(Object.keys(result.assessments).length,17);
   const dependencyPlan=runtime.createDependencyPlan();
-  assert.deepEqual(result.deterministicOrder,dependencyPlan.order);
-  assert.deepEqual(result.deterministicOrder.slice().sort(),IDS.slice().sort());
+  assert.deepEqual(Array.from(result.deterministicOrder),Array.from(dependencyPlan.order));
+  assert.deepEqual(Array.from(result.deterministicOrder).sort(),IDS.slice().sort());
   assert.equal(runtime.getOrchestrationState().turn,43);
 });
