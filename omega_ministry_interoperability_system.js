@@ -105,6 +105,12 @@
     return null;
   }
 
+  function firstEvidence(observed,context,paths){
+    const fromObserved=first(observed,paths);
+    if(fromObserved!==null) return fromObserved;
+    return first(context,paths);
+  }
+
   function collectionCount(value){
     if(Array.isArray(value)) return value.length;
     if(value instanceof Map || value instanceof Set) return value.size;
@@ -596,27 +602,28 @@
       const observed=execution.observedInputs||{};
 
       const fiscal={
-        budget:number(first(observed,[
+        budget:number(firstEvidence(observed,context,[
           'finance.budget','economy.budget','projects.budget',
           'defense.budget','transport.budget'
         ])),
-        spending:number(first(observed,[
+        spending:number(firstEvidence(observed,context,[
           'finance.spending','projects.budget','defense.spending'
         ])),
-        reserves:number(first(observed,['finance.reserves','economy.reserves'])),
-        revenue:number(first(observed,['finance.taxRevenue','finance.revenue','economy.revenue'])),
-        debt:number(first(observed,['economy.debt','finance.debt'])),
+        reserves:number(firstEvidence(observed,context,['finance.reserves','economy.reserves'])),
+        revenue:number(firstEvidence(observed,context,['finance.taxRevenue','finance.revenue','economy.revenue'])),
+        debt:number(firstEvidence(observed,context,['economy.debt','finance.debt'])),
         sourceFields:Object.keys(observed).filter(k=>/budget|spending|reserve|revenue|debt/i.test(k))
       };
 
       const facts={};
-      for(const [key,value] of Object.entries(observed)){
+      const evidenceSource={...context,...observed};
+      for(const [key,value] of Object.entries(evidenceSource)){
         if(/relation|treat|sanction|logistic|threat|readiness|procurement|production|inflation|unemployment|enrollment|research|innovation|hospital|stability|corruption|security/i.test(key)){
           facts[key]=clone(value);
         }
       }
 
-      const projectRegistry=first(observed,['projects.registry']);
+      const projectRegistry=firstEvidence(observed,context,['projects.registry']);
       const latestProjectSignal=this.projectSignals.get(ministryId)?.slice(-1)[0]||null;
       const projects={
         knownCount:collectionCount(projectRegistry) ?? latestProjectSignal?.projectCount ?? null,
