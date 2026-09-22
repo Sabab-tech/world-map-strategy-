@@ -33,6 +33,7 @@
       if(Object.prototype.hasOwnProperty.call(value,entityId))return value[entityId];
       const key=Object.keys(value).find(k=>String(k).toUpperCase()===String(entityId).toUpperCase());
       if(key!==undefined)return value[key];
+      return undefined;
     }
     return value;
   }
