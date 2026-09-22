@@ -352,15 +352,10 @@
       inbox.push(message);
       while(inbox.length>1000) inbox.shift();
 
-      if(this.messaging && typeof this.messaging.send==='function'){
-        try{
-          this.messaging.send(source,target,message.topic,{
-            priority:message.priority,
-            data:message
-          });
-        }catch(_){}
-      }
-
+      // Delivery authority is intentionally singular: the interoperability
+      // inbox above. Kernel messaging remains available as a separate service,
+      // but this system does not mirror packets into a second queue. That avoids
+      // duplicate delivery and keeps one deterministic receive ledger.
       if(message.messageType===MESSAGE_TYPES.REQUEST) this.metrics.requests+=1;
       if(message.messageType===MESSAGE_TYPES.RESPONSE) this.metrics.responses+=1;
       if(message.messageType===MESSAGE_TYPES.ALERT) this.metrics.alerts+=1;
