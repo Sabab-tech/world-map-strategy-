@@ -58,6 +58,7 @@
       this.stateSource=options.stateSource||null;
       this.transactionLedger=new Map();
       this.revisionLedger=new Map();
+      this.checkpointLedger=new Map();
     }
 
     root(){
@@ -246,14 +247,38 @@
       return clone(this.transactionLedger.get(String(transactionId||''))||null);
     }
 
+    createCheckpoint(turn,stateSnapshot=null){
+      const n=Number(turn);
+      if(!Number.isFinite(n))throw new Error('CHECKPOINT_TURN_REQUIRED');
+      const source=stateSnapshot&&typeof stateSnapshot==='object'?stateSnapshot:this.root()||{};
+      this.checkpointLedger.set(n,{schemaVersion:1,turn:n,state:clone(source),digest:hash(source)});
+      while(this.checkpointLedger.size>16){
+        const first=this.checkpointLedger.keys().next().value;
+        this.checkpointLedger.delete(first);
+      }
+      return clone(this.checkpointLedger.get(n));
+    }
+
+    getCheckpoint(turn){
+      const n=Number(turn);
+      if(!Number.isFinite(n))return null;
+      return clone(this.checkpointLedger.get(n)||null);
+    }
+
     reconstructState(baseState=null,options={}){
-      const source=baseState&&typeof baseState==='object'
-        ?clone(baseState)
-        :clone(this.root()||{});
       const from=Number.isFinite(Number(options.fromTurn))?Number(options.fromTurn):-Infinity;
       const to=Number.isFinite(Number(options.toTurn))?Number(options.toTurn):Infinity;
+      const suppliedBase=baseState&&typeof baseState==='object';
+      const checkpoints=[...this.checkpointLedger.values()]
+        .filter(row=>row&&Number(row.turn)<=from)
+        .sort((a,b)=>Number(b.turn)-Number(a.turn));
+      const checkpoint= suppliedBase ? null : (checkpoints[0]||null);
+      const source=suppliedBase
+        ?clone(baseState)
+        :(checkpoint?clone(checkpoint.state):{});
+      const replayFrom=checkpoint?Number(checkpoint.turn):from;
       const rows=[...this.transactionLedger.values()]
-        .filter(row=>row&&row.status!=='CONFLICT'&&Number(row.simulationTurn)>=from&&Number(row.simulationTurn)<=to)
+        .filter(row=>row&&row.status!=='CONFLICT'&&Number(row.simulationTurn)>replayFrom&&Number(row.simulationTurn)<=to)
         .sort((a,b)=>Number(a.simulationTurn)-Number(b.simulationTurn)||String(a.transactionId).localeCompare(String(b.transactionId)));
       const apply=(state,transaction)=>{
         for(const operation of transaction.operations||[]){
@@ -282,6 +307,7 @@
         mode:'AUTHORITATIVE_TRANSACTION_REPLAY',
         fromTurn:options.fromTurn??null,
         toTurn:options.toTurn??null,
+        checkpointTurn:checkpoint?.turn??null,
         appliedTransactionCount:rows.length,
         appliedTransactions:rows.map(row=>({
           transactionId:row.transactionId,
@@ -301,7 +327,8 @@
         schemaVersion:1,
         version:VERSION,
         revisions:clone(Object.fromEntries(this.revisionLedger)),
-        transactions:clone(Object.fromEntries(this.transactionLedger))
+        transactions:clone(Object.fromEntries(this.transactionLedger)),
+        checkpoints:clone(Object.fromEntries([...this.checkpointLedger.entries()].map(([k,v])=>[String(k),v])))
       };
     }
 
@@ -309,6 +336,7 @@
       if(!snapshot||typeof snapshot!=='object')throw new Error('INVALID_STATE_AUTHORITY_SAVE');
       this.revisionLedger=new Map(Object.entries(snapshot.revisions||{}));
       this.transactionLedger=new Map(Object.entries(snapshot.transactions||{}));
+      this.checkpointLedger=new Map(Object.entries(snapshot.checkpoints||{}).map(([k,v])=>[Number(k),clone(v)]));
       return true;
     }
 
@@ -334,6 +362,8 @@
     begin:(owner,country,turn,commandId)=>instance.begin(owner,country,turn,commandId),
     commitTransaction:tx=>instance.commitTransaction(tx),
     getTransaction:id=>instance.getTransaction(id),
+    createCheckpoint:(turn,state)=>instance.createCheckpoint(turn,state),
+    getCheckpoint:turn=>instance.getCheckpoint(turn),
     saveState:()=>instance.exportState(),
     loadState:s=>instance.importState(s),
     reconstructState:(baseState,options)=>instance.reconstructState(baseState,options),
