@@ -306,11 +306,54 @@ test('O: country A and country B state remain isolated',()=>{
     }
   });
   s.tick('finance',1);
+  s.state.simulationTurn=1;
+  s.sandbox.Game.currentActiveCountry='BB';
+  s.sandbox.OmegaCabinetUI.activeCountry='BB';
+  s.runtime.tick('finance',16.7,1,s.store,s.blackboard);
   const a=s.mesh.getPeerState('trade','finance','AA',{currentTurn:1});
   const b=s.mesh.getPeerState('trade','finance','BB',{currentTurn:1});
   assert.equal(a.publishedFacts['finance.reserves'].value,10);
   assert.equal(b.publishedFacts['finance.reserves'].value,900);
   assert.notDeepEqual(a.publishedFacts['finance.reserves'].value,b.publishedFacts['finance.reserves'].value);
+});
+
+test('U: command -> authoritative owner -> canonical event -> republish -> peer observation',()=>{
+  const s=createSandbox();
+  s.tickAll(1);
+  s.registerTradeAction();
+  s.mesh.registerCommandHandler(ACTION_ID,'foreign',(command,{stateProvider,emitEvent})=>{
+    const country=command.countryId;
+    const target=s.countryB;
+    const foreignState=stateProvider.root().foreign?.[country];
+    if(!foreignState)return {accepted:false,reason:'FOREIGN_STATE_UNAVAILABLE'};
+    foreignState.treaties=foreignState.treaties||{};
+    foreignState.treaties[target]={status:'SIGNED'};
+    emitEvent('TREATY_SIGNED',{
+      targetCountryId:target,
+      agreementId:'TEST-AGREEMENT-1'
+    });
+    return {
+      accepted:true,
+      eventType:'TREATY_SIGNED',
+      eventPayload:{targetCountryId:target,agreementId:'TEST-AGREEMENT-1'}
+    };
+  });
+
+  const command=s.mesh.dispatchCommand('trade',ACTION_ID,s.countryA,{
+    targetCountryId:s.countryB
+  },{turn:2,commandType:ACTION_ID});
+  assert.equal(command.status,'APPLIED');
+  assert.equal(command.stateOwnerMinistryId,'foreign');
+  assert.equal(s.mesh.getEvent(command.commandId),null);
+
+  const foreignEvent=[...s.mesh.events?.values?.()||[]][0]||null;
+  assert.ok(foreignEvent);
+  assert.equal(foreignEvent.eventType,'TREATY_SIGNED');
+
+  s.tick('foreign',2);
+  const tradeForeign=s.mesh.getPeerState('trade','foreign',s.countryA,{currentTurn:2});
+  assert.equal(tradeForeign.publishedFacts['foreign.treaties'].value[s.countryB].status,'SIGNED');
+  assert.ok(s.mesh.getCommand(command.commandId).requiresRepublish);
 });
 
 test('P: ministry cannot directly mutate another ministry private coordination state',()=>{
