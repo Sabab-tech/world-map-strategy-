@@ -933,18 +933,12 @@
                 // [FIX P3] Expose System Objects
                 window.Omega.App = { kernel, presentation, bridge: sharedBridge, state: "READY", ministryRuntime: ministryRuntimeController };
 
-                if (window.OmegaMinistry && typeof window.OmegaMinistry.createRuntime === "function") {
-                    const ministryRuntime = window.OmegaMinistry.createRuntime();
-                    if (ministryRuntime && typeof ministryRuntime.init === "function") {
-                        ministryRuntime.init(sharedBridge);
-                        window.__LOG_EVENT__("MINISTRY_RUNTIME_INIT_CALLED");
-                    }
-                    if (window.OMEGA_UI_ADAPTER) {
-                        window.OMEGA_UI_ADAPTER.init(ministryRuntime, sharedBridge, presentation);
-                        window.__LOG_EVENT__("UI_ADAPTER_MANUAL_INIT_CALLED");
-                    }
-                } else {
-                    console.warn("[OMEGA] OmegaMinistry.createRuntime not found.");
+                // Legacy OmegaMinistry.createRuntime is intentionally not initialized here.
+                // Canonical ministry domain execution has exactly one authority:
+                // Game.Simulation -> OMEGA_MINISTRY_RUNTIME_V1.runTurn().
+                if (window.OMEGA_UI_ADAPTER) {
+                    window.OMEGA_UI_ADAPTER.init(ministryRuntimeController, sharedBridge, presentation);
+                    window.__LOG_EVENT__("UI_ADAPTER_CANONICAL_RUNTIME_BOUND");
                 }
 
                 let isPaused = false;
