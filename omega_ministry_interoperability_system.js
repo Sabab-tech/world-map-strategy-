@@ -125,6 +125,15 @@
 
   function now(){ return Date.now(); }
 
+  function deepFreeze(value,seen=new Set()){
+    if(value===null || typeof value!=='object' || seen.has(value)) return value;
+    seen.add(value);
+    if(value instanceof Map){ for(const [k,v] of value.entries()){ deepFreeze(k,seen); deepFreeze(v,seen); } }
+    else if(value instanceof Set){ for(const v of value.values()) deepFreeze(v,seen); }
+    else for(const key of Object.keys(value)) deepFreeze(value[key],seen);
+    return Object.freeze(value);
+  }
+
   class MinistryInteroperabilitySystem{
     constructor(){
       this.version=VERSION;
@@ -144,6 +153,8 @@
       this.bridge=null;
       this.messaging=null;
       this.lastTurn=0;
+      this._knowledgeRevision=0;
+      this._knowledgeCache=null;
       this.initialized=false;
       this.metrics={
         sent:0,received:0,dropped:0,rejected:0,
@@ -203,6 +214,23 @@
         loopbackConnections:IDS.length,
         missing,bad
       };
+    }
+
+    _invalidateKnowledgeCache(){
+      this._knowledgeRevision+=1;
+      this._knowledgeCache=null;
+    }
+
+    _getKnowledgeCache(){
+      if(this._knowledgeCache && this._knowledgeCache.revision===this._knowledgeRevision) return this._knowledgeCache;
+      const nationalPicture={};
+      for(const id of IDS) nationalPicture[id]=this._peerCompact(this.snapshots.get(id));
+      this._knowledgeCache={
+        revision:this._knowledgeRevision,
+        nationalPicture:deepFreeze(nationalPicture),
+        government:deepFreeze(this._governmentLedger())
+      };
+      return this._knowledgeCache;
     }
 
     _route(source,target){
@@ -408,6 +436,7 @@
       }
       this._recordRouteReceive(route,unwrapped.turn);
       this.metrics.received+=1;
+      this._invalidateKnowledgeCache();
       if(unwrapped.correlationId && unwrapped.messageType===MESSAGE_TYPES.RESPONSE){
         const req=this.requests.get(unwrapped.correlationId);
         if(req){
@@ -470,6 +499,7 @@
       });
       while(list.length>100) list.shift();
       this.budgetRequests.set(source,list);
+      this._invalidateKnowledgeCache();
     }
 
     _recordProjectSignal(message){
@@ -488,6 +518,7 @@
       });
       while(list.length>100) list.shift();
       this.projectSignals.set(source,list);
+      this._invalidateKnowledgeCache();
     }
 
     _recordFiscalStatus(message){
@@ -503,6 +534,7 @@
         currency:message.payload?.currency??null,
         evidence:clone(message.payload?.evidence||null)
       });
+      this._invalidateKnowledgeCache();
     }
 
     _recordConstraint(message){
@@ -520,6 +552,7 @@
       });
       while(list.length>100) list.shift();
       this.constraints.set(source,list);
+      this._invalidateKnowledgeCache();
     }
 
     _recordAlert(message){
@@ -535,6 +568,7 @@
       });
       while(list.length>100) list.shift();
       this.alerts.set(source,list);
+      this._invalidateKnowledgeCache();
     }
 
     publishState(ministryId,packet={}){
@@ -639,6 +673,7 @@
       const knowledge=this._knowledgeBucket(ministryId);
       knowledge.peerFacts.set(ministryId,clone(snapshot));
       this.lastTurn=Math.max(this.lastTurn,Number(snapshot.turn)||0);
+      this._invalidateKnowledgeCache();
       this._emit('OMEGA_MINISTRY_PUBLIC_STATE_UPDATED',clone(snapshot));
       return clone(snapshot);
     }
@@ -726,9 +761,7 @@
     getMinistryBriefing(ministryId){
       ministryId=String(ministryId);
       if(!ID_SET.has(ministryId)) return null;
-      const peers={};
-      for(const id of IDS) peers[id]=this._peerCompact(this.snapshots.get(id));
-      const ledger=this._governmentLedger();
+      const cache=this._getKnowledgeCache();
       const received=this._knowledgeBucket(ministryId).inbox;
       const outgoing=this.connectionsFor(ministryId,'OUTBOUND').filter(r=>r.messagesSent>0).slice(-64);
 
@@ -736,9 +769,10 @@
         schemaVersion:1,
         ministryId,
         generatedTurn:this.lastTurn,
-        ownState:peers[ministryId],
-        peers,
-        government:ledger,
+        knowledgeRevision:cache.revision,
+        ownState:cache.nationalPicture[ministryId],
+        peers:cache.nationalPicture,
+        government:cache.government,
         incomingMessages:received.slice(-50),
         outboundActivity:outgoing,
         mesh:{
@@ -752,22 +786,19 @@
 
     getContext(ministryId,options={}){
       ministryId=String(ministryId);
-      const briefing=this.getMinistryBriefing(ministryId);
+      const cache=this._getKnowledgeCache();
       const port=this.createPort(ministryId);
-      const peers=briefing ? briefing.peers : {};
-      const compactPeers={};
-      for(const id of IDS) compactPeers[id]=this._peerCompact(peers[id]?.ministryId ? peers[id] : null);
+      const inbox=this._knowledgeBucket(ministryId).inbox.slice(-25);
 
       return Object.freeze({
         ministryId,
         turn:Number.isFinite(Number(options.turn))?Number(options.turn):this.lastTurn,
         dt:number(options.dt)||0,
         mesh:port,
-        nationalPicture:compactPeers,
-        government:clone(briefing?.government||{
-          financial:[],projects:[],budgetNeeds:[],alerts:[],constraints:[]
-        }),
-        incomingMessages:clone((briefing?.incomingMessages||[]).slice(-25)),
+        knowledgeRevision:cache.revision,
+        nationalPicture:cache.nationalPicture,
+        government:cache.government,
+        incomingMessages:clone(inbox),
         decisionSupport:{
           tradeAgreement:this.evaluateAction('trade','CONCLUDE_TRADE_AGREEMENT')
         }
