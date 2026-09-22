@@ -182,15 +182,34 @@
       }else if(dataset&&typeof dataset==='object'){
         for(const [key,row] of Object.entries(dataset)){
           const id=this.canonicalCountryId(row?.countryId||row?.countryCode||row?.country_code||row?.iso2||row?.iso3||row?.code||row?.id||row?.name||row?.countryName||row?.country_name||key);
-          if(id)rows.push([id,clone(row)]);
+          if(id){
+            const cloned=clone(row);
+            if(cloned&&typeof cloned==='object'&&!Array.isArray(cloned))cloned.__sourceKey=String(key);
+            rows.push([id,cloned]);
+          }
         }
       }
       const state=this.root();
       if(!state[d]||typeof state[d]!=='object')state[d]={};
       const written=[];
+      const aliases=new Map();
       for(const [id,row] of rows){
         state[d][id]=row;
         written.push(id);
+        const sourceKey=String(row?.__sourceKey||'').trim();
+        if(sourceKey&&sourceKey!==id)aliases.set(sourceKey,id);
+      }
+      // Non-enumerable compatibility aliases keep legacy UI reads working without
+      // duplicating authoritative country records or polluting canonical iteration.
+      for(const [alias,id] of aliases){
+        try{
+          Object.defineProperty(state[d],alias,{
+            configurable:true,
+            enumerable:false,
+            get(){return state[d][id];},
+            set(value){state[d][id]=value;}
+          });
+        }catch(_){}
       }
       return {
         schemaVersion:1,
