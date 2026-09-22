@@ -928,6 +928,7 @@
           priority:payload?.priority??null,
           urgency:payload?.urgency??null,
           purpose:payload?.purpose??null,
+          visibility:this._factVisibility(source,'budget.request'),
           evidence:clone(payload?.evidence||null),
           statusHistory:[{status:String(payload?.status||REQUEST_STATUS.CREATED),simulationTurn:turn}]
         });
@@ -984,7 +985,7 @@
         budget:number(payload?.budget),allocated:number(payload?.allocated),
         committed:number(payload?.committed),available:number(payload?.available),
         spent:number(payload?.spent),encumbered:number(payload?.encumbered),
-        currency:payload?.currency??null,evidence:clone(payload?.evidence||null)
+        currency:payload?.currency??null,visibility:this._factVisibility(source,'fiscal.status'),evidence:clone(payload?.evidence||null)
       };
       this.requestLedger.set(key,row);
       this._invalidateKnowledgeCache();
@@ -1782,10 +1783,16 @@
         publishedSnapshots+=1;
         if(Number.isFinite(Number(currentTurn))&&Number.isFinite(Number(snap.simulationTurn))&&Number(currentTurn)-Number(snap.simulationTurn)>this.maxSnapshotAgeTurns)staleSnapshots+=1;
       }
-      const budgetRequestCount=countryId
-        ? this.getMinistryBriefing?.('finance',String(countryId).trim().toUpperCase(),{currentTurn})?.governmentLedger?.budgetRequests?.length||0
+      const cId=countryId?String(countryId).trim().toUpperCase():null;
+      const budgetRequestCount=cId
+        ? this._getBudgetRequestsForCountry(cId).length
         : 0;
-      const behaviorPass=this.metrics.sent>0&&this.metrics.delivered===this.metrics.sent&&this.metrics.dropped===0;
+      const projectSignalCount=cId?this._getProjectsForCountry(cId).length:0;
+      const constraintCount=cId?[...this.requestLedger.entries()].reduce((n,[key,list])=>n+(String(key).startsWith('CONSTRAINT:'+cId+':')&&Array.isArray(list)?list.length:0),0):0;
+      const alertCount=cId?[...this.requestLedger.entries()].reduce((n,[key,list])=>n+(String(key).startsWith('ALERT:'+cId+':')&&Array.isArray(list)?list.length:0),0):0;
+      const pendingRequestCount=cId?this.getPendingRequests(cId).length:0;
+      const unresolvedCount=[...this.requestLedger.values()].filter(row=>row?.countryId===cId && !['RESPONDED','REJECTED','EXPIRED','FAILED'].includes(String(row?.status||''))).length;
+      const behaviorPass=this.metrics.sent>0&&this.metrics.delivered===this.metrics.sent&&this.metrics.dropped===0&&this.metrics.failed===0;
       return {
         version:VERSION,
         structure:{
@@ -1818,13 +1825,15 @@
         },
         governanceSignals:{
           budgetRequests:budgetRequestCount,
-          projects:countryId?this._getProjectsForCountry(String(countryId).trim().toUpperCase()).length:0,
-          constraints:countryId?[...this.requestLedger.values()].filter(r=>r?.countryId===String(countryId).trim().toUpperCase()&&r?.kind===undefined&&Array.isArray(r)).length:0,
-          alerts:countryId?[...this.requestLedger.values()].filter(r=>r?.countryId===String(countryId).trim().toUpperCase()&&String(r?.kind||'')==='ALERT').length:0
+          projects:projectSignalCount,
+          constraints:constraintCount,
+          alerts:alertCount,
+          unresolvedRequests:unresolvedCount
         },
         requests:{
-          pending:countryId?this.getPendingRequests(countryId).length:0,
-          total:this.requestLedger.size
+          pending:pendingRequestCount,
+          total:this.requestLedger.size,
+          unresolved:unresolvedCount
         },
         decisions:{
           evaluations:this.metrics.decisionEvaluations
