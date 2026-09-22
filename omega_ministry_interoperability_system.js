@@ -703,10 +703,15 @@
         financial.push({
           ministryId:id,
           budget:s?.fiscal?.budget ?? null,
+          allocated:s?.fiscal?.allocated ?? null,
+          committed:s?.fiscal?.committed ?? null,
+          available:s?.fiscal?.available ?? null,
           spending:s?.fiscal?.spending ?? null,
           reserves:s?.fiscal?.reserves ?? null,
           revenue:s?.fiscal?.revenue ?? null,
           debt:s?.fiscal?.debt ?? null,
+          requestedBudget:s?.fiscal?.requestedBudget ?? null,
+          budgetNeedStatus:s?.fiscal?.budgetNeedStatus ?? 'UNKNOWN',
           turn:s?.turn ?? null
         });
         projects.push({ministryId:id,...p});
