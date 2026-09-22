@@ -454,9 +454,14 @@
       const messageType=String(options.messageType||MESSAGE_TYPES.STATE_UPDATE);
       const protocol=this.messageProtocols.get(messageType)||null;
       if(protocol){
-        const required=Array.isArray(protocol.requiredFields)?protocol.requiredFields:[];
+        const required=Array.isArray(protocol.requiredFields)&&protocol.requiredFields.length
+          ?protocol.requiredFields
+          :(Array.isArray(protocol.schema?.required)?protocol.schema.required:[]);
         const candidate={sourceMinistryId:src,targetMinistryId:dst,countryId,topic,payload,messageType};
-        const missing=required.filter(field=>candidate[field]===undefined||candidate[field]===null||candidate[field]==='');
+        const missing=required.filter(field=>{
+          const value=readPath(candidate,String(field));
+          return value===undefined||value===null||value==='';
+        });
         if(missing.length)throw new Error('MESSAGE_SCHEMA_INVALID:'+messageType+':'+missing.join(','));
         if(Array.isArray(protocol.allowedSources)&&!protocol.allowedSources.includes(src))throw new Error('MESSAGE_SOURCE_FORBIDDEN:'+messageType);
         if(Array.isArray(protocol.allowedTargets)&&!protocol.allowedTargets.includes(dst))throw new Error('MESSAGE_TARGET_FORBIDDEN:'+messageType);
@@ -1493,6 +1498,7 @@
       const normalized={
         messageType:type,
         requiredFields:Array.isArray(definition.requiredFields)?definition.requiredFields.map(String):[],
+        schema:clone(definition.schema||null),
         allowedSources:Array.isArray(definition.allowedSources)?definition.allowedSources.map(String):null,
         allowedTargets:Array.isArray(definition.allowedTargets)?definition.allowedTargets.map(String):null,
         timeoutTurns:Number.isFinite(Number(definition.timeoutTurns))?Number(definition.timeoutTurns):null,
