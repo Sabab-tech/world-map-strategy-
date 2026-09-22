@@ -462,7 +462,7 @@
         if(Array.isArray(protocol.allowedTargets)&&!protocol.allowedTargets.includes(dst))throw new Error('MESSAGE_TARGET_FORBIDDEN:'+messageType);
       }
 
-      const messageId=String(options.messageId||this._deterministicMessageId(countryId,turn,src,dst));
+      const messageId=String(options.messageId||options.idempotencyKey||this._deterministicMessageId(countryId,turn,src,dst));
       if(this.deliveryLedger.has(messageId)){
         this.metrics.duplicate+=1;
         return clone(this.deliveryLedger.get(messageId).message);
@@ -1758,8 +1758,10 @@
           this.eventDeliveryLedger.set(deliveryKey,delivery);
         }
           this._deliverEventTransport(row.event);
-        const reactions=this.evaluateCausalRules(row.event);
-        row.reactionIds=reactions.map(r=>r.reactionId);
+        const reactions=Array.isArray(row.reactionIds)&&row.reactionIds.length
+          ?[]
+          :this.evaluateCausalRules(row.event);
+        if(reactions.length)row.reactionIds=reactions.map(r=>r.reactionId);
         row.status=failed?'FAILED':'DISPATCHED';
         row.completedTurn=failed?null:n;
         row.error=failed?row.error||'EVENT_SUBSCRIBER_FAILURE':null;
@@ -1786,7 +1788,14 @@
       const commandId=String(options.commandId||('OMI-CMD-'+String(turn)+'-'+String(this._commandSequence)));
 
       const existing=this.commands.get(commandId);
-      if(existing)return clone({...existing,duplicate:true,status:'ALREADY_PROCESSED'});
+      if(existing&&(
+        String(existing.status)==='APPLIED' ||
+        String(existing.lifecycleStatus)==='VERIFIED' ||
+        String(existing.lifecycleStatus)==='COMMITTED'
+      )){
+        return clone({...existing,duplicate:true,status:'ALREADY_PROCESSED'});
+      }
+      if(existing)this.commands.delete(commandId);
 
       const commandType=String(options.commandType||actionId||'');
       const handler=this.commandHandlers.get(commandType)||null;
