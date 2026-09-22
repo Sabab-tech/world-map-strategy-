@@ -1,1097 +1,1833 @@
 /*
- * OMEGA GOVERNMENT INTEROPERABILITY SYSTEM v1.0.0
+ * OMEGA GOVERNMENT INTEROPERABILITY SYSTEM v2.0.0
  *
- * Purpose:
- *   - Provide a full 17 x 17 directed ministry communication topology.
- *   - Keep ministry engines independent while giving every ministry a
- *     compact, validated national situational picture.
- *   - Track public ministry state, budget requests, project signals,
- *     constraints, alerts, requests and responses.
- *   - Route real messages through the kernel messaging substrate when
- *     available; never let one ministry directly mutate another ministry.
- *
- * Architecture:
- *   17 domain engines
- *        -> interoperability system
- *        -> public state exchange + bilateral mesh
- *        -> target ministry inbox / decision context
- *
- * Unknown data stays unknown. This module never invents financial,
- * diplomatic, project, resource or operational values.
+ * Institutional interoperability layer for independent ministry engines.
+ * This is NOT an authoritative game-state store. It is a deterministic
+ * communication, public-state projection, evidence, decision-context and
+ * command/event coordination system.
  */
 (function(global){
   'use strict';
 
-  const VERSION = '1.0.0';
-  const IDS = Object.freeze([
+  const VERSION='2.0.0';
+  const DEFAULT_MAX_INBOX=256;
+  const DEFAULT_MAX_HISTORY=128;
+
+  const FALLBACK_IDS=Object.freeze([
     'cabinet','defense','military','finance','economy','trade','foreign',
     'intelligence','interior','transport','resource','health','education',
     'technology','projects','culture','statistics'
   ]);
-  const ID_SET = new Set(IDS);
 
-  const MESSAGE_TYPES = Object.freeze({
+  const AVAILABILITY=Object.freeze({
+    AVAILABLE:'AVAILABLE',
+    UNOBSERVED:'UNOBSERVED',
+    UNAVAILABLE:'UNAVAILABLE',
+    STALE:'STALE',
+    INVALID:'INVALID',
+    NOT_APPLICABLE:'NOT_APPLICABLE',
+    ESTIMATED:'ESTIMATED'
+  });
+
+  const VISIBILITY=Object.freeze({
+    PUBLIC:'PUBLIC',
+    GOVERNMENT_INTERNAL:'GOVERNMENT_INTERNAL',
+    RESTRICTED:'RESTRICTED',
+    CLASSIFIED:'CLASSIFIED'
+  });
+
+  const MESSAGE_TYPES=Object.freeze({
     STATE_UPDATE:'STATE_UPDATE',
     POLICY_UPDATE:'POLICY_UPDATE',
     REQUEST:'REQUEST',
     RESPONSE:'RESPONSE',
-    ALERT:'ALERT',
     ACK:'ACK',
+    ALERT:'ALERT',
+    FISCAL_STATUS:'FISCAL_STATUS',
     BUDGET_REQUEST:'BUDGET_REQUEST',
     PROJECT_STATUS:'PROJECT_STATUS',
-    CONSTRAINT_UPDATE:'CONSTRAINT_UPDATE',
-    FISCAL_STATUS:'FISCAL_STATUS'
+    CONSTRAINT_UPDATE:'CONSTRAINT_UPDATE'
   });
 
-  const CONNECTION_STATES = Object.freeze({
-    READY:'READY',
-    ACTIVE:'ACTIVE',
-    DEGRADED:'DEGRADED',
-    BLOCKED:'BLOCKED'
+  const DELIVERY_STATUS=Object.freeze({
+    CREATED:'CREATED',
+    DELIVERED:'DELIVERED',
+    ACCEPTED:'ACCEPTED',
+    REJECTED:'REJECTED',
+    PROCESSING:'PROCESSING',
+    PROCESSED:'PROCESSED',
+    RESPONDED:'RESPONDED',
+    EXPIRED:'EXPIRED',
+    FAILED:'FAILED',
+    DUPLICATE:'DUPLICATE'
   });
 
-  const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi,
-    Number.isFinite(Number(n)) ? Number(n) : lo));
+  const REQUEST_STATUS=Object.freeze({
+    CREATED:'CREATED',
+    DELIVERED:'DELIVERED',
+    ACCEPTED:'ACCEPTED',
+    REJECTED:'REJECTED',
+    PROCESSING:'PROCESSING',
+    RESPONDED:'RESPONDED',
+    EXPIRED:'EXPIRED',
+    FAILED:'FAILED'
+  });
 
-  function clone(value, seen = new WeakMap()){
-    if(value === null || typeof value !== 'object') return value;
-    if(seen.has(value)) return seen.get(value);
-    if(Array.isArray(value)){
-      const out=[]; seen.set(value,out);
-      for(const item of value) out.push(clone(item,seen));
-      return out;
-    }
-    if(value instanceof Map){
-      const out={}; seen.set(value,out);
-      for(const [k,v] of value.entries()) out[String(k)] = clone(v,seen);
-      return out;
-    }
-    if(value instanceof Set){
-      const out=[]; seen.set(value,out);
-      for(const v of value.values()) out.push(clone(v,seen));
-      return out;
-    }
-    const out={}; seen.set(value,out);
-    for(const key of Object.keys(value)){
-      if(key==='__proto__' || key==='constructor') continue;
-      const v=value[key];
-      if(v!==undefined && typeof v!=='function') out[key]=clone(v,seen);
+  const EVENT_TYPES=Object.freeze({
+    MINISTRY_STATE_PUBLISHED:'MINISTRY_STATE_PUBLISHED',
+    BUDGET_REQUESTED:'BUDGET_REQUESTED',
+    BUDGET_APPROVED:'BUDGET_APPROVED',
+    BUDGET_REJECTED:'BUDGET_REJECTED',
+    PROJECT_STARTED:'PROJECT_STARTED',
+    PROJECT_BLOCKED:'PROJECT_BLOCKED',
+    PROJECT_COMPLETED:'PROJECT_COMPLETED',
+    TREATY_NEGOTIATION_STARTED:'TREATY_NEGOTIATION_STARTED',
+    TREATY_SIGNED:'TREATY_SIGNED',
+    TREATY_RATIFIED:'TREATY_RATIFIED',
+    TREATY_SUSPENDED:'TREATY_SUSPENDED',
+    SANCTION_IMPOSED:'SANCTION_IMPOSED',
+    SANCTION_LIFTED:'SANCTION_LIFTED',
+    TRADE_POLICY_CHANGED:'TRADE_POLICY_CHANGED',
+    FISCAL_CONDITION_CHANGED:'FISCAL_CONDITION_CHANGED',
+    TRANSPORT_CAPACITY_CHANGED:'TRANSPORT_CAPACITY_CHANGED',
+    THREAT_ASSESSMENT_CHANGED:'THREAT_ASSESSMENT_CHANGED',
+    RESOURCE_STATE_CHANGED:'RESOURCE_STATE_CHANGED',
+    MINISTRY_STATE_CHANGED:'MINISTRY_STATE_CHANGED'
+  });
+
+  const STANDARD_PUBLIC_PATHS=Object.freeze({
+    cabinet:[
+      'store.policies','store.decisions'
+    ],
+    finance:[
+      'finance.budget','finance.allocated','finance.committed','finance.available',
+      'finance.reserves','finance.taxRevenue','finance.revenue','finance.spending',
+      'finance.encumbered','finance.capitalExpenditure','finance.operatingExpenditure',
+      'finance.emergencyAllocation','finance.mandatoryObligations'
+    ],
+    economy:[
+      'economy.gdp','economy.debt','economy.inflation','economy.unemployment',
+      'economy.production','economy.revenue','economy.reserves'
+    ],
+    trade:[
+      'trade.relations','trade.balance','trade.exports','trade.imports',
+      'trade.policy','trade.negotiations'
+    ],
+    foreign:[
+      'foreign.relations','foreign.treaties','foreign.negotiations',
+      'foreign.sanctions','foreign.embassies'
+    ],
+    intelligence:[
+      'intelligence.threats','intelligence.state','intelligence.cyber',
+      'intelligence.sources'
+    ],
+    defense:[
+      'defense.procurement','defense.readiness'
+    ],
+    military:[
+      'military.combat','military.readiness','military.forceStructure','military.logistics'
+    ],
+    interior:[
+      'interior.stability','interior.corruption','interior.security'
+    ],
+    transport:[
+      'transport.infrastructure','transport.logistics','transport.ports','transport.rail'
+    ],
+    resource:[
+      'resourceSummary','resourceInventory','resourceDeposits'
+    ],
+    health:[
+      'health.state','health.welfare','health.hospitals'
+    ],
+    education:[
+      'education.state','education.research','education.enrollment'
+    ],
+    technology:[
+      'technology.research','technology.innovation','technology.patents','technology.rnd'
+    ],
+    projects:[
+      'projects.registry','projects.legal','projects.cost','projects.allocatedFunding',
+      'projects.committedFunding','projects.spentFunding','projects.remainingFunding',
+      'projects.completion','projects.startDate','projects.targetDate',
+      'projects.dependencies','projects.blockers','projects.requiredApprovals',
+      'projects.linkedMinistries'
+    ],
+    culture:[
+      'culture.state','culture.media','culture.social'
+    ],
+    statistics:[
+      'population','relations','economy','resourceSummary'
+    ]
+  });
+
+  function clone(value,seen=new WeakMap()){
+    if(value===null||typeof value!=='object')return value;
+    if(seen.has(value))return seen.get(value);
+    if(Array.isArray(value)){const out=[];seen.set(value,out);for(const v of value)out.push(clone(v,seen));return out;}
+    if(value instanceof Map){const out={};seen.set(value,out);for(const [k,v] of value.entries())out[String(k)]=clone(v,seen);return out;}
+    if(value instanceof Set){const out=[];seen.set(value,out);for(const v of value.values())out.push(clone(v,seen));return out;}
+    const out={};seen.set(value,out);
+    for(const k of Object.keys(value)){
+      if(k==='__proto__'||k==='constructor')continue;
+      const v=value[k];
+      if(v!==undefined&&typeof v!=='function')out[k]=clone(v,seen);
     }
     return out;
   }
 
+  function deepFreeze(value,seen=new Set()){
+    if(value===null||typeof value!=='object'||seen.has(value))return value;
+    seen.add(value);
+    if(Array.isArray(value)){for(const v of value)deepFreeze(v,seen);}
+    else if(value instanceof Map){for(const [k,v] of value.entries()){deepFreeze(k,seen);deepFreeze(v,seen);}}
+    else if(value instanceof Set){for(const v of value.values())deepFreeze(v,seen);}
+    else for(const k of Object.keys(value))deepFreeze(value[k],seen);
+    try{return Object.freeze(value);}catch(_){return value;}
+  }
+
   function number(value){
-    if(typeof value === 'number' && Number.isFinite(value)) return value;
-    if(typeof value === 'string' && value.trim()!=='' && Number.isFinite(Number(value))) return Number(value);
+    if(typeof value==='number'&&Number.isFinite(value))return value;
+    if(typeof value==='string'&&value.trim()!==''&&Number.isFinite(Number(value)))return Number(value);
     return null;
   }
 
   function readPath(root,path){
-    if(root==null || !path) return undefined;
+    if(root==null||!path)return undefined;
     let cur=root;
     for(const part of String(path).split('.')){
-      if(cur==null) return undefined;
-      if(!Object.prototype.hasOwnProperty.call(Object(cur),part)) return undefined;
+      if(cur==null||!Object.prototype.hasOwnProperty.call(Object(cur),part))return undefined;
       cur=cur[part];
     }
     return cur;
   }
 
-  function first(root,paths){
-    for(const path of paths){
-      const value=readPath(root,path);
-      if(value!==undefined && value!==null) return value;
+  function setPath(root,path,value){
+    const parts=String(path).split('.');
+    let cur=root;
+    for(let i=0;i<parts.length-1;i++){
+      if(!cur[parts[i]]||typeof cur[parts[i]]!=='object')cur[parts[i]]={};
+      cur=cur[parts[i]];
     }
-    return null;
+    cur[parts[parts.length-1]]=value;
+    return root;
   }
 
-  function firstEvidence(observed,context,paths){
-    const fromObserved=first(observed,paths);
-    if(fromObserved!==null) return fromObserved;
-    return first(context,paths);
+  function normalizeIds(registry){
+    const ids=Array.isArray(registry?.ids)?registry.ids.map(String).filter(Boolean):
+      Array.isArray(registry?.list?.())?registry.list().map(String).filter(Boolean):[];
+    return [...new Set(ids.length?ids:FALLBACK_IDS)];
   }
 
-  function fact(snapshot,key){
-    return snapshot?.operations?.facts && Object.prototype.hasOwnProperty.call(snapshot.operations.facts,key)
-      ? snapshot.operations.facts[key]
-      : null;
+  function snapshotKey(countryId,ministryId){
+    return String(countryId)+'::'+String(ministryId);
   }
 
-  function collectionCount(value){
-    if(Array.isArray(value)) return value.length;
-    if(value instanceof Map || value instanceof Set) return value.size;
-    if(value && typeof value==='object') return Object.keys(value).length;
-    return null;
-  }
-
-  function toArray(value){
-    if(Array.isArray(value)) return clone(value);
-    if(value && typeof value.toArray==='function'){
-      try{ return clone(value.toArray()); }catch(_){}
+  function factValue(fact,entityId){
+    if(!fact||fact.value===undefined)return undefined;
+    const value=fact.value;
+    if(entityId==null)return value;
+    if(Array.isArray(value)){
+      for(const row of value){
+        if(row&&typeof row==='object'){
+          const id=row.countryId??row.targetCountryId??row.id;
+          if(id!=null&&String(id).toUpperCase()===String(entityId).toUpperCase()){
+            return row.value??row.score??row.status??row;
+          }
+        }
+      }
+      return undefined;
     }
-    if(value instanceof Map) return [...value.values()].map(value=>clone(value));
-    if(value instanceof Set) return [...value.values()].map(value=>clone(value));
-    if(value && typeof value==='object') return Object.values(value).map(value=>clone(value));
-    return [];
+    if(value&&typeof value==='object'){
+      if(Object.prototype.hasOwnProperty.call(value,entityId))return value[entityId];
+      const key=Object.keys(value).find(k=>String(k).toUpperCase()===String(entityId).toUpperCase());
+      if(key!==undefined)return value[key];
+    }
+    return value;
   }
 
-  function now(){ return Date.now(); }
-
-  function deepFreeze(value,seen=new Set()){
-    if(value===null || typeof value!=='object' || seen.has(value)) return value;
-    seen.add(value);
-    if(value instanceof Map){ for(const [k,v] of value.entries()){ deepFreeze(k,seen); deepFreeze(v,seen); } }
-    else if(value instanceof Set){ for(const v of value.values()) deepFreeze(v,seen); }
-    else for(const key of Object.keys(value)) deepFreeze(value[key],seen);
-    return Object.freeze(value);
+  function summarizeAvailability(facts){
+    const counts={};
+    for(const fact of Object.values(facts||{})){
+      const status=String(fact?.availability||AVAILABILITY.UNOBSERVED);
+      counts[status]=(counts[status]||0)+1;
+    }
+    return counts;
   }
 
   class MinistryInteroperabilitySystem{
-    constructor(){
+    constructor(options={}){
       this.version=VERSION;
-      this.ids=IDS.slice();
-      this.messageTypes=MESSAGE_TYPES;
+      this.registry=options.registry||null;
+      this.provider=options.provider||null;
+      this.policy=options.policy||null;
+      this.decisionFramework=options.decisionFramework||null;
+      this.kernel=null;
+      this.bridge=null;
+      this.ids=normalizeIds(this.registry);
       this.connections=new Map();
       this.inboxes=new Map();
       this.snapshots=new Map();
-      this.requests=new Map();
-      this.alerts=new Map();
-      this.budgetRequests=new Map();
-      this.projectSignals=new Map();
-      this.constraints=new Map();
-      this.fiscalReports=new Map();
+      this.deliveryLedger=new Map();
+      this.requestLedger=new Map();
+      this.events=new Map();
+      this.commands=new Map();
+      this.commandHandlers=new Map();
       this._receivedMessageIds=new Set();
-      this.routeSequence=0;
-      this.attached=false;
-      this.bridge=null;
-      this.messaging=null;
+      this._requestSequence=0;
+      this._messageSequence=0;
+      this._eventSequence=0;
+      this._commandSequence=0;
       this.lastTurn=0;
       this._knowledgeRevision=0;
       this._knowledgeCache=null;
-      this.initialized=false;
+      this.maxInbox=Number.isFinite(Number(options.maxInbox))?Number(options.maxInbox):DEFAULT_MAX_INBOX;
+      this.maxHistory=Number.isFinite(Number(options.maxHistory))?Number(options.maxHistory):DEFAULT_MAX_HISTORY;
       this.metrics={
-        sent:0,received:0,dropped:0,rejected:0,
-        requests:0,responses:0,alerts:0,statePublications:0
+        sent:0,delivered:0,accepted:0,rejected:0,duplicate:0,
+        dropped:0,expired:0,failed:0,processed:0,
+        requests:0,responses:0,acks:0,alerts:0,
+        statePublications:0,decisionEvaluations:0,commands:0,events:0,
+        providerReads:0,providerMisses:0
       };
-      this._buildFullMesh();
+      this._rebuildTopology();
     }
 
-    _buildFullMesh(){
+    configure(options={}){
+      this.registry=options.registry||this.registry||global.OmegaMinistryRegistry||global.OmegaMinistryDomainEngines||null;
+      this.provider=options.provider||this.provider||global.OmegaMinistryStateProvider?.instance||null;
+      this.policy=options.policy||this.policy||global.OmegaMinistryInformationPolicy?.instance||null;
+      this.decisionFramework=options.decisionFramework||this.decisionFramework||global.OmegaMinistryDecisionFramework?.instance||null;
+      this.ids=normalizeIds(this.registry);
+      this.maxInbox=Number.isFinite(Number(options.maxInbox))?Number(options.maxInbox):this.maxInbox;
+      this.maxHistory=Number.isFinite(Number(options.maxHistory))?Number(options.maxHistory):this.maxHistory;
+      this._rebuildTopology();
+      return this;
+    }
+
+    _rebuildTopology(){
       this.connections.clear();
       this.inboxes.clear();
-      for(const source of IDS){
+      for(const source of this.ids){
         this.inboxes.set(source,[]);
-        for(const target of IDS){
-          const id=source+'->'+target;
-          this.connections.set(id,{
-            id,source,target,enabled:true,
-            state:CONNECTION_STATES.READY,
-            protocolVersion:1,
-            messagesSent:0,
-            messagesReceived:0,
-            messagesDropped:0,
-            lastSentTurn:null,
-            lastReceivedTurn:null
+        for(const target of this.ids){
+          const key=source+'->'+target;
+          this.connections.set(key,{
+            id:key,source,target,enabled:true,state:'READY',
+            messagesSent:0,messagesDelivered:0,messagesAccepted:0,
+            messagesRejected:0,messagesDropped:0,messagesDuplicated:0,
+            lastSentTurn:null,lastDeliveredTurn:null,lastAcceptedTurn:null
           });
         }
       }
     }
 
-    init(kernelOrBridge){
-      this.bridge=kernelOrBridge || this.bridge || null;
-      try{
-        this.messaging=this.bridge?.getService?.('MinistryMessaging') || null;
-      }catch(_){ this.messaging=null; }
-      this.attached=true;
-      this.initialized=true;
-      return this.verifyFullMesh().ok;
+    init(kernelOrBridge,options={}){
+      if(options&&typeof options==='object'&&options.registry)this.configure(options);
+      else this.configure({});
+      this.kernel=kernelOrBridge||global.Omega?.Kernel||null;
+      this.bridge=(
+        this.kernel&&typeof this.kernel.createBridge==='function'
+          ?this.kernel.createBridge()
+          :kernelOrBridge&&typeof kernelOrBridge.emitEvent==='function'
+            ?kernelOrBridge:null
+      );
+      this.lastTurn=Number.isFinite(Number(options.turn))?Number(options.turn):this.lastTurn;
+      return this.verifyStructure().pass;
     }
 
-    verifyFullMesh(){
-      const expected=IDS.length*IDS.length;
+    verifyStructure(){
+      const expected=this.ids.length*this.ids.length;
       const missing=[];
-      const bad=[];
-      for(const source of IDS){
-        for(const target of IDS){
-          const route=this.connections.get(source+'->'+target);
-          if(!route) missing.push(source+'->'+target);
-          else if(route.source!==source || route.target!==target || route.enabled!==true) bad.push(route.id);
+      const invalid=[];
+      for(const source of this.ids){
+        for(const target of this.ids){
+          const key=source+'->'+target;
+          const route=this.connections.get(key);
+          if(!route)missing.push(key);
+          else if(route.source!==source||route.target!==target||route.enabled!==true)invalid.push(key);
         }
       }
+      const engineRegistry=this.registry||global.OmegaMinistryDomainEngines;
+      const engines=this.ids.map(id=>engineRegistry?.get?.(id)||null);
+      const uniqueInstances=new Set(engines.filter(Boolean)).size;
+      const enginesOk=engines.length===this.ids.length&&engines.every(e=>e&&e.id&&e.independent===true&&typeof e.execute==='function')&&uniqueInstances===this.ids.length;
       return {
-        ok:missing.length===0 && bad.length===0 && this.connections.size===expected,
-        ministries:IDS.length,
-        connectionCells:this.connections.size,
+        pass:missing.length===0&&invalid.length===0&&this.connections.size===expected,
+        registryCount:this.ids.length,
+        engineCount:engines.filter(Boolean).length,
+        uniqueEngineInstances:uniqueInstances,
+        connections:this.connections.size,
         expectedConnections:expected,
-        crossMinistryConnections:IDS.length*(IDS.length-1),
-        loopbackConnections:IDS.length,
-        missing,bad
+        crossMinistryConnections:this.ids.length*Math.max(0,this.ids.length-1),
+        loopbackConnections:this.ids.length,
+        missing,invalid,
+        independentEnginesPass:enginesOk
       };
     }
+
+    verifyFullMesh(){return this.verifyStructure();}
 
     _invalidateKnowledgeCache(){
       this._knowledgeRevision+=1;
       this._knowledgeCache=null;
     }
 
-    _getKnowledgeCache(){
-      if(this._knowledgeCache && this._knowledgeCache.revision===this._knowledgeRevision) return this._knowledgeCache;
-      const nationalPicture={};
-      for(const id of IDS) nationalPicture[id]=this._peerCompact(this.snapshots.get(id));
-      this._knowledgeCache={
-        revision:this._knowledgeRevision,
-        nationalPicture:deepFreeze(nationalPicture),
-        government:deepFreeze(this._governmentLedger())
+    _providerValue(countryId,path,context,observed){
+      if(this.provider&&typeof this.provider.describe==='function'){
+        this.metrics.providerReads+=1;
+        const d=this.provider.describe(countryId,path,{currentTurn:this.lastTurn});
+        if(d.availability===AVAILABILITY.AVAILABLE||d.availability===AVAILABILITY.ESTIMATED||d.availability===AVAILABILITY.STALE||d.availability===AVAILABILITY.INVALID){
+          return d;
+        }
+        if(d.availability===AVAILABILITY.UNAVAILABLE||d.availability===AVAILABILITY.UNOBSERVED)this.metrics.providerMisses+=1;
+        return d;
+      }
+      const fromObserved=readPath(observed,path);
+      if(fromObserved!==undefined){
+        return {
+          countryId:String(countryId).toUpperCase(),path:String(path),
+          value:clone(fromObserved),availability:AVAILABILITY.AVAILABLE,
+          availabilityReason:'RUNTIME_EXECUTION_OBSERVATION',
+          provenance:{
+            provider:'OmegaMinistryInteroperabilitySystem',
+            sourceType:'RUNTIME_EXECUTION_OUTPUT',
+            source:'domainExecution.observedInputs',
+            fieldPath:String(path),
+            sourceRevision:null,
+            simulationTurn:this.lastTurn,
+            availability:AVAILABILITY.AVAILABLE
+          }
+        };
+      }
+      const fromContext=readPath(context,path);
+      return {
+        countryId:String(countryId).toUpperCase(),path:String(path),
+        value:fromContext===undefined?null:clone(fromContext),
+        availability:fromContext===undefined?AVAILABILITY.UNAVAILABLE:AVAILABILITY.AVAILABLE,
+        availabilityReason:fromContext===undefined?'STATE_PROVIDER_UNAVAILABLE':'RUNTIME_CONTEXT_FALLBACK',
+        provenance:{
+          provider:'OmegaMinistryInteroperabilitySystem',
+          sourceType:'RUNTIME_CONTEXT',
+          source:'domainContext',
+          fieldPath:String(path),
+          sourceRevision:null,
+          simulationTurn:this.lastTurn,
+          availability:fromContext===undefined?AVAILABILITY.UNAVAILABLE:AVAILABILITY.AVAILABLE
+        }
       };
-      return this._knowledgeCache;
+    }
+
+    _sourceRevision(countryId,ministryId,context,execution){
+      if(this.provider&&typeof this.provider.getRevision==='function'){
+        const revision=this.provider.getRevision(countryId,ministryId);
+        if(revision!==null&&revision!==undefined)return String(revision);
+      }
+      if(execution&&execution.stateRevision!==undefined&&execution.stateRevision!==null)return String(execution.stateRevision);
+      return null;
+    }
+
+    _currentTurn(context,packet){
+      const candidates=[packet?.turn,context?.turn,context?.currentTurn,this.lastTurn];
+      for(const v of candidates){const n=Number(v);if(Number.isFinite(n))return n;}
+      return 0;
+    }
+
+    _factVisibility(source,path,explicit){
+      if(this.policy&&typeof this.policy.classify==='function'){
+        return this.policy.classify(source,path,explicit);
+      }
+      return VISIBILITY.GOVERNMENT_INTERNAL;
+    }
+
+    _messageProvenance(options={}){
+      return options.provenance?clone(options.provenance):null;
+    }
+
+    _deterministicMessageId(countryId,turn,source,target){
+      this._messageSequence+=1;
+      return 'OMI-MSG-'+String(turn)+'-'+String(this._messageSequence)+'-'+String(countryId)+'-'+source+'-'+target;
+    }
+
+    _transitionDelivery(messageId,status,turn,reason=null){
+      const row=this.deliveryLedger.get(String(messageId));
+      if(!row)return null;
+      row.statusHistory.push({status:String(status),simulationTurn:Number(turn),reason:reason||null});
+      row.status=String(status);
+      if(status===DELIVERY_STATUS.DELIVERED)row.deliveredTurn=Number(turn);
+      if(status===DELIVERY_STATUS.ACCEPTED)row.acceptedTurn=Number(turn);
+      if(status===DELIVERY_STATUS.PROCESSING)row.processingTurn=Number(turn);
+      if(status===DELIVERY_STATUS.PROCESSED||status===DELIVERY_STATUS.FAILED||status===DELIVERY_STATUS.REJECTED||status===DELIVERY_STATUS.EXPIRED||status===DELIVERY_STATUS.RESPONDED)row.completedTurn=Number(turn);
+      return row;
     }
 
     _route(source,target){
-      return this.connections.get(String(source)+'->'+String(target)) || null;
-    }
-
-    _validateIds(source,target){
-      return ID_SET.has(String(source)) && ID_SET.has(String(target));
-    }
-
-    _nextMessageId(source,target,turn){
-      this.routeSequence+=1;
-      return 'OMI-'+String(turn??this.lastTurn??0)+'-'+String(this.routeSequence)+'-'+source+'-'+target;
-    }
-
-    _recordRouteSend(route,turn){
-      if(!route) return;
-      route.messagesSent+=1;
-      route.lastSentTurn=turn??null;
-      route.state=CONNECTION_STATES.ACTIVE;
-    }
-
-    _recordRouteReceive(route,turn){
-      if(!route) return;
-      route.messagesReceived+=1;
-      route.lastReceivedTurn=turn??null;
-      route.state=CONNECTION_STATES.ACTIVE;
-    }
-
-    _recordRouteDrop(route){
-      if(!route) return;
-      route.messagesDropped+=1;
-      if(route.messagesDropped>0) route.state=CONNECTION_STATES.DEGRADED;
-    }
-
-    _emit(topic,payload){
-      try{
-        this.bridge?.emitEvent?.(topic,payload);
-      }catch(_){}
-      try{
-        global.dispatchEvent?.(new CustomEvent(topic,{detail:payload}));
-      }catch(_){}
-    }
-
-    createPort(source){
-      const sourceId=String(source);
-      if(!ID_SET.has(sourceId)) throw new Error('UNKNOWN_MINISTRY:'+sourceId);
-      const self=this;
-      return Object.freeze({
-        ministryId:sourceId,
-        send(target,topic,payload={},options={}){
-          return self.send(sourceId,target,topic,payload,options);
-        },
-        broadcast(targets,topic,payload={},options={}){
-          return self.broadcast(sourceId,targets,topic,payload,options);
-        },
-        request(target,topic,payload={},options={}){
-          return self.request(sourceId,target,topic,payload,options);
-        },
-        reply(message,topic,payload={},options={}){
-          return self.reply(sourceId,message,topic,payload,options);
-        },
-        getPeer(target){
-          return self.getPeerState(sourceId,target);
-        },
-        getNationalBriefing(){
-          return self.getMinistryBriefing(sourceId);
-        },
-        getDecisionContext(action,options={}){
-          return self.evaluateAction(sourceId,action,options);
-        }
-      });
+      return this.connections.get(String(source)+'->'+String(target))||null;
     }
 
     send(source,target,topic,payload={},options={}){
-      source=String(source); target=String(target);
-      if(!this._validateIds(source,target)){
+      const src=String(source||'');
+      const dst=String(target||'');
+      const countryId=String(options.countryId||'').trim().toUpperCase();
+      const turn=Number.isFinite(Number(options.turn))?Number(options.turn):this.lastTurn;
+      if(!this.ids.includes(src)||!this.ids.includes(dst)){
         this.metrics.rejected+=1;
         throw new Error('MESH_ROUTE_ID_INVALID');
       }
-      const route=this._route(source,target);
-      if(!route || route.enabled!==true){
+      if(!countryId){
+        this.metrics.rejected+=1;
+        throw new Error('COUNTRY_ID_REQUIRED');
+      }
+      const route=this._route(src,dst);
+      if(!route||route.enabled!==true){
         this.metrics.rejected+=1;
         throw new Error('MESH_ROUTE_UNAVAILABLE');
       }
-      const turn=Number.isFinite(Number(options.turn)) ? Number(options.turn) : this.lastTurn;
+
+      const messageId=String(options.messageId||this._deterministicMessageId(countryId,turn,src,dst));
+      if(this.deliveryLedger.has(messageId)){
+        this.metrics.duplicate+=1;
+        return clone(this.deliveryLedger.get(messageId).message);
+      }
+
+      const sourceSnapshot=this.snapshots.get(snapshotKey(countryId,src));
+      const sourceStateRevision=options.sourceStateRevision!==undefined
+        ?String(options.sourceStateRevision)
+        :(sourceSnapshot?.stateRevision??null);
+
       const message=Object.freeze({
-        protocolVersion:1,
-        messageId:String(options.messageId||this._nextMessageId(source,target,turn)),
-        source,
-        target,
-        sourceMinistryId:source,
-        targetMinistryId:target,
-        topic:String(topic||'MINISTRY_INFORMATION'),
+        protocolVersion:2,
+        messageId,
+        sourceMinistryId:src,
+        targetMinistryId:dst,
+        source:src,
+        target:dst,
+        countryId,
         messageType:String(options.messageType||MESSAGE_TYPES.STATE_UPDATE),
+        topic:String(topic||'MINISTRY_INFORMATION'),
         priority:String(options.priority||'NORMAL'),
+        simulationTurn:turn,
         turn,
-        correlationId:options.correlationId ? String(options.correlationId) : null,
-        causationId:options.causationId ? String(options.causationId) : null,
-        countryId:options.countryId ? String(options.countryId) : null,
+        sourceStateRevision,
         payload:clone(payload),
-        timestamp:now(),
-        expiry:Number.isFinite(Number(options.expiry)) ? Number(options.expiry) : 0
+        timestamp:Date.now(),
+        timestampIsTelemetry:true,
+        correlationId:options.correlationId?String(options.correlationId):null,
+        causationId:options.causationId?String(options.causationId):null,
+        expiryTurn:Number.isFinite(Number(options.expiryTurn))?Number(options.expiryTurn):null,
+        provenance:this._messageProvenance(options)
       });
 
-      this._recordRouteSend(route,turn);
-      this.metrics.sent+=1;
-
-      // The interoperability queue is the canonical logical delivery ledger.
-      // The kernel messaging engine is a transport adapter and may deliver the
-      // same packet separately. acceptMessage() deduplicates by messageId.
-      const inbox=this.inboxes.get(target);
+      const inbox=this.inboxes.get(dst);
       if(!inbox){
-        this._recordRouteDrop(route);
-        this.metrics.dropped+=1;
-        throw new Error('MESH_RECEIVER_INBOX_MISSING:'+target);
+        route.messagesDropped+=1;route.state='DEGRADED';
+        this.metrics.dropped+=1;this.metrics.failed+=1;
+        throw new Error('MESH_RECEIVER_INBOX_MISSING:'+dst);
       }
+      if(inbox.length>=this.maxInbox){
+        route.messagesDropped+=1;route.state='DEGRADED';
+        this.metrics.dropped+=1;this.metrics.failed+=1;
+        this.deliveryLedger.set(messageId,{
+          message:clone(message),messageId,countryId,source:src,target:dst,
+          status:DELIVERY_STATUS.FAILED,statusHistory:[
+            {status:DELIVERY_STATUS.CREATED,simulationTurn:turn,reason:null},
+            {status:DELIVERY_STATUS.FAILED,simulationTurn:turn,reason:'INBOX_FULL'}
+          ],createdTurn:turn,failedTurn:turn,error:'INBOX_FULL'
+        });
+        throw new Error('MESH_INBOX_FULL:'+dst);
+      }
+
+      this.deliveryLedger.set(messageId,{
+        message:clone(message),
+        messageId,countryId,source:src,target:dst,
+        status:DELIVERY_STATUS.CREATED,
+        statusHistory:[{status:DELIVERY_STATUS.CREATED,simulationTurn:turn,reason:null}],
+        createdTurn:turn,
+        deliveredTurn:null,
+        acceptedTurn:null,
+        processingTurn:null,
+        completedTurn:null,
+        error:null
+      });
+      this._transitionDelivery(messageId,DELIVERY_STATUS.DELIVERED,turn);
       inbox.push(message);
-      while(inbox.length>1000) inbox.shift();
-
-      // Delivery authority is intentionally singular: the interoperability
-      // inbox above. Kernel messaging remains available as a separate service,
-      // but this system does not mirror packets into a second queue. That avoids
-      // duplicate delivery and keeps one deterministic receive ledger.
-      if(message.messageType===MESSAGE_TYPES.REQUEST) this.metrics.requests+=1;
-      if(message.messageType===MESSAGE_TYPES.RESPONSE) this.metrics.responses+=1;
-      if(message.messageType===MESSAGE_TYPES.ALERT) this.metrics.alerts+=1;
-
-      this._emit('OMEGA_MINISTRY_MESH_MESSAGE_SENT',message);
+      route.messagesSent+=1;
+      route.messagesDelivered+=1;
+      route.lastSentTurn=turn;
+      route.lastDeliveredTurn=turn;
+      route.state='ACTIVE';
+      this.metrics.sent+=1;
+      this.metrics.delivered+=1;
+      if(message.messageType===MESSAGE_TYPES.REQUEST)this.metrics.requests+=1;
+      if(message.messageType===MESSAGE_TYPES.RESPONSE)this.metrics.responses+=1;
+      if(message.messageType===MESSAGE_TYPES.ACK)this.metrics.acks+=1;
+      if(message.messageType===MESSAGE_TYPES.ALERT)this.metrics.alerts+=1;
+      this._emit('OMEGA_MINISTRY_MESSAGE_CREATED',message);
       return message;
     }
 
     broadcast(source,targets,topic,payload={},options={}){
-      const list=Array.isArray(targets) ? targets : IDS.filter(id=>id!==String(source));
+      const list=Array.isArray(targets)?targets:this.ids.filter(id=>id!==String(source));
       return list.map(target=>{
         try{return this.send(source,target,topic,payload,options);}
-        catch(error){return {target,error:String(error?.message||error)};}
+        catch(error){return {ok:false,target,error:String(error?.message||error)};}
       });
     }
 
     request(source,target,topic,payload={},options={}){
-      const correlationId=String(options.correlationId||(
-        'REQ-'+this._nextMessageId(source,target,options.turn)
-      ));
+      const turn=Number.isFinite(Number(options.turn))?Number(options.turn):this.lastTurn;
+      this._requestSequence+=1;
+      const requestId=String(options.requestId||('OMI-REQ-'+String(turn)+'-'+String(this._requestSequence)));
+      const correlationId=String(options.correlationId||requestId);
       const message=this.send(source,target,topic,payload,{
         ...options,
         messageType:MESSAGE_TYPES.REQUEST,
         correlationId
       });
-      this.requests.set(correlationId,{
-        correlationId,source,target,topic,
-        status:'PENDING',
-        createdTurn:message.turn,
-        createdAt:message.timestamp,
-        responseMessageId:null
+      this.requestLedger.set(correlationId,{
+        requestId,correlationId,messageId:message.messageId,
+        countryId:message.countryId,source:String(source),target:String(target),
+        topic:String(topic),status:REQUEST_STATUS.DELIVERED,
+        createdTurn:turn,expiryTurn:message.expiryTurn,
+        responseMessageId:null,responseTurn:null,
+        statusHistory:[
+          {status:REQUEST_STATUS.CREATED,simulationTurn:turn},
+          {status:REQUEST_STATUS.DELIVERED,simulationTurn:turn}
+        ]
       });
       return message;
     }
 
     reply(source,requestMessage,topic,payload={},options={}){
       const request=unwrapMessage(requestMessage);
-      if(!request || request.target!==source) throw new Error('RESPONSE_SOURCE_MISMATCH');
-      const target=String(request.source);
-      const correlationId=request.correlationId||request.messageId;
-      const response=this.send(source,target,topic,payload,{
+      if(!request)throw new Error('INVALID_REQUEST_MESSAGE');
+      if(String(request.targetMinistryId||request.target||'')!==String(source))throw new Error('RESPONSE_SOURCE_MISMATCH');
+      const response=this.send(source,request.sourceMinistryId||request.source,topic,payload,{
         ...options,
+        countryId:request.countryId,
+        turn:Number.isFinite(Number(options.turn))?Number(options.turn):this.lastTurn,
         messageType:MESSAGE_TYPES.RESPONSE,
-        correlationId,
+        correlationId:request.correlationId||request.messageId,
         causationId:request.messageId
       });
-      const pending=this.requests.get(correlationId);
-      if(pending){
-        pending.status='RESPONDED';
-        pending.responseMessageId=response.messageId;
+      const ledger=this.requestLedger.get(String(request.correlationId||request.messageId));
+      if(ledger){
+        ledger.status=REQUEST_STATUS.RESPONDED;
+        ledger.responseMessageId=response.messageId;
+        ledger.responseTurn=response.simulationTurn;
+        ledger.statusHistory.push({status:REQUEST_STATUS.RESPONDED,simulationTurn:response.simulationTurn});
+        this._transitionDelivery(response.messageId,DELIVERY_STATUS.RESPONDED,response.simulationTurn);
       }
       return response;
     }
 
-    acceptMessage(target,message){
-      const targetId=String(target);
+    acknowledge(source,message,options={}){
+      const request=unwrapMessage(message);
+      if(!request)throw new Error('INVALID_MESSAGE');
+      return this.send(source,request.sourceMinistryId||request.source,'message.acknowledgement',{
+        acknowledgedMessageId:request.messageId,
+        acknowledgedType:request.messageType
+      },{
+        ...options,
+        countryId:request.countryId,
+        messageType:MESSAGE_TYPES.ACK,
+        correlationId:request.correlationId||request.messageId,
+        causationId:request.messageId
+      });
+    }
+
+    acceptMessage(idOrCountry,targetOrMessage,messageOrTurn,maybeTurn){
+      let countryId,targetId,message,currentTurn;
+      if(arguments.length>=3){
+        countryId=String(idOrCountry||'').trim().toUpperCase();
+        targetId=String(targetOrMessage||'');
+        message=messageOrTurn;
+        currentTurn=Number.isFinite(Number(maybeTurn))?Number(maybeTurn):this.lastTurn;
+      }else{
+        targetId=String(idOrCountry||'');
+        message=targetOrCountry;
+        countryId=String(message?.countryId||'').trim().toUpperCase();
+        currentTurn=this.lastTurn;
+      }
       const unwrapped=unwrapMessage(message);
-      if(!ID_SET.has(targetId) || !unwrapped){
+      if(!countryId||!this.ids.includes(targetId)||!unwrapped){
         this.metrics.rejected+=1;
-        return {ok:false,reason:'INVALID_MESSAGE'};
+        return {ok:false,status:DELIVERY_STATUS.REJECTED,reason:'INVALID_MESSAGE'};
       }
-      if(unwrapped.target!==targetId || !ID_SET.has(String(unwrapped.source))){
+      if(unwrapped.countryId!==countryId){
         this.metrics.rejected+=1;
-        return {ok:false,reason:'MESSAGE_ROUTE_VALIDATION_FAILED'};
+        return {ok:false,status:DELIVERY_STATUS.REJECTED,reason:'COUNTRY_SCOPE_MISMATCH'};
       }
-      const route=this._route(unwrapped.source,targetId);
+      if(!this.ids.includes(String(unwrapped.sourceMinistryId||unwrapped.source))){
+        this.metrics.rejected+=1;
+        return {ok:false,status:DELIVERY_STATUS.REJECTED,reason:'INVALID_SOURCE'};
+      }
+      if(String(unwrapped.targetMinistryId||unwrapped.target)!==targetId){
+        this.metrics.rejected+=1;
+        return {ok:false,status:DELIVERY_STATUS.REJECTED,reason:'INVALID_TARGET'};
+      }
+      const route=this._route(unwrapped.sourceMinistryId||unwrapped.source,targetId);
       if(!route){
         this.metrics.rejected+=1;
-        return {ok:false,reason:'ROUTE_NOT_FOUND'};
+        return {ok:false,status:DELIVERY_STATUS.REJECTED,reason:'ROUTE_NOT_FOUND'};
       }
-      const messageId=String(unwrapped.messageId||'');
-      if(messageId && this._receivedMessageIds.has(messageId)){
-        return {ok:true,duplicate:true,message:clone(unwrapped)};
+      const existing=this.deliveryLedger.get(String(unwrapped.messageId||''));
+      if(existing&&[DELIVERY_STATUS.ACCEPTED,DELIVERY_STATUS.PROCESSING,DELIVERY_STATUS.PROCESSED,DELIVERY_STATUS.RESPONDED].includes(existing.status)){
+        route.messagesDuplicated+=1;
+        this.metrics.duplicate+=1;
+        return {ok:true,duplicate:true,status:DELIVERY_STATUS.DUPLICATE,message:clone(unwrapped)};
       }
-      if(messageId) this._receivedMessageIds.add(messageId);
-      if(this._receivedMessageIds.size>5000){
-        const oldest=this._receivedMessageIds.values().next().value;
-        if(oldest) this._receivedMessageIds.delete(oldest);
+
+      if(Number.isFinite(Number(unwrapped.expiryTurn))&&currentTurn>Number(unwrapped.expiryTurn)){
+        this._transitionDelivery(unwrapped.messageId,DELIVERY_STATUS.EXPIRED,currentTurn,'EXPIRY_TURN_REACHED');
+        route.messagesRejected+=1;
+        this.metrics.expired+=1;
+        if(unwrapped.correlationId){
+          const req=this.requestLedger.get(String(unwrapped.correlationId));
+          if(req){
+            req.status=REQUEST_STATUS.EXPIRED;
+            req.statusHistory.push({status:REQUEST_STATUS.EXPIRED,simulationTurn:currentTurn});
+          }
+        }
+        return {ok:false,status:DELIVERY_STATUS.EXPIRED,reason:'EXPIRED'};
       }
-      this._recordRouteReceive(route,unwrapped.turn);
-      this.metrics.received+=1;
-      this._invalidateKnowledgeCache();
-      if(unwrapped.correlationId && unwrapped.messageType===MESSAGE_TYPES.RESPONSE){
-        const req=this.requests.get(unwrapped.correlationId);
+
+      this._transitionDelivery(unwrapped.messageId,DELIVERY_STATUS.ACCEPTED,currentTurn);
+      route.messagesAccepted+=1;
+      route.lastAcceptedTurn=currentTurn;
+      this.metrics.accepted+=1;
+      if(unwrapped.messageType===MESSAGE_TYPES.REQUEST&&unwrapped.correlationId){
+        const req=this.requestLedger.get(String(unwrapped.correlationId));
         if(req){
-          req.status='RESPONDED';
-          req.responseMessageId=unwrapped.messageId;
+          req.status=REQUEST_STATUS.ACCEPTED;
+          req.statusHistory.push({status:REQUEST_STATUS.ACCEPTED,simulationTurn:currentTurn});
         }
       }
-
-      const bucket=this._knowledgeBucket(targetId);
-      if(unwrapped.messageType===MESSAGE_TYPES.BUDGET_REQUEST){
-        this._recordBudgetRequest(unwrapped);
-      }else if(unwrapped.messageType===MESSAGE_TYPES.PROJECT_STATUS){
-        this._recordProjectSignal(unwrapped);
-      }else if(unwrapped.messageType===MESSAGE_TYPES.CONSTRAINT_UPDATE){
-        this._recordConstraint(unwrapped);
-      }else if(unwrapped.messageType===MESSAGE_TYPES.FISCAL_STATUS){
-        this._recordFiscalStatus(unwrapped);
-      }else if(unwrapped.messageType===MESSAGE_TYPES.ALERT){
-        this._recordAlert(unwrapped);
-      }
-
-      bucket.inbox.push(clone(unwrapped));
-      while(bucket.inbox.length>250) bucket.inbox.shift();
-
-      this._emit('OMEGA_MINISTRY_MESH_MESSAGE_RECEIVED',unwrapped);
-      return {ok:true,message:clone(unwrapped)};
+      this._invalidateKnowledgeCache();
+      return {ok:true,status:DELIVERY_STATUS.ACCEPTED,message:clone(unwrapped)};
     }
 
-    _knowledgeBucket(ministryId){
-      if(!this._ministryKnowledge) this._ministryKnowledge=new Map();
-      if(!this._ministryKnowledge.has(ministryId)){
-        this._ministryKnowledge.set(ministryId,{
-          inbox:[],
-          peerFacts:new Map(),
-          sent:[],
-          received:[]
+    beginProcessing(messageId,currentTurn=this.lastTurn){
+      const row=this.deliveryLedger.get(String(messageId));
+      if(!row)return false;
+      this._transitionDelivery(String(messageId),DELIVERY_STATUS.PROCESSING,Number(currentTurn));
+      if(row.message.messageType===MESSAGE_TYPES.REQUEST&&row.message.correlationId){
+        const req=this.requestLedger.get(String(row.message.correlationId));
+        if(req){
+          req.status=REQUEST_STATUS.PROCESSING;
+          req.statusHistory.push({status:REQUEST_STATUS.PROCESSING,simulationTurn:Number(currentTurn)});
+        }
+      }
+      return true;
+    }
+
+    completeProcessing(messageId,success=true,currentTurn=this.lastTurn,error=null){
+      const row=this.deliveryLedger.get(String(messageId));
+      if(!row)return false;
+      const status=success?DELIVERY_STATUS.PROCESSED:DELIVERY_STATUS.FAILED;
+      this._transitionDelivery(String(messageId),status,Number(currentTurn),error);
+      if(success)this.metrics.processed+=1;else this.metrics.failed+=1;
+      if(row.message.messageType===MESSAGE_TYPES.REQUEST&&row.message.correlationId){
+        const req=this.requestLedger.get(String(row.message.correlationId));
+        if(req&&!success){
+          req.status=REQUEST_STATUS.FAILED;
+          req.statusHistory.push({status:REQUEST_STATUS.FAILED,simulationTurn:Number(currentTurn),reason:error||null});
+        }
+      }
+      return true;
+    }
+
+    _expireTurn(turn){
+      for(const row of this.requestLedger.values()){
+        if([REQUEST_STATUS.RESPONDED,REQUEST_STATUS.EXPIRED,REQUEST_STATUS.FAILED,REQUEST_STATUS.REJECTED].includes(row.status))continue;
+        if(Number.isFinite(Number(row.expiryTurn))&&Number(turn)>Number(row.expiryTurn)){
+          row.status=REQUEST_STATUS.EXPIRED;
+          row.statusHistory.push({status:REQUEST_STATUS.EXPIRED,simulationTurn:Number(turn)});
+          this.metrics.expired+=1;
+          this._transitionDelivery(row.messageId,DELIVERY_STATUS.EXPIRED,Number(turn),'REQUEST_EXPIRED');
+        }
+      }
+      for(const [key,inbox] of this.inboxes.entries()){
+        const kept=[];
+        for(const message of inbox){
+          if(Number.isFinite(Number(message.expiryTurn))&&Number(turn)>Number(message.expiryTurn)){
+            this._transitionDelivery(message.messageId,DELIVERY_STATUS.EXPIRED,Number(turn),'INBOX_MESSAGE_EXPIRED');
+            this.metrics.expired+=1;
+          }else kept.push(message);
+        }
+        this.inboxes.set(key,kept);
+      }
+    }
+
+    advanceTurn(turn){
+      const n=Number(turn);
+      if(!Number.isFinite(n))return this.lastTurn;
+      this.lastTurn=Math.max(this.lastTurn,n);
+      this._expireTurn(this.lastTurn);
+      return this.lastTurn;
+    }
+
+    drainInbox(countryId,ministryId,callback,maxMessages=100){
+      const c=String(countryId||'').trim().toUpperCase();
+      const id=String(ministryId||'');
+      const inbox=this.inboxes.get(id);
+      if(!c||!inbox||typeof callback!=='function')return 0;
+      let count=0;
+      while(count<Number(maxMessages)&&inbox.length){
+        const message=inbox.shift();
+        if(String(message.countryId||'').toUpperCase()!==c){
+          this.metrics.rejected+=1;
+          this._transitionDelivery(message.messageId,DELIVERY_STATUS.REJECTED,this.lastTurn,'COUNTRY_SCOPE_MISMATCH');
+          count+=1;
+          continue;
+        }
+        try{callback(message);}catch(error){
+          this.completeProcessing(message.messageId,false,this.lastTurn,String(error?.message||error));
+        }
+        count+=1;
+      }
+      return count;
+    }
+
+    getMinistryInbox(countryId,ministryId){
+      const c=String(countryId||'').trim().toUpperCase();
+      const id=String(ministryId||'');
+      const inbox=this.inboxes.get(id)||[];
+      return clone(inbox.filter(m=>String(m.countryId||'').toUpperCase()===c));
+    }
+
+    _compilePublicSnapshot(ministryId,packet={}){
+      const countryId=String(packet.context?.countryId||'').trim().toUpperCase();
+      if(!countryId)throw new Error('COUNTRY_ID_REQUIRED_FOR_PUBLICATION');
+      const turn=this._currentTurn(packet.context,packet);
+      this.lastTurn=Math.max(this.lastTurn,turn);
+      const engine=this.registry?.get?.(ministryId)||global.OmegaMinistryDomainEngines?.get?.(ministryId)||null;
+      const execution=packet.domainExecution||{};
+      const context=packet.context||{};
+      const observed=execution.observedInputs||{};
+      const configuredPaths=[...(Array.isArray(engine?.inputs)?engine.inputs:[]),...(STANDARD_PUBLIC_PATHS[ministryId]||[])];
+      const paths=[...new Set(configuredPaths)];
+      const publishedFacts={};
+      const dataGaps=[];
+      for(const path of paths){
+        const described=this._providerValue(countryId,path,context,observed);
+        const visibility=this._factVisibility(ministryId,path);
+        const sourceRevision=this.provider?.getRevision?.(countryId,ministryId)??null;
+        const fact={
+          value:described.value===undefined?null:clone(described.value),
+          availability:described.availability||AVAILABILITY.UNAVAILABLE,
+          availabilityReason:described.availabilityReason||null,
+          visibility,
+          sourceMinistryId:ministryId,
+          countryId,
+          path,
+          simulationTurn:turn,
+          sourceTurn:described.provenance?.simulationTurn??turn,
+          stateRevision:sourceRevision,
+          publishedAt:Date.now(),
+          timestampIsTelemetry:true,
+          provenance:clone(described.provenance||null),
+          access:{granted:true}
+        };
+        publishedFacts[path]=fact;
+        if(fact.availability!==AVAILABILITY.AVAILABLE)dataGaps.push({
+          path,availability:fact.availability,reason:fact.availabilityReason
         });
       }
-      return this._ministryKnowledge.get(ministryId);
+
+      const stateRevision=this._sourceRevision(countryId,ministryId,context,execution);
+      const runtimeStatus=packet.runtimeState||{};
+      const policyCount=Object.keys(publishedFacts).filter(k=>k.startsWith('store.')).length;
+      const projectFact=publishedFacts['projects.registry'];
+      const projectCount=projectFact?.availability===AVAILABILITY.AVAILABLE&&projectFact.value&&typeof projectFact.value==='object'
+        ?Object.keys(projectFact.value).length:null;
+
+      const fiscal=this._groupFacts(publishedFacts,[
+        ['budget','finance.budget'],['allocated','finance.allocated'],['committed','finance.committed'],
+        ['available','finance.available'],['reserves','finance.reserves'],['taxRevenue','finance.taxRevenue'],
+        ['revenue','finance.revenue'],['spending','finance.spending'],['encumbered','finance.encumbered'],
+        ['capitalExpenditure','finance.capitalExpenditure'],['operatingExpenditure','finance.operatingExpenditure'],
+        ['emergencyAllocation','finance.emergencyAllocation'],['mandatoryObligations','finance.mandatoryObligations']
+      ]);
+
+      const projects=this._groupFacts(publishedFacts,[
+        ['registry','projects.registry'],['cost','projects.cost'],['allocatedFunding','projects.allocatedFunding'],
+        ['committedFunding','projects.committedFunding'],['spentFunding','projects.spentFunding'],
+        ['remainingFunding','projects.remainingFunding'],['completion','projects.completion'],
+        ['startDate','projects.startDate'],['targetDate','projects.targetDate'],
+        ['dependencies','projects.dependencies'],['blockers','projects.blockers'],
+        ['requiredApprovals','projects.requiredApprovals'],['linkedMinistries','projects.linkedMinistries']
+      ]);
+      projects.knownCount=projectCount;
+
+      const ownNeeds=this._compileNeeds(ministryId,countryId,publishedFacts);
+      const budgetRequests=this._getBudgetRequestsForCountry(countryId,ministryId);
+      const constraints=this._getConstraintsForCountry(countryId,ministryId);
+      const alerts=this._getAlertsForCountry(countryId,ministryId);
+
+      const snapshot={
+        schemaVersion:2,
+        ministryId,
+        countryId,
+        simulationTurn:turn,
+        stateRevision,
+        status:runtimeStatus.status||'UNKNOWN',
+        active:runtimeStatus.active===true,
+        domain:packet.domain||engine?.domain||null,
+        fiscal,
+        projects,
+        needs:ownNeeds,
+        requests:{
+          budget:budgetRequests,
+          inboxCount:this.getMinistryInbox(countryId,ministryId).length
+        },
+        constraints,
+        alerts,
+        operations:{
+          phase:execution.phase||engine?.phase||null,
+          failures:number(runtimeStatus.failures)??0,
+          lastDt:number(runtimeStatus.lastDt)??null,
+          inputCompleteness:number(execution.derived?.inputCompleteness)??null,
+          missingInputs:clone(execution.missingInputs||[]),
+          engineRevision:number(execution.revision)??null
+        },
+        publishedFacts,
+        dataAvailability:summarizeAvailability(publishedFacts),
+        knownDataGaps:dataGaps,
+        provenance:{
+          stateProvider:this.provider?.version||this.provider?.VERSION||null,
+          publicationSource:'OMEGA_MINISTRY_INTEROPERABILITY_SYSTEM',
+          publicationTurn:turn,
+          sourceStateRevision:stateRevision
+        }
+      };
+      return snapshot;
     }
 
-    drainInbox(ministryId,callback,maxMessages=100){
-      const id=String(ministryId);
-      const inbox=this.inboxes.get(id);
-      if(!inbox || typeof callback!=='function') return 0;
-      let drained=0;
-      while(drained<maxMessages && inbox.length){
-        const message=inbox.shift();
-        callback(message);
-        drained+=1;
+    _groupFacts(publishedFacts,entries){
+      const out={};
+      for(const [alias,path] of entries){
+        if(publishedFacts[path])out[alias]=publishedFacts[path];
       }
-      return drained;
+      return out;
     }
 
-    getMinistryInbox(ministryId){
-      const bucket=this._knowledgeBucket(String(ministryId));
-      return clone(bucket.inbox);
+    _compileNeeds(ministryId,countryId,publishedFacts){
+      const required=publishedFacts['finance.required']||publishedFacts['projects.requiredFunding']||null;
+      const available=publishedFacts['finance.available']||null;
+      const committed=publishedFacts['finance.committed']||publishedFacts['projects.committedFunding']||null;
+      const mandatory=publishedFacts['finance.mandatoryObligations']||null;
+      const result={
+        status:'UNAVAILABLE',
+        requirement:null,
+        requested:null,
+        required:null,
+        committed:null,
+        available:null,
+        fundingGap:null,
+        priority:null,
+        urgency:null,
+        evidence:[]
+      };
+      const fields=[['required',required],['available',available],['committed',committed],['mandatoryObligations',mandatory]];
+      for(const [name,fact] of fields)if(fact)result[name]=clone(fact);
+      if(publishedFacts['finance.required'])result.evidence.push({path:'finance.required',provenance:clone(required.provenance||null)});
+      if(publishedFacts['finance.available'])result.evidence.push({path:'finance.available',provenance:clone(available.provenance||null)});
+      if(required?.availability===AVAILABILITY.AVAILABLE&&available?.availability===AVAILABILITY.AVAILABLE){
+        const req=number(factValue(required)),av=number(factValue(available));
+        if(req!==null&&av!==null){
+          result.fundingGap=Math.max(0,req-av-(number(factValue(committed))||0)-(number(factValue(mandatory))||0));
+          result.status=result.fundingGap>0?'UNDERFUNDED':'FUNDED';
+        }
+      }
+      return result;
     }
 
-    _recordBudgetRequest(message){
-      const source=message.source;
-      const list=this.budgetRequests.get(source)||[];
-      list.push({
-        messageId:message.messageId,
-        ministryId:source,
-        turn:message.turn,
-        amount:number(message.payload?.amount),
-        currency:message.payload?.currency??null,
-        purpose:message.payload?.purpose??null,
-        urgency:message.payload?.urgency??'NORMAL',
-        status:message.payload?.status??'OPEN',
-        evidence:clone(message.payload?.evidence||null)
+    _recordBudgetLocal(countryId,source,payload,messageId,turn){
+      const requestId=String(payload?.requestId||messageId);
+      if(!this.requestLedger.has('BUDGET:'+requestId)){
+        this.requestLedger.set('BUDGET:'+requestId,{
+          kind:'BUDGET',
+          requestId,countryId,sourceMinistryId:source,
+          targetMinistryId:String(payload?.targetMinistryId||'finance'),
+          messageId,
+          createdTurn:turn,
+          status:String(payload?.status||REQUEST_STATUS.CREATED),
+          requestedAmount:number(payload?.requestedAmount??payload?.amount),
+          requiredAmount:number(payload?.requiredAmount),
+          fundingGap:number(payload?.fundingGap),
+          priority:payload?.priority??null,
+          urgency:payload?.urgency??null,
+          purpose:payload?.purpose??null,
+          evidence:clone(payload?.evidence||null),
+          statusHistory:[{status:String(payload?.status||REQUEST_STATUS.CREATED),simulationTurn:turn}]
+        });
+      }
+      return this.requestLedger.get('BUDGET:'+requestId);
+    }
+
+    _getBudgetRequestsForCountry(countryId,ministryId=null){
+      const out=[];
+      for(const [key,row] of this.requestLedger.entries()){
+        if(!String(key).startsWith('BUDGET:'))continue;
+        if(row.countryId!==countryId)continue;
+        if(ministryId&&row.sourceMinistryId!==ministryId)continue;
+        if(['CLOSED',REQUEST_STATUS.RESPONDED,REQUEST_STATUS.REJECTED].includes(row.status))continue;
+        out.push(clone(row));
+      }
+      return out.slice(-this.maxHistory);
+    }
+
+    _recordProjectLocal(countryId,source,payload,messageId,turn){
+      const key='PROJECT:'+countryId+':'+String(payload?.projectId||messageId);
+      const existing=this.requestLedger.get(key)||{
+        kind:'PROJECT',countryId,sourceMinistryId:source,
+        projectId:payload?.projectId??null,
+        status:null,statusHistory:[]
+      };
+      Object.assign(existing,{
+        messageId,turn,ownerMinistry:payload?.ownerMinistry||source,
+        status:payload?.status??null,phase:payload?.phase??null,
+        cost:number(payload?.cost),allocatedFunding:number(payload?.allocatedFunding),
+        committedFunding:number(payload?.committedFunding),spentFunding:number(payload?.spentFunding),
+        remainingFunding:number(payload?.remainingFunding),
+        completion:number(payload?.completion),blockers:clone(payload?.blockers||[]),
+        dependencies:clone(payload?.dependencies||[]),linkedMinistries:clone(payload?.linkedMinistries||[])
       });
-      while(list.length>100) list.shift();
-      this.budgetRequests.set(source,list);
+      existing.statusHistory.push({status:existing.status,simulationTurn:turn});
+      if(existing.statusHistory.length>this.maxHistory)existing.statusHistory.shift();
+      this.requestLedger.set(key,existing);
+      return existing;
+    }
+
+    _getProjectsForCountry(countryId){
+      const out=[];
+      for(const [key,row] of this.requestLedger.entries()){
+        if(String(key).startsWith('PROJECT:')&&row.countryId===countryId)out.push(clone(row));
+      }
+      return out.slice(-this.maxHistory);
+    }
+
+    _recordFiscalLocal(countryId,source,payload,messageId,turn){
+      const key='FISCAL:'+countryId+':'+source;
+      const row={
+        kind:'FISCAL',countryId,sourceMinistryId:source,messageId,turn,
+        budget:number(payload?.budget),allocated:number(payload?.allocated),
+        committed:number(payload?.committed),available:number(payload?.available),
+        spent:number(payload?.spent),encumbered:number(payload?.encumbered),
+        currency:payload?.currency??null,evidence:clone(payload?.evidence||null)
+      };
+      this.requestLedger.set(key,row);
+      this._invalidateKnowledgeCache();
+      return row;
+    }
+
+    _recordConstraintLocal(countryId,source,payload,messageId,turn){
+      const key='CONSTRAINT:'+countryId+':'+source;
+      const list=this.requestLedger.get(key)||[];
+      list.push({messageId,countryId,sourceMinistryId:source,turn,
+        severity:String(payload?.severity||'INFO'),code:payload?.code??null,
+        description:payload?.description??null,blocking:payload?.blocking===true,
+        evidence:clone(payload?.evidence||null)});
+      while(list.length>this.maxHistory)list.shift();
+      this.requestLedger.set(key,list);
       this._invalidateKnowledgeCache();
     }
 
-    _recordProjectSignal(message){
-      const source=message.source;
-      const list=this.projectSignals.get(source)||[];
-      list.push({
-        messageId:message.messageId,
-        ministryId:source,
-        turn:message.turn,
-        projectId:message.payload?.projectId??null,
-        projectCount:number(message.payload?.projectCount),
-        activeCount:number(message.payload?.activeCount),
-        committedBudget:number(message.payload?.committedBudget),
-        status:message.payload?.status??null,
-        blockers:clone(message.payload?.blockers||[])
-      });
-      while(list.length>100) list.shift();
-      this.projectSignals.set(source,list);
+    _recordAlertLocal(countryId,source,payload,messageId,turn){
+      const key='ALERT:'+countryId+':'+source;
+      const list=this.requestLedger.get(key)||[];
+      list.push({messageId,countryId,sourceMinistryId:source,turn,
+        priority:String(payload?.priority||'NORMAL'),topic:payload?.topic??null,
+        payload:clone(payload)});
+      while(list.length>this.maxHistory)list.shift();
+      this.requestLedger.set(key,list);
       this._invalidateKnowledgeCache();
     }
 
-    _recordFiscalStatus(message){
-      const source=message.source;
-      this.fiscalReports.set(source,{
-        messageId:message.messageId,
-        ministryId:source,
-        turn:message.turn,
-        budget:number(message.payload?.budget),
-        allocated:number(message.payload?.allocated),
-        committed:number(message.payload?.committed),
-        available:number(message.payload?.available),
-        currency:message.payload?.currency??null,
-        evidence:clone(message.payload?.evidence||null)
-      });
-      this._invalidateKnowledgeCache();
+    _getConstraintsForCountry(countryId,ministryId){
+      const key='CONSTRAINT:'+countryId+':'+ministryId;
+      const list=this.requestLedger.get(key)||[];
+      return clone(list.slice(-10));
     }
 
-    _recordConstraint(message){
-      const source=message.source;
-      const list=this.constraints.get(source)||[];
-      list.push({
-        messageId:message.messageId,
-        ministryId:source,
-        turn:message.turn,
-        severity:String(message.payload?.severity||'INFO'),
-        code:message.payload?.code??null,
-        description:message.payload?.description??null,
-        blocking:message.payload?.blocking===true,
-        evidence:clone(message.payload?.evidence||null)
-      });
-      while(list.length>100) list.shift();
-      this.constraints.set(source,list);
-      this._invalidateKnowledgeCache();
-    }
-
-    _recordAlert(message){
-      const source=message.source;
-      const list=this.alerts.get(source)||[];
-      list.push({
-        messageId:message.messageId,
-        ministryId:source,
-        turn:message.turn,
-        severity:String(message.priority||'NORMAL'),
-        topic:message.topic,
-        payload:clone(message.payload)
-      });
-      while(list.length>100) list.shift();
-      this.alerts.set(source,list);
-      this._invalidateKnowledgeCache();
+    _getAlertsForCountry(countryId,ministryId){
+      const key='ALERT:'+countryId+':'+ministryId;
+      const list=this.requestLedger.get(key)||[];
+      return clone(list.slice(-10));
     }
 
     publishState(ministryId,packet={}){
-      ministryId=String(ministryId);
-      if(!ID_SET.has(ministryId)) throw new Error('UNKNOWN_MINISTRY:'+ministryId);
-
-      const execution=packet.domainExecution||{};
-      const context=packet.context||{};
-      const store=packet.store||null;
-      const runtimeState=packet.runtimeState||{};
-      const observed=execution.observedInputs||{};
-
-      const fiscal={
-        budget:number(firstEvidence(observed,context,[
-          'finance.budget','economy.budget','projects.budget',
-          'defense.budget','transport.budget'
-        ])),
-        spending:number(firstEvidence(observed,context,[
-          'finance.spending','projects.budget','defense.spending'
-        ])),
-        reserves:number(firstEvidence(observed,context,['finance.reserves','economy.reserves'])),
-        revenue:number(firstEvidence(observed,context,['finance.taxRevenue','finance.revenue','economy.revenue'])),
-        debt:number(firstEvidence(observed,context,['economy.debt','finance.debt'])),
-        sourceFields:Object.keys(observed).filter(k=>/budget|spending|reserve|revenue|debt/i.test(k))
-      };
-
-      const facts={};
-      const evidenceSource={...context,...observed};
-      for(const [key,value] of Object.entries(evidenceSource)){
-        if(/relation|treat|sanction|logistic|threat|readiness|procurement|production|inflation|unemployment|enrollment|research|innovation|hospital|stability|corruption|security/i.test(key)){
-          facts[key]=clone(value);
-        }
-      }
-
-      const projectRegistry=firstEvidence(observed,context,['projects.registry']);
-      const latestProjectSignal=this.projectSignals.get(ministryId)?.slice(-1)[0]||null;
-      const projects={
-        knownCount:collectionCount(projectRegistry) ?? latestProjectSignal?.projectCount ?? null,
-        activeCount:latestProjectSignal?.activeCount ?? null,
-        committedBudget:latestProjectSignal?.committedBudget ?? null,
-        blockers:clone(latestProjectSignal?.blockers||[])
-      };
-
-      const policies=toArray(store?.policies);
-      const decisions=toArray(store?.decisions);
-      const needs=clone(store?.needsModel||null);
-      const reportedFiscal=this.fiscalReports.get(ministryId)||null;
-      if(reportedFiscal){
-        if(reportedFiscal.budget!==null) fiscal.budget=reportedFiscal.budget;
-        if(reportedFiscal.allocated!==null) fiscal.allocated=reportedFiscal.allocated;
-        if(reportedFiscal.committed!==null) fiscal.committed=reportedFiscal.committed;
-        if(reportedFiscal.available!==null) fiscal.available=reportedFiscal.available;
-        if(reportedFiscal.currency!==null) fiscal.currency=reportedFiscal.currency;
-      }
-      const pendingBudgetRequests=(this.budgetRequests.get(ministryId)||[]).filter(x=>String(x.status).toUpperCase()!=='CLOSED');
-      const requestedBudget=pendingBudgetRequests.reduce((sum,item)=>{
-        const amount=number(item.amount);
-        return sum+(amount===null?0:amount);
-      },0);
-      fiscal.requestedBudget=requestedBudget;
-      fiscal.budgetNeedStatus=requestedBudget>0?'REQUESTED':'NONE';
-      fiscal.budgetPressure=fiscal.budget!==null && fiscal.budget!==0
-        ? Number((requestedBudget/fiscal.budget).toFixed(6))
-        : null;
-      const latestConstraints=this.constraints.get(ministryId)?.slice(-10)||[];
-      const latestAlerts=this.alerts.get(ministryId)?.slice(-10)||[];
-
-      const snapshot=Object.freeze({
-        schemaVersion:1,
-        ministryId,
-        domain:packet.domain||execution.domain||null,
-        countryId:context.countryId||null,
-        turn:Number.isFinite(Number(packet.turn))?Number(packet.turn):this.lastTurn,
-        status:runtimeState.status||'UNKNOWN',
-        active:runtimeState.active===true,
-        fiscal,
-        projects,
-        policy:{
-          activeCount:collectionCount(store?.policies),
-          decisionCount:collectionCount(store?.decisions)
-        },
-        needs,
-        requests:{
-          openBudgetRequests:clone(pendingBudgetRequests),
-          inboxCount:this._knowledgeBucket(ministryId).inbox.length
-        },
-        constraints:clone(latestConstraints),
-        alerts:clone(latestAlerts),
-        operations:{
-          phase:execution.phase||null,
-          failures:number(runtimeState.failures)||0,
-          lastDt:number(runtimeState.lastDt),
-          inputCompleteness:number(execution.derived?.inputCompleteness),
-          missingInputs:clone(execution.missingInputs||[]),
-          engineRevision:number(execution.revision)||null,
-          facts
-        }
-      });
-
-      this.snapshots.set(ministryId,clone(snapshot));
+      const id=String(ministryId||'');
+      if(!this.ids.includes(id))throw new Error('UNKNOWN_MINISTRY:'+id);
+      const snapshot=this._compilePublicSnapshot(id,packet);
+      this.snapshots.set(snapshotKey(snapshot.countryId,id),snapshot);
       this.metrics.statePublications+=1;
-
-      const knowledge=this._knowledgeBucket(ministryId);
-      knowledge.peerFacts.set(ministryId,clone(snapshot));
-      this.lastTurn=Math.max(this.lastTurn,Number(snapshot.turn)||0);
+      this.lastTurn=Math.max(this.lastTurn,snapshot.simulationTurn);
       this._invalidateKnowledgeCache();
-      this._emit('OMEGA_MINISTRY_PUBLIC_STATE_UPDATED',clone(snapshot));
-      return clone(snapshot);
-    }
-
-    getPeerState(requesterId,targetId){
-      requesterId=String(requesterId); targetId=String(targetId);
-      if(!ID_SET.has(requesterId) || !ID_SET.has(targetId)) return null;
-      return clone(this.snapshots.get(targetId)||{
-        ministryId:targetId,
-        availability:'UNOBSERVED'
-      });
-    }
-
-    _peerCompact(snapshot){
-      if(!snapshot) return {
-        availability:'UNOBSERVED'
-      };
-      return {
-        ministryId:snapshot.ministryId,
-        domain:snapshot.domain,
+      this._emit(EVENT_TYPES.MINISTRY_STATE_PUBLISHED,{
         countryId:snapshot.countryId,
-        turn:snapshot.turn,
-        status:snapshot.status,
-        active:snapshot.active,
-        fiscal:clone(snapshot.fiscal),
-        projects:clone(snapshot.projects),
-        policy:clone(snapshot.policy),
-        needs:clone(snapshot.needs),
-        requests:clone(snapshot.requests),
-        constraints:clone(snapshot.constraints),
-        alerts:clone(snapshot.alerts),
-        operations:clone(snapshot.operations)
-      };
+        ministryId:id,
+        simulationTurn:snapshot.simulationTurn,
+        stateRevision:snapshot.stateRevision,
+        dataAvailability:snapshot.dataAvailability
+      },snapshot.simulationTurn);
+      return this.getPeerState(id,id,snapshot.countryId,{currentTurn:snapshot.simulationTurn});
     }
 
-    _openBudgetNeed(ministryId){
-      const list=this.budgetRequests.get(ministryId)||[];
-      return list.filter(x=>String(x.status).toUpperCase()!=='CLOSED').slice(-5);
-    }
-
-    _projectSummary(ministryId){
-      const snapshot=this.snapshots.get(ministryId);
-      const signals=this.projectSignals.get(ministryId)||[];
-      const latest=signals[signals.length-1]||null;
+    _emptyPublicState(countryId,ministryId,currentTurn){
       return {
-        knownCount:snapshot?.projects?.knownCount ?? latest?.projectCount ?? null,
-        activeCount:snapshot?.projects?.activeCount ?? latest?.activeCount ?? null,
-        committedBudget:snapshot?.projects?.committedBudget ?? latest?.committedBudget ?? null,
-        latestTurn:latest?.turn ?? snapshot?.turn ?? null
+        schemaVersion:2,
+        ministryId,countryId,
+        simulationTurn:currentTurn??null,
+        stateRevision:null,
+        status:'UNKNOWN',
+        active:false,
+        domain:this.registry?.get?.(ministryId)?.domain||null,
+        fiscal:{},
+        projects:{knownCount:null},
+        needs:{status:'UNOBSERVED',requirement:null,requested:null,required:null,fundingGap:null},
+        requests:{budget:[],inboxCount:0},
+        constraints:[],alerts:[],
+        operations:{},
+        publishedFacts:{},
+        dataAvailability:{UNOBSERVED:1},
+        knownDataGaps:[],
+        provenance:null,
+        availability:AVAILABILITY.UNOBSERVED
       };
     }
 
-    _governmentLedger(){
-      const financial=[];
-      const projects=[];
-      const budgetNeeds=[];
-      const alerts=[];
-      const constraints=[];
-      for(const id of IDS){
-        const s=this.snapshots.get(id);
-        const p=this._projectSummary(id);
-        financial.push({
-          ministryId:id,
-          budget:s?.fiscal?.budget ?? null,
-          allocated:s?.fiscal?.allocated ?? null,
-          committed:s?.fiscal?.committed ?? null,
-          available:s?.fiscal?.available ?? null,
-          spending:s?.fiscal?.spending ?? null,
-          reserves:s?.fiscal?.reserves ?? null,
-          revenue:s?.fiscal?.revenue ?? null,
-          debt:s?.fiscal?.debt ?? null,
-          requestedBudget:s?.fiscal?.requestedBudget ?? null,
-          budgetNeedStatus:s?.fiscal?.budgetNeedStatus ?? 'UNKNOWN',
-          turn:s?.turn ?? null
-        });
-        projects.push({ministryId:id,...p});
-        const needs=this._openBudgetNeed(id);
-        if(needs.length) budgetNeeds.push({ministryId:id,requests:clone(needs)});
-        if(s?.constraints?.length) constraints.push({ministryId:id,items:clone(s.constraints.slice(-5))});
-        if(s?.alerts?.length) alerts.push({ministryId:id,items:clone(s.alerts.slice(-5))});
+    _filterSnapshotFor(viewer,source,snapshot,currentTurn){
+      if(!snapshot)return this._emptyPublicState(snapshot?.countryId||null,source,currentTurn);
+      const out=clone(snapshot);
+      const filtered={};
+      for(const [path,fact] of Object.entries(snapshot.publishedFacts||{})){
+        const allowed=this.policy?.canRead?.(viewer,source,fact.visibility)!==false;
+        if(allowed){
+          const f=clone(fact);
+          f.access={granted:true};
+          if(String(f.availability)==='AVAILABLE'&&Number.isFinite(Number(currentTurn))&&Number.isFinite(Number(f.simulationTurn))){
+            const maxAge=1;
+            if(Number(currentTurn)-Number(f.simulationTurn)>maxAge){
+              f.availability=AVAILABILITY.STALE;
+              f.availabilityReason='CONSUMER_CURRENT_TURN_EXCEEDS_PUBLICATION_WINDOW';
+            }
+          }
+          filtered[path]=f;
+        }else{
+          filtered[path]={
+            ...clone(fact),
+            value:null,
+            availability:AVAILABILITY.UNAVAILABLE,
+            availabilityReason:'ACCESS_RESTRICTED',
+            access:{granted:false}
+          };
+        }
       }
-      return {financial,projects,budgetNeeds,alerts,constraints};
+      out.publishedFacts=filtered;
+      out.fiscal=this._filterGrouped(out.fiscal,filtered);
+      out.projects=this._filterGrouped(out.projects,filtered);
+      out.dataAvailability=summarizeAvailability(filtered);
+      out.knownDataGaps=Object.entries(filtered).filter(([,f])=>f.availability!==AVAILABILITY.AVAILABLE).map(([path,f])=>({path,availability:f.availability,reason:f.availabilityReason}));
+      const staleCount=Object.values(filtered).filter(f=>f.availability===AVAILABILITY.STALE).length;
+      out.freshness=staleCount?{status:AVAILABILITY.STALE,staleFacts:staleCount}:{
+        status:'CURRENT',staleFacts:0
+      };
+      return out;
     }
 
-    getMinistryBriefing(ministryId){
-      ministryId=String(ministryId);
-      if(!ID_SET.has(ministryId)) return null;
-      const cache=this._getKnowledgeCache();
-      const received=this._knowledgeBucket(ministryId).inbox;
-      const outgoing=this.connectionsFor(ministryId,'OUTBOUND').filter(r=>r.messagesSent>0).slice(-64);
-
-      return clone({
-        schemaVersion:1,
-        ministryId,
-        generatedTurn:this.lastTurn,
-        knowledgeRevision:cache.revision,
-        ownState:cache.nationalPicture[ministryId],
-        peers:cache.nationalPicture,
-        government:cache.government,
-        incomingMessages:received.slice(-50),
-        outboundActivity:outgoing,
-        mesh:{
-          totalConnections:IDS.length*IDS.length,
-          crossMinistryConnections:IDS.length*(IDS.length-1),
-          loopbackConnections:IDS.length,
-          availableFromThisMinistry:IDS.length
+    _filterGrouped(grouped,filtered){
+      const out={};
+      for(const [key,fact] of Object.entries(grouped||{})){
+        if(fact?.path&&filtered[fact.path])out[key]=filtered[fact.path];
+        else if(fact?.availability!==undefined){
+          const path=fact.path;
+          if(!path||!filtered[path])continue;
+          out[key]=filtered[path];
         }
+      }
+      if(Object.prototype.hasOwnProperty.call(grouped||{},'knownCount'))out.knownCount=grouped.knownCount;
+      return out;
+    }
+
+    getPeerState(requesterId,targetId,countryId,options={}){
+      const viewer=String(requesterId||'');
+      const target=String(targetId||'');
+      const c=String(countryId||'').trim().toUpperCase();
+      if(!this.ids.includes(viewer)||!this.ids.includes(target)||!c)return null;
+      const snapshot=this.snapshots.get(snapshotKey(c,target));
+      return this._filterSnapshotFor(viewer,target,snapshot,options.currentTurn??this.lastTurn);
+    }
+
+    _getKnowledgeReadModel(requesterId,countryId,currentTurn){
+      const cacheKey=String(requesterId)+'::'+String(countryId)+'::'+String(currentTurn??this.lastTurn)+'::'+String(this._knowledgeRevision);
+      if(this._knowledgeCache?.key===cacheKey)return this._knowledgeCache.value;
+      const peerStates={};
+      for(const id of this.ids)peerStates[id]=this.getPeerState(requesterId,id,countryId,{currentTurn});
+      const government=this._governmentLedger(countryId,currentTurn);
+      const nationalState=this._nationalState(countryId,currentTurn);
+      const value=deepFreeze({
+        revision:this._knowledgeRevision,
+        requesterMinistryId:String(requesterId),
+        countryId:String(countryId).trim().toUpperCase(),
+        currentTurn:currentTurn??this.lastTurn,
+        ownState:peerStates[String(requesterId)],
+        peerStates,
+        governmentLedger:government,
+        nationalState,
+        knownDataGaps:this._collectKnownGaps(peerStates),
+        incomingMessages:deepFreeze(this.getMinistryInbox(countryId,requesterId).slice(-25))
+      });
+      this._knowledgeCache={key:cacheKey,value};
+      return value;
+    }
+
+    _collectKnownGaps(peerStates){
+      const out=[];
+      for(const [id,state] of Object.entries(peerStates||{})){
+        for(const gap of state?.knownDataGaps||[])out.push({ministryId:id,...gap});
+      }
+      return out.slice(-256);
+    }
+
+    _nationalState(countryId,currentTurn){
+      let record=null;
+      try{record=this.provider?.countryRecord?.(countryId)||null;}catch(_){}
+      const domains=[];
+      for(const id of this.ids){
+        const snapshot=this.snapshots.get(snapshotKey(countryId,id));
+        if(snapshot)domains.push({ministryId:id,available:true,turn:snapshot.simulationTurn,revision:snapshot.stateRevision});
+        else domains.push({ministryId:id,available:false,turn:null,revision:null});
+      }
+      return {
+        countryId:String(countryId).trim().toUpperCase(),
+        countryName:record?.name||record?.officialName||record?.names?.[0]||null,
+        simulationTurn:currentTurn??this.lastTurn,
+        ministryDomains:domains
+      };
+    }
+
+    _governmentLedger(countryId,currentTurn){
+      const financial=[];
+      const budgetRequests=[];
+      const projects=[];
+      const constraints=[];
+      const alerts=[];
+      const staleSnapshots=[];
+      for(const id of this.ids){
+        const snap=this.snapshots.get(snapshotKey(countryId,id));
+        if(snap){
+          financial.push({
+            ministryId:id,
+            fiscal:clone(snap.fiscal),
+            stateRevision:snap.stateRevision,
+            simulationTurn:snap.simulationTurn
+          });
+          const filtered=this._filterSnapshotFor('cabinet',id,snap,currentTurn);
+          if(filtered.freshness?.status===AVAILABILITY.STALE)staleSnapshots.push(id);
+          for(const request of filtered.requests?.budget||[])budgetRequests.push(request);
+          for(const item of filtered.constraints||[])constraints.push({...item,sourceMinistryId:id});
+          for(const item of filtered.alerts||[])alerts.push({...item,sourceMinistryId:id});
+          if(filtered.projects?.knownCount!==null&&filtered.projects?.knownCount!==undefined){
+            projects.push({ministryId:id,knownCount:filtered.projects.knownCount});
+          }
+        }
+      }
+      for(const row of this._getBudgetRequestsForCountry(countryId))budgetRequests.push(row);
+      for(const row of this._getProjectsForCountry(countryId))projects.push(row);
+      return {
+        countryId,
+        currentTurn:currentTurn??this.lastTurn,
+        financial,
+        budgetRequests:dedupeRecords(budgetRequests),
+        projects:dedupeRecords(projects),
+        constraints:dedupeRecords(constraints),
+        alerts:dedupeRecords(alerts),
+        staleSnapshots:[...new Set(staleSnapshots)],
+        pendingRequests:this.getPendingRequests(countryId)
+      };
+    }
+
+    getMinistryBriefing(ministryId,countryId,options={}){
+      const readModel=this._getKnowledgeReadModel(
+        String(ministryId),
+        String(countryId).trim().toUpperCase(),
+        Number.isFinite(Number(options.currentTurn))?Number(options.currentTurn):this.lastTurn
+      );
+      return clone({
+        schemaVersion:2,
+        ministryId:readModel.requesterMinistryId,
+        countryId:readModel.countryId,
+        generatedTurn:readModel.currentTurn,
+        knowledgeRevision:readModel.revision,
+        ownState:readModel.ownState,
+        peerStates:readModel.peerStates,
+        governmentLedger:readModel.governmentLedger,
+        nationalState:readModel.nationalState,
+        knownDataGaps:readModel.knownDataGaps,
+        incomingMessages:readModel.incomingMessages,
+        pendingRequests:this.getPendingRequests(readModel.countryId,readModel.requesterMinistryId)
       });
     }
 
     getContext(ministryId,options={}){
-      ministryId=String(ministryId);
-      const cache=this._getKnowledgeCache();
-      const port=this.createPort(ministryId);
-      const inbox=this._knowledgeBucket(ministryId).inbox.slice(-25);
+      const id=String(ministryId||'');
+      const countryId=String(options.countryId||'').trim().toUpperCase();
+      if(!this.ids.includes(id)||!countryId)return null;
+      const turn=Number.isFinite(Number(options.turn))?Number(options.turn):this.lastTurn;
+      const readModel=this._getKnowledgeReadModel(id,countryId,turn);
+      return deepFreeze({
+        ministryId:id,
+        countryId,
+        turn,
+        dt:number(options.dt)??0,
+        mesh:this.createPort(id,countryId),
+        ownState:readModel.ownState,
+        peerStates:readModel.peerStates,
+        nationalState:readModel.nationalState,
+        governmentLedger:readModel.governmentLedger,
+        incomingMessages:readModel.incomingMessages,
+        pendingRequests:this.getPendingRequests(countryId,id),
+        alerts:readModel.ownState?.alerts||[],
+        constraints:readModel.ownState?.constraints||[],
+        knownDataGaps:readModel.knownDataGaps,
+        decisionContext:null,
+        knowledgeRevision:readModel.revision
+      });
+    }
 
+    createPort(source,countryId){
+      const src=String(source||'');
+      const c=String(countryId||'').trim().toUpperCase();
+      if(!this.ids.includes(src)||!c)throw new Error('INVALID_MINISTRY_PORT');
+      const self=this;
       return Object.freeze({
-        ministryId,
-        turn:Number.isFinite(Number(options.turn))?Number(options.turn):this.lastTurn,
-        dt:number(options.dt)||0,
-        mesh:port,
-        knowledgeRevision:cache.revision,
-        nationalPicture:cache.nationalPicture,
-        government:cache.government,
-        incomingMessages:clone(inbox),
-        decisionSupport:{
-          tradeAgreement:this.evaluateAction('trade','CONCLUDE_TRADE_AGREEMENT')
-        }
+        ministryId:src,
+        countryId:c,
+        send(target,topic,payload={},options={}){return self.send(src,target,topic,payload,{...options,countryId:c});},
+        broadcast(targets,topic,payload={},options={}){return self.broadcast(src,targets,topic,payload,{...options,countryId:c});},
+        request(target,topic,payload={},options={}){return self.request(src,target,topic,payload,{...options,countryId:c});},
+        reply(message,topic,payload={},options={}){return self.reply(src,message,topic,payload,{...options,countryId:c});},
+        acknowledge(message,options={}){return self.acknowledge(src,message,{...options,countryId:c});},
+        getPeer(target,options={}){return self.getPeerState(src,target,c,{currentTurn:options.currentTurn??self.lastTurn});},
+        getNationalBriefing(options={}){return self.getMinistryBriefing(src,c,options);},
+        getDecisionContext(actionId,options={}){return self.evaluateAction(src,actionId,{...options,countryId:c});},
+        dispatchCommand(actionId,payload={},options={}){return self.dispatchCommand(src,actionId,c,payload,options);},
+        emitEvent(eventType,payload={},options={}){return self.emitEvent(eventType,c,src,payload,options);}
       });
     }
 
-    evaluateAction(ministryId,action,options={}){
-      ministryId=String(ministryId);
-      const actionId=String(action||'GENERAL_ACTION').toUpperCase();
-      if(!ID_SET.has(ministryId)) return {status:'UNKNOWN',reason:'UNKNOWN_MINISTRY'};
-
-      if(actionId==='CONCLUDE_TRADE_AGREEMENT' && ministryId==='trade'){
-        return this._evaluateTradeAgreement();
+    evaluateAction(ministryId,actionId,options={}){
+      const id=String(ministryId||'');
+      const countryId=String(options.countryId||'').trim().toUpperCase();
+      if(!this.ids.includes(id))return {status:'UNKNOWN',reason:'UNKNOWN_MINISTRY',ministryId:id,countryId};
+      const briefing=this.getMinistryBriefing(id,countryId,{currentTurn:options.currentTurn??this.lastTurn});
+      const framework=this.decisionFramework||global.OmegaMinistryDecisionFramework?.instance||null;
+      if(!framework||typeof framework.evaluate!=='function'){
+        return {status:'UNKNOWN',actionId:String(actionId||''),ministryId:id,countryId,reason:'DECISION_FRAMEWORK_UNAVAILABLE'};
       }
+      const result=framework.evaluate({
+        ministryId:id,
+        actionId:String(actionId||''),
+        countryId,
+        currentTurn:options.currentTurn??this.lastTurn,
+        briefing,
+        requirements:Array.isArray(options.requirements)?options.requirements:undefined
+      });
+      this.metrics.decisionEvaluations+=1;
+      return clone(result);
+    }
 
-      const required=Array.isArray(options.requirements)?options.requirements:[];
-      const evidence=[];
-      const missing=[];
-      for(const req of required){
-        const target=String(req.ministry||'');
-        const snapshot=this.snapshots.get(target);
-        const value=readPath(snapshot,req.path);
-        if(value===undefined || value===null){
-          missing.push({ministryId:target,path:req.path});
-          continue;
-        }
-        evidence.push({ministryId:target,path:req.path,value:clone(value)});
-      }
-      return {
-        status:missing.length ? 'UNKNOWN' : 'OBSERVED',
-        action:actionId,
-        evidence,
-        missing
+    registerAction(actionId,definition){
+      const framework=this.decisionFramework||global.OmegaMinistryDecisionFramework?.instance;
+      if(!framework?.registerAction)throw new Error('DECISION_FRAMEWORK_UNAVAILABLE');
+      return framework.registerAction(actionId,definition);
+    }
+
+    registerCommandHandler(commandType,ownerMinistry,handler){
+      const owner=String(ownerMinistry||'');
+      if(!this.ids.includes(owner))throw new Error('COMMAND_OWNER_UNKNOWN:'+owner);
+      if(typeof handler!=='function')throw new Error('COMMAND_HANDLER_REQUIRED');
+      this.commandHandlers.set(String(commandType),{ownerMinistry:owner,handler});
+      return {commandType:String(commandType),ownerMinistry:owner};
+    }
+
+    dispatchCommand(sourceMinistry,actionId,countryId,payload={},options={}){
+      const source=String(sourceMinistry||'');
+      const country=String(countryId||'').trim().toUpperCase();
+      if(!this.ids.includes(source)||!country)throw new Error('INVALID_COMMAND_SOURCE_OR_COUNTRY');
+      const turn=Number.isFinite(Number(options.turn))?Number(options.turn):this.lastTurn;
+      this._commandSequence+=1;
+      const commandId=String(options.commandId||('OMI-CMD-'+String(turn)+'-'+String(this._commandSequence)));
+      const commandType=String(options.commandType||actionId||'');
+      const handler=this.commandHandlers.get(commandType)||null;
+      const action=this.decisionFramework?.getAction?.(String(actionId||''))||null;
+      if(options.ownerMinistry&&handler&&String(options.ownerMinistry)!==handler.ownerMinistry)throw new Error('COMMAND_OWNER_MISMATCH');
+
+      const command=Object.freeze({
+        schemaVersion:1,
+        commandId,
+        commandType,
+        actionId:String(actionId||''),
+        sourceMinistryId:source,
+        countryId:country,
+        simulationTurn:turn,
+        stateOwnerMinistryId:handler?.ownerMinistry||options.ownerMinistry||action?.stateOwnerMinistry||null,
+        payload:clone(payload),
+        correlationId:options.correlationId?String(options.correlationId):null,
+        causationId:options.causationId?String(options.causationId):null,
+        provenance:clone(options.provenance||null)
+      });
+
+      const row={
+        ...clone(command),
+        status:'CREATED',
+        statusHistory:[{status:'CREATED',simulationTurn:turn}],
+        result:null,
+        requiresRepublish:true
       };
-    }
+      this.commands.set(commandId,row);
+      this.metrics.commands+=1;
 
-    _evaluateTradeAgreement(){
-      const foreign=this.snapshots.get('foreign')||null;
-      const trade=this.snapshots.get('trade')||null;
-      const economy=this.snapshots.get('economy')||null;
-      const finance=this.snapshots.get('finance')||null;
-      const transport=this.snapshots.get('transport')||null;
-      const intelligence=this.snapshots.get('intelligence')||null;
-
-      const evidence=[];
-      const missing=[];
-      const blockers=[];
-
-      const treaty=fact(foreign,'foreign.treaties') ?? fact(trade,'trade.relations');
-      const sanctions=fact(foreign,'foreign.sanctions');
-      const relation=fact(foreign,'foreign.relations') ?? fact(trade,'trade.relations');
-      const tradeBalance=trade?.fiscal?.revenue ?? fact(trade,'trade.balance') ?? fact(trade,'trade.exports');
-      const logistics=fact(transport,'transport.logistics');
-      const fiscalReserves=finance?.fiscal?.reserves ?? null;
-      const threat=fact(intelligence,'intelligence.threats');
-
-      const checks=[
-        ['foreign.treatyStatus',treaty],
-        ['foreign.sanctions',sanctions],
-        ['foreign.relationScore',relation],
-        ['transport.logisticsCapacity',logistics],
-        ['finance.reserves',fiscalReserves],
-        ['intelligence.externalThreat',threat]
-      ];
-
-      for(const [path,value] of checks){
-        if(value===undefined || value===null){
-          missing.push({path});
-        }else{
-          evidence.push({path,value:clone(value)});
-        }
+      if(!handler){
+        row.status='UNHANDLED';
+        row.statusHistory.push({status:'UNHANDLED',simulationTurn:turn,reason:'AUTHORITATIVE_HANDLER_NOT_REGISTERED'});
+        this._emit('OMEGA_COMMAND_UNHANDLED',{commandId,commandType,sourceMinistryId:source,countryId},turn);
+        return clone(row);
       }
 
-      if(typeof sanctions==='number' && sanctions>0) blockers.push({code:'FOREIGN_SANCTIONS',value:sanctions});
-      if(typeof relation==='number' && relation<0) blockers.push({code:'NEGATIVE_RELATION',value:relation});
-      if(typeof logistics==='number' && logistics<=0) blockers.push({code:'LOGISTICS_CAPACITY',value:logistics});
-      if(typeof threat==='number' && threat>=90) blockers.push({code:'EXTERNAL_THREAT_CRITICAL',value:threat});
+      try{
+        row.status='PROCESSING';
+        row.statusHistory.push({status:'PROCESSING',simulationTurn:turn});
+        const result=handler.handler(deepFreeze(clone(command)),{
+          countryId:country,
+          simulationTurn:turn,
+          stateProvider:this.provider,
+          emitEvent:(eventType,eventPayload={},eventOptions={})=>this.emitEvent(eventType,country,handler.ownerMinistry,eventPayload,{...eventOptions,turn,causationId:commandId})
+        });
+        row.result=clone(result);
+        row.status=result?.accepted===false?'FAILED':'APPLIED';
+        row.statusHistory.push({status:row.status,simulationTurn:turn});
+        if(result?.eventType)this.emitEvent(result.eventType,country,handler.ownerMinistry,result.eventPayload||{},{
+          turn,causationId:commandId,provenance:result.provenance||null
+        });
+        return clone(row);
+      }catch(error){
+        row.status='FAILED';
+        row.result={error:String(error?.message||error)};
+        row.statusHistory.push({status:'FAILED',simulationTurn:turn});
+        this.metrics.failed+=1;
+        return clone(row);
+      }
+    }
 
-      let status='UNKNOWN';
-      if(blockers.length) status='BLOCKED';
-      else if(missing.length) status='CONDITIONALLY_ASSESSABLE';
-      else status='OBSERVED';
+    executeCommand(sourceMinistry,commandType,countryId,payload={},options={}){
+      return this.dispatchCommand(sourceMinistry,commandType,countryId,payload,{...options,commandType});
+    }
 
-      return {
-        action:'CONCLUDE_TRADE_AGREEMENT',
-        status,
-        evidence,
-        blockers,
-        missing,
-        note:'This is a decision-context assessment from published game state. It does not invent missing diplomatic or fiscal facts.'
+    emitEvent(eventType,countryId,sourceMinistry,payload={},options={}){
+      const type=String(eventType||'');
+      const country=String(countryId||'').trim().toUpperCase();
+      const source=String(sourceMinistry||'');
+      if(!Object.prototype.hasOwnProperty.call(EVENT_TYPES,type))throw new Error('NON_CANONICAL_EVENT:'+type);
+      if(!this.ids.includes(source)||!country)throw new Error('INVALID_EVENT_SCOPE');
+      const turn=Number.isFinite(Number(options.turn))?Number(options.turn):this.lastTurn;
+      this._eventSequence+=1;
+      const eventId=String(options.eventId||('OMEGA-EVT-'+String(turn)+'-'+String(this._eventSequence)));
+      if(this.events.has(eventId))return clone(this.events.get(eventId));
+      const event={
+        schemaVersion:1,eventId,eventType:type,countryId:country,
+        sourceMinistryId:source,simulationTurn:turn,
+        causationId:options.causationId?String(options.causationId):null,
+        correlationId:options.correlationId?String(options.correlationId):null,
+        stateRevision:options.stateRevision??this.snapshots.get(snapshotKey(country,source))?.stateRevision??null,
+        payload:clone(payload),
+        provenance:clone(options.provenance||null),
+        timestamp:Date.now(),timestampIsTelemetry:true
       };
+      this.events.set(eventId,event);
+      while(this.events.size>this.maxHistory){
+        const firstKey=this.events.keys().next().value;
+        if(firstKey)this.events.delete(firstKey);else break;
+      }
+      this.metrics.events+=1;
+      try{this.bridge?.emitEvent?.(type,event);}catch(error){
+        event.transportError=String(error?.message||error);
+        this.metrics.failed+=1;
+      }
+      try{global.dispatchEvent?.(new CustomEvent(type,{detail:clone(event)}));}catch(error){
+        event.browserEventError=String(error?.message||error);
+      }
+      this._invalidateKnowledgeCache();
+      return clone(event);
     }
 
-    publishFiscalStatus(ministryId,status,options={}){
-      const ministryId0=String(ministryId);
-      this._recordFiscalStatus({
-        source:ministryId0,
-        messageId:'LOCAL-FISCAL-'+ministryId0+'-'+this.lastTurn,
-        turn:Number.isFinite(Number(options.turn))?Number(options.turn):this.lastTurn,
-        payload:status||{}
-      });
-      return this.send(
-        ministryId0,
-        String(options.target||'finance'),
-        options.topic||'ministry.fiscal.status',
-        {
-          budget:number(status?.budget),
-          allocated:number(status?.allocated),
-          committed:number(status?.committed),
-          available:number(status?.available),
-          currency:status?.currency??null,
-          evidence:clone(status?.evidence||null)
-        },
-        { ...options, messageType:MESSAGE_TYPES.FISCAL_STATUS }
-      );
+    _emit(type,payload,turn){
+      if(Object.prototype.hasOwnProperty.call(EVENT_TYPES,type)){
+        try{return this.emitEvent(type,payload?.countryId||payload?.country||null,payload?.ministryId||'cabinet',payload,{turn});}catch(_){return null;}
+      }
+      try{this.bridge?.emitEvent?.(type,payload);}catch(_){}
+      try{global.dispatchEvent?.(new CustomEvent(type,{detail:clone(payload)}));}catch(_){}
+      return null;
     }
 
-    recordBudgetRequest(ministryId,request,options={}){
-      const source=String(ministryId);
-      this._recordBudgetRequest({
-        source,
-        messageId:'LOCAL-BUDGET-'+source+'-'+this.lastTurn+'-'+String((this.budgetRequests.get(source)||[]).length+1),
-        turn:Number.isFinite(Number(options.turn))?Number(options.turn):this.lastTurn,
-        payload:request||{}
-      });
-      return this.send(
-        String(ministryId),
-        String(options.target||'finance'),
-        options.topic||'ministry.budget.request',
-        {
-          amount:number(request?.amount),
-          currency:request?.currency??null,
-          purpose:request?.purpose??null,
-          urgency:request?.urgency??'NORMAL',
-          status:request?.status??'OPEN',
-          evidence:clone(request?.evidence||null)
-        },
-        { ...options, messageType:MESSAGE_TYPES.BUDGET_REQUEST }
-      );
+    getPendingRequests(countryId,requesterMinistry=null){
+      const c=String(countryId||'').trim().toUpperCase();
+      const out=[];
+      for(const row of this.requestLedger.values()){
+        if(row?.countryId!==c)continue;
+        if(requesterMinistry&&row.sourceMinistryId!==String(requesterMinistry))continue;
+        if(['RESPONDED','EXPIRED','FAILED','REJECTED','CLOSED'].includes(String(row.status)))continue;
+        if(row.kind==='PROJECT'||row.kind==='FISCAL'||row.kind==='CONSTRAINT'||row.kind==='ALERT')continue;
+        out.push(clone(row));
+      }
+      return out.slice(-this.maxHistory);
     }
 
-    publishProjectStatus(ministryId,status,options={}){
-      const source=String(ministryId);
-      this._recordProjectSignal({
-        source,
-        messageId:'LOCAL-PROJECT-'+source+'-'+this.lastTurn+'-'+String((this.projectSignals.get(source)||[]).length+1),
-        turn:Number.isFinite(Number(options.turn))?Number(options.turn):this.lastTurn,
-        payload:status||{}
-      });
-      return this.send(
-        String(ministryId),
-        String(options.target||'cabinet'),
-        options.topic||'ministry.project.status',
-        {
-          projectId:status?.projectId??null,
-          projectCount:number(status?.projectCount),
-          activeCount:number(status?.activeCount),
-          committedBudget:number(status?.committedBudget),
-          status:status?.status??'UPDATED',
-          blockers:clone(status?.blockers||[])
-        },
-        { ...options, messageType:MESSAGE_TYPES.PROJECT_STATUS }
-      );
+    getDelivery(messageId){
+      const row=this.deliveryLedger.get(String(messageId));
+      return row?clone(row):null;
     }
 
-    publishConstraint(ministryId,constraint,options={}){
-      const source=String(ministryId);
-      this._recordConstraint({
-        source,
-        messageId:'LOCAL-CONSTRAINT-'+source+'-'+this.lastTurn+'-'+String((this.constraints.get(source)||[]).length+1),
-        turn:Number.isFinite(Number(options.turn))?Number(options.turn):this.lastTurn,
-        payload:constraint||{}
-      });
-      return this.send(
-        String(ministryId),
-        String(options.target||'cabinet'),
-        options.topic||'ministry.constraint.updated',
-        {
-          severity:constraint?.severity??'INFO',
-          code:constraint?.code??null,
-          description:constraint?.description??null,
-          blocking:constraint?.blocking===true,
-          evidence:clone(constraint?.evidence||null)
-        },
-        { ...options, messageType:MESSAGE_TYPES.CONSTRAINT_UPDATE }
-      );
-    }
-
-    connectionsFor(ministryId,direction='ALL'){
-      ministryId=String(ministryId);
-      return [...this.connections.values()]
-        .filter(r=>direction==='ALL' ? (r.source===ministryId||r.target===ministryId)
-          : direction==='OUTBOUND' ? r.source===ministryId
-          : r.target===ministryId)
-        .map(value=>clone(value));
+    getRequest(correlationId){
+      const row=this.requestLedger.get(String(correlationId));
+      return row?clone(row):null;
     }
 
     getConnection(source,target){
-      const route=this._route(String(source),String(target));
-      return route ? clone(route) : null;
+      const row=this._route(source,target);
+      return row?clone(row):null;
     }
 
-    health(){
-      const mesh=this.verifyFullMesh();
-      const initializedSnapshots=this.snapshots.size;
-      const published=IDS.filter(id=>this.snapshots.has(id)).length;
-      return {
-        version:VERSION,
-        initialized:this.initialized,
-        ministries:IDS.length,
-        connections:mesh.connectionCells,
-        expectedConnections:mesh.expectedConnections,
-        crossMinistryConnections:mesh.crossMinistryConnections,
-        loopbackConnections:mesh.loopbackConnections,
-        snapshots:initializedSnapshots,
-        publishedMinistries:published,
-        metrics:clone(this.metrics),
-        meshOk:mesh.ok
+    connectionsFor(ministryId,direction='ALL'){
+      const id=String(ministryId||'');
+      return [...this.connections.values()].filter(row=>{
+        if(direction==='OUTBOUND')return row.source===id;
+        if(direction==='INBOUND')return row.target===id;
+        return row.source===id||row.target===id;
+      }).map(clone);
+    }
+
+    publishFiscalStatus(ministryId,status={},options={}){
+      const source=String(ministryId||'');
+      const countryId=String(options.countryId||'').trim().toUpperCase();
+      if(!this.ids.includes(source)||!countryId)throw new Error('INVALID_FISCAL_PUBLICATION_SCOPE');
+      const turn=Number.isFinite(Number(options.turn))?Number(options.turn):this.lastTurn;
+      const payload={
+        budget:number(status.budget),allocated:number(status.allocated),committed:number(status.committed),
+        available:number(status.available),spent:number(status.spent),encumbered:number(status.encumbered),
+        currency:status.currency??null,evidence:clone(status.evidence||null)
       };
-    }
-
-    export(){
-      return clone({
-        version:VERSION,
-        routeSequence:this.routeSequence,
-        connections:[...this.connections.entries()],
-        snapshots:[...this.snapshots.entries()],
-        requests:[...this.requests.entries()],
-        alerts:[...this.alerts.entries()],
-        budgetRequests:[...this.budgetRequests.entries()],
-        projectSignals:[...this.projectSignals.entries()],
-        constraints:[...this.constraints.entries()],
-        fiscalReports:[...this.fiscalReports.entries()],
-        metrics:this.metrics,
-        lastTurn:this.lastTurn
+      this._recordFiscalLocal(countryId,source,payload,'LOCAL-FISCAL-'+source+'-'+turn,turn);
+      return this.send(source,String(options.target||'finance'),'ministry.fiscal.status',payload,{
+        ...options,countryId,turn,messageType:MESSAGE_TYPES.FISCAL_STATUS
       });
     }
 
-    import(data){
-      if(!data || typeof data!=='object') throw new Error('INVALID_INTEROPERABILITY_SNAPSHOT');
-      this.routeSequence=number(data.routeSequence)||0;
-      this.lastTurn=number(data.lastTurn)||0;
-      if(Array.isArray(data.connections)) this.connections=new Map(data.connections.map(([k,v])=>[k,clone(v)]));
-      if(!Array.isArray(data.connections) || this.connections.size!==IDS.length*IDS.length) this._buildFullMesh();
-      this.snapshots=new Map(Array.isArray(data.snapshots)?data.snapshots.map(([k,v])=>[k,clone(v)]):[]);
-      this.requests=new Map(Array.isArray(data.requests)?data.requests.map(([k,v])=>[k,clone(v)]):[]);
-      this.alerts=new Map(Array.isArray(data.alerts)?data.alerts.map(([k,v])=>[k,clone(v)]):[]);
-      this.budgetRequests=new Map(Array.isArray(data.budgetRequests)?data.budgetRequests.map(([k,v])=>[k,clone(v)]):[]);
-      this.projectSignals=new Map(Array.isArray(data.projectSignals)?data.projectSignals.map(([k,v])=>[k,clone(v)]):[]);
-      this.constraints=new Map(Array.isArray(data.constraints)?data.constraints.map(([k,v])=>[k,clone(v)]):[]);
-      this.fiscalReports=new Map(Array.isArray(data.fiscalReports)?data.fiscalReports.map(([k,v])=>[k,clone(v)]):[]);
-      this._receivedMessageIds=new Set();
-      this._invalidateKnowledgeCache();
-      this.metrics={...this.metrics,...clone(data.metrics||{})};
+    recordBudgetRequest(ministryId,request={},options={}){
+      const source=String(ministryId||'');
+      const countryId=String(options.countryId||'').trim().toUpperCase();
+      if(!this.ids.includes(source)||!countryId)throw new Error('INVALID_BUDGET_REQUEST_SCOPE');
+      const turn=Number.isFinite(Number(options.turn))?Number(options.turn):this.lastTurn;
+      this._requestSequence+=1;
+      const requestId=String(request.requestId||('BUDGET-REQ-'+String(turn)+'-'+String(this._requestSequence)));
+      const payload={
+        requestId,
+        targetMinistryId:String(options.target||'finance'),
+        requestedAmount:number(request.requestedAmount??request.amount),
+        requiredAmount:number(request.requiredAmount),
+        fundingGap:number(request.fundingGap),
+        priority:request.priority??null,
+        urgency:request.urgency??null,
+        purpose:request.purpose??null,
+        status:request.status??REQUEST_STATUS.CREATED,
+        evidence:clone(request.evidence||null)
+      };
+      const message=this.send(source,payload.targetMinistryId,'ministry.budget.request',payload,{
+        ...options,countryId,turn,messageType:MESSAGE_TYPES.BUDGET_REQUEST
+      });
+      this._recordBudgetLocal(countryId,source,payload,message.messageId,turn);
+      this.emitEvent(EVENT_TYPES.BUDGET_REQUESTED,countryId,source,payload,{
+        turn,causationId:message.messageId,provenance:payload.evidence
+      });
+      return message;
     }
+
+    publishProjectStatus(ministryId,status={},options={}){
+      const source=String(ministryId||'');
+      const countryId=String(options.countryId||'').trim().toUpperCase();
+      if(!this.ids.includes(source)||!countryId)throw new Error('INVALID_PROJECT_PUBLICATION_SCOPE');
+      const turn=Number.isFinite(Number(options.turn))?Number(options.turn):this.lastTurn;
+      const payload={
+        projectId:status.projectId??null,ownerMinistry:status.ownerMinistry||source,
+        status:status.status??null,phase:status.phase??null,
+        cost:number(status.cost),allocatedFunding:number(status.allocatedFunding),
+        committedFunding:number(status.committedFunding),spentFunding:number(status.spentFunding),
+        remainingFunding:number(status.remainingFunding),completion:number(status.completion),
+        startDate:status.startDate??null,targetDate:status.targetDate??null,
+        dependencies:clone(status.dependencies||[]),blockers:clone(status.blockers||[]),
+        requiredApprovals:clone(status.requiredApprovals||[]),linkedMinistries:clone(status.linkedMinistries||[])
+      };
+      const message=this.send(source,String(options.target||'cabinet'),'ministry.project.status',payload,{
+        ...options,countryId,turn,messageType:MESSAGE_TYPES.PROJECT_STATUS
+      });
+      this._recordProjectLocal(countryId,source,payload,message.messageId,turn);
+      if(payload.status==='STARTED')this.emitEvent(EVENT_TYPES.PROJECT_STARTED,countryId,source,payload,{turn,causationId:message.messageId});
+      if(payload.status==='BLOCKED')this.emitEvent(EVENT_TYPES.PROJECT_BLOCKED,countryId,source,payload,{turn,causationId:message.messageId});
+      if(payload.status==='COMPLETED')this.emitEvent(EVENT_TYPES.PROJECT_COMPLETED,countryId,source,payload,{turn,causationId:message.messageId});
+      return message;
+    }
+
+    publishConstraint(ministryId,constraint={},options={}){
+      const source=String(ministryId||'');
+      const countryId=String(options.countryId||'').trim().toUpperCase();
+      const turn=Number.isFinite(Number(options.turn))?Number(options.turn):this.lastTurn;
+      const payload={
+        severity:constraint.severity??'INFO',code:constraint.code??null,
+        description:constraint.description??null,blocking:constraint.blocking===true,
+        evidence:clone(constraint.evidence||null)
+      };
+      const message=this.send(source,String(options.target||'cabinet'),'ministry.constraint.updated',payload,{
+        ...options,countryId,turn,messageType:MESSAGE_TYPES.CONSTRAINT_UPDATE
+      });
+      this._recordConstraintLocal(countryId,source,payload,message.messageId,turn);
+      return message;
+    }
+
+    publishAlert(ministryId,alert={},options={}){
+      const source=String(ministryId||'');
+      const countryId=String(options.countryId||'').trim().toUpperCase();
+      const turn=Number.isFinite(Number(options.turn))?Number(options.turn):this.lastTurn;
+      const payload={priority:alert.priority??'NORMAL',topic:alert.topic??null,evidence:clone(alert.evidence||null),...clone(alert)};
+      const message=this.send(source,String(options.target||'cabinet'),'ministry.alert',payload,{
+        ...options,countryId,turn,messageType:MESSAGE_TYPES.ALERT
+      });
+      this._recordAlertLocal(countryId,source,payload,message.messageId,turn);
+      return message;
+    }
+
+    _ingestMessage(message){
+      const type=String(message.messageType||MESSAGE_TYPES.STATE_UPDATE);
+      const countryId=String(message.countryId||'').trim().toUpperCase();
+      const source=String(message.sourceMinistryId||message.source||'');
+      if(type===MESSAGE_TYPES.BUDGET_REQUEST)this._recordBudgetLocal(countryId,source,message.payload||{},message.messageId,message.simulationTurn);
+      if(type===MESSAGE_TYPES.PROJECT_STATUS)this._recordProjectLocal(countryId,source,message.payload||{},message.messageId,message.simulationTurn);
+      if(type===MESSAGE_TYPES.FISCAL_STATUS)this._recordFiscalLocal(countryId,source,message.payload||{},message.messageId,message.simulationTurn);
+      if(type===MESSAGE_TYPES.CONSTRAINT_UPDATE)this._recordConstraintLocal(countryId,source,message.payload||{},message.messageId,message.simulationTurn);
+      if(type===MESSAGE_TYPES.ALERT)this._recordAlertLocal(countryId,source,message.payload||{},message.messageId,message.simulationTurn);
+      this._invalidateKnowledgeCache();
+    }
+
+    processIncoming(countryId,targetId,message,currentTurn,processor){
+      const accepted=this.acceptMessage(countryId,targetId,message,currentTurn);
+      if(!accepted.ok)return accepted;
+      this.beginProcessing(message.messageId,currentTurn);
+      this._ingestMessage(accepted.message);
+      try{
+        const result=typeof processor==='function'?processor(accepted.message):{accepted:true};
+        this.completeProcessing(message.messageId,true,currentTurn);
+        return {ok:true,status:DELIVERY_STATUS.PROCESSED,message:accepted.message,result:clone(result)};
+      }catch(error){
+        this.completeProcessing(message.messageId,false,currentTurn,String(error?.message||error));
+        return {ok:false,status:DELIVERY_STATUS.FAILED,error:String(error?.message||error)};
+      }
+    }
+
+    diagnostics(countryId=null,currentTurn=this.lastTurn){
+      const structure=this.verifyStructure();
+      let available=0,missing=0,stale=0,invalid=0,unobserved=0,estimated=0;
+      for(const snapshot of this.snapshots.values()){
+        if(countryId&&snapshot.countryId!==String(countryId).trim().toUpperCase())continue;
+        const counts=snapshot.dataAvailability||{};
+        available+=Number(counts.AVAILABLE||0);
+        missing+=Number(counts.UNAVAILABLE||0);
+        stale+=Number(counts.STALE||0);
+        invalid+=Number(counts.INVALID||0);
+        unobserved+=Number(counts.UNOBSERVED||0);
+        estimated+=Number(counts.ESTIMATED||0);
+      }
+      const behaviorPass=this.metrics.sent>0&&this.metrics.delivered===this.metrics.sent&&this.metrics.rejected===0&&this.metrics.dropped===0;
+      return {
+        version:VERSION,
+        structure:{
+          status:structure.pass?'PASS':'FAIL',
+          ...structure
+        },
+        behavior:{
+          status:behaviorPass?'PASS':'NOT_YET_VERIFIED',
+          messagesSent:this.metrics.sent,
+          messagesDelivered:this.metrics.delivered,
+          messagesAccepted:this.metrics.accepted,
+          messagesProcessed:this.metrics.processed,
+          messagesRejected:this.metrics.rejected,
+          messagesDropped:this.metrics.dropped,
+          messagesDuplicated:this.metrics.duplicate,
+          messagesExpired:this.metrics.expired,
+          failed:this.metrics.failed
+        },
+        data:{
+          status:'DIAGNOSTIC_ONLY',
+          available,missing,stale,invalid,unobserved,estimated
+        },
+        requests:{
+          pending:countryId?this.getPendingRequests(countryId).length:0,
+          total:this.requestLedger.size
+        },
+        decisions:{
+          evaluations:this.metrics.decisionEvaluations
+        },
+        commands:{
+          total:this.commands.size
+        },
+        events:{
+          total:this.events.size
+        },
+        countryId:countryId?String(countryId).trim().toUpperCase():null,
+        simulationTurn:currentTurn,
+        notes:[
+          'Architecture readiness and data completeness are intentionally reported separately.',
+          'Telemetry timestamps are not used to influence simulation outcomes.'
+        ]
+      };
+    }
+
+    health(countryId=null,currentTurn=this.lastTurn){
+      return this.diagnostics(countryId,currentTurn);
+    }
+
+    saveState(){
+      return this.exportState();
+    }
+
+    exportState(){
+      const inboxes={};
+      for(const [id,list] of this.inboxes.entries())inboxes[id]=clone(list);
+      const snapshots={};
+      for(const [key,row] of this.snapshots.entries())snapshots[key]=clone(row);
+      const delivery={};
+      for(const [key,row] of this.deliveryLedger.entries())delivery[key]=clone(row);
+      const requests={};
+      for(const [key,row] of this.requestLedger.entries())requests[key]=clone(row);
+      const events={};
+      for(const [key,row] of this.events.entries())events[key]=clone(row);
+      const commands={};
+      for(const [key,row] of this.commands.entries())commands[key]=clone(row);
+      return {
+        schemaVersion:2,
+        version:VERSION,
+        ids:this.ids.slice(),
+        lastTurn:this.lastTurn,
+        sequences:{
+          message:this._messageSequence,request:this._requestSequence,
+          event:this._eventSequence,command:this._commandSequence
+        },
+        metrics:clone(this.metrics),
+        inboxes,snapshots,deliveryLedger:delivery,requestLedger:requests,
+        events,commands
+      };
+    }
+
+    loadState(state){
+      if(!state||typeof state!=='object')throw new Error('INVALID_INTEROPERABILITY_SAVE');
+      const incomingIds=Array.isArray(state.ids)?state.ids.map(String):[];
+      if(incomingIds.length&&incomingIds.some(id=>!this.ids.includes(id)))throw new Error('SAVE_MINISTRY_REGISTRY_MISMATCH');
+      this.lastTurn=number(state.lastTurn)||0;
+      this._messageSequence=number(state.sequences?.message)||0;
+      this._requestSequence=number(state.sequences?.request)||0;
+      this._eventSequence=number(state.sequences?.event)||0;
+      this._commandSequence=number(state.sequences?.command)||0;
+      this.metrics={...this.metrics,...clone(state.metrics||{})};
+      for(const id of this.ids)this.inboxes.set(id,clone(state.inboxes?.[id]||[]).slice(0,this.maxInbox));
+      this.snapshots=new Map(Object.entries(state.snapshots||{}).map(([k,v])=>[k,clone(v)]));
+      this.deliveryLedger=new Map(Object.entries(state.deliveryLedger||{}).map(([k,v])=>[k,clone(v)]));
+      this.requestLedger=new Map(Object.entries(state.requestLedger||{}).map(([k,v])=>[k,clone(v)]));
+      this.events=new Map(Object.entries(state.events||{}).map(([k,v])=>[k,clone(v)]));
+      this.commands=new Map(Object.entries(state.commands||{}).map(([k,v])=>[k,clone(v)]));
+      this._receivedMessageIds=new Set();
+      for(const [id,row] of this.deliveryLedger.entries())if(['ACCEPTED','PROCESSING','PROCESSED','RESPONDED'].includes(row.status))this._receivedMessageIds.add(id);
+      this._invalidateKnowledgeCache();
+      return true;
+    }
+
+    restoreState(state){return this.loadState(state);}
+
+    export(){return this.exportState();}
+    import(state){return this.loadState(state);}
   }
 
   function unwrapMessage(message){
-    if(!message || typeof message!=='object') return null;
-    if(message.data && typeof message.data==='object' && message.data.messageId) return message.data;
-    return message.messageId ? message : null;
+    if(!message||typeof message!=='object')return null;
+    if(message.data&&typeof message.data==='object'&&message.data.messageId)return message.data;
+    return message.messageId?message:null;
   }
 
-  const api = new MinistryInteroperabilitySystem();
-  global.Omega = global.Omega || {};
-  global.Omega.MinistryInteroperability = api;
-  global.Omega.MinistryMesh = api;
-  global.OmegaMinistryInteroperability = api;
+  function dedupeRecords(rows){
+    const seen=new Set(),out=[];
+    for(const row of rows||[]){
+      const key=String(row?.requestId||row?.projectId||row?.messageId||JSON.stringify(row));
+      if(seen.has(key))continue;
+      seen.add(key);out.push(row);
+    }
+    return out;
+  }
+
+  const apiInstance=new MinistryInteroperabilitySystem();
+
+  const api=Object.freeze({
+    VERSION,
+    Availability:AVAILABILITY,
+    Visibility:VISIBILITY,
+    MessageTypes:MESSAGE_TYPES,
+    DeliveryStatus:DELIVERY_STATUS,
+    RequestStatus:REQUEST_STATUS,
+    EventTypes:EVENT_TYPES,
+    instance:apiInstance,
+    configure:options=>apiInstance.configure(options),
+    init:(kernelOrBridge,options={})=>apiInstance.init(kernelOrBridge,options),
+    verifyFullMesh:()=>apiInstance.verifyFullMesh(),
+    health:(countryId,currentTurn)=>apiInstance.health(countryId,currentTurn),
+    diagnostics:(countryId,currentTurn)=>apiInstance.diagnostics(countryId,currentTurn),
+    getConnection:(source,target)=>apiInstance.getConnection(source,target),
+    connectionsFor:(ministry,direction)=>apiInstance.connectionsFor(ministry,direction),
+    createPort:(source,countryId)=>apiInstance.createPort(source,countryId),
+    send:(source,target,topic,payload,options)=>apiInstance.send(source,target,topic,payload,options),
+    broadcast:(source,targets,topic,payload,options)=>apiInstance.broadcast(source,targets,topic,payload,options),
+    request:(source,target,topic,payload,options)=>apiInstance.request(source,target,topic,payload,options),
+    reply:(source,message,topic,payload,options)=>apiInstance.reply(source,message,topic,payload,options),
+    acknowledge:(source,message,options)=>apiInstance.acknowledge(source,message,options),
+    acceptMessage:(...args)=>apiInstance.acceptMessage(...args),
+    beginProcessing:(...args)=>apiInstance.beginProcessing(...args),
+    completeProcessing:(...args)=>apiInstance.completeProcessing(...args),
+    processIncoming:(...args)=>apiInstance.processIncoming(...args),
+    drainInbox:(...args)=>apiInstance.drainInbox(...args),
+    getMinistryInbox:(...args)=>apiInstance.getMinistryInbox(...args),
+    publishState:(...args)=>apiInstance.publishState(...args),
+    getPeerState:(...args)=>apiInstance.getPeerState(...args),
+    getMinistryBriefing:(...args)=>apiInstance.getMinistryBriefing(...args),
+    getContext:(...args)=>apiInstance.getContext(...args),
+    evaluateAction:(...args)=>apiInstance.evaluateAction(...args),
+    registerAction:(...args)=>apiInstance.registerAction(...args),
+    registerCommandHandler:(...args)=>apiInstance.registerCommandHandler(...args),
+    dispatchCommand:(...args)=>apiInstance.dispatchCommand(...args),
+    executeCommand:(...args)=>apiInstance.executeCommand(...args),
+    emitEvent:(...args)=>apiInstance.emitEvent(...args),
+    publishFiscalStatus:(...args)=>apiInstance.publishFiscalStatus(...args),
+    recordBudgetRequest:(...args)=>apiInstance.recordBudgetRequest(...args),
+    publishProjectStatus:(...args)=>apiInstance.publishProjectStatus(...args),
+    publishConstraint:(...args)=>apiInstance.publishConstraint(...args),
+    publishAlert:(...args)=>apiInstance.publishAlert(...args),
+    getDelivery:(...args)=>apiInstance.getDelivery(...args),
+    getRequest:(...args)=>apiInstance.getRequest(...args),
+    getPendingRequests:(...args)=>apiInstance.getPendingRequests(...args),
+    saveState:()=>apiInstance.saveState(),
+    loadState:state=>apiInstance.loadState(state),
+    export:()=>apiInstance.export(),
+    import:state=>apiInstance.import(state)
+  });
+
+  global.Omega=global.Omega||{};
+  global.Omega.MinistryInteroperability=api;
+  global.Omega.MinistryMesh=api;
+  global.OmegaMinistryInteroperability=api;
+  global.OmegaMinistryMesh=api;
 })(typeof window!=='undefined'?window:globalThis);
