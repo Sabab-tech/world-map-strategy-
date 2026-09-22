@@ -171,7 +171,9 @@ window.initializeWorldGameDatabase = function() {
         }
 
         const provider=window.OmegaMinistryStateProvider?.instance||window.Omega?.MinistryStateProvider?.instance||null;
+        const authority=window.OmegaAuthoritativeStateAuthority?.instance||window.Omega?.AuthoritativeStateAuthority?.instance||null;
         if(!provider)throw new Error('MINISTRY_STATE_PROVIDER_UNAVAILABLE');
+        if(!authority?.bind?.(window.Game.state))throw new Error('AUTHORITATIVE_GAME_STATE_BIND_FAILED');
 
         const popData = await fetcher('population.json');
         if (popData) {
@@ -184,9 +186,6 @@ window.initializeWorldGameDatabase = function() {
             provider.hydrateDataset(econData,'economy',{strict:true});
             console.log('Economy Engine Database Sync Ready.');
         }
-
-        const authority=window.OmegaAuthoritativeStateAuthority?.instance||window.Omega?.AuthoritativeStateAuthority?.instance||null;
-        if(!authority?.bind?.(window.Game.state))throw new Error('AUTHORITATIVE_GAME_STATE_BIND_FAILED');
 
         if (window.ResourceMinistryEngine && typeof window.ResourceMinistryEngine.init === 'function') {
             await window.ResourceMinistryEngine.init();
@@ -205,8 +204,9 @@ window.initializeWorldGameDatabase = function() {
             });
         }
         if (window.updateGlobalResourceHUD) window.updateGlobalResourceHUD();
+        authority.lockInitialization?.(Number(window.Game.state.simulationTurn??window.Game.worldState?.turn??0));
         window.__OMEGA_DATA_READY__ = true;
-        window.dispatchEvent?.(new CustomEvent('OMEGA_DATA_CONTRACT_READY',{detail:{
+        window.dispatchEvent?.(new CustomEvent('OMEGA_BASE_DATA_READY',{detail:{
             schemaVersion:window.OmegaGameStateContract.schemaVersion,
             countryCount:Object.keys(window.Game.state.economy||{}).length
         }}));
