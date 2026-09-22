@@ -187,21 +187,22 @@
           }
         }
       }
+      const authority=this.authority();
+      if(!authority?.hydrateCountryDomain)throw new Error('AUTHORITATIVE_STATE_AUTHORITY_UNAVAILABLE');
+      const result=authority.hydrateCountryDomain(
+        d,
+        rows.map(([id,row,sourceKey=''])=>({countryId:id,value:row,sourceKey:String(sourceKey||'')})),
+        {replace:options.replace!==false,allowHotPlug:options.allowHotPlug===true}
+      );
       const state=this.root();
-      if(!state[d]||typeof state[d]!=='object')state[d]={};
-      const written=[];
-      const aliases=new Map();
-      for(const [id,row,sourceKey=''] of rows){
-        state[d][id]=row;
-        written.push(id);
-        const rawKey=String(sourceKey||'').trim();
-        if(rawKey&&rawKey!==id)aliases.set(rawKey,id);
-      }
+      if(!state[d]||typeof state[d]!=='object')throw new Error('STATE_DOMAIN_HYDRATION_FAILED');
       // Non-enumerable compatibility aliases keep legacy UI reads working without
-      // duplicating authoritative country records or polluting canonical iteration.
-      for(const [alias,id] of aliases){
+      // duplicating authoritative country records or changing canonical iteration.
+      for(const [id,row,sourceKey=''] of rows){
+        const rawKey=String(sourceKey||'').trim();
+        if(!rawKey||rawKey===id)continue;
         try{
-          Object.defineProperty(state[d],alias,{
+          Object.defineProperty(state[d],rawKey,{
             configurable:true,
             enumerable:false,
             get(){return state[d][id];},
