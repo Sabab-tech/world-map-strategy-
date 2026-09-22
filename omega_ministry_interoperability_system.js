@@ -1491,25 +1491,28 @@
         row.result=clone(result);
         row.status=result?.accepted===false?'FAILED':'APPLIED';
         row.stateChanged=Boolean(row.transaction?.changed);
-        if(row.transaction?.afterRevision)row.stateRevisionAfter=row.transaction.afterRevision;
+        const authoritativeDomainRevision=row.stateChanged
+          ? (authority?.revision?.(country,handler.ownerMinistry)||row.transaction?.afterRevision||null)
+          : null;
+        if(authoritativeDomainRevision)row.stateRevisionAfter=authoritativeDomainRevision;
         if(row.stateChanged){
           row.requiresRepublish=true;
           this.dirtyPublications.set(snapshotKey(country,handler.ownerMinistry),{
             countryId:country,
             ministryId:handler.ownerMinistry,
             simulationTurn:turn,
-            stateRevision:row.transaction.afterRevision,
+            stateRevision:authoritativeDomainRevision,
             changedPaths:(row.transaction.operations||[]).map(op=>op.path).slice(0,64),
             causationId:commandId
           });
           this._broadcastStateChangeNotice(
-            country,handler.ownerMinistry,turn,row.transaction.afterRevision,
+            country,handler.ownerMinistry,turn,authoritativeDomainRevision,
             (row.transaction.operations||[]).map(op=>op.path),
             commandId,row.provenance||null
           );
           this.emitEvent(EVENT_TYPES.MINISTRY_STATE_CHANGED,country,handler.ownerMinistry,{
-            commandId,stateRevision:row.transaction.afterRevision,changedPaths:(row.transaction.operations||[]).map(op=>op.path)
-          },{turn,causationId:commandId});
+            commandId,stateRevision:authoritativeDomainRevision,changedPaths:(row.transaction.operations||[]).map(op=>op.path)
+          },{turn,causationId:commandId,stateRevision:authoritativeDomainRevision});
         }
         row.statusHistory.push({status:row.status,simulationTurn:turn});
         if(result?.eventType)this.emitEvent(result.eventType,country,handler.ownerMinistry,result.eventPayload||{},{
