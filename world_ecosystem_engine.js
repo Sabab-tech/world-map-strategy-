@@ -617,6 +617,11 @@ _globalTarget.WorldEcosystemEngine = (() => {
                 }
             });
         }
+        return {
+            tick: currentSimulationTick,
+            advanced: true,
+            countriesProcessed: Object.keys(stateRegistry).length
+        };
     }
 
     // -------------------------------------------------------------------------
