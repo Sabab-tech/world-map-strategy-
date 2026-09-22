@@ -355,6 +355,33 @@ test('canonical government scheduler executes deterministic multi-phase turn spi
 });
 
 
+test('canonical dataset contract accepts a single country record and rejects unknown country identities in strict mode',async()=>{
+  const sandbox={
+    console,Date,JSON,Object,Number,String,RegExp,Map,Set,WeakMap,Array,Math,Promise,URL,
+    fetch:async path=>{
+      const key=String(path).replace(/^\//,'').replace(/\?.*$/,'');
+      if(key==='countries.json')return{ok:true,json:async()=>[{code:'BD',name:'Bangladesh'}]};
+      if(key==='cities.json')return{ok:true,json:async()=>({})};
+      return{ok:true,json:async()=>({})};
+    },
+    CustomEvent:class{constructor(type,init={}){this.type=type;this.detail=init.detail}},
+    dispatchEvent(){return true},addEventListener(){},removeEventListener(){},
+    Game:{state:{},currentActiveCountry:'BD'},Omega:{},OmegaCabinetUI:{}
+  };
+  sandbox.window=sandbox;sandbox.globalThis=sandbox;
+  loadBrowserScript('omega_country_semantic_bridge.js',sandbox);
+  assert.equal(await sandbox.OmegaCanonicalIdentityRegistry.init(),true);
+  loadBrowserScript('omega_ministry_registry.js',sandbox);
+  loadBrowserScript('omega_authoritative_state_authority.js',sandbox);
+  loadBrowserScript('omega_ministry_state_provider.js',sandbox);
+  const provider=sandbox.Omega.MinistryStateProvider.create({stateSource:sandbox.Game.state});
+  sandbox.Omega.MinistryStateProvider.instance=provider;
+  const single={countryId:'BD',metric:12};
+  assert.equal(provider.validateDatasetShape(single,{strict:true}).valid,true);
+  assert.equal(provider.hydrateDataset(single,'statistics',{strict:true}).countryCount,1);
+  assert.equal(sandbox.Game.state.statistics.BD.metric,12);
+  assert.throws(()=>provider.validateDatasetShape({MARS:{metric:1}},{strict:true}),/DATASET_CONTRACT_INVALID/);
+});
 test('canonical world-turn runtime processes multiple country scopes through one global turn boundary',()=>{
   const kernelStates=new Map(IDS.map(id=>[id,'RUNNING']));
   const kernel={
