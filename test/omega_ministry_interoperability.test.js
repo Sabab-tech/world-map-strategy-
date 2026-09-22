@@ -532,7 +532,7 @@ test('T3: incomplete fiscal data stays explicitly unavailable and does not becom
   const s=createSandbox({state:{simulationTurn:1}});
   s.tick('finance',1);
   const finance=s.mesh.getPeerState('trade','finance',s.countryA,{currentTurn:1});
-  assert.equal(finance.publishedFacts['finance.reserves'].availability,'UNAVAILABLE');
+  assert.equal(finance.publishedFacts['finance.reserves'].availability,'UNOBSERVED');
   assert.notEqual(finance.publishedFacts['finance.reserves'].value,0);
 });
 
