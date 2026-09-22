@@ -742,10 +742,10 @@ test('architectural knowledge contract exposes capability and authority as separ
   const s=createSandbox();
   const contract=s.sandbox.OmegaMinistryKnowledgeContract;
   const capability=contract.getCapability('trade');
-  const authority=contract.getActionAuthority(ACTION_ID);
+  const authority=contract.getActionAuthority('CONCLUDE_TRADE_AGREEMENT');
   assert.equal(capability.ministryId,'trade');
   assert.ok(capability.consume.includes('foreign'));
   assert.equal(authority.stateOwnerMinistry,'foreign');
   assert.deepEqual(authority.approvalRequirements,[]);
-  assert.equal(contract.canPerform('trade',ACTION_ID),true);
+  assert.equal(contract.canPerform('trade','CONCLUDE_TRADE_AGREEMENT'),true);
 });
