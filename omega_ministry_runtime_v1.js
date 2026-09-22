@@ -16,11 +16,12 @@
 
   const VERSION='1.2.0';
 
-  const IDS=Object.freeze([
-    'cabinet','defense','military','finance','economy','trade','foreign',
-    'intelligence','interior','transport','resource','health','education',
-    'technology','projects','culture','statistics'
-  ]);
+  const IDS=Object.freeze(
+    Array.isArray(global.OmegaMinistryRegistry?.ids)
+      ? global.OmegaMinistryRegistry.ids.map(String)
+      : []
+  );
+  if(!IDS.length) throw new Error('OMEGA_MINISTRY_REGISTRY_REQUIRED');
 
   const SPECS=Object.freeze({
     cabinet:{domain:'executive_coordination',dependencies:IDS.filter(id=>id!=='cabinet').slice(0,4)},
@@ -72,6 +73,22 @@
 
   function getInteroperability(){
     return global.OmegaMinistryInteroperability || global.Omega?.MinistryInteroperability || global.OmegaMinistryMesh || null;
+  }
+
+  function getStateProvider(){
+    return global.OmegaMinistryStateProvider?.instance || global.Omega?.MinistryStateProvider?.instance || null;
+  }
+
+  function putContextPath(root,path,value){
+    const parts=String(path||'').split('.');
+    let cursor=root;
+    for(let i=0;i<parts.length-1;i++){
+      const part=parts[i];
+      if(!cursor[part]||typeof cursor[part]!=='object')cursor[part]={};
+      cursor=cursor[part];
+    }
+    if(parts.length)cursor[parts[parts.length-1]]=value;
+    return root;
   }
 
   function pickCountryBucket(context,section){
@@ -147,55 +164,76 @@
   }
 
   function buildDomainContext(id,dt,currentTurn,store){
-    const gameState=global.Game?.state||global.gameState||null;
+    const provider=getStateProvider();
+    const state=provider?.root?.() || global.Game?.state || global.gameState || {};
     const interop=getInteroperability();
     const countryId=String(
+      store?.countryId ||
+      global.OmegaSimulation?.activeCountryId ||
       global.OmegaCabinetUI?.activeCountry ||
       global.Game?.currentActiveCountry ||
       global.CountryIOS?.activeCountry ||
-      gameState?.countryCode ||
-      gameState?.countryId ||
+      state?.countryCode ||
+      state?.countryId ||
       ''
     ).trim().toUpperCase() || null;
 
-    const economy=(gameState?.economy && countryId && (gameState.economy[countryId]||gameState.economy[global.Game?.currentActiveCountry]))||null;
-    const population=(gameState?.population && countryId && (gameState.population[countryId]||gameState.population[global.Game?.currentActiveCountry]))||null;
-    const relations=(gameState?.relations && countryId && (gameState.relations[countryId]||gameState.relations[global.Game?.currentActiveCountry]))||null;
-    const resourceEngine=global.ResourceMinistryEngine||null;
-    let resourceEngineState=null;
-    const domainSections={};
-    for(const domainId of IDS){
-      if(domainId==='cabinet') continue;
-      domainSections[domainId]=pickCountryBucket({gameState,countryId},domainId);
+    const engine=getEngineRegistry()?.get?.(id);
+    const domainContext={
+      ministryId:id,
+      countryId,
+      turn:Number.isFinite(Number(currentTurn))?Number(currentTurn):null,
+      dt:Number.isFinite(Number(dt))?Number(dt):0,
+      countryRecord:provider?.countryRecord?.(countryId)||null,
+      stateProvider:provider||null,
+      ministers:global.OmegaMinistersDB||global.OmegaCabinetUI?.ministersDB||null,
+      store:store||null,
+      interoperability:interop && countryId && typeof interop.getContext==='function'
+        ? interop.getContext(id,{countryId,turn:currentTurn,dt,store})
+        : null
+    };
+
+    const paths=Array.isArray(engine?.inputs)?engine.inputs:[];
+    for(const path of paths){
+      let value;
+      let described=null;
+      try{
+        if(provider?.describe){
+          described=provider.describe(countryId,path,{currentTurn});
+          if(described.availability!=='UNOBSERVED'&&described.availability!=='UNAVAILABLE'&&described.availability!=='NOT_APPLICABLE'){
+            value=described.value;
+          }else if(described.value!==null&&described.value!==undefined){
+            value=described.value;
+          }
+        }
+      }catch(_){}
+      if(value===undefined){
+        const direct=readContextPath(domainContext,path);
+        if(direct!==undefined)value=direct;
+      }
+      if(value!==undefined)putContextPath(domainContext,path,value);
     }
+
+    // Backward-compatible derived resource state comes through the provider,
+    // never as a second authoritative resource database.
     try{
-      if(resourceEngine && typeof resourceEngine.getIntegratedResourceState==='function' && countryId){
-        resourceEngineState=resourceEngine.getIntegratedResourceState(countryId);
+      if(domainContext.resourceEngineState===undefined && provider?.get){
+        const resourceState=provider.get(countryId,'resourceEngineState');
+        if(resourceState!==undefined)domainContext.resourceEngineState=resourceState;
       }
     }catch(_){}
 
-    return {
-      ministryId:id,
-      countryId,
-      turn:Number.isFinite(currentTurn)?currentTurn:null,
-      dt:Number.isFinite(dt)?dt:0,
-      gameState,
-      countryRecord:null,
-      ...domainSections,
-      economy,
-      population,
-      relations,
-      resourceSummary:gameState?.resources||gameState?.resource||null,
-      resourceInventory:resourceEngineState?.inventory||null,
-      resourceDeposits:resourceEngine?.deposits||null,
-      resourceEngineState,
-      ministers:global.OmegaMinistersDB||global.OmegaCabinetUI?.ministersDB||null,
-      educationEngine:global.EducationEngine||null,
-      store:store||null,
-      interoperability:interop && typeof interop.getContext==='function'
-        ? interop.getContext(id,{turn:currentTurn,dt,store})
-        : null
-    };
+    return domainContext;
+  }
+
+  function readContextPath(root,path){
+    if(root==null||!path)return undefined;
+    let cur=root;
+    for(const part of String(path).split('.')){
+      if(cur==null||!Object.prototype.hasOwnProperty.call(Object(cur),part))return undefined;
+      cur=cur[part];
+    }
+    return cur;
   }
 
   function safeDependencyStates(states,kernel,deps){
@@ -302,26 +340,16 @@
       const phase=['OBSERVE','VALIDATE','PROCESS','COMMIT'][Math.max(0,currentTurn||0)%4];
       let domainExecution;
 
-      // Drain any interoperability packets not delivered through the kernel
-      // transport adapter. The mesh itself remains the canonical delivery ledger.
-      if(interop && typeof interop.drainInbox==='function'){
-        interop.drainInbox(id,(message)=>{
+      if(interop && typeof interop.advanceTurn==='function')interop.advanceTurn(currentTurn);
+
+      if(interop && countryId && typeof interop.drainInbox==='function'){
+        interop.drainInbox(countryId,id,(message)=>{
           handleMessage(id,message);
         },100);
       }
 
       try{
         domainExecution=engine.execute(domainContext);
-        if(interoperability && typeof interoperability.publishState==='function'){
-          interoperability.publishState(id,{
-            domain:spec.domain,
-            domainExecution,
-            context:domainContext,
-            store,
-            runtimeState:s,
-            turn:currentTurn
-          });
-        }
       }catch(err){
         s.failures+=1;
         s.errors.push(String(err?.message||err));
@@ -339,6 +367,17 @@
       s.inputSources=inputSources.slice();
       s.dependencies=dependencySnapshot;
       s.phase=phase;
+
+      if(interoperability && typeof interoperability.publishState==='function' && countryId){
+        interoperability.publishState(id,{
+          domain:spec.domain,
+          domainExecution,
+          context:domainContext,
+          store,
+          runtimeState:s,
+          turn:currentTurn
+        });
+      }
 
       const telemetry={
         id,
@@ -401,30 +440,36 @@
       if(!IDS.includes(String(id))) return false;
       const targetId=String(id);
       const interop=getInteroperability();
-      let accepted={ok:true,message};
-      if(interop && typeof interop.acceptMessage==='function'){
-        accepted=interop.acceptMessage(targetId,message);
-        if(!accepted?.ok) return false;
-      }
+      const countryId=String(message?.countryId||'').trim().toUpperCase();
+      const currentTurn=Number.isFinite(Number(message?.simulationTurn??message?.turn))
+        ? Number(message.simulationTurn??message.turn)
+        : (interop?.lastTurn||0);
       const engine=getEngineRegistry()?.get?.(targetId)||null;
-      if(engine && typeof engine.handleMessage==='function'){
-        try{
-          engine.handleMessage(accepted.message || message,{
-            ministryId:targetId,
-            interoperability:interop && typeof interop.getContext==='function'
-              ? interop.getContext(targetId,{turn:accepted.message?.turn ?? null,dt:0})
-              : null
-          });
-        }catch(err){
-          const s=states.get(targetId);
-          s.failures+=1;
-          s.errors.push(String(err?.message||err));
-          if(s.errors.length>8) s.errors.shift();
-          return false;
-        }
+      if(!engine || typeof engine.handleMessage!=='function'){
+        return false;
       }
-      states.get(targetId).handledMessages+=1;
-      return true;
+
+      if(interop && typeof interop.processIncoming==='function'){
+        const result=interop.processIncoming(countryId,targetId,message,currentTurn,(accepted)=>{
+          const coordinationContext=interop.getContext?.(targetId,{countryId,turn:currentTurn,dt:0})||null;
+          return engine.handleMessage(accepted,coordinationContext);
+        });
+        if(!result?.ok)return false;
+        states.get(targetId).handledMessages+=1;
+        return true;
+      }
+
+      try{
+        engine.handleMessage(message,{ministryId:targetId,countryId,interoperability:null});
+        states.get(targetId).handledMessages+=1;
+        return true;
+      }catch(err){
+        const state=states.get(targetId);
+        state.failures+=1;
+        state.errors.push(String(err?.message||err));
+        if(state.errors.length>8)state.errors.shift();
+        return false;
+      }
     }
 
     function getIds(){ return IDS.slice(); }
