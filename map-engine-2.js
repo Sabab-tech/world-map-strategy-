@@ -1919,7 +1919,7 @@ window.loadGameCities = async function() {
 
     try {
         if (Game.DataLoader && typeof Game.DataLoader.loadAssets === 'function') {
-            Game.DataLoader.loadAssets();
+            await Game.DataLoader.loadAssets();
         }
     } catch (aErr) {
         console.error("DataLoader error:", aErr);
