@@ -878,7 +878,7 @@ test('architectural delayed-effect scheduler promotes due effects into the canon
   const prepared=s.mesh.processScheduledEffects(5);
   assert.equal(prepared.length,1);
   assert.equal(prepared[0].status,'PREPARED');
-  assert.equal(s.state.foreign[s.countryA].treaties[s.countryB],undefined);
+  assert.equal(s.state.foreign[s.countryA].treaties[s.countryB].status,'NOT_CONCLUDED');
   const committed=s.mesh.commitPendingCommands(5);
   assert.equal(committed[0].status,'APPLIED');
   assert.equal(s.state.foreign[s.countryA].treaties[s.countryB].status,'DELAYED');
