@@ -88,11 +88,15 @@ test('OMEGA data contract canonicalizes name-keyed repository datasets without d
   sandbox.window=sandbox;
   sandbox.globalThis=sandbox;
   loadBrowserScript('omega_country_semantic_bridge.js',sandbox);
+  loadBrowserScript('omega_ministry_registry.js',sandbox);
+  loadBrowserScript('omega_ministry_state_transaction.js',sandbox);
+  loadBrowserScript('omega_authoritative_state_authority.js',sandbox);
   const bridge=sandbox.OmegaCanonicalIdentityRegistry;
   assert.ok(bridge);
   assert.equal(await bridge.init(),true);
   const providerSource=fs.readFileSync(new URL('../omega_ministry_state_provider.js',import.meta.url),'utf8');
   vm.runInNewContext(providerSource,sandbox,{filename:'omega_ministry_state_provider.js'});
+  sandbox.OmegaAuthoritativeStateAuthority.instance.bind(sandbox.Game.state);
   const provider=sandbox.Omega.MinistryStateProvider.create({stateSource:sandbox.Game.state});
   sandbox.Omega.MinistryStateProvider.instance=provider;
   const contract=provider.validateDatasetShape(economy,{strict:true});
@@ -104,6 +108,8 @@ test('OMEGA data contract canonicalizes name-keyed repository datasets without d
   assert.equal(Object.keys(sandbox.Game.state.economy).includes('BANGLADESH'),false);
   assert.equal(sandbox.Game.state.economy.BANGLADESH.gdp,economy.BANGLADESH.gdp);
   assert.equal(result.countryIds.includes(bd),true);
+  assert.ok(result.unresolvedCount>0);
+  assert.equal(result.simulationReady,false);
 });
 
 test('the production Game.Simulation adapter delegates to the canonical government runtime instead of owning legacy simulation mutations',()=>{
