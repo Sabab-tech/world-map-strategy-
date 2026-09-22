@@ -14,7 +14,7 @@
 (function(global){
   'use strict';
 
-  const VERSION='1.2.0';
+  const VERSION='1.3.0';
 
   const IDS=Object.freeze(
     Array.isArray(global.OmegaMinistryRegistry?.ids)
@@ -22,6 +22,40 @@
       : []
   );
   if(!IDS.length) throw new Error('OMEGA_MINISTRY_REGISTRY_REQUIRED');
+
+  const GOVERNMENT_PHASES=Object.freeze([
+    'TURN_START',
+    'WORLD_UPDATE',
+    'OBSERVE',
+    'INFORMATION',
+    'ASSESS',
+    'COORDINATE',
+    'DECIDE',
+    'AUTHORIZE',
+    'EXECUTE',
+    'COMMIT',
+    'PUBLISH',
+    'REACT',
+    'VERIFY',
+    'TURN_END'
+  ]);
+
+  const PHASE_BARRIERS=Object.freeze({
+    TURN_START:[],
+    WORLD_UPDATE:['TURN_START'],
+    OBSERVE:['WORLD_UPDATE'],
+    INFORMATION:['OBSERVE'],
+    ASSESS:['INFORMATION'],
+    COORDINATE:['ASSESS'],
+    DECIDE:['COORDINATE'],
+    AUTHORIZE:['DECIDE'],
+    EXECUTE:['AUTHORIZE'],
+    COMMIT:['EXECUTE'],
+    PUBLISH:['COMMIT'],
+    REACT:['PUBLISH'],
+    VERIFY:['REACT'],
+    TURN_END:['VERIFY']
+  });
 
   const SPECS=Object.freeze({
     cabinet:{domain:'executive_coordination',dependencies:IDS.filter(id=>id!=='cabinet').slice(0,4)},
@@ -271,6 +305,7 @@
     let initialized=false;
     let registryHealth={ok:false,reason:'NOT_INITIALIZED'};
     let interoperability=getInteroperability();
+    let lastOrchestration=null;
 
     function syncManifest(){
       const manifest=global.GLOBAL_MINISTRY_MANIFEST;
@@ -320,7 +355,7 @@
       return true;
     }
 
-    function tick(id,dt,currentTurn,store,blackboard){
+    function tick(id,dt,currentTurn,store,blackboard,options={}){
       if(!IDS.includes(String(id))) return null;
       const interop=getInteroperability();
       const engine=getEngineRegistry()?.get?.(id);
@@ -335,15 +370,15 @@
       const spec=SPECS[id]||{domain:'unknown',dependencies:[]};
       const s=states.get(id);
       const inputSources=discoverInputSources();
-      const domainContext=buildDomainContext(id,dt,currentTurn,store);
+      const domainContext=options.contextOverride||buildDomainContext(id,dt,currentTurn,store);
       const countryId=domainContext.countryId;
       const dependencySnapshot=safeDependencyStates(states,kernel,spec.dependencies);
-      const phase=['OBSERVE','VALIDATE','PROCESS','COMMIT'][Math.max(0,currentTurn||0)%4];
+      const phase=String(options.phase||['OBSERVE','VALIDATE','PROCESS','COMMIT'][Math.max(0,currentTurn||0)%4]);
       let domainExecution;
 
-      if(interop && typeof interop.advanceTurn==='function')interop.advanceTurn(currentTurn);
+      if(options.advanceInterop!==false&&interop && typeof interop.advanceTurn==='function')interop.advanceTurn(currentTurn);
 
-      if(interop && countryId && typeof interop.drainInbox==='function'){
+      if(options.processInbox!==false&&interop && countryId && typeof interop.drainInbox==='function'){
         interop.drainInbox(countryId,id,(message)=>{
           handleMessage(id,message);
         },100);
@@ -369,7 +404,7 @@
       s.dependencies=dependencySnapshot;
       s.phase=phase;
 
-      if(interoperability && typeof interoperability.publishState==='function' && countryId){
+      if(options.publish!==false&&interoperability && typeof interoperability.publishState==='function' && countryId){
         interoperability.publishState(id,{
           domain:spec.domain,
           domainExecution,
@@ -427,9 +462,241 @@
         if(s.errors.length>8) s.errors.shift();
       }
 
-      try{ bridge?.emitEvent?.('OMEGA_MINISTRY_RUNTIME_TICK',telemetry); }catch(_){}
-      publishEvent('OMEGA_MINISTRY_RUNTIME_TICK',telemetry);
+      if(options.emitRuntimeEvent!==false){
+        try{ bridge?.emitEvent?.('OMEGA_MINISTRY_RUNTIME_TICK',telemetry); }catch(_){}
+        publishEvent('OMEGA_MINISTRY_RUNTIME_TICK',telemetry);
+      }
       return telemetry;
+    }
+
+    function createSchedule(currentTurn){
+      const turn=Number(currentTurn);
+      if(!Number.isFinite(turn))throw new Error('SIMULATION_TURN_REQUIRED');
+      return {
+        schemaVersion:1,
+        turn,
+        deterministicOrder:IDS.slice(),
+        phases:GOVERNMENT_PHASES.map((id,index)=>({
+          id,
+          order:index,
+          barriers:PHASE_BARRIERS[id].slice(),
+          ministryOrder:IDS.slice()
+        }))
+      };
+    }
+
+    function emitGovernmentPhase(turn,phase,status,detail={}){
+      publishEvent('OMEGA_GOVERNMENT_PHASE',{
+        schemaVersion:1,
+        turn,
+        phase,
+        status,
+        detail:clone(detail)
+      });
+    }
+
+    function runTurn(currentTurn,dt,store,blackboard,options={}){
+      if(!initialized)throw new Error('OMEGA_GOVERNMENT_RUNTIME_NOT_INITIALIZED');
+      const turn=Number(currentTurn);
+      if(!Number.isFinite(turn))throw new Error('SIMULATION_TURN_REQUIRED');
+      const delta=Number.isFinite(Number(dt))?Number(dt):0;
+      const schedule=createSchedule(turn);
+      const phaseResults=[];
+      const observations=new Map();
+      const assessments=new Map();
+      const decisions=[];
+      const commands=[];
+      const failures=[];
+
+      const phase=(id,status,detail={})=>{
+        const row={phase:id,status,turn,detail:clone(detail)};
+        phaseResults.push(row);
+        emitGovernmentPhase(turn,id,status,detail);
+        return row;
+      };
+
+      try{
+        if(interoperability?.advanceTurn)interoperability.advanceTurn(turn);
+      }catch(error){
+        failures.push({phase:'TURN_START',scope:'GLOBAL',error:String(error?.message||error)});
+      }
+      phase('TURN_START',failures.length?'DEGRADED':'COMMITTED');
+
+      try{
+        if(typeof options.worldUpdate==='function')options.worldUpdate({turn,dt:delta,phase:'WORLD_UPDATE'});
+        phase('WORLD_UPDATE','COMMITTED');
+      }catch(error){
+        failures.push({phase:'WORLD_UPDATE',scope:'WORLD',error:String(error?.message||error)});
+        phase('WORLD_UPDATE','FAILED',{error:String(error?.message||error)});
+      }
+
+      for(const id of IDS){
+        try{
+          observations.set(id,buildDomainContext(id,delta,turn,store));
+        }catch(error){
+          failures.push({phase:'OBSERVE',scope:id,error:String(error?.message||error)});
+        }
+      }
+      phase('OBSERVE',failures.some(x=>x.phase==='OBSERVE')?'DEGRADED':'COMMITTED',{
+        observedMinistries:observations.size
+      });
+
+      for(const id of IDS){
+        const context=observations.get(id);
+        const countryId=context?.countryId;
+        if(!context||!countryId)continue;
+        try{
+          interoperability?.drainInbox?.(countryId,id,(message)=>handleMessage(id,message),100);
+        }catch(error){
+          failures.push({phase:'INFORMATION',scope:id,error:String(error?.message||error)});
+        }
+      }
+      phase('INFORMATION',failures.some(x=>x.phase==='INFORMATION')?'DEGRADED':'COMMITTED');
+
+      for(const id of IDS){
+        try{
+          const freshContext=buildDomainContext(id,delta,turn,store);
+          const result=tick(id,delta,turn,store,blackboard,{
+            phase:'ASSESS',
+            contextOverride:freshContext,
+            processInbox:false,
+            advanceInterop:false,
+            publish:false,
+            emitRuntimeEvent:false
+          });
+          assessments.set(id,{context:freshContext,execution:result});
+        }catch(error){
+          failures.push({phase:'ASSESS',scope:id,error:String(error?.message||error)});
+        }
+      }
+      phase('ASSESS',failures.some(x=>x.phase==='ASSESS')?'DEGRADED':'COMMITTED',{
+        assessedMinistries:assessments.size
+      });
+
+      const coordination={};
+      for(const id of IDS){
+        const context=assessments.get(id)?.context;
+        const countryId=context?.countryId;
+        if(!countryId)continue;
+        try{
+          coordination[id]=interoperability?.getContext?.(id,{countryId,turn,dt:delta})||null;
+        }catch(error){
+          failures.push({phase:'COORDINATE',scope:id,error:String(error?.message||error)});
+        }
+      }
+      phase('COORDINATE',failures.some(x=>x.phase==='COORDINATE')?'DEGRADED':'COMMITTED',{
+        coordinatedMinistries:Object.keys(coordination).length
+      });
+
+      if(typeof options.decide==='function'){
+        try{
+          const result=options.decide({
+            turn,dt:delta,coordination:clone(coordination),
+            ministries:IDS.slice()
+          });
+          if(Array.isArray(result))decisions.push(...clone(result));
+          else if(result!==undefined)decisions.push(clone(result));
+        }catch(error){
+          failures.push({phase:'DECIDE',scope:'GOVERNMENT',error:String(error?.message||error)});
+        }
+      }
+      phase('DECIDE',failures.some(x=>x.phase==='DECIDE')?'DEGRADED':'COMMITTED',{decisionCount:decisions.length});
+
+      if(typeof options.authorize==='function'){
+        try{
+          options.authorize({turn,dt:delta,decisions:clone(decisions),coordination:clone(coordination)});
+        }catch(error){
+          failures.push({phase:'AUTHORIZE',scope:'GOVERNMENT',error:String(error?.message||error)});
+        }
+      }
+      phase('AUTHORIZE',failures.some(x=>x.phase==='AUTHORIZE')?'DEGRADED':'COMMITTED');
+
+      const commandRequests=Array.isArray(options.commands)?options.commands:[];
+      for(const request of commandRequests){
+        try{
+          const source=String(request?.sourceMinistryId||'');
+          const actionId=String(request?.actionId||request?.commandType||'');
+          const countryId=String(request?.countryId||store?.countryId||'').trim().toUpperCase();
+          if(!source||!actionId||!countryId)throw new Error('COMMAND_REQUEST_SCOPE_INVALID');
+          const result=interoperability.dispatchCommand(source,actionId,countryId,request.payload||{},{
+            ...request.options,
+            turn,
+            commandType:request.commandType||actionId
+          });
+          commands.push(clone(result));
+        }catch(error){
+          failures.push({phase:'EXECUTE',scope:request?.sourceMinistryId||'unknown',error:String(error?.message||error)});
+        }
+      }
+      phase('EXECUTE',failures.some(x=>x.phase==='EXECUTE')?'DEGRADED':'COMMITTED',{commandCount:commands.length});
+
+      phase('COMMIT',commands.some(row=>row.status==='FAILED')?'DEGRADED':'COMMITTED',{
+        committedCommands:commands.filter(row=>row.lifecycleStatus==='COMMITTED'||row.lifecycleStatus==='VERIFIED').length
+      });
+
+      for(const [id,result] of assessments.entries()){
+        const context=result.context;
+        const countryId=context?.countryId;
+        if(!countryId||!interoperability?.publishState)continue;
+        try{
+          interoperability.publishState(id,{
+            domain:SPECS[id]?.domain||null,
+            domainExecution:result.execution?.domainExecution||result.execution,
+            context,
+            store,
+            runtimeState:states.get(id),
+            turn
+          });
+        }catch(error){
+          failures.push({phase:'PUBLISH',scope:id,error:String(error?.message||error)});
+        }
+      }
+      phase('PUBLISH',failures.some(x=>x.phase==='PUBLISH')?'DEGRADED':'COMMITTED');
+
+      let reactions=[];
+      try{
+        interoperability?.processEventOutbox?.(turn);
+        reactions=interoperability?.processReactionQueue?.(turn)||[];
+      }catch(error){
+        failures.push({phase:'REACT',scope:'GOVERNMENT',error:String(error?.message||error)});
+      }
+      phase('REACT',failures.some(x=>x.phase==='REACT')?'DEGRADED':'COMMITTED',{reactionCount:reactions.length});
+
+      let verification=null;
+      try{
+        verification={
+          runtime:this.health(),
+          interoperability:interoperability?.diagnostics?.(null,turn)||null,
+          schedule
+        };
+      }catch(error){
+        failures.push({phase:'VERIFY',scope:'GOVERNMENT',error:String(error?.message||error)});
+      }
+      phase('VERIFY',failures.some(x=>x.phase==='VERIFY')?'DEGRADED':'COMMITTED');
+
+      phase('TURN_END',failures.length?'DEGRADED':'COMMITTED',{
+        failures:failures.length,
+        processedMinistries:assessments.size
+      });
+
+      lastOrchestration={
+        schemaVersion:1,
+        turn,
+        dt:delta,
+        status:failures.length?'DEGRADED':'COMMITTED',
+        deterministicOrder:IDS.slice(),
+        phases:phaseResults,
+        assessments:Object.fromEntries([...assessments.entries()].map(([id,row])=>[id,{
+          revision:row.execution?.runtimeRevision??null,
+          engineRevision:row.execution?.domainExecution?.revision??null
+        }])),
+        decisions:clone(decisions),
+        commands:clone(commands),
+        reactions:clone(reactions),
+        verification:clone(verification),
+        failures:clone(failures)
+      };
+      return clone(lastOrchestration);
     }
 
     function handleMessage(id,message){
@@ -488,7 +755,8 @@
         version:VERSION,
         ministries:Object.fromEntries([...states.entries()].map(([id,state])=>[id,clone(state)])),
         engines:engineStates,
-        interoperability:interoperability?.saveState?.()||null
+        interoperability:interoperability?.saveState?.()||null,
+        orchestration:lastOrchestration?clone(lastOrchestration):null
       };
     }
 
@@ -509,6 +777,7 @@
         }
       }
       if(snapshot.interoperability&&interoperability?.loadState)interoperability.loadState(snapshot.interoperability);
+      lastOrchestration=clone(snapshot.orchestration||null);
       return true;
     }
 
@@ -549,9 +818,14 @@
       getState,
       getEngine,
       health,
+      createSchedule,
+      runTurn,
+      getOrchestrationState:()=>clone(lastOrchestration),
       saveState,
       loadState,
-      getEngineBinding:resolveEngineBinding
+      getEngineBinding:resolveEngineBinding,
+      GOVERNMENT_PHASES,
+      PHASE_BARRIERS
     });
 
     return api;
