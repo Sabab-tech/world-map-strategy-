@@ -127,6 +127,10 @@
       const id=normalizeCountryId(transaction.countryId);
       const owner=String(transaction.ownerMinistry||'');
       if(!owner)throw new Error('STATE_OWNER_REQUIRED');
+      const canonicalIds=Array.isArray(global.OmegaMinistryRegistry?.ids)
+        ?global.OmegaMinistryRegistry.ids.map(String)
+        :null;
+      if(canonicalIds&& !canonicalIds.includes(owner))throw new Error('STATE_OWNER_UNKNOWN:'+owner);
       const operations=Array.isArray(transaction.operations)?transaction.operations:[];
       const transactionId=String(transaction.transactionId||('OMI-TX-'+transaction.turn+'-'+owner+'-'+transaction.commandId));
 
