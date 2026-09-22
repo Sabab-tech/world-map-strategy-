@@ -896,20 +896,29 @@
     }
 
     function resolveSimulationCountries(options={}){
-      const source=Array.isArray(options.countryIds)&&options.countryIds.length
-        ?options.countryIds
-        :Object.keys(global.Game?.state?.economy||{});
       const registry=global.OmegaCanonicalIdentityRegistry||global.OmegaCountrySemanticBridge||null;
+      const explicit=Array.isArray(options.countryIds)&&options.countryIds.length?options.countryIds:null;
+      const canonical=registry?.listCountryIds?.()||[];
+      const source=explicit||(
+        canonical.length
+          ?canonical
+          :Object.keys(global.Game?.state?.economy||{})
+      );
       const resolved=[];
       const seen=new Set();
       const add=value=>{
         const raw=String(value??'').trim();
         if(!raw)return;
-        let id=raw.toUpperCase();
-        try{id=String(registry?.canonicalCountryId?.(raw)||registry?.resolveCountry?.(raw)?.id||id).trim().toUpperCase();}catch(_){}
+        let id=null;
+        try{
+          id=String(registry?.canonicalCountryId?.(raw)||registry?.resolveCountry?.(raw)?.id||'').trim().toUpperCase()||null;
+        }catch(_){}
+        if(!id&&canonical.length&&explicit)throw new Error('SIMULATION_COUNTRY_ID_UNRESOLVED:'+raw);
+        if(!id)id=raw.toUpperCase();
         if(id&&!seen.has(id)){seen.add(id);resolved.push(id);}
       };
       for(const value of source)add(value);
+      if(!resolved.length&&explicit)throw new Error('SIMULATION_COUNTRY_SET_EMPTY');
       if(!resolved.length)add(global.Game?.currentActiveCountry||global.CountryIOS?.activeCountry||global.OmegaCabinetUI?.activeCountry||global.Game?.state?.playerCountryId||global.Game?.state?.countryId);
       resolved.sort((a,b)=>a.localeCompare(b));
       return resolved;
