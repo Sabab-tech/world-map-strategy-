@@ -167,7 +167,13 @@
       projectSignalCount:projects.length,
       alertCount:alerts.length,
       constraintCount:constraints.length,
-      decisionContextAvailable:!!c.decisionContext
+      decisionContextAvailable:!!c.decisionContext,
+      knownRevision:Number(c.knowledgeRevision||0),
+      stalePeerCount:peerIds.filter(id=>picture[id]?.freshness?.status==='STALE').length,
+      knownDataGapCount:Array.isArray(c.knownDataGaps)?c.knownDataGaps.length:0,
+      attentionScore:Number(c.attentionScore||0),
+      decisionSignals:Array.isArray(c.decisionSignals)?c.decisionSignals:[],
+      watchList:global.OmegaMinistryKnowledgeContract?.get?.(String(c.ministryId||''))?.watch||[]
     };
   }
 
@@ -201,7 +207,13 @@
           projectSignals:[],
           constraints:[],
           lastMessage:null,
-          processedCount:0
+          processedCount:0,
+          knowledgeRevision:0,
+          knownFacts:{},
+          decisionSignals:[],
+          openTasks:[],
+          attentionScore:0,
+          uncertaintyCount:0
         });
       }
       return this._coordinationByCountry.get(key)||null;
@@ -222,8 +234,35 @@
       if(coordination.received.length>100) coordination.received.shift();
       coordination.lastMessage=record;
       coordination.processedCount+=1;
+      coordination.knowledgeRevision+=1;
 
       const type=String(message.messageType||'STATE_UPDATE');
+      const priority=String(message.priority||'NORMAL').toUpperCase();
+      const attentionWeight={LOW:1,NORMAL:2,HIGH:4,CRITICAL:8}[priority]||2;
+      coordination.attentionScore=Math.min(100,Number(coordination.attentionScore||0)+attentionWeight);
+      if(message.payload?.dataAvailability||message.payload?.changedPaths){
+        coordination.knownFacts[source]={
+          stateRevision:message.payload?.stateRevision??message.sourceStateRevision??null,
+          changedPaths:Array.isArray(message.payload?.changedPaths)?message.payload.changedPaths.slice(0,64):[],
+          dataAvailability:cloneValue(message.payload?.dataAvailability||{}),
+          simulationTurn:message.simulationTurn??message.turn??null
+        };
+      }
+      if(['REQUEST','ALERT','BUDGET_REQUEST','PROJECT_STATUS','CONSTRAINT_UPDATE'].includes(type)){
+        coordination.openTasks.push({
+          taskId:String(message.correlationId||message.messageId||('TASK-'+coordination.processedCount)),
+          type,
+          source,
+          priority,
+          simulationTurn:message.simulationTurn??message.turn??null,
+          requiresResponse:type==='REQUEST',
+          status:'OPEN'
+        });
+        if(coordination.openTasks.length>50)coordination.openTasks.shift();
+      }
+      if(type==='STATE_UPDATE' && message.payload?.dataAvailability){
+        coordination.uncertaintyCount=Object.values(message.payload.dataAvailability).reduce((n,v)=>n+(v===('UNAVAILABLE')||v===('UNOBSERVED')||v===('STALE')?1:0),0);
+      }
       if(type==='STATE_UPDATE'||type==='POLICY_UPDATE')coordination.peerStateUpdates[source]=record;
       else if(type==='REQUEST'){coordination.pendingRequests.push(record);if(coordination.pendingRequests.length>50)coordination.pendingRequests.shift();}
       else if(type==='RESPONSE'||type==='ACK'){coordination.responses.push(record);if(coordination.responses.length>50)coordination.responses.shift();}
@@ -244,7 +283,7 @@
         countryId:String(countryId||'').trim().toUpperCase()||null,
         received:[],peerStateUpdates:{},pendingRequests:[],responses:[],
         alerts:[],budgetSignals:[],projectSignals:[],constraints:[],
-        lastMessage:null,processedCount:0
+        lastMessage:null,processedCount:0,knowledgeRevision:0,knownFacts:{},decisionSignals:[],openTasks:[],attentionScore:0,uncertaintyCount:0
       });
     }
 
@@ -297,7 +336,14 @@
         observedInputs:observed,
         derived:{
           ...buildGenericDerived(observed,missing),
-          coordination:buildCoordinationSummary(context)
+          coordination:buildCoordinationSummary(context),
+          knowledgeState:{
+            revision:Number(this._coordinationState(normalizeCountryId(prepared),false)?.knowledgeRevision||0),
+            processedMessages:Number(this._coordinationState(normalizeCountryId(prepared),false)?.processedCount||0),
+            attentionScore:Number(this._coordinationState(normalizeCountryId(prepared),false)?.attentionScore||0),
+            openTasks:(this._coordinationState(normalizeCountryId(prepared),false)?.openTasks||[]).length,
+            uncertaintyCount:Number(this._coordinationState(normalizeCountryId(prepared),false)?.uncertaintyCount||0)
+          }
         }
       };
     }
