@@ -133,6 +133,42 @@
     };
   }
 
+  function buildCoordinationSummary(context){
+    const c=context?.interoperability;
+    if(!c || typeof c!=='object'){
+      return {
+        available:false,
+        knownPeerCount:0,
+        totalPeerCount:IDS.length-1,
+        incomingMessageCount:0,
+        openBudgetNeedCount:0,
+        projectSignalCount:0,
+        alertCount:0,
+        constraintCount:0,
+        tradeAgreementAssessment:null
+      };
+    }
+    const picture=c.nationalPicture && typeof c.nationalPicture==='object' ? c.nationalPicture : {};
+    const knownPeerCount=IDS.filter(id=>picture[id] && picture[id].availability!=='UNOBSERVED').length;
+    const incoming=Array.isArray(c.incomingMessages)?c.incomingMessages:[];
+    const government=c.government||{};
+    const budgetNeeds=Array.isArray(government.budgetNeeds)?government.budgetNeeds:[];
+    const projects=Array.isArray(government.projects)?government.projects:[];
+    const alerts=Array.isArray(government.alerts)?government.alerts:[];
+    const constraints=Array.isArray(government.constraints)?government.constraints:[];
+    return {
+      available:true,
+      knownPeerCount,
+      totalPeerCount:IDS.length-1,
+      incomingMessageCount:incoming.length,
+      openBudgetNeedCount:budgetNeeds.length,
+      projectSignalCount:projects.filter(p=>p?.knownCount!==null && p?.knownCount!==undefined).length,
+      alertCount:alerts.length,
+      constraintCount:constraints.length,
+      tradeAgreementAssessment:cloneValue(c.decisionSupport?.tradeAgreement||null)
+    };
+  }
+
   class IndependentMinistryEngine{
     constructor(config){
       this.id=config.id;
@@ -142,11 +178,75 @@
       this.inputs=Object.freeze(config.inputs.slice());
       this._revision=0;
       this._lastExecution=null;
+      this._coordination={
+        received:[],
+        peerStateUpdates:{},
+        pendingRequests:[],
+        responses:[],
+        alerts:[],
+        budgetSignals:[],
+        projectSignals:[],
+        constraints:[],
+        lastMessage:null,
+        processedCount:0
+      };
       this.independent=true;
       this.sharedExecutionDependency=null;
     }
 
     get revision(){ return this._revision; }
+
+    handleMessage(message,context={}){
+      if(!message || typeof message!=='object') throw new Error('INVALID_MINISTRY_MESSAGE');
+      const source=String(message.source||message.sender||'');
+      const target=String(message.target||message.receiver||this.id);
+      if(target!==this.id) throw new Error('MINISTRY_MESSAGE_TARGET_MISMATCH');
+      if(!IDS.includes(source)) throw new Error('MINISTRY_MESSAGE_SOURCE_INVALID');
+
+      const record=cloneValue(message);
+      this._coordination.received.push(record);
+      if(this._coordination.received.length>100) this._coordination.received.shift();
+      this._coordination.lastMessage=record;
+      this._coordination.processedCount+=1;
+
+      const type=String(message.messageType||'STATE_UPDATE');
+      if(type==='STATE_UPDATE' || type==='POLICY_UPDATE'){
+        this._coordination.peerStateUpdates[source]=record;
+      }else if(type==='REQUEST'){
+        this._coordination.pendingRequests.push(record);
+        if(this._coordination.pendingRequests.length>50) this._coordination.pendingRequests.shift();
+      }else if(type==='RESPONSE' || type==='ACK'){
+        this._coordination.responses.push(record);
+        if(this._coordination.responses.length>50) this._coordination.responses.shift();
+      }else if(type==='ALERT'){
+        this._coordination.alerts.push(record);
+        if(this._coordination.alerts.length>50) this._coordination.alerts.shift();
+      }else if(type==='BUDGET_REQUEST'){
+        this._coordination.budgetSignals.push(record);
+        if(this._coordination.budgetSignals.length>50) this._coordination.budgetSignals.shift();
+      }else if(type==='PROJECT_STATUS'){
+        this._coordination.projectSignals.push(record);
+        if(this._coordination.projectSignals.length>50) this._coordination.projectSignals.shift();
+      }else if(type==='CONSTRAINT_UPDATE'){
+        this._coordination.constraints.push(record);
+        if(this._coordination.constraints.length>50) this._coordination.constraints.shift();
+      }
+
+      return {
+        accepted:true,
+        engineId:this.id,
+        messageId:record.messageId||null,
+        messageType:type,
+        source,
+        target:this.id,
+        coordinationProcessedCount:this._coordination.processedCount,
+        contextAvailable:!!context?.interoperability
+      };
+    }
+
+    getCoordinationState(){
+      return cloneValue(this._coordination);
+    }
 
     execute(context={}){
       const prepared=context||{};
@@ -178,7 +278,10 @@
         requiredInputCount:this.inputs.length,
         missingInputs:missing,
         observedInputs:observed,
-        derived:buildGenericDerived(observed,missing)
+        derived:{
+          ...buildGenericDerived(observed,missing),
+          coordination:buildCoordinationSummary(context)
+        }
       };
     }
 
