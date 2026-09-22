@@ -32,8 +32,10 @@ jobs:
         run: |
           set -euo pipefail
           node --check omega_ministry_domain_engines.js
+          node --check omega_ministry_interoperability_system.js
           node --check omega_ministry_runtime_v1.js
           node --check test/omega_17_ministry_runtime.test.js
+          node --check test/omega_ministry_interoperability.test.js
 
       - name: Independent 17-ministry runtime proof
         run: |
@@ -47,9 +49,14 @@ jobs:
           import fs from 'node:fs/promises';
           const runtime = await fs.readFile('omega_ministry_runtime_v1.js','utf8');
           const engines = await fs.readFile('omega_ministry_domain_engines.js','utf8');
+          const interoperability = await fs.readFile('omega_ministry_interoperability_system.js','utf8');
           const test = await fs.readFile('test/omega_17_ministry_runtime.test.js','utf8');
+          const meshTest = await fs.readFile('test/omega_ministry_interoperability.test.js','utf8');
 
           if (!runtime.includes("const VERSION='1.2.0'")) throw new Error('Runtime version contract is not 1.2.0');
+          if (!interoperability.includes("const VERSION = '1.0.0'")) throw new Error('Interoperability version contract is not 1.0.0');
+          if (!interoperability.includes("IDS.length*IDS.length")) throw new Error('17x17 mesh topology generation missing');
+          if (!meshTest.includes('connectionCells,289')) throw new Error('289-connection regression assertion missing');
           if (!runtime.includes("version:VERSION")) throw new Error('Runtime API does not expose the canonical version token');
           if (!engines.includes("const VERSION='1.0.0'")) throw new Error('Engine version contract is not 1.0.0');
           if (runtime.includes('nativeAdapter')) throw new Error('Legacy native-adapter execution path remains');
