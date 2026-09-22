@@ -1085,6 +1085,11 @@
       const snapshot=this._compilePublicSnapshot(id,packet);
       this.snapshots.set(snapshotKey(snapshot.countryId,id),snapshot);
       this._markDirtyPublication(snapshot,previous,packet.transaction||null);
+      const dirtyKey=snapshotKey(snapshot.countryId,id);
+      const dirty=this.dirtyPublications.get(dirtyKey);
+      if(dirty && String(dirty.stateRevision||'')===String(snapshot.stateRevision||'')){
+        this.dirtyPublications.delete(dirtyKey);
+      }
       this.metrics.statePublications+=1;
       this.lastTurn=Math.max(this.lastTurn,snapshot.simulationTurn);
       this._invalidateKnowledgeCache();
