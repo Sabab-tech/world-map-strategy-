@@ -190,6 +190,9 @@
       if(!id||!p)return {status:AVAILABILITY.NOT_APPLICABLE,reason:'INVALID_ID_OR_PATH'};
       const state=this.root();
       let value=this.get(id,p);
+      if((p==='country.identity'||p==='countryRecord') && this.countryRecord(id)){
+        value=this.countryRecord(id);
+      }
       if(value===undefined||value===null){
         const d=topDomain(p);
         const section=state?.[d];
