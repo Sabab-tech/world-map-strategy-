@@ -1853,6 +1853,7 @@
           approvalOverride:clone(row.approval),
           approvingMinistryId:row.approval.approverMinistryId,
           executorMinistryId:actor.executorMinistryId||row.stateOwnerMinistryId,
+          approvedExecution:true,
           provenance:clone(row.provenance||null)
         }
       );
@@ -1884,9 +1885,11 @@
       }
       if(existing&&(
         String(existing.status)==='REVIEW_REQUIRED' ||
-        String(existing.lifecycleStatus)==='REVIEW_REQUIRED' ||
-        String(existing.lifecycleStatus)==='APPROVED'
+        String(existing.lifecycleStatus)==='REVIEW_REQUIRED'
       )){
+        return clone({...existing,duplicate:true,status:'PENDING_APPROVAL'});
+      }
+      if(existing&&String(existing.lifecycleStatus)==='APPROVED'&&options.approvedExecution!==true){
         return clone({...existing,duplicate:true,status:'PENDING_APPROVAL'});
       }
       if(existing)this.commands.delete(commandId);
@@ -1911,6 +1914,7 @@
         payload:clone(payload),
         correlationId:options.correlationId?String(options.correlationId):null,
         causationId:options.causationId?String(options.causationId):null,
+        approvalOverride:options.approvalOverride?clone(options.approvalOverride):null,
         provenance:clone(options.provenance||null)
       });
 
@@ -1942,7 +1946,10 @@
 
       try{
         transition('VALIDATED');
-        const approval=this.authorizeCommand(command,{ministryId:options.approvingMinistryId||source});
+        const approval=this.authorizeCommand(command,{
+          ministryId:options.approvingMinistryId||source,
+          executorMinistryId:options.executorMinistryId||command.stateOwnerMinistryId
+        });
         row.approval=clone(approval);
         transition(approval.authorized?'APPROVED':approval.status,approval.reason);
         if(!approval.authorized){
