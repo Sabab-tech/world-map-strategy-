@@ -148,6 +148,7 @@
 
   function buildDomainContext(id,dt,currentTurn,store){
     const gameState=global.Game?.state||global.gameState||null;
+    const interop=getInteroperability();
     const countryId=String(
       global.OmegaCabinetUI?.activeCountry ||
       global.Game?.currentActiveCountry ||
@@ -191,8 +192,8 @@
       ministers:global.OmegaMinistersDB||global.OmegaCabinetUI?.ministersDB||null,
       educationEngine:global.EducationEngine||null,
       store:store||null,
-      interoperability:interoperability && typeof interoperability.getContext==='function'
-        ? interoperability.getContext(id,{turn:currentTurn,dt,store})
+      interoperability:interop && typeof interop.getContext==='function'
+        ? interop.getContext(id,{turn:currentTurn,dt,store})
         : null
     };
   }
