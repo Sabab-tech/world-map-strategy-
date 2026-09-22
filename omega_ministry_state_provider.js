@@ -140,6 +140,12 @@
     }
 
     _specialPath(countryId,path){
+      if(path==='resourceSummary'){
+        const state=this.root();
+        const section=state?.resources||state?.resourceSummary||null;
+        if(section&&typeof section==='object'&&countryId&&section[countryId]!==undefined)return clone(section[countryId]);
+        return section===undefined?undefined:clone(section);
+      }
       if(path==='resourceInventory'||path==='resourceDeposits'||path==='resourceEngineState'){
         const engine=global.ResourceMinistryEngine;
         try{
@@ -228,12 +234,13 @@
       const id=normalizeId(countryId);
       const p=String(path??'');
       const availability=this.getAvailability(id,p,options);
+      const repositoryIdentity=(p==='country.identity'||p==='countryRecord') && !!this.countryRecord(id);
       return {
         provider:'OmegaMinistryStateProvider',
         countryId:id||null,
         fieldPath:p||null,
-        sourceType:'AUTHORITATIVE_RUNTIME_STATE',
-        source:'Game.state / canonical repository authority',
+        sourceType:repositoryIdentity?'CANONICAL_REPOSITORY_DATA':'AUTHORITATIVE_RUNTIME_STATE',
+        source:repositoryIdentity?'countries.json / canonical country registry':'Game.state / canonical repository authority',
         sourceRevision:this.getRevision(id,topDomain(p)),
         simulationTurn:this.simulationTurn(),
         availability:availability.status,
