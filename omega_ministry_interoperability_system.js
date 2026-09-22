@@ -1130,13 +1130,23 @@
       this.metrics.statePublications+=1;
       this.lastTurn=Math.max(this.lastTurn,snapshot.simulationTurn);
       this._invalidateKnowledgeCache();
-      this._emit(EVENT_TYPES.MINISTRY_STATE_PUBLISHED,{
-        countryId:snapshot.countryId,
-        ministryId:id,
-        simulationTurn:snapshot.simulationTurn,
-        stateRevision:snapshot.stateRevision,
-        dataAvailability:snapshot.dataAvailability
-      },snapshot.simulationTurn);
+      if(packet.deferEventDispatch===true){
+        this.emitEvent(EVENT_TYPES.MINISTRY_STATE_PUBLISHED,snapshot.countryId,id,{
+          countryId:snapshot.countryId,
+          ministryId:id,
+          simulationTurn:turn,
+          stateRevision:snapshot.stateRevision,
+          dataAvailability:snapshot.dataAvailability
+        },{turn:snapshot.simulationTurn,stateRevision:snapshot.stateRevision,deferDispatch:true});
+      }else{
+        this._emit(EVENT_TYPES.MINISTRY_STATE_PUBLISHED,{
+          countryId:snapshot.countryId,
+          ministryId:id,
+          simulationTurn:turn,
+          stateRevision:snapshot.stateRevision,
+          dataAvailability:snapshot.dataAvailability
+        },snapshot.simulationTurn);
+      }
       return this.getPeerState(id,id,snapshot.countryId,{currentTurn:snapshot.simulationTurn});
     }
 
