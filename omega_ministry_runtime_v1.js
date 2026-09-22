@@ -152,6 +152,11 @@
     const relations=(gameState?.relations && countryId && (gameState.relations[countryId]||gameState.relations[global.Game?.currentActiveCountry]))||null;
     const resourceEngine=global.ResourceMinistryEngine||null;
     let resourceEngineState=null;
+    const domainSections={};
+    for(const domainId of IDS){
+      if(domainId==='cabinet') continue;
+      domainSections[domainId]=pickCountryBucket({gameState},domainId);
+    }
     try{
       if(resourceEngine && typeof resourceEngine.getIntegratedResourceState==='function' && countryId){
         resourceEngineState=resourceEngine.getIntegratedResourceState(countryId);
@@ -165,6 +170,7 @@
       dt:Number.isFinite(dt)?dt:0,
       gameState,
       countryRecord:null,
+      ...domainSections,
       economy,
       population,
       relations,
