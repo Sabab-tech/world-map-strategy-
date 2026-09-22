@@ -370,6 +370,39 @@ test('canonical government scheduler executes deterministic multi-phase turn spi
 });
 
 
+test('canonical country registry merges same-name ISO-2/ISO-3 duplicates into one sovereign identity',async()=>{
+  const sandbox={
+    console,Date,JSON,Object,Number,String,RegExp,Map,Set,WeakMap,Array,Math,Promise,URL,
+    fetch:async path=>{
+      const key=String(path).replace(/^\//,'').replace(/\?.*$/,'');
+      if(key==='countries.json')return{ok:true,json:async()=>[
+        {code:'PRT',name:'Portugal',lat:38.7,lng:-9.1},
+        {code:'PT',name:'Portugal',lat:39.4,lng:-8.2},
+        {code:'AGO',name:'Angola',lat:-11.2,lng:17.8},
+        {code:'AO',name:'Angola',lat:-11.2,lng:17.8}
+      ]};
+      if(key==='cities.json')return{ok:true,json:async()=>({})};
+      return{ok:true,json:async()=>({})};
+    },
+    CustomEvent:class{constructor(type,init={}){this.type=type;this.detail=init.detail}},
+    dispatchEvent(){return true},addEventListener(){},removeEventListener(){},
+    Game:{state:{},currentActiveCountry:'PT'},Omega:{}
+  };
+  sandbox.window=sandbox;sandbox.globalThis=sandbox;
+  loadBrowserScript('omega_country_semantic_bridge.js',sandbox);
+  const registry=sandbox.OmegaCanonicalIdentityRegistry;
+  assert.equal(await registry.init(),true);
+  const ids=registry.listCountryIds();
+  assert.equal(ids.filter(id=>id==='PT').length,1);
+  assert.equal(ids.includes('PRT'),false);
+  assert.equal(ids.filter(id=>id==='AO').length,1);
+  assert.equal(ids.includes('AGO'),false);
+  assert.equal(registry.resolveCountry('Portugal').id,'PT');
+  assert.equal(registry.resolveCountry('PRT').id,'PT');
+  assert.equal(registry.resolveCountry('Angola').id,'AO');
+  assert.equal(registry.resolveCountry('AGO').id,'AO');
+  assert.equal(registry.diagnostics().duplicateCountryMerges.length,2);
+});
 test('canonical dataset contract accepts a single country record and rejects unknown country identities in strict mode',async()=>{
   const sandbox={
     console,Date,JSON,Object,Number,String,RegExp,Map,Set,WeakMap,Array,Math,Promise,URL,
