@@ -927,6 +927,24 @@ test('architectural transaction replay reconstructs authoritative state from com
   assert.equal(replay.state.foreign[s.countryA].relations[s.countryB],99);
   assert.ok(replay.digest);
 });
+test('architectural replay uses an explicit base or checkpoint and never re-applies onto the live current state by default',()=>{
+  const s=createSandbox();
+  s.mesh.registerAction(ACTION_ID+'-REPLAY-BASE',{stateOwnerMinistry:'foreign'});
+  s.mesh.registerAuthorityPolicy(ACTION_ID+'-REPLAY-BASE',{
+    proposerMinistries:['trade'],approverMinistries:['trade'],executorMinistries:['foreign']
+  });
+  s.mesh.registerCommandHandler(ACTION_ID+'-REPLAY-BASE','foreign',(command,{stateTransaction})=>{
+    stateTransaction.set('foreign.relations',{[s.countryB]:77});
+    return {accepted:true};
+  });
+  const cmd=s.mesh.dispatchCommand('trade',ACTION_ID+'-REPLAY-BASE',s.countryA,{},{
+    turn:6,commandType:ACTION_ID+'-REPLAY-BASE',commandId:'CMD-REPLAY-BASE-1'
+  });
+  assert.equal(cmd.status,'APPLIED');
+  const replay=s.sandbox.OmegaAuthoritativeStateAuthority.instance.reconstructState(undefined,{fromTurn:6,toTurn:6});
+  assert.equal(replay.state.foreign?.[s.countryA]?.relations?.[s.countryB],77);
+  assert.equal(replay.appliedTransactionCount,1);
+});
 test('architectural recovery preserves a prepared transaction across save/load',()=>{
   const s=createSandbox();
   s.tickAll(1);
