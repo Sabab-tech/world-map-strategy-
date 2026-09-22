@@ -697,3 +697,54 @@ test('architectural workflow and authority lifecycle remain explicit without pre
   assert.equal(s.mesh.advanceCase(row.caseId,'EXECUTING').status,'EXECUTING');
   assert.equal(s.mesh.advanceCase(row.caseId,'CLOSED').status,'CLOSED');
 });
+
+test('architectural command idempotency returns the committed command without re-execution',()=>{
+  const s=createSandbox();
+  s.tickAll(1);
+  s.registerTradeAction();
+  let executions=0;
+  s.mesh.registerCommandHandler(ACTION_ID,'foreign',(command,{stateTransaction})=>{
+    executions+=1;
+    const treaties=stateTransaction.get('foreign.treaties')||{};
+    treaties[s.countryB]={status:'SIGNED'};
+    stateTransaction.set('foreign.treaties',treaties);
+    return {accepted:true};
+  });
+  const first=s.mesh.dispatchCommand('trade',ACTION_ID,s.countryA,{targetCountryId:s.countryB},{
+    turn:2,commandType:ACTION_ID,commandId:'CMD-IDEMPOTENT-1'
+  });
+  const second=s.mesh.dispatchCommand('trade',ACTION_ID,s.countryA,{targetCountryId:s.countryB},{
+    turn:2,commandType:ACTION_ID,commandId:'CMD-IDEMPOTENT-1'
+  });
+  assert.equal(first.status,'APPLIED');
+  assert.equal(second.status,'ALREADY_PROCESSED');
+  assert.equal(executions,1);
+});
+
+test('architectural message protocol validates canonical schema fields before delivery',()=>{
+  const s=createSandbox();
+  s.mesh.registerMessageProtocol('PROTOCOL_TEST',{
+    schema:{required:['payload.requestType']},
+    allowedSources:['trade'],
+    allowedTargets:['foreign']
+  });
+  assert.throws(()=>s.mesh.send('trade','foreign','protocol.test',{},{
+    countryId:s.countryA,turn:2,messageType:'PROTOCOL_TEST'
+  }),/MESSAGE_SCHEMA_INVALID/);
+  const message=s.mesh.send('trade','foreign','protocol.test',{requestType:'REVIEW'},{
+    countryId:s.countryA,turn:2,messageType:'PROTOCOL_TEST',idempotencyKey:'PROTO-1'
+  });
+  assert.equal(message.messageType,'PROTOCOL_TEST');
+  assert.equal(s.mesh.getDelivery(message.messageId).message.messageType,'PROTOCOL_TEST');
+});
+
+test('architectural knowledge contract exposes capability and authority as separate institutional views',()=>{
+  const contract=s.sandbox.OmegaMinistryKnowledgeContract;
+  const capability=contract.getCapability('trade');
+  const authority=contract.getActionAuthority(ACTION_ID);
+  assert.equal(capability.ministryId,'trade');
+  assert.ok(capability.consume.includes('foreign'));
+  assert.equal(authority.stateOwnerMinistry,'foreign');
+  assert.deepEqual(authority.approvalRequirements,[]);
+  assert.equal(contract.canPerform('trade',ACTION_ID),true);
+});
