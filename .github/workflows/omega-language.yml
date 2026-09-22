@@ -260,6 +260,12 @@ jobs:
           NODE
           echo '--- server log ---'
           tail -n 80 /tmp/omega-server.log || true
+      - name: Independent 17-ministry runtime proof
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run test:ministries
+
       - name: Full canonical test suite
         shell: bash
         run: |
