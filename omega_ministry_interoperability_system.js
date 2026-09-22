@@ -156,7 +156,8 @@
       'culture.state','culture.media','culture.social'
     ],
     statistics:[
-      'population','relations','economy','resourceSummary'
+      'country.identity','statistics.observations','statistics.indicators',
+      'statistics.sampleSize'
     ]
   });
 
@@ -805,7 +806,15 @@
       const context=packet.context||{};
       const observed=execution.observedInputs||{};
       const configuredPaths=[...(Array.isArray(engine?.inputs)?engine.inputs:[]),...(STANDARD_PUBLIC_PATHS[ministryId]||[])];
-      const paths=[...new Set(configuredPaths)];
+      const isOwnedPath=path=>{
+        const p=String(path||'');
+        if(p==='country.identity')return ministryId==='statistics';
+        if(p==='resourceSummary'||p==='resourceInventory'||p==='resourceDeposits')return ministryId==='resource';
+        return p===String(ministryId)+'.'+p.split('.').slice(1).join('.') ||
+          p.startsWith(String(ministryId)+'.') ||
+          p.startsWith('store.') && ministryId==='cabinet';
+      };
+      const paths=[...new Set(configuredPaths)].filter(isOwnedPath);
       const publishedFacts={};
       const dataGaps=[];
       for(const path of paths){
