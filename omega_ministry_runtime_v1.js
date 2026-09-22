@@ -330,6 +330,7 @@
     let registryHealth={ok:false,reason:'NOT_INITIALIZED'};
     let interoperability=getInteroperability();
     let lastOrchestration=null;
+    let lastWorldOrchestration=null;
 
     function syncManifest(){
       const manifest=global.GLOBAL_MINISTRY_MANIFEST;
@@ -894,6 +895,70 @@
       return clone(lastOrchestration);
     }
 
+    function resolveSimulationCountries(options={}){
+      const source=Array.isArray(options.countryIds)&&options.countryIds.length
+        ?options.countryIds
+        :Object.keys(global.Game?.state?.economy||{});
+      const registry=global.OmegaCanonicalIdentityRegistry||global.OmegaCountrySemanticBridge||null;
+      const resolved=[];
+      const seen=new Set();
+      const add=value=>{
+        const raw=String(value??'').trim();
+        if(!raw)return;
+        let id=raw.toUpperCase();
+        try{id=String(registry?.canonicalCountryId?.(raw)||registry?.resolveCountry?.(raw)?.id||id).trim().toUpperCase();}catch(_){}
+        if(id&&!seen.has(id)){seen.add(id);resolved.push(id);}
+      };
+      for(const value of source)add(value);
+      if(!resolved.length)add(global.Game?.currentActiveCountry||global.CountryIOS?.activeCountry||global.OmegaCabinetUI?.activeCountry||global.Game?.state?.playerCountryId||global.Game?.state?.countryId);
+      resolved.sort((a,b)=>a.localeCompare(b));
+      return resolved;
+    }
+
+    function runWorldTurn(currentTurn,dt,options={}){
+      if(!initialized)throw new Error('OMEGA_GOVERNMENT_RUNTIME_NOT_INITIALIZED');
+      const turn=Number(currentTurn);
+      if(!Number.isFinite(turn))throw new Error('SIMULATION_TURN_REQUIRED');
+      if(lastWorldOrchestration&&turn<Number(lastWorldOrchestration.turn))throw new Error('SIMULATION_TURN_REGRESSION');
+      if(lastWorldOrchestration&&turn===Number(lastWorldOrchestration.turn)&&options.allowRepeat!==true)return clone(lastWorldOrchestration);
+      const countries=resolveSimulationCountries(options);
+      if(!countries.length)throw new Error('SIMULATION_COUNTRY_SET_EMPTY');
+
+      const results=[];
+      for(let index=0;index<countries.length;index++){
+        const countryId=countries[index];
+        const store={...(clone(options.store||{})),countryId};
+        const countryCommands=Array.isArray(options.commands)
+          ?options.commands.filter(command=>!command?.countryId||String(command.countryId).trim().toUpperCase()===countryId)
+          :options.commands;
+        const result=runTurn(turn,dt,store,options.blackboard,{
+          ...options,
+          countryId,
+          countryIds:undefined,
+          commands:countryCommands,
+          allowRepeat:true,
+          worldUpdate:index===0?options.worldUpdate:undefined
+        });
+        results.push(result);
+      }
+
+      const failedCountries=results.filter(row=>row?.status==='DEGRADED').length;
+      lastWorldOrchestration={
+        schemaVersion:3,
+        mode:'WORLD_TURN',
+        turn,
+        dt:Number.isFinite(Number(dt))?Number(dt):0,
+        countryCount:countries.length,
+        deterministicCountryOrder:countries.slice(),
+        countries:clone(results),
+        processedCountries:results.length,
+        failedCountries,
+        status:failedCountries?'DEGRADED':'COMMITTED'
+      };
+      lastOrchestration=clone(lastWorldOrchestration);
+      return clone(lastWorldOrchestration);
+    }
+
     function handleMessage(id,message){
       if(!IDS.includes(String(id))) return false;
       const targetId=String(id);
@@ -943,6 +1008,8 @@
       return s ? clone(s):null;
     }
 
+    function getWorldOrchestrationState(){ return clone(lastWorldOrchestration); }
+
     function getEngine(id){ return getEngineRegistry()?.get?.(String(id))||null; }
 
     function saveState(){
@@ -957,7 +1024,8 @@
         ministries:Object.fromEntries([...states.entries()].map(([id,state])=>[id,clone(state)])),
         engines:engineStates,
         interoperability:interoperability?.saveState?.()||null,
-        orchestration:lastOrchestration?clone(lastOrchestration):null
+        orchestration:lastOrchestration?clone(lastOrchestration):null,
+        worldOrchestration:lastWorldOrchestration?clone(lastWorldOrchestration):null
       };
     }
 
@@ -979,6 +1047,7 @@
       }
       if(snapshot.interoperability&&interoperability?.loadState)interoperability.loadState(snapshot.interoperability);
       lastOrchestration=clone(snapshot.orchestration||null);
+      lastWorldOrchestration=clone(snapshot.worldOrchestration||null);
       return true;
     }
 
@@ -1021,6 +1090,9 @@
       health,
       createSchedule,
       runTurn,
+      runWorldTurn,
+      resolveSimulationCountries,
+      getWorldOrchestrationState,
       getOrchestrationState:()=>clone(lastOrchestration),
       createDependencyPlan,
       getCurrentTurn,
