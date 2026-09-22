@@ -338,7 +338,7 @@
           ...buildGenericDerived(observed,missing),
           coordination:buildCoordinationSummary(context),
           knowledgeState:{
-            revision:Number(this._coordinationState(normalizeCountryId(prepared),false)?.knowledgeRevision||0),
+            revision:Number(this._coordinationState(normalizeCountryId(context),false)?.knowledgeRevision||0),
             processedMessages:Number(this._coordinationState(normalizeCountryId(prepared),false)?.processedCount||0),
             attentionScore:Number(this._coordinationState(normalizeCountryId(prepared),false)?.attentionScore||0),
             openTasks:(this._coordinationState(normalizeCountryId(prepared),false)?.openTasks||[]).length,
