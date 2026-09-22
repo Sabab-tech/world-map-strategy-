@@ -315,6 +315,14 @@ window.Omega = window.Omega || {};
             this.#isInitialized = true;
         }
 
+        sendMinistryMessage(sender, receiver, topic, rawPayload) {
+            return this.#messaging.routeMessage(sender, receiver, topic, rawPayload || {});
+        }
+
+        flushMinistryMessages(mId, callback) {
+            return this.#messaging.flushQueue(mId, callback);
+        }
+
         executePipelineFrame(mId, dt, currentTurn, callbackManifest) {
             if (!this.#isInitialized) return;
             const kState = this.#kernelBridge.getMinistryStatus(mId);
@@ -482,7 +490,14 @@ window.Omega = window.Omega || {};
                         try { self.#commandRegistry.get(cmd)(payload); } catch(e) { self.#logger.log("ERROR", "KERNEL", `Dispatcher Fail: ${e.message}`); }
                     }
                 },
-                getService: (name) => name === "PermissionManager" ? self.#permissionManager : null,
+                getService: (name) => {
+                    if (name === "PermissionManager") return self.#permissionManager;
+                    if (name === "MinistryMessaging") return {
+                        send: (sender, receiver, topic, rawPayload) => self.#runtimeCore.sendMinistryMessage(sender, receiver, topic, rawPayload),
+                        flush: (mId, callback) => self.#runtimeCore.flushMinistryMessages(mId, callback),
+                    };
+                    return null;
+                },
                 emitEvent: (topic, payload) => self.#eventBus.emit(topic, payload),
                 log: (level, sys, msg) => self.#logger.log(level, sys, msg),
 
