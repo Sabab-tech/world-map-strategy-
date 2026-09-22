@@ -472,18 +472,109 @@
       return telemetry;
     }
 
+    function createDependencyPlan(){
+      const graph=new Map(IDS.map(id=>[id,new Set((SPECS[id]?.dependencies||[]).filter(dep=>IDS.includes(dep)))]));
+      const indexById=new Map();
+      const lowById=new Map();
+      const stack=[];
+      const onStack=new Set();
+      const components=[];
+      let index=0;
+
+      const visit=(id)=>{
+        indexById.set(id,index);
+        lowById.set(id,index);
+        index+=1;
+        stack.push(id);
+        onStack.add(id);
+        for(const dep of graph.get(id)||[]){
+          if(!indexById.has(dep)){
+            visit(dep);
+            lowById.set(id,Math.min(lowById.get(id),lowById.get(dep)));
+          }else if(onStack.has(dep)){
+            lowById.set(id,Math.min(lowById.get(id),indexById.get(dep)));
+          }
+        }
+        if(lowById.get(id)===indexById.get(id)){
+          const component=[];
+          while(stack.length){
+            const member=stack.pop();
+            onStack.delete(member);
+            component.push(member);
+            if(member===id)break;
+          }
+          component.sort((a,b)=>IDS.indexOf(a)-IDS.indexOf(b));
+          components.push(component);
+        }
+      };
+
+      for(const id of IDS)if(!indexById.has(id))visit(id);
+
+      const componentOf=new Map();
+      components.forEach((component,componentId)=>component.forEach(id=>componentOf.set(id,componentId)));
+
+      const outgoing=new Map(components.map((_,i)=>[i,new Set()]));
+      const indegree=new Map(components.map((_,i)=>[i,0]));
+      for(const [id,deps] of graph.entries()){
+        const from=componentOf.get(id);
+        for(const dep of deps){
+          const to=componentOf.get(dep);
+          if(from===to)continue;
+          if(!outgoing.get(to).has(from)){
+            outgoing.get(to).add(from);
+            indegree.set(from,indegree.get(from)+1);
+          }
+        }
+      }
+
+      const ready=components
+        .map((component,componentId)=>({componentId,component}))
+        .filter(row=>indegree.get(row.componentId)===0)
+        .sort((a,b)=>IDS.indexOf(a.component[0])-IDS.indexOf(b.component[0]));
+
+      const orderedComponents=[];
+      while(ready.length){
+        const row=ready.shift();
+        orderedComponents.push(row);
+        for(const next of outgoing.get(row.componentId)||[]){
+          indegree.set(next,indegree.get(next)-1);
+          if(indegree.get(next)===0){
+            ready.push({componentId:next,component:components[next]});
+            ready.sort((a,b)=>IDS.indexOf(a.component[0])-IDS.indexOf(b.component[0]));
+          }
+        }
+      }
+
+      if(orderedComponents.length!==components.length)throw new Error('MINISTRY_DEPENDENCY_GRAPH_INVALID');
+      const groups=orderedComponents.map(row=>row.component.slice());
+      const order=groups.flat();
+      return {
+        schemaVersion:1,
+        order,
+        groups,
+        cycles:groups.filter(group=>{
+          if(group.length>1)return true;
+          const only=group[0];
+          return graph.get(only)?.has(only)===true;
+        }),
+        dependencies:Object.fromEntries(IDS.map(id=>[id,[...(graph.get(id)||new Set())]]))
+      };
+    }
+
     function createSchedule(currentTurn){
       const turn=Number(currentTurn);
       if(!Number.isFinite(turn))throw new Error('SIMULATION_TURN_REQUIRED');
+      const dependencyPlan=createDependencyPlan();
       return {
         schemaVersion:1,
         turn,
-        deterministicOrder:IDS.slice(),
+        deterministicOrder:dependencyPlan.order.slice(),
+        dependencyPlan:clone(dependencyPlan),
         phases:GOVERNMENT_PHASES.map((id,index)=>({
           id,
           order:index,
           barriers:PHASE_BARRIERS[id].slice(),
-          ministryOrder:IDS.slice()
+          ministryOrder:dependencyPlan.order.slice()
         }))
       };
     }
@@ -535,7 +626,7 @@
         phase('WORLD_UPDATE','FAILED',{error:String(error?.message||error)});
       }
 
-      for(const id of IDS){
+      for(const id of schedule.deterministicOrder){
         try{
           observations.set(id,buildDomainContext(id,delta,turn,store));
         }catch(error){
@@ -546,7 +637,7 @@
         observedMinistries:observations.size
       });
 
-      for(const id of IDS){
+      for(const id of schedule.deterministicOrder){
         const context=observations.get(id);
         const countryId=context?.countryId;
         if(!context||!countryId)continue;
@@ -558,7 +649,7 @@
       }
       phase('INFORMATION',failures.some(x=>x.phase==='INFORMATION')?'DEGRADED':'COMMITTED');
 
-      for(const id of IDS){
+      for(const id of schedule.deterministicOrder){
         try{
           const freshContext=buildDomainContext(id,delta,turn,store);
           const result=tick(id,delta,turn,store,blackboard,{
@@ -580,7 +671,7 @@
 
       const coordination={};
       let governmentCoordination=null;
-      for(const id of IDS){
+      for(const id of schedule.deterministicOrder){
         const context=assessments.get(id)?.context;
         const countryId=context?.countryId;
         if(!countryId)continue;
@@ -603,12 +694,22 @@
         cabinetReady:governmentCoordination?.status==='READY'
       });
 
+      try{
+        const automatic=interoperability?.evaluateGovernmentDecisions?.(coordinationCountry||observations.get('cabinet')?.countryId,{
+          currentTurn:turn
+        });
+        if(Array.isArray(automatic?.evaluated))decisions.push(...clone(automatic.evaluated));
+      }catch(error){
+        failures.push({phase:'DECIDE',scope:'GOVERNMENT',error:String(error?.message||error)});
+      }
+
       if(typeof options.decide==='function'){
         try{
           const result=options.decide({
             turn,dt:delta,coordination:clone(coordination),
             governmentCoordination:clone(governmentCoordination),
-            ministries:IDS.slice()
+            decisions:clone(decisions),
+            ministries:schedule.deterministicOrder.slice()
           });
           if(Array.isArray(result))decisions.push(...clone(result));
           else if(result!==undefined)decisions.push(clone(result));
@@ -627,7 +728,20 @@
       }
       phase('AUTHORIZE',failures.some(x=>x.phase==='AUTHORIZE')?'DEGRADED':'COMMITTED');
 
-      const commandRequests=Array.isArray(options.commands)?options.commands:[];
+      let scheduledCommands=[];
+      try{
+        scheduledCommands=interoperability?.processScheduledEffects?.(turn,256)||[];
+      }catch(error){
+        failures.push({phase:'EXECUTE',scope:'SCHEDULED_EFFECTS',error:String(error?.message||error)});
+      }
+
+      let commandRequests=Array.isArray(options.commands)?clone(options.commands):[];
+      try{
+        const compiled=interoperability?.compileDecisionCommands?.(decisions,{turn})||[];
+        commandRequests=[...commandRequests,...compiled];
+      }catch(error){
+        failures.push({phase:'EXECUTE',scope:'COMMAND_COMPILER',error:String(error?.message||error)});
+      }
       for(const request of commandRequests){
         try{
           const source=String(request?.sourceMinistryId||'');
@@ -646,7 +760,13 @@
           failures.push({phase:'EXECUTE',scope:request?.sourceMinistryId||'unknown',error:String(error?.message||error)});
         }
       }
-      phase('EXECUTE',failures.some(x=>x.phase==='EXECUTE')?'DEGRADED':'COMMITTED',{commandCount:commands.length});
+      for(const scheduled of scheduledCommands){
+        if(scheduled?.status==='STAGED')commands.push(clone(scheduled));
+        else if(scheduled?.status==='FAILED'){
+          failures.push({phase:'EXECUTE',scope:'SCHEDULED_EFFECTS',error:String(scheduled?.result?.error||scheduled?.error||'SCHEDULED_EFFECT_FAILED')});
+        }
+      }
+      phase('EXECUTE',failures.some(x=>x.phase==='EXECUTE')?'DEGRADED':'COMMITTED',{commandCount:commands.length,scheduledEffects:scheduledCommands.length});
 
       let committedCommandRows=[];
       try{
@@ -711,12 +831,27 @@
         processedMinistries:assessments.size
       });
 
+      if(failures.length&&interoperability?.recordFailure){
+        for(const failure of failures){
+          try{
+            interoperability.recordFailure(
+              failure.scope||'GLOBAL',
+              failure.phase||'UNKNOWN',
+              turn,
+              failure.error||'UNKNOWN_FAILURE',
+              'RETRY',
+              {orchestrator:'OMEGA_MINISTRY_RUNTIME_V1'}
+            );
+          }catch(_){}
+        }
+      }
+
       lastOrchestration={
-        schemaVersion:1,
+        schemaVersion:2,
         turn,
         dt:delta,
         status:failures.length?'DEGRADED':'COMMITTED',
-        deterministicOrder:IDS.slice(),
+        deterministicOrder:schedule.deterministicOrder.slice(),
         phases:phaseResults,
         assessments:Object.fromEntries([...assessments.entries()].map(([id,row])=>[id,{
           revision:row.execution?.runtimeRevision??null,
@@ -854,6 +989,7 @@
       createSchedule,
       runTurn,
       getOrchestrationState:()=>clone(lastOrchestration),
+      createDependencyPlan,
       saveState,
       loadState,
       getEngineBinding:resolveEngineBinding,
