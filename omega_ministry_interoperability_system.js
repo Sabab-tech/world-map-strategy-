@@ -1435,6 +1435,16 @@
       return this.dispatchCommand(sourceMinistry,commandType,countryId,payload,{...options,commandType});
     }
 
+    getCommand(commandId){
+      const row=this.commands.get(String(commandId||''));
+      return row?clone(row):null;
+    }
+
+    getEvent(eventId){
+      const row=this.events.get(String(eventId||''));
+      return row?clone(row):null;
+    }
+
     emitEvent(eventType,countryId,sourceMinistry,payload={},options={}){
       const type=String(eventType||'');
       const country=String(countryId||'').trim().toUpperCase();
@@ -1635,6 +1645,10 @@
       this._ingestMessage(accepted.message);
       try{
         const result=typeof processor==='function'?processor(accepted.message):{accepted:true};
+        if(result&&result.accepted===false){
+          this.completeProcessing(message.messageId,false,currentTurn,String(result.reason||'PROCESSOR_REJECTED'));
+          return {ok:false,status:DELIVERY_STATUS.REJECTED,reason:result.reason||'PROCESSOR_REJECTED',result:clone(result)};
+        }
         this.completeProcessing(message.messageId,true,currentTurn);
         return {ok:true,status:DELIVERY_STATUS.PROCESSED,message:accepted.message,result:clone(result)};
       }catch(error){
@@ -1828,6 +1842,8 @@
     publishAlert:(...args)=>apiInstance.publishAlert(...args),
     getDelivery:(...args)=>apiInstance.getDelivery(...args),
     getRequest:(...args)=>apiInstance.getRequest(...args),
+    getCommand:(...args)=>apiInstance.getCommand(...args),
+    getEvent:(...args)=>apiInstance.getEvent(...args),
     getPendingRequests:(...args)=>apiInstance.getPendingRequests(...args),
     saveState:()=>apiInstance.saveState(),
     loadState:state=>apiInstance.loadState(state),
