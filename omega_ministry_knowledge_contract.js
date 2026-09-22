@@ -8,7 +8,7 @@
 (function(global){
   'use strict';
 
-  const VERSION='1.0.0';
+  const VERSION='1.1.0';
   const roles=Object.freeze({
     REQUIRED:'REQUIRED',
     OPTIONAL:'OPTIONAL',
@@ -88,6 +88,32 @@
     }
   };
 
+  function getCapability(ministryId){
+    const id=String(ministryId||'');
+    const def=definitions[id];
+    if(!def)return null;
+    return {
+      ministryId:id,
+      domain:def.domain,
+      publish:def.publish.slice(),
+      consume:def.watch.slice(),
+      actions:def.actions.slice()
+    };
+  }
+
+  function getActionAuthority(actionId){
+    const action=actionDefinitions[String(actionId||'')];
+    if(!action)return null;
+    return {
+      actionId:action.actionId,
+      stateOwnerMinistry:action.stateOwnerMinistry||null,
+      proposerAuthority:action.authority||null,
+      approvalRequirements:Array.isArray(action.approvalRequirements)?action.approvalRequirements.slice():[],
+      affectedMinistries:Array.isArray(action.affectedMinistries)?action.affectedMinistries.slice():[],
+      affectedStateDomains:Array.isArray(action.affectedStateDomains)?action.affectedStateDomains.slice():[]
+    };
+  }
+
   const api=Object.freeze({
     VERSION,
     roles:Object.freeze({...roles}),
@@ -102,6 +128,9 @@
     get:id=>definitions[String(id)]||null,
     getFactMeta:(ministry,path)=>factMeta[String(ministry)]?.[String(path)]||{role:roles.INFORMATIONAL},
     getAction:id=>actionDefinitions[String(id)]||null,
+    getCapability:getCapability,
+    getActionAuthority:getActionAuthority,
+    canPerform:(ministryId,actionId)=>Boolean(definitions[String(ministryId||'')]?.actions?.includes(String(actionId||''))),
     actions:()=>Object.keys(actionDefinitions),
     list:()=>Object.keys(definitions),
     size:()=>Object.keys(definitions).length
