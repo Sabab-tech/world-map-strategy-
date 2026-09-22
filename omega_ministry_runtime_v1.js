@@ -373,7 +373,8 @@
       const domainContext=options.contextOverride||buildDomainContext(id,dt,currentTurn,store);
       const countryId=domainContext.countryId;
       const dependencySnapshot=safeDependencyStates(states,kernel,spec.dependencies);
-      const phase=String(options.phase||['OBSERVE','VALIDATE','PROCESS','COMMIT'][Math.max(0,currentTurn||0)%4]);
+      // Direct tick is a ministry execution primitive. Turn lifecycle ownership belongs to runTurn().
+      const phase=String(options.phase||'ASSESS');
       let domainExecution;
 
       if(options.advanceInterop!==false&&interop && typeof interop.advanceTurn==='function')interop.advanceTurn(currentTurn);
