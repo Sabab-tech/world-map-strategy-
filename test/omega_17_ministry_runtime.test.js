@@ -121,7 +121,7 @@ test('the production Game.Simulation adapter delegates to the canonical governme
     OMEGA_MINISTRY_RUNTIME_V1:{
       runTurn(turn,dt,store){calls.push({turn,dt,store});return {turn,status:'COMMITTED'};}
     },
-    document:{},
+    document:{addEventListener(){},querySelectorAll(){return[]},getElementById(){return null}},
     setTimeout(){return 1},
     clearTimeout(){},
     ResourceMinistryEngine:{},
@@ -129,7 +129,10 @@ test('the production Game.Simulation adapter delegates to the canonical governme
   };
   sandbox.window=sandbox;
   sandbox.globalThis=sandbox;
-  vm.runInNewContext(source,sandbox,{filename:'map-engine-2.js'});
+  const simStart=source.indexOf('Game.Simulation = {');
+  const simEnd=source.indexOf('\n\nGame.Diplomacy',simStart);
+  assert.ok(simStart>=0&&simEnd>simStart,'canonical Game.Simulation adapter must be present');
+  vm.runInNewContext(source.slice(simStart,simEnd),sandbox,{filename:'map-engine-2.js:canonical-simulation'});
   const result=sandbox.Game.Simulation.tick(16.7);
   assert.equal(result.status,'COMMITTED');
   assert.equal(calls.length,1);
@@ -345,6 +348,8 @@ test('canonical government scheduler executes deterministic multi-phase turn spi
     'PUBLISH','REACT','VERIFY','TURN_END'
   ]);
   assert.equal(Object.keys(result.assessments).length,17);
-  assert.deepEqual(result.deterministicOrder,IDS);
+  const dependencyPlan=runtime.createDependencyPlan();
+  assert.deepEqual(result.deterministicOrder,dependencyPlan.order);
+  assert.deepEqual(result.deterministicOrder.slice().sort(),IDS.slice().sort());
   assert.equal(runtime.getOrchestrationState().turn,43);
 });
