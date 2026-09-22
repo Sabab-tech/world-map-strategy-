@@ -296,17 +296,7 @@
     _directPath(countryId,path){
       const state=this.root();
       const rawPath=String(path??'');
-      if(!rawPath)return undefined;      const datasetParts=rawPath.split('.');
-      const datasetDomain=datasetParts[0];
-      const datasetRecord=this._canonicalDatasetRecord(countryId,datasetDomain);
-      if(datasetRecord!==null){
-        let datasetValue=datasetRecord;
-        for(const part of datasetParts.slice(1)){
-          if(datasetValue==null||!Object.prototype.hasOwnProperty.call(Object(datasetValue),part)) { datasetValue=undefined; break; }
-          datasetValue=datasetValue[part];
-        }
-        if(datasetValue!==undefined)return datasetValue;
-      }
+      if(!rawPath)return undefined;
 
       if(rawPath==='countryRecord'||rawPath==='country.identity')return this.countryRecord(countryId);
 
@@ -315,6 +305,9 @@
       if(!domain)return undefined;
       const section=state?.[domain];
 
+      // Authoritative runtime state always wins once hydrated. Repository datasets are
+      // only the bootstrap/fallback source. This prevents same-turn committed state
+      // changes from being masked by immutable input JSON records.
       if(COUNTRY_SCOPED_DOMAINS.has(domain)){
         if(!section||typeof section!=='object'||!countryId)return undefined;
         let countryBucket=section[countryId];
@@ -332,12 +325,30 @@
       }
 
       let cur=state?.[domain];
-      if(cur===undefined)return undefined;
-      for(const part of parts){
-        if(cur==null||!Object.prototype.hasOwnProperty.call(Object(cur),part))return undefined;
-        cur=cur[part];
+      if(cur!==undefined){
+        for(const part of parts){
+          if(cur==null||!Object.prototype.hasOwnProperty.call(Object(cur),part)){
+            cur=undefined;
+            break;
+          }
+          cur=cur[part];
+        }
+        if(cur!==undefined)return cur;
       }
-      return cur;
+
+      const datasetRecord=this._canonicalDatasetRecord(countryId,domain);
+      if(datasetRecord!==null){
+        let datasetValue=datasetRecord;
+        for(const part of parts){
+          if(datasetValue==null||!Object.prototype.hasOwnProperty.call(Object(datasetValue),part)){
+            datasetValue=undefined;
+            break;
+          }
+          datasetValue=datasetValue[part];
+        }
+        if(datasetValue!==undefined)return datasetValue;
+      }
+      return undefined;
     }
     _specialPath(countryId,path){
       if(path==='resourceSummary'){
