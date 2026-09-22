@@ -136,6 +136,7 @@ jobs:
           if (!provider.includes('hydrateDataset')) throw new Error('Canonical dataset hydration missing');
           if (!provider.includes('hydrateCountryDomain')) throw new Error('Provider must hydrate through state authority');
           if (!provider.includes('_strictCanonicalCountryId')) throw new Error('Strict canonical country identity validation missing');
+          if (!provider.includes('ingestionQuarantine')) throw new Error('Unresolved data quarantine missing');
           if (!bridge.includes('getDatasetRecord')) throw new Error('Canonical dataset resolver missing');
           if (!gameLogic.includes('window.gameState = canonicalGameState')) throw new Error('Game state authority split remains');
           if (!gameLogic.includes('derivedState')) throw new Error('Derived state boundary missing');
