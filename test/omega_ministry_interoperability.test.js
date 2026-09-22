@@ -174,7 +174,9 @@ test('C+D: every route transports and target engines actually process packets',(
       const route=s.mesh.getConnection(source,target);
       assert.equal(route.messagesSent,1,source+'->'+target+' sent');
       assert.equal(route.messagesDelivered,1,source+'->'+target+' delivered');
-      assert.equal(route.messagesAccepted,1,source+'->'+target+' accepted');
+      assert.equal(route.messagesAccepted,1,source+'->'+target+' accepted '+JSON.stringify(s.mesh.getDelivery(
+        s.mesh.getMinistryInbox(s.countryA,target)[0]?.messageId||''
+      )));
       const engine=s.sandbox.OmegaMinistryDomainEngines.get(target);
       assert.equal(engine.getCoordinationState(s.countryA).processedCount>=1,true);
     }
@@ -185,7 +187,7 @@ test('E+F: duplicate, invalid and expired messages are rejected safely',()=>{
   const s=createSandbox();
   const msg=s.mesh.send('finance','trade','duplicate.test',{value:1},{countryId:s.countryA,turn:1,messageId:'DUPLICATE-1'});
   const first=s.mesh.acceptMessage(s.countryA,'trade',msg,1);
-  assert.equal(first.ok,true);
+  assert.equal(first.ok,true,JSON.stringify(first));
   const duplicate=s.mesh.acceptMessage(s.countryA,'trade',msg,1);
   assert.equal(duplicate.ok,true);
   assert.equal(duplicate.duplicate,true);
