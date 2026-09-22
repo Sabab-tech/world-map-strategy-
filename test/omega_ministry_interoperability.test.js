@@ -282,7 +282,7 @@ test('J: missing data remains explicit and never becomes zero',()=>{
   const finance=s.mesh.getPeerState('trade','finance',s.countryA,{currentTurn:3});
   const projects=s.mesh.getPeerState('trade','projects',s.countryA,{currentTurn:3});
   assert.equal(finance.publishedFacts['finance.reserves'].value,null);
-  assert.equal(finance.publishedFacts['finance.reserves'].availability,'UNOBSERVED');
+  assert.equal(finance.publishedFacts['finance.reserves'].availability,'UNAVAILABLE');
   assert.notEqual(finance.publishedFacts['finance.reserves'].value,0);
   assert.equal(projects.projects.knownCount,null);
   assert.ok(['UNAVAILABLE','UNOBSERVED'].includes(projects.publishedFacts['projects.registry'].availability));
@@ -739,6 +739,7 @@ test('architectural message protocol validates canonical schema fields before de
 });
 
 test('architectural knowledge contract exposes capability and authority as separate institutional views',()=>{
+  const s=createSandbox();
   const contract=s.sandbox.OmegaMinistryKnowledgeContract;
   const capability=contract.getCapability('trade');
   const authority=contract.getActionAuthority(ACTION_ID);
