@@ -5,7 +5,9 @@
 var Game = window.Game = {
     state: {
         population: {},
-        economy: {},
+        economy: {}
+    },
+    derivedState: {
         relations: {}
     },
 
