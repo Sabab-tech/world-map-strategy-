@@ -749,3 +749,41 @@ test('architectural knowledge contract exposes capability and authority as separ
   assert.deepEqual(authority.approvalRequirements,[]);
   assert.equal(contract.canPerform('trade','CONCLUDE_TRADE_AGREEMENT'),true);
 });
+
+test('architectural authority review can approve and resume a command without bypassing the state boundary',()=>{
+  const s=createSandbox();
+  s.tickAll(1);
+  s.mesh.registerAction(ACTION_ID+'-REVIEW',{
+    stateOwnerMinistry:'foreign',
+    approvalRequirements:['foreign.authority']
+  });
+  s.mesh.registerAuthorityPolicy(ACTION_ID+'-REVIEW',{
+    proposerMinistries:['trade'],
+    reviewerMinistries:['cabinet'],
+    approverMinistries:['cabinet'],
+    executorMinistries:['foreign'],
+    reviewRequired:true
+  });
+  let executions=0;
+  s.mesh.registerCommandHandler(ACTION_ID+'-REVIEW','foreign',(command,{stateTransaction})=>{
+    executions+=1;
+    const treaties=stateTransaction.get('foreign.treaties')||{};
+    treaties[s.countryB]={status:'APPROVED'};
+    stateTransaction.set('foreign.treaties',treaties);
+    return {accepted:true};
+  });
+
+  const pending=s.mesh.dispatchCommand('trade',ACTION_ID+'-REVIEW',s.countryA,{targetCountryId:s.countryB},{
+    turn:2,commandType:ACTION_ID+'-REVIEW',commandId:'CMD-REVIEW-1'
+  });
+  assert.equal(pending.status,'REVIEW_REQUIRED');
+  assert.ok(pending.caseId);
+  assert.equal(executions,0);
+
+  const approved=s.mesh.approveCommand('CMD-REVIEW-1',{ministryId:'cabinet',turn:2});
+  assert.equal(approved.status,'APPROVED');
+  const committed=s.mesh.executeApprovedCommand('CMD-REVIEW-1',{ministryId:'foreign',executorMinistryId:'foreign',turn:2});
+  assert.equal(committed.status,'APPLIED');
+  assert.equal(executions,1);
+  assert.equal(s.state.foreign[s.countryA].treaties[s.countryB].status,'APPROVED');
+});
