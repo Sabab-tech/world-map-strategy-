@@ -91,6 +91,8 @@
       this.datasetRows=Array.isArray(options.countryRows)?options.countryRows:null;
       this.revisionOverrides=options.revisionOverrides||null;
       this.turnOverrides=options.turnOverrides||null;
+      this.ingestionQuarantine=new Map();
+      this.lastIngestionReports=new Map();
     }
 
     root(){
@@ -188,8 +190,27 @@
           }
         }
       }else errors.push('DATASET_NOT_OBJECT_OR_ARRAY');
-      const result={...contract,valid:errors.length===0,errors};
+      const unresolvedCountryKeys=[];
+      const collectIdentity=value=>{
+        const raw=String(value??'').trim();
+        if(raw&&!this._strictCanonicalCountryId(raw))unresolvedCountryKeys.push(raw);
+      };
+      if(Array.isArray(value)){
+        value.forEach(row=>collectIdentity(row?.countryId||row?.countryCode||row?.country_code||row?.iso2||row?.iso3||row?.code||row?.id||row?.name||row?.countryName||row?.country_name));
+      }else if(value&&typeof value==='object'&&!this._looksLikeCountryRecord(value)){
+        for(const [key,row] of Object.entries(value)){
+          if(row&&typeof row==='object'&&!Array.isArray(row)){
+            collectIdentity(row.countryId||row.countryCode||row.country_code||row.iso2||row.iso3||row.code||row.id||row.name||row.countryName||row.country_name||key);
+          }
+        }
+      }
+      const totalRecords=Array.isArray(value)?value.length:(value&&typeof value==='object'?(
+        this._looksLikeCountryRecord(value)?1:Object.keys(value).length
+      ):0);
+      const identityCoverage=totalRecords?Math.max(0,(totalRecords-new Set(unresolvedCountryKeys).size)/totalRecords):1;
+      const result={...contract,valid:errors.length===0,errors,unresolvedCountryKeys:[...new Set(unresolvedCountryKeys)],identityCoverage};
       if(options.strict&&errors.length)throw new Error('DATASET_CONTRACT_INVALID:'+errors.join(','));
+      if(options.requireCompleteIdentity&&unresolvedCountryKeys.length)throw new Error('DATASET_IDENTITY_INCOMPLETE:'+[...new Set(unresolvedCountryKeys)].slice(0,25).join(','));
       return result;
     }
 
@@ -198,19 +219,26 @@
       if(!d)throw new Error('DATASET_DOMAIN_REQUIRED');
       const contract=this.validateDatasetShape(dataset,{strict:options.strict===true});
       const rows=[];
+      const unresolved=[];
       if(Array.isArray(dataset)){
-        dataset.forEach(row=>{
-          const id=this._strictCanonicalCountryId(row?.countryId||row?.countryCode||row?.country_code||row?.iso2||row?.iso3||row?.code||row?.id||row?.name||row?.countryName||row?.country_name);
+        dataset.forEach((row,index)=>{
+          const identity=row?.countryId||row?.countryCode||row?.country_code||row?.iso2||row?.iso3||row?.code||row?.id||row?.name||row?.countryName||row?.country_name;
+          const id=this._strictCanonicalCountryId(identity);
           if(id)rows.push([id,clone(row),'']);
+          else unresolved.push({index,identity:String(identity??''),reason:'COUNTRY_ID_NOT_CANONICAL'});
         });
       }else if(dataset&&typeof dataset==='object'){
         if(this._looksLikeCountryRecord(dataset)){
-          const id=this._strictCanonicalCountryId(dataset.countryId||dataset.countryCode||dataset.country_code||dataset.iso2||dataset.iso3||dataset.code||dataset.id||dataset.name||dataset.countryName||dataset.country_name);
+          const identity=dataset.countryId||dataset.countryCode||dataset.country_code||dataset.iso2||dataset.iso3||dataset.code||dataset.id||dataset.name||dataset.countryName||dataset.country_name;
+          const id=this._strictCanonicalCountryId(identity);
           if(id)rows.push([id,clone(dataset),'']);
+          else unresolved.push({key:null,identity:String(identity??''),reason:'COUNTRY_ID_NOT_CANONICAL'});
         }else{
           for(const [key,row] of Object.entries(dataset)){
-            const id=this._strictCanonicalCountryId(row?.countryId||row?.countryCode||row?.country_code||row?.iso2||row?.iso3||row?.code||row?.id||row?.name||row?.countryName||row?.country_name||key);
+            const identity=row?.countryId||row?.countryCode||row?.country_code||row?.iso2||row?.iso3||row?.code||row?.id||row?.name||row?.countryName||row?.country_name||key;
+            const id=this._strictCanonicalCountryId(identity);
             if(id)rows.push([id,clone(row),String(key)]);
+            else unresolved.push({key:String(key),identity:String(identity??key),reason:'COUNTRY_ID_NOT_CANONICAL'});
           }
         }
       }
@@ -221,6 +249,18 @@
         rows.map(([id,row,sourceKey=''])=>({countryId:id,value:row,sourceKey:String(sourceKey||'')})),
         {replace:options.replace!==false,allowHotPlug:options.allowHotPlug===true}
       );
+      const report={
+        schemaVersion:1,
+        domain:d,
+        countryCount:result.countryCount,
+        countryIds:(result.countryIds||[]).slice(),
+        unresolved:clone(unresolved),
+        unresolvedCount:unresolved.length,
+        identityCoverage:(rows.length+unresolved.length)?rows.length/(rows.length+unresolved.length):1,
+        simulationReady:unresolved.length===0
+      };
+      this.lastIngestionReports.set(d,report);
+      this.ingestionQuarantine.set(d,clone(unresolved));
       const state=this.root();
       if(!state[d]||typeof state[d]!=='object')throw new Error('STATE_DOMAIN_HYDRATION_FAILED');
       // Non-enumerable compatibility aliases keep legacy UI reads working without
@@ -243,6 +283,10 @@
         countryCount:result.countryCount,
         countryIds:[...new Set(result.countryIds||[])],
         contract,
+        unresolved:clone(unresolved),
+        unresolvedCount:unresolved.length,
+        identityCoverage:report.identityCoverage,
+        simulationReady:report.simulationReady,
         authority:'OMEGA_MINISTRY_STATE_PROVIDER'
       };
     }
@@ -447,6 +491,14 @@
       return clone(DATASET_INPUT_CONTRACT);
     }
 
+    getIngestionReport(domain){
+      return clone(this.lastIngestionReports.get(String(domain||''))||null);
+    }
+
+    getQuarantine(domain){
+      return clone(this.ingestionQuarantine.get(String(domain||''))||[]);
+    }
+
     diagnostics(countryId=null,paths=[]){
       const checks=[];
       if(countryId && paths.length){
@@ -472,6 +524,8 @@
     inputContract:clone(DATASET_INPUT_CONTRACT),
     validateDatasetShape:(dataset,options={})=>api.instance.validateDatasetShape(dataset,options),
     hydrateDataset:(dataset,domain,options={})=>api.instance.hydrateDataset(dataset,domain,options),
+    getIngestionReport:domain=>api.instance.getIngestionReport(domain),
+    getQuarantine:domain=>api.instance.getQuarantine(domain),
     instance:new MinistryStateProvider()
   };
 
