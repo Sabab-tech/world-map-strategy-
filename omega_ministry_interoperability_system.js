@@ -1020,6 +1020,26 @@
       return clone(list.slice(-10));
     }
 
+    _broadcastStateChangeNotice(countryId,ministryId,turn,stateRevision,changedPaths=[],causationId=null,provenance=null){
+      const targets=this.ids.filter(id=>id!==String(ministryId));
+      for(const target of targets){
+        try{
+          this.send(String(ministryId),target,'ministry.state.changed',{
+            stateRevision:stateRevision??null,
+            simulationTurn:Number(turn)||0,
+            changedPaths:(changedPaths||[]).slice(0,64)
+          },{
+            countryId:String(countryId).trim().toUpperCase(),
+            turn:Number(turn)||0,
+            messageType:MESSAGE_TYPES.STATE_UPDATE,
+            priority:'NORMAL',
+            causationId:causationId||null,
+            provenance:clone(provenance||null)
+          });
+        }catch(error){this.metrics.failed+=1;}
+      }
+    }
+
     _markDirtyPublication(snapshot,previous=null,transaction=null){
       const countryId=snapshot.countryId;
       const ministryId=snapshot.ministryId;
@@ -1041,25 +1061,7 @@
           causationId:transaction?.commandId||null
         };
         this.dirtyPublications.set(key,dirty);
-        const targets=this.ids.filter(id=>id!==ministryId);
-        for(const target of targets){
-          try{
-            this.send(ministryId,target,'ministry.state.changed',{
-              stateRevision:snapshot.stateRevision,
-              simulationTurn:snapshot.simulationTurn,
-              changedPaths:changedPaths.slice(0,64),
-              dataAvailability:clone(snapshot.dataAvailability)
-            },{
-              countryId,
-              turn:snapshot.simulationTurn,
-              messageType:MESSAGE_TYPES.STATE_UPDATE,
-              priority:'NORMAL',
-              causationId:transaction?.commandId||null,
-              provenance:snapshot.provenance
-            });
-          }catch(error){
-            this.metrics.failed+=1;
-          }
+        this._broadcastStateChangeNotice(countryId,ministryId,snapshot.simulationTurn,snapshot.stateRevision,changedPaths,transaction?.commandId||null,snapshot.provenance);
         }
       }
       return changedPaths;
@@ -1476,14 +1478,19 @@
         if(row.transaction?.afterRevision)row.stateRevisionAfter=row.transaction.afterRevision;
         if(row.stateChanged){
           row.requiresRepublish=true;
-          this._markDirtyPublication({
+          this.dirtyPublications.set(snapshotKey(country,handler.ownerMinistry),{
             countryId:country,
             ministryId:handler.ownerMinistry,
             simulationTurn:turn,
             stateRevision:row.transaction.afterRevision,
-            publishedFacts:{},
-            dataAvailability:{}
-          },null,row.transaction);
+            changedPaths:(row.transaction.operations||[]).map(op=>op.path).slice(0,64),
+            causationId:commandId
+          });
+          this._broadcastStateChangeNotice(
+            country,handler.ownerMinistry,turn,row.transaction.afterRevision,
+            (row.transaction.operations||[]).map(op=>op.path),
+            commandId,row.provenance||null
+          );
           this.emitEvent(EVENT_TYPES.MINISTRY_STATE_CHANGED,country,handler.ownerMinistry,{
             commandId,stateRevision:row.transaction.afterRevision,changedPaths:(row.transaction.operations||[]).map(op=>op.path)
           },{turn,causationId:commandId});
