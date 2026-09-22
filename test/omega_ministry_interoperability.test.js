@@ -88,6 +88,7 @@ function createSandbox(options={}){
   });
   loadBrowserScript('omega_ministry_information_policy.js',sandbox);
   loadBrowserScript('omega_ministry_decision_framework.js',sandbox);
+  loadBrowserScript('omega_ministry_state_transaction.js',sandbox);
   loadBrowserScript('omega_kernel.js',sandbox);
   loadBrowserScript('omega_ministry_domain_engines.js',sandbox);
   loadBrowserScript('omega_ministry_interoperability_system.js',sandbox);
@@ -320,9 +321,12 @@ test('O: country A and country B state remain isolated',()=>{
     }
   });
   s.tick('finance',1);
+  const originalCountry=s.store.countryId;
+  s.store.countryId='BB';
   s.sandbox.Game.currentActiveCountry='BB';
   s.sandbox.OmegaCabinetUI.activeCountry='BB';
   s.runtime.tick('finance',16.7,1,s.store,s.blackboard);
+  s.store.countryId=originalCountry;
   const a=s.mesh.getPeerState('trade','finance','AA',{currentTurn:1});
   const b=s.mesh.getPeerState('trade','finance','BB',{currentTurn:1});
   assert.equal(a.publishedFacts['finance.reserves'].value,10);
