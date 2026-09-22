@@ -821,3 +821,37 @@ test('architectural scheduler defers authoritative mutation until its COMMIT bou
   assert.equal(s.state.foreign[s.countryA].treaties[s.countryB].status,'STAGED');
   assert.equal(s.mesh.instance.pendingCommands.size,0);
 });
+
+test('architectural recovery preserves a prepared transaction across save/load',()=>{
+  const s=createSandbox();
+  s.tickAll(1);
+  s.mesh.registerAction(ACTION_ID+'-RECOVER',{
+    stateOwnerMinistry:'foreign'
+  });
+  s.mesh.registerAuthorityPolicy(ACTION_ID+'-RECOVER',{
+    proposerMinistries:['trade'],
+    approverMinistries:['trade'],
+    executorMinistries:['foreign']
+  });
+  s.mesh.registerCommandHandler(ACTION_ID+'-RECOVER','foreign',(command,{stateTransaction})=>{
+    const treaties=stateTransaction.get('foreign.treaties')||{};
+    treaties[s.countryB]={status:'RECOVERED'};
+    stateTransaction.set('foreign.treaties',treaties);
+    return {accepted:true};
+  });
+
+  const pending=s.mesh.dispatchCommand('trade',ACTION_ID+'-RECOVER',s.countryA,{targetCountryId:s.countryB},{
+    turn:2,commandType:ACTION_ID+'-RECOVER',commandId:'CMD-RECOVER-1',
+    deferCommit:true,deferEventDispatch:true
+  });
+  assert.equal(pending.status,'STAGED');
+  const snapshot=s.mesh.instance.saveState();
+  assert.equal(Array.isArray(snapshot.pendingCommands),true);
+  assert.equal(snapshot.pendingCommands.length,1);
+
+  s.mesh.instance.loadState(snapshot);
+  assert.equal(s.mesh.instance.pendingCommands.size,1);
+  const committed=s.mesh.commitPendingCommands(2);
+  assert.equal(committed[0].status,'APPLIED');
+  assert.equal(s.state.foreign[s.countryA].treaties[s.countryB].status,'RECOVERED');
+});
