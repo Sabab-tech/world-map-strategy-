@@ -72,9 +72,10 @@ function fixtureForEngine(engine){
 
 test('OMEGA data contract canonicalizes name-keyed repository datasets without duplicating authoritative country records',async()=>{
   const countries=JSON.parse(fs.readFileSync(new URL('../countries.json',import.meta.url),'utf8'));
+  const cities=JSON.parse(fs.readFileSync(new URL('../cities.json',import.meta.url),'utf8'));
   const economy=JSON.parse(fs.readFileSync(new URL('../economy.json',import.meta.url),'utf8'));
   const events=[];
-  const files={'countries.json':countries,'economy.json':economy};
+  const files={'countries.json':countries,'cities.json':cities,'economy.json':economy};
   const sandbox={
     console,Date,JSON,Object,Number,String,RegExp,Map,Set,WeakMap,Array,Math,Promise,URL,
     fetch:async path=>({ok:true,json:async()=>files[String(path).replace(/^\//,'').replace(/\?.*$/,'')]}),
