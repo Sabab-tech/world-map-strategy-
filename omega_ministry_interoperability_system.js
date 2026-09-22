@@ -148,6 +148,7 @@
       this.projectSignals=new Map();
       this.constraints=new Map();
       this.fiscalReports=new Map();
+      this._receivedMessageIds=new Set();
       this.routeSequence=0;
       this.attached=false;
       this.bridge=null;
@@ -339,29 +340,25 @@
       this._recordRouteSend(route,turn);
       this.metrics.sent+=1;
 
-      let delivered=false;
+      // The interoperability queue is the canonical logical delivery ledger.
+      // The kernel messaging engine is a transport adapter and may deliver the
+      // same packet separately. acceptMessage() deduplicates by messageId.
+      const inbox=this.inboxes.get(target);
+      if(!inbox){
+        this._recordRouteDrop(route);
+        this.metrics.dropped+=1;
+        throw new Error('MESH_RECEIVER_INBOX_MISSING:'+target);
+      }
+      inbox.push(message);
+      while(inbox.length>1000) inbox.shift();
+
       if(this.messaging && typeof this.messaging.send==='function'){
         try{
           this.messaging.send(source,target,message.topic,{
             priority:message.priority,
             data:message
           });
-          delivered=true;
         }catch(_){}
-      }
-      if(!delivered){
-        const inbox=this.inboxes.get(target);
-        if(inbox){
-          inbox.push(message);
-          while(inbox.length>1000) inbox.shift();
-          delivered=true;
-        }
-      }
-
-      if(!delivered){
-        this._recordRouteDrop(route);
-        this.metrics.dropped+=1;
-        throw new Error('MESH_DELIVERY_FAILED:'+message.messageId);
       }
 
       if(message.messageType===MESSAGE_TYPES.REQUEST) this.metrics.requests+=1;
@@ -434,6 +431,15 @@
         this.metrics.rejected+=1;
         return {ok:false,reason:'ROUTE_NOT_FOUND'};
       }
+      const messageId=String(unwrapped.messageId||'');
+      if(messageId && this._receivedMessageIds.has(messageId)){
+        return {ok:true,duplicate:true,message:clone(unwrapped)};
+      }
+      if(messageId) this._receivedMessageIds.add(messageId);
+      if(this._receivedMessageIds.size>5000){
+        const oldest=this._receivedMessageIds.values().next().value;
+        if(oldest) this._receivedMessageIds.delete(oldest);
+      }
       this._recordRouteReceive(route,unwrapped.turn);
       this.metrics.received+=1;
       this._invalidateKnowledgeCache();
@@ -476,6 +482,19 @@
         });
       }
       return this._ministryKnowledge.get(ministryId);
+    }
+
+    drainInbox(ministryId,callback,maxMessages=100){
+      const id=String(ministryId);
+      const inbox=this.inboxes.get(id);
+      if(!inbox || typeof callback!=='function') return 0;
+      let drained=0;
+      while(drained<maxMessages && inbox.length){
+        const message=inbox.shift();
+        callback(message);
+        drained+=1;
+      }
+      return drained;
     }
 
     getMinistryInbox(ministryId){
@@ -1062,6 +1081,8 @@
       this.projectSignals=new Map(Array.isArray(data.projectSignals)?data.projectSignals.map(([k,v])=>[k,clone(v)]):[]);
       this.constraints=new Map(Array.isArray(data.constraints)?data.constraints.map(([k,v])=>[k,clone(v)]):[]);
       this.fiscalReports=new Map(Array.isArray(data.fiscalReports)?data.fiscalReports.map(([k,v])=>[k,clone(v)]):[]);
+      this._receivedMessageIds=new Set();
+      this._invalidateKnowledgeCache();
       this.metrics={...this.metrics,...clone(data.metrics||{})};
     }
   }
