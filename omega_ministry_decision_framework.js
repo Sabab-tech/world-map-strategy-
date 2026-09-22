@@ -169,9 +169,10 @@
       const warnings=[];
       const evidenceById=new Map();
 
+      let requirementIndex=0;
       for(const requirement of requirements){
         const result=this._fact(input.briefing||{},requirement,ministryId,countryId,input.currentTurn??null);
-        const key=String(requirement.id||requirement.path||requirement.ministryId||'requirement');
+        const key=String(requirement.id||requirement.path||requirement.ministryId||('requirement:'+String(requirementIndex++)));
         evidence.push({...result,requirement:clone(requirement)});
         evidenceById.set(key,result);
         if(result.status==='MISSING' && requirement.required!==false)missing.push(result);
