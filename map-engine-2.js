@@ -197,16 +197,14 @@ Game.getGameFriendlyName = function(name) {
 Game.Simulation = {
     tick(dt=0){
         const runtime=window.OMEGA_MINISTRY_RUNTIME_V1||window.Omega?.MinistryRuntime||null;
-        if(!runtime?.runTurn)throw new Error('CANONICAL_MINISTRY_RUNTIME_UNAVAILABLE');
+        if(!runtime?.runWorldTurn)throw new Error('CANONICAL_WORLD_RUNTIME_UNAVAILABLE');
         const current=Number(
             Game.state?.simulationTurn ??
             Game.worldState?.turn ??
             0
         );
         const nextTurn=Math.max(1,Number.isFinite(current)?current+1:1);
-        return runtime.runTurn(nextTurn,Number.isFinite(Number(dt))?Number(dt):0,{
-            countryId:Game.currentActiveCountry||window.CountryIOS?.activeCountry||window.OmegaCabinetUI?.activeCountry||null
-        });
+        return runtime.runWorldTurn(nextTurn,Number.isFinite(Number(dt))?Number(dt):0);
     },
     getCurrentTurn(){
         return Number(Game.state?.simulationTurn??Game.worldState?.turn??0);
