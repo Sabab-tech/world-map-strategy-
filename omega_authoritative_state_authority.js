@@ -132,9 +132,10 @@
 
       // Semantic idempotency: the same committed command is never applied twice.
       const existing=this.transactionLedger.get(transactionId);
-      if(existing){
+      if(existing&&existing.status!=='CONFLICT'){
         return Object.freeze({...clone(existing),duplicate:true,status:'ALREADY_PROCESSED'});
       }
+      if(existing?.status==='CONFLICT')this.transactionLedger.delete(transactionId);
 
       const aliases={resourceSummary:'resource',resourceInventory:'resource',resourceDeposits:'resource'};
       const firstDomain=String(operations[0]?.path||'').split('.')[0]||owner;
