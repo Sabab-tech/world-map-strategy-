@@ -483,8 +483,13 @@ _globalTarget.WorldEcosystemEngine = (() => {
             });
         }
 
+        const causalLogId = `CAUSAL_LOG_${currentSimulationTick}_${causalLogCounter++}`;
+        if (authoritativeState?.worldEcosystem) {
+            authoritativeState.worldEcosystem.causalLogCounter = causalLogCounter;
+        }
+
         const logEntry = {
-            id: `CAUSAL_LOG_${Date.now()}_${causalLogCounter++}`,
+            id: causalLogId,
             timestamp: new Date().toISOString(),
             origin,
             target,
