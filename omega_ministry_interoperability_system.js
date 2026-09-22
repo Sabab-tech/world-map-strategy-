@@ -2038,7 +2038,7 @@
       return [...this.events.values()]
         .filter(event=>(country===null||event.countryId===country)&&Number(event.simulationTurn)>=from&&Number(event.simulationTurn)<=to)
         .sort((a,b)=>Number(a.simulationTurn)-Number(b.simulationTurn)||String(a.eventId).localeCompare(String(b.eventId)))
-        .map(clone);
+        .map(event=>clone(event));
     }
 
     replayEvents(options={}){
