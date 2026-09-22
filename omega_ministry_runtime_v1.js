@@ -501,6 +501,8 @@
       if(!initialized)throw new Error('OMEGA_GOVERNMENT_RUNTIME_NOT_INITIALIZED');
       const turn=Number(currentTurn);
       if(!Number.isFinite(turn))throw new Error('SIMULATION_TURN_REQUIRED');
+      if(lastOrchestration&&turn<Number(lastOrchestration.turn))throw new Error('SIMULATION_TURN_REGRESSION');
+      if(lastOrchestration&&turn===Number(lastOrchestration.turn)&&options.allowRepeat!==true)return clone(lastOrchestration);
       const delta=Number.isFinite(Number(dt))?Number(dt):0;
       const schedule=createSchedule(turn);
       const phaseResults=[];
@@ -576,6 +578,7 @@
       });
 
       const coordination={};
+      let governmentCoordination=null;
       for(const id of IDS){
         const context=assessments.get(id)?.context;
         const countryId=context?.countryId;
@@ -586,14 +589,24 @@
           failures.push({phase:'COORDINATE',scope:id,error:String(error?.message||error)});
         }
       }
+      const coordinationCountry=store?.countryId||observations.get('cabinet')?.countryId||null;
+      try{
+        if(coordinationCountry&&interoperability?.coordinateGovernment){
+          governmentCoordination=interoperability.coordinateGovernment(coordinationCountry,{currentTurn:turn});
+        }
+      }catch(error){
+        failures.push({phase:'COORDINATE',scope:'CABINET',error:String(error?.message||error)});
+      }
       phase('COORDINATE',failures.some(x=>x.phase==='COORDINATE')?'DEGRADED':'COMMITTED',{
-        coordinatedMinistries:Object.keys(coordination).length
+        coordinatedMinistries:Object.keys(coordination).length,
+        cabinetReady:governmentCoordination?.status==='READY'
       });
 
       if(typeof options.decide==='function'){
         try{
           const result=options.decide({
             turn,dt:delta,coordination:clone(coordination),
+            governmentCoordination:clone(governmentCoordination),
             ministries:IDS.slice()
           });
           if(Array.isArray(result))decisions.push(...clone(result));
@@ -606,7 +619,7 @@
 
       if(typeof options.authorize==='function'){
         try{
-          options.authorize({turn,dt:delta,decisions:clone(decisions),coordination:clone(coordination)});
+          options.authorize({turn,dt:delta,decisions:clone(decisions),coordination:clone(coordination),governmentCoordination:clone(governmentCoordination)});
         }catch(error){
           failures.push({phase:'AUTHORIZE',scope:'GOVERNMENT',error:String(error?.message||error)});
         }
@@ -623,7 +636,8 @@
           const result=interoperability.dispatchCommand(source,actionId,countryId,request.payload||{},{
             ...request.options,
             turn,
-            commandType:request.commandType||actionId
+            commandType:request.commandType||actionId,
+            deferEventDispatch:true
           });
           commands.push(clone(result));
         }catch(error){
@@ -692,6 +706,7 @@
           revision:row.execution?.runtimeRevision??null,
           engineRevision:row.execution?.domainExecution?.revision??null
         }])),
+        coordination:clone(governmentCoordination),
         decisions:clone(decisions),
         commands:clone(commands),
         reactions:clone(reactions),
