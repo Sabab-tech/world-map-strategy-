@@ -225,8 +225,6 @@
     const countryIdRaw=String(
       store?.countryId ||
       global.OmegaSimulation?.activeCountryId ||
-      store?.countryId ||
-      global.OmegaSimulation?.activeCountryId ||
       global.OmegaCabinetUI?.activeCountry ||
       global.Game?.currentActiveCountry ||
       global.CountryIOS?.activeCountry ||
