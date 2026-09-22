@@ -1780,9 +1780,9 @@ Game.Map.setMapMetric = function(metric) {
         values.push(val);
     });
 
-    const validVals = values.filter(v => typeof v === 'number' && !isNaN(v));
+    const validVals = values.filter(v => typeof v === 'number' && Number.isFinite(v));
     const min = validVals.length > 0 ? Math.min(...validVals) : 0;
-    const max = validVals.length > 0 ? Math.max(...validVals) : 100;
+    const max = validVals.length > 0 ? Math.max(...validVals) : 0;
     const range = (max - min) || 1;
 
     const fmt = (v) => {
@@ -1827,21 +1827,24 @@ Game.Map.getCountryMetricValue = function(countryName, metric) {
     const pop = (Game.state && Game.state.population && Game.state.population[cId]) || {};
     const loc = (Game.locationsRegistry && Game.locationsRegistry[cId]) || {};
 
-    const gdp = econ.gdp || 50000000000;
-    const popVal = pop.population_2015 || 15000000;
+    const gdp = Number.isFinite(Number(econ.gdp)) ? Number(econ.gdp) : null;
+    const popVal = Number.isFinite(Number(pop.population_2015)) ? Number(pop.population_2015) : null;
 
     switch (metric) {
         case 'GDP': return gdp;
-        case 'GDP_PER_CAPITA': return gdp / (popVal || 1);
-        case 'TREASURY': return econ.treasury || (gdp * 0.08);
-        case 'DEBT': return (econ.debt || (gdp * 0.4)) / (gdp || 1);
+        case 'GDP_PER_CAPITA': return (gdp !== null && popVal) ? gdp / popVal : null;
+        case 'TREASURY': return Number.isFinite(Number(econ.treasury)) ? Number(econ.treasury) : null;
+        case 'DEBT': return (gdp !== null && gdp !== 0 && Number.isFinite(Number(econ.debt))) ? Number(econ.debt) / gdp : null;
         case 'POPULATION': return popVal;
-        case 'EMPLOYMENT': return econ.employment_rate || 92;
-        case 'RESOURCE_WEALTH': return (loc.resource_count || 5) * 1000 + (gdp * 0.001);
-        case 'ENERGY': return econ.energy_capacity || 15;
-        case 'MILITARY': return (econ.military_power || 65);
-        case 'STABILITY': return (econ.stability || 75);
-        default: return 0;
+        case 'EMPLOYMENT': return Number.isFinite(Number(econ.employment_rate)) ? Number(econ.employment_rate) : null;
+        case 'RESOURCE_WEALTH': {
+            const count=Number.isFinite(Number(loc.resource_count)) ? Number(loc.resource_count) : null;
+            return (count !== null && gdp !== null) ? count*1000 + gdp*0.001 : null;
+        }
+        case 'ENERGY': return Number.isFinite(Number(econ.energy_capacity)) ? Number(econ.energy_capacity) : null;
+        case 'MILITARY': return Number.isFinite(Number(econ.military_power)) ? Number(econ.military_power) : null;
+        case 'STABILITY': return Number.isFinite(Number(econ.stability)) ? Number(econ.stability) : null;
+        default: return null;
     }
 };
 
