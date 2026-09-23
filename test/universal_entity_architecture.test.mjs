@@ -65,7 +65,6 @@ assert.equal(unknown.id, null);
 const core = globalThis.OfflineQueryEngine;
 assert.ok(core, 'Deep Core must expose the unified repository selector');
 
-core.resetForTest = undefined;
 const coreDataset = {
   "Testland 002": {
     nation_ref: "Testland 002",
