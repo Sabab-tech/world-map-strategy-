@@ -1241,7 +1241,8 @@
     const personnelKey=structure.personnel!==undefined?'personnel':structure.activePersonnel!==undefined?'activePersonnel':structure.manpower!==undefined?'manpower':null;
     if(!personnelKey)return{accepted:false,reason:'PERSONNEL_FIELD_UNAVAILABLE'};
     const organizedKey=structure.organizedPersonnel!==undefined?'organizedPersonnel':structure.organized_personnel!==undefined?'organized_personnel':structure.assignedPersonnel!==undefined?'assignedPersonnel':'organizedPersonnel';
-    const unitsKey=structure.units!==undefined?'units':structure.unitCount!==undefined?'unitCount':'units';
+    const unitsKey=structure.units!==undefined?'units':structure.unitCount!==undefined?'unitCount':null;
+    if(!unitsKey)return{accepted:false,reason:'UNIT_COUNT_FIELD_UNAVAILABLE'};
     const current=scalar(structure[personnelKey]);
     if(current===null)return{accepted:false,reason:'PERSONNEL_VALUE_UNAVAILABLE'};
     const already=scalar(structure[organizedKey])??0;
@@ -1255,7 +1256,8 @@
     const next=clone(structure);
     next[organizedKey]=already+unitsAdded*perUnit;
     const units=scalar(structure[unitsKey]);
-    next[unitsKey]=(units===null?units:units+unitsAdded);
+    if(units===null)return{accepted:false,reason:'UNIT_COUNT_VALUE_UNAVAILABLE'};
+    next[unitsKey]=units+unitsAdded;
     ctx.stateTransaction.set('military.forceStructure',next);
     const row={organizationId:String(p.organizationId||('ORG-'+turn()+'-'+ctx.countryId)),personnel:unitsAdded*perUnit,unitsAdded,status:'ORGANIZED',createdTurn:turn(),decisionId:p.decisionId||null};
     const q=Array.isArray(ctx.stateTransaction.get('military.organizationQueue'))?ctx.stateTransaction.get('military.organizationQueue'):[];
