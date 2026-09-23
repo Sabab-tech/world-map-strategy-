@@ -193,7 +193,8 @@
       'interior.stability','interior.corruption','interior.security','interior.housingAssets','cities.housing.available'
     ],
     transport:[
-      'transport.infrastructure','transport.infrastructure.capacity','transport.logistics','transport.ports','transport.rail','transport.resourceRevenue'
+      'transport.infrastructure','transport.infrastructure.capacity','transport.logistics','transport.ports','transport.rail','transport.resourceRevenue',
+      'transport.resourceRouteCapacity','transport.resourceShipments','transport.resourceBatchStatus','transport.runtimeStatus','transport.lastProcessedTurn'
     ],
     resource:[
       'resourceSummary','resourceInventory','resourceDeposits','resource.inventory','resource.production','resource.consumption','resource.reserves',
