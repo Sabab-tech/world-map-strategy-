@@ -524,22 +524,22 @@
       if(row.status!=='READY')continue;
       const asset=(p.assets||[]).find(a=>String(a?.projectId??a?.assetId??a?.id??a?.siteId??'')===row.facilityId);
       if(!asset)continue;
-      let sourceBatchIds=[];
+      const txId='IND-'+turn()+'-'+canonical(c)+'-'+row.facilityId+'-'+String(executed.length+1);
+      let sourceBatchIds=[],consumptions=[];
       for(const [rid,coef] of Object.entries(row.inputCoefficients)){
         const qty=row.plannedScale*coef;
         const result=dispatch('resource','OMEGA_RESOURCE_ECON_CONSUME_INVENTORY',c,{
           resourceId:rid,quantity:qty,reason:row.stage==='FACTORY'?'FACTORY_INPUT_CONSUMPTION':'PROCESSING_INPUT_CONSUMPTION',
-          correlationId:'IND-'+turn()+'-'+canonical(c)+'-'+row.facilityId
+          correlationId:txId
         });
         if(result?.status!=='APPLIED'){
           row.status='BLOCKED';row.reason=result?.result?.reason||'INPUT_CONSUMPTION_FAILED';break;
         }
-        for(const x of (result.result?.consumed||[]))if(x.batchId)sourceBatchIds.push(x.batchId);
-        const txId='IND-'+turn()+'-'+canonical(c)+'-'+row.facilityId+'-'+String(executed.length+1);
-        settleDomesticInput(c,rid,qty,result.result?.consumed||[],row.companyId,row.facilityId,txId);
+        const consumed=result.result?.consumed||[];
+        consumptions.push({resourceId:rid,quantity:qty,consumed});
+        for(const x of consumed)if(x.batchId)sourceBatchIds.push(x.batchId);
       }
       if(row.status!=='READY')continue;
-      const txId='IND-'+turn()+'-'+canonical(c)+'-'+row.facilityId+'-'+String(executed.length+1);
       for(const [rid,q] of Object.entries(row.computedOutputs)){
         const stage=row.stage==='PROCESSING'?'INTERMEDIATE':'FINISHED';
         const add=dispatch('resource','OMEGA_RESOURCE_ECON_ADD_INVENTORY',c,{
@@ -551,6 +551,7 @@
         }
       }
       if(row.status!=='READY')continue;
+      for(const item of consumptions)settleDomesticInput(c,item.resourceId,item.quantity,item.consumed,row.companyId,row.facilityId,txId);
       executed.push({
         transactionId:txId,countryId:canonical(c),facilityId:row.facilityId,companyId:row.companyId,stage:row.stage,
         inputQuantities:Object.fromEntries(Object.entries(row.inputCoefficients).map(([rid,coef])=>[rid,row.plannedScale*coef])),
