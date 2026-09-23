@@ -535,6 +535,8 @@
           row.status='BLOCKED';row.reason=result?.result?.reason||'INPUT_CONSUMPTION_FAILED';break;
         }
         for(const x of (result.result?.consumed||[]))if(x.batchId)sourceBatchIds.push(x.batchId);
+        const txId='IND-'+turn()+'-'+canonical(c)+'-'+row.facilityId+'-'+String(executed.length+1);
+        settleDomesticInput(c,rid,qty,result.result?.consumed||[],row.companyId,row.facilityId,txId);
       }
       if(row.status!=='READY')continue;
       const txId='IND-'+turn()+'-'+canonical(c)+'-'+row.facilityId+'-'+String(executed.length+1);
@@ -655,6 +657,58 @@
     const owners=econ.industrialRuntime?.materialOwners;
     if(owners?.[resourceId])return String(owners[resourceId]);
     return companyIdForMine(c,resourceId);
+  }
+
+  function settleDomesticInput(c,resourceId,quantity,consumed,buyerCompany,facilityId,transactionId){
+    const grossUnit=num(read(c,'trade.marketPrice')?.[resourceId]);
+    const unitPrice=grossUnit!==null?grossUnit:(typeof g.OmegaGlobalMarket?.localPrice==='function'?num(g.OmegaGlobalMarket.localPrice(c,resourceId)):null);
+    const q=num(quantity)||0;
+    const suppliers={};
+    for(const row of Array.isArray(consumed)?consumed:[]){
+      const owner=String(row?.ownerCompanyId||'').trim();
+      const rq=num(row?.quantity)||0;
+      if(owner&&owner!=='UNKNOWN_SOURCE'&&rq>0)suppliers[owner]=(suppliers[owner]||0)+rq;
+    }
+    if(!Object.keys(suppliers).length)suppliers[companyIdForMine(c,resourceId)]=q;
+    const totalSupplierQty=Object.values(suppliers).reduce((s,v)=>s+v,0)||q;
+    const sale={
+      saleId:'DOM-'+turn()+'-'+canonical(c)+'-'+token(resourceId)+'-'+String(facilityId)+'-'+String(transactionId),
+      transactionId,facilityId,countryId:canonical(c),resourceId,quantity:q,buyerCompanyId:buyerCompany,
+      supplierAllocations:clone(suppliers),direction:'DOMESTIC',simulationTurn:turn()
+    };
+    if(unitPrice===null||unitPrice<=0){
+      sale.status='PHYSICAL_TRANSFER_COMPLETED';
+      sale.paymentStatus='UNOBSERVED';
+      sale.valuationStatus='UNOBSERVED_MARKET_PRICE';
+      dispatch('trade','OMEGA_RESOURCE_ECON_RECORD_DOMESTIC_SALE',c,{sale,correlationId:sale.saleId});
+      return sale;
+    }
+    sale.unitPrice=unitPrice;sale.totalValue=q*unitPrice;sale.status='SETTLED';sale.paymentStatus='SETTLED';sale.valuationStatus='OBSERVED_RUNTIME_MARKET_PRICE';
+    for(const [supplier,sourceQty] of Object.entries(suppliers)){
+      const share=sourceQty/totalSupplierQty;
+      const supplierGross=sale.totalValue*share;
+      dispatch('economy','OMEGA_RESOURCE_ECON_COMPANY_FLOW',c,{companyId:supplier,amount:supplierGross,direction:'CREDIT',grossRevenue:supplierGross,supplierRevenue:supplierGross,category:'DOMESTIC_SUPPLY',saleId:sale.saleId});
+      const f=fiscalForSale(c,{totalValue:supplierGross,direction:'DOMESTIC',currency:null});
+      if(f&&f.total>0){
+        dispatch('economy','OMEGA_RESOURCE_ECON_COMPANY_FLOW',c,{companyId:supplier,amount:f.total,direction:'DEBIT',category:'TAX',saleId:sale.saleId});
+        dispatch('finance','OMEGA_RESOURCE_ECON_FISCAL_RECEIPT',c,{receipt:{...f,saleId:sale.saleId,resourceId,companyId:supplier,direction:'DOMESTIC'},correlationId:sale.saleId});
+      }
+      const worker=supplierGross*(num(rules()?.operatingAllocation?.workerIncomeRate)||0);
+      const transport=supplierGross*(num(rules()?.operatingAllocation?.transportRevenueRate)||0);
+      if(worker>0){
+        dispatch('economy','OMEGA_RESOURCE_ECON_WORKER_FLOW',c,{amount:worker,saleId:sale.saleId});
+        dispatch('economy','OMEGA_RESOURCE_ECON_COMPANY_FLOW',c,{companyId:supplier,amount:worker,direction:'DEBIT',category:'WORKER_INCOME',saleId:sale.saleId});
+      }
+      if(transport>0){
+        dispatch('transport','OMEGA_RESOURCE_ECON_TRANSPORT_REVENUE',c,{amount:transport,saleId:sale.saleId});
+        dispatch('economy','OMEGA_RESOURCE_ECON_COMPANY_FLOW',c,{companyId:supplier,amount:transport,direction:'DEBIT',category:'TRANSPORT',saleId:sale.saleId});
+      }
+    }
+    dispatch('economy','OMEGA_RESOURCE_ECON_COMPANY_FLOW',c,{companyId:buyerCompany,amount:sale.totalValue,direction:'DEBIT',category:'FACTORY_INPUT_PURCHASE',saleId:sale.saleId});
+    dispatch('economy','OMEGA_RESOURCE_ECON_SUPPLIER_FLOW',c,{amount:sale.totalValue,saleId:sale.saleId});
+    dispatch('trade','OMEGA_RESOURCE_ECON_RECORD_DOMESTIC_SALE',c,{sale,correlationId:sale.saleId});
+    emit('OMEGA_RESOURCE_DOMESTIC_SALE_SETTLED',c,sale,'trade');
+    return sale;
   }
 
   function recordMaterialOwner(c,execution){
