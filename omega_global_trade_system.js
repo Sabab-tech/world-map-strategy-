@@ -458,7 +458,7 @@
         if(response?.status==='APPLIED'){
           const next=response.result?.request;
           if(String(next?.status||'').toUpperCase()==='ACCEPTED')settleRequest(next);
-          if(String(next?.status||'').toUpperCase()==='REJECTED')handleRejection(next,d);
+          if(String(next?.status||'').toUpperCase()==='REJECTED'&&d?.decision==='REJECT')handleRejection(next,d);
         }
       }
       return;
@@ -498,10 +498,11 @@
     if(req.reservationId)command('cabinet','OMEGA_AUTO_RELEASE_RESERVATION',c,{reservationId:req.reservationId,correlationId:req.requestId});
     if(relation(c,s)){
       command('foreign','OMEGA_TRADE_APPLY_POLITICAL_PRESSURE',c,{targetCountryId:s,requestId:req.requestId,delta:-1,reason:decision?.reason||'TRADE_REFUSAL'});
-      if(refusal>=MILITARY_ESCALATION_AFTER){
-        command('military','OMEGA_TRADE_APPLY_MILITARY_PRESSURE',c,{targetCountryId:s,requestId:req.requestId,level:1});
-      }
+      const militaryLevel=refusal>=MILITARY_ESCALATION_AFTER?1:0;
+      if(militaryLevel)command('military','OMEGA_TRADE_APPLY_MILITARY_PRESSURE',c,{targetCountryId:s,requestId:req.requestId,level:militaryLevel});
+      emit('OMEGA_TRADE_PRESSURE_APPLIED',c,{targetCountryId:s,requestId:req.requestId,refusalCount:refusal,politicalPressureDelta:-1,militaryPressureLevel:militaryLevel,reason:decision?.reason||'TRADE_REFUSAL'});
     }
+    if(refusal>=8)return;
     try{memory()?.record?.(c,{type:'RELATIONAL',sourceEvent:'OMEGA_TRADE_REQUEST_REJECTED',targetCountryId:s,action:'IMPORT',outcome:{status:'REJECTED',reason:decision?.reason||null},importance:.8,confidence:.9});}catch(_){}
     if(turn()+RETRY_COOLDOWN>=turn()){
       command('trade','OMEGA_TRADE_CREATE_RETRY',c,{previousRequest:{...req,requestedQuantity:req.quantity,unitPrice:req.unitPrice,refusalCount:refusal},pressureLevel:refusal});
