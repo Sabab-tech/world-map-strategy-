@@ -38,7 +38,10 @@
     try{
       var reg=g.__OmegaResourceIdentityRegistry,locKey=m&&m.locationNodeKey,loc=reg&&reg.locations&&typeof reg.locations.get==='function'?reg.locations.get(locKey):null;
       lat=num(loc&&loc.lat);lng=num(loc&&(loc.lng!=null?loc.lng:loc.lon));
-      if(lat!==null&&lng!==null)return{lat:lat,lng:lng,accuracy:'IDENTITY_LOCATION',source:'PART04_LOCATION_REGISTRY'};
+      if(lat!==null&&lng!==null){
+        var anchorLocation=id(loc&&loc.adminStateProvince)==='PRIMARY_PROVINCE';
+        return{lat:lat,lng:lng,accuracy:anchorLocation?'COUNTRY_LEVEL_IDENTITY_ANCHOR':'IDENTITY_LOCATION',source:'PART04_LOCATION_REGISTRY'};
+      }
     }catch(_){}
     var engine=g.ResourceMinistryEngine;
     if(engine&&Array.isArray(engine.deposits)){
