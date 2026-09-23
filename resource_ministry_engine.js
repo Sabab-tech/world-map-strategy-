@@ -11798,9 +11798,33 @@ _globalScope.GSRSK_DataFoundation = (() => {
                             });
                             scratch.registerReserveAnchor(anchor);
 
-                            const declaredEndowment = this._resolveDeclaredQuantity(occ, deposit, knowledgeModel, config);
                             const unit = resType ? (resType.declaredStandardUnit || 'TONNES') : 'TONNES';
                             const dimension = resType ? (resType.declaredDimension || QuantityDimension.MASS) : QuantityDimension.MASS;
+                            const resolvedQuantity = this._resolveDeclaredQuantity(occ, deposit, knowledgeModel, config, unit);
+                            if (resolvedQuantity === null || !(resolvedQuantity > 0)) {
+                                if (scratch.diagnostics && typeof scratch.diagnostics.logDiagnostic === 'function') {
+                                    scratch.diagnostics.logDiagnostic(
+                                        'R5_021_DECLARED_RESERVE_UNAVAILABLE',
+                                        'No source-declared reserve quantity could be resolved for occurrence ' + occKey,
+                                        CollisionSeverity.WARNING,
+                                        { occurrenceKey: occKey, resourceTypeKey: occ.resourceTypeKey, depositKey: occ.depositKey }
+                                    );
+                                }
+                                return;
+                            }
+                            const declaredEndowment = resolvedQuantity;
+
+                            const rawReserve = this._findRawDepositRecord(deposit, knowledgeModel, occ);
+                            const reserveProvenance = rawReserve
+                                ? {
+                                    sourceSubsystem: 'RESOURCE_DEPOSIT_RESERVE_DATA',
+                                    sourceId: rawReserve.id || rawReserve.referenceId || rawReserve.name || deposit?.depositRawName || occKey,
+                                    declaredReserveText: rawReserve.reserves || rawReserve.reserve || null,
+                                    resourceId: occ.resourceTypeKey,
+                                    conversion: this._describeReserveConversion(rawReserve, occ.resourceTypeKey, unit),
+                                    timestamp: 0
+                                }
+                                : { sourceSubsystem: 'RESOURCE_OCCURRENCE_DECLARED_QUANTITY', sourceId: occKey, timestamp: 0 };
 
                             const basis = new ReserveBasis({
                                 occurrenceKey: occKey,
@@ -11808,7 +11832,8 @@ _globalScope.GSRSK_DataFoundation = (() => {
                                 unit: unit,
                                 dimension: dimension,
                                 reserveClass: occ.occurrenceTier === 'TIER_A_PRIMARY_KNOWN' ? ReserveClassificationEnum.MINERAL_PROVED_RESERVE : ReserveClassificationEnum.GEOLOGICAL_INFERRED,
-                                confidence: typeof occ.confidenceScore === 'number' ? occ.confidenceScore : 0.8
+                                confidence: typeof occ.confidenceScore === 'number' ? occ.confidenceScore : 0.8,
+                                provenance: reserveProvenance
                             });
                             scratch.registerReserveBasis(basis);
 
@@ -11828,7 +11853,8 @@ _globalScope.GSRSK_DataFoundation = (() => {
                                 currentlyAvailableQuantity: declaredEndowment * recFactor * 0.1,
                                 cumulativeDepletedQuantity: 0,
                                 residualQuantity: declaredEndowment * recFactor,
-                                operationalStatus: occ.occurrenceTier === 'TIER_A_PRIMARY_KNOWN' ? ReserveOperationalStatus.ACTIVE_EXTRACTION : ReserveOperationalStatus.UNASSESSED
+                                operationalStatus: occ.occurrenceTier === 'TIER_A_PRIMARY_KNOWN' ? ReserveOperationalStatus.ACTIVE_EXTRACTION : ReserveOperationalStatus.UNASSESSED,
+                                provenance: reserveProvenance
                             });
                             scratch.registerReserveState(state);
 
@@ -11889,22 +11915,103 @@ _globalScope.GSRSK_DataFoundation = (() => {
                 }
             }
 
-            _resolveDeclaredQuantity(occ, deposit, knowledgeModel, config) {
+            _findRawDepositRecord(deposit, knowledgeModel, occ) {
+                const refs = Array.isArray(knowledgeModel?.deposits)
+                    ? knowledgeModel.deposits
+                    : (Array.isArray(knowledgeModel?.references)
+                        ? knowledgeModel.references
+                        : (Array.isArray(knowledgeModel?.refCatalog?.allReferences) ? knowledgeModel.refCatalog.allReferences : []));
+                const name = String(deposit?.depositRawName || '').trim().toUpperCase();
+                const country = String(deposit?.hostCountryIso3 || '').trim().toUpperCase();
+                const id = String(occ?.depositKey || '').trim().toUpperCase();
+                return refs.find(ref => {
+                    if (!ref || typeof ref !== 'object') return false;
+                    const refCountry = String(ref.countryCode ?? ref.countryIso3 ?? ref.country ?? ref.hostCountryIso3 ?? '').trim().toUpperCase();
+                    const refName = String(ref.name ?? ref.depositRawName ?? ref.title ?? '').trim().toUpperCase();
+                    const refId = String(ref.id ?? ref.referenceId ?? '').trim().toUpperCase();
+                    return (name && refName === name && (!country || !refCountry || refCountry === country))
+                        || (refId && id && id.includes(refId));
+                }) || null;
+            }
+
+            _parseDeclaredReserveQuantity(reserveText, resourceTypeKey, targetUnit) {
+                const text = String(reserveText || '').replace(/,/g, ' ').replace(/\\s+/g, ' ').trim();
+                if (!text) return null;
+                const rid = String(resourceTypeKey || '').replace(/^RES_TYPE:/i, '').trim().toLowerCase();
+                if (rid === 'crude_oil') {
+                    const m = text.match(/([0-9]+(?:\\.[0-9]+)?)\\s*(billion|million|thousand)?\\s*(?:bb l|bbl|barrels?)/i) || text.match(/([0-9]+(?:\\.[0-9]+)?)\\s*(billion|million|thousand)?\\s*bb/i);
+                    if (!m) return null;
+                    const mult = String(m[2] || '').toLowerCase() === 'billion' ? 1e9 : String(m[2] || '').toLowerCase() === 'million' ? 1e6 : String(m[2] || '').toLowerCase() === 'thousand' ? 1e3 : 1;
+                    return Number(m[1]) * mult;
+                }
+                if (rid === 'natural_gas') {
+                    const tcf = text.match(/([0-9]+(?:\\.[0-9]+)?)\\s*(?:TCF|TRILLION\\s*CUBIC\\s*FEET)/i);
+                    if (tcf) return Number(tcf[1]) * 1e6;
+                    const bcf = text.match(/([0-9]+(?:\\.[0-9]+)?)\\s*(?:BCF|BILLION\\s*CUBIC\\s*FEET)/i);
+                    if (bcf) return Number(bcf[1]) * 1e3;
+                    const mcf = text.match(/([0-9]+(?:\\.[0-9]+)?)\\s*(?:MCF|MILLION\\s*CUBIC\\s*FEET)/i);
+                    if (mcf) return Number(mcf[1]);
+                    return null;
+                }
+                if (rid === 'gold') {
+                    const oz = text.match(/([0-9]+(?:\\.[0-9]+)?)\\s*(?:MILLION|BILLION|THOUSAND)?\\s*(?:OZ|OZT|TROY\\s*OUNCES?)/i);
+                    if (oz) {
+                        const scale = /BILLION/i.test(oz[0]) ? 1e9 : /MILLION/i.test(oz[0]) ? 1e6 : /THOUSAND/i.test(oz[0]) ? 1e3 : 1;
+                        return Number(oz[1]) * scale;
+                    }
+                    const tons = text.match(/([0-9]+(?:\\.[0-9]+)?)\\s*(?:MILLION|BILLION|THOUSAND)?\\s*TONS?\\s+GOLD/i);
+                    if (tons) {
+                        const scale = /BILLION/i.test(tons[0]) ? 1e9 : /MILLION/i.test(tons[0]) ? 1e6 : /THOUSAND/i.test(tons[0]) ? 1e3 : 1;
+                        return Number(tons[1]) * scale * 32150.7465686;
+                    }
+                    return null;
+                }
+                if (rid === 'uranium') {
+                    const m = text.match(/([0-9]+(?:\\.[0-9]+)?)\\s*(billion|million|thousand)?\\s*(?:metric\\s*)?tons?/i);
+                    if (!m) return null;
+                    const scale = String(m[2] || '').toLowerCase() === 'billion' ? 1e9 : String(m[2] || '').toLowerCase() === 'million' ? 1e6 : String(m[2] || '').toLowerCase() === 'thousand' ? 1e3 : 1;
+                    return Number(m[1]) * scale * 1000;
+                }
+                if (rid === 'iron_ore' && /\\bCOAL\\b/i.test(text)) return null;
+                if (['iron_ore','rare_earth','lithium','phosphate','bauxite','nickel','cobalt','potash'].includes(rid)) {
+                    const m = text.match(/([0-9]+(?:\\.[0-9]+)?)\\s*(billion|million|thousand)?\\s*(?:metric\\s*)?tons?/i);
+                    if (!m) return null;
+                    const scale = String(m[2] || '').toLowerCase() === 'billion' ? 1e9 : String(m[2] || '').toLowerCase() === 'million' ? 1e6 : String(m[2] || '').toLowerCase() === 'thousand' ? 1e3 : 1;
+                    return Number(m[1]) * scale;
+                }
+                return null;
+            }
+
+            _describeReserveConversion(rawDeposit, resourceTypeKey, targetUnit) {
+                const rid = String(resourceTypeKey || '').replace(/^RES_TYPE:/i, '').trim().toLowerCase();
+                const source = String(rawDeposit?.reserves || rawDeposit?.reserve || '');
+                if (rid === 'natural_gas' && /TCF/i.test(source)) return 'TCF_TO_MCF_1_TO_1000000';
+                if (rid === 'uranium' && /TON/i.test(source) && String(targetUnit).toUpperCase() === 'KG') return 'TONNES_TO_KG_1_TO_1000';
+                if (rid === 'gold' && /TON/i.test(source) && String(targetUnit).toUpperCase() === 'OZT') return 'TONNES_TO_TROY_OUNCE_1_TO_32150.7465686';
+                if (/BILLION/i.test(source)) return 'BILLION_TO_BASE_UNIT';
+                if (/MILLION/i.test(source)) return 'MILLION_TO_BASE_UNIT';
+                if (/THOUSAND/i.test(source)) return 'THOUSAND_TO_BASE_UNIT';
+                return 'DIRECT_SOURCE_UNIT';
+            }
+
+            _resolveDeclaredQuantity(occ, deposit, knowledgeModel, config, targetUnit) {
                 if (config.defaultQuantityPerTier && config.defaultQuantityPerTier[occ.occurrenceTier]) {
                     return config.defaultQuantityPerTier[occ.occurrenceTier];
                 }
                 if (typeof occ.declaredQuantity === 'number' && occ.declaredQuantity > 0) {
                     return occ.declaredQuantity;
                 }
-                const confidence = typeof occ.confidenceScore === 'number' ? occ.confidenceScore : 0.8;
-                return confidence * 5000000;
+                const raw = this._findRawDepositRecord(deposit, knowledgeModel, occ);
+                const parsed = this._parseDeclaredReserveQuantity(raw?.reserves || raw?.reserve, occ.resourceTypeKey, targetUnit);
+                if (parsed !== null && parsed > 0) return parsed;
+                return null;
             }
 
             _resolveNominalCapacityRate(declaredQuantity, config) {
                 if (typeof config.nominalRateDaily === 'number') {
                     return config.nominalRateDaily;
                 }
-                return Math.max(100, Math.round(declaredQuantity / 3650.0));
+                return Math.max(0.0001, declaredQuantity / 3650.0);
             }
 
             _compileBenchmarkModels(scratch, config = {}) {
