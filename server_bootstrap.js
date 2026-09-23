@@ -47,6 +47,7 @@ if (typeof nativeFetch === 'function' && !globalThis.__omegaGeminiFetchCompat) {
   };
 }
 
+await import('./omega_universal_entity_identity_engine.js');
 await import('./omega_country_semantic_bridge.js');
 const canonicalCountryBridge = globalThis.OmegaCanonicalIdentityRegistry || globalThis.OmegaCountrySemanticBridge;
 if (!canonicalCountryBridge?.init) {
