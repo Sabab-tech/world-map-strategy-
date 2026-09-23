@@ -103,7 +103,7 @@
     book.bids=book.bids.slice(-MAX_ORDERS);book.asks=book.asks.slice(-MAX_ORDERS);
     return book;
   }
-  function clearResource(rid,orders){
+  function clearResource(rid,orders,history=[]){
     const bids=[...orders.bids].sort((a,b)=>b.priceUsd-a.priceUsd||a.countryId.localeCompare(b.countryId)||String(a.requestId||'').localeCompare(String(b.requestId||'')));
     const asks=[...orders.asks].sort((a,b)=>a.priceUsd-b.priceUsd||a.countryId.localeCompare(b.countryId)||String(a.offerId||'').localeCompare(String(b.offerId||'')));
     let bi=0,ai=0,matched=0,lastBid=null,lastAsk=null,matches=[];
@@ -126,21 +126,27 @@
     const matchedNotional=matches.reduce((s,x)=>s+(x.quantity||0)*((x.bidPriceUsd+x.askPriceUsd)/2),0);
     const vwap=matched>0?Number((matchedNotional/matched).toFixed(8)):null;
     const spread=bestBid!==null&&bestAsk!==null?Number((bestAsk-bestBid).toFixed(8)):null;
-    const historyPrices=Array.isArray(arguments?.[2])?arguments[2]:[];
+    const priceSamples=(Array.isArray(history)?history:[]).map(x=>n(x?.clearingPriceUsd)).filter(x=>x!==null);
+    if(clearing!==null)priceSamples.push(clearing);
+    const mean=priceSamples.length?priceSamples.reduce((s,x)=>s+x,0)/priceSamples.length:null;
+    const variance=priceSamples.length>1?priceSamples.reduce((s,x)=>s+Math.pow(x-mean,2),0)/priceSamples.length:null;
+    const volatilityUsd=variance!==null?Number(Math.sqrt(variance).toFixed(8)):null;
     return{resourceId:rid,status,numeraire:'USD',clearingPriceUsd:clearing,bestBidUsd:bestBid,bestAskUsd:bestAsk,matchedQuantity:matched,
       bidDepth:bids.reduce((s,x)=>s+(n(x.quantity)||0),0),askDepth:asks.reduce((s,x)=>s+(n(x.quantity)||0),0),
       priceDiscovery:clearing!==null?'ORDER_BOOK_CROSSING':(bestBid!==null&&bestAsk!==null?'NEGOTIATION_RANGE':ref?'REFERENCE_ONLY':'UNAVAILABLE'),
-      referencePrice:ref?.price??null,referenceUnit:ref?.unit??null,referenceSource:ref?.source??null,matches,vwapUsd:vwap,spreadUsd:spread,
+      referencePrice:ref?.price??null,referenceUnit:ref?.unit??null,referenceSource:ref?.source??null,matches,vwapUsd:vwap,spreadUsd:spread,volatilityUsd,
       microstructure:{bidCount:bids.length,askCount:asks.length,referenceAskCount:asks.filter(x=>x.referenceOnly).length},
       generatedTurn:turn(),orderBookDepth:{bid:bids.length,ask:asks.length}};
   }
   function rebuild(){
     const markets={};
+    const seedCountry=countries()[0];
+    const persisted=seedCountry?countryValue(seedCountry,'trade.marketHistory'):{};
     for(const rid of resourceIds()){
       const orders=collectOrders(rid);
-      markets[rid]={orders,clearing:clearResource(rid,orders),history:[]};
-      const prior=state()?.globalMarketHistory?.[rid];
-      const h=Array.isArray(prior)?prior:[];markets[rid].history=h.concat([{turn:turn(),...markets[rid].clearing}]).slice(-MAX_MARKET_HISTORY);
+      const h=Array.isArray(persisted?.[rid])?persisted[rid]:[];
+      const clearing=clearResource(rid,orders,h);
+      markets[rid]={orders,clearing,history:h.concat([{turn:turn(),...clearing}]).slice(-MAX_MARKET_HISTORY)};
     }
     g.__OmegaMarketBooks=markets;
     return markets;
