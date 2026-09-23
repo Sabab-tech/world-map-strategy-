@@ -490,7 +490,15 @@
       ['OMEGA_RESOURCE_ECON_ADD_INVENTORY','resource',addInventoryHandler],
       ['OMEGA_RESOURCE_ECON_APPLY_PRODUCTION','resource',applyProductionHandler],
       ['OMEGA_RESOURCE_ECON_PUBLISH_RESOURCE_RUNTIME','resource',publishResourceRuntimeHandler],
+  function macroSignalHandler(cmd,ctx){
+    var p=cmd&&cmd.payload||{},macro=clone(p.resourceMacro||{});
+    ctx.stateTransaction.set('economy.resourceMacro',macro);
+    emit('OMEGA_RESOURCE_MACRO_SIGNAL_UPDATED',ctx.countryId,{turn:turn(),resourceMacro:macro},'economy');
+    return{accepted:true};
+  }
+
       ['OMEGA_RESOURCE_ECON_PUBLISH_ECONOMY','economy',economyPublishHandler],
+    ['OMEGA_RESOURCE_ECON_PUBLISH_MACRO_SIGNAL','economy',macroSignalHandler],
       ['OMEGA_RESOURCE_ECON_COMPANY_FLOW','economy',companyFlowHandler],
       ['OMEGA_RESOURCE_ECON_WORKER_FLOW','economy',flowHandler('economy.workerIncome','WORKER')],
       ['OMEGA_RESOURCE_ECON_SUPPLIER_FLOW','economy',flowHandler('economy.supplierRevenue','SUPPLIER')],
@@ -523,6 +531,25 @@
     runtime.lastTurn=turn();runtime.facilities=prod.executed.concat(prod.blocked);runtime.productionLedger=(Array.isArray(runtime.productionLedger)?runtime.productionLedger:[]).concat(prod.executed).slice(-(num(rules().runtime.maxLedgerEntries)||2048));runtime.blockedFacilities=prod.blocked.slice(-256);runtime.status=prod.blocked.length?'DEGRADED':(prod.assets.length?'HEALTHY':'NO_FACTORY_ASSETS');
     prod.executed.forEach(function(x){Object.keys(x.outputQuantities||{}).forEach(function(rid){out[rid]=(out[rid]||0)+x.outputQuantities[rid];});});
     dispatch('economy','OMEGA_RESOURCE_ECON_PUBLISH_ECONOMY',cid,{industrialRuntime:runtime,companyAccounts:accounts,workerIncome:workers,supplierRevenue:suppliers,factoryOutput:out,correlationId:'ECO-'+turn()+'-'+cid});
+    var prices=clone(read(cid,'trade.marketPrice')||{}),resourceProduction=clone(afterState.production||rs.production||{}),resourceConsumption=clone(afterState.consumption||rs.consumption||{}),resourceInventory=clone(afterState.inventory||after||{});
+    var priceValue=function(rid,q){var p=num(prices[rid]);if(p===null&&g.OmegaGlobalMarket&&typeof g.OmegaGlobalMarket.localPrice==='function'){try{p=num(g.OmegaGlobalMarket.localPrice(cid,rid));}catch(_){}}return p===null?null:p*(num(q)||0);};
+    var productionValue=0,consumptionValue=0,inventoryValue=0,unpricedProduction=0,unpricedConsumption=0;
+    Object.keys(resourceProduction).forEach(function(rid){var q=num(resourceProduction[rid])||0,v=priceValue(rid,q);if(v===null)unpricedProduction+=q;else productionValue+=v;});
+    Object.keys(resourceConsumption).forEach(function(rid){var q=num(resourceConsumption[rid])||0,v=priceValue(rid,q);if(v===null)unpricedConsumption+=q;else consumptionValue+=v;});
+    Object.keys(resourceInventory).forEach(function(rid){var q=num(resourceInventory[rid])||0,v=priceValue(rid,q);if(v!==null)inventoryValue+=v;});
+    var shortagePressure=consumptionValue>0?Math.max(0,Math.min(1,(consumptionValue-productionValue)/consumptionValue)):0;
+    var macro={
+      turn:turn(),countryId:cid,productionValue:productionValue,consumptionValue:consumptionValue,inventoryValue:inventoryValue,
+      supplyDemandValueGap:productionValue-consumptionValue,shortagePressure:shortagePressure,
+      factoryOutputValue:Object.keys(out).reduce(function(s,rid){var v=priceValue(rid,out[rid]);return s+(v===null?0:v);},0),
+      workerIncome:num(workers[cid]&&workers[cid].thisTurn)||num(workers.totalThisTurn)||0,
+      supplierRevenue:num(suppliers[cid]&&suppliers[cid].thisTurn)||num(suppliers.totalThisTurn)||0,
+      transportRevenue:num((bucket(cid,'transport')?.resourceRevenue||{}).thisTurn)||0,
+      fiscalReceiptThisTurn:num((bucket(cid,'finance')?.resourceFiscal||{}).thisTurn?.total)||0,
+      unpricedProductionQuantity:unpricedProduction,unpricedConsumptionQuantity:unpricedConsumption,
+      availability:'AVAILABLE',source:'OMEGA_RESOURCE_ECONOMY_RUNTIME_V2',authority:true
+    };
+    dispatch('economy','OMEGA_RESOURCE_ECON_PUBLISH_MACRO_SIGNAL',cid,{resourceMacro:macro,correlationId:'RESOURCE-MACRO-'+turn()+'-'+cid});
     emit('OMEGA_RESOURCE_INVENTORY_RECONCILED',cid,{turn:turn(),delta:delta,factoriesExecuted:prod.executed.length,factoriesBlocked:prod.blocked.length},'resource-economy');
     return{countryId:cid,turn:turn(),mineCount:Array.isArray(rs.mines)?rs.mines.length:0,inventoryBefore:before,inventoryAfter:after,inventoryDelta:delta,factoriesExecuted:prod.executed.length,factoriesBlocked:prod.blocked.length,blockedFacilities:prod.blocked,transportPrepared:!!transportPrep};
   }
