@@ -44,6 +44,7 @@ const COGNITIVE_SCRIPT = '<script src="/omega_cognitive_engine.js"></script>';
 const REASONING_SCRIPT = '<script src="/omega_reasoning_dispatcher.js"></script>';
 const COUNTRY_BRIDGE_SCRIPT = '<script src="/omega_country_semantic_bridge.js"></script>';
 const RESOURCE_BRIDGE_SCRIPT = '<script src="/omega_resource_semantic_bridge.js"></script>';
+const RESOURCE_MINISTRY_ENGINE_SCRIPT = '<script src="/resource_ministry_engine.js"></script>';
 const UNIVERSAL_AI_SCRIPT = '<script src="/omega_universal_ai_runtime.js"></script>';
 const LANGUAGE_SYSTEM_SCRIPT = '<script src="/omega_language_system.js"></script>';
 const LANGUAGE_BATCH03_SCRIPT = '<script src="/omega_language_batch03_semantic_extension.js"></script>';
@@ -121,7 +122,7 @@ function renderIndex(res, next) {
     if (err) return next(err);
     let output = html;
     const scripts = [
-      LANGUAGE_SYSTEM_SCRIPT, LANGUAGE_BATCH03_SCRIPT, UNIVERSAL_ENTITY_SCRIPT, COUNTRY_BRIDGE_SCRIPT, RESOURCE_BRIDGE_SCRIPT,
+      LANGUAGE_SYSTEM_SCRIPT, LANGUAGE_BATCH03_SCRIPT, UNIVERSAL_ENTITY_SCRIPT, COUNTRY_BRIDGE_SCRIPT, RESOURCE_BRIDGE_SCRIPT, RESOURCE_MINISTRY_ENGINE_SCRIPT,
       MINISTRY_REGISTRY_SCRIPT, MINISTRY_STATE_PROVIDER_SCRIPT, MINISTRY_INFORMATION_POLICY_SCRIPT,
       MINISTRY_DECISION_FRAMEWORK_SCRIPT, MINISTRY_STATE_TRANSACTION_SCRIPT, MINISTRY_DOMAIN_ENGINES_SCRIPT,
       MINISTRY_INTEROPERABILITY_SCRIPT, MINISTRY_RUNTIME_V1_SCRIPT, SIMULATION_RUNTIME_SCRIPT, OPPONENT_COUNTRY_RULES_SCRIPT, OPPONENT_AUTONOMY_SCRIPT,
