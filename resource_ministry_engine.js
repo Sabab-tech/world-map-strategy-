@@ -8746,6 +8746,7 @@ _globalScope.GSRSK_DataFoundation = (() => {
             // No synthetic country profile is created here.
             // Missing canonical resource profile remains unavailable.
             return null;
+        }
 
         getIntegratedResourceState(countryKey, options = {}) {
             const normalized = this.normalizeCountryCode(countryKey);
