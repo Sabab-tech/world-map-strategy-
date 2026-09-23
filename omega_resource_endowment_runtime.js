@@ -108,75 +108,73 @@
     }catch(_){}
     return out.slice(0,MAX_MINES);
   }
-  function mergeState(c,rows){
-    const s=countryState(c),existing=clone(s);
-    const byResource={};
-    const mines=[];
+  function buildCountryProjection(c,rows,existing={}){
+    const byResource={},mines=[];
     for(const x of rows){
-      const rs=x.reserveState,raw=x.rawDeposit;
-      if(!rs)continue;
+      const rs=x.reserveState,raw=x.rawDeposit;if(!rs)continue;
       const resource=x.resourceId;
-      if(!byResource[resource])byResource[resource]={declared:0,recoverable:0,residual:0,current:0,mineCount:0};
+      if(!byResource[resource])byResource[resource]={declared:0,recoverable:0,residual:0,mineCount:0};
       byResource[resource].declared+=n(rs.geologicalQuantity)||0;
       byResource[resource].recoverable+=n(rs.recoverableQuantity)||0;
       byResource[resource].residual+=n(rs.residualQuantity)||0;
-      byResource[resource].current+=n(rs.currentlyAvailableQuantity)||0;
       byResource[resource].mineCount+=1;
       mines.push({
         occurrenceKey:x.occurrenceKey,depositKey:x.depositKey,resourceId:resource,depositName:x.depositName,
         countryId:canonical(c),locationNodeKey:x.locationNodeKey,resourceTypeKey:x.resourceTypeKey,
-        ownerKey:x.ownerKey,operatorKey:x.operatorKey,rawDeposit:raw,reserveState:clone(rs.toJSON?.()||rs),
-        operationalStatus:rs.operationalStatus,unit:rs.unit,provenance:clone(rs.provenance||raw?.provenance||null)
+        ownerKey:x.ownerKey,operatorKey:x.operatorKey,rawDeposit:raw,
+        reserveState:clone(rs.toJSON?.()||rs),operationalStatus:rs.operationalStatus,unit:rs.unit,
+        provenance:clone(rs.provenance||raw?.provenance||null)
       });
     }
-    const preserveObject=(old,next)=>old&&typeof old==='object'?{...next,...old}:next;
+    const merge=(derived,old)=>{
+      const out=clone(derived||{});
+      if(old&&typeof old==='object')for(const [k,v] of Object.entries(old))if(v!==undefined)out[k]=clone(v);
+      return out;
+    };
     const reserves={},endowment={};
     for(const [k,v] of Object.entries(byResource)){reserves[k]=v.residual;endowment[k]=v.recoverable;}
-    const inventory=preserveObject(existing.inventory,{});
-    const production=preserveObject(existing.production,{});
-    const consumption=preserveObject(existing.consumption,{});
+    const inventory=merge({},existing.inventory);
+    const production=merge({},existing.production);
+    const consumption=merge({},existing.consumption);
     const tradeAvailability={};
-    for(const resource of Object.keys(byResource)){
-      tradeAvailability[resource]=(n(inventory[resource])||0)+(n(production[resource])||0);
-      if(production[resource]===undefined)production[resource]=0;
-      if(consumption[resource]===undefined)consumption[resource]=undefined;
-    }
-    s.countryResourceProfile=clone(profile(c));
-    s.resourceDomain=clone(profile(c)?.resource_domain||null);
-    s.mines=mines;
-    s.endowment=endowment;
-    s.reserves=preserveObject(existing.reserves,reserves);
-    s.inventory=inventory;
-    s.production=production;
-    s.consumption=consumption;
-    s.tradeAvailability=tradeAvailability;
-    s.mineStates=s.mineStates&&typeof s.mineStates==='object'?s.mineStates:{};
-    for(const x of rows)s.mineStates[x.occurrenceKey]=clone(x.reserveState.toJSON?.()||x.reserveState);
-    s.extractionLedger=Array.isArray(s.extractionLedger)?s.extractionLedger.slice(-MAX_LEDGER):[];
-    s.resourceAuthority={
-      source:'RESOURCE_MINISTRY_ENGINE->PART04->PART05',
-      knowledgeSources:['resources.json','resources_2.json'],
-      mineSource:'ResourceMinistryEngine.deposits',
-      reserveSource:'GSRSK_Part05.ResourceReserveExtractionEngine',
-      countryScoped:true,
-      simulationTurn:turn()
+    for(const resource of Object.keys(byResource))tradeAvailability[resource]=n(inventory[resource])||0;
+    const mineStates=existing.mineStates&&typeof existing.mineStates==='object'?clone(existing.mineStates):{};
+    for(const x of rows)mineStates[x.occurrenceKey]=clone(x.reserveState.toJSON?.()||x.reserveState);
+    return{
+      ...clone(existing),
+      countryResourceProfile:clone(profile(c)),
+      resourceDomain:clone(profile(c)?.resource_domain||null),
+      mines:mines.slice(0,MAX_MINES),endowment,reserves:merge(reserves,existing.reserves),
+      inventory,production,consumption,tradeAvailability,mineStates,
+      extractionLedger:Array.isArray(existing.extractionLedger)?existing.extractionLedger.slice(-MAX_LEDGER):[],
+      resourceAuthority:{
+        source:'RESOURCE_MINISTRY_ENGINE->PART04->PART05',
+        knowledgeSources:['resources.json','resources_2.json'],
+        mineSource:'ResourceMinistryEngine.deposits',
+        reserveSource:'GSRSK_Part05.ResourceReserveExtractionEngine',
+        countryScoped:true,simulationTurn:turn()
+      }
     };
-    return s;
   }
   function hydrateHandler(cmd,ctx){
-    const c=canonical(ctx.countryId),rows=occurrenceRows(c);
-    mergeState(c,rows);
-    ctx.stateTransaction.set('resource.endowment',countryState(c).endowment);
-    ctx.stateTransaction.set('resource.reserves',countryState(c).reserves);
-    ctx.stateTransaction.set('resource.mines',countryState(c).mines);
-    ctx.stateTransaction.set('resource.mineStates',countryState(c).mineStates);
-    ctx.stateTransaction.set('resource.tradeAvailability',countryState(c).tradeAvailability);
-    ctx.stateTransaction.set('resource.authority',countryState(c).resourceAuthority);
-    if(state()?.resource?.[c]?.inventory!==undefined)ctx.stateTransaction.set('resource.inventory',state().resource[c].inventory);
-    else ctx.stateTransaction.set('resource.inventory',{});
-    if(state()?.resource?.[c]?.production!==undefined)ctx.stateTransaction.set('resource.production',state().resource[c].production);
-    else ctx.stateTransaction.set('resource.production',{});
-    return{accepted:true,countryId:c,mineCount:rows.length,resourceCount:Object.keys(countryState(c).endowment).length};
+    const c=canonical(ctx.countryId),rows=occurrenceRows(c),existing=clone(state()?.resource?.[c]||{});
+    const projection=buildCountryProjection(c,rows,existing);
+    for(const [path,value] of [
+      ['resource.countryResourceProfile',projection.countryResourceProfile],
+      ['resource.resourceDomain',projection.resourceDomain],
+      ['resource.mines',projection.mines],
+      ['resource.endowment',projection.endowment],
+      ['resource.reserves',projection.reserves],
+      ['resource.inventory',projection.inventory],
+      ['resource.production',projection.production],
+      ['resource.consumption',projection.consumption],
+      ['resource.tradeAvailability',projection.tradeAvailability],
+      ['resource.mineStates',projection.mineStates],
+      ['resource.extractionLedger',projection.extractionLedger],
+      ['resource.authority',projection.resourceAuthority]
+    ])ctx.stateTransaction.set(path,value);
+    emit('OMEGA_RESOURCE_ENDOWMENT_HYDRATED',c,{countryId:c,mineCount:rows.length,resourceCount:Object.keys(projection.endowment).length,resourceIds:Object.keys(projection.endowment)},cmd.commandId);
+    return{accepted:true,countryId:c,mineCount:rows.length,resourceCount:Object.keys(projection.endowment).length};
   }
   function extractHandler(cmd,ctx){
     const c=canonical(ctx.countryId),r=g.__OmegaResourceReserveRegistry,p5=g.GSRSK_Part05||g.GSRSK_ResourceReserveExtractionEngine;
@@ -246,7 +244,7 @@
     ctx.stateTransaction.set('resource.inventory',inventory);
     ctx.stateTransaction.set('resource.reserves',reserves);
     const tradeAvailability={};
-    for(const [k,v] of Object.entries(inventory))tradeAvailability[k]=(n(v)||0)+(n(production[k])||0);
+    for(const [k,v] of Object.entries(inventory))tradeAvailability[k]=n(v)||0;
     ctx.stateTransaction.set('resource.tradeAvailability',tradeAvailability);
     ctx.stateTransaction.set('resource.extractionLedger',ledger.slice(-MAX_LEDGER));
     for(const x of blocked)emit('OMEGA_RESOURCE_EXTRACTION_BLOCKED',c,{...x,simulationTurn:turn()},cmd.commandId);
