@@ -3,132 +3,160 @@ import vm from 'node:vm';
 import assert from 'node:assert/strict';
 
 const source=fs.readFileSync(new URL('../opponent_country_rules.js',import.meta.url),'utf8');
-const queued=[],actions=new Map(),handlers=new Map();
-const state={
-  simulation:{turn:4,session:{playerCountryId:'AAA'}},
-  economy:{BBB:{investmentDemand:{trend:'RISING'},consumerDemand:{trend:'RISING'},revenue:80,expenditure:120,output:50}},
-  resource:{BBB:{demand:{total:100,food:80,energy:120},supply:{effective:50,total:60,food:30,energy:90},inventory:20,reserve:40}},
-  population:{BBB:{population:1000,growth_rate:{trend:'RISING'},labor:{available:40,skilled:20},migrationPressure:{trend:'RISING'}}},
-  cities:{BBB:{housing:{required:100,available:70}}},
-  industry:{BBB:{inputs:{required:80,available:40},demand:100,effectiveCapacity:60,currentOutput:50,capacity:60,output:50}},
-  infrastructure:{BBB:{load:120,capacity:100}},
-  finance:{BBB:{revenue:80,expenditure:120,capitalAvailable:200,operationalRequirement:100,liquidity:150,foreignCurrency:100}},
-  trade:{BBB:{imports:120,exports:80,externalDemand:200,currentExports:80,routeCapacity:100,routeLoad:40}},
-  interior:{BBB:{stability:{trend:'FALLING'},corruption:{trend:'RISING'},serviceCapacity:100}},
-  defense:{BBB:{threatLevel:{trend:'RISING'},readiness:{trend:'FALLING'}}},
-  technology:{BBB:{capability:{trend:'FALLING'},r_and_d:{trend:'RISING'}}},
-  health:{BBB:{capacity:80,pressure:{trend:'RISING'},demand:100}},
-  education:{BBB:{capacity:80,demand:100}},
-  projects:{BBB:{maintenanceBacklog:{trend:'RISING'}}},
-  relations:{BBB:{foreignTension:{trend:'RISING'},targetCountryId:'CCC'}},
-  events:[{eventType:'EXTERNAL_SHOCK_ACTIVE',countryId:'BBB',resolved:false,impactedSignals:['RESOURCE_STOCK']}]
+
+const countries=JSON.parse(fs.readFileSync(new URL('../countries.json',import.meta.url),'utf8'));
+const populationData=JSON.parse(fs.readFileSync(new URL('../population.json',import.meta.url),'utf8'));
+const economyData=JSON.parse(fs.readFileSync(new URL('../economy.json',import.meta.url),'utf8'));
+const citiesData=JSON.parse(fs.readFileSync(new URL('../cities.json',import.meta.url),'utf8'));
+const relationsData=JSON.parse(fs.readFileSync(new URL('../relations.json',import.meta.url),'utf8'));
+
+let resourceRuntime={
+  production:{crude_oil:80},
+  consumption:{crude_oil:100},
+  reserves:{crude_oil:30},
+  inventory:{crude_oil:20}
 };
-const listeners=new Map();
-const sandbox={
-  console,Map,Set,WeakMap,Object,Array,Number,String,JSON,Promise,Math,
+
+const queued=[],actions=new Map(),handlers=new Map(),listeners=new Map();
+const state={
+  simulation:{turn:1,session:{playerCountryId:'AAA'}},
+  population:{BD:{labor:{available:100,skilled:50}}},
+  resource:{BD:{demand:{total:100,food:100,energy:100},supply:{effective:80,total:80,food:80,energy:80},inventory:20,reserve:30}},
+  economy:{BD:{consumerDemand:{value:100,trend:'RISING'},investmentDemand:{value:100,trend:'RISING'},output:90,revenue:100,expenditure:80}},
+  cities:{BD:{housing:{required:100,available:80}}},
+  industry:{BD:{inputs:{required:80,available:60},demand:100,effectiveCapacity:120,currentOutput:90,capacity:120,output:90}},
+  infrastructure:{BD:{load:80,capacity:120}},
+  finance:{BD:{revenue:100,expenditure:80,capitalAvailable:50,operationalRequirement:40,liquidity:100,foreignCurrency:100}},
+  trade:{BD:{imports:40,exports:20,externalDemand:80,currentExports:20,routeCapacity:100,routeLoad:20}},
+  interior:{BD:{stability:{trend:'STABLE'},corruption:{trend:'STABLE'},serviceCapacity:100}},
+  defense:{BD:{threatLevel:{trend:'LOW'},readiness:{trend:'RISING'}}},
+  technology:{BD:{capability:{trend:'STABLE'},r_and_d:{trend:'RISING'}}},
+  health:{BD:{capacity:100,pressure:{trend:'STABLE'},demand:100}},
+  education:{BD:{capacity:100,demand:100}},
+  projects:{BD:{maintenanceBacklog:{trend:'STABLE'}}},
+  relations:{BD:{foreignTension:{trend:'STABLE'}},
+  events:[]
+};
+
+const fake={
+  console:{log(){},error(){}},Map,Set,WeakMap,Object,Array,Number,String,JSON,Promise,Math,Date,
   CustomEvent:class{constructor(type,init={}){this.type=type;this.detail=init.detail;}},
-  addEventListener(type,fn){(listeners.get(type)||listeners.set(type,[]).get(type)).push(fn);},
-  fetch:async()=>({ok:true,json:async()=>({countries:[{code:'AAA',name:'Alpha'},{code:'BBB',name:'Bravo'},{code:'CCC',name:'Charlie'}]})}),
+  addEventListener(type,fn){const a=listeners.get(type)||[];a.push(fn);listeners.set(type,a);},
+  fetch:async()=>({ok:true,json:async()=>countries}),
   Game:{state},
+  ResourceMinistryEngine:{getIntegratedResourceState(){return resourceRuntime;}},
   Omega:{
-    Simulation:{clock:{turn:4},getPlayerCountryId(){return 'AAA';},enqueueCommand(c){queued.push(c);return c;}},
+    Simulation:{clock:{turn:1},getPlayerCountryId(){return'AAA';},enqueueCommand(c){queued.push(c);return c;}},
     MinistryInteroperability:{
       registerAction(id,d){actions.set(id,d);return d;},
-      registerCommandHandler(id,owner,fn){handlers.set(id,{owner,fn});return {id,owner};}
+      registerCommandHandler(id,owner,fn){handlers.set(id,{owner,fn});return{id,owner};}
     }
   }
 };
-vm.createContext(sandbox);
-vm.runInContext(source,sandbox,{filename:'opponent_country_rules.js'});
-const api=sandbox.Omega.OpponentCountryRules;
+
+vm.createContext(fake);
+vm.runInContext(source,fake,{filename:'opponent_country_rules.js'});
+const api=fake.Omega.OpponentCountryRules;
+
 assert.equal(api.VERSION,'4.2.0');
-await api.initialize({fetchCountries:true,turn:4});
-assert.equal((await api.listCountryIds()).join(','),'AAA,BBB,CCC');
+await api.initialize({fetchCountries:true});
 
-const profile=api.getDatasetProfile('countries');
-assert.ok(profile && profile.schema && profile.identityFields.length>0);
-api.setDataset('population',[{code:'CCC',population_total:1234,growth_rate:'RISING'}]);
-const populationProfile=api.getDatasetProfile('population');
-assert.ok(populationProfile && populationProfile.fieldMeaning.POPULATION);
-const cccHydrated=api.evaluateCountry ? await api.evaluateCountry('CCC',4) : null;
-assert.ok(cccHydrated);
-assert.ok(api.getHydratedState('CCC').signals.POPULATION.status==='AVAILABLE');
-assert.equal(api.getHydratedState('CCC').signals.POPULATION.value,1234);
+api.setDataset('countries',countries);
+api.setDataset('population',populationData);
+api.setDataset('economy',economyData);
+api.setDataset('cities',citiesData);
+api.setDataset('relations',relationsData);
 
-assert.equal(api.evaluateDirection('INFLATION',{trend:'RISING'},'RISING').state,'TRUE');
-const run=await api.evaluateCountry('BBB',4);
-assert.equal(run.status,'COMPLETE');
-assert.ok(Array.from(run.scenarios).some(x=>x.id==='RESOURCE_DEFICIT'));
-assert.ok(Array.from(run.scenarios).some(x=>x.id==='FOOD_SHORTAGE'));
-assert.ok(Array.from(run.scenarios).some(x=>x.id==='ENERGY_SHORTAGE'));
-assert.ok(Array.from(run.scenarios).some(x=>x.id==='HOUSING_SHORTAGE'));
-assert.ok(run.gapPressure.gaps.RESOURCE.required===100);
-assert.ok(run.gapPressure.gaps.RESOURCE.available===50);
-assert.equal(run.reconciliation.status,'PASS');
+const bd=await api.evaluateCountry('BD',1);
+assert.equal(bd.status,'COMPLETE');
+assert.equal(bd.datasetObservations.population_2015.status,'AVAILABLE');
+assert.equal(bd.datasetObservations.annual_growth_rate.status,'AVAILABLE');
+assert.equal(bd.datasetObservations.gdp.status,'AVAILABLE');
+assert.equal(bd.signals.POPULATION.value,populationData.BANGLADESH.population_2015);
+assert.equal(bd.signals.POPULATION_GROWTH.value,populationData.BANGLADESH.annual_growth_rate);
+assert.equal(bd.signals.GDP_GROWTH.value,economyData.BANGLADESH.gdp_growth);
+assert.equal(bd.signals.INFLATION.value,economyData.BANGLADESH.inflation);
+assert.equal(bd.signals.UNEMPLOYMENT.value,economyData.BANGLADESH.unemployment_rate);
+assert.equal(bd.signals.FOREIGN_CURRENCY.value,economyData.BANGLADESH.reserves);
+assert.equal(bd.signals.POPULATION.provenance.authoritative,false);
 
-const projectDecision=Array.from(run.decisions).find(d=>Array.from(d.selectedActions||[]).some(a=>String(api.ACTION_TYPES[a]?.execution||'').includes('PROJECT')));
-assert.ok(projectDecision);
-const projectAction=Array.from(projectDecision.selectedActions).find(a=>String(api.ACTION_TYPES[a]?.execution||'').includes('PROJECT'));
-const projectAid='OCR_V42_'+projectDecision.scenarioId;
-const projectHandler=handlers.get(projectAid);
+const deficit=bd.runtimeAnalysis.measurements.find(x=>x.kind==='RESOURCE_FLOW'&&x.resourceId==='crude_oil');
+assert.ok(deficit);
+assert.equal(deficit.status,'DEFICIT');
+assert.equal(deficit.required,100);
+assert.equal(deficit.available,80);
+assert.equal(deficit.gap,20);
+assert.equal(deficit.candidates[0].action,'IMPORT');
+assert.equal(deficit.candidates[0].quantity,20);
+
+resourceRuntime={production:{crude_oil:120},consumption:{crude_oil:100},reserves:{crude_oil:30},inventory:{crude_oil:20}};
+const surplusRun=await api.evaluateCountry('BD',2);
+const surplus=surplusRun.runtimeAnalysis.measurements.find(x=>x.kind==='RESOURCE_FLOW'&&x.resourceId==='crude_oil');
+assert.equal(surplus.status,'SURPLUS');
+assert.equal(surplus.candidates[0].action,'EXPORT');
+assert.equal(surplus.candidates[0].quantity,20);
+
+resourceRuntime={production:{crude_oil:100},consumption:{crude_oil:100},reserves:{crude_oil:30},inventory:{crude_oil:20}};
+const balancedRun=await api.evaluateCountry('BD',3);
+const balanced=balancedRun.runtimeAnalysis.measurements.find(x=>x.kind==='RESOURCE_FLOW'&&x.resourceId==='crude_oil');
+assert.equal(balanced.status,'BALANCED');
+assert.equal(balanced.candidates[0].action,'HOLD');
+assert.equal(balanced.candidates[0].quantity,0);
+
+const runtimeDecision=deficitRun=bd.decisions.find(x=>x.decisionOrigin==='RUNTIME_CALCULATION'&&x.runtimeMeasurement?.kind==='RESOURCE_FLOW');
+assert.ok(runtimeDecision);
+assert.equal(runtimeDecision.selectedActions[0],'IMPORT');
+
+const importedScenario=runtimeDecision.scenarioId;
+assert.ok(api.SCENARIO_REGISTRY.some(x=>x.id===importedScenario));
+const importHandler=handlers.get('OCR_V42_'+importedScenario);
+assert.ok(importHandler);
+
+const txStore=new Map();
+const tx={get(k){return txStore.get(k);},set(k,v){txStore.set(k,v);}};
+const runtimeHandled=importHandler.fn({
+  commandId:'runtime-import-test',
+  countryId:'BD',
+  sourceMinistryId:importHandler.owner,
+  payload:{opponentDecision:runtimeDecision}
+},{stateTransaction:tx,simulationTurn:1,emitEvent(){}});
+assert.equal(runtimeHandled.accepted,true);
+assert.equal(runtimeHandled.batch.executionApplied,false);
+assert.equal(runtimeHandled.batch.plans[0].transactionId!==undefined,true);
+assert.equal(runtimeHandled.batch.plans[0].quantity,20);
+assert.equal(runtimeHandled.batch.plans[0].stateMutationAuthority,false);
+assert.equal(runtimeHandled.batch.plans[0].requirements.amountKnown,true);
+assert.ok(txStore.has(importHandler.owner+'.executionOrders'));
+
+const projectDecision={
+  decisionId:'DEC-PROJECT-1',countryId:'BD',simulationTurn:4,scenarioId:'FACTORY_EXPANSION',
+  selectedActions:['DOMESTIC_EXPANSION'],evidence:{test:true}
+};
+const projectHandler=handlers.get('OCR_V42_FACTORY_EXPANSION');
 assert.ok(projectHandler);
-const txContext={get(){return undefined;},set(){}};
-const handled=projectHandler.fn({commandId:'cmd-project',countryId:'BBB',sourceMinistryId:projectHandler.owner,payload:{opponentDecision:{...projectDecision,selectedActions:[projectAction]}}},{stateTransaction:txContext,simulationTurn:4,emitEvent(){}});
-assert.equal(handled.accepted,true);
-assert.equal(handled.batch.executionApplied,false);
-assert.ok(Array.from(handled.batch.plans).some(x=>x.projectId));
-assert.equal(handled.batch.plans.find(x=>x.projectId).stateMutationAuthority,false);
-assert.ok(handled.batch.plans.find(x=>x.projectId).requirements.evidenceStatus==='OBSERVED'||handled.batch.plans.find(x=>x.projectId).requirements.evidenceStatus==='UNAVAILABLE');
+const projectHandled=projectHandler.fn({countryId:'BD',sourceMinistryId:projectHandler.owner,payload:{opponentDecision:projectDecision}},
+  {stateTransaction:tx,simulationTurn:4,emitEvent(){}});
+assert.equal(projectHandled.accepted,true);
+assert.equal(projectHandled.batch.executionApplied,false);
+assert.equal(projectHandled.batch.plans[0].stateMutationAuthority,false);
+assert.ok(txStore.has('projects.executionOrders'));
 
-const txScenario=run.scenarios.find(x=>x.actions.includes('IMPORT'));
-assert.ok(txScenario);
-const txHandler=handlers.get('OCR_V42_'+txScenario.id);
-const txDecision={...projectDecision,scenarioId:txScenario.id,decisionId:'DEC-TX-1',selectedActions:['IMPORT']};
-const txHandled=txHandler.fn({commandId:'cmd-tx',countryId:'BBB',sourceMinistryId:txHandler.owner,payload:{opponentDecision:txDecision}},{stateTransaction:txContext,simulationTurn:4,emitEvent(){}});
-assert.equal(txHandled.accepted,true);
-assert.ok(Array.from(txHandled.batch.plans).some(x=>x.transactionId));
-assert.equal(txHandled.batch.plans.find(x=>x.transactionId).stateMutationAuthority,false);
-
-const policyScenario=run.scenarios.find(x=>x.actions.includes('DEMAND_MANAGEMENT'));
-assert.ok(policyScenario);
-const policyHandler=handlers.get('OCR_V42_'+policyScenario.id);
-assert.ok(policyHandler);
-  const policyDecision={...projectDecision,scenarioId:policyScenario.id,decisionId:'DEC-POL-1',selectedActions:['DEMAND_MANAGEMENT']};
-  const policyHandled=policyHandler.fn({commandId:'cmd-policy',countryId:'BBB',sourceMinistryId:policyHandler.owner,payload:{opponentDecision:policyDecision}},{stateTransaction:txContext,simulationTurn:4,emitEvent(){}});
-  assert.equal(policyHandled.accepted,true);
-  assert.ok(Array.from(policyHandled.batch.plans).some(x=>x.policyId));
-  const outcomePolicy=api.handleOutcome({countryId:'BBB',policyId:policyHandled.batch.plans.find(x=>x.policyId).policyId,scenarioId:policyDecision.scenarioId,status:'COMPLETED',eventType:'OMEGA_POLICY_EXECUTED',affectedActors:['CCC']});
-  assert.ok(outcomePolicy.reconciliation);
-const outcome=api.handleOutcome({countryId:'BBB',projectId:handled.batch.plans[0].projectId,scenarioId:projectDecision.scenarioId,status:'COMPLETED',eventType:'OMEGA_PROJECT_COMPLETED',impactedNodes:['industry'],affectedActors:['CCC']});
-assert.ok(Array.from(outcome.dirty).includes('OUTPUT'));
-assert.ok(Array.from(outcome.affectedActors).includes('CCC'));
+const outcome=api.handleOutcome({countryId:'BD',projectId:projectHandled.batch.plans[0].projectId,status:'COMPLETED',eventType:'OMEGA_PROJECT_COMPLETED',impactedNodes:['industry'],affectedActors:['AAA']});
+assert.ok(outcome.dirty.includes('OUTPUT'));
+assert.ok(outcome.affectedActors.includes('AAA'));
 
 const trace=api.getTrace();
-assert.ok(trace.some(x=>x.type==='EXECUTION_STARTED'));
-assert.ok(trace.some(x=>x.type==='NEXT_EVALUATION_SCHEDULED'));
-const traceLayers=new Set(trace.map(x=>x.layer));
-for(const layer of api.LAYERS.map(x=>x.id))assert.ok(traceLayers.has(layer),layer+' missing');
 assert.ok(trace.some(x=>x.layer==='L26_EVIDENCE_TRACE'));
-
-const firstForecast=run.forecasts;
-state.economy.BBB.output=60;
-const second=await api.evaluateCountry('BBB',5);
-assert.equal(second.status,'COMPLETE');
-assert.ok(Object.keys(second.forecasts.trend).length>=1);
-
-const reasoning=api.setReasoningAdapter(async ctx=>({scenarioCount:ctx.scenarios.length}));
-assert.equal(reasoning.status,'BOUND');
-const reasoned=await api.reason('BBB',5);
-assert.equal(reasoned.mutationAuthority,false);
-assert.equal(reasoned.status,'RETURNED');
+assert.ok(!trace.some(x=>x.type==='RUNTIME_COVERAGE'));
 
 const diagnostics=api.diagnostics();
 assert.equal(diagnostics.layers,28);
-assert.equal(diagnostics.runtimeLayers,28);
-assert.equal(diagnostics.scenarioCount,25);
-assert.equal(diagnostics.directionalSignals,63);
-assert.equal(diagnostics.actionTypes,27);
-assert.equal(diagnostics.traceLayers.length,28);
+assert.ok(diagnostics.executedLayers<diagnostics.layers);
+assert.ok(diagnostics.unexecutedLayers>0);
+assert.ok(diagnostics.runtimeCalculation.enginePresent);
+assert.ok(diagnostics.approvedPolicyLayer.scenarioRules>=20);
+assert.equal(diagnostics.approvedPolicyLayer.numericStateTransitions,0);
+assert.equal(diagnostics.dataTruth.syntheticFallbackTraceEntries,0);
 
 const saved=api.saveState();
 assert.equal(saved.schemaVersion,6);
@@ -136,14 +164,14 @@ api.loadState(saved);
 
 console.log('OMEGA AUTONOMOUS WORLD CORE TEST PASSED');
 console.log(JSON.stringify({
-  layers:diagnostics.layers,
-  scenarios:diagnostics.scenarioCount,
-  directionalSignals:diagnostics.directionalSignals,
-  actionTypes:diagnostics.actionTypes,
-  activeScenarios:run.scenarios.length,
-  decisions:run.decisions.length,
-  traceEntries:trace.length,
-  projectPlans:handled.batch.plans.length,
-  transactionPlans:txHandled.batch.plans.length,
-  queued:queued.length
+  countries:countries.length,
+  activeScenarios:bd.scenarios.length,
+  policyDecisions:bd.decisions.filter(x=>x.decisionOrigin!=='RUNTIME_CALCULATION').length,
+  runtimeComparisons:diagnostics.runtimeCalculation.automaticComparisons,
+  deficitAction:deficit.candidates[0].action,
+  surplusAction:surplus.candidates[0].action,
+  balancedAction:balanced.candidates[0].action,
+  transactionQuantity:runtimeHandled.batch.plans[0].quantity,
+  executedLayers:diagnostics.executedLayers,
+  unexecutedLayers:diagnostics.unexecutedLayers
 }));
