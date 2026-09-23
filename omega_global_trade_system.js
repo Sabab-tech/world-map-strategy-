@@ -549,6 +549,7 @@
     if(req.reservationId)command('cabinet','OMEGA_AUTO_RELEASE_RESERVATION',c,{reservationId:req.reservationId,correlationId:req.requestId});
     if(relation(c,s)){
       command('foreign','OMEGA_TRADE_APPLY_POLITICAL_PRESSURE',c,{targetCountryId:s,requestId:req.requestId,delta:-1,reason:decision?.reason||'TRADE_REFUSAL'});
+      command('foreign','OMEGA_TRADE_APPLY_POLITICAL_PRESSURE',s,{targetCountryId:c,requestId:req.requestId,delta:-0.5,reason:'COUNTERPARTY_REFUSAL_OBSERVED'});
       const militaryLevel=refusal>=MILITARY_ESCALATION_AFTER?1:0;
       if(militaryLevel)command('military','OMEGA_TRADE_APPLY_MILITARY_PRESSURE',c,{targetCountryId:s,requestId:req.requestId,level:militaryLevel});
       emit('OMEGA_TRADE_PRESSURE_APPLIED',c,{targetCountryId:s,requestId:req.requestId,refusalCount:refusal,politicalPressureDelta:-1,militaryPressureLevel:militaryLevel,reason:decision?.reason||'TRADE_REFUSAL'});
