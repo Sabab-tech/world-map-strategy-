@@ -62,7 +62,8 @@
       const aliases={
         resourceSummary:'resource',
         resourceInventory:'resource',
-        resourceDeposits:'resource'
+        resourceDeposits:'resource',
+        cities:'interior'
       };
       const owner=aliases[first]||first;
       if(owner!==this.ownerMinistry)throw new Error('STATE_PATH_NOT_OWNED_BY_MINISTRY:'+p);
