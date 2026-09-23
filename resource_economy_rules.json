@@ -1,0 +1,24 @@
+{
+  "schemaVersion": "1.0.0",
+  "description": "OMEGA resource-to-industry-to-market fiscal simulation rules. These are game rules, not claims about any real country's tax law or industrial yields.",
+  "inventory": {
+    "legacyOpeningBalancePolicy": "PRESERVE_AND_MARK",
+    "batchConsumptionPolicy": "FIFO",
+    "sellableSurplusPolicy": "OBSERVED_INVENTORY_ONLY"
+  },
+  "fiscal": {
+    "royaltyRate": 0.02,
+    "resourceTaxRate": 0.01,
+    "corporateTaxRate": 0.20,
+    "exportDutyRate": 0.00,
+    "otherReceiptRate": 0.00
+  },
+  "operatingAllocation": {
+    "workerIncomeRate": 0.12,
+    "transportRevenueRate": 0.05
+  },
+  "runtime": {
+    "maxLedgerEntries": 2048,
+    "maxBatches": 8192
+  }
+}
