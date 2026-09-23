@@ -322,42 +322,40 @@ const GLOBAL_MARKET = {};
     /**
      * Inspects the full dependency tree for a strategic node (e.g., Missile Defense, Chip Fab, Energy Grid)
      */
-    function inspectNodeDependencyTree(countryId, nodeType = "SEMICONDUCTOR_FAB") {
-        const profile = initCountryProfile(countryId);
+    function inspectNodeDependencyTree(countryId, nodeType = null) {
+        const id = String(countryId || '').trim().toUpperCase();
+        if (!id) return { status: 'UNKNOWN', country: null, dependencies: [], reason: 'COUNTRY_ID_REQUIRED' };
 
-        if (nodeType === "SEMICONDUCTOR_FAB") {
+        const state = authoritativeState || _globalTarget.Game?.state || _globalTarget.gameState || {};
+        const world = state?.worldEcosystem || {};
+        const explicit = world?.dependencyGraph?.[id] || world?.dependencies?.[id] || null;
+        if (!explicit || typeof explicit !== 'object') {
             return {
-                nodeName: "Advanced Semiconductor Fabrication Plant (3nm / 5nm)",
-                country: countryId,
-                status: profile.tech.semiconductorFabDominance > 50 ? "OPERATIONAL" : "CRITICAL BOTTLENECK",
-                dependencies: [
-                    { level: 1, name: "Rare Earth Refinement (Neodymium/Dysprosium)", source: "Resource Supply", status: profile.resources.rare_earth.reserveTon > 5000 ? "OK" : "DEFICIT" },
-                    { level: 1, name: "Industrial Electricity Grid (GigaWatt Baseload)", source: "Infrastructure", status: "STABLE" },
-                    { level: 2, name: "EUV Lithography Machine Patents", source: "Tech / Intellectual Property", status: "FOREIGN DEPENDENT (NLD/USA)" },
-                    { level: 2, name: "High-Purity Silica Sand Ingestion", source: "Resource Supply", status: "OK" },
-                    { level: 3, name: "Precision Missile Guidance Systems Output", source: "Military Downstream", status: "ACTIVE CONSUMER" },
-                    { level: 3, name: "AI Quantum Computing Infrastructure Output", source: "Scientific Downstream", status: "ACTIVE CONSUMER" }
-                ]
+                status: 'UNKNOWN',
+                country: id,
+                nodeType: nodeType || null,
+                dependencies: [],
+                reason: 'DEPENDENCY_DATA_UNAVAILABLE'
             };
-        } else if (nodeType === "BORDER_DEFENSE_LINE") {
+        }
+
+        const node = nodeType ? explicit[nodeType] : explicit;
+        if (!node) {
             return {
-                nodeName: "Sovereign Border Fortification & Early Warning Net",
-                country: countryId,
-                status: "ACTIVE",
-                dependencies: [
-                    { level: 1, name: "Radar Magnet Rare Earth Alloys", source: "Resource Supply", status: "CRITICAL" },
-                    { level: 1, name: "Military Manpower & Veterans Reserve", source: "Demographics", status: profile.population.veteransCount > 1000000 ? "STRONG" : "ADEQUATE" },
-                    { level: 2, name: "River & Mountain Pass Geography Barriers", source: "Tactical Terrain", status: `${profile.geography.mountainBarrierRating}% BARRIER` },
-                    { level: 2, name: "Satellite Cyber Guidance Shield", source: "Space Defense", status: "ONLINE" }
-                ]
+                status: 'UNKNOWN',
+                country: id,
+                nodeType,
+                dependencies: [],
+                reason: 'NODE_DEPENDENCY_DATA_UNAVAILABLE'
             };
         }
 
         return {
-            nodeName: "General Sovereign Infrastructure Node",
-            country: countryId,
-            status: "UNAVAILABLE",
-            dependencies: []
+            status: 'OBSERVED',
+            country: id,
+            nodeType: nodeType || null,
+            dependencies: Array.isArray(node.dependencies) ? CLONE(node.dependencies) : [],
+            source: 'AUTHORITATIVE_WORLD_STATE'
         };
     }
 
