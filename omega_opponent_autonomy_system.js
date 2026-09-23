@@ -729,6 +729,8 @@
       candidateEvaluations:clone(evaluations),
       deferredActions:evaluations.filter(x=>!selected||x.action!==selected.action).map(x=>({action:x.action,status:x.status,reason:x.reason,score:x.score})),
       factorModel:DECISION_WEIGHTS,
+      resourceId:decision?.runtimeMeasurement?.resourceId??decision?.measurement?.resourceId??null,
+      targetCountryId:selected?.targetCountryId||decision?.targetCountryId||null,
       dataRouting:collectEvidence(countryId,[...new Set(candidates.map(actionSubject))],selected?.targetCountryId||null)
     };
     routed.status=selected?'ROUTED':'WAITING_FOR_EVIDENCE';
