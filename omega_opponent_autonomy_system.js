@@ -530,6 +530,7 @@
       if(!supplier?.countryId){status='WAIT_DATA';reasons.push(supplier?.reason||'SUPPLIER_NOT_IDENTIFIED');}
       else if(supplier.relationAvailable!==true){status='WAIT_DATA';reasons.push('FOREIGN_RELATION_NOT_OBSERVED');}
       else if(supplier.priceAvailable!==true){status='WAIT_DATA';reasons.push('SUPPLIER_PRICE_NOT_OBSERVED');}
+      else if(supplier.routeAvailable!==true){status='WAIT_DATA';reasons.push('TRADE_ROUTE_CAPACITY_NOT_OBSERVED');}
       else if(financial.liquidity===null){status='WAIT_DATA';reasons.push('TREASURY_LIQUIDITY_NOT_OBSERVED');}
       else if(plan.quantity===null){status='WAIT_DATA';reasons.push('IMPORT_QUANTITY_NOT_OBSERVED');}
       else {
@@ -642,36 +643,28 @@
 
   function supplierPrice(countryId,resourceId){
     const target=canonicalId(countryId),rid=String(resourceId||'').trim();
-    const explicitCandidates=[
-      readState(target,'trade.marketPrices.'+rid).value,
-      readState(target,'trade.marketPrice.'+rid).value,
-      readState(target,'trade.offers.'+rid+'.unitPrice').value,
-      readState(target,'trade.offers.'+rid+'.price').value,
-      readState(target,'trade.offerBook.'+rid+'.unitPrice').value,
-      readState(target,'trade.offerBook.'+rid+'.price').value
+    const directPaths=[
+      'trade.marketPrices.'+rid,
+      'trade.marketPrice.'+rid,
+      'trade.offers.'+rid+'.unitPrice',
+      'trade.offers.'+rid+'.price',
+      'trade.offerBook.'+rid+'.unitPrice',
+      'trade.offerBook.'+rid+'.price'
     ];
-    for(const x of explicitCandidates){const n=scalar(x);if(n!==null)return n;}
+    for(const path of directPaths){
+      const raw=readState(target,path);
+      const n=scalar(raw.value);
+      if(n!==null)return{value:n,source:raw.source,path,availability:raw.availability};
+    }
     const engine=g.ResourceMinistryEngine;
     try{
-      const profile=engine?.getCountryResourceProfile?.(canonicalId(countryId));
-      const found=read(profile,'market')||read(profile,'resource_market')||read(profile,'market_context');
-      const candidates=[
-        read(found,'prices.'+resourceId),read(found,'price.'+resourceId),read(found,'unitPrice.'+resourceId),
-        read(profile,'marketPrice.'+resourceId),read(profile,'market_price.'+resourceId)
-      ];
-      for(const x of candidates){const n=scalar(x);if(n!==null)return n;}
+      const integrated=engine?.getIntegratedResourceState?.(target);
+      const market=integrated?.marketPrices||integrated?.priceBook||integrated?.supplierPrices;
+      const n=scalar(market?.[rid]??market?.[String(rid).toLowerCase()]);
+      if(n!==null)return{value:n,source:'RESOURCE_ENGINE_MARKET_PRICE',path:'marketPrices.'+rid,availability:'AVAILABLE'};
     }catch(_){}
-    const bridge=resourceBridge();
-    try{
-      const q=bridge?.queryResource?.({resourceId,countryId:canonicalId(countryId),operation:'LOCATE'});
-      const first=q?.records?.[0];
-      const raw=first?.raw||null;
-      const candidates=[read(raw,'marketPrice'),read(raw,'market_price'),read(raw,'price'),read(raw,'unitPrice'),read(raw,'unit_price'),read(raw,'pricing.unitPrice')];
-      for(const x of candidates){const n=scalar(x);if(n!==null)return n;}
-    }catch(_){}
-    return null;
+    return{value:null,source:null,path:null,availability:'UNAVAILABLE'};
   }
-
   function chooseImportSupplier(countryId,decision){
     const m=decision?.runtimeMeasurement||decision?.measurement||{};
     const resourceId=m?.resourceId||m?.resource||null;
@@ -682,8 +675,17 @@
       const rel=relationRecord(countryId,x.countryId);
       const relationScore=relationScoreFor(rel);
       const relationAvailable=!!rel;
-      const unitPrice=supplierPrice(x.countryId,resourceId);
+      const priceEvidence=supplierPrice(x.countryId,resourceId);
+      const unitPrice=priceEvidence.value;
       const priceAvailable=unitPrice!==null;
+      const originRouteCandidates=[
+        scalar(readState(countryId,'trade.routeCapacity.'+resourceId).value),
+        scalar(readState(countryId,'trade.routeCapacity').value),
+        scalar(readState(countryId,'transport.tradeRouteCapacity.'+resourceId).value),
+        scalar(readState(countryId,'transport.tradeRouteCapacity').value)
+      ];
+      const routeObserved=originRouteCandidates.find(v=>v!==null);
+      const routeAvailable=routeObserved===undefined?false:routeObserved>0;
       const rs=resourceRuntime(x.countryId);
       const inv=rs.value?.inventory,prod=rs.value?.production,resv=rs.value?.reserves;
       const lookup=k=>scalar(inv?.[k]??inv?.[String(k).toLowerCase()]);
@@ -691,12 +693,12 @@
       const supplyObserved=currentSupply!==null;
       const hasSupply=supplyObserved?currentSupply>0:true;
       const legalAccess=relationAvailable&&rel.war_state!==true&&rel.sanctions!==true&&hasSupply;
-      return{...x,relationAvailable,relationScore,unitPrice,priceAvailable,legalAccess,supplyObserved,supply:currentSupply};
+      return{...x,relationAvailable,relationScore,unitPrice,priceAvailable,priceSource:priceEvidence.source,pricePath:priceEvidence.path,routeAvailable,routeCapacity:routeObserved,legalAccess,supplyObserved,supply:currentSupply};
     }).filter(x=>x.legalAccess);
     if(!rows.length){
       return{countryId:null,reason:'NO_SUPPLIER_WITH_OBSERVED_FOREIGN_ACCESS'};
     }
-    const priced=rows.filter(x=>x.priceAvailable);
+    const priced=rows.filter(x=>x.priceAvailable&&x.routeAvailable);
     if(!priced.length){
       return{countryId:null,reason:'SUPPLIER_PRICE_NOT_OBSERVED'};
     }
