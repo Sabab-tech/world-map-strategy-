@@ -544,6 +544,11 @@
       if(plan.cost===null){status='WAIT_DATA';reasons.push('PROJECT_COST_NOT_OBSERVED');}
       if(labor.available===null&&plan.labor!==null){status='WAIT_DATA';reasons.push('LABOR_CAPACITY_NOT_OBSERVED');}
       if(labor.available!==null&&plan.labor!==null&&labor.available-reservation.labor<plan.labor){status='BLOCKED';reasons.push('INSUFFICIENT_UNRESERVED_LABOR');}
+      if(plan.materials&&Object.keys(plan.materials).length){
+        const materialRatio=materialRequirementFactor(countryId,plan.materials,reservation.materials);
+        if(materialRatio===null){status='WAIT_DATA';reasons.push('MATERIAL_AVAILABILITY_NOT_OBSERVED');}
+        else if(materialRatio<1){status='BLOCKED';reasons.push('INSUFFICIENT_UNRESERVED_MATERIALS');}
+      }
       if(financial.liquidity===null){status='WAIT_DATA';reasons.push('TREASURY_LIQUIDITY_NOT_OBSERVED');}
       if(plan.cost!==null&&financial.liquidity!==null&&financial.liquidity-reservation.money<plan.cost){status='BLOCKED';reasons.push('INSUFFICIENT_UNRESERVED_TREASURY');}
     }
@@ -671,8 +676,14 @@
       const relationAvailable=!!rel;
       const unitPrice=supplierPrice(x.countryId,resourceId);
       const priceAvailable=unitPrice!==null;
-      const legalAccess=relationAvailable&&rel.war_state!==true&&rel.sanctions!==true;
-      return{...x,relationAvailable,relationScore,unitPrice,priceAvailable,legalAccess};
+      const rs=resourceRuntime(x.countryId);
+      const inv=rs.value?.inventory,prod=rs.value?.production,resv=rs.value?.reserves;
+      const lookup=k=>scalar(inv?.[k]??inv?.[String(k).toLowerCase()]);
+      const currentSupply=lookup(resourceId)??scalar(prod?.[resourceId]??prod?.[String(resourceId).toLowerCase()])??scalar(resv?.[resourceId]??resv?.[String(resourceId).toLowerCase()]);
+      const supplyObserved=currentSupply!==null;
+      const hasSupply=supplyObserved?currentSupply>0:true;
+      const legalAccess=relationAvailable&&rel.war_state!==true&&rel.sanctions!==true&&hasSupply;
+      return{...x,relationAvailable,relationScore,unitPrice,priceAvailable,legalAccess,supplyObserved,supply:currentSupply};
     }).filter(x=>x.legalAccess);
     if(!rows.length){
       return{countryId:null,reason:'NO_SUPPLIER_WITH_OBSERVED_FOREIGN_ACCESS'};
@@ -1082,8 +1093,36 @@
 
   function equipmentHandler(cmd,ctx){
     const p=cmd?.payload||{},q=num(p.quantity),item=String(p.item||'').trim();
+    const cost=num(p.cost),materials=p.materials&&typeof p.materials==='object'?clone(p.materials):{};
     if(q===null||q<=0)return{accepted:false,reason:'EQUIPMENT_QUANTITY_INVALID'};
     if(!item)return{accepted:false,reason:'EQUIPMENT_ITEM_REQUIRED'};
+    if(cost===null||cost<0)return{accepted:false,reason:'EQUIPMENT_COST_REQUIRED'};
+    const finAvail=scalar(ctx.stateTransaction.get('finance.available'));
+    const finRes=scalar(ctx.stateTransaction.get('finance.reserves'));
+    const financeBase=finAvail!==null?finAvail:finRes;
+    if(financeBase===null)return{accepted:false,reason:'FINANCE_STATE_UNAVAILABLE'};
+    if(financeBase<cost)return{accepted:false,reason:'INSUFFICIENT_TREASURY'};
+    if(Object.keys(materials).length){
+      const inventoryRaw=ctx.stateTransaction.get('resource.inventory');
+      if(!inventoryRaw||typeof inventoryRaw!=='object')return{accepted:false,reason:'MATERIAL_INVENTORY_UNAVAILABLE'};
+      for(const [rid,rawAmount] of Object.entries(materials)){
+        const amount=num(rawAmount);if(amount===null||amount<0)return{accepted:false,reason:'EQUIPMENT_MATERIAL_INVALID:'+rid};
+        const key=Object.keys(inventoryRaw).find(x=>id(x)===id(rid));
+        if(!key)return{accepted:false,reason:'EQUIPMENT_MATERIAL_NOT_OBSERVED:'+rid};
+        const available=scalar(inventoryRaw[key]);
+        if(available===null||available<amount)return{accepted:false,reason:'EQUIPMENT_MATERIAL_INSUFFICIENT:'+rid};
+      }
+    }
+    const committed=dispatch('finance','OMEGA_AUTO_FINANCE_COMMIT',ctx.countryId,{amount:cost,decisionId:p.decisionId,correlationId:p.correlationId||p.decisionId},p.correlationId||p.decisionId);
+    if(committed?.status!=='APPLIED')return{accepted:false,reason:'EQUIPMENT_FINANCE_COMMIT_FAILED',detail:committed};
+    let consumed={status:'APPLIED',skipped:true};
+    if(Object.keys(materials).length){
+      consumed=dispatch('resource','OMEGA_AUTO_RESOURCE_CONSUME',ctx.countryId,{materials,decisionId:p.decisionId,correlationId:p.correlationId||p.decisionId},p.correlationId||p.decisionId);
+      if(consumed?.status!=='APPLIED'){
+        dispatch('finance','OMEGA_AUTO_FINANCE_REFUND',ctx.countryId,{amount:cost,decisionId:p.decisionId,correlationId:p.correlationId||p.decisionId},p.correlationId||p.decisionId);
+        return{accepted:false,reason:'EQUIPMENT_MATERIAL_COMMIT_FAILED',detail:consumed};
+      }
+    }
     const inventoryRaw=ctx.stateTransaction.get('military.equipmentInventory');
     const inventory=inventoryRaw&&typeof inventoryRaw==='object'?clone(inventoryRaw):{};
     const key=Object.keys(inventory).find(x=>id(x)===id(item))||item;
@@ -1091,7 +1130,7 @@
     inventory[key]=current+q;
     ctx.stateTransaction.set('military.equipmentInventory',inventory);
     const queue=Array.isArray(ctx.stateTransaction.get('military.equipmentQueue'))?ctx.stateTransaction.get('military.equipmentQueue'):[];
-    const row={equipmentId:String(p.equipmentId||('EQUIP-'+turn()+'-'+ctx.countryId)),quantity:q,item,status:'EQUIPPED',createdTurn:turn(),decisionId:p.decisionId||null};
+    const row={equipmentId:String(p.equipmentId||('EQUIP-'+turn()+'-'+ctx.countryId)),quantity:q,item,status:'EQUIPPED',cost,materials,createdTurn:turn(),decisionId:p.decisionId||null};
     ctx.stateTransaction.set('military.equipmentQueue',queue.concat([row]).slice(-256));
     event('OMEGA_MILITARY_EQUIPMENT_APPLIED',ctx.countryId,{...row,equipmentInventory:inventory},cmd.commandId,p.correlationId||p.decisionId||null);
     return{accepted:true,equipment:row,newInventory:inventory,stateMutationAuthority:true};
@@ -1444,6 +1483,17 @@
     };
   }
 
+  function resolveEventRoute(eventType,countryId=null){
+    const type=String(eventType||'').trim().toUpperCase(),route=EVENT_ROUTES[type]||null;
+    return route?{eventType:type,countryId:countryId?id(countryId):null,owner:route.owner,domains:clone(route.domains),canonical:true}:{
+      eventType:type,countryId:countryId?id(countryId):null,canonical:false,reason:'EVENT_ROUTE_NOT_REGISTERED'
+    };
+  }
+  function findDataSources(subject,countryId,targetId=null){
+    const route=sourceFor(String(subject),countryId,targetId);
+    return{subject:String(subject),countryId:id(countryId),targetCountryId:targetId?id(targetId):null,primaryMinistry:route.primary||null,dependentMinistries:route.dependencies||[],authoritativePaths:(route.checks||[]).filter(x=>x?.authority||x?.availability==='AVAILABLE').map(x=>({path:x.path,source:x.source,availability:x.availability})),files:route.files||[],routeStatus:route.primary?'REGISTERED':'UNKNOWN'};
+  }
+
   function apiRouteSubject(subject,countryId,targetId=null){return clone(sourceFor(String(subject),countryId,targetId));}
   function apiPlanDecision(decision){return clone(decide(clone(decision||{})));}
   function apiRouteDecision(decision,t=turn()){
@@ -1491,6 +1541,8 @@
     diagnostics,
     canonicalCountry,
     routeSubject:apiRouteSubject,
+    resolveEventRoute,
+    findDataSources,
     collectEvidence:(countryId,subjects,targetId)=>collectEvidence(countryId,subjects,targetId),
     planDecision:apiPlanDecision,
     routeDecision:apiRouteDecision,
