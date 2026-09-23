@@ -112,7 +112,8 @@ const CANONICAL_AI_SCRIPTS = Object.freeze([
   'omega_cognitive_engine.js',
   'omega_reasoning_dispatcher.js',
   'omega_universal_ai_runtime.js',
-  'omega_ai_context_bridge.js'
+  'omega_ai_context_bridge.js',
+  'omega_opponent_autonomy_system.js'
 ]);
 
 const escapeRegExp = value => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
