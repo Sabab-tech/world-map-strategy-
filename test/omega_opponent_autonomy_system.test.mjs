@@ -220,7 +220,8 @@ const decision=autonomy.planDecision({
   scenarioId:'HOUSING_SHORTAGE',
   runtimeMeasurement:{
     required:1200,available:1000,gap:200,
-    selected:{action:'HOUSING_BUILD',quantity:200}
+    cost:1000,durationTurns:2,labor:50,materials:{steel:50},
+    selected:{action:'HOUSING_BUILD',quantity:200,cost:1000,durationTurns:2,labor:50,materials:{steel:50}}
   }
 });
 assert(decision.factorModel.treasury>0);
