@@ -170,6 +170,7 @@
       ['resource.consumption',projection.consumption],
       ['resource.tradeAvailability',projection.tradeAvailability],
       ['resource.mineStates',projection.mineStates],
+      ['resource.mineOutputs',clone(existing.mineOutputs||{})],
       ['resource.extractionLedger',projection.extractionLedger],
       ['resource.authority',projection.resourceAuthority]
     ])ctx.stateTransaction.set(path,value);
@@ -194,6 +195,8 @@
       ?rows.filter(x=>cmd.payload.occurrenceKeys.includes(x.occurrenceKey)):rows;
     const extracted=[];
     const blocked=[];
+    const mineOutputs=clone(ctx.stateTransaction.get('resource.mineOutputs')||{});
+    const mines=clone(ctx.stateTransaction.get('resource.mines')||[]);
     for(const x of selected){
       const reserve=r.getReserveState(x.occurrenceKey);if(!reserve||reserve.residualQuantity<=0)continue;
       if(!['ACTIVE_EXTRACTION','DEPLETING','RESERVE_DEPLETING'].some(s=>String(reserve.operationalStatus||'').toUpperCase().includes(s)))continue;
@@ -230,6 +233,15 @@
       inventory[resource]=(n(inventory[resource])||0)+q;
       reserves[resource]=n(result.reserveAfter.residualQuantity)||0;
       current[x.occurrenceKey]=clone(result.reserveAfter.toJSON?.()||result.reserveAfter);
+      mineOutputs[x.occurrenceKey]={
+        occurrenceKey:x.occurrenceKey,depositKey:x.depositKey,resourceId:resource,simulationTurn:turn(),
+        producedQuantity:q,residualQuantity:n(result.reserveAfter.residualQuantity)||0,status:result.status
+      };
+      const mineIndex=mines.findIndex(m=>String(m.occurrenceKey)===String(x.occurrenceKey));
+      if(mineIndex>=0){
+        mines[mineIndex]={...mines[mineIndex],reserveState:clone(result.reserveAfter.toJSON?.()||result.reserveAfter),
+          operationalStatus:result.reserveAfter.operationalStatus,residualQuantity:n(result.reserveAfter.residualQuantity)||0};
+      }
       const record={
         extractionId:'EXT-'+turn()+'-'+c+'-'+String(x.occurrenceKey).replace(/[^A-Z0-9:_-]/gi,''),
         countryId:c,simulationTurn:turn(),occurrenceKey:x.occurrenceKey,depositKey:x.depositKey,resourceId:resource,
@@ -245,6 +257,8 @@
       emit('OMEGA_RESOURCE_EXTRACTION_COMPLETED',c,record,cmd.commandId);
     }
     ctx.stateTransaction.set('resource.mineStates',current);
+    ctx.stateTransaction.set('resource.mineOutputs',mineOutputs);
+    ctx.stateTransaction.set('resource.mines',mines);
     ctx.stateTransaction.set('resource.production',production);
     ctx.stateTransaction.set('resource.inventory',inventory);
     ctx.stateTransaction.set('resource.reserves',reserves);
