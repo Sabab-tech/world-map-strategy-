@@ -95,11 +95,11 @@ if(policyHandler){
 }
 const outcome=api.handleOutcome({countryId:'BBB',projectId:handled.batch.plans[0].projectId,scenarioId:projectDecision.scenarioId,status:'COMPLETED',eventType:'OMEGA_PROJECT_COMPLETED',impactedNodes:['industry'],affectedActors:['CCC']});
 assert.ok(Array.from(outcome.dirty).includes('OUTPUT'));
-assert.ok(trace.some(x=>x.type==='EXECUTION_STARTED'));
-assert.ok(trace.some(x=>x.type==='NEXT_EVALUATION_SCHEDULED'));
 assert.ok(Array.from(outcome.affectedActors).includes('CCC'));
 
 const trace=api.getTrace();
+assert.ok(trace.some(x=>x.type==='EXECUTION_STARTED'));
+assert.ok(trace.some(x=>x.type==='NEXT_EVALUATION_SCHEDULED'));
 const traceLayers=new Set(trace.map(x=>x.layer));
 for(const layer of api.LAYERS.map(x=>x.id))assert.ok(traceLayers.has(layer),layer+' missing');
 assert.ok(trace.some(x=>x.layer==='L26_EVIDENCE_TRACE'));
