@@ -50,4 +50,6 @@ const transport=globalThis.OmegaResourceTransport;
 assert(transport);
 const shipments=transport.getCountryShipments('BGD');
 assert(shipments.some(x=>x.resourceId==='natural_gas'&&x.batchId));
-console.log('OMEGA RESOURCE ENDOWMENT, EXTRACTION AND TRANSPORT TEST PASSED');
+assert(Array.isArray(after.batches));
+assert(after.batches.some(x=>x.resourceId==='natural_gas'&&x.materialIdentity==='natural_gas'));
+console.log('OMEGA RESOURCE ENDOWMENT, EXTRACTION BATCH AND TRANSPORT TEST PASSED');
