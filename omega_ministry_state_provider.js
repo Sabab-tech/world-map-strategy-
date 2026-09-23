@@ -7,7 +7,7 @@
 (function(global){
   'use strict';
 
-  const VERSION='1.0.0';
+  const VERSION='1.1.0';
   const AVAILABILITY=Object.freeze({
     AVAILABLE:'AVAILABLE',
     UNOBSERVED:'UNOBSERVED',
@@ -152,18 +152,27 @@
     _specialPath(countryId,path){
       if(path==='resourceSummary'){
         const state=this.root();
-        const section=state?.resources||state?.resourceSummary||null;
-        if(section&&typeof section==='object'&&countryId&&section[countryId]!==undefined)return clone(section[countryId]);
-        return section===undefined?undefined:clone(section);
+        const section=state?.resources||state?.resourceSummary;
+        if(!section||typeof section!=='object'||!countryId)return undefined;
+        const key=Object.keys(section).find(k=>String(k).toUpperCase()===String(countryId).toUpperCase());
+        return key===undefined?undefined:clone(section[key]);
       }
       if(path==='resourceInventory'||path==='resourceDeposits'||path==='resourceEngineState'){
         const engine=global.ResourceMinistryEngine;
         try{
           if(!engine?.getIntegratedResourceState)return undefined;
-          const state=engine.getIntegratedResourceState(countryId);
-          if(path==='resourceEngineState')return state;
-          if(path==='resourceInventory')return state?.inventory;
-          if(path==='resourceDeposits')return engine.deposits;
+          const integrated=engine.getIntegratedResourceState(countryId);
+          if(path==='resourceEngineState')return integrated;
+          if(path==='resourceInventory')return integrated?.inventory;
+          if(path==='resourceDeposits'){
+            const deposits=Array.isArray(engine.deposits)?engine.deposits:[];
+            const cid=String(countryId).toUpperCase();
+            const filtered=deposits.filter(row=>{
+              const owner=row?.countryCode??row?.countryId??row?.country;
+              return owner!==undefined&&String(owner).trim().toUpperCase()===cid;
+            });
+            return filtered.length?clone(filtered):undefined;
+          }
         }catch(_){}
       }
       return undefined;
@@ -254,7 +263,8 @@
         sourceRevision:this.getRevision(id,topDomain(p)),
         simulationTurn:this.simulationTurn(),
         availability:availability.status,
-        reason:availability.reason
+        reason:availability.reason,
+        countryScoped:COUNTRY_SCOPED_DOMAINS.has(topDomain(p))||['resourceSummary','resourceInventory','resourceDeposits','resourceEngineState'].includes(p)
       };
     }
 
