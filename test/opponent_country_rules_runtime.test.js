@@ -86,9 +86,11 @@ const txHandled=txHandler.fn({commandId:'cmd-tx',countryId:'BBB',sourceMinistryI
 assert.equal(txHandled.accepted,true);
 assert.ok(Array.from(txHandled.batch.plans).some(x=>x.transactionId));
 
-const policyHandler=handlers.get('OCR_V42_'+run.scenarios.find(x=>x.actions.includes('DEMAND_MANAGEMENT'))?.id);
-if(policyHandler){
-  const policyDecision={...projectDecision,scenarioId:run.scenarios.find(x=>x.actions.includes('DEMAND_MANAGEMENT'))?.id,decisionId:'DEC-POL-1',selectedActions:['DEMAND_MANAGEMENT']};
+const policyScenario=run.scenarios.find(x=>x.actions.includes('DEMAND_MANAGEMENT'));
+assert.ok(policyScenario);
+const policyHandler=handlers.get('OCR_V42_'+policyScenario.id);
+assert.ok(policyHandler);
+  const policyDecision={...projectDecision,scenarioId:policyScenario.id,decisionId:'DEC-POL-1',selectedActions:['DEMAND_MANAGEMENT']};
   const policyHandled=policyHandler.fn({commandId:'cmd-policy',countryId:'BBB',sourceMinistryId:policyHandler.owner,payload:{opponentDecision:policyDecision}},{stateTransaction:txContext,simulationTurn:4,emitEvent(){}});
   assert.equal(policyHandled.accepted,true);
   assert.ok(Array.from(policyHandled.batch.plans).some(x=>x.policyId));
