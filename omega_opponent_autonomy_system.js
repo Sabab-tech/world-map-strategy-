@@ -338,7 +338,7 @@
       targetCountryId:out.targetCountryId,
       subjects:[...subjects],
       availableSubjects:Object.entries(out.subjects).filter(([,x])=>(x.checks||[]).some(y=>y?.availability==='AVAILABLE')).map(([k])=>k)
-    },null,'EVIDENCE-'+id(countryId)+'-'+turn());
+    },null,'EVIDENCE-'+canonicalId(countryId)+'-'+turn());
     return out;
   }
 
@@ -653,7 +653,7 @@
     for(const x of explicitCandidates){const n=scalar(x);if(n!==null)return n;}
     const engine=g.ResourceMinistryEngine;
     try{
-      const profile=engine?.getCountryResourceProfile?.(id(countryId));
+      const profile=engine?.getCountryResourceProfile?.(canonicalId(countryId));
       const found=read(profile,'market')||read(profile,'resource_market')||read(profile,'market_context');
       const candidates=[
         read(found,'prices.'+resourceId),read(found,'price.'+resourceId),read(found,'unitPrice.'+resourceId),
@@ -676,7 +676,7 @@
     const m=decision?.runtimeMeasurement||decision?.measurement||{};
     const resourceId=m?.resourceId||m?.resource||null;
     if(!resourceId)return{countryId:null,reason:'RESOURCE_ID_NOT_OBSERVED'};
-    const suppliers=findResourceSuppliers(resourceId).filter(x=>id(x.countryId)!==id(countryId));
+    const suppliers=findResourceSuppliers(resourceId).filter(x=>canonicalId(x.countryId)!==canonicalId(countryId));
     if(!suppliers.length)return{countryId:null,reason:'NO_RESOURCE_SUPPLIER_RECORD'};
     const rows=suppliers.map(x=>{
       const rel=relationRecord(countryId,x.countryId);
@@ -758,7 +758,7 @@
     const mesh=interop();
     if(!mesh?.dispatchCommand)return{status:'UNAVAILABLE',reason:'MINISTRY_INTEROPERABILITY_UNAVAILABLE'};
     try{
-      return mesh.dispatchCommand(owner,action,id(countryId),payload,{
+      return mesh.dispatchCommand(owner,action,canonicalId(countryId),payload,{
         turn:turn(),commandType:action,correlationId:correlationId||null
       });
     }catch(e){return{status:'FAILED',reason:String(e?.message||e)};}
@@ -774,7 +774,7 @@
   }
 
   function stateArray(state,domain,countryId,key){
-    const root=state?.[domain]?.[id(countryId)];
+    const root=state?.[domain]?.[canonicalId(countryId)];
     const existing=root?.[key];
     return Array.isArray(existing)?existing:[];
   }
@@ -1497,7 +1497,7 @@
 
   function resolveEventRoute(eventType,countryId=null){
     const type=String(eventType||'').trim().toUpperCase(),route=EVENT_ROUTES[type]||null;
-    return route?{eventType:type,countryId:countryId?id(countryId):null,owner:route.owner,domains:clone(route.domains),canonical:true}:{
+    return route?{eventType:type,countryId:countryId?canonicalId(countryId):null,owner:route.owner,domains:clone(route.domains),canonical:true}:{
       eventType:type,countryId:countryId?id(countryId):null,canonical:false,reason:'EVENT_ROUTE_NOT_REGISTERED'
     };
   }
