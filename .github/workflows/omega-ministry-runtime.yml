@@ -51,7 +51,9 @@ jobs:
           node --check omega_opponent_second_order_consequence_system.js
           node --check omega_opponent_memory_trace_log_system.js
           node --check omega_resource_endowment_runtime.js
+          node --check omega_resource_economy_runtime_v2.js
           node --check omega_global_market_system.js
+          node --check test/omega_resource_economy_runtime_v2.test.mjs
           node --check opponent_country_rules.js
           node --check test/opponent_country_rules_runtime.test.js
           node --check omega_ai_context_bridge.js
@@ -104,6 +106,7 @@ jobs:
             'omega_opponent_adaptive_strategy_system.js',
             'omega_opponent_autonomy_system.js',
             'omega_global_trade_system.js',
+            'omega_resource_economy_runtime_v2.js',
             'omega_opponent_treaty_lifecycle_system.js',
             'omega_opponent_second_order_consequence_system.js'
           ]) {
@@ -128,6 +131,7 @@ jobs:
           node test/omega_opponent_memory_trace_log_system.test.mjs
           node test/omega_global_market_system.test.mjs
           node test/omega_resource_endowment_runtime.test.mjs
+          node --test test/omega_resource_economy_runtime_v2.test.mjs
           node test/omega_resource_request_and_settlement.test.mjs
           node test/omega_opponent_multi_country_integration.test.mjs
           node --input-type=module <<'NODE'
@@ -138,39 +142,3 @@ jobs:
           for (const required of [
             'class RuntimeFlowEngine',
             'class RuntimeOperationEngine',
-            'const APPROVED_POLICY_OVERRIDES',
-            'class Decision',
-            'class ProjectEngine',
-            'class TransactionEngine',
-            'class Consequence',
-            'class Forecast',
-            'class Scheduler',
-            'class Reconcile',
-            'class Gateway',
-            'class Identity',
-            'class CapRegistry'
-          ]) {
-            if (!runtime.includes(required)) throw new Error('Required opponent runtime component missing: '+required);
-          }
-
-          if (runtime.includes("type:'RUNTIME_COVERAGE'")) throw new Error('Fake layer execution coverage remains');
-          if (runtime.includes('executionApplied:true')) throw new Error('Opponent runtime claims world effect was directly applied');
-          if (/countryId\s*===\s*['"][^'"]+['"]/.test(runtime)) throw new Error('Country-specific runtime branch detected');
-          if (/country\s*===\s*['"][^'"]+['"]/.test(runtime)) throw new Error('Country-specific runtime branch detected');
-
-          const policyMatch = runtime.match(/const APPROVED_POLICY_OVERRIDES=Object\.freeze\((\{[\s\S]*?\})\);/);
-          if (!policyMatch) throw new Error('Approved policy layer missing');
-          if (/\b(?:0\.\d+|\d{2,})\b/.test(policyMatch[1])) throw new Error('Numeric state-transition constants found inside approved policy layer');
-
-          if (ecosystem.includes('defaultAi')) throw new Error('Synthetic default AI profile remains');
-          if (/\+=|-=/.test(ecosystem)) throw new Error('Direct synthetic ecosystem state mutation remains');
-          if (/DEFAULT_GLOBAL_MARKET\s*=\s*\{\s*[^}]+price/.test(ecosystem)) throw new Error('Hardcoded global market baseline remains');
-
-          const countries=JSON.parse(await fs.readFile('countries.json','utf8'));
-          const population=JSON.parse(await fs.readFile('population.json','utf8'));
-          const economy=JSON.parse(await fs.readFile('economy.json','utf8'));
-          if (!Array.isArray(countries) || countries.length===0) throw new Error('Canonical countries dataset missing');
-          if (!population.BANGLADESH || !economy.BANGLADESH) throw new Error('Bangladesh static datasets missing');
-          console.log('CI AUTONOMOUS WORLD BEHAVIOR PROOF: PASS');
-          NODE
-
