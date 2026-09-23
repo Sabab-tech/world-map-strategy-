@@ -82,6 +82,27 @@
     return null;
   }
 
+  function readNetworkMode(c,rid,kind){
+    var candidates=[
+      readPath(c,'transport.resourceNetworkMode'),
+      readPath(c,'transport.logisticsMode'),
+      readPath(c,'transport.mode'),
+      readPath(c,'trade.transportMode')
+    ];
+    for(var i=0;i<candidates.length;i++){
+      var x=candidates[i];
+      if(x&&typeof x==='object'&&x[rid]!=null)x=x[rid];
+      if(typeof x==='string'&&x.trim())return{mode:id(x),source:'OBSERVED_TRANSPORT_STATE'};
+    }
+    if(kind==='TRADE_EXPORT')return{mode:'INTERNATIONAL_TRANSIT',source:'TRADE_SETTLEMENT'};
+    return{mode:'UNSPECIFIED_LOGISTICS',source:'UNOBSERVED_TRANSPORT_MODE'};
+  }
+  function readPath(c,path){
+    var parts=String(path||'').split('.'),cur=bucket(c,parts.shift());
+    for(var i=0;i<parts.length;i++){if(cur==null)return undefined;cur=cur[parts[i]];}
+    return cur;
+  }
+
   function readObservedCapacity(c,rid){
     var paths=[
       ['transport','resourceRouteCapacity'],
@@ -150,6 +171,7 @@
     var quantity=num(batch.remainingQuantity!=null?batch.remainingQuantity:batch.quantity)||0;
     if(quantity<=0)return null;
     var capInfo=readObservedCapacity(c,batch.resourceId),cap=capInfo.capacity;
+    var network=readNetworkMode(c,batch.resourceId,kind);
     var deliver=Math.min(quantity,cap);
     var status=deliver>=quantity?'DELIVERED':'IN_TRANSIT';
     var finalStage=destination&&destination.stage==='FACTORY'?'DOMESTIC_DISTRIBUTION':'PROCESSING_FEED';
@@ -158,7 +180,7 @@
       batchId:batch.batchId,resourceId:batch.resourceId,quantity:quantity,deliveredQuantity:deliver,remainingQuantity:Math.max(0,quantity-deliver),
       kind:kind,status:status,fromStage:kind==='EXTRACTION'?'MINE_SITE':(kind==='PROCESSING_OUTPUT'?'PROCESSING_OUTPUT':'DOMESTIC_STOCK'),
       currentStage:status==='DELIVERED'?finalStage:'LOCAL_COLLECTION',destinationStage:finalStage,destinationFacilityId:destination&&destination.id||null,
-      destinationCountryId:canonical(c),routeCapacityObserved:cap,capacitySource:capInfo.source,createdTurn:turn(),updatedTurn:turn(),
+      destinationCountryId:canonical(c),routeCapacityObserved:cap,capacitySource:capInfo.source,networkMode:network.mode,networkModeSource:network.source,createdTurn:turn(),updatedTurn:turn(),
       legs:[
         {name:'LOCAL_COLLECTION',status:deliver>0?'COMPLETED':'PENDING'},
         {name:'REGIONAL_LOGISTICS',status:deliver>=quantity?'COMPLETED':'IN_TRANSIT'},
@@ -207,7 +229,7 @@
       var move=Math.min(num(s.remainingQuantity)||0,availableCap);
       if(move>0){
         s.deliveredQuantity=(num(s.deliveredQuantity)||0)+move;s.remainingQuantity=Math.max(0,(num(s.remainingQuantity)||0)-move);
-        s.routeCapacityObserved=capInfo.capacity;s.capacitySource=capInfo.source;s.updatedTurn=turn();capacityLeftByResource[s.resourceId]=(used===Infinity||move===Infinity)?Infinity:used+move;changed=true;
+        s.routeCapacityObserved=capInfo.capacity;s.capacitySource=capInfo.source;var network=readNetworkMode(c,s.resourceId,s.kind);s.networkMode=network.mode;s.networkModeSource=network.source;s.updatedTurn=turn();capacityLeftByResource[s.resourceId]=(used===Infinity||move===Infinity)?Infinity:used+move;changed=true;
       }
       if((num(s.remainingQuantity)||0)<=1e-9){
         s.status='DELIVERED';s.currentStage=s.destinationStage;
