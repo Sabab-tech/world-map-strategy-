@@ -115,6 +115,7 @@ const CANONICAL_AI_SCRIPTS = Object.freeze([
   'omega_universal_ai_runtime.js',
   'omega_ai_context_bridge.js',
   'omega_opponent_deep_memory_system.js',
+  
   'omega_opponent_adaptive_strategy_system.js',
   'omega_opponent_autonomy_system.js',
   'omega_global_trade_system.js',
