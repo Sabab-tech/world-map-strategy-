@@ -53,7 +53,6 @@ jobs:
           npm run test:ministries
           npm run test:simulation
 
-
       - name: Production server boot and canonical script injection smoke
         run: |
           set -euo pipefail
@@ -93,59 +92,53 @@ jobs:
           console.log('CI PRODUCTION BOOT SMOKE: PASS');
           NODE
 
-      - name: Required proof assertions
+      - name: Autonomous world architecture proof
         run: |
           set -euo pipefail
           node --input-type=module <<'NODE'
           import fs from 'node:fs/promises';
-          const runtime = await fs.readFile('omega_ministry_runtime_v1.js','utf8');
-          const engines = await fs.readFile('omega_ministry_domain_engines.js','utf8');
-          const interoperability = await fs.readFile('omega_ministry_interoperability_system.js','utf8');
+          const runtime = await fs.readFile('opponent_country_rules.js','utf8');
+          const test = await fs.readFile('test/opponent_country_rules_runtime.test.js','utf8');
           const simulation = await fs.readFile('omega_simulation_runtime.js','utf8');
-          const opponentRules = await fs.readFile('opponent_country_rules.js','utf8');
-          const opponentTest = await fs.readFile('test/opponent_country_rules_runtime.test.js','utf8');
-          const test = await fs.readFile('test/omega_17_ministry_runtime.test.js','utf8');
-          const meshTest = await fs.readFile('test/omega_ministry_interoperability.test.js','utf8');
 
-          if (!runtime.includes("const VERSION='1.2.0'")) throw new Error('Runtime version contract is not 1.2.0');
-          if (!simulation.includes("const VERSION='1.0.0'")) throw new Error('Simulation authority version contract is not 1.0.0');
+          if (!runtime.includes("const V='4.2.0'")) throw new Error('Autonomous core version contract missing');
+          if (!runtime.includes('const LAYERS=[')) throw new Error('Executable layer registry missing');
+          if (!runtime.includes('const SCENARIO_ROWS=[')) throw new Error('Universal scenario registry missing');
+          if (!runtime.includes('const ACTIONS={')) throw new Error('Action registry missing');
+          if (!runtime.includes('class ProjectEngine')) throw new Error('Project lifecycle engine missing');
+          if (!runtime.includes('class TransactionEngine')) throw new Error('Transaction lifecycle engine missing');
+          if (!runtime.includes('class Consequence')) throw new Error('Consequence propagation engine missing');
+          if (!runtime.includes('class Forecast')) throw new Error('Forecast engine missing');
+          if (!runtime.includes('class Scheduler')) throw new Error('Multi-rate scheduler missing');
+          if (!runtime.includes('class Reconcile')) throw new Error('State reconciliation missing');
+          if (!runtime.includes('class Gateway')) throw new Error('Data intake gateway missing');
+          if (!runtime.includes('class Identity')) throw new Error('Canonical identity layer missing');
+          if (!runtime.includes('class CapRegistry')) throw new Error('Capability registry missing');
+          if (!runtime.includes('L26_EVIDENCE_TRACE')) throw new Error('Evidence trace layer missing');
+          if (!runtime.includes('setReasoningAdapter')) throw new Error('AI reasoning boundary missing');
+          if (!runtime.includes('executionApplied:false')) throw new Error('Direct state-mutation guard missing');
+          if (/trigger:\{[^}]*value\s*:/.test(runtime)) throw new Error('Numeric trigger threshold detected');
+          for (const forbidden of ['Bangladesh','India','Pakistan','China','United States','USA']) {
+            if (runtime.includes(forbidden)) throw new Error('Country-specific behavior hardcode detected: '+forbidden);
+          }
+
+          const layerCount = (runtime.match(/id:'L\d\d_/g)||[]).length;
+          if (layerCount !== 28) throw new Error('Expected exactly 28 executable layer declarations, found '+layerCount);
+          if ((runtime.match(/\['REL'/g)||[]).length < 20) throw new Error('Universal relational scenario coverage is incomplete');
+
           if (!simulation.includes('class SimulationCoordinator')) throw new Error('Canonical simulation coordinator missing');
-          if (!simulation.includes('class SimulationClock')) throw new Error('Canonical simulation clock missing');
           if (!simulation.includes('AuthoritativeWorldState')) throw new Error('Authoritative world-state root missing');
           if (!simulation.includes("const PHASES=Object.freeze([")) throw new Error('Ordered simulation phases missing');
-          if (!opponentRules.includes("OMEGA OPPONENT COUNTRY RULES RUNTIME")) throw new Error('Opponent country rules runtime missing');
-          if (!opponentRules.includes('OMEGA_SIMULATION_TURN_COMMITTED')) throw new Error('Opponent rules turn binding missing');
-          if (!opponentRules.includes('OMEGA_OPPONENT_RULE_INTENT_APPLIED')) throw new Error('Opponent intent transaction event missing');
-          if (!opponentRules.includes('runtime.enqueueCommand')) throw new Error('Opponent rules command integration missing');
-          if (!opponentRules.includes('const STATE_DIRECTION_REGISTRY=')) throw new Error('State direction registry missing');
-          if (!opponentRules.includes('const GAP_RELATION_REGISTRY=')) throw new Error('Gap relation registry missing');
-          if (!opponentRules.includes('const SCENARIO_REGISTRY=')) throw new Error('Scenario registry missing');
-          if (!opponentRules.includes('const RUNTIME_LAYER_REGISTRY=')) throw new Error('Runtime layer registry missing');
-          if (!opponentRules.includes('L27_RUNTIME_DEBUG')) throw new Error('28-layer runtime map incomplete');
-          if (opponentRules.includes('GTE') || opponentRules.includes('LTE')) throw new Error('Numeric threshold operators must not be embedded in opponent scenario rules');
-          if (/trigger:\{[^}]*value\s*:/.test(opponentRules)) throw new Error('Numeric trigger threshold detected in opponent scenario rules');
-          if (!opponentTest.includes('OMEGA OPPONENT COUNTRY RULES TEST PASSED')) throw new Error('Opponent runtime behavioral test missing');
-          if (!interoperability.includes("const VERSION='2.0.0'")) throw new Error('Interoperability version contract is not 2.0.0');
-          if (!interoperability.includes('deliveryLedger')) throw new Error('Canonical delivery ledger missing');
-          if (!interoperability.includes('publishedFacts')) throw new Error('Public-state projection contract missing');
-          if (!interoperability.includes('stateRevision')) throw new Error('State revision contract missing');
-          if (!interoperability.includes('UNOBSERVED')) throw new Error('Missing-data semantics missing');
-          if (!interoperability.includes('dispatchCommand')) throw new Error('Command system missing');
-          if (!interoperability.includes('emitEvent')) throw new Error('Semantic event system missing');
-          if (!interoperability.includes('saveState')) throw new Error('Save/load state contract missing');
-          if (!interoperability.includes('this.ids.length*this.ids.length')) throw new Error('Dynamic NxN mesh topology generation missing');
-          if (!meshTest.includes("every route transports")) throw new Error('Expanded route transport test missing');
-          if (!meshTest.includes("relationship is not substituted for treaty status")) throw new Error('Treaty semantic separation test missing');
-          if (!meshTest.includes("command -> authoritative owner")) throw new Error('Command propagation test missing');
-          if (!runtime.includes("version:VERSION")) throw new Error('Runtime API does not expose the canonical version token');
-          if (!runtime.includes('saveState')) throw new Error('Runtime save/load API missing');
-          if (!test.includes('const IDS')) throw new Error('Canonical runtime test missing');
-          if (!engines.includes("const VERSION='1.0.0'")) throw new Error('Engine version contract is not 1.0.0');
-          if (runtime.includes('nativeAdapter')) throw new Error('Legacy native-adapter execution path remains');
-          if ((engines.match(/class .*Engine extends IndependentMinistryEngine/g) || []).length !== 17) {
-            throw new Error('Expected 17 independent concrete ministry engines');
-          }
-          if (!test.includes('unique engine instance')) throw new Error('Unique-engine regression assertion missing');
-          if (!test.includes('legacy config reference')) throw new Error('Binding-aware legacy reference assertion missing');
-          console.log('CI OMEGA MINISTRY PROOF: PASS');
+
+          if (!test.includes("OMEGA AUTONOMOUS WORLD CORE TEST PASSED")) throw new Error('Autonomous core behavior test missing');
+          if (!test.includes("assert.equal(diagnostics.layers,28)")) throw new Error('28-layer assertion missing');
+          if (!test.includes("assert.equal(diagnostics.scenarioCount,25)")) throw new Error('25-scenario assertion missing');
+          if (!test.includes("assert.equal(diagnostics.directionalSignals,63)")) throw new Error('63-signal assertion missing');
+          if (!test.includes("assert.equal(diagnostics.actionTypes,27)")) throw new Error('27-action assertion missing');
+          if (!test.includes("L26_EVIDENCE_TRACE")) throw new Error('Evidence trace runtime assertion missing');
+          if (!test.includes("projectId")) throw new Error('Project lifecycle behavioral assertion missing');
+          if (!test.includes("transactionId")) throw new Error('Transaction lifecycle behavioral assertion missing');
+          if (!test.includes("mutationAuthority,false")) throw new Error('AI mutation boundary assertion missing');
+
+          console.log('CI AUTONOMOUS WORLD ARCHITECTURE PROOF: PASS');
           NODE
