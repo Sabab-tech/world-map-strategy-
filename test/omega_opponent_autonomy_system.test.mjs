@@ -48,7 +48,7 @@ globalThis.Game={
         treaties:{}
       }
     },
-    trade:{BD:{relations:{SA:{overall:75,trade:80,trust:70}},marketPrice:{crude_oil:80},offerBook:{crude_oil:{unitPrice:80}}},SA:{offerBook:{crude_oil:{unitPrice:78}}}}
+    trade:{BD:{relations:{SA:{overall:75,trade:80,trust:70}},marketPrice:{crude_oil:80},offerBook:{crude_oil:{unitPrice:80}},routeCapacity:{crude_oil:2000000}},SA:{offerBook:{crude_oil:{unitPrice:78}}}}
   }
 };
 
