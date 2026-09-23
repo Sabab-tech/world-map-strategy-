@@ -171,6 +171,7 @@ const training=autonomy.dispatch('OMEGA_AUTO_MILITARY_TRAIN','BD',{
 assert.equal(training.status,'APPLIED');
 assert.equal(globalThis.Game.state.military.BD.trainingQueue.length,1);
 
+globalThis.Game.state.simulation.turn=2;
 const tick=autonomy.dispatch('OMEGA_AUTO_MILITARY_TICK','BD',{});
 assert.equal(tick.status,'APPLIED');
 assert.equal(globalThis.Game.state.military.BD.trainingQueue[0].status,'COMPLETED');
@@ -228,6 +229,15 @@ assert(decision.factorModel.strategicPriority>0);
 assert(decision.factorModel.time>0);
 assert(decision.factorModel.risk>0);
 assert(decision.factorModel.relations>0);
+assert(decision.selected?.factors?.needPressure!==null);
+assert(decision.selected?.factors?.treasury!==null);
+assert(decision.selected?.factors?.labor!==null);
+assert(decision.selected?.factors?.materials!==null);
+assert(decision.selected?.factors?.debt!==null);
+assert(decision.selected?.factors?.existingProjects!==null);
+assert(decision.selected?.factors?.strategicPriority!==null);
+assert(decision.selected?.factors?.time!==null);
+assert(decision.selected?.factors?.risk!==null);
 assert.equal(decision.status,'ROUTED');
 assert(decision.candidateEvaluations.length>0);
 
