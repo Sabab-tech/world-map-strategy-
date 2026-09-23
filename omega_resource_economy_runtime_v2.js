@@ -286,7 +286,7 @@
   }
 
   function fiscalFor(gross,direction,companyId){
-    var r=rules().fiscal,q=number?null:null; // keep expression engine simple; 'q' is intentionally unused.
+    var r=rules().fiscal;
     var royalty=gross*(num(r.royaltyRate)||0),resourceTax=gross*(num(r.resourceTaxRate)||0),corporate=sovereignCompany(companyId)?0:gross*(num(r.corporateTaxRate)||0),exportDuty=String(direction||'').toUpperCase()==='EXPORT'?gross*(num(r.exportDutyRate)||0):0,other=gross*(num(r.otherReceiptRate)||0);
     return{gross:gross,royalty:royalty,resourceTax:resourceTax,corporateTax:corporate,exportDuty:exportDuty,other:other,total:royalty+resourceTax+corporate+exportDuty+other,policySource:'resource_economy_rules.json'};
   }
@@ -439,7 +439,7 @@
   function processCountry(c){
     var cid=canonical(c),rs=bucket(cid,'resource')||{},before=clone(rs.inventory||{}),recon=dispatch('resource','OMEGA_RESOURCE_ECON_RECONCILE_INVENTORY',cid,{correlationId:'RECON-'+turn()+'-'+cid}),prod=executeFactories(cid),afterState=bucket(cid,'resource')||{},after=clone(afterState.inventory||{}),delta={},keys={};
     Object.keys(before).forEach(function(k){keys[k]=true;});Object.keys(after).forEach(function(k){keys[k]=true;});Object.keys(keys).forEach(function(k){delta[k]=(num(after[k])||0)-(num(before[k])||0);});
-    updateResource=dispatch('resource','OMEGA_RESOURCE_ECON_PUBLISH_RESOURCE_RUNTIME',cid,{inventoryDelta:delta,integrity:clone(afterState.inventoryIntegrity||((recon&&recon.result)||null)),correlationId:'RES-RUNTIME-'+turn()+'-'+cid});
+    var updateResource=dispatch('resource','OMEGA_RESOURCE_ECON_PUBLISH_RESOURCE_RUNTIME',cid,{inventoryDelta:delta,integrity:clone(afterState.inventoryIntegrity||((recon&&recon.result)||null)),correlationId:'RES-RUNTIME-'+turn()+'-'+cid});
     publishOffers(cid);
     var econ=bucket(cid,'economy')||{},runtime=clone(econ.industrialRuntime||{}),accounts=clone(econ.companyAccounts||{}),workers=clone(econ.workerIncome||{}),suppliers=clone(econ.supplierRevenue||{}),out={};
     runtime.lastTurn=turn();runtime.facilities=prod.executed.concat(prod.blocked);runtime.productionLedger=(Array.isArray(runtime.productionLedger)?runtime.productionLedger:[]).concat(prod.executed).slice(-(num(rules().runtime.maxLedgerEntries)||2048));runtime.blockedFacilities=prod.blocked.slice(-256);runtime.status=prod.blocked.length?'DEGRADED':(prod.assets.length?'HEALTHY':'NO_FACTORY_ASSETS');
@@ -493,16 +493,24 @@
     var s=document.createElement('style');s.id='omega-re2-style';s.textContent='.omega-re2{font-family:var(--font-mono,monospace);color:#dce8f0;display:flex;flex-direction:column;gap:10px;padding:2px 2px 28px}.omega-re2-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;background:linear-gradient(135deg,rgba(6,16,29,.98),rgba(15,29,47,.98));border:1px solid rgba(91,213,255,.35);border-radius:12px;padding:14px}.omega-re2-head small{color:#61d7ff;letter-spacing:1.4px;font-size:8px}.omega-re2-head h3{margin:5px 0;font-size:14px;color:#f4f8fb}.omega-re2-head p{margin:0;color:#6f879a;font-size:9px}.omega-re2-head>b{font-size:8px;border:1px solid currentColor;border-radius:999px;padding:6px 8px}.omega-re2-kpi{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}.omega-re2-kpi>div,.omega-re2-panel{background:rgba(7,17,29,.96);border:1px solid rgba(255,255,255,.07);border-radius:9px}.omega-re2-kpi>div{padding:9px}.omega-re2-kpi small{display:block;color:#6d8497;font-size:7px}.omega-re2-kpi strong{display:block;color:#edf6fa;font-size:17px}.omega-re2-kpi em{font-size:7px;color:#7297ac;font-style:normal}.omega-re2-flow{background:rgba(4,11,21,.97);border:1px solid rgba(165,113,255,.22);border-radius:9px;padding:9px;font-size:8px;color:#c8b1ff}.omega-re2-flow div{margin-top:6px;color:#8ea3b2;line-height:1.8}.omega-re2-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.omega-re2-panel{overflow:hidden;min-width:0}.omega-re2-panel.wide{grid-column:1/-1}.omega-re2-panel header{padding:8px 9px;border-bottom:1px solid rgba(255,255,255,.06);font-size:8px;font-weight:800;display:flex;justify-content:space-between}.omega-re2-panel header span{color:#6d8497;font-weight:400}.omega-re2-scroll{max-height:250px;overflow:auto}.omega-re2-row{display:grid;grid-template-columns:2.1fr .8fr .9fr .75fr .85fr 1.1fr;gap:5px;align-items:center;padding:7px 8px;border-bottom:1px solid rgba(255,255,255,.04);font-size:8px}.omega-re2-row b{display:block;color:#e9f3f7}.omega-re2-row small,.omega-re2-line small{color:#6a8193;font-size:7px}.omega-re2-line{display:grid;grid-template-columns:1fr auto auto;gap:8px;padding:7px 9px;border-bottom:1px solid rgba(255,255,255,.04);font-size:8px}.omega-re2-line strong{color:#cfe8f2}.omega-re2-line em{color:#36d399;font-style:normal}.omega-re2-total{display:flex;justify-content:space-between;padding:9px;font-size:9px;border-top:1px solid rgba(255,213,105,.18)}.omega-re2-total strong{color:#ffd56a}.omega-re2-empty{padding:12px;color:#5f7688;font-size:8px;text-align:center}.omega-re2 footer{color:#5f7688;font-size:7px;padding:2px}@media(max-width:850px){.omega-re2-kpi{grid-template-columns:repeat(2,minmax(0,1fr))}.omega-re2-grid{grid-template-columns:1fr}.omega-re2-panel.wide{grid-column:auto}.omega-re2-row{grid-template-columns:1.5fr .8fr .9fr .75fr .85fr}.omega-re2-row small:last-child{grid-column:1/-1}}';document.head&&document.head.appendChild(s);g.__OmegaResourceEconomyV2UI=true;
   }
 
+  function refreshUI(){
+    try{
+      if(!g.CountryIOS)return;
+      var active=g.CountryIOS.activeChapter;
+      if((active===5||active==='5')&&typeof g.CountryIOS.switchChapter==='function')g.CountryIOS.switchChapter(5);
+    }catch(_){}
+  }
+
   function boot(){
     installHandlers();installEvents();loadRules();initOntology();
     if(typeof document!=='undefined'&&(document.readyState==='interactive'||document.readyState==='complete'))ui();
     else if(typeof document!=='undefined')document.addEventListener('DOMContentLoaded',ui,{once:true});
     if(typeof g.addEventListener==='function'){
       g.addEventListener('OMEGA_SIMULATION_TURN_COMMITTED',function(){var t=turn();if(g.__OmegaResourceEconomyV2Turn===t)return;g.__OmegaResourceEconomyV2Turn=t;runTurn();});
-      g.addEventListener('OMEGA_READY',function(){installHandlers();installEvents();ui();});
-      g.addEventListener('OMEGA_GAME_SESSION_STARTED',function(){installHandlers();installEvents();ui();});
-      g.addEventListener('RESOURCE_STATE_UPDATED',ui);
-      g.addEventListener('OMEGA_RESOURCE_ECONOMY_UPDATED',ui);
+      g.addEventListener('OMEGA_READY',function(){installHandlers();installEvents();ui();refreshUI();});
+      g.addEventListener('OMEGA_GAME_SESSION_STARTED',function(){installHandlers();installEvents();ui();refreshUI();});
+      g.addEventListener('RESOURCE_STATE_UPDATED',function(){ui();refreshUI();});
+      g.addEventListener('OMEGA_RESOURCE_ECONOMY_UPDATED',function(){ui();refreshUI();});
     }
   }
   function initOntology(){
