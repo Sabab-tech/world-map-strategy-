@@ -554,8 +554,14 @@
       if(plan.cost!==null&&financial.liquidity!==null&&financial.liquidity-reservation.money<plan.cost){status='BLOCKED';reasons.push('INSUFFICIENT_UNRESERVED_TREASURY');}
     }
 
-    if(['MILITARY_RECRUIT','MILITARY_TRAIN','MILITARY_EQUIP'].includes(a)){
+    if(['MILITARY_RECRUIT','MILITARY_TRAIN','MILITARY_ORGANIZE','MILITARY_EQUIP'].includes(a)){
       if(financial.liquidity===null){status='WAIT_DATA';reasons.push('TREASURY_LIQUIDITY_NOT_OBSERVED');}
+    }
+    if(a==='MILITARY_TRAIN'&&plan.durationTurns===null){status='WAIT_DATA';reasons.push('TRAINING_DURATION_NOT_OBSERVED');}
+    if(a==='MILITARY_ORGANIZE'&&plan.personnelPerUnit===null){status='WAIT_DATA';reasons.push('PERSONNEL_PER_UNIT_NOT_OBSERVED');}
+    if(a==='MILITARY_EQUIP'){
+      if(!plan.item){status='WAIT_DATA';reasons.push('EQUIPMENT_ITEM_NOT_OBSERVED');}
+      if(plan.cost===null){status='WAIT_DATA';reasons.push('EQUIPMENT_COST_NOT_OBSERVED');}
     }
 
     const treasuryFactor=plan.cost!==null&&financial.liquidity!==null
@@ -1324,7 +1330,7 @@
     }else if(a==='MILITARY_TRAIN'){
       result=dispatch('military','OMEGA_AUTO_MILITARY_TRAIN',c,{quantity:plan.plan.quantity,durationTurns:plan.plan.durationTurns,reservationId,decisionId,readinessDelta:plan.plan.readinessDelta},decisionId);
     }else if(a==='MILITARY_EQUIP'){
-      result=dispatch('military','OMEGA_AUTO_MILITARY_EQUIP',c,{quantity:plan.plan.quantity,item:plan.plan.item,reservationId,decisionId,correlationId:decisionId},decisionId);
+      result=dispatch('military','OMEGA_AUTO_MILITARY_EQUIP',c,{quantity:plan.plan.quantity,item:plan.plan.item,cost:plan.plan.cost,materials:plan.plan.materials,reservationId,decisionId,correlationId:decisionId},decisionId);
     }else if(a==='TREATY_NEGOTIATION'){
       result=dispatch('foreign','OMEGA_AUTO_TREATY_NEGOTIATION_START',c,{targetCountryId:plan.targetCountryId,reservationId,decisionId},decisionId);
     }else{
