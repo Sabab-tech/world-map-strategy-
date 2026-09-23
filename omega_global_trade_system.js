@@ -529,9 +529,11 @@
     const sellerResource=command('resource','OMEGA_TRADE_RESOURCE_DEBIT',s,{resourceId:req.resourceId,quantity:req.quantity,settlementId:sid,requestId:req.requestId});
     const buyerResource=command('resource','OMEGA_TRADE_RESOURCE_CREDIT',c,{resourceId:req.resourceId,quantity:req.quantity,settlementId:sid,requestId:req.requestId});
     if(sellerCredit?.status!=='APPLIED'||sellerResource?.status!=='APPLIED'||buyerResource?.status!=='APPLIED'){
-      /* deterministic compensation for the buyer debit when the remaining legs cannot commit */
-      command('finance','OMEGA_TRADE_FINANCE_CREDIT',c,{amount:check.buyerTotal,settlementId:sid+'-COMP',requestId:req.requestId,currency:check.buyerCurrency});
-      emit('OMEGA_TRADE_SETTLEMENT_FAILED',c,{requestId:req.requestId,settlementId:sid,reason:'MULTI_LEDGER_COMMIT_FAILED'});
+      if(sellerCredit?.status==='APPLIED')command('finance','OMEGA_TRADE_FINANCE_DEBIT',s,{amount:check.sellerTotal,settlementId:sid+'-COMP-SELLER-FIN',requestId:req.requestId,currency:check.sellerCurrency});
+      if(sellerResource?.status==='APPLIED')command('resource','OMEGA_TRADE_RESOURCE_CREDIT',s,{resourceId:req.resourceId,quantity:req.quantity,settlementId:sid+'-COMP-SELLER-RES',requestId:req.requestId});
+      if(buyerResource?.status==='APPLIED')command('resource','OMEGA_TRADE_RESOURCE_DEBIT',c,{resourceId:req.resourceId,quantity:req.quantity,settlementId:sid+'-COMP-BUYER-RES',requestId:req.requestId});
+      if(debit?.status==='APPLIED')command('finance','OMEGA_TRADE_FINANCE_CREDIT',c,{amount:check.buyerTotal,settlementId:sid+'-COMP-BUYER-FIN',requestId:req.requestId,currency:check.buyerCurrency});
+      emit('OMEGA_TRADE_SETTLEMENT_FAILED',c,{requestId:req.requestId,settlementId:sid,reason:'MULTI_LEDGER_COMMIT_FAILED',compensated:true});
       return;
     }
     command('trade','OMEGA_TRADE_CLOSE_REQUEST',c,{requestId:req.requestId,status:TYPES.SETTLED,stage:'SETTLED',settlementId:sid});
