@@ -225,9 +225,22 @@
         /THREAT|EVIDENCE/.test(type)?'SEMANTIC':
         /TRADE|IMPORT|TREATY/.test(type)?(target?'RELATIONAL':'EPISODIC'):
         /FAIL|REJECT|BLOCK/.test(status)?'FAILURE':'EPISODIC';
-        record(c,{type:kind,sourceEvent:type,targetCountryId:target,action:d.action||d.payload?.action||null,
+        const action=d.action||d.payload?.action||null;
+      record(c,{type:kind,sourceEvent:type,targetCountryId:target,action,
           scenarioId:d.scenarioId||d.payload?.scenarioId||null,outcome:{status,event:type},evidence:{payload:clone(d)},confidence:failure?0.85:0.6,
           importance:/THREAT|TRADE|TREATY/.test(type)?.8:.5,tags:[type]});
+      if(target&&/TRADE_REQUEST_|TRADE_COUNTER|TRADE_SETTLEMENT|TREATY_/.test(type)){
+        record(c,{type:'COUNTERPARTY',sourceEvent:type,targetCountryId:target,action:action||(/TREATY/.test(type)?'TREATY':'TRADE'),
+          outcome:{status,event:type},evidence:{payload:clone(d)},confidence:failure?0.85:0.65,importance:.85,tags:['COUNTERPARTY',type]});
+      }
+      if(/TRADE_SETTLEMENT_COMPLETED|HOUSING_CAPACITY_CHANGED|FACTORY_CAPACITY_CHANGED|MILITARY_READINESS_CHANGED|MILITARY_TRAINING_COMPLETED|TREATY_IMPLEMENTED/.test(type)){
+        record(c,{type:'CAUSAL',sourceEvent:type,targetCountryId:target,action:action||type,
+          causal:{event:type,cause:clone(d.payload||d),effect:clone(d.payload||d)},outcome:{status},evidence:{payload:clone(d)},
+          confidence:.75,importance:.8,tags:['CAUSAL',type]});
+      }
+      if(/DECISION_CREATED|PLAN_CREATED/.test(type)){
+        record(c,{type:'WORKING',sourceEvent:type,targetCountryId:target,action,working:{lastEvent:type,decisionId:d.decisionId||d.payload?.decisionId||null,context:clone(d.payload||d)},payload:{event:type}});
+      }
       });
     }
     return true;
