@@ -623,7 +623,7 @@ class Runtime{
     if(p){plans.push(p);this.cons.preview(d,a);}
   }
   if(!plans.length)return{accepted:false,reason:'NO_EXECUTABLE_PLAN'};
-  const owner=String(cmd.sourceMinistryId||'cabinet'),turn=NUM(ctx?.simulationTurn)??TURN(),batch={
+  const owner=String(plans[0]?.executor||cmd.sourceMinistryId||'cabinet'),turn=NUM(ctx?.simulationTurn)??TURN(),batch={
     batchId:'EXEC-'+turn+'-'+country+'-'+sc.id+'-'+String(d.decisionId||'').replace(/[^A-Z0-9_-]/gi,''),countryId:country,decisionId:d.decisionId||null,
     scenarioId:d.scenarioId,plans,status:'PENDING_EXTERNAL_EXECUTOR',executionApplied:false,
     executorBoundary:'EXTERNAL_MINISTRY_OR_PROJECT_TRANSACTION_POLICY_ENGINE',turn,stateMutationAuthority:false,feasibility
