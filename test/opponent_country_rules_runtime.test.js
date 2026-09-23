@@ -47,6 +47,11 @@ assert.equal((await api.listCountryIds()).join(','),'AAA,BBB,CCC');
 
 const profile=api.getDatasetProfile('countries');
 assert.ok(profile && profile.schema && profile.identityFields.length>0);
+api.setDataset('population',[{code:'BBB',population_total:1234,growth_rate:'RISING'}]);
+const populationProfile=api.getDatasetProfile('population');
+assert.ok(populationProfile && populationProfile.fieldMeaning.POPULATION);
+assert.ok(api.getHydratedState('BBB').signals.POPULATION.status==='AVAILABLE');
+assert.equal(api.getHydratedState('BBB').signals.POPULATION.value,1234);
 
 assert.equal(api.evaluateDirection('INFLATION',{trend:'RISING'},'RISING').state,'TRUE');
 const run=await api.evaluateCountry('BBB',4);
@@ -79,8 +84,19 @@ const txHandled=txHandler.fn({commandId:'cmd-tx',countryId:'BBB',sourceMinistryI
 assert.equal(txHandled.accepted,true);
 assert.ok(Array.from(txHandled.batch.plans).some(x=>x.transactionId));
 
+const policyHandler=handlers.get('OCR_V42_'+run.scenarios.find(x=>x.actions.includes('DEMAND_MANAGEMENT'))?.id);
+if(policyHandler){
+  const policyDecision={...projectDecision,scenarioId:run.scenarios.find(x=>x.actions.includes('DEMAND_MANAGEMENT'))?.id,decisionId:'DEC-POL-1',selectedActions:['DEMAND_MANAGEMENT']};
+  const policyHandled=policyHandler.fn({commandId:'cmd-policy',countryId:'BBB',sourceMinistryId:policyHandler.owner,payload:{opponentDecision:policyDecision}},{stateTransaction:txContext,simulationTurn:4,emitEvent(){}});
+  assert.equal(policyHandled.accepted,true);
+  assert.ok(Array.from(policyHandled.batch.plans).some(x=>x.policyId));
+  const outcomePolicy=api.handleOutcome({countryId:'BBB',policyId:policyHandled.batch.plans.find(x=>x.policyId).policyId,scenarioId:policyDecision.scenarioId,status:'COMPLETED',eventType:'OMEGA_POLICY_EXECUTED',affectedActors:['CCC']});
+  assert.ok(outcomePolicy.reconciliation);
+}
 const outcome=api.handleOutcome({countryId:'BBB',projectId:handled.batch.plans[0].projectId,scenarioId:projectDecision.scenarioId,status:'COMPLETED',eventType:'OMEGA_PROJECT_COMPLETED',impactedNodes:['industry'],affectedActors:['CCC']});
 assert.ok(Array.from(outcome.dirty).includes('OUTPUT'));
+assert.ok(trace.some(x=>x.type==='EXECUTION_STARTED'));
+assert.ok(trace.some(x=>x.type==='NEXT_EVALUATION_SCHEDULED'));
 assert.ok(Array.from(outcome.affectedActors).includes('CCC'));
 
 const trace=api.getTrace();
