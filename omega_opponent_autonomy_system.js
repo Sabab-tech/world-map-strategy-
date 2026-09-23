@@ -119,15 +119,15 @@
   });
 
   const DECISION_WEIGHTS=Object.freeze({
-    needPressure:0.18,
-    treasury:0.13,
+    needPressure:0.17,
+    treasury:0.12,
     labor:0.09,
-    materials:0.11,
+    materials:0.10,
     debt:0.08,
     existingProjects:0.07,
     strategicPriority:0.09,
     time:0.06,
-    risk:0.06,
+    risk:0.05,
     relations:0.03,
     memory:0.08,
     strategy:0.06
