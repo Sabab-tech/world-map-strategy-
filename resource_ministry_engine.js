@@ -8747,7 +8747,7 @@ _globalScope.GSRSK_DataFoundation = (() => {
             // Missing canonical resource profile remains unavailable.
             return null;
 
-        getIntegratedResourceState(countryKey) {
+        getIntegratedResourceState(countryKey, options = {}) {
             const normalized = this.normalizeCountryCode(countryKey);
             let canonicalCountryId = normalized;
             try {
@@ -8759,7 +8759,7 @@ _globalScope.GSRSK_DataFoundation = (() => {
             const state = global.Game?.state || global.gameState || {};
             const runtime = state?.resource?.[canonicalCountryId] || state?.resource?.[normalized] ||
                 state?.resources?.[canonicalCountryId] || state?.resources?.[normalized] || null;
-            const profile = this.getCountryResourceProfile(countryKey);
+            const profile = options.includeProfile === true ? this.getCountryResourceProfile(countryKey) : null;
             const deposits = this.getDepositsForCountry(normalized);
 
             return {
