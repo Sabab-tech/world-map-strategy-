@@ -163,7 +163,7 @@
       'finance.reserves','finance.taxRevenue','finance.revenue','finance.spending',
       'finance.encumbered','finance.capitalExpenditure','finance.operatingExpenditure',
       'finance.emergencyAllocation','finance.mandatoryObligations','finance.required',
-      'finance.ministryAllocations','finance.resourceFiscal','finance.resourceFiscalLedger','finance.resourceSettlementClearing'
+      'finance.ministryAllocations','finance.resourceFiscal','finance.resourceFiscalLedger','finance.resourceSettlementClearing','finance.resourceBudgetContribution','finance.resourceBudgetContributionThisTurn'
     ],
     economy:[
       'economy.gdp','economy.debt','economy.inflation','economy.unemployment',
