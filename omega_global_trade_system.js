@@ -206,7 +206,11 @@
     const root=ledger&&typeof ledger==='object'?clone(ledger):{requests:[],decisions:[],settlements:[]};
     root.decisions=[...(root.decisions||[]),{...decision,simulationTurn:turn()}].slice(-MAX_HISTORY);
     ctx.stateTransaction.set('trade.globalTradeLedger',root);
-    emit(decision.decision==='ACCEPT'?'OMEGA_TRADE_REQUEST_ACCEPTED':'OMEGA_TRADE_REQUEST_REJECTED',seller,{
+    if(decision.decision==='ACCEPT')emit('OMEGA_TRADE_REQUEST_ACCEPTED',seller,{
+      requestId:decision.requestId,buyerCountryId:decision.buyerCountryId,resourceId:decision.resourceId,
+      quantityApproved:decision.quantityApproved,unitPrice:decision.unitPrice,decision:decision.decision,reason:decision.reason
+    });
+    else if(decision.decision==='REJECT')emit('OMEGA_TRADE_REQUEST_REJECTED',seller,{
       requestId:decision.requestId,buyerCountryId:decision.buyerCountryId,resourceId:decision.resourceId,
       quantityApproved:decision.quantityApproved,unitPrice:decision.unitPrice,decision:decision.decision,reason:decision.reason
     });
@@ -365,7 +369,11 @@
     return{accepted:true,resourceId:rid,quantity:q};
   }
   function closeRequestHandler(cmd,ctx){
-    const p=cmd?.payload||{},c=canonical(ctx.countryId),root=ctx.stateTransaction.get('trade'),tradeRoot=root&&typeof root==='object'?clone(root):{},bucket=ensureTradeBucket(tradeRoot,c);
+    const p=cmd?.payload||{},c=canonical(ctx.countryId);
+    const rawBucket=ctx.stateTransaction.get('trade');
+    const bucket=rawBucket&&typeof rawBucket==='object'?clone(rawBucket):{};
+    if(!Array.isArray(bucket.importRequests))bucket.importRequests=[];
+    if(!bucket.globalTradeLedger||typeof bucket.globalTradeLedger!=='object')bucket.globalTradeLedger={requests:[],decisions:[],settlements:[]};
     const idx=bucket.importRequests.findIndex(x=>String(x.requestId)===String(p.requestId));
     if(idx<0)return{accepted:false,reason:'TRADE_REQUEST_NOT_FOUND'};
     const req=clone(bucket.importRequests[idx]);req.status=p.status||TYPES.SETTLED;req.stage=p.stage||'SETTLED';req.settlementId=p.settlementId||null;req.settledTurn=p.status===TYPES.SETTLED?turn():null;
@@ -376,8 +384,11 @@
     return{accepted:true,request:req};
   }
   function sellerLedgerHandler(cmd,ctx){
-    const p=cmd?.payload||{},root=ctx.stateTransaction.get('trade'),tradeRoot=root&&typeof root==='object'?clone(root):{},bucket=ensureTradeBucket(tradeRoot,canonical(ctx.countryId));
-    bucket.globalTradeLedger.settlements=[...(bucket.globalTradeLedger.settlements||[]),clone(p)];
+    const p=cmd?.payload||{};
+    const rawBucket=ctx.stateTransaction.get('trade');
+    const bucket=rawBucket&&typeof rawBucket==='object'?clone(rawBucket):{};
+    if(!bucket.globalTradeLedger||typeof bucket.globalTradeLedger!=='object')bucket.globalTradeLedger={requests:[],decisions:[],settlements:[]};
+    bucket.globalTradeLedger.settlements=[...(bucket.globalTradeLedger.settlements||[]),clone(p)].slice(-MAX_HISTORY);
     ctx.stateTransaction.set('trade',bucket);
     return{accepted:true,settlementId:p.settlementId};
   }
