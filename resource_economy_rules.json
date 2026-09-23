@@ -18,7 +18,13 @@
     "transportRevenueRate": 0.05
   },
   "runtime": {
+    
     "maxLedgerEntries": 2048,
     "maxBatches": 8192
+  
+  },
+  "market": {
+    "offerFractionOfObservedInventory": 0.25,
+    "minOfferQuantity": 1
   }
 }
