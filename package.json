@@ -17,8 +17,9 @@
     "start": "node server_bootstrap.js",
     "test:deep-core-self": "node scripts/test_deep_core_self_query.cjs",
     "test:interoperability": "node test/omega_ministry_interoperability.test.js",
-    "test:simulation": "node test/omega_simulation_runtime.test.js",
-    "test:ministries": "node test/omega_17_ministry_runtime.test.js && node test/omega_ministry_interoperability.test.js"
+    "test:simulation": "node test/omega_simulation_runtime.test.js && npm run test:opponent-rules",
+    "test:ministries": "node test/omega_17_ministry_runtime.test.js && node test/omega_ministry_interoperability.test.js",
+    "test:opponent-rules": "node test/opponent_country_rules_runtime.test.js"
   },
   "dependencies": {
     "@google/genai": "^2.21.0",
