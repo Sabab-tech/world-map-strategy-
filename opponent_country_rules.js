@@ -623,7 +623,7 @@ class Runtime{
     if(p){plans.push(p);this.cons.preview(d,a);}
   }
   if(!plans.length)return{accepted:false,reason:'NO_EXECUTABLE_PLAN'};
-  const owner=String(plans[0]?.executor||cmd.sourceMinistryId||'cabinet'),turn=NUM(ctx?.simulationTurn)??TURN(),batch={
+  const scenarioOwner=String(cmd.sourceMinistryId||'cabinet'),owner=String(plans[0]?.executor||scenarioOwner),turn=NUM(ctx?.simulationTurn)??TURN(),batch={
     batchId:'EXEC-'+turn+'-'+country+'-'+sc.id+'-'+String(d.decisionId||'').replace(/[^A-Z0-9_-]/gi,''),countryId:country,decisionId:d.decisionId||null,
     scenarioId:d.scenarioId,plans,status:'PENDING_EXTERNAL_EXECUTOR',executionApplied:false,
     executorBoundary:'EXTERNAL_MINISTRY_OR_PROJECT_TRANSACTION_POLICY_ENGINE',turn,stateMutationAuthority:false,feasibility
@@ -631,9 +631,16 @@ class Runtime{
   this.tr.add({layer:'L27_RUNTIME_DEBUG',type:'EXECUTION_STARTED',batchId:batch.batchId,executionApplied:false,planCount:plans.length});
   try{
     if(ctx?.stateTransaction){
-      const key=owner+'.executionOrders',q=ctx.stateTransaction.get(key),order={...batch,executionState:'QUEUED_FOR_EXECUTOR',worldEffectApplied:false};
-      ctx.stateTransaction.set(key,Array.isArray(q)?q.slice(-127).concat([order]):[order]);
+      const order={...batch,executionState:'QUEUED_FOR_EXECUTOR',worldEffectApplied:false};
+      const executorKey=owner+'.executionOrders',executorQueue=ctx.stateTransaction.get(executorKey);
+      ctx.stateTransaction.set(executorKey,Array.isArray(executorQueue)?executorQueue.slice(-127).concat([order]):[order]);
       ctx.stateTransaction.set(owner+'.lastExecutionOrder',order);
+      if(scenarioOwner!==owner){
+        const handoffKey=scenarioOwner+'.executionOrders',handoffQueue=ctx.stateTransaction.get(handoffKey);
+        const handoff={handoffId:'HANDOFF-'+batch.batchId,executionState:'HANDOFF_TO_EXECUTOR',scenarioOwner,executor:owner,batchId:batch.batchId,countryId:batch.countryId,decisionId:batch.decisionId,scenarioId:batch.scenarioId,executionApplied:false,worldEffectApplied:false,stateMutationAuthority:false,planCount:plans.length};
+        ctx.stateTransaction.set(handoffKey,Array.isArray(handoffQueue)?handoffQueue.slice(-127).concat([handoff]):[handoff]);
+        ctx.stateTransaction.set(scenarioOwner+'.lastExecutionHandoff',handoff);
+      }
     }
     ctx?.emitEvent?.('OMEGA_AUTONOMOUS_EXECUTION_REQUESTED',batch);
     this.tr.add({layer:'L27_RUNTIME_DEBUG',type:'EXECUTION_HANDOFF',batchId:batch.batchId,executorBoundary:batch.executorBoundary});
