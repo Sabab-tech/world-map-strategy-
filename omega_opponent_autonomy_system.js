@@ -663,6 +663,13 @@
     const bridge=resourceBridge();
     const out=[];
     try{
+      const market=g.OmegaGlobalMarket||g.Omega?.GlobalMarket;
+      for(const x of market?.suppliers?.(rid,0,null)||[]){
+        const cid=id(x.countryId);
+        if(cid&&!out.some(y=>y.countryId===cid))out.push({countryId:cid,source:'OmegaGlobalMarket',recordId:null});
+      }
+    }catch(_){}
+    try{
       if(bridge?.queryResource){
         const q=bridge.queryResource({resourceId:rid,operation:'LOCATE',worldwide:true});
         for(const x of q?.records||[]){
@@ -692,6 +699,11 @@
       'trade.offerBook.'+rid+'.unitPrice',
       'trade.offerBook.'+rid+'.price'
     ];
+    try{
+      const market=g.OmegaGlobalMarket||g.Omega?.GlobalMarket;
+      const local=market?.localPrice?.(target,rid);
+      if(local!==null&&local!==undefined)return{value:local,source:'OMEGA_GLOBAL_MARKET',path:'market.localPrice.'+rid,availability:'AVAILABLE'};
+    }catch(_){}
     for(const path of directPaths){
       const raw=readState(target,path);
       const n=scalar(raw.value);
@@ -709,40 +721,44 @@
   function chooseImportSupplier(countryId,decision){
     const m=decision?.runtimeMeasurement||decision?.measurement||{};
     const resourceId=m?.resourceId||m?.resource||null;
+    const quantity=scalar(m?.selected?.quantity??m?.quantity)??0;
     if(!resourceId)return{countryId:null,reason:'RESOURCE_ID_NOT_OBSERVED'};
-    const suppliers=findResourceSuppliers(resourceId).filter(x=>canonicalId(x.countryId)!==canonicalId(countryId));
+    const market=g.OmegaGlobalMarket||g.Omega?.GlobalMarket;
+    let marketSuppliers=[];
+    try{marketSuppliers=market?.suppliers?.(resourceId,Math.max(0,quantity),countryId)||[];}catch(_){}
+    const baseSuppliers=findResourceSuppliers(resourceId).filter(x=>canonicalId(x.countryId)!==canonicalId(countryId));
+    const seen=new Set, suppliers=[];
+    for(const x of [...marketSuppliers,...baseSuppliers]){
+      const cid=canonicalId(x.countryId);if(cid&&cid!==canonicalId(countryId)&&!seen.has(cid)){seen.add(cid);suppliers.push({...x,countryId:cid});}
+    }
     if(!suppliers.length)return{countryId:null,reason:'NO_RESOURCE_SUPPLIER_RECORD'};
     const rows=suppliers.map(x=>{
       const rel=relationRecord(countryId,x.countryId);
-      const relationScore=relationScoreFor(rel);
       const relationAvailable=!!rel;
+      const relationScoreValue=relationScoreFor(rel);
+      const agreementObserved=rel?.trade_agreement===true || !!readState(countryId,'foreign.treaties').value?.[canonicalId(x.countryId)];
       const priceEvidence=supplierPrice(x.countryId,resourceId);
       const unitPrice=priceEvidence.value;
       const priceAvailable=unitPrice!==null;
-      const originRouteCandidates=[
+      const rs=resourceRuntime(x.countryId);
+      const inv=rs.value?.inventory,prod=rs.value?.production,resv=rs.value?.reserves,tradeable=rs.value?.tradeAvailability;
+      const currentSupply=scalar(tradeable?.[resourceId])??scalar(inv?.[resourceId])??scalar(prod?.[resourceId])??scalar(resv?.[resourceId]);
+      const supplyObserved=currentSupply!==null;
+      const hasSupply=supplyObserved?currentSupply>0:false;
+      const routeObserved=[
         scalar(readState(countryId,'trade.routeCapacity.'+resourceId).value),
         scalar(readState(countryId,'trade.routeCapacity').value),
         scalar(readState(countryId,'transport.tradeRouteCapacity.'+resourceId).value),
         scalar(readState(countryId,'transport.tradeRouteCapacity').value)
-      ];
-      const routeObserved=originRouteCandidates.find(v=>v!==null);
-      const routeAvailable=routeObserved===undefined?false:routeObserved>0;
-      const rs=resourceRuntime(x.countryId);
-      const inv=rs.value?.inventory,prod=rs.value?.production,resv=rs.value?.reserves;
-      const lookup=k=>scalar(inv?.[k]??inv?.[String(k).toLowerCase()]);
-      const currentSupply=lookup(resourceId)??scalar(prod?.[resourceId]??prod?.[String(resourceId).toLowerCase()])??scalar(resv?.[resourceId]??resv?.[String(resourceId).toLowerCase()]);
-      const supplyObserved=currentSupply!==null;
-      const hasSupply=supplyObserved?currentSupply>0:true;
-      const legalAccess=relationAvailable&&rel.war_state!==true&&rel.sanctions!==true&&hasSupply;
-      return{...x,relationAvailable,relationScore,unitPrice,priceAvailable,priceSource:priceEvidence.source,pricePath:priceEvidence.path,routeAvailable,routeCapacity:routeObserved,legalAccess,supplyObserved,supply:currentSupply};
-    }).filter(x=>x.legalAccess);
-    if(!rows.length){
-      return{countryId:null,reason:'NO_SUPPLIER_WITH_OBSERVED_FOREIGN_ACCESS'};
-    }
-    const priced=rows.filter(x=>x.priceAvailable&&x.routeAvailable);
-    if(!priced.length){
-      return{countryId:null,reason:'SUPPLIER_PRICE_NOT_OBSERVED'};
-    }
+      ].find(v=>v!==null);
+      return{...x,relationAvailable,relationScore:relationScoreValue,agreementObserved,unitPrice,priceAvailable,
+        priceSource:priceEvidence.source,pricePath:priceEvidence.path,routeAvailable:routeObserved===undefined?null:routeObserved>0,
+        routeCapacity:routeObserved??null,legalAccess:relationAvailable&&agreementObserved&&!hasSupply?false:relationAvailable&&agreementObserved,
+        supplyObserved,supply:currentSupply};
+    }).filter(x=>x.legalAccess&&(!x.supplyObserved||x.supply>0));
+    if(!rows.length)return{countryId:null,reason:'NO_SUPPLIER_WITH_RELATION_AND_TRADE_AGREEMENT'};
+    const priced=rows.filter(x=>x.priceAvailable);
+    if(!priced.length)return{countryId:null,reason:'SUPPLIER_PRICE_NOT_OBSERVED'};
     priced.sort((a,b)=>(a.unitPrice-b.unitPrice)||((b.relationScore??0)-(a.relationScore??0))||a.countryId.localeCompare(b.countryId));
     const best=priced[0];
     return{...best};
