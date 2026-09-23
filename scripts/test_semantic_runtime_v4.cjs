@@ -91,7 +91,8 @@ vm.runInNewContext(resourceBridgeSource, sandbox, { filename: 'omega_resource_se
     ...(indiaJson?.secret || []),
     ...(indiaJson?.capital ? [indiaJson.capital] : [])
   ].map(c => c?.name).filter(Boolean))];
-  assert.deepEqual(india?.countryBrief?.cities?.map(c => c.name).sort(), expectedIndiaCityNames.sort());
+  const actualIndiaCityNames = Array.from(india?.countryBrief?.cities || [], c => c?.name).sort();
+  assert.deepEqual(actualIndiaCityNames, expectedIndiaCityNames.slice().sort());
 
   const indiaPlan = runtime.buildAnswerPlan('India', {}, {}, []);
   assert.equal(indiaPlan?.semantic?.entities?.country?.id, 'IN', 'buildAnswerPlan must use canonical country identity for India');
