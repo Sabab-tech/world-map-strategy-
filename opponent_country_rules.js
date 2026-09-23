@@ -644,7 +644,37 @@ class Runtime{
   }
 }
 
-async turnCommitted(t=TURN()){
+async evaluateAllCountries(t=TURN(),options={}){
+    const ids=await this.countries();
+    const player=PLAYER();
+    const excludePlayer=options.excludePlayer===true;
+    const selectedIds=excludePlayer?ids.filter(x=>!player||x!==player):ids;
+    const evaluated=[],queued=[];
+    for(const countryId of selectedIds){
+      const result=await this.evaluate(countryId,t);
+      if(result.status==='COMPLETE')evaluated.push(result);
+    }
+    if(options.queue!==false){
+      for(const result of evaluated){
+        for(const decision of result.decisions||[]){
+          const command=this.queue(decision,t);
+          if(command)queued.push(command);
+        }
+      }
+    }
+    return{
+      status:'COMPLETE',
+      turn:t,
+      totalCountries:ids.length,
+      selectedCountries:selectedIds.length,
+      evaluated:evaluated.length,
+      decisions:evaluated.reduce((sum,x)=>sum+(x.decisions?.length||0),0),
+      queued:queued.length,
+      evaluatedCountryIds:evaluated.map(x=>x.countryId),
+      queuedCommands:queued
+    };
+  }
+  async turnCommitted(t=TURN()){
     if(!this.running)return{status:'SKIPPED',reason:'STOPPED'};
     try{
       this.bind();
