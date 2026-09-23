@@ -123,22 +123,12 @@ class Forecast{
 }
 class Scheduler{
   constructor(tr){this.tr=tr;this.last=new Map;this.dirty=new Map;}
-  mode(gp,sc){
-    return gp.semantic.length||Object.values(gp.gaps).some(x=>x.state==='TRUE')?'FULL':sc.length?'STANDARD':'BACKGROUND';
-  }
-  mark(c,nodes,reason){
-    const set=this.dirty.get(c)||new Set;
-    for(const x of nodes||[])set.add(x);
-    this.dirty.set(c,set);
-    this.tr.add({layer:'L24_MULTI_RATE_SCHEDULER',countryId:c,reason,dirty:[...set]});
-  }
-  should(c,t,m){return m==='FULL'||!this.last.has(c)||Number(t)>Number(this.last.get(c));}
-  commit(c,t){this.last.set(c,Number(t));this.dirty.delete(c);}
+  mode(gp,sc){return gp.semantic.length||Object.values(gp.gaps).some(x=>x.state==='TRUE')?'FULL':sc.length?'STANDARD':'BACKGROUND';}
+  mark(c,nodes,reason){const set=this.dirty.get(c)||new Set;for(const x of nodes||[])set.add(x);this.dirty.set(c,set);this.tr.add({layer:'L24_MULTI_RATE_SCHEDULER',countryId:c,reason,dirty:[...set],scheduled:true});}
+  should(c,t,m){const due=m==='FULL'||!this.last.has(c)||Number(t)>Number(this.last.get(c));this.tr.add({layer:'L24_MULTI_RATE_SCHEDULER',countryId:c,turn:t,mode:m,due,dirty:[...(this.dirty.get(c)||new Set)]});return due;}
+  commit(c,t){this.last.set(c,Number(t));this.dirty.delete(c);this.tr.add({layer:'L24_MULTI_RATE_SCHEDULER',countryId:c,turn:t,action:'COMMIT_SCHEDULE',scheduledNext:true});}
   save(){return{last:Object.fromEntries(this.last),dirty:Object.fromEntries([...this.dirty].map(([k,v])=>[k,[...v]]))};}
-  restore(v){
-    this.last=new Map(Object.entries(v?.last||{}));
-    this.dirty=new Map(Object.entries(v?.dirty||{}).map(([k,x])=>[k,new Set(x)]));
-  }
+  restore(v){this.last=new Map(Object.entries(v?.last||{}));this.dirty=new Map(Object.entries(v?.dirty||{}).map(([k,x])=>[k,new Set(x)]));}
 }
 class Reconcile{
   constructor(tr){this.tr=tr;}
