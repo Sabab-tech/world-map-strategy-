@@ -333,6 +333,11 @@
   function collectEvidence(countryId,subjects=[],targetId=null){
     const out={countryId:id(countryId),targetCountryId:targetId?id(targetId):null,subjects:{},generatedTurn:turn()};
     for(const subject of subjects)out.subjects[subject]=sourceFor(subject,countryId,targetId);
+    event('OMEGA_AUTONOMY_EVIDENCE_COLLECTED',countryId,{
+      targetCountryId:out.targetCountryId,
+      subjects:[...subjects],
+      availableSubjects:Object.entries(out.subjects).filter(([,x])=>(x.checks||[]).some(y=>y?.availability==='AVAILABLE')).map(([k])=>k)
+    },null,'EVIDENCE-'+id(countryId)+'-'+turn());
     return out;
   }
 
@@ -600,6 +605,16 @@
   }
 
   function supplierPrice(countryId,resourceId){
+    const target=id(countryId),rid=String(resourceId||'').trim();
+    const explicitCandidates=[
+      readState(target,'trade.marketPrices.'+rid).value,
+      readState(target,'trade.marketPrice.'+rid).value,
+      readState(target,'trade.offers.'+rid+'.unitPrice').value,
+      readState(target,'trade.offers.'+rid+'.price').value,
+      readState(target,'trade.offerBook.'+rid+'.unitPrice').value,
+      readState(target,'trade.offerBook.'+rid+'.price').value
+    ];
+    for(const x of explicitCandidates){const n=scalar(x);if(n!==null)return n;}
     const engine=g.ResourceMinistryEngine;
     try{
       const profile=engine?.getCountryResourceProfile?.(id(countryId));
@@ -675,6 +690,14 @@
       dataRouting:collectEvidence(countryId,[...new Set(candidates.map(actionSubject))],selected?.targetCountryId||null)
     };
     routed.status=selected?'ROUTED':'WAITING_FOR_EVIDENCE';
+    event('OMEGA_AUTONOMY_PLAN_CREATED',countryId,{
+      decisionId:routed.decisionId||decision?.decisionId||null,
+      scenarioId:routed.scenarioId||decision?.scenarioId||null,
+      selectedAction:selected?.action||null,
+      status:routed.status,
+      candidateCount:evaluations.length,
+      factorSnapshot:selected?.factors||null
+    },routed.decisionId||decision?.decisionId||null,routed.decisionId||decision?.decisionId||null);
     event('OMEGA_AUTONOMY_DECISION_CREATED',countryId,{
       decisionId:decision?.decisionId||null,scenarioId:decision?.scenarioId||null,selectedAction:selected?.action||null,
       candidateCount:evaluations.length,status:routed.status
@@ -717,6 +740,32 @@
   function reserveHandler(cmd,ctx){
     const c=id(ctx.countryId),d=cmd?.payload||{},res=existingReservations(c);
     if(res.some(x=>x.reservationId===d.reservationId))return{accepted:true,reservationId:d.reservationId,duplicate:true};
+    const active=activeReservationTotals(c);
+    const money=num(d.money)||0;
+    const laborRequired=num(d.labor)||0;
+    const financeAvailable=scalar(ctx.stateTransaction.get('finance.available'));
+    const financeReserves=scalar(ctx.stateTransaction.get('finance.reserves'));
+    const treasuryBase=financeAvailable!==null?financeAvailable:financeReserves;
+    if(money>0&&treasuryBase===null)return{accepted:false,reason:'TREASURY_STATE_UNAVAILABLE'};
+    if(money>0&&treasuryBase-active.money<money)return{accepted:false,reason:'INSUFFICIENT_UNRESERVED_TREASURY'};
+    const laborAvailable=scalar(ctx.stateTransaction.get('population.labor.available'));
+    if(laborRequired>0&&laborAvailable===null)return{accepted:false,reason:'LABOR_STATE_UNAVAILABLE'};
+    if(laborRequired>0&&laborAvailable-active.labor<laborRequired)return{accepted:false,reason:'INSUFFICIENT_UNRESERVED_LABOR'};
+    const materials=clone(d.materials||{});
+    if(Object.keys(materials).length){
+      const inv=ctx.stateTransaction.get('resource.inventory');
+      if(!inv||typeof inv!=='object')return{accepted:false,reason:'MATERIAL_INVENTORY_UNAVAILABLE'};
+      for(const [rid,amountRaw] of Object.entries(materials)){
+        const amount=num(amountRaw);
+        if(amount===null||amount<0)return{accepted:false,reason:'MATERIAL_REQUIREMENT_INVALID:'+rid};
+        const key=Object.prototype.hasOwnProperty.call(inv,rid)?rid:Object.keys(inv).find(x=>id(x)===id(rid));
+        if(!key)return{accepted:false,reason:'MATERIAL_NOT_OBSERVED:'+rid};
+        const available=scalar(inv[key]);
+        const reserved=num(active.materials[id(rid)])||num(active.materials[rid])||0;
+        if(available===null)return{accepted:false,reason:'MATERIAL_AVAILABILITY_UNKNOWN:'+rid};
+        if(available-reserved<amount)return{accepted:false,reason:'INSUFFICIENT_UNRESERVED_MATERIAL:'+rid};
+      }
+    }
     const ledger=Array.isArray(ctx.stateTransaction.get('cabinet.autonomyReservations'))?ctx.stateTransaction.get('cabinet.autonomyReservations'):res;
     const row={
       reservationId:String(d.reservationId||('RES-'+turn()+'-'+c+'-'+String(d.decisionId||'AUTO'))),
@@ -1030,28 +1079,52 @@
   }
 
   function threatFusion(countryId,targetCountryId=null){
-    const cid=id(countryId);
-    const target=targetCountryId?id(targetCountryId):null;
+    const cid=id(countryId),target=targetCountryId?id(targetCountryId):null;
     const raw=target?relationRecord(cid,target):null;
     const threats=readState(cid,'intelligence.threats').value;
     const sources=readState(cid,'intelligence.sources').value;
-    const state=readState(cid,'intelligence.state').value;
-    const force=readState(target||cid,'military.forceStructure').value;
-    const readiness=scalar(readState(target||cid,'military.readiness').value);
-    const relations=raw;
+    const stateInfo=readState(cid,'intelligence.state').value;
+    const targetForce=target?readState(target,'military.forceStructure').value:null;
+    const targetReadiness=target?scalar(readState(target,'military.readiness').value):null;
+    const targetDefense=target?scalar(readState(target,'defense.threatLevel').value):null;
     const evidence=[];
-    const threatValue=scalar(target&&threats?.[target]!==undefined?threats[target]:threats);
-    if(threatValue!==null)evidence.push({factor:'THREAT_SIGNAL',value:threatValue,source:'intelligence.threats'});
-    if(relations?.military_threat!==undefined)evidence.push({factor:'MILITARY_THREAT',value:relations.military_threat,source:'relations'});
-    if(readiness!==null)evidence.push({factor:'TARGET_READINESS',value:readiness,source:'military.readiness'});
-    const sourceQuality=sources&&typeof sources==='object'?Object.keys(sources).length:null;
-    const confidence=clamp(evidence.length/4);
+    const pushEvidence=(factor,value,source)=>{
+      if(value===undefined||value===null)return;
+      const n=scalar(value);
+      evidence.push({factor,value:n===null?clone(value):n,source});
+    };
+    const threatValue=target&&threats&&typeof threats==='object'?scalar(threats[target]):scalar(threats);
+    pushEvidence('THREAT_SIGNAL',threatValue,'intelligence.threats');
+    pushEvidence('RELATION_MILITARY_THREAT',raw?.military_threat,'relations');
+    pushEvidence('TARGET_READINESS',targetReadiness,'target.military.readiness');
+    pushEvidence('TARGET_DEFENSE_SIGNAL',targetDefense,'target.defense.threatLevel');
+
+    const sourceRows=Array.isArray(sources)?sources:
+      (sources&&typeof sources==='object'?Object.entries(sources).map(([sourceId,row])=>({sourceId,...(row&&typeof row==='object'?row:{value:row})})):[]);
+    const reliabilityValues=sourceRows.map(x=>scalar(x.reliability??x.reliabilityScore??x.confidence??x.quality??x.weight)).filter(v=>v!==null);
+    const sourceReliability=reliabilityValues.length
+      ?reliabilityValues.reduce((a,v)=>a+clamp(v>1?v/100:v),0)/reliabilityValues.length
+      :null;
+    const evidenceCoverage=clamp(evidence.length/4);
+    const confidence=sourceReliability===null?evidenceCoverage:evidenceCoverage*(0.5+0.5*sourceReliability);
+    const vectorsRaw=stateInfo?.possibleAttackVectors||stateInfo?.vectors||targetDefense?.possibleAttackVectors;
+    const vectors=Array.isArray(vectorsRaw)?clone(vectorsRaw):[];
+    const intent=raw?.military_threat!==undefined?
+      (num(raw.military_threat)!==null&&num(raw.military_threat)>70?'HOSTILE_PRESSURE':
+       num(raw.military_threat)!==null&&num(raw.military_threat)>40?'ELEVATED_PRESSURE':'LOW_PRESSURE')
+      :'UNKNOWN';
+    const horizonRaw=stateInfo?.timeHorizon??stateInfo?.horizonTurns??(threats?.[target]?.timeHorizon);
     const assessment={
       countryId:cid,targetCountryId:target,simulationTurn:turn(),
       threatLevel:threatValue===null?'UNKNOWN':(threatValue>70?'HIGH':threatValue>40?'MEDIUM':'LOW'),
-      confidence,sourceCoverage:sourceQuality,
-      intent:'UNKNOWN',capability:force?clone(force):null,timeHorizon:'UNKNOWN',
-      possibleVectors:[],uncertainty:1-confidence,evidence
+      confidence:Number((confidence??0).toFixed(6)),
+      sourceReliability:sourceReliability===null?'UNKNOWN':Number(sourceReliability.toFixed(6)),
+      sourceCoverage:sourceRows.length,
+      intent,capability:targetForce?clone(targetForce):null,
+      timeHorizon:horizonRaw??'UNKNOWN',
+      possibleVectors:vectors,
+      uncertainty:Number((1-(confidence??0)).toFixed(6)),
+      evidence
     };
     event('OMEGA_THREAT_ASSESSMENT_CREATED',cid,assessment,null,'THREAT-'+cid+'-'+String(target||'SELF')+'-'+turn());
     return assessment;
