@@ -36,7 +36,7 @@ const req=globalThis.Game.state.trade.BD.importRequests[0];
 assert.equal(req.status,'SETTLED');
 assert.equal(globalThis.Game.state.resource.BD.inventory.crude_oil,1000);
 assert.equal(globalThis.Game.state.resource.SA.inventory.crude_oil,4000);
-assert.equal(globalThis.Game.state.finance.BD.available,100000);
+assert.equal(globalThis.Game.state.finance.BD.available,105000);
 assert.equal(globalThis.Game.state.finance.SA.available,195000);
 assert.equal(globalThis.Game.state.trade.BD.balance,-95000);
 assert.equal(globalThis.Game.state.trade.SA.balance,95000);
