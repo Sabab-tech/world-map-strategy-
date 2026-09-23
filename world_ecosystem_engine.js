@@ -56,17 +56,8 @@ _globalTarget.WorldEcosystemEngine = (() => {
     };
 
     // Global Strategic Commodity Market Baseline
-    const DEFAULT_GLOBAL_MARKET = {
-        crude_oil: { price: 82.50, trend: "STABLE", demandRatio: 1.02, supplyChainRisk: 32 },
-        natural_gas: { price: 3.40, trend: "UP", demandRatio: 1.08, supplyChainRisk: 45 },
-        lithium: { price: 18500, trend: "UP", demandRatio: 1.25, supplyChainRisk: 62 },
-        rare_earth: { price: 48000, trend: "CRITICAL", demandRatio: 1.35, supplyChainRisk: 78 },
-        semiconductors: { price: 120, trend: "UP", demandRatio: 1.40, supplyChainRisk: 84 },
-        wheat: { price: 210, trend: "STABLE", demandRatio: 1.01, supplyChainRisk: 28 },
-        uranium: { price: 85, trend: "UP", demandRatio: 1.15, supplyChainRisk: 55 },
-        copper: { price: 8900, trend: "UP", demandRatio: 1.18, supplyChainRisk: 38 }
-    };
-    const GLOBAL_MARKET = JSON.parse(JSON.stringify(DEFAULT_GLOBAL_MARKET));
+    const DEFAULT_GLOBAL_MARKET = Object.freeze({});
+const GLOBAL_MARKET = {};
 
     // Helper for deterministic geographic and trait hashing (replaces Math.random)
     function getDeterministicHash(id) {
@@ -94,9 +85,9 @@ _globalTarget.WorldEcosystemEngine = (() => {
         }
         stateRegistry = state.worldEcosystem.countryProfiles;
         if (!state.worldEcosystem.market || typeof state.worldEcosystem.market !== 'object') {
-            state.worldEcosystem.market = JSON.parse(JSON.stringify(DEFAULT_GLOBAL_MARKET));
+            state.worldEcosystem.market = {};
         }
-        Object.assign(GLOBAL_MARKET, state.worldEcosystem.market);
+        Object.keys(GLOBAL_MARKET).forEach(k=>delete GLOBAL_MARKET[k]);Object.assign(GLOBAL_MARKET, state.worldEcosystem.market);
         state.worldEcosystem.market = GLOBAL_MARKET;
 
         if (!Array.isArray(state.worldEcosystem.causalEventLog)) state.worldEcosystem.causalEventLog = [];
@@ -162,17 +153,17 @@ _globalTarget.WorldEcosystemEngine = (() => {
             reqEpistemic: cons.epistemicStatus,
             importNeed: importNeedVal,
             // Numerical accessors for backward-compatibility with UI / charts
-            reserveBbl: reserve.value || 0,
-            reserveMcf: reserve.value || 0,
-            reserveTon: reserve.value || 0,
-            reserveUnits: reserve.value || 0,
-            reserveKg: reserve.value || 0,
-            reserveM3: reserve.value || 0,
-            inventoryBbl: inventory.value || 0,
-            inventoryMcf: inventory.value || 0,
-            inventoryTon: inventory.value || 0,
-            inventoryUnits: inventory.value || 0,
-            inventoryKg: inventory.value || 0
+            reserveBbl: reserve.value,
+            reserveMcf: reserve.value,
+            reserveTon: reserve.value,
+            reserveUnits: reserve.value,
+            reserveKg: reserve.value,
+            reserveM3: reserve.value,
+            inventoryBbl: inventory.value,
+            inventoryMcf: inventory.value,
+            inventoryTon: inventory.value,
+            inventoryUnits: inventory.value,
+            inventoryKg: inventory.value
         };
     }
 
@@ -196,148 +187,99 @@ _globalTarget.WorldEcosystemEngine = (() => {
      * Initializes sovereign state profiles for countries with deterministic data derivation
      */
     function initCountryProfile(countryId) {
-        const id = (countryId || "USA").toUpperCase();
+        const id = String(countryId || '').trim().toUpperCase();
+        if (!id) return null;
         if (stateRegistry[id]) return stateRegistry[id];
 
-        const normKey = id.replace(/[-\s]/g, '_');
-        const h = getDeterministicHash(id);
+        const state = authoritativeState || _globalTarget.Game?.state || _globalTarget.gameState || {};
+        const registry = _globalTarget.OmegaCanonicalIdentityRegistry || _globalTarget.OmegaCountrySemanticBridge || null;
+        let canonical = null;
+        try { canonical = registry?.resolveCountry?.(id)?.raw || registry?.resolveCountry?.(id) || null; } catch (_) {}
 
-        const gameState = _globalTarget.gameState || null;
-        const popState = (gameState && gameState.population && (gameState.population[normKey] || gameState.population[id])) || null;
-        const econState = (gameState && gameState.economy && (gameState.economy[normKey] || gameState.economy[id])) || null;
-
-        let resState = null;
-        const ministryEngine = _globalTarget.ResourceMinistryEngine || null;
-        if (ministryEngine && typeof ministryEngine.getIntegratedResourceState === 'function') {
-            resState = ministryEngine.getIntegratedResourceState(normKey);
-        }
-
-        const inv = (resState && resState.inventory) || {};
-        const prod = (resState && resState.production) || {};
-        const cons = (resState && resState.consumption) || {};
-        const resv = (resState && resState.reserves) || {};
-
-        const popMetric = resolveEpistemicMetric(popState ? (popState.population_2015 || popState.total) : null);
-        const gdpMetric = resolveEpistemicMetric(econState ? (econState.gdp || econState.nominal_gdp) : null);
-        const urbanizationMetric = resolveEpistemicMetric(popState ? popState.urbanization_rate : null, 65 + (h % 30));
-
-        const defaultAi = {
-            aggressiveExpansion: 20 + (h % 30),
-            strategicIsolation: 20 + ((h >> 1) % 30),
-            pragmaticRealism: 60 + ((h >> 2) % 30),
-            ideologicalIdealism: 40 + ((h >> 3) % 30),
-            economicImperialism: 20 + ((h >> 4) % 35),
-            religiousZeal: 15 + ((h >> 5) % 30),
-            riskTolerance: 30 + ((h >> 6) % 30),
-            strategicVision: 60 + ((h >> 7) % 25),
-            memoryRetention: 90,
-            emotionalVolatility: 20 + ((h >> 8) % 20)
+        const aliases = [...new Set([id, canonical?.id, canonical?.code, canonical?.iso2, canonical?.iso3, canonical?.name, canonical?.countryName].filter(Boolean).map(x => String(x).toUpperCase()))];
+        const bucket = (domain) => {
+            const section = state?.[domain];
+            if (!section || typeof section !== 'object') return null;
+            for (const key of aliases) {
+                if (section[key] !== undefined) return section[key];
+                const found = Object.keys(section).find(k => String(k).toUpperCase() === key);
+                if (found !== undefined) return section[found];
+            }
+            return null;
         };
 
-        const aiPersonality = STRATEGIC_AI_PROFILES[id] || defaultAi;
+        let resState = null;
+        try {
+            const engine = _globalTarget.ResourceMinistryEngine;
+            if (engine?.getIntegratedResourceState) resState = engine.getIntegratedResourceState(id) || null;
+        } catch (_) {}
+
+        const inv = resState?.inventory || {}, prod = resState?.production || {}, cons = resState?.consumption || {}, resv = resState?.reserves || {};
+        const resourceIds = [...new Set([...Object.keys(inv), ...Object.keys(prod), ...Object.keys(cons), ...Object.keys(resv)])];
+        const resources = {};
+        for (const rid of resourceIds) {
+            resources[rid] = createEpistemicResourceEntry(resv[rid], inv[rid], prod[rid], cons[rid]);
+        }
+
+        const pop = bucket('population') || {};
+        const econ = bucket('economy') || {};
+        const geography = bucket('geography') || {};
+        const government = bucket('government') || bucket('interior') || {};
+        const media = bucket('media') || {};
+        const corporate = bucket('corporate') || {};
+        const tech = bucket('technology') || bucket('tech') || {};
+        const environment = bucket('environment') || {};
+        const ai = bucket('aiPersonality') || bucket('ai') || null;
 
         stateRegistry[id] = {
             id,
-            // 1. Geography (Deterministic Placeholder until Canonical Geography Dataset load)
             geography: {
-                borderLengthKm: 1200 + (h % 8000),
-                borderShapeComplexity: (0.3 + ((h % 50) / 100)).toFixed(2),
-                mountainBarrierRating: 20 + (h % 70),
-                riverBarrierDefense: 20 + ((h >> 2) % 65),
-                isLandlocked: ["BOL", "PRY", "AUT", "CHE", "AFG", "ETH", "ZWE", "BFA", "NER", "MLI", "KAZ", "UZB"].includes(id),
-                deepSeaPortQuality: 30 + ((h >> 3) % 65),
-                chokepointControl: [],
-                terrainDifficulty: 20 + ((h >> 4) % 70)
+                borderLengthKm: pop?.borderLengthKm ?? geography?.borderLengthKm ?? null,
+                borderShapeComplexity: geography?.borderShapeComplexity ?? null,
+                mountainBarrierRating: geography?.mountainBarrierRating ?? null,
+                riverBarrierDefense: geography?.riverBarrierDefense ?? null,
+                isLandlocked: geography?.isLandlocked ?? null,
+                deepSeaPortQuality: geography?.deepSeaPortQuality ?? null,
+                chokepointControl: Array.isArray(geography?.chokepointControl) ? [...geography.chokepointControl] : [],
+                terrainDifficulty: geography?.terrainDifficulty ?? null
             },
-            // 2. Resource Stockpiles & Supply Chains (Connected strictly with GSRSK & Sovereign state)
-            resources: {
-                crude_oil: createEpistemicResourceEntry(resv.crude_oil, inv.crude_oil, prod.crude_oil, cons.crude_oil),
-                natural_gas: createEpistemicResourceEntry(resv.natural_gas, inv.natural_gas, prod.natural_gas, cons.natural_gas),
-                rare_earth: createEpistemicResourceEntry(resv.rare_earths, inv.rare_earths, prod.rare_earths, cons.rare_earths),
-                lithium: createEpistemicResourceEntry(resv.lithium, inv.lithium, prod.lithium, cons.lithium),
-                semiconductors: createEpistemicResourceEntry(resv.semiconductors, inv.semiconductors, prod.semiconductors, cons.semiconductors),
-                food_grains: createEpistemicResourceEntry(resv.food_grains, inv.food_grains, prod.food_grains, cons.food_grains),
-                fresh_water: {
-                    reserveM3: resv.fresh_water || 0,
-                    stressLevel: 25 + (h % 50),
-                    epistemicStatus: resv.fresh_water !== undefined ? "VERIFIED_FACT" : "MISSING"
-                },
-                uranium: createEpistemicResourceEntry(resv.uranium, inv.uranium, prod.uranium, cons.uranium)
-            },
-            // 3. Demographics & Social Classes (Derived strictly from Population state)
+            resources,
             population: {
-                total: popMetric.value,
-                totalEpistemic: popMetric.epistemicStatus,
-                urbanizationRate: urbanizationMetric.value,
-                educationIndex: 75 + (h % 20),
-                healthcareIndex: 72 + ((h >> 1) % 22),
-                happinessScore: 68 + ((h >> 2) % 25),
-                radicalizationIndex: 15 + ((h >> 3) % 25),
-                nationalismIndex: 50 + ((h >> 4) % 35),
-                povertyRate: 10 + (h % 20),
-                middleClassShare: 50 + (h % 25),
-                eliteClassShare: 1.5,
-                refugeeInflowAnnual: 15000,
-                youthBulgeRatio: 22,
-                veteransCount: popMetric.value ? Math.floor(popMetric.value * 0.01) : null
+                total: pop?.population_2015 ?? pop?.total ?? null,
+                totalEpistemic: pop?.population_2015 !== undefined || pop?.total !== undefined ? 'VERIFIED_FACT' : 'MISSING',
+                urbanizationRate: pop?.urbanization_rate ?? pop?.urbanizationRate ?? null,
+                educationIndex: pop?.educationIndex ?? null,
+                healthcareIndex: pop?.healthcareIndex ?? null,
+                happinessScore: pop?.happinessScore ?? null,
+                radicalizationIndex: pop?.radicalizationIndex ?? null,
+                nationalismIndex: pop?.nationalismIndex ?? null,
+                povertyRate: pop?.povertyRate ?? null,
+                middleClassShare: pop?.middleClassShare ?? null,
+                eliteClassShare: pop?.eliteClassShare ?? null,
+                refugeeInflowAnnual: pop?.refugeeInflowAnnual ?? null,
+                youthBulgeRatio: pop?.youthBulgeRatio ?? null,
+                veteransCount: pop?.veteransCount ?? null
             },
-            // 4. Economy & Treasury
             economy: {
-                gdp: gdpMetric.value,
-                gdpEpistemic: gdpMetric.epistemicStatus
+                gdp: econ?.gdp ?? econ?.nominal_gdp ?? null,
+                gdpEpistemic: econ?.gdp !== undefined || econ?.nominal_gdp !== undefined ? 'VERIFIED_FACT' : 'MISSING',
+                gdpGrowth: econ?.gdp_growth ?? null,
+                inflation: econ?.inflation ?? null,
+                unemploymentRate: econ?.unemployment_rate ?? null,
+                budgetBalance: econ?.budget_balance ?? null,
+                debt: econ?.debt ?? null,
+                tradeBalance: econ?.trade_balance ?? null,
+                exchangeRateUsd: econ?.exchange_rate_usd ?? null,
+                reserves: econ?.reserves ?? null
             },
-            // 4. Executive Government & Ministries
-            government: {
-                headOfState: "Executive Leadership",
-                cabinetStability: 80 + (h % 18),
-                parliamentMajorityShare: 52 + (h % 15),
-                oppositionPressure: 35 + ((h >> 1) % 25),
-                electionCountdownMonths: 24,
-                bureaucracyEfficiency: 75 + ((h >> 2) % 20),
-                judiciaryIndependence: 78 + ((h >> 3) % 18),
-                corruptionIndex: 20 + (h % 30),
-                emergencyPowerActive: false,
-                juntaControl: 0
-            },
-            // 5. AI Cognitive Sovereign Personality (10 Dimensions - Deterministic)
-            aiPersonality,
-            // 6. Media & Propaganda Information Sphere
-            media: {
-                pressFreedomIndex: 60 + (h % 35),
-                stateMediaControl: 20 + ((h >> 1) % 40),
-                socialMediaDisinfoPressure: 35 + ((h >> 2) % 30),
-                internationalReputation: 70 + ((h >> 3) % 25),
-                narrativeControlDominance: 55 + ((h >> 4) % 30)
-            },
-            // 7. Corporate, Mega-Corp & PMCs
-            corporate: {
-                megaCorpsCount: 12 + (h % 15),
-                defenseContractors: ["Sovereign Aerospace", "National Defense Dynamics", "Apex Industrial"],
-                pmcContractors: ["Global Shield Sec", "Apex Tactical"],
-                foreignNgoPressure: 25 + (h % 30),
-                lobbyGroupPower: 50 + (h % 35)
-            },
-            // 8. Scientific, Tech & Cyber Sovereignty
-            tech: {
-                researchOutputGdpShare: 2.2,
-                aiSingularityRating: 75 + (h % 20),
-                quantumCryptoShield: 68 + ((h >> 1) % 25),
-                spaceDefenseAssets: 35 + ((h >> 2) % 30),
-                semiconductorFabDominance: 50 + ((h >> 3) % 40),
-                cyberAttackPower: 75 + ((h >> 4) % 22),
-                cyberShieldPower: 75 + ((h >> 5) % 20)
-            },
-            // 9. Climate & Environment Disasters
-            environment: {
-                carbonFootprintMt: 3500 + (h % 3000),
-                climateDisasterRisk: 30 + (h % 40),
-                droughtRiskIndex: 25 + ((h >> 1) % 35),
-                floodVulnerability: 25 + ((h >> 2) % 40),
-                freshwaterScarcityRisk: 20 + ((h >> 3) % 35)
-            },
-            // 10. Active Blocs & Spheres
-            blocs: ["UN"],
-            influenceSphere: "Sovereign Independent"
+            government: government && typeof government === 'object' ? CLONE(government) : {},
+            aiPersonality: ai && typeof ai === 'object' ? CLONE(ai) : null,
+            media: media && typeof media === 'object' ? CLONE(media) : {},
+            corporate: corporate && typeof corporate === 'object' ? CLONE(corporate) : {},
+            tech: tech && typeof tech === 'object' ? CLONE(tech) : {},
+            environment: environment && typeof environment === 'object' ? CLONE(environment) : {},
+            blocs: Array.isArray(bucket('blocs')) ? [...bucket('blocs')] : [],
+            influenceSphere: bucket('influenceSphere') ?? null
         };
 
         return stateRegistry[id];
@@ -351,161 +293,37 @@ _globalTarget.WorldEcosystemEngine = (() => {
      * Executes a cascading multi-tier causal chain reaction across the world ecosystem.
      * @param {Object} triggerEvent - { originCountry, type, severity, targetCountry }
      */
-    function triggerCausalCascade(triggerEvent) {
-        const origin = (triggerEvent.originCountry || "USA").toUpperCase();
-        const target = (triggerEvent.targetCountry || "CHN").toUpperCase();
-        const eventType = triggerEvent.type || "TRADE_SANCTION";
-        const severity = triggerEvent.severity || 1.0;
+    function triggerCausalCascade(triggerEvent = {}) {
+        const origin = String(triggerEvent.originCountry || '').trim().toUpperCase();
+        const target = String(triggerEvent.targetCountry || '').trim().toUpperCase();
+        const eventType = String(triggerEvent.type || '').trim();
+        if (!origin || !target || !eventType) throw new Error("CAUSAL_EVENT_SCOPE_REQUIRED");
 
-        const profileA = initCountryProfile(origin);
-        const profileB = initCountryProfile(target);
-
-        const cascadeSteps = [];
-
-        cascadeSteps.push({
-            step: 1,
-            layer: "EXECUTIVE DIRECTIVE",
-            node: `${origin} Executive Decree: ${eventType}`,
-            impact: `Directive enacted with severity factor ${severity}x.`
-        });
-
-        if (eventType === "TRADE_SANCTION" || eventType === "TARIFF_HIKE") {
-            // Step 2: Resource & Market Supply Strain
-            const marketStrain = Math.round(12 * severity);
-            GLOBAL_MARKET.semiconductors.price += marketStrain;
-            GLOBAL_MARKET.rare_earth.price += marketStrain * 2;
-
-            cascadeSteps.push({
-                step: 2,
-                layer: "RESOURCE & GLOBAL MARKET",
-                node: `Global Commodity Strain: Rare Earths & Semiconductor Prices Surge`,
-                impact: `Semiconductor Index +$${marketStrain}, Rare Earths +$${marketStrain * 2}/Ton.`
-            });
-
-            // Step 3: Corporate & Industrial Output Drops
-            profileB.tech.semiconductorFabDominance = Math.max(10, profileB.tech.semiconductorFabDominance - Math.round(4 * severity));
-            profileB.resources.semiconductors.importNeed += Math.round(150000 * severity);
-
-            cascadeSteps.push({
-                step: 3,
-                layer: "CORPORATE & INDUSTRY",
-                node: `${target} High-Tech Manufacturing Bottleneck`,
-                impact: `Industrial output constrained. Import shortage increased by ${(150 * severity).toFixed(0)}K units.`
-            });
-
-            // Step 4: Demographics & Economy Reaction
-            profileB.population.happinessScore = Math.max(10, profileB.population.happinessScore - Math.round(3 * severity));
-            profileB.population.povertyRate += 0.4 * severity;
-
-            cascadeSteps.push({
-                step: 4,
-                layer: "DEMOGRAPHICS & POPULATION",
-                node: `${target} Public Inflation & Commodity Price Rise`,
-                impact: `Public Happiness dropped -${(3 * severity).toFixed(1)} pts, Poverty Rate +${(0.4 * severity).toFixed(2)}%.`
-            });
-
-            // Step 5: Media & Public Narrative Escalation
-            profileB.media.socialMediaDisinfoPressure += Math.round(10 * severity);
-            profileB.media.narrativeControlDominance += Math.round(5 * severity);
-
-            cascadeSteps.push({
-                step: 5,
-                layer: "MEDIA & PROPAGANDA",
-                node: `${target} State Media Nationalism & Disinformation Counter-Offensive`,
-                impact: `Anti-${origin} public narrative rhetoric amplified.`
-            });
-
-            // Step 6: Government & Opposition Stability Impact
-            profileB.government.oppositionPressure += Math.round(4 * severity);
-            profileB.government.cabinetStability = Math.max(20, profileB.government.cabinetStability - Math.round(3 * severity));
-
-            cascadeSteps.push({
-                step: 6,
-                layer: "GOVERNMENT & CABINET",
-                node: `${target} Cabinet Emergency Session Called`,
-                impact: `Cabinet stability -${(3 * severity).toFixed(1)}%, Emergency retaliation directives drafted.`
-            });
-
-            // Step 7: AI Cognitive Retaliation Decision
-            profileB.aiPersonality.aggressiveExpansion += Math.round(6 * severity);
-            profileB.aiPersonality.riskTolerance += Math.round(4 * severity);
-
-            cascadeSteps.push({
-                step: 7,
-                layer: "AI COGNITIVE PERSONALITY",
-                node: `${target} Sovereign AI Shift: Hostility & Risk Acceptance High`,
-                impact: `Aggressive expansion stance increased to ${profileB.aiPersonality.aggressiveExpansion}/100.`
-            });
-
-            // Step 8: Military & Cyber Response
-            profileB.tech.cyberAttackPower = Math.min(100, profileB.tech.cyberAttackPower + 2);
-
-            cascadeSteps.push({
-                step: 8,
-                layer: "MILITARY & CYBER SPHERE",
-                node: `${target} Cyber Offense Readiness Level Elevated`,
-                impact: `Asymmetric cyber retaliatory vectors primed.`
-            });
-
-            // Step 9: Emergent Geopolitical Relation Calculation
-            const newRelationScore = computeEmergentRelation(origin, target);
-
-            cascadeSteps.push({
-                step: 9,
-                layer: "EMERGENT RELATION MATRIX",
-                node: `Sovereign Bilateral Relationship Re-calculated`,
-                impact: `New Real-Time Bilateral Index between ${origin} & ${target}: ${newRelationScore}/100 (${newRelationScore < 35 ? "HOSTILE" : newRelationScore < 60 ? "FRICTION" : "ALLIED"})`
-            });
-        } else if (eventType === "MILITARY_MOBILIZATION" || eventType === "BORDER_CLASH") {
-            cascadeSteps.push({
-                step: 2,
-                layer: "GEOGRAPHY & TACTICAL TERRAIN",
-                node: `Border Sector Fortification & Pass Closure`,
-                impact: `Mountain & River crossing points militarized.`
-            });
-
-            profileA.resources.crude_oil.reserveBbl -= 200000 * severity;
-            profileB.population.radicalizationIndex += 8 * severity;
-
-            cascadeSteps.push({
-                step: 3,
-                layer: "RESOURCE & DEMOGRAPHICS",
-                node: `Fuel Stockpile Depletion & Civilian Mobilization Surge`,
-                impact: `Radicalization Index +${(8 * severity).toFixed(1)}%, Fuel Reserves -200K BBL.`
-            });
-
-            const newRelationScore = computeEmergentRelation(origin, target);
-            cascadeSteps.push({
-                step: 4,
-                layer: "EMERGENT RELATION MATRIX",
-                node: `War Readiness Index Activated`,
-                impact: `Bilateral Score collapsed to ${newRelationScore}/100 (HIGH CONFLICT RISK).`
-            });
-        }
-
-        const causalLogId = `CAUSAL_LOG_${currentSimulationTick}_${causalLogCounter++}`;
-        if (authoritativeState?.worldEcosystem) {
-            authoritativeState.worldEcosystem.causalLogCounter = causalLogCounter;
-        }
+        const impactedNodes = [...new Set([...(triggerEvent.impactedNodes || []), ...(triggerEvent.impactedSignals || []), ...(triggerEvent.domains || [])].map(String).filter(Boolean))];
+        const declaredSteps = Array.isArray(triggerEvent.steps) ? triggerEvent.steps.map(CLONE) : [];
+        const cascadeSteps = declaredSteps.length ? declaredSteps : impactedNodes.map((node, index) => ({
+            step: index + 1,
+            layer: 'CAUSAL_PROPAGATION',
+            node,
+            impact: 'PENDING_CAUSAL_EXECUTOR',
+            source: triggerEvent.provenance || null
+        }));
 
         const logEntry = {
-            id: causalLogId,
+            id: 'CAUSAL_LOG_' + currentSimulationTick + '_' + causalLogCounter++,
             timestamp: new Date().toISOString(),
-            origin,
-            target,
-            eventType,
-            severity,
+            origin, target, eventType,
+            severity: triggerEvent.severity ?? null,
+            status: 'RECORDED_NO_SYNTHETIC_MUTATION',
+            impactedNodes,
             steps: cascadeSteps
         };
-
+        if (authoritativeState?.worldEcosystem) authoritativeState.worldEcosystem.causalLogCounter = causalLogCounter;
         causalEventLog.unshift(logEntry);
         if (causalEventLog.length > 50) causalEventLog.pop();
-
-        // Dispatch system-wide event for UI updates
-        if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
-            window.dispatchEvent(new CustomEvent("CAUSAL_CASCADE_EXECUTED", { detail: logEntry }));
+        if (typeof _globalTarget.dispatchEvent === 'function') {
+            try { _globalTarget.dispatchEvent(new CustomEvent('CAUSAL_CASCADE_EXECUTED', { detail: logEntry })); } catch (_) {}
         }
-
         return logEntry;
     }
 
@@ -549,11 +367,8 @@ _globalTarget.WorldEcosystemEngine = (() => {
         return {
             nodeName: "General Sovereign Infrastructure Node",
             country: countryId,
-            status: "STABLE",
-            dependencies: [
-                { level: 1, name: "Crude Oil & Energy Grid", source: "Hydrocarbons", status: "OPERATIONAL" },
-                { level: 1, name: "Cabinet & Parliamentary Approval", source: "Executive Government", status: "APPROVED" }
-            ]
+            status: "UNAVAILABLE",
+            dependencies: []
         };
     }
 
@@ -564,45 +379,18 @@ _globalTarget.WorldEcosystemEngine = (() => {
      * Replaces static relation lookup with real-time emergent calculation
      */
     function computeEmergentRelation(countryA, countryB) {
-        const idA = (countryA || "USA").toUpperCase();
-        const idB = (countryB || "CHN").toUpperCase();
+        const idA = String(countryA || '').trim().toUpperCase();
+        const idB = String(countryB || '').trim().toUpperCase();
+        if (!idA || !idB) return { status: 'UNKNOWN', score: null, reason: 'COUNTRY_ID_REQUIRED' };
+        if (idA === idB) return { status: 'VERIFIED_SELF_RELATION', score: 100 };
 
-        if (idA === idB) return 100;
-
-        const profA = initCountryProfile(idA);
-        const profB = initCountryProfile(idB);
-
-        let score = 50; // Baseline neutral relation
-
-        // 1. Shared Alliance Blocs (+20 for each shared alliance)
-        const sharedBlocs = profA.blocs.filter(b => profB.blocs.includes(b));
-        score += sharedBlocs.length * 22;
-
-        // 2. Ideological & Influence Sphere Compatibility
-        if (profA.influenceSphere === profB.influenceSphere) {
-            score += 15;
-        } else if (
-            (profA.influenceSphere.includes("Western") && profB.influenceSphere.includes("Sino")) ||
-            (profA.influenceSphere.includes("Western") && profB.influenceSphere.includes("Eurasian"))
-        ) {
-            score -= 25; // Cold War Friction
-        }
-
-        // 3. Trade & Resource Interdependence
-        const resourceInterdependence = Math.min(30, (profA.resources.semiconductors.importNeed > 1000000 ? 12 : 0) + (profB.resources.crude_oil.importNeed > 100000 ? 10 : 0));
-        score += resourceInterdependence;
-
-        // 4. AI Aggressive Personality & Threat Friction
-        const threatPenalty = Math.round((profA.aiPersonality.aggressiveExpansion + profB.aiPersonality.aggressiveExpansion) / 6);
-        score -= threatPenalty;
-
-        // 5. Freedom of Press & Media Disinfo Friction
-        const mediaFriction = Math.abs(profA.media.pressFreedomIndex - profB.media.pressFreedomIndex) / 4;
-        score -= mediaFriction;
-
-        // Clamp between 0 and 100
-        const finalScore = Math.max(0, Math.min(100, Math.round(score)));
-        return finalScore;
+        const state = authoritativeState || _globalTarget.Game?.state || _globalTarget.gameState || {};
+        const relations = state?.relations || state?.foreign?.relations || {};
+        const rowA = relations?.[idA] || relations?.[idA.toLowerCase()] || relations?.[idA.replace(/-/g, '_')] || null;
+        const rowB = rowA?.[idB] || rowA?.[idB.toLowerCase()] || null;
+        const score = Number(rowB?.overall ?? rowB?.score ?? rowB);
+        if (Number.isFinite(score)) return { status: 'OBSERVED_RELATION', score, source: 'AUTHORITATIVE_RUNTIME_STATE' };
+        return { status: 'UNKNOWN', score: null, reason: 'RELATION_DATA_UNAVAILABLE' };
     }
 
     // -------------------------------------------------------------------------
@@ -611,37 +399,11 @@ _globalTarget.WorldEcosystemEngine = (() => {
     let currentSimulationTick = 0;
 
     function processSimulationTick(dt, targetTurn) {
-        const requestedTurn = Number.isFinite(Number(targetTurn))
-            ? Number(targetTurn)
-            : currentSimulationTick + 1;
-        if (requestedTurn <= currentSimulationTick) {
-            return {
-                tick: currentSimulationTick,
-                advanced: false,
-                countriesProcessed: Object.keys(stateRegistry).length
-            };
-        }
-        currentSimulationTick = requestedTurn;
-        if (authoritativeState?.simulation?.subsystemTurns) {
-            authoritativeState.simulation.subsystemTurns.worldEcosystem = currentSimulationTick;
-        }
-
-        // Every 50 simulation turns (Monthly Economic & Resource Cycle)
-        if (currentSimulationTick % 50 === 0) {
-            Object.keys(stateRegistry).forEach(code => {
-                const prof = stateRegistry[code];
-                // Consume resources, update happiness & stability
-                if (prof.resources.crude_oil.importNeed > prof.resources.crude_oil.reserveBbl) {
-                    prof.population.happinessScore = Math.max(10, prof.population.happinessScore - 1);
-                    prof.government.cabinetStability = Math.max(15, prof.government.cabinetStability - 1);
-                }
-            });
-        }
-        return {
-            tick: currentSimulationTick,
-            advanced: true,
-            countriesProcessed: Object.keys(stateRegistry).length
-        };
+        const next = Number.isFinite(Number(targetTurn)) ? Number(targetTurn) : currentSimulationTick + 1;
+        if (next <= currentSimulationTick) return { tick: currentSimulationTick, advanced: false, countriesProcessed: Object.keys(stateRegistry).length, syntheticMutations: 0 };
+        currentSimulationTick = next;
+        if (authoritativeState?.simulation?.subsystemTurns) authoritativeState.simulation.subsystemTurns.worldEcosystem = currentSimulationTick;
+        return { tick: currentSimulationTick, advanced: true, countriesProcessed: Object.keys(stateRegistry).length, syntheticMutations: 0 };
     }
 
     // -------------------------------------------------------------------------
