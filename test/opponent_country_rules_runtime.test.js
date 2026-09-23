@@ -34,7 +34,7 @@ const state={
   health:{BD:{capacity:100,pressure:{trend:'STABLE'},demand:100}},
   education:{BD:{capacity:100,demand:100}},
   projects:{BD:{maintenanceBacklog:{trend:'STABLE'}}},
-  relations:{BD:{foreignTension:{trend:'STABLE'}},
+  relations:{BD:{foreignTension:{trend:'STABLE'}}},
   events:[]
 };
 
