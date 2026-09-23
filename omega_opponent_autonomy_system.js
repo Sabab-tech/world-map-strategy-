@@ -923,6 +923,7 @@
     let completed=[];
     const next=projects.map(p=>{
       if(!p.autonomy||!['UNDER_CONSTRUCTION','COMMISSIONING'].includes(String(p.status||'').toUpperCase()))return p;
+      if(p.settlementReady===true)return p;
       const q={...p,progress:Math.min(1,(num(p.progress)||0)+(num(p.progressPerTurn)||0.1)),lastProgressTurn:turn()};
       event('OMEGA_PROJECT_CONSTRUCTION_PROGRESS',c,{projectId:q.projectId,previousProgress:num(p.progress)||0,progress:q.progress,status:q.status},cmd.commandId,q.decisionId||q.projectId);
       if(q.progress>=1){q.progress=1;q.status='COMMISSIONING';q.phase='COMMISSIONING';}
@@ -937,25 +938,77 @@
           if(Object.keys(materials).length)dispatch('resource','OMEGA_AUTO_RESOURCE_RESTORE',c,{materials,correlationId:q.projectId},q.projectId);
           q.status='COMMISSIONING';q.phase='SETTLEMENT_BLOCKED';q.blocker=financeResult?.reason||'FINANCE_SETTLEMENT_FAILED';return q;
         }
-        q.spent=q.cost;q.status='COMPLETED';q.phase='OPERATIONAL';q.commissionedTurn=turn();completed.push(q);
+        q.spent=q.cost;q.status='COMMISSIONING';q.phase='SETTLEMENT_READY';q.settlementReady=true;completed.push(q);
       }
       return q;
     });
     if(active.length)ctx.stateTransaction.set('projects.registry',next);
     for(const p of completed){
-      const action=String(p.kind||'').toUpperCase()==='HOUSING'?'OMEGA_AUTO_HOUSING_COMMISSION':
-        String(p.kind||'').toUpperCase()==='FACTORY'?'OMEGA_AUTO_FACTORY_COMMISSION':
-        String(p.kind||'').toUpperCase()==='MILITARY_FACILITY'?'OMEGA_AUTO_MILITARY_FACILITY_COMMISSION':
-        String(p.kind||'').toUpperCase()==='INFRASTRUCTURE'?'OMEGA_AUTO_INFRASTRUCTURE_COMMISSION':null;
+      const kind=String(p.kind||'').toUpperCase();
+      const action=kind==='HOUSING'?'OMEGA_AUTO_HOUSING_COMMISSION':
+        kind==='FACTORY'?'OMEGA_AUTO_FACTORY_COMMISSION':
+        kind==='MILITARY_FACILITY'?'OMEGA_AUTO_MILITARY_FACILITY_COMMISSION':
+        kind==='INFRASTRUCTURE'?'OMEGA_AUTO_INFRASTRUCTURE_COMMISSION':null;
+      let commission={status:'APPLIED',skipped:true};
       if(action){
         const owner=action.includes('HOUSING')?'interior':action.includes('FACTORY')?'economy':action.includes('INFRASTRUCTURE')?'transport':'military';
-        dispatch(owner,action,c,{project:p,reservationId:p.reservationId,decisionId:p.decisionId,correlationId:p.decisionId||p.projectId},p.decisionId||p.projectId);
+        commission=dispatch(owner,action,c,{project:p,reservationId:p.reservationId,decisionId:p.decisionId,correlationId:p.decisionId||p.projectId},p.decisionId||p.projectId);
       }
-      event('OMEGA_PROJECT_CONSTRUCTION_COMPLETED',c,{project:p},cmd.commandId,p.decisionId||p.projectId);
-      const release=dispatch('cabinet','OMEGA_AUTO_RELEASE_RESERVATION',c,{reservationId:p.reservationId,correlationId:p.decisionId||p.projectId},p.decisionId||p.projectId);
-      if(release?.status==='FAILED')void release;
+      if(commission?.status!=='APPLIED'){
+        if(p.cost>0)dispatch('finance','OMEGA_AUTO_FINANCE_REFUND',c,{amount:p.cost,decisionId:p.decisionId,correlationId:p.projectId},p.projectId);
+        if(p.materials&&Object.keys(p.materials).length)dispatch('resource','OMEGA_AUTO_RESOURCE_RESTORE',c,{materials:p.materials,correlationId:p.projectId},p.projectId);
+        p.settlementReady=false;
+        p.phase='COMMISSIONING_BLOCKED';
+        p.blocker=commission?.reason||'ASSET_COMMISSION_FAILED';
+        const blocked=projects.map(x=>x.projectId===p.projectId?p:x);
+        ctx.stateTransaction.set('projects.registry',blocked);
+        continue;
+      }
+      const sim=getSimulation();
+      try{
+        sim?.enqueueCommand?.({
+          commandId:'OAS-FINALIZE-'+turn()+'-'+c+'-'+String(p.projectId),
+          commandType:'OMEGA_AUTO_PROJECT_FINALIZE',
+          actionId:'OMEGA_AUTO_PROJECT_FINALIZE',
+          sourceMinistryId:'projects',
+          countryId:c,
+          payload:{countryId:c,projectId:p.projectId,decisionId:p.decisionId,reservationId:p.reservationId,correlationId:p.decisionId||p.projectId},
+          options:{origin:'OMEGA_AUTONOMY_PROJECT_FINALIZE',scenarioId:p.scenarioId||null,correlationId:p.decisionId||p.projectId}
+        });
+      }catch(_){}
     }
     return{accepted:true,activeCount:active.length,completed:completed.map(x=>x.projectId)};
+  }
+
+  function projectFinalizeHandler(cmd,ctx){
+    const p=cmd?.payload||{},projectId=String(p.projectId||'');
+    if(!projectId)return{accepted:false,reason:'PROJECT_ID_REQUIRED'};
+    const projects=readProjectRegistry(ctx.stateTransaction);
+    const target=projects.find(x=>x.projectId===projectId);
+    if(!target)return{accepted:false,reason:'PROJECT_NOT_FOUND:'+projectId};
+    if(target.settlementReady!==true)return{accepted:false,reason:'PROJECT_NOT_READY_FOR_FINALIZE'};
+    const next=projects.map(x=>x.projectId===projectId?{
+      ...x,
+      settlementReady:false,
+      status:'COMPLETED',
+      phase:'OPERATIONAL',
+      commissionedTurn:turn()
+    }:x);
+    ctx.stateTransaction.set('projects.registry',next);
+    event('OMEGA_PROJECT_CONSTRUCTION_COMPLETED',ctx.countryId,{
+      projectId,
+      decisionId:target.decisionId||null,
+      scenarioId:target.scenarioId||null,
+      kind:target.kind||null,
+      quantity:target.quantity,
+      cost:target.cost,
+      commissionedTurn:turn()
+    },cmd.commandId,p.correlationId||target.decisionId||projectId);
+    const release=dispatch('cabinet','OMEGA_AUTO_RELEASE_RESERVATION',ctx.countryId,{
+      reservationId:target.reservationId,
+      correlationId:p.correlationId||target.decisionId||projectId
+    },p.correlationId||target.decisionId||projectId);
+    return{accepted:true,projectId,status:'COMPLETED',releaseStatus:release?.status||null,stateMutationAuthority:true};
   }
 
   function housingCommission(cmd,ctx){
@@ -1359,6 +1412,7 @@
       OMEGA_AUTO_RESOURCE_IMPORT_REQUEST:importHandler,
       OMEGA_AUTO_PROJECT_CREATE:projectCreateHandler,
       OMEGA_AUTO_PROJECT_TICK:projectTickHandler,
+      OMEGA_AUTO_PROJECT_FINALIZE:projectFinalizeHandler,
       OMEGA_AUTO_HOUSING_COMMISSION:housingCommission,
       OMEGA_AUTO_FACTORY_COMMISSION:factoryCommission,
       OMEGA_AUTO_MILITARY_FACILITY_COMMISSION:militaryFacilityCommission,
@@ -1394,6 +1448,7 @@
       ['OMEGA_AUTO_RESOURCE_IMPORT_REQUEST','trade',{affectedMinistries:['finance','resource','foreign','trade']}],
       ['OMEGA_AUTO_PROJECT_CREATE','projects',{affectedMinistries:['finance','resource','economy'] }],
       ['OMEGA_AUTO_PROJECT_TICK','projects',{}],
+      ['OMEGA_AUTO_PROJECT_FINALIZE','projects',{}],
       ['OMEGA_AUTO_HOUSING_COMMISSION','interior',{affectedStateDomains:['cities','interior']}],
       ['OMEGA_AUTO_FACTORY_COMMISSION','economy',{affectedStateDomains:['economy']}],
       ['OMEGA_AUTO_MILITARY_FACILITY_COMMISSION','military',{affectedStateDomains:['military']}],
