@@ -242,15 +242,37 @@
         mines[mineIndex]={...mines[mineIndex],reserveState:clone(result.reserveAfter.toJSON?.()||result.reserveAfter),
           operationalStatus:result.reserveAfter.operationalStatus,residualQuantity:n(result.reserveAfter.residualQuantity)||0};
       }
+      const extractionId='EXT-'+turn()+'-'+c+'-'+String(x.occurrenceKey).replace(/[^A-Z0-9:_-]/gi,'');
+      let producedBatch=clone(result.producedBatch?.toJSON?.()||result.producedBatch||null);
+      if(producedBatch){
+        producedBatch.batchId=producedBatch.batchId||('BATCH_EXT_'+turn()+'_'+c+'_'+String(resource).replace(/[^A-Z0-9:_-]/gi,'')+'_'+String(x.occurrenceKey).replace(/[^A-Z0-9:_-]/gi,''));
+        producedBatch.resourceId=resource;
+        producedBatch.materialIdentity=resource;
+        producedBatch.quantity=q;
+        producedBatch.remainingQuantity=q;
+        producedBatch.ownerCountryCode=c;
+        producedBatch.locationKey=x.occurrenceKey;
+        producedBatch.facilityKey=capacity.assetReference||null;
+        producedBatch.extractionReference=result.resultId||extractionId;
+        producedBatch.sourceBatchIds=Array.isArray(producedBatch.sourceBatchIds)?producedBatch.sourceBatchIds:[];
+        producedBatch.timestampTurn=turn();
+        producedBatch.provenance=Object.assign({},producedBatch.provenance||{},{
+          sourceSubsystem:'OMEGA_RESOURCE_ENDOWMENT_RUNTIME',
+          extractionId:extractionId,
+          occurrenceKey:x.occurrenceKey,
+          resourceId:resource,
+          simulationTurn:turn()
+        });
+      }
       const record={
-        extractionId:'EXT-'+turn()+'-'+c+'-'+String(x.occurrenceKey).replace(/[^A-Z0-9:_-]/gi,''),
+        extractionId:extractionId,
         countryId:c,simulationTurn:turn(),occurrenceKey:x.occurrenceKey,depositKey:x.depositKey,resourceId:resource,
         requestedQuantity:request.requestedQuantity,approvedQuantity:q,status:result.status,
         reserveBefore:clone(result.reserveBefore?.toJSON?.()||result.reserveBefore),
         reserveAfter:clone(result.reserveAfter?.toJSON?.()||result.reserveAfter),
         calculationTrace:clone(result.calculationTrace?.toJSON?.()||result.calculationTrace),
         transition:clone(result.transition?.toJSON?.()||result.transition),
-        producedBatch:clone(result.producedBatch?.toJSON?.()||result.producedBatch),
+        producedBatch:producedBatch,
         provenance:clone(result.provenance||request.provenance)
       };
       ledger.push(record);extracted.push(record);
