@@ -137,20 +137,23 @@
     return diagnostics();
   }
   function trace(c,traceId){
-    const cid=canonical(c),rows=state()?.memoryTraceLog;
-    const all=rows?.byCountry?.[cid]||[];
-    return traceId?all.filter(x=>x.traceId===String(traceId)||x.chainId===String(traceId)||x.parentTraceId===String(traceId)).sort((a,b)=>a.sequence-b.sequence):clone(all).sort((a,b)=>a.sequence-b.sequence);
+    const cid=canonical(c),root=state()?.cabinet?.[cid]?.memoryTraceLog||{},all=root.byCountry?.[cid]||[];
+    return traceId?clone(all.filter(x=>x.traceId===String(traceId)||x.chainId===String(traceId)||x.parentTraceId===String(traceId)).sort((a,b)=>a.sequence-b.sequence)):clone(all.sort((a,b)=>a.sequence-b.sequence));
   }
   function replay(c,chainId){
-    const cid=canonical(c),all=state()?.memoryTraceLog?.byCountry?.[cid]||[];
+    const cid=canonical(c),all=state()?.cabinet?.[cid]?.memoryTraceLog?.byCountry?.[cid]||[];
     const rows=all.filter(x=>x.chainId===String(chainId)||x.traceId===String(chainId)||x.parentTraceId===String(chainId));
     return{countryId:cid,chainId:String(chainId),entries:clone(rows.sort((a,b)=>a.sequence-b.sequence)),complete:rows.length>0};
   }
   function diagnostics(){
-    const root=state()?.memoryTraceLog||{},byCountry=root.byCountry||{};let entries=0;
-    for(const rows of Object.values(byCountry))entries+=Array.isArray(rows)?rows.length:0;
+    const cabinet=state()?.cabinet||{};let entries=0,countries=0;
+    for(const bucket of Object.values(cabinet)){
+      const root=bucket?.memoryTraceLog;if(!root||typeof root!=='object')continue;
+      const byCountry=root.byCountry||{};countries+=Object.keys(byCountry).length;
+      for(const rows of Object.values(byCountry))entries+=Array.isArray(rows)?rows.length:0;
+    }
     return{version:VERSION,handlerInstalled:!!interop()?.commandHandlers?.has?.('OMEGA_MEMORY_LOG_APPEND')||!!g.__omegaMemoryTraceHooks,
-      hookInstalled:!!g.__omegaMemoryTraceHooks,countries:Object.keys(byCountry).length,entries};
+      hookInstalled:!!g.__omegaMemoryTraceHooks,countries,entries};
   }
   const API=Object.freeze({VERSION,TYPES,diagnostics,trace,replay,append:(c,p)=>command(c,p)});
   g.Omega=g.Omega||{};g.Omega.MemoryTraceLog=API;g.OmegaMemoryTraceLog=API;
