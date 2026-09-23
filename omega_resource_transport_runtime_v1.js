@@ -308,7 +308,7 @@
   function handleTrade(e){
     var d=e&&e.detail?e.detail:{},p=d.payload||d,c=canonical(p.sellerCountryId||p.targetCountryId||p.countryId);if(!c||!p.resourceId)return;
     var qty=num(p.quantity!=null?p.quantity:p.totalQuantity)||0;if(qty<=0)return;
-    var idBase='TRADE-'+turn()+'-'+c+'-'+tok(p.resourceId)+'-'+String(p.settlementId||p.requestId||Math.random()).replace(/[^A-Z0-9_-]/gi,'');
+    var idBase='TRADE-'+turn()+'-'+c+'-'+tok(p.resourceId)+'-'+String(p.settlementId||p.requestId||('AUTO-'+qty+'-'+tok(p.resourceId))).replace(/[^A-Z0-9_-]/gi,'');
     var shipment={shipmentId:idBase,batchId:p.batchId||null,resourceId:p.resourceId,quantity:qty,deliveredQuantity:qty,remainingQuantity:0,kind:'TRADE_EXPORT',status:'DELIVERED',fromStage:'EXPORT_CORRIDOR',currentStage:'INTERNATIONAL_TRANSIT',destinationStage:'DESTINATION_COUNTRY',destinationFacilityId:null,destinationCountryId:canonical(p.buyerCountryId||p.countryId||''),createdTurn:turn(),updatedTurn:turn(),legs:[{name:'EXPORT_CORRIDOR',status:'COMPLETED'},{name:'PORT_GATE',status:'COMPLETED'},{name:'INTERNATIONAL_TRANSIT',status:'COMPLETED'},{name:'DESTINATION_COUNTRY',status:'COMPLETED'}],provenance:{source:'OMEGA_RESOURCE_TRANSPORT_RUNTIME_V1',settlementId:p.settlementId||null}};
     var rs=resourceState(c),shipments=Array.isArray(rs.transportShipments)?clone(rs.transportShipments):[];if(!shipments.some(function(s){return s&&s.shipmentId===shipment.shipmentId;})){shipments.push(shipment);if(shipments.length>MAX_SHIPMENTS)shipments=shipments.slice(-MAX_SHIPMENTS);dispatch('transport','OMEGA_RESOURCE_TRANSPORT_COMMIT_STATE',c,{batches:Array.isArray(rs.batches)?rs.batches:[],shipments:shipments,correlationId:shipment.shipmentId});}
   }
