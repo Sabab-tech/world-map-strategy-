@@ -14,7 +14,14 @@ const cwd=()=>global.process?.cwd?.()||'.';
 const rel=(f,r)=>{const p=M().path;return p?p.relative(r,f).replace(/\\/g,'/'):f};
 function loadKnowledge(){if(global.OmegaOfflineSemanticKnowledge)return global.OmegaOfflineSemanticKnowledge;if(global.OmegaSemanticKnowledge)return global.OmegaSemanticKnowledge;const p=M().path;return p?readJSON(p.join(cwd(),'offline_semantic_knowledge.json'))||{}:{}}
 function unifiedIdentity(){return global.OmegaUniversalEntityIdentityEngine||global.OmegaUnifiedIdentity||null}
-function canonicalCountryResolve(q){const u=unifiedIdentity();try{const h=u?.resolve?.(q,'COUNTRY');if(h?.id)return h}catch(_){}const b=global.OmegaCanonicalIdentityRegistry||global.OmegaCountrySemanticBridge;try{const h=b?.resolveCountry?.(q);return h?.id?h:null}catch(_){return null}}
+function canonicalCountryResolve(q){
+  const raw=S(q),variants=[raw,raw.replace(/[_-]+/g,' '),raw.replace(/[^A-Za-z0-9]+/g,' '),raw.toUpperCase().replace(/[_-]+/g,' ')];
+  const unique=[...new Set(variants.map(S).filter(Boolean))],u=unifiedIdentity();
+  for(const v of unique){try{const h=u?.resolve?.(v,'COUNTRY');if(h?.id)return h}catch(_){}}
+  const b=global.OmegaCanonicalIdentityRegistry||global.OmegaCountrySemanticBridge;
+  for(const v of unique){try{const h=b?.resolveCountry?.(v);if(h?.id)return h}catch(_){}}
+  return null
+}
 function relations(k){return A(k?.relations||k?.relationship_registry||k?.relationshipRegistry).filter(O).map(x=>({...x,id:U(x.id),from:U(x.from||x.fromType||''),to:U(x.to||x.toType||'')})).filter(x=>x.id)}
 function metadata(k){const out=[];for(const d of A(k?.data_finding?.dataset_capabilities)){if(!O(d)||!S(d.dataset))continue;out.push({dataset:S(d.dataset),capabilities:A(d.capabilities).map(U),entityTypes:A(d.entityTypes).map(U),identityFields:A(d.identityFields).map(N),recordLocator:S(d.recordLocator)||null,recordKeyIsIdentity:d.recordKeyIsIdentity===true,fieldMappings:d.fieldMappings||{},authority:S(d.authority)||'EXPLICIT_METADATA'})}return out}
 function heuristicMeta(name,raw){const fields=scalarFields(raw,'').map(x=>x.key);const identityFields=[...new Set(fields.filter(x=>/^(id|key|code|iso2|iso3|countryid|country_id|countrycode|country_code|name|countryname|country_name|resourceid|resource_id|mineid|mine_id|depositid|deposit_id)$/i.test(String(x))))];const entityTypes=[];if(/country|nation/i.test(String(name)))entityTypes.push('COUNTRY');if(/resource|commodity/i.test(String(name)))entityTypes.push('RESOURCE');if(/mine/i.test(String(name)))entityTypes.push('MINE');if(/deposit/i.test(String(name)))entityTypes.push('DEPOSIT');return{dataset:name,logicalDatasetId:name,capabilities:[],entityTypes,identityFields,recordLocator:null,recordKeyIsIdentity:false,fieldMappings:{},authority:'HEURISTIC_SCHEMA_DISCOVERY'}}
