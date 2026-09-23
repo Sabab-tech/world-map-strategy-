@@ -1060,7 +1060,10 @@
     if(existing===null)return{accepted:false,reason:'HOUSING_CAPACITY_STATE_UNAVAILABLE'};
     ctx.stateTransaction.set('cities.housing.available',existing+q);
     const assets=Array.isArray(ctx.stateTransaction.get('interior.housingAssets'))?ctx.stateTransaction.get('interior.housingAssets'):[];
-    ctx.stateTransaction.set('interior.housingAssets',assets.concat([{projectId:p.projectId,quantity:q,commissionedTurn:turn()}]).slice(-256));
+    const asset={projectId:p.projectId,quantity:q,commissionedTurn:turn(),siteId:p.siteId||p.site?.id||null,location:clone(p.location||p.site?.location||null),
+      utilityPlan:clone(p.utilityPlan||p.utilities||null),occupancyCapacity:num(p.occupancyCapacity),occupancy:p.occupancy??null,
+      householdCapacity:num(p.householdCapacity),rentIndex:num(p.rentIndex),density:num(p.density),roadAccess: p.roadAccess??null};
+    ctx.stateTransaction.set('interior.housingAssets',assets.concat([asset]).slice(-256));
     event('OMEGA_HOUSING_CAPACITY_CHANGED',ctx.countryId,{projectId:p.projectId,delta:q,newValue:existing+q},cmd.commandId,p.decisionId||p.projectId);
     return{accepted:true,delta:q,newHousingCapacity:existing+q,stateMutationAuthority:true};
   }
@@ -1073,7 +1076,11 @@
     if(existing===null)return{accepted:false,reason:'PRODUCTION_CAPACITY_STATE_UNAVAILABLE'};
     ctx.stateTransaction.set('economy.productionCapacity',existing+q);
     const assets=Array.isArray(ctx.stateTransaction.get('economy.productionAssets'))?ctx.stateTransaction.get('economy.productionAssets'):[];
-    ctx.stateTransaction.set('economy.productionAssets',assets.concat([{projectId:p.projectId,capacity:q,commissionedTurn:turn()}]).slice(-256));
+    const asset={projectId:p.projectId,capacity:q,commissionedTurn:turn(),facilityType:p.facilityType||p.factoryType||null,siteId:p.siteId||p.site?.id||null,
+      location:clone(p.location||p.site?.location||null),workforce:clone(p.workforce||null),energyProfile:clone(p.energyProfile||p.energy||null),
+      inputCoefficients:clone(p.inputCoefficients||p.inputs||null),outputProfile:clone(p.outputProfile||p.outputs||null),inventoryPolicy:clone(p.inventoryPolicy||null),
+      utilization:num(p.utilization),wageIndex:num(p.wageIndex),taxProfile:clone(p.taxProfile||null)};
+    ctx.stateTransaction.set('economy.productionAssets',assets.concat([asset]).slice(-256));
     event('OMEGA_FACTORY_CAPACITY_CHANGED',ctx.countryId,{projectId:p.projectId,delta:q,newCapacity:existing+q},cmd.commandId,p.decisionId||p.projectId);
     return{accepted:true,delta:q,newProductionCapacity:existing+q,stateMutationAuthority:true};
   }
@@ -1093,7 +1100,10 @@
     const p=cmd?.payload?.project||{},q=scalar(p.quantity);
     if(q===null||q<=0)return{accepted:false,reason:'MILITARY_FACILITY_QUANTITY_INVALID'};
     const facilities=Array.isArray(ctx.stateTransaction.get('military.facilities'))?ctx.stateTransaction.get('military.facilities'):[];
-    const row={projectId:p.projectId,quantity:q,kind:'MILITARY_FACILITY',commissionedTurn:turn()};
+    const row={projectId:p.projectId,quantity:q,kind:'MILITARY_FACILITY',commissionedTurn:turn(),facilityType:p.facilityType||p.kind||null,
+      location:clone(p.location||p.site?.location||null),capacity:num(p.capacity??q),staffing:clone(p.staffing||null),fuelCapacity:num(p.fuelCapacity),
+      maintenance:clone(p.maintenance||null),serviceRadius:num(p.serviceRadius),readinessContribution:num(p.readinessContribution)};
+
     ctx.stateTransaction.set('military.facilities',facilities.concat([row]).slice(-256));
     event('OMEGA_MILITARY_FACILITY_CAPACITY_CHANGED',ctx.countryId,{projectId:p.projectId,facilityAdded:q,capacityDelta:q,facilityType:p.facilityType||p.kind||null,location:p.location||null},cmd.commandId,p.decisionId||p.projectId);
     return{accepted:true,facility:row,stateMutationAuthority:true};
