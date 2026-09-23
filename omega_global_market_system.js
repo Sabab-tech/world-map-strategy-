@@ -142,7 +142,15 @@
   function quote(rid){
     const key=String(rid||'').trim();
     const row=g.__OmegaMarketBooks?.[key]||g.__OmegaMarketBooks?.[Object.keys(g.__OmegaMarketBooks||{}).find(x=>token(x)===token(key))];
-    return row?.clearing||{resourceId:key,status:'UNAVAILABLE',priceDiscovery:'UNAVAILABLE',clearingPriceUsd:null,bestBidUsd:null,bestAskUsd:null};
+    const q=row?.clearing||{resourceId:key,status:'UNAVAILABLE',priceDiscovery:'UNAVAILABLE',clearingPriceUsd:null,bestBidUsd:null,bestAskUsd:null,referencePrice:null};
+    return clone(q);
+  }
+  function localPrice(countryId,rid){
+    const q=quote(rid),c=canonical(countryId);
+    const usd=q.clearingPriceUsd??q.referencePrice;
+    if(usd===null||usd===undefined)return null;
+    const rate=usdRate(c);if(rate===null)return null;
+    return currency(c)==='USD'?usd:usd*rate;
   }
   function suppliers(rid,quantity=0,buyer=null){
     const target=canonical(buyer),out=[];
@@ -190,8 +198,10 @@
   function onTurn(){
     install();
     const markets=rebuild();
-    for(const c of countries())writeProjection(c,markets);
-    try{interop()?.emitEvent?.('OMEGA_MARKET_PRICE_UPDATED','GLOBAL','trade',{turn:turn(),resources:Object.keys(markets).length},{turn:turn()});}catch(_){}
+    for(const c of countries()){
+      writeProjection(c,markets);
+      try{interop()?.emitEvent?.('OMEGA_MARKET_PRICE_UPDATED',c,'trade',{turn:turn(),resources:Object.keys(markets).length},{turn:turn(),correlationId:'MARKET-'+turn()+'-'+c});}catch(_){}
+    }
   }
   function diagnostics(){
     const markets=g.__OmegaMarketBooks||{},rows=Object.values(markets);
@@ -208,7 +218,7 @@
     if(state()?.simulation?.turn!==undefined)rebuild();
     return diagnostics();
   }
-  const API=Object.freeze({VERSION,diagnostics,rebuild,quote,suppliers});
+  const API=Object.freeze({VERSION,diagnostics,rebuild,quote,localPrice,suppliers});
   g.Omega=g.Omega||{};g.Omega.GlobalMarket=API;g.OmegaGlobalMarket=API;
   try{init();}catch(e){g.OmegaGlobalMarketError=String(e?.message||e);}
 })(typeof window!=='undefined'?window:globalThis);
