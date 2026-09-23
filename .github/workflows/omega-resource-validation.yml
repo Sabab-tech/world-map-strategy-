@@ -1,0 +1,90 @@
+name: OMEGA Resource Validation
+
+on:
+  push:
+    branches: [main, omega-resource-complete-v1]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  resource-vertical-slice:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e1aac5ba805825da76410c181273ba90b1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 24
+
+      - name: Install runtime dependencies
+        run: npm install --ignore-scripts --no-audit
+
+      - name: Syntax verification
+        run: |
+          set -euo pipefail
+          node --check server.js
+          node --check resource_ministry_engine.js
+          node --check omega_resource_endowment_runtime.js
+          node --check omega_resource_economy_runtime_v2.js
+          node --check omega_resource_transport_runtime_v1.js
+          node --check omega_resource_map_authority_v1.js
+          node --check omega_global_market_system.js
+          node --check omega_global_trade_system.js
+
+      - name: Extraction and authoritative batch verification
+        run: node test/omega_resource_endowment_runtime.test.mjs
+
+      - name: Resource economy integration verification
+        run: node --test test/omega_resource_economy_runtime_v2.test.mjs
+
+      - name: Full resource vertical slice verification
+        run: node test/omega_resource_full_vertical_slice.test.mjs
+
+      - name: Market verification
+        run: node test/omega_global_market_system.test.mjs
+
+      - name: Global trade verification
+        run: node test/omega_global_trade_system.test.mjs
+
+      - name: Resource request and settlement verification
+        run: node test/omega_resource_request_and_settlement.test.mjs
+
+      - name: Production server boot verification
+        run: |
+          set -euo pipefail
+          PORT=31338 node server_bootstrap.js >/tmp/omega-resource-server.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill $SERVER_PID >/dev/null 2>&1 || true' EXIT
+          READY=0
+          for i in $(seq 1 20); do
+            if curl -fsS http://127.0.0.1:31338/api/ai/status >/tmp/omega-resource-ai-status.json 2>/dev/null; then READY=1; break; fi
+            sleep 1
+          done
+          if [ "$READY" -ne 1 ]; then
+            cat /tmp/omega-resource-server.log
+            exit 1
+          fi
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs/promises';
+          const html = await fs.readFile('index.html','utf8');
+          for (const required of [
+            'omega_resource_endowment_runtime.js',
+            'omega_resource_economy_runtime_v2.js',
+            'omega_resource_transport_runtime_v1.js',
+            'omega_resource_map_authority_v1.js',
+            'omega_global_market_system.js',
+            'omega_global_trade_system.js'
+          ]) {
+            if (!html.includes(required)) throw new Error('Resource runtime missing from index.html: '+required);
+          }
+          const status = JSON.parse(await fs.readFile('/tmp/omega-resource-ai-status.json','utf8'));
+          if (status.ok !== true) throw new Error('Production /api/ai/status is not healthy');
+          console.log('RESOURCE PRODUCTION BOOT SMOKE: PASS');
+          NODE
