@@ -47,9 +47,15 @@
   function profile(c){
     const cid=canonical(c),out={countryId:cid,availability:'UNOBSERVED',source:null,dimensions:{}};
     for(const dim of DIMENSIONS)out.dimensions[dim]={value:null,availability:'UNOBSERVED',source:null};
-    for(const src of SOURCES){
-      const base=src.startsWith('countryRecord')?read(cid,src):read(cid,src);
-      if(base===undefined)continue;
+    let canonicalRaw=null;
+    try{
+      const hit=registry()?.resolveCountry?.(cid);
+      canonicalRaw=hit?.raw||hit||null;
+    }catch(_){}
+    const bases=[{source:'countryRecord',value:canonicalRaw},...SOURCES.map(src=>({source:src,value:read(cid,src)}))];
+    for(const row of bases){
+      const src=row.source,base=row.value;
+      if(base===undefined||base===null)continue;
       out.availability='AVAILABLE';out.source=src;
       for(const dim of DIMENSIONS){
         if(out.dimensions[dim].value!==null)continue;
