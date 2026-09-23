@@ -62,7 +62,18 @@
       countryValue(b,'trade.relations')?.[a],
       countryValue(b,'relations')?.[a]
     ].filter(x=>x!==undefined&&x!==null);
-    return clone(candidates[0]||null);
+    const base=clone(candidates[0]||null);
+    if(!base)return null;
+    const adjustments=countryValue(a,'foreign.relationAdjustments')?.[b];
+    const rows=Array.isArray(adjustments)?adjustments:[];
+    const delta=rows.reduce((s,x)=>s+(num(x?.delta)||0),0);
+    if(delta!==0){
+      for(const k of ['overall','trade','trust','political']){
+        const v=num(base[k]);
+        if(v!==null)base[k]=Math.max(0,Math.min(100,v+delta));
+      }
+    }
+    return base;
   }
   function relationScore(r){
     if(!r)return null;
