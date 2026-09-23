@@ -123,6 +123,8 @@
   }
 
   async function discoverCountry(question){
+    const unified=global.OmegaUniversalEntityIdentityEngine||global.OmegaUnifiedIdentity;
+    try{const hit=unified?.resolve?.(question,'COUNTRY');if(hit?.status==='RESOLVED'&&hit.id)return hit;}catch(_){}
     const registry=global.OmegaCanonicalIdentityRegistry||global.OmegaCountrySemanticBridge;
     try{if(registry?.init)await registry.init();}catch(_){ }
     installQuestionAwareCountryResolver();
