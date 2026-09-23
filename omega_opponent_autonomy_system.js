@@ -485,6 +485,7 @@
     const reservation=activeReservationTotals(countryId);
     const plan=extractPlanInputs(decision,a);
     const material=routeMaterials(countryId,decision?.runtimeMeasurement?.resourceId||decision?.measurement?.resourceId||null);
+    let importSupplier=null;
     const duration=plan.durationTurns;
     const need=needPressure(decision);
     const priority=priorityFor(decision);
@@ -496,6 +497,7 @@
     const reasons=[];
     if(['IMPORT'].includes(a)){
       const supplier=chooseImportSupplier(countryId,decision);
+      importSupplier=supplier;
       targetCountryId=supplier?.countryId||null;
       relations=supplier?.relationScore??null;
       if(!supplier?.countryId){status='WAIT_DATA';reasons.push(supplier?.reason||'SUPPLIER_NOT_IDENTIFIED');}
@@ -505,6 +507,8 @@
       else if(plan.quantity===null){status='WAIT_DATA';reasons.push('IMPORT_QUANTITY_NOT_OBSERVED');}
       else {
         const estimatedCost=plan.cost!==null?plan.cost:(supplier.unitPrice!==null?plan.quantity*supplier.unitPrice:null);
+        plan.unitPrice=supplier.unitPrice;
+        plan.cost=estimatedCost;
         if(estimatedCost===null){status='WAIT_DATA';reasons.push('IMPORT_COST_NOT_OBSERVED');}
         else if(financial.liquidity-reservation.money<estimatedCost){status='BLOCKED';reasons.push('INSUFFICIENT_UNRESERVED_TREASURY');}
       }
@@ -556,6 +560,8 @@
     return{
       action:a,status,reason:reasons.join('|')||null,score:Number(score.toFixed(6)),
       targetCountryId,
+      unitPrice:importSupplier?.unitPrice??null,
+      supplier:importSupplier?clone(importSupplier):null,
       plan,
       factors,
       financial:{liquidity:financial.liquidity,debt:financial.debt,debtToGdp:financial.debtToGdp,reservedMoney:reservation.money},
@@ -845,7 +851,9 @@
   function housingCommission(cmd,ctx){
     const p=cmd?.payload?.project||{},q=scalar(p.quantity);
     if(q===null||q<=0)return{accepted:false,reason:'HOUSING_CAPACITY_QUANTITY_INVALID'};
-    const existing=scalar(ctx.stateTransaction.get('cities.housing.available'))||0;
+    const rawExisting=ctx.stateTransaction.get('cities.housing.available');
+    const existing=scalar(rawExisting);
+    if(existing===null)return{accepted:false,reason:'HOUSING_CAPACITY_STATE_UNAVAILABLE'};
     ctx.stateTransaction.set('cities.housing.available',existing+q);
     const assets=Array.isArray(ctx.stateTransaction.get('interior.housingAssets'))?ctx.stateTransaction.get('interior.housingAssets'):[];
     ctx.stateTransaction.set('interior.housingAssets',assets.concat([{projectId:p.projectId,quantity:q,commissionedTurn:turn()}]).slice(-256));
@@ -856,7 +864,9 @@
   function factoryCommission(cmd,ctx){
     const p=cmd?.payload?.project||{},q=scalar(p.quantity);
     if(q===null||q<=0)return{accepted:false,reason:'FACTORY_CAPACITY_QUANTITY_INVALID'};
-    const existing=scalar(ctx.stateTransaction.get('economy.productionCapacity'))||0;
+    const rawExisting=ctx.stateTransaction.get('economy.productionCapacity');
+    const existing=scalar(rawExisting);
+    if(existing===null)return{accepted:false,reason:'PRODUCTION_CAPACITY_STATE_UNAVAILABLE'};
     ctx.stateTransaction.set('economy.productionCapacity',existing+q);
     const assets=Array.isArray(ctx.stateTransaction.get('economy.productionAssets'))?ctx.stateTransaction.get('economy.productionAssets'):[];
     ctx.stateTransaction.set('economy.productionAssets',assets.concat([{projectId:p.projectId,capacity:q,commissionedTurn:turn()}]).slice(-256));
