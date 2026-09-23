@@ -34,7 +34,7 @@ const sandbox={
       simulation:{turn:4,session:{playerCountryId:'AAA'}},
       economy:{
         BBB:{
-          inflation:{status:'HIGH'},
+          inflation:{status:'HIGH',trend:'RISING'},
           gdp_growth:{status:'FALLING'},
           demand:{total:100},
           supply:{effective:50}
@@ -82,6 +82,11 @@ assert.equal(direction.state,'FALSE');
 const rising=api.evaluateDirection('INFLATION',{trend:'RISING'},'RISING');
 assert.equal(rising.state,'TRUE');
 
+const assessment=await api.assessCountryState('BBB',4);
+assert.ok(assessment.problemSignals.includes('INFLATION'));
+assert.ok(assessment.problemSignals.includes('STABILITY'));
+assert.ok(assessment.gaps.RESOURCE.state==='TRUE');
+
 const result=await api.onTurnCommitted(4);
 assert.equal(result.status,'COMPLETE');
 assert.equal(result.opponents,2);
@@ -100,6 +105,7 @@ assert.equal(diagnostics.version,'2.0.0');
 assert.equal(diagnostics.scenarios,25);
 assert.ok(diagnostics.directionalSignals>0);
 assert.ok(diagnostics.directionalProblemDefinitions>0);
+assert.equal(diagnostics.runtimeLayers,28);
 
 console.log('OMEGA OPPONENT COUNTRY RULES TEST PASSED');
 console.log(JSON.stringify({
