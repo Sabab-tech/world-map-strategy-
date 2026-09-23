@@ -518,46 +518,41 @@
   }
 
   function executeFactories(c){
-    const p=makeProductionState(c);
-    const executed=[];
+    const p=makeProductionState(c),executed=[];
     for(const row of p.records){
       if(row.status!=='READY')continue;
       const asset=(p.assets||[]).find(a=>String(a?.projectId??a?.assetId??a?.id??a?.siteId??'')===row.facilityId);
       if(!asset)continue;
+      const currentInv=inventoryObject(c);
+      let feasible=true;
+      for(const [rid,coef] of Object.entries(row.inputCoefficients)){
+        const available=num(currentInv[rid])??num(currentInv[Object.keys(currentInv).find(k=>token(k)===token(rid))]);
+        const needed=row.plannedScale*coef;
+        if(available===null||available<needed){row.status='BLOCKED';row.reason='RESOURCE_INVENTORY_INSUFFICIENT';row.inputsAvailable={[rid]:available??0};feasible=false;break;}
+      }
+      if(!feasible)continue;
       const txId='IND-'+turn()+'-'+canonical(c)+'-'+row.facilityId+'-'+String(executed.length+1);
-      let sourceBatchIds=[],consumptions=[];
+      const consumptions=[],sourceBatchIds=[];
       for(const [rid,coef] of Object.entries(row.inputCoefficients)){
         const qty=row.plannedScale*coef;
-        const result=dispatch('resource','OMEGA_RESOURCE_ECON_CONSUME_INVENTORY',c,{
-          resourceId:rid,quantity:qty,reason:row.stage==='FACTORY'?'FACTORY_INPUT_CONSUMPTION':'PROCESSING_INPUT_CONSUMPTION',
-          correlationId:txId
-        });
-        if(result?.status!=='APPLIED'){
-          row.status='BLOCKED';row.reason=result?.result?.reason||'INPUT_CONSUMPTION_FAILED';break;
-        }
+        const result=dispatch('resource','OMEGA_RESOURCE_ECON_CONSUME_INVENTORY',c,{resourceId:rid,quantity:qty,reason:row.stage==='FACTORY'?'FACTORY_INPUT_CONSUMPTION':'PROCESSING_INPUT_CONSUMPTION',correlationId:txId});
+        if(result?.status!=='APPLIED'){row.status='BLOCKED';row.reason=result?.result?.reason||'INPUT_CONSUMPTION_FAILED';row.failureDetail=result?.result||result?.reason||null;feasible=false;break;}
         const consumed=result.result?.consumed||[];
         consumptions.push({resourceId:rid,quantity:qty,consumed});
         for(const x of consumed)if(x.batchId)sourceBatchIds.push(x.batchId);
       }
-      if(row.status!=='READY')continue;
+      if(!feasible)continue;
+      let outputFailed=false;
       for(const [rid,q] of Object.entries(row.computedOutputs)){
         const stage=row.stage==='PROCESSING'?'INTERMEDIATE':'FINISHED';
-        const add=dispatch('resource','OMEGA_RESOURCE_ECON_ADD_INVENTORY',c,{
-          resourceId:rid,quantity:q,stage,ownerCompanyId:row.companyId,sourceBatchIds,transactionId:txId,
-          unit:asset?.unit||null,provenance:{source:'OMEGA_RESOURCE_ECONOMY_RUNTIME',facilityId:row.facilityId,simulationTurn:turn(),derivedOutputRule:row.derivedOutputRule}
-        });
-        if(add?.status!=='APPLIED'){
-          row.status='BLOCKED';row.reason=add?.result?.reason||'OUTPUT_INVENTORY_COMMIT_FAILED';break;
-        }
+        const add=dispatch('resource','OMEGA_RESOURCE_ECON_ADD_INVENTORY',c,{resourceId:rid,quantity:q,stage,ownerCompanyId:row.companyId,sourceBatchIds,transactionId:txId,unit:asset?.unit||null,provenance:{source:'OMEGA_RESOURCE_ECONOMY_RUNTIME',facilityId:row.facilityId,simulationTurn:turn(),derivedOutputRule:row.derivedOutputRule}});
+        if(add?.status!=='APPLIED'){row.status='BLOCKED';row.reason=add?.result?.reason||'OUTPUT_INVENTORY_COMMIT_FAILED';row.failureDetail=add?.result||add?.reason||null;outputFailed=true;break;}
       }
-      if(row.status!=='READY')continue;
+      if(outputFailed)continue;
       for(const item of consumptions)settleDomesticInput(c,item.resourceId,item.quantity,item.consumed,row.companyId,row.facilityId,txId);
-      executed.push({
-        transactionId:txId,countryId:canonical(c),facilityId:row.facilityId,companyId:row.companyId,stage:row.stage,
-        inputQuantities:Object.fromEntries(Object.entries(row.inputCoefficients).map(([rid,coef])=>[rid,row.plannedScale*coef])),
-        outputQuantities:clone(row.computedOutputs),sourceBatchIds,turn:turn(),status:'COMPLETED',derivedOutputRule:row.derivedOutputRule
-      });
-      emit(row.stage==='PROCESSING'?'OMEGA_RESOURCE_PROCESSING_COMPLETED':'OMEGA_INDUSTRIAL_PRODUCTION_COMPLETED',c,executed[executed.length-1]);
+      const completed={transactionId:txId,countryId:canonical(c),facilityId:row.facilityId,companyId:row.companyId,stage:row.stage,inputQuantities:Object.fromEntries(Object.entries(row.inputCoefficients).map(([rid,coef])=>[rid,row.plannedScale*coef])),outputQuantities:clone(row.computedOutputs),sourceBatchIds:[...new Set(sourceBatchIds)],turn:turn(),status:'COMPLETED',derivedOutputRule:row.derivedOutputRule};
+      executed.push(completed);
+      emit(row.stage==='PROCESSING'?'OMEGA_RESOURCE_PROCESSING_COMPLETED':'OMEGA_INDUSTRIAL_PRODUCTION_COMPLETED',c,completed);
     }
     return{...p,executed};
   }
@@ -571,20 +566,6 @@
     runtime.blockedFacilities=(blocks||[]).slice(-256);
     runtime.status=blocks?.length?'DEGRADED':'HEALTHY';
     return runtime;
-  }
-
-  function publishMarketOffers(c){
-    const inv=inventoryObject(c),offers=[],fraction=Math.max(0,Math.min(1,num(rules()?.market?.offerFractionOfObservedInventory)??0.25)),minQ=Math.max(0,num(rules()?.market?.minOfferQuantity)??1);
-    for(const [rid,q0] of Object.entries(inv)){
-      const q=num(q0)||0;if(q<minQ)continue;
-      const statePrice=num(read(c,'trade.marketPrice')?.[rid]);
-      let price=statePrice;
-      if(price===null&&typeof g.OmegaGlobalMarket?.localPrice==='function')price=num(g.OmegaGlobalMarket.localPrice(c,rid));
-      if(price===null||price<=0)continue;
-      const offerQuantity=q*fraction;if(offerQuantity<minQ)continue;
-      offers.push({offerId:'AUTO-OFFER-'+turn()+'-'+canonical(c)+'-'+token(rid),resourceId:rid,quantity:offerQuantity,available:offerQuantity,price,unitPrice:price,countryId:canonical(c),source:'OMEGA_RESOURCE_ECON_AUTO_OFFER',referenceOnly:false,simulationTurn:turn()});
-    }
-    return dispatch('trade','OMEGA_RESOURCE_ECON_PUBLISH_OFFER_BOOK',c,{offers,correlationId:'AUTO-OFFER-'+turn()+'-'+canonical(c)});
   }
 
   function processTurnCountry(c){
@@ -603,7 +584,6 @@
     const supplierRevenue=clone(countryBucket(c,'economy')?.supplierRevenue||{});
     const factoryOutput={};
     for(const e of production.executed)for(const [rid,q] of Object.entries(e.outputQuantities))factoryOutput[rid]=(factoryOutput[rid]||0)+q;
-    publishMarketOffers(c);
     dispatch('economy','OMEGA_RESOURCE_ECON_PUBLISH_ECONOMY',c,{
       industrialRuntime:runtime,companyAccounts,workerIncome,supplierRevenue,factoryOutput,
       correlationId:'RESOURCE-ECO-PUBLISH-'+turn()+'-'+canonical(c)
@@ -661,49 +641,35 @@
   }
 
   function settleDomesticInput(c,resourceId,quantity,consumed,buyerCompany,facilityId,transactionId){
-    const grossUnit=num(read(c,'trade.marketPrice')?.[resourceId]);
-    const unitPrice=grossUnit!==null?grossUnit:(typeof g.OmegaGlobalMarket?.localPrice==='function'?num(g.OmegaGlobalMarket.localPrice(c,resourceId)):null);
+    const observed=num(read(c,'trade.marketPrice')?.[resourceId]);
+    const unitPrice=observed!==null?observed:(typeof g.OmegaGlobalMarket?.localPrice==='function'?num(g.OmegaGlobalMarket.localPrice(c,resourceId)):null);
     const q=num(quantity)||0;
     const suppliers={};
     for(const row of Array.isArray(consumed)?consumed:[]){
-      const owner=String(row?.ownerCompanyId||'').trim();
-      const rq=num(row?.quantity)||0;
+      const owner=String(row?.ownerCompanyId||'').trim(),rq=num(row?.quantity)||0;
       if(owner&&owner!=='UNKNOWN_SOURCE'&&rq>0)suppliers[owner]=(suppliers[owner]||0)+rq;
     }
     if(!Object.keys(suppliers).length)suppliers[companyIdForMine(c,resourceId)]=q;
     const totalSupplierQty=Object.values(suppliers).reduce((s,v)=>s+v,0)||q;
-    const sale={
-      saleId:'DOM-'+turn()+'-'+canonical(c)+'-'+token(resourceId)+'-'+String(facilityId)+'-'+String(transactionId),
-      transactionId,facilityId,countryId:canonical(c),resourceId,quantity:q,buyerCompanyId:buyerCompany,
-      supplierAllocations:clone(suppliers),direction:'DOMESTIC',simulationTurn:turn()
-    };
+    const sale={saleId:'DOM-'+turn()+'-'+canonical(c)+'-'+token(resourceId)+'-'+String(facilityId)+'-'+String(transactionId),transactionId,facilityId,countryId:canonical(c),resourceId,quantity:q,buyerCompanyId:buyerCompany,supplierAllocations:clone(suppliers),direction:'DOMESTIC',simulationTurn:turn()};
     if(unitPrice===null||unitPrice<=0){
-      sale.status='PHYSICAL_TRANSFER_COMPLETED';
-      sale.paymentStatus='UNOBSERVED';
-      sale.valuationStatus='UNOBSERVED_MARKET_PRICE';
+      sale.status='PHYSICAL_TRANSFER_COMPLETED';sale.paymentStatus='UNOBSERVED';sale.valuationStatus='UNOBSERVED_MARKET_PRICE';
       dispatch('trade','OMEGA_RESOURCE_ECON_RECORD_DOMESTIC_SALE',c,{sale,correlationId:sale.saleId});
       return sale;
     }
     sale.unitPrice=unitPrice;sale.totalValue=q*unitPrice;sale.status='SETTLED';sale.paymentStatus='SETTLED';sale.valuationStatus='OBSERVED_RUNTIME_MARKET_PRICE';
     for(const [supplier,sourceQty] of Object.entries(suppliers)){
-      const share=sourceQty/totalSupplierQty;
-      const supplierGross=sale.totalValue*share;
+      const supplierGross=sale.totalValue*(sourceQty/totalSupplierQty);
       dispatch('economy','OMEGA_RESOURCE_ECON_COMPANY_FLOW',c,{companyId:supplier,amount:supplierGross,direction:'CREDIT',grossRevenue:supplierGross,supplierRevenue:supplierGross,category:'DOMESTIC_SUPPLY',saleId:sale.saleId});
-      const f=fiscalForSale(c,{totalValue:supplierGross,direction:'DOMESTIC',currency:null});
+      const f=fiscalForSale(c,{totalValue:supplierGross,direction:'DOMESTIC'});
       if(f&&f.total>0){
         dispatch('economy','OMEGA_RESOURCE_ECON_COMPANY_FLOW',c,{companyId:supplier,amount:f.total,direction:'DEBIT',category:'TAX',saleId:sale.saleId});
         dispatch('finance','OMEGA_RESOURCE_ECON_FISCAL_RECEIPT',c,{receipt:{...f,saleId:sale.saleId,resourceId,companyId:supplier,direction:'DOMESTIC'},correlationId:sale.saleId});
       }
       const worker=supplierGross*(num(rules()?.operatingAllocation?.workerIncomeRate)||0);
       const transport=supplierGross*(num(rules()?.operatingAllocation?.transportRevenueRate)||0);
-      if(worker>0){
-        dispatch('economy','OMEGA_RESOURCE_ECON_WORKER_FLOW',c,{amount:worker,saleId:sale.saleId});
-        dispatch('economy','OMEGA_RESOURCE_ECON_COMPANY_FLOW',c,{companyId:supplier,amount:worker,direction:'DEBIT',category:'WORKER_INCOME',saleId:sale.saleId});
-      }
-      if(transport>0){
-        dispatch('transport','OMEGA_RESOURCE_ECON_TRANSPORT_REVENUE',c,{amount:transport,saleId:sale.saleId});
-        dispatch('economy','OMEGA_RESOURCE_ECON_COMPANY_FLOW',c,{companyId:supplier,amount:transport,direction:'DEBIT',category:'TRANSPORT',saleId:sale.saleId});
-      }
+      if(worker>0){dispatch('economy','OMEGA_RESOURCE_ECON_WORKER_FLOW',c,{amount:worker,saleId:sale.saleId});dispatch('economy','OMEGA_RESOURCE_ECON_COMPANY_FLOW',c,{companyId:supplier,amount:worker,direction:'DEBIT',category:'WORKER_INCOME',saleId:sale.saleId});}
+      if(transport>0){dispatch('transport','OMEGA_RESOURCE_ECON_TRANSPORT_REVENUE',c,{amount:transport,saleId:sale.saleId});dispatch('economy','OMEGA_RESOURCE_ECON_COMPANY_FLOW',c,{companyId:supplier,amount:transport,direction:'DEBIT',category:'TRANSPORT',saleId:sale.saleId});}
     }
     dispatch('economy','OMEGA_RESOURCE_ECON_COMPANY_FLOW',c,{companyId:buyerCompany,amount:sale.totalValue,direction:'DEBIT',category:'FACTORY_INPUT_PURCHASE',saleId:sale.saleId});
     dispatch('economy','OMEGA_RESOURCE_ECON_SUPPLIER_FLOW',c,{amount:sale.totalValue,saleId:sale.saleId});
