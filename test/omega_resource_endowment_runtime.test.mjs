@@ -23,6 +23,7 @@ await import('../omega_ministry_decision_framework.js');
 await import('../omega_ministry_state_transaction.js');
 await import('../omega_ministry_interoperability_system.js');
 await import('../omega_resource_endowment_runtime.js');
+await import('../omega_resource_transport_runtime_v1.js');
 
 const runtime=globalThis.OmegaResourceEndowmentRuntime;
 const initialized=await runtime.initialize();
@@ -45,4 +46,8 @@ assert((after.inventory.natural_gas||0)>0);
 assert((after.reserves.natural_gas||0)<(before.reserves.natural_gas||0));
 assert(after.extractionLedger.some(x=>x.extractionId));
 assert(after.mineStates[gasMine.occurrenceKey]);
-console.log('OMEGA RESOURCE ENDOWMENT AND MINE EXTRACTION TEST PASSED');
+const transport=globalThis.OmegaResourceTransport;
+assert(transport);
+const shipments=transport.getCountryShipments('BGD');
+assert(shipments.some(x=>x.resourceId==='natural_gas'&&x.batchId));
+console.log('OMEGA RESOURCE ENDOWMENT, EXTRACTION AND TRANSPORT TEST PASSED');
