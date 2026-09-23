@@ -7,7 +7,7 @@
  */
 (function(g){
   'use strict';
-  const VERSION='1.0.0',DAY_HOURS=24,MAX_MINES=512,MAX_LEDGER=512;
+  const VERSION='1.0.0',DAY_HOURS=24,MAX_LEDGER=512;
   const clone=(v,seen=new WeakMap())=>{
     if(v===null||typeof v!=='object')return v;
     if(seen.has(v))return seen.get(v);
@@ -106,7 +106,7 @@
         });
       }
     }catch(_){}
-    return out.slice(0,MAX_MINES);
+    return out;
   }
   function buildCountryProjection(c,rows,existing={}){
     const byResource={},mines=[];
@@ -144,7 +144,7 @@
       ...clone(existing),
       countryResourceProfile:clone(profile(c)),
       resourceDomain:clone(profile(c)?.resource_domain||null),
-      mines:mines.slice(0,MAX_MINES),endowment,reserves:merge(reserves,existing.reserves),
+      mines:mines,endowment,reserves:merge(reserves,existing.reserves),
       inventory,production,consumption,tradeAvailability,mineStates,
       extractionLedger:Array.isArray(existing.extractionLedger)?existing.extractionLedger.slice(-MAX_LEDGER):[],
       resourceAuthority:{
