@@ -122,6 +122,7 @@ jobs:
           node test/omega_global_trade_system.test.mjs
           node test/omega_opponent_treaty_lifecycle_system.test.mjs
           node test/omega_opponent_e2e_runtime.test.mjs
+          node test/omega_opponent_multi_country_integration.test.mjs
           node --input-type=module <<'NODE'
           import fs from 'node:fs/promises';
           const runtime = await fs.readFile('opponent_country_rules.js','utf8');
