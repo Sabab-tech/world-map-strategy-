@@ -77,6 +77,8 @@ const handled=projectHandler.fn({commandId:'cmd-project',countryId:'BBB',sourceM
 assert.equal(handled.accepted,true);
 assert.equal(handled.batch.executionApplied,false);
 assert.ok(Array.from(handled.batch.plans).some(x=>x.projectId));
+assert.equal(handled.batch.plans.find(x=>x.projectId).stateMutationAuthority,false);
+assert.ok(handled.batch.plans.find(x=>x.projectId).requirements.evidenceStatus==='OBSERVED'||handled.batch.plans.find(x=>x.projectId).requirements.evidenceStatus==='UNAVAILABLE');
 
 const txScenario=run.scenarios.find(x=>x.actions.includes('IMPORT'));
 assert.ok(txScenario);
@@ -85,6 +87,7 @@ const txDecision={...projectDecision,scenarioId:txScenario.id,decisionId:'DEC-TX
 const txHandled=txHandler.fn({commandId:'cmd-tx',countryId:'BBB',sourceMinistryId:txHandler.owner,payload:{opponentDecision:txDecision}},{stateTransaction:txContext,simulationTurn:4,emitEvent(){}});
 assert.equal(txHandled.accepted,true);
 assert.ok(Array.from(txHandled.batch.plans).some(x=>x.transactionId));
+assert.equal(txHandled.batch.plans.find(x=>x.transactionId).stateMutationAuthority,false);
 
 const policyScenario=run.scenarios.find(x=>x.actions.includes('DEMAND_MANAGEMENT'));
 assert.ok(policyScenario);
@@ -96,7 +99,6 @@ assert.ok(policyHandler);
   assert.ok(Array.from(policyHandled.batch.plans).some(x=>x.policyId));
   const outcomePolicy=api.handleOutcome({countryId:'BBB',policyId:policyHandled.batch.plans.find(x=>x.policyId).policyId,scenarioId:policyDecision.scenarioId,status:'COMPLETED',eventType:'OMEGA_POLICY_EXECUTED',affectedActors:['CCC']});
   assert.ok(outcomePolicy.reconciliation);
-}
 const outcome=api.handleOutcome({countryId:'BBB',projectId:handled.batch.plans[0].projectId,scenarioId:projectDecision.scenarioId,status:'COMPLETED',eventType:'OMEGA_PROJECT_COMPLETED',impactedNodes:['industry'],affectedActors:['CCC']});
 assert.ok(Array.from(outcome.dirty).includes('OUTPUT'));
 assert.ok(Array.from(outcome.affectedActors).includes('CCC'));
