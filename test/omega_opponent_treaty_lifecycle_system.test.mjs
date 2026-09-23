@@ -25,6 +25,7 @@ await import('../omega_opponent_treaty_lifecycle_system.js');
 
 const treaty=globalThis.OmegaOpponentTreatyLifecycle;
 assert(treaty.diagnostics().handlerInstalled);
+globalThis.Game.state.simulation.turn=2;
 treaty.processAll();
 assert.equal(globalThis.Game.state.foreign.BD.treaties.SA.status,'ACTIVE');
 assert.equal(globalThis.Game.state.foreign.SA.treaties.BD.status,'ACTIVE');
