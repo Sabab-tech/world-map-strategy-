@@ -608,7 +608,7 @@ class Runtime{
     return{accepted:true,executionState:'QUEUED_FOR_EXECUTOR',worldEffectApplied:false,batch:{batchId:'AUTO-'+order.operationId,plans:[order],executionApplied:false,stateMutationAuthority:false}};
   }
   handle(cmd,ctx={}){
-  const d=cmd?.payload?.opponentDecision||cmd?.payload?.decision||{},selected=Array.isArray(d.selectedActions)?d.selectedActions:[],country=ID(d.countryId||cmd?.countryId);
+  const d=cmd?.payload?.opponentDecision||cmd?.payload?.decision||{},selected=Array.isArray(d.selectedActions)?d.selectedActions:(d.decisionOrigin==='RUNTIME_CALCULATION'&&d.selected?.action?[d.selected.action]:[]),country=ID(d.countryId||cmd?.countryId);
   if(!country)return{accepted:false,reason:'COUNTRY_ID_REQUIRED'};
   const sc=SCENARIOS.find(x=>x.id===d.scenarioId);if(!sc)return{accepted:false,reason:'SCENARIO_NOT_REGISTERED'};
   if(!selected.length)return{accepted:false,reason:'NO_SELECTED_ACTIONS'};
