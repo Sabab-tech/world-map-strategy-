@@ -515,7 +515,10 @@
     "minZoom": 4.5,
     "maxZoom": 9,
     "importance": 3,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "aliases": [
+      "Congo"
+    ]
   },
   {
     "code": "CD",
@@ -528,7 +531,10 @@
     "minZoom": 3.8,
     "maxZoom": 8.5,
     "importance": 3,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "aliases": [
+      "Congo, Democratic Republic of the"
+    ]
   },
   {
     "code": "CK",
@@ -557,7 +563,10 @@
     "minZoom": 4.5,
     "maxZoom": 9,
     "importance": 3,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "aliases": [
+      "Côte d'Ivoire"
+    ]
   },
   {
     "code": "HR",
@@ -974,7 +983,10 @@
     "minZoom": 6.5,
     "maxZoom": 10,
     "importance": 1,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "aliases": [
+      "Holy See"
+    ]
   },
   {
     "code": "HN",
@@ -1050,7 +1062,10 @@
     "minZoom": 3.5,
     "maxZoom": 8.5,
     "importance": 4,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "aliases": [
+      "Iran, Islamic Republic of"
+    ]
   },
   {
     "code": "IQ",
@@ -1202,7 +1217,10 @@
     "minZoom": 4,
     "maxZoom": 9,
     "importance": 4,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "aliases": [
+      "Korea, Republic of"
+    ]
   },
   {
     "code": "KW",
@@ -1573,7 +1591,10 @@
     "minZoom": 4.5,
     "maxZoom": 9,
     "importance": 4,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "aliases": [
+      "Netherlands, Kingdom of the"
+    ]
   },
   {
     "code": "NC",
@@ -1720,7 +1741,10 @@
     "minZoom": 4.5,
     "maxZoom": 9,
     "importance": 4,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "aliases": [
+      "Palestine, State of"
+    ]
   },
   {
     "code": "PA",
@@ -1864,7 +1888,10 @@
     "minZoom": 3,
     "maxZoom": 7,
     "importance": 5,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "aliases": [
+      "Russian Federation"
+    ]
   },
   {
     "code": "RW",
@@ -2193,7 +2220,10 @@
     "minZoom": 4,
     "maxZoom": 9,
     "importance": 3,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "aliases": [
+      "Syrian Arab Republic"
+    ]
   },
   {
     "code": "TW",
@@ -2227,7 +2257,10 @@
     "minZoom": 4,
     "maxZoom": 9,
     "importance": 3,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "aliases": [
+      "Tanzania, United Republic of"
+    ]
   },
   {
     "code": "TH",
@@ -2306,7 +2339,10 @@
     "minZoom": 3.8,
     "maxZoom": 8.8,
     "importance": 4,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "aliases": [
+      "Türkiye"
+    ]
   },
   {
     "code": "TM",
@@ -2387,7 +2423,10 @@
     "minZoom": 4,
     "maxZoom": 8.5,
     "importance": 5,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "aliases": [
+      "United Kingdom of Great Britain and Northern Ireland"
+    ]
   },
   {
     "code": "US",
@@ -2400,7 +2439,10 @@
     "minZoom": 3,
     "maxZoom": 7,
     "importance": 5,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "aliases": [
+      "United States of America"
+    ]
   },
   {
     "code": "UM",
@@ -2455,7 +2497,10 @@
     "minZoom": 3.8,
     "maxZoom": 8.5,
     "importance": 3,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "aliases": [
+      "Venezuela, Bolivarian Republic of"
+    ]
   },
   {
     "code": "VN",
