@@ -101,13 +101,21 @@
     return out;
   }
 
-  function scalarFields(v,path='',out=[],depth=0){
-    if(depth>24||v==null||!O(v))return out;
-    if(Array.isArray(v)){for(let i=0;i<v.length;i++)scalarFields(v[i],path+'['+i+']',out,depth+1);return out;}
+  const HEAVY_KEY=/^(geometry|coordinates|arcs|bbox|polygons?|multipolygon|multilinestring|linestring|rings)$/i;
+  function scalarFields(v,path='',out=[],depth=0,ctx=null){
+    ctx=ctx||{count:0,limit:1800};
+    if(depth>18||ctx.count>=ctx.limit||v==null||!O(v))return out;
+    if(Array.isArray(v)){
+      if(v.length>128)return out;
+      for(let i=0;i<v.length&&ctx.count<ctx.limit;i++)scalarFields(v[i],path+'['+i+']',out,depth+1,ctx);
+      return out;
+    }
     for(const [k,x] of Object.entries(v)){
+      if(HEAVY_KEY.test(String(k)))continue;
       const p=path?(path+'.'+k):k;
-      if(x===null||['string','number','boolean'].includes(typeof x))out.push({key:k,path:p,value:x});
-      else if(O(x))scalarFields(x,p,out,depth+1);
+      if(x===null||['string','number','boolean'].includes(typeof x)){out.push({key:k,path:p,value:x});ctx.count++;}
+      else if(O(x))scalarFields(x,p,out,depth+1,ctx);
+      if(ctx.count>=ctx.limit)break;
     }
     return out;
   }
@@ -221,29 +229,56 @@
     return out;
   }
 
+  const LIGHT_DATASET=/^(resources(?:_2)?|world|cities|relation_generation_engine)\.json$/i;
   function ingestDataset(dataset,raw,options={}){
     const name=S(dataset); if(!name)return null;
     const schema=discoverSchema(name,raw,options.metadata||options);
-    state.datasets.set(name,{schema,recordCount:0});
-    const visitRecord=(value,locator,keyHint,parent)=>{
+    const light=options.indexMode==='LIGHT'||LIGHT_DATASET.test(name);
+    state.datasets.set(name,{schema,recordCount:0,indexMode:light?'LIGHT':'FULL'});
+    const visitRecord=(value,locator,keyHint,parent,depth=0)=>{
       if(!O(value))return;
       const signature=name+'::'+locator;
       const ids=candidateIds(value,keyHint,schema);
-      const rec={dataset:name,locator,key:keyHint==null?null:S(keyHint),parent:parent||null,identities:[],value:C(value)};
+      const rec={dataset:name,locator,key:keyHint==null?null:S(keyHint),parent:parent||null,identities:[],value:light?value:C(value)};
       for(const id of ids){
         const entity=addEntity(id.type,id.id,id.surfaces,value,name,id.source.indexOf('CANONICAL_')===0?'CANONICAL':'LOCAL');
         rec.identities.push(Object.assign({},id,{entityId:entity&&entity.id||id.id}));
       }
       state.records.set(signature,rec);
       state.datasets.get(name).recordCount+=1;
+      if(light){
+        if(depth>=1)return;
+        for(const [k,x] of Object.entries(value)){
+          if(Array.isArray(x)){
+            if(x.length>256)continue;
+            for(let i=0;i<x.length;i++)if(O(x[i]))visitRecord(x[i],locator+'.'+k+'['+i+']',String(i),signature,depth+1);
+          }else if(O(x)){
+            visitRecord(x,locator+'.'+k,k,signature,depth+1);
+          }
+        }
+        return;
+      }
+      if(depth>=8)return;
       for(const [k,x] of Object.entries(value)){
-        if(O(x))visitRecord(x,locator+'.'+k,k,signature);
-        else if(Array.isArray(x))for(let i=0;i<x.length;i++)if(O(x[i]))visitRecord(x[i],locator+'.'+k+'['+i+']',String(i),signature);
+        if(HEAVY_KEY.test(String(k)))continue;
+        if(Array.isArray(x)){
+          if(x.length>128)continue;
+          for(let i=0;i<x.length;i++)if(O(x[i]))visitRecord(x[i],locator+'.'+k+'['+i+']',String(i),signature,depth+1);
+        }else if(O(x))visitRecord(x,locator+'.'+k,k,signature,depth+1);
       }
     };
-    if(Array.isArray(raw))raw.forEach((x,i)=>{if(O(x))visitRecord(x,'['+i+']',String(i),null);});
-    else if(O(raw)){for(const [k,x] of Object.entries(raw))if(O(x))visitRecord(x,k,k,null);if(!state.records.size)visitRecord(raw,'root','root',null);}
-    return C({dataset:name,schema,recordCount:state.datasets.get(name).recordCount});
+    if(Array.isArray(raw)){
+      for(let i=0;i<raw.length;i++)if(O(raw[i]))visitRecord(raw[i],'['+i+']',String(i),null,0);
+    }else if(O(raw)){
+      for(const [k,x] of Object.entries(raw)){
+        if(Array.isArray(x)){
+          if(x.length>256)continue;
+          for(let i=0;i<x.length;i++)if(O(x[i]))visitRecord(x[i],k+'['+i+']',String(i),null,0);
+        }else if(O(x))visitRecord(x,k,k,null,0);
+      }
+      if(!state.records.size)visitRecord(raw,'root','root',null,0);
+    }
+    return C({dataset:name,schema,recordCount:state.datasets.get(name).recordCount,indexMode:light?'LIGHT':'FULL'});
   }
 
   function resolve(surface,type=null){
