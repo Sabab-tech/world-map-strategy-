@@ -2,7 +2,7 @@ name: OMEGA Ministry Runtime
 
 on:
   push:
-    branches: [main]
+    branches: [main, omega-resource-complete-v1]
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -52,6 +52,8 @@ jobs:
           node --check omega_opponent_memory_trace_log_system.js
           node --check omega_resource_endowment_runtime.js
           node --check omega_resource_economy_runtime_v2.js
+          node --check omega_resource_transport_runtime_v1.js
+          node --check omega_resource_map_authority_v1.js
           node --check omega_global_market_system.js
           node --check test/omega_resource_economy_runtime_v2.test.mjs
           node --check opponent_country_rules.js
@@ -132,6 +134,7 @@ jobs:
           node test/omega_global_market_system.test.mjs
           node test/omega_resource_endowment_runtime.test.mjs
           node --test test/omega_resource_economy_runtime_v2.test.mjs
+          node test/omega_resource_full_vertical_slice.test.mjs
           node test/omega_resource_request_and_settlement.test.mjs
           node test/omega_opponent_multi_country_integration.test.mjs
           node --input-type=module <<'NODE'
