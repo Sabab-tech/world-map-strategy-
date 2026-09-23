@@ -1095,6 +1095,14 @@
   }
 
   function installHandlers(){
+    const mesh=interop();
+    try{
+      if(mesh&&(!Array.isArray(mesh.ids)||mesh.ids.length===0))mesh.configure({
+        registry:g.OmegaMinistryRegistry||g.Omega?.MinistryRegistry,
+        provider:g.OmegaMinistryStateProvider?.instance||g.Omega?.MinistryStateProvider?.instance,
+        stateTransaction:g.OmegaMinistryStateTransaction||g.Omega?.MinistryStateTransaction
+      });
+    }catch(_){}
     const defs=[
       ['OMEGA_AUTO_RESERVE','cabinet',{}],
       ['OMEGA_AUTO_RELEASE_RESERVATION','cabinet',{}],
@@ -1216,8 +1224,15 @@
   function apiStartTreaty(countryId,targetCountryId,details={}){return treatyNegotiationStart(countryId,targetCountryId,details);}
   function apiThreat(countryId,targetCountryId=null){return threatFusion(countryId,targetCountryId);}
   function apiDispatch(action,countryId,payload={}){const a=String(action||'').toUpperCase();const c=id(countryId);const owner=
-    a.includes('TREATY')?'foreign':a.includes('MILITARY')||a.includes('RECRUIT')||a.includes('TRAIN')||a.includes('EQUIP')?'military':
-    a.includes('PROJECT')||a.includes('COMMISSION')?'projects':a.includes('IMPORT')?'trade':a.includes('FINANCE')?'finance':'cabinet';
+    a==='OMEGA_AUTO_HOUSING_COMMISSION'?'interior':
+    a==='OMEGA_AUTO_FACTORY_COMMISSION'?'economy':
+    a==='OMEGA_AUTO_MILITARY_FACILITY_COMMISSION'?'military':
+    a.includes('TREATY')?'foreign':
+    a.includes('MILITARY')||a.includes('RECRUIT')||a.includes('TRAIN')||a.includes('EQUIP')?'military':
+    a.includes('PROJECT')?'projects':
+    a.includes('IMPORT')?'trade':
+    a.includes('FINANCE')?'finance':
+    a.includes('RESOURCE')?'resource':'cabinet';
     return dispatch(owner,a,c,payload,payload?.correlationId||payload?.decisionId||null);}
   
   function init(){
