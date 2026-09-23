@@ -53,17 +53,19 @@
       canonicalRaw=hit?.raw||hit||null;
     }catch(_){}
     const bases=[{source:'countryRecord',value:canonicalRaw},...SOURCES.map(src=>({source:src,value:read(cid,src)}))];
+    let observedDimensions=0;
     for(const row of bases){
       const src=row.source,base=row.value;
       if(base===undefined||base===null)continue;
-      out.availability='AVAILABLE';out.source=src;
+      out.source=out.source||src;
       for(const dim of DIMENSIONS){
         if(out.dimensions[dim].value!==null)continue;
         const raw=base?.[dim]??base?.[dim.replace(/[A-Z]/g,m=>'_'+m.toLowerCase())];
         const v=normalize(raw);
-        if(v!==null)out.dimensions[dim]={value:v,availability:'AVAILABLE',source:src};
+        if(v!==null){out.dimensions[dim]={value:v,availability:'AVAILABLE',source:src};observedDimensions+=1;}
       }
     }
+    if(observedDimensions>0)out.availability='AVAILABLE';
     return out;
   }
   const ACTION_DIMENSIONS=Object.freeze({
