@@ -132,7 +132,7 @@
   function makeMarker(dep,index,total,map){
     var item=catalogItem(dep.resourceId),color=item.color||'#38bdf8',status=dep.liveStatus||liveStatus(dep),tier=dep.tier||quantityTier(dep),size=tier==='MASSIVE'?30:tier==='HIGH'?28:26;
     var angle=total>1?(index*(Math.PI*2/total)):0,lat=dep.lat,lng=dep.lng;
-    if(total>1&&dep.locationAccuracy!=='DEPOSIT_COORDINATE'&&dep.locationAccuracy!=='IDENTITY_LOCATION'){
+    if(total>1){
       lat=Math.max(-89.8,Math.min(89.8,lat+0.035*Math.sin(angle)));
       lng=lng+(0.035*Math.cos(angle)/Math.max(0.2,Math.abs(Math.cos(lat*Math.PI/180))));
     }
