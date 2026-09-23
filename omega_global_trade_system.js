@@ -122,6 +122,41 @@
     for(const p of paths){const x=countryValue(buyer,p);const n=num(x);if(n!==null)return n;}
     return null;
   }
+  function currencyOf(country){
+    return String(
+      countryValue(country,'trade.settlementCurrency')||
+      countryValue(country,'finance.currencyCode')||
+      countryValue(country,'economy.currency_code')||
+      countryValue(country,'economy.currencyCode')||
+      ''
+    ).trim().toUpperCase()||null;
+  }
+  function fxRate(buyer,seller){
+    const bc=currencyOf(buyer),sc=currencyOf(seller);
+    if(!bc||!sc)return null;
+    if(bc===sc)return 1;
+    const paths=[
+      'finance.exchangeRates.'+sc,
+      'trade.exchangeRates.'+sc,
+      'finance.fx.'+sc,
+      'trade.fx.'+sc
+    ];
+    for(const p of paths){
+      const direct=num(countryValue(buyer,p));
+      if(direct!==null&&direct>0)return direct;
+    }
+    const globalRates=state()?.exchangeRates||state()?.fxRates||null;
+    const direct=num(globalRates?.[bc]?.[sc]??globalRates?.[sc]?.[bc]);
+    if(direct!==null&&direct>0)return direct;
+    return null;
+  }
+  function settlementValues(buyer,seller,quantity,unitPrice){
+    const q=num(quantity),p=num(unitPrice),fx=fxRate(buyer,seller);
+    if(q===null||p===null||fx===null)return{buyerValue:null,sellerValue:null,fx};
+    const sellerValue=q*p;
+    return{buyerValue:sellerValue*fx,sellerValue,fx,buyerCurrency:currencyOf(buyer),sellerCurrency:currencyOf(seller)};
+  }
+
   function financial(country){
     const available=num(countryValue(country,'finance.available'));
     const reserves=num(countryValue(country,'finance.reserves'));
@@ -163,7 +198,8 @@
       requestId:String(request.requestId),buyerCountryId:buyer,sellerCountryId:seller,resourceId,
       quantity:num(request.quantity),offeredUnitPrice:num(request.unitPrice),marketPrice:price,
       relationScore:rel,agreement:agreement(r,buyer,seller),decision:'WAITING_DATA',reason:null,
-      quantityApproved:null,unitPrice:null,confidence:0.5
+      quantityApproved:null,unitPrice:null,confidence:0.5,
+      sellerCurrency:currencyOf(seller),buyerCurrency:currencyOf(buyer),fxRate:null
     };
     if(!r){result.reason='FOREIGN_RELATION_NOT_OBSERVED';return result;}
     if(sanctionsOrWar(r)){result.decision='REJECT';result.reason='WAR_OR_SANCTIONS';return result;}
@@ -194,6 +230,8 @@
     }
     result.quantityApproved=approved;
     result.unitPrice=offered>=price?offered:price;
+    result.fxRate=fxRate(buyer,seller);
+    if(result.fxRate===null){result.decision='WAITING_DATA';result.reason='SETTLEMENT_FX_NOT_OBSERVED';return result;}
     result.decision=(rel>=.25||need>=.8||diplomacyWeight>=.6)?'ACCEPT':'COUNTER';
     if(result.decision==='COUNTER'){result.reason='LOW_RELATION_OR_COMMERCIAL_TERM';result.unitPrice=price;}
     result.confidence=.85;
@@ -310,7 +348,8 @@
   function sellerCanSettle(req){
     const inv=inventory(req.targetCountryId,req.resourceId),r=relation(req.countryId,req.targetCountryId),capacity=routeCapacity(req.countryId,req.resourceId);
     const q=num(req.quantity),buyerFin=financial(req.countryId),buyerInv=inventory(req.countryId,req.resourceId);
-    const total=q!==null&&num(req.unitPrice)!==null?q*num(req.unitPrice):null;
+    const values=settlementValues(req.countryId,req.targetCountryId,q,req.unitPrice);
+    const total=values.sellerValue;
     if(!r)return{ok:false,reason:'RELATION_NOT_OBSERVED'};
     if(sanctionsOrWar(r))return{ok:false,reason:'WAR_OR_SANCTIONS'};
     if(!agreement(r,req.countryId,req.targetCountryId))return{ok:false,reason:'TRADE_AGREEMENT_NOT_APPROVED'};
@@ -319,10 +358,11 @@
     const reserve=Math.max(0,inv.reserve||0);
     if(q===null||q<=0)return{ok:false,reason:'QUANTITY_NOT_OBSERVED'};
     if(inv.stock-reserve<q)return{ok:false,reason:'SELLER_FREE_STOCK_INSUFFICIENT'};
-    if(buyerFin.liquidity===null||total===null)return{ok:false,reason:'BUYER_LIQUIDITY_OR_PRICE_NOT_OBSERVED'};
-    if(buyerFin.liquidity<total)return{ok:false,reason:'BUYER_LIQUIDITY_INSUFFICIENT'};
+    if(values.fx===null||values.sellerValue===null||values.buyerValue===null)return{ok:false,reason:'SETTLEMENT_FX_OR_PRICE_NOT_OBSERVED'};
+    if(buyerFin.liquidity===null)return{ok:false,reason:'BUYER_LIQUIDITY_NOT_OBSERVED'};
+    if(buyerFin.liquidity<values.buyerValue)return{ok:false,reason:'BUYER_LIQUIDITY_INSUFFICIENT'};
     if(buyerInv.stock===null)return{ok:false,reason:'BUYER_RESOURCE_INVENTORY_NOT_OBSERVED'};
-    return{ok:true,total,price:num(req.unitPrice)};
+    return{ok:true,total:values.sellerValue,buyerTotal:values.buyerValue,sellerTotal:values.sellerValue,price:num(req.unitPrice),fx:values.fx,buyerCurrency:values.buyerCurrency,sellerCurrency:values.sellerCurrency};
   }
 
   function financeDebitHandler(cmd,ctx){
@@ -472,23 +512,23 @@
     const check=sellerCanSettle(req);
     if(!check.ok){command('trade','OMEGA_TRADE_CLOSE_REQUEST',c,{requestId:req.requestId,status:TYPES.FAILED,stage:'SETTLEMENT_BLOCKED',reason:check.reason});emit('OMEGA_TRADE_SETTLEMENT_FAILED',c,{requestId:req.requestId,reason:check.reason,targetCountryId:s});return;}
     const sid='SET-'+turn()+'-'+c+'-'+s+'-'+String(req.requestId);
-    const debit=command('finance','OMEGA_TRADE_FINANCE_DEBIT',c,{amount:check.total,settlementId:sid,requestId:req.requestId});
+    const debit=command('finance','OMEGA_TRADE_FINANCE_DEBIT',c,{amount:check.buyerTotal,settlementId:sid,requestId:req.requestId,currency:check.buyerCurrency});
     if(debit?.status!=='APPLIED'){emit('OMEGA_TRADE_SETTLEMENT_FAILED',c,{requestId:req.requestId,reason:debit?.result?.reason||'BUYER_FINANCE_DEBIT_FAILED'});return;}
-    const sellerCredit=command('finance','OMEGA_TRADE_FINANCE_CREDIT',s,{amount:check.total,settlementId:sid,requestId:req.requestId});
+    const sellerCredit=command('finance','OMEGA_TRADE_FINANCE_CREDIT',s,{amount:check.sellerTotal,settlementId:sid,requestId:req.requestId,currency:check.sellerCurrency});
     const sellerResource=command('resource','OMEGA_TRADE_RESOURCE_DEBIT',s,{resourceId:req.resourceId,quantity:req.quantity,settlementId:sid,requestId:req.requestId});
     const buyerResource=command('resource','OMEGA_TRADE_RESOURCE_CREDIT',c,{resourceId:req.resourceId,quantity:req.quantity,settlementId:sid,requestId:req.requestId});
     if(sellerCredit?.status!=='APPLIED'||sellerResource?.status!=='APPLIED'||buyerResource?.status!=='APPLIED'){
       /* deterministic compensation for the buyer debit when the remaining legs cannot commit */
-      command('finance','OMEGA_TRADE_FINANCE_CREDIT',c,{amount:check.total,settlementId:sid+'-COMP',requestId:req.requestId});
+      command('finance','OMEGA_TRADE_FINANCE_CREDIT',c,{amount:check.buyerTotal,settlementId:sid+'-COMP',requestId:req.requestId,currency:check.buyerCurrency});
       emit('OMEGA_TRADE_SETTLEMENT_FAILED',c,{requestId:req.requestId,settlementId:sid,reason:'MULTI_LEDGER_COMMIT_FAILED'});
       return;
     }
     command('trade','OMEGA_TRADE_CLOSE_REQUEST',c,{requestId:req.requestId,status:TYPES.SETTLED,stage:'SETTLED',settlementId:sid});
-    command('trade','OMEGA_TRADE_RECORD_SELLER_SETTLEMENT',s,{settlementId:sid,requestId:req.requestId,buyerCountryId:c,resourceId:req.resourceId,quantity:req.quantity,unitPrice:req.unitPrice,totalValue:check.total,status:'SETTLED',turn:turn()});
+    command('trade','OMEGA_TRADE_RECORD_SELLER_SETTLEMENT',s,{settlementId:sid,requestId:req.requestId,buyerCountryId:c,resourceId:req.resourceId,quantity:req.quantity,unitPrice:req.unitPrice,totalValue:check.sellerTotal,buyerValue:check.buyerTotal,fx:check.fx,buyerCurrency:check.buyerCurrency,sellerCurrency:check.sellerCurrency,status:'SETTLED',turn:turn()});
     const reservationId=req.reservationId;
     if(reservationId)command('cabinet','OMEGA_AUTO_RELEASE_RESERVATION',c,{reservationId,correlationId:req.requestId});
     emit('OMEGA_TRADE_SHIPMENT_CREATED',c,{settlementId:sid,requestId:req.requestId,targetCountryId:s,resourceId:req.resourceId,quantity:req.quantity});
-    emit('OMEGA_TRADE_SETTLEMENT_COMPLETED',c,{settlementId:sid,requestId:req.requestId,targetCountryId:s,resourceId:req.resourceId,quantity:req.quantity,totalValue:check.total});
+    emit('OMEGA_TRADE_SETTLEMENT_COMPLETED',c,{settlementId:sid,requestId:req.requestId,targetCountryId:s,resourceId:req.resourceId,quantity:req.quantity,totalValue:check.sellerTotal,buyerValue:check.buyerTotal,fx:check.fx,buyerCurrency:check.buyerCurrency,sellerCurrency:check.sellerCurrency});
     try{memory()?.record?.(c,{type:'RELATIONAL',sourceEvent:'OMEGA_TRADE_SETTLEMENT_COMPLETED',targetCountryId:s,action:'IMPORT',outcome:{status:'SETTLED'},importance:.9,confidence:.9,evidence:{settlementId:sid}});}catch(_){}
   }
 
