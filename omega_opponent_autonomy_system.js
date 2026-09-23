@@ -1361,8 +1361,11 @@
       uncertainty:Number((1-(confidence??0)).toFixed(6)),
       evidence
     };
-    event('OMEGA_THREAT_ASSESSMENT_CREATED',cid,assessment,null,'THREAT-'+cid+'-'+String(target||'SELF')+'-'+turn());
-    return assessment;
+    const intelligenceEvolution=g.OmegaOpponentIntelligenceEvolution||g.Omega?.OpponentIntelligenceEvolution||null;
+    let evolvedAssessment=assessment;
+    try{if(target&&intelligenceEvolution?.fuse)evolvedAssessment=intelligenceEvolution.fuse(cid,target,assessment)||assessment;}catch(_){}
+    event('OMEGA_THREAT_ASSESSMENT_CREATED',cid,{...evolvedAssessment,targetCountryId:target},null,'THREAT-'+cid+'-'+String(target||'SELF')+'-'+turn());
+    return evolvedAssessment;
   }
 
   function treatyNegotiationStart(countryId,targetCountryId,details={}){
