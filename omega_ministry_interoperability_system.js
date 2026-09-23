@@ -115,7 +115,7 @@
 
   const STANDARD_PUBLIC_PATHS=Object.freeze({
     cabinet:[
-      'store.policies','store.decisions'
+      'store.policies','store.decisions','cabinet.autonomyReservations'
     ],
     finance:[
       'finance.budget','finance.allocated','finance.committed','finance.available',
@@ -126,34 +126,35 @@
     ],
     economy:[
       'economy.gdp','economy.debt','economy.inflation','economy.unemployment',
-      'economy.production','economy.revenue','economy.reserves'
+      'economy.production','economy.productionCapacity','economy.revenue','economy.reserves','economy.productionAssets'
     ],
     trade:[
       'trade.relations','trade.balance','trade.exports','trade.imports',
-      'trade.policy','trade.negotiations'
+      'trade.policy','trade.negotiations','trade.importRequests','trade.offerBook','trade.marketPrice','trade.routeCapacity'
     ],
     foreign:[
       'foreign.relations','foreign.treaties','foreign.negotiations',
-      'foreign.sanctions','foreign.embassies'
+      'foreign.sanctions','foreign.embassies','foreign.negotiationRequests'
     ],
     intelligence:[
       'intelligence.threats','intelligence.state','intelligence.cyber',
-      'intelligence.sources'
+      'intelligence.sources','intelligence.threatLevel'
     ],
     defense:[
-      'defense.procurement','defense.readiness'
+      'defense.procurement','defense.readiness','defense.threatLevel'
     ],
     military:[
-      'military.combat','military.readiness','military.forceStructure','military.logistics'
+      'military.combat','military.readiness','military.forceStructure','military.logistics',
+      'military.recruitmentQueue','military.trainingQueue','military.organizationQueue','military.equipmentQueue','military.equipmentInventory','military.facilities'
     ],
     interior:[
-      'interior.stability','interior.corruption','interior.security'
+      'interior.stability','interior.corruption','interior.security','interior.housingAssets','cities.housing.available'
     ],
     transport:[
-      'transport.infrastructure','transport.logistics','transport.ports','transport.rail'
+      'transport.infrastructure','transport.infrastructure.capacity','transport.logistics','transport.ports','transport.rail'
     ],
     resource:[
-      'resourceSummary','resourceInventory','resourceDeposits'
+      'resourceSummary','resourceInventory','resourceDeposits','resource.inventory','resource.production','resource.consumption','resource.reserves'
     ],
     health:[
       'health.state','health.welfare','health.hospitals'
