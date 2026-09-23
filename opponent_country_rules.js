@@ -13,6 +13,48 @@ const ACTIONS={
 IMPORT:{execution:'TRANSACTION',owner:'trade',caps:['RESOURCE_DEMAND'],domains:['resources','trade','finance']},EXPORT:{execution:'TRANSACTION',owner:'trade',caps:['EXPORT_DEMAND','OUTPUT'],domains:['trade','finance','production']},DOMESTIC_EXPANSION:{execution:'PROJECT',owner:'projects',caps:['PRODUCTION_CAPACITY'],domains:['production','resources','labor']},RESERVE_RELEASE:{execution:'TRANSACTION',owner:'resource',caps:['RESOURCE_RESERVE'],domains:['resources','welfare']},RESERVE_BUILD:{execution:'PROJECT_OR_TRANSACTION',owner:'resource',caps:['RESOURCE_RESERVE'],domains:['resources','finance']},SUBSTITUTION:{execution:'POLICY_OR_PROJECT',owner:'economy',caps:['INPUT_AVAILABILITY'],domains:['production','resources']},EFFICIENCY:{execution:'POLICY_OR_PROJECT',owner:'technology',caps:['PRODUCTIVITY'],domains:['production','resources','energy']},SUPPLIER_CHANGE:{execution:'TRANSACTION_OR_POLICY',owner:'trade',caps:['EXPORT_DEMAND'],domains:['trade','resources']},DEMAND_MANAGEMENT:{execution:'POLICY',owner:'economy',caps:['CONSUMER_DEMAND'],domains:['demand','welfare','inflation']},PROCESSING_EXPANSION:{execution:'PROJECT',owner:'projects',caps:['OUTPUT'],domains:['industry','resources','trade']},HOUSING_BUILD:{execution:'PROJECT',owner:'projects',caps:['HOUSING_DEMAND','HOUSING_SUPPLY'],domains:['housing','infrastructure','labor']},INDUSTRY_BUILD:{execution:'PROJECT',owner:'projects',caps:['PRODUCTION_CAPACITY'],domains:['industry','labor','energy','resources','trade']},PROJECT_INVESTMENT:{execution:'PROJECT',owner:'projects',caps:['CAPITAL_AVAILABILITY'],domains:['industry','infrastructure','technology']},FINANCIAL_TRANSACTION:{execution:'TRANSACTION',owner:'finance',caps:['LIQUIDITY'],domains:['finance','economy']},DEBT_MANAGEMENT:{execution:'TRANSACTION_OR_POLICY',owner:'finance',caps:['DEBT_SERVICE_PRESSURE'],domains:['finance','economy','welfare']},INFRASTRUCTURE_EXPANSION:{execution:'PROJECT',owner:'projects',caps:['INFRASTRUCTURE_CAPACITY'],domains:['infrastructure','logistics','production']},MAINTENANCE:{execution:'PROJECT_OR_TRANSACTION',owner:'projects',caps:['MAINTENANCE_BACKLOG'],domains:['assets','production','infrastructure']},REPAIR:{execution:'PROJECT',owner:'projects',caps:['DISASTER_DAMAGE'],domains:['assets','infrastructure','production']},MODERNIZATION:{execution:'PROJECT',owner:'projects',caps:['TECHNOLOGY_CAPABILITY'],domains:['technology','productivity','production']},R_AND_D:{execution:'PROJECT',owner:'projects',caps:['R_AND_D_CAPABILITY'],domains:['technology','productivity']},EDUCATION_INVESTMENT:{execution:'PROJECT',owner:'projects',caps:['EDUCATION_CAPACITY'],domains:['education','labor','technology']},TRAINING:{execution:'PROJECT_OR_POLICY',owner:'education',caps:['SKILLED_LABOR','EDUCATION_CAPACITY'],domains:['labor','productivity']},MIGRATION_POLICY:{execution:'POLICY',owner:'interior',caps:['MIGRATION_PRESSURE'],domains:['population','labor','housing']},DIPLOMATIC_ADJUSTMENT:{execution:'POLICY',owner:'foreign',caps:['FOREIGN_TENSION'],domains:['foreign','trade','security']},SECURITY_PREPARATION:{execution:'PROJECT_OR_POLICY',owner:'defense',caps:['SECURITY_THREAT'],domains:['security','finance','resources']},EMERGENCY_RESPONSE:{execution:'PROJECT_OR_TRANSACTION',owner:'cabinet',caps:['DISASTER_DAMAGE'],domains:['disaster','health','infrastructure','welfare']},POLICY_REVIEW:{execution:'POLICY',owner:'cabinet',caps:[],domains:['institution','policy']}};
 const SCENARIO_ROWS=[
 ['RESOURCE_DEFICIT','resources','PRESSURE',['REL','RESOURCE'],['IMPORT','DOMESTIC_EXPANSION','RESERVE_RELEASE','SUBSTITUTION','EFFICIENCY','SUPPLIER_CHANGE','RESERVE_BUILD']],['RESOURCE_SURPLUS','resources','OPPORTUNITY',['REL','RESOURCE_SURPLUS'],['EXPORT','PROCESSING_EXPANSION','RESERVE_BUILD','INDUSTRY_BUILD','PROJECT_INVESTMENT']],['POPULATION_DEMAND_EXPANSION','population','DRIVER',['SIG','POPULATION_GROWTH','RISING'],['HOUSING_BUILD','DOMESTIC_EXPANSION','EDUCATION_INVESTMENT','INFRASTRUCTURE_EXPANSION','TRAINING']],['HOUSING_SHORTAGE','housing','PRESSURE',['REL','HOUSING'],['HOUSING_BUILD','INFRASTRUCTURE_EXPANSION','PROJECT_INVESTMENT']],['FOOD_SHORTAGE','food','PRESSURE',['REL','FOOD'],['DOMESTIC_EXPANSION','IMPORT','RESERVE_RELEASE','PROCESSING_EXPANSION','INFRASTRUCTURE_EXPANSION']],['ENERGY_SHORTAGE','energy','PRESSURE',['REL','ENERGY'],['DOMESTIC_EXPANSION','IMPORT','INFRASTRUCTURE_EXPANSION','EFFICIENCY','SUBSTITUTION']],['INDUSTRIAL_INPUT_SHORTAGE','industry','PRESSURE',['REL','INDUSTRIAL_INPUT'],['IMPORT','SUBSTITUTION','SUPPLIER_CHANGE','RESERVE_BUILD','DOMESTIC_EXPANSION']],['FACTORY_EXPANSION','industry','OPPORTUNITY',['REL','PRODUCTION'],['INDUSTRY_BUILD','PROJECT_INVESTMENT','IMPORT','MODERNIZATION','EFFICIENCY']],['INVESTMENT_OPPORTUNITY','investment','OPPORTUNITY',['SIG','INVESTMENT_DEMAND','RISING'],['PROJECT_INVESTMENT','INDUSTRY_BUILD','INFRASTRUCTURE_EXPANSION','R_AND_D']],['CAPITAL_SURPLUS','finance','OPPORTUNITY',['REL','CAPITAL_SURPLUS'],['PROJECT_INVESTMENT','INFRASTRUCTURE_EXPANSION','R_AND_D','RESERVE_BUILD','DEBT_MANAGEMENT']],['FISCAL_DEFICIT','finance','PRESSURE',['REL','FISCAL'],['DEBT_MANAGEMENT','FINANCIAL_TRANSACTION','PROJECT_INVESTMENT','DEMAND_MANAGEMENT']],['TRADE_DEFICIT','trade','PRESSURE',['REL','TRADE'],['DOMESTIC_EXPANSION','EXPORT','SUPPLIER_CHANGE','SUBSTITUTION','DEMAND_MANAGEMENT']],['EXPORT_OPPORTUNITY','trade','OPPORTUNITY',['ALL',['REL','DOMESTIC_SURPLUS_EXISTS'],['REL','EXTERNAL_DEMAND_EXISTS'],['REL','ROUTE_CAPACITY_AVAILABLE']],['EXPORT','INDUSTRY_BUILD','PROCESSING_EXPANSION','INFRASTRUCTURE_EXPANSION']],['EMPLOYMENT_PRESSURE','labor','PRESSURE',['SIG','UNEMPLOYMENT','RISING'],['INDUSTRY_BUILD','INFRASTRUCTURE_EXPANSION','TRAINING','PROJECT_INVESTMENT']],['LABOR_SHORTAGE','labor','PRESSURE',['REL','LABOR'],['TRAINING','MIGRATION_POLICY','MODERNIZATION','R_AND_D']],['INFRASTRUCTURE_BOTTLENECK','infrastructure','PRESSURE',['REL','INFRASTRUCTURE'],['INFRASTRUCTURE_EXPANSION','EFFICIENCY','DEMAND_MANAGEMENT']],['LOGISTICS_BOTTLENECK','logistics','PRESSURE',['REL','LOGISTICS'],['INFRASTRUCTURE_EXPANSION','SUPPLIER_CHANGE','RESERVE_BUILD']],['TECHNOLOGY_GAP','technology','PRESSURE',['SIG','TECHNOLOGY_CAPABILITY','FALLING'],['R_AND_D','MODERNIZATION','TRAINING','PROJECT_INVESTMENT']],['RESOURCE_RESERVE_DECLINE','resources','PRESSURE',['SIG','RESOURCE_RESERVE','FALLING'],['RESERVE_BUILD','IMPORT','DOMESTIC_EXPANSION','SUBSTITUTION','SUPPLIER_CHANGE']],['EXTERNAL_SHOCK','external','PRESSURE',['EVENT','EXTERNAL_SHOCK_ACTIVE'],['IMPORT','RESERVE_RELEASE','DIPLOMATIC_ADJUSTMENT','EMERGENCY_RESPONSE','SUPPLIER_CHANGE']],['MIGRATION_PRESSURE','population','PRESSURE',['SIG','MIGRATION_PRESSURE','RISING'],['HOUSING_BUILD','INDUSTRY_BUILD','MIGRATION_POLICY','INFRASTRUCTURE_EXPANSION']],['STRATEGIC_RESERVE_MANAGEMENT','resources','GOVERNANCE',['ANY',['REL','RESERVE_BELOW_TARGET'],['REL','RESERVE_ABOVE_TARGET']],['RESERVE_BUILD','RESERVE_RELEASE','IMPORT']],['MAINTENANCE_CAPACITY_DECAY','assets','PRESSURE',['SIG','MAINTENANCE_BACKLOG','RISING'],['MAINTENANCE','REPAIR','MODERNIZATION']],['DISASTER_RESPONSE','disaster','PRESSURE',['SIG','DISASTER_DAMAGE','RISING'],['EMERGENCY_RESPONSE','REPAIR','IMPORT','RESERVE_RELEASE','PROJECT_INVESTMENT']],['GROWTH_OPPORTUNITY','development','OPPORTUNITY',['ALL',['REL','UNUSED_CAPACITY_EXISTS'],['REL','MARKET_DEMAND_EXISTS'],['REL','CAPITAL_FEASIBLE']],['INDUSTRY_BUILD','INFRASTRUCTURE_EXPANSION','R_AND_D','PROJECT_INVESTMENT']]];
+
+// Runtime calculation layer. It computes state relationships; it never supplies missing values.
+const RUNTIME_COMPARATORS=Object.freeze({
+  DEFICIT:'DEFICIT',
+  SURPLUS:'SURPLUS',
+  BALANCED:'BALANCED',
+  UNKNOWN:'UNKNOWN'
+});
+const APPROVED_POLICY_OVERRIDES=Object.freeze({
+  RESOURCE_DEFICIT:['IMPORT','DOMESTIC_EXPANSION','RESERVE_RELEASE','SUBSTITUTION','DEMAND_MANAGEMENT'],
+  RESOURCE_SURPLUS:['EXPORT','PROCESSING_EXPANSION','RESERVE_BUILD','DOMESTIC_EXPANSION'],
+  FOOD_SHORTAGE:['IMPORT','DOMESTIC_EXPANSION','RESERVE_RELEASE','PROCESSING_EXPANSION'],
+  ENERGY_SHORTAGE:['IMPORT','DOMESTIC_EXPANSION','EFFICIENCY','SUBSTITUTION'],
+  INDUSTRIAL_INPUT_SHORTAGE:['IMPORT','DOMESTIC_EXPANSION','SUBSTITUTION','SUPPLIER_CHANGE'],
+  HOUSING_SHORTAGE:['HOUSING_BUILD','INFRASTRUCTURE_EXPANSION','PROJECT_INVESTMENT'],
+  FACTORY_EXPANSION:['DOMESTIC_EXPANSION','PROCESSING_EXPANSION','PROJECT_INVESTMENT','MODERNIZATION'],
+  INVESTMENT_OPPORTUNITY:['PROJECT_INVESTMENT','DOMESTIC_EXPANSION','INFRASTRUCTURE_EXPANSION','R_AND_D'],
+  CAPITAL_SURPLUS:['PROJECT_INVESTMENT','INFRASTRUCTURE_EXPANSION','R_AND_D','RESERVE_BUILD','DEBT_MANAGEMENT'],
+  FISCAL_DEFICIT:['DEBT_MANAGEMENT','FINANCIAL_TRANSACTION','DEMAND_MANAGEMENT'],
+  TRADE_DEFICIT:['DOMESTIC_EXPANSION','SUPPLIER_CHANGE','SUBSTITUTION','DEMAND_MANAGEMENT'],
+  EXPORT_OPPORTUNITY:['EXPORT','PROCESSING_EXPANSION','DOMESTIC_EXPANSION','INFRASTRUCTURE_EXPANSION'],
+  EMPLOYMENT_PRESSURE:['DOMESTIC_EXPANSION','INFRASTRUCTURE_EXPANSION','TRAINING','PROJECT_INVESTMENT'],
+  LABOR_SHORTAGE:['TRAINING','MIGRATION_POLICY','MODERNIZATION','R_AND_D'],
+  INFRASTRUCTURE_BOTTLENECK:['INFRASTRUCTURE_EXPANSION','EFFICIENCY','DEMAND_MANAGEMENT'],
+  LOGISTICS_BOTTLENECK:['INFRASTRUCTURE_EXPANSION','SUPPLIER_CHANGE','RESERVE_BUILD'],
+  TECHNOLOGY_GAP:['R_AND_D','MODERNIZATION','TRAINING','PROJECT_INVESTMENT'],
+  RESOURCE_RESERVE_DECLINE:['RESERVE_BUILD','IMPORT','DOMESTIC_EXPANSION','SUBSTITUTION'],
+  EXTERNAL_SHOCK:['IMPORT','RESERVE_RELEASE','DIPLOMATIC_ADJUSTMENT','EMERGENCY_RESPONSE','SUPPLIER_CHANGE'],
+  MIGRATION_PRESSURE:['HOUSING_BUILD','DOMESTIC_EXPANSION','MIGRATION_POLICY','INFRASTRUCTURE_EXPANSION'],
+  STRATEGIC_RESERVE_MANAGEMENT:['RESERVE_BUILD','RESERVE_RELEASE','IMPORT'],
+  MAINTENANCE_CAPACITY_DECAY:['MAINTENANCE','REPAIR','MODERNIZATION'],
+  DISASTER_RESPONSE:['EMERGENCY_RESPONSE','REPAIR','IMPORT','RESERVE_RELEASE','PROJECT_INVESTMENT'],
+  GROWTH_OPPORTUNITY:['DOMESTIC_EXPANSION','INFRASTRUCTURE_EXPANSION','R_AND_D','PROJECT_INVESTMENT']
+});
+const RUNTIME_ONLY_ACTIONS=Object.freeze({
+  PRODUCTION_INCREASE:{execution:'OPERATION',owner:'economy',caps:['OUTPUT'],domains:['production','resources']},
+  PRODUCTION_DECREASE:{execution:'OPERATION',owner:'economy',caps:['OUTPUT'],domains:['production','resources']},
+  IMPORT_REDUCTION:{execution:'OPERATION',owner:'trade',caps:['IMPORT_DEPENDENCE'],domains:['trade','resources','demand']},
+  HOLD:{execution:'NONE',owner:'economy',caps:[],domains:[]}
+});
+Object.assign(ACTIONS,RUNTIME_ONLY_ACTIONS);
+
 const CLONE=(v,s=new WeakMap())=>{if(v===null||typeof v!=='object')return v;if(s.has(v))return s.get(v);if(Array.isArray(v)){const a=[];s.set(v,a);for(const x of v)a.push(CLONE(x,s));return a;}const o={};s.set(v,o);for(const k of Object.keys(v))if(k!=='__proto__'&&k!=='constructor'&&typeof v[k]!=='function')o[k]=CLONE(v[k],s);return o;};
 const NUM=v=>{const n=Number(v);return Number.isFinite(n)?n:null},ID=v=>String(v??'').trim().toUpperCase();
 function DIRECTION(v){if(v==null)return null;if(typeof v==='string'){const x=v.trim().toUpperCase();if(['RISING','INCREASING','UP','GROWING','ESCALATING'].includes(x))return'RISING';if(['FALLING','DECREASING','DOWN','DECLINING','SHRINKING'].includes(x))return'FALLING';if(['HIGH','LOW','CRITICAL','STABLE','NORMAL','SURPLUS','DEFICIT','NONE'].includes(x))return x;return null;}if(typeof v==='object')for(const k of ['problemDirection','direction','trend','status','condition','state']){const d=DIRECTION(v[k]);if(d)return d;}return null;}
@@ -304,6 +346,99 @@ class Reconcile{
   }
 }
 
+class RuntimeFlowEngine{
+  constructor(tr){this.tr=tr;}
+  compare(required,available,meta={}){
+    const r=SCALAR(required),a=SCALAR(available);
+    if(r===null||a===null)return{status:RUNTIME_COMPARATORS.UNKNOWN,required:r,available:a,gap:null,ratio:null,...meta};
+    const gap=r-a;
+    return{status:gap>0?RUNTIME_COMPARATORS.DEFICIT:gap<0?RUNTIME_COMPARATORS.SURPLUS:RUNTIME_COMPARATORS.BALANCED,
+      required:r,available:a,gap,ratio:r===0?0:Math.abs(gap)/Math.abs(r),...meta};
+  }
+  _bestMeasurementAction(m,sig,scenarioId){
+    const base=APPROVED_POLICY_OVERRIDES[scenarioId]||[];
+    const candidates=[];
+    const capacity=SCALAR(sig.EFFECTIVE_CAPACITY?.value),output=SCALAR(sig.OUTPUT?.value);
+    const fx=SCALAR(sig.FOREIGN_CURRENCY?.value),route=SCALAR(sig.TRADE_ROUTE_CAPACITY?.value);
+    const externalDemand=SCALAR(sig.EXPORT_DEMAND?.value);
+    if(m.status===RUNTIME_COMPARATORS.DEFICIT){
+      if(capacity!==null&&output!==null&&capacity>output){
+        candidates.push({action:'PRODUCTION_INCREASE',quantity:Math.min(m.gap,capacity-output),reason:'CAPACITY_HEADROOM'});
+      }
+      if(fx!==null&&fx>0&&route!==null&&route>0){
+        candidates.push({action:'IMPORT',quantity:m.gap,reason:'FOREIGN_SUPPLY_FEASIBLE'});
+      }
+      if(m.reserve!==null&&m.reserve>0){
+        candidates.push({action:'RESERVE_RELEASE',quantity:Math.min(m.gap,m.reserve),reason:'RESERVE_AVAILABLE'});
+      }
+      candidates.push({action:'SUBSTITUTION',quantity:m.gap,reason:'SUBSTITUTION_CANDIDATE'});
+      if(base.includes('DEMAND_MANAGEMENT'))candidates.push({action:'DEMAND_MANAGEMENT',quantity:m.gap,reason:'DEMAND_SIDE_OPTION'});
+    }else if(m.status===RUNTIME_COMPARATORS.SURPLUS){
+      if(externalDemand!==null&&externalDemand>0&&route!==null&&route>0){
+        candidates.push({action:'EXPORT',quantity:Math.min(Math.abs(m.gap),externalDemand),reason:'EXTERNAL_DEMAND_AND_ROUTE'});
+      }
+      if(output!==null&&m.required!==null&&output>m.required){
+        candidates.push({action:'PRODUCTION_DECREASE',quantity:output-m.required,reason:'OUTPUT_ABOVE_REQUIRED'});
+      }
+    }else if(m.status===RUNTIME_COMPARATORS.BALANCED){
+      candidates.push({action:'HOLD',quantity:0,reason:'REQUIRED_EQUALS_AVAILABLE'});
+    }
+    candidates.sort((a,b)=>{
+      const ai=base.indexOf(a.action),bi=base.indexOf(b.action);
+      return (ai<0?999:ai)-(bi<0?999:bi)||String(a.action).localeCompare(String(b.action));
+    });
+    return candidates.length?candidates:[{action:'HOLD',quantity:0,reason:'NO_FEASIBLE_RUNTIME_CORRECTION'}];
+  }
+  analyze(countryId,s){
+    const measures=[];
+    const pairs=[
+      ['FOOD','FOOD_DEMAND','FOOD_SUPPLY'],['ENERGY','ENERGY_DEMAND','ENERGY_SUPPLY'],
+      ['HOUSING','HOUSING_DEMAND','HOUSING_SUPPLY'],['RESOURCE','RESOURCE_DEMAND','RESOURCE_STOCK']
+    ];
+    for(const [kind,need,available] of pairs){
+      const m=this.compare(s.signals[need]?.value,s.signals[available]?.value,{kind,requiredSignal:need,availableSignal:available});
+      if(m.status!==RUNTIME_COMPARATORS.UNKNOWN){m.candidates=this._bestMeasurementAction(m,s.signals,this._scenarioFor(kind));measures.push(m);}
+    }
+    const demand=SCALAR(s.signals.INVESTMENT_DEMAND?.value),out=SCALAR(s.signals.OUTPUT?.value),cap=SCALAR(s.signals.EFFECTIVE_CAPACITY?.value);
+    if(demand!==null&&out!==null){
+      const m=this.compare(demand,out,{kind:'INDUSTRY_OUTPUT',requiredSignal:'INVESTMENT_DEMAND',availableSignal:'OUTPUT'});
+      if(m.status===RUNTIME_COMPARATORS.DEFICIT&&cap!==null&&cap>out)m.candidates=[{action:'PRODUCTION_INCREASE',quantity:Math.min(m.gap,cap-out),reason:'CAPACITY_HEADROOM'}];
+      else if(m.status===RUNTIME_COMPARATORS.DEFICIT)m.candidates=[{action:'EXPAND_CAPACITY',quantity:m.gap,reason:'CAPACITY_BOUND'}];
+      else m.candidates=this._bestMeasurementAction(m,s.signals,'FACTORY_EXPANSION');
+      measures.push(m);
+    }
+    const re=g.ResourceMinistryEngine;
+    let rs=null;try{rs=re?.getIntegratedResourceState?.(countryId)||null;}catch(_){}
+    if(rs&&typeof rs==='object'){
+      const prod=rs.production||{},cons=rs.consumption||{},resv=rs.reserves||{},inv=rs.inventory||{};
+      for(const resourceId of [...new Set([...Object.keys(prod),...Object.keys(cons)])]){
+        const m=this.compare(cons[resourceId],prod[resourceId],{kind:'RESOURCE_FLOW',resourceId,reserve:SCALAR(resv[resourceId]),inventory:SCALAR(inv[resourceId]),requiredSignal:'RESOURCE_CONSUMPTION',availableSignal:'RESOURCE_PRODUCTION'});
+        if(m.status!==RUNTIME_COMPARATORS.UNKNOWN)m.candidates=this._bestMeasurementAction(m,s.signals,'RESOURCE_DEFICIT');
+        if(m.status!==RUNTIME_COMPARATORS.UNKNOWN)measures.push(m);
+      }
+    }
+    const automaticDecisions=measures.map((m,i)=>({decisionId:'AUTO-'+ID(countryId)+'-'+s.turn+'-'+String(i+1),countryId:ID(countryId),simulationTurn:s.turn,
+      scenarioId:'RUNTIME_'+m.kind,status:'AUTO_DECIDED',measurement:CLONE(m),selected:m.candidates?.[0]||{action:'HOLD',quantity:0,reason:'NO_CANDIDATE'},
+      evidence:{required:m.required,available:m.available,gap:m.gap,status:m.status,requiredSignal:m.requiredSignal,availableSignal:m.availableSignal}}));
+    this.tr.add({layer:'L05_DEMAND_ENGINE',countryId:countryId,runtimeComparisons:measures.length,automaticDecisions:automaticDecisions.length});
+    return{measurements:measures,automaticDecisions};
+  }
+  _scenarioFor(kind){return({FOOD:'FOOD_SHORTAGE',ENERGY:'ENERGY_SHORTAGE',HOUSING:'HOUSING_SHORTAGE',RESOURCE:'RESOURCE_DEFICIT'})[kind]||'RESOURCE_DEFICIT';}
+}
+class RuntimeOperationEngine{
+  constructor(tr){this.tr=tr;this.orders=new Map();}
+  plan(d){
+    const selection=d?.selected; if(!selection||!RUNTIME_ONLY_ACTIONS[selection.action])return null;
+    const order={operationId:'OP-'+d.decisionId,countryId:ID(d.countryId),simulationTurn:d.simulationTurn,scenarioId:d.scenarioId,
+      actionType:selection.action,quantity:SCALAR(selection.quantity)??0,reason:selection.reason||null,status:'QUEUED_FOR_EXECUTOR',
+      stateMutationAuthority:false,executionApplied:false,executor:RUNTIME_ONLY_ACTIONS[selection.action].owner,evidence:CLONE(d.measurement||d.evidence||null)};
+    this.orders.set(order.operationId,order);this.tr.add({layer:'L12_PROJECT_ENGINE',countryId:order.countryId,operationId:order.operationId,type:'RUNTIME_OPERATION_ORDER'});
+    return CLONE(order);
+  }
+  save(){return CLONE([...this.orders.values()]);}
+  restore(v){this.orders=new Map((Array.isArray(v)?v:[]).map(x=>[x.operationId,CLONE(x)]));}
+}
+
 class Runtime{
   constructor(o={}){
     this.tr=new Trace;
@@ -321,7 +456,7 @@ class Runtime{
     this.goal=new Goal(this.tr,this.mem);
     this.feas=new Feasibility(this.tr);
     this.decision=new Decision(this.tr,this.feas,this.mem);
-    this.projects=new ProjectEngine(this.tr);
+    this.projects=new ProjectEngine(this.tr);this.runtimeFlow=new RuntimeFlowEngine(this.tr);this.operations=new RuntimeOperationEngine(this.tr);
     this.transactions=new TransactionEngine(this.tr);
     this.trade=new TradeMarketEngine(this.tr);
     this.finance=new FinanceEngine(this.tr);
@@ -369,7 +504,7 @@ class Runtime{
   }
   async evaluate(c,t=TURN()){
     const s=this.kernel.snap(c,t);s.rawState=WORLD();this.graph.build();
-    const demand=this.demand.run(s),supply=this.supply.run(s),gap=this.gap.run(s),events=this.events.run(s.countryId),scenarios=this.scenario.run(s,gap,events);
+    const demand=this.demand.run(s),supply=this.supply.run(s),gap=this.gap.run(s),events=this.events.run(s.countryId),scenarios=this.scenario.run(s,gap,events),runtimeAnalysis=this.runtimeFlow.analyze(s.countryId,s);
     const mode=this.scheduler.mode(gap,scenarios);
     if(!this.scheduler.should(s.countryId,t,mode))return{status:'SKIPPED',countryId:s.countryId,turn:t,mode,last:this.runs.get(s.countryId)||null};
     this.forecast.observe(s);this.forecast.setProjects(this.projects.list(s.countryId));
@@ -378,11 +513,11 @@ class Runtime{
     for(const [k,v] of Object.entries(s.signals))if(v.status==='AVAILABLE')ctx.countryCapabilities[k]=true;
     ctx.forecasts=this.forecast.run(s,gap);
     ctx.subsystems={trade:this.trade.run(s),finance:this.finance.run(s),infra:this.infra.run(s),population:this.population.run(s),technology:this.technology.run(s),policy:this.policyEngine.run(s)};
-    const goals=this.goal.run(s.countryId,scenarios,gap),decisions=this.decision.run(s.countryId,goals,ctx);
+    const goals=this.goal.run(s.countryId,scenarios,gap),policyDecisions=this.decision.run(s.countryId,goals,ctx),automaticDecisions=runtimeAnalysis.automaticDecisions.map(x=>({decisionId:x.decisionId,countryId:x.countryId,simulationTurn:x.simulationTurn,scenarioId:x.scenarioId,status:x.status,selectedActions:[x.selected.action],selected:x.selected,runtimeMeasurement:x.measurement,evidence:x.evidence,selectedEvaluations:[{action:x.selected.action,feasibility:{status:'RUNTIME_FEASIBLE'}}]})),decisions=[...policyDecisions,...automaticDecisions];
     const reconciliation=this.reconcile.run(s),development=this.development(s,gap);
     decisions.forEach(d=>this.mem.decision(s.countryId,d));
     const out={status:'COMPLETE',countryId:s.countryId,turn:t,mode,identity:s.identity,signals:s.signals,demand,supply,gapPressure:gap,scenarios,goals,
-      decisions,forecasts:ctx.forecasts,reconciliation,development,events,subsystems:ctx.subsystems};
+      decisions,runtimeAnalysis,forecasts:ctx.forecasts,reconciliation,development,events,subsystems:ctx.subsystems};
     this.runs.set(s.countryId,out);this.scheduler.commit(s.countryId,t);
     this.history.push({countryId:s.countryId,turn:t,scenarios:scenarios.map(x=>x.id),decisions:decisions.map(x=>x.decisionId)});if(this.history.length>MAX)this.history.shift();
     this.emitCoverage(s.countryId,t);return out;
@@ -452,7 +587,7 @@ class Runtime{
   if(feasibility.some(x=>x.result.status!=='FEASIBLE'))return{accepted:false,reason:'SELECTED_ACTION_NOT_FEASIBLE',feasibility};
   const plans=[];
   for(const a of selected){
-    const p=this.projects.plan({...d,countryId:country,context},a)||this.transactions.plan({...d,countryId:country,context},a)||this.policyLifecycle.plan({...d,countryId:country,context},a);
+    const runtimeOrder=this.operations.plan({...d,countryId:country,selected:d.selected,runtimeMeasurement:d.runtimeMeasurement,measurement:d.runtimeMeasurement});const p=runtimeOrder||this.projects.plan({...d,countryId:country,context},a)||this.transactions.plan({...d,countryId:country,context},a)||this.policyLifecycle.plan({...d,countryId:country,context},a);
     if(p){plans.push(p);this.cons.preview(d,a);}
   }
   if(!plans.length)return{accepted:false,reason:'NO_EXECUTABLE_PLAN'};
@@ -514,7 +649,7 @@ async turnCommitted(t=TURN()){
       actionId:id,
       sourceMinistryId:sc.owner,
       countryId:ID(d.countryId),
-      payload:{opponentDecision:CLONE(d)},
+      payload:{opponentDecision:CLONE(d),runtimeMeasurement:d.runtimeMeasurement||null},
       options:{origin:'OMEGA_AUTONOMOUS_WORLD_SIMULATION',scenarioId:d.scenarioId,correlationId:d.decisionId}
     };
     try{r.enqueueCommand(cmd);return cmd;}catch(_){return null;}
@@ -587,7 +722,7 @@ save(){
     return{
       schemaVersion:SV,version:V,history:CLONE(this.history),runs:CLONE(Object.fromEntries(this.runs)),
       memory:this.mem.save(),forecast:this.forecast.save(),scheduler:this.scheduler.save(),
-      projects:this.projects.save(),transactions:this.transactions.save(),policies:this.policyLifecycle.save(),
+      projects:this.projects.save(),operations:this.operations.save(),transactions:this.transactions.save(),policies:this.policyLifecycle.save(),
       trace:this.tr.save(),datasets:this.gw.save(),hydrated:CLONE(Object.fromEntries(this.kernel.hyd))
     };
   }
