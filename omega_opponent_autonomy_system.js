@@ -1452,9 +1452,18 @@
     const selected=route.selected,a=String(selected.action||'').toUpperCase(),decisionId=route.decisionId||p.decisionId||null;
     const reservationId='RES-'+turn()+'-'+c+'-'+String(decisionId||a).replace(/[^A-Z0-9_-]/gi,'');
     const plan=route.selected;
+    const tradeSystem=g.OmegaGlobalTrade||g.Omega?.GlobalTrade||null;
+    let importReservationCost=0;
+    if(a==='IMPORT'&&plan.plan?.quantity!==null&&plan.targetCountryId&&plan.unitPrice!==null){
+      try{
+        const v=tradeSystem?.settlementValues?.(c,plan.targetCountryId,plan.plan.quantity,plan.unitPrice);
+        if(v?.buyerValue!==null&&v?.buyerValue!==undefined)importReservationCost=v.buyerValue;
+      }catch(_){}
+      if(importReservationCost===0)importReservationCost=plan.plan.quantity*plan.unitPrice;
+    }
     const reservation={
       reservationId,decisionId,scenarioId:route.scenarioId,action:a,
-      money:num(plan.plan?.cost)||(a==='IMPORT'&&plan.plan?.quantity!==null&&plan.targetCountryId&&plan.unitPrice!==null?plan.plan.quantity*plan.unitPrice:0),
+      money:num(plan.plan?.cost)||(a==='IMPORT'?importReservationCost:0),
       labor:num(plan.plan?.labor)||0,materials:clone(plan.plan?.materials||{}),executor:a==='IMPORT'?'trade':actionSubject(a),expiresTurn:turn()+64
     };
     const reserve=dispatch('cabinet','OMEGA_AUTO_RESERVE',c,reservation,decisionId);
