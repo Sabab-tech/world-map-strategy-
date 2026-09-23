@@ -83,7 +83,15 @@ vm.runInNewContext(resourceBridgeSource, sandbox, { filename: 'omega_resource_se
   assert.equal(india?.countryBrief?.countryName, 'India');
   assert.equal(india?.countryBrief?.cityCount, india?.countryBrief?.cities?.length);
   assert.ok(india?.countryBrief?.cityCount > 3, 'Country brief must expose all JSON-described cities, not only three cities');
-  assert.deepEqual(india?.countryBrief?.cities?.map(c => c.name), files.get('cities.json').countries.find(c => c.name === 'India').cities.map(c => c.name));
+  const indiaJson = files.get('cities.json').countries.find(c => c.name === 'India');
+  const expectedIndiaCityNames = [...new Set([
+    ...(indiaJson?.cities || []),
+    ...(indiaJson?.economic || []),
+    ...(indiaJson?.military || []),
+    ...(indiaJson?.secret || []),
+    ...(indiaJson?.capital ? [indiaJson.capital] : [])
+  ].map(c => c?.name).filter(Boolean))];
+  assert.deepEqual(india?.countryBrief?.cities?.map(c => c.name).sort(), expectedIndiaCityNames.sort());
 
   const indiaPlan = runtime.buildAnswerPlan('India', {}, {}, []);
   assert.equal(indiaPlan?.semantic?.entities?.country?.id, 'IN', 'buildAnswerPlan must use canonical country identity for India');
