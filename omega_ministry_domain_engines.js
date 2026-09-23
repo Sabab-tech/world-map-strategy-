@@ -535,7 +535,7 @@
       'economy.gdp','economy.debt','finance.reserves','finance.taxRevenue','finance.spending'
     ]),
     economy:config('economy','economic_state','MACRO_REVIEW',[
-      'economy.gdp','economy.debt','economy.inflation','economy.unemployment','economy.production'
+      'economy.gdp','economy.debt','economy.inflation','economy.unemployment','economy.production','economy.resourceMacro'
     ]),
     trade:config('trade','commerce_state','COMMERCE_REVIEW',[
       'trade.relations','trade.balance','trade.exports','trade.imports','foreign.relations'
@@ -550,7 +550,7 @@
       'interior.stability','interior.corruption','interior.security','population'
     ]),
     transport:config('transport','infrastructure_logistics','INFRASTRUCTURE_REVIEW',[
-      'transport.infrastructure','transport.logistics','transport.ports','transport.rail'
+      'transport.infrastructure','transport.logistics','transport.ports','transport.rail','transport.resourceShipments','transport.resourceBatchStatus','transport.runtimeStatus'
     ]),
     resource:config('resource','resource_governance','RESOURCE_REVIEW',[
       'resourceSummary','resourceInventory','resourceDeposits','economy.production'
