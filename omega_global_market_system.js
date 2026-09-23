@@ -168,7 +168,7 @@
     const m=interop();if(!m?.dispatchCommand)return null;
     const snapshot={turn:turn(),numeraire:'USD',resources:{}};
     for(const [rid,row] of Object.entries(markets||{})){
-      snapshot.resources[rid]=clone(row.clearing);
+      snapshot.resources[rid]={...clone(row.clearing),history:clone(row.history||[])};
     }
     return m.dispatchCommand('trade','OMEGA_MARKET_PUBLISH_PROJECTION',canonical(c),{snapshot},{turn:turn(),commandType:'OMEGA_MARKET_PUBLISH_PROJECTION',correlationId:'MARKET-'+turn()+'-'+canonical(c)});
   }
@@ -183,8 +183,14 @@
     if(Object.keys(prices).length)ctx.stateTransaction.set('trade.marketPrice',prices);
     const meta=ctx.stateTransaction.get('trade.marketMeta');
     const next=meta&&typeof meta==='object'?clone(meta):{};
-    for(const [rid,q] of Object.entries(snap.resources||{}))next[rid]=clone(q);
+    const history=ctx.stateTransaction.get('trade.marketHistory');
+    const h=history&&typeof history==='object'?clone(history):{};
+    for(const [rid,q] of Object.entries(snap.resources||{})){
+      const row=clone(q);const rows=Array.isArray(row.history)?row.history.slice(-MAX_MARKET_HISTORY):[];
+      delete row.history;next[rid]=row;h[rid]=rows;
+    }
     ctx.stateTransaction.set('trade.marketMeta',next);
+    ctx.stateTransaction.set('trade.marketHistory',h);
     return{accepted:true,resourceCount:Object.keys(snap.resources||{}).length,turn:snap.turn};
   }
   function install(){
