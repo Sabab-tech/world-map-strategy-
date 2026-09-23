@@ -542,9 +542,9 @@
       turn:turn(),countryId:cid,productionValue:productionValue,consumptionValue:consumptionValue,inventoryValue:inventoryValue,
       supplyDemandValueGap:productionValue-consumptionValue,shortagePressure:shortagePressure,
       factoryOutputValue:Object.keys(out).reduce(function(s,rid){var v=priceValue(rid,out[rid]);return s+(v===null?0:v);},0),
-      workerIncome:num(workers[cid]&&workers[cid].thisTurn)||num(workers.totalThisTurn)||0,
-      supplierRevenue:num(suppliers[cid]&&suppliers[cid].thisTurn)||num(suppliers.totalThisTurn)||0,
-      transportRevenue:num((bucket(cid,'transport')?.resourceRevenue||{}).thisTurn)||0,
+      workerIncomeRuntimeTotal:num(workers.totalSinceRuntimeStart)||0,
+      supplierRevenueRuntimeTotal:num(suppliers.totalSinceRuntimeStart)||0,
+      transportRevenueRuntimeTotal:num((bucket(cid,'transport')?.resourceRevenue||{}).totalSinceRuntimeStart)||0,
       fiscalReceiptThisTurn:num((bucket(cid,'finance')?.resourceFiscal||{}).thisTurn?.total)||0,
       unpricedProductionQuantity:unpricedProduction,unpricedConsumptionQuantity:unpricedConsumption,
       availability:'AVAILABLE',source:'OMEGA_RESOURCE_ECONOMY_RUNTIME_V2',authority:true
