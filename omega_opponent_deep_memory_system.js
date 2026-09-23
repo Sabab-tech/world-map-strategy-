@@ -22,6 +22,7 @@
   const n=v=>{const x=Number(v);return Number.isFinite(x)?x:null;};
   const clamp=(v,a=0,b=1)=>{const x=n(v);return x===null?null:Math.max(a,Math.min(b,x));};
   const turn=()=>{const s=g.Game?.state||g.gameState||{};return n(s?.simulation?.turn??s?.turn??s?.simulationTurn??g.Omega?.Simulation?.clock?.turn)??0;};
+  const stableHash=v=>{const s=JSON.stringify(v,(k,x)=>x&&typeof x==='object'&&!Array.isArray(x)?Object.fromEntries(Object.keys(x).sort().map(q=>[q,x[q]])):x);let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return (h>>>0).toString(16).padStart(8,'0');};
   const state=()=>g.Game?.state||g.gameState||null;
   const canonical=v=>{const b=g.OmegaCanonicalIdentityRegistry||g.OmegaCountrySemanticBridge||g.Omega?.CanonicalIdentity;try{const r=b?.resolveCountry?.(v);if(r?.id)return id(r.id);}catch(_){}return id(v);};
   const interop=()=>g.Omega?.MinistryInteroperability||g.OmegaMinistryInteroperability||null;
@@ -71,7 +72,10 @@
     const p=cmd?.payload||{},c=canonical(ctx.countryId),root=ctx.stateTransaction.get('cabinet.opponentMemory');
     const all=root&&typeof root==='object'?clone(root):{};
     const m=ensureCountryMemory(all,c);
-    const entry={memoryId:String(p.memoryId||('MEM-'+turn()+'-'+c+'-'+(m.revision+1))),
+    const revision=(m.revision||0)+1;
+    const traceSeed={countryId:c,turn:turn(),revision,sourceEvent:p.sourceEvent||null,action:p.action||null,targetCountryId:p.targetCountryId||null};
+    const traceId=String(p.traceId||('MEMTRACE-'+turn()+'-'+c+'-'+revision+'-'+String(stableHash(traceSeed))));
+    const entry={memoryId:String(p.memoryId||('MEM-'+turn()+'-'+c+'-'+revision)),traceId,
       type:TYPES.includes(String(p.type||'EPISODIC').toUpperCase())?String(p.type).toUpperCase():'EPISODIC',
       simulationTurn:turn(),importance:clamp(p.importance??0.5),sourceEvent:p.sourceEvent||null,
       targetCountryId:p.targetCountryId?canonical(p.targetCountryId):null,
@@ -117,10 +121,12 @@
         m.metacognitive.uncertainty=bounded([...(m.metacognitive.uncertainty||[]),entry],96);
       }
     }
-    m.lastTurn=turn();m.revision=(m.revision||0)+1;
+    m.lastTurn=turn();m.revision=revision;
     all[c]=m;
+    if(!Array.isArray(m.traceHold))m.traceHold=[];
+    m.traceHold=[...m.traceHold,{traceId,sequence:revision,simulationTurn:turn(),sourceEvent:entry.sourceEvent,memoryId:entry.memoryId}].slice(-256);
     ctx.stateTransaction.set('cabinet.opponentMemory',all);
-    emit('OMEGA_MEMORY_UPDATED',c,{memoryId:entry.memoryId,type:entry.type,revision:m.revision,targetCountryId:entry.targetCountryId||null});
+    emit('OMEGA_MEMORY_UPDATED',c,{memoryId:entry.memoryId,traceId,type:entry.type,revision:m.revision,targetCountryId:entry.targetCountryId||null,sourceCommandId:cmd.commandId,correlationId:p.correlationId||p.decisionId||null});
     return{accepted:true,memoryId:entry.memoryId,type:entry.type,revision:m.revision};
   }
 
