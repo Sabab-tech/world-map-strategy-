@@ -348,6 +348,25 @@
     return{accepted:false,reason:'UNKNOWN_TRADE_RESPONSE:'+decision};
   }
 
+  function scheduleRetryHandler(cmd,ctx){
+    const p=cmd?.payload||{},requestId=String(p.requestId||''),bucketRaw=ctx.stateTransaction.get('trade');
+    const bucket=bucketRaw&&typeof bucketRaw==='object'?clone(bucketRaw):{};
+    if(!Array.isArray(bucket.importRequests))bucket.importRequests=[];
+    const idx=bucket.importRequests.findIndex(x=>String(x.requestId)===requestId);
+    if(idx<0)return{accepted:false,reason:'TRADE_REQUEST_NOT_FOUND'};
+    const row=clone(bucket.importRequests[idx]);
+    if(String(row.status||'').toUpperCase()!=='REJECTED')return{accepted:false,reason:'TRADE_REQUEST_NOT_REJECTED'};
+    const nextRetryTurn=turn()+(num(p.cooldownTurns)||RETRY_COOLDOWN);
+    row.nextRetryTurn=nextRetryTurn;row.stage='PRESSURE_WAIT';row.status=TYPES.REJECTED;
+    row.refusalCount=num(p.refusalCount)??num(row.refusalCount)??1;
+    bucket.importRequests[idx]=row;
+    bucket.globalTradeLedger=bucket.globalTradeLedger||{requests:[],decisions:[],settlements:[]};
+    bucket.globalTradeLedger.requests=[...(bucket.globalTradeLedger.requests||[]),{requestId,status:'RETRY_SCHEDULED',nextRetryTurn,refusalCount:row.refusalCount,simulationTurn:turn()}].slice(-MAX_HISTORY);
+    ctx.stateTransaction.set('trade',bucket);
+    emit('OMEGA_TRADE_REQUEST_RETRY_SCHEDULED',ctx.countryId,{requestId,targetCountryId:row.targetCountryId,nextRetryTurn,refusalCount:row.refusalCount},cmd.commandId);
+    return{accepted:true,request:row,nextRetryTurn};
+  }
+
   function retryHandler(cmd,ctx){
     const p=cmd?.payload||{},c=canonical(ctx.countryId);
     const rawBucket=ctx.stateTransaction.get('trade');
@@ -356,6 +375,12 @@
     if(!bucket.globalTradeLedger||typeof bucket.globalTradeLedger!=='object')bucket.globalTradeLedger={requests:[],decisions:[],settlements:[]};
     const previous=clone(p.previousRequest||null);
     if(!previous)return{accepted:false,reason:'PREVIOUS_REQUEST_REQUIRED'};
+    const previousIndex=bucket.importRequests.findIndex(x=>String(x.requestId)===String(previous.requestId));
+    if(previousIndex>=0){
+      const prev=clone(bucket.importRequests[previousIndex]);
+      prev.stage='RETRY_EXECUTED';prev.nextRetryTurn=null;
+      bucket.importRequests[previousIndex]=prev;
+    }
     const attempt=(num(previous.attempt)||1)+1;
     const retry={
       requestId:'IMP-RETRY-'+turn()+'-'+c+'-'+canonical(previous.targetCountryId)+'-'+attempt+'-'+String(previous.resourceId),
@@ -503,6 +528,7 @@
     const defs=[
       ['OMEGA_TRADE_COUNTERPARTY_REVIEW','trade',reviewHandler],
       ['OMEGA_TRADE_APPLY_BUYER_RESPONSE','trade',buyerResponseHandler],
+      ['OMEGA_TRADE_SCHEDULE_RETRY','trade',scheduleRetryHandler],
       ['OMEGA_TRADE_CREATE_RETRY','trade',retryHandler],
       ['OMEGA_TRADE_FINANCE_DEBIT','finance',financeDebitHandler],
       ['OMEGA_TRADE_FINANCE_CREDIT','finance',financeCreditHandler],
@@ -598,12 +624,7 @@
     }
     try{memory()?.record?.(c,{type:'RELATIONAL',sourceEvent:'OMEGA_TRADE_REQUEST_REJECTED',targetCountryId:s,action:'IMPORT',outcome:{status:'REJECTED',reason:decision?.reason||null},importance:.8,confidence:.9});}catch(_){}
     if(refusal<8){
-      const nextRetryTurn=turn()+RETRY_COOLDOWN;
-      const bucket=state()?.trade?.[c];
-      const requests=Array.isArray(bucket?.importRequests)?bucket.importRequests:[];
-      const target=String(req.requestId);
-      for(const row of requests)if(String(row.requestId)===target){row.nextRetryTurn=nextRetryTurn;row.stage='PRESSURE_WAIT';row.status=TYPES.REJECTED;}
-      emit('OMEGA_TRADE_REQUEST_RETRY_SCHEDULED',c,{requestId:req.requestId,targetCountryId:s,nextRetryTurn,refusalCount:refusal});
+      command('trade','OMEGA_TRADE_SCHEDULE_RETRY',c,{requestId:req.requestId,cooldownTurns:RETRY_COOLDOWN,refusalCount:refusal});
     }
   }
 
