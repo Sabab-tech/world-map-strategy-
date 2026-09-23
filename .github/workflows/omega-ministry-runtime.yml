@@ -41,6 +41,8 @@ jobs:
           node --check omega_ministry_interoperability_system.js
           node --check omega_ministry_runtime_v1.js
           node --check omega_simulation_runtime.js
+          node --check opponent_country_rules.js
+          node --check test/opponent_country_rules_runtime.test.js
           node --check omega_ai_context_bridge.js
           node --check test/omega_17_ministry_runtime.test.js
           node --check test/omega_ministry_interoperability.test.js
@@ -81,6 +83,7 @@ jobs:
             'omega_ministry_interoperability_system.js',
             'omega_ministry_runtime_v1.js',
             'omega_simulation_runtime.js',
+            'opponent_country_rules.js',
             'omega_ai_context_bridge.js'
           ]) {
             if (!html.includes(required)) throw new Error('Canonical script missing from production HTML: '+required);
@@ -99,6 +102,8 @@ jobs:
           const engines = await fs.readFile('omega_ministry_domain_engines.js','utf8');
           const interoperability = await fs.readFile('omega_ministry_interoperability_system.js','utf8');
           const simulation = await fs.readFile('omega_simulation_runtime.js','utf8');
+          const opponentRules = await fs.readFile('opponent_country_rules.js','utf8');
+          const opponentTest = await fs.readFile('test/opponent_country_rules_runtime.test.js','utf8');
           const test = await fs.readFile('test/omega_17_ministry_runtime.test.js','utf8');
           const meshTest = await fs.readFile('test/omega_ministry_interoperability.test.js','utf8');
 
@@ -108,6 +113,11 @@ jobs:
           if (!simulation.includes('class SimulationClock')) throw new Error('Canonical simulation clock missing');
           if (!simulation.includes('AuthoritativeWorldState')) throw new Error('Authoritative world-state root missing');
           if (!simulation.includes("const PHASES=Object.freeze([")) throw new Error('Ordered simulation phases missing');
+          if (!opponentRules.includes("OMEGA OPPONENT COUNTRY RULES RUNTIME")) throw new Error('Opponent country rules runtime missing');
+          if (!opponentRules.includes('OMEGA_SIMULATION_TURN_COMMITTED')) throw new Error('Opponent rules turn binding missing');
+          if (!opponentRules.includes('OMEGA_OPPONENT_RULE_INTENT_APPLIED')) throw new Error('Opponent intent transaction event missing');
+          if (!opponentRules.includes('runtime.enqueueCommand')) throw new Error('Opponent rules command integration missing');
+          if (!opponentTest.includes('OMEGA OPPONENT COUNTRY RULES TEST PASSED')) throw new Error('Opponent runtime behavioral test missing');
           if (!interoperability.includes("const VERSION='2.0.0'")) throw new Error('Interoperability version contract is not 2.0.0');
           if (!interoperability.includes('deliveryLedger')) throw new Error('Canonical delivery ledger missing');
           if (!interoperability.includes('publishedFacts')) throw new Error('Public-state projection contract missing');
