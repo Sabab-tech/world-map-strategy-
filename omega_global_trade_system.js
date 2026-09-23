@@ -223,7 +223,18 @@
     if(free<=0){result.decision='REJECT';result.reason='RESOURCE_RESERVED_OR_SCARCE';return result;}
     const approved=Math.min(result.quantity,free);
     const debtPressure=sellerFin.debtToGdp===null?0:clamp(sellerFin.debtToGdp/1.5);
-    const diplomacyWeight=clamp(.25+.5*rel+debtPressure*.25);
+    const liquidityPressure=sellerFin.liquidity===null?0:clamp(1-(sellerFin.liquidity/Math.max(sellerFin.gdp||sellerFin.liquidity||1,1)));
+    const productionBuffer=supply.production===null||supply.production===undefined?null:clamp(Number(supply.production)/(Math.max(Number(supply.production)+Number(supply.stock||0),1)));
+    const strategicScarcity=free<=Math.max(result.quantity,0)?1:clamp(result.quantity/Math.max(free,1));
+    const diplomaticBenefit=rel;
+    const willingness=clamp(
+      .35*diplomaticBenefit+
+      .25*debtPressure+
+      .20*liquidityPressure+
+      .20*(1-strategicScarcity)
+    );
+    result.sellerDecisionFactors={resourceFree:free,resourceReserve:reserve,resourceScarcity:strategicScarcity,
+      debtPressure,liquidityPressure,productionBuffer,diplomaticBenefit,willingness};
     const offered=result.offeredUnitPrice;
     if(offered===null){result.reason='REQUESTED_PRICE_NOT_OBSERVED';return result;}
     if(approved<result.quantity){
@@ -231,12 +242,16 @@
       if(approved<=0){result.decision='REJECT';result.reason='INSUFFICIENT_FREE_SUPPLY';return result;}
       result.unitPrice=price;
       result.decision='COUNTER';
-      result.reason='SUPPLY_LIMIT_COUNTER_OFFER';
+      result.reason=willingness>=.65?'SCARCE_RESOURCE_RELEASED_AT_MARKET':'SUPPLY_LIMIT_COUNTER_OFFER';
       result.confidence=.85;
       return result;
     }
     if(offered < price*0.95){
-      result.quantityApproved=approved;result.unitPrice=price;result.decision='COUNTER';result.reason='PRICE_BELOW_MARKET';result.confidence=.9;
+      result.quantityApproved=approved;
+      result.unitPrice=price;
+      result.decision=willingness>=.75?'ACCEPT':'COUNTER';
+      result.reason=result.decision==='ACCEPT'?'DEBT_OR_DIPLOMATIC_LIQUIDITY_PRESSURE':'PRICE_BELOW_MARKET';
+      result.confidence=.9;
       return result;
     }
     result.quantityApproved=approved;
