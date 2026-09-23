@@ -598,7 +598,6 @@ class Runtime{
   handleRuntimeAuto(cmd,ctx={}){
     const d=cmd?.payload?.opponentDecision||{},selected=d.selected||d.runtimeMeasurement?.selected,country=ID(d.countryId||cmd?.countryId);
     if(!country)return{accepted:false,reason:'COUNTRY_ID_REQUIRED'};
-  if(String(d.scenarioId||'').startsWith('RUNTIME_'))return this.handleRuntimeAuto(cmd,ctx);
     if(!selected||!RUNTIME_ONLY_ACTIONS[selected.action])return{accepted:false,reason:'RUNTIME_ACTION_NOT_REGISTERED'};
     const tx=ctx?.stateTransaction;if(!tx)return{accepted:false,reason:'AUTHORITATIVE_STATE_TRANSACTION_UNAVAILABLE'};
     const order=this.operations.plan({decisionId:d.decisionId||('AUTO-'+TURN()),countryId:country,simulationTurn:d.simulationTurn??TURN(),scenarioId:d.scenarioId,selected,measurement:d.runtimeMeasurement||d.measurement,evidence:d.evidence});
@@ -610,6 +609,7 @@ class Runtime{
   handle(cmd,ctx={}){
   const d=cmd?.payload?.opponentDecision||cmd?.payload?.decision||{},selected=Array.isArray(d.selectedActions)?d.selectedActions:[],country=ID(d.countryId||cmd?.countryId);
   if(!country)return{accepted:false,reason:'COUNTRY_ID_REQUIRED'};
+  if(String(d.scenarioId||'').startsWith('RUNTIME_'))return this.handleRuntimeAuto(cmd,ctx);
   const sc=SCENARIOS.find(x=>x.id===d.scenarioId);if(!sc)return{accepted:false,reason:'SCENARIO_NOT_REGISTERED'};
   if(!selected.length)return{accepted:false,reason:'NO_SELECTED_ACTIONS'};
   for(const a of selected)if(!ACTIONS[a])return{accepted:false,reason:'ACTION_NOT_REGISTERED:'+a};
