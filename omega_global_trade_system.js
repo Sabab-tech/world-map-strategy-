@@ -526,6 +526,20 @@
     const buyer=canonical(req.countryId),seller=canonical(req.targetCountryId);
     if(!buyer||!seller||buyer===seller)return;
     const status=String(req.status||'').toUpperCase(),stage=String(req.stage||'').toUpperCase();
+    if(status==='REJECTED'&&num(req.nextRetryTurn)!==null&&turn()>=num(req.nextRetryTurn)){
+      const retry=command('trade','OMEGA_TRADE_CREATE_RETRY',buyer,{previousRequest:clone(req),pressureLevel:num(req.refusalCount)||1});
+      if(retry?.status==='APPLIED'){
+        const current=findRequest(buyer,req.requestId);
+        if(current){
+          const raw=state()?.trade?.[buyer]?.importRequests;
+          if(Array.isArray(raw)){
+            const idx=raw.findIndex(x=>String(x.requestId)===String(req.requestId));
+            if(idx>=0){const updated=clone(raw[idx]);updated.stage='RETRY_SCHEDULED';updated.nextRetryTurn=null;raw[idx]=updated;}
+          }
+        }
+      }
+      return;
+    }
     if(status==='SENT'&&(/PENDING|OPEN|RETRY|PRESSURE/.test(stage)||stage==='COUNTERPARTY_DATA_PENDING')){
       const result=command('trade','OMEGA_TRADE_COUNTERPARTY_REVIEW',seller,{request:req});
       if(result?.status==='APPLIED'){
@@ -582,10 +596,14 @@
       if(militaryLevel)command('military','OMEGA_TRADE_APPLY_MILITARY_PRESSURE',c,{targetCountryId:s,requestId:req.requestId,level:militaryLevel});
       emit('OMEGA_TRADE_PRESSURE_APPLIED',c,{targetCountryId:s,requestId:req.requestId,refusalCount:refusal,politicalPressureDelta:-1,militaryPressureLevel:militaryLevel,reason:decision?.reason||'TRADE_REFUSAL'});
     }
-    if(refusal>=8)return;
     try{memory()?.record?.(c,{type:'RELATIONAL',sourceEvent:'OMEGA_TRADE_REQUEST_REJECTED',targetCountryId:s,action:'IMPORT',outcome:{status:'REJECTED',reason:decision?.reason||null},importance:.8,confidence:.9});}catch(_){}
-    if(turn()+RETRY_COOLDOWN>=turn()){
-      command('trade','OMEGA_TRADE_CREATE_RETRY',c,{previousRequest:{...req,requestedQuantity:req.quantity,unitPrice:req.unitPrice,refusalCount:refusal},pressureLevel:refusal});
+    if(refusal<8){
+      const nextRetryTurn=turn()+RETRY_COOLDOWN;
+      const bucket=state()?.trade?.[c];
+      const requests=Array.isArray(bucket?.importRequests)?bucket.importRequests:[];
+      const target=String(req.requestId);
+      for(const row of requests)if(String(row.requestId)===target){row.nextRetryTurn=nextRetryTurn;row.stage='PRESSURE_WAIT';row.status=TYPES.REJECTED;}
+      emit('OMEGA_TRADE_REQUEST_RETRY_SCHEDULED',c,{requestId:req.requestId,targetCountryId:s,nextRetryTurn,refusalCount:refusal});
     }
   }
 
