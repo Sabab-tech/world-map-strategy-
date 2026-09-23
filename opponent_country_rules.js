@@ -265,6 +265,165 @@
     return out;
   }
 
+  const CAPABILITY_PATTERNS=Object.freeze({
+    POPULATION:['population','pop','population_total'],
+    RESOURCE_STOCK:['stock','inventory','reserve','reserves'],
+    RESOURCE_PRODUCTION:['production','output','extraction','generation'],
+    RESOURCE_DEMAND:['demand','consumption','requirement','requirements'],
+    INDUSTRIAL_CAPACITY:['capacity','installed_capacity','effective_capacity'],
+    INDUSTRIAL_OUTPUT:['output','production','utilization'],
+    INPUT_AVAILABILITY:['input','inputs','materials','feedstock'],
+    FOOD_SUPPLY:['food_supply','foodproduction','agricultural_output'],
+    FOOD_DEMAND:['food_demand','foodconsumption'],
+    ENERGY_SUPPLY:['energy_supply','power_generation','generation','electricity_available'],
+    ENERGY_DEMAND:['energy_demand','power_demand','electricity_demand'],
+    HOUSING_SUPPLY:['housing_available','housing_stock','dwellings'],
+    HOUSING_DEMAND:['housing_required','housing_demand'],
+    LABOR_AVAILABILITY:['labor_available','labour_available','workers','workforce'],
+    UNEMPLOYMENT:['unemployment','unemployment_rate'],
+    REVENUE:['revenue','tax_revenue','government_revenue'],
+    EXPENDITURE:['expenditure','spending','government_spending'],
+    LIQUIDITY:['liquidity','cash','reserves','available_cash'],
+    CAPITAL_AVAILABILITY:['capital_available','investable_capital'],
+    TRADE_FLOW:['imports','exports','trade','trade_flow'],
+    TRANSPORT_CAPACITY:['transport_capacity','route_capacity','port_capacity','rail_capacity'],
+    INFRASTRUCTURE_CAPACITY:['infrastructure_capacity','grid_capacity','network_capacity'],
+    TECHNOLOGY_CAPABILITY:['technology','technology_capability','productivity','automation'],
+    HEALTH_CAPACITY:['health_capacity','hospital_capacity','medical_capacity'],
+    EDUCATION_CAPACITY:['education_capacity','school_capacity','enrollment_capacity'],
+    PROJECT_STATE:['project','projects','construction','progress','delay'],
+    RELATIONSHIP_STATE:['relations','relationships','partners','dependencies']
+  });
+
+  const RUNTIME_LAYER_REGISTRY=Object.freeze([
+    {id:'L00_DATA_INTAKE',contract:'dataset -> raw observation'},
+    {id:'L01_IDENTITY',contract:'raw entity -> canonical identity'},
+    {id:'L02_CAPABILITY',contract:'fields -> capabilities'},
+    {id:'L03_WORLD_STATE',contract:'observations -> current state'},
+    {id:'L04_DEPENDENCY',contract:'state -> causal/dependency links'},
+    {id:'L05_DEMAND',contract:'state -> requirement/load'},
+    {id:'L06_SUPPLY_CAPACITY',contract:'state -> effective supply/capacity'},
+    {id:'L07_NEED_GAP_PRESSURE',contract:'requirement vs availability -> pressure'},
+    {id:'L08_SCENARIO',contract:'pressure/opportunity -> scenario'},
+    {id:'L09_GOAL_PRIORITY',contract:'actor context -> priorities'},
+    {id:'L10_DECISION',contract:'candidates -> selected intent'},
+    {id:'L11_FEASIBILITY',contract:'intent -> executable/not executable'},
+    {id:'L12_PROJECT',contract:'physical action -> lifecycle project'},
+    {id:'L13_TRANSACTION',contract:'economic/resource transfer -> transaction'},
+    {id:'L14_CONSEQUENCE',contract:'executed action -> propagated effects'},
+    {id:'L15_FORECAST',contract:'state + trends + commitments -> projection'},
+    {id:'L16_MEMORY',contract:'decision/outcome -> actor memory'},
+    {id:'L17_SCHEDULER',contract:'dependency/event -> evaluation schedule'},
+    {id:'L18_RECONCILIATION',contract:'state transitions -> consistency checks'},
+    {id:'L19_EVIDENCE_TRACE',contract:'source -> decision/execution trace'}
+  ]);
+
+  function flattenFieldPaths(value,prefix='',out=[],depth=0){
+    if(depth>5||value==null)return out;
+    if(Array.isArray(value)){
+      for(const item of value.slice(0,8))flattenFieldPaths(item,prefix,out,depth+1);
+      return out;
+    }
+    if(typeof value!=='object')return out;
+    for(const [key,child] of Object.entries(value)){
+      if(key==='__proto__'||key==='constructor')continue;
+      const path=prefix?prefix+'.'+key:key;
+      out.push(path);
+      if(child&&typeof child==='object')flattenFieldPaths(child,path,out,depth+1);
+    }
+    return out;
+  }
+
+  function sampleRows(raw){
+    const data=unwrapDataset(raw);
+    if(Array.isArray(data))return data.slice(0,32);
+    if(data&&typeof data==='object'){
+      const rows=Object.values(data).filter(v=>v&&typeof v==='object');
+      return rows.slice(0,32);
+    }
+    return [];
+  }
+
+  function discoverSchema(raw){
+    const data=unwrapDataset(raw);
+    const rows=sampleRows(raw);
+    const fields=[...new Set(rows.flatMap(row=>flattenFieldPaths(row)))];
+    const rootShape=Array.isArray(raw)?'ARRAY':(raw&&typeof raw==='object'?'OBJECT':typeof raw);
+    const dataShape=Array.isArray(data)?'ARRAY':(data&&typeof data==='object'?'OBJECT':'SCALAR');
+    const keyedByCandidate=!Array.isArray(data)&&data&&typeof data==='object'
+      ?Object.keys(data).slice(0,32)
+      :[];
+    return {
+      rootShape,
+      dataShape,
+      recordCountEstimate:Array.isArray(data)?data.length:(data&&typeof data==='object'?Object.keys(data).length:0),
+      sampleRowCount:rows.length,
+      fieldCount:fields.length,
+      fields:fields.slice(0,1000),
+      keyedByCandidate
+    };
+  }
+
+  function discoverIdentityFields(raw){
+    const rows=sampleRows(raw);
+    const candidates=['id','code','country_id','countryId','country_code','countryCode','iso2','iso3','name','country','countryName','entity_id','entityId','resource_id','resourceId'];
+    const present=[];
+    for(const field of candidates){
+      if(rows.some(row=>deepRead(row,field)!==undefined))present.push(field);
+    }
+    return present;
+  }
+
+  function unitTokenFromPath(path){
+    const key=String(path||'').toLowerCase();
+    const units=['barrel','bbl','ton','tonne','kg','mt','mwh','gwh','twh','usd','million_usd','billion_usd','unit','units','day','year','percent','percentage'];
+    return units.find(unit=>key.includes(unit))||null;
+  }
+
+  function discoverUnits(raw){
+    const schema=discoverSchema(raw);
+    const units={};
+    for(const field of schema.fields){
+      const unit=unitTokenFromPath(field);
+      if(unit)units[field]=unit;
+    }
+    return units;
+  }
+
+  function discoverRelationships(raw){
+    const rows=sampleRows(raw);
+    const paths=[...new Set(rows.flatMap(row=>flattenFieldPaths(row)))];
+    const candidates=paths.filter(path=>/(^|\.)(.+)(_id|Id|_ids|Ids|parent|owner|operator|country|resource|facility|project|supplier|target)(\.|$)/i.test(path));
+    return candidates.slice(0,500);
+  }
+
+  function discoverCapabilities(raw){
+    const schema=discoverSchema(raw);
+    const discovered=[];
+    for(const [capability,patterns] of Object.entries(CAPABILITY_PATTERNS)){
+      const matches=schema.fields.filter(field=>{
+        const normalized=String(field).toLowerCase().replace(/[^a-z0-9]+/g,'_');
+        return patterns.some(pattern=>normalized.includes(String(pattern).toLowerCase()));
+      });
+      if(matches.length)discovered.push({capability,fields:matches.slice(0,30)});
+    }
+    return discovered;
+  }
+
+  function buildDatasetProfile(datasetId,raw){
+    const schema=discoverSchema(raw);
+    return {
+      datasetId:String(datasetId),
+      schema,
+      identityFields:discoverIdentityFields(raw),
+      units:discoverUnits(raw),
+      relationships:discoverRelationships(raw),
+      capabilities:discoverCapabilities(raw),
+      discoveredAtSimulationLayer:'L00-L02',
+      sourceOfTruth:'DATASET'
+    };
+  }
+
   function number(value){
     const n=Number(value);
     return Number.isFinite(n)?n:null;
@@ -672,6 +831,7 @@
       this.pending=new Map();
       this.loadedTurn=new Map();
       this.failedTurn=new Map();
+      this.profiles=new Map();
       this.basePath=String(options.basePath||'').trim();
       this.fetchImpl=options.fetchImpl||global.fetch?.bind(global)||null;
     }
@@ -680,6 +840,7 @@
       const key=String(id);
       this.cache.set(key,clone(data));
       this.loadedTurn.set(key,number(turn)??0);
+      this.profiles.set(key,buildDatasetProfile(key,data));
       this.failedTurn.delete(key);
       return true;
     }
@@ -735,13 +896,15 @@
         schemaVersion:1,
         datasets,
         loadedTurn:Object.fromEntries(this.loadedTurn.entries()),
-        failedTurn:Object.fromEntries(this.failedTurn.entries())
+        failedTurn:Object.fromEntries(this.failedTurn.entries()),
+        profiles:Object.fromEntries([...this.profiles.entries()].map(([id,profile])=>[id,clone(profile)]))
       };
     }
     restoreState(snapshot){
       this.cache=new Map(Object.entries(snapshot?.datasets||{}).map(([k,v])=>[k,clone(v)]));
       this.loadedTurn=new Map(Object.entries(snapshot?.loadedTurn||{}).map(([k,v])=>[k,number(v)??0]));
       this.failedTurn=new Map(Object.entries(snapshot?.failedTurn||{}).map(([k,v])=>[k,number(v)??0]));
+      this.profiles=new Map(Object.entries(snapshot?.profiles||{}).map(([k,v])=>[k,clone(v)]));
       this.pending.clear();
       return true;
     }
@@ -1151,7 +1314,9 @@
         countriesTracked:this.countryState.size,
         decisionsRecorded:this.decisionHistory.reduce((sum,row)=>sum+(row.decisions?.length||0),0),
         queuedCommands:this.decisionHistory.reduce((sum,row)=>sum+(row.queued||[]).filter(x=>x.status==='QUEUED').length,0),
-        datasetStatus:this.gateway.status()
+        datasetStatus:this.gateway.status(),
+        runtimeLayers:RUNTIME_LAYER_REGISTRY.length,
+        activeRuntimeLayers:RUNTIME_LAYER_REGISTRY.map(row=>row.id)
       };
     }
   }
