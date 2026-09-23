@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
-import './omega_universal_entity_identity_engine.js';
-import './opponent_country_rules.js';
+import '../omega_universal_entity_identity_engine.js';
+import '../opponent_country_rules.js';
 
 const identity = globalThis.OmegaUniversalEntityIdentityEngine;
 assert.ok(identity, 'universal identity engine must load');
