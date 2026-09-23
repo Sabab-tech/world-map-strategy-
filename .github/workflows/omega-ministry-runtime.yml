@@ -106,10 +106,17 @@ jobs:
           if (!runtime.includes('const SCENARIO_ROWS=[')) throw new Error('Universal scenario registry missing');
           if (!runtime.includes('const ACTIONS={')) throw new Error('Action registry missing');
           if (!runtime.includes('class ProjectEngine')) throw new Error('Project lifecycle engine missing');
+          if (!runtime.includes('const FIELD_ALIASES=')) throw new Error('Universal semantic field alias registry missing');
+          if (!runtime.includes('fieldMeaning')) throw new Error('Field meaning discovery output missing');
           if (!runtime.includes('class TransactionEngine')) throw new Error('Transaction lifecycle engine missing');
+          for (const cls of ['TradeMarketEngine','FinanceEngine','InfraLogisticsEngine','PopulationLaborEngine','TechProductivityEngine','PolicyInstitutionEngine','PolicyLifecycle']) {
+            if (!runtime.includes('class '+cls)) throw new Error('Distinct domain lifecycle missing: '+cls);
+          }
           if (!runtime.includes('class Consequence')) throw new Error('Consequence propagation engine missing');
           if (!runtime.includes('class Forecast')) throw new Error('Forecast engine missing');
           if (!runtime.includes('class Scheduler')) throw new Error('Multi-rate scheduler missing');
+          if (!runtime.includes('stateUpdated:true')) throw new Error('Post-execution state rehydration trace missing');
+          if (!runtime.includes('NEXT_EVALUATION_SCHEDULED')) throw new Error('Next evaluation scheduling trace missing');
           if (!runtime.includes('class Reconcile')) throw new Error('State reconciliation missing');
           if (!runtime.includes('class Gateway')) throw new Error('Data intake gateway missing');
           if (!runtime.includes('class Identity')) throw new Error('Canonical identity layer missing');
@@ -132,6 +139,8 @@ jobs:
 
           if (!test.includes("OMEGA AUTONOMOUS WORLD CORE TEST PASSED")) throw new Error('Autonomous core behavior test missing');
           if (!test.includes("assert.equal(diagnostics.layers,28)")) throw new Error('28-layer assertion missing');
+          if (!test.includes('fieldMeaning.POPULATION')) throw new Error('Semantic field binding regression test missing');
+          if (!test.includes('policyId')) throw new Error('Policy lifecycle behavioral assertion missing');
           if (!test.includes("assert.equal(diagnostics.scenarioCount,25)")) throw new Error('25-scenario assertion missing');
           if (!test.includes("assert.equal(diagnostics.directionalSignals,63)")) throw new Error('63-signal assertion missing');
           if (!test.includes("assert.equal(diagnostics.actionTypes,27)")) throw new Error('27-action assertion missing');
