@@ -178,7 +178,10 @@
     const prices={};
     for(const [rid,q] of Object.entries(snap.resources||{})){
       const px=q.clearingPriceUsd??q.referencePrice??null;
-      if(px!==null)prices[rid]=px;
+      if(px!==null){
+        const rate=usdRate(ctx.countryId);
+        if(rate!==null)prices[rid]=currency(ctx.countryId)==='USD'?px:px*rate;
+      }
     }
     if(Object.keys(prices).length)ctx.stateTransaction.set('trade.marketPrice',prices);
     const meta=ctx.stateTransaction.get('trade.marketMeta');
