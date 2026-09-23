@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 globalThis.Game={state:{
   simulation:{turn:1},
   cabinet:{BD:{autonomyReservations:[]},SA:{autonomyReservations:[]}},
-  finance:{BD:{available:200000,reserves:200000},SA:{available:100000,reserves:100000}},
+  finance:{BD:{available:200000,reserves:200000,currencyCode:'USD'},SA:{available:100000,reserves:100000,currencyCode:'USD'}},
   economy:{BD:{gdp:1000000,debt:100000},SA:{gdp:2000000,debt:100000}},
   population:{BD:{labor:{available:10000}},SA:{labor:{available:10000}}},
   resource:{BD:{inventory:{crude_oil:0},reserves:{crude_oil:0},production:{crude_oil:0}},SA:{inventory:{crude_oil:5000},reserves:{crude_oil:500},production:{crude_oil:500}}},
