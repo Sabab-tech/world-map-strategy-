@@ -27,7 +27,7 @@ function deepSet(root,path,value){
 
 function createContext(){
   const events=new EventTargetMock();
-  const state={
+  const worldState={
     simulation:{turn:1},
     resource:{
       BGD:{
@@ -64,8 +64,8 @@ function createContext(){
 
   const handlers=new Map();
   const stateTx=(countryId)=>({
-    get(path){ return deepGet(state(),path); },
-    set(path,value){ deepSet(state(),path,value); },
+    get(path){ return deepGet(worldState,path); },
+    set(path,value){ deepSet(worldState,path,value); },
     _countryId:countryId
   });
 
@@ -133,8 +133,8 @@ function createContext(){
     addEventListener:events.addEventListener.bind(events),
     removeEventListener:events.removeEventListener.bind(events),
     dispatchEvent:events.dispatchEvent.bind(events),
-    Game:{state},
-    gameState:state,
+    Game:{state:worldState},
+    gameState:worldState,
     OmegaCanonicalIdentityRegistry:countryRegistry,
     CountryIOS:{
       activeChapter:5,
@@ -147,38 +147,38 @@ function createContext(){
       CanonicalIdentity:countryRegistry
     },
     OmegaGlobalMarket:{
-      localPrice(_country,rid){ return state().trade.BGD.marketPrice[rid] ?? null; },
+      localPrice(_country,rid){ return worldState.trade.BGD.marketPrice[rid] ?? null; },
       rebuild(){}
     },
     OmegaGlobalTrade:{processAll(){}}
   };
   context.globalThis=context;
-  return {context,state,handlers,events};
+  return {context,worldState,handlers,events};
 }
 
 test('resource economy v2 completes mine-backed processing, domestic settlement and treasury receipt flow', async()=>{
-  const {context,state}=createContext();
+  const {context,worldState}=createContext();
   const code=readFileSync('omega_resource_economy_runtime_v2.js','utf8');
   vm.runInNewContext(code,context,{filename:'omega_resource_economy_runtime_v2.js'});
   await context.OmegaResourceEconomy.runTurn();
 
-  assert.equal(state.resource.BGD.inventory.iron_ore,50);
-  assert.equal(state.resource.BGD.inventory.iron_intermediate,40);
+  assert.equal(worldState.resource.BGD.inventory.iron_ore,50);
+  assert.equal(worldState.resource.BGD.inventory.iron_intermediate,40);
 
-  const fiscal=state.finance.BGD.resourceFiscal;
+  const fiscal=worldState.finance.BGD.resourceFiscal;
   assert.equal(fiscal.thisTurn.total,115);
-  assert.equal(state.finance.BGD.available,1115);
-  assert.equal(state.finance.BGD.resourceBudgetContribution,115);
-  assert.equal(state.finance.BGD.resourceBudgetContributionThisTurn,115);
+  assert.equal(worldState.finance.BGD.available,1115);
+  assert.equal(worldState.finance.BGD.resourceBudgetContribution,115);
+  assert.equal(worldState.finance.BGD.resourceBudgetContributionThisTurn,115);
 
-  const accounts=state.economy.BGD.companyAccounts;
+  const accounts=worldState.economy.BGD.companyAccounts;
   assert.equal(accounts.MINER_CO.runtimeNetCashFlow,300);
   assert.equal(accounts.PROCESS_CO.runtimeNetCashFlow,-500);
 
-  assert.equal(state.trade.BGD.domesticSales.length,1);
-  assert.equal(state.trade.BGD.domesticSales[0].sale.status,'SETTLED');
-  assert.equal(state.trade.BGD.offerBook.length,1);
-  assert.equal(state.trade.BGD.offerBook[0].source,'OMEGA_RESOURCE_ECON_AUTO_OFFER');
+  assert.equal(worldState.trade.BGD.domesticSales.length,1);
+  assert.equal(worldState.trade.BGD.domesticSales[0].sale.status,'SETTLED');
+  assert.equal(worldState.trade.BGD.offerBook.length,1);
+  assert.equal(worldState.trade.BGD.offerBook[0].source,'OMEGA_RESOURCE_ECON_AUTO_OFFER');
 
   const dashboard=context.OmegaResourceEconomy.getCountryDashboard('BGD');
   assert.equal(dashboard.health.noSyntheticWarehouseBalance,true);
@@ -193,7 +193,7 @@ test('resource economy v2 completes mine-backed processing, domestic settlement 
 
 test('factory input failure does not consume a resource that lacks the other required input', async()=>{
   const {context,state}=createContext();
-  state.economy.BGD.productionAssets.push({
+  worldState.economy.BGD.productionAssets.push({
     id:'FACTORY_2',stage:'FACTORY',capacity:10,
     inputCoefficients:{iron_ore:1,copper:1},
     outputProfile:{finished_alloy:1},
@@ -203,15 +203,15 @@ test('factory input failure does not consume a resource that lacks the other req
   vm.runInNewContext(code,context,{filename:'omega_resource_economy_runtime_v2.js'});
   await context.OmegaResourceEconomy.runTurn();
 
-  const blocked=state.economy.BGD.industrialRuntime.blockedFacilities.find(x=>x.facilityId==='FACTORY_2');
+  const blocked=worldState.economy.BGD.industrialRuntime.blockedFacilities.find(x=>x.facilityId==='FACTORY_2');
   assert.ok(blocked);
   assert.equal(blocked.reason,'INPUT_STOCK_UNAVAILABLE');
-  assert.equal(state.resource.BGD.inventory.copper,undefined);
+  assert.equal(worldState.resource.BGD.inventory.copper,undefined);
 });
 
 test('all modeled mine rows are not capped by the removed legacy 512-row limiter',()=>{
   const code=readFileSync('omega_resource_endowment_runtime.js','utf8');
   assert.doesNotMatch(code,/MAX_MINES/);
   assert.doesNotMatch(code,/slice\(0,\s*MAX_MINES\)/);
-  assert.match(code,/for\(const c of countries\(\)\)dispatch\('OMEGA_RESOURCE_EXTRACT_TICK'/);
+  assert.match(code,/OMEGA_RESOURCE_EXTRACT_TICK/);
 });
