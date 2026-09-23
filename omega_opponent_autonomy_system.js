@@ -549,12 +549,9 @@
     const deepMemory=g.OmegaOpponentDeepMemory||g.Omega?.OpponentDeepMemory||null;
     let targetCountryId=null;
     let memoryTarget=decision?.targetCountryId||null;
-    if(a==='IMPORT' && importSupplier?.countryId) memoryTarget=importSupplier.countryId;
     let memoryEvaluation=null;
-    try{memoryEvaluation=deepMemory?.scoreAction?.(countryId,a,memoryTarget)||null;}catch(_){memoryEvaluation=null;}
     const strategy=g.OmegaOpponentAdaptiveStrategy||g.Omega?.OpponentAdaptiveStrategy||null;
     let strategyEvaluation=null;
-    try{strategyEvaluation=strategy?.scoreAction?.(countryId,a)||null;}catch(_){strategyEvaluation=null;}
     let relations=null;
     let status='READY';
     const reasons=[];
@@ -571,12 +568,15 @@
       else if(plan.quantity===null){status='WAIT_DATA';reasons.push('IMPORT_QUANTITY_NOT_OBSERVED');}
       else {
         const estimatedCost=plan.cost!==null?plan.cost:(supplier.unitPrice!==null?plan.quantity*supplier.unitPrice:null);
+        memoryTarget=supplier.countryId;
         plan.unitPrice=supplier.unitPrice;
         plan.cost=estimatedCost;
         if(estimatedCost===null){status='WAIT_DATA';reasons.push('IMPORT_COST_NOT_OBSERVED');}
         else if(financial.liquidity-reservation.money<estimatedCost){status='BLOCKED';reasons.push('INSUFFICIENT_UNRESERVED_TREASURY');}
       }
     }
+    try{memoryEvaluation=deepMemory?.scoreAction?.(countryId,a,memoryTarget)||null;}catch(_){memoryEvaluation=null;}
+    try{strategyEvaluation=strategy?.scoreAction?.(countryId,a)||null;}catch(_){strategyEvaluation=null;}
     if(['HOUSING_BUILD','INDUSTRY_BUILD','DOMESTIC_EXPANSION','PROCESSING_EXPANSION','INFRASTRUCTURE_EXPANSION','MILITARY_FACILITY_BUILD'].includes(a)){
       if(plan.quantity===null){status='WAIT_DATA';reasons.push('PROJECT_QUANTITY_NOT_OBSERVED');}
       if(plan.cost===null){status='WAIT_DATA';reasons.push('PROJECT_COST_NOT_OBSERVED');}
