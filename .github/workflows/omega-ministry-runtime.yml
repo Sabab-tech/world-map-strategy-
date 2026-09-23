@@ -52,6 +52,7 @@ jobs:
         run: |
           set -euo pipefail
           npm run test:architecture
+          npm run test:country-roster
           npm run test:ministries
           npm run test:simulation
 
