@@ -104,11 +104,55 @@ class ActorRegistry{
   list(type){const t=type?String(type).toUpperCase():null;return [...this.m.values()].filter(x=>!t||x.actorType===t).sort((a,b)=>a.id.localeCompare(b.id));}
 }
 class Graph{constructor(tr){this.tr=tr;this.e=new Map;}build(){this.e.clear();for(const[a,b]of [['POPULATION','FOOD_DEMAND'],['POPULATION','HOUSING_DEMAND'],['POPULATION','EDUCATION_CAPACITY'],['POPULATION','HEALTH_CAPACITY'],['POPULATION','LABOR_AVAILABILITY'],['POPULATION','ENERGY_DEMAND'],['POPULATION','CONSUMER_DEMAND'],['OUTPUT','REVENUE'],['OUTPUT','EXPORT_DEMAND'],['INPUT_AVAILABILITY','OUTPUT'],['INFRASTRUCTURE_CAPACITY','EFFECTIVE_CAPACITY'],['TECHNOLOGY_CAPABILITY','PRODUCTIVITY'],['PRODUCTIVITY','OUTPUT'],['UNEMPLOYMENT','HOUSEHOLD_INCOME'],['HOUSEHOLD_INCOME','CONSUMER_DEMAND'],['CONSUMER_DEMAND','OUTPUT'],['MAINTENANCE_BACKLOG','EFFECTIVE_CAPACITY'],['DISASTER_DAMAGE','EFFECTIVE_CAPACITY'],['FORECAST_SHORTFALL','SCENARIO']])this.add(a,b,'UNIVERSAL_CAUSAL_RELATION');this.tr.add({layer:'L04_DEPENDENCY_GRAPH',edges:this.count()});}add(a,b,r){const x=this.e.get(a)||[];if(!x.some(q=>q.to===b))x.push({from:a,to:b,reason:r});this.e.set(a,x);}down(ns=[]){const q=[...ns],s=new Set(q);while(q.length){const x=q.shift();for(const e of this.e.get(x)||[])if(!s.has(e.to)){s.add(e.to);q.push(e.to);}}return[...s];}count(){return[...this.e.values()].reduce((a,x)=>a+x.length,0);}}
+const SIGNAL_SOURCE_RULES=Object.freeze({
+  POPULATION:[['population','population_2015']],
+  POPULATION_GROWTH:[['population','annual_growth_rate']],
+  GDP_GROWTH:[['economy','gdp_growth']],
+  INFLATION:[['economy','inflation']],
+  UNEMPLOYMENT:[['economy','unemployment_rate']],
+  DEBT:[['economy','debt']],
+  TRADE_DEFICIT_PRESSURE:[['economy','trade_balance']],
+  SAVINGS:[['economy','savings']],
+  /* Runtime-owned subjects intentionally do not fall back to generic JSON fields. */
+  FOOD_DEMAND:[],FOOD_SUPPLY:[],HOUSING_DEMAND:[],HOUSING_SUPPLY:[],
+  ENERGY_DEMAND:[],ENERGY_SUPPLY:[],RESOURCE_DEMAND:[],RESOURCE_STOCK:[],
+  RESOURCE_RESERVE:[],RESOURCE_PRODUCTION:[],PRODUCTION_CAPACITY:[],
+  EFFECTIVE_CAPACITY:[],CAPACITY_UTILIZATION:[],INPUT_AVAILABILITY:[],OUTPUT:[],
+  PRODUCTIVITY:[],LABOR_AVAILABILITY:[],SKILLED_LABOR:[],WAGE_PRESSURE:[],
+  HOUSEHOLD_INCOME:[],CONSUMER_DEMAND:[],REVENUE:[],EXPENDITURE:[],
+  LIQUIDITY:[],CAPITAL_AVAILABILITY:[],DEBT_SERVICE_PRESSURE:[],FOREIGN_CURRENCY:[],
+  IMPORT_DEPENDENCE:[],EXPORT_DEMAND:[],INVESTMENT_DEMAND:[],MARKET_PRICE:[],
+  TRADE_ROUTE_CAPACITY:[],TRANSPORT_CAPACITY:[],INFRASTRUCTURE_CAPACITY:[],
+  LOGISTICS_CONGESTION:[],NETWORK_FAILURE_RISK:[],MAINTENANCE_BACKLOG:[],
+  PROJECT_DELAY:[],ASSET_AGE:[],STABILITY:[],CORRUPTION:[],SECURITY_THREAT:[],
+  FOREIGN_TENSION:[],MILITARY_READINESS:[],TECHNOLOGY_CAPABILITY:[],R_AND_D_CAPABILITY:[],
+  HEALTH_CAPACITY:[],HEALTH_PRESSURE:[],EDUCATION_CAPACITY:[],PUBLIC_SERVICE_CAPACITY:[],
+  MIGRATION_PRESSURE:[],WELFARE_PRESSURE:[],DISASTER_DAMAGE:[],FORECAST_SHORTFALL:[],
+  INTEREST_PRESSURE:[],SUPPLIER_CONCENTRATION:[]
+});
+function EXPLICIT_DATA_VALUE(gw,c,k){
+  for(const [dataset,field] of (SIGNAL_SOURCE_RULES[k]||[])){
+    const raw=gw.get(dataset),row=REC(raw,c);if(!row)continue;
+    const value=READ(row,field);
+    if(value!==undefined)return{value,source:'DATASET:'+dataset+'.'+field,authoritative:false};
+  }
+  return null;
+}
 class Kernel{
   constructor(gw,id,tr){this.gw=gw;this.id=id;this.tr=tr;this.hyd=new Map;}
   readSignal(state,c,k){
     for(const p of STATE_PATHS[k]||[]){const v=STATE_PATH(state,c,p);if(v!==undefined)return{value:v,source:'STATE:'+p,authoritative:true};}
-    for(const [dataset,raw] of this.gw.c){const r=REC(raw,c);if(!r)continue;for(const p of [k,...(FIELD_ALIASES[k]||[])]){const v=READ(r,p);if(v!==undefined)return{value:v,source:'DATASET:'+dataset+'.'+p,authoritative:false};}}
+    const explicit=EXPLICIT_DATA_VALUE(this.gw,c,k);if(explicit)return explicit;
+    /* Resource ownership is delegated to the existing resource runtime only. */
+    if(['RESOURCE_DEMAND','RESOURCE_STOCK','RESOURCE_RESERVE','RESOURCE_PRODUCTION'].includes(k)){
+      try{
+        const rs=g.ResourceMinistryEngine?.getIntegratedResourceState?.(c);
+        if(rs){
+          const map={RESOURCE_STOCK:rs.inventory,RESOURCE_PRODUCTION:rs.production,RESOURCE_DEMAND:rs.consumption,RESOURCE_RESERVE:rs.reserves};
+          if(map[k]!==undefined)return{value:CLONE(map[k]),source:'RESOURCE_ENGINE:'+k,authoritative:true};
+        }
+      }catch(_){}
+    }
     return null;
   }
   observeDatasetFields(c){
@@ -165,10 +209,14 @@ class GapPressure{
     const gaps={},state=s.rawState||WORLD(),cid=s.countryId;
     const resolve=path=>{
       const sv=STATE_PATH(state,cid,path),sn=SCALAR(sv);if(sn!==null)return{value:sn,raw:CLONE(sv),path,source:'STATE'};
-      const parts=String(path).split('.'),root=parts.shift(),ds=[root,{resource:'resources',trade:'relations',transport:'infrastructure'}[root]].filter(Boolean);
-      for(const dataset of ds){const r=REC(WORLD_DATASET(dataset),cid);if(!r)continue;const v=READ(r,parts.join('.')),n=SCALAR(v);if(n!==null)return{value:n,raw:CLONE(v),path,source:'DATASET:'+dataset};}
-      const key=Object.keys(STATE_PATHS).find(k=>(STATE_PATHS[k]||[]).includes(path)),sig=s.signals?.[key],n=SCALAR(sig?.value);
-      return key&&n!==null?{value:n,raw:CLONE(sig.value),path:key,source:'SIGNAL'}:null;
+      const key=Object.keys(STATE_PATHS).find(k=>(STATE_PATHS[k]||[]).includes(path));
+      if(key){
+        const explicit=EXPLICIT_DATA_VALUE(this.tr?.gw||{get:()=>undefined},cid,key);
+        const ev=explicit?.value!==undefined?explicit:null;
+        const sig=s.signals?.[key],n=SCALAR(ev?.value??sig?.value);
+        if(n!==null)return{value:n,raw:CLONE(ev?.value??sig.value),path:ev?.source||key,source:ev?.source||'SIGNAL'};
+      }
+      return null;
     };
     Object.keys(REL).forEach(k=>{
       const spec=REL[k],a=resolve(spec[0]),b=resolve(spec[1]);
