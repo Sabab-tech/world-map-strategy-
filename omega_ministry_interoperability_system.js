@@ -168,7 +168,7 @@
     economy:[
       'economy.gdp','economy.debt','economy.inflation','economy.unemployment',
       'economy.production','economy.productionCapacity','economy.revenue','economy.reserves','economy.productionAssets',
-      'economy.industrialRuntime','economy.companyAccounts','economy.workerIncome','economy.supplierRevenue','economy.factoryOutput'
+      'economy.industrialRuntime','economy.companyAccounts','economy.workerIncome','economy.supplierRevenue','economy.factoryOutput','economy.resourceMacro'
     ],
     trade:[
       'trade.relations','trade.balance','trade.exports','trade.imports',
