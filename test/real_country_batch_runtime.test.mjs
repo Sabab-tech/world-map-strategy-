@@ -1,7 +1,9 @@
 import fs from 'node:fs/promises';
 import assert from 'node:assert/strict';
 import '../omega_universal_entity_identity_engine.js';
-const { OmegaOpponentCountryRuntime } = await import('../opponent_country_rules.js');
+await import('../opponent_country_rules.js');
+const opponent = globalThis.Omega?.OpponentCountryRules || globalThis.OmegaOpponentCountryRules;
+assert.ok(opponent?.instance, 'Opponent country runtime must load');
 
 const countries = JSON.parse(await fs.readFile(new URL('../countries.json', import.meta.url), 'utf8'));
 assert.ok(Array.isArray(countries));
@@ -9,8 +11,8 @@ assert.equal(countries.length, 249);
 const unique = new Set(countries.map(x => x.code));
 assert.equal(unique.size, 249);
 
-const runtime = OmegaOpponentCountryRuntime;
-runtime.setDataset('countries', countries);
+const runtime = opponent.instance;
+opponent.setDataset('countries', countries);
 
 const calls = [];
 let active = 0;
