@@ -276,6 +276,7 @@
     }catch(_){return false;}
   }
   async function initialize(){
+    if(g.__omegaResourceEndowmentReady)return{status:'READY',countries:countries().length,reused:true};
     if(g.__omegaResourceEndowmentInitializing)return;
     g.__omegaResourceEndowmentInitializing=true;
     try{
@@ -283,7 +284,8 @@
       const compiled=compile();if(compiled.status!=='READY')return compiled;
       applyPersistedReserveStates();install();
       for(const c of countries())dispatch('OMEGA_RESOURCE_ENDOWMENT_HYDRATE',c,{correlationId:'RESOURCE-HYDRATE-'+turn()+'-'+c});
-      return{status:'READY',countries:countries().length};
+      g.__omegaResourceEndowmentReady=true;
+      return{status:'READY',countries:countries().length,reused:false};
     }finally{g.__omegaResourceEndowmentInitializing=false;}
   }
   function extractAll(){
