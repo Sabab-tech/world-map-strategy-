@@ -174,6 +174,8 @@
       relationFields:[...new Set(relationFields)],
       fields:fields.slice(0,4000),
       fieldCandidates:inferFieldCandidates(raw),
+      capabilities:A(m.capabilities),
+      fieldMappings:O(m.fieldMappings)?C(m.fieldMappings):{},
       recordLocator:m.recordLocator||null,
       recordKeyIsIdentity:m.recordKeyIsIdentity===true
     };
@@ -286,6 +288,8 @@
     return[...unique.values()].sort((a,b)=>b.confidence-a.confidence||String(b.alias).length-String(a.alias).length||a.id.localeCompare(b.id)).slice(0,Math.max(1,Math.min(200,Number(limit)||25)));
   }
 
+  function resolveQuestion(question,types=null){const wanted=Array.isArray(types)&&types.length?types:['COUNTRY','RESOURCE','CITY','MINE','DEPOSIT','FACILITY','PROJECT','COMPANY','ORGANIZATION','INSTITUTION'];const entities={};for(const type of wanted){const hits=select(question,type,8);if(hits.length)entities[U(type)]=hits;}return{status:Object.keys(entities).length?'RESOLVED':'NOT_FOUND',question:S(question),entities,authority:'OMEGA_UNIVERSAL_ENTITY_IDENTITY_ENGINE'};}
+
   function lookupId(id,type=null){
     const q=U(id),t=U(type);if(!q)return{status:'IDENTITY_NOT_FOUND',id:null,type:t||null,count:0,matches:[]};
     const matches=[],types=t?[t]:[...state.entities.keys()];
@@ -326,7 +330,7 @@
   function reset(){state.entities.clear();state.aliases.clear();state.records.clear();state.datasets.clear();return diagnostics();}
 
   g.OmegaUniversalEntityIdentityEngine=Object.freeze({
-    VERSION,reset,registerCanonical,ingestDataset,discoverSchema,resolve,select,lookupId,findRecords,schema,list,diagnostics
+    VERSION,reset,registerCanonical,ingestDataset,discoverSchema,resolve,resolveQuestion,select,lookupId,findRecords,schema,list,diagnostics
   });
   g.OmegaUnifiedIdentity=g.OmegaUniversalEntityIdentityEngine;
 })(typeof globalThis!=='undefined'?globalThis:window);
