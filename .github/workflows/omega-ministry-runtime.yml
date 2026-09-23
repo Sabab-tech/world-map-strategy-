@@ -129,7 +129,8 @@ jobs:
             if (runtime.includes(forbidden)) throw new Error('Country-specific behavior hardcode detected: '+forbidden);
           }
 
-          const layerCount = (runtime.match(/id:'L\d\d_/g)||[]).length;
+          const layerRegistry = runtime.match(/const LAYERS=\[(.*?)\]\.map/s);
+          const layerCount = layerRegistry ? layerRegistry[1].split(',').filter(Boolean).length : 0;
           if (layerCount !== 28) throw new Error('Expected exactly 28 executable layer declarations, found '+layerCount);
           if ((runtime.match(/\['REL'/g)||[]).length < 20) throw new Error('Universal relational scenario coverage is incomplete');
 
