@@ -204,14 +204,14 @@ class Demand{constructor(tr){this.tr=tr;}run(s){const observed={},required={},dr
 class Supply{constructor(tr){this.tr=tr;}run(s){const supply={},capacity={};for(const k of ['FOOD_SUPPLY','ENERGY_SUPPLY','RESOURCE_STOCK','RESOURCE_PRODUCTION','PRODUCTION_CAPACITY','EFFECTIVE_CAPACITY','INFRASTRUCTURE_CAPACITY','TRANSPORT_CAPACITY','LABOR_AVAILABILITY','HOUSING_SUPPLY','HEALTH_CAPACITY','EDUCATION_CAPACITY','INPUT_AVAILABILITY'])if(s.signals[k]?.status==='AVAILABLE')(['PRODUCTION_CAPACITY','EFFECTIVE_CAPACITY','INFRASTRUCTURE_CAPACITY','TRANSPORT_CAPACITY','LABOR_AVAILABILITY','HOUSING_SUPPLY','HEALTH_CAPACITY','EDUCATION_CAPACITY'].includes(k)?capacity:supply)[k]=CLONE(s.signals[k]);this.tr.add({layer:'L06_SUPPLY_CAPACITY_ENGINE',countryId:s.countryId,supply:Object.keys(supply),capacity:Object.keys(capacity)});return{supply,capacity};}}
 function LEVEL(v){const d=DIRECTION(v);return d==='CRITICAL'?'CRITICAL':d==='HIGH'?'HIGH':d==='LOW'?'LOW':['RISING','FALLING'].includes(d)?'MODERATE':null;}
 class GapPressure{
-  constructor(tr){this.tr=tr;}
+  constructor(tr,gw){this.tr=tr;this.gw=gw;}
   run(s){
     const gaps={},state=s.rawState||WORLD(),cid=s.countryId;
     const resolve=path=>{
       const sv=STATE_PATH(state,cid,path),sn=SCALAR(sv);if(sn!==null)return{value:sn,raw:CLONE(sv),path,source:'STATE'};
       const key=Object.keys(STATE_PATHS).find(k=>(STATE_PATHS[k]||[]).includes(path));
       if(key){
-        const explicit=EXPLICIT_DATA_VALUE(this.tr?.gw||{get:()=>undefined},cid,key);
+        const explicit=EXPLICIT_DATA_VALUE(this.gw,cid,key);
         const ev=explicit?.value!==undefined?explicit:null;
         const sig=s.signals?.[key],n=SCALAR(ev?.value??sig?.value);
         if(n!==null)return{value:n,raw:CLONE(ev?.value??sig.value),path:ev?.source||key,source:ev?.source||'SIGNAL'};
@@ -511,7 +511,7 @@ class Runtime{
     this.kernel=new Kernel(this.gw,this.idr,this.tr);
     this.demand=new Demand(this.tr);
     this.supply=new Supply(this.tr);
-    this.gap=new GapPressure(this.tr);
+    this.gap=new GapPressure(this.tr,this.gw);
     this.scenario=new ScenarioEngine(this.tr);
     this.mem=new Memory(this.tr);
     this.goal=new Goal(this.tr,this.mem);
