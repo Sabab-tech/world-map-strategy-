@@ -68,6 +68,31 @@
     if(observedDimensions>0)out.availability='AVAILABLE';
     return out;
   }
+
+  const ACTION_DIRECTIONS=Object.freeze({
+    IMPORT:{tradeDependence:1,diplomaticPreference:1,selfSufficiencyPriority:-1,fiscalDiscipline:-0.7},
+    EXPORT:{tradeDependence:1,diplomaticPreference:1,fiscalDiscipline:0.5},
+    SUPPLIER_CHANGE:{tradeDependence:-1,selfSufficiencyPriority:1,diplomaticPreference:0.5},
+    TREATY_NEGOTIATION:{diplomaticPreference:1,escalationTolerance:-0.4,strategicTimeHorizon:1},
+    MILITARY_RECRUIT:{mobilizationTolerance:1,riskAppetite:0.7,domesticStabilityPriority:0.3},
+    MILITARY_TRAIN:{mobilizationTolerance:1,strategicTimeHorizon:1,fiscalDiscipline:-0.4},
+    MILITARY_EQUIP:{riskAppetite:1,fiscalDiscipline:-0.5,strategicTimeHorizon:0.8},
+    MILITARY_FACILITY_BUILD:{riskAppetite:0.8,strategicTimeHorizon:1,escalationTolerance:0.6},
+    SECURITY_PREPARATION:{riskAppetite:0.8,escalationTolerance:0.6,mobilizationTolerance:1},
+    HOUSING_BUILD:{domesticStabilityPriority:1,fiscalDiscipline:-0.5,strategicTimeHorizon:0.6},
+    INDUSTRY_BUILD:{selfSufficiencyPriority:1,innovationPreference:1,fiscalDiscipline:-0.5,strategicTimeHorizon:0.8},
+    DOMESTIC_EXPANSION:{selfSufficiencyPriority:1,innovationPreference:0.8,fiscalDiscipline:-0.5},
+    PROCESSING_EXPANSION:{selfSufficiencyPriority:1,tradeDependence:0.4,innovationPreference:1},
+    INFRASTRUCTURE_EXPANSION:{strategicTimeHorizon:1,fiscalDiscipline:-0.4,domesticStabilityPriority:0.6},
+    PROJECT_INVESTMENT:{fiscalDiscipline:-0.5,strategicTimeHorizon:1},
+    EDUCATION_INVESTMENT:{innovationPreference:1,strategicTimeHorizon:1,domesticStabilityPriority:0.5},
+    R_AND_D:{innovationPreference:1,strategicTimeHorizon:1,fiscalDiscipline:-0.3},
+    MODERNIZATION:{innovationPreference:1,strategicTimeHorizon:1,riskAppetite:0.6},
+    RESERVE_RELEASE:{selfSufficiencyPriority:-1,fiscalDiscipline:0.8},
+    SUBSTITUTION:{selfSufficiencyPriority:1,innovationPreference:0.8},
+    EFFICIENCY:{fiscalDiscipline:1,innovationPreference:0.8,strategicTimeHorizon:0.8},
+    DIPLOMATIC_ADJUSTMENT:{diplomaticPreference:1,escalationTolerance:-0.4}
+  });
   const ACTION_DIMENSIONS=Object.freeze({
     IMPORT:['tradeDependence','diplomaticPreference','selfSufficiencyPriority','fiscalDiscipline'],
     EXPORT:['tradeDependence','diplomaticPreference','fiscalDiscipline'],
@@ -94,10 +119,17 @@
   });
   function scoreAction(c,action){
     const p=profile(c),dims=ACTION_DIMENSIONS[String(action||'').toUpperCase()]||[];
-    const vals=[];
-    for(const d of dims){const x=p.dimensions[d];if(x?.value!==null)vals.push({dimension:d,value:x.value});}
+    const vals=[],directions=ACTION_DIRECTIONS[String(action||'').toUpperCase()]||{};
+    for(const d of dims){
+      const x=p.dimensions[d];
+      if(x?.value!==null){
+        const direction=num(directions[d])??1;
+        const utility=direction>=0?x.value:1-x.value;
+        vals.push({dimension:d,value:x.value,direction,utility});
+      }
+    }
     if(!vals.length)return{known:false,score:null,confidence:0,profile:p};
-    const mean=vals.reduce((s,x)=>s+x.value,0)/vals.length;
+    const mean=vals.reduce((s,x)=>s+x.utility,0)/vals.length;
     return{known:true,score:clamp(mean),confidence:clamp(Math.min(1,vals.length/4)),dimensions:vals,profile:p};
   }
   function strategicPlan(c,decision){
