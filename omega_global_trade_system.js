@@ -287,6 +287,10 @@
     return{accepted:true,decision:'WAITING_DATA',tradeDecision:decision};
   }
 
+  function relScoreForBuyer(buyer,seller){
+    return relationScore(relation(buyer,seller))??0.5;
+  }
+
   function buyerResponseHandler(cmd,ctx){
     const p=cmd?.payload||{},c=canonical(ctx.countryId),requestId=String(p.requestId||''),response=clone(p.response||{});
     const rawBucket=ctx.stateTransaction.get('trade');
@@ -316,7 +320,9 @@
       const need=clamp(req.needPressure??0.5);
       const mem=memoryInsight(c,req.targetCountryId);
       const memoryScore=mem.known?clamp(mem.acceptRate??0.5):0.5;
-      const ceiling=market===null?price:market*(1.05+need*.10+memoryScore*.05);
+      const debtPressure=buyerFin.debtToGdp===null?0:clamp(buyerFin.debtToGdp/1.5);
+      const diplomaticNeed=relScoreForBuyer(c,req.targetCountryId);
+      const ceiling=market===null?price:market*(1.05+need*.10+memoryScore*.05-(debtPressure*.10)+(diplomaticNeed*.05));
       if(price===null||liquidity===null||qty===null){req.status='SENT';req.stage='COUNTER_OFFER_DATA_PENDING';bucket.importRequests[idx]=req;ctx.stateTransaction.set('trade',bucket);return{accepted:true,status:'WAITING_DATA'};}
       const total=qty*price;
       if(total<=liquidity&&price<=ceiling){
