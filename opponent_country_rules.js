@@ -224,29 +224,47 @@ class PolicyLifecycle{constructor(tr){this.tr=tr;this.m=new Map;}plan(d,a){const
 class EventShock{constructor(tr){this.tr=tr;}run(c){const e=EVENT_LIST(c).filter(x=>!x.resolved).map(x=>({eventId:x.id||x.eventId||x.eventType,type:x.eventType||x.type,impactedSignals:x.impactedSignals||[],domains:x.domains||[],sourceCountryId:x.sourceCountryId||null}));this.tr.add({layer:'L20_EVENT_SHOCK_ENGINE',countryId:c,activeEvents:e.length});return e;}}
 class Consequence{
   constructor(tr,g,gw){this.tr=tr;this.g=g;this.gw=gw;}
+  domainSignals(domain){
+    const m={
+      resources:['RESOURCE_STOCK','RESOURCE_PRODUCTION','RESOURCE_DEMAND','RESOURCE_RESERVE'],resource:['RESOURCE_STOCK','RESOURCE_PRODUCTION','RESOURCE_DEMAND','RESOURCE_RESERVE'],
+      food:['FOOD_SUPPLY','FOOD_DEMAND','RESOURCE_STOCK'],energy:['ENERGY_SUPPLY','ENERGY_DEMAND','RESOURCE_STOCK'],
+      industry:['INPUT_AVAILABILITY','PRODUCTION_CAPACITY','EFFECTIVE_CAPACITY','OUTPUT','PRODUCTIVITY','ENERGY_DEMAND'],
+      production:['PRODUCTION_CAPACITY','EFFECTIVE_CAPACITY','OUTPUT','INPUT_AVAILABILITY'],
+      trade:['IMPORT_DEPENDENCE','EXPORT_DEMAND','MARKET_PRICE','FOREIGN_CURRENCY','TRADE_ROUTE_CAPACITY'],
+      finance:['REVENUE','EXPENDITURE','LIQUIDITY','CAPITAL_AVAILABILITY','FOREIGN_CURRENCY','DEBT_SERVICE_PRESSURE'],
+      infrastructure:['INFRASTRUCTURE_CAPACITY','TRANSPORT_CAPACITY','EFFECTIVE_CAPACITY','LOGISTICS_CONGESTION','NETWORK_FAILURE_RISK'],
+      logistics:['TRADE_ROUTE_CAPACITY','TRANSPORT_CAPACITY','LOGISTICS_CONGESTION','EFFECTIVE_CAPACITY'],
+      labor:['LABOR_AVAILABILITY','SKILLED_LABOR','UNEMPLOYMENT','WAGE_PRESSURE','HOUSEHOLD_INCOME'],
+      population:['POPULATION','POPULATION_GROWTH','MIGRATION_PRESSURE','HOUSEHOLD_INCOME','CONSUMER_DEMAND'],
+      housing:['HOUSING_DEMAND','HOUSING_SUPPLY','INFRASTRUCTURE_CAPACITY','LABOR_AVAILABILITY'],
+      education:['EDUCATION_CAPACITY','SKILLED_LABOR','PRODUCTIVITY'],health:['HEALTH_CAPACITY','HEALTH_PRESSURE','PUBLIC_SERVICE_CAPACITY'],
+      technology:['TECHNOLOGY_CAPABILITY','R_AND_D_CAPABILITY','PRODUCTIVITY','OUTPUT'],assets:['ASSET_AGE','MAINTENANCE_BACKLOG','EFFECTIVE_CAPACITY','OUTPUT'],
+      security:['SECURITY_THREAT','MILITARY_READINESS','LIQUIDITY'],foreign:['FOREIGN_TENSION','EXPORT_DEMAND','TRADE_ROUTE_CAPACITY','SECURITY_THREAT'],
+      welfare:['WELFARE_PRESSURE','HOUSEHOLD_INCOME','CONSUMER_DEMAND'],disaster:['DISASTER_DAMAGE','HEALTH_PRESSURE','INFRASTRUCTURE_CAPACITY','WELFARE_PRESSURE'],
+      development:['OUTPUT','PRODUCTIVITY','CAPITAL_AVAILABILITY'],investment:['INVESTMENT_DEMAND','CAPITAL_AVAILABILITY','OUTPUT'],
+      demand:['CONSUMER_DEMAND','INFLATION','WELFARE_PRESSURE'],institution:['STABILITY','CORRUPTION','PUBLIC_SERVICE_CAPACITY']
+    };
+    return [...(m[String(domain||'').toLowerCase()]||[])];
+  }
   preview(d,a){
-    const direct=ACTIONS[a]?.domains||[];
-    const down=this.g.down(direct.concat(d.expectedConsequences||[]));
-    const secondary=down.filter(x=>!direct.includes(x));
-    const external=down.filter(x=>['foreign','trade','security'].includes(x));
-    const x={decisionId:d.decisionId,action:a,direct,secondary,external,crossDomain:new Set(down).size>1};
-    this.tr.add({layer:'L21_CONSEQUENCE_ENGINE',countryId:d.countryId,decisionId:d.decisionId,action:a,direct,secondary,external});
-    return x;
+    const domains=ACTIONS[a]?.domains||[];
+    const direct=[...new Set(domains.flatMap(x=>this.domainSignals(x)))];
+    const down=this.g.down(direct),secondary=down.filter(x=>!direct.includes(x));
+    const external=down.filter(x=>['FOREIGN_TENSION','EXPORT_DEMAND','TRADE_ROUTE_CAPACITY','SECURITY_THREAT'].includes(x));
+    const out={decisionId:d.decisionId,action:a,domains,direct,secondary,external,crossDomain:new Set(down).size>1};
+    this.tr.add({layer:'L21_CONSEQUENCE_ENGINE',countryId:d.countryId,decisionId:d.decisionId,action:a,direct,secondary,external});return out;
   }
   affectedActors(e){
-    const origin=ID(e?.countryId),s=new Set(origin?[origin]:[]),raw=this.gw.get('relations');
-    for(const r of ROWS(raw)){
-      const ids=['countryId','sourceCountryId','targetCountryId','partnerCountryId','fromCountryId','toCountryId','actorId','targetId'].map(k=>ID(r?.[k])).filter(Boolean);
-      if(!origin||ids.includes(origin))for(const z of ids)s.add(z);
-    }
-    for(const z of e?.affectedActors||[])if(ID(z))s.add(ID(z));
-    return [...s];
+    const origin=ID(e?.countryId),actors=new Set(origin?[origin]:[]),raw=this.gw.get('relations');
+    for(const r of ROWS(raw)){const ids=['countryId','sourceCountryId','targetCountryId','partnerCountryId','fromCountryId','toCountryId','actorId','targetId'].map(k=>ID(r?.[k])).filter(Boolean);if(!origin||ids.includes(origin))for(const z of ids)actors.add(z);}
+    for(const z of e?.affectedActors||[])if(ID(z))actors.add(ID(z));return [...actors];
   }
   outcome(e){
-    const dirty=this.g.down(e?.impactedNodes||e?.domains||[]);
-    const actors=this.affectedActors(e);
-    this.tr.add({layer:'L21_CONSEQUENCE_ENGINE',countryId:e?.countryId,eventType:e?.eventType,dirty,affectedActors:actors,propagated:true});
-    return {dirty,affectedActors:actors};
+    const inputs=[...(e?.impactedNodes||[]),...(e?.domains||[])];
+    const normalized=[...new Set(inputs.flatMap(x=>this.domainSignals(x)))];
+    const dirty=this.g.down(normalized.length?normalized:inputs),actors=this.affectedActors(e);
+    this.tr.add({layer:'L21_CONSEQUENCE_ENGINE',countryId:e?.countryId,eventType:e?.eventType,inputs,normalizedSignals:normalized,dirty,affectedActors:actors,propagated:true});
+    return{dirty,affectedActors:actors};
   }
 }
 class Forecast{
