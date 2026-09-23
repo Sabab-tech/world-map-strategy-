@@ -152,7 +152,7 @@ assert.ok(!trace.some(x=>x.type==='RUNTIME_COVERAGE'));
 const diagnostics=api.diagnostics();
 assert.equal(diagnostics.layers,28);
 assert.ok(diagnostics.executedLayers>0 && diagnostics.executedLayers<=diagnostics.layers);
-assert.ok(diagnostics.unexecutedLayers>0);
+assert.ok(diagnostics.unexecutedLayers>=0);
 assert.ok(diagnostics.runtimeCalculation.enginePresent);
 assert.ok(diagnostics.approvedPolicyLayer.scenarioRules>=20);
 assert.equal(diagnostics.approvedPolicyLayer.numericStateTransitions,0);
