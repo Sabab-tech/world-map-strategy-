@@ -278,7 +278,11 @@
     "iso2": "BO",
     "iso3": "BOL",
     "numericCode": "068",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "aliases": [
+      "Bolivia",
+      "Bolivia (Plurinational State of)"
+    ]
   },
   {
     "code": "BQ",
@@ -339,7 +343,11 @@
     "iso2": "BN",
     "iso3": "BRN",
     "numericCode": "096",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "aliases": [
+      "Brunei",
+      "Brunei Darussalam"
+    ]
   },
   {
     "code": "BG",
@@ -381,7 +389,10 @@
     "iso2": "CV",
     "iso3": "CPV",
     "numericCode": "132",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "aliases": [
+      "Cape Verde"
+    ]
   },
   {
     "code": "KH",
@@ -517,7 +528,9 @@
     "importance": 3,
     "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
     "aliases": [
-      "Congo"
+      "Congo",
+      "Republic of the Congo",
+      "Congo-Brazzaville"
     ]
   },
   {
@@ -533,7 +546,10 @@
     "importance": 3,
     "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
     "aliases": [
-      "Congo, Democratic Republic of the"
+      "Congo, Democratic Republic of the",
+      "Democratic Republic of the Congo",
+      "DR Congo",
+      "DRC"
     ]
   },
   {
@@ -565,7 +581,9 @@
     "importance": 3,
     "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
     "aliases": [
-      "Côte d'Ivoire"
+      "Côte d'Ivoire",
+      "Cote d'Ivoire",
+      "Ivory Coast"
     ]
   },
   {
@@ -595,7 +613,11 @@
     "iso2": "CW",
     "iso3": "CUW",
     "numericCode": "531",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "aliases": [
+      "Curacao",
+      "Curaçao"
+    ]
   },
   {
     "code": "CY",
@@ -611,7 +633,10 @@
     "iso2": "CZ",
     "iso3": "CZE",
     "numericCode": "203",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "aliases": [
+      "Czech Republic"
+    ]
   },
   {
     "code": "DK",
@@ -730,7 +755,11 @@
     "iso2": "FK",
     "iso3": "FLK",
     "numericCode": "238",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "aliases": [
+      "Falkland Islands",
+      "Falkland Islands (Malvinas)"
+    ]
   },
   {
     "code": "FO",
@@ -1204,7 +1233,12 @@
     "iso2": "KP",
     "iso3": "PRK",
     "numericCode": "408",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "aliases": [
+      "North Korea",
+      "DPRK",
+      "Democratic People's Republic of Korea"
+    ]
   },
   {
     "code": "KR",
@@ -1254,7 +1288,11 @@
     "iso2": "LA",
     "iso3": "LAO",
     "numericCode": "418",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "aliases": [
+      "Laos",
+      "Lao People's Democratic Republic"
+    ]
   },
   {
     "code": "LV",
@@ -1336,7 +1374,11 @@
     "iso2": "MO",
     "iso3": "MAC",
     "numericCode": "446",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "aliases": [
+      "Macau",
+      "Macao"
+    ]
   },
   {
     "code": "MG",
@@ -1465,7 +1507,11 @@
     "iso2": "FM",
     "iso3": "FSM",
     "numericCode": "583",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "aliases": [
+      "Micronesia",
+      "Federated States of Micronesia"
+    ]
   },
   {
     "code": "MD",
@@ -1473,7 +1519,11 @@
     "iso2": "MD",
     "iso3": "MDA",
     "numericCode": "498",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "aliases": [
+      "Moldova",
+      "Republic of Moldova"
+    ]
   },
   {
     "code": "MC",
@@ -1673,7 +1723,12 @@
     "iso2": "MK",
     "iso3": "MKD",
     "numericCode": "807",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "aliases": [
+      "Macedonia",
+      "North Macedonia",
+      "Republic of North Macedonia"
+    ]
   },
   {
     "code": "MP",
@@ -1807,7 +1862,10 @@
     "iso2": "PN",
     "iso3": "PCN",
     "numericCode": "612",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "aliases": [
+      "Pitcairn Islands"
+    ]
   },
   {
     "code": "PL",
@@ -1989,7 +2047,11 @@
     "iso2": "ST",
     "iso3": "STP",
     "numericCode": "678",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "aliases": [
+      "São Tomé and Príncipe",
+      "Sao Tome and Principe"
+    ]
   },
   {
     "code": "SA",
@@ -2060,7 +2122,11 @@
     "iso2": "SX",
     "iso3": "SXM",
     "numericCode": "534",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "aliases": [
+      "Sint Maarten",
+      "Saint Martin (Dutch part)"
+    ]
   },
   {
     "code": "SK",
@@ -2231,7 +2297,11 @@
     "iso2": "TW",
     "iso3": "TWN",
     "numericCode": "158",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "aliases": [
+      "Taiwan",
+      "Republic of China"
+    ]
   },
   {
     "code": "TJ",
@@ -2410,7 +2480,11 @@
     "minZoom": 4.5,
     "maxZoom": 9,
     "importance": 4,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "aliases": [
+      "UAE",
+      "United Arab Emirates"
+    ]
   },
   {
     "code": "GB",
@@ -2521,7 +2595,10 @@
     "iso2": "VG",
     "iso3": "VGB",
     "numericCode": "092",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "aliases": [
+      "British Virgin Islands"
+    ]
   },
   {
     "code": "VI",
@@ -2529,7 +2606,12 @@
     "iso2": "VI",
     "iso3": "VIR",
     "numericCode": "850",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "aliases": [
+      "US Virgin Islands",
+      "United States Virgin Islands",
+      "U.S. Virgin Islands"
+    ]
   },
   {
     "code": "WF",
