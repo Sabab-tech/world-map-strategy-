@@ -1318,7 +1318,8 @@
       const delta=num(x.readinessApplied);
       const next=Math.max(0,Math.min(100,current+delta));
       ctx.stateTransaction.set('military.readiness',next);
-      event('OMEGA_FORCE_STRUCTURE_CHANGED',c,{trainingId:x.trainingId,readinessBefore:current,readinessAfter:next,delta},cmd.commandId,x.decisionId||x.trainingId);
+      event('OMEGA_MILITARY_READINESS_CHANGED',ctx.countryId,{trainingId:x.trainingId,readinessBefore:current,readinessAfter:next,delta},cmd.commandId,x.decisionId||x.trainingId);
+      event('OMEGA_MILITARY_TRAINING_COMPLETED',ctx.countryId,{trainingId:x.trainingId,quantity:x.quantity||null,skillGain:x.skillGain??null,experienceGain:x.experienceGain??null,moraleDelta:x.moraleDelta??null,proficiencyGain:x.proficiencyGain??null},cmd.commandId,x.decisionId||x.trainingId);
     }
     return{accepted:true,completedTraining:nextTrain.filter(x=>x.status==='COMPLETED'&&x.completedTurn===turnNow).length};
   }
