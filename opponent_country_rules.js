@@ -178,7 +178,7 @@
     FISCAL:{id:'FISCAL',badWhen:'EXPENDITURE_EXCEEDS_REVENUE',need:'FISCAL_BALANCE'},
     TRADE:{id:'TRADE',badWhen:'IMPORT_VALUE_EXCEEDS_EXPORT_VALUE',need:'EXTERNAL_BALANCE'},
     RESERVE:{id:'RESERVE',badWhen:'RESERVE_BELOW_TARGET',need:'STRATEGIC_RESERVE'},
-    CAPITAL:{id:'CAPITAL',badWhen:'CAPITAL_AVAILABLE_EXCEEDS_OPERATIONAL_REQUIREMENT',need:'INVESTMENT_ALLOCATION'},
+    CAPITAL:{id:'CAPITAL',badWhen:'CAPITAL_AVAILABLE_BELOW_OPERATIONAL_REQUIREMENT',need:'CAPITAL_SECURITY'},
     LOGISTICS:{id:'LOGISTICS',badWhen:'SUPPLY_EXISTS_BUT_REACHABILITY_IS_CONSTRAINED',need:'LOGISTICS_CAPACITY'}
   });
 
@@ -719,6 +719,9 @@
       ],
       CAPITAL_AVAILABLE_EXCEEDS_OPERATIONAL_REQUIREMENT:[
         [['finance.capitalAvailable','finance.liquidity'],['finance.operationalRequirement','finance.requiredOperatingCapital']]
+      ],
+      CAPITAL_AVAILABLE_BELOW_OPERATIONAL_REQUIREMENT:[
+        [['finance.operationalRequirement','finance.requiredInvestmentCapital'],['finance.capitalAvailable','finance.liquidity']]
       ],
       EXPENDITURE_EXCEEDS_REVENUE:[
         [['finance.expenditure','economy.expenditure'],['finance.revenue','economy.revenue']]
