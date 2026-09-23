@@ -165,6 +165,23 @@
     FORECAST_SHORTFALL:{problemWhen:'RISING',notes:'Forecasted shortfall is a future pressure signal, not a fabricated current value.'}
   });
 
+
+  const GAP_RELATION_REGISTRY=Object.freeze({
+    RESOURCE:{id:'RESOURCE',badWhen:'DEMAND_EXCEEDS_EFFECTIVE_SUPPLY',need:'RESOURCE_SECURITY'},
+    FOOD:{id:'FOOD',badWhen:'FOOD_DEMAND_EXCEEDS_EFFECTIVE_SUPPLY',need:'FOOD_SECURITY'},
+    ENERGY:{id:'ENERGY',badWhen:'ENERGY_DEMAND_EXCEEDS_EFFECTIVE_AVAILABLE',need:'ENERGY_SECURITY'},
+    HOUSING:{id:'HOUSING',badWhen:'HOUSING_REQUIRED_EXCEEDS_EFFECTIVE_AVAILABLE',need:'HOUSING_CAPACITY'},
+    INDUSTRIAL_INPUT:{id:'INDUSTRIAL_INPUT',badWhen:'INPUT_REQUIREMENT_EXCEEDS_INPUT_AVAILABILITY',need:'INPUT_SECURITY'},
+    PRODUCTION:{id:'PRODUCTION',badWhen:'PRODUCT_DEMAND_EXCEEDS_EFFECTIVE_CAPACITY',need:'PRODUCTIVE_CAPACITY'},
+    LABOR:{id:'LABOR',badWhen:'LABOR_REQUIRED_EXCEEDS_AVAILABLE',need:'LABOR_CAPACITY'},
+    INFRASTRUCTURE:{id:'INFRASTRUCTURE',badWhen:'LOAD_EXCEEDS_INFRASTRUCTURE_CAPACITY',need:'INFRASTRUCTURE_CAPACITY'},
+    FISCAL:{id:'FISCAL',badWhen:'EXPENDITURE_EXCEEDS_REVENUE',need:'FISCAL_BALANCE'},
+    TRADE:{id:'TRADE',badWhen:'IMPORT_VALUE_EXCEEDS_EXPORT_VALUE',need:'EXTERNAL_BALANCE'},
+    RESERVE:{id:'RESERVE',badWhen:'RESERVE_BELOW_TARGET',need:'STRATEGIC_RESERVE'},
+    CAPITAL:{id:'CAPITAL',badWhen:'CAPITAL_AVAILABLE_EXCEEDS_OPERATIONAL_REQUIREMENT',need:'INVESTMENT_ALLOCATION'},
+    LOGISTICS:{id:'LOGISTICS',badWhen:'SUPPLY_EXISTS_BUT_REACHABILITY_IS_CONSTRAINED',need:'LOGISTICS_CAPACITY'}
+  });
+
   const ACTION_TYPES=Object.freeze({
     IMPORT:'IMPORT',
     EXPORT:'EXPORT',
@@ -1197,6 +1214,57 @@
       return raw===undefined?null:getDatasetCountryRecord(raw,countryId);
     }
 
+    async assessCountryState(countryId,turn=getCurrentTurn()){
+      const context=await this.buildContext(normalizeId(countryId),number(turn)??getCurrentTurn());
+      const assessment={};
+      const problemSignals=[];
+      const opportunitySignals=[];
+      const unknownSignals=[];
+
+      for(const signalId of Object.keys(this.stateDirections)){
+        const observation=context.signals[signalId]||getObservationForSignal(context,signalId);
+        const definition=this.stateDirections[signalId];
+        const expected=definition.problemWhen;
+        const evaluation=evaluateDirection(signalId,observation.raw,expected);
+
+        assessment[signalId]={
+          problemWhen:expected,
+          opportunityWhen:definition.opportunityWhen||null,
+          observedDirection:observation.direction||null,
+          status:observation.status,
+          problem:evaluation.state==='TRUE',
+          reason:evaluation.reason||null,
+          source:observation.source||null
+        };
+
+        if(evaluation.state==='TRUE')problemSignals.push(signalId);
+        else if(observation.direction&&definition.opportunityWhen===observation.direction)opportunitySignals.push(signalId);
+        else if(evaluation.state==='UNKNOWN' && observation.status!=='AVAILABLE')unknownSignals.push(signalId);
+      }
+
+      const gaps={};
+      for(const [gapId,definition] of Object.entries(GAP_RELATION_REGISTRY)){
+        const result=evaluateRelation(context,definition.badWhen);
+        gaps[gapId]={
+          relation:definition.badWhen,
+          need:definition.need,
+          state:result.state,
+          evidence:result.operands||null
+        };
+      }
+
+      return {
+        countryId:context.countryId,
+        simulationTurn:context.turn,
+        problemSignals,
+        opportunitySignals,
+        unknownSignals,
+        gaps,
+        sourceCount:context.sourcesUsed.length,
+        capabilities:context.capabilities
+      };
+    }
+
     selectDecisions(decisions){
       return decisions.slice().sort((a,b)=>
         Number(b.priority)-Number(a.priority) ||
@@ -1338,6 +1406,8 @@
     ACTION_TYPES:clone(ACTION_TYPES),
     SCENARIO_REGISTRY:clone(SCENARIO_REGISTRY),
     RULES:clone(RULES),
+    GAP_RELATION_REGISTRY:clone(GAP_RELATION_REGISTRY),
+    RUNTIME_LAYER_REGISTRY:clone(RUNTIME_LAYER_REGISTRY),
     instance:runtime,
     configure:options=>runtime.configure(options),
     initialize:options=>runtime.initialize(options),
@@ -1348,6 +1418,7 @@
     registerScenario:scenario=>runtime.registerScenario(scenario),
     registerRule:rule=>runtime.registerRule(rule),
     evaluateDirection:(signalId,observation,expectedDirection)=>evaluateDirection(signalId,observation,expectedDirection),
+    assessCountryState:(countryId,turn)=>runtime.assessCountryState(countryId,turn),
     loadDataset:(id,options)=>runtime.gateway.load(id,options||{}),
     setDataset:(id,data,turn)=>runtime.gateway.set(id,data,turn),
     getDataset:id=>runtime.gateway.get(id),
