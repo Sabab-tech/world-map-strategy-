@@ -118,6 +118,7 @@ jobs:
           node --check world_ecosystem_engine.js
           node test/opponent_country_rules_runtime.test.js
           node test/omega_opponent_deep_memory_system.test.mjs
+          node test/omega_opponent_intelligence_evolution_system.test.mjs
           node test/omega_global_trade_system.test.mjs
           node test/omega_opponent_treaty_lifecycle_system.test.mjs
           node test/omega_opponent_e2e_runtime.test.mjs
