@@ -32,6 +32,7 @@ jobs:
         run: |
           set -euo pipefail
           node --check server_bootstrap.js
+          node --check omega_universal_entity_identity_engine.js
           node --check omega_ministry_registry.js
           node --check omega_ministry_state_provider.js
           node --check omega_ministry_information_policy.js
@@ -50,6 +51,7 @@ jobs:
       - name: Independent 17-ministry runtime proof
         run: |
           set -euo pipefail
+          npm run test:architecture
           npm run test:ministries
           npm run test:simulation
 
@@ -83,6 +85,7 @@ jobs:
             'omega_ministry_runtime_v1.js',
             'omega_simulation_runtime.js',
             'opponent_country_rules.js',
+            'omega_universal_entity_identity_engine.js',
             'omega_ai_context_bridge.js'
           ]) {
             if (!html.includes(required)) throw new Error('Canonical script missing from production HTML: '+required);
