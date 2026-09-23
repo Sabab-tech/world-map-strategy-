@@ -140,6 +140,15 @@
     OMEGA_RESOURCE_ENDOWMENT_HYDRATED:'OMEGA_RESOURCE_ENDOWMENT_HYDRATED',
     OMEGA_RESOURCE_EXTRACTION_COMPLETED:'OMEGA_RESOURCE_EXTRACTION_COMPLETED',
     OMEGA_RESOURCE_EXTRACTION_BLOCKED:'OMEGA_RESOURCE_EXTRACTION_BLOCKED',
+    OMEGA_RESOURCE_BATCH_CREATED:'OMEGA_RESOURCE_BATCH_CREATED',
+    OMEGA_RESOURCE_INVENTORY_CHANGED:'OMEGA_RESOURCE_INVENTORY_CHANGED',
+    OMEGA_RESOURCE_INVENTORY_RECONCILED:'OMEGA_RESOURCE_INVENTORY_RECONCILED',
+    OMEGA_RESOURCE_PROCESSING_COMPLETED:'OMEGA_RESOURCE_PROCESSING_COMPLETED',
+    OMEGA_INDUSTRIAL_PRODUCTION_COMPLETED:'OMEGA_INDUSTRIAL_PRODUCTION_COMPLETED',
+    OMEGA_INDUSTRIAL_RUNTIME_PUBLISHED:'OMEGA_INDUSTRIAL_RUNTIME_PUBLISHED',
+    OMEGA_RESOURCE_FISCAL_RECEIPT_POSTED:'OMEGA_RESOURCE_FISCAL_RECEIPT_POSTED',
+    OMEGA_RESOURCE_TRADE_RECONCILED:'OMEGA_RESOURCE_TRADE_RECONCILED',
+    OMEGA_RESOURCE_ECONOMY_RUNTIME_HEALTH:'OMEGA_RESOURCE_ECONOMY_RUNTIME_HEALTH',
 
     MINISTRY_STATE_CHANGED:'MINISTRY_STATE_CHANGED'
   });
@@ -153,15 +162,16 @@
       'finance.reserves','finance.taxRevenue','finance.revenue','finance.spending',
       'finance.encumbered','finance.capitalExpenditure','finance.operatingExpenditure',
       'finance.emergencyAllocation','finance.mandatoryObligations','finance.required',
-      'finance.ministryAllocations'
+      'finance.ministryAllocations','finance.resourceFiscal','finance.resourceFiscalLedger','finance.resourceSettlementClearing'
     ],
     economy:[
       'economy.gdp','economy.debt','economy.inflation','economy.unemployment',
-      'economy.production','economy.productionCapacity','economy.revenue','economy.reserves','economy.productionAssets'
+      'economy.production','economy.productionCapacity','economy.revenue','economy.reserves','economy.productionAssets',
+      'economy.industrialRuntime','economy.companyAccounts','economy.workerIncome','economy.supplierRevenue','economy.factoryOutput'
     ],
     trade:[
       'trade.relations','trade.balance','trade.exports','trade.imports',
-      'trade.policy','trade.negotiations','trade.importRequests','trade.offerBook','trade.marketPrice','trade.marketState','trade.marketMeta','trade.routeCapacity'
+      'trade.policy','trade.negotiations','trade.importRequests','trade.offerBook','trade.marketPrice','trade.marketState','trade.marketMeta','trade.routeCapacity','trade.domesticSales'
     ],
     foreign:[
       'foreign.relations','foreign.treaties','foreign.negotiations',
@@ -182,11 +192,12 @@
       'interior.stability','interior.corruption','interior.security','interior.housingAssets','cities.housing.available'
     ],
     transport:[
-      'transport.infrastructure','transport.infrastructure.capacity','transport.logistics','transport.ports','transport.rail'
+      'transport.infrastructure','transport.infrastructure.capacity','transport.logistics','transport.ports','transport.rail','transport.resourceRevenue'
     ],
     resource:[
       'resourceSummary','resourceInventory','resourceDeposits','resource.inventory','resource.production','resource.consumption','resource.reserves',
-      'resource.endowment','resource.mines','resource.mineStates','resource.tradeAvailability','resource.extractionLedger','resource.resourceDomain','resource.authority'
+      'resource.endowment','resource.mines','resource.mineStates','resource.tradeAvailability','resource.extractionLedger','resource.resourceDomain','resource.authority',
+      'resource.batches','resource.inventoryLedger','resource.inventoryIntegrity','resource.lastExtractionTurn'
     ],
     health:[
       'health.state','health.welfare','health.hospitals'
