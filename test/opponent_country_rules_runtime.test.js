@@ -26,7 +26,7 @@ const state={
   cities:{BD:{housing:{required:100,available:80}}},
   industry:{BD:{inputs:{required:80,available:60},demand:100,effectiveCapacity:120,currentOutput:90,capacity:120,output:90}},
   infrastructure:{BD:{load:80,capacity:120}},
-  finance:{BD:{revenue:100,expenditure:80,capitalAvailable:50,operationalRequirement:40,liquidity:100,foreignCurrency:100}},
+  finance:{BD:{revenue:100,expenditure:80,capitalAvailable:50,operationalRequirement:40,liquidity:100}},
   trade:{BD:{imports:40,exports:20,externalDemand:80,currentExports:20,routeCapacity:100,routeLoad:20}},
   interior:{BD:{stability:{trend:'STABLE'},corruption:{trend:'STABLE'},serviceCapacity:100}},
   defense:{BD:{threatLevel:{trend:'LOW'},readiness:{trend:'RISING'}}},
@@ -103,7 +103,7 @@ assert.equal(balanced.status,'BALANCED');
 assert.equal(balanced.candidates[0].action,'HOLD');
 assert.equal(balanced.candidates[0].quantity,0);
 
-const runtimeDecision=deficitRun=bd.decisions.find(x=>x.decisionOrigin==='RUNTIME_CALCULATION'&&x.runtimeMeasurement?.kind==='RESOURCE_FLOW');
+const runtimeDecision=bd.decisions.find(x=>x.decisionOrigin==='RUNTIME_CALCULATION'&&x.runtimeMeasurement?.kind==='RESOURCE_FLOW');
 assert.ok(runtimeDecision);
 assert.equal(runtimeDecision.selectedActions[0],'IMPORT');
 
