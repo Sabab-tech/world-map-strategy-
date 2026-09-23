@@ -120,6 +120,7 @@ const CANONICAL_AI_SCRIPTS = Object.freeze([
   'omega_opponent_intelligence_evolution_system.js',
   'omega_opponent_adaptive_strategy_system.js',
   'omega_opponent_autonomy_system.js',
+  'omega_global_market_system.js',
   'omega_global_trade_system.js',
   'omega_opponent_treaty_lifecycle_system.js',
   'omega_opponent_second_order_consequence_system.js'
