@@ -46,7 +46,7 @@ vm.runInNewContext(resourceBridgeSource, sandbox, { filename: 'omega_resource_se
 
   const countryDiag = identity.diagnostics();
   assert.equal(countryDiag.ready, true, JSON.stringify(countryDiag));
-  assert.equal(countryDiag.countryCount, 197, `Expected exactly 197 canonical country IDs, got ${countryDiag.countryCount}`);
+  assert.equal(countryDiag.countryCount, 249, `Expected exactly 249 canonical country IDs, got ${countryDiag.countryCount}`);
   assert.equal(countryDiag.complete, true, JSON.stringify(countryDiag));
   assert.ok(countryDiag.totalCityRecords > 0, 'No city records were ingested from cities.json');
 
@@ -91,14 +91,14 @@ vm.runInNewContext(resourceBridgeSource, sandbox, { filename: 'omega_resource_se
   assert.equal(unknown, null, 'Unknown country must remain unresolved, never become Bangladesh');
 
   const bridgeExport = identity.exportData();
-  assert.equal(bridgeExport.countries.length, 197, 'Export must contain all 197 canonical countries');
+  assert.equal(bridgeExport.countries.length, 249, 'Export must contain all 249 canonical countries');
   assert.ok(bridgeExport.countries.every(c => Array.isArray(c.cities)), 'Every exported country must carry its runtime city array');
 
   const bridgeDiag = resourceBridge.diagnostics();
   assert.equal(bridgeDiag.ready, true, JSON.stringify(bridgeDiag));
   assert.ok(bridgeDiag.countries > 0, 'Resource bridge country registry is empty');
   assert.ok(bridgeDiag.resources > 0, 'Resource bridge registry is empty');
-  assert.equal(bridgeDiag.expectedCountryIds, 197);
+  assert.equal(bridgeDiag.countries, 249, `Resource bridge must mirror all 249 canonical country IDs, got ${bridgeDiag.countries}`);
 
   const ontology = files.get('resource_ontology.json');
   const resourceTypes = ontology?.COMMODITY_ONTOLOGIES || {};
