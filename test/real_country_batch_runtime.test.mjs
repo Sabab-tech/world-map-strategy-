@@ -17,7 +17,7 @@ opponent.setDataset('countries', countries);
 const calls = [];
 let active = 0;
 let maxActive = 0;
-runtime.runtime.evaluate = async (countryId, turn) => {
+runtime.evaluate = async (countryId, turn) => {
   active++;
   maxActive = Math.max(maxActive, active);
   await new Promise(resolve => setTimeout(resolve, 1));
