@@ -1086,8 +1086,9 @@
     const p=cmd?.payload||{},q=num(p.quantity);
     if(q===null||q<=0)return{accepted:false,reason:'TRAINING_QUANTITY_INVALID'};
     const queue=Array.isArray(ctx.stateTransaction.get('military.trainingQueue'))?ctx.stateTransaction.get('military.trainingQueue'):[];
-    const duration=Math.max(1,Math.floor(num(p.durationTurns)||1));
-    const row={trainingId:String(p.trainingId||('TRAIN-'+turn()+'-'+ctx.countryId)),quantity:q,status:'IN_TRAINING',createdTurn:turn(),completionTurn:turn()+duration,durationTurns:duration,decisionId:p.decisionId||null,readinessDelta:num(p.readinessDelta)};
+    const duration=num(p.durationTurns);
+    if(duration===null||duration<=0)return{accepted:false,reason:'TRAINING_DURATION_REQUIRED'};
+    const row={trainingId:String(p.trainingId||('TRAIN-'+turn()+'-'+ctx.countryId)),quantity:q,status:'IN_TRAINING',createdTurn:turn(),completionTurn:turn()+duration,durationTurns:Math.floor(duration),decisionId:p.decisionId||null,readinessDelta:num(p.readinessDelta)};
     ctx.stateTransaction.set('military.trainingQueue',queue.concat([row]).slice(-256));
     event('OMEGA_MILITARY_TRAINING_APPLIED',ctx.countryId,row,cmd.commandId,p.correlationId||p.decisionId||null);
     return{accepted:true,training:row,stateMutationAuthority:true};
