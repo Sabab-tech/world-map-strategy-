@@ -349,7 +349,7 @@
   }
 
   function schema(dataset){const x=state.datasets.get(S(dataset));return x?C(x.schema):null;}
-  function list(type=null){const t=U(type);if(t)return [...(state.entities.get(t)||new Map()).values()].map(C);const out=[];for(const m of state.entities.values())for(const e of m.values())out.push(C(e));return out;}
+  function list(type=null){const t=U(type);if(t)return [...(state.entities.get(t)||new Map()).values()].map(x=>C(x));const out=[];for(const m of state.entities.values())for(const e of m.values())out.push(C(e));return out;}
 
   function diagnostics(){
     const byType={};for(const [t,m] of state.entities.entries())byType[t]=m.size;
