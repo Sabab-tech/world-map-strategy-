@@ -529,7 +529,7 @@ class Runtime{
     const goals=this.goal.run(s.countryId,scenarios,gap),policyDecisions=this.decision.run(s.countryId,goals,ctx),automaticDecisions=runtimeAnalysis.automaticDecisions.map(x=>({decisionId:x.decisionId,countryId:x.countryId,simulationTurn:x.simulationTurn,scenarioId:x.scenarioId,status:x.status,selectedActions:[x.selected.action],selected:x.selected,runtimeMeasurement:x.measurement,evidence:x.evidence,selectedEvaluations:[{action:x.selected.action,feasibility:{status:'RUNTIME_FEASIBLE'}}]})),decisions=[...policyDecisions,...automaticDecisions];
     const reconciliation=this.reconcile.run(s),development=this.development(s,gap);
     decisions.forEach(d=>this.mem.decision(s.countryId,d));
-    const out={status:'COMPLETE',countryId:s.countryId,turn:t,mode,identity:s.identity,signals:s.signals,demand,supply,gapPressure:gap,scenarios,goals,
+    const out={status:'COMPLETE',countryId:s.countryId,turn:t,mode,identity:s.identity,signals:s.signals,datasetObservations:s.datasetObservations,demand,supply,gapPressure:gap,scenarios,goals,
       decisions,runtimeAnalysis,forecasts:ctx.forecasts,reconciliation,development,events,subsystems:ctx.subsystems};
     this.runs.set(s.countryId,out);this.scheduler.commit(s.countryId,t);
     this.history.push({countryId:s.countryId,turn:t,scenarios:scenarios.map(x=>x.id),decisions:decisions.map(x=>x.decisionId)});if(this.history.length>MAX)this.history.shift();
