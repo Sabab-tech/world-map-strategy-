@@ -135,6 +135,9 @@
       x.attempts+=1;if(/SUCCESS|ACCEPT|APPLIED|SETTLED|COMPLETED/.test(out))x.successes+=1;if(/FAIL|REJECT|BLOCK/.test(out))x.failures+=1;x.lastTurn=Math.max(x.lastTurn,e.simulationTurn||0);byAction[key]=x;
     }
     m.procedural=bounded(Object.values(byAction).map(x=>({...x,successRate:x.attempts?x.successes/x.attempts:0.5,confidence:clamp(Math.min(1,x.attempts/8))})),MAX_PROCEDURES);
+    m.forecast=bounded(Object.values(byAction).map(x=>({type:'ACTION_SUCCESS_FORECAST',action:x.action,expectedSuccessRate:x.attempts?x.successes/x.attempts:0.5,
+      confidence:clamp(Math.min(1,x.attempts/10)),basisAttempts:x.attempts,simulationTurn:turn()})),MAX_FORECASTS);
+    m.metacognitive.confidence=clamp(m.procedural.length?m.procedural.reduce((s,x)=>s+(num(x.confidence)||0),0)/m.procedural.length:.5);
     const failures=recent.filter(e=>/FAIL|REJECT|BLOCK/.test(String(e.outcome?.status||e.outcome||'').toUpperCase()));
     m.failure=bounded(failures,MAX_EPISODES);
     const pairFacts=[];
@@ -218,7 +221,10 @@
         const outcome=d.executorResult||d.result||d.payload||d;
         const status=String(d.status||outcome?.status||outcome?.executionState||'OBSERVED').toUpperCase();
         const failure=/FAIL|REJECT|BLOCK/.test(status);
-        const kind=/TRADE|IMPORT/.test(type)?(target?'RELATIONAL':'EPISODIC'):(failure?'FAILURE':'EPISODIC');
+        const kind=/DECISION_CREATED|PLAN_CREATED/.test(type)?'STRATEGIC':
+        /THREAT|EVIDENCE/.test(type)?'SEMANTIC':
+        /TRADE|IMPORT|TREATY/.test(type)?(target?'RELATIONAL':'EPISODIC'):
+        /FAIL|REJECT|BLOCK/.test(status)?'FAILURE':'EPISODIC';
         record(c,{type:kind,sourceEvent:type,targetCountryId:target,action:d.action||d.payload?.action||null,
           scenarioId:d.scenarioId||d.payload?.scenarioId||null,outcome:{status,event:type},evidence:{payload:clone(d)},confidence:failure?0.85:0.6,
           importance:/THREAT|TRADE|TREATY/.test(type)?.8:.5,tags:[type]});
