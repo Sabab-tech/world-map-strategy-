@@ -8747,6 +8747,36 @@ _globalScope.GSRSK_DataFoundation = (() => {
             // Missing canonical resource profile remains unavailable.
             return null;
 
+        getIntegratedResourceState(countryKey) {
+            const normalized = this.normalizeCountryCode(countryKey);
+            let canonicalCountryId = normalized;
+            try {
+                const identity = global.OmegaCanonicalIdentityRegistry || global.OmegaCountrySemanticBridge;
+                const hit = identity && typeof identity.resolveCountry === 'function' ? identity.resolveCountry(countryKey) : null;
+                if (hit?.id) canonicalCountryId = String(hit.id).trim().toUpperCase();
+            } catch (_) {}
+
+            const state = global.Game?.state || global.gameState || {};
+            const runtime = state?.resource?.[canonicalCountryId] || state?.resource?.[normalized] ||
+                state?.resources?.[canonicalCountryId] || state?.resources?.[normalized] || null;
+            const profile = this.getCountryResourceProfile(countryKey);
+            const deposits = this.getDepositsForCountry(normalized);
+
+            return {
+                countryId: canonicalCountryId,
+                resourceIso3: normalized,
+                profile: profile || null,
+                inventory: runtime?.inventory && typeof runtime.inventory === 'object' ? runtime.inventory : {},
+                production: runtime?.production && typeof runtime.production === 'object' ? runtime.production : {},
+                consumption: runtime?.consumption && typeof runtime.consumption === 'object' ? runtime.consumption : {},
+                reserves: runtime?.reserves && typeof runtime.reserves === 'object' ? runtime.reserves : {},
+                deposits: deposits.slice(),
+                availability: runtime ? 'AVAILABLE' : 'RUNTIME_STATE_UNAVAILABLE',
+                source: runtime ? 'GAME.state + GSRSK_RESOURCE_MINISTRY_ENGINE' : 'GSRSK_RESOURCE_MINISTRY_ENGINE',
+                authoritativeRuntimeState: !!runtime
+            };
+        }
+
         getDepositsForCountry(countryKey) {
             const iso = this.normalizeCountryCode(countryKey);
             return this.deposits.filter(d => d.countryCode === iso || d.country.toUpperCase() === String(countryKey).toUpperCase());
