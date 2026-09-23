@@ -297,7 +297,7 @@
     var rs=resourceState(c),bs=Array.isArray(rs.batches)?clone(rs.batches):[],shipments=Array.isArray(rs.transportShipments)?clone(rs.transportShipments):[],changed=false;
     bs.forEach(function(b){
       if(!b||!b.batchId||String(b.timestampTurn)!==String(turn()))return;
-      if(!b.transport||id(b.transport.status)!=='DELIVERED')return;
+      if(b.transport&&id(b.transport.status)!=='DELIVERED')return;
       if(!/^FINISHED|INTERMEDIATE$/i.test(String(b.stage||'')))return;
       if(shipments.some(function(s){return s&&s.batchId===b.batchId;}))return;
       var s=makeShipment(c,b,'PROCESSING_OUTPUT',{id:'DOMESTIC_MARKET',stage:'FACTORY'});if(s){shipments.push(s);b.transport=Object.assign({},b.transport,{shipmentId:s.shipmentId,status:s.status,currentStage:s.currentStage,destinationStage:s.destinationStage,destinationFacilityId:s.destinationFacilityId,processingEligible:true,updatedTurn:turn()});changed=true;}
