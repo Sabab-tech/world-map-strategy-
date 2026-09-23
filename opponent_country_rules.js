@@ -515,11 +515,11 @@ class Runtime{
     if(this.gw.get('countries')===undefined)await this.gw.load('countries');
     this.idr.rebuild();this.actors.rebuild();return this.idr.list();
   }
-  async evaluate(c,t=TURN()){
+  async evaluate(c,t=TURN(),options={}){
     const s=this.kernel.snap(c,t);s.rawState=WORLD();this.graph.build();
     const demand=this.demand.run(s),supply=this.supply.run(s),gap=this.gap.run(s),events=this.events.run(s.countryId),scenarios=this.scenario.run(s,gap,events),runtimeAnalysis=this.runtimeFlow.analyze(s.countryId,s);
     const mode=this.scheduler.mode(gap,scenarios);
-    if(!this.scheduler.should(s.countryId,t,mode))return{status:'SKIPPED',countryId:s.countryId,turn:t,mode,last:this.runs.get(s.countryId)||null};
+    if(!this.scheduler.should(s.countryId,t,mode)&&options.forceFull!==true){const heartbeat={countryId:s.countryId,turn:t,observed:true,scheduled:false,mode};this.tr.add({layer:'L24_MULTI_RATE_SCHEDULER',countryId:s.countryId,turn:t,action:'COUNTRY_TICK_HEARTBEAT',observed:true});return{status:'SKIPPED',countryId:s.countryId,turn:t,mode,heartbeat,last:this.runs.get(s.countryId)||null};}
     this.forecast.observe(s);this.forecast.setProjects(this.projects.list(s.countryId));
     const ctx={countryId:s.countryId,turn:t,mode,signals:s.signals,demand,supply,gapPressure:gap,scenarios,events,
       countryCapabilities:this.cap.forCountry(s.countryId),forecasts:null};
@@ -649,28 +649,58 @@ async evaluateAllCountries(t=TURN(),options={}){
     const player=PLAYER();
     const excludePlayer=options.excludePlayer===true;
     const selectedIds=excludePlayer?ids.filter(x=>!player||x!==player):ids;
-    const evaluated=[],queued=[];
-    for(const countryId of selectedIds){
-      const result=await this.evaluate(countryId,t);
-      if(result.status==='COMPLETE')evaluated.push(result);
-    }
+    const concurrency=Math.max(1,Math.min(selectedIds.length||1,Number.isFinite(Number(options.concurrency))&&Number(options.concurrency)>0?Math.floor(Number(options.concurrency)):8));
+    const results=new Array(selectedIds.length);
+    const lanes=Array.from({length:concurrency},(_,lane)=>lane);
+    const yieldControl=()=>new Promise(resolve=>setTimeout(resolve,0));
+    this.tr.add({layer:'L24_MULTI_RATE_SCHEDULER',turn:t,action:'SAME_TICK_BATCH_START',countryCount:selectedIds.length,concurrency,dispatchMode:'COOPERATIVE_CONCURRENT'});
+    const worker=async lane=>{
+      for(let i=lane;i<selectedIds.length;i+=concurrency){
+        const countryId=selectedIds[i];
+        await yieldControl();
+        this.tr.add({layer:'L24_MULTI_RATE_SCHEDULER',countryId,turn:t,action:'COUNTRY_TASK_STARTED',batchIndex:i});
+        try{
+          results[i]=await this.evaluate(countryId,t,{forceFull:options.forceFull===true});
+        }catch(error){
+          results[i]={status:'ERROR',countryId,turn:t,error:String(error?.message||error)};
+          this.tr.add({layer:'L27_RUNTIME_DEBUG',type:'COUNTRY_EVALUATION_FAILED',countryId,turn:t,error:results[i].error});
+        }
+        this.tr.add({layer:'L24_MULTI_RATE_SCHEDULER',countryId,turn:t,action:'COUNTRY_TASK_FINISHED',batchIndex:i,status:results[i]?.status||'UNKNOWN'});
+      }
+    };
+    await Promise.all(lanes.map(worker));
+    const evaluated=results.filter(x=>x?.status==='COMPLETE');
+    const skipped=results.filter(x=>x?.status==='SKIPPED');
+    const failed=results.filter(x=>x?.status==='ERROR');
+    const queued=[];
     if(options.queue!==false){
-      for(const result of evaluated){
+      for(const result of results){
+        if(result?.status!=='COMPLETE')continue;
         for(const decision of result.decisions||[]){
           const command=this.queue(decision,t);
           if(command)queued.push(command);
         }
       }
     }
+    const activity=selectedIds.map((countryId,i)=>({countryId,status:results[i]?.status||'UNKNOWN',turn:t,observed:results[i]?.status==='COMPLETE'||results[i]?.status==='SKIPPED'||results[i]?.status==='ERROR',batchIndex:i}));
+    this.tr.add({layer:'L24_MULTI_RATE_SCHEDULER',turn:t,action:'SAME_TICK_BATCH_COMPLETE',countryCount:selectedIds.length,evaluated:evaluated.length,skipped:skipped.length,failed:failed.length,queued:queued.length,starvationFree:true});
     return{
-      status:'COMPLETE',
+      status:failed.length?'PARTIAL':'COMPLETE',
       turn:t,
       totalCountries:ids.length,
       selectedCountries:selectedIds.length,
       evaluated:evaluated.length,
+      skipped:skipped.length,
+      failed:failed.length,
       decisions:evaluated.reduce((sum,x)=>sum+(x.decisions?.length||0),0),
       queued:queued.length,
+      concurrency,
+      dispatchMode:'SAME_TICK_COOPERATIVE_CONCURRENT',
+      starvationFree:true,
       evaluatedCountryIds:evaluated.map(x=>x.countryId),
+      skippedCountryIds:skipped.map(x=>x.countryId),
+      failedCountryIds:failed.map(x=>x.countryId),
+      countryActivity:activity,
       queuedCommands:queued
     };
   }
