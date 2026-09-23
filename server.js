@@ -229,3 +229,162 @@ function executeProductionMinisterQuery(prompt, input, ir) {
   if (semantic?.targetDomain !== 'MINISTER') return null;
   const base = plan?.result || {};
   const ministerId = semantic?.entities?.minister?.id || input.ministerId || null;
+
+function buildRuntimeDataContext(input = {}) {
+  const countryCode = String(input.countryCode || input.countryId || '').trim().toUpperCase();
+  const countryResource = resolveCountryResourceData(countryCode, input.countryName);
+  const gameState = input.gameState || input.worldState || {};
+  return {
+    ...input,
+    countryCode: countryCode || input.countryCode || input.countryId || null,
+    countryId: input.countryId || countryCode || null,
+    countryResourceData: countryResource || null,
+    resourceProfiles: cachedResourceProfiles,
+    resourceTypes: resourceTypesRegistry,
+    gameState,
+    worldState: input.worldState || gameState
+  };
+}
+
+function executeDeepCorePrompt(prompt, input = {}) {
+  const requestInput = input && typeof input === 'object' ? input : {};
+  const ir = requestInput.ir && typeof requestInput.ir === 'object'
+    ? requestInput.ir
+    : buildDeepCoreIR(prompt, requestInput);
+
+  const ministerResult = executeProductionMinisterQuery(prompt, requestInput, ir);
+  if (ministerResult?.handled) return ministerResult.result;
+
+  const runtimeDataContext = buildRuntimeDataContext({
+    ...requestInput,
+    prompt
+  });
+
+  if (!OfflineQueryEngine?.execute) {
+    return {
+      ok: false,
+      status: 'DEEP_CORE_UNAVAILABLE',
+      value: null,
+      evidence: [],
+      trace: [{ step: 'DEEP_CORE', status: 'UNAVAILABLE' }]
+    };
+  }
+
+  try {
+    const result = OfflineQueryEngine.execute(
+      ir,
+      runtimeDataContext,
+      requestInput.language || 'en',
+      requestInput.context || {}
+    );
+    return result && typeof result === 'object'
+      ? result
+      : { ok: false, status: 'DEEP_CORE_EMPTY_RESULT', value: null, evidence: [] };
+  } catch (e) {
+    return {
+      ok: false,
+      status: 'DEEP_CORE_EXECUTION_ERROR',
+      value: null,
+      evidence: [],
+      trace: [{ step: 'DEEP_CORE_EXECUTION', status: 'ERROR', error: e.message }]
+    };
+  }
+}
+
+app.get('/api/deep-core/query', (req, res) => {
+  try {
+    const input = deepCoreContext(req);
+    const prompt = String(req.query.prompt || req.query.question || req.query.q || '').trim();
+    if (!prompt) return res.status(400).json({ ok: false, status: 'PROMPT_REQUIRED', result: null });
+    const result = executeDeepCorePrompt(prompt, input);
+    return res.json({ ok: result?.ok !== false, result });
+  } catch (e) {
+    return res.status(500).json({ ok: false, status: 'DEEP_CORE_QUERY_ERROR', error: e.message });
+  }
+});
+
+app.post('/api/deep-core/query', (req, res) => {
+  try {
+    const input = deepCoreContext(req);
+    const prompt = String(input.prompt || input.question || input.q || '').trim();
+    if (!prompt && !input.ir) return res.status(400).json({ ok: false, status: 'PROMPT_REQUIRED', result: null });
+    const result = executeDeepCorePrompt(prompt, input);
+    return res.json({ ok: result?.ok !== false, result });
+  } catch (e) {
+    return res.status(500).json({ ok: false, status: 'DEEP_CORE_QUERY_ERROR', error: e.message });
+  }
+});
+
+app.get('/api/deep-core/lookup', (req, res) => {
+  try {
+    const id = String(req.query.id || '').trim();
+    if (!id) return res.status(400).json({ ok: false, status: 'ID_REQUIRED' });
+    const result = OfflineQueryEngine.lookupId(id);
+    return res.json(result);
+  } catch (e) {
+    return res.status(500).json({ ok: false, status: 'DEEP_CORE_LOOKUP_ERROR', error: e.message });
+  }
+});
+
+app.get('/api/deep-core/resolve', (req, res) => {
+  try {
+    const id = String(req.query.id || req.query.q || '').trim();
+    const type = req.query.type ? String(req.query.type) : null;
+    if (!id) return res.status(400).json({ ok: false, status: 'ID_REQUIRED' });
+    const result = OfflineQueryEngine.resolve({ id, type });
+    return res.json(result);
+  } catch (e) {
+    return res.status(500).json({ ok: false, status: 'DEEP_CORE_RESOLVE_ERROR', error: e.message });
+  }
+});
+
+app.get('/api/deep-core/search', (req, res) => {
+  try {
+    const q = String(req.query.q || '').trim();
+    if (!q) return res.status(400).json({ ok: false, status: 'QUERY_REQUIRED' });
+    const result = OfflineQueryEngine.search(q, {
+      dataset: req.query.dataset ? String(req.query.dataset) : undefined,
+      type: req.query.type ? String(req.query.type) : undefined,
+      limit: req.query.limit != null ? Number(req.query.limit) : undefined
+    });
+    return res.json(result);
+  } catch (e) {
+    return res.status(500).json({ ok: false, status: 'DEEP_CORE_SEARCH_ERROR', error: e.message });
+  }
+});
+
+app.post('/api/deep-core/plan', (req, res) => {
+  try {
+    const input = deepCoreContext(req);
+    const prompt = String(input.prompt || input.question || input.q || '').trim();
+    const ir = input.ir && typeof input.ir === 'object' ? input.ir : buildDeepCoreIR(prompt, input);
+    const runtimeDataContext = buildRuntimeDataContext({ ...input, prompt });
+    const plan = OfflineQueryEngine.buildExecutionPlan(ir, runtimeDataContext);
+    return res.json(plan);
+  } catch (e) {
+    return res.status(500).json({ ok: false, status: 'DEEP_CORE_PLAN_ERROR', error: e.message });
+  }
+});
+
+app.get('/api/deep-core/diagnostics', (req, res) => {
+  try {
+    return res.json(OfflineQueryEngine.diagnostics());
+  } catch (e) {
+    return res.status(500).json({ ok: false, status: 'DEEP_CORE_DIAGNOSTICS_ERROR', error: e.message });
+  }
+});
+
+app.post('/api/deep-core/refresh', async (req, res) => {
+  try {
+    const result = await OfflineQueryEngine.refreshAsync();
+    return res.json(result);
+  } catch (e) {
+    return res.status(500).json({ ok: false, status: 'DEEP_CORE_REFRESH_ERROR', error: e.message });
+  }
+});
+
+const server = app.listen(PORT, () => {
+  console.log(`[OMEGA Server] listening on http://127.0.0.1:${PORT}`);
+});
+
+export { app, server, executeDeepCorePrompt };
