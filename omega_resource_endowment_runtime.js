@@ -290,6 +290,7 @@
   }
   function init(){
     install();
+    if(engine()?.isReady)void initialize();
     g.addEventListener?.('OMEGA_READY',onReady);
     g.addEventListener?.('RESOURCE_STATE_UPDATED',onReady);
     g.addEventListener?.('OMEGA_GAME_SESSION_STARTED',onReady);
