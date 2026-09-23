@@ -153,9 +153,12 @@
     }
     m.semantic=bounded([...m.semantic,...pairFacts],MAX_FACTS);
     m.consolidation={lastTurn:turn(),episodesConsumed:recent.length};
-    m.lastTurn=turn();m.revision=(m.revision||0)+1;
+    const revision=(m.revision||0)+1;
+    const traceId='MEMTRACE-'+turn()+'-'+c+'-'+revision+'-'+stableHash({countryId:c,turn:turn(),revision,operation:'CONSOLIDATE'});
+    m.lastTurn=turn();m.revision=revision;
+    m.traceHold=[...(m.traceHold||[]),{traceId,sequence:revision,simulationTurn:turn(),sourceEvent:'OMEGA_MEMORY_CONSOLIDATED',memoryId:null}].slice(-256);
     all[c]=m;ctx.stateTransaction.set('cabinet.opponentMemory',all);
-    emit('OMEGA_MEMORY_CONSOLIDATED',c,{revision:m.revision,episodesConsumed:recent.length,procedures:m.procedural.length,counterparties:Object.keys(m.counterparty||{}).length});
+    emit('OMEGA_MEMORY_CONSOLIDATED',c,{traceId,revision:m.revision,episodesConsumed:recent.length,procedures:m.procedural.length,counterparties:Object.keys(m.counterparty||{}).length,sourceCommandId:cmd.commandId,correlationId:cmd?.payload?.correlationId||null});
     return{accepted:true,revision:m.revision,procedures:m.procedural.length};
   }
 
