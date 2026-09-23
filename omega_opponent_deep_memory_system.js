@@ -220,7 +220,7 @@
         const failure=/FAIL|REJECT|BLOCK/.test(status);
         const kind=/TRADE|IMPORT/.test(type)?(target?'RELATIONAL':'EPISODIC'):(failure?'FAILURE':'EPISODIC');
         record(c,{type:kind,sourceEvent:type,targetCountryId:target,action:d.action||d.payload?.action||null,
-          scenarioId:d.scenarioId||d.payload?.scenarioId||null,outcome:{status,event:type},evidence:{payload:clone(d)},confidence:failure?.85:.6,
+          scenarioId:d.scenarioId||d.payload?.scenarioId||null,outcome:{status,event:type},evidence:{payload:clone(d)},confidence:failure?0.85:0.6,
           importance:/THREAT|TRADE|TREATY/.test(type)?.8:.5,tags:[type]});
       });
     }
