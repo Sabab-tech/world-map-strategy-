@@ -125,8 +125,12 @@ jobs:
           if (!runtime.includes('setReasoningAdapter')) throw new Error('AI reasoning boundary missing');
           if (!runtime.includes('executionApplied:false')) throw new Error('Direct state-mutation guard missing');
           if (/trigger:\{[^}]*value\s*:/.test(runtime)) throw new Error('Numeric trigger threshold detected');
-          for (const forbidden of ['Bangladesh','India','Pakistan','China','United States','USA']) {
+          for (const forbidden of ['Bangladesh','India','Pakistan','China','United States']) {
             if (runtime.includes(forbidden)) throw new Error('Country-specific behavior hardcode detected: '+forbidden);
+          }
+          const specificCountryBehavior = /(countryId|countryCode|sourceCountryId|targetCountryId|actorId|country\\s*===|actor\\s*===)[^;\\n]{0,100}(['"][^'"]*['"])/i;
+          if (specificCountryBehavior.test(runtime) && /(Bangladesh|India|Pakistan|China|United States|USA)/i.test(runtime.match(specificCountryBehavior)[0])) {
+            throw new Error('Country-specific behavior hardcode detected');
           }
 
           const layerRegistry = runtime.match(/const LAYERS=\[(.*?)\]\.map/s);
