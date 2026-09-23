@@ -90,8 +90,11 @@
   const ACTION_DEFINITIONS=Object.freeze(RULES.map(rule=>Object.freeze({
     actionId:rule.actionId,
     ownerMinistry:rule.ministryId,
+    stateOwnerMinistry:rule.ministryId,
     ruleId:rule.id,
-    affectedMinistries:rule.downstream
+    affectedMinistries:rule.downstream,
+    expectedOutputs:['MINISTRY_OWNED_OPPONENT_INTENT'],
+    downstreamEffects:rule.downstream.map(ministryId=>({ministryId,mode:'REQUEST_OR_CAUSAL_INPUT'}))
   })));
 
   function clone(value,seen=new WeakMap()){
@@ -246,6 +249,7 @@
       this.lastTurn=null;
       this.lastError=null;
       this.listeners=new Set();
+      this.registeredActions=new Set();
       this.attached=false;
     }
     configure(options={}){
@@ -270,6 +274,7 @@
       return true;
     }
     async initialize(options={}){
+      this.ensureRuntimeBindings();
       if(options.fetchCountries!==false){
         try{await this.gateway.load(DEFAULT_COUNTRY_DATASET,{turn:options.turn??getCurrentTurn()});}
         catch(error){this.lastError=String(error?.message||error);}
@@ -277,10 +282,79 @@
       this.initialized=true;
       return this.diagnostics();
     }
+    ensureRuntimeBindings(){
+      const interop=getInterop();
+      if(!interop?.registerAction||!interop?.registerCommandHandler)return {status:'UNAVAILABLE',reason:'INTEROPERABILITY_BINDING_API_UNAVAILABLE'};
+
+      const results=[];
+      for(const definition of this.actions){
+        const actionId=String(definition.actionId||'');
+        const owner=String(definition.ownerMinistry||'');
+        if(!actionId||!MINISTRY_IDS.includes(owner))continue;
+        if(this.registeredActions.has(actionId))continue;
+
+        try{
+          const existing=interop.instance?.decisionFramework?.getAction?.(actionId) ||
+            global.OmegaMinistryDecisionFramework?.instance?.getAction?.(actionId) || null;
+          if(!existing){
+            interop.registerAction(actionId,{
+              actionId,
+              stateOwnerMinistry:owner,
+              authority:'OMEGA_OPPONENT_COUNTRY_RULES',
+              affectedMinistries:clone(definition.affectedMinistries||[]),
+              expectedOutputs:clone(definition.expectedOutputs||[]),
+              downstreamEffects:clone(definition.downstreamEffects||[]),
+              requirements:[],
+              optionalRequirements:[],
+              blockingConditions:[],
+              warningConditions:[]
+            });
+          }
+
+          interop.registerCommandHandler(actionId,owner,(command,{stateTransaction,emitEvent,simulationTurn})=>{
+            const decision=command?.payload?.opponentRuleDecision||{};
+            const queuePath=owner+'.opponentIntentQueue';
+            const existingQueue=stateTransaction.get(queuePath);
+            const queue=Array.isArray(existingQueue)?existingQueue.slice(-31):[];
+            queue.push({
+              commandId:command.commandId,
+              decisionId:decision.decisionId||null,
+              ruleId:decision.ruleId||definition.ruleId||null,
+              actionId,
+              countryId:command.countryId,
+              simulationTurn,
+              priority:Number(decision.priority||0),
+              severity:Number(decision.severity||0),
+              evidence:clone(decision.evidence||null),
+              affectedMinistries:clone(decision.affectedMinistries||definition.affectedMinistries||[])
+            });
+            stateTransaction.set(queuePath,queue);
+            stateTransaction.set(owner+'.opponentLastIntent',queue[queue.length-1]);
+            emitEvent?.('OMEGA_OPPONENT_RULE_INTENT_APPLIED',{
+              actionId,ruleId:decision.ruleId||definition.ruleId||null,decisionId:decision.decisionId||null
+            });
+            return {
+              accepted:true,
+              eventType:'OMEGA_OPPONENT_RULE_INTENT_APPLIED',
+              eventPayload:{actionId,ruleId:decision.ruleId||definition.ruleId||null},
+              provenance:{runtime:'OMEGA_OPPONENT_COUNTRY_RULES',runtimeVersion:VERSION}
+            };
+          });
+
+          this.registeredActions.add(actionId);
+          results.push({actionId,status:'BOUND',ownerMinistry:owner});
+        }catch(error){
+          results.push({actionId,status:'FAILED',ownerMinistry:owner,error:String(error?.message||error)});
+        }
+      }
+      return {status:'READY',results};
+    }
+
     async onTurnCommitted(turn=getCurrentTurn()){
       if(!this.running||this.evaluating)return {status:'SKIPPED',reason:'NOT_RUNNING_OR_BUSY',turn};
       this.evaluating=true;this.lastError=null;
       try{
+        this.ensureRuntimeBindings();
         const currentTurn=number(turn)??getCurrentTurn();
         const playerCountryId=getPlayerCountryId();
         const countryIds=await this.listCountryIds(currentTurn);
