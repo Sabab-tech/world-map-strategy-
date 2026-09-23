@@ -60,11 +60,6 @@
       if(required===null)return{accepted:false,reason:'HOUSING_REQUIRED_NOT_OBSERVED'};
       ctx.stateTransaction.set('cities.housing.required',Math.max(0,required-delta));
     }
-    const pressure=ctx.stateTransaction.get('population.migration_pressure');
-    if(pressure!==undefined){
-      const pv=num(pressure);
-      if(pv!==null)ctx.stateTransaction.set('population.migration_pressure',Math.max(0,pv-delta));
-    }
     return{accepted:true,delta};
   }
   function factoryConsequenceHandler(cmd,ctx){
