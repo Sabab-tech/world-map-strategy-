@@ -33,7 +33,12 @@ const MINISTRY_DOMAIN_ENGINES_SCRIPT = '<script src="/omega_ministry_domain_engi
 const MINISTRY_RUNTIME_V1_SCRIPT = '<script src="/omega_ministry_runtime_v1.js"></script>';
 const SIMULATION_RUNTIME_SCRIPT = '<script src="/omega_simulation_runtime.js"></script>';
 const OPPONENT_COUNTRY_RULES_SCRIPT = '<script src="/opponent_country_rules.js"></script>';
+const OPPONENT_DEEP_MEMORY_SCRIPT = '<script src="/omega_opponent_deep_memory_system.js"></script>';
+const OPPONENT_STRATEGY_SCRIPT = '<script src="/omega_opponent_adaptive_strategy_system.js"></script>';
 const OPPONENT_AUTONOMY_SCRIPT = '<script src="/omega_opponent_autonomy_system.js"></script>';
+const OPPONENT_TRADE_SCRIPT = '<script src="/omega_global_trade_system.js"></script>';
+const OPPONENT_TREATY_SCRIPT = '<script src="/omega_opponent_treaty_lifecycle_system.js"></script>';
+const OPPONENT_CONSEQUENCE_SCRIPT = '<script src="/omega_opponent_second_order_consequence_system.js"></script>';
 const MINISTER_CAPABILITY_SCRIPT = '<script src="/minister_capability_engine.js"></script>';
 const MINISTER_STATE_SCRIPT = '<script src="/omega_minister_state_system.js"></script>';
 const MINISTER_RECRUITMENT_SCRIPT = '<script src="/minister_recruitment_engine.js"></script>';
