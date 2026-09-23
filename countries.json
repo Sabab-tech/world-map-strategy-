@@ -2,1003 +2,2543 @@
   {
     "code": "AF",
     "name": "Afghanistan",
+    "iso2": "AF",
+    "iso3": "AFG",
+    "numericCode": "004",
     "lat": 33.9391,
     "lng": 67.71,
     "minZoom": 3.5,
     "maxZoom": 9,
-    "importance": 3
+    "importance": 3,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "AX",
+    "name": "Åland Islands",
+    "iso2": "AX",
+    "iso3": "ALA",
+    "numericCode": "248",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
   },
   {
     "code": "AL",
     "name": "Albania",
+    "iso2": "AL",
+    "iso3": "ALB",
+    "numericCode": "008",
     "lat": 41.1533,
     "lng": 20.1683,
     "minZoom": 4,
     "maxZoom": 9,
-    "importance": 2
+    "importance": 2,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
   },
   {
     "code": "DZ",
     "name": "Algeria",
+    "iso2": "DZ",
+    "iso3": "DZA",
+    "numericCode": "012",
     "lat": 28.0339,
     "lng": 1.6596,
     "minZoom": 3.5,
     "maxZoom": 8.5,
-    "importance": 3
+    "importance": 3,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "AS",
+    "name": "American Samoa",
+    "iso2": "AS",
+    "iso3": "ASM",
+    "numericCode": "016",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
   },
   {
     "code": "AD",
     "name": "Andorra",
+    "iso2": "AD",
+    "iso3": "AND",
+    "numericCode": "020",
     "lat": 42.5462,
     "lng": 1.6015,
     "minZoom": 5,
     "maxZoom": 9,
-    "importance": 1
+    "importance": 1,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
   },
   {
     "code": "AO",
     "name": "Angola",
+    "iso2": "AO",
+    "iso3": "AGO",
+    "numericCode": "024",
     "lat": -11.2027,
     "lng": 17.8739,
     "minZoom": 3.8,
     "maxZoom": 8.8,
-    "importance": 3
+    "importance": 3,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "AI",
+    "name": "Anguilla",
+    "iso2": "AI",
+    "iso3": "AIA",
+    "numericCode": "660",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "AQ",
+    "name": "Antarctica",
+    "iso2": "AQ",
+    "iso3": "ATA",
+    "numericCode": "010",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "AG",
+    "name": "Antigua and Barbuda",
+    "iso2": "AG",
+    "iso3": "ATG",
+    "numericCode": "028",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
   },
   {
     "code": "AR",
     "name": "Argentina",
+    "iso2": "AR",
+    "iso3": "ARG",
+    "numericCode": "032",
     "lat": -38.4161,
     "lng": -63.6167,
     "minZoom": 3.5,
     "maxZoom": 8.5,
-    "importance": 4
+    "importance": 4,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
   },
   {
     "code": "AM",
     "name": "Armenia",
+    "iso2": "AM",
+    "iso3": "ARM",
+    "numericCode": "051",
     "lat": 40.0691,
     "lng": 45.0382,
     "minZoom": 4,
     "maxZoom": 9,
-    "importance": 2
+    "importance": 2,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "AW",
+    "name": "Aruba",
+    "iso2": "AW",
+    "iso3": "ABW",
+    "numericCode": "533",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
   },
   {
     "code": "AU",
     "name": "Australia",
+    "iso2": "AU",
+    "iso3": "AUS",
+    "numericCode": "036",
     "lat": -25.2744,
     "lng": 133.7751,
     "minZoom": 3,
     "maxZoom": 7.5,
-    "importance": 5
+    "importance": 5,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
   },
   {
     "code": "AT",
     "name": "Austria",
+    "iso2": "AT",
+    "iso3": "AUT",
+    "numericCode": "040",
     "lat": 47.5162,
     "lng": 14.5501,
     "minZoom": 4.5,
     "maxZoom": 9,
-    "importance": 3
+    "importance": 3,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
   },
   {
     "code": "AZ",
     "name": "Azerbaijan",
+    "iso2": "AZ",
+    "iso3": "AZE",
+    "numericCode": "031",
     "lat": 40.1431,
     "lng": 47.5769,
     "minZoom": 4,
     "maxZoom": 9,
-    "importance": 3
-  },
-  {
-    "code": "BD",
-    "name": "Bangladesh",
-    "lat": 23.685,
-    "lng": 90.3563,
-    "minZoom": 3.8,
-    "maxZoom": 9,
-    "importance": 3
-  },
-  {
-    "code": "BE",
-    "name": "Belgium",
-    "lat": 50.5039,
-    "lng": 4.4699,
-    "minZoom": 4.5,
-    "maxZoom": 9,
-    "importance": 3
-  },
-  {
-    "code": "BR",
-    "name": "Brazil",
-    "lat": -14.235,
-    "lng": -51.9253,
-    "minZoom": 3,
-    "maxZoom": 7.5,
-    "importance": 5
-  },
-  {
-    "code": "CA",
-    "name": "Canada",
-    "lat": 56.1304,
-    "lng": -106.3468,
-    "minZoom": 3,
-    "maxZoom": 7.5,
-    "importance": 5
-  },
-  {
-    "code": "CN",
-    "name": "China",
-    "lat": 35.8617,
-    "lng": 104.1954,
-    "minZoom": 3,
-    "maxZoom": 7.5,
-    "importance": 5
-  },
-  {
-    "code": "IN",
-    "name": "India",
-    "lat": 20.5937,
-    "lng": 78.9629,
-    "minZoom": 3.5,
-    "maxZoom": 8.5,
-    "importance": 5
-  },
-  {
-    "code": "ID",
-    "name": "Indonesia",
-    "lat": -0.7893,
-    "lng": 113.9213,
-    "minZoom": 3.5,
-    "maxZoom": 8.5,
-    "importance": 4
-  },
-  {
-    "code": "IR",
-    "name": "Iran",
-    "lat": 32.4279,
-    "lng": 53.688,
-    "minZoom": 3.5,
-    "maxZoom": 8.5,
-    "importance": 4
-  },
-  {
-    "code": "IQ",
-    "name": "Iraq",
-    "lat": 33.2232,
-    "lng": 43.6793,
-    "minZoom": 4,
-    "maxZoom": 9,
-    "importance": 3
-  },
-  {
-    "code": "JP",
-    "name": "Japan",
-    "lat": 36.2048,
-    "lng": 138.2529,
-    "minZoom": 4,
-    "maxZoom": 9,
-    "importance": 5
-  },
-  {
-    "code": "DE",
-    "name": "Germany",
-    "lat": 51.1657,
-    "lng": 10.4515,
-    "minZoom": 4,
-    "maxZoom": 8.5,
-    "importance": 5
-  },
-  {
-    "code": "FR",
-    "name": "France",
-    "lat": 46.2276,
-    "lng": 2.2137,
-    "minZoom": 4,
-    "maxZoom": 8.5,
-    "importance": 5
-  },
-  {
-    "code": "GB",
-    "name": "United Kingdom",
-    "lat": 55.3781,
-    "lng": -3.436,
-    "minZoom": 4,
-    "maxZoom": 8.5,
-    "importance": 5
-  },
-  {
-    "code": "US",
-    "name": "United States",
-    "lat": 37.0902,
-    "lng": -95.7129,
-    "minZoom": 3,
-    "maxZoom": 7,
-    "importance": 5
-  },
-  {
-    "code": "PK",
-    "name": "Pakistan",
-    "lat": 30.3753,
-    "lng": 69.3451,
-    "minZoom": 3.8,
-    "maxZoom": 9,
-    "importance": 4
-  },
-  {
-    "code": "RU",
-    "name": "Russia",
-    "lat": 61.524,
-    "lng": 105.3188,
-    "minZoom": 3,
-    "maxZoom": 7,
-    "importance": 5
-  },
-  {
-    "code": "SA",
-    "name": "Saudi Arabia",
-    "lat": 23.8859,
-    "lng": 45.0792,
-    "minZoom": 3.8,
-    "maxZoom": 8.8,
-    "importance": 4
-  },
-  {
-    "code": "ZA",
-    "name": "South Africa",
-    "lat": -30.5595,
-    "lng": 22.9375,
-    "minZoom": 3.8,
-    "maxZoom": 8.8,
-    "importance": 4
-  },
-  {
-    "code": "KR",
-    "name": "South Korea",
-    "lat": 35.9078,
-    "lng": 127.7669,
-    "minZoom": 4,
-    "maxZoom": 9,
-    "importance": 4
-  },
-  {
-    "code": "ES",
-    "name": "Spain",
-    "lat": 40.4637,
-    "lng": -3.7492,
-    "minZoom": 4,
-    "maxZoom": 8.5,
-    "importance": 4
-  },
-  {
-    "code": "IT",
-    "name": "Italy",
-    "lat": 41.8719,
-    "lng": 12.5674,
-    "minZoom": 4,
-    "maxZoom": 8.5,
-    "importance": 4
-  },
-  {
-    "code": "TR",
-    "name": "Turkey",
-    "lat": 38.9637,
-    "lng": 35.2433,
-    "minZoom": 3.8,
-    "maxZoom": 8.8,
-    "importance": 4
-  },
-  {
-    "code": "VN",
-    "name": "Vietnam",
-    "lat": 14.0583,
-    "lng": 108.2772,
-    "minZoom": 4,
-    "maxZoom": 9,
-    "importance": 3
-  },
-  {
-    "code": "SE",
-    "name": "Sweden",
-    "lat": 60.1282,
-    "lng": 18.6435,
-    "minZoom": 4.5,
-    "maxZoom": 9,
-    "importance": 4
-  },
-  {
-    "code": "CH",
-    "name": "Switzerland",
-    "lat": 46.8182,
-    "lng": 8.2275,
-    "minZoom": 4.5,
-    "maxZoom": 9,
-    "importance": 4
-  },
-  {
-    "code": "NL",
-    "name": "Netherlands",
-    "lat": 52.1326,
-    "lng": 5.2913,
-    "minZoom": 4.5,
-    "maxZoom": 9,
-    "importance": 4
-  },
-  {
-    "code": "NO",
-    "name": "Norway",
-    "lat": 60.472,
-    "lng": 8.4689,
-    "minZoom": 4.5,
-    "maxZoom": 9,
-    "importance": 4
-  },
-  {
-    "code": "FI",
-    "name": "Finland",
-    "lat": 61.9241,
-    "lng": 25.7482,
-    "minZoom": 4.5,
-    "maxZoom": 9,
-    "importance": 4
-  },
-  {
-    "code": "PL",
-    "name": "Poland",
-    "lat": 51.9194,
-    "lng": 19.1451,
-    "minZoom": 4,
-    "maxZoom": 8.5,
-    "importance": 4
-  },
-  {
-    "code": "UA",
-    "name": "Ukraine",
-    "lat": 48.3794,
-    "lng": 31.1656,
-    "minZoom": 3.8,
-    "maxZoom": 8.5,
-    "importance": 4
-  },
-  {
-    "code": "RO",
-    "name": "Romania",
-    "lat": 45.9432,
-    "lng": 24.9668,
-    "minZoom": 4,
-    "maxZoom": 9,
-    "importance": 3
-  },
-  {
-    "code": "GR",
-    "name": "Greece",
-    "lat": 39.0742,
-    "lng": 21.8243,
-    "minZoom": 4.5,
-    "maxZoom": 9,
-    "importance": 4
-  },
-  {
-    "code": "PT",
-    "name": "Portugal",
-    "lat": 39.3999,
-    "lng": -8.2245,
-    "minZoom": 4.5,
-    "maxZoom": 9,
-    "importance": 4
-  },
-  {
-    "code": "EG",
-    "name": "Egypt",
-    "lat": 26.8206,
-    "lng": 30.8025,
-    "minZoom": 3.8,
-    "maxZoom": 8.8,
-    "importance": 4
-  },
-  {
-    "code": "NG",
-    "name": "Nigeria",
-    "lat": 9.082,
-    "lng": 8.6753,
-    "minZoom": 3.8,
-    "maxZoom": 8.8,
-    "importance": 4
-  },
-  {
-    "code": "KE",
-    "name": "Kenya",
-    "lat": -0.0236,
-    "lng": 37.9062,
-    "minZoom": 4,
-    "maxZoom": 9,
-    "importance": 3
-  },
-  {
-    "code": "ET",
-    "name": "Ethiopia",
-    "lat": 9.145,
-    "lng": 40.4897,
-    "minZoom": 4,
-    "maxZoom": 9,
-    "importance": 3
-  },
-  {
-    "code": "TH",
-    "name": "Thailand",
-    "lat": 15.87,
-    "lng": 100.9925,
-    "minZoom": 4,
-    "maxZoom": 9,
-    "importance": 4
-  },
-  {
-    "code": "MY",
-    "name": "Malaysia",
-    "lat": 4.2105,
-    "lng": 101.9758,
-    "minZoom": 4,
-    "maxZoom": 9,
-    "importance": 4
-  },
-  {
-    "code": "SG",
-    "name": "Singapore",
-    "lat": 1.3521,
-    "lng": 103.8198,
-    "minZoom": 5,
-    "maxZoom": 9.5,
-    "importance": 5
-  },
-  {
-    "code": "PH",
-    "name": "Philippines",
-    "lat": 12.8797,
-    "lng": 121.774,
-    "minZoom": 4,
-    "maxZoom": 9,
-    "importance": 4
-  },
-  {
-    "code": "MM",
-    "name": "Myanmar",
-    "lat": 21.9162,
-    "lng": 95.956,
-    "minZoom": 4,
-    "maxZoom": 9,
-    "importance": 3
-  },
-  {
-    "code": "NP",
-    "name": "Nepal",
-    "lat": 28.3949,
-    "lng": 84.124,
-    "minZoom": 4,
-    "maxZoom": 9,
-    "importance": 3
-  },
-  {
-    "code": "LK",
-    "name": "Sri Lanka",
-    "lat": 7.8731,
-    "lng": 80.7718,
-    "minZoom": 4,
-    "maxZoom": 9,
-    "importance": 3
-  },
-  {
-    "code": "MX",
-    "name": "Mexico",
-    "lat": 23.6345,
-    "lng": -102.5528,
-    "minZoom": 3.8,
-    "maxZoom": 8.5,
-    "importance": 4
-  },
-  {
-    "code": "CL",
-    "name": "Chile",
-    "lat": -35.6751,
-    "lng": -71.543,
-    "minZoom": 3.8,
-    "maxZoom": 8.5,
-    "importance": 4
-  },
-  {
-    "code": "CO",
-    "name": "Colombia",
-    "lat": 4.5709,
-    "lng": -74.2973,
-    "minZoom": 3.8,
-    "maxZoom": 8.5,
-    "importance": 4
-  },
-  {
-    "code": "PE",
-    "name": "Peru",
-    "lat": -9.19,
-    "lng": -75.0152,
-    "minZoom": 3.8,
-    "maxZoom": 8.5,
-    "importance": 4
-  },
-  {
-    "code": "VE",
-    "name": "Venezuela",
-    "lat": 6.4238,
-    "lng": -66.5897,
-    "minZoom": 3.8,
-    "maxZoom": 8.5,
-    "importance": 3
-  },
-  {
-    "code": "UY",
-    "name": "Uruguay",
-    "lat": -32.5228,
-    "lng": -55.7658,
-    "minZoom": 4.5,
-    "maxZoom": 9,
-    "importance": 3
-  },
-  {
-    "code": "CU",
-    "name": "Cuba",
-    "lat": 21.5218,
-    "lng": -77.7812,
-    "minZoom": 4.5,
-    "maxZoom": 9,
-    "importance": 3
-  },
-  {
-    "code": "HT",
-    "name": "Haiti",
-    "lat": 18.9712,
-    "lng": -72.2852,
-    "minZoom": 4.5,
-    "maxZoom": 9,
-    "importance": 2
-  },
-  {
-    "code": "DO",
-    "name": "Dominican Republic",
-    "lat": 18.7357,
-    "lng": -70.1627,
-    "minZoom": 4.5,
-    "maxZoom": 9,
-    "importance": 3
-  },
-  {
-    "code": "NZ",
-    "name": "New Zealand",
-    "lat": -40.9006,
-    "lng": 174.886,
-    "minZoom": 4,
-    "maxZoom": 8.5,
-    "importance": 4
-  },
-  {
-    "code": "PG",
-    "name": "Papua New Guinea",
-    "lat": -6.3149,
-    "lng": 143.9555,
-    "minZoom": 4,
-    "maxZoom": 8.5,
-    "importance": 3
-  },
-  {
-    "code": "FJ",
-    "name": "Fiji",
-    "lat": -17.7134,
-    "lng": 178.065,
-    "minZoom": 5,
-    "maxZoom": 9.5,
-    "importance": 2
-  },
-  {
-    "code": "KZ",
-    "name": "Kazakhstan",
-    "lat": 48.0196,
-    "lng": 66.9237,
-    "minZoom": 3.5,
-    "maxZoom": 8.5,
-    "importance": 4
-  },
-  {
-    "code": "UZ",
-    "name": "Uzbekistan",
-    "lat": 41.3775,
-    "lng": 64.5853,
-    "minZoom": 4,
-    "maxZoom": 9,
-    "importance": 3
-  },
-  {
-    "code": "TM",
-    "name": "Turkmenistan",
-    "lat": 38.9697,
-    "lng": 59.5563,
-    "minZoom": 4,
-    "maxZoom": 9,
-    "importance": 3
-  },
-  {
-    "code": "KG",
-    "name": "Kyrgyzstan",
-    "lat": 41.2044,
-    "lng": 74.7661,
-    "minZoom": 4,
-    "maxZoom": 9,
-    "importance": 3
-  },
-  {
-    "code": "TJ",
-    "name": "Tajikistan",
-    "lat": 38.861,
-    "lng": 71.2761,
-    "minZoom": 4,
-    "maxZoom": 9,
-    "importance": 3
-  },
-  {
-    "code": "SY",
-    "name": "Syria",
-    "lat": 34.8021,
-    "lng": 38.9968,
-    "minZoom": 4,
-    "maxZoom": 9,
-    "importance": 3
-  },
-  {
-    "code": "JO",
-    "name": "Jordan",
-    "lat": 30.5852,
-    "lng": 36.2384,
-    "minZoom": 4,
-    "maxZoom": 9,
-    "importance": 3
-  },
-  {
-    "code": "LB",
-    "name": "Lebanon",
-    "lat": 33.8547,
-    "lng": 35.8623,
-    "minZoom": 4.5,
-    "maxZoom": 9,
-    "importance": 3
-  },
-  {
-    "code": "IL",
-    "name": "Israel",
-    "lat": 31.0461,
-    "lng": 34.8516,
-    "minZoom": 4.5,
-    "maxZoom": 9,
-    "importance": 4
-  },
-  {
-    "code": "PS",
-    "name": "Palestine",
-    "lat": 31.9522,
-    "lng": 35.2332,
-    "minZoom": 4.5,
-    "maxZoom": 9,
-    "importance": 4
+    "importance": 3,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "BS",
+    "name": "Bahamas",
+    "iso2": "BS",
+    "iso3": "BHS",
+    "numericCode": "044",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
   },
   {
     "code": "BH",
     "name": "Bahrain",
+    "iso2": "BH",
+    "iso3": "BHR",
+    "numericCode": "048",
     "lat": 26.0667,
     "lng": 50.5577,
     "minZoom": 5,
     "maxZoom": 9.5,
-    "importance": 4
+    "importance": 4,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
   },
   {
-    "code": "MV",
-    "name": "Maldives",
-    "lat": 3.2028,
-    "lng": 73.2207,
-    "minZoom": 5,
-    "maxZoom": 9.5,
-    "importance": 4
+    "code": "BD",
+    "name": "Bangladesh",
+    "iso2": "BD",
+    "iso3": "BGD",
+    "numericCode": "050",
+    "lat": 23.685,
+    "lng": 90.3563,
+    "minZoom": 3.8,
+    "maxZoom": 9,
+    "importance": 3,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
   },
   {
-    "code": "QA",
-    "name": "Qatar",
-    "lat": 25.3548,
-    "lng": 51.1839,
-    "minZoom": 5,
-    "maxZoom": 9.5,
-    "importance": 4
+    "code": "BB",
+    "name": "Barbados",
+    "iso2": "BB",
+    "iso3": "BRB",
+    "numericCode": "052",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
   },
   {
-    "code": "AE",
-    "name": "United Arab Emirates",
-    "lat": 23.4241,
-    "lng": 53.8478,
+    "code": "BY",
+    "name": "Belarus",
+    "iso2": "BY",
+    "iso3": "BLR",
+    "numericCode": "112",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "BE",
+    "name": "Belgium",
+    "iso2": "BE",
+    "iso3": "BEL",
+    "numericCode": "056",
+    "lat": 50.5039,
+    "lng": 4.4699,
     "minZoom": 4.5,
     "maxZoom": 9,
-    "importance": 4
+    "importance": 3,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
   },
   {
-    "code": "KW",
-    "name": "Kuwait",
-    "lat": 29.3117,
-    "lng": 47.4818,
-    "minZoom": 5,
-    "maxZoom": 9.5,
-    "importance": 4
+    "code": "BZ",
+    "name": "Belize",
+    "iso2": "BZ",
+    "iso3": "BLZ",
+    "numericCode": "084",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
   },
   {
-    "code": "OM",
-    "name": "Oman",
-    "lat": 21.4735,
-    "lng": 55.9754,
-    "minZoom": 4.5,
-    "maxZoom": 9,
-    "importance": 3
+    "code": "BJ",
+    "name": "Benin",
+    "iso2": "BJ",
+    "iso3": "BEN",
+    "numericCode": "204",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
   },
   {
-    "code": "YE",
-    "name": "Yemen",
-    "lat": 15.5527,
-    "lng": 48.5164,
-    "minZoom": 4,
-    "maxZoom": 9,
-    "importance": 3
+    "code": "BM",
+    "name": "Bermuda",
+    "iso2": "BM",
+    "iso3": "BMU",
+    "numericCode": "060",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
   },
   {
-    "code": "MA",
-    "name": "Morocco",
-    "lat": 31.7917,
-    "lng": -7.0926,
-    "minZoom": 4,
-    "maxZoom": 8.8,
-    "importance": 4
+    "code": "BT",
+    "name": "Bhutan",
+    "iso2": "BT",
+    "iso3": "BTN",
+    "numericCode": "064",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
   },
   {
-    "code": "TN",
-    "name": "Tunisia",
-    "lat": 33.8869,
-    "lng": 9.5375,
-    "minZoom": 4.5,
-    "maxZoom": 9,
-    "importance": 3
+    "code": "BO",
+    "name": "Bolivia, Plurinational State of",
+    "iso2": "BO",
+    "iso3": "BOL",
+    "numericCode": "068",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
   },
   {
-    "code": "LY",
-    "name": "Libya",
-    "lat": 26.3351,
-    "lng": 17.2283,
-    "minZoom": 4,
-    "maxZoom": 8.8,
-    "importance": 3
+    "code": "BQ",
+    "name": "Bonaire, Sint Eustatius and Saba",
+    "iso2": "BQ",
+    "iso3": "BES",
+    "numericCode": "535",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
   },
   {
-    "code": "SD",
-    "name": "Sudan",
-    "lat": 12.8628,
-    "lng": 30.2176,
-    "minZoom": 4,
-    "maxZoom": 8.8,
-    "importance": 3
+    "code": "BA",
+    "name": "Bosnia and Herzegovina",
+    "iso2": "BA",
+    "iso3": "BIH",
+    "numericCode": "070",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
   },
   {
-    "code": "SS",
-    "name": "South Sudan",
-    "lat": 6.877,
-    "lng": 31.307,
-    "minZoom": 4,
-    "maxZoom": 9,
-    "importance": 2
+    "code": "BW",
+    "name": "Botswana",
+    "iso2": "BW",
+    "iso3": "BWA",
+    "numericCode": "072",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
   },
   {
-    "code": "UG",
-    "name": "Uganda",
-    "lat": 1.3733,
-    "lng": 32.2903,
-    "minZoom": 4.5,
-    "maxZoom": 9,
-    "importance": 3
+    "code": "BV",
+    "name": "Bouvet Island",
+    "iso2": "BV",
+    "iso3": "BVT",
+    "numericCode": "074",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
   },
   {
-    "code": "TZ",
-    "name": "Tanzania",
-    "lat": -6.369,
-    "lng": 34.8888,
-    "minZoom": 4,
-    "maxZoom": 9,
-    "importance": 3
+    "code": "BR",
+    "name": "Brazil",
+    "iso2": "BR",
+    "iso3": "BRA",
+    "numericCode": "076",
+    "lat": -14.235,
+    "lng": -51.9253,
+    "minZoom": 3,
+    "maxZoom": 7.5,
+    "importance": 5,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
   },
   {
-    "code": "RW",
-    "name": "Rwanda",
-    "lat": -1.9403,
-    "lng": 29.8739,
-    "minZoom": 4.5,
-    "maxZoom": 9,
-    "importance": 2
+    "code": "IO",
+    "name": "British Indian Ocean Territory",
+    "iso2": "IO",
+    "iso3": "IOT",
+    "numericCode": "086",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
   },
   {
-    "code": "BI",
-    "name": "Burundi",
-    "lat": -3.3731,
-    "lng": 29.9189,
-    "minZoom": 4.5,
-    "maxZoom": 9,
-    "importance": 2
+    "code": "BN",
+    "name": "Brunei Darussalam",
+    "iso2": "BN",
+    "iso3": "BRN",
+    "numericCode": "096",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
   },
   {
-    "code": "GH",
-    "name": "Ghana",
-    "lat": 7.9465,
-    "lng": -1.0232,
-    "minZoom": 4.5,
-    "maxZoom": 9,
-    "importance": 3
-  },
-  {
-    "code": "CI",
-    "name": "Ivory Coast",
-    "lat": 7.54,
-    "lng": -5.5471,
-    "minZoom": 4.5,
-    "maxZoom": 9,
-    "importance": 3
-  },
-  {
-    "code": "SN",
-    "name": "Senegal",
-    "lat": 14.4974,
-    "lng": -14.4524,
-    "minZoom": 4.5,
-    "maxZoom": 9,
-    "importance": 3
-  },
-  {
-    "code": "ML",
-    "name": "Mali",
-    "lat": 17.5707,
-    "lng": -3.9962,
-    "minZoom": 4,
-    "maxZoom": 9,
-    "importance": 3
-  },
-  {
-    "code": "NE",
-    "name": "Niger",
-    "lat": 17.6078,
-    "lng": 8.0817,
-    "minZoom": 4,
-    "maxZoom": 9,
-    "importance": 2
+    "code": "BG",
+    "name": "Bulgaria",
+    "iso2": "BG",
+    "iso3": "BGR",
+    "numericCode": "100",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
   },
   {
     "code": "BF",
     "name": "Burkina Faso",
+    "iso2": "BF",
+    "iso3": "BFA",
+    "numericCode": "854",
     "lat": 12.2383,
     "lng": -1.5616,
     "minZoom": 4.5,
     "maxZoom": 9,
-    "importance": 2
+    "importance": 2,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "BI",
+    "name": "Burundi",
+    "iso2": "BI",
+    "iso3": "BDI",
+    "numericCode": "108",
+    "lat": -3.3731,
+    "lng": 29.9189,
+    "minZoom": 4.5,
+    "maxZoom": 9,
+    "importance": 2,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "CV",
+    "name": "Cabo Verde",
+    "iso2": "CV",
+    "iso3": "CPV",
+    "numericCode": "132",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "KH",
+    "name": "Cambodia",
+    "iso2": "KH",
+    "iso3": "KHM",
+    "numericCode": "116",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
   },
   {
     "code": "CM",
     "name": "Cameroon",
+    "iso2": "CM",
+    "iso3": "CMR",
+    "numericCode": "120",
     "lat": 7.3697,
     "lng": 12.3547,
     "minZoom": 4,
     "maxZoom": 9,
-    "importance": 3
+    "importance": 3,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
   },
   {
-    "code": "GA",
-    "name": "Gabon",
-    "lat": -0.8037,
-    "lng": 11.6094,
-    "minZoom": 4.5,
-    "maxZoom": 9,
-    "importance": 3
+    "code": "CA",
+    "name": "Canada",
+    "iso2": "CA",
+    "iso3": "CAN",
+    "numericCode": "124",
+    "lat": 56.1304,
+    "lng": -106.3468,
+    "minZoom": 3,
+    "maxZoom": 7.5,
+    "importance": 5,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "KY",
+    "name": "Cayman Islands",
+    "iso2": "KY",
+    "iso3": "CYM",
+    "numericCode": "136",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "CF",
+    "name": "Central African Republic",
+    "iso2": "CF",
+    "iso3": "CAF",
+    "numericCode": "140",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "TD",
+    "name": "Chad",
+    "iso2": "TD",
+    "iso3": "TCD",
+    "numericCode": "148",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "CL",
+    "name": "Chile",
+    "iso2": "CL",
+    "iso3": "CHL",
+    "numericCode": "152",
+    "lat": -35.6751,
+    "lng": -71.543,
+    "minZoom": 3.8,
+    "maxZoom": 8.5,
+    "importance": 4,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "CN",
+    "name": "China",
+    "iso2": "CN",
+    "iso3": "CHN",
+    "numericCode": "156",
+    "lat": 35.8617,
+    "lng": 104.1954,
+    "minZoom": 3,
+    "maxZoom": 7.5,
+    "importance": 5,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "CX",
+    "name": "Christmas Island",
+    "iso2": "CX",
+    "iso3": "CXR",
+    "numericCode": "162",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "CC",
+    "name": "Cocos (Keeling) Islands",
+    "iso2": "CC",
+    "iso3": "CCK",
+    "numericCode": "166",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "CO",
+    "name": "Colombia",
+    "iso2": "CO",
+    "iso3": "COL",
+    "numericCode": "170",
+    "lat": 4.5709,
+    "lng": -74.2973,
+    "minZoom": 3.8,
+    "maxZoom": 8.5,
+    "importance": 4,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "KM",
+    "name": "Comoros",
+    "iso2": "KM",
+    "iso3": "COM",
+    "numericCode": "174",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
   },
   {
     "code": "CG",
     "name": "Congo Republic",
+    "iso2": "CG",
+    "iso3": "COG",
+    "numericCode": "178",
     "lat": -0.228,
     "lng": 15.8277,
     "minZoom": 4.5,
     "maxZoom": 9,
-    "importance": 3
+    "importance": 3,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
   },
   {
     "code": "CD",
     "name": "DR Congo",
+    "iso2": "CD",
+    "iso3": "COD",
+    "numericCode": "180",
     "lat": -4.0383,
     "lng": 21.7587,
     "minZoom": 3.8,
     "maxZoom": 8.5,
-    "importance": 3
+    "importance": 3,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
   },
   {
-    "code": "MG",
-    "name": "Madagascar",
-    "lat": -18.7669,
-    "lng": 46.8691,
+    "code": "CK",
+    "name": "Cook Islands",
+    "iso2": "CK",
+    "iso3": "COK",
+    "numericCode": "184",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "CR",
+    "name": "Costa Rica",
+    "iso2": "CR",
+    "iso3": "CRI",
+    "numericCode": "188",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "CI",
+    "name": "Ivory Coast",
+    "iso2": "CI",
+    "iso3": "CIV",
+    "numericCode": "384",
+    "lat": 7.54,
+    "lng": -5.5471,
     "minZoom": 4.5,
     "maxZoom": 9,
-    "importance": 3
+    "importance": 3,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
   },
   {
-    "code": "MZ",
-    "name": "Mozambique",
-    "lat": -18.6657,
-    "lng": 35.5296,
+    "code": "HR",
+    "name": "Croatia",
+    "iso2": "HR",
+    "iso3": "HRV",
+    "numericCode": "191",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "CU",
+    "name": "Cuba",
+    "iso2": "CU",
+    "iso3": "CUB",
+    "numericCode": "192",
+    "lat": 21.5218,
+    "lng": -77.7812,
+    "minZoom": 4.5,
+    "maxZoom": 9,
+    "importance": 3,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "CW",
+    "name": "Curaçao",
+    "iso2": "CW",
+    "iso3": "CUW",
+    "numericCode": "531",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "CY",
+    "name": "Cyprus",
+    "iso2": "CY",
+    "iso3": "CYP",
+    "numericCode": "196",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "CZ",
+    "name": "Czechia",
+    "iso2": "CZ",
+    "iso3": "CZE",
+    "numericCode": "203",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "DK",
+    "name": "Denmark",
+    "iso2": "DK",
+    "iso3": "DNK",
+    "numericCode": "208",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "DJ",
+    "name": "Djibouti",
+    "iso2": "DJ",
+    "iso3": "DJI",
+    "numericCode": "262",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "DM",
+    "name": "Dominica",
+    "iso2": "DM",
+    "iso3": "DMA",
+    "numericCode": "212",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "DO",
+    "name": "Dominican Republic",
+    "iso2": "DO",
+    "iso3": "DOM",
+    "numericCode": "214",
+    "lat": 18.7357,
+    "lng": -70.1627,
+    "minZoom": 4.5,
+    "maxZoom": 9,
+    "importance": 3,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "EC",
+    "name": "Ecuador",
+    "iso2": "EC",
+    "iso3": "ECU",
+    "numericCode": "218",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "EG",
+    "name": "Egypt",
+    "iso2": "EG",
+    "iso3": "EGY",
+    "numericCode": "818",
+    "lat": 26.8206,
+    "lng": 30.8025,
+    "minZoom": 3.8,
+    "maxZoom": 8.8,
+    "importance": 4,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "SV",
+    "name": "El Salvador",
+    "iso2": "SV",
+    "iso3": "SLV",
+    "numericCode": "222",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "GQ",
+    "name": "Equatorial Guinea",
+    "iso2": "GQ",
+    "iso3": "GNQ",
+    "numericCode": "226",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "ER",
+    "name": "Eritrea",
+    "iso2": "ER",
+    "iso3": "ERI",
+    "numericCode": "232",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "EE",
+    "name": "Estonia",
+    "iso2": "EE",
+    "iso3": "EST",
+    "numericCode": "233",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "SZ",
+    "name": "Eswatini",
+    "iso2": "SZ",
+    "iso3": "SWZ",
+    "numericCode": "748",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "ET",
+    "name": "Ethiopia",
+    "iso2": "ET",
+    "iso3": "ETH",
+    "numericCode": "231",
+    "lat": 9.145,
+    "lng": 40.4897,
     "minZoom": 4,
     "maxZoom": 9,
-    "importance": 3
+    "importance": 3,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
   },
   {
-    "code": "ZW",
-    "name": "Zimbabwe",
-    "lat": -19.0154,
-    "lng": 29.1549,
-    "minZoom": 4.5,
-    "maxZoom": 9,
-    "importance": 3
+    "code": "FK",
+    "name": "Falkland Islands (Malvinas)",
+    "iso2": "FK",
+    "iso3": "FLK",
+    "numericCode": "238",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
   },
   {
-    "code": "ZM",
-    "name": "Zambia",
-    "lat": -13.1339,
-    "lng": 27.8493,
-    "minZoom": 4.5,
-    "maxZoom": 9,
-    "importance": 3
+    "code": "FO",
+    "name": "Faroe Islands",
+    "iso2": "FO",
+    "iso3": "FRO",
+    "numericCode": "234",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
   },
   {
-    "code": "IS",
-    "name": "Iceland",
-    "lat": 64.9631,
-    "lng": -19.0208,
+    "code": "FJ",
+    "name": "Fiji",
+    "iso2": "FJ",
+    "iso3": "FJI",
+    "numericCode": "242",
+    "lat": -17.7134,
+    "lng": 178.065,
     "minZoom": 5,
     "maxZoom": 9.5,
-    "importance": 3
+    "importance": 2,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
   },
   {
-    "code": "MC",
-    "name": "Monaco",
-    "lat": 43.7384,
-    "lng": 7.4246,
-    "minZoom": 6,
-    "maxZoom": 10,
-    "importance": 2
+    "code": "FI",
+    "name": "Finland",
+    "iso2": "FI",
+    "iso3": "FIN",
+    "numericCode": "246",
+    "lat": 61.9241,
+    "lng": 25.7482,
+    "minZoom": 4.5,
+    "maxZoom": 9,
+    "importance": 4,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
   },
   {
-    "code": "SM",
-    "name": "San Marino",
-    "lat": 43.9333,
-    "lng": 12.45,
-    "minZoom": 6,
-    "maxZoom": 10,
-    "importance": 2
+    "code": "FR",
+    "name": "France",
+    "iso2": "FR",
+    "iso3": "FRA",
+    "numericCode": "250",
+    "lat": 46.2276,
+    "lng": 2.2137,
+    "minZoom": 4,
+    "maxZoom": 8.5,
+    "importance": 5,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "GF",
+    "name": "French Guiana",
+    "iso2": "GF",
+    "iso3": "GUF",
+    "numericCode": "254",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "PF",
+    "name": "French Polynesia",
+    "iso2": "PF",
+    "iso3": "PYF",
+    "numericCode": "258",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "TF",
+    "name": "French Southern Territories",
+    "iso2": "TF",
+    "iso3": "ATF",
+    "numericCode": "260",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "GA",
+    "name": "Gabon",
+    "iso2": "GA",
+    "iso3": "GAB",
+    "numericCode": "266",
+    "lat": -0.8037,
+    "lng": 11.6094,
+    "minZoom": 4.5,
+    "maxZoom": 9,
+    "importance": 3,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "GM",
+    "name": "Gambia",
+    "iso2": "GM",
+    "iso3": "GMB",
+    "numericCode": "270",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "GE",
+    "name": "Georgia",
+    "iso2": "GE",
+    "iso3": "GEO",
+    "numericCode": "268",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "DE",
+    "name": "Germany",
+    "iso2": "DE",
+    "iso3": "DEU",
+    "numericCode": "276",
+    "lat": 51.1657,
+    "lng": 10.4515,
+    "minZoom": 4,
+    "maxZoom": 8.5,
+    "importance": 5,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "GH",
+    "name": "Ghana",
+    "iso2": "GH",
+    "iso3": "GHA",
+    "numericCode": "288",
+    "lat": 7.9465,
+    "lng": -1.0232,
+    "minZoom": 4.5,
+    "maxZoom": 9,
+    "importance": 3,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "GI",
+    "name": "Gibraltar",
+    "iso2": "GI",
+    "iso3": "GIB",
+    "numericCode": "292",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "GR",
+    "name": "Greece",
+    "iso2": "GR",
+    "iso3": "GRC",
+    "numericCode": "300",
+    "lat": 39.0742,
+    "lng": 21.8243,
+    "minZoom": 4.5,
+    "maxZoom": 9,
+    "importance": 4,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "GL",
+    "name": "Greenland",
+    "iso2": "GL",
+    "iso3": "GRL",
+    "numericCode": "304",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "GD",
+    "name": "Grenada",
+    "iso2": "GD",
+    "iso3": "GRD",
+    "numericCode": "308",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "GP",
+    "name": "Guadeloupe",
+    "iso2": "GP",
+    "iso3": "GLP",
+    "numericCode": "312",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "GU",
+    "name": "Guam",
+    "iso2": "GU",
+    "iso3": "GUM",
+    "numericCode": "316",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "GT",
+    "name": "Guatemala",
+    "iso2": "GT",
+    "iso3": "GTM",
+    "numericCode": "320",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "GG",
+    "name": "Guernsey",
+    "iso2": "GG",
+    "iso3": "GGY",
+    "numericCode": "831",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "GN",
+    "name": "Guinea",
+    "iso2": "GN",
+    "iso3": "GIN",
+    "numericCode": "324",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "GW",
+    "name": "Guinea-Bissau",
+    "iso2": "GW",
+    "iso3": "GNB",
+    "numericCode": "624",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "GY",
+    "name": "Guyana",
+    "iso2": "GY",
+    "iso3": "GUY",
+    "numericCode": "328",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "HT",
+    "name": "Haiti",
+    "iso2": "HT",
+    "iso3": "HTI",
+    "numericCode": "332",
+    "lat": 18.9712,
+    "lng": -72.2852,
+    "minZoom": 4.5,
+    "maxZoom": 9,
+    "importance": 2,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "HM",
+    "name": "Heard Island and McDonald Islands",
+    "iso2": "HM",
+    "iso3": "HMD",
+    "numericCode": "334",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
   },
   {
     "code": "VA",
     "name": "Vatican City",
+    "iso2": "VA",
+    "iso3": "VAT",
+    "numericCode": "336",
     "lat": 41.9029,
     "lng": 12.4534,
     "minZoom": 6.5,
     "maxZoom": 10,
-    "importance": 1
+    "importance": 1,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
   },
   {
-    "code": "AGO",
-    "name": "Angola",
-    "lat": -8.839,
-    "lng": 13.289
+    "code": "HN",
+    "name": "Honduras",
+    "iso2": "HN",
+    "iso3": "HND",
+    "numericCode": "340",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
   },
   {
-    "code": "PRT",
+    "code": "HK",
+    "name": "Hong Kong",
+    "iso2": "HK",
+    "iso3": "HKG",
+    "numericCode": "344",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "HU",
+    "name": "Hungary",
+    "iso2": "HU",
+    "iso3": "HUN",
+    "numericCode": "348",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "IS",
+    "name": "Iceland",
+    "iso2": "IS",
+    "iso3": "ISL",
+    "numericCode": "352",
+    "lat": 64.9631,
+    "lng": -19.0208,
+    "minZoom": 5,
+    "maxZoom": 9.5,
+    "importance": 3,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "IN",
+    "name": "India",
+    "iso2": "IN",
+    "iso3": "IND",
+    "numericCode": "356",
+    "lat": 20.5937,
+    "lng": 78.9629,
+    "minZoom": 3.5,
+    "maxZoom": 8.5,
+    "importance": 5,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "ID",
+    "name": "Indonesia",
+    "iso2": "ID",
+    "iso3": "IDN",
+    "numericCode": "360",
+    "lat": -0.7893,
+    "lng": 113.9213,
+    "minZoom": 3.5,
+    "maxZoom": 8.5,
+    "importance": 4,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "IR",
+    "name": "Iran",
+    "iso2": "IR",
+    "iso3": "IRN",
+    "numericCode": "364",
+    "lat": 32.4279,
+    "lng": 53.688,
+    "minZoom": 3.5,
+    "maxZoom": 8.5,
+    "importance": 4,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "IQ",
+    "name": "Iraq",
+    "iso2": "IQ",
+    "iso3": "IRQ",
+    "numericCode": "368",
+    "lat": 33.2232,
+    "lng": 43.6793,
+    "minZoom": 4,
+    "maxZoom": 9,
+    "importance": 3,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "IE",
+    "name": "Ireland",
+    "iso2": "IE",
+    "iso3": "IRL",
+    "numericCode": "372",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "IM",
+    "name": "Isle of Man",
+    "iso2": "IM",
+    "iso3": "IMN",
+    "numericCode": "833",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "IL",
+    "name": "Israel",
+    "iso2": "IL",
+    "iso3": "ISR",
+    "numericCode": "376",
+    "lat": 31.0461,
+    "lng": 34.8516,
+    "minZoom": 4.5,
+    "maxZoom": 9,
+    "importance": 4,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "IT",
+    "name": "Italy",
+    "iso2": "IT",
+    "iso3": "ITA",
+    "numericCode": "380",
+    "lat": 41.8719,
+    "lng": 12.5674,
+    "minZoom": 4,
+    "maxZoom": 8.5,
+    "importance": 4,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "JM",
+    "name": "Jamaica",
+    "iso2": "JM",
+    "iso3": "JAM",
+    "numericCode": "388",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "JP",
+    "name": "Japan",
+    "iso2": "JP",
+    "iso3": "JPN",
+    "numericCode": "392",
+    "lat": 36.2048,
+    "lng": 138.2529,
+    "minZoom": 4,
+    "maxZoom": 9,
+    "importance": 5,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "JE",
+    "name": "Jersey",
+    "iso2": "JE",
+    "iso3": "JEY",
+    "numericCode": "832",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "JO",
+    "name": "Jordan",
+    "iso2": "JO",
+    "iso3": "JOR",
+    "numericCode": "400",
+    "lat": 30.5852,
+    "lng": 36.2384,
+    "minZoom": 4,
+    "maxZoom": 9,
+    "importance": 3,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "KZ",
+    "name": "Kazakhstan",
+    "iso2": "KZ",
+    "iso3": "KAZ",
+    "numericCode": "398",
+    "lat": 48.0196,
+    "lng": 66.9237,
+    "minZoom": 3.5,
+    "maxZoom": 8.5,
+    "importance": 4,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "KE",
+    "name": "Kenya",
+    "iso2": "KE",
+    "iso3": "KEN",
+    "numericCode": "404",
+    "lat": -0.0236,
+    "lng": 37.9062,
+    "minZoom": 4,
+    "maxZoom": 9,
+    "importance": 3,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "KI",
+    "name": "Kiribati",
+    "iso2": "KI",
+    "iso3": "KIR",
+    "numericCode": "296",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "KP",
+    "name": "Korea, Democratic People's Republic of",
+    "iso2": "KP",
+    "iso3": "PRK",
+    "numericCode": "408",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "KR",
+    "name": "South Korea",
+    "iso2": "KR",
+    "iso3": "KOR",
+    "numericCode": "410",
+    "lat": 35.9078,
+    "lng": 127.7669,
+    "minZoom": 4,
+    "maxZoom": 9,
+    "importance": 4,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "KW",
+    "name": "Kuwait",
+    "iso2": "KW",
+    "iso3": "KWT",
+    "numericCode": "414",
+    "lat": 29.3117,
+    "lng": 47.4818,
+    "minZoom": 5,
+    "maxZoom": 9.5,
+    "importance": 4,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "KG",
+    "name": "Kyrgyzstan",
+    "iso2": "KG",
+    "iso3": "KGZ",
+    "numericCode": "417",
+    "lat": 41.2044,
+    "lng": 74.7661,
+    "minZoom": 4,
+    "maxZoom": 9,
+    "importance": 3,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "LA",
+    "name": "Lao People's Democratic Republic",
+    "iso2": "LA",
+    "iso3": "LAO",
+    "numericCode": "418",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "LV",
+    "name": "Latvia",
+    "iso2": "LV",
+    "iso3": "LVA",
+    "numericCode": "428",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "LB",
+    "name": "Lebanon",
+    "iso2": "LB",
+    "iso3": "LBN",
+    "numericCode": "422",
+    "lat": 33.8547,
+    "lng": 35.8623,
+    "minZoom": 4.5,
+    "maxZoom": 9,
+    "importance": 3,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "LS",
+    "name": "Lesotho",
+    "iso2": "LS",
+    "iso3": "LSO",
+    "numericCode": "426",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "LR",
+    "name": "Liberia",
+    "iso2": "LR",
+    "iso3": "LBR",
+    "numericCode": "430",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "LY",
+    "name": "Libya",
+    "iso2": "LY",
+    "iso3": "LBY",
+    "numericCode": "434",
+    "lat": 26.3351,
+    "lng": 17.2283,
+    "minZoom": 4,
+    "maxZoom": 8.8,
+    "importance": 3,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "LI",
+    "name": "Liechtenstein",
+    "iso2": "LI",
+    "iso3": "LIE",
+    "numericCode": "438",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "LT",
+    "name": "Lithuania",
+    "iso2": "LT",
+    "iso3": "LTU",
+    "numericCode": "440",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "LU",
+    "name": "Luxembourg",
+    "iso2": "LU",
+    "iso3": "LUX",
+    "numericCode": "442",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "MO",
+    "name": "Macao",
+    "iso2": "MO",
+    "iso3": "MAC",
+    "numericCode": "446",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "MG",
+    "name": "Madagascar",
+    "iso2": "MG",
+    "iso3": "MDG",
+    "numericCode": "450",
+    "lat": -18.7669,
+    "lng": 46.8691,
+    "minZoom": 4.5,
+    "maxZoom": 9,
+    "importance": 3,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "MW",
+    "name": "Malawi",
+    "iso2": "MW",
+    "iso3": "MWI",
+    "numericCode": "454",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "MY",
+    "name": "Malaysia",
+    "iso2": "MY",
+    "iso3": "MYS",
+    "numericCode": "458",
+    "lat": 4.2105,
+    "lng": 101.9758,
+    "minZoom": 4,
+    "maxZoom": 9,
+    "importance": 4,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "MV",
+    "name": "Maldives",
+    "iso2": "MV",
+    "iso3": "MDV",
+    "numericCode": "462",
+    "lat": 3.2028,
+    "lng": 73.2207,
+    "minZoom": 5,
+    "maxZoom": 9.5,
+    "importance": 4,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "ML",
+    "name": "Mali",
+    "iso2": "ML",
+    "iso3": "MLI",
+    "numericCode": "466",
+    "lat": 17.5707,
+    "lng": -3.9962,
+    "minZoom": 4,
+    "maxZoom": 9,
+    "importance": 3,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "MT",
+    "name": "Malta",
+    "iso2": "MT",
+    "iso3": "MLT",
+    "numericCode": "470",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "MH",
+    "name": "Marshall Islands",
+    "iso2": "MH",
+    "iso3": "MHL",
+    "numericCode": "584",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "MQ",
+    "name": "Martinique",
+    "iso2": "MQ",
+    "iso3": "MTQ",
+    "numericCode": "474",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "MR",
+    "name": "Mauritania",
+    "iso2": "MR",
+    "iso3": "MRT",
+    "numericCode": "478",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "MU",
+    "name": "Mauritius",
+    "iso2": "MU",
+    "iso3": "MUS",
+    "numericCode": "480",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "YT",
+    "name": "Mayotte",
+    "iso2": "YT",
+    "iso3": "MYT",
+    "numericCode": "175",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "MX",
+    "name": "Mexico",
+    "iso2": "MX",
+    "iso3": "MEX",
+    "numericCode": "484",
+    "lat": 23.6345,
+    "lng": -102.5528,
+    "minZoom": 3.8,
+    "maxZoom": 8.5,
+    "importance": 4,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "FM",
+    "name": "Micronesia, Federated States of",
+    "iso2": "FM",
+    "iso3": "FSM",
+    "numericCode": "583",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "MD",
+    "name": "Moldova, Republic of",
+    "iso2": "MD",
+    "iso3": "MDA",
+    "numericCode": "498",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "MC",
+    "name": "Monaco",
+    "iso2": "MC",
+    "iso3": "MCO",
+    "numericCode": "492",
+    "lat": 43.7384,
+    "lng": 7.4246,
+    "minZoom": 6,
+    "maxZoom": 10,
+    "importance": 2,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "MN",
+    "name": "Mongolia",
+    "iso2": "MN",
+    "iso3": "MNG",
+    "numericCode": "496",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "ME",
+    "name": "Montenegro",
+    "iso2": "ME",
+    "iso3": "MNE",
+    "numericCode": "499",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "MS",
+    "name": "Montserrat",
+    "iso2": "MS",
+    "iso3": "MSR",
+    "numericCode": "500",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "MA",
+    "name": "Morocco",
+    "iso2": "MA",
+    "iso3": "MAR",
+    "numericCode": "504",
+    "lat": 31.7917,
+    "lng": -7.0926,
+    "minZoom": 4,
+    "maxZoom": 8.8,
+    "importance": 4,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "MZ",
+    "name": "Mozambique",
+    "iso2": "MZ",
+    "iso3": "MOZ",
+    "numericCode": "508",
+    "lat": -18.6657,
+    "lng": 35.5296,
+    "minZoom": 4,
+    "maxZoom": 9,
+    "importance": 3,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "MM",
+    "name": "Myanmar",
+    "iso2": "MM",
+    "iso3": "MMR",
+    "numericCode": "104",
+    "lat": 21.9162,
+    "lng": 95.956,
+    "minZoom": 4,
+    "maxZoom": 9,
+    "importance": 3,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "NA",
+    "name": "Namibia",
+    "iso2": "NA",
+    "iso3": "NAM",
+    "numericCode": "516",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "NR",
+    "name": "Nauru",
+    "iso2": "NR",
+    "iso3": "NRU",
+    "numericCode": "520",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "NP",
+    "name": "Nepal",
+    "iso2": "NP",
+    "iso3": "NPL",
+    "numericCode": "524",
+    "lat": 28.3949,
+    "lng": 84.124,
+    "minZoom": 4,
+    "maxZoom": 9,
+    "importance": 3,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "NL",
+    "name": "Netherlands",
+    "iso2": "NL",
+    "iso3": "NLD",
+    "numericCode": "528",
+    "lat": 52.1326,
+    "lng": 5.2913,
+    "minZoom": 4.5,
+    "maxZoom": 9,
+    "importance": 4,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "NC",
+    "name": "New Caledonia",
+    "iso2": "NC",
+    "iso3": "NCL",
+    "numericCode": "540",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "NZ",
+    "name": "New Zealand",
+    "iso2": "NZ",
+    "iso3": "NZL",
+    "numericCode": "554",
+    "lat": -40.9006,
+    "lng": 174.886,
+    "minZoom": 4,
+    "maxZoom": 8.5,
+    "importance": 4,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "NI",
+    "name": "Nicaragua",
+    "iso2": "NI",
+    "iso3": "NIC",
+    "numericCode": "558",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "NE",
+    "name": "Niger",
+    "iso2": "NE",
+    "iso3": "NER",
+    "numericCode": "562",
+    "lat": 17.6078,
+    "lng": 8.0817,
+    "minZoom": 4,
+    "maxZoom": 9,
+    "importance": 2,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "NG",
+    "name": "Nigeria",
+    "iso2": "NG",
+    "iso3": "NGA",
+    "numericCode": "566",
+    "lat": 9.082,
+    "lng": 8.6753,
+    "minZoom": 3.8,
+    "maxZoom": 8.8,
+    "importance": 4,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "NU",
+    "name": "Niue",
+    "iso2": "NU",
+    "iso3": "NIU",
+    "numericCode": "570",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "NF",
+    "name": "Norfolk Island",
+    "iso2": "NF",
+    "iso3": "NFK",
+    "numericCode": "574",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "MK",
+    "name": "North Macedonia",
+    "iso2": "MK",
+    "iso3": "MKD",
+    "numericCode": "807",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "MP",
+    "name": "Northern Mariana Islands",
+    "iso2": "MP",
+    "iso3": "MNP",
+    "numericCode": "580",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "NO",
+    "name": "Norway",
+    "iso2": "NO",
+    "iso3": "NOR",
+    "numericCode": "578",
+    "lat": 60.472,
+    "lng": 8.4689,
+    "minZoom": 4.5,
+    "maxZoom": 9,
+    "importance": 4,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "OM",
+    "name": "Oman",
+    "iso2": "OM",
+    "iso3": "OMN",
+    "numericCode": "512",
+    "lat": 21.4735,
+    "lng": 55.9754,
+    "minZoom": 4.5,
+    "maxZoom": 9,
+    "importance": 3,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "PK",
+    "name": "Pakistan",
+    "iso2": "PK",
+    "iso3": "PAK",
+    "numericCode": "586",
+    "lat": 30.3753,
+    "lng": 69.3451,
+    "minZoom": 3.8,
+    "maxZoom": 9,
+    "importance": 4,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "PW",
+    "name": "Palau",
+    "iso2": "PW",
+    "iso3": "PLW",
+    "numericCode": "585",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "PS",
+    "name": "Palestine",
+    "iso2": "PS",
+    "iso3": "PSE",
+    "numericCode": "275",
+    "lat": 31.9522,
+    "lng": 35.2332,
+    "minZoom": 4.5,
+    "maxZoom": 9,
+    "importance": 4,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "PA",
+    "name": "Panama",
+    "iso2": "PA",
+    "iso3": "PAN",
+    "numericCode": "591",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "PG",
+    "name": "Papua New Guinea",
+    "iso2": "PG",
+    "iso3": "PNG",
+    "numericCode": "598",
+    "lat": -6.3149,
+    "lng": 143.9555,
+    "minZoom": 4,
+    "maxZoom": 8.5,
+    "importance": 3,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "PY",
+    "name": "Paraguay",
+    "iso2": "PY",
+    "iso3": "PRY",
+    "numericCode": "600",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "PE",
+    "name": "Peru",
+    "iso2": "PE",
+    "iso3": "PER",
+    "numericCode": "604",
+    "lat": -9.19,
+    "lng": -75.0152,
+    "minZoom": 3.8,
+    "maxZoom": 8.5,
+    "importance": 4,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "PH",
+    "name": "Philippines",
+    "iso2": "PH",
+    "iso3": "PHL",
+    "numericCode": "608",
+    "lat": 12.8797,
+    "lng": 121.774,
+    "minZoom": 4,
+    "maxZoom": 9,
+    "importance": 4,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "PN",
+    "name": "Pitcairn",
+    "iso2": "PN",
+    "iso3": "PCN",
+    "numericCode": "612",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "PL",
+    "name": "Poland",
+    "iso2": "PL",
+    "iso3": "POL",
+    "numericCode": "616",
+    "lat": 51.9194,
+    "lng": 19.1451,
+    "minZoom": 4,
+    "maxZoom": 8.5,
+    "importance": 4,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "PT",
     "name": "Portugal",
-    "lat": 38.722,
-    "lng": -9.139
+    "iso2": "PT",
+    "iso3": "PRT",
+    "numericCode": "620",
+    "lat": 39.3999,
+    "lng": -8.2245,
+    "minZoom": 4.5,
+    "maxZoom": 9,
+    "importance": 4,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "PR",
+    "name": "Puerto Rico",
+    "iso2": "PR",
+    "iso3": "PRI",
+    "numericCode": "630",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "QA",
+    "name": "Qatar",
+    "iso2": "QA",
+    "iso3": "QAT",
+    "numericCode": "634",
+    "lat": 25.3548,
+    "lng": 51.1839,
+    "minZoom": 5,
+    "maxZoom": 9.5,
+    "importance": 4,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "RE",
+    "name": "Réunion",
+    "iso2": "RE",
+    "iso3": "REU",
+    "numericCode": "638",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "RO",
+    "name": "Romania",
+    "iso2": "RO",
+    "iso3": "ROU",
+    "numericCode": "642",
+    "lat": 45.9432,
+    "lng": 24.9668,
+    "minZoom": 4,
+    "maxZoom": 9,
+    "importance": 3,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "RU",
+    "name": "Russia",
+    "iso2": "RU",
+    "iso3": "RUS",
+    "numericCode": "643",
+    "lat": 61.524,
+    "lng": 105.3188,
+    "minZoom": 3,
+    "maxZoom": 7,
+    "importance": 5,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "RW",
+    "name": "Rwanda",
+    "iso2": "RW",
+    "iso3": "RWA",
+    "numericCode": "646",
+    "lat": -1.9403,
+    "lng": 29.8739,
+    "minZoom": 4.5,
+    "maxZoom": 9,
+    "importance": 2,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "BL",
+    "name": "Saint Barthélemy",
+    "iso2": "BL",
+    "iso3": "BLM",
+    "numericCode": "652",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "SH",
+    "name": "Saint Helena, Ascension and Tristan da Cunha",
+    "iso2": "SH",
+    "iso3": "SHN",
+    "numericCode": "654",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "KN",
+    "name": "Saint Kitts and Nevis",
+    "iso2": "KN",
+    "iso3": "KNA",
+    "numericCode": "659",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "LC",
+    "name": "Saint Lucia",
+    "iso2": "LC",
+    "iso3": "LCA",
+    "numericCode": "662",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "MF",
+    "name": "Saint Martin (French part)",
+    "iso2": "MF",
+    "iso3": "MAF",
+    "numericCode": "663",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "PM",
+    "name": "Saint Pierre and Miquelon",
+    "iso2": "PM",
+    "iso3": "SPM",
+    "numericCode": "666",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "VC",
+    "name": "Saint Vincent and the Grenadines",
+    "iso2": "VC",
+    "iso3": "VCT",
+    "numericCode": "670",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "WS",
+    "name": "Samoa",
+    "iso2": "WS",
+    "iso3": "WSM",
+    "numericCode": "882",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "SM",
+    "name": "San Marino",
+    "iso2": "SM",
+    "iso3": "SMR",
+    "numericCode": "674",
+    "lat": 43.9333,
+    "lng": 12.45,
+    "minZoom": 6,
+    "maxZoom": 10,
+    "importance": 2,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "ST",
+    "name": "Sao Tome and Principe",
+    "iso2": "ST",
+    "iso3": "STP",
+    "numericCode": "678",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "SA",
+    "name": "Saudi Arabia",
+    "iso2": "SA",
+    "iso3": "SAU",
+    "numericCode": "682",
+    "lat": 23.8859,
+    "lng": 45.0792,
+    "minZoom": 3.8,
+    "maxZoom": 8.8,
+    "importance": 4,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "SN",
+    "name": "Senegal",
+    "iso2": "SN",
+    "iso3": "SEN",
+    "numericCode": "686",
+    "lat": 14.4974,
+    "lng": -14.4524,
+    "minZoom": 4.5,
+    "maxZoom": 9,
+    "importance": 3,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "RS",
+    "name": "Serbia",
+    "iso2": "RS",
+    "iso3": "SRB",
+    "numericCode": "688",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "SC",
+    "name": "Seychelles",
+    "iso2": "SC",
+    "iso3": "SYC",
+    "numericCode": "690",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "SL",
+    "name": "Sierra Leone",
+    "iso2": "SL",
+    "iso3": "SLE",
+    "numericCode": "694",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "SG",
+    "name": "Singapore",
+    "iso2": "SG",
+    "iso3": "SGP",
+    "numericCode": "702",
+    "lat": 1.3521,
+    "lng": 103.8198,
+    "minZoom": 5,
+    "maxZoom": 9.5,
+    "importance": 5,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "SX",
+    "name": "Sint Maarten (Dutch part)",
+    "iso2": "SX",
+    "iso3": "SXM",
+    "numericCode": "534",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "SK",
+    "name": "Slovakia",
+    "iso2": "SK",
+    "iso3": "SVK",
+    "numericCode": "703",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "SI",
+    "name": "Slovenia",
+    "iso2": "SI",
+    "iso3": "SVN",
+    "numericCode": "705",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "SB",
+    "name": "Solomon Islands",
+    "iso2": "SB",
+    "iso3": "SLB",
+    "numericCode": "090",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "SO",
+    "name": "Somalia",
+    "iso2": "SO",
+    "iso3": "SOM",
+    "numericCode": "706",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "ZA",
+    "name": "South Africa",
+    "iso2": "ZA",
+    "iso3": "ZAF",
+    "numericCode": "710",
+    "lat": -30.5595,
+    "lng": 22.9375,
+    "minZoom": 3.8,
+    "maxZoom": 8.8,
+    "importance": 4,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "GS",
+    "name": "South Georgia and the South Sandwich Islands",
+    "iso2": "GS",
+    "iso3": "SGS",
+    "numericCode": "239",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "SS",
+    "name": "South Sudan",
+    "iso2": "SS",
+    "iso3": "SSD",
+    "numericCode": "728",
+    "lat": 6.877,
+    "lng": 31.307,
+    "minZoom": 4,
+    "maxZoom": 9,
+    "importance": 2,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "ES",
+    "name": "Spain",
+    "iso2": "ES",
+    "iso3": "ESP",
+    "numericCode": "724",
+    "lat": 40.4637,
+    "lng": -3.7492,
+    "minZoom": 4,
+    "maxZoom": 8.5,
+    "importance": 4,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "LK",
+    "name": "Sri Lanka",
+    "iso2": "LK",
+    "iso3": "LKA",
+    "numericCode": "144",
+    "lat": 7.8731,
+    "lng": 80.7718,
+    "minZoom": 4,
+    "maxZoom": 9,
+    "importance": 3,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "SD",
+    "name": "Sudan",
+    "iso2": "SD",
+    "iso3": "SDN",
+    "numericCode": "729",
+    "lat": 12.8628,
+    "lng": 30.2176,
+    "minZoom": 4,
+    "maxZoom": 8.8,
+    "importance": 3,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "SR",
+    "name": "Suriname",
+    "iso2": "SR",
+    "iso3": "SUR",
+    "numericCode": "740",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "SJ",
+    "name": "Svalbard and Jan Mayen",
+    "iso2": "SJ",
+    "iso3": "SJM",
+    "numericCode": "744",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "SE",
+    "name": "Sweden",
+    "iso2": "SE",
+    "iso3": "SWE",
+    "numericCode": "752",
+    "lat": 60.1282,
+    "lng": 18.6435,
+    "minZoom": 4.5,
+    "maxZoom": 9,
+    "importance": 4,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "CH",
+    "name": "Switzerland",
+    "iso2": "CH",
+    "iso3": "CHE",
+    "numericCode": "756",
+    "lat": 46.8182,
+    "lng": 8.2275,
+    "minZoom": 4.5,
+    "maxZoom": 9,
+    "importance": 4,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "SY",
+    "name": "Syria",
+    "iso2": "SY",
+    "iso3": "SYR",
+    "numericCode": "760",
+    "lat": 34.8021,
+    "lng": 38.9968,
+    "minZoom": 4,
+    "maxZoom": 9,
+    "importance": 3,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "TW",
+    "name": "Taiwan, Province of China",
+    "iso2": "TW",
+    "iso3": "TWN",
+    "numericCode": "158",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "TJ",
+    "name": "Tajikistan",
+    "iso2": "TJ",
+    "iso3": "TJK",
+    "numericCode": "762",
+    "lat": 38.861,
+    "lng": 71.2761,
+    "minZoom": 4,
+    "maxZoom": 9,
+    "importance": 3,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "TZ",
+    "name": "Tanzania",
+    "iso2": "TZ",
+    "iso3": "TZA",
+    "numericCode": "834",
+    "lat": -6.369,
+    "lng": 34.8888,
+    "minZoom": 4,
+    "maxZoom": 9,
+    "importance": 3,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "TH",
+    "name": "Thailand",
+    "iso2": "TH",
+    "iso3": "THA",
+    "numericCode": "764",
+    "lat": 15.87,
+    "lng": 100.9925,
+    "minZoom": 4,
+    "maxZoom": 9,
+    "importance": 4,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "TL",
+    "name": "Timor-Leste",
+    "iso2": "TL",
+    "iso3": "TLS",
+    "numericCode": "626",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "TG",
+    "name": "Togo",
+    "iso2": "TG",
+    "iso3": "TGO",
+    "numericCode": "768",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "TK",
+    "name": "Tokelau",
+    "iso2": "TK",
+    "iso3": "TKL",
+    "numericCode": "772",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "TO",
+    "name": "Tonga",
+    "iso2": "TO",
+    "iso3": "TON",
+    "numericCode": "776",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "TT",
+    "name": "Trinidad and Tobago",
+    "iso2": "TT",
+    "iso3": "TTO",
+    "numericCode": "780",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "TN",
+    "name": "Tunisia",
+    "iso2": "TN",
+    "iso3": "TUN",
+    "numericCode": "788",
+    "lat": 33.8869,
+    "lng": 9.5375,
+    "minZoom": 4.5,
+    "maxZoom": 9,
+    "importance": 3,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "TR",
+    "name": "Turkey",
+    "iso2": "TR",
+    "iso3": "TUR",
+    "numericCode": "792",
+    "lat": 38.9637,
+    "lng": 35.2433,
+    "minZoom": 3.8,
+    "maxZoom": 8.8,
+    "importance": 4,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "TM",
+    "name": "Turkmenistan",
+    "iso2": "TM",
+    "iso3": "TKM",
+    "numericCode": "795",
+    "lat": 38.9697,
+    "lng": 59.5563,
+    "minZoom": 4,
+    "maxZoom": 9,
+    "importance": 3,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "TC",
+    "name": "Turks and Caicos Islands",
+    "iso2": "TC",
+    "iso3": "TCA",
+    "numericCode": "796",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "TV",
+    "name": "Tuvalu",
+    "iso2": "TV",
+    "iso3": "TUV",
+    "numericCode": "798",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "UG",
+    "name": "Uganda",
+    "iso2": "UG",
+    "iso3": "UGA",
+    "numericCode": "800",
+    "lat": 1.3733,
+    "lng": 32.2903,
+    "minZoom": 4.5,
+    "maxZoom": 9,
+    "importance": 3,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "UA",
+    "name": "Ukraine",
+    "iso2": "UA",
+    "iso3": "UKR",
+    "numericCode": "804",
+    "lat": 48.3794,
+    "lng": 31.1656,
+    "minZoom": 3.8,
+    "maxZoom": 8.5,
+    "importance": 4,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "AE",
+    "name": "United Arab Emirates",
+    "iso2": "AE",
+    "iso3": "ARE",
+    "numericCode": "784",
+    "lat": 23.4241,
+    "lng": 53.8478,
+    "minZoom": 4.5,
+    "maxZoom": 9,
+    "importance": 4,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "GB",
+    "name": "United Kingdom",
+    "iso2": "GB",
+    "iso3": "GBR",
+    "numericCode": "826",
+    "lat": 55.3781,
+    "lng": -3.436,
+    "minZoom": 4,
+    "maxZoom": 8.5,
+    "importance": 5,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "US",
+    "name": "United States",
+    "iso2": "US",
+    "iso3": "USA",
+    "numericCode": "840",
+    "lat": 37.0902,
+    "lng": -95.7129,
+    "minZoom": 3,
+    "maxZoom": 7,
+    "importance": 5,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "UM",
+    "name": "United States Minor Outlying Islands",
+    "iso2": "UM",
+    "iso3": "UMI",
+    "numericCode": "581",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "UY",
+    "name": "Uruguay",
+    "iso2": "UY",
+    "iso3": "URY",
+    "numericCode": "858",
+    "lat": -32.5228,
+    "lng": -55.7658,
+    "minZoom": 4.5,
+    "maxZoom": 9,
+    "importance": 3,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "UZ",
+    "name": "Uzbekistan",
+    "iso2": "UZ",
+    "iso3": "UZB",
+    "numericCode": "860",
+    "lat": 41.3775,
+    "lng": 64.5853,
+    "minZoom": 4,
+    "maxZoom": 9,
+    "importance": 3,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "VU",
+    "name": "Vanuatu",
+    "iso2": "VU",
+    "iso3": "VUT",
+    "numericCode": "548",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "VE",
+    "name": "Venezuela",
+    "iso2": "VE",
+    "iso3": "VEN",
+    "numericCode": "862",
+    "lat": 6.4238,
+    "lng": -66.5897,
+    "minZoom": 3.8,
+    "maxZoom": 8.5,
+    "importance": 3,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "VN",
+    "name": "Vietnam",
+    "iso2": "VN",
+    "iso3": "VNM",
+    "numericCode": "704",
+    "lat": 14.0583,
+    "lng": 108.2772,
+    "minZoom": 4,
+    "maxZoom": 9,
+    "importance": 3,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "VG",
+    "name": "Virgin Islands (British)",
+    "iso2": "VG",
+    "iso3": "VGB",
+    "numericCode": "092",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "VI",
+    "name": "Virgin Islands (U.S.)",
+    "iso2": "VI",
+    "iso3": "VIR",
+    "numericCode": "850",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "WF",
+    "name": "Wallis and Futuna",
+    "iso2": "WF",
+    "iso3": "WLF",
+    "numericCode": "876",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "EH",
+    "name": "Western Sahara",
+    "iso2": "EH",
+    "iso3": "ESH",
+    "numericCode": "732",
+    "identityStatus": "ISO3166_IDENTITY_ONLY"
+  },
+  {
+    "code": "YE",
+    "name": "Yemen",
+    "iso2": "YE",
+    "iso3": "YEM",
+    "numericCode": "887",
+    "lat": 15.5527,
+    "lng": 48.5164,
+    "minZoom": 4,
+    "maxZoom": 9,
+    "importance": 3,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "ZM",
+    "name": "Zambia",
+    "iso2": "ZM",
+    "iso3": "ZMB",
+    "numericCode": "894",
+    "lat": -13.1339,
+    "lng": 27.8493,
+    "minZoom": 4.5,
+    "maxZoom": 9,
+    "importance": 3,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+  },
+  {
+    "code": "ZW",
+    "name": "Zimbabwe",
+    "iso2": "ZW",
+    "iso3": "ZWE",
+    "numericCode": "716",
+    "lat": -19.0154,
+    "lng": 29.1549,
+    "minZoom": 4.5,
+    "maxZoom": 9,
+    "importance": 3,
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
   }
 ]
