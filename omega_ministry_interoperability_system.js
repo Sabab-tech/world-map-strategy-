@@ -134,6 +134,11 @@
     OMEGA_MILITARY_TRAINING_COMPLETED:'OMEGA_MILITARY_TRAINING_COMPLETED',
     OMEGA_MILITARY_EQUIPMENT_ASSIGNMENT_CHANGED:'OMEGA_MILITARY_EQUIPMENT_ASSIGNMENT_CHANGED',
     OMEGA_INTELLIGENCE_BELIEF_UPDATED:'OMEGA_INTELLIGENCE_BELIEF_UPDATED',
+    OMEGA_MEMORY_TRACE_APPEND:'OMEGA_MEMORY_TRACE_APPEND',
+    OMEGA_MARKET_PRICE_UPDATED:'OMEGA_MARKET_PRICE_UPDATED',
+    OMEGA_RESOURCE_ENDOWMENT_HYDRATED:'OMEGA_RESOURCE_ENDOWMENT_HYDRATED',
+    OMEGA_RESOURCE_EXTRACTION_COMPLETED:'OMEGA_RESOURCE_EXTRACTION_COMPLETED',
+    OMEGA_RESOURCE_EXTRACTION_BLOCKED:'OMEGA_RESOURCE_EXTRACTION_BLOCKED',
 
     MINISTRY_STATE_CHANGED:'MINISTRY_STATE_CHANGED'
   });
@@ -155,7 +160,7 @@
     ],
     trade:[
       'trade.relations','trade.balance','trade.exports','trade.imports',
-      'trade.policy','trade.negotiations','trade.importRequests','trade.offerBook','trade.marketPrice','trade.routeCapacity'
+      'trade.policy','trade.negotiations','trade.importRequests','trade.offerBook','trade.marketPrice','trade.marketState','trade.marketMeta','trade.routeCapacity'
     ],
     foreign:[
       'foreign.relations','foreign.treaties','foreign.negotiations',
@@ -179,7 +184,8 @@
       'transport.infrastructure','transport.infrastructure.capacity','transport.logistics','transport.ports','transport.rail'
     ],
     resource:[
-      'resourceSummary','resourceInventory','resourceDeposits','resource.inventory','resource.production','resource.consumption','resource.reserves'
+      'resourceSummary','resourceInventory','resourceDeposits','resource.inventory','resource.production','resource.consumption','resource.reserves',
+      'resource.endowment','resource.mines','resource.mineStates','resource.tradeAvailability','resource.extractionLedger','resource.resourceDomain','resource.authority'
     ],
     health:[
       'health.state','health.welfare','health.hospitals'
