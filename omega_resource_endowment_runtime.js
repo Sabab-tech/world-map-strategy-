@@ -311,7 +311,14 @@
     for(const c of countries())dispatch('OMEGA_RESOURCE_EXTRACT_TICK',c,{correlationId:'RESOURCE-EXTRACT-'+t+'-'+c});
   }
   function onReady(){void initialize();}
-  function onTurn(){void initialize();extractAll();}
+  async function onTurn(){
+    try{
+      const ready=await initialize();
+      if((ready&&ready.status==='READY')||g.__omegaResourceEndowmentReady)extractAll();
+    }catch(e){
+      try{emit?.('OMEGA_RESOURCE_ENDOWMENT_RUNTIME_HEALTH',null,{status:'DEGRADED',reason:String(e?.message||e)});}catch(_){}
+    }
+  }
   function diagnostics(){
     const r=g.__OmegaResourceReserveRegistry, e=engine(), mines=[];
     for(const c of countries()){
