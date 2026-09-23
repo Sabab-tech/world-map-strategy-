@@ -362,8 +362,6 @@
     const paths=['finance.available','finance.reserves','finance.liquidity','finance.committed','finance.encumbered','finance.budget'];
     const values={};
     for(const p of paths){const r=readState(countryId,p);if(r.value!==undefined)values[p]=scalar(r.value);}
-    const economy=readState(countryId,'economy.reserves').value;
-    if(values['finance.reserves']==null&&economy!==undefined)values['finance.reserves']=scalar(economy);
     const debt=scalar(readState(countryId,'economy.debt').value);
     const gdp=scalar(readState(countryId,'economy.gdp').value);
     const liquidity=values['finance.available']??values['finance.liquidity']??values['finance.reserves']??null;
@@ -400,18 +398,22 @@
     const req=scalar(m?.required);
     if(gap!==null&&req!==null&&req!==0)return clamp(Math.abs(gap)/Math.abs(req),0,1);
     const scenario=String(decision?.scenarioId||'').toUpperCase();
-    return /SHORTAGE|DEFICIT|THREAT|EMERGENCY/.test(scenario)?1:.5;
+    return /SHORTAGE|DEFICIT|THREAT|EMERGENCY/.test(scenario)?1:null;
   }
 
   function riskScore(countryId,decision){
     const threat=scalar(readState(countryId,'defense.threatLevel').value);
-    const readiness=scalar(readState(countryId,'military.readiness').value);
+    const threatAlt=scalar(readState(countryId,'intelligence.threatLevel').value);
     const concentration=scalar(readState(countryId,'trade.supplierConcentration').value);
-    let risk=.15;
-    if(threat!==null)risk+=.45*clamp(threat>1?threat/100:threat);
-    if(concentration!==null)risk+=.20*clamp(concentration>1?concentration/100:concentration);
-    if(readiness!==null)risk+=.05*(1-clamp(pct(readiness)));
-    return 1-clamp(risk,0,1);
+    const sanctions=String(readState(countryId,'foreign.sanctions').value?.status||'').toUpperCase();
+    const evidence=[];
+    if(threat!==null)evidence.push(clamp(threat>1?threat/100:threat));
+    else if(threatAlt!==null)evidence.push(clamp(threatAlt>1?threatAlt/100:threatAlt));
+    if(concentration!==null)evidence.push(clamp(concentration>1?concentration/100:concentration));
+    if(sanctions==='ACTIVE'||sanctions==='TRUE')evidence.push(1);
+    if(!evidence.length)return null;
+    const exposure=evidence.reduce((a,v)=>a+v,0)/evidence.length;
+    return 1-clamp(exposure,0,1);
   }
 
   function relationScore(countryId,targetId){
@@ -483,6 +485,22 @@
     return{money,labor,count,materials};
   }
 
+  function materialRequirementFactor(countryId,requirements,reserved={}){
+    if(!requirements||typeof requirements!=='object'||Object.keys(requirements).length===0)return 1;
+    const rs=resourceRuntime(countryId),inv=rs.value?.inventory;
+    if(!inv||typeof inv!=='object')return null;
+    let ratios=[];
+    for(const [rid,rawAmount] of Object.entries(requirements)){
+      const amount=num(rawAmount);if(amount===null||amount<=0)return null;
+      const key=Object.prototype.hasOwnProperty.call(inv,rid)?rid:Object.keys(inv).find(x=>id(x)===id(rid));
+      if(!key)return null;
+      const available=scalar(inv[key]);if(available===null)return null;
+      const reservedAmount=num(reserved[rid])||num(reserved[id(rid)])||0;
+      ratios.push(clamp((available-reservedAmount)/amount,0,1));
+    }
+    return ratios.length?Math.min(...ratios):1;
+  }
+
   function candidateEvaluate(countryId,decision,action){
     const a=String(action||'').toUpperCase();
     const financial=routeFinancial(countryId);
@@ -535,13 +553,15 @@
       ? clamp((financial.liquidity-reservation.money)/Math.max(plan.cost,1),0,1)
       : financial.liquidity===null?null:clamp((financial.liquidity-reservation.money)/Math.max(Math.abs(financial.liquidity),1),0,1);
     const laborFactor=plan.labor!==null&&labor.available!==null?clamp((labor.available-reservation.labor)/Math.max(plan.labor,1),0,1):(labor.available===null?null:clamp(labor.available>0?1:0));
-    const materialFactor=material.inventory!==null&&plan.materials
-      ? clamp(material.inventory/Math.max(Object.values(plan.materials).reduce((s,x)=>s+(num(x)||0),0),1),0,1)
-      : material.inventory===null?null:1;
-    const debtFactor=financial.debtToGdp===null?null:1-clamp(financial.debtToGdp,0,1);
+    const materialFactor=plan.materials
+      ? materialRequirementFactor(countryId,plan.materials,reservation.materials)
+      : (material.inventory===null?null:1);
+    const debtService=scalar(readState(countryId,'finance.debtServicePressure').value);
+    const debtFactor=debtService!==null?1-clamp(debtService>1?debtService/100:debtService,0,1):
+      (financial.debtToGdp===null?null:1-clamp(financial.debtToGdp,0,1));
     const projectFactor=clamp(1-activeProjects(countryId).length/10,0,1);
-    const timeFactor=duration===null?0.5:clamp(1-duration/20,0,1);
-    const relationFactor=relations===null?0.5:relations;
+    const timeFactor=duration===null?null:clamp(1-duration/20,0,1);
+    const relationFactor=relations;
 
     const factors={
       needPressure:need,
