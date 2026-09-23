@@ -156,6 +156,40 @@
     if(!icon||!g.L||!g.L.marker)return null;
     var marker=g.L.marker([lat,lng],{icon:icon});marker.bindPopup(popup,{className:'dark-theme-popup'});return marker;
   }
+  function installAuthoritativeSummary(){
+    var e=g.ResourceMinistryEngine,eco=g.OmegaResourceEconomy;
+    if(!e||!eco||typeof eco.getCountryDashboard!=='function')return false;
+    if(e.__omegaAuthoritativeSummaryInstalled)return true;
+    e.__omegaAuthoritativeSummaryInstalled=true;
+    e.__omegaLegacyGetSummary=e.getSummary;
+    e.getSummary=function(countryKey){
+      var d=eco.getCountryDashboard(countryKey),rs=d&&d.inventory&&d.inventory.actual||{},prod=d&&d.industry&&d.industry.factoryOutput||{},refOut=d&&d.industry&&d.industry.refiningOutput||{},refIn=d&&d.industry&&d.industry.refiningInput||{};
+      var resources={};
+      Object.keys(rs).forEach(function(k){resources[k]=true;});
+      Object.keys(prod).forEach(function(k){resources[k]=true;});
+      Object.keys(refOut).forEach(function(k){resources[k]=true;});
+      Object.keys(refIn).forEach(function(k){resources[k]=true;});
+      var list=Object.keys(resources).sort().map(function(rid){
+        var inventory=num(rs[rid])||0,output=num(prod[rid])||0,input=num(refIn[rid])||0,refined=num(refOut[rid])||0;
+        return{id:rid,name:rid.replace(/_/g,' '),icon:'⛏',category:'AUTHORITATIVE_RUNTIME',color:'#38bdf8',unit:'RUNTIME',basePrice:null,
+          dailyProduction:output,dailyConsumption:input,netBalance:output-input,selfSufficiencyRatio:input>0?Math.round(output/input*100):null,
+          stockDays:input>0?Math.round(inventory/input):null,activeFacilities:d&&d.industry&&d.industry.runtime&&Array.isArray(d.industry.runtime.facilities)?d.industry.runtime.facilities.length:0,
+          warehouseStock:inventory,inventory:inventory,refiningInput:input,refiningOutput:refined,processChain:null,authoritativeRuntimeState:true};
+      });
+      return{
+        briefing:'Authoritative OMEGA resource runtime for '+String(d&&d.countryId||countryKey)+'.',
+        globalMetrics:{
+          autonomyIndex:null,strategicReservesTotalDays:null,
+          activeFacilitiesTotal:list.reduce(function(s,x){return s+(x.activeFacilities||0);},0),
+          surveysUnderway:[]
+        },
+        resourcesList:list,debates:[],authoritativeRuntimeState:true,
+        mines:d&&d.mines||null,inventory:d&&d.inventory||null,industry:d&&d.industry||null,transport:d&&d.transport||null,market:d&&d.market||null,treasury:d&&d.treasury||null
+      };
+    };
+    return true;
+  }
+
   function render(){
     var GameObj=g.Game;if(!GameObj||!GameObj.Map||!g.L)return;
     var M=GameObj.Map;M.map=M.map||g.map;if(!M.map)return;
@@ -180,9 +214,10 @@
     var M=g.Game&&g.Game.Map;if(!M)return false;
     M.renderAuthoritativeResourceDeposits=render;
     if(M.resourceState){
-      // Preserve the existing controls while ensuring their final render points at authoritative state.
+      // Final resource map renderer reads only authoritative occurrence state.
       M.renderResourceDeposits=render;
     }
+    installAuthoritativeSummary();
     ['RESOURCE_STATE_UPDATED','OMEGA_RESOURCE_EXTRACTION_COMPLETED','OMEGA_RESOURCE_TRANSPORT_UPDATED','OMEGA_RESOURCE_ECONOMY_UPDATED','OMEGA_READY','OMEGA_GAME_SESSION_STARTED','OMEGA_SIMULATION_TURN_COMMITTED'].forEach(function(type){
       if(!g.__OmegaResourceMapHooks)g.__OmegaResourceMapHooks={};
       if(g.__OmegaResourceMapHooks[type])return;
