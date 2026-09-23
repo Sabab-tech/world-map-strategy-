@@ -107,19 +107,33 @@ assert.equal(listed.length, 250);
 const runtime = opponent.instance;
 const originalEvaluate = runtime.evaluate;
 const calls = [];
+let active = 0;
+let maxActive = 0;
 runtime.evaluate = async (countryId, turn) => {
+  active++;
+  maxActive = Math.max(maxActive, active);
+  await new Promise(resolve => setTimeout(resolve, 1));
   calls.push({ countryId, turn });
+  active--;
   return { status: 'COMPLETE', countryId, turn, decisions: [] };
 };
 
 try {
-  const batch = await opponent.evaluateAllCountries(17, { excludePlayer: false, queue: false });
+  const batch = await opponent.evaluateAllCountries(17, { excludePlayer: false, queue: false, concurrency: 8 });
   assert.equal(batch.status, 'COMPLETE');
   assert.equal(batch.totalCountries, 250);
+  assert.equal(batch.selectedCountries, 250);
   assert.equal(batch.evaluated, 250);
+  assert.equal(batch.skipped, 0);
+  assert.equal(batch.failed, 0);
+  assert.equal(batch.concurrency, 8);
+  assert.equal(batch.dispatchMode, 'SAME_TICK_COOPERATIVE_CONCURRENT');
+  assert.equal(batch.starvationFree, true);
   assert.equal(calls.length, 250);
   assert.equal(new Set(calls.map(x => x.countryId)).size, 250);
-  assert.deepEqual(calls.map(x => x.countryId), listed);
+  assert.deepEqual(calls.map(x => x.countryId).sort(), listed.slice().sort());
+  assert.ok(maxActive > 1, 'country evaluations must overlap within the shared batch');
+  assert.ok(maxActive <= 8, 'batch concurrency must respect configured lane count');
 } finally {
   runtime.evaluate = originalEvaluate;
 }
