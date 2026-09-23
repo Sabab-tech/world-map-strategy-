@@ -433,7 +433,7 @@
     if(['IMPORT','EXPORT','SUPPLIER_CHANGE'].includes(a))return a==='IMPORT'?'import':'trade';
     if(['HOUSING_BUILD'].includes(a))return'housing';
     if(['INDUSTRY_BUILD','DOMESTIC_EXPANSION','PROCESSING_EXPANSION'].includes(a))return'industry';
-    if(['SECURITY_PREPARATION','MILITARY_RECRUIT','MILITARY_TRAIN','MILITARY_EQUIP','MILITARY_FACILITY_BUILD'].includes(a))return'military';
+    if(['SECURITY_PREPARATION','MILITARY_RECRUIT','MILITARY_TRAIN','MILITARY_ORGANIZE','MILITARY_EQUIP','MILITARY_FACILITY_BUILD'].includes(a))return'military';
     if(['DEBT_MANAGEMENT','FINANCIAL_TRANSACTION','PROJECT_INVESTMENT'].includes(a))return'finance';
     if(['INFRASTRUCTURE_EXPANSION','MAINTENANCE','REPAIR'].includes(a))return'infrastructure';
     if(['DIPLOMATIC_ADJUSTMENT','TREATY_NEGOTIATION'].includes(a))return'diplomacy';
@@ -455,7 +455,7 @@
       FOOD_SHORTAGE:['IMPORT','DOMESTIC_EXPANSION','RESERVE_RELEASE','EFFICIENCY'],
       HOUSING_SHORTAGE:['HOUSING_BUILD','INFRASTRUCTURE_EXPANSION','MIGRATION_POLICY'],
       FACTORY_EXPANSION:['DOMESTIC_EXPANSION','INDUSTRY_BUILD','PROCESSING_EXPANSION','EFFICIENCY'],
-      SECURITY_PREPARATION:['SECURITY_PREPARATION'],
+      SECURITY_PREPARATION:['MILITARY_FACILITY_BUILD','MILITARY_RECRUIT','MILITARY_TRAIN','MILITARY_ORGANIZE','MILITARY_EQUIP','SECURITY_PREPARATION'],
       PUBLIC_SERVICE_SHORTAGE:['INFRASTRUCTURE_EXPANSION','PROJECT_INVESTMENT','POLICY_REVIEW']
     };
     return defaults[sc]||['POLICY_REVIEW'];
@@ -469,7 +469,10 @@
     const labor=scalar(selected?.labor??m?.labor??m?.requiredLabor);
     const materials=selected?.materials??m?.materials??null;
     const duration=scalar(selected?.durationTurns??m?.durationTurns??m?.time);
-    return{quantity,cost,labor,materials:materials&&typeof materials==='object'?clone(materials):null,durationTurns:duration};
+    const personnelPerUnit=scalar(selected?.personnelPerUnit??m?.personnelPerUnit??m?.selected?.personnelPerUnit);
+    const readinessDelta=num(selected?.readinessDelta??m?.readinessDelta??m?.selected?.readinessDelta);
+    const item=selected?.item??m?.item??m?.selected?.item??null;
+    return{quantity,cost,labor,materials:materials&&typeof materials==='object'?clone(materials):null,durationTurns:duration,personnelPerUnit,readinessDelta,item};
   }
 
   function activeReservationTotals(countryId){
@@ -1078,13 +1081,20 @@
   }
 
   function equipmentHandler(cmd,ctx){
-    const p=cmd?.payload||{},q=num(p.quantity);
+    const p=cmd?.payload||{},q=num(p.quantity),item=String(p.item||'').trim();
     if(q===null||q<=0)return{accepted:false,reason:'EQUIPMENT_QUANTITY_INVALID'};
+    if(!item)return{accepted:false,reason:'EQUIPMENT_ITEM_REQUIRED'};
+    const inventoryRaw=ctx.stateTransaction.get('military.equipmentInventory');
+    const inventory=inventoryRaw&&typeof inventoryRaw==='object'?clone(inventoryRaw):{};
+    const key=Object.keys(inventory).find(x=>id(x)===id(item))||item;
+    const current=scalar(inventory[key])??0;
+    inventory[key]=current+q;
+    ctx.stateTransaction.set('military.equipmentInventory',inventory);
     const queue=Array.isArray(ctx.stateTransaction.get('military.equipmentQueue'))?ctx.stateTransaction.get('military.equipmentQueue'):[];
-    const row={equipmentId:String(p.equipmentId||('EQUIP-'+turn()+'-'+ctx.countryId)),quantity:q,item:p.item||null,status:'ORDERED',createdTurn:turn(),decisionId:p.decisionId||null};
+    const row={equipmentId:String(p.equipmentId||('EQUIP-'+turn()+'-'+ctx.countryId)),quantity:q,item,status:'EQUIPPED',createdTurn:turn(),decisionId:p.decisionId||null};
     ctx.stateTransaction.set('military.equipmentQueue',queue.concat([row]).slice(-256));
-    event('OMEGA_MILITARY_EQUIPMENT_APPLIED',ctx.countryId,row,cmd.commandId,p.correlationId||p.decisionId||null);
-    return{accepted:true,equipment:row,stateMutationAuthority:true};
+    event('OMEGA_MILITARY_EQUIPMENT_APPLIED',ctx.countryId,{...row,equipmentInventory:inventory},cmd.commandId,p.correlationId||p.decisionId||null);
+    return{accepted:true,equipment:row,newInventory:inventory,stateMutationAuthority:true};
   }
 
   function militaryTickHandler(cmd,ctx){
@@ -1092,9 +1102,24 @@
     const train=Array.isArray(ctx.stateTransaction.get('military.trainingQueue'))?ctx.stateTransaction.get('military.trainingQueue'):[];
     const nextTrain=train.map(x=>{
       if(x.status!=='IN_TRAINING'||turnNow<Number(x.completionTurn||Infinity))return x;
-      return{...x,status:'COMPLETED',completedTurn:turnNow};
+      const completed={...x,status:'COMPLETED',completedTurn:turnNow};
+      const delta=num(x.readinessDelta);
+      if(delta!==null){
+        const readiness=scalar(ctx.stateTransaction.get('military.readiness'));
+        if(readiness!==null)completed.readinessApplied=Math.max(0,Math.min(100,readiness+delta))-readiness;
+      }
+      return completed;
     });
     ctx.stateTransaction.set('military.trainingQueue',nextTrain);
+    const completedForReadiness=nextTrain.filter(x=>x.status==='COMPLETED'&&x.completedTurn===turnNow&&num(x.readinessApplied)!==null);
+    for(const x of completedForReadiness){
+      const raw=ctx.stateTransaction.get('military.readiness'),current=scalar(raw);
+      if(current===null)continue;
+      const delta=num(x.readinessApplied);
+      const next=Math.max(0,Math.min(100,current+delta));
+      ctx.stateTransaction.set('military.readiness',next);
+      event('OMEGA_FORCE_STRUCTURE_CHANGED',c,{trainingId:x.trainingId,readinessBefore:current,readinessAfter:next,delta},cmd.commandId,x.decisionId||x.trainingId);
+    }
     return{accepted:true,completedTraining:nextTrain.filter(x=>x.status==='COMPLETED'&&x.completedTurn===turnNow).length};
   }
 
@@ -1162,6 +1187,46 @@
     },details.correlationId||details.decisionId||null);
   }
 
+  function militaryOrganizeHandler(cmd,ctx){
+    const p=cmd?.payload||{},structure=ctx.stateTransaction.get('military.forceStructure');
+    if(!structure||typeof structure!=='object')return{accepted:false,reason:'FORCE_STRUCTURE_STATE_UNAVAILABLE'};
+    const personnelKey=structure.personnel!==undefined?'personnel':structure.activePersonnel!==undefined?'activePersonnel':structure.manpower!==undefined?'manpower':null;
+    if(!personnelKey)return{accepted:false,reason:'PERSONNEL_FIELD_UNAVAILABLE'};
+    const organizedKey=structure.organizedPersonnel!==undefined?'organizedPersonnel':structure.organized_personnel!==undefined?'organized_personnel':structure.assignedPersonnel!==undefined?'assignedPersonnel':'organizedPersonnel';
+    const unitsKey=structure.units!==undefined?'units':structure.unitCount!==undefined?'unitCount':'units';
+    const current=scalar(structure[personnelKey]);
+    if(current===null)return{accepted:false,reason:'PERSONNEL_VALUE_UNAVAILABLE'};
+    const already=scalar(structure[organizedKey])??0;
+    const available=Math.max(0,current-already);
+    const quantity=Math.min(available,Math.max(0,num(p.quantity)??available));
+    if(quantity<=0)return{accepted:false,reason:'NO_UNORGANIZED_PERSONNEL'};
+    const perUnit=scalar(p.personnelPerUnit??structure.personnelPerUnit??structure.personnel_per_unit);
+    if(perUnit===null||perUnit<=0)return{accepted:false,reason:'PERSONNEL_PER_UNIT_REQUIRED'};
+    const unitsAdded=Math.floor(quantity/perUnit);
+    if(unitsAdded<=0)return{accepted:false,reason:'INSUFFICIENT_PERSONNEL_FOR_UNIT'};
+    const next=clone(structure);
+    next[organizedKey]=already+unitsAdded*perUnit;
+    const units=scalar(structure[unitsKey]);
+    next[unitsKey]=(units===null?units:units+unitsAdded);
+    ctx.stateTransaction.set('military.forceStructure',next);
+    const row={organizationId:String(p.organizationId||('ORG-'+turn()+'-'+ctx.countryId)),personnel:unitsAdded*perUnit,unitsAdded,status:'ORGANIZED',createdTurn:turn(),decisionId:p.decisionId||null};
+    const q=Array.isArray(ctx.stateTransaction.get('military.organizationQueue'))?ctx.stateTransaction.get('military.organizationQueue'):[];
+    ctx.stateTransaction.set('military.organizationQueue',q.concat([row]).slice(-256));
+    event('OMEGA_FORCE_STRUCTURE_CHANGED',ctx.countryId,{...row,forceStructure:next},cmd.commandId,p.correlationId||p.decisionId||null);
+    return{accepted:true,organization:row,newForceStructure:next,stateMutationAuthority:true};
+  }
+
+  function militaryReadinessHandler(cmd,ctx){
+    const p=cmd?.payload||{},raw=ctx.stateTransaction.get('military.readiness');
+    const readiness=scalar(raw),delta=num(p.readinessDelta);
+    if(readiness===null)return{accepted:false,reason:'MILITARY_READINESS_STATE_UNAVAILABLE'};
+    if(delta===null)return{accepted:false,reason:'READINESS_DELTA_REQUIRED'};
+    const next=Math.max(0,Math.min(100,readiness+delta));
+    ctx.stateTransaction.set('military.readiness',next);
+    event('OMEGA_FORCE_STRUCTURE_CHANGED',ctx.countryId,{readinessBefore:readiness,readinessAfter:next,delta},cmd.commandId,p.correlationId||p.decisionId||null);
+    return{accepted:true,readinessBefore:readiness,readinessAfter:next,stateMutationAuthority:true};
+  }
+
   function treatyHandler(cmd,ctx){
     const c=id(ctx.countryId),p=cmd?.payload||{},target=id(p.targetCountryId);
     if(!target)return{accepted:false,reason:'TARGET_COUNTRY_REQUIRED'};
@@ -1208,8 +1273,12 @@
         durationTurns:plan.plan.durationTurns,currency:null,dependencies:SUBJECT_ROUTES[actionSubject(a)]?.depends||[],
         linkedMinistries:Object.values(SUBJECT_ROUTES[actionSubject(a)]?.depends||{})
       },decisionId);
+    }else if(a==='MILITARY_FACILITY_BUILD'){
+      result=dispatch('projects','OMEGA_AUTO_PROJECT_CREATE',c,{projectId:'AUTO-MILFAC-'+turn()+'-'+c+'-'+String(decisionId||a),action:a,kind:'MILITARY_FACILITY',scenarioId:route.scenarioId,decisionId,reservationId,quantity:plan.plan.quantity,cost:plan.plan.cost,labor:plan.plan.labor,materials:plan.plan.materials,durationTurns:plan.plan.durationTurns,dependencies:SUBJECT_ROUTES.military.depends,linkedMinistries:SUBJECT_ROUTES.military.depends},decisionId);
     }else if(a==='MILITARY_RECRUIT'){
       result=dispatch('military','OMEGA_AUTO_MILITARY_RECRUIT',c,{quantity:plan.plan.quantity,reservationId,decisionId,correlationId:decisionId},decisionId);
+    }else if(a==='MILITARY_ORGANIZE'){
+      result=dispatch('military','OMEGA_AUTO_MILITARY_ORGANIZE',c,{quantity:plan.plan.quantity,personnelPerUnit:plan.plan.personnelPerUnit,reservationId,decisionId,correlationId:decisionId},decisionId);
     }else if(a==='MILITARY_TRAIN'){
       result=dispatch('military','OMEGA_AUTO_MILITARY_TRAIN',c,{quantity:plan.plan.quantity,durationTurns:plan.plan.durationTurns,reservationId,decisionId,readinessDelta:plan.plan.readinessDelta},decisionId);
     }else if(a==='MILITARY_EQUIP'){
@@ -1245,7 +1314,9 @@
       OMEGA_AUTO_INFRASTRUCTURE_COMMISSION:infrastructureCommission,
       OMEGA_AUTO_MILITARY_RECRUIT:recruitmentHandler,
       OMEGA_AUTO_MILITARY_TRAIN:trainingHandler,
+      OMEGA_AUTO_MILITARY_ORGANIZE:militaryOrganizeHandler,
       OMEGA_AUTO_MILITARY_EQUIP:equipmentHandler,
+      OMEGA_AUTO_MILITARY_READY:militaryReadinessHandler,
       OMEGA_AUTO_MILITARY_TICK:militaryTickHandler,
       OMEGA_AUTO_TREATY_NEGOTIATION_START:treatyHandler,
       OMEGA_AUTONOMY_BUNDLE:bundleHandler
@@ -1278,7 +1349,9 @@
       ['OMEGA_AUTO_INFRASTRUCTURE_COMMISSION','transport',{affectedStateDomains:['transport']}],
       ['OMEGA_AUTO_MILITARY_RECRUIT','military',{affectedStateDomains:['military']}],
       ['OMEGA_AUTO_MILITARY_TRAIN','military',{affectedStateDomains:['military']}],
+      ['OMEGA_AUTO_MILITARY_ORGANIZE','military',{affectedStateDomains:['military']}],
       ['OMEGA_AUTO_MILITARY_EQUIP','military',{affectedStateDomains:['military']}],
+      ['OMEGA_AUTO_MILITARY_READY','military',{affectedStateDomains:['military']}],
       ['OMEGA_AUTO_MILITARY_TICK','military',{}],
       ['OMEGA_AUTO_TREATY_NEGOTIATION_START','foreign',{affectedStateDomains:['foreign']}],
       ['OMEGA_AUTONOMY_BUNDLE','cabinet',{affectedMinistries:['finance','resource','trade','foreign','projects','economy','military']}]
