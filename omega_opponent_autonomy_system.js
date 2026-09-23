@@ -1178,6 +1178,17 @@
     const personnelKey=structure.personnel!==undefined?'personnel':structure.activePersonnel!==undefined?'activePersonnel':structure.manpower!==undefined?'manpower':null;
     const current=personnelKey?scalar(structure[personnelKey]):null;
     if(current===null)return{accepted:false,reason:'FORCE_STRUCTURE_PERSONNEL_FIELD_UNAVAILABLE'};
+    const provider=ctx.stateProvider||null;
+    const observed=(paths)=>{
+      for(const path of paths){
+        try{const d=provider?.describe?.(ctx.countryId,path);if(d?.availability==='AVAILABLE'&&d.value!==null&&d.value!==undefined)return scalar(d.value);}catch(_){}
+      }
+      return null;
+    };
+    const recruitable=observed(['population.military.recruitable','population.recruitable','population.military.recruitablePersonnel']);
+    if(recruitable!==null&&q>recruitable)return{accepted:false,reason:'RECRUITABLE_PERSONNEL_INSUFFICIENT',available:recruitable,requested:q};
+    const ceiling=scalar(structure.maxPersonnel??structure.maxForcePersonnel??structure.forceCeiling??structure.maximumPersonnel);
+    if(ceiling!==null&&current+q>ceiling)return{accepted:false,reason:'FORCE_CEILING_EXCEEDED',ceiling,current,requested:q};
     const next=clone(structure);next[personnelKey]=current+q;
     ctx.stateTransaction.set('military.forceStructure',next);
     const queue=Array.isArray(ctx.stateTransaction.get('military.recruitmentQueue'))?ctx.stateTransaction.get('military.recruitmentQueue'):[];
@@ -1191,6 +1202,14 @@
     const p=cmd?.payload||{},q=num(p.quantity);
     if(q===null||q<=0)return{accepted:false,reason:'TRAINING_QUANTITY_INVALID'};
     const queue=Array.isArray(ctx.stateTransaction.get('military.trainingQueue'))?ctx.stateTransaction.get('military.trainingQueue'):[];
+    const structure=ctx.stateTransaction.get('military.forceStructure')||{};
+    const personnel=scalar(structure.personnel??structure.activePersonnel??structure.manpower);
+    const inTraining=queue.filter(x=>String(x.status||'').toUpperCase()==='IN_TRAINING').reduce((s,x)=>s+(num(x.quantity)||0),0);
+    const untrained=scalar(structure.untrainedPersonnel??structure.untrained_personnel);
+    if(untrained!==null&&q>untrained)return{accepted:false,reason:'UNTRAINED_PERSONNEL_INSUFFICIENT',available:untrained,requested:q};
+    if(untrained===null&&personnel!==null&&q>Math.max(0,personnel-inTraining))return{accepted:false,reason:'TRAINING_PERSONNEL_INSUFFICIENT',available:Math.max(0,personnel-inTraining),requested:q};
+    const trainingCapacity=scalar(ctx.stateTransaction.get('military.trainingCapacity')??ctx.stateTransaction.get('military.trainingFacilityCapacity'));
+    if(trainingCapacity!==null&&q+inTraining>trainingCapacity)return{accepted:false,reason:'TRAINING_CAPACITY_EXCEEDED',capacity:trainingCapacity,inTraining,requested:q};
     const duration=num(p.durationTurns);
     if(duration===null||duration<=0)return{accepted:false,reason:'TRAINING_DURATION_REQUIRED'};
     const row={trainingId:String(p.trainingId||('TRAIN-'+turn()+'-'+ctx.countryId)),quantity:q,status:'IN_TRAINING',createdTurn:turn(),completionTurn:turn()+duration,durationTurns:Math.floor(duration),decisionId:p.decisionId||null,readinessDelta:num(p.readinessDelta)};
@@ -1244,6 +1263,28 @@
     return{accepted:true,equipment:row,newInventory:inventory,stateMutationAuthority:true};
   }
 
+  function equipmentAssignmentHandler(cmd,ctx){
+    const p=cmd?.payload||{},item=String(p.item||'').trim(),q=num(p.quantity);
+    if(!item||q===null||q<=0)return{accepted:false,reason:'EQUIPMENT_ASSIGNMENT_INPUT_INVALID'};
+    const rawInv=ctx.stateTransaction.get('military.equipmentInventory');
+    if(!rawInv||typeof rawInv!=='object')return{accepted:false,reason:'EQUIPMENT_INVENTORY_UNAVAILABLE'};
+    const inv=clone(rawInv),key=Object.keys(inv).find(x=>id(x)===id(item));
+    if(!key)return{accepted:false,reason:'EQUIPMENT_ITEM_NOT_OBSERVED'};
+    const stock=scalar(inv[key]);if(stock===null||stock<q)return{accepted:false,reason:'EQUIPMENT_STOCK_INSUFFICIENT'};
+    const existing=ctx.stateTransaction.get('military.equipmentAssignments');
+    const assignments=existing&&typeof existing==='object'?clone(existing):{};
+    const row=assignments[key]&&typeof assignments[key]==='object'?assignments[key]:{assignedQuantity:0,units:[]};
+    row.assignedQuantity=(num(row.assignedQuantity)||0)+q;
+    if(p.unitId)row.units=Array.isArray(row.units)?row.units.concat([String(p.unitId)]).slice(-256):[String(p.unitId)];
+    row.lastAssignmentTurn=turn();
+    assignments[key]=row;
+    inv[key]=stock-q;
+    ctx.stateTransaction.set('military.equipmentInventory',inv);
+    ctx.stateTransaction.set('military.equipmentAssignments',assignments);
+    event('OMEGA_MILITARY_EQUIPMENT_ASSIGNMENT_CHANGED',ctx.countryId,{item:key,quantity:q,assignment:row,remainingInventory:inv[key]},cmd.commandId,p.correlationId||p.decisionId||item);
+    return{accepted:true,item:key,quantity:q,assignment:row,remainingInventory:inv[key],stateMutationAuthority:true};
+  }
+
   function militaryTickHandler(cmd,ctx){
     const p=cmd?.payload||{},turnNow=turn();
     const train=Array.isArray(ctx.stateTransaction.get('military.trainingQueue'))?ctx.stateTransaction.get('military.trainingQueue'):[];
@@ -1251,6 +1292,8 @@
       if(x.status!=='IN_TRAINING'||turnNow<Number(x.completionTurn||Infinity))return x;
       const completed={...x,status:'COMPLETED',completedTurn:turnNow};
       const delta=num(x.readinessDelta);
+      const skillGain=num(x.skillGain),experienceGain=num(x.experienceGain),moraleDelta=num(x.moraleDelta),proficiencyGain=num(x.proficiencyGain);
+      completed.skillGain=skillGain;completed.experienceGain=experienceGain;completed.moraleDelta=moraleDelta;completed.proficiencyGain=proficiencyGain;
       if(delta!==null){
         const readiness=scalar(ctx.stateTransaction.get('military.readiness'));
         if(readiness!==null)completed.readinessApplied=Math.max(0,Math.min(100,readiness+delta))-readiness;
@@ -1466,6 +1509,7 @@
       OMEGA_AUTO_MILITARY_TRAIN:trainingHandler,
       OMEGA_AUTO_MILITARY_ORGANIZE:militaryOrganizeHandler,
       OMEGA_AUTO_MILITARY_EQUIP:equipmentHandler,
+      OMEGA_AUTO_MILITARY_ASSIGN_EQUIPMENT:equipmentAssignmentHandler,
       OMEGA_AUTO_MILITARY_READY:militaryReadinessHandler,
       OMEGA_AUTO_MILITARY_TICK:militaryTickHandler,
       OMEGA_AUTO_TREATY_NEGOTIATION_START:treatyHandler,
@@ -1502,6 +1546,7 @@
       ['OMEGA_AUTO_MILITARY_TRAIN','military',{affectedStateDomains:['military']}],
       ['OMEGA_AUTO_MILITARY_ORGANIZE','military',{affectedStateDomains:['military']}],
       ['OMEGA_AUTO_MILITARY_EQUIP','military',{affectedStateDomains:['military']}],
+      ['OMEGA_AUTO_MILITARY_ASSIGN_EQUIPMENT','military',{affectedStateDomains:['military','defense']}],
       ['OMEGA_AUTO_MILITARY_READY','military',{affectedStateDomains:['military']}],
       ['OMEGA_AUTO_MILITARY_TICK','military',{}],
       ['OMEGA_AUTO_TREATY_NEGOTIATION_START','foreign',{affectedStateDomains:['foreign']}],
