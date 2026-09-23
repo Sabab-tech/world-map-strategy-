@@ -226,8 +226,7 @@ class Decision{
         candidateActions:CLONE(candidates),selectedActions:selected,selectedEvaluations:CLONE(evaluations),evidence:CLONE(sc.evidence||null),
         decisionFactors:sc.decisionFactors,status:'DECIDED',executionMethod:selected.map(a=>ACTIONS[a].execution),
         expectedConsequences:[...new Set(selected.flatMap(a=>ACTIONS[a].domains||[]))],
-        reasoning:{selection:'FIRST_FEASIBLE_APPROVED_ACTION',approvedOrder:order,memoryBias:this.mem.bias(ctx.countryId,sc.id)}
-      });
+        reasoning:{selection:'FIRST_FEASIBLE_APPROVED_ACTION',approvedOrder:order,memoryBias:this.mem.bias(ctx.countryId,sc.id)}});
     }
     this.tr.add({layer:'L10_DECISION_ENGINE',countryId:c,count:out.length,decisions:out.map(x=>x.decisionId)});return out;
   }
@@ -493,7 +492,7 @@ class Runtime{
   }
   async init(o={}){
     try{
-      if(o.fetchCountries!==false&&this.gw.get('countries')===undefined)await this.gw.load('countries');
+      if(o.fetchCountries!==false&&this.gw.get('countries')===undefined)await this.gw.load('countries');for(const k of ['population','economy','cities','relations'])if(this.gw.get(k)===undefined)try{await this.gw.load(k);}catch(e){this.tr.add({layer:'L27_RUNTIME_DEBUG',type:'DATASET_OPTIONAL_LOAD_FAILED',datasetId:k,error:String(e?.message||e)});}
       this.idr.rebuild();
       this.actors.rebuild();
       if(o.preload){
@@ -546,10 +545,10 @@ class Runtime{
       currentPressures:g.semantic.map(x=>x.signal)};
   }
   emitCoverage(c,t){
-    const r=this.runs.get(c),layers=[...new Set(this.tr.a.map(x=>x.layer).filter(Boolean))];
+    const r=this.runs.get(c),executed=[...new Set(this.tr.a.map(x=>x.layer).filter(Boolean))];
     this.tr.add({layer:'L26_EVIDENCE_TRACE',countryId:c,turn:t,availableSignals:r?Object.values(r.signals).filter(x=>x.status==='AVAILABLE').length:0,
-      scenarioCount:r?.scenarios?.length||0,decisionCount:r?.decisions?.length||0,executedLayers:layers.length});
-    this.tr.add({layer:'L27_RUNTIME_DEBUG',type:'REAL_LAYER_EXECUTION_TRACE',countryId:c,turn:t,executedLayers:layers});
+      scenarioCount:r?.scenarios?.length||0,decisionCount:r?.decisions?.length||0,executedLayers:executed.length});
+    this.tr.add({layer:'L27_RUNTIME_DEBUG',type:'REAL_LAYER_EXECUTION_TRACE',countryId:c,turn:t});
   }
   bind(){
     const x=IO();
