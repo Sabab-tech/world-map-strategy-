@@ -34,6 +34,7 @@ const MINISTRY_RUNTIME_V1_SCRIPT = '<script src="/omega_ministry_runtime_v1.js">
 const SIMULATION_RUNTIME_SCRIPT = '<script src="/omega_simulation_runtime.js"></script>';
 const OPPONENT_COUNTRY_RULES_SCRIPT = '<script src="/opponent_country_rules.js"></script>';
 const OPPONENT_DEEP_MEMORY_SCRIPT = '<script src="/omega_opponent_deep_memory_system.js"></script>';
+const OPPONENT_INTELLIGENCE_SCRIPT = '<script src="/omega_opponent_intelligence_evolution_system.js"></script>';
 const OPPONENT_STRATEGY_SCRIPT = '<script src="/omega_opponent_adaptive_strategy_system.js"></script>';
 const OPPONENT_AUTONOMY_SCRIPT = '<script src="/omega_opponent_autonomy_system.js"></script>';
 const OPPONENT_TRADE_SCRIPT = '<script src="/omega_global_trade_system.js"></script>';
