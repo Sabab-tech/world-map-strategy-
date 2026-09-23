@@ -221,16 +221,17 @@
 
   function buyerResponseHandler(cmd,ctx){
     const p=cmd?.payload||{},c=canonical(ctx.countryId),requestId=String(p.requestId||''),response=clone(p.response||{});
-    const root=ctx.stateTransaction.get('trade');
-    const tradeRoot=root&&typeof root==='object'?clone(root):{};
-    const bucket=ensureTradeBucket(tradeRoot,c);
+    const rawBucket=ctx.stateTransaction.get('trade');
+    const bucket=rawBucket&&typeof rawBucket==='object'?clone(rawBucket):{};
+    if(!Array.isArray(bucket.importRequests))bucket.importRequests=[];
+    if(!bucket.globalTradeLedger||typeof bucket.globalTradeLedger!=='object')bucket.globalTradeLedger={requests:[],decisions:[],settlements:[]};
     const idx=bucket.importRequests.findIndex(x=>String(x.requestId)===requestId);
     if(idx<0)return{accepted:false,reason:'TRADE_REQUEST_NOT_FOUND'};
     const req=clone(bucket.importRequests[idx]);
     const decision=String(response.decision||'WAITING_DATA').toUpperCase();
     req.lastCounterpartyDecision=clone(response);
     req.lastDecisionTurn=turn();
-    if(decision==='WAITING_DATA'){req.status='SENT';req.stage='COUNTERPARTY_DATA_PENDING';bucket.importRequests[idx]=req;ctx.stateTransaction.set('trade',tradeRoot);return{accepted:true,status:'WAITING_DATA'};}
+    if(decision==='WAITING_DATA'){req.status='SENT';req.stage='COUNTERPARTY_DATA_PENDING';bucket.importRequests[idx]=req;ctx.stateTransaction.set('trade',bucket);return{accepted:true,status:'WAITING_DATA'};}
     if(decision==='REJECT'){
       req.status=TYPES.REJECTED;req.stage='COUNTERPARTY_REJECTED';req.rejectionReason=response.reason||'COUNTERPARTY_REJECTED';
       req.refusalCount=(num(req.refusalCount)||0)+1;
@@ -238,7 +239,7 @@
       const ledger=bucket.globalTradeLedger||{requests:[],decisions:[],settlements:[]};
       ledger.requests=[...(ledger.requests||[]),{requestId,status:req.status,attempt:req.attempt||1,simulationTurn:turn(),reason:req.rejectionReason}].slice(-MAX_HISTORY);
       bucket.globalTradeLedger=ledger;
-      ctx.stateTransaction.set('trade',tradeRoot);
+      ctx.stateTransaction.set('trade',bucket);
       return{accepted:true,status:TYPES.REJECTED,request:req};
     }
     if(decision==='COUNTER'){
@@ -248,29 +249,32 @@
       const mem=memoryInsight(c,req.targetCountryId);
       const memoryScore=mem.known?clamp(mem.acceptRate??0.5):0.5;
       const ceiling=market===null?price:market*(1.05+need*.10+memoryScore*.05);
-      if(price===null||liquidity===null||qty===null){req.status='SENT';req.stage='COUNTER_OFFER_DATA_PENDING';bucket.importRequests[idx]=req;ctx.stateTransaction.set('trade',tradeRoot);return{accepted:true,status:'WAITING_DATA'};}
+      if(price===null||liquidity===null||qty===null){req.status='SENT';req.stage='COUNTER_OFFER_DATA_PENDING';bucket.importRequests[idx]=req;ctx.stateTransaction.set('trade',bucket);return{accepted:true,status:'WAITING_DATA'};}
       const total=qty*price;
       if(total<=liquidity&&price<=ceiling){
         req.quantity=qty;req.unitPrice=price;req.totalValue=total;req.status=TYPES.ACCEPTED;req.stage='COUNTER_OFFER_ACCEPTED';req.acceptedTurn=turn();
-        bucket.importRequests[idx]=req;ctx.stateTransaction.set('trade',tradeRoot);
+        bucket.importRequests[idx]=req;ctx.stateTransaction.set('trade',bucket);
         return{accepted:true,status:TYPES.ACCEPTED,request:req};
       }
       req.status=TYPES.REJECTED;req.stage='COUNTER_OFFER_DECLINED';req.rejectionReason='BUYER_COUNTER_OFFER_TOO_EXPENSIVE';req.refusalCount=(num(req.refusalCount)||0)+1;
-      bucket.importRequests[idx]=req;ctx.stateTransaction.set('trade',tradeRoot);
+      bucket.importRequests[idx]=req;ctx.stateTransaction.set('trade',bucket);
       return{accepted:true,status:TYPES.REJECTED,request:req};
     }
     if(decision==='ACCEPT'){
       const qty=num(response.quantityApproved)||num(req.quantity),price=num(response.unitPrice)||num(req.unitPrice);
       req.quantity=qty;req.unitPrice=price;req.totalValue=qty*price;req.status=TYPES.ACCEPTED;req.stage='COUNTERPARTY_ACCEPTED';req.acceptedTurn=turn();
-      bucket.importRequests[idx]=req;ctx.stateTransaction.set('trade',tradeRoot);
+      bucket.importRequests[idx]=req;ctx.stateTransaction.set('trade',bucket);
       return{accepted:true,status:TYPES.ACCEPTED,request:req};
     }
     return{accepted:false,reason:'UNKNOWN_TRADE_RESPONSE:'+decision};
   }
 
   function retryHandler(cmd,ctx){
-    const p=cmd?.payload||{},c=canonical(ctx.countryId),root=ctx.stateTransaction.get('trade');
-    const tradeRoot=root&&typeof root==='object'?clone(root):{},bucket=ensureTradeBucket(tradeRoot,c);
+    const p=cmd?.payload||{},c=canonical(ctx.countryId);
+    const rawBucket=ctx.stateTransaction.get('trade');
+    const bucket=rawBucket&&typeof rawBucket==='object'?clone(rawBucket):{};
+    if(!Array.isArray(bucket.importRequests))bucket.importRequests=[];
+    if(!bucket.globalTradeLedger||typeof bucket.globalTradeLedger!=='object')bucket.globalTradeLedger={requests:[],decisions:[],settlements:[]};
     const previous=clone(p.previousRequest||null);
     if(!previous)return{accepted:false,reason:'PREVIOUS_REQUEST_REQUIRED'};
     const attempt=(num(previous.attempt)||1)+1;
@@ -286,7 +290,7 @@
     bucket.importRequests=[...bucket.importRequests,retry].slice(-MAX_HISTORY);
     bucket.globalTradeLedger=bucket.globalTradeLedger||{requests:[],decisions:[],settlements:[]};
     bucket.globalTradeLedger.requests=[...(bucket.globalTradeLedger.requests||[]),{requestId:retry.requestId,status:'RETRY',attempt,previousRequestId:previous.requestId,simulationTurn:turn()}].slice(-MAX_HISTORY);
-    ctx.stateTransaction.set('trade',tradeRoot);
+    ctx.stateTransaction.set('trade',bucket);
     emit('OMEGA_TRADE_REQUEST_RETRY_CREATED',c,retry);
     return{accepted:true,request:retry};
   }
@@ -368,13 +372,13 @@
     bucket.importRequests[idx]=req;
     bucket.globalTradeLedger=bucket.globalTradeLedger||{requests:[],decisions:[],settlements:[]};
     bucket.globalTradeLedger.settlements=[...(bucket.globalTradeLedger.settlements||[]),{settlementId:p.settlementId,requestId:p.requestId,status:req.status,turn:turn(),quantity:req.quantity,unitPrice:req.unitPrice,supplier:req.targetCountryId}].slice(-MAX_HISTORY);
-    ctx.stateTransaction.set('trade',tradeRoot);
+    ctx.stateTransaction.set('trade',bucket);
     return{accepted:true,request:req};
   }
   function sellerLedgerHandler(cmd,ctx){
     const p=cmd?.payload||{},root=ctx.stateTransaction.get('trade'),tradeRoot=root&&typeof root==='object'?clone(root):{},bucket=ensureTradeBucket(tradeRoot,canonical(ctx.countryId));
     bucket.globalTradeLedger.settlements=[...(bucket.globalTradeLedger.settlements||[]),clone(p)];
-    ctx.stateTransaction.set('trade',tradeRoot);
+    ctx.stateTransaction.set('trade',bucket);
     return{accepted:true,settlementId:p.settlementId};
   }
   function relationPressureHandler(cmd,ctx){
