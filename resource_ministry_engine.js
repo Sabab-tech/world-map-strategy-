@@ -8687,6 +8687,12 @@ _globalScope.GSRSK_DataFoundation = (() => {
 
         normalizeCountryCode(countryKey) {
             if (!countryKey) return 'BGD';
+            const shared = global.OmegaCanonicalIdentityRegistry || global.OmegaCountrySemanticBridge;
+            try {
+                const hit = shared && typeof shared.resolveCountry === 'function' ? shared.resolveCountry(countryKey) : null;
+                const iso3 = hit?.raw?.iso3 || hit?.raw?.countryId || hit?.raw?.iso3Code;
+                if (iso3) return String(iso3).trim().toUpperCase();
+            } catch (_) {}
             const k = String(countryKey).trim().toUpperCase();
             const aliasMap = {
                 'BANGLADESH': 'BGD', 'BD': 'BGD',
@@ -8937,8 +8943,8 @@ _globalScope.GSRSK_DataFoundation = (() => {
 
         renderModalContent(modalEl, countryKey, activeTab = 'matrix') {
             const summary = this.getSummary(countryKey);
-            const profile = this.getCountryResourceProfile(countryKey);
-            const countryName = profile.identity?.name || countryKey;
+            const profile = this.getCountryResourceProfile(countryKey) || {};
+            const countryName = profile?.identity?.name || countryKey;
             const countryDeposits = this.getDepositsForCountry(countryKey);
 
             modalEl.innerHTML = `
@@ -9074,7 +9080,7 @@ _globalScope.GSRSK_DataFoundation = (() => {
         }
 
         _renderProfileTab(profile, countryKey) {
-            const id = profile.identity || {};
+            const id = profile?.identity || {};
             const geo = profile.geography || {};
             const dom = profile.resource_domain || {};
             const min = profile.mineral_resource_base || {};
