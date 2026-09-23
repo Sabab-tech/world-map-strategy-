@@ -47,11 +47,13 @@ assert.equal((await api.listCountryIds()).join(','),'AAA,BBB,CCC');
 
 const profile=api.getDatasetProfile('countries');
 assert.ok(profile && profile.schema && profile.identityFields.length>0);
-api.setDataset('population',[{code:'BBB',population_total:1234,growth_rate:'RISING'}]);
+api.setDataset('population',[{code:'CCC',population_total:1234,growth_rate:'RISING'}]);
 const populationProfile=api.getDatasetProfile('population');
 assert.ok(populationProfile && populationProfile.fieldMeaning.POPULATION);
-assert.ok(api.getHydratedState('BBB').signals.POPULATION.status==='AVAILABLE');
-assert.equal(api.getHydratedState('BBB').signals.POPULATION.value,1234);
+const cccHydrated=api.evaluateCountry ? await api.evaluateCountry('CCC',4) : null;
+assert.ok(cccHydrated);
+assert.ok(api.getHydratedState('CCC').signals.POPULATION.status==='AVAILABLE');
+assert.equal(api.getHydratedState('CCC').signals.POPULATION.value,1234);
 
 assert.equal(api.evaluateDirection('INFLATION',{trend:'RISING'},'RISING').state,'TRUE');
 const run=await api.evaluateCountry('BBB',4);
