@@ -322,7 +322,7 @@
     ['royalty','resourceTax','corporateTax','exportDuty','other'].forEach(function(k){var q=num(r[k])||0;f.cumulative[k]=(num(f.cumulative[k])||0)+q;f.thisTurn[k]=(num(f.thisTurn[k])||0)+q;});
     f.cumulative.total=(num(f.cumulative.total)||0)+total;f.thisTurn.total=(num(f.thisTurn.total)||0)+total;f.lastTurn=turn();f.policySource='resource_economy_rules.json';
     var l=Array.isArray(ctx.stateTransaction.get('finance.resourceFiscalLedger'))?clone(ctx.stateTransaction.get('finance.resourceFiscalLedger')):[];r.turn=turn();l.push(r);while(l.length>(num(rules().runtime.maxLedgerEntries)||2048))l.shift();
-    ctx.stateTransaction.set('finance.resourceFiscal',f);ctx.stateTransaction.set('finance.resourceFiscalLedger',l);
+    ctx.stateTransaction.set('finance.resourceFiscal',f);ctx.stateTransaction.set('finance.resourceFiscalLedger',l);var budgetContribution=num(ctx.stateTransaction.get('finance.resourceBudgetContribution'))||0,budgetTurn=num(ctx.stateTransaction.get('finance.resourceBudgetContributionThisTurn'))||0;ctx.stateTransaction.set('finance.resourceBudgetContribution',budgetContribution+total);ctx.stateTransaction.set('finance.resourceBudgetContributionThisTurn',budgetTurn+total);
     var rev=num(ctx.stateTransaction.get('finance.revenue')),tax=num(ctx.stateTransaction.get('finance.taxRevenue')),av=num(ctx.stateTransaction.get('finance.available')),res=num(ctx.stateTransaction.get('finance.reserves'));
     ctx.stateTransaction.set('finance.revenue',(rev===null?0:rev)+total);ctx.stateTransaction.set('finance.taxRevenue',(tax===null?0:tax)+total);
     if(av!==null)ctx.stateTransaction.set('finance.available',av+total);else if(res!==null)ctx.stateTransaction.set('finance.reserves',res+total);
