@@ -95,64 +95,50 @@ jobs:
       - name: Autonomous world architecture proof
         run: |
           set -euo pipefail
+          node --check opponent_country_rules.js
+          node --check world_ecosystem_engine.js
+          node test/opponent_country_rules_runtime.test.js
           node --input-type=module <<'NODE'
           import fs from 'node:fs/promises';
           const runtime = await fs.readFile('opponent_country_rules.js','utf8');
-          const test = await fs.readFile('test/opponent_country_rules_runtime.test.js','utf8');
-          const simulation = await fs.readFile('omega_simulation_runtime.js','utf8');
+          const ecosystem = await fs.readFile('world_ecosystem_engine.js','utf8');
 
-          if (!runtime.includes("const V='4.2.0'")) throw new Error('Autonomous core version contract missing');
-          if (!runtime.includes('const LAYERS=[')) throw new Error('Executable layer registry missing');
-          if (!runtime.includes('const SCENARIO_ROWS=[')) throw new Error('Universal scenario registry missing');
-          if (!runtime.includes('const ACTIONS={')) throw new Error('Action registry missing');
-          if (!runtime.includes('class ProjectEngine')) throw new Error('Project lifecycle engine missing');
-          if (!runtime.includes('const FIELD_ALIASES=')) throw new Error('Universal semantic field alias registry missing');
-          if (!runtime.includes('fieldMeaning')) throw new Error('Field meaning discovery output missing');
-          if (!runtime.includes('class TransactionEngine')) throw new Error('Transaction lifecycle engine missing');
-          for (const cls of ['TradeMarketEngine','FinanceEngine','InfraLogisticsEngine','PopulationLaborEngine','TechProductivityEngine','PolicyInstitutionEngine','PolicyLifecycle']) {
-            if (!runtime.includes('class '+cls)) throw new Error('Distinct domain lifecycle missing: '+cls);
-          }
-          if (!runtime.includes('class Consequence')) throw new Error('Consequence propagation engine missing');
-          if (!runtime.includes('class Forecast')) throw new Error('Forecast engine missing');
-          if (!runtime.includes('class Scheduler')) throw new Error('Multi-rate scheduler missing');
-          if (!runtime.includes('stateUpdated:true')) throw new Error('Post-execution state rehydration trace missing');
-          if (!runtime.includes('NEXT_EVALUATION_SCHEDULED')) throw new Error('Next evaluation scheduling trace missing');
-          if (!runtime.includes('class Reconcile')) throw new Error('State reconciliation missing');
-          if (!runtime.includes('class Gateway')) throw new Error('Data intake gateway missing');
-          if (!runtime.includes('class Identity')) throw new Error('Canonical identity layer missing');
-          if (!runtime.includes('class CapRegistry')) throw new Error('Capability registry missing');
-          if (!runtime.includes('L26_EVIDENCE_TRACE')) throw new Error('Evidence trace layer missing');
-          if (!runtime.includes('setReasoningAdapter')) throw new Error('AI reasoning boundary missing');
-          if (!runtime.includes('executionApplied:false')) throw new Error('Direct state-mutation guard missing');
-          if (/trigger:\{[^}]*value\s*:/.test(runtime)) throw new Error('Numeric trigger threshold detected');
-          for (const forbidden of ['Bangladesh','India','Pakistan','China','United States']) {
-            if (runtime.includes(forbidden)) throw new Error('Country-specific behavior hardcode detected: '+forbidden);
-          }
-          const specificCountryBehavior = /(countryId|countryCode|sourceCountryId|targetCountryId|actorId|country\\s*===|actor\\s*===)[^;\\n]{0,100}(['"][^'"]*['"])/i;
-          if (specificCountryBehavior.test(runtime) && /(Bangladesh|India|Pakistan|China|United States|USA)/i.test(runtime.match(specificCountryBehavior)[0])) {
-            throw new Error('Country-specific behavior hardcode detected');
+          for (const required of [
+            'class RuntimeFlowEngine',
+            'class RuntimeOperationEngine',
+            'const APPROVED_POLICY_OVERRIDES',
+            'class Decision',
+            'class ProjectEngine',
+            'class TransactionEngine',
+            'class Consequence',
+            'class Forecast',
+            'class Scheduler',
+            'class Reconcile',
+            'class Gateway',
+            'class Identity',
+            'class CapRegistry'
+          ]) {
+            if (!runtime.includes(required)) throw new Error('Required opponent runtime component missing: '+required);
           }
 
-          const layerRegistry = runtime.match(/const LAYERS=\[(.*?)\]\.map/s);
-          const layerCount = layerRegistry ? layerRegistry[1].split(',').filter(Boolean).length : 0;
-          if (layerCount !== 28) throw new Error('Expected exactly 28 executable layer declarations, found '+layerCount);
-          if ((runtime.match(/\['REL'/g)||[]).length < 20) throw new Error('Universal relational scenario coverage is incomplete');
+          if (runtime.includes("type:'RUNTIME_COVERAGE'")) throw new Error('Fake layer execution coverage remains');
+          if (runtime.includes('executionApplied:true')) throw new Error('Opponent runtime claims world effect was directly applied');
+          if (/countryId\s*===\s*['"][^'"]+['"]/.test(runtime)) throw new Error('Country-specific runtime branch detected');
+          if (/country\s*===\s*['"][^'"]+['"]/.test(runtime)) throw new Error('Country-specific runtime branch detected');
 
-          if (!simulation.includes('class SimulationCoordinator')) throw new Error('Canonical simulation coordinator missing');
-          if (!simulation.includes('AuthoritativeWorldState')) throw new Error('Authoritative world-state root missing');
-          if (!simulation.includes("const PHASES=Object.freeze([")) throw new Error('Ordered simulation phases missing');
+          const policyMatch = runtime.match(/const APPROVED_POLICY_OVERRIDES=Object\.freeze\((\{[\s\S]*?\})\);/);
+          if (!policyMatch) throw new Error('Approved policy layer missing');
+          if (/\b(?:0\.\d+|\d{2,})\b/.test(policyMatch[1])) throw new Error('Numeric state-transition constants found inside approved policy layer');
 
-          if (!test.includes("OMEGA AUTONOMOUS WORLD CORE TEST PASSED")) throw new Error('Autonomous core behavior test missing');
-          if (!test.includes("assert.equal(diagnostics.layers,28)")) throw new Error('28-layer assertion missing');
-          if (!test.includes('fieldMeaning.POPULATION')) throw new Error('Semantic field binding regression test missing');
-          if (!test.includes('policyId')) throw new Error('Policy lifecycle behavioral assertion missing');
-          if (!test.includes("assert.equal(diagnostics.scenarioCount,25)")) throw new Error('25-scenario assertion missing');
-          if (!test.includes("assert.equal(diagnostics.directionalSignals,63)")) throw new Error('63-signal assertion missing');
-          if (!test.includes("assert.equal(diagnostics.actionTypes,27)")) throw new Error('27-action assertion missing');
-          if (!test.includes("L26_EVIDENCE_TRACE")) throw new Error('Evidence trace runtime assertion missing');
-          if (!test.includes("projectId")) throw new Error('Project lifecycle behavioral assertion missing');
-          if (!test.includes("transactionId")) throw new Error('Transaction lifecycle behavioral assertion missing');
-          if (!test.includes("mutationAuthority,false")) throw new Error('AI mutation boundary assertion missing');
+          if (ecosystem.includes('defaultAi')) throw new Error('Synthetic default AI profile remains');
+          if (/\+=|-=/.test(ecosystem)) throw new Error('Direct synthetic ecosystem state mutation remains');
+          if (/DEFAULT_GLOBAL_MARKET\s*=\s*\{\s*[^}]+price/.test(ecosystem)) throw new Error('Hardcoded global market baseline remains');
 
-          console.log('CI AUTONOMOUS WORLD ARCHITECTURE PROOF: PASS');
+          const countries=JSON.parse(await fs.readFile('countries.json','utf8'));
+          const population=JSON.parse(await fs.readFile('population.json','utf8'));
+          const economy=JSON.parse(await fs.readFile('economy.json','utf8'));
+          if (!Array.isArray(countries) || countries.length===0) throw new Error('Canonical countries dataset missing');
+          if (!population.BANGLADESH || !economy.BANGLADESH) throw new Error('Bangladesh static datasets missing');
+          console.log('CI AUTONOMOUS WORLD BEHAVIOR PROOF: PASS');
           NODE
+
