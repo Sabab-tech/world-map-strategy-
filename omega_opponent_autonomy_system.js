@@ -13,7 +13,7 @@
 (function(g){
   'use strict';
 
-  const VERSION='1.0.0';
+  const VERSION='1.1.0';
   if(g.OmegaOpponentAutonomy?.VERSION===VERSION)return;
 
   const clone=(v,seen=new WeakMap())=>{
@@ -119,16 +119,17 @@
   });
 
   const DECISION_WEIGHTS=Object.freeze({
-    needPressure:0.20,
-    treasury:0.14,
-    labor:0.10,
-    materials:0.12,
-    debt:0.09,
-    existingProjects:0.08,
-    strategicPriority:0.10,
-    time:0.07,
+    needPressure:0.18,
+    treasury:0.13,
+    labor:0.09,
+    materials:0.11,
+    debt:0.08,
+    existingProjects:0.07,
+    strategicPriority:0.09,
+    time:0.06,
     risk:0.06,
-    relations:0.04
+    relations:0.03,
+    memory:0.10
   });
 
   const EVENT_ROUTES=Object.freeze({
@@ -149,7 +150,22 @@
     OMEGA_MILITARY_EQUIPMENT_APPLIED:{owner:'military',domains:['military','resource','finance']},
     OMEGA_FORCE_STRUCTURE_CHANGED:{owner:'military',domains:['military','defense']},
     OMEGA_TREATY_NEGOTIATION_STARTED:{owner:'foreign',domains:['foreign','trade']},
-    OMEGA_THREAT_ASSESSMENT_CREATED:{owner:'intelligence',domains:['intelligence','foreign','defense','military']}
+    OMEGA_THREAT_ASSESSMENT_CREATED:{owner:'intelligence',domains:['intelligence','foreign','defense','military']},
+    OMEGA_MILITARY_FACILITY_CAPACITY_CHANGED:{owner:'military',domains:['military','defense']},
+    OMEGA_MILITARY_READINESS_CHANGED:{owner:'military',domains:['military','defense']},
+    OMEGA_MILITARY_EQUIPMENT_ASSIGNMENT_CHANGED:{owner:'military',domains:['military','defense']},
+    OMEGA_TRADE_REQUEST_ACCEPTED:{owner:'trade',domains:['trade','foreign','resource','finance']},
+    OMEGA_TRADE_REQUEST_REJECTED:{owner:'trade',domains:['trade','foreign']},
+    OMEGA_TRADE_COUNTER_OFFERED:{owner:'trade',domains:['trade','foreign','finance']},
+    OMEGA_TRADE_REQUEST_RETRY_CREATED:{owner:'trade',domains:['trade','foreign']},
+    OMEGA_TRADE_SHIPMENT_CREATED:{owner:'trade',domains:['trade','resource','transport']},
+    OMEGA_TRADE_SETTLEMENT_COMPLETED:{owner:'trade',domains:['trade','resource','finance','foreign']},
+    OMEGA_TRADE_SETTLEMENT_FAILED:{owner:'trade',domains:['trade','finance','resource']},
+    OMEGA_TRADE_PRESSURE_APPLIED:{owner:'trade',domains:['trade','foreign','military']},
+    OMEGA_TRADE_DIPLOMATIC_RELATION_ADJUSTED:{owner:'foreign',domains:['foreign','trade']},
+    OMEGA_TRADE_MILITARY_PRESSURE_APPLIED:{owner:'military',domains:['military','foreign']},
+    OMEGA_MEMORY_UPDATED:{owner:'cabinet',domains:['cabinet','statistics']},
+    OMEGA_MEMORY_CONSOLIDATED:{owner:'cabinet',domains:['cabinet','statistics']}
   });
 
   function event(type,country,payload={},causationId=null,correlationId=null){
@@ -257,7 +273,19 @@
       readState(a,'relations')?.value?.[b],
       readState(a,'foreign.treaties')?.value?.[b]
     ].find(x=>x!==undefined);
-    if(exact!==undefined)return exact;
+    if(exact!==undefined){
+      const base=clone(exact);
+      const adjustments=readState(a,'foreign.relationAdjustments')?.value?.[b];
+      const rows=Array.isArray(adjustments)?adjustments:[];
+      const delta=rows.reduce((s,x)=>s+(num(x?.delta)||0),0);
+      if(delta!==0){
+        for(const k of ['overall','political']){
+          const v=num(base[k]);
+          if(v!==null)base[k]=Math.max(0,Math.min(100,v+delta));
+        }
+      }
+      return base;
+    }
     const rt=g.Omega?.OpponentCountryRuntime?.instance;
     try{
       const raw=rt?.gw?.get('relations');
@@ -517,6 +545,10 @@
     const need=needPressure(decision);
     const priority=priorityFor(decision);
     const risk=riskScore(countryId,decision);
+    const deepMemory=g.OmegaOpponentDeepMemory||g.Omega?.OpponentDeepMemory||null;
+    const memoryTarget=decision?.targetCountryId||null;
+    let memoryEvaluation=null;
+    try{memoryEvaluation=deepMemory?.scoreAction?.(countryId,a,memoryTarget)||null;}catch(_){memoryEvaluation=null;}
 
     let targetCountryId=null;
     let relations=null;
@@ -579,6 +611,7 @@
     const projectFactor=clamp(1-activeProjects(countryId).length/10,0,1);
     const timeFactor=duration===null?null:clamp(1-duration/20,0,1);
     const relationFactor=relations;
+    const memoryFactor=memoryEvaluation?.score??null;
 
     const factors={
       needPressure:need,
@@ -590,7 +623,8 @@
       strategicPriority:priority,
       time:timeFactor,
       risk,
-      relations:relationFactor
+      relations:relationFactor,
+      memory:memoryFactor
     };
     let score=0,totalWeight=0;
     for(const [k,w] of Object.entries(DECISION_WEIGHTS)){
