@@ -72,7 +72,11 @@
 
   function canonicalResolve(surface,type){
     const t=U(type), q=S(surface), r=canonicalRegistry(t);
-    if(!q||!r)return null;
+    if(!q)return null;
+    const local=state.aliases.get(t);
+    const localIds=local&&local.get(N(q));
+    if(localIds&&localIds.size===1){const id=[...localIds][0],entity=state.entities.get(t)&&state.entities.get(t).get(id);if(entity&&entity.authority==='CANONICAL')return{status:'RESOLVED',id,type:t,surface:q,raw:C(entity.raw),source:'UNIVERSAL_CANONICAL_REGISTRY',authority:'CANONICAL'};}
+    if(!r)return null;
     try{
       const fn=t==='COUNTRY'?r.resolveCountry:(t==='RESOURCE'?r.resolveResource:null);
       if(typeof fn!=='function')return null;
