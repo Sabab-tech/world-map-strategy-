@@ -68,10 +68,17 @@
 
   function relationalKey(country,target){return canonical(target)||'UNKNOWN';}
 
+  function readStoredMemory(value,c){
+    if(value&&typeof value==='object'){
+      if(value.countryId&&canonical(value.countryId)===c)return clone(value);
+      const nested=value[c]||value[Object.keys(value).find(k=>canonical(k)===c)];
+      if(nested&&typeof nested==='object')return clone(nested);
+    }
+    return ensureCountryMemory({},c);
+  }
   function recordHandler(cmd,ctx){
-    const p=cmd?.payload||{},c=canonical(ctx.countryId),root=ctx.stateTransaction.get('cabinet.opponentMemory');
-    const all=root&&typeof root==='object'?clone(root):{};
-    const m=ensureCountryMemory(all,c);
+    const p=cmd?.payload||{},c=canonical(ctx.countryId),stored=ctx.stateTransaction.get('cabinet.opponentMemory');
+    const m=readStoredMemory(stored,c);
     const revision=(m.revision||0)+1;
     const traceSeed={countryId:c,turn:turn(),revision,sourceEvent:p.sourceEvent||null,action:p.action||null,targetCountryId:p.targetCountryId||null};
     const traceId=String(p.traceId||('MEMTRACE-'+turn()+'-'+c+'-'+revision+'-'+String(stableHash(traceSeed))));
@@ -122,17 +129,15 @@
       }
     }
     m.lastTurn=turn();m.revision=revision;
-    all[c]=m;
     if(!Array.isArray(m.traceHold))m.traceHold=[];
     m.traceHold=[...m.traceHold,{traceId,sequence:revision,simulationTurn:turn(),sourceEvent:entry.sourceEvent,memoryId:entry.memoryId}].slice(-256);
-    ctx.stateTransaction.set('cabinet.opponentMemory',all);
+    ctx.stateTransaction.set('cabinet.opponentMemory',m);
     emit('OMEGA_MEMORY_UPDATED',c,{memoryId:entry.memoryId,traceId,type:entry.type,revision:m.revision,targetCountryId:entry.targetCountryId||null,sourceCommandId:cmd.commandId,correlationId:p.correlationId||p.decisionId||null});
     return{accepted:true,memoryId:entry.memoryId,type:entry.type,revision:m.revision};
   }
 
   function consolidateHandler(cmd,ctx){
-    const c=canonical(ctx.countryId),root=ctx.stateTransaction.get('cabinet.opponentMemory');
-    const all=root&&typeof root==='object'?clone(root):{},m=ensureCountryMemory(all,c);
+    const c=canonical(ctx.countryId),stored=ctx.stateTransaction.get('cabinet.opponentMemory'),m=readStoredMemory(stored,c);
     const recent=m.episodic.slice(-96),byAction={};
     for(const e of recent){
       const key=actionKey(e);
@@ -157,7 +162,7 @@
     const traceId='MEMTRACE-'+turn()+'-'+c+'-'+revision+'-'+stableHash({countryId:c,turn:turn(),revision,operation:'CONSOLIDATE'});
     m.lastTurn=turn();m.revision=revision;
     m.traceHold=[...(m.traceHold||[]),{traceId,sequence:revision,simulationTurn:turn(),sourceEvent:'OMEGA_MEMORY_CONSOLIDATED',memoryId:null}].slice(-256);
-    all[c]=m;ctx.stateTransaction.set('cabinet.opponentMemory',all);
+    ctx.stateTransaction.set('cabinet.opponentMemory',m);
     emit('OMEGA_MEMORY_CONSOLIDATED',c,{traceId,revision:m.revision,episodesConsumed:recent.length,procedures:m.procedural.length,counterparties:Object.keys(m.counterparty||{}).length,sourceCommandId:cmd.commandId,correlationId:cmd?.payload?.correlationId||null});
     return{accepted:true,revision:m.revision,procedures:m.procedural.length};
   }
@@ -179,8 +184,8 @@
   }
 
   function memory(c){
-    const cid=canonical(c),root=state()?.opponentMemory||{};
-    return clone(root?.[cid]||ensureCountryMemory(root,cid));
+    const cid=canonical(c),stored=state()?.cabinet?.[cid]?.opponentMemory;
+    return clone(readStoredMemory(stored,cid));
   }
 
   function scoreAction(c,action,target=null){
@@ -257,18 +262,21 @@
 
   function tick(){
     const ids=(g.OmegaCanonicalIdentityRegistry?.list?.('COUNTRY')||g.OmegaCountrySemanticBridge?.list?.('COUNTRY')||[]).map(canonical).filter(Boolean);
-    const root=state()?.opponentMemory||{};
     for(const c of ids){
-      const m=root[c];
+      const m=state()?.cabinet?.[c]?.opponentMemory;
       if(m&&turn()-(m.consolidation?.lastTurn||0)>=8)createCommand('OMEGA_MEMORY_CONSOLIDATE',c,{correlationId:'MEM-CONSOLIDATE-'+turn()+'-'+c});
     }
   }
 
   function diagnostics(){
-    const root=state()?.opponentMemory||{};
-    const countries=Object.keys(root).length;
+    const cabinet=state()?.cabinet||{};
+    const countries=Object.values(cabinet).filter(x=>x?.opponentMemory&&typeof x.opponentMemory==='object').length;
     let episodes=0,relations=0;
-    for(const m of Object.values(root)){episodes+=Array.isArray(m.episodic)?m.episodic.length:0;relations+=Object.keys(m.counterparty||{}).length;}
+    for(const bucket of Object.values(cabinet)){
+      const m=bucket?.opponentMemory;if(!m||typeof m!=='object')continue;
+      episodes+=Array.isArray(m.episodic)?m.episodic.length:0;
+      relations+=Object.keys(m.counterparty||{}).length;
+    }
     return{version:VERSION,types:TYPES.slice(),handlerInstalled:true,eventHooksInstalled:!!g.__omegaDeepMemoryEventsV1,countries,episodes,relationshipProfiles:relations};
   }
 
