@@ -828,17 +828,31 @@
     const next=projects.map(p=>{
       if(!p.autonomy||!['UNDER_CONSTRUCTION','COMMISSIONING'].includes(String(p.status||'').toUpperCase()))return p;
       const q={...p,progress:Math.min(1,(num(p.progress)||0)+(num(p.progressPerTurn)||0.1)),lastProgressTurn:turn()};
+      event('OMEGA_PROJECT_CONSTRUCTION_PROGRESS',c,{projectId:q.projectId,previousProgress:num(p.progress)||0,progress:q.progress,status:q.status},cmd.commandId,q.decisionId||q.projectId);
       if(q.progress>=1){q.progress=1;q.status='COMMISSIONING';q.phase='COMMISSIONING';}
-      if(q.status==='COMMISSIONING'&&turn()>=Number(q.completionTurn||turn())){q.status='COMPLETED';q.phase='OPERATIONAL';q.commissionedTurn=turn();completed.push(q);}
+      if(q.status==='COMMISSIONING'&&turn()>=Number(q.completionTurn||turn())){
+        const materials=q.materials&&typeof q.materials==='object'?q.materials:{};
+        const resourceResult=Object.keys(materials).length?dispatch('resource','OMEGA_AUTO_RESOURCE_CONSUME',c,{materials,decisionId:q.decisionId,correlationId:q.projectId},q.projectId):{status:'APPLIED',skipped:true};
+        if(resourceResult?.status!=='APPLIED'){
+          q.status='COMMISSIONING';q.phase='SETTLEMENT_BLOCKED';q.blocker=resourceResult?.reason||'RESOURCE_SETTLEMENT_FAILED';return q;
+        }
+        const financeResult=q.cost>0?dispatch('finance','OMEGA_AUTO_FINANCE_COMMIT',c,{amount:q.cost,decisionId:q.decisionId,correlationId:q.projectId},q.projectId):{status:'APPLIED',skipped:true};
+        if(financeResult?.status!=='APPLIED'){
+          if(Object.keys(materials).length)dispatch('resource','OMEGA_AUTO_RESOURCE_RESTORE',c,{materials,correlationId:q.projectId},q.projectId);
+          q.status='COMMISSIONING';q.phase='SETTLEMENT_BLOCKED';q.blocker=financeResult?.reason||'FINANCE_SETTLEMENT_FAILED';return q;
+        }
+        q.spent=q.cost;q.status='COMPLETED';q.phase='OPERATIONAL';q.commissionedTurn=turn();completed.push(q);
+      }
       return q;
     });
     if(active.length)ctx.stateTransaction.set('projects.registry',next);
     for(const p of completed){
       const action=String(p.kind||'').toUpperCase()==='HOUSING'?'OMEGA_AUTO_HOUSING_COMMISSION':
         String(p.kind||'').toUpperCase()==='FACTORY'?'OMEGA_AUTO_FACTORY_COMMISSION':
-        String(p.kind||'').toUpperCase()==='MILITARY_FACILITY'?'OMEGA_AUTO_MILITARY_FACILITY_COMMISSION':null;
+        String(p.kind||'').toUpperCase()==='MILITARY_FACILITY'?'OMEGA_AUTO_MILITARY_FACILITY_COMMISSION':
+        String(p.kind||'').toUpperCase()==='INFRASTRUCTURE'?'OMEGA_AUTO_INFRASTRUCTURE_COMMISSION':null;
       if(action){
-        const owner=action.includes('HOUSING')?'interior':action.includes('FACTORY')?'economy':'military';
+        const owner=action.includes('HOUSING')?'interior':action.includes('FACTORY')?'economy':action.includes('INFRASTRUCTURE')?'transport':'military';
         dispatch(owner,action,c,{project:p,reservationId:p.reservationId,decisionId:p.decisionId,correlationId:p.decisionId||p.projectId},p.decisionId||p.projectId);
       }
       event('OMEGA_PROJECT_CONSTRUCTION_COMPLETED',c,{project:p},cmd.commandId,p.decisionId||p.projectId);
@@ -874,6 +888,17 @@
     return{accepted:true,delta:q,newProductionCapacity:existing+q,stateMutationAuthority:true};
   }
 
+  function infrastructureCommission(cmd,ctx){
+    const p=cmd?.payload?.project||{},q=scalar(p.quantity);
+    if(q===null||q<=0)return{accepted:false,reason:'INFRASTRUCTURE_CAPACITY_QUANTITY_INVALID'};
+    const raw=ctx.stateTransaction.get('transport.infrastructure.capacity');
+    const existing=scalar(raw);
+    if(existing===null)return{accepted:false,reason:'TRANSPORT_CAPACITY_STATE_UNAVAILABLE'};
+    ctx.stateTransaction.set('transport.infrastructure.capacity',existing+q);
+    event('OMEGA_AUTONOMY_ACTION_DISPATCHED',ctx.countryId,{action:'INFRASTRUCTURE_COMMISSION',projectId:p.projectId,delta:q,newCapacity:existing+q},cmd.commandId,p.decisionId||p.projectId);
+    return{accepted:true,delta:q,newInfrastructureCapacity:existing+q,stateMutationAuthority:true};
+  }
+
   function militaryFacilityCommission(cmd,ctx){
     const p=cmd?.payload?.project||{},q=scalar(p.quantity);
     if(q===null||q<=0)return{accepted:false,reason:'MILITARY_FACILITY_QUANTITY_INVALID'};
@@ -899,6 +924,18 @@
     return{accepted:true,spent:amount,stateMutationAuthority:true};
   }
 
+  function financeRefundHandler(cmd,ctx){
+    const amount=num(cmd?.payload?.amount);
+    if(amount===null||amount<0)return{accepted:false,reason:'FINANCE_REFUND_AMOUNT_INVALID'};
+    const available=scalar(ctx.stateTransaction.get('finance.available'));
+    const reserves=scalar(ctx.stateTransaction.get('finance.reserves'));
+    if(available===null&&reserves===null)return{accepted:false,reason:'FINANCE_STATE_UNAVAILABLE'};
+    if(available!==null)ctx.stateTransaction.set('finance.available',available+amount);else ctx.stateTransaction.set('finance.reserves',reserves+amount);
+    const committed=scalar(ctx.stateTransaction.get('finance.committed'));
+    if(committed!==null)ctx.stateTransaction.set('finance.committed',Math.max(0,committed-amount));
+    return{accepted:true,refunded:amount,stateMutationAuthority:true};
+  }
+
   function resourceConsumeHandler(cmd,ctx){
     const materials=cmd?.payload?.materials||{};
     const inventory=ctx.stateTransaction.get('resource.inventory');
@@ -911,11 +948,36 @@
       if(!key)return{accepted:false,reason:'RESOURCE_NOT_IN_INVENTORY:'+rid};
       const available=scalar(next[key]);
       if(available===null||available<amount)return{accepted:false,reason:'RESOURCE_INVENTORY_INSUFFICIENT:'+rid};
-      next[key]=available-amount;
+      if(next[key]&&typeof next[key]==='object'&&!Array.isArray(next[key])){
+        const copy=clone(next[key]);
+        const field=['quantity','amount','value','available','total'].find(k=>Object.prototype.hasOwnProperty.call(copy,k))||'quantity';
+        copy[field]=available-amount;
+        next[key]=copy;
+      }else next[key]=available-amount;
     }
     ctx.stateTransaction.set('resource.inventory',next);
     event('OMEGA_AUTONOMY_ACTION_DISPATCHED',ctx.countryId,{action:'RESOURCE_CONSUME',materials},cmd.commandId,cmd?.payload?.correlationId||null);
     return{accepted:true,inventory:next,stateMutationAuthority:true};
+  }
+
+  function resourceRestoreHandler(cmd,ctx){
+    const materials=cmd?.payload?.materials||{};
+    const inventory=ctx.stateTransaction.get('resource.inventory');
+    if(!inventory||typeof inventory!=='object')return{accepted:false,reason:'RESOURCE_INVENTORY_STATE_UNAVAILABLE'};
+    const next=clone(inventory);
+    for(const [rid,amountRaw] of Object.entries(materials)){
+      const amount=num(amountRaw);
+      if(amount===null||amount<0)return{accepted:false,reason:'RESOURCE_AMOUNT_INVALID:'+rid};
+      const key=Object.prototype.hasOwnProperty.call(next,rid)?rid:Object.keys(next).find(x=>id(x)===id(rid));
+      if(!key)return{accepted:false,reason:'RESOURCE_NOT_IN_INVENTORY:'+rid};
+      const current=scalar(next[key]);
+      if(current===null)return{accepted:false,reason:'RESOURCE_INVENTORY_VALUE_INVALID:'+rid};
+      if(next[key]&&typeof next[key]==='object'&&!Array.isArray(next[key])){
+        const copy=clone(next[key]);const field=['quantity','amount','value','available','total'].find(k=>Object.prototype.hasOwnProperty.call(copy,k))||'quantity';copy[field]=current+amount;next[key]=copy;
+      }else next[key]=current+amount;
+    }
+    ctx.stateTransaction.set('resource.inventory',next);
+    return{accepted:true,restored:clone(materials),stateMutationAuthority:true};
   }
 
   function recruitmentHandler(cmd,ctx){
@@ -923,15 +985,16 @@
     if(q===null||q<=0)return{accepted:false,reason:'RECRUITMENT_QUANTITY_INVALID'};
     const structure=ctx.stateTransaction.get('military.forceStructure');
     if(!structure||typeof structure!=='object')return{accepted:false,reason:'FORCE_STRUCTURE_STATE_UNAVAILABLE'};
-    const current=scalar(structure.personnel??structure.activePersonnel??structure.manpower);
+    const personnelKey=structure.personnel!==undefined?'personnel':structure.activePersonnel!==undefined?'activePersonnel':structure.manpower!==undefined?'manpower':null;
+    const current=personnelKey?scalar(structure[personnelKey]):null;
     if(current===null)return{accepted:false,reason:'FORCE_STRUCTURE_PERSONNEL_FIELD_UNAVAILABLE'};
-    const next={...clone(structure),personnel:current+q};
+    const next=clone(structure);next[personnelKey]=current+q;
     ctx.stateTransaction.set('military.forceStructure',next);
     const queue=Array.isArray(ctx.stateTransaction.get('military.recruitmentQueue'))?ctx.stateTransaction.get('military.recruitmentQueue'):[];
     const row={recruitmentId:String(p.recruitmentId||('REC-'+turn()+'-'+ctx.countryId)),quantity:q,status:'RECRUITED',createdTurn:turn(),decisionId:p.decisionId||null};
     ctx.stateTransaction.set('military.recruitmentQueue',queue.concat([row]).slice(-256));
-    event('OMEGA_MILITARY_RECRUITMENT_APPLIED',ctx.countryId,{...row,newPersonnel:current+q},cmd.commandId,p.correlationId||p.decisionId||null);
-    return{accepted:true,recruitment:row,newPersonnel:current+q,stateMutationAuthority:true};
+    event('OMEGA_MILITARY_RECRUITMENT_APPLIED',ctx.countryId,{...row,newPersonnel:current+q,personnelField:personnelKey},cmd.commandId,p.correlationId||p.decisionId||null);
+    return{accepted:true,recruitment:row,newPersonnel:current+q,personnelField:personnelKey,stateMutationAuthority:true};
   }
 
   function trainingHandler(cmd,ctx){
@@ -1083,7 +1146,10 @@
       OMEGA_AUTO_FACTORY_COMMISSION:factoryCommission,
       OMEGA_AUTO_MILITARY_FACILITY_COMMISSION:militaryFacilityCommission,
       OMEGA_AUTO_FINANCE_COMMIT:financeCommitHandler,
+      OMEGA_AUTO_FINANCE_REFUND:financeRefundHandler,
       OMEGA_AUTO_RESOURCE_CONSUME:resourceConsumeHandler,
+      OMEGA_AUTO_RESOURCE_RESTORE:resourceRestoreHandler,
+      OMEGA_AUTO_INFRASTRUCTURE_COMMISSION:infrastructureCommission,
       OMEGA_AUTO_MILITARY_RECRUIT:recruitmentHandler,
       OMEGA_AUTO_MILITARY_TRAIN:trainingHandler,
       OMEGA_AUTO_MILITARY_EQUIP:equipmentHandler,
@@ -1113,7 +1179,10 @@
       ['OMEGA_AUTO_FACTORY_COMMISSION','economy',{affectedStateDomains:['economy']}],
       ['OMEGA_AUTO_MILITARY_FACILITY_COMMISSION','military',{affectedStateDomains:['military']}],
       ['OMEGA_AUTO_FINANCE_COMMIT','finance',{affectedStateDomains:['finance']}],
+      ['OMEGA_AUTO_FINANCE_REFUND','finance',{affectedStateDomains:['finance']}],
       ['OMEGA_AUTO_RESOURCE_CONSUME','resource',{affectedStateDomains:['resource']}],
+      ['OMEGA_AUTO_RESOURCE_RESTORE','resource',{affectedStateDomains:['resource']}],
+      ['OMEGA_AUTO_INFRASTRUCTURE_COMMISSION','transport',{affectedStateDomains:['transport']}],
       ['OMEGA_AUTO_MILITARY_RECRUIT','military',{affectedStateDomains:['military']}],
       ['OMEGA_AUTO_MILITARY_TRAIN','military',{affectedStateDomains:['military']}],
       ['OMEGA_AUTO_MILITARY_EQUIP','military',{affectedStateDomains:['military']}],
