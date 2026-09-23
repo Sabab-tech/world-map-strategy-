@@ -237,7 +237,7 @@ class ProjectEngine{
     const spec=ACTIONS[a];if(!spec||!String(spec.execution).includes('PROJECT'))return null;
     const ctx=d.context||{},sig=ctx.signals||{},gaps=ctx.gapPressure?.gaps||{},rel=spec.rel&&gaps[spec.rel]?.state==='TRUE'?gaps[spec.rel]:null;
     const evidencePaths=Object.values(sig).filter(x=>x?.status==='AVAILABLE').map(x=>x.source).filter(Boolean);
-    const requirements={targetQuantity:rel?.gap??null,capital:SCALAR(sig.CAPITAL_AVAILABILITY?.value),labor:SCALAR(sig.LABOR_AVAILABILITY?.value),
+    const runtimeQuantity=SCALAR(d.selected?.quantity??d.runtimeMeasurement?.selected?.quantity);const requirements={targetQuantity:runtimeQuantity??rel?.gap??null,capital:SCALAR(sig.CAPITAL_AVAILABILITY?.value),labor:SCALAR(sig.LABOR_AVAILABILITY?.value),
       infrastructure:SCALAR(sig.INFRASTRUCTURE_CAPACITY?.value),technology:SCALAR(sig.TECHNOLOGY_CAPABILITY?.value),inputs:[],time:null,evidenceStatus:evidencePaths.length?'OBSERVED':'UNAVAILABLE',evidencePaths};
     const p={projectId:'PROJ-'+d.decisionId+'-'+a,countryId:ID(d.countryId),actionType:a,scenarioId:d.scenarioId,decisionId:d.decisionId,status:'PROPOSED',
       phase:'INITIATION',requirements,progress:0,commissioning:'PENDING',operationalCapacity:null,executor:spec.owner,createdTurn:d.simulationTurn,dependencies:spec.domains||[],
@@ -255,7 +255,7 @@ class TransactionEngine{
   plan(d,a){
     const spec=ACTIONS[a];if(!spec||!String(spec.execution).includes('TRANSACTION'))return null;
     const ctx=d.context||{},sig=ctx.signals||{},gaps=ctx.gapPressure?.gaps||{},rel=spec.rel&&gaps[spec.rel]?.state==='TRUE'?gaps[spec.rel]:null;
-    const quantity=rel?.gap??null,price=SCALAR(sig.MARKET_PRICE?.value),value=quantity!==null&&price!==null?quantity*price:null;
+    const runtimeQuantity=SCALAR(d.selected?.quantity??d.runtimeMeasurement?.selected?.quantity),quantity=runtimeQuantity??rel?.gap??null,price=SCALAR(sig.MARKET_PRICE?.value),value=quantity!==null&&price!==null?quantity*price:null;
     const q={transactionId:'TX-'+d.decisionId+'-'+a,countryId:ID(d.countryId),actionType:a,scenarioId:d.scenarioId,decisionId:d.decisionId,status:'PROPOSED',
       settlement:'PENDING',from:null,to:null,quantity,value,currency:null,requirements:{sourceKnown:false,targetKnown:false,amountKnown:quantity!==null,priceKnown:price!==null,
         foreignCurrencyObserved:SCALAR(sig.FOREIGN_CURRENCY?.value)!==null},executor:spec.owner,createdTurn:d.simulationTurn,executionBoundary:'EXTERNAL_TRANSACTION_EXECUTOR',
@@ -429,27 +429,28 @@ class RuntimeFlowEngine{
       }
     }
     const automaticDecisions=measures.map((m,i)=>({decisionId:'AUTO-'+ID(countryId)+'-'+s.turn+'-'+String(i+1),countryId:ID(countryId),simulationTurn:s.turn,
-      scenarioId:'RUNTIME_'+m.kind,status:'AUTO_DECIDED',measurement:CLONE(m),selected:m.candidates?.[0]||{action:'HOLD',quantity:0,reason:'NO_CANDIDATE'},
+      scenarioId:this._scenarioFor(m.kind),decisionOrigin:'RUNTIME_CALCULATION',status:'AUTO_DECIDED',measurement:CLONE(m),selected:m.candidates?.[0]||{action:'HOLD',quantity:0,reason:'NO_CANDIDATE'},
       evidence:{required:m.required,available:m.available,gap:m.gap,status:m.status,requiredSignal:m.requiredSignal,availableSignal:m.availableSignal}}));
     this.tr.add({layer:'L05_DEMAND_ENGINE',countryId:countryId,runtimeComparisons:measures.length,automaticDecisions:automaticDecisions.length});
     return{measurements:measures,automaticDecisions};
   }
-  _scenarioFor(kind){return({FOOD:'FOOD_SHORTAGE',ENERGY:'ENERGY_SHORTAGE',HOUSING:'HOUSING_SHORTAGE',RESOURCE:'RESOURCE_DEFICIT'})[kind]||'RESOURCE_DEFICIT';}
+  _scenarioFor(kind){return({FOOD:'FOOD_SHORTAGE',ENERGY:'ENERGY_SHORTAGE',HOUSING:'HOUSING_SHORTAGE',RESOURCE:'RESOURCE_DEFICIT',RESOURCE_FLOW:'RESOURCE_DEFICIT',INDUSTRY_OUTPUT:'FACTORY_EXPANSION'})[kind]||'RESOURCE_DEFICIT';}
 }
 class RuntimeOperationEngine{
   constructor(tr){this.tr=tr;this.orders=new Map();}
   plan(d){
-    const selection=d?.selected; if(!selection||!RUNTIME_ONLY_ACTIONS[selection.action])return null;
-    const order={operationId:'OP-'+d.decisionId,countryId:ID(d.countryId),simulationTurn:d.simulationTurn,scenarioId:d.scenarioId,
-      actionType:selection.action,quantity:SCALAR(selection.quantity)??0,reason:selection.reason||null,status:'QUEUED_FOR_EXECUTOR',
-      stateMutationAuthority:false,executionApplied:false,executor:RUNTIME_ONLY_ACTIONS[selection.action].owner,evidence:CLONE(d.measurement||d.evidence||null)};
+    const selection=d?.selected;
+    if(!selection||!RUNTIME_ONLY_ACTIONS[selection.action])return null;
+    const order={operationId:'OP-'+d.decisionId+'-'+selection.action,countryId:ID(d.countryId),simulationTurn:d.simulationTurn,scenarioId:d.scenarioId,
+      actionType:selection.action,quantity:SCALAR(selection.quantity)??0,direction:selection.action==='PRODUCTION_INCREASE'?'INCREASE':selection.action==='PRODUCTION_DECREASE'?'DECREASE':'HOLD',
+      status:'QUEUED_FOR_EXECUTOR',executor:RUNTIME_ONLY_ACTIONS[selection.action].owner,stateMutationAuthority:false,executionApplied:false,
+      reason:selection.reason||null,measurement:CLONE(d.measurement||d.runtimeMeasurement||null)};
     this.orders.set(order.operationId,order);this.tr.add({layer:'L12_PROJECT_ENGINE',countryId:order.countryId,operationId:order.operationId,type:'RUNTIME_OPERATION_ORDER'});
     return CLONE(order);
   }
   save(){return CLONE([...this.orders.values()]);}
   restore(v){this.orders=new Map((Array.isArray(v)?v:[]).map(x=>[x.operationId,CLONE(x)]));}
 }
-
 class Runtime{
   constructor(o={}){
     this.tr=new Trace;
@@ -609,7 +610,6 @@ class Runtime{
   handle(cmd,ctx={}){
   const d=cmd?.payload?.opponentDecision||cmd?.payload?.decision||{},selected=Array.isArray(d.selectedActions)?d.selectedActions:[],country=ID(d.countryId||cmd?.countryId);
   if(!country)return{accepted:false,reason:'COUNTRY_ID_REQUIRED'};
-  if(String(d.scenarioId||'').startsWith('RUNTIME_'))return this.handleRuntimeAuto(cmd,ctx);
   const sc=SCENARIOS.find(x=>x.id===d.scenarioId);if(!sc)return{accepted:false,reason:'SCENARIO_NOT_REGISTERED'};
   if(!selected.length)return{accepted:false,reason:'NO_SELECTED_ACTIONS'};
   for(const a of selected)if(!ACTIONS[a])return{accepted:false,reason:'ACTION_NOT_REGISTERED:'+a};
@@ -618,7 +618,7 @@ class Runtime{
   if(feasibility.some(x=>x.result.status!=='FEASIBLE'))return{accepted:false,reason:'SELECTED_ACTION_NOT_FEASIBLE',feasibility};
   const plans=[];
   for(const a of selected){
-    const runtimeOrder=this.operations.plan({...d,countryId:country,selected:d.selected,runtimeMeasurement:d.runtimeMeasurement,measurement:d.runtimeMeasurement});const p=runtimeOrder||this.projects.plan({...d,countryId:country,context},a)||this.transactions.plan({...d,countryId:country,context},a)||this.policyLifecycle.plan({...d,countryId:country,context},a);
+    const runtimeOrder=this.operations.plan({...d,countryId:country,selected:d.selected||d.runtimeMeasurement?.selected,runtimeMeasurement:d.runtimeMeasurement,measurement:d.runtimeMeasurement});const p=runtimeOrder||this.projects.plan({...d,countryId:country,context},a)||this.transactions.plan({...d,countryId:country,context},a)||this.policyLifecycle.plan({...d,countryId:country,context},a);
     if(p){plans.push(p);this.cons.preview(d,a);}
   }
   if(!plans.length)return{accepted:false,reason:'NO_EXECUTABLE_PLAN'};
@@ -630,9 +630,9 @@ class Runtime{
   this.tr.add({layer:'L27_RUNTIME_DEBUG',type:'EXECUTION_STARTED',batchId:batch.batchId,executionApplied:false,planCount:plans.length});
   try{
     if(ctx?.stateTransaction){
-      const key=owner+'.autonomousExecutionQueue',q=ctx.stateTransaction.get(key);
-      ctx.stateTransaction.set(key,Array.isArray(q)?q.slice(-127).concat([batch]):[batch]);
-      ctx.stateTransaction.set(owner+'.autonomousLastExecution',batch);
+      const key=owner+'.executionOrders',q=ctx.stateTransaction.get(key),order={...batch,executionState:'QUEUED_FOR_EXECUTOR',worldEffectApplied:false};
+      ctx.stateTransaction.set(key,Array.isArray(q)?q.slice(-127).concat([order]):[order]);
+      ctx.stateTransaction.set(owner+'.lastExecutionOrder',order);
     }
     ctx?.emitEvent?.('OMEGA_AUTONOMOUS_EXECUTION_REQUESTED',batch);
     this.tr.add({layer:'L27_RUNTIME_DEBUG',type:'EXECUTION_HANDOFF',batchId:batch.batchId,executorBoundary:batch.executorBoundary});
@@ -670,13 +670,14 @@ async turnCommitted(t=TURN()){
     }
   }
   queue(d,t){
-    const r=SIM(),runtime=String(d.scenarioId||'').startsWith('RUNTIME_');
-    if(!r?.enqueueCommand)return null;
-    const id=runtime?'OCR_V42_RUNTIME_AUTO':'OCR_V42_'+d.scenarioId;
-    if(!runtime&&!SCENARIOS.some(x=>x.id===d.scenarioId))return null;
-    const commandId='OCR-V42-'+(runtime?'AUTO-':'')+t+'-'+ID(d.countryId)+'-'+String(d.decisionId||d.scenarioId);
-    const cmd={commandId,commandType:id,actionId:id,sourceMinistryId:runtime?'economy':SCENARIOS.find(x=>x.id===d.scenarioId).owner,
-      countryId:ID(d.countryId),payload:{opponentDecision:CLONE(d)},options:{origin:runtime?'OMEGA_AUTONOMOUS_RUNTIME':'OMEGA_AUTONOMOUS_WORLD_SIMULATION',scenarioId:d.scenarioId,correlationId:d.decisionId}};
+    if(d?.decisionOrigin==='RUNTIME_CALCULATION'&&d?.selected?.action==='HOLD')return null;
+    const r=SIM();if(!r?.enqueueCommand)return null;
+    const sc=SCENARIOS.find(x=>x.id===d.scenarioId);if(!sc)return null;
+    const id='OCR_V42_'+d.scenarioId;
+    const cmd={commandId:'OCR-V42-'+t+'-'+ID(d.countryId)+'-'+d.scenarioId+'-'+String(d.decisionId||''),
+      commandType:id,actionId:id,sourceMinistryId:sc.owner,countryId:ID(d.countryId),payload:{opponentDecision:CLONE(d)},
+      options:{origin:d.decisionOrigin==='RUNTIME_CALCULATION'?'OMEGA_AUTONOMOUS_RUNTIME':'OMEGA_AUTONOMOUS_WORLD_SIMULATION',
+        scenarioId:d.scenarioId,correlationId:d.decisionId}};
     try{r.enqueueCommand(cmd);return cmd;}catch(e){this.lastError=String(e?.message||e);return null;}
   }
   outcome(e){
@@ -728,18 +729,21 @@ async turnCommitted(t=TURN()){
     return true;
   }
   diag(){
-    const executed=new Set(this.tr.a.map(x=>x.layer).filter(Boolean)),registered=new Set(LAYERS.map(x=>x.id)),dynamic=[...executed].filter(x=>registered.has(x)),profiles=[...this.gw.p.values()];
-    return{version:V,schemaVersion:SV,layers:LAYERS.length,executedLayers:dynamic.length,unexecutedLayers:LAYERS.length-dynamic.length,
-      scenarioCount:SCENARIOS.length,directionalSignals:Object.keys(DIR).length,actionTypes:Object.keys(ACTIONS).length,registeredCommands:this.bound.size,
-      trackedCountries:this.runs.size,lastTurn:this.lastTurn,lastError:this.lastError,traceEntries:this.tr.a.length,traceLayers:[...executed],
-      datasets:this.gw.status(),capabilities:this.cap.snapshot(),runtimeCalculation:{enginePresent:!!this.runtimeFlow,automaticComparisons:this.tr.a.filter(x=>x.runtimeComparisons!==undefined).reduce((n,x)=>n+Number(x.runtimeComparisons||0),0)},
+    const executed=new Set(this.tr.a.map(x=>x.layer).filter(Boolean)),known=new Set(LAYERS.map(x=>x.id)),real=[...executed].filter(x=>known.has(x)),runtime=this.tr.a.filter(x=>x.runtimeComparisons!==undefined);
+    return{version:V,schemaVersion:SV,layers:LAYERS.length,executedLayers:real.length,unexecutedLayers:LAYERS.length-real.length,
+      scenarioCount:SCENARIOS.length,directionalSignals:Object.keys(DIR).length,actionTypes:Object.keys(ACTIONS).length,registeredCommands:this.bound.size,trackedCountries:this.runs.size,
+      lastTurn:this.lastTurn,lastError:this.lastError,traceEntries:this.tr.a.length,traceLayers:[...executed],datasets:this.gw.status(),capabilities:this.cap.snapshot(),
+      runtimeCalculation:{enginePresent:!!this.runtimeFlow,comparisonPasses:runtime.reduce((n,x)=>n+Number(x.runtimeComparisons||0),0),
+        automaticDecisions:runtime.reduce((n,x)=>n+Number(x.automaticDecisions||0),0),numericValuesSource:'OBSERVED_STATE_ONLY'},
       approvedPolicyLayer:{scenarioRules:Object.keys(APPROVED_POLICY_OVERRIDES).length,numericStateTransitions:0},
-      dataTruth:{syntheticRuntimeValues:this.tr.a.filter(x=>x.syntheticFallback===true).length,missingDataPolicy:'UNAVAILABLE_OR_UNKNOWN'},
-      contracts:{dataIntake:true,schemaDiscovery:profiles.every(p=>!!p.schema),identity:this.gw.get('countries')===undefined||this.idr.map.size>0,
-        fieldMeaning:profiles.some(p=>Object.keys(p.fieldMeaning||{}).length>0),unitDetection:profiles.some(p=>Object.keys(p.units||{}).length>0),runtimeBinding:this.bound.size>0||!IO(),
-        capabilityRegistry:this.cap.m.size>0||profiles.length===0,stateHydration:true,dependencyGraph:this.graph.count()>0,demand:true,supplyCapacity:true,needGapPressure:true,
-        scenario:true,goalPriority:true,decision:true,feasibility:true,runtimeComparison:!!this.runtimeFlow,projectLifecycle:true,transactionLifecycle:true,operationLifecycle:!!this.operations,
-        policyLifecycle:true,consequence:true,forecast:true,memoryAdaptation:true,multiRateScheduler:true,stateReconciliation:true,evidenceTrace:dynamic.includes('L26_EVIDENCE_TRACE'),runtimeDebug:dynamic.includes('L27_RUNTIME_DEBUG')}}
+      dataTruth:{syntheticFallbackTraceEntries:this.tr.a.filter(x=>x.syntheticFallback===true).length,missingDataPolicy:'UNKNOWN_OR_UNAVAILABLE'},
+      contracts:{dataIntake:true,schemaDiscovery:[...this.gw.p.values()].every(x=>!!x.schema),identity:this.gw.get('countries')===undefined||this.idr.map.size>0,
+        fieldMeaning:[...this.gw.p.values()].some(x=>Object.keys(x.fieldMeaning||{}).length>0),unitDetection:[...this.gw.p.values()].some(x=>Object.keys(x.units||{}).length>0),
+        runtimeBinding:this.bound.size>0||!IO(),capabilityRegistry:this.cap.m.size>0||this.gw.p.size===0,stateHydration:true,dependencyGraph:this.graph.count()>0,
+        demand:true,supplyCapacity:true,needGapPressure:true,scenario:true,goalPriority:true,decision:true,feasibility:true,runtimeComparison:!!this.runtimeFlow,
+        projectLifecycle:true,transactionLifecycle:true,operationLifecycle:!!this.operations,policyLifecycle:true,tradeMarket:true,finance:true,infraLogistics:true,
+        populationLabor:true,techProductivity:true,policyInstitution:true,eventShock:true,consequence:true,forecast:true,memoryAdaptation:true,
+        multiRateScheduler:true,stateReconciliation:true,evidenceTrace:real.includes('L26_EVIDENCE_TRACE'),runtimeDebug:real.includes('L27_RUNTIME_DEBUG')}}
   }
 save(){
     return{
