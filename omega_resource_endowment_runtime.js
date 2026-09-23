@@ -181,6 +181,11 @@
     if(!r||!p5?.ExtractionRequest||!p5?.executeExtraction)return{accepted:false,reason:'PART05_RESOURCE_EXTRACTION_UNAVAILABLE'};
     const current=ctx.stateTransaction.get('resource.mineStates')||{};
     const production=clone(ctx.stateTransaction.get('resource.production')||{});
+    const previousExtractionTurn=n(ctx.stateTransaction.get('resource.lastExtractionTurn'));
+    if(previousExtractionTurn!==turn()){
+      for(const key of Object.keys(production))production[key]=0;
+      ctx.stateTransaction.set('resource.lastExtractionTurn',turn());
+    }
     const inventory=clone(ctx.stateTransaction.get('resource.inventory')||{});
     const reserves=clone(ctx.stateTransaction.get('resource.reserves')||{});
     const ledger=Array.isArray(ctx.stateTransaction.get('resource.extractionLedger'))?clone(ctx.stateTransaction.get('resource.extractionLedger')):[];
@@ -250,6 +255,16 @@
     for(const x of blocked)emit('OMEGA_RESOURCE_EXTRACTION_BLOCKED',c,{...x,simulationTurn:turn()},cmd.commandId);
     return{accepted:true,countryId:c,extracted:extracted.length,blocked:blocked.length,records:extracted};
   }
+  function hydrateCountry(c){
+    install();
+    return dispatch('OMEGA_RESOURCE_ENDOWMENT_HYDRATE',canonical(c),{correlationId:'RESOURCE-HYDRATE-MANUAL-'+turn()+'-'+canonical(c)});
+  }
+  function extractCountry(c,occurrenceKeys=null){
+    install();
+    return dispatch('OMEGA_RESOURCE_EXTRACT_TICK',canonical(c),{occurrenceKeys:Array.isArray(occurrenceKeys)?occurrenceKeys:undefined,correlationId:'RESOURCE-EXTRACT-MANUAL-'+turn()+'-'+canonical(c)});
+  }
+  function countryResourceState(c){return clone(state()?.resource?.[canonical(c)]||null);}
+  function countryMines(c){return clone(state()?.resource?.[canonical(c)]?.mines||[]);}
   function install(){
     const m=interop();if(!m?.registerCommandHandler)return false;
     try{
@@ -297,7 +312,7 @@
     g.addEventListener?.('OMEGA_SIMULATION_TURN_COMMITTED',onTurn);
     return diagnostics();
   }
-  const API=Object.freeze({VERSION,diagnostics,initialize,extractAll,compile});
+  const API=Object.freeze({VERSION,diagnostics,initialize,extractAll,extractCountry,hydrateCountry,countryResourceState,countryMines,compile});
   g.Omega=g.Omega||{};g.Omega.ResourceEndowmentRuntime=API;g.OmegaResourceEndowmentRuntime=API;
   try{init();}catch(e){g.OmegaResourceEndowmentRuntimeError=String(e?.message||e);}
 })(typeof window!=='undefined'?window:globalThis);
