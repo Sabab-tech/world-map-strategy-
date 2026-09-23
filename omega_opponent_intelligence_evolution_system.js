@@ -73,13 +73,33 @@
     try{interop()?.emitEvent?.('OMEGA_INTELLIGENCE_BELIEF_UPDATED',c,'intelligence',{countryId:c,targetCountryId:target,belief:beliefs[target]},{turn:turn(),causationId:cmd.commandId});}catch(_){}
     return{accepted:true,targetCountryId:target,belief:beliefs[target]};
   }
+  function pressureHandler(cmd,ctx){
+    const p=cmd?.payload||{},source=canonical(p.sourceCountryId),level=num(p.level);
+    if(!source)return{accepted:false,reason:'PRESSURE_SOURCE_REQUIRED'};
+    const intelligence=ctx.stateTransaction.get('intelligence');
+    const next=intelligence&&typeof intelligence==='object'?clone(intelligence):{};
+    const signals=next.receivedPressureSignals&&typeof next.receivedPressureSignals==='object'?clone(next.receivedPressureSignals):{};
+    const row=signals[source]&&typeof signals[source]==='object'?signals[source]:{count:0,history:[]};
+    row.count=(row.count||0)+1;row.lastTurn=turn();row.level=(num(row.level)||0)+(level??1);
+    row.history=(Array.isArray(row.history)?row.history:[]).concat([{turn:turn(),level:level??1,requestId:p.requestId||null}]).slice(-MAX_HISTORY);
+    signals[source]=row;next.receivedPressureSignals=signals;ctx.stateTransaction.set('intelligence',next);
+    return{accepted:true,sourceCountryId:source,signal:row};
+  }
+
   function install(){
     const m=interop();if(!m?.registerCommandHandler)return false;
     try{
       m.registerAction?.('OMEGA_INTELLIGENCE_RECORD_ASSESSMENT',{actionId:'OMEGA_INTELLIGENCE_RECORD_ASSESSMENT',stateOwnerMinistry:'intelligence',authority:'OMEGA_INTELLIGENCE_EVOLUTION'});
+      m.registerAction?.('OMEGA_INTELLIGENCE_RECORD_PRESSURE',{actionId:'OMEGA_INTELLIGENCE_RECORD_PRESSURE',stateOwnerMinistry:'intelligence',authority:'OMEGA_INTELLIGENCE_EVOLUTION'});
       m.registerCommandHandler('OMEGA_INTELLIGENCE_RECORD_ASSESSMENT','intelligence',recordHandler);
+      m.registerCommandHandler('OMEGA_INTELLIGENCE_RECORD_PRESSURE','intelligence',pressureHandler);
       return true;
     }catch(_){return false;}
+  }
+  function onPressure(e){
+    const d=e?.detail||{},p=d.payload||d,source=canonical(p.countryId),target=canonical(p.targetCountryId),level=num(p.level);
+    if(!source||!target)return;
+    try{interop()?.dispatchCommand('intelligence','OMEGA_INTELLIGENCE_RECORD_PRESSURE',target,{sourceCountryId:source,level:level??1,requestId:p.requestId||null},{turn:turn(),commandType:'OMEGA_INTELLIGENCE_RECORD_PRESSURE',correlationId:d.eventId||null});}catch(_){}
   }
   function onThreat(e){
     const d=e?.detail||{},p=d.payload||d,c=canonical(d.countryId||p.countryId),target=canonical(p.targetCountryId);
