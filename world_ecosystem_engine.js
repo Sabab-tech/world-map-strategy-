@@ -167,18 +167,7 @@ const GLOBAL_MARKET = {};
         };
     }
 
-    // Deterministic Sovereign AI Personality Archetypes
-    const STRATEGIC_AI_PROFILES = {
-        USA: { aggressiveExpansion: 35, strategicIsolation: 20, pragmaticRealism: 80, ideologicalIdealism: 65, economicImperialism: 75, religiousZeal: 15, riskTolerance: 50, strategicVision: 85, memoryRetention: 95, emotionalVolatility: 20 },
-        CHN: { aggressiveExpansion: 45, strategicIsolation: 25, pragmaticRealism: 90, ideologicalIdealism: 55, economicImperialism: 85, religiousZeal: 10, riskTolerance: 40, strategicVision: 92, memoryRetention: 98, emotionalVolatility: 15 },
-        RUS: { aggressiveExpansion: 70, strategicIsolation: 40, pragmaticRealism: 75, ideologicalIdealism: 45, economicImperialism: 60, religiousZeal: 30, riskTolerance: 75, strategicVision: 78, memoryRetention: 92, emotionalVolatility: 35 },
-        BGD: { aggressiveExpansion: 10, strategicIsolation: 20, pragmaticRealism: 85, ideologicalIdealism: 50, economicImperialism: 25, religiousZeal: 35, riskTolerance: 30, strategicVision: 70, memoryRetention: 90, emotionalVolatility: 20 },
-        IND: { aggressiveExpansion: 30, strategicIsolation: 25, pragmaticRealism: 82, ideologicalIdealism: 60, economicImperialism: 55, religiousZeal: 40, riskTolerance: 45, strategicVision: 80, memoryRetention: 92, emotionalVolatility: 25 },
-        GBR: { aggressiveExpansion: 25, strategicIsolation: 30, pragmaticRealism: 85, ideologicalIdealism: 60, economicImperialism: 65, religiousZeal: 10, riskTolerance: 40, strategicVision: 82, memoryRetention: 95, emotionalVolatility: 20 },
-        DEU: { aggressiveExpansion: 15, strategicIsolation: 15, pragmaticRealism: 90, ideologicalIdealism: 70, economicImperialism: 70, religiousZeal: 10, riskTolerance: 30, strategicVision: 85, memoryRetention: 96, emotionalVolatility: 15 },
-        FRA: { aggressiveExpansion: 25, strategicIsolation: 20, pragmaticRealism: 84, ideologicalIdealism: 65, economicImperialism: 65, religiousZeal: 10, riskTolerance: 45, strategicVision: 84, memoryRetention: 94, emotionalVolatility: 25 },
-        JPN: { aggressiveExpansion: 10, strategicIsolation: 35, pragmaticRealism: 92, ideologicalIdealism: 55, economicImperialism: 60, religiousZeal: 10, riskTolerance: 25, strategicVision: 88, memoryRetention: 96, emotionalVolatility: 15 }
-    };
+    // Sovereign AI personality is runtime/data supplied. No country-specific synthetic profile is created here.
 
     let causalLogCounter = 1;
     let causalEventLog = [];
