@@ -43,6 +43,23 @@ class Core{
  resolveEntity(surface,type=null){if(U(type)==='COUNTRY'){const h=canonicalCountryResolve(surface);if(h?.id)return{...h,type:'COUNTRY',id:U(h.id),authority:'OMEGA_CANONICAL_COUNTRY_REGISTRY'};}this.ensure();if(typeof document!=='undefined')return{status:'SERVER_API_REQUIRED',candidates:[]};const s=S(surface),u=U(surface),t=type?U(type):null,d=this.known.filter(e=>(!t||e.type===t)&&(e.id===u||e.names.some(n=>N(n)===N(s))));if(d.length)return{status:d.length===1?'RESOLVED':'AMBIGUOUS_IDENTITY',candidates:d};const raw=[...this.ids.values()].filter(x=>x.id===u&&(!t||x.type===t));if(raw.length)return{status:raw.length===1?'RESOLVED':'AMBIGUOUS_IDENTITY',candidates:raw.map(x=>({id:x.id,type:x.type,names:[],refs:x.refs}))};return{status:'IDENTITY_NOT_FOUND',candidates:[]}}
  async resolveEntityAsync(s,t=null){if(typeof document!=='undefined'){const q=new URLSearchParams({id:S(s),...(t?{type:S(t)}:{})});try{return await serverJSON(`/api/deep-core/resolve?${q.toString()}`)}catch(e){if(e.status!==404)throw e;return e.payload||{status:'IDENTITY_NOT_FOUND',candidates:[]}}}await this.ensureAsync();return this.resolveEntity(s,t)}
  search(q,opts={}){this.ensure();if(typeof document!=='undefined')return{status:'SERVER_API_REQUIRED',query:S(q),count:0,matches:[],scan:{...this.scan}};const n=N(q),rows=[];for(const x of this.raw)if(N(x.value)===n||N(x.field)===n)rows.push(x);if(!rows.length){const terms=n.split(/\s+/).filter(Boolean);for(const x of this.raw)if(terms.every(t=>N(x.value).includes(t)))rows.push(x)}let out=rows;if(opts.dataset)out=out.filter(x=>N(x.dataset)===N(opts.dataset));if(opts.type)out=out.filter(x=>!x.entityType||U(x.entityType)===U(opts.type));const uniq=[...new Map(out.map(x=>[x.dataset+'::'+x.recordLocator+'::'+x.fieldPath,x])).values()];return{status:uniq.length?'RESOLVED':'NOT_FOUND',query:S(q),count:uniq.length,matches:uniq.slice(0,Number(opts.limit||2000)),scan:{...this.scan}}}
+  select(q,type=null,limit=25){
+    const u=unifiedIdentity();
+    try{
+      if(u?.select){
+        const hits=u.select(q,type,limit);
+        return{status:hits.length?'RESOLVED':'NOT_FOUND',query:S(q),type:type?U(type):null,count:hits.length,candidates:hits,authority:'OMEGA_UNIVERSAL_ENTITY_IDENTITY_ENGINE'};
+      }
+    }catch(_){}
+    this.ensure();
+    if(typeof document!=='undefined')return{status:'SERVER_API_REQUIRED',query:S(q),type:type?U(type):null,count:0,candidates:[],scan:{...this.scan}};
+    const hits=[];
+    for(const [key,row] of this.ids){
+      if(type&&U(row.type)!==U(type))continue;
+      if(key.endsWith('::'+U(q)))hits.push({id:row.id,type:row.type,confidence:1,source:'DEEP_CORE_ID_INDEX'});
+    }
+    return{status:hits.length?'RESOLVED':'NOT_FOUND',query:S(q),type:type?U(type):null,count:hits.length,candidates:hits};
+  }
  async searchAsync(q,o={}){if(typeof document!=='undefined'){const params=new URLSearchParams({q:S(q)});if(o.dataset)params.set('dataset',S(o.dataset));if(o.type)params.set('type',S(o.type));if(o.limit!=null)params.set('limit',S(o.limit));try{return await serverJSON(`/api/deep-core/search?${params.toString()}`)}catch(e){if(e.status!==404)throw e;return e.payload||{status:'NOT_FOUND',query:S(q),count:0,matches:[]}}}await this.ensureAsync();return this.search(q,o)}
  resolveFromIR(ir){const out={};for(const[type,spec]of[['COUNTRY',ir?.entities?.country],['RESOURCE',ir?.entities?.resource],['ASSET_CLASS',ir?.entities?.assetClass||{id:ir?.assetClass}]]){if(spec?.id){const x=this.resolveEntity(spec.id,type);if(x.status==='RESOLVED'){out[type]=x;continue}}for(const s of[spec?.surface,spec?.name,spec?.alias,spec?.label,...A(spec?.aliases)])if(s){const x=this.resolveEntity(s,type);if(x.status==='RESOLVED'||x.status==='AMBIGUOUS_IDENTITY'){out[type]=x;break}}}return out}
  ancestors(r){const out=[];let c=r,seen=new Set();while(c&&!seen.has(c.signature)){seen.add(c.signature);out.push(c);c=this.bySig.get(c.parent)}return out}
