@@ -367,11 +367,11 @@ class RuntimeFlowEngine{
       required:r,available:a,gap,ratio:r===0?0:Math.abs(gap)/Math.abs(r),...meta};
   }
   _bestMeasurementAction(m,sig,scenarioId){
-    const base=APPROVED_POLICY_OVERRIDES[scenarioId]||[];
-    const candidates=[];
+    const base=APPROVED_POLICY_OVERRIDES[scenarioId]||[],candidates=[];
     const capacity=SCALAR(sig.EFFECTIVE_CAPACITY?.value),output=SCALAR(sig.OUTPUT?.value);
     const fx=SCALAR(sig.FOREIGN_CURRENCY?.value),route=SCALAR(sig.TRADE_ROUTE_CAPACITY?.value);
-    const externalDemand=SCALAR(sig.EXPORT_DEMAND?.value);
+    const externalDemand=SCALAR(sig.EXPORT_DEMAND?.value),consumerDemand=SCALAR(sig.CONSUMER_DEMAND?.value);
+    const reserve=SCALAR(m.reserve);
     if(m.status===RUNTIME_COMPARATORS.DEFICIT){
       if(capacity!==null&&output!==null&&capacity>output){
         candidates.push({action:'PRODUCTION_INCREASE',quantity:Math.min(m.gap,capacity-output),reason:'CAPACITY_HEADROOM'});
@@ -379,11 +379,12 @@ class RuntimeFlowEngine{
       if(fx!==null&&fx>0&&route!==null&&route>0){
         candidates.push({action:'IMPORT',quantity:m.gap,reason:'FOREIGN_SUPPLY_FEASIBLE'});
       }
-      if(m.reserve!==null&&m.reserve>0){
-        candidates.push({action:'RESERVE_RELEASE',quantity:Math.min(m.gap,m.reserve),reason:'RESERVE_AVAILABLE'});
+      if(reserve!==null&&reserve>0){
+        candidates.push({action:'RESERVE_RELEASE',quantity:Math.min(m.gap,reserve),reason:'RESERVE_AVAILABLE'});
       }
-      candidates.push({action:'SUBSTITUTION',quantity:m.gap,reason:'SUBSTITUTION_CANDIDATE'});
-      if(base.includes('DEMAND_MANAGEMENT'))candidates.push({action:'DEMAND_MANAGEMENT',quantity:m.gap,reason:'DEMAND_SIDE_OPTION'});
+      if(base.includes('DEMAND_MANAGEMENT')&&consumerDemand!==null&&consumerDemand>0){
+        candidates.push({action:'DEMAND_MANAGEMENT',quantity:m.gap,reason:'OBSERVED_CONSUMER_DEMAND'});
+      }
     }else if(m.status===RUNTIME_COMPARATORS.SURPLUS){
       if(externalDemand!==null&&externalDemand>0&&route!==null&&route>0){
         candidates.push({action:'EXPORT',quantity:Math.min(Math.abs(m.gap),externalDemand),reason:'EXTERNAL_DEMAND_AND_ROUTE'});
@@ -394,11 +395,11 @@ class RuntimeFlowEngine{
     }else if(m.status===RUNTIME_COMPARATORS.BALANCED){
       candidates.push({action:'HOLD',quantity:0,reason:'REQUIRED_EQUALS_AVAILABLE'});
     }
-    candidates.sort((a,b)=>{
-      const ai=base.indexOf(a.action),bi=base.indexOf(b.action);
-      return (ai<0?999:ai)-(bi<0?999:bi)||String(a.action).localeCompare(String(b.action));
+    candidates.sort((x,y)=>{
+      const xi=base.indexOf(x.action),yi=base.indexOf(y.action);
+      return (xi<0?Number.MAX_SAFE_INTEGER:xi)-(yi<0?Number.MAX_SAFE_INTEGER:yi)||String(x.action).localeCompare(String(y.action));
     });
-    return candidates.length?candidates:[{action:'HOLD',quantity:0,reason:'NO_FEASIBLE_RUNTIME_CORRECTION'}];
+    return candidates.length?candidates:[{action:'HOLD',quantity:0,reason:'NO_EVIDENCE_BACKED_CORRECTION'}];
   }
   analyze(countryId,s){
     const measures=[];
@@ -414,7 +415,7 @@ class RuntimeFlowEngine{
     if(demand!==null&&out!==null){
       const m=this.compare(demand,out,{kind:'INDUSTRY_OUTPUT',requiredSignal:'INVESTMENT_DEMAND',availableSignal:'OUTPUT'});
       if(m.status===RUNTIME_COMPARATORS.DEFICIT&&cap!==null&&cap>out)m.candidates=[{action:'PRODUCTION_INCREASE',quantity:Math.min(m.gap,cap-out),reason:'CAPACITY_HEADROOM'}];
-      else if(m.status===RUNTIME_COMPARATORS.DEFICIT)m.candidates=[{action:'EXPAND_CAPACITY',quantity:m.gap,reason:'CAPACITY_BOUND'}];
+      else if(m.status===RUNTIME_COMPARATORS.DEFICIT)m.candidates=[{action:'DOMESTIC_EXPANSION',quantity:m.gap,reason:'CAPACITY_BOUND'}];
       else m.candidates=this._bestMeasurementAction(m,s.signals,'FACTORY_EXPANSION');
       measures.push(m);
     }
@@ -424,7 +425,7 @@ class RuntimeFlowEngine{
       const prod=rs.production||{},cons=rs.consumption||{},resv=rs.reserves||{},inv=rs.inventory||{};
       for(const resourceId of [...new Set([...Object.keys(prod),...Object.keys(cons)])]){
         const m=this.compare(cons[resourceId],prod[resourceId],{kind:'RESOURCE_FLOW',resourceId,reserve:SCALAR(resv[resourceId]),inventory:SCALAR(inv[resourceId]),requiredSignal:'RESOURCE_CONSUMPTION',availableSignal:'RESOURCE_PRODUCTION'});
-        if(m.status!==RUNTIME_COMPARATORS.UNKNOWN)m.candidates=this._bestMeasurementAction(m,s.signals,'RESOURCE_DEFICIT');
+        if(m.status!==RUNTIME_COMPARATORS.UNKNOWN)m.candidates=this._bestMeasurementAction(m,s.signals,m.status===RUNTIME_COMPARATORS.SURPLUS?'RESOURCE_SURPLUS':'RESOURCE_DEFICIT');
         if(m.status!==RUNTIME_COMPARATORS.UNKNOWN)measures.push(m);
       }
     }
