@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import '../omega_universal_entity_identity_engine.js';
 import '../opponent_country_rules.js';
+import '../offline_query_engine.js';
 
 const identity = globalThis.OmegaUniversalEntityIdentityEngine;
 assert.ok(identity, 'universal identity engine must load');
@@ -59,6 +60,45 @@ assert.equal(records.records[0].value.nation_ref, 'Testland 002');
 const unknown = identity.resolve('Neverland 999', 'COUNTRY');
 assert.equal(unknown.status, 'IDENTITY_NOT_FOUND');
 assert.equal(unknown.id, null);
+
+
+const core = globalThis.OfflineQueryEngine;
+assert.ok(core, 'Deep Core must expose the unified repository selector');
+
+core.resetForTest = undefined;
+const coreDataset = {
+  "Testland 002": {
+    nation_ref: "Testland 002",
+    industrial_output: 123,
+    installed_capacity: 240
+  },
+  "Neverland 999": {
+    nation_ref: "Neverland 999",
+    industrial_output: 500,
+    installed_capacity: 700
+  }
+};
+core.registerDataset('future_metrics.json', coreDataset, {
+  entityTypes: ['COUNTRY'],
+  identityFields: ['nation_ref'],
+  capabilities: ['OUTPUT', 'CAPACITY'],
+  fieldMappings: {
+    OUTPUT: { valuePath: 'industrial_output' },
+    CAPACITY: { valuePath: 'installed_capacity' }
+  }
+});
+
+const coreSelection = core.select('Testland 002', 'COUNTRY');
+assert.equal(coreSelection.status, 'RESOLVED');
+assert.equal(coreSelection.candidates[0].id, 'T002');
+
+const coreResolved = core.resolve({ id: 'T002', type: 'COUNTRY' });
+assert.equal(coreResolved.status, 'RESOLVED');
+assert.equal(coreResolved.id, 'T002');
+
+const coreUnknown = core.resolve({ id: 'Neverland 999', type: 'COUNTRY' });
+assert.notEqual(coreUnknown.status, 'RESOLVED');
+assert.equal(coreUnknown.id, null);
 
 const opponent = globalThis.Omega.OpponentCountryRules;
 opponent.setDataset('countries', countries);
