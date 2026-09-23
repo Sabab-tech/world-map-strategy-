@@ -539,9 +539,10 @@
         else if(financial.liquidity-reservation.money<estimatedCost){status='BLOCKED';reasons.push('INSUFFICIENT_UNRESERVED_TREASURY');}
       }
     }
-    if(['HOUSING_BUILD','INDUSTRY_BUILD','DOMESTIC_EXPANSION','PROCESSING_EXPANSION','INFRASTRUCTURE_EXPANSION'].includes(a)){
+    if(['HOUSING_BUILD','INDUSTRY_BUILD','DOMESTIC_EXPANSION','PROCESSING_EXPANSION','INFRASTRUCTURE_EXPANSION','MILITARY_FACILITY_BUILD'].includes(a)){
       if(plan.quantity===null){status='WAIT_DATA';reasons.push('PROJECT_QUANTITY_NOT_OBSERVED');}
       if(plan.cost===null){status='WAIT_DATA';reasons.push('PROJECT_COST_NOT_OBSERVED');}
+      if(plan.durationTurns===null){status='WAIT_DATA';reasons.push('PROJECT_DURATION_NOT_OBSERVED');}
       if(labor.available===null&&plan.labor!==null){status='WAIT_DATA';reasons.push('LABOR_CAPACITY_NOT_OBSERVED');}
       if(labor.available!==null&&plan.labor!==null&&labor.available-reservation.labor<plan.labor){status='BLOCKED';reasons.push('INSUFFICIENT_UNRESERVED_LABOR');}
       if(plan.materials&&Object.keys(plan.materials).length){
@@ -859,9 +860,10 @@
     const projects=readProjectRegistry(ctx.stateTransaction);
     const existing=projects.find(x=>x.projectId===p.projectId);
     if(existing)return{accepted:true,project:existing,duplicate:true};
-    const quantity=num(p.quantity),cost=num(p.cost);
+    const quantity=num(p.quantity),cost=num(p.cost),duration=num(p.durationTurns);
     if(quantity===null||quantity<=0)return{accepted:false,reason:'PROJECT_QUANTITY_INVALID'};
     if(cost===null||cost<0)return{accepted:false,reason:'PROJECT_COST_REQUIRED'};
+    if(duration===null||duration<=0)return{accepted:false,reason:'PROJECT_DURATION_REQUIRED'};
     const project={
       projectId:String(p.projectId||('AUTO-PROJ-'+turn()+'-'+c)),
       countryId:c,actionType:String(p.action||''),
@@ -870,9 +872,9 @@
       phase:'CONSTRUCTION',progress:0,createdTurn:turn(),startTurn:turn(),
       quantity,cost,spent:0,currency:p.currency||null,
       laborRequired:num(p.labor)||0,materials:clone(p.materials||{}),
-      durationTurns:Math.max(1,Math.floor(num(p.durationTurns)||1)),
-      progressPerTurn:1/Math.max(1,Math.floor(num(p.durationTurns)||1)),
-      completionTurn:turn()+Math.max(1,Math.floor(num(p.durationTurns)||1)),
+      durationTurns:Math.floor(duration),
+      progressPerTurn:1/Math.floor(duration),
+      completionTurn:turn()+Math.floor(duration),
       linkedMinistries:clone(p.linkedMinistries||[]),dependencies:clone(p.dependencies||[]),
       autonomy:true,executionBoundary:'OMEGA_PROJECT_EXECUTOR',stateMutationAuthority:true
     };
