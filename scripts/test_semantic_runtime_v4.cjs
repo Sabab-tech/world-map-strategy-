@@ -48,7 +48,7 @@ vm.runInNewContext(resourceBridgeSource, sandbox, { filename: 'omega_resource_se
   assert.equal(countryInitialized, true, 'Country semantic bridge must initialize before diagnostics');
   if (typeof resourceBridge.init === 'function') {
     const resourceInitialized = await resourceBridge.init();
-    assert.equal(resourceInitialized, true, 'Resource semantic bridge must initialize after canonical country bridge');
+    assert.equal(Boolean(resourceInitialized?.ready), true, 'Resource semantic bridge must initialize after canonical country bridge');
   }
 
   const countryDiag = identity.diagnostics();
