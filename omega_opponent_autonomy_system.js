@@ -129,7 +129,8 @@
     time:0.06,
     risk:0.06,
     relations:0.03,
-    memory:0.10
+    memory:0.08,
+    strategy:0.06
   });
 
   const EVENT_ROUTES=Object.freeze({
@@ -546,11 +547,14 @@
     const priority=priorityFor(decision);
     const risk=riskScore(countryId,decision);
     const deepMemory=g.OmegaOpponentDeepMemory||g.Omega?.OpponentDeepMemory||null;
-    const memoryTarget=decision?.targetCountryId||null;
+    let targetCountryId=null;
+    let memoryTarget=decision?.targetCountryId||null;
+    if(a==='IMPORT' && importSupplier?.countryId) memoryTarget=importSupplier.countryId;
     let memoryEvaluation=null;
     try{memoryEvaluation=deepMemory?.scoreAction?.(countryId,a,memoryTarget)||null;}catch(_){memoryEvaluation=null;}
-
-    let targetCountryId=null;
+    const strategy=g.OmegaOpponentAdaptiveStrategy||g.Omega?.OpponentAdaptiveStrategy||null;
+    let strategyEvaluation=null;
+    try{strategyEvaluation=strategy?.scoreAction?.(countryId,a)||null;}catch(_){strategyEvaluation=null;}
     let relations=null;
     let status='READY';
     const reasons=[];
@@ -624,7 +628,8 @@
       time:timeFactor,
       risk,
       relations:relationFactor,
-      memory:memoryFactor
+      memory:memoryFactor,
+      strategy:strategyEvaluation?.score??null
     };
     let score=0,totalWeight=0;
     for(const [k,w] of Object.entries(DECISION_WEIGHTS)){
@@ -637,6 +642,8 @@
       action:a,status,reason:reasons.join('|')||null,score:Number(score.toFixed(6)),
       targetCountryId,
       unitPrice:importSupplier?.unitPrice??null,
+      memoryTargetCountryId:memoryTarget,
+      strategyEvaluation:clone(strategyEvaluation||null),
       supplier:importSupplier?clone(importSupplier):null,
       plan,
       factors,
@@ -1088,7 +1095,7 @@
     const facilities=Array.isArray(ctx.stateTransaction.get('military.facilities'))?ctx.stateTransaction.get('military.facilities'):[];
     const row={projectId:p.projectId,quantity:q,kind:'MILITARY_FACILITY',commissionedTurn:turn()};
     ctx.stateTransaction.set('military.facilities',facilities.concat([row]).slice(-256));
-    event('OMEGA_FORCE_STRUCTURE_CHANGED',ctx.countryId,{projectId:p.projectId,facilityAdded:q},cmd.commandId,p.decisionId||p.projectId);
+    event('OMEGA_MILITARY_FACILITY_CAPACITY_CHANGED',ctx.countryId,{projectId:p.projectId,facilityAdded:q,capacityDelta:q,facilityType:p.facilityType||p.kind||null,location:p.location||null},cmd.commandId,p.decisionId||p.projectId);
     return{accepted:true,facility:row,stateMutationAuthority:true};
   }
 
@@ -1365,7 +1372,7 @@
     if(delta===null)return{accepted:false,reason:'READINESS_DELTA_REQUIRED'};
     const next=Math.max(0,Math.min(100,readiness+delta));
     ctx.stateTransaction.set('military.readiness',next);
-    event('OMEGA_FORCE_STRUCTURE_CHANGED',ctx.countryId,{readinessBefore:readiness,readinessAfter:next,delta},cmd.commandId,p.correlationId||p.decisionId||null);
+    event('OMEGA_MILITARY_READINESS_CHANGED',ctx.countryId,{readinessBefore:readiness,readinessAfter:next,delta},cmd.commandId,p.correlationId||p.decisionId||null);
     return{accepted:true,readinessBefore:readiness,readinessAfter:next,stateMutationAuthority:true};
   }
 
