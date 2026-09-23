@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { GoogleGenAI } from '@google/genai';
+import './omega_universal_entity_identity_engine.js';
 import './omega_production_semantic_runtime_v3.js';
 import './offline_semantic_brain.js';
 import './offline_query_engine.js';
@@ -45,6 +46,7 @@ const RESOURCE_BRIDGE_SCRIPT = '<script src="/omega_resource_semantic_bridge.js"
 const UNIVERSAL_AI_SCRIPT = '<script src="/omega_universal_ai_runtime.js"></script>';
 const LANGUAGE_SYSTEM_SCRIPT = '<script src="/omega_language_system.js"></script>';
 const LANGUAGE_BATCH03_SCRIPT = '<script src="/omega_language_batch03_semantic_extension.js"></script>';
+const UNIVERSAL_ENTITY_SCRIPT = '<script src="/omega_universal_entity_identity_engine.js"></script>';
 
 let cachedResourceProfiles = {}, resourceTypesRegistry = {};
 try {
@@ -118,7 +120,7 @@ function renderIndex(res, next) {
     if (err) return next(err);
     let output = html;
     const scripts = [
-      LANGUAGE_SYSTEM_SCRIPT, LANGUAGE_BATCH03_SCRIPT, COUNTRY_BRIDGE_SCRIPT, RESOURCE_BRIDGE_SCRIPT,
+      LANGUAGE_SYSTEM_SCRIPT, LANGUAGE_BATCH03_SCRIPT, UNIVERSAL_ENTITY_SCRIPT, COUNTRY_BRIDGE_SCRIPT, RESOURCE_BRIDGE_SCRIPT,
       MINISTRY_REGISTRY_SCRIPT, MINISTRY_STATE_PROVIDER_SCRIPT, MINISTRY_INFORMATION_POLICY_SCRIPT,
       MINISTRY_DECISION_FRAMEWORK_SCRIPT, MINISTRY_STATE_TRANSACTION_SCRIPT, MINISTRY_DOMAIN_ENGINES_SCRIPT,
       MINISTRY_INTEROPERABILITY_SCRIPT, MINISTRY_RUNTIME_V1_SCRIPT, SIMULATION_RUNTIME_SCRIPT, OPPONENT_COUNTRY_RULES_SCRIPT,
@@ -318,6 +320,7 @@ app.get('/api/deep-core/schema', (req, res) => { try { const dataset = String(re
 app.get('/api/deep-core/lookup', (req, res) => { try { const id = String(req.query.id || '').trim(); if (!id) return res.status(400).json({ ok: false, error: 'id query parameter is required' }); const result = OfflineQueryEngine.lookupId(id); res.status(result.status === 'IDENTITY_NOT_FOUND' ? 404 : 200).json({ ok: result.status !== 'IDENTITY_NOT_FOUND', ...result }); } catch (e) { res.status(500).json({ ok: false, error: e.message }); } });
 app.get('/api/deep-core/resolve', (req, res) => { try { const id = String(req.query.id || '').trim(), type = String(req.query.type || '').trim(); if (!id) return res.status(400).json({ ok: false, error: 'id query parameter is required' }); const result = OfflineQueryEngine.resolve({ id, type: type || undefined }); res.status(result.status === 'IDENTITY_NOT_FOUND' ? 404 : 200).json({ ok: result.status !== 'IDENTITY_NOT_FOUND', ...result }); } catch (e) { res.status(500).json({ ok: false, error: e.message }); } });
 app.get('/api/deep-core/search', (req, res) => { try { const q = String(req.query.q || '').trim(); if (!q) return res.status(400).json({ ok: false, error: 'q query parameter is required' }); const result = OfflineQueryEngine.search(q, { dataset: req.query.dataset, type: req.query.type, limit: req.query.limit }); res.status(result.status === 'NOT_FOUND' ? 404 : 200).json({ ok: result.status !== 'NOT_FOUND', ...result }); } catch (e) { res.status(500).json({ ok: false, error: e.message }); } });
+app.get('/api/deep-core/select', (req, res) => { try { const q = String(req.query.q || '').trim(); if (!q) return res.status(400).json({ ok: false, error: 'q query parameter is required' }); const result = OfflineQueryEngine.select(q, req.query.type || null, Number(req.query.limit || 25)); res.status(result.status === 'NOT_FOUND' ? 404 : 200).json({ ok: result.status !== 'NOT_FOUND', ...result }); } catch (e) { res.status(500).json({ ok: false, error: e.message }); } });
 
 function respondDeepCoreQuery(req, res) {
   try {
