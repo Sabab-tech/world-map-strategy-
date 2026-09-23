@@ -97,6 +97,11 @@
   function sanctionsOrWar(r){return r?.war_state===true||r?.sanctions===true;}
   function marketPrice(country,resource){
     const rid=String(resource||'').trim();
+    try{
+      const market=g.OmegaGlobalMarket||g.Omega?.GlobalMarket;
+      const local=market?.localPrice?.(canonical(country),rid);
+      if(num(local)!==null&&local>=0)return local;
+    }catch(_){}
     const paths=[
       'trade.marketPrice.'+rid,'trade.marketPrices.'+rid,
       'trade.offerBook.'+rid+'.unitPrice','trade.offerBook.'+rid+'.price',
