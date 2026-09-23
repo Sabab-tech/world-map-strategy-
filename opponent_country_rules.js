@@ -62,14 +62,118 @@ function TRIGGER(t,c){if(!t)return{state:'UNKNOWN'};if(t.type==='signal'){const 
 class Demand{constructor(tr){this.tr=tr;}run(s){const observed={},required={},drivers={};for(const k of Object.keys(s.signals))if(/DEMAND$/.test(k)||['RESOURCE_DEMAND','CONSUMER_DEMAND','INVESTMENT_DEMAND'].includes(k))if(s.signals[k].status==='AVAILABLE'){observed[k]=CLONE(s.signals[k]);const z=SCALAR(s.signals[k].value);if(z!==null)required[k]=z;}for(const k of ['POPULATION','POPULATION_GROWTH','HOUSEHOLD_INCOME','OUTPUT','EXPORT_DEMAND','INVESTMENT_DEMAND'])if(s.signals[k]?.status==='AVAILABLE')drivers[k]=CLONE(s.signals[k]);this.tr.add({layer:'L05_DEMAND_ENGINE',countryId:s.countryId,observed:Object.keys(observed),required:Object.keys(required),drivers:Object.keys(drivers)});return{observed,required,drivers};}}
 class Supply{constructor(tr){this.tr=tr;}run(s){const supply={},capacity={};for(const k of ['FOOD_SUPPLY','ENERGY_SUPPLY','RESOURCE_STOCK','RESOURCE_PRODUCTION','PRODUCTION_CAPACITY','EFFECTIVE_CAPACITY','INFRASTRUCTURE_CAPACITY','TRANSPORT_CAPACITY','LABOR_AVAILABILITY','HOUSING_SUPPLY','HEALTH_CAPACITY','EDUCATION_CAPACITY','INPUT_AVAILABILITY'])if(s.signals[k]?.status==='AVAILABLE')(['PRODUCTION_CAPACITY','EFFECTIVE_CAPACITY','INFRASTRUCTURE_CAPACITY','TRANSPORT_CAPACITY','LABOR_AVAILABILITY','HOUSING_SUPPLY','HEALTH_CAPACITY','EDUCATION_CAPACITY'].includes(k)?capacity:supply)[k]=CLONE(s.signals[k]);this.tr.add({layer:'L06_SUPPLY_CAPACITY_ENGINE',countryId:s.countryId,supply:Object.keys(supply),capacity:Object.keys(capacity)});return{supply,capacity};}}
 function LEVEL(v){const d=DIRECTION(v);return d==='CRITICAL'?'CRITICAL':d==='HIGH'?'HIGH':d==='LOW'?'LOW':['RISING','FALLING'].includes(d)?'MODERATE':null;}
-class GapPressure{constructor(tr){this.tr=tr;}run(s){const gaps={};for(const k of Object.keys(REL)){const e=EVAL_REL({state:s.rawState||WORLD(),countryId:s.countryId},k);gaps[k]={...e,required:e.operands?.left??null,available:e.operands?.right??null,need:e.state==='TRUE'?{id:'NEED_'+k,state:'ACTIVE',kind:['OPPORTUNITY','MARKET','CAPACITY'].includes(REL[k][2])?'OPPORTUNITY':'CAPABILITY_GAP'}:null,pressure:e.state==='TRUE'?{state:'ACTIVE',level:'UNSPECIFIED_WITHOUT_SEVERITY_EVIDENCE'}:{state:'NONE'}};}const semantic=[];for(const[k,o]of Object.entries(s.signals))if(o.status==='AVAILABLE'){const e=EVAL_DIR(k,o.raw,DIR[k]?.problemWhen);if(e.state==='TRUE')semantic.push({signal:k,direction:e.actual,level:LEVEL(o.raw)||'MODERATE'});}this.tr.add({layer:'L07_NEED_GAP_PRESSURE_ENGINE',countryId:s.countryId,requiresVsAvailable:true,activeGaps:Object.entries(gaps).filter(([,x])=>x.state==='TRUE').map(([k])=>k),semantic});return{gaps,needs:[...new Set(Object.entries(gaps).filter(([,x])=>x.state==='TRUE').map(([k])=>'NEED_'+k))],semantic};}}
+class GapPressure{
+  constructor(tr){this.tr=tr;}
+  run(s){
+    const gaps={},state=s.rawState||WORLD(),cid=s.countryId;
+    const resolve=path=>{
+      const sv=STATE_PATH(state,cid,path),sn=SCALAR(sv);if(sn!==null)return{value:sn,raw:CLONE(sv),path,source:'STATE'};
+      const parts=String(path).split('.'),root=parts.shift(),ds=[root,{resource:'resources',trade:'relations',transport:'infrastructure'}[root]].filter(Boolean);
+      for(const dataset of ds){const r=REC(WORLD_DATASET(dataset),cid);if(!r)continue;const v=READ(r,parts.join('.')),n=SCALAR(v);if(n!==null)return{value:n,raw:CLONE(v),path,source:'DATASET:'+dataset};}
+      const key=Object.keys(STATE_PATHS).find(k=>(STATE_PATHS[k]||[]).includes(path)),sig=s.signals?.[key],n=SCALAR(sig?.value);
+      return key&&n!==null?{value:n,raw:CLONE(sig.value),path:key,source:'SIGNAL'}:null;
+    };
+    Object.keys(REL).forEach(k=>{
+      const spec=REL[k],a=resolve(spec[0]),b=resolve(spec[1]);
+      if(!a||!b){gaps[k]={state:'UNKNOWN',required:null,available:null,gap:null,kind:spec[2],operands:null,need:null,pressure:{state:'UNKNOWN',level:null,reason:'RELATION_DATA_UNAVAILABLE'}};return;}
+      const gap=a.value-b.value,active=gap>0,ratio=Math.max(0,Math.min(1,gap/Math.max(Math.abs(a.value),1e-9)));
+      gaps[k]={state:active?'TRUE':'FALSE',required:a.value,available:b.value,gap,kind:spec[2],
+        operands:{left:a.value,right:b.value,leftPath:a.path,rightPath:b.path,leftSource:a.source,rightSource:b.source},
+        need:active?{id:'NEED_'+k,state:'ACTIVE',gap,severity:ratio}:null,
+        pressure:active?{state:'ACTIVE',level:ratio>=.75?'CRITICAL':ratio>=.5?'HIGH':ratio>=.2?'MODERATE':'LOW',ratio}:{state:'NONE',level:null,ratio:0}};
+    });
+    const semantic=[];Object.entries(s.signals).forEach(([k,o])=>{if(o.status!=='AVAILABLE')return;const e=EVAL_DIR(k,o.raw,DIR[k]?.problemWhen);if(e.state==='TRUE')semantic.push({signal:k,direction:e.actual,rule:DIR[k]?.problemWhen});});
+    this.tr.add({layer:'L07_NEED_GAP_PRESSURE_ENGINE',countryId:cid,activeGaps:Object.entries(gaps).filter(([,x])=>x.state==='TRUE').map(([k])=>k),unknownGaps:Object.entries(gaps).filter(([,x])=>x.state==='UNKNOWN').map(([k])=>k),semantic});
+    return{gaps,needs:Object.entries(gaps).filter(([,x])=>x.state==='TRUE').map(([k])=>'NEED_'+k),semantic};
+  }
+}
+
 class ScenarioEngine{constructor(tr){this.tr=tr;}run(s,gp,events){const ctx={...s,...gp,state:s.rawState||WORLD(),countryId:s.countryId,events};const active=[];for(const sc of SCENARIOS){const e=TRIGGER(sc.trigger,ctx);if(e.state==='TRUE')active.push({...CLONE(sc),evidence:e.evidence});}this.tr.add({layer:'L08_SCENARIO_ENGINE',countryId:s.countryId,active:active.map(x=>x.id)});return active;}}
 class Memory{constructor(tr){this.tr=tr;this.m=new Map;}state(c){if(!this.m.has(c))this.m.set(c,{pastProblems:[],pastDecisions:[],outcomes:[],scenarioBias:{},persistentGoals:[]});return this.m.get(c);}bias(c,sc){const x=this.state(c).scenarioBias[sc];return x==='FAILED'?'RETRY_CAUTION':x==='BLOCKED'?'AVOID_BLOCKED_ACTION':x==='COMPLETED'?'FAVOR_REPEAT':null;}decision(c,d){this.state(c).pastDecisions.push(CLONE(d));this.tr.add({layer:'L23_ACTOR_MEMORY_ADAPTATION',countryId:c,type:'DECISION',decisionId:d.decisionId});}outcome(c,o){const m=this.state(c);m.outcomes.push(CLONE(o));m.scenarioBias[o.scenarioId]=String(o.status||'OBSERVED').toUpperCase();if(m.outcomes.length>64)m.outcomes.shift();this.tr.add({layer:'L23_ACTOR_MEMORY_ADAPTATION',countryId:c,type:'OUTCOME',scenarioId:o.scenarioId,status:o.status});}save(){return CLONE(Object.fromEntries(this.m));}restore(v){this.m=new Map(Object.entries(v||{}).map(([k,x])=>[k,CLONE(x)]));}}
 class Goal{constructor(tr,mem){this.tr=tr;this.mem=mem;}run(c,sc,gp){const prior=this.mem.state(c).persistentGoals||[],goals=sc.map(x=>({goalId:'GOAL-'+x.id,scenarioId:x.id,priorityClass:x.kind==='PRESSURE'?'PRESSURE':x.kind==='OPPORTUNITY'?'OPPORTUNITY':'DRIVER',persistent:true,previouslyActive:prior.includes(x.id),memoryBias:this.mem.bias(c,x.id),needs:CLONE(gp.needs),priorityFactors:x.decisionFactors})).sort((a,b)=>(a.priorityClass==='PRESSURE'?0:a.priorityClass==='DRIVER'?1:2)-(b.priorityClass==='PRESSURE'?0:b.priorityClass==='DRIVER'?1:2)||a.goalId.localeCompare(b.goalId));this.mem.state(c).persistentGoals=[...new Set(goals.map(x=>x.scenarioId))].slice(-128);this.tr.add({layer:'L09_GOAL_PRIORITY_ENGINE',countryId:c,goals:goals.map(x=>x.goalId)});return goals;}}
-class Feasibility{constructor(tr){this.tr=tr;}check(c,a,ctx){const d=ACTIONS[a];if(!d)return{status:'BLOCKED',reason:'ACTION_UNREGISTERED'};const missing=[],unknown=[];for(const cap of d.caps){if(ctx.countryCapabilities?.[cap])continue;if(ctx.signals?.[cap]?.status==='AVAILABLE')continue;if(ctx.countryCapabilities?.[cap]===false)missing.push(cap);else unknown.push(cap);}const blockers=[];if(a==='IMPORT'&&ctx.signals.FOREIGN_CURRENCY?.status==='AVAILABLE'&&NUM(ctx.signals.FOREIGN_CURRENCY.value)===0)blockers.push('FOREIGN_CURRENCY_UNAVAILABLE');if(a==='EXPORT'&&ctx.signals.TRADE_ROUTE_CAPACITY?.status==='AVAILABLE'&&NUM(ctx.signals.TRADE_ROUTE_CAPACITY.value)===0)blockers.push('NO_ROUTE_CAPACITY');const status=blockers.length?'BLOCKED':missing.length?'BLOCKED':unknown.length?'UNKNOWN':'FEASIBLE';const r={status,owner:d.owner,execution:d.execution,requiredCapabilities:d.caps,missingCapabilities:missing,unknownCapabilities:unknown,blockingConditions:blockers};this.tr.add({layer:'L11_FEASIBILITY_ENGINE',countryId:c,action:a,status,missing,unknown,blockers});return r;}}
-class Decision{constructor(tr,f){this.tr=tr;this.f=f;}run(c,goals,ctx){const out=[];for(const goal of goals){const sc=ctx.scenarios.find(x=>x.id===goal.scenarioId);if(!sc)continue;const candidates=sc.actions.map(a=>({action:a,feasibility:this.f.check(c,a,ctx)})),feasible=candidates.filter(x=>x.feasibility.status==='FEASIBLE');if(!feasible.length)continue;const max=goal.priorityClass==='PRESSURE'?3:goal.priorityClass==='OPPORTUNITY'?2:1;const selected=feasible.slice(0,max).map(x=>x.action);out.push({decisionId:'DEC-'+c+'-'+ctx.turn+'-'+sc.id,countryId:c,simulationTurn:ctx.turn,scenarioId:sc.id,goal:CLONE(goal),candidateActions:CLONE(candidates),selectedActions:selected,decisionFactors:sc.decisionFactors,executionMethod:selected.map(a=>ACTIONS[a].execution),expectedConsequences:selected.flatMap(a=>ACTIONS[a].domains),status:'DECIDED'});}this.tr.add({layer:'L10_DECISION_ENGINE',countryId:c,count:out.length});return out;}}
-class ProjectEngine{constructor(tr){this.tr;this.tr=tr;this.m=new Map;}plan(d,a){const x=ACTIONS[a];if(!x||!x.execution.includes('PROJECT'))return null;const p={projectId:'PROJ-'+d.decisionId+'-'+a,countryId:d.countryId,actionType:a,scenarioId:d.scenarioId,decisionId:d.decisionId,status:'PROPOSED',phase:'INITIATION',requirements:{inputs:[],capital:null,labor:null,infrastructure:null,technology:null,time:null},progress:null,commissioning:'PENDING',operationalCapacity:null,executor:x.owner,createdTurn:d.simulationTurn,dependencies:x.domains};this.m.set(p.projectId,p);this.tr.add({layer:'L12_PROJECT_ENGINE',countryId:d.countryId,projectId:p.projectId,status:p.status});return CLONE(p);}advance(e){const p=this.m.get(e?.projectId);if(!p)return null;for(const k of ['status','phase','progress','commissioning','operationalCapacity'])if(e[k]!==undefined)p[k]=CLONE(e[k]);p.lastEvent=e.eventType||null;this.tr.add({layer:'L12_PROJECT_ENGINE',projectId:p.projectId,status:p.status,event:p.lastEvent});return CLONE(p);}list(c){return CLONE([...this.m.values()].filter(x=>!c||ID(x.countryId)===ID(c)));}save(){return CLONE([...this.m.values()]);}restore(v){this.m=new Map((Array.isArray(v)?v:[]).map(x=>[x.projectId,CLONE(x)]));}}
-class TransactionEngine{constructor(tr){this.tr=tr;this.m=new Map;}plan(d,a){const x=ACTIONS[a];if(!x||!x.execution.includes('TRANSACTION'))return null;const q={transactionId:'TX-'+d.decisionId+'-'+a,countryId:d.countryId,actionType:a,scenarioId:d.scenarioId,decisionId:d.decisionId,status:'PROPOSED',settlement:'PENDING',from:null,to:null,quantity:null,value:null,currency:null,requirements:{sourceKnown:false,targetKnown:false,amountKnown:false},executor:x.owner,createdTurn:d.simulationTurn};this.m.set(q.transactionId,q);this.tr.add({layer:'L13_TRANSACTION_ENGINE',countryId:d.countryId,transactionId:q.transactionId,status:q.status});return CLONE(q);}settle(e){const q=this.m.get(e?.transactionId);if(!q)return null;q.status=e.status||'SETTLED';q.settlement=CLONE(e);this.tr.add({layer:'L13_TRANSACTION_ENGINE',transactionId:q.transactionId,status:q.status});return CLONE(q);}save(){return CLONE([...this.m.values()]);}restore(v){this.m=new Map((Array.isArray(v)?v:[]).map(x=>[x.transactionId,CLONE(x)]));}}
+class Feasibility{
+  constructor(tr){this.tr=tr;}
+  check(c,a,ctx){
+    const d=ACTIONS[a];if(!d)return{status:'BLOCKED',reason:'ACTION_UNREGISTERED'};
+    const missing=[],unknown=[],signals=ctx.signals||{},caps=ctx.countryCapabilities||{};
+    for(const cap of d.caps||[]){if(caps[cap]===true||signals[cap]?.status==='AVAILABLE')continue;if(caps[cap]===false)missing.push(cap);else unknown.push(cap);}
+    const n=k=>SCALAR(signals[k]?.value),blockers=[];
+    if(a==='IMPORT'&&n('FOREIGN_CURRENCY')!==null&&n('FOREIGN_CURRENCY')<=0)blockers.push('FOREIGN_CURRENCY_UNAVAILABLE');
+    if(['IMPORT','EXPORT'].includes(a)&&n('TRADE_ROUTE_CAPACITY')!==null&&n('TRADE_ROUTE_CAPACITY')<=0)blockers.push('TRADE_ROUTE_CAPACITY_UNAVAILABLE');
+    if(['PROJECT_INVESTMENT','FINANCIAL_TRANSACTION'].includes(a)&&n('LIQUIDITY')!==null&&n('LIQUIDITY')<0)blockers.push('NEGATIVE_LIQUIDITY');
+    if(a==='EXPORT'&&ctx.gapPressure?.gaps?.RESOURCE?.state==='TRUE')blockers.push('DOMESTIC_RESOURCE_DEFICIT');
+    const status=blockers.length||missing.length?'BLOCKED':unknown.length?'UNKNOWN':'FEASIBLE';
+    const r={status,owner:d.owner,execution:d.execution,requiredCapabilities:d.caps||[],missingCapabilities:missing,unknownCapabilities:unknown,blockingConditions:blockers};
+    this.tr.add({layer:'L11_FEASIBILITY_ENGINE',countryId:ID(c),action:a,status,missing,unknown,blockers});return r;
+  }
+}
+
+class Decision{
+  constructor(tr,feas,mem){this.tr=tr;this.f=feas;this.mem=mem;}
+  score(action,scenario,feas,ctx){
+    if(feas.status!=='FEASIBLE')return -Infinity;
+    const main=scenario.trigger?.type==='relation'?ctx.gapPressure?.gaps?.[scenario.trigger.relation]:null;
+    const severity=main?.pressure?.ratio||0,urgency=scenario.kind==='PRESSURE'?4:scenario.kind==='DRIVER'?2:1;
+    const breadth=(ACTIONS[action].domains||[]).length,forecast=(ctx.forecasts?.projectedShortfalls||[]).length,bias=this.mem.bias(ctx.countryId,scenario.id);
+    const memory=bias==='FAVOR_REPEAT'?.35:bias==='RETRY_CAUTION'?- .35:bias==='AVOID_BLOCKED_ACTION'?-.5:0;
+    return 100+urgency*10+severity*20+breadth+forecast*2+memory;
+  }
+  run(c,goals,ctx){
+    const out=[];
+    for(const goal of goals){
+      const sc=ctx.scenarios.find(x=>x.id===goal.scenarioId);if(!sc)continue;
+      const candidates=sc.actions.map(a=>({action:a,feasibility:this.f.check(c,a,ctx),score:0}));
+      candidates.forEach(x=>x.score=this.score(x.action,sc,x.feasibility,ctx));
+      const feasible=candidates.filter(x=>x.feasibility.status==='FEASIBLE').sort((a,b)=>b.score-a.score||a.action.localeCompare(b.action));
+      if(!feasible.length){this.tr.add({layer:'L10_DECISION_ENGINE',countryId:c,scenarioId:sc.id,status:'NO_FEASIBLE_ACTION'});continue;}
+      const selected=[feasible[0].action];
+      if(sc.kind==='PRESSURE'&&feasible.length>1){const owner=ACTIONS[selected[0]].owner,alt=feasible.find(x=>x.action!==selected[0]&&ACTIONS[x.action].owner!==owner);if(alt)selected.push(alt.action);}
+      const evals=selected.map(a=>candidates.find(x=>x.action===a));
+      out.push({decisionId:'DEC-'+ID(c)+'-'+ctx.turn+'-'+sc.id,countryId:ID(c),simulationTurn:ctx.turn,scenarioId:sc.id,goal:CLONE(goal),
+        candidateActions:CLONE(candidates),selectedActions:selected,selectedEvaluations:CLONE(evals),evidence:CLONE(sc.evidence||null),decisionFactors:sc.decisionFactors,status:'DECIDED',
+        executionMethod:selected.map(a=>ACTIONS[a].execution),expectedConsequences:[...new Set(selected.flatMap(a=>ACTIONS[a].domains||[]))],
+        reasoning:{ranking:'FEASIBLE_EVIDENCE_SCORE',selectedScores:evals.map(x=>({action:x.action,score:x.score})),memoryBias:this.mem.bias(ctx.countryId,sc.id)}});
+    }
+    this.tr.add({layer:'L10_DECISION_ENGINE',countryId:c,count:out.length,decisions:out.map(x=>x.decisionId)});return out;
+  }
+}
+
+class ProjectEngine{
+  constructor(tr){this.tr=tr;this.m=new Map();}
+  plan(d,a){
+    const spec=ACTIONS[a];if(!spec||!String(spec.execution).includes('PROJECT'))return null;
+    const ctx=d.context||{},sig=ctx.signals||{},gaps=ctx.gapPressure?.gaps||{},rel=spec.rel&&gaps[spec.rel]?.state==='TRUE'?gaps[spec.rel]:null;
+    const evidencePaths=Object.values(sig).filter(x=>x?.status==='AVAILABLE').map(x=>x.source).filter(Boolean);
+    const requirements={targetQuantity:rel?.gap??null,capital:SCALAR(sig.CAPITAL_AVAILABILITY?.value),labor:SCALAR(sig.LABOR_AVAILABILITY?.value),
+      infrastructure:SCALAR(sig.INFRASTRUCTURE_CAPACITY?.value),technology:SCALAR(sig.TECHNOLOGY_CAPABILITY?.value),inputs:[],time:null,evidenceStatus:evidencePaths.length?'OBSERVED':'UNAVAILABLE',evidencePaths};
+    const p={projectId:'PROJ-'+d.decisionId+'-'+a,countryId:ID(d.countryId),actionType:a,scenarioId:d.scenarioId,decisionId:d.decisionId,status:'PROPOSED',
+      phase:'INITIATION',requirements,progress:0,commissioning:'PENDING',operationalCapacity:null,executor:spec.owner,createdTurn:d.simulationTurn,dependencies:spec.domains||[],
+      executionBoundary:'EXTERNAL_PROJECT_EXECUTOR',stateMutationAuthority:false,lifecycle:['PROPOSED','APPROVED','FUNDED','UNDER_CONSTRUCTION','COMMISSIONING','OPERATIONAL','COMPLETED','BLOCKED']};
+    this.m.set(p.projectId,p);this.tr.add({layer:'L12_PROJECT_ENGINE',countryId:p.countryId,projectId:p.projectId,status:p.status,requirements});return CLONE(p);
+  }
+  advance(e){const p=this.m.get(e?.projectId);if(!p)return null;['status','phase','progress','commissioning','operationalCapacity','requirements'].forEach(k=>{if(e[k]!==undefined)p[k]=CLONE(e[k]);});p.lastEvent=e?.eventType||null;this.tr.add({layer:'L12_PROJECT_ENGINE',projectId:p.projectId,status:p.status,event:p.lastEvent});return CLONE(p);}
+  list(c){return CLONE([...this.m.values()].filter(x=>!c||ID(x.countryId)===ID(c)));}
+  save(){return CLONE([...this.m.values()]);}
+  restore(v){this.m=new Map((Array.isArray(v)?v:[]).map(x=>[x.projectId,CLONE(x)]));}
+}
+
+class TransactionEngine{
+  constructor(tr){this.tr=tr;this.m=new Map();}
+  plan(d,a){
+    const spec=ACTIONS[a];if(!spec||!String(spec.execution).includes('TRANSACTION'))return null;
+    const ctx=d.context||{},sig=ctx.signals||{},gaps=ctx.gapPressure?.gaps||{},rel=spec.rel&&gaps[spec.rel]?.state==='TRUE'?gaps[spec.rel]:null;
+    const quantity=rel?.gap??null,price=SCALAR(sig.MARKET_PRICE?.value),value=quantity!==null&&price!==null?quantity*price:null;
+    const q={transactionId:'TX-'+d.decisionId+'-'+a,countryId:ID(d.countryId),actionType:a,scenarioId:d.scenarioId,decisionId:d.decisionId,status:'PROPOSED',
+      settlement:'PENDING',from:null,to:null,quantity,value,currency:null,requirements:{sourceKnown:false,targetKnown:false,amountKnown:quantity!==null,priceKnown:price!==null,
+        foreignCurrencyObserved:SCALAR(sig.FOREIGN_CURRENCY?.value)!==null},executor:spec.owner,createdTurn:d.simulationTurn,executionBoundary:'EXTERNAL_TRANSACTION_EXECUTOR',
+      stateMutationAuthority:false,evidence:CLONE(d.evidence||null)};
+    this.m.set(q.transactionId,q);this.tr.add({layer:'L13_TRANSACTION_ENGINE',countryId:q.countryId,transactionId:q.transactionId,status:q.status,quantity,value});return CLONE(q);
+  }
+  settle(e){const q=this.m.get(e?.transactionId);if(!q)return null;q.status=e.status||'SETTLED';q.settlement=CLONE(e);this.tr.add({layer:'L13_TRANSACTION_ENGINE',transactionId:q.transactionId,status:q.status});return CLONE(q);}
+  save(){return CLONE([...this.m.values()]);}
+  restore(v){this.m=new Map((Array.isArray(v)?v:[]).map(x=>[x.transactionId,CLONE(x)]));}
+}
+
 class TradeMarketEngine{constructor(tr){this.tr=tr;}run(s){const x={imports:s.signals.IMPORT_DEPENDENCE,exports:s.signals.EXPORT_DEMAND,route:s.signals.TRADE_ROUTE_CAPACITY,price:s.signals.MARKET_PRICE,concentration:s.signals.SUPPLIER_CONCENTRATION};this.tr.add({layer:'L14_TRADE_MARKET_ENGINE',countryId:s.countryId,observed:Object.values(x).filter(v=>v?.status==='AVAILABLE').length,marketState:x});return x;}}
 class FinanceEngine{constructor(tr){this.tr=tr;}run(s){const x={revenue:s.signals.REVENUE,expenditure:s.signals.EXPENDITURE,liquidity:s.signals.LIQUIDITY,capital:s.signals.CAPITAL_AVAILABILITY,foreignCurrency:s.signals.FOREIGN_CURRENCY,debtService:s.signals.DEBT_SERVICE_PRESSURE};this.tr.add({layer:'L15_FINANCE_ENGINE',countryId:s.countryId,observed:Object.values(x).filter(v=>v?.status==='AVAILABLE').length,financialState:x});return x;}}
 class InfraLogisticsEngine{constructor(tr){this.tr=tr;}run(s){const x={infrastructure:s.signals.INFRASTRUCTURE_CAPACITY,transport:s.signals.TRANSPORT_CAPACITY,congestion:s.signals.LOGISTICS_CONGESTION,route:s.signals.TRADE_ROUTE_CAPACITY,failureRisk:s.signals.NETWORK_FAILURE_RISK};this.tr.add({layer:'L16_INFRA_LOGISTICS_ENGINE',countryId:s.countryId,observed:Object.values(x).filter(v=>v?.status==='AVAILABLE').length,networkState:x});return x;}}
@@ -106,66 +210,42 @@ class Consequence{
   }
 }
 class Forecast{
-  constructor(tr){this.tr=tr;this.h=new Map;this.projects=[];}
-  observe(s){
-    const a=this.h.get(s.countryId)||[];
-    a.push({turn:s.turn,signals:CLONE(s.signals)});
-    this.h.set(s.countryId,a.slice(-24));
-  }
+  constructor(tr){this.tr=tr;this.h=new Map();this.projects=[];}
+  observe(s){const a=this.h.get(s.countryId)||[];if(!a.length||a[a.length-1].turn!==s.turn)a.push({turn:s.turn,signals:CLONE(s.signals)});this.h.set(s.countryId,a.slice(-24));}
   run(s,gp){
-    const h=this.h.get(s.countryId)||[],trend={};
-    if(h.length>1){
-      const a=h[h.length-2],b=h[h.length-1];
-      for(const[k,o]of Object.entries(b.signals)){
-        const x=SCALAR(a.signals[k]?.value),y=SCALAR(o.value);
-        if(x!==null&&y!==null)trend[k]={direction:y>x?'RISING':y<x?'FALLING':'STABLE',from:x,to:y};
-      }
-    }
-    const shortfalls=Object.entries(gp.gaps).filter(([,x])=>x.state==='TRUE').map(([gap])=>({gap,current:true}));
-    const out={
-      trend,
-      projectedShortfalls:shortfalls,
-      basis:{
-        currentState:true,
-        observedTrends:Object.keys(trend),
-        committedProjects:CLONE(this.projects),
-        knownConstraints:shortfalls.map(x=>x.gap)
-      },
-      window:'SCHEDULER_DEFINED'
-    };
-    this.tr.add({layer:'L22_FORECAST_ENGINE',countryId:s.countryId,trendSignals:Object.keys(trend).length,shortfalls:shortfalls.map(x=>x.gap)});
-    return out;
+    const h=this.h.get(s.countryId)||[],trend={},projectedShortfalls=[];
+    if(h.length>=2){const a=h[h.length-2],b=h[h.length-1];Object.keys(b.signals).forEach(k=>{const x=SCALAR(a.signals[k]?.value),y=SCALAR(b.signals[k]?.value);if(x===null||y===null)return;const slope=y-x;trend[k]={direction:slope>0?'RISING':slope<0?'FALLING':'STABLE',from:x,to:y,slope};});}
+    Object.entries(gp.gaps).forEach(([gap,row])=>{if(row.state==='TRUE')projectedShortfalls.push({gap,current:true,severity:row.pressure?.ratio??null,trend:trend[gap]||null});});
+    const out={trend,projectedShortfalls,basis:{currentState:true,observedTurns:h.length,committedProjects:CLONE(this.projects),knownConstraints:projectedShortfalls.map(x=>x.gap)},window:'SCHEDULER_DEFINED'};
+    this.tr.add({layer:'L22_FORECAST_ENGINE',countryId:s.countryId,trendSignals:Object.keys(trend).length,shortfalls:projectedShortfalls.length});return out;
   }
-  setProjects(p){this.projects=CLONE(p||[]);}
-  save(){return CLONE(Object.fromEntries(this.h));}
-  restore(v){this.h=new Map(Object.entries(v||{}).map(([k,x])=>[k,CLONE(x)]));}
+  setProjects(p){this.projects=CLONE(p||[]);}save(){return CLONE(Object.fromEntries(this.h));}restore(v){this.h=new Map(Object.entries(v||{}));}
 }
+
 class Scheduler{
-  constructor(tr){this.tr=tr;this.last=new Map;this.dirty=new Map;}
-  mode(gp,sc){return gp.semantic.length||Object.values(gp.gaps).some(x=>x.state==='TRUE')?'FULL':sc.length?'STANDARD':'BACKGROUND';}
-  mark(c,nodes,reason){const set=this.dirty.get(c)||new Set;for(const x of nodes||[])set.add(x);this.dirty.set(c,set);this.tr.add({layer:'L24_MULTI_RATE_SCHEDULER',countryId:c,reason,dirty:[...set],scheduled:true});}
-  should(c,t,m){const due=m==='FULL'||!this.last.has(c)||Number(t)>Number(this.last.get(c));this.tr.add({layer:'L24_MULTI_RATE_SCHEDULER',countryId:c,turn:t,mode:m,due,dirty:[...(this.dirty.get(c)||new Set)]});return due;}
+  constructor(tr){this.tr=tr;this.last=new Map();this.dirty=new Map();}
+  mode(gp,sc){if(gp.semantic.length||Object.values(gp.gaps).some(x=>x.state==='TRUE'))return'FULL';if(sc.length)return'STANDARD';return'BACKGROUND';}
+  should(c,t,m){const interval={FULL:1,STANDARD:3,BACKGROUND:7}[m]||1,last=this.last.get(c),dirty=this.dirty.get(c),due=last===undefined||Number(t)-Number(last)>=interval||(dirty&&dirty.size>0);this.tr.add({layer:'L24_MULTI_RATE_SCHEDULER',countryId:c,turn:t,mode:m,interval,due,dirty:[...(dirty||new Set())]});return due;}
+  mark(c,nodes,reason){const set=this.dirty.get(c)||new Set();(nodes||[]).forEach(x=>set.add(x));this.dirty.set(c,set);this.tr.add({layer:'L24_MULTI_RATE_SCHEDULER',countryId:c,reason,dirty:[...set],scheduled:true});}
   commit(c,t){this.last.set(c,Number(t));this.dirty.delete(c);this.tr.add({layer:'L24_MULTI_RATE_SCHEDULER',countryId:c,turn:t,action:'COMMIT_SCHEDULE',scheduledNext:true});}
   save(){return{last:Object.fromEntries(this.last),dirty:Object.fromEntries([...this.dirty].map(([k,v])=>[k,[...v]]))};}
   restore(v){this.last=new Map(Object.entries(v?.last||{}));this.dirty=new Map(Object.entries(v?.dirty||{}).map(([k,x])=>[k,new Set(x)]));}
 }
+
 class Reconcile{
   constructor(tr){this.tr=tr;}
   run(s){
-    const checks=[];
-    const inv=SCALAR(s.signals.RESOURCE_STOCK?.value),
-          cap=SCALAR(s.signals.EFFECTIVE_CAPACITY?.value),
-          out=SCALAR(s.signals.OUTPUT?.value),
-          route=SCALAR(s.signals.TRADE_ROUTE_CAPACITY?.value),
-          load=SCALAR(s.signals.LOGISTICS_CONGESTION?.value);
-    if(inv!==null)checks.push({id:'INVENTORY_NON_NEGATIVE',status:inv<0?'FAIL':'PASS'});
-    if(cap!==null&&out!==null)checks.push({id:'OUTPUT_WITHIN_EFFECTIVE_CAPACITY',status:out<=cap?'PASS':'FAIL'});
-    if(route!==null&&load!==null)checks.push({id:'ROUTE_LOAD_WITHIN_CAPACITY',status:load<=route?'PASS':'FAIL'});
-    const r={status:checks.some(x=>x.status==='FAIL')?'FAIL':'PASS',checks};
-    this.tr.add({layer:'L25_STATE_RECONCILIATION',countryId:s.countryId,status:r.status,checks});
-    return r;
+    const checks=[],n=k=>SCALAR(s.signals[k]?.value),inv=n('RESOURCE_STOCK'),cap=n('EFFECTIVE_CAPACITY'),out=n('OUTPUT'),route=n('TRADE_ROUTE_CAPACITY'),load=n('LOGISTICS_CONGESTION');
+    if(inv!==null)checks.push({id:'INVENTORY_NON_NEGATIVE',status:inv<0?'FAIL':'PASS',value:inv});
+    if(cap!==null&&out!==null)checks.push({id:'OUTPUT_WITHIN_EFFECTIVE_CAPACITY',status:out<=cap?'PASS':'FAIL',output:out,capacity:cap});
+    if(route!==null&&load!==null)checks.push({id:'LOGISTICS_WITHIN_ROUTE_CAPACITY',status:load<=route?'PASS':'FAIL',load,route});
+    const rev=n('REVENUE'),exp=n('EXPENDITURE');if(rev!==null&&exp!==null)checks.push({id:'FISCAL_ARITHMETIC',status:'PASS',balance:rev-exp});
+    const liq=n('LIQUIDITY');if(liq!==null)checks.push({id:'LIQUIDITY_NON_NEGATIVE',status:liq<0?'FAIL':'PASS',liquidity:liq});
+    const failed=checks.filter(x=>x.status==='FAIL'),result={status:failed.length?'FAIL':checks.length?'PASS':'UNVERIFIED',checks,verifiedChecks:checks.length,failedChecks:failed.map(x=>x.id)};
+    this.tr.add({layer:'L25_STATE_RECONCILIATION',countryId:s.countryId,status:result.status,checks});return result;
   }
 }
+
 class Runtime{
   constructor(o={}){
     this.tr=new Trace;
@@ -261,118 +341,42 @@ class Runtime{
     return{status:'READY',results:result};
   }
   handle(cmd,ctx={}){
-    const d=cmd?.payload?.opponentDecision||cmd?.payload?.decision||{};
-    const plans=[];
-    for(const a of d.selectedActions||[]){
-      const p=this.projects.plan(d,a)||this.transactions.plan(d,a)||this.policyLifecycle.plan(d,a);
-      if(p)plans.push(p);
-      this.cons.preview(d,a);
+  const d=cmd?.payload?.opponentDecision||cmd?.payload?.decision||{},selected=Array.isArray(d.selectedActions)?d.selectedActions:[],country=ID(d.countryId||cmd?.countryId);
+  if(!country)return{accepted:false,reason:'COUNTRY_ID_REQUIRED'};
+  const sc=SCENARIOS.find(x=>x.id===d.scenarioId);if(!sc)return{accepted:false,reason:'SCENARIO_NOT_REGISTERED'};
+  if(!selected.length)return{accepted:false,reason:'NO_SELECTED_ACTIONS'};
+  for(const a of selected)if(!ACTIONS[a])return{accepted:false,reason:'ACTION_NOT_REGISTERED:'+a};
+  const context=this.runs.get(country)||d.context;if(!context)return{accepted:false,reason:'DECISION_CONTEXT_UNAVAILABLE'};
+  const feasibility=selected.map(a=>({action:a,result:this.feas.check(country,a,context)}));
+  if(feasibility.some(x=>x.result.status!=='FEASIBLE'))return{accepted:false,reason:'SELECTED_ACTION_NOT_FEASIBLE',feasibility};
+  const plans=[];
+  for(const a of selected){
+    const p=this.projects.plan({...d,countryId:country,context},a)||this.transactions.plan({...d,countryId:country,context},a)||this.policyLifecycle.plan({...d,countryId:country,context},a);
+    if(p){plans.push(p);this.cons.preview(d,a);}
+  }
+  if(!plans.length)return{accepted:false,reason:'NO_EXECUTABLE_PLAN'};
+  const owner=String(cmd.sourceMinistryId||'cabinet'),turn=NUM(ctx?.simulationTurn)??TURN(),batch={
+    batchId:'EXEC-'+turn+'-'+country+'-'+sc.id+'-'+String(d.decisionId||'').replace(/[^A-Z0-9_-]/gi,''),countryId:country,decisionId:d.decisionId||null,
+    scenarioId:d.scenarioId,plans,status:'PENDING_EXTERNAL_EXECUTOR',executionApplied:false,
+    executorBoundary:'EXTERNAL_MINISTRY_OR_PROJECT_TRANSACTION_POLICY_ENGINE',turn,stateMutationAuthority:false,feasibility
+  };
+  this.tr.add({layer:'L27_RUNTIME_DEBUG',type:'EXECUTION_STARTED',batchId:batch.batchId,executionApplied:false,planCount:plans.length});
+  try{
+    if(ctx?.stateTransaction){
+      const key=owner+'.autonomousExecutionQueue',q=ctx.stateTransaction.get(key);
+      ctx.stateTransaction.set(key,Array.isArray(q)?q.slice(-127).concat([batch]):[batch]);
+      ctx.stateTransaction.set(owner+'.autonomousLastExecution',batch);
     }
-    const batch={
-      batchId:'EXEC-'+String(ctx.simulationTurn||TURN())+'-'+ID(d.countryId||cmd?.countryId),
-      countryId:ID(cmd?.countryId||d.countryId),
-      decisionId:d.decisionId||null,
-      scenarioId:d.scenarioId||null,
-      plans,
-      status:'PENDING_EXTERNAL_EXECUTOR',
-      executionApplied:false,
-      executorBoundary:'EXTERNAL_MINISTRY_OR_PROJECT_TRANSACTION_POLICY_ENGINE',
-      turn:NUM(ctx.simulationTurn)??TURN()
-    };
-    this.tr.add({layer:'L27_RUNTIME_DEBUG',type:'EXECUTION_STARTED',batchId:batch.batchId,executionApplied:false,planCount:plans.length});
-    try{
-      const owner=String(cmd?.sourceMinistryId||'cabinet');
-      if(ctx.stateTransaction){
-        const q=ctx.stateTransaction.get(owner+'.autonomousExecutionQueue');
-        ctx.stateTransaction.set(owner+'.autonomousExecutionQueue',Array.isArray(q)?q.slice(-127).concat([batch]):[batch]);
-        ctx.stateTransaction.set(owner+'.autonomousLastExecution',batch);
-      }
-      ctx.emitEvent?.('OMEGA_AUTONOMOUS_EXECUTION_REQUESTED',batch);
-      this.tr.add({layer:'L27_RUNTIME_DEBUG',type:'EXECUTION_HANDOFF',batchId:batch.batchId});
-      return{accepted:true,batch};
-    }catch(e){
-      this.lastError=String(e?.message||e);
-      return{accepted:false,error:this.lastError};
-    }
+    ctx?.emitEvent?.('OMEGA_AUTONOMOUS_EXECUTION_REQUESTED',batch);
+    this.tr.add({layer:'L27_RUNTIME_DEBUG',type:'EXECUTION_HANDOFF',batchId:batch.batchId,executorBoundary:batch.executorBoundary});
+    return{accepted:true,batch:CLONE(batch)};
+  }catch(e){
+    this.lastError=String(e?.message||e);this.tr.add({layer:'L27_RUNTIME_DEBUG',type:'EXECUTION_HANDOFF_FAILED',error:this.lastError});
+    return{accepted:false,error:this.lastError};
   }
-  async countries(){
-    let ids=this.idr.list();
-    if(ids.length)return ids;
-    await this.gw.load('countries');
-    this.idr.rebuild();
-    return this.idr.list();
-  }
-  async evaluate(c,t=TURN()){
-    const s=this.kernel.snap(c,t);
-    s.rawState=WORLD();
-    this.graph.build();
-    const demand=this.demand.run(s),
-          supply=this.supply.run(s),
-          gap=this.gap.run(s),
-          events=this.events.run(s.countryId),
-          scenarios=this.scenario.run(s,gap,events),
-          mode=this.scheduler.mode(gap,scenarios);
-    if(!this.scheduler.should(s.countryId,t,mode))return{status:'SKIPPED',countryId:s.countryId,mode};
-    const caps=this.cap.forCountry(s.countryId);
-    for(const[k,o]of Object.entries(s.signals))if(o.status==='AVAILABLE')caps[k]=true;
-    const subs={
-      trade:this.trade.run(s),
-      finance:this.finance.run(s),
-      infra:this.infra.run(s),
-      population:this.population.run(s),
-      technology:this.technology.run(s),
-      policy:this.policyEngine.run(s)
-    };
-    const ctx={
-      countryId:s.countryId,
-      turn:t,
-      signals:s.signals,
-      demand,supply,gapPressure:gap,scenarios,events,subsystems:subs,
-      countryCapabilities:caps
-    };
-    this.forecast.observe(s);
-    const goals=this.goal.run(s.countryId,scenarios,gap);
-    const decisions=this.decision.run(s.countryId,goals,ctx);
-    for(const d of decisions)this.mem.decision(s.countryId,d);
-    this.forecast.setProjects(this.projects.list(s.countryId));
-    const forecasts=this.forecast.run(s,gap),
-          reconciliation=this.reconcile.run(s),
-          development=this.development(s,gap);
-    this.tr.add({
-      layer:'L26_EVIDENCE_TRACE',
-      countryId:s.countryId,
-      turn:t,
-      availableSignals:Object.values(s.signals).filter(x=>x.status==='AVAILABLE').length,
-      sources:Object.values(s.signals).filter(x=>x.source).map(x=>x.source)
-    });
-    const out={
-      status:'COMPLETE',
-      countryId:s.countryId,turn:t,mode,identity:s.identity,
-      signals:s.signals,demand,supply,gapPressure:gap,scenarios,goals,decisions,
-      forecasts,reconciliation,development,events,subsystems:subs
-    };
-    this.runs.set(s.countryId,out);
-    this.scheduler.commit(s.countryId,t);
-    this.history.push({countryId:s.countryId,turn:t,scenarios:scenarios.map(x=>x.id),decisions:decisions.map(x=>x.decisionId)});
-    if(this.history.length>MAX)this.history.shift();
-    return out;
-  }
-  development(s,g){
-    const available=k=>s.signals[k]?.status==='AVAILABLE';
-    return{
-      emergent:true,
-      conditionSet:{
-        basicNeeds:['FOOD_SUPPLY','HOUSING_SUPPLY','HEALTH_CAPACITY'].filter(available),
-        productiveCapacity:['OUTPUT','PRODUCTIVITY','LABOR_AVAILABILITY','CAPITAL_AVAILABILITY'].filter(available),
-        humanCapital:['EDUCATION_CAPACITY','TECHNOLOGY_CAPABILITY'].filter(available),
-        infrastructure:['INFRASTRUCTURE_CAPACITY'].filter(available),
-        financialStability:['CAPITAL_AVAILABILITY','LIQUIDITY'].filter(available),
-        resilience:['HEALTH_CAPACITY','INFRASTRUCTURE_CAPACITY'].filter(available)
-      },
-      currentPressures:g.semantic.map(x=>x.signal)
-    };
-  }
-  async turnCommitted(t=TURN()){
+}
+
+async turnCommitted(t=TURN()){
     if(!this.running)return{status:'SKIPPED',reason:'STOPPED'};
     try{
       this.bind();
@@ -463,28 +467,22 @@ class Runtime{
     return true;
   }
   diag(){
-    return{
-      version:V,schemaVersion:SV,layers:LAYERS.length,runtimeLayers:LAYERS.length,
-      scenarioCount:SCENARIOS.length,directionalSignals:Object.keys(DIR).length,
-      actionTypes:Object.keys(ACTIONS).length,registeredCommands:this.bound.size,
-      trackedCountries:this.runs.size,lastTurn:this.lastTurn,lastError:this.lastError,
-      traceEntries:this.tr.a.length,traceLayers:[...new Set(this.tr.a.map(x=>x.layer).filter(Boolean))],
-      datasets:this.gw.status(),capabilities:this.cap.snapshot(),
-      contracts:{
-        dataIntake:true,schemaDiscovery:true,identity:true,fieldMeaning:true,
-        unitDetection:true,relationshipDetection:true,runtimeBinding:true,
-        capabilityRegistry:true,stateHydration:true,dependencyGraph:true,
-        demand:true,supplyCapacity:true,needGapPressure:true,scenario:true,
-        goalPriority:true,decision:true,feasibility:true,projectLifecycle:true,
-        transactionLifecycle:true,policyLifecycle:true,tradeMarket:true,finance:true,
-        infraLogistics:true,populationLabor:true,techProductivity:true,
-        policyInstitution:true,eventShock:true,consequence:true,forecast:true,
-        memoryAdaptation:true,multiRateScheduler:true,stateReconciliation:true,
-        evidenceTrace:true,runtimeDebug:true
-      }
-    };
-  }
-  save(){
+  const coverage=new Set(this.tr.a.map(x=>x.layer).filter(Boolean)),profiles=[...this.gw.p.values()];
+  return{version:V,schemaVersion:SV,layers:LAYERS.length,runtimeLayers:coverage.size,scenarioCount:SCENARIOS.length,directionalSignals:Object.keys(DIR).length,
+    actionTypes:Object.keys(ACTIONS).length,registeredCommands:this.bound.size,trackedCountries:this.runs.size,lastTurn:this.lastTurn,lastError:this.lastError,traceEntries:this.tr.a.length,
+    traceLayers:[...coverage],datasets:this.gw.status(),capabilities:this.cap.snapshot(),contracts:{
+      dataIntake:typeof this.gw.set==='function',schemaDiscovery:profiles.every(p=>!!p.schema),identity:this.gw.get('countries')===undefined||this.idr.map.size>0,
+      fieldMeaning:profiles.some(p=>Object.keys(p.fieldMeaning||{}).length>0),unitDetection:profiles.some(p=>Object.keys(p.units||{}).length>0),relationshipDetection:true,
+      runtimeBinding:this.bound.size>0||!IO(),capabilityRegistry:this.cap.m.size>0||profiles.length===0,stateHydration:typeof this.kernel.snap==='function',
+      dependencyGraph:this.graph.count()>0,demand:!!this.demand,supplyCapacity:!!this.supply,needGapPressure:!!this.gap,scenario:!!this.scenario,goalPriority:!!this.goal,
+      decision:!!this.decision,feasibility:!!this.feas,projectLifecycle:!!this.projects,transactionLifecycle:!!this.transactions,policyLifecycle:!!this.policyLifecycle,
+      tradeMarket:!!this.trade,finance:!!this.finance,infraLogistics:!!this.infra,populationLabor:!!this.population,techProductivity:!!this.technology,
+      policyInstitution:!!this.policyEngine,eventShock:!!this.events,consequence:!!this.cons,forecast:!!this.forecast,memoryAdaptation:!!this.mem,
+      multiRateScheduler:!!this.scheduler,stateReconciliation:!!this.reconcile,evidenceTrace:coverage.has('L26_EVIDENCE_TRACE'),runtimeDebug:coverage.has('L27_RUNTIME_DEBUG')
+    }};
+}
+
+save(){
     return{
       schemaVersion:SV,version:V,history:CLONE(this.history),runs:CLONE(Object.fromEntries(this.runs)),
       memory:this.mem.save(),forecast:this.forecast.save(),scheduler:this.scheduler.save(),
