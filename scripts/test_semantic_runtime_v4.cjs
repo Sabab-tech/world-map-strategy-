@@ -44,6 +44,13 @@ vm.runInNewContext(resourceBridgeSource, sandbox, { filename: 'omega_resource_se
   assert.ok(identity, 'Canonical identity registry must load');
   assert.ok(resourceBridge, 'Resource semantic bridge must load');
 
+  const countryInitialized = await countryBridge.init();
+  assert.equal(countryInitialized, true, 'Country semantic bridge must initialize before diagnostics');
+  if (typeof resourceBridge.init === 'function') {
+    const resourceInitialized = await resourceBridge.init();
+    assert.equal(resourceInitialized, true, 'Resource semantic bridge must initialize after canonical country bridge');
+  }
+
   const countryDiag = identity.diagnostics();
   assert.equal(countryDiag.ready, true, JSON.stringify(countryDiag));
   assert.equal(countryDiag.countryCount, 249, `Expected exactly 249 canonical country IDs, got ${countryDiag.countryCount}`);
