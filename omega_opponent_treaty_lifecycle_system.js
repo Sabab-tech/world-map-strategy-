@@ -86,9 +86,7 @@
     }
     if(decision==='ACCEPT'){
       n.status='ACCEPTED';n.stage='RATIFICATION_PENDING';n.counterpartyDecision='ACCEPT';n.acceptedTurn=turn();next[target]=n;ctx.stateTransaction.set('foreign.negotiations',next);
-      command('foreign','OMEGA_TREATY_ACTIVATE',c,{negotiationId:p.negotiationId||p.decisionId||null,targetCountryId:target,terms:n.counterTerms||n.terms||{},treatyType:n.treatyType||'BILATERAL_AGREEMENT'});
-      command('foreign','OMEGA_TREATY_ACTIVATE',target,{negotiationId:p.negotiationId||p.decisionId||null,targetCountryId:c,terms:n.counterTerms||n.terms||{},treatyType:n.treatyType||'BILATERAL_AGREEMENT'});
-      return{accepted:true,status:'ACCEPTED'};
+      return{accepted:true,status:'ACCEPTED',negotiation:n};
     }
     return{accepted:false,reason:'UNKNOWN_TREATY_RESPONSE'};
   }
@@ -128,8 +126,10 @@
           const d=reviewResult.result?.decision;
           if(!d||d.decision==='WAITING_DATA')continue;
           const requesterResult=command('foreign','OMEGA_TREATY_APPLY_NEGOTIATION_RESPONSE',c,{targetCountryId:target,decision:d.decision,terms:d.terms||n.terms||{},negotiationId:req.negotiationId});
-          if(d.decision==='ACCEPT') {
-            /* The requester accepts the counterpart's acceptance, activating both sides through two owner transactions. */
+          if(d.decision==='ACCEPT'&&requesterResult?.status==='APPLIED'){
+            const terms=d.terms||n.terms||{},treatyType=n.treatyType||'BILATERAL_AGREEMENT';
+            command('foreign','OMEGA_TREATY_ACTIVATE',c,{negotiationId:req.negotiationId,targetCountryId:target,terms,treatyType});
+            command('foreign','OMEGA_TREATY_ACTIVATE',target,{negotiationId:req.negotiationId,targetCountryId:c,terms,treatyType});
           } else if(d.decision==='COUNTER') {
             emit('OMEGA_TREATY_COUNTER_OFFERED',c,{targetCountryId:target,terms:d.terms||{},negotiationId:req.negotiationId});
           }
