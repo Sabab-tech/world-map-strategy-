@@ -155,7 +155,7 @@
   function event(type,country,payload={},causationId=null,correlationId=null){
     const inter=g.Omega?.MinistryInteroperability||g.OmegaMinistryInteroperability;
     const route=EVENT_ROUTES[type];
-    const body={...clone(payload),countryId:id(country),eventType:type,causationId:causationId?String(causationId):null,correlationId:correlationId?String(correlationId):null};
+    const body={...clone(payload),countryId:canonicalId(country),eventType:type,causationId:causationId?String(causationId):null,correlationId:correlationId?String(correlationId):null};
     try{
       if(inter?.emitEvent && route){
         const created=inter.emitEvent(type,id(country),route.owner,body,{causationId,correlationId,turn:turn()});
@@ -180,6 +180,7 @@
     const direct=id(value);
     return direct?{id:direct,raw:null,authority:'UNVERIFIED_INPUT'}:null;
   }
+  function canonicalId(value){const hit=canonicalCountry(value);return hit?.id||id(value);}
 
   function surfaces(countryId){
     const c=canonicalCountry(countryId),r=c?.raw||{};
@@ -207,7 +208,7 @@
 
   function readState(countryId,path){
     const provider=g.Omega?.MinistryStateProvider?.instance||g.OmegaMinistryStateProvider?.instance;
-    const cid=id(countryId);
+    const cid=canonicalId(countryId);
     if(provider?.describe){
       try{
         const d=provider.describe(cid,path);
@@ -228,7 +229,7 @@
   }
 
   function resourceRuntime(countryId){
-    const cid=id(countryId);
+    const cid=canonicalId(countryId);
     try{
       const engine=g.ResourceMinistryEngine;
       if(engine?.getIntegratedResourceState){
@@ -249,7 +250,7 @@
   }
 
   function relationRecord(countryId,targetId){
-    const a=id(countryId),b=id(targetId);
+    const a=canonicalId(countryId),b=canonicalId(targetId);
     const exact=[
       readState(a,'foreign.relations')?.value?.[b],
       readState(a,'trade.relations')?.value?.[b],
@@ -270,7 +271,7 @@
   }
 
   function existingReservations(countryId){
-    const cid=id(countryId);
+    const cid=canonicalId(countryId);
     const state=g.Game?.state||g.gameState||{};
     const ledger=state?.cabinet?.[cid]?.autonomyReservations;
     if(!Array.isArray(ledger))return[];
@@ -278,7 +279,7 @@
   }
 
   function activeProjects(countryId){
-    const cid=id(countryId);
+    const cid=canonicalId(countryId);
     const state=g.Game?.state||g.gameState||{};
     const r=state?.projects?.[cid]?.registry;
     if(Array.isArray(r))return r.filter(x=>!['COMPLETED','CANCELLED','BLOCKED'].includes(String(x.status||'').toUpperCase()));
@@ -327,11 +328,11 @@
       const x=readState(countryId,p);
       exact.push(x);
     }
-    return{subject,primary:route.primary,dependencies:route.depends.slice(),countryId:id(countryId),targetCountryId:targetId?id(targetId):null,checks:exact,files:[...(FILE_ROUTES[route.primary]?.files||[])]};
+    return{subject,primary:route.primary,dependencies:route.depends.slice(),countryId:canonicalId(countryId),targetCountryId:targetId?canonicalId(targetId):null,checks:exact,files:[...(FILE_ROUTES[route.primary]?.files||[])]};
   }
 
   function collectEvidence(countryId,subjects=[],targetId=null){
-    const out={countryId:id(countryId),targetCountryId:targetId?id(targetId):null,subjects:{},generatedTurn:turn()};
+    const out={countryId:canonicalId(countryId),targetCountryId:targetId?canonicalId(targetId):null,subjects:{},generatedTurn:turn()};
     for(const subject of subjects)out.subjects[subject]=sourceFor(subject,countryId,targetId);
     event('OMEGA_AUTONOMY_EVIDENCE_COLLECTED',countryId,{
       targetCountryId:out.targetCountryId,
@@ -640,7 +641,7 @@
   }
 
   function supplierPrice(countryId,resourceId){
-    const target=id(countryId),rid=String(resourceId||'').trim();
+    const target=canonicalId(countryId),rid=String(resourceId||'').trim();
     const explicitCandidates=[
       readState(target,'trade.marketPrices.'+rid).value,
       readState(target,'trade.marketPrice.'+rid).value,
@@ -662,7 +663,7 @@
     }catch(_){}
     const bridge=resourceBridge();
     try{
-      const q=bridge?.queryResource?.({resourceId,countryId:id(countryId),operation:'LOCATE'});
+      const q=bridge?.queryResource?.({resourceId,countryId:canonicalId(countryId),operation:'LOCATE'});
       const first=q?.records?.[0];
       const raw=first?.raw||null;
       const candidates=[read(raw,'marketPrice'),read(raw,'market_price'),read(raw,'price'),read(raw,'unitPrice'),read(raw,'unit_price'),read(raw,'pricing.unitPrice')];
@@ -713,7 +714,7 @@
   }
 
   function decide(decision){
-    const countryId=id(decision?.countryId);
+    const countryId=canonicalId(decision?.countryId);
     const candidates=candidateActions(decision);
     const evaluations=candidates.map(a=>candidateEvaluate(countryId,decision,a));
     const ready=evaluations.filter(x=>x.status==='READY');
@@ -1172,7 +1173,7 @@
   }
 
   function threatFusion(countryId,targetCountryId=null){
-    const cid=id(countryId),target=targetCountryId?id(targetCountryId):null;
+    const cid=canonicalId(countryId),target=targetCountryId?id(targetCountryId):null;
     const raw=target?relationRecord(cid,target):null;
     const threats=readState(cid,'intelligence.threats').value;
     const sources=readState(cid,'intelligence.sources').value;
@@ -1224,7 +1225,7 @@
   }
 
   function treatyNegotiationStart(countryId,targetCountryId,details={}){
-    const c=id(countryId),target=id(targetCountryId);
+    const c=canonicalId(countryId),target=canonicalId(targetCountryId);
     if(!target)return{accepted:false,reason:'TARGET_COUNTRY_REQUIRED'};
     const relation=relationRecord(c,target);
     if(!relation)return{accepted:false,reason:'FOREIGN_RELATION_NOT_OBSERVED'};
@@ -1413,7 +1414,7 @@
   function enqueue(route,t){
     const sim=getSimulation();
     if(!sim?.enqueueCommand)return null;
-    const country=id(route.countryId);
+    const country=canonicalId(route.countryId);
     const command={
       commandId:'OAS-'+String(t)+'-'+country+'-'+String(route.decisionId||route.scenarioId||'AUTO'),
       commandType:'OMEGA_AUTONOMY_BUNDLE',
@@ -1454,14 +1455,14 @@
         try{sim?.enqueueCommand?.({
           commandId:'OAS-TICK-'+turn()+'-'+id(country),
           commandType:'OMEGA_AUTO_PROJECT_TICK',actionId:'OMEGA_AUTO_PROJECT_TICK',
-          sourceMinistryId:'projects',countryId:id(country),payload:{countryId:id(country)},options:{origin:'OMEGA_AUTONOMY_PROJECT_CLOCK'}
+          sourceMinistryId:'projects',countryId:canonicalId(country),payload:{countryId:canonicalId(country)},options:{origin:'OMEGA_AUTONOMY_PROJECT_CLOCK'}
         });}catch(_){}
       }
       if(Array.isArray(state?.military?.[id(country)]?.trainingQueue)&&state.military[id(country)].trainingQueue.some(x=>x.status==='IN_TRAINING')){
         try{sim?.enqueueCommand?.({
           commandId:'OAS-MIL-TICK-'+turn()+'-'+id(country),
           commandType:'OMEGA_AUTO_MILITARY_TICK',actionId:'OMEGA_AUTO_MILITARY_TICK',
-          sourceMinistryId:'military',countryId:id(country),payload:{countryId:id(country)},options:{origin:'OMEGA_AUTONOMY_MILITARY_CLOCK'}
+          sourceMinistryId:'military',countryId:canonicalId(country),payload:{countryId:canonicalId(country)},options:{origin:'OMEGA_AUTONOMY_MILITARY_CLOCK'}
         });}catch(_){}
       }
     }
@@ -1502,24 +1503,25 @@
   }
   function findDataSources(subject,countryId,targetId=null){
     const route=sourceFor(String(subject),countryId,targetId);
-    return{subject:String(subject),countryId:id(countryId),targetCountryId:targetId?id(targetId):null,primaryMinistry:route.primary||null,dependentMinistries:route.dependencies||[],authoritativePaths:(route.checks||[]).filter(x=>x?.authority||x?.availability==='AVAILABLE').map(x=>({path:x.path,source:x.source,availability:x.availability})),files:route.files||[],routeStatus:route.primary?'REGISTERED':'UNKNOWN'};
+    return{subject:String(subject),countryId:canonicalId(countryId),targetCountryId:targetId?canonicalId(targetId):null,primaryMinistry:route.primary||null,dependentMinistries:route.dependencies||[],authoritativePaths:(route.checks||[]).filter(x=>x?.authority||x?.availability==='AVAILABLE').map(x=>({path:x.path,source:x.source,availability:x.availability})),files:route.files||[],routeStatus:route.primary?'REGISTERED':'UNKNOWN'};
   }
 
-  function apiRouteSubject(subject,countryId,targetId=null){return clone(sourceFor(String(subject),countryId,targetId));}
-  function apiPlanDecision(decision){return clone(decide(clone(decision||{})));}
+  function apiRouteSubject(subject,countryId,targetId=null){return clone(sourceFor(String(subject),canonicalId(countryId),targetId?canonicalId(targetId):null));}
+  function apiPlanDecision(decision){const input=clone(decision||{});if(input.countryId)input.countryId=canonicalId(input.countryId);if(input.targetCountryId)input.targetCountryId=canonicalId(input.targetCountryId);return clone(decide(input));}
   function apiRouteDecision(decision,t=turn()){
-    const r=decide(clone(decision||{}));
+    const input=clone(decision||{});if(input.countryId)input.countryId=canonicalId(input.countryId);if(input.targetCountryId)input.targetCountryId=canonicalId(input.targetCountryId);
+    const r=decide(input);
     if(r.selectedAction)return{status:'READY_TO_QUEUE',route:r,command:enqueue(r,t)};
     return{status:r.status,route:r,command:null};
   }
   function apiImportPlan(countryId,resourceId,quantity){
-    const d={decisionId:'MANUAL-IMPORT-'+turn()+'-'+id(countryId),countryId:id(countryId),scenarioId:'RESOURCE_DEFICIT',
+    const d={decisionId:'MANUAL-IMPORT-'+turn()+'-'+id(countryId),countryId:canonicalId(countryId),scenarioId:'RESOURCE_DEFICIT',
       runtimeMeasurement:{resourceId,required:num(quantity),available:0,gap:num(quantity),selected:{action:'IMPORT',quantity:num(quantity)}}};
     return apiPlanDecision(d);
   }
-  function apiStartTreaty(countryId,targetCountryId,details={}){return treatyNegotiationStart(countryId,targetCountryId,details);}
-  function apiThreat(countryId,targetCountryId=null){return threatFusion(countryId,targetCountryId);}
-  function apiDispatch(action,countryId,payload={}){const a=String(action||'').toUpperCase();const c=id(countryId);const owner=
+  function apiStartTreaty(countryId,targetCountryId,details={}){return treatyNegotiationStart(canonicalId(countryId),canonicalId(targetCountryId),details);}
+  function apiThreat(countryId,targetCountryId=null){return threatFusion(canonicalId(countryId),targetCountryId?canonicalId(targetCountryId):null);}
+  function apiDispatch(action,countryId,payload={}){const a=String(action||'').toUpperCase();const c=canonicalId(countryId);const owner=
     a==='OMEGA_AUTO_HOUSING_COMMISSION'?'interior':
     a==='OMEGA_AUTO_FACTORY_COMMISSION'?'economy':
     a==='OMEGA_AUTO_MILITARY_FACILITY_COMMISSION'?'military':
