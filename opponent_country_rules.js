@@ -188,11 +188,18 @@
       this.cache=new Map();
       this.pending=new Map();
       this.loadedTurn=new Map();
+      this.failedTurn=new Map();
       this.basePath=String(options.basePath||'').trim();
       this.fetchImpl=options.fetchImpl||global.fetch?.bind(global)||null;
     }
     descriptor(id){return clone(this.manifest[String(id)]);}
-    set(id,data,turn=getCurrentTurn()){const key=String(id);this.cache.set(key,clone(data));this.loadedTurn.set(key,number(turn)??0);return true;}
+    set(id,data,turn=getCurrentTurn()){
+      const key=String(id);
+      this.cache.set(key,clone(data));
+      this.loadedTurn.set(key,number(turn)??0);
+      this.failedTurn.delete(key);
+      return true;
+    }
     get(id){const value=this.cache.get(String(id));return value===undefined?undefined:clone(value);}
     async load(id,options={}){
       const key=String(id||'');
@@ -200,16 +207,25 @@
       const cached=this.cache.get(key),loadedAt=this.loadedTurn.get(key),now=number(options.turn)??getCurrentTurn();
       if(cached!==undefined&&loadedAt!==undefined&&now-loadedAt<=DATA_CACHE_TTL_TURNS)return clone(cached);
       if(this.pending.has(key))return clone(await this.pending.get(key));
+      const failedAt=this.failedTurn.get(key);
+      if(failedAt!==undefined&&now-failedAt<=DATA_CACHE_TTL_TURNS){
+        throw new Error('OPPONENT_DATASET_CACHED_UNAVAILABLE:'+key);
+      }
       const descriptor=this.manifest[key];
       if(!descriptor)throw new Error('OPPONENT_DATASET_NOT_REGISTERED:'+key);
       if(!this.fetchImpl)throw new Error('OPPONENT_DATASET_FETCH_UNAVAILABLE:'+key);
       const url=this.basePath?this.basePath.replace(/\/$/,'')+'/'+descriptor.path:descriptor.path;
       const task=(async()=>{
-        const response=await this.fetchImpl(url,{cache:'no-store'});
-        if(!response?.ok)throw new Error('OPPONENT_DATASET_FETCH_FAILED:'+key);
-        const json=await response.json();
-        this.set(key,json,now);
-        return clone(json);
+        try{
+          const response=await this.fetchImpl(url,{cache:'no-store'});
+          if(!response?.ok)throw new Error('OPPONENT_DATASET_FETCH_FAILED:'+key);
+          const json=await response.json();
+          this.set(key,json,now);
+          return clone(json);
+        }catch(error){
+          if(descriptor.required!==true)this.failedTurn.set(key,now);
+          throw error;
+        }
       })();
       this.pending.set(key,task);
       try{return clone(await task);}finally{this.pending.delete(key);}
@@ -224,11 +240,17 @@
     }
     saveState(){
       const datasets={};for(const [id,data] of this.cache.entries())datasets[id]=clone(data);
-      return {schemaVersion:1,datasets,loadedTurn:Object.fromEntries(this.loadedTurn.entries())};
+      return {
+        schemaVersion:1,
+        datasets,
+        loadedTurn:Object.fromEntries(this.loadedTurn.entries()),
+        failedTurn:Object.fromEntries(this.failedTurn.entries())
+      };
     }
     restoreState(snapshot){
       this.cache=new Map(Object.entries(snapshot?.datasets||{}).map(([k,v])=>[k,clone(v)]));
       this.loadedTurn=new Map(Object.entries(snapshot?.loadedTurn||{}).map(([k,v])=>[k,number(v)??0]));
+      this.failedTurn=new Map(Object.entries(snapshot?.failedTurn||{}).map(([k,v])=>[k,number(v)??0]));
       this.pending.clear();
       return true;
     }
