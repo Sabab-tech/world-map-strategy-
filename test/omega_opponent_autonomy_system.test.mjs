@@ -151,7 +151,12 @@ assert.equal(project.status,'APPLIED');
 globalThis.Game.state.simulation.turn=2;
 const projectTick=autonomy.dispatch('OMEGA_AUTO_PROJECT_TICK','BD',{});
 assert.equal(projectTick.status,'APPLIED');
-assert(globalThis.Game.state.projects.BD.registry.some(x=>x.projectId==='HOUSE-PROJECT-1'&&x.status==='COMPLETED'));
+assert(globalThis.Game.state.projects.BD.registry.some(x=>x.projectId==='HOUSE-PROJECT-1'&&x.status==='COMMISSIONING'&&x.settlementReady===true));
+const projectFinalize=autonomy.dispatch('OMEGA_AUTO_PROJECT_FINALIZE','BD',{
+  projectId:'HOUSE-PROJECT-1',decisionId:'TEST-PROJECT',reservationId:'TEST-RES-PROJECT',correlationId:'TEST-PROJECT'
+});
+assert.equal(projectFinalize.status,'APPLIED');
+assert(globalThis.Game.state.projects.BD.registry.some(x=>x.projectId==='HOUSE-PROJECT-1'&&x.status==='COMPLETED'&&x.phase==='OPERATIONAL'));
 assert.equal(globalThis.Game.state.cities.BD.housing.available,1250);
 assert.equal(globalThis.Game.state.resource.BD.inventory.steel,9950);
 
