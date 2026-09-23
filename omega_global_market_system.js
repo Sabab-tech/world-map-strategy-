@@ -123,10 +123,16 @@
     const clearing=matched>0?Number(((lastBid.priceUsd+lastAsk.priceUsd)/2).toFixed(8)):null;
     const bestBid=bids[0]?.priceUsd??null,bestAsk=asks[0]?.priceUsd??null;
     const status=clearing!==null?'CLEARED':(bestBid!==null||bestAsk!==null?'NO_CROSS':'NO_ORDERS');
-    return{resourceId:rid,status,numeraire:'USD',clearingPriceUsd:clearing,bestBidUsd:bestBid,bestAskUsd:bestAsk,matchedQuantity:matched,bidDepth:bids.reduce((s,x)=>s+(n(x.quantity)||0),0),askDepth:asks.reduce((s,x)=>s+(n(x.quantity)||0),0),
+    const matchedNotional=matches.reduce((s,x)=>s+(x.quantity||0)*((x.bidPriceUsd+x.askPriceUsd)/2),0);
+    const vwap=matched>0?Number((matchedNotional/matched).toFixed(8)):null;
+    const spread=bestBid!==null&&bestAsk!==null?Number((bestAsk-bestBid).toFixed(8)):null;
+    const historyPrices=Array.isArray(arguments?.[2])?arguments[2]:[];
+    return{resourceId:rid,status,numeraire:'USD',clearingPriceUsd:clearing,bestBidUsd:bestBid,bestAskUsd:bestAsk,matchedQuantity:matched,
+      bidDepth:bids.reduce((s,x)=>s+(n(x.quantity)||0),0),askDepth:asks.reduce((s,x)=>s+(n(x.quantity)||0),0),
       priceDiscovery:clearing!==null?'ORDER_BOOK_CROSSING':(bestBid!==null&&bestAsk!==null?'NEGOTIATION_RANGE':ref?'REFERENCE_ONLY':'UNAVAILABLE'),
-      referencePrice:ref?.price??null,referenceUnit:ref?.unit??null,referenceSource:ref?.source??null,matches,microstructure:{bidCount:bids.length,askCount:asks.length,referenceAskCount:asks.filter(x=>x.referenceOnly).length},
-      generatedTurn:turn()};
+      referencePrice:ref?.price??null,referenceUnit:ref?.unit??null,referenceSource:ref?.source??null,matches,vwapUsd:vwap,spreadUsd:spread,
+      microstructure:{bidCount:bids.length,askCount:asks.length,referenceAskCount:asks.filter(x=>x.referenceOnly).length},
+      generatedTurn:turn(),orderBookDepth:{bid:bids.length,ask:asks.length}};
   }
   function rebuild(){
     const markets={};
