@@ -63,7 +63,7 @@
     const sourceEvent=String(p.sourceEvent||p.operation||'UNKNOWN');
     const chainId=String(p.chainId||p.correlationId||p.decisionId||('CHAIN-'+turn()+'-'+c+'-'+hash({sourceEvent,payload:p.payload||p})));
     const previous=Array.isArray(root.byCountry[c])?root.byCountry[c].slice():[];
-    const parentTraceId=p.parentTraceId||previous.find(x=>x.chainId===chainId)?.traceId||null;
+    const parentTraceId=p.parentTraceId||[...previous].reverse().find(x=>x.chainId===chainId)?.traceId||null;
     root.sequence=n(root.sequence)||0;
     root.sequence+=1;
     const traceId=String(p.traceId||('MEMTRACE-'+turn()+'-'+c+'-'+root.sequence+'-'+hash({chainId,sourceEvent,sequence:root.sequence})));
