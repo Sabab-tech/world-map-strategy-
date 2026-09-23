@@ -122,9 +122,7 @@
       [/institution/i,'INSTITUTION'],[/city/i,'CITY'],[/project/i,'PROJECT']
     ];
     for(const s of sampleObjects(raw,96))for(const f of scalarFields(s.value)){
-      if(COUNTRY_KEY.test(f.key))types.add('COUNTRY');
-      for(const h of hints)if(h[0].test(f.key))types.add(h[1]);
-      if(canonicalResolve(f.value,'COUNTRY'))types.add('COUNTRY');
+      if(COUNTRY_KEY.test(f.key)){types.add('COUNTRY');} else {for(const h of hints)if(h[0].test(f.key))types.add(h[1]);} if((COUNTRY_KEY.test(f.key)||/^(country|nation|iso2|iso3|countrycode|country_code|countryid|country_id)$/i.test(f.key))&&canonicalResolve(f.value,'COUNTRY'))types.add('COUNTRY'); if(O(s.value)&&s.value.entityType)types.add(U(s.value.entityType));
     }
     return [...types];
   }
@@ -188,7 +186,12 @@
       const keyMatch=schema.identityFields.some(x=>N(x)===N(f.key)||N(x)===N(f.path));
       const likely=keyMatch||ID_KEY.test(f.key)||COUNTRY_KEY.test(f.key)||NAME_KEY.test(f.key);
       if(!likely)continue;
-      for(const type of types){
+      let fieldTypes=types;
+      if(COUNTRY_KEY.test(f.key))fieldTypes=types.filter(x=>U(x)==='COUNTRY');
+      else if(/^(mine|deposit|facility|project|company|organization|institution)_?id$/i.test(f.key))fieldTypes=types.filter(x=>U(x)===U(String(f.key).split('_')[0]));
+      else if(/^(resource|commodity|resource_type)_?id$/i.test(f.key))fieldTypes=types.filter(x=>U(x)==='RESOURCE');
+      if(!fieldTypes.length)fieldTypes=types;
+      for(const type of fieldTypes){
         const t=U(type);
         if(t==='COUNTRY'){
           const hit=canonicalResolve(f.value,'COUNTRY');
