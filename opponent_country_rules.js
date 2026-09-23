@@ -171,7 +171,8 @@ class Kernel{
     return out;
   }
   snap(c,t){
-    const cid=ID(c),state=WORLD(),sig={};
+    const resolved=this.id.resolve(c);
+    const cid=ID(resolved?.id||c),state=WORLD(),sig={};
     for(const k of Object.keys(SIGNALS)){const r=this.readSignal(state,cid,k),v=r?.value;
       sig[k]={signalId:k,value:v===undefined?null:CLONE(v),raw:v===undefined?null:CLONE(v),direction:DIRECTION(v),status:v===undefined||v===null?'UNAVAILABLE':'AVAILABLE',
         source:r?.source||null,provenance:r?{source:r.source,simulationTurn:t,authoritative:!!r.authoritative}:null};
@@ -189,7 +190,7 @@ class Kernel{
     if(sig.EFFECTIVE_CAPACITY.status!=='AVAILABLE'){const pc=n('PRODUCTION_CAPACITY');if(pc!==null){const ic=n('INFRASTRUCTURE_CAPACITY'),tc=n('TRANSPORT_CAPACITY');let v=pc;const from=['PRODUCTION_CAPACITY'];if(ic!==null){v=Math.min(v,ic);from.push('INFRASTRUCTURE_CAPACITY');}if(tc!==null){v=Math.min(v,tc);from.push('TRANSPORT_CAPACITY');}sig.EFFECTIVE_CAPACITY={signalId:'EFFECTIVE_CAPACITY',value:v,raw:v,direction:null,status:'AVAILABLE',source:'DERIVED:CAPACITY_CONSTRAINTS',provenance:{derivedFrom:from}};}}
     if(sig.CAPACITY_UTILIZATION.status!=='AVAILABLE'){const o=n('OUTPUT'),c=n('EFFECTIVE_CAPACITY');if(o!==null&&c!==null&&c>0){const v=o/c;sig.CAPACITY_UTILIZATION={signalId:'CAPACITY_UTILIZATION',value:v,raw:v,direction:v>=1?'HIGH':null,status:'AVAILABLE',source:'DERIVED:OUTPUT_DIV_CAPACITY',provenance:{derivedFrom:['OUTPUT','EFFECTIVE_CAPACITY']}};}}
   }
-  getHydrated(c){return CLONE(this.hyd.get(ID(c))||null);}
+  getHydrated(c){const resolved=this.id.resolve(c);return CLONE(this.hyd.get(ID(resolved?.id||c))||null);}
 }
 function SCALAR(v){if(v&&typeof v==='object')for(const k of ['value','effective','total','available','required','demand','supply','capacity','load','target','amount','quantity']){const z=NUM(v[k]);if(z!==null)return z;}return NUM(v);}
 function RELATION(s,c,k){const d=REL[k];if(!d)return null;let a,b,ap,bp;for(const p of [d[0]]){const z=STATE_PATH(s,c,p);if(z!==undefined){a=SCALAR(z);ap=p;break;}}for(const p of [d[1]]){const z=STATE_PATH(s,c,p);if(z!==undefined){b=SCALAR(z);bp=p;break;}}return a===null||b===null?null:{left:a,right:b,leftPath:ap,rightPath:bp};}
