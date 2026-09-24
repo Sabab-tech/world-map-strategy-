@@ -11861,7 +11861,7 @@ _globalScope.GSRSK_DataFoundation = (() => {
             }
 
             _parseDeclaredReserveQuantity(reserveText, resourceTypeKey, targetUnit) {
-                const text = String(reserveText || '').replace(/,/g, ' ').replace(/\s+/g, ' ').trim();
+                const text = String(reserveText || '').replace(/,/g, '').replace(/\s+/g, ' ').trim();
                 if (!text) return null;
 
                 const rid = String(resourceTypeKey || '').replace(/^RES_TYPE:/i, '').trim().toLowerCase();
@@ -11931,7 +11931,7 @@ _globalScope.GSRSK_DataFoundation = (() => {
                 }
 
                 if (rid === 'iron_ore' && /\bcoal\b/i.test(text)) return null;
-                if (['iron_ore','rare_earth','lithium','phosphate','bauxite','nickel','cobalt','potash','coal'].includes(rid)) {
+                if (['iron_ore','rare_earth','lithium','phosphate','bauxite','nickel','cobalt','copper','potash','coal'].includes(rid)) {
                     const m = text.match(/([0-9]+(?:\.[0-9]+)?)\s*(billion|million|thousand)?\s*(?:metric\s*)?tons?/i);
                     if (!m) return null;
                     return Number(m[1]) * scale(m[2]);
