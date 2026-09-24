@@ -164,6 +164,24 @@
     return String(b?.locationNodeId||b?.nodeId||'STOCKPILE').trim();
   }
 
+  function ensureLegacyInventoryBatch(c,rid){
+    const rb=resourceBucket(c,true),stock=num(rb.inventory?.[rid]);
+    if(stock===null||stock<=0)return;
+    const existing=rb.batches.filter(b=>token(b?.resourceId||b?.materialIdentity)===token(rid))
+      .reduce((sum,b)=>sum+batchFree(b)+(num(b.inTransitQuantity)||0),0);
+    if(stock<=existing+1e-9)return;
+    const q=stock-existing;
+    const batchId='LEGACY_OPENING_'+cid(c)+'_'+String(rid).toUpperCase();
+    rb.batches.push({
+      batchId,resourceId:rid,materialIdentity:rid,quantity:q,remainingQuantity:q,
+      stage:'RAW',ownerCountryCode:cid(c),ownerCompanyId:'UNOBSERVED',
+      sourceBatchIds:[],locationNodeId:'STOCKPILE:'+cid(c),
+      provenance:{source:'LEGACY_OPENING_BALANCE',reason:'TRANSPORT_RECONCILIATION',turn:turn()}
+    });
+    rb.inventoryLedger=Array.isArray(rb.inventoryLedger)?rb.inventoryLedger:[];
+    rb.inventoryLedger.push({type:'LEGACY_OPENING_BATCH_CREATED',resourceId:rid,quantity:q,batchId,turn:turn()});
+  }
+
   function sourceAllocations(c,rid,qty,sourceNodeId){
     const rb=resourceBucket(c,true),rows=findBatchRows(rb.batches,rid);
     let remaining=qty;const allocations=[];
@@ -214,6 +232,7 @@
     const destinationNodeId=String(p.destinationNodeId||'STOCKPILE:'+destinationCountry);
     ensureNode(sourceCountry,sourceNodeId,p.sourceNodeType||'STORAGE',p.sourceNodeMeta||{});
     ensureNode(destinationCountry,destinationNodeId,p.destinationNodeType||'STORAGE',p.destinationNodeMeta||{});
+    ensureLegacyInventoryBatch(sourceCountry,rid);
     const allocation=sourceAllocations(sourceCountry,rid,qty,sourceNodeId);
     if(allocation.remaining>1e-9)return{accepted:false,reason:'SOURCE_BATCHES_NOT_LOCATED',resourceId:rid,requested:qty,located:qty-allocation.remaining};
     const invResult=decrementInventory(sourceCountry,rid,qty);
@@ -441,6 +460,7 @@
   }
 
   function onTurn(){
+    installHandlers();
     const cs=Object.keys(state().resource||state().transport||{});
     const list=[...new Set(cs.map(cid).filter(Boolean))];
     list.forEach(c=>{
@@ -452,7 +472,28 @@
     });
   }
 
+  function installHandlers(){
+    const m=interop();
+    if(!m?.registerCommandHandler)return false;
+    const defs=[
+      ['OMEGA_RESOURCE_TRANSPORT_CREATE_SHIPMENT','transport',(cmd)=>createShipment(cmd?.payload||{})],
+      ['OMEGA_RESOURCE_TRANSPORT_ADVANCE_COUNTRY','transport',(cmd)=>advanceCountry(cmd?.payload?.countryId||cmd?.countryId||'')]
+    ];
+    try{
+      for(const [type,owner,handler] of defs){
+        m.registerAction?.(type,{actionId:type,stateOwnerMinistry:owner,authority:'OMEGA_RESOURCE_TRANSPORT_RUNTIME'});
+        m.registerCommandHandler(type,owner,(cmd,ctx)=>{
+          const p=Object.assign({},cmd?.payload||{},ctx?.countryId?{countryId:ctx.countryId}:{});
+          const result=handler({payload:p});
+          return result&&result.accepted===false?result:{accepted:true,result};
+        });
+      }
+      return true;
+    }catch(_){return false;}
+  }
+
   function initialize(){
+    installHandlers();
     const cs=[...new Set(Object.keys(state().resource||{}).map(cid).filter(Boolean))];
     cs.forEach(c=>{transportBucket(c,true);deriveFacilityNodes(c);const rb=resourceBucket(c,true);for(const b of rb.batches){if(!b.locationNodeId)b.locationNodeId='STOCKPILE:'+c;}});
     installEvents();
