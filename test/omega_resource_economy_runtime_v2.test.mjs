@@ -71,8 +71,26 @@ function createContext(){
 
   const handlers=new Map();
   const stateTx=(countryId)=>({
-    get(path){ return deepGet(worldState,path); },
-    set(path,value){ deepSet(worldState,path,value); },
+    get(path){
+      const parts=String(path).split('.');
+      const domain=parts.shift();
+      const bucket=worldState[domain]&&worldState[domain][countryId];
+      if(bucket===undefined)return undefined;
+      return parts.reduce((cur,key)=>cur==null?undefined:cur[key],bucket);
+    },
+    set(path,value){
+      const parts=String(path).split('.');
+      const domain=parts.shift();
+      if(!worldState[domain])worldState[domain]={};
+      if(!worldState[domain][countryId])worldState[domain][countryId]={};
+      let cur=worldState[domain][countryId];
+      for(let i=0;i<parts.length-1;i++){
+        if(!cur[parts[i]]||typeof cur[parts[i]]!=='object')cur[parts[i]]={};
+        cur=cur[parts[i]];
+      }
+      if(parts.length)cur[parts.at(-1)]=value;
+      else worldState[domain][countryId]=value;
+    },
     _countryId:countryId
   });
 
