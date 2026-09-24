@@ -47,10 +47,64 @@
   }
   function buildKnowledge(){
     const e=engine();if(!e?.isReady)return null;
-    const profiles=e.countryProfiles&&typeof e.countryProfiles==='object'?Object.values(e.countryProfiles):[];
-    const countriesRaw=profiles.map(p=>clone(p?.identity||p)).filter(Boolean).map(p=>{
-      const x=clone(p);if(!x.iso3)x.iso3=x.countryId||x.isoCode||null;if(!x.id)x.id=x.iso3;return x;
+    const profiles=e.countryProfiles&&typeof e.countryProfiles==='object'?e.countryProfiles:{};
+    const byCountry=new Map();
+
+    Object.values(profiles).forEach(function(p){
+      if(!p||typeof p!=='object')return;
+      const raw=p.identity||p;
+      const cid=canonical(raw.iso3||raw.isoCode||raw.countryId||raw.id||p.iso3||p.countryId);
+      if(!cid)return;
+      const x=clone(raw);
+      x.iso3=x.iso3||cid;
+      x.id=x.id||cid;
+      byCountry.set(cid,x);
     });
+
+    // Resource simulation must not depend on a browser-only fetch completing.
+    // The canonical country registry is the fallback authority for the sovereign roster.
+    const reg=registry();
+    let roster=[];
+    try{
+      const exported=reg?.exportData?.();
+      if(Array.isArray(exported?.countries))roster=exported.countries;
+    }catch(_){}
+    if(!roster.length){
+      try{
+        const listed=reg?.list?.('COUNTRY')||reg?.list?.()||[];
+        roster=Array.isArray(listed)?listed:[];
+      }catch(_){}
+    }
+    roster.forEach(function(item){
+      const raw=typeof item==='object'?(item||{}):{id:item,iso3:item};
+      const cid=canonical(raw.iso3||raw.isoCode||raw.countryId||raw.id||raw.code);
+      if(!cid)return;
+      if(!byCountry.has(cid)){
+        const x=clone(raw);
+        x.iso3=x.iso3||cid;
+        x.id=x.id||cid;
+        if(!x.name)x.name=x.countryName||x.sovereignName||cid;
+        byCountry.set(cid,x);
+      }
+    });
+
+    // Deposit records themselves are an authoritative resource-side fallback for any
+    // country not present in the profile dataset.
+    (Array.isArray(e.deposits)?e.deposits:[]).forEach(function(dep){
+      const cid=canonical(dep?.countryCode||dep?.iso3||dep?.countryId||dep?.country);
+      if(!cid)return;
+      if(!byCountry.has(cid)){
+        byCountry.set(cid,{id:cid,iso3:cid,name:dep?.country||cid});
+      }
+    });
+
+    const countriesRaw=[...byCountry.values()].map(function(p){
+      const x=clone(p);
+      if(!x.iso3)x.iso3=x.countryId||x.isoCode||null;
+      if(!x.id)x.id=x.iso3;
+      return x;
+    }).filter(Boolean);
+
     return{
       sovereignEntities:{countries:countriesRaw,resourceTypes:clone(e.resourceTypes||[])},
       refCatalog:{allReferences:clone(Array.isArray(e.deposits)?e.deposits:[])}
