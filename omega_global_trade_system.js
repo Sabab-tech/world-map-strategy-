@@ -32,11 +32,14 @@
   const memory=()=>g.OmegaOpponentDeepMemory||g.Omega?.OpponentDeepMemory||null;
 
   function ids(){
-    try{
-      const b=registry();
-      const a=b?.list?.('COUNTRY')||b?.list?.()||[];
-      return [...new Set(a.map(canonical).filter(Boolean))].sort();
-    }catch(_){return Object.keys(state()?.trade||{}).map(canonical).filter(Boolean).sort();}
+    const out=new Set();
+    try{(registry()?.list?.('COUNTRY')||registry()?.list?.()||[]).map(canonical).filter(Boolean).forEach(function(c){out.add(c);});}catch(_){}
+    const s=state();
+    ['trade','resource','economy','finance','foreign','population','cabinet'].forEach(function(domain){
+      const b=s?.[domain];
+      if(b&&typeof b==='object')Object.keys(b).forEach(function(k){const c=id(k);if(c)out.add(c);});
+    });
+    return[...out].sort();
   }
   function read(root,path){
     let cur=root;
@@ -47,9 +50,12 @@
     return cur;
   }
   function countryValue(c,path){
-    const s=state(),cid=canonical(c),parts=String(path||'').split('.'),domain=parts.shift();
+    const s=state(),raw=id(c),cid=canonical(c),parts=String(path||'').split('.'),domain=parts.shift();
     let bucket=s?.[domain];
-    if(bucket&&typeof bucket==='object')bucket=bucket[cid]??bucket[Object.keys(bucket).find(k=>id(k)===cid)];
+    if(bucket&&typeof bucket==='object'){
+      const key=Object.prototype.hasOwnProperty.call(bucket,raw)?raw:(Object.prototype.hasOwnProperty.call(bucket,cid)?cid:Object.keys(bucket).find(k=>id(k)===raw||id(k)===cid));
+      bucket=key===undefined?undefined:bucket[key];
+    }
     return read(bucket,parts.join('.'));
   }
   function relation(buyer,seller){
