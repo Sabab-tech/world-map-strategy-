@@ -381,17 +381,14 @@
     const batchId='TRANSIT-'+shipmentId;
     if(batches.some(function(b){return String(b&&b.batchId)===batchId;}))return{accepted:true,duplicate:true,shipmentId,batchId};
     inv[key]=(n(inv[key])||0)+q;
-    const batchId='TRANSIT-'+shipmentId;
-    if(!batches.some(b=>String(b?.batchId)===batchId)){
-      batches.push({
+    batches.push({
         batchId,resourceId:rid,materialIdentity:rid,quantity:q,remainingQuantity:q,unit:p.unit||null,
         stage:p.purpose==='PROCESSING_INPUT'?'RAW':'RAW',ownerCountryCode:canonical(ctx.countryId),
         ownerCompanyId:p.ownerCompanyId||'UNKNOWN_SOURCE',sourceBatchIds:Array.isArray(p.sourceBatchIds)?p.sourceBatchIds.slice():[],
         extractionReference:null,processId:facilityId,facilityId,locationNodeId:destinationNodeId,
         transportShipmentId:shipmentId,timestampTurn:turn(),
         provenance:{source:'OMEGA_RESOURCE_TRANSPORT_DELIVERY',shipmentId,sourceCountryId:p.sourceCountryId||null,turn:turn()}
-      });
-    }
+    });
     if(facilityId){
       const facilityInventory=clone(ctx.stateTransaction.get('resource.facilityInventory')||{});
       if(!facilityInventory[facilityId]||typeof facilityInventory[facilityId]!=='object')facilityInventory[facilityId]={};
