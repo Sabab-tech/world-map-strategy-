@@ -227,14 +227,11 @@
   }
 
   function prepareCountry(c){
-    installHandlers();var rs=resourceState(c),bs=Array.isArray(rs.batches)?rs.batches:[];
-    var created=0;
-    bs.forEach(function(b){
-      if(!b||!b.batchId||batchQuantity(b)<=0)return;
-      if(!shipmentForBatch(c,b.batchId)){if(ensureBatchShipment(c,b,'BATCH'))created++;}
-    });
+    installHandlers();
+    /* Existing local inventory batches are already at the domestic stock point.
+       Only extraction/output/trade flows explicitly register shipments. */
     var advanced=advance(c);
-    return{accepted:true,countryId:canonical(c),createdShipments:created,advance:advanced,shipmentCount:shipmentsForCountry(c).length};
+    return{accepted:true,countryId:canonical(c),createdShipments:0,advance:advanced,shipmentCount:shipmentsForCountry(c).length};
   }
 
   function registerExtractionBatch(c,batch){
