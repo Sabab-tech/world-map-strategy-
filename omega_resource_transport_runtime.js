@@ -194,7 +194,7 @@
       allocations.push({batchId:row.b.batchId,quantity:take,sourceNodeId:loc,ownerCompanyId:row.b.ownerCompanyId||'UNKNOWN_SOURCE',stage:row.b.stage||'RAW'});
       remaining-=take;
     }
-    if(remaining>1e-9 && (!sourceNodeId||sourceNodeId==='STOCKPILE')){
+    if(remaining>1e-9 && (!sourceNodeId||String(sourceNodeId).toUpperCase().indexOf('STOCKPILE:')===0)){
       for(const row of rows){
         if(remaining<=1e-9)break;
         const free=batchFree(row.b);if(free<=0)continue;
@@ -240,7 +240,7 @@
     const mode=modeFor(rid,p.purpose,p.mode);
     const spec=rules().modes?.[mode]||rules().modes?.[rules().defaultMode];
     const explicitTurns=num(p.travelTurns);
-    const travelTurns=explicitTurns!==null&&explicitTurns>=0?Math.floor(explicitTurns):((sourceCountry===destinationCountry)?0:Math.max(1,Math.floor(num(spec?.defaultTravelTurns)||1)));
+    const travelTurns=explicitTurns!==null&&explicitTurns>=0?Math.floor(explicitTurns):Math.max(1,Math.floor(num(spec?.defaultTravelTurns)||1));
     const distanceKm=num(p.distanceKm)??(sourceCountry===destinationCountry?50:1000);
     const costPerUnit=num(spec?.costPerUnit)||0;
     const shipmentId=String(p.shipmentId||('RSHIP-'+turn()+'-'+sourceCountry+'-'+destinationCountry+'-'+token(rid)+'-'+Math.random().toString(36).slice(2,8))).toUpperCase();
@@ -356,7 +356,13 @@
     destT.capacity[capKey]=Math.max(0,(num(destT.capacity[capKey])||0)-shipment.quantity);
     const srow=srcT.resourceShipments.find(x=>x.shipmentId===shipment.shipmentId);
     if(srow){srow.status='DELIVERED';srow.remainingQuantity=0;srow.deliveredTurn=turn();srow.transportRevision=(num(srow.transportRevision)||0)+1;}
-    appendLedger(shipment.sourceCountryId,{type:'SHIPMENT_DELIVERED',shipmentId:shipment.shipmentId,resourceId:shipment.resourceId,quantity:shipment.quantity,sourceNodeId:shipment.sourceNodeId,destinationNodeId:shipment.destinationNodeId,mode:shipment.mode,purpose:shipment.purpose,batchId:result.batch.batchId,status:'DELIVERED'});
+    srcT.resourceRevenue.totalSinceRuntimeStart=(num(srcT.resourceRevenue.totalSinceRuntimeStart)||0)+shipment.transportCost;
+    srcT.resourceRevenue.thisTurn=(num(srcT.resourceRevenue.lastTurn)===turn()?num(srcT.resourceRevenue.thisTurn)||0:0)+shipment.transportCost;
+    srcT.resourceRevenue.lastTurn=turn();
+    srcT.transportLedger=Array.isArray(srcT.transportLedger)?srcT.transportLedger:[];
+    srcT.transportLedger.push({shipmentId:shipment.shipmentId,resourceId:shipment.resourceId,quantity:shipment.quantity,cost:shipment.transportCost,mode:shipment.mode,turn:turn(),purpose:shipment.purpose,status:'DELIVERED'});
+    while(srcT.transportLedger.length>(num(rules().maxLedgerEntries)||4096))srcT.transportLedger.shift();
+    appendLedger(shipment.sourceCountryId,{type:'SHIPMENT_DELIVERED',shipmentId:shipment.shipmentId,resourceId:shipment.resourceId,quantity:shipment.quantity,sourceNodeId:shipment.sourceNodeId,destinationNodeId:shipment.destinationNodeId,mode:shipment.mode,purpose:shipment.purpose,batchId:result.batch.batchId,transportCost:shipment.transportCost,status:'DELIVERED'});
     emit('OMEGA_RESOURCE_TRANSPORT_DELIVERED',shipment.destinationCountryId,{shipmentId:shipment.shipmentId,resourceId:shipment.resourceId,quantity:shipment.quantity,sourceCountryId:shipment.sourceCountryId,destinationCountryId:shipment.destinationCountryId,destinationNodeId:shipment.destinationNodeId,targetFacilityId:shipment.targetFacilityId,batchId:result.batch.batchId,settlementId:shipment.settlementId,requestId:shipment.requestId});
     if(shipment.settlementId)settleDeliveredTrade(shipment);
     return{accepted:true,shipmentId:shipment.shipmentId,batch:result.batch,status:'DELIVERED'};
