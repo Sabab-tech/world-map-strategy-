@@ -570,31 +570,80 @@
   }
 
   function settleRequest(req){
-    const c=canonical(req.countryId),s=canonical(req.targetCountryId);
-    if(!c||!s)return;
+    const buyer=canonical(req.countryId),seller=canonical(req.targetCountryId);
+    if(!buyer||!seller)return;
     const check=sellerCanSettle(req);
-    if(!check.ok){command('trade','OMEGA_TRADE_CLOSE_REQUEST',c,{requestId:req.requestId,status:TYPES.FAILED,stage:'SETTLEMENT_BLOCKED',reason:check.reason});emit('OMEGA_TRADE_SETTLEMENT_FAILED',c,{requestId:req.requestId,reason:check.reason,targetCountryId:s});return;}
-    const sid='SET-'+turn()+'-'+c+'-'+s+'-'+String(req.requestId);
-    const debit=command('finance','OMEGA_TRADE_FINANCE_DEBIT',c,{amount:check.buyerTotal,settlementId:sid,requestId:req.requestId,currency:check.buyerCurrency});
-    if(debit?.status!=='APPLIED'){emit('OMEGA_TRADE_SETTLEMENT_FAILED',c,{requestId:req.requestId,reason:debit?.result?.reason||'BUYER_FINANCE_DEBIT_FAILED'});return;}
-    const sellerCredit=command('finance','OMEGA_TRADE_FINANCE_CREDIT',s,{amount:check.sellerTotal,settlementId:sid,requestId:req.requestId,currency:check.sellerCurrency});
-    const sellerResource=command('resource','OMEGA_TRADE_RESOURCE_DEBIT',s,{resourceId:req.resourceId,quantity:req.quantity,settlementId:sid,requestId:req.requestId});
-    const buyerResource=command('resource','OMEGA_TRADE_RESOURCE_CREDIT',c,{resourceId:req.resourceId,quantity:req.quantity,settlementId:sid,requestId:req.requestId});
-    if(sellerCredit?.status!=='APPLIED'||sellerResource?.status!=='APPLIED'||buyerResource?.status!=='APPLIED'){
-      if(sellerCredit?.status==='APPLIED')command('finance','OMEGA_TRADE_FINANCE_DEBIT',s,{amount:check.sellerTotal,settlementId:sid+'-COMP-SELLER-FIN',requestId:req.requestId,currency:check.sellerCurrency});
-      if(sellerResource?.status==='APPLIED')command('resource','OMEGA_TRADE_RESOURCE_CREDIT',s,{resourceId:req.resourceId,quantity:req.quantity,settlementId:sid+'-COMP-SELLER-RES',requestId:req.requestId});
-      if(buyerResource?.status==='APPLIED')command('resource','OMEGA_TRADE_RESOURCE_DEBIT',c,{resourceId:req.resourceId,quantity:req.quantity,settlementId:sid+'-COMP-BUYER-RES',requestId:req.requestId});
-      if(debit?.status==='APPLIED')command('finance','OMEGA_TRADE_FINANCE_CREDIT',c,{amount:check.buyerTotal,settlementId:sid+'-COMP-BUYER-FIN',requestId:req.requestId,currency:check.buyerCurrency});
-      emit('OMEGA_TRADE_SETTLEMENT_FAILED',c,{requestId:req.requestId,settlementId:sid,reason:'MULTI_LEDGER_COMMIT_FAILED',compensated:true});
+    if(!check.ok){
+      command('trade','OMEGA_TRADE_CLOSE_REQUEST',buyer,{requestId:req.requestId,status:TYPES.FAILED,stage:'SETTLEMENT_BLOCKED',reason:check.reason});
+      emit('OMEGA_TRADE_SETTLEMENT_FAILED',buyer,{requestId:req.requestId,reason:check.reason,targetCountryId:seller});
       return;
     }
-    command('trade','OMEGA_TRADE_CLOSE_REQUEST',c,{requestId:req.requestId,status:TYPES.SETTLED,stage:'SETTLED',settlementId:sid});
-    command('trade','OMEGA_TRADE_RECORD_SELLER_SETTLEMENT',s,{settlementId:sid,requestId:req.requestId,buyerCountryId:c,resourceId:req.resourceId,quantity:req.quantity,unitPrice:req.unitPrice,totalValue:check.sellerTotal,buyerValue:check.buyerTotal,fx:check.fx,buyerCurrency:check.buyerCurrency,sellerCurrency:check.sellerCurrency,status:'SETTLED',turn:turn()});
-    const reservationId=req.reservationId;
-    if(reservationId)command('cabinet','OMEGA_AUTO_RELEASE_RESERVATION',c,{reservationId,correlationId:req.requestId});
-    emit('OMEGA_TRADE_SHIPMENT_CREATED',c,{settlementId:sid,requestId:req.requestId,targetCountryId:s,resourceId:req.resourceId,quantity:req.quantity});
-    emit('OMEGA_TRADE_SETTLEMENT_COMPLETED',c,{settlementId:sid,requestId:req.requestId,targetCountryId:s,resourceId:req.resourceId,quantity:req.quantity,totalValue:check.sellerTotal,buyerValue:check.buyerTotal,fx:check.fx,buyerCurrency:check.buyerCurrency,sellerCurrency:check.sellerCurrency});
-    try{memory()?.record?.(c,{type:'RELATIONAL',sourceEvent:'OMEGA_TRADE_SETTLEMENT_COMPLETED',targetCountryId:s,action:'IMPORT',outcome:{status:'SETTLED'},importance:.9,confidence:.9,evidence:{settlementId:sid}});}catch(_){}
+    const sid='SET-'+turn()+'-'+buyer+'-'+seller+'-'+String(req.requestId);
+    const debit=command('finance','OMEGA_TRADE_FINANCE_DEBIT',buyer,{amount:check.buyerTotal,settlementId:sid,requestId:req.requestId,currency:check.buyerCurrency});
+    if(debit?.status!=='APPLIED'){
+      emit('OMEGA_TRADE_SETTLEMENT_FAILED',buyer,{requestId:req.requestId,reason:debit?.result?.reason||'BUYER_FINANCE_DEBIT_FAILED',settlementId:sid});
+      return;
+    }
+    const sellerCredit=command('finance','OMEGA_TRADE_FINANCE_CREDIT',seller,{amount:check.sellerTotal,settlementId:sid,requestId:req.requestId,currency:check.sellerCurrency});
+    if(sellerCredit?.status!=='APPLIED'){
+      command('finance','OMEGA_TRADE_FINANCE_CREDIT',buyer,{amount:check.buyerTotal,settlementId:sid+'-COMP-BUYER-FIN',requestId:req.requestId,currency:check.buyerCurrency});
+      emit('OMEGA_TRADE_SETTLEMENT_FAILED',buyer,{requestId:req.requestId,settlementId:sid,reason:'SELLER_FINANCE_CREDIT_FAILED',compensated:true});
+      return;
+    }
+
+    const shipment=command('transport','OMEGA_RESOURCE_TRANSPORT_CREATE_SHIPMENT',seller,{
+      shipmentId:'RSHIP-'+sid,
+      sourceCountryId:seller,
+      destinationCountryId:buyer,
+      resourceId:req.resourceId,
+      quantity:req.quantity,
+      sourceNodeId:'STOCKPILE:'+seller,
+      destinationNodeId:'STOCKPILE:'+buyer,
+      sourceNodeType:'STORAGE',
+      destinationNodeType:'STORAGE',
+      purpose:'TRADE',
+      mode:req.transportMode||'SEA',
+      settlementId:sid,
+      requestId:req.requestId,
+      unitPrice:req.unitPrice,
+      totalValue:check.sellerTotal,
+      buyerValue:check.buyerTotal,
+      sellerTotal:check.sellerTotal,
+      fx:check.fx,
+      buyerCurrency:check.buyerCurrency,
+      sellerCurrency:check.sellerCurrency,
+      provenance:{source:'OMEGA_GLOBAL_TRADE',settlementId:sid,requestId:req.requestId,simulationTurn:turn()}
+    });
+
+    if(shipment?.status!=='APPLIED'||shipment?.result?.accepted!==true){
+      command('finance','OMEGA_TRADE_FINANCE_DEBIT',seller,{amount:check.sellerTotal,settlementId:sid+'-COMP-SELLER-FIN',requestId:req.requestId,currency:check.sellerCurrency});
+      command('finance','OMEGA_TRADE_FINANCE_CREDIT',buyer,{amount:check.buyerTotal,settlementId:sid+'-COMP-BUYER-FIN',requestId:req.requestId,currency:check.buyerCurrency});
+      emit('OMEGA_TRADE_SETTLEMENT_FAILED',buyer,{requestId:req.requestId,settlementId:sid,reason:shipment?.result?.reason||'RESOURCE_TRANSPORT_CREATE_FAILED',compensated:true});
+      return;
+    }
+
+    const sh=shipment.result.shipment||shipment.result;
+    const inTransit=sh?.status!=='DELIVERED';
+    command('trade','OMEGA_TRADE_CLOSE_REQUEST',buyer,{
+      requestId:req.requestId,
+      status:inTransit?'IN_TRANSIT':TYPES.SETTLED,
+      stage:inTransit?'IN_TRANSIT':'DELIVERED',
+      settlementId:sid,
+      shipmentId:sh?.shipmentId||null
+    });
+    emit('OMEGA_TRADE_SHIPMENT_CREATED',buyer,{
+      settlementId:sid,requestId:req.requestId,targetCountryId:seller,
+      resourceId:req.resourceId,quantity:req.quantity,shipmentId:sh?.shipmentId||null,
+      transportMode:sh?.mode||req.transportMode||'SEA',status:sh?.status||'IN_TRANSIT'
+    });
+
+    if(sh?.status==='DELIVERED'){
+      emit('OMEGA_TRADE_SETTLEMENT_COMPLETED',buyer,{
+        settlementId:sid,requestId:req.requestId,targetCountryId:seller,resourceId:req.resourceId,
+        quantity:req.quantity,totalValue:check.sellerTotal,buyerValue:check.buyerTotal,fx:check.fx,
+        buyerCurrency:check.buyerCurrency,sellerCurrency:check.sellerCurrency,shipmentId:sh.shipmentId,transportStatus:'DELIVERED'
+      });
+    }
   }
 
   function handleRejection(req,decision){
