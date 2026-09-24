@@ -53,6 +53,13 @@ console.log('RESOURCE_DEBUG',JSON.stringify({
   bdIndex:globalThis.__OmegaResourceIdentityRegistry?.getOccurrencesByCountry?.('BD')?.length||null,
   deposits:(engine.deposits||[]).filter(x=>String(x.countryCode||'').toUpperCase()==='BGD').map(x=>({name:x.name,resId:x.resId,reserves:x.reserves}))
 }));
+const manualHydrate=runtime.hydrateCountry('BGD');
+console.log('HYDRATE_DEBUG',JSON.stringify({
+  manualHydrate,
+  interopIds:globalThis.OmegaMinistryInteroperability?.ids,
+  commandHandlers:[...(globalThis.OmegaMinistryInteroperability?.commandHandlers?.keys?.()||[])],
+  resourceStateAfterManual:globalThis.Game.state.resource.BD
+}));
 const before=runtime.countryResourceState('BGD');
 console.log('P5_PARSED_STATUS',JSON.stringify({
   mineCount:before?.mines?.length||0,
