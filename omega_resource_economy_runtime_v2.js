@@ -553,15 +553,18 @@
   }
 
   function macroCausalHandler(cmd,ctx){
-    var p=cmd&&cmd.payload||{},impact=p.impact||p;
-    var econ=clone(ctx.stateTransaction.get('economy')||{});
-    if(num(econ.resourceMacroLastAppliedTurn)===turn())return{accepted:true,duplicate:true,turn:turn(),countryId:canonical(ctx.countryId)};
-    if(num(econ.gdp)!==null&&num(impact.valueAdded)!==null){econ.gdp=(num(econ.gdp)||0)+Math.max(0,num(impact.valueAdded)||0);impact.gdpDelta=Math.max(0,num(impact.valueAdded)||0);impact.gdpAfter=econ.gdp;}else impact.gdpAvailability='UNOBSERVED';
-    if(num(econ.inflation)!==null&&impact.utilization!==null){var pressure=(1-impact.utilization)*0.10;econ.inflation=(num(econ.inflation)||0)+pressure;impact.inflationDelta=pressure;}else impact.inflationAvailability='UNOBSERVED';
-    if(num(econ.unemployment)!==null&&impact.utilization!==null){var laborDelta=(0.5-impact.utilization)*0.05;econ.unemployment=Math.max(0,(num(econ.unemployment)||0)+laborDelta);impact.unemploymentDelta=laborDelta;}else impact.unemploymentAvailability='UNOBSERVED';
-    econ.resourceCausalImpact=clone(impact);econ.resourceValueAddedThisTurn=num(impact.valueAdded)||0;econ.resourceMacroLastAppliedTurn=turn();
-    ctx.stateTransaction.set('economy',econ);
-    return{accepted:true,countryId:canonical(ctx.countryId),impact:clone(impact)};
+    var p=cmd&&cmd.payload||{},impact=clone(p.impact||p),last=n(ctx.stateTransaction.get('economy.resourceMacroLastAppliedTurn'));
+    if(last!==null&&last===turn())return{accepted:true,duplicate:true,turn:turn(),countryId:canonical(ctx.countryId)};
+    var gdp=n(ctx.stateTransaction.get('economy.gdp')),inflation=n(ctx.stateTransaction.get('economy.inflation')),unemployment=n(ctx.stateTransaction.get('economy.unemployment'));
+    impact.gdpBefore=gdp;impact.inflationBefore=inflation;impact.unemploymentBefore=unemployment;
+    if(gdp!==null&&n(impact.valueAdded)!==null){impact.gdpDelta=Math.max(0,n(impact.valueAdded)||0);impact.gdpAfter=gdp+impact.gdpDelta;ctx.stateTransaction.set('economy.gdp',impact.gdpAfter);}else impact.gdpAvailability='UNOBSERVED';
+    if(inflation!==null&&impact.utilization!==null){var pressure=(1-impact.utilization)*0.10;impact.inflationDelta=pressure;impact.inflationAfter=Math.max(0,inflation+pressure);ctx.stateTransaction.set('economy.inflation',impact.inflationAfter);}else impact.inflationAvailability='UNOBSERVED';
+    if(unemployment!==null&&impact.utilization!==null){var laborDelta=(0.5-impact.utilization)*0.05;impact.unemploymentDelta=laborDelta;impact.unemploymentAfter=Math.max(0,unemployment+laborDelta);ctx.stateTransaction.set('economy.unemployment',impact.unemploymentAfter);}else impact.unemploymentAvailability='UNOBSERVED';
+    impact.turn=turn();impact.countryId=canonical(ctx.countryId);impact.availability=impact.availability||'AVAILABLE';
+    ctx.stateTransaction.set('economy.resourceCausalImpact',impact);
+    ctx.stateTransaction.set('economy.resourceValueAddedThisTurn',n(impact.valueAdded)||0);
+    ctx.stateTransaction.set('economy.resourceMacroLastAppliedTurn',turn());
+    return{accepted:true,countryId:canonical(ctx.countryId),impact:impact};
   }
 
   function runTurn(){
