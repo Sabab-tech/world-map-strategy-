@@ -22,8 +22,16 @@
   const interop=()=>g.Omega?.MinistryInteroperability||g.OmegaMinistryInteroperability||null;
   const turn=()=>n(state()?.simulation?.turn??state()?.turn??state()?.simulationTurn??g.Omega?.Simulation?.clock?.turn)??0;
   const countries=()=>{
-    try{return[...new Set((registry()?.list?.('COUNTRY')||registry()?.list?.()||[]).map(canonical).filter(Boolean))].sort();}
-    catch(_){return Object.keys(state()?.trade||{}).map(canonical).filter(Boolean).sort();}
+    try{
+      const listed=(registry()?.list?.('COUNTRY')||registry()?.list?.()||[]).map(canonical).filter(Boolean);
+      if(listed.length)return[...new Set(listed)].sort();
+    }catch(_){}
+    const s=state(),out=new Set();
+    ['trade','resource','economy','finance','foreign'].forEach(function(domain){
+      const b=s?.[domain];
+      if(b&&typeof b==='object')Object.keys(b).forEach(function(k){var c=canonical(k);if(c)out.add(c);});
+    });
+    return[...out].sort();
   };
   function countryValue(c,path){
     const cid=canonical(c),parts=String(path||'').split('.'),domain=parts.shift();let bucket=state()?.[domain];
