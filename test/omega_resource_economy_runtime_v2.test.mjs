@@ -43,8 +43,15 @@ function createContext(){
         batches:[{
           batchId:'MINE-BATCH-1',resourceId:'iron_ore',materialIdentity:'iron_ore',
           quantity:100,remainingQuantity:100,stage:'RAW',ownerCountryCode:'BGD',
-          ownerCompanyId:'MINER_CO',sourceBatchIds:[]
-        }]
+          ownerCompanyId:'MINER_CO',sourceBatchIds:[],purity:0.62,grade:62,
+          quality:0.62,qualityState:{purity:0.62,purityStatus:'OBSERVED',gradePercent:62},
+          warehouseId:'WH-BGD-RAW',locationNodeKey:'WAREHOUSE:BGD:RAW'
+        }],
+        warehouse:{
+          warehouseId:'WH-BGD-RAW',countryId:'BGD',type:'SOVEREIGN_RAW_MATERIAL_WAREHOUSE',
+          locationNodeKey:'WAREHOUSE:BGD:RAW',status:'OPERATIONAL',
+          availableByResource:{iron_ore:100},storedBatchIds:['MINE-BATCH-1'],receipts:[]
+        }
       }
     },
     economy:{
@@ -64,8 +71,26 @@ function createContext(){
 
   const handlers=new Map();
   const stateTx=(countryId)=>({
-    get(path){ return deepGet(worldState,path); },
-    set(path,value){ deepSet(worldState,path,value); },
+    get(path){
+      const parts=String(path).split('.');
+      const domain=parts.shift();
+      const bucket=worldState[domain]&&worldState[domain][countryId];
+      if(bucket===undefined)return undefined;
+      return parts.reduce((cur,key)=>cur==null?undefined:cur[key],bucket);
+    },
+    set(path,value){
+      const parts=String(path).split('.');
+      const domain=parts.shift();
+      if(!worldState[domain])worldState[domain]={};
+      if(!worldState[domain][countryId])worldState[domain][countryId]={};
+      let cur=worldState[domain][countryId];
+      for(let i=0;i<parts.length-1;i++){
+        if(!cur[parts[i]]||typeof cur[parts[i]]!=='object')cur[parts[i]]={};
+        cur=cur[parts[i]];
+      }
+      if(parts.length)cur[parts.at(-1)]=value;
+      else worldState[domain][countryId]=value;
+    },
     _countryId:countryId
   });
 
@@ -180,8 +205,19 @@ test('resource economy v2 completes mine-backed processing, domestic settlement 
   assert.equal(worldState.trade.BGD.offerBook.length,1);
   assert.equal(worldState.trade.BGD.offerBook[0].source,'OMEGA_RESOURCE_ECON_AUTO_OFFER');
 
+  assert.equal(worldState.resource.BGD.warehouse.availableByResource.iron_ore,50);
+  assert.equal(worldState.resource.BGD.warehouse.availableByResource.iron_intermediate,40);
+  const inputBatch=worldState.resource.BGD.batches.find(x=>x.batchId==='MINE-BATCH-1');
+  assert.equal(inputBatch.remainingQuantity,50);
+  const outputBatch=worldState.resource.BGD.batches.find(x=>x.resourceId==='iron_intermediate');
+  assert.ok(outputBatch);
+  assert.equal(outputBatch.quantity,40);
+  assert.equal(outputBatch.purity,0.62);
+  assert.equal(outputBatch.qualityState.purityStatus,'INHERITED_FROM_INPUT');
+  assert.deepEqual(outputBatch.sourceBatchIds,['MINE-BATCH-1']);
+
   const dashboard=context.OmegaResourceEconomy.getCountryDashboard('BGD');
-  assert.equal(dashboard.health.noSyntheticWarehouseBalance,true);
+  assert.equal(dashboard.health.warehouseAuthoritative,true);
   assert.equal(dashboard.treasury.fiscalThisTurn.total,115);
   assert.equal(dashboard.mines.total,1);
 
@@ -191,8 +227,54 @@ test('resource economy v2 completes mine-backed processing, domestic settlement 
   assert.match(html,/OPERATING MINE REGISTER/);
 });
 
+test('factory input availability event is persisted as an economy runtime event without creating a duplicate batch', async()=>{
+  const {context,worldState,events}=createContext();
+  const code=readFileSync('omega_resource_economy_runtime_v2.js','utf8');
+  vm.runInNewContext(code,context,{filename:'omega_resource_economy_runtime_v2.js'});
+  await context.OmegaResourceEconomy.runTurn();
+
+  const beforeCount=worldState.resource.BGD.batches.length;
+  context.dispatchEvent(new CustomEventMock('OMEGA_RESOURCE_FACTORY_INPUT_AVAILABLE',{
+    detail:{
+      eventType:'OMEGA_RESOURCE_FACTORY_INPUT_AVAILABLE',
+      countryId:'BGD',
+      payload:{
+        countryId:'BGD',extractionId:'EXT-1',batch:{batchId:'MINE-BATCH-1'},
+        resourceId:'iron_ore',quantity:25,purity:0.62,gradePercent:62,warehouseId:'WH-BGD-RAW',
+        simulationTurn:1,sourceAuthority:'RESOURCE_JSON'
+      }
+    }
+  }));
+
+  const runtime=worldState.economy.BGD.industrialRuntime;
+  assert.ok(Array.isArray(runtime.factoryInputEvents));
+  assert.equal(runtime.factoryInputEvents.at(-1).batchId,'MINE-BATCH-1');
+  assert.equal(runtime.factoryInputEvents.at(-1).purity,0.62);
+  assert.equal(worldState.resource.BGD.batches.length,beforeCount);
+  assert.deepEqual(runtime.factoryInputEvents.at(-1).candidateFactoryIds,['PROC_1']);
+  assert.equal(runtime.factoryInputEvents.at(-1).dispatchStatus,'AVAILABLE_TO_MATCHING_FACTORIES');
+  assert.ok(events.listeners.has('OMEGA_RESOURCE_FACTORY_INPUT_AVAILABLE'));
+});
+
+test('legacy opening inventory reconciliation creates a warehouse-backed unobserved batch', async()=>{
+  const {context,worldState}=createContext();
+  worldState.resource.BGD.inventory.copper=25;
+  delete worldState.resource.BGD.warehouse.availableByResource.copper;
+  const code=readFileSync('omega_resource_economy_runtime_v2.js','utf8');
+  vm.runInNewContext(code,context,{filename:'omega_resource_economy_runtime_v2.js'});
+  context.OmegaResourceEconomy.reconcileCountry('BGD');
+
+  const legacy=worldState.resource.BGD.batches.find(x=>x.batchId==='LEGACY_OPENING_BGD_COPPER');
+  assert.ok(legacy);
+  assert.equal(legacy.remainingQuantity,25);
+  assert.equal(legacy.purity,null);
+  assert.equal(legacy.qualityState.purityStatus,'UNOBSERVED');
+  assert.equal(worldState.resource.BGD.warehouse.availableByResource.copper,25);
+  assert.ok(worldState.resource.BGD.warehouse.storedBatchIds.includes(legacy.batchId));
+});
+
 test('factory input failure does not consume a resource that lacks the other required input', async()=>{
-  const {context,state}=createContext();
+  const {context,worldState}=createContext();
   worldState.economy.BGD.productionAssets.push({
     id:'FACTORY_2',stage:'FACTORY',capacity:10,
     inputCoefficients:{iron_ore:1,copper:1},
