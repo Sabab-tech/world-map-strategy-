@@ -1372,6 +1372,7 @@ Game.Map.renderResourceDeposits = function(){
             window.addEventListener(evt,function(){if(Game.Map.resourceState?.enabled){clearTimeout(Game.Map.__omegaMapRefreshTimer);Game.Map.__omegaMapRefreshTimer=setTimeout(function(){Game.Map.renderResourceDeposits();},40);}});
         });
     }
+    if(!this.resourceState)this.resourceState={enabled:false,scope:'NATION',selectedResources:new Set()};
     const ontology=window.__OmegaResourceEconomyOntology;
     if(ontology&&typeof ontology==='object'&&Object.keys(ontology).length){
         const previous=this.resourceCatalog||[];
