@@ -243,7 +243,10 @@
     const travelTurns=explicitTurns!==null&&explicitTurns>=0?Math.floor(explicitTurns):Math.max(1,Math.floor(num(spec?.defaultTravelTurns)||1));
     const distanceKm=num(p.distanceKm)??(sourceCountry===destinationCountry?50:1000);
     const costPerUnit=num(spec?.costPerUnit)||0;
-    const shipmentId=String(p.shipmentId||('RSHIP-'+turn()+'-'+sourceCountry+'-'+destinationCountry+'-'+token(rid)+'-'+Math.random().toString(36).slice(2,8))).toUpperCase();
+    const srcTransport=transportBucket(sourceCountry,true);
+    const sequence=(num(srcTransport.nextShipmentSequence)||0)+1;
+    srcTransport.nextShipmentSequence=sequence;
+    const shipmentId=String(p.shipmentId||('RSHIP-'+turn()+'-'+sourceCountry+'-'+String(sequence).padStart(5,'0')+'-'+token(rid))).toUpperCase();
     const destTransport=transportBucket(destinationCountry,true);
     const capacity=num(spec?.capacityPerTurn)||null;
     const capKey=routeKey(sourceNodeId,destinationNodeId,mode);
@@ -273,8 +276,14 @@
       correlationId:p.correlationId||p.settlementId||p.requestId||shipmentId,
       provenance:clone(p.provenance||{source:'OMEGA_RESOURCE_TRANSPORT_RUNTIME',turn:turn()})
     };
-    const srcT=transportBucket(sourceCountry,true);
+    const srcT=srcTransport;
     srcT.resourceShipments.push(clone(shipment));
+    if(sourceCountry!==destinationCountry){
+      destTransport.inboundResourceShipments=Array.isArray(destTransport.inboundResourceShipments)?destTransport.inboundResourceShipments:[];
+      destTransport.inboundResourceShipments.push({...clone(shipment),remoteMirror:true,mirrorSide:'DESTINATION',status:'IN_TRANSIT'});
+      const maxInbound=num(rules().maxShipments)||16384;
+      while(destTransport.inboundResourceShipments.length>maxInbound)destTransport.inboundResourceShipments.shift();
+    }
     appendLedger(sourceCountry,{type:'SHIPMENT_CREATED',shipmentId,resourceId:rid,quantity:qty,sourceNodeId,destinationNodeId,mode,purpose:shipment.purpose,status:shipment.status});
     if(travelTurns===0){
       const delivered=deliverShipment(shipment);
@@ -356,6 +365,8 @@
     destT.capacity[capKey]=Math.max(0,(num(destT.capacity[capKey])||0)-shipment.quantity);
     const srow=srcT.resourceShipments.find(x=>x.shipmentId===shipment.shipmentId);
     if(srow){srow.status='DELIVERED';srow.remainingQuantity=0;srow.deliveredTurn=turn();srow.transportRevision=(num(srow.transportRevision)||0)+1;}
+    const inbound=destT.inboundResourceShipments?.find(x=>x.shipmentId===shipment.shipmentId);
+    if(inbound){inbound.status='DELIVERED';inbound.remainingQuantity=0;inbound.deliveredTurn=turn();inbound.transportRevision=(num(inbound.transportRevision)||0)+1;}
     srcT.resourceRevenue.totalSinceRuntimeStart=(num(srcT.resourceRevenue.totalSinceRuntimeStart)||0)+shipment.transportCost;
     srcT.resourceRevenue.thisTurn=(num(srcT.resourceRevenue.lastTurn)===turn()?num(srcT.resourceRevenue.thisTurn)||0:0)+shipment.transportCost;
     srcT.resourceRevenue.lastTurn=turn();
