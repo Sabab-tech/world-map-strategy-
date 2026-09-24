@@ -233,6 +233,8 @@ test('factory input availability event is persisted as an economy runtime event 
   assert.equal(runtime.factoryInputEvents.at(-1).batchId,'MINE-BATCH-1');
   assert.equal(runtime.factoryInputEvents.at(-1).purity,0.62);
   assert.equal(worldState.resource.BGD.batches.length,beforeCount);
+  assert.deepEqual(runtime.factoryInputEvents.at(-1).candidateFactoryIds,['PROC_1']);
+  assert.equal(runtime.factoryInputEvents.at(-1).dispatchStatus,'AVAILABLE_TO_MATCHING_FACTORIES');
   assert.ok(events.listeners.has('OMEGA_RESOURCE_FACTORY_INPUT_AVAILABLE'));
 });
 
