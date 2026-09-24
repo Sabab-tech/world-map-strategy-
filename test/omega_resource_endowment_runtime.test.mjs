@@ -7,6 +7,7 @@ const resourceSource=JSON.parse(fs.readFileSync(new URL('../resources.json',impo
 const resourceSource2=JSON.parse(fs.readFileSync(new URL('../resources_2.json',import.meta.url),'utf8'));
 const resourceSite=JSON.parse(fs.readFileSync(new URL('../resource_deposits.json',import.meta.url),'utf8'));
 const extractionRules=JSON.parse(fs.readFileSync(new URL('../resource_economy_rules.json',import.meta.url),'utf8'));
+const resourceTypes=JSON.parse(fs.readFileSync(new URL('../resource_types.json',import.meta.url),'utf8'));
 globalThis.fetch=async url=>({
   ok:true,status:200,
   async json(){
@@ -15,6 +16,7 @@ globalThis.fetch=async url=>({
     if(name==='resources_2.json')return resourceSource2;
     if(name==='resource_deposits.json')return resourceSite;
     if(name==='resource_economy_rules.json')return extractionRules;
+    if(name==='resource_types.json')return resourceTypes;
     return{};
   }
 });
@@ -27,8 +29,7 @@ await countryIdentity.init();
 
 await import('../resource_ministry_engine.js');
 const engine=globalThis.ResourceMinistryEngine;
-engine.countryProfiles=resourceSource.GSRSK_Master_CountryProfiles_v14.countryProfiles;
-engine.isReady=true;
+await engine.init();
 
 await import('../omega_ministry_registry.js');
 await import('../omega_ministry_state_provider.js');
