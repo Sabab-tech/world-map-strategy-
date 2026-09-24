@@ -240,7 +240,12 @@
       for(var b=0;b<working.length&&remaining>1e-9;b++){
         var batch=working[b];
         if(tok(batch&&(batch.resourceId||batch.materialIdentity))!==tok(resId))continue;
-        if(transportReady&&!g.OmegaResourceTransport.isProcessReadyBatch(batch))continue;
+        if(transportReady){
+          var ready=typeof g.OmegaResourceTransport.isBatchProcessReady==='function'
+            ? g.OmegaResourceTransport.isBatchProcessReady(ctx.countryId,batch.batchId)
+            : g.OmegaResourceTransport.isProcessReadyBatch(batch);
+          if(!ready)continue;
+        }
         var batchQty=num(batch&&(batch.remainingQuantity!=null?batch.remainingQuantity:batch.quantity))||0;
         if(batchQty<=0)continue;
         var take=Math.min(batchQty,remaining);
