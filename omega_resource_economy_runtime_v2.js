@@ -451,6 +451,12 @@
       var done={transactionId:tx,countryId:canonical(c),facilityId:row.facilityId,companyId:row.companyId,stage:row.stage,inputQuantities:{},outputQuantities:clone(row.computedOutputs),createdBatches:clone(result.result&&result.result.created||[]),sourceBatchIds:[...new Set(sourceBatchIds)],turn:turn(),status:'COMPLETED'};
       Object.keys(row.inputCoefficients).forEach(function(rid){done.inputQuantities[rid]=row.plannedScale*row.inputCoefficients[rid];});
       executed.push(done);
+      if(g.OmegaResourceTransport&&typeof g.OmegaResourceTransport.registerOutputBatch==='function'){
+        (done.createdBatches||[]).forEach(function(outputBatch){
+          try{g.OmegaResourceTransport.registerOutputBatch(c,outputBatch);}
+          catch(transportError){emit('OMEGA_RESOURCE_TRANSPORT_HEALTH',c,{status:'DEGRADED',reason:String(transportError&&transportError.message||transportError),batchId:outputBatch&&outputBatch.batchId},'resource-economy');}
+        });
+      }
       emit(row.stage==='PROCESSING'?'OMEGA_RESOURCE_PROCESSING_COMPLETED':'OMEGA_INDUSTRIAL_PRODUCTION_COMPLETED',c,done,'resource-economy');
     });
     return{assets:assets,records:records,executed:executed,blocked:blocked};
