@@ -172,8 +172,10 @@
     if(quantity<=0)return null;
     var capInfo=readObservedCapacity(c,batch.resourceId),cap=capInfo.capacity;
     var network=readNetworkMode(c,batch.resourceId,kind);
-    var deliver=Math.min(quantity,cap);
-    var status=deliver>=quantity?'DELIVERED':'IN_TRANSIT';
+    // Creation registers the shipment. Movement is applied exactly once by advance(),
+    // so an observed route capacity cannot be consumed twice in the same turn.
+    var deliver=0;
+    var status='IN_TRANSIT';
     var finalStage=destination&&destination.stage==='FACTORY'?'DOMESTIC_DISTRIBUTION':'PROCESSING_FEED';
     var shipment={
       shipmentId:'SHP-'+turn()+'-'+canonical(c)+'-'+String(batch.batchId).replace(/[^A-Z0-9_-]/gi,'')+'-'+shipments.length,
