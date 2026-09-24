@@ -8522,86 +8522,24 @@ _globalScope.GSRSK_DataFoundation = (() => {
     // Deposits Catalog, 17 Commodities, and Interactive Command Hubs
     // =========================================================================
 
-    const CANONICAL_RESOURCE_TYPES = [
-        { id: 'crude_oil', name: 'Crude Petroleum', bnName: 'অপরিশোধিত তেল', icon: '🛢️', category: 'hydrocarbons', color: '#eab308', unit: 'BBL', basePrice: 82.5, dailyOutput: 18500, dailyDemand: 16200, strategicImportance: 'critical', processChain: 'Drilling ➔ Distillation ➔ Petrochem Refineries ➔ Strategic Reserves' },
-        { id: 'natural_gas', name: 'Natural Gas / LNG', bnName: 'প্রাকৃতিক গ্যাস', icon: '🔥', category: 'hydrocarbons', color: '#38bdf8', unit: 'MCF', basePrice: 3.4, dailyOutput: 32000, dailyDemand: 28500, strategicImportance: 'critical', processChain: 'Wellhead Extraction ➔ Dehydration ➔ LNG Cryogenic Liquefaction ➔ Baseload Power' },
-        { id: 'uranium', name: 'Uranium Yellowcake', bnName: 'ইউরেনিয়াম', icon: '⚛️', category: 'nuclear_energy', color: '#a855f7', unit: 'KG', basePrice: 85.0, dailyOutput: 120, dailyDemand: 95, strategicImportance: 'critical', processChain: 'In-situ Leaching ➔ Centrifuge Enrichment (3-5% / 90%) ➔ Fuel Bundles ➔ Baseload Reactor' },
-        { id: 'iron_ore', name: 'Iron Ore / Steel', bnName: 'লোহা ও ইস্পাত', icon: '⚙️', category: 'industrial_metals', color: '#cbd5e1', unit: 'TONS', basePrice: 120.0, dailyOutput: 45000, dailyDemand: 41000, strategicImportance: 'high', processChain: 'Open-Pit Beneficiation ➔ Blast Furnace Smelting ➔ Hot Rolled Coil ➔ Heavy Industry' },
-        { id: 'rare_earth', name: 'Rare Earth Elements', bnName: 'বিরল মৃত্তিকা মৌল', icon: '🔬', category: 'critical_minerals', color: '#ec4899', unit: 'TONS', basePrice: 48000.0, dailyOutput: 350, dailyDemand: 320, strategicImportance: 'critical', processChain: 'Solvent Extraction ➔ Chromatographic Refining ➔ Permanent NdFeB Magnets ➔ Defense & EV' },
-        { id: 'lithium', name: 'Lithium Carbonate', bnName: 'লিথিয়াম', icon: '🔋', category: 'battery_metals', color: '#00e5ff', unit: 'TONS', basePrice: 18500.0, dailyOutput: 850, dailyDemand: 780, strategicImportance: 'critical', processChain: 'Brine Evaporation / Spodumene Calcination ➔ Hydroxide Conversion ➔ LFP/NMC Battery Cells' },
-        { id: 'phosphate', name: 'Phosphate Rock', bnName: 'ফসফেট ও সার', icon: '🌾', category: 'agricultural_chemicals', color: '#84cc16', unit: 'TONS', basePrice: 155.0, dailyOutput: 22000, dailyDemand: 19500, strategicImportance: 'high', processChain: 'Phosphorite Mining ➔ Sulfuric Acid Digestion ➔ DAP/MAP Fertilizer ➔ Agrarian Security' },
-        { id: 'copper', name: 'Refined Copper', bnName: 'তামা', icon: '⚡', category: 'strategic_metals', color: '#f97316', unit: 'TONS', basePrice: 8900.0, dailyOutput: 14200, dailyDemand: 13500, strategicImportance: 'critical', processChain: 'Flotation Concentration ➔ Flash Smelting ➔ Electrolytic Refining ➔ Power Grid & HVDC' },
-        { id: 'bauxite', name: 'Bauxite / Aluminum', bnName: 'বক্সাইট ও অ্যালুমিনিয়াম', icon: '✈️', category: 'strategic_metals', color: '#94a3b8', unit: 'TONS', basePrice: 2400.0, dailyOutput: 18000, dailyDemand: 16500, strategicImportance: 'high', processChain: 'Bayer Process Digestion ➔ Hall-Héroult Reduction ➔ Aerospace Grade Ingots ➔ Defense Hull' },
-        { id: 'nickel', name: 'Class 1 Nickel', bnName: 'নিকেল', icon: '🛡️', category: 'critical_minerals', color: '#10b981', unit: 'TONS', basePrice: 16800.0, dailyOutput: 1900, dailyDemand: 1750, strategicImportance: 'high', processChain: 'HPAL Autoclave Leaching ➔ Matte Refining ➔ Superalloy & High-Nickel Cathodes' },
-        { id: 'cobalt', name: 'Cobalt Hydroxide', bnName: 'কোবাল্ট', icon: '🔋', category: 'battery_metals', color: '#6366f1', unit: 'TONS', basePrice: 32000.0, dailyOutput: 420, dailyDemand: 390, strategicImportance: 'critical', processChain: 'Heterogenite Leaching ➔ Organic Solvent Separation ➔ Cobalt Sulfate Crystals ➔ Energy Cells' },
-        { id: 'gold', name: 'Monetary Gold Bullion', bnName: 'স্বর্ণ রিজার্ভ', icon: '💰', category: 'monetary_strategic', color: '#ffd700', unit: 'OZT', basePrice: 2350.0, dailyOutput: 8500, dailyDemand: 6200, strategicImportance: 'high', processChain: 'Underground/Placer Cyanidation ➔ Merrill-Crowe / CIP ➔ Doré Smelting ➔ Central Bank Vaults' },
-        { id: 'potash', name: 'Potash / Potassium', bnName: 'পটাশ সার', icon: '🌱', category: 'agricultural_chemicals', color: '#14b8a6', unit: 'TONS', basePrice: 320.0, dailyOutput: 16500, dailyDemand: 15000, strategicImportance: 'high', processChain: 'Deep Shaft Evaporite Mining ➔ Flotation Crystallization ➔ MOP Granulation ➔ Food Crops' },
-        { id: 'silicon', name: 'Polysilicon Wafers', bnName: 'সিলিকন ওয়েফার', icon: '💻', category: 'high_tech_materials', color: '#3b82f6', unit: 'TONS', basePrice: 18000.0, dailyOutput: 920, dailyDemand: 860, strategicImportance: 'critical', processChain: 'Quartzite Reduction ➔ Siemens Trichlorosilane ➔ Czochralski Ingot Pulling ➔ EUV Fab' },
-        { id: 'timber', name: 'Strategic Hardwood', bnName: 'কাঠ ও বনজ সম্পদ', icon: '🌲', category: 'natural_infrastructure', color: '#78716c', unit: 'M3', basePrice: 450.0, dailyOutput: 28000, dailyDemand: 25000, strategicImportance: 'medium', processChain: 'Sustainable Forestry ➔ Kiln Drying ➔ Structural Engineered Timber ➔ Defense/Logistics' },
-        { id: 'fresh_water', name: 'Potable Aquifer Water', bnName: 'মিঠা পানি ও সেচ', icon: '💧', category: 'sovereign_life_support', color: '#06b6d4', unit: 'ML', basePrice: 12.0, dailyOutput: 95000, dailyDemand: 91000, strategicImportance: 'critical', processChain: 'Deep Confined Aquifers ➔ Reverse Osmosis Desalination ➔ Pressurized Canals ➔ National Grid' },
-        { id: 'wheat', name: 'Strategic Food Grain', bnName: 'খাদ্য শস্য ও গম', icon: '🍞', category: 'food_security', color: '#f59e0b', unit: 'TONS', basePrice: 280.0, dailyOutput: 65000, dailyDemand: 59000, strategicImportance: 'critical', processChain: 'Precision Irrigation ➔ Automated Harvesting ➔ Grain Silo Hermetic Storage ➔ Food Reserve' }
-    ];
+    const CANONICAL_RESOURCE_TYPES = Object.freeze([]);
 
-    const CANONICAL_GLOBAL_DEPOSITS = [
-        { id: 'dep-ghawar-oil', name: 'Ghawar Oil Super-Giant', country: 'SAUDI ARABIA', countryCode: 'SAU', lat: 25.4, lng: 49.6, resId: 'crude_oil', category: 'hydrocarbons', reserves: '48.2 Billion BBL', grade: '34° API Arab Light', status: 'ACTIVE_PRODUCING', owner: 'Saudi Aramco', operator: 'Aramco Upstream' },
-        { id: 'dep-permian-oil', name: 'Permian Basin Super-Play', country: 'USA', countryCode: 'USA', lat: 31.8, lng: -102.3, resId: 'crude_oil', category: 'hydrocarbons', reserves: '60.5 Billion BBL', grade: '40° API WTI Midland', status: 'ACTIVE_PRODUCING', owner: 'Multi-Operator Joint Basin', operator: 'Pioneer & Chevron' },
-        { id: 'dep-escondida-cu', name: 'Escondida Copper Mine', country: 'CHILE', countryCode: 'CHL', lat: -24.26, lng: -69.07, resId: 'copper', category: 'strategic_metals', reserves: '32.6 Million Tons', grade: '0.85% Cu Sulfide', status: 'ACTIVE_PRODUCING', owner: 'BHP & Rio Tinto', operator: 'Minera Escondida' },
-        { id: 'dep-grasberg-au-cu', name: 'Grasberg Mine Complex', country: 'INDONESIA', countryCode: 'IDN', lat: -4.05, lng: 137.11, resId: 'gold', category: 'monetary_strategic', reserves: '30.2 Million Oz Au / 15Mt Cu', grade: '0.98 g/t Au, 0.72% Cu', status: 'ACTIVE_PRODUCING', owner: 'PT Inalum / Freeport', operator: 'PT Freeport Indonesia' },
-        { id: 'dep-bayan-obo-ree', name: 'Bayan Obo Rare Earth Mine', country: 'CHINA', countryCode: 'CHN', lat: 41.77, lng: 109.96, resId: 'rare_earth', category: 'critical_minerals', reserves: '40.0 Million Tons REO', grade: '5.7% Bastnäsite / Monazite', status: 'ACTIVE_PRODUCING', owner: 'China Northern Rare Earth', operator: 'Baogang Group' },
-        { id: 'dep-greenbushes-li', name: 'Greenbushes Hard-Rock Lithium', country: 'AUSTRALIA', countryCode: 'AUS', lat: -33.86, lng: 116.01, resId: 'lithium', category: 'battery_metals', reserves: '8.4 Million Tons LCE', grade: '2.1% Li2O Spodumene', status: 'ACTIVE_PRODUCING', owner: 'Tianqi Lithium & IGO', operator: 'Talison Lithium' },
-        { id: 'dep-salar-atacama-li', name: 'Salar de Atacama Brine Field', country: 'CHILE', countryCode: 'CHL', lat: -23.5, lng: -68.3, resId: 'lithium', category: 'battery_metals', reserves: '9.2 Million Tons LCE', grade: '1,400 mg/L Li Brine', status: 'ACTIVE_PRODUCING', owner: 'SQM & Albemarle', operator: 'SQM Salar' },
-        { id: 'dep-norilsk-ni', name: 'Norilsk Talnakh Ore Belt', country: 'RUSSIA', countryCode: 'RUS', lat: 69.35, lng: 88.2, resId: 'nickel', category: 'critical_minerals', reserves: '18.4 Million Tons Ni', grade: '1.75% Ni, 2.5% Cu, 8g/t PGM', status: 'ACTIVE_PRODUCING', owner: 'Nornickel Group', operator: 'Polar Division' },
-        { id: 'dep-olympic-dam-u', name: 'Olympic Dam Orebody', country: 'AUSTRALIA', countryCode: 'AUS', lat: -30.43, lng: 136.88, resId: 'uranium', category: 'nuclear_energy', reserves: '2.1 Million Tons U3O8', grade: '0.05% U3O8, 0.8% Cu', status: 'ACTIVE_PRODUCING', owner: 'BHP', operator: 'Olympic Dam Corp' },
-        { id: 'dep-tenke-fung-co', name: 'Tenke Fungurume Belt', country: 'DR CONGO', countryCode: 'COD', lat: -10.57, lng: 26.18, resId: 'cobalt', category: 'battery_metals', reserves: '2.8 Million Tons Co', grade: '0.35% Co, 2.8% Cu', status: 'ACTIVE_PRODUCING', owner: 'CMOC Group', operator: 'TFM SARL' },
-        { id: 'dep-carajas-fe', name: 'Carajás Iron Ore Province', country: 'BRAZIL', countryCode: 'BRA', lat: -6.06, lng: -50.18, resId: 'iron_ore', category: 'industrial_metals', reserves: '7.2 Billion Tons Fe', grade: '66.5% Fe Premium Fines', status: 'ACTIVE_PRODUCING', owner: 'Vale S.A.', operator: 'Vale Carajás' },
-        { id: 'dep-pilbara-fe', name: 'Pilbara Hamersley Province', country: 'AUSTRALIA', countryCode: 'AUS', lat: -22.5, lng: 118.0, resId: 'iron_ore', category: 'industrial_metals', reserves: '24.0 Billion Tons Fe', grade: '62.0% Fe Brockman Ore', status: 'ACTIVE_PRODUCING', owner: 'Rio Tinto & BHP', operator: 'Pilbara Iron Ops' },
-        { id: 'dep-cigar-lake-u', name: 'Cigar Lake High-Grade Mine', country: 'CANADA', countryCode: 'CAN', lat: 58.06, lng: -104.53, resId: 'uranium', category: 'nuclear_energy', reserves: '165,000 Tons U3O8', grade: '15.9% U3O8 Ultra-Rich', status: 'ACTIVE_PRODUCING', owner: 'Cameco & Orano', operator: 'Cameco Corporation' },
-        { id: 'dep-bou-craa-p', name: 'Bou Craa Phosphate Open-Cast', country: 'MOROCCO', countryCode: 'MAR', lat: 26.32, lng: -12.85, resId: 'phosphate', category: 'agricultural_chemicals', reserves: '1.2 Billion Tons P2O5', grade: '72% BPL Sedimentary', status: 'ACTIVE_PRODUCING', owner: 'OCP Group', operator: 'Phosboucraa' },
-        { id: 'dep-weipa-al', name: 'Weipa Bauxite Plateau', country: 'AUSTRALIA', countryCode: 'AUS', lat: -12.63, lng: 141.87, resId: 'bauxite', category: 'strategic_metals', reserves: '1.4 Billion Tons Bauxite', grade: '52.5% Al2O3 Pisolitic', status: 'ACTIVE_PRODUCING', owner: 'Rio Tinto', operator: 'Weipa Operations' },
-        { id: 'dep-bibiyana-gas', name: 'Bibiyana Natural Gas Field', country: 'BANGLADESH', countryCode: 'BGD', lat: 24.63, lng: 91.65, resId: 'natural_gas', category: 'hydrocarbons', reserves: '4.5 TCF Gas', grade: 'High Methane Sweet Gas', status: 'ACTIVE_PRODUCING', owner: 'Petrobangla / Chevron', operator: 'Chevron Bangladesh' },
-        { id: 'dep-barapukuria-coal', name: 'Barapukuria Coal Basin', country: 'BANGLADESH', countryCode: 'BGD', lat: 25.55, lng: 88.96, resId: 'iron_ore', category: 'industrial_metals', reserves: '390 Million Tons Bituminous', grade: 'Low Ash High Energy Coal', status: 'ACTIVE_PRODUCING', owner: 'Petrobangla', operator: 'BCMCL' },
-        { id: 'dep-titas-gas', name: 'Titas Gas Field Reservoir', country: 'BANGLADESH', countryCode: 'BGD', lat: 23.98, lng: 91.13, resId: 'natural_gas', category: 'hydrocarbons', reserves: '2.8 TCF Natural Gas', grade: '96.2% Pure Methane Gas', status: 'ACTIVE_PRODUCING', owner: 'BGFCL', operator: 'Titas Gas T&D' },
-        { id: 'dep-kailashtila-cond', name: 'Kailashtila Field & NGL Plant', country: 'BANGLADESH', countryCode: 'BGD', lat: 24.87, lng: 92.01, resId: 'natural_gas', category: 'hydrocarbons', reserves: '1.9 TCF Gas / 18M BBL Condensate', grade: 'High Hydrocarbon Condensate', status: 'ACTIVE_PRODUCING', owner: 'Sylhet Gas Fields Ltd', operator: 'SGFL' },
-        { id: 'dep-burgan-oil', name: 'Greater Burgan Oilfield', country: 'KUWAIT', countryCode: 'KWT', lat: 29.07, lng: 47.96, resId: 'crude_oil', category: 'hydrocarbons', reserves: '66.0 Billion BBL', grade: '31.9° API Medium Crude', status: 'ACTIVE_PRODUCING', owner: 'Kuwait Oil Company', operator: 'KOC Exploration' },
-        { id: 'dep-south-pars-gas', name: 'South Pars / North Dome Gas', country: 'QATAR', countryCode: 'QAT', lat: 27.2, lng: 52.0, resId: 'natural_gas', category: 'hydrocarbons', reserves: '1,800 TCF Non-Associated Gas', grade: 'Super-Giant Gas Field', status: 'ACTIVE_PRODUCING', owner: 'QatarEnergy & NIOC', operator: 'Qatargas & POGC' },
-        { id: 'dep-safaniya-oil', name: 'Safaniya Offshore Oilfield', country: 'SAUDI ARABIA', countryCode: 'SAU', lat: 28.05, lng: 48.77, resId: 'crude_oil', category: 'hydrocarbons', reserves: '37.0 Billion BBL', grade: '27° API Heavy Offshore', status: 'ACTIVE_PRODUCING', owner: 'Saudi Aramco', operator: 'Aramco Offshore' },
-        { id: 'dep-daqing-oil', name: 'Daqing Complex Oil Basin', country: 'CHINA', countryCode: 'CHN', lat: 46.59, lng: 125.0, resId: 'crude_oil', category: 'hydrocarbons', reserves: '16.0 Billion BBL', grade: 'Waxy Sweet Crude', status: 'ACTIVE_PRODUCING', owner: 'PetroChina', operator: 'Daqing Oilfield Co' },
-        { id: 'dep-samotlor-oil', name: 'Samotlor West Siberian Field', country: 'RUSSIA', countryCode: 'RUS', lat: 61.12, lng: 76.71, resId: 'crude_oil', category: 'hydrocarbons', reserves: '20.5 Billion BBL', grade: '32° API Siberian Light', status: 'ACTIVE_PRODUCING', owner: 'Rosneft', operator: 'Samotlorneftegaz' },
-        { id: 'dep-vaca-muerta-shale', name: 'Vaca Muerta Shale Basin', country: 'ARGENTINA', countryCode: 'ARG', lat: -38.5, lng: -69.0, resId: 'crude_oil', category: 'hydrocarbons', reserves: '16.2 Billion BBL / 308 TCF', grade: 'Unconventional Tight Oil/Gas', status: 'ACTIVE_PRODUCING', owner: 'YPF & Chevron', operator: 'YPF S.A.' },
-        { id: 'dep-marcellus-gas', name: 'Marcellus Shale Gas Basin', country: 'USA', countryCode: 'USA', lat: 41.0, lng: -77.5, resId: 'natural_gas', category: 'hydrocarbons', reserves: '84.0 TCF Proved Gas', grade: 'Dry Sweet Natural Gas', status: 'ACTIVE_PRODUCING', owner: 'EQT & Chesapeake', operator: 'EQT Production' },
-        { id: 'dep-athabasca-oil', name: 'Athabasca Bitumen Sands', country: 'CANADA', countryCode: 'CAN', lat: 57.0, lng: -111.5, resId: 'crude_oil', category: 'hydrocarbons', reserves: '165 Billion BBL Bitumen', grade: '8-10° API Heavy Bitumen', status: 'ACTIVE_PRODUCING', owner: 'Suncor & CNRL', operator: 'Canadian Natural' },
-        { id: 'dep-muruntau-au', name: 'Muruntau Open-Pit Gold Mine', country: 'UZBEKISTAN', countryCode: 'UZB', lat: 41.5, lng: 64.57, resId: 'gold', category: 'monetary_strategic', reserves: '4,500 Tons Gold (145M Oz)', grade: '2.4 g/t Quartz Vein Gold', status: 'ACTIVE_PRODUCING', owner: 'Navoi Mining & Metal', operator: 'NMMC State Enterprise' },
-        { id: 'dep-carlin-au', name: 'Carlin Trend Gold Province', country: 'USA', countryCode: 'USA', lat: 40.71, lng: -116.3, resId: 'gold', category: 'monetary_strategic', reserves: '84 Million Oz Gold', grade: '3.1 g/t Disseminated Au', status: 'ACTIVE_PRODUCING', owner: 'Nevada Gold Mines / Barrick', operator: 'NGM Joint Venture' },
-        { id: 'dep-collahuasi-cu', name: 'Collahuasi Porphyry Copper', country: 'CHILE', countryCode: 'CHL', lat: -20.97, lng: -68.65, resId: 'copper', category: 'strategic_metals', reserves: '28.5 Million Tons Cu', grade: '0.82% Cu Porphyry', status: 'ACTIVE_PRODUCING', owner: 'Anglo American & Glencore', operator: 'Doña Inés de Collahuasi' },
-        { id: 'dep-el-teniente-cu', name: 'El Teniente Underground Mine', country: 'CHILE', countryCode: 'CHL', lat: -34.09, lng: -70.35, resId: 'copper', category: 'strategic_metals', reserves: '34.0 Million Tons Cu', grade: '0.62% Cu Breccia Pipe', status: 'ACTIVE_PRODUCING', owner: 'Codelco State Corporation', operator: 'División El Teniente' },
-        { id: 'dep-kiruna-fe', name: 'Kiruna Magnetite Orebody', country: 'SWEDEN', countryCode: 'SWE', lat: 67.85, lng: 20.22, resId: 'iron_ore', category: 'industrial_metals', reserves: '1.2 Billion Tons Fe', grade: '60.0% Fe Dense Magnetite', status: 'ACTIVE_PRODUCING', owner: 'LKAB State Mining', operator: 'LKAB Kiruna' },
-        { id: 'dep-sudbury-ni-cu', name: 'Sudbury Impact Basin', country: 'CANADA', countryCode: 'CAN', lat: 46.6, lng: -81.2, resId: 'nickel', category: 'critical_minerals', reserves: '8.5 Million Tons Ni / 6Mt Cu', grade: '1.2% Ni, 1.4% Cu, PGM', status: 'ACTIVE_PRODUCING', owner: 'Vale Base Metals & Glencore', operator: 'Vale Sudbury Ops' },
-        { id: 'dep-jinchuan-ni', name: 'Jinchuan Ultramafic Nickel', country: 'CHINA', countryCode: 'CHN', lat: 38.5, lng: 102.18, resId: 'nickel', category: 'critical_minerals', reserves: '5.2 Million Tons Ni', grade: '1.06% Ni, 0.7% Cu', status: 'ACTIVE_PRODUCING', owner: 'Jinchuan Group', operator: 'Jinchuan Mining Co' },
-        { id: 'dep-mountain-pass-ree', name: 'Mountain Pass Carbonatite', country: 'USA', countryCode: 'USA', lat: 35.48, lng: -115.53, resId: 'rare_earth', category: 'critical_minerals', reserves: '2.1 Million Tons REO', grade: '6.3% Bastnäsite REO', status: 'ACTIVE_PRODUCING', owner: 'MP Materials Corp', operator: 'MP Materials Ops' },
-        { id: 'dep-mount-weld-ree', name: 'Mount Weld Carbonatite Pipe', country: 'AUSTRALIA', countryCode: 'AUS', lat: -28.87, lng: 122.18, resId: 'rare_earth', category: 'critical_minerals', reserves: '3.2 Million Tons REO', grade: '5.4% NdPr Enriched REO', status: 'ACTIVE_PRODUCING', owner: 'Lynas Rare Earths', operator: 'Lynas Mt Weld' },
-        { id: 'dep-uyuni-li', name: 'Salar de Uyuni Giant Basin', country: 'BOLIVIA', countryCode: 'BOL', lat: -20.13, lng: -67.48, resId: 'lithium', category: 'battery_metals', reserves: '21.0 Million Tons LCE', grade: '500-900 mg/L Li Brine', status: 'ACTIVE_PRODUCING', owner: 'YLB (Yacimientos de Litio)', operator: 'YLB State Corp' },
-        { id: 'dep-pilgangoora-li', name: 'Pilgangoora Spodumene Mine', country: 'AUSTRALIA', countryCode: 'AUS', lat: -21.03, lng: 118.91, resId: 'lithium', category: 'battery_metals', reserves: '5.8 Million Tons LCE', grade: '1.25% Li2O Pegmatite', status: 'ACTIVE_PRODUCING', owner: 'Pilbara Minerals', operator: 'Pilbara Minerals Ltd' },
-        { id: 'dep-sangaredi-al', name: 'Sangaredi High-Grade Bauxite', country: 'GUINEA', countryCode: 'GIN', lat: 11.09, lng: -13.9, resId: 'bauxite', category: 'strategic_metals', reserves: '1.8 Billion Tons Bauxite', grade: '58.0% Al2O3 High Quality', status: 'ACTIVE_PRODUCING', owner: 'CBG (Compagnie des Bauxites)', operator: 'CBG Guinea' },
-        { id: 'dep-khouribga-p', name: 'Khouribga Phosphate Plateau', country: 'MOROCCO', countryCode: 'MAR', lat: 32.88, lng: -6.91, resId: 'phosphate', category: 'agricultural_chemicals', reserves: '35.0 Billion Tons Phosphate', grade: '70% BPL Premium Rock', status: 'ACTIVE_PRODUCING', owner: 'OCP Group', operator: 'OCP Khouribga' },
-        { id: 'dep-uralkali-potash', name: 'Berezniki Potash Basin', country: 'RUSSIA', countryCode: 'RUS', lat: 59.41, lng: 56.81, resId: 'potash', category: 'agricultural_chemicals', reserves: '3.8 Billion Tons KCl', grade: '28% K2O Sylvinite', status: 'ACTIVE_PRODUCING', owner: 'Uralkali JSC', operator: 'Berezniki Mining Mine 4' },
-        { id: 'dep-sask-potash', name: 'Saskatchewan Potash Basin', country: 'CANADA', countryCode: 'CAN', lat: 52.0, lng: -106.0, resId: 'potash', category: 'agricultural_chemicals', reserves: '9.5 Billion Tons KCl', grade: '25-30% K2O Evaporite', status: 'ACTIVE_PRODUCING', owner: 'Nutrien & Mosaic', operator: 'Nutrien Allan & Rocanville' },
-        { id: 'dep-dead-sea-potash', name: 'Dead Sea Minerals & Bromine', country: 'JORDAN', countryCode: 'JOR', lat: 31.05, lng: 35.36, resId: 'potash', category: 'agricultural_chemicals', reserves: '1.5 Billion Tons Carnallite', grade: 'High Purity Potash/Bromine', status: 'ACTIVE_PRODUCING', owner: 'Arab Potash Company & ICL', operator: 'APC Industrial Plant' }
-    ];
+    const CANONICAL_GLOBAL_DEPOSITS = Object.freeze([]);
 
     /**
      * Unified Autonomous Resource Ministry Engine
      */
     class AutonomousResourceMinistryEngine {
         constructor() {
-            this.resourceTypes = CANONICAL_RESOURCE_TYPES;
-            this.deposits = CANONICAL_GLOBAL_DEPOSITS;
+            this.resourceTypes = [];
+            this.deposits = [];
             this.countryProfiles = {};
             this.isReady = false;
             this.isLoading = false;
-            this.activeSurveys = new Set(['lithium', 'rare_earth']);
-            this.facilityUpgrades = {};
-            this.strategicReserves = {};
-            this.cabinetVotes = {};
+            this.activeSurveys = new Set();
+            this.facilityUpgrades = Object.create(null);
+            this.strategicReserves = Object.create(null);
+            this.cabinetVotes = Object.create(null);
 
             // Synchronize on startup
             this.init();
@@ -8618,9 +8556,11 @@ _globalScope.GSRSK_DataFoundation = (() => {
                     return res.ok ? await res.json() : null;
                 });
 
-                const [res1, res2] = await Promise.all([
+                const [res1, res2, resourceTypesData, resourceDepositsData] = await Promise.all([
                     fetcher('resources.json').catch(() => null),
-                    fetcher('resources_2.json').catch(() => null)
+                    fetcher('resources_2.json').catch(() => null),
+                    fetcher('resource_types.json').catch(() => null),
+                    fetcher('resource_deposits.json').catch(() => null)
                 ]);
 
                 if (res1) {
@@ -8639,6 +8579,17 @@ _globalScope.GSRSK_DataFoundation = (() => {
                     }
                 }
 
+                if (resourceTypesData?.resource_types) {
+                    this._mergeResourceTypes(resourceTypesData.resource_types);
+                }
+
+                if (resourceDepositsData && Array.isArray(resourceDepositsData.deposits)) {
+                    this.deposits = resourceDepositsData.deposits.map(row => ({ ...row }));
+                    if (resourceDepositsData.resource_types) {
+                        this._mergeResourceTypes(resourceDepositsData.resource_types);
+                    }
+                }
+
                 // Hydrate into MasterGSRSKEngine if present
                 if (global.GSRSK_MasterEngine && typeof global.GSRSK_MasterEngine.bootstrap === 'function') {
                     global.GSRSK_MasterEngine.bootstrap({
@@ -8649,13 +8600,13 @@ _globalScope.GSRSK_DataFoundation = (() => {
                 }
 
                 this.isReady = true;
-                console.log(`[GSRSK] Resource Ministry Engine Fully Ready: ${Object.keys(this.countryProfiles).length} sovereign country profiles, ${this.deposits.length} strategic deposits, ${this.resourceTypes.length} commodities.`);
+                console.log(`[GSRSK] Resource Ministry Engine Ready: ${Object.keys(this.countryProfiles).length} sovereign country profiles, ${this.deposits.length} site records, ${this.resourceTypes.length} resource types loaded from data files.`);
 
                 if (typeof window !== 'undefined') {
                     window.dispatchEvent(new CustomEvent('RESOURCE_STATE_UPDATED', { detail: { engine: this } }));
                 }
             } catch (err) {
-                console.warn("[GSRSK] Resource initialization notice (using verified fallback data):", err);
+                console.warn("[GSRSK] Resource initialization failed; data-only runtime will remain unavailable until sources load:", err);
                 this.isReady = true;
             } finally {
                 this.isLoading = false;
@@ -8671,16 +8622,16 @@ _globalScope.GSRSK_DataFoundation = (() => {
                     this.resourceTypes.push({
                         id: k,
                         name: t.name || k.replace(/_/g, ' ').toUpperCase(),
-                        bnName: t.bnName || k,
-                        icon: t.icon || '💎',
-                        category: t.category || 'strategic_minerals',
-                        color: t.color || '#00e5ff',
-                        unit: t.unit || 'TONS',
-                        basePrice: t.basePrice || 1000,
-                        dailyOutput: t.dailyOutput || 5000,
-                        dailyDemand: t.dailyDemand || 4500,
-                        strategicImportance: t.strategicImportance || 'high',
-                        processChain: t.description || 'Extraction ➔ Refining ➔ National Stockpile'
+                        bnName: t.bnName || null,
+                        icon: t.icon || null,
+                        category: t.category || null,
+                        color: t.color || null,
+                        unit: t.unit || null,
+                        basePrice: t.basePrice ?? null,
+                        dailyOutput: null,
+                        dailyDemand: null,
+                        strategicImportance: t.strategicImportance || null,
+                        processChain: t.processChain || t.description || null
                     });
                 }
             });
@@ -8785,171 +8736,107 @@ _globalScope.GSRSK_DataFoundation = (() => {
         }
 
         getSummary(countryKey) {
-            const activeIso = this.normalizeCountryCode(countryKey || (typeof window !== 'undefined' && window.currentActiveCountry) || 'BGD');
-            const countryProf = this.getCountryResourceProfile(activeIso);
-            const countryName = countryProf?.identity?.name || activeIso;
-
-            // Generate 17 commodities status with active multipliers
-            const resourcesList = this.resourceTypes.map(res => {
-                const upgradeMul = this.facilityUpgrades[res.id] || 1.0;
-                const bonusSPR = this.strategicReserves[res.id] || 0;
-                const prod = Math.round(res.dailyOutput * upgradeMul);
-                const demand = res.dailyDemand;
-                const net = prod - demand;
-                const selfSuff = Math.min(250, Math.round((prod / (demand || 1)) * 100));
-                const stockDays = Math.max(15, Math.round((bonusSPR + (prod * 45)) / (demand || 1)));
-                const warehouseStock = Math.round(bonusSPR + (prod * 60));
-                const activeFac = Math.round(3 + (upgradeMul * 4));
-
+            const activeIso = this.normalizeCountryCode(countryKey || (typeof window !== 'undefined' && window.currentActiveCountry) || null);
+            const state = global.Game?.state || global.gameState || {};
+            const runtime = state?.resource?.[activeIso] || state?.resource?.[String(countryKey || '').toUpperCase()] || null;
+            const mineRows = Array.isArray(runtime?.mines) ? runtime.mines : [];
+            const outputs = runtime?.mineOutputs && typeof runtime.mineOutputs === 'object' ? runtime.mineOutputs : {};
+            const inventory = runtime?.inventory && typeof runtime.inventory === 'object' ? runtime.inventory : {};
+            const production = runtime?.production && typeof runtime.production === 'object' ? runtime.production : {};
+            const reserves = runtime?.reserves && typeof runtime.reserves === 'object' ? runtime.reserves : {};
+            const consumption = runtime?.consumption && typeof runtime.consumption === 'object' ? runtime.consumption : {};
+            const batches = Array.isArray(runtime?.batches) ? runtime.batches : [];
+            const resourceIds = new Set([
+                ...Object.keys(production),
+                ...Object.keys(inventory),
+                ...Object.keys(reserves),
+                ...mineRows.map(x => x?.resourceId).filter(Boolean)
+            ]);
+            const rows = this.resourceTypes.filter(res => resourceIds.size === 0 || resourceIds.has(res.id)).map(res => {
+                const rid = res.id;
+                const mineForResource = mineRows.filter(x => String(x?.resourceId || '') === String(rid));
+                const outputThisTurn = mineForResource.reduce((sum, mine) => {
+                    const o = outputs[mine?.occurrenceKey];
+                    return sum + (Number(o?.producedQuantity) || 0);
+                }, 0);
+                const cumulativeOutput = mineForResource.reduce((sum, mine) => {
+                    const o = outputs[mine?.occurrenceKey];
+                    return sum + (Number(o?.cumulativeProducedQuantity) || 0);
+                }, 0);
+                const prod = production[rid] == null ? outputThisTurn : Number(production[rid]);
+                const demand = consumption[rid] == null ? null : Number(consumption[rid]);
                 return {
-                    id: res.id,
+                    id: rid,
                     name: res.name,
-                    bnName: res.bnName,
-                    icon: res.icon,
-                    category: res.category,
-                    color: res.color,
-                    unit: res.unit,
-                    basePrice: res.basePrice,
-                    dailyProduction: prod,
+                    bnName: res.bnName || null,
+                    icon: res.icon || null,
+                    category: res.category || null,
+                    color: res.color || null,
+                    unit: res.unit || null,
+                    basePrice: res.basePrice ?? null,
+                    dailyProduction: Number.isFinite(prod) ? prod : outputThisTurn,
                     dailyConsumption: demand,
-                    netBalance: net,
-                    selfSufficiencyRatio: selfSuff,
-                    stockDays: stockDays,
-                    activeFacilities: activeFac,
-                    warehouseStock: warehouseStock,
-                    processChain: res.processChain
+                    netBalance: demand == null ? null : ((Number.isFinite(prod) ? prod : outputThisTurn) - demand),
+                    selfSufficiencyRatio: demand == null ? null : (((Number.isFinite(prod) ? prod : outputThisTurn) / Math.max(demand, 1)) * 100),
+                    stockDays: null,
+                    activeFacilities: mineForResource.filter(x => /ACTIVE|OPERATING|RUNNING|DEPLETING/.test(String(x?.operationalStatus || '').toUpperCase())).length,
+                    warehouseStock: Number(inventory[rid]) || 0,
+                    reserveBalance: Number(reserves[rid]) || 0,
+                    outputThisTurn,
+                    cumulativeOutput,
+                    batchCount: batches.filter(x => String(x?.resourceId || x?.materialIdentity || '') === String(rid)).length,
+                    processChain: res.processChain || null,
+                    dataStatus: runtime ? 'AVAILABLE' : 'RUNTIME_STATE_UNAVAILABLE'
                 };
             });
-
-            // Global Metrics
-            const totalStockDays = Math.round(resourcesList.reduce((acc, r) => acc + r.stockDays, 0) / resourcesList.length);
-            const avgSufficiency = Math.round(resourcesList.reduce((acc, r) => acc + r.selfSufficiencyRatio, 0) / resourcesList.length);
-            const activeSurveysList = Array.from(this.activeSurveys);
-
-            const globalMetrics = {
-                autonomyIndex: avgSufficiency,
-                strategicReservesTotalDays: totalStockDays,
-                activeFacilitiesTotal: resourcesList.reduce((acc, r) => acc + r.activeFacilities, 0),
-                surveysUnderway: activeSurveysList.map(id => {
-                    const r = this.resourceTypes.find(x => x.id === id) || { name: id, icon: '⛏️' };
-                    return { id, name: r.name, icon: r.icon, progress: 68, yieldPotential: 'High (+18.4%)' };
-                })
-            };
-
-            const briefing = `Sovereign resource grid for ${countryName} is operating in full geopolitical equilibrium. 17 strategic commodities are monitored with continuous multi-facility SCADA telemetry. Strategic Autonomy Index is ${avgSufficiency}% with ${totalStockDays} days of aggregate sovereign emergency reserves.`;
-
-            const debates = [
-                {
-                    id: 'deb-lng-expansion',
-                    avatar: '🛢️',
-                    speaker: 'Dr. Tariqul Islam',
-                    role: 'Secretary of Energy & Hydrocarbons',
-                    text: `We recommend authorizing a $500M Sovereign Expansion into deepwater LNG liquefaction and offshore gas storage to guarantee continuous baseload grid power during winter peak demand.`,
-                    options: [
-                        { label: '✅ AUTHORIZE DECREE (+$25M/s Gas)', action: 'expand_gas' },
-                        { label: '❌ POSTPONE FOR SPR BUFFER', action: 'buffer_spr' }
-                    ]
-                },
-                {
-                    id: 'deb-critical-lithium',
-                    avatar: '🔋',
-                    speaker: 'Engr. Sarah Chen',
-                    role: 'Chief of Critical Minerals Council',
-                    text: `Global lithium and rare earth markets face escalating trade friction. Fast-tracking domestic geological survey radar will uncover local pegmatite and heavy mineral sand reserves.`,
-                    options: [
-                        { label: '⛏️ LAUNCH NATIONAL SURVEY', action: 'survey_lithium' },
-                        { label: '🤝 SIGN IMPORT TREATY', action: 'treaty_lithium' }
-                    ]
-                },
-                {
-                    id: 'deb-grain-mandate',
-                    avatar: '🌾',
-                    speaker: 'Director Mahmudur Rahman',
-                    role: 'Food & Strategic Grain Reserve Board',
-                    text: `Enforcing a 100% Hermetic Food Grain Mandate across national silos will insulate the population from trans-boundary fertilizer and wheat inflation shocks.`,
-                    options: [
-                        { label: '📦 ENFORCE GRAIN MANDATE', action: 'mandate_grain' },
-                        { label: '💵 ALLOCATE AGRI SUBSIDY', action: 'subsidy_agri' }
-                    ]
-                }
-            ];
-
+            const activeMineCount = mineRows.filter(x => /ACTIVE|OPERATING|RUNNING|DEPLETING/.test(String(x?.operationalStatus || '').toUpperCase())).length;
             return {
-                briefing,
-                globalMetrics,
-                resourcesList,
-                debates
+                briefing: runtime
+                    ? `Observed resource runtime for ${activeIso}: ${mineRows.length} registered extraction sites, ${activeMineCount} operational sites, ${batches.length} tracked material lots. Missing values remain explicitly unobserved.`
+                    : `Resource runtime state for ${activeIso} is unavailable. No synthetic production, demand, stock or reserve figures are generated.`,
+                globalMetrics: {
+                    countryId: activeIso,
+                    autonomyIndex: null,
+                    strategicReservesTotalDays: null,
+                    activeFacilitiesTotal: activeMineCount,
+                    surveysUnderway: []
+                },
+                resourcesList: rows,
+                debates: [],
+                runtimeState: runtime ? 'AVAILABLE' : 'UNAVAILABLE',
+                mineRegister: mineRows.map(mine => ({
+                    occurrenceKey: mine.occurrenceKey || null,
+                    resourceId: mine.resourceId || null,
+                    depositName: mine.depositName || null,
+                    status: mine.operationalStatus || null,
+                    reserve: Number(mine?.reserveState?.residualQuantity ?? mine?.residualQuantity) || 0,
+                    outputThisTurn: Number(outputs[mine?.occurrenceKey]?.producedQuantity) || 0,
+                    cumulativeOutput: Number(outputs[mine?.occurrenceKey]?.cumulativeProducedQuantity) || 0,
+                    lastBatchId: outputs[mine?.occurrenceKey]?.lastBatchId || null,
+                    qualityState: outputs[mine?.occurrenceKey]?.qualityState || null
+                }))
             };
         }
 
         executeDirective(action, resId, opt) {
-            const resObj = this.resourceTypes.find(r => r.id === resId) || { name: resId, icon: '💎' };
-            const countryName = (typeof window !== 'undefined' && window.currentActiveCountry) || 'BANGLADESH';
-
-            if (action === 'survey') {
-                this.activeSurveys.add(resId);
-                if (typeof window !== 'undefined' && window.showOmegaNotification) {
-                    window.showOmegaNotification('⛏️ GEOLOGICAL SURVEY DISPATCHED', `Autonomous deep-earth exploration initiated for ${resObj.name}! Discovered reserve confidence increased.`, 'success');
+            if (action === 'focus_map' && typeof window !== 'undefined' && window.Game?.Map) {
+                if (typeof window.Game.Map.activateResourceMode === 'function') {
+                    window.Game.Map.activateResourceMode([resId]);
+                    return { accepted: true, status: 'MAP_FOCUS_APPLIED', resourceId: resId || null };
                 }
-            } else if (action === 'expand_facility') {
-                const cur = this.facilityUpgrades[resId] || 1.0;
-                this.facilityUpgrades[resId] = +(cur + 0.25).toFixed(2);
-
-                if (typeof window !== 'undefined') {
-                    if (window.resources && window.resources.cash) {
-                        window.resources.cash = Math.max(0, window.resources.cash - 10000000);
-                    }
-                    if (window.resourceRates) {
-                        if (resId === 'crude_oil') window.resourceRates.oil += 250;
-                        if (resId === 'iron_ore') window.resourceRates.steel += 150;
-                        if (resId === 'uranium') window.resourceRates.uranium += 5;
-                    }
-                    if (window.showOmegaNotification) {
-                        window.showOmegaNotification('🏭 FACILITY EXPANSION AUTHORIZED', `Industrial processing throughput for ${resObj.name} boosted to ${(this.facilityUpgrades[resId] * 100)}%!`, 'success');
-                    }
-                }
-            } else if (action === 'add_reserve') {
-                const cur = this.strategicReserves[resId] || 0;
-                this.strategicReserves[resId] = cur + 50000;
-
-                if (typeof window !== 'undefined') {
-                    if (window.resources) {
-                        if (resId === 'crude_oil') window.resources.oil += 50000;
-                        if (resId === 'iron_ore') window.resources.steel += 20000;
-                        if (resId === 'uranium') window.resources.uranium += 100;
-                    }
-                    if (window.showOmegaNotification) {
-                        window.showOmegaNotification('📦 STRATEGIC RESERVE STOCKPILED', `+50,000 units of ${resObj.name} transferred to sovereign emergency bunkers!`, 'success');
-                    }
-                }
-            } else if (action === 'focus_map') {
-                if (typeof window !== 'undefined' && window.Game && window.Game.Map) {
-                    if (typeof window.Game.Map.activateResourceMode === 'function') {
-                        window.Game.Map.activateResourceMode([resId]);
-                    } else if (typeof window.Game.Map.applyResourceMapFilter === 'function') {
-                        window.Game.Map.applyResourceMapFilter(resId);
-                    }
-                    if (window.showOmegaNotification) {
-                        window.showOmegaNotification('🗺️ MAP SENSORS ENGAGED', `World map targeted on global ${resObj.name} deposits and logistic corridors!`, 'info');
-                    }
-                }
-            } else if (action === 'cabinet_vote') {
-                this.cabinetVotes[resId] = opt;
-                if (typeof window !== 'undefined') {
-                    if (window.resources && window.resourceRates) {
-                        window.resourceRates.cash += 1000;
-                    }
-                    if (window.showOmegaNotification) {
-                        window.showOmegaNotification('🏛️ EXECUTIVE DECREE ENACTED', `Cabinet policy decree for ${resId} successfully passed into law!`, 'success');
-                    }
+                if (typeof window.Game.Map.applyResourceMapFilter === 'function') {
+                    window.Game.Map.applyResourceMapFilter(resId);
+                    return { accepted: true, status: 'MAP_FOCUS_APPLIED', resourceId: resId || null };
                 }
             }
-
-            // Fire reactive event
-            if (typeof window !== 'undefined') {
-                window.dispatchEvent(new CustomEvent('RESOURCE_STATE_UPDATED', { detail: { action, resId, opt } }));
-                window.dispatchEvent(new CustomEvent('MINISTRY_STATE_CHANGED', { detail: { ministryId: 'economy' } }));
-            }
+            return {
+                accepted: false,
+                status: 'LEGACY_DIRECTIVE_DISABLED',
+                action: action || null,
+                resourceId: resId || null,
+                option: opt || null,
+                reason: 'Direct resource mutation directives are disabled. Use the validated resource command/runtime path.'
+            };
         }
 
         openModal(countryKey) {
@@ -8991,7 +8878,7 @@ _globalScope.GSRSK_DataFoundation = (() => {
                                     <span style="font-size:11px; padding:2px 8px; border-radius:12px; background:rgba(34,197,94,0.2); border:1px solid #22c55e; color:#22c55e;">v14.0 ACTIVE</span>
                                 </div>
                                 <div style="font-size:11px; color:#cbd5e1; margin-top:2px;">
-                                    Sovereign Focus: <strong style="color:#ffd700;">${countryName}</strong> • Autonomy Rating: <strong style="color:#22c55e;">${summary.globalMetrics.autonomyIndex}%</strong> • Emergency Stock: <strong style="color:#00e5ff;">${summary.globalMetrics.strategicReservesTotalDays} Days</strong>
+                                    Sovereign Focus: <strong style="color:#ffd700;">${countryName}</strong> • Autonomy Rating: <strong style="color:#22c55e;">${summary.globalMetrics.autonomyIndex == null ? 'UNOBSERVED' : summary.globalMetrics.autonomyIndex + '%'}</strong> • Emergency Stock: <strong style="color:#00e5ff;">${summary.globalMetrics.strategicReservesTotalDays == null ? 'UNOBSERVED' : summary.globalMetrics.strategicReservesTotalDays + ' Days'}</strong>
                                 </div>
                             </div>
                         </div>
@@ -9024,55 +8911,85 @@ _globalScope.GSRSK_DataFoundation = (() => {
         }
 
         _renderMatrixTab(summary, countryKey) {
+            const mineRegister = Array.isArray(summary?.mineRegister) ? summary.mineRegister : [];
+            const mineRows = mineRegister.length ? mineRegister.map(m => {
+                const q = m.qualityState || {};
+                const grade = q.grade == null ? 'UNOBSERVED' : (Number(q.grade) * 100).toFixed(2) + '%';
+                const purity = q.purity == null ? 'UNOBSERVED' : (Number(q.purity) * 100).toFixed(2) + '%';
+                const output = Number.isFinite(Number(m.outputThisTurn)) ? Number(m.outputThisTurn).toLocaleString() : 'UNOBSERVED';
+                const cumulative = Number.isFinite(Number(m.cumulativeOutput)) ? Number(m.cumulativeOutput).toLocaleString() : 'UNOBSERVED';
+                const reserve = Number.isFinite(Number(m.reserve)) ? Number(m.reserve).toLocaleString() : 'UNOBSERVED';
+                return `
+                    <div style="display:grid;grid-template-columns:1.8fr .8fr .9fr .9fr .9fr .8fr .8fr;gap:8px;align-items:center;padding:8px 10px;border-bottom:1px solid rgba(255,255,255,0.07);font-size:10px;">
+                        <div><strong style="color:#f8fafc;">${m.depositName || m.occurrenceKey || 'UNNAMED SITE'}</strong><div style="color:#64748b;margin-top:2px;">${m.resourceId || 'UNOBSERVED'} · ${m.status || 'UNKNOWN'}</div></div>
+                        <span style="color:#00e5ff;">${reserve}</span>
+                        <span style="color:#22c55e;">+${output}</span>
+                        <span style="color:#cbd5e1;">${cumulative}</span>
+                        <span style="color:#a855f7;">${grade}</span>
+                        <span style="color:#f59e0b;">${purity}</span>
+                        <span style="color:#94a3b8;">${m.lastBatchId || 'NO BATCH'}</span>
+                    </div>`;
+            }).join('') : '<div style="padding:14px;color:#94a3b8;font-size:11px;">No runtime mine records are currently available.</div>';
+
             return `
+                <div style="margin-bottom:16px;background:rgba(8,15,26,0.94);border:1px solid rgba(0,229,255,0.25);border-radius:10px;overflow:hidden;">
+                    <div style="padding:10px 12px;background:rgba(0,229,255,0.06);display:flex;justify-content:space-between;align-items:center;">
+                        <strong style="color:#00e5ff;font-size:11px;">LIVE MINE OUTPUT REGISTER</strong>
+                        <span style="color:#94a3b8;font-size:10px;">${mineRegister.length} sites · output is batch-ledger derived</span>
+                    </div>
+                    <div style="display:grid;grid-template-columns:1.8fr .8fr .9fr .9fr .9fr .8fr .8fr;gap:8px;padding:7px 10px;color:#64748b;font-size:9px;text-transform:uppercase;border-bottom:1px solid rgba(255,255,255,0.09);">
+                        <span>MINE / STATUS</span><span>RESERVE</span><span>OUTPUT/TURN</span><span>CUMULATIVE</span><span>GRADE</span><span>PURITY</span><span>LAST BATCH</span>
+                    </div>
+                    ${mineRows}
+                </div>
+
                 <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:12px;">
-                    ${summary.resourcesList.map(r => `
-                        <div style="background:rgba(8,15,26,0.9); border:1px solid ${r.color || 'rgba(0,229,255,0.3)'}; border-radius:10px; padding:12px; display:flex; flex-direction:column; gap:8px;">
-                            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-                                <div style="display:flex; align-items:center; gap:8px;">
-                                    <span style="font-size:22px;">${r.icon}</span>
-                                    <div>
-                                        <div style="font-size:12px; font-weight:bold; color:#f8fafc;">${r.name}</div>
-                                        <div style="font-size:10px; color:#94a3b8;">${r.bnName || ''} • ${r.category}</div>
+                    ${summary.resourcesList.map(r => {
+                        const dailyProduction = r.dailyProduction == null ? 'UNOBSERVED' : Number(r.dailyProduction).toLocaleString();
+                        const dailyConsumption = r.dailyConsumption == null ? 'UNOBSERVED' : Number(r.dailyConsumption).toLocaleString();
+                        const netBalance = r.netBalance == null ? 'UNOBSERVED' : ((r.netBalance >= 0 ? '+' : '') + Number(r.netBalance).toLocaleString());
+                        const stockDays = r.stockDays == null ? 'UNOBSERVED' : r.stockDays + ' D';
+                        const suff = r.selfSufficiencyRatio == null ? 'UNOBSERVED' : Number(r.selfSufficiencyRatio).toFixed(1) + '%';
+                        const progress = r.selfSufficiencyRatio == null ? 0 : Math.max(0, Math.min(100, Number(r.selfSufficiencyRatio)));
+                        return `
+                            <div style="background:rgba(8,15,26,0.9); border:1px solid ${r.color || 'rgba(0,229,255,0.3)'}; border-radius:10px; padding:12px; display:flex; flex-direction:column; gap:8px;">
+                                <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                                    <div style="display:flex; align-items:center; gap:8px;">
+                                        <span style="font-size:22px;">${r.icon || ''}</span>
+                                        <div>
+                                            <div style="font-size:12px; font-weight:bold; color:#f8fafc;">${r.name}</div>
+                                            <div style="font-size:10px; color:#94a3b8;">${r.bnName || ''} ${r.category ? '• ' + r.category : ''}</div>
+                                        </div>
+                                    </div>
+                                    <span style="font-size:10px; padding:2px 6px; border-radius:4px; background:rgba(0,229,255,0.1); color:#00e5ff; font-weight:bold;">${r.unit || 'UNOBSERVED'}</span>
+                                </div>
+
+                                <div>
+                                    <div style="display:flex; justify-content:space-between; font-size:10px; margin-bottom:3px;">
+                                        <span style="color:#94a3b8;">Self-Sufficiency:</span>
+                                        <strong style="color:#94a3b8;">${suff}</strong>
+                                    </div>
+                                    <div style="width:100%; height:6px; background:rgba(255,255,255,0.1); border-radius:3px; overflow:hidden;">
+                                        <div style="width:${progress}%; height:100%; background:#64748b;"></div>
                                     </div>
                                 </div>
-                                <span style="font-size:10px; padding:2px 6px; border-radius:4px; background:rgba(0,229,255,0.1); color:#00e5ff; font-weight:bold;">${r.unit}</span>
-                            </div>
 
-                            <!-- SELF-SUFFICIENCY BAR -->
-                            <div>
-                                <div style="display:flex; justify-content:space-between; font-size:10px; margin-bottom:3px;">
-                                    <span style="color:#94a3b8;">Self-Sufficiency:</span>
-                                    <strong style="color:${r.selfSufficiencyRatio >= 100 ? '#22c55e' : '#ffd700'};">${r.selfSufficiencyRatio}%</strong>
+                                <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; font-size:10px; background:rgba(0,0,0,0.3); padding:6px 8px; border-radius:6px;">
+                                    <div>Output: <strong style="color:#22c55e;">+${dailyProduction}</strong></div>
+                                    <div>Demand: <strong style="color:#f87171;">-${dailyConsumption}</strong></div>
+                                    <div>Net: <strong style="color:#cbd5e1;">${netBalance}</strong></div>
+                                    <div>Stock Days: <strong style="color:#ffd700;">${stockDays}</strong></div>
+                                    <div>Warehouse: <strong style="color:#00e5ff;">${r.warehouseStock == null ? 'UNOBSERVED' : Number(r.warehouseStock).toLocaleString()}</strong></div>
+                                    <div>Reserve: <strong style="color:#a855f7;">${r.reserveBalance == null ? 'UNOBSERVED' : Number(r.reserveBalance).toLocaleString()}</strong></div>
                                 </div>
-                                <div style="width:100%; height:6px; background:rgba(255,255,255,0.1); border-radius:3px; overflow:hidden;">
-                                    <div style="width:${Math.min(100, r.selfSufficiencyRatio)}%; height:100%; background:${r.selfSufficiencyRatio >= 100 ? '#22c55e' : '#ffd700'};"></div>
+
+                                <div style="display:grid; grid-template-columns:1fr; gap:4px; margin-top:2px;">
+                                    <button onclick="window.ResourceMinistryEngine.executeDirective('focus_map', '${countryKey}'); window.ResourceMinistryEngine.closeModal();" style="padding:6px 4px; background:rgba(168,85,247,0.15); border:1px solid #a855f7; color:#a855f7; font-size:10px; font-weight:bold; border-radius:4px; cursor:pointer;">
+                                        FOCUS MAP
+                                    </button>
                                 </div>
-                            </div>
-
-                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; font-size:10px; background:rgba(0,0,0,0.3); padding:6px 8px; border-radius:6px;">
-                                <div>Output: <strong style="color:#22c55e;">+${r.dailyProduction.toLocaleString()}</strong></div>
-                                <div>Demand: <strong style="color:#f87171;">-${r.dailyConsumption.toLocaleString()}</strong></div>
-                                <div>Net: <strong style="color:${r.netBalance >= 0 ? '#22c55e' : '#f87171'};">${r.netBalance >= 0 ? '+' : ''}${r.netBalance.toLocaleString()}</strong></div>
-                                <div>Stock Days: <strong style="color:#ffd700;">${r.stockDays} D</strong></div>
-                            </div>
-
-                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:4px; margin-top:2px;">
-                                <button onclick="window.ResourceMinistryEngine.executeDirective('survey', '${r.id}'); window.ResourceMinistryEngine.renderModalContent(document.getElementById('gsrsk-intelligence-modal'), '${countryKey}', 'matrix');" style="padding:6px 4px; background:rgba(0,229,255,0.15); border:1px solid #00e5ff; color:#00e5ff; font-size:10px; font-weight:bold; border-radius:4px; cursor:pointer;">
-                                    ⛏️ SURVEY
-                                </button>
-                                <button onclick="window.ResourceMinistryEngine.executeDirective('expand_facility', '${r.id}'); window.ResourceMinistryEngine.renderModalContent(document.getElementById('gsrsk-intelligence-modal'), '${countryKey}', 'matrix');" style="padding:6px 4px; background:rgba(34,197,94,0.15); border:1px solid #22c55e; color:#22c55e; font-size:10px; font-weight:bold; border-radius:4px; cursor:pointer;">
-                                    🏭 EXPAND (+25%)
-                                </button>
-                                <button onclick="window.ResourceMinistryEngine.executeDirective('add_reserve', '${r.id}'); window.ResourceMinistryEngine.renderModalContent(document.getElementById('gsrsk-intelligence-modal'), '${countryKey}', 'matrix');" style="padding:6px 4px; background:rgba(255,215,0,0.15); border:1px solid #ffd700; color:#ffd700; font-size:10px; font-weight:bold; border-radius:4px; cursor:pointer;">
-                                    📦 SPR BUFFER
-                                </button>
-                                <button onclick="window.ResourceMinistryEngine.executeDirective('focus_map', '${r.id}'); window.ResourceMinistryEngine.closeModal();" style="padding:6px 4px; background:rgba(168,85,247,0.15); border:1px solid #a855f7; color:#a855f7; font-size:10px; font-weight:bold; border-radius:4px; cursor:pointer;">
-                                    🗺️ FOCUS MAP
-                                </button>
-                            </div>
-                        </div>
-                    `).join('')}
+                            </div>`;
+                    }).join('') || '<div style="padding:14px;color:#94a3b8;">No resource runtime records are available.</div>'}
                 </div>
             `;
         }
@@ -11868,15 +11785,23 @@ _globalScope.GSRSK_DataFoundation = (() => {
                             });
                             scratch.registerAccessibilityState(accessibility);
 
-                            const nominalCapacityRate = this._resolveNominalCapacityRate(declaredEndowment, config);
+                            const nominalCapacityRate = this._resolveNominalCapacityRate(declaredEndowment, config, rawReserve);
                             const capacity = new ExtractionCapacity({
                                 assetReference: `ASSET_${occKey}`,
                                 occurrenceKey: occKey,
                                 nominalRate: nominalCapacityRate,
-                                rateUnit: unit,
+                                unit: unit,
                                 period: TemporalWindowUnit.PER_DAY,
-                                availabilityFactor: 0.92,
-                                maintenanceFactor: 0.95
+                                availabilityFactor: typeof rawReserve?.capacityAvailabilityFactor === 'number' ? rawReserve.capacityAvailabilityFactor : 0.92,
+                                maintenanceFactor: typeof rawReserve?.capacityMaintenanceFactor === 'number' ? rawReserve.capacityMaintenanceFactor : 0.95,
+                                provenance: {
+                                    sourceSubsystem: rawReserve ? 'RESOURCE_JSON_CAPACITY_DATA' : 'RESOURCE_RESERVE_CAPACITY_RULE',
+                                    sourceId: rawReserve?.sourceRecordId || rawReserve?.id || rawReserve?.name || occKey,
+                                    observedRatePerDay: rawReserve?.productionRatePerDay ?? null,
+                                    rateStatus: rawReserve?.productionRateStatus || 'DERIVED_GAME_RULE',
+                                    rule: rawReserve?.productionRateProvenance || 'resource_economy_rules.json#extraction.capacityModel',
+                                    timestamp: 0
+                                }
                             });
                             scratch.registerCapacity(capacity);
                         });
@@ -11936,57 +11861,94 @@ _globalScope.GSRSK_DataFoundation = (() => {
             }
 
             _parseDeclaredReserveQuantity(reserveText, resourceTypeKey, targetUnit) {
-                const text = String(reserveText || '').replace(/,/g, ' ').replace(/\\s+/g, ' ').trim();
+                const text = String(reserveText || '').replace(/,/g, '').replace(/\s+/g, ' ').trim();
                 if (!text) return null;
+
                 const rid = String(resourceTypeKey || '').replace(/^RES_TYPE:/i, '').trim().toLowerCase();
+                const unit = String(targetUnit || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '_');
+
+                const scale = multiplier => {
+                    const source = String(multiplier || '').toLowerCase();
+                    if (source === 'billion') return 1e9;
+                    if (source === 'million') return 1e6;
+                    if (source === 'thousand') return 1e3;
+                    return 1;
+                };
+
                 if (rid === 'crude_oil') {
-                    const m = text.match(/([0-9]+(?:\\.[0-9]+)?)\\s*(billion|million|thousand)?\\s*(?:bb l|bbl|barrels?)/i) || text.match(/([0-9]+(?:\\.[0-9]+)?)\\s*(billion|million|thousand)?\\s*bb/i);
-                    if (!m) return null;
-                    const mult = String(m[2] || '').toLowerCase() === 'billion' ? 1e9 : String(m[2] || '').toLowerCase() === 'million' ? 1e6 : String(m[2] || '').toLowerCase() === 'thousand' ? 1e3 : 1;
-                    return Number(m[1]) * mult;
+                    const m = text.match(/([0-9]+(?:\.[0-9]+)?)\s*(billion|million|thousand)?\s*(?:bbl|barrels?)/i);
+                    return m ? Number(m[1]) * scale(m[2]) : null;
                 }
+
                 if (rid === 'natural_gas') {
-                    const tcf = text.match(/([0-9]+(?:\\.[0-9]+)?)\\s*(?:TCF|TRILLION\\s*CUBIC\\s*FEET)/i);
-                    if (tcf) return Number(tcf[1]) * 1e6;
-                    const bcf = text.match(/([0-9]+(?:\\.[0-9]+)?)\\s*(?:BCF|BILLION\\s*CUBIC\\s*FEET)/i);
-                    if (bcf) return Number(bcf[1]) * 1e3;
-                    const mcf = text.match(/([0-9]+(?:\\.[0-9]+)?)\\s*(?:MCF|MILLION\\s*CUBIC\\s*FEET)/i);
-                    if (mcf) return Number(mcf[1]);
+                    let m = text.match(/([0-9]+(?:\.[0-9]+)?)\s*TCF/i);
+                    if (m) {
+                        const value = Number(m[1]);
+                        if (unit === 'bcm' || unit === 'billion_cubic_metres' || unit === 'billion_cubic_meters') return value * 28.316846592;
+                        if (unit === 'bcf' || unit === 'billion_cubic_feet') return value * 1000;
+                        if (unit === 'mcf' || unit === 'million_cubic_feet') return value * 1e6;
+                        if (unit === 'cubic_metres' || unit === 'cubic_meters' || unit === 'm3') return value * 28.316846592e9;
+                        return value;
+                    }
+
+                    m = text.match(/([0-9]+(?:\.[0-9]+)?)\s*BCF/i);
+                    if (m) {
+                        const value = Number(m[1]);
+                        if (unit === 'bcm' || unit === 'billion_cubic_metres' || unit === 'billion_cubic_meters') return value * 0.028316846592;
+                        if (unit === 'mcf' || unit === 'million_cubic_feet') return value * 1000;
+                        if (unit === 'cubic_metres' || unit === 'cubic_meters' || unit === 'm3') return value * 28.316846592e6;
+                        return value;
+                    }
+
+                    m = text.match(/([0-9]+(?:\.[0-9]+)?)\s*MCF/i);
+                    if (m) {
+                        const value = Number(m[1]);
+                        if (unit === 'bcm' || unit === 'billion_cubic_metres' || unit === 'billion_cubic_meters') return value * 0.000028316846592;
+                        if (unit === 'cubic_metres' || unit === 'cubic_meters' || unit === 'm3') return value * 28.316846592;
+                        return value;
+                    }
+
                     return null;
                 }
+
                 if (rid === 'gold') {
-                    const oz = text.match(/([0-9]+(?:\\.[0-9]+)?)\\s*(?:MILLION|BILLION|THOUSAND)?\\s*(?:OZ|OZT|TROY\\s*OUNCES?)/i);
-                    if (oz) {
-                        const scale = /BILLION/i.test(oz[0]) ? 1e9 : /MILLION/i.test(oz[0]) ? 1e6 : /THOUSAND/i.test(oz[0]) ? 1e3 : 1;
-                        return Number(oz[1]) * scale;
-                    }
-                    const tons = text.match(/([0-9]+(?:\\.[0-9]+)?)\\s*(?:MILLION|BILLION|THOUSAND)?\\s*TONS?\\s+GOLD/i);
+                    const oz = text.match(/([0-9]+(?:\.[0-9]+)?)\s*(million|billion|thousand)?\s*(?:oz|ozt|troy\s*ounces?)/i);
+                    if (oz) return Number(oz[1]) * scale(oz[2]);
+
+                    const tons = text.match(/([0-9]+(?:\.[0-9]+)?)\s*(million|billion|thousand)?\s*(?:metric\s*)?tons?\s+gold/i);
                     if (tons) {
-                        const scale = /BILLION/i.test(tons[0]) ? 1e9 : /MILLION/i.test(tons[0]) ? 1e6 : /THOUSAND/i.test(tons[0]) ? 1e3 : 1;
-                        return Number(tons[1]) * scale * 32150.7465686;
+                        const tonnes = Number(tons[1]) * scale(tons[2]);
+                        return unit === 'troy_ounces' || unit === 'ozt' ? tonnes * 32150.7465686 : tonnes;
                     }
                     return null;
                 }
+
                 if (rid === 'uranium') {
-                    const m = text.match(/([0-9]+(?:\\.[0-9]+)?)\\s*(billion|million|thousand)?\\s*(?:metric\\s*)?tons?/i);
+                    const m = text.match(/([0-9]+(?:\.[0-9]+)?)\s*(billion|million|thousand)?\s*(?:metric\s*)?tons?/i);
                     if (!m) return null;
-                    const scale = String(m[2] || '').toLowerCase() === 'billion' ? 1e9 : String(m[2] || '').toLowerCase() === 'million' ? 1e6 : String(m[2] || '').toLowerCase() === 'thousand' ? 1e3 : 1;
-                    return Number(m[1]) * scale * 1000;
+                    const tonnes = Number(m[1]) * scale(m[2]);
+                    return unit === 'kg' || unit === 'kilograms' ? tonnes * 1000 : tonnes;
                 }
-                if (rid === 'iron_ore' && /\\bCOAL\\b/i.test(text)) return null;
-                if (['iron_ore','rare_earth','lithium','phosphate','bauxite','nickel','cobalt','potash'].includes(rid)) {
-                    const m = text.match(/([0-9]+(?:\\.[0-9]+)?)\\s*(billion|million|thousand)?\\s*(?:metric\\s*)?tons?/i);
+
+                if (rid === 'iron_ore' && /\bcoal\b/i.test(text)) return null;
+                if (['iron_ore','rare_earth','lithium','phosphate','bauxite','nickel','cobalt','copper','potash','coal'].includes(rid)) {
+                    const m = text.match(/([0-9]+(?:\.[0-9]+)?)\s*(billion|million|thousand)?\s*(?:metric\s*)?tons?/i);
                     if (!m) return null;
-                    const scale = String(m[2] || '').toLowerCase() === 'billion' ? 1e9 : String(m[2] || '').toLowerCase() === 'million' ? 1e6 : String(m[2] || '').toLowerCase() === 'thousand' ? 1e3 : 1;
-                    return Number(m[1]) * scale;
+                    return Number(m[1]) * scale(m[2]);
                 }
+
                 return null;
             }
 
             _describeReserveConversion(rawDeposit, resourceTypeKey, targetUnit) {
                 const rid = String(resourceTypeKey || '').replace(/^RES_TYPE:/i, '').trim().toLowerCase();
                 const source = String(rawDeposit?.reserves || rawDeposit?.reserve || '');
-                if (rid === 'natural_gas' && /TCF/i.test(source)) return 'TCF_TO_MCF_1_TO_1000000';
+                if (rid === 'natural_gas' && /TCF/i.test(source)) {
+                    const unit = String(targetUnit || '').trim().toLowerCase();
+                    if (unit === 'bcm' || unit === 'billion_cubic_metres' || unit === 'billion_cubic_meters') return 'TCF_TO_BCM_1_TO_28.316846592';
+                    if (unit === 'mcf' || unit === 'million_cubic_feet') return 'TCF_TO_MCF_1_TO_1000000';
+                    return 'TCF_TO_SOURCE_UNIT';
+                }
                 if (rid === 'uranium' && /TON/i.test(source) && String(targetUnit).toUpperCase() === 'KG') return 'TONNES_TO_KG_1_TO_1000';
                 if (rid === 'gold' && /TON/i.test(source) && String(targetUnit).toUpperCase() === 'OZT') return 'TONNES_TO_TROY_OUNCE_1_TO_32150.7465686';
                 if (/BILLION/i.test(source)) return 'BILLION_TO_BASE_UNIT';
@@ -12008,8 +11970,12 @@ _globalScope.GSRSK_DataFoundation = (() => {
                 return null;
             }
 
-            _resolveNominalCapacityRate(declaredQuantity, config) {
-                if (typeof config.nominalRateDaily === 'number') {
+            _resolveNominalCapacityRate(declaredQuantity, config, rawDeposit = null) {
+                const sourceRate = Number(rawDeposit?.productionRatePerDay);
+                if (Number.isFinite(sourceRate) && sourceRate > 0) {
+                    return sourceRate;
+                }
+                if (typeof config.nominalRateDaily === 'number' && Number.isFinite(config.nominalRateDaily) && config.nominalRateDaily > 0) {
                     return config.nominalRateDaily;
                 }
                 return Math.max(0.0001, declaredQuantity / 3650.0);

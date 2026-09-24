@@ -156,6 +156,189 @@
       }
     };
   }
+
+  function appendEvent(ctx,eventType,payload){
+    const logs=Array.isArray(ctx.stateTransaction.get('resource.eventLog'))
+      ? clone(ctx.stateTransaction.get('resource.eventLog')) : [];
+    logs.push({
+      eventId:'REV-'+turn()+'-'+canonical(ctx.countryId)+'-'+String(logs.length+1),
+      eventType,
+      countryId:canonical(ctx.countryId),
+      simulationTurn:turn(),
+      payload:clone(payload||{})
+    });
+    const max=1024;
+    ctx.stateTransaction.set('resource.eventLog',logs.slice(-max));
+  }
+  function parseObservedQuality(v){
+    if(v===undefined||v===null||v==='')return null;
+    if(typeof v==='number'&&Number.isFinite(v)){
+      if(v>=0&&v<=1)return v;
+      if(v>1&&v<=100)return v/100;
+      return null;
+    }
+    const s=String(v).trim().replace(/,/g,'');
+    const m=s.match(/(-?\d+(?:\.\d+)?)\s*%/);
+    if(m){
+      const n=Number(m[1]);return Number.isFinite(n)?n/100:null;
+    }
+    const n=Number(s);
+    if(Number.isFinite(n)){
+      if(n>=0&&n<=1)return n;
+      if(n>1&&n<=100)return n/100;
+    }
+    return null;
+  }
+  function inventoryFromBatches(batchRows){
+    const out={};
+    (Array.isArray(batchRows)?batchRows:[]).forEach(b=>{
+      const rid=String(b?.resourceId||b?.materialIdentity||'').trim();
+      const q=n(b?.remainingQuantity!=null?b.remainingQuantity:b?.quantity);
+      if(rid&&q!==null&&q>0)out[rid]=(out[rid]||0)+q;
+    });
+    return out;
+  }
+  function warehouseFromBatches(c,batchRows){
+    const lots=[];
+    const stockByResource={};
+    const locationBalances={};
+    (Array.isArray(batchRows)?batchRows:[]).forEach(b=>{
+      const q=n(b?.remainingQuantity!=null?b.remainingQuantity:b?.quantity);
+      if(!b||q===null||q<=0)return;
+      const rid=String(b.resourceId||b.materialIdentity||'').trim();
+      const location=String(b.warehouseLocationKey||b.warehouseLocation||'WAREHOUSE_'+canonical(c)).trim();
+      if(rid)stockByResource[rid]=(stockByResource[rid]||0)+q;
+      if(location){
+        if(!locationBalances[location])locationBalances[location]={};
+        if(rid)locationBalances[location][rid]=(locationBalances[location][rid]||0)+q;
+      }
+      lots.push({
+        batchId:b.batchId||null,resourceId:rid,materialIdentity:b.materialIdentity||rid,
+        quantity:n(b.quantity)||q,remainingQuantity:q,unit:b.unit||null,stage:b.stage||'RAW',
+        locationKey:location,ownerCompanyId:b.ownerCompanyId||null,
+        extractionReference:b.extractionReference||null,processId:b.processId||null,
+        timestampTurn:b.timestampTurn??turn(),qualityState:clone(b.qualityState||null),
+        sourceBatchIds:Array.isArray(b.sourceBatchIds)?b.sourceBatchIds.slice():[],
+        provenance:clone(b.provenance||null)
+      });
+    });
+    return {
+      version:'1.0.0',
+      authority:'RESOURCE_BATCH_LEDGER',
+      countryId:canonical(c),
+      lastUpdatedTurn:turn(),
+      lotCount:lots.length,
+      lots,
+      stockByResource,
+      locationBalances
+    };
+  }
+  function persistPhysicalState(ctx,batchRows){
+    const inventory=inventoryFromBatches(batchRows);
+    const warehouse=warehouseFromBatches(ctx.countryId,batchRows);
+    ctx.stateTransaction.set('resource.inventory',inventory);
+    ctx.stateTransaction.set('resource.warehouse',warehouse);
+    return{inventory,warehouse};
+  }
+  function sourceRawForOccurrence(x){
+    if(x?.rawDeposit)return x.rawDeposit;
+    const e=engine(),rows=Array.isArray(e?.deposits)?e.deposits:[];
+    const name=String(x?.depositName||'').trim().toUpperCase();
+    const country=String(x?.countryId||'').trim().toUpperCase();
+    return rows.find(d=>String(d?.name||'').trim().toUpperCase()===name &&
+      (!country||String(d?.countryCode||d?.country||'').trim().toUpperCase()===country))||null;
+  }
+  function decorateProducedBatch(rawBatch,x,result,c){
+    const batch=clone(rawBatch?.toJSON?.()||rawBatch||{});
+    const raw=sourceRawForOccurrence(x)||{};
+    const gradeRaw=raw.grade??raw.oreGrade??raw.ore_grade??raw.assayGrade??null;
+    const purityRaw=raw.purity??raw.orePurity??raw.ore_purity??raw.quality??null;
+    const grade=parseObservedQuality(raw.gradeValue??gradeRaw);
+    const purity=parseObservedQuality(raw.purityValue??purityRaw);
+    const rid=String(x.resourceId||x.resourceTypeKey||'').replace(/^RES_TYPE:/i,'').toLowerCase();
+    const gasLike=rid==='natural_gas';
+    const oilLike=rid==='crude_oil';
+    const liquidLike=oilLike;
+    const quality=Object.assign({},clone(batch.qualityState||{}),{
+      grade,
+      purity,
+      gradeRaw:gradeRaw===undefined?null:gradeRaw,
+      purityRaw:purityRaw===undefined?null:purityRaw,
+      gradeStatus:grade===null
+        ? (gradeRaw===undefined||gradeRaw===null||gradeRaw===''?'UNOBSERVED':'OBSERVED_TEXT_ONLY')
+        : 'OBSERVED_SOURCE',
+      purityStatus:purity===null?'UNOBSERVED':'OBSERVED_SOURCE',
+      physicalState:raw.physicalState||batch.qualityState?.physicalState||
+        (gasLike?'GAS_RAW':(liquidLike?'LIQUID_CRUDE':'SOLID_RUN_OF_MINE')),
+      chemicalState:raw.chemicalState||batch.qualityState?.chemicalState||
+        (gasLike?'RAW_NATURAL_GAS':(liquidLike?'RAW_CRUDE_OIL':'RAW_EXTRACTED_ORE'))
+    });
+    batch.batchId=batch.batchId||('BATCH_EXT_'+turn()+'_'+canonical(c)+'_'+String(x.occurrenceKey).replace(/[^A-Z0-9:_-]/gi,''));
+    batch.resourceId=x.resourceId||batch.resourceId||x.resourceTypeKey;
+    batch.materialIdentity=x.resourceId||x.resourceTypeKey||batch.materialIdentity;
+    batch.quantity=n(batch.quantity)!=null?n(batch.quantity):n(result.approvedQuantity)||0;
+    batch.remainingQuantity=batch.quantity;
+    batch.unit=batch.unit||x.reserveState?.unit||raw.unit||'UNKNOWN_UNIT';
+    batch.stage='RAW';
+    batch.ownerCountryCode=canonical(c);
+    batch.ownerCompanyId=x.ownerKey||x.operatorKey||batch.ownerCompanyId||null;
+    batch.sourceLocationKey=x.locationNodeKey||x.occurrenceKey;
+    batch.warehouseLocationKey='WAREHOUSE_'+canonical(c);
+    batch.locationKey=batch.warehouseLocationKey;
+    batch.extractionReference=batch.extractionReference||result.resultId||null;
+    batch.sourceBatchIds=Array.isArray(batch.sourceBatchIds)?batch.sourceBatchIds:[];
+    batch.timestampTurn=turn();
+    batch.qualityState=quality;
+    batch.sourceData={
+      authority:'RESOURCE_JSON',
+      dataset:raw.sourceDataset||null,
+      path:raw.sourcePath||null,
+      recordId:raw.sourceRecordId||raw.id||null,
+      declaredReserve:raw.reserves??raw.reserve??null,
+      declaredGrade:gradeRaw,
+      declaredPurity:purityRaw,
+      sourceProductionRatePerDay:raw.productionRatePerDay??null,
+      productionRateBasis:raw.productionRateBasis||null,
+      status:raw.status||raw.operationalStatus||null
+    };
+    batch.provenance=Object.assign({},clone(batch.provenance||{}),{
+      sourceSubsystem:'OMEGA_RESOURCE_ENDOWMENT_RUNTIME',
+      sourceAuthority:'RESOURCE_JSON',
+      sourceDataset:raw.sourceDataset||null,
+      sourcePath:raw.sourcePath||null,
+      sourceRecordId:raw.sourceRecordId||null,
+      calculationTraceHash:result.calculationTrace?.toJSON?.().output?.traceHash||batch.provenance?.calculationTraceHash||null,
+      timestamp:0
+    });
+    return batch;
+  }
+  function syncSourceCapacities(registry){
+    const e=engine();
+    const identityRegistry=g.__OmegaResourceIdentityRegistry;
+    const rows=identityRegistry?.occurrences instanceof Map ? Array.from(identityRegistry.occurrences.values()) : [];
+    const sites=Array.isArray(e?.deposits)?e.deposits:[];
+    let observedSourceRates=0,derivedRates=0,unobservedRates=0;
+    for(const occ of rows){
+      const dep=identityRegistry.getDeposit?.(occ.depositKey);
+      const name=String(dep?.depositRawName||'').trim().toUpperCase();
+      const country=String(dep?.hostCountryIso3||'').trim().toUpperCase();
+      const raw=sites.find(x=>String(x?.name||'').trim().toUpperCase()===name &&
+        (!country||String(x?.countryCode||x?.country||'').trim().toUpperCase()===country));
+      const rate=n(raw?.productionRatePerDay);
+      const status=String(raw?.productionRateStatus||'').toUpperCase();
+      if(rate!==null&&rate>0&&status!=='DERIVED_GAME_RULE')observedSourceRates++;
+      else if(rate!==null&&rate>0)derivedRates++;
+      else unobservedRates++;
+    }
+    return{
+      status:'PART05_DATA_BACKED',
+      totalOccurrences:rows.length,
+      observedSourceRates,
+      derivedRates,
+      unobservedRates,
+      authority:'RESOURCE_JSON + RESOURCE_ECONOMY_RULES'
+    };
+  }
   function hydrateHandler(cmd,ctx){
     const c=canonical(ctx.countryId),rows=occurrenceRows(c),existing=clone(state()?.resource?.[c]||{});
     const projection=buildCountryProjection(c,rows,existing);
@@ -184,31 +367,52 @@
     const production=clone(ctx.stateTransaction.get('resource.production')||{});
     const previousExtractionTurn=n(ctx.stateTransaction.get('resource.lastExtractionTurn'));
     if(previousExtractionTurn!==turn()){
-      for(const key of Object.keys(production))production[key]=0;
+      Object.keys(production).forEach(key=>production[key]=0);
       ctx.stateTransaction.set('resource.lastExtractionTurn',turn());
     }
-    const inventory=clone(ctx.stateTransaction.get('resource.inventory')||{});
+
+    let batches=Array.isArray(ctx.stateTransaction.get('resource.batches'))?clone(ctx.stateTransaction.get('resource.batches')):[];
+    const existingInventory=clone(ctx.stateTransaction.get('resource.inventory')||{});
+    if(!batches.length && Object.keys(existingInventory).length){
+      Object.entries(existingInventory).forEach(([resourceId,q])=>{
+        const amount=n(q);
+        if(amount===null||amount<=0)return;
+        batches.push({
+          batchId:'LEGACY_OPENING_'+c+'_'+String(resourceId).replace(/[^A-Z0-9:_-]/gi,'_'),
+          resourceId,materialIdentity:resourceId,quantity:amount,remainingQuantity:amount,
+          unit:null,stage:'RAW',ownerCountryCode:c,ownerCompanyId:'UNKNOWN_SOURCE',
+          sourceBatchIds:[],extractionReference:null,processId:null,timestampTurn:turn(),
+          qualityState:{grade:null,purity:null,gradeStatus:'UNOBSERVED',purityStatus:'UNOBSERVED'},
+          provenance:{source:'PRE_EXISTING_RESOURCE_INVENTORY',status:'UNALLOCATED_LEGACY_BALANCE',simulationTurn:turn()}
+        });
+      });
+    }
+
     const reserves=clone(ctx.stateTransaction.get('resource.reserves')||{});
     const ledger=Array.isArray(ctx.stateTransaction.get('resource.extractionLedger'))?clone(ctx.stateTransaction.get('resource.extractionLedger')):[];
     const rows=occurrenceRows(c);
     const selected=Array.isArray(cmd?.payload?.occurrenceKeys)&&cmd.payload.occurrenceKeys.length
       ?rows.filter(x=>cmd.payload.occurrenceKeys.includes(x.occurrenceKey)):rows;
-    const extracted=[];
-    const blocked=[];
+    const extracted=[],blocked=[];
     const mineOutputs=clone(ctx.stateTransaction.get('resource.mineOutputs')||{});
     const mines=clone(ctx.stateTransaction.get('resource.mines')||[]);
+
     for(const x of selected){
-      const reserve=r.getReserveState(x.occurrenceKey);if(!reserve||reserve.residualQuantity<=0)continue;
-      if(!['ACTIVE_EXTRACTION','DEPLETING','RESERVE_DEPLETING'].some(s=>String(reserve.operationalStatus||'').toUpperCase().includes(s)))continue;
-      let capacity=null;try{capacity=r.getCapacityForOccurrence(x.occurrenceKey);}catch(_){}
-      if(!capacity)continue;
-      let windowQuantity=0;try{windowQuantity=n(capacity.computeWindowCapacity(DAY_HOURS)?.windowCapacity)||0;}catch(_){windowQuantity=n(capacity.nominalRate)||0;}
-      if(windowQuantity<=0)continue;
+      const reserve=r.getReserveState(x.occurrenceKey);
+      if(!reserve||reserve.residualQuantity<=0){continue;}
+      const capacity=r.getCapacityForOccurrence?.(x.occurrenceKey);
+      if(!capacity){blocked.push({occurrenceKey:x.occurrenceKey,resourceId:x.resourceId,reason:'EXTRACTION_CAPACITY_UNAVAILABLE'});continue;}
+      let windowQuantity=0;
+      try{windowQuantity=n(capacity.computeWindowCapacity(DAY_HOURS)?.windowCapacity)||0;}catch(_){windowQuantity=n(capacity.nominalRate)||0;}
+      if(windowQuantity<=0){
+        blocked.push({occurrenceKey:x.occurrenceKey,resourceId:x.resourceId,reason:'SOURCE_PRODUCTION_RATE_UNOBSERVED_OR_ZERO'});
+        continue;
+      }
       const request=new p5.ExtractionRequest({
-        occurrenceKey:x.occurrenceKey,requestedQuantity:windowQuantity,requestedUnit:reserve.unit,
-        requestedPeriod:p5.TemporalWindowUnit?.PER_DAY||'PER_DAY',assetReference:capacity.assetReference,
-        expectedStateVersion:n(reserve.stateVersion)||1,simulationTick:turn(),timeWindowDurationHours:DAY_HOURS,
-        extractionMethod:p5.ExtractionMethodEnum?.UNKNOWN||'UNKNOWN',
+        occurrenceKey:x.occurrenceKey,requestedQuantity:Math.min(windowQuantity,n(reserve.residualQuantity)||0),
+        requestedUnit:reserve.unit,requestedPeriod:p5.TemporalWindowUnit?.PER_DAY||'PER_DAY',
+        assetReference:capacity.assetReference,expectedStateVersion:n(reserve.stateVersion)||1,
+        simulationTick:turn(),timeWindowDurationHours:DAY_HOURS,extractionMethod:p5.ExtractionMethodEnum?.UNKNOWN||'UNKNOWN',
         provenance:{sourceSubsystem:'OMEGA_RESOURCE_ENDOWMENT_RUNTIME',sourceId:x.depositKey,timestamp:0}
       });
       let result;
@@ -227,47 +431,86 @@
         blocked.push({occurrenceKey:x.occurrenceKey,resourceId:x.resourceId,reason:result?.diagnostics?.[0]?.message||result?.status||'EXTRACTION_NOT_APPROVED'});
         continue;
       }
+
       r.registerReserveState(result.reserveAfter);
-      const q=n(result.approvedQuantity)||0,resource=x.resourceId;
+      const q=n(result.approvedQuantity)||0;
+      if(q<=0)continue;
+      const resource=x.resourceId;
+      const batch=decorateProducedBatch(result.producedBatch,x,result,c);
+      if(!batch.batchId||q<=0){blocked.push({occurrenceKey:x.occurrenceKey,resourceId:resource,reason:'PRODUCED_BATCH_INVALID'});continue;}
+      if(batches.some(b=>String(b?.batchId)===String(batch.batchId)))continue;
+      batches.push(batch);
+
       production[resource]=(n(production[resource])||0)+q;
-      inventory[resource]=(n(inventory[resource])||0)+q;
       reserves[resource]=n(result.reserveAfter.residualQuantity)||0;
       current[x.occurrenceKey]=clone(result.reserveAfter.toJSON?.()||result.reserveAfter);
+
+      const previous=mineOutputs[x.occurrenceKey]||{};
+      const cumulative=(n(previous.cumulativeProducedQuantity)||0)+q;
       mineOutputs[x.occurrenceKey]={
         occurrenceKey:x.occurrenceKey,depositKey:x.depositKey,resourceId:resource,simulationTurn:turn(),
-        producedQuantity:q,residualQuantity:n(result.reserveAfter.residualQuantity)||0,status:result.status
+        producedQuantity:q,cumulativeProducedQuantity:cumulative,residualQuantity:n(result.reserveAfter.residualQuantity)||0,
+        plannedOutputRatePerDay:windowQuantity,status:result.status,lastBatchId:batch.batchId,lastExtractionId:result.resultId,
+        qualityState:clone(batch.qualityState),sourceData:clone(batch.sourceData||null)
       };
+
       const mineIndex=mines.findIndex(m=>String(m.occurrenceKey)===String(x.occurrenceKey));
       if(mineIndex>=0){
-        mines[mineIndex]={...mines[mineIndex],reserveState:clone(result.reserveAfter.toJSON?.()||result.reserveAfter),
-          operationalStatus:result.reserveAfter.operationalStatus,residualQuantity:n(result.reserveAfter.residualQuantity)||0};
+        mines[mineIndex]=Object.assign({},mines[mineIndex],{
+          reserveState:clone(result.reserveAfter.toJSON?.()||result.reserveAfter),
+          operationalStatus:result.reserveAfter.operationalStatus,
+          residualQuantity:n(result.reserveAfter.residualQuantity)||0,
+          lastOutputQuantity:q,lastBatchId:batch.batchId,lastExtractionId:result.resultId,
+          currentOutputRatePerDay:windowQuantity
+        });
       }
+
       const record={
         extractionId:'EXT-'+turn()+'-'+c+'-'+String(x.occurrenceKey).replace(/[^A-Z0-9:_-]/gi,''),
-        countryId:c,simulationTurn:turn(),occurrenceKey:x.occurrenceKey,depositKey:x.depositKey,resourceId:resource,
-        requestedQuantity:request.requestedQuantity,approvedQuantity:q,status:result.status,
-        reserveBefore:clone(result.reserveBefore?.toJSON?.()||result.reserveBefore),
+        resultId:result.resultId,countryId:c,simulationTurn:turn(),occurrenceKey:x.occurrenceKey,
+        depositKey:x.depositKey,resourceId:resource,requestedQuantity:request.requestedQuantity,
+        approvedQuantity:q,status:result.status,reserveBefore:clone(result.reserveBefore?.toJSON?.()||result.reserveBefore),
         reserveAfter:clone(result.reserveAfter?.toJSON?.()||result.reserveAfter),
         calculationTrace:clone(result.calculationTrace?.toJSON?.()||result.calculationTrace),
         transition:clone(result.transition?.toJSON?.()||result.transition),
-        producedBatch:clone(result.producedBatch?.toJSON?.()||result.producedBatch),
-        provenance:clone(result.provenance||request.provenance)
+        producedBatch:clone(batch),provenance:clone(result.provenance||request.provenance),
+        qualityState:clone(batch.qualityState),sourceData:clone(batch.sourceData||null)
       };
       ledger.push(record);extracted.push(record);
+
+      const physical=persistPhysicalState(ctx,batches);
+      appendEvent(ctx,'OMEGA_RESOURCE_BATCH_CREATED',{batchId:batch.batchId,resourceId:resource,quantity:q,qualityState:batch.qualityState,warehouse:physical.warehouse});
+      appendEvent(ctx,'OMEGA_RESOURCE_WAREHOUSE_RECEIPT_CREATED',{receiptId:'RCPT-'+batch.batchId,batchId:batch.batchId,resourceId:resource,quantity:q,warehouseLocationKey:batch.warehouseLocationKey,qualityState:batch.qualityState});
+      appendEvent(ctx,'OMEGA_RESOURCE_FACTORY_INPUT_AVAILABLE',{batchId:batch.batchId,resourceId:resource,quantity:q,warehouseLocationKey:batch.warehouseLocationKey,qualityState:batch.qualityState});
+      appendEvent(ctx,'OMEGA_RESOURCE_EXTRACTION_COMPLETED',{extractionId:record.extractionId,batchId:batch.batchId,resourceId:resource,quantity:q});
+      emit('OMEGA_RESOURCE_BATCH_CREATED',c,{batch:clone(batch),extractionId:record.extractionId,sourceData:clone(batch.sourceData||null)},cmd.commandId);
+      emit('OMEGA_RESOURCE_WAREHOUSE_RECEIPT_CREATED',c,{receiptId:'RCPT-'+batch.batchId,batchId:batch.batchId,resourceId:resource,quantity:q,warehouseLocation:batch.locationKey,qualityState:clone(batch.qualityState)},cmd.commandId);
+      emit('OMEGA_RESOURCE_FACTORY_INPUT_AVAILABLE',c,{batchId:batch.batchId,resourceId:resource,quantity:q,qualityState:clone(batch.qualityState),warehouseLocation:batch.locationKey},cmd.commandId);
       emit('OMEGA_RESOURCE_EXTRACTION_COMPLETED',c,record,cmd.commandId);
     }
+
+    const physical=persistPhysicalState(ctx,batches);
     ctx.stateTransaction.set('resource.mineStates',current);
     ctx.stateTransaction.set('resource.mineOutputs',mineOutputs);
     ctx.stateTransaction.set('resource.mines',mines);
     ctx.stateTransaction.set('resource.production',production);
-    ctx.stateTransaction.set('resource.inventory',inventory);
     ctx.stateTransaction.set('resource.reserves',reserves);
-    const tradeAvailability={};
-    for(const [k,v] of Object.entries(inventory))tradeAvailability[k]=n(v)||0;
-    ctx.stateTransaction.set('resource.tradeAvailability',tradeAvailability);
+    ctx.stateTransaction.set('resource.batches',batches.slice(-8192));
+    ctx.stateTransaction.set('resource.warehouse',physical.warehouse);
+    ctx.stateTransaction.set('resource.inventory',physical.inventory);
+    ctx.stateTransaction.set('resource.inventoryDelta',clone(extracted.reduce((acc,x)=>{
+      const rid=x.resourceId,q=n(x.approvedQuantity)||0;acc[rid]=(acc[rid]||0)+q;return acc;
+    },{})));
+    ctx.stateTransaction.set('resource.tradeAvailability',clone(physical.inventory));
     ctx.stateTransaction.set('resource.extractionLedger',ledger.slice(-MAX_LEDGER));
     for(const x of blocked)emit('OMEGA_RESOURCE_EXTRACTION_BLOCKED',c,{...x,simulationTurn:turn()},cmd.commandId);
-    return{accepted:true,countryId:c,extracted:extracted.length,blocked:blocked.length,records:extracted};
+
+    return{
+      accepted:true,countryId:c,extracted:extracted.length,blocked:blocked.length,records:extracted,
+      producedBatches:extracted.map(x=>clone(x.producedBatch)),
+      inventory:clone(physical.inventory),warehouse:clone(physical.warehouse),
+      runtimeEventCount:Array.isArray(ctx.stateTransaction.get('resource.eventLog'))?ctx.stateTransaction.get('resource.eventLog').length:0
+    };
   }
   function hydrateCountry(c){
     install();
@@ -291,33 +534,53 @@
   }
   async function initialize(){
     if(g.__omegaResourceEndowmentReady)return{status:'READY',countries:countries().length,reused:true};
-    if(g.__omegaResourceEndowmentInitializing)return;
-    g.__omegaResourceEndowmentInitializing=true;
-    try{
-      for(let i=0;i<40&&!engine()?.isReady;i++)await new Promise(r=>setTimeout(r,0));
-      const compiled=compile();if(compiled.status!=='READY')return compiled;
-      applyPersistedReserveStates();install();
-      for(const c of countries())dispatch('OMEGA_RESOURCE_ENDOWMENT_HYDRATE',c,{correlationId:'RESOURCE-HYDRATE-'+turn()+'-'+c});
-      g.__omegaResourceEndowmentReady=true;
-      return{status:'READY',countries:countries().length,reused:false};
-    }finally{g.__omegaResourceEndowmentInitializing=false;}
+    if(g.__omegaResourceEndowmentInitializationPromise)return g.__omegaResourceEndowmentInitializationPromise;
+    g.__omegaResourceEndowmentInitializationPromise=(async()=>{
+      try{
+        const dataPromise=g.OmegaResourceDataAuthority?.init?.()||g.__omegaResourceDataAuthorityPromise;
+        if(dataPromise)await dataPromise;
+        for(let i=0;i<80&&!engine()?.isReady;i++)await new Promise(r=>setTimeout(r,0));
+        if(!engine()?.isReady)return{status:'WAITING_DEPENDENCIES',reason:'RESOURCE_MINISTRY_ENGINE_NOT_READY'};
+        const compiled=compile();
+        if(compiled.status!=='READY')return compiled;
+        const capacitySync=syncSourceCapacities(compiled.registry);
+        applyPersistedReserveStates();install();
+        for(const c of countries())dispatch('OMEGA_RESOURCE_ENDOWMENT_HYDRATE',c,{correlationId:'RESOURCE-HYDRATE-'+turn()+'-'+c});
+        g.__omegaResourceEndowmentReady=true;
+        return{status:'READY',countries:countries().length,reused:false,sourceCapacitySync:capacitySync};
+      }finally{g.__omegaResourceEndowmentInitializationPromise=null;}
+    })();
+    return g.__omegaResourceEndowmentInitializationPromise;
   }
-  function extractAll(){
-    if(!g.__OmegaResourceReserveRegistry)return;
+  async function extractAll(){
+    if(!g.__OmegaResourceReserveRegistry)await initialize();
+    if(!g.__OmegaResourceReserveRegistry)return{status:'WAITING_DEPENDENCIES'};
     const t=turn();
-    if(g.__omegaResourceExtractionTurn===t)return;
+    if(g.__omegaResourceExtractionTurn===t)return{status:'ALREADY_PROCESSED',turn:t};
     g.__omegaResourceExtractionTurn=t;
     install();
-    for(const c of countries())dispatch('OMEGA_RESOURCE_EXTRACT_TICK',c,{correlationId:'RESOURCE-EXTRACT-'+t+'-'+c});
+    const results=[];
+    for(const c of countries()){
+      try{results.push(dispatch('OMEGA_RESOURCE_EXTRACT_TICK',c,{correlationId:'RESOURCE-EXTRACT-'+t+'-'+c}));}
+      catch(error){results.push({status:'FAILED',countryId:c,reason:String(error?.message||error)});}
+    }
+    const totals=results.reduce((a,r)=>{
+      a.extracted+=(n(r?.result?.extracted)||0);
+      a.blocked+=(n(r?.result?.blocked)||0);
+      a.batches+=(Array.isArray(r?.result?.producedBatches)?r.result.producedBatches.length:0);
+      return a;
+    },{extracted:0,blocked:0,batches:0});
+    emit('OMEGA_RESOURCE_EXTRACTION_TURN_COMPLETED','GLOBAL',{turn:t,countries:countries().length,...totals},'resource-endowment');
+    return{status:'COMPLETED',turn:t,countries:countries().length,results,totals};
   }
   function onReady(){void initialize();}
-  function onTurn(){void initialize();extractAll();}
+  function onTurn(){void initialize().then(()=>extractAll()).catch(error=>{g.OmegaResourceEndowmentRuntimeError=String(error?.message||error);});}
   function diagnostics(){
     const r=g.__OmegaResourceReserveRegistry, e=engine(), mines=[];
     for(const c of countries()){
       const m=state()?.resource?.[c]?.mines;if(Array.isArray(m))mines.push(...m);
     }
-    return{version:VERSION,engineReady:!!e?.isReady,identityRegistryReady:!!g.__OmegaResourceIdentityRegistry,reserveRegistryReady:!!r,countryCount:countries().length,mineCount:mines.length,compiledReserveStates:r?.reserveStates?.size||0};
+    return{version:VERSION,engineReady:!!e?.isReady,dataAuthority:clone(e?.resourceDataDiagnostics||null),identityRegistryReady:!!g.__OmegaResourceIdentityRegistry,reserveRegistryReady:!!r,countryCount:countries().length,mineCount:mines.length,compiledReserveStates:r?.reserveStates?.size||0,sourceCapacityCount:r?.capacities?.size||0};
   }
   function init(){
     install();

@@ -9,22 +9,28 @@
   "fiscal": {
     "royaltyRate": 0.02,
     "resourceTaxRate": 0.01,
-    "corporateTaxRate": 0.20,
-    "exportDutyRate": 0.00,
-    "otherReceiptRate": 0.00
+    "corporateTaxRate": 0.2,
+    "exportDutyRate": 0,
+    "otherReceiptRate": 0
   },
   "operatingAllocation": {
     "workerIncomeRate": 0.12,
     "transportRevenueRate": 0.05
   },
   "runtime": {
-    
     "maxLedgerEntries": 2048,
     "maxBatches": 8192
-  
   },
   "market": {
     "offerFractionOfObservedInventory": 0.25,
     "minOfferQuantity": 1
+  },
+  "extraction": {
+    "capacityModel": "RESERVE_HORIZON",
+    "reserveHorizonDays": 3650,
+    "availabilityFactor": 0.92,
+    "maintenanceFactor": 0.95,
+    "onlyActiveStatus": true,
+    "fallbackProductionRateStatus": "DERIVED_GAME_RULE"
   }
 }

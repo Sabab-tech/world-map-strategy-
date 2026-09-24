@@ -164,6 +164,12 @@ test('resource economy v2 completes mine-backed processing, domestic settlement 
 
   assert.equal(worldState.resource.BGD.inventory.iron_ore,50);
   assert.equal(worldState.resource.BGD.inventory.iron_intermediate,40);
+  assert.equal(worldState.resource.BGD.warehouse.authority,'RESOURCE_BATCH_LEDGER');
+  assert.equal(worldState.resource.BGD.warehouse.stockByResource.iron_ore,50);
+  assert.equal(worldState.resource.BGD.warehouse.stockByResource.iron_intermediate,40);
+  assert.equal(worldState.resource.BGD.batches.length,2);
+  assert.equal(worldState.resource.BGD.batches.find(x=>x.batchId==='MINE-BATCH-1').remainingQuantity,50);
+  assert.equal(worldState.resource.BGD.batches.find(x=>x.resourceId==='iron_intermediate').stage,'INTERMEDIATE');
 
   const fiscal=worldState.finance.BGD.resourceFiscal;
   assert.equal(fiscal.thisTurn.total,115);
