@@ -24,8 +24,15 @@
   const turn=()=>n(state()?.simulation?.turn??state()?.turn??state()?.simulationTurn??g.Omega?.Simulation?.clock?.turn)??0;
   const engine=()=>g.ResourceMinistryEngine||null;
   function countries(){
-    try{return[...new Set((registry()?.list?.('COUNTRY')||registry()?.list?.()||[]).map(canonical).filter(Boolean))].sort();}
-    catch(_){return Object.keys(state()?.resource||{}).map(canonical).filter(Boolean).sort();}
+    try{
+      const listed=registry()?.list?.('COUNTRY')||registry()?.list?.()||[];
+      const out=listed.map(function(item){
+        const raw=typeof item==='object'?(item||{}):{id:item,iso3:item};
+        return canonical(raw.iso3||raw.isoCode||raw.countryId||raw.id||raw.code||raw.key);
+      }).filter(Boolean);
+      if(out.length)return[...new Set(out)].sort();
+    }catch(_){}
+    return Object.keys(state()?.resource||{}).map(canonical).filter(Boolean).sort();
   }
   function countryState(c){
     const cid=canonical(c),s=state();if(!s.resource)s.resource={};if(!s.resource[cid])s.resource[cid]={};
