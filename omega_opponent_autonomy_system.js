@@ -759,7 +759,7 @@
     const baseSuppliers=findResourceSuppliers(resourceId).filter(x=>canonicalId(x.countryId)!==canonicalId(countryId));
     const seen=new Set, suppliers=[];
     for(const x of [...marketSuppliers,...baseSuppliers]){
-      const cid=canonicalId(x.countryId);if(cid&&cid!==canonicalId(countryId)&&!seen.has(cid)){seen.add(cid);suppliers.push({...x,countryId:cid});}
+      const cid=id(x.countryId);if(cid&&cid!==id(countryId)&&!seen.has(cid)){seen.add(cid);suppliers.push({...x,countryId:cid});}
     }
     if(!suppliers.length)return{countryId:null,reason:'NO_RESOURCE_SUPPLIER_RECORD'};
     const rows=suppliers.map(x=>{
