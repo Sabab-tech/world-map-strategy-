@@ -355,6 +355,24 @@
     return{accepted:true,resourceId:rid,quantity:q};
   }
 
+  function transportReleaseCargoHandler(cmd,ctx){
+    const p=cmd?.payload||{},allocations=Array.isArray(p.allocations)?p.allocations:[];
+    const batches=Array.isArray(ctx.stateTransaction.get('resource.batches'))?clone(ctx.stateTransaction.get('resource.batches')):[];
+    const byId=new Map(batches.map(b=>[String(b?.batchId),b]));
+    let released=0;
+    for(const a of allocations){
+      const b=byId.get(String(a?.batchId));if(!b)continue;
+      const q=Math.max(0,n(a?.quantity)||0);
+      b.inTransitQuantity=Math.max(0,(n(b.inTransitQuantity)||0)-q);
+      released+=q;
+    }
+    const ledger=Array.isArray(ctx.stateTransaction.get('resource.inventoryLedger'))?clone(ctx.stateTransaction.get('resource.inventoryLedger')):[];
+    ledger.push({type:'TRANSPORT_CARGO_RELEASED',shipmentId:p.shipmentId||null,resourceId:p.resourceId||null,quantity:released,batchAllocations:clone(allocations),turn:turn()});
+    while(ledger.length>2048)ledger.shift();
+    ctx.stateTransaction.set('resource.batches',batches);ctx.stateTransaction.set('resource.inventoryLedger',ledger);
+    return{accepted:true,shipmentId:p.shipmentId||null,released};
+  }
+
   function transportCreditDeliveryHandler(cmd,ctx){
     const p=cmd?.payload||{},rid=String(p.resourceId||'').trim(),q=n(p.quantity),shipmentId=String(p.shipmentId||'').trim(),destinationNodeId=String(p.destinationNodeId||('STOCKPILE:'+canonical(ctx.countryId))),facilityId=p.targetFacilityId?String(p.targetFacilityId):null;
     if(!rid||q===null||q<=0||!shipmentId)return{accepted:false,reason:'TRANSPORT_DELIVERY_INPUT_INVALID'};
@@ -405,9 +423,11 @@
       m.registerAction?.('OMEGA_RESOURCE_TRANSPORT_RESERVE_CARGO',{actionId:'OMEGA_RESOURCE_TRANSPORT_RESERVE_CARGO',stateOwnerMinistry:'resource',authority:'OMEGA_RESOURCE_ENDOWMENT_RUNTIME'});
       m.registerAction?.('OMEGA_RESOURCE_TRANSPORT_CANCEL_CARGO',{actionId:'OMEGA_RESOURCE_TRANSPORT_CANCEL_CARGO',stateOwnerMinistry:'resource',authority:'OMEGA_RESOURCE_ENDOWMENT_RUNTIME'});
       m.registerAction?.('OMEGA_RESOURCE_TRANSPORT_CREDIT_DELIVERY',{actionId:'OMEGA_RESOURCE_TRANSPORT_CREDIT_DELIVERY',stateOwnerMinistry:'resource',authority:'OMEGA_RESOURCE_ENDOWMENT_RUNTIME'});
+      m.registerAction?.('OMEGA_RESOURCE_TRANSPORT_RELEASE_CARGO',{actionId:'OMEGA_RESOURCE_TRANSPORT_RELEASE_CARGO',stateOwnerMinistry:'resource',authority:'OMEGA_RESOURCE_ENDOWMENT_RUNTIME'});
       m.registerCommandHandler('OMEGA_RESOURCE_TRANSPORT_RESERVE_CARGO','resource',transportReserveCargoHandler);
       m.registerCommandHandler('OMEGA_RESOURCE_TRANSPORT_CANCEL_CARGO','resource',transportCancelCargoHandler);
       m.registerCommandHandler('OMEGA_RESOURCE_TRANSPORT_CREDIT_DELIVERY','resource',transportCreditDeliveryHandler);
+      m.registerCommandHandler('OMEGA_RESOURCE_TRANSPORT_RELEASE_CARGO','resource',transportReleaseCargoHandler);
       return true;
     }catch(_){return false;}
   }
