@@ -268,7 +268,7 @@
       result.confidence=.85;
       return result;
     }
-    if(offered < price*0.95){
+    if(offered <= price*0.95){
       result.quantityApproved=approved;
       result.unitPrice=price;
       result.decision=willingness>=.75?'ACCEPT':'COUNTER';
