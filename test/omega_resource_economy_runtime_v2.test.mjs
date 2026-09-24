@@ -160,6 +160,8 @@ test('resource economy v2 completes mine-backed processing, domestic settlement 
   const {context,worldState}=createContext();
   const code=readFileSync('omega_resource_economy_runtime_v2.js','utf8');
   vm.runInNewContext(code,context,{filename:'omega_resource_economy_runtime_v2.js'});
+  const directResult=context.OmegaResourceEconomy.processCountry('BGD');
+  console.log('RESOURCE_PROCESS_DIRECT',JSON.stringify(directResult));
   const runResult=await context.OmegaResourceEconomy.runTurn();
   console.log('RESOURCE_ECON_DEBUG_STATE',JSON.stringify({
     runResult,
