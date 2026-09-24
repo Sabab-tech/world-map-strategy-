@@ -432,27 +432,42 @@
   }
 
   function planFacilityInputs(c){
-    const country=cid(c),facilities=deriveFacilityNodes(country),rb=resourceBucket(country,true),planned=[];
+    const country=cid(c),facilities=deriveFacilityNodes(country),rb=resourceBucket(country,true),t=transportBucket(country,true),planned=[];
     for(const f of facilities){
-      const inputs=assetInputs(f.asset);
-      if(!inputs.length)continue;
+      const inputs=assetInputs(f.asset);if(!inputs.length)continue;
       for(const input of inputs){
-        const rid=input.resourceId,available=facilityInventory(country,f.facilityId,rid);
-        const needed=num(f.asset?.capacity??f.asset?.productionCapacity??f.asset?.throughput);
-        if(needed===null||needed<=0)continue;
-        const target=Math.max(0,needed*input.coefficient);
-        const deficit=target-available;
-        if(deficit<=1e-9)continue;
-        const stock=num(rb.inventory[rid])||0;
-        if(stock<=0)continue;
-        const toMove=Math.min(deficit,stock);
-        const shipment=createShipment({
-          sourceCountryId:country,destinationCountryId:country,resourceId:rid,quantity:toMove,
-          sourceNodeId:'STOCKPILE:'+country,destinationNodeId:'FACILITY:'+f.facilityId,
-          targetFacilityId:f.facilityId,purpose:'PROCESSING_INPUT',mode:modeFor(rid,'PROCESSING_INPUT'),
-          correlationId:'FACILITY-INPUT-'+turn()+'-'+country+'-'+f.facilityId+'-'+token(rid)
-        });
-        if(shipment.accepted)planned.push(shipment.shipment);
+        const rid=input.resourceId,facilityAvailable=facilityInventory(country,f.facilityId,rid);
+        const capacity=num(f.asset?.capacity??f.asset?.productionCapacity??f.asset?.throughput);
+        if(capacity===null||capacity<=0)continue;
+        const target=Math.max(0,capacity*input.coefficient);
+        const pending=t.resourceShipments.filter(function(x){return x&&x.status==='IN_TRANSIT'&&String(x.targetFacilityId||'')===String(f.facilityId)&&token(x.resourceId)===token(rid);})
+          .reduce(function(sum,x){return sum+(num(x.quantity)||0);},0);
+        const inbound=(t.inboundResourceShipments||[]).filter(function(x){return x&&x.status==='IN_TRANSIT'&&String(x.targetFacilityId||'')===String(f.facilityId)&&token(x.resourceId)===token(rid);})
+          .reduce(function(sum,x){return sum+(num(x.quantity)||0);},0);
+        const deficit=Math.max(0,target-facilityAvailable-pending-inbound);if(deficit<=1e-9)continue;
+        ensureLegacyInventoryBatch(country,rid);
+        const allocation=sourceAllocations(country,rid,deficit,null);
+        const byNode=new Map();
+        for(const a of allocation.allocations){
+          const key=String(a.sourceNodeId||('STOCKPILE:'+country));
+          if(!byNode.has(key))byNode.set(key,[]);
+          byNode.get(key).push(a);
+        }
+        for(const [sourceNodeId,allocations] of byNode){
+          const amount=allocations.reduce(function(sum,x){return sum+x.quantity;},0);
+          if(amount<=1e-9)continue;
+          const shipment=createShipment({
+            sourceCountryId:country,destinationCountryId:country,resourceId:rid,quantity:amount,
+            sourceNodeId,sourceNodeType:String(sourceNodeId).indexOf('MINE:')===0?'MINE':'STORAGE',
+            destinationNodeId:'FACILITY:'+f.facilityId,destinationNodeType:/REFINERY/.test(f.stage)?'REFINERY':'FACTORY',
+            targetFacilityId:f.facilityId,purpose:'PROCESSING_INPUT',mode:modeFor(rid,'PROCESSING_INPUT'),
+            correlationId:'FACILITY-INPUT-'+turn()+'-'+country+'-'+f.facilityId+'-'+token(rid)+'-'+token(sourceNodeId)
+          });
+          if(shipment.accepted)planned.push(shipment.shipment);
+        }
+        if(allocation.remaining>1e-9){
+          emit('OMEGA_RESOURCE_TRANSPORT_HEALTH',country,{status:'DEGRADED',reason:'RESOURCE_INPUT_SOURCE_CAPACITY_INSUFFICIENT',countryId:country,facilityId:f.facilityId,resourceId:rid,requested:deficit,unplanned:allocation.remaining},'resource-transport');
+        }
       }
     }
     return planned;
