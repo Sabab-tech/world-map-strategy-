@@ -687,6 +687,19 @@
         if(candidate&&tags.some(x=>x===token(rid)||x.includes(token(rid))))if(!out.some(y=>y.countryId===candidate))out.push({countryId:candidate,source:'ResourceMinistryEngine',recordId:dep.resId||dep.id||null});
       }
     }catch(_){}
+    /* Authoritative runtime fallback: a resource engine may be unavailable in
+       isolated/offline contexts, but country resource state can still identify
+       a real supplier without inventing a deposit. */
+    try{
+      const rs=g.Game?.state?.resource||g.gameState?.resource||{};
+      Object.keys(rs).forEach(function(countryKey){
+        const countryId=id(countryKey),row=rs[countryKey]||{},inv=row.inventory||{},prod=row.production||{},tradeable=row.tradeAvailability||{};
+        const quantity=scalar(tradeable[rid])??scalar(inv[rid])??scalar(prod[rid]);
+        if(countryId&&quantity!==null&&quantity>0&&!out.some(y=>y.countryId===countryId)){
+          out.push({countryId:countryId,source:'Game.state.resource',recordId:null});
+        }
+      });
+    }catch(_){}
     return out;
   }
 
