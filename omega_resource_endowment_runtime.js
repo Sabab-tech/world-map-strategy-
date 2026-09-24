@@ -206,7 +206,7 @@
       const q=n(b?.remainingQuantity!=null?b.remainingQuantity:b?.quantity);
       if(!b||q===null||q<=0)return;
       const rid=String(b.resourceId||b.materialIdentity||'').trim();
-      const location=String(b.locationKey||b.facilityKey||('WAREHOUSE_'+canonical(c))).trim();
+      const location=String(b.warehouseLocationKey||b.warehouseLocation||'WAREHOUSE_'+canonical(c)).trim();
       if(rid)stockByResource[rid]=(stockByResource[rid]||0)+q;
       if(location){
         if(!locationBalances[location])locationBalances[location]={};
@@ -267,14 +267,16 @@
     });
     batch.batchId=batch.batchId||('BATCH_EXT_'+turn()+'_'+canonical(c)+'_'+String(x.occurrenceKey).replace(/[^A-Z0-9:_-]/gi,''));
     batch.resourceId=x.resourceId||batch.resourceId||x.resourceTypeKey;
-    batch.materialIdentity=batch.materialIdentity||x.resourceTypeKey||x.resourceId;
+    batch.materialIdentity=x.resourceTypeKey||x.resourceId||batch.materialIdentity;
     batch.quantity=n(batch.quantity)!=null?n(batch.quantity):n(result.approvedQuantity)||0;
     batch.remainingQuantity=batch.quantity;
     batch.unit=batch.unit||x.reserveState?.unit||raw.unit||'UNKNOWN_UNIT';
     batch.stage='RAW';
     batch.ownerCountryCode=canonical(c);
     batch.ownerCompanyId=x.ownerKey||x.operatorKey||batch.ownerCompanyId||null;
-    batch.locationKey=x.locationNodeKey||x.occurrenceKey;
+    batch.sourceLocationKey=x.locationNodeKey||x.occurrenceKey;
+    batch.warehouseLocationKey='WAREHOUSE_'+canonical(c);
+    batch.locationKey=batch.warehouseLocationKey;
     batch.extractionReference=batch.extractionReference||result.resultId||null;
     batch.sourceBatchIds=Array.isArray(batch.sourceBatchIds)?batch.sourceBatchIds:[];
     batch.timestampTurn=turn();
@@ -326,8 +328,8 @@
           nominalRate:effective,
           rateUnit:unit,
           period:p5.TemporalWindowUnit?.PER_DAY||'PER_DAY',
-          availabilityFactor:effective>0?1:0,
-          maintenanceFactor:1
+          availabilityFactor:Math.max(0,Math.min(1,n(raw?.capacityAvailabilityFactor)??0.92)),
+          maintenanceFactor:Math.max(0,Math.min(1,n(raw?.capacityMaintenanceFactor)??0.95))
         });
         registry.registerCapacity(capacity);
         if(effective>0)updated++;else zeroed++;
