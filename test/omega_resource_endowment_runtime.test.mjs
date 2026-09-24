@@ -26,6 +26,18 @@ await import('../omega_resource_endowment_runtime.js');
 await import('../omega_resource_transport_runtime_v1.js');
 
 const runtime=globalThis.OmegaResourceEndowmentRuntime;
+const p5debug=globalThis.GSRSK_Part05;
+const firstOcc=globalThis.__OmegaResourceIdentityRegistry?.occurrences?.values?.().next?.().value;
+const firstDep=firstOcc?globalThis.__OmegaResourceIdentityRegistry.getDeposit(firstOcc.depositKey):null;
+const p5debugCompiler=p5debug?new p5debug.ResourceReserveCompilerPipeline():null;
+const p5raw=p5debugCompiler&&p5debugCompiler._findRawDepositRecord(firstDep,{refCatalog:{allReferences:engine.deposits}},firstOcc);
+const p5parsed=p5debugCompiler&&p5debugCompiler._parseDeclaredReserveQuantity(p5raw?.reserves||p5raw?.reserve,firstOcc?.resourceTypeKey,globalThis.GSRSK_Part05?.QuantityDimension?'TEST':'UNKNOWN');
+console.log('P5_DEBUG_ONE_OCCURRENCE',JSON.stringify({
+  occurrence:firstOcc&&{key:firstOcc.occurrenceKey,resourceTypeId:firstOcc.resourceTypeId,resourceTypeKey:firstOcc.resourceTypeKey,depositKey:firstOcc.depositKey},
+  deposit:firstDep&&{name:firstDep.depositRawName,country:firstDep.hostCountryIso3},
+  raw:p5raw&&{name:p5raw.name,countryCode:p5raw.countryCode,reserves:p5raw.reserves,resId:p5raw.resId},
+  parsed:p5parsed
+}));
 const initialized=await runtime.initialize();
 assert.equal(initialized.status,'READY');
 console.log('RESOURCE_DEBUG',JSON.stringify({
