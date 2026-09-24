@@ -96,7 +96,7 @@
       CHINA:'CHN','CN':'CHN','UNITED STATES':'USA','US':'USA',
       RUSSIA:'RUS','RU':'RUS','AUSTRALIA':'AUS','AU':'AUS',
       CANADA:'CAN','CA':'CAN','JAPAN':'JPN','JP':'JPN',
-      UNITED KINGDOM:'GBR','UK':'GBR','TURKEY':'TUR','TÜRKIYE':'TUR','TR':'TUR'
+      'UNITED KINGDOM':'GBR','UK':'GBR','TURKEY':'TUR','TÜRKIYE':'TUR','TR':'TUR'
     };
     return aliases[text] || text;
   }
