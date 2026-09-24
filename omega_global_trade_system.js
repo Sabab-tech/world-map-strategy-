@@ -226,7 +226,14 @@
     if(supply.stock===null){result.reason='SELLER_RESOURCE_STOCK_NOT_OBSERVED';return result;}
     const reserve=Math.max(0,supply.reserve||0),free=Math.max(0,supply.stock-reserve);
     if(free<=0){result.decision='REJECT';result.reason='RESOURCE_RESERVED_OR_SCARCE';return result;}
-    const approved=Math.min(result.quantity,free);
+    const observedRouteCapacity=routeCapacity(buyer,resourceId);
+    if(observedRouteCapacity!==null&&observedRouteCapacity<=0){
+      result.decision='REJECT';result.reason='TRANSPORT_ROUTE_CAPACITY_ZERO';return result;
+    }
+    const approved=Math.min(result.quantity,free,observedRouteCapacity===null?result.quantity:observedRouteCapacity);
+    if(approved<=0){
+      result.decision='REJECT';result.reason='TRANSPORT_ROUTE_CAPACITY_UNAVAILABLE';return result;
+    }
     const debtPressure=sellerFin.debtToGdp===null?0:clamp(sellerFin.debtToGdp/1.5);
     const liquidityPressure=sellerFin.liquidity===null?0:clamp(1-(sellerFin.liquidity/Math.max(sellerFin.gdp||sellerFin.liquidity||1,1)));
     const productionBuffer=supply.production===null||supply.production===undefined?null:clamp(Number(supply.production)/(Math.max(Number(supply.production)+Number(supply.stock||0),1)));
@@ -239,6 +246,8 @@
       .20*(1-strategicScarcity)
     );
     result.sellerDecisionFactors={resourceFree:free,resourceReserve:reserve,resourceScarcity:strategicScarcity,
+      observedRouteCapacity:observedRouteCapacity,
+      transportCapacityLimited:observedRouteCapacity!==null&&approved<result.quantity,
       debtPressure,liquidityPressure,productionBuffer,diplomaticBenefit,willingness};
     const offered=result.offeredUnitPrice;
     if(offered===null){result.reason='REQUESTED_PRICE_NOT_OBSERVED';return result;}
@@ -247,7 +256,9 @@
       if(approved<=0){result.decision='REJECT';result.reason='INSUFFICIENT_FREE_SUPPLY';return result;}
       result.unitPrice=price;
       result.decision='COUNTER';
-      result.reason=willingness>=.65?'SCARCE_RESOURCE_RELEASED_AT_MARKET':'SUPPLY_LIMIT_COUNTER_OFFER';
+      result.reason=(observedRouteCapacity!==null&&observedRouteCapacity<result.quantity)
+        ?'TRANSPORT_ROUTE_CAPACITY_LIMITED'
+        :(willingness>=.65?'SCARCE_RESOURCE_RELEASED_AT_MARKET':'SUPPLY_LIMIT_COUNTER_OFFER');
       result.confidence=.85;
       return result;
     }
