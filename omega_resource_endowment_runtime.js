@@ -310,7 +310,8 @@
     if(!registry||!p5?.ExtractionCapacity||typeof registry.registerCapacity!=='function'||!e)return {updated:0,zeroed:0};
     let updated=0,zeroed=0;
     try{
-      registry.occurrences?.forEach?.((occ,occKey)=>{
+      const identityRegistry=g.__OmegaResourceIdentityRegistry || registry;
+      identityRegistry.occurrences?.forEach?.((occ,occKey)=>{
         const deposit=registry.getDeposit?.(occ.depositKey);
         const name=String(deposit?.depositRawName||'').trim().toUpperCase();
         const country=String(deposit?.hostCountryIso3||'').trim().toUpperCase();
@@ -335,7 +336,7 @@
         if(effective>0)updated++;else zeroed++;
       });
     }catch(_){}
-    return{updated,zeroed};
+    return{updated,zeroed,source:'RESOURCE_JSON',identityOccurrences:identityRegistry?.occurrences?.size||0};
   }
   function hydrateHandler(cmd,ctx){
     const c=canonical(ctx.countryId),rows=occurrenceRows(c),existing=clone(state()?.resource?.[c]||{});
