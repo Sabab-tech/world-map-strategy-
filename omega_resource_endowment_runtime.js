@@ -331,26 +331,28 @@
       }
       const extractionId='EXT-'+turn()+'-'+c+'-'+String(x.occurrenceKey).replace(/[^A-Z0-9:_-]/gi,'');
       let producedBatch=clone(result.producedBatch?.toJSON?.()||result.producedBatch||null);
-      if(producedBatch){
-        producedBatch.batchId=producedBatch.batchId||('BATCH_EXT_'+turn()+'_'+c+'_'+String(resource).replace(/[^A-Z0-9:_-]/gi,'')+'_'+String(x.occurrenceKey).replace(/[^A-Z0-9:_-]/gi,''));
-        producedBatch.resourceId=resource;
-        producedBatch.materialIdentity=resource;
-        producedBatch.quantity=q;
-        producedBatch.remainingQuantity=q;
-        producedBatch.ownerCountryCode=c;
-        producedBatch.locationKey=x.occurrenceKey;
-        producedBatch.facilityKey=capacity.assetReference||null;
-        producedBatch.extractionReference=result.resultId||extractionId;
-        producedBatch.sourceBatchIds=Array.isArray(producedBatch.sourceBatchIds)?producedBatch.sourceBatchIds:[];
-        producedBatch.timestampTurn=turn();
-        producedBatch.provenance=Object.assign({},producedBatch.provenance||{},{
-          sourceSubsystem:'OMEGA_RESOURCE_ENDOWMENT_RUNTIME',
-          extractionId:extractionId,
-          occurrenceKey:x.occurrenceKey,
-          resourceId:resource,
-          simulationTurn:turn()
-        });
-      }
+      producedBatch=producedBatch&&typeof producedBatch==='object'?producedBatch:{};
+      producedBatch.batchId=producedBatch.batchId||('BATCH_EXT_'+turn()+'_'+c+'_'+String(resource).replace(/[^A-Z0-9:_-]/gi,'')+'_'+String(x.occurrenceKey).replace(/[^A-Z0-9:_-]/gi,''));
+      producedBatch.resourceId=resource;
+      producedBatch.materialIdentity=resource;
+      producedBatch.quantity=q;
+      producedBatch.remainingQuantity=q;
+      producedBatch.unit=producedBatch.unit||reserve.unit||null;
+      producedBatch.stage='RAW';
+      producedBatch.ownerCountryCode=c;
+      producedBatch.ownerCompanyId=producedBatch.ownerCompanyId||x.operatorKey||x.ownerKey||('STATE_RESOURCE_AUTHORITY_'+c);
+      producedBatch.locationKey=x.occurrenceKey;
+      producedBatch.facilityKey=capacity.assetReference||null;
+      producedBatch.extractionReference=result.resultId||extractionId;
+      producedBatch.sourceBatchIds=Array.isArray(producedBatch.sourceBatchIds)?producedBatch.sourceBatchIds:[];
+      producedBatch.timestampTurn=turn();
+      producedBatch.provenance=Object.assign({},producedBatch.provenance||{},{
+        sourceSubsystem:'OMEGA_RESOURCE_ENDOWMENT_RUNTIME',
+        extractionId:extractionId,
+        occurrenceKey:x.occurrenceKey,
+        resourceId:resource,
+        simulationTurn:turn()
+      });
       const record={
         extractionId:extractionId,
         countryId:c,simulationTurn:turn(),occurrenceKey:x.occurrenceKey,depositKey:x.depositKey,resourceId:resource,
