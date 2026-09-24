@@ -277,6 +277,7 @@
     const inventory=clone(ctx.stateTransaction.get('resource.inventory')||{});
     const reserves=clone(ctx.stateTransaction.get('resource.reserves')||{});
     const ledger=Array.isArray(ctx.stateTransaction.get('resource.extractionLedger'))?clone(ctx.stateTransaction.get('resource.extractionLedger')):[];
+    const batches=Array.isArray(ctx.stateTransaction.get('resource.batches'))?clone(ctx.stateTransaction.get('resource.batches')):[];
     const rows=occurrenceRows(c);
     const selected=Array.isArray(cmd?.payload?.occurrenceKeys)&&cmd.payload.occurrenceKeys.length
       ?rows.filter(x=>cmd.payload.occurrenceKeys.includes(x.occurrenceKey)):rows;
@@ -353,6 +354,9 @@
         resourceId:resource,
         simulationTurn:turn()
       });
+      const existingBatchIndex=batches.findIndex(function(b){return b&&b.batchId===producedBatch.batchId;});
+      if(existingBatchIndex>=0)batches[existingBatchIndex]=clone(producedBatch);
+      else batches.push(clone(producedBatch));
       const record={
         extractionId:extractionId,
         countryId:c,simulationTurn:turn(),occurrenceKey:x.occurrenceKey,depositKey:x.depositKey,resourceId:resource,
@@ -377,6 +381,7 @@
     for(const [k,v] of Object.entries(inventory))tradeAvailability[k]=n(v)||0;
     ctx.stateTransaction.set('resource.tradeAvailability',tradeAvailability);
     ctx.stateTransaction.set('resource.extractionLedger',ledger.slice(-MAX_LEDGER));
+    ctx.stateTransaction.set('resource.batches',batches.slice(-8192));
     for(const x of blocked)emit('OMEGA_RESOURCE_EXTRACTION_BLOCKED',c,{...x,simulationTurn:turn()},cmd.commandId);
     return{accepted:true,countryId:c,extracted:extracted.length,blocked:blocked.length,records:extracted};
   }
