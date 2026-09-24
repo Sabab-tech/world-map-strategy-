@@ -36,6 +36,7 @@ console.log('RESOURCE_DEBUG',JSON.stringify({
   resourceStateKeys:Object.keys(globalThis.Game.state.resource||{}),
   reserveCount:globalThis.__OmegaResourceReserveRegistry?.reserveStates?.size||null,
   identityOccurrences:globalThis.__OmegaResourceIdentityRegistry?.occurrences?.size||null,
+  reserveDiagnostics:globalThis.__OmegaResourceReserveRegistry?.diagnostics?.getReport?.()||null,
   bgdIndex:globalThis.__OmegaResourceIdentityRegistry?.getOccurrencesByCountry?.('BGD')?.length||null,
   bdIndex:globalThis.__OmegaResourceIdentityRegistry?.getOccurrencesByCountry?.('BD')?.length||null,
   deposits:(engine.deposits||[]).filter(x=>String(x.countryCode||'').toUpperCase()==='BGD').map(x=>({name:x.name,resId:x.resId,reserves:x.reserves}))
