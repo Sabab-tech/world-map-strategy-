@@ -76,7 +76,7 @@
       if(Array.isArray(reqs))for(const q of reqs.slice(-256)){
         if(token(q?.resourceId)!==token(rid)||!['SENT','COUNTER_OFFERED','ACCEPTED'].includes(id(q?.status)))continue;
         const usd=toUsd(c,q.unitPrice);if(usd===null)continue;
-        pushOrder({[rid]:book},{resourceId:rid,side:'bids',countryId:canonical(c),quantity:n(q.quantity)||0,price:n(q.unitPrice),priceUsd:usd,currency:currency(c),source:'TRADE_IMPORT_REQUEST',referenceOnly:false,requestId:q.requestId});
+        pushOrder(book,{resourceId:rid,side:'bids',countryId:canonical(c),quantity:n(q.quantity)||0,price:n(q.unitPrice),priceUsd:usd,currency:currency(c),source:'TRADE_IMPORT_REQUEST',referenceOnly:false,requestId:q.requestId});
       }
       const offers=countryValue(c,'trade.offerBook');
       const rows=[];
@@ -90,14 +90,14 @@
       for(const q of rows){
         if(token(q?.resourceId||q?.resource)!==token(rid))continue;
         const usd=toUsd(c,q.unitPrice??q.price);if(usd===null)continue;
-        pushOrder({[rid]:book},{resourceId:rid,side:'asks',countryId:canonical(c),quantity:n(q.quantity)||n(q.available)||0,price:n(q.unitPrice??q.price),priceUsd:usd,currency:currency(c),source:'TRADE_OFFER_BOOK',referenceOnly:false,offerId:q.offerId||q.id||null});
+        pushOrder(book,{resourceId:rid,side:'asks',countryId:canonical(c),quantity:n(q.quantity)||n(q.available)||0,price:n(q.unitPrice??q.price),priceUsd:usd,currency:currency(c),source:'TRADE_OFFER_BOOK',referenceOnly:false,offerId:q.offerId||q.id||null});
       }
       const inv=countryValue(c,'resource.inventory'),prod=countryValue(c,'resource.production'),tradeable=countryValue(c,'resource.tradeAvailability');
       const available=n(tradeable?.[rid])??((n(inv?.[rid])||0)+(n(prod?.[rid])||0));
       if(available>0){
         const ref=referencePrice(rid);
         const usd=ref?toUsd(c,ref.price):null;
-        if(ref&&usd!==null)pushOrder({[rid]:book},{resourceId:rid,side:'asks',countryId:canonical(c),quantity:available,price:ref.price,priceUsd:usd,currency:currency(c),source:'OBSERVED_RESOURCE_LIQUIDITY_AT_REFERENCE',referenceOnly:true});
+        if(ref&&usd!==null)pushOrder(book,{resourceId:rid,side:'asks',countryId:canonical(c),quantity:available,price:ref.price,priceUsd:usd,currency:currency(c),source:'OBSERVED_RESOURCE_LIQUIDITY_AT_REFERENCE',referenceOnly:true});
       }
     }
     book.bids=book.bids.slice(-MAX_ORDERS);book.asks=book.asks.slice(-MAX_ORDERS);
