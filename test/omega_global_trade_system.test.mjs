@@ -42,7 +42,8 @@ console.log('TRADE_DEBUG',JSON.stringify({
   saFinance:globalThis.Game.state.finance.SA,
   bdResource:globalThis.Game.state.resource.BD,
   saResource:globalThis.Game.state.resource.SA,
-  diagnostics:trade.diagnostics()
+  diagnostics:trade.diagnostics(),
+  commands:[...globalThis.OmegaMinistryInteroperability.commands.values()].map(x=>({commandType:x.commandType,source:x.sourceMinistryId,country:x.countryId,status:x.status,result:x.result}))
 }));
 assert.equal(req.status,'SETTLED');
 assert.equal(globalThis.Game.state.resource.BD.inventory.crude_oil,1000);
