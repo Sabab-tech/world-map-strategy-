@@ -126,6 +126,8 @@ function makeContext(){
     shipments,
     transportState:context.Game.state.transport.BGD,
     handlerKeys:[...handlers.keys()],
+    listenerKeys:[...events.listeners.keys()],
+    transportEventFlag:context.__OmegaResourceTransportEventsV2,
     transportDiagnostics:context.OmegaResourceTransport.diagnostics()
   }));
   assert.equal(shipments.filter(x=>x.batchId==='EXTRACT-BATCH-1').length,1);
