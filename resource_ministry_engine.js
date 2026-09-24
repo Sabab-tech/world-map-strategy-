@@ -8531,8 +8531,8 @@ _globalScope.GSRSK_DataFoundation = (() => {
      */
     class AutonomousResourceMinistryEngine {
         constructor() {
-            this.resourceTypes = CANONICAL_RESOURCE_TYPES;
-            this.deposits = CANONICAL_GLOBAL_DEPOSITS;
+            this.resourceTypes = [];
+            this.deposits = [];
             this.countryProfiles = {};
             this.isReady = false;
             this.isLoading = false;
