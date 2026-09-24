@@ -120,6 +120,14 @@ jobs:
           console.log('CI PRODUCTION BOOT SMOKE: PASS');
           NODE
 
+      - name: Resource end-to-end runtime proof
+        run: |
+          set -euo pipefail
+          node test/omega_resource_endowment_runtime.test.mjs
+          node --test test/omega_resource_transport_runtime.test.mjs
+          node --test test/omega_resource_economy_runtime_v2.test.mjs
+          node test/omega_resource_request_and_settlement.test.mjs
+
       - name: Autonomous world architecture proof
         run: |
           set -euo pipefail
