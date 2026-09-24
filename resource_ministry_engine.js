@@ -11785,15 +11785,23 @@ _globalScope.GSRSK_DataFoundation = (() => {
                             });
                             scratch.registerAccessibilityState(accessibility);
 
-                            const nominalCapacityRate = this._resolveNominalCapacityRate(declaredEndowment, config);
+                            const nominalCapacityRate = this._resolveNominalCapacityRate(declaredEndowment, config, rawReserve);
                             const capacity = new ExtractionCapacity({
                                 assetReference: `ASSET_${occKey}`,
                                 occurrenceKey: occKey,
                                 nominalRate: nominalCapacityRate,
-                                rateUnit: unit,
+                                unit: unit,
                                 period: TemporalWindowUnit.PER_DAY,
-                                availabilityFactor: 0.92,
-                                maintenanceFactor: 0.95
+                                availabilityFactor: typeof rawReserve?.capacityAvailabilityFactor === 'number' ? rawReserve.capacityAvailabilityFactor : 0.92,
+                                maintenanceFactor: typeof rawReserve?.capacityMaintenanceFactor === 'number' ? rawReserve.capacityMaintenanceFactor : 0.95,
+                                provenance: {
+                                    sourceSubsystem: rawReserve ? 'RESOURCE_JSON_CAPACITY_DATA' : 'RESOURCE_RESERVE_CAPACITY_RULE',
+                                    sourceId: rawReserve?.sourceRecordId || rawReserve?.id || rawReserve?.name || occKey,
+                                    observedRatePerDay: rawReserve?.productionRatePerDay ?? null,
+                                    rateStatus: rawReserve?.productionRateStatus || 'DERIVED_GAME_RULE',
+                                    rule: rawReserve?.productionRateProvenance || 'resource_economy_rules.json#extraction.capacityModel',
+                                    timestamp: 0
+                                }
                             });
                             scratch.registerCapacity(capacity);
                         });
@@ -11962,8 +11970,12 @@ _globalScope.GSRSK_DataFoundation = (() => {
                 return null;
             }
 
-            _resolveNominalCapacityRate(declaredQuantity, config) {
-                if (typeof config.nominalRateDaily === 'number') {
+            _resolveNominalCapacityRate(declaredQuantity, config, rawDeposit = null) {
+                const sourceRate = Number(rawDeposit?.productionRatePerDay);
+                if (Number.isFinite(sourceRate) && sourceRate > 0) {
+                    return sourceRate;
+                }
+                if (typeof config.nominalRateDaily === 'number' && Number.isFinite(config.nominalRateDaily) && config.nominalRateDaily > 0) {
                     return config.nominalRateDaily;
                 }
                 return Math.max(0.0001, declaredQuantity / 3650.0);
