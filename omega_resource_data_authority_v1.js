@@ -397,6 +397,58 @@
       const resourceTypes = mergeResourceTypes(sources.map(x => x.data));
 
       if(engine){
+        if(!engine.__omegaResourceAuthoritativeSummaryV1){
+          engine.__omegaResourceAuthoritativeSummaryV1=true;
+          engine.getSummary=function(countryKey){
+            try{
+              const c=(g.OmegaResourceEconomy&&typeof g.OmegaResourceEconomy.getCountryDashboard==='function')
+                ? g.OmegaResourceEconomy.getCountryDashboard(countryKey) : null;
+              const state=g.Game&&g.Game.state?g.Game.state:{};
+              const cid=String(c?.countryId||countryKey||'').toUpperCase();
+              const rs=state?.resource?.[cid]||{};
+              const production=rs.production&&typeof rs.production==='object'?rs.production:{};
+              const inventory=rs.inventory&&typeof rs.inventory==='object'?rs.inventory:{};
+              const reserves=rs.reserves&&typeof rs.reserves==='object'?rs.reserves:{};
+              const rows=Array.isArray(c?.mines?.rows)?c.mines.rows:[];
+              const resourceIds=Array.from(new Set([
+                ...Object.keys(production),...Object.keys(inventory),...Object.keys(reserves),
+                ...rows.map(x=>x.resourceId).filter(Boolean)
+              ]));
+              return{
+                countryId:cid,
+                sourceAuthority:'RESOURCE_JSON + RESOURCE_BATCH_LEDGER',
+                resources:resourceIds.map(rid=>{
+                  const mineRows=rows.filter(x=>String(x.resourceId||'')===String(rid));
+                  return{
+                    id:rid,
+                    production:num(production[rid])||0,
+                    productionObserved:true,
+                    demand:null,
+                    demandStatus:'UNOBSERVED',
+                    net:null,
+                    inventory:num(inventory[rid])||0,
+                    warehouseStock:num(c?.warehouse?.stockByResource?.[rid])||num(inventory[rid])||0,
+                    reserve:num(reserves[rid])||0,
+                    mineCount:mineRows.length,
+                    outputThisTurn:mineRows.reduce((s,x)=>s+(num(x.outputThisTurn)||0),0),
+                    cumulativeOutput:mineRows.reduce((s,x)=>s+(num(x.cumulativeOutput)||0),0),
+                    selfSufficiency:null,
+                    stockDays:null
+                  };
+                }),
+                totals:{
+                  mineCount:rows.length,
+                  activeMines:c?.mines?.active||0,
+                  blockedMines:c?.mines?.blocked||0,
+                  inventory:resourceIds.reduce((s,rid)=>s+(num(inventory[rid])||0),0),
+                  warehouseLots:c?.warehouse?.lotCount||0
+                }
+              };
+            }catch(error){
+              return{countryId:String(countryKey||'').toUpperCase(),sourceAuthority:'RESOURCE_JSON',error:String(error?.message||error),resources:[],totals:{mineCount:0,activeMines:0,blockedMines:0,inventory:0,warehouseLots:0}};
+            }
+          };
+        }
         if(resourceTypes.size){
           const existingById = new Map((engine.resourceTypes || []).map(x => [canonicalResourceId(x && x.id), x]));
           resourceTypes.forEach((row, rid) => {
