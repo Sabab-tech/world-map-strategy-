@@ -503,8 +503,19 @@
     bucket.importRequests[idx]=req;
     bucket.globalTradeLedger=bucket.globalTradeLedger||{requests:[],decisions:[],settlements:[]};
     bucket.globalTradeLedger.settlements=[...(bucket.globalTradeLedger.settlements||[]),{settlementId:p.settlementId,requestId:p.requestId,status:req.status,turn:turn(),quantity:req.quantity,unitPrice:req.unitPrice,supplier:req.targetCountryId}].slice(-MAX_HISTORY);
+    if(String(req.status||'').toUpperCase()===TYPES.SETTLED){
+      const total=num(req.totalValue)||0;
+      bucket.importValue=(num(bucket.importValue)||0)+total;
+      bucket.balance=(num(bucket.balance)||0)-total;
+      bucket.flowLedger=Array.isArray(bucket.flowLedger)?bucket.flowLedger:[];
+      bucket.flowLedger.push({type:'IMPORT',amount:total,resourceId:req.resourceId,quantity:req.quantity,counterpartyCountryId:req.targetCountryId,turn:turn(),settlementId:p.settlementId||null});
+      bucket.flowLedger=bucket.flowLedger.slice(-MAX_HISTORY);
+    }
     ctx.stateTransaction.set('trade.importRequests',clone(bucket.importRequests||[]));
     ctx.stateTransaction.set('trade.globalTradeLedger',clone(bucket.globalTradeLedger||{requests:[],decisions:[],settlements:[]}));
+    ctx.stateTransaction.set('trade.importValue',num(bucket.importValue)||0);
+    ctx.stateTransaction.set('trade.balance',num(bucket.balance)||0);
+    ctx.stateTransaction.set('trade.flowLedger',clone(bucket.flowLedger||[]));
     return{accepted:true,request:req};
   }
   function sellerLedgerHandler(cmd,ctx){
@@ -513,8 +524,16 @@
     const bucket=rawBucket&&typeof rawBucket==='object'?clone(rawBucket):{};
     if(!bucket.globalTradeLedger||typeof bucket.globalTradeLedger!=='object')bucket.globalTradeLedger={requests:[],decisions:[],settlements:[]};
     bucket.globalTradeLedger.settlements=[...(bucket.globalTradeLedger.settlements||[]),clone(p)].slice(-MAX_HISTORY);
-    ctx.stateTransaction.set('trade.importRequests',clone(bucket.importRequests||[]));
+    const total=num(p.totalValue)||0;
+    bucket.exportValue=(num(bucket.exportValue)||0)+total;
+    bucket.balance=(num(bucket.balance)||0)+total;
+    bucket.flowLedger=Array.isArray(bucket.flowLedger)?bucket.flowLedger:[];
+    bucket.flowLedger.push({type:'EXPORT',amount:total,resourceId:p.resourceId,quantity:p.quantity,counterpartyCountryId:p.buyerCountryId||null,turn:turn(),settlementId:p.settlementId||null});
+    bucket.flowLedger=bucket.flowLedger.slice(-MAX_HISTORY);
     ctx.stateTransaction.set('trade.globalTradeLedger',clone(bucket.globalTradeLedger||{requests:[],decisions:[],settlements:[]}));
+    ctx.stateTransaction.set('trade.exportValue',num(bucket.exportValue)||0);
+    ctx.stateTransaction.set('trade.balance',num(bucket.balance)||0);
+    ctx.stateTransaction.set('trade.flowLedger',clone(bucket.flowLedger||[]));
     return{accepted:true,settlementId:p.settlementId};
   }
   function relationPressureHandler(cmd,ctx){
