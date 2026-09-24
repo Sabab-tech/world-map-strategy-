@@ -482,6 +482,13 @@
     dispatch('economy','OMEGA_RESOURCE_ECON_PUBLISH_ECONOMY',c,{industrialRuntime:runtime,companyAccounts:clone(econ.companyAccounts||{}),workerIncome:clone(econ.workerIncome||{}),supplierRevenue:clone(econ.supplierRevenue||{}),factoryOutput:clone(econ.factoryOutput||{}),correlationId:'OWNER-'+turn()+'-'+canonical(c)});
   }
 
+  function macroSignalHandler(cmd,ctx){
+    var p=cmd&&cmd.payload||{},macro=clone(p.resourceMacro||{});
+    ctx.stateTransaction.set('economy.resourceMacro',macro);
+    emit('OMEGA_RESOURCE_MACRO_SIGNAL_UPDATED',ctx.countryId,{turn:turn(),resourceMacro:macro},'economy');
+    return{accepted:true};
+  }
+
   function economyPublishHandler(cmd,ctx){
     var p=cmd&&cmd.payload||{};ctx.stateTransaction.set('economy.industrialRuntime',clone(p.industrialRuntime||{}));ctx.stateTransaction.set('economy.companyAccounts',clone(p.companyAccounts||{}));ctx.stateTransaction.set('economy.workerIncome',clone(p.workerIncome||{}));ctx.stateTransaction.set('economy.supplierRevenue',clone(p.supplierRevenue||{}));ctx.stateTransaction.set('economy.factoryOutput',clone(p.factoryOutput||{}));emit('OMEGA_INDUSTRIAL_RUNTIME_PUBLISHED',ctx.countryId,{turn:turn()},'economy');return{accepted:true};
   }
@@ -495,13 +502,6 @@
       ['OMEGA_RESOURCE_ECON_ADD_INVENTORY','resource',addInventoryHandler],
       ['OMEGA_RESOURCE_ECON_APPLY_PRODUCTION','resource',applyProductionHandler],
       ['OMEGA_RESOURCE_ECON_PUBLISH_RESOURCE_RUNTIME','resource',publishResourceRuntimeHandler],
-  function macroSignalHandler(cmd,ctx){
-    var p=cmd&&cmd.payload||{},macro=clone(p.resourceMacro||{});
-    ctx.stateTransaction.set('economy.resourceMacro',macro);
-    emit('OMEGA_RESOURCE_MACRO_SIGNAL_UPDATED',ctx.countryId,{turn:turn(),resourceMacro:macro},'economy');
-    return{accepted:true};
-  }
-
       ['OMEGA_RESOURCE_ECON_PUBLISH_ECONOMY','economy',economyPublishHandler],
     ['OMEGA_RESOURCE_ECON_PUBLISH_MACRO_SIGNAL','economy',macroSignalHandler],
       ['OMEGA_RESOURCE_ECON_COMPANY_FLOW','economy',companyFlowHandler],
