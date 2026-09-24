@@ -403,16 +403,26 @@
   }
   async function initialize(){
     if(g.__omegaResourceEndowmentReady)return{status:'READY',countries:countries().length,reused:true};
-    if(g.__omegaResourceEndowmentInitializing)return;
+    if(g.__omegaResourceEndowmentPromise)return g.__omegaResourceEndowmentPromise;
     g.__omegaResourceEndowmentInitializing=true;
-    try{
-      for(let i=0;i<40&&!engine()?.isReady;i++)await new Promise(r=>setTimeout(r,0));
-      const compiled=compile();if(compiled.status!=='READY')return compiled;
-      applyPersistedReserveStates();install();
-      for(const c of countries())dispatch('OMEGA_RESOURCE_ENDOWMENT_HYDRATE',c,{correlationId:'RESOURCE-HYDRATE-'+turn()+'-'+c});
-      g.__omegaResourceEndowmentReady=true;
-      return{status:'READY',countries:countries().length,reused:false};
-    }finally{g.__omegaResourceEndowmentInitializing=false;}
+    g.__omegaResourceEndowmentPromise=(async function(){
+      try{
+        for(let i=0;i<400&&!engine()?.isReady;i++)await new Promise(r=>setTimeout(r,0));
+        if(!engine()?.isReady)return{status:'FAILED',reason:'RESOURCE_MINISTRY_ENGINE_NOT_READY'};
+        const compiled=compile();
+        if(compiled.status!=='READY')return compiled;
+        applyPersistedReserveStates();install();
+        for(const c of countries())dispatch('OMEGA_RESOURCE_ENDOWMENT_HYDRATE',c,{correlationId:'RESOURCE-HYDRATE-'+turn()+'-'+c});
+        g.__omegaResourceEndowmentReady=true;
+        return{status:'READY',countries:countries().length,reused:false};
+      }catch(e){
+        return{status:'FAILED',reason:String(e?.message||e)};
+      }finally{
+        g.__omegaResourceEndowmentInitializing=false;
+        g.__omegaResourceEndowmentPromise=null;
+      }
+    })();
+    return g.__omegaResourceEndowmentPromise;
   }
   async function extractAll(){
     const initialized=await initialize();
