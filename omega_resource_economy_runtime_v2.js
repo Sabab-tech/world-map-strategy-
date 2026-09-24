@@ -506,9 +506,11 @@
   }
 
   function factoryInputEventHandler(cmd,ctx){
-    var p=cmd&&cmd.payload||{},runtime=clone(ctx.stateTransaction.get('economy.industrialRuntime')||{}),events=Array.isArray(runtime.factoryInputEvents)?runtime.factoryInputEvents:[];
-    var resourceId=String(p.resourceId||p.batch&&p.batch.resourceId||'').trim();
-    var assets=Array.isArray(ctx.stateTransaction.get('economy.productionAssets'))?ctx.stateTransaction.get('economy.productionAssets'):[];
+    var p=cmd&&cmd.payload||{},econ=bucket(ctx.countryId,'economy')||{},
+      runtime=clone(econ.industrialRuntime||ctx.stateTransaction.get('economy.industrialRuntime')||{}),
+      events=Array.isArray(runtime.factoryInputEvents)?runtime.factoryInputEvents:[],
+      resourceId=String(p.resourceId||p.batch&&p.batch.resourceId||'').trim(),
+      assets=Array.isArray(econ.productionAssets)?econ.productionAssets:[];
     var candidateFactoryIds=assets.filter(function(asset){
       var coeff=asset&&asset.inputCoefficients;
       if(!coeff||typeof coeff!=='object'||!resourceId)return false;
@@ -517,6 +519,7 @@
     events.push({eventId:p.eventId||null,eventType:'OMEGA_RESOURCE_FACTORY_INPUT_AVAILABLE',countryId:canonical(ctx.countryId),extractionId:p.extractionId||null,batchId:p.batch&&p.batch.batchId||p.batchId||null,resourceId:resourceId,quantity:num(p.quantity)||0,purity:num(p.purity),gradePercent:num(p.gradePercent),warehouseId:p.warehouseId||null,candidateFactoryIds:candidateFactoryIds,dispatchStatus:candidateFactoryIds.length?'AVAILABLE_TO_MATCHING_FACTORIES':'NO_MATCHING_FACTORY',simulationTurn:turn(),sourceAuthority:p.sourceAuthority||'RESOURCE_JSON'});
     while(events.length>(num(rules().runtime.maxLedgerEntries)||2048))events.shift();
     runtime.factoryInputEvents=events;runtime.lastFactoryInputEventTurn=turn();
+    econ.industrialRuntime=runtime;
     ctx.stateTransaction.set('economy.industrialRuntime',runtime);
     return{accepted:true,eventCount:events.length};
   }
