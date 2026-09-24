@@ -1416,14 +1416,14 @@
         "geography": {
           "capital": "Sri Lanka Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -1800,14 +1800,14 @@
         "geography": {
           "capital": "Nepal Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -2184,14 +2184,14 @@
         "geography": {
           "capital": "Bhutan Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -2568,14 +2568,14 @@
         "geography": {
           "capital": "Afghanistan Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -2952,14 +2952,14 @@
         "geography": {
           "capital": "Maldives Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -3336,14 +3336,14 @@
         "geography": {
           "capital": "Algeria Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -3725,14 +3725,14 @@
         "geography": {
           "capital": "Egypt Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -4114,14 +4114,14 @@
         "geography": {
           "capital": "Libya Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -4503,14 +4503,14 @@
         "geography": {
           "capital": "Morocco Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -4892,14 +4892,14 @@
         "geography": {
           "capital": "Tunisia Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -5281,14 +5281,14 @@
         "geography": {
           "capital": "Sudan Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -5670,14 +5670,14 @@
         "geography": {
           "capital": "Mauritania Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -6059,14 +6059,14 @@
         "geography": {
           "capital": "Senegal Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -6443,14 +6443,14 @@
         "geography": {
           "capital": "Gambia Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -6827,14 +6827,14 @@
         "geography": {
           "capital": "Guinea-Bissau Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -7211,14 +7211,14 @@
         "geography": {
           "capital": "Guinea Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -7595,14 +7595,14 @@
         "geography": {
           "capital": "Sierra Leone Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -7979,14 +7979,14 @@
         "geography": {
           "capital": "Liberia Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -8363,14 +8363,14 @@
         "geography": {
           "capital": "Côte d'Ivoire Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -8747,14 +8747,14 @@
         "geography": {
           "capital": "Ghana Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -9131,14 +9131,14 @@
         "geography": {
           "capital": "Togo Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -9515,14 +9515,14 @@
         "geography": {
           "capital": "Benin Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -9899,14 +9899,14 @@
         "geography": {
           "capital": "Burkina Faso Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -10283,14 +10283,14 @@
         "geography": {
           "capital": "Mali Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -10667,14 +10667,14 @@
         "geography": {
           "capital": "Niger Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -11051,14 +11051,14 @@
         "geography": {
           "capital": "Nigeria Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -11435,14 +11435,14 @@
         "geography": {
           "capital": "Cabo Verde Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -11819,14 +11819,14 @@
         "geography": {
           "capital": "Western Sahara Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -12208,14 +12208,14 @@
         "geography": {
           "capital": "Cameroon Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -12592,14 +12592,14 @@
         "geography": {
           "capital": "Central African Republic Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -12976,14 +12976,14 @@
         "geography": {
           "capital": "Chad Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -13360,14 +13360,14 @@
         "geography": {
           "capital": "Republic of the Congo Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -13744,14 +13744,14 @@
         "geography": {
           "capital": "Angola Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -14128,14 +14128,14 @@
         "geography": {
           "capital": "Democratic Republic of the Congo Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -14512,14 +14512,14 @@
         "geography": {
           "capital": "Gabon Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -14896,14 +14896,14 @@
         "geography": {
           "capital": "Equatorial Guinea Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -15280,14 +15280,14 @@
         "geography": {
           "capital": "São Tomé and Príncipe Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -15664,14 +15664,14 @@
         "geography": {
           "capital": "Ethiopia Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -16048,14 +16048,14 @@
         "geography": {
           "capital": "Kenya Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -16432,14 +16432,14 @@
         "geography": {
           "capital": "Tanzania Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -16816,14 +16816,14 @@
         "geography": {
           "capital": "Uganda Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -17200,14 +17200,14 @@
         "geography": {
           "capital": "Rwanda Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -17584,14 +17584,14 @@
         "geography": {
           "capital": "Burundi Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -17968,14 +17968,14 @@
         "geography": {
           "capital": "Somalia Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -18352,14 +18352,14 @@
         "geography": {
           "capital": "Djibouti Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -18736,14 +18736,14 @@
         "geography": {
           "capital": "Eritrea Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -19120,14 +19120,14 @@
         "geography": {
           "capital": "South Sudan Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -19504,14 +19504,14 @@
         "geography": {
           "capital": "Malawi Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -19888,14 +19888,14 @@
         "geography": {
           "capital": "Madagascar Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -20272,14 +20272,14 @@
         "geography": {
           "capital": "Mauritius Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -20656,14 +20656,14 @@
         "geography": {
           "capital": "Seychelles Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -21040,14 +21040,14 @@
         "geography": {
           "capital": "Comoros Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -21424,14 +21424,14 @@
         "geography": {
           "capital": "South Africa Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -21808,14 +21808,14 @@
         "geography": {
           "capital": "Zambia Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -22192,14 +22192,14 @@
         "geography": {
           "capital": "Zimbabwe Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -22576,14 +22576,14 @@
         "geography": {
           "capital": "Namibia Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -22960,14 +22960,14 @@
         "geography": {
           "capital": "Botswana Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -23344,14 +23344,14 @@
         "geography": {
           "capital": "Mozambique Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -23728,14 +23728,14 @@
         "geography": {
           "capital": "Lesotho Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -24112,14 +24112,14 @@
         "geography": {
           "capital": "Eswatini Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -24496,14 +24496,14 @@
         "geography": {
           "capital": "Saudi Arabia Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -24885,14 +24885,14 @@
         "geography": {
           "capital": "United Arab Emirates Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -25274,14 +25274,14 @@
         "geography": {
           "capital": "Qatar Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -25663,14 +25663,14 @@
         "geography": {
           "capital": "Kuwait Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -26052,14 +26052,14 @@
         "geography": {
           "capital": "Oman Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -26441,14 +26441,14 @@
         "geography": {
           "capital": "Bahrain Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -26830,14 +26830,14 @@
         "geography": {
           "capital": "Yemen Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -27219,14 +27219,14 @@
         "geography": {
           "capital": "Iraq Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -27608,14 +27608,14 @@
         "geography": {
           "capital": "Iran Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -27999,14 +27999,14 @@
         "geography": {
           "capital": "Turkey Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -28388,14 +28388,14 @@
         "geography": {
           "capital": "Syria Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -28779,14 +28779,14 @@
         "geography": {
           "capital": "Jordan Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -29168,14 +29168,14 @@
         "geography": {
           "capital": "Lebanon Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -29557,14 +29557,14 @@
         "geography": {
           "capital": "Israel Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -29946,14 +29946,14 @@
         "geography": {
           "capital": "Palestine Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -30719,14 +30719,14 @@
         "geography": {
           "capital": "Japan Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -31103,14 +31103,14 @@
         "geography": {
           "capital": "South Korea Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -31487,14 +31487,14 @@
         "geography": {
           "capital": "North Korea Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -31873,14 +31873,14 @@
         "geography": {
           "capital": "Mongolia Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -32257,14 +32257,14 @@
         "geography": {
           "capital": "Taiwan Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -32641,14 +32641,14 @@
         "geography": {
           "capital": "Indonesia Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -33025,14 +33025,14 @@
         "geography": {
           "capital": "Malaysia Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -33409,14 +33409,14 @@
         "geography": {
           "capital": "Vietnam Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -33793,14 +33793,14 @@
         "geography": {
           "capital": "Thailand Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -34177,14 +34177,14 @@
         "geography": {
           "capital": "Philippines Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -34561,14 +34561,14 @@
         "geography": {
           "capital": "Myanmar Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -34945,14 +34945,14 @@
         "geography": {
           "capital": "Singapore Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -35329,14 +35329,14 @@
         "geography": {
           "capital": "Brunei Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -35713,14 +35713,14 @@
         "geography": {
           "capital": "Cambodia Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -36097,14 +36097,14 @@
         "geography": {
           "capital": "Laos Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -36481,14 +36481,14 @@
         "geography": {
           "capital": "Timor-Leste Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -36865,14 +36865,14 @@
         "geography": {
           "capital": "Kazakhstan Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -37249,14 +37249,14 @@
         "geography": {
           "capital": "Uzbekistan Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -37633,14 +37633,14 @@
         "geography": {
           "capital": "Turkmenistan Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -38017,14 +38017,14 @@
         "geography": {
           "capital": "Kyrgyzstan Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -38401,14 +38401,14 @@
         "geography": {
           "capital": "Tajikistan Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -38785,14 +38785,14 @@
         "geography": {
           "capital": "Georgia Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -39169,14 +39169,14 @@
         "geography": {
           "capital": "Armenia Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -39553,14 +39553,14 @@
         "geography": {
           "capital": "Azerbaijan Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -40706,14 +40706,14 @@
         "geography": {
           "capital": "France Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -41091,14 +41091,14 @@
         "geography": {
           "capital": "United Kingdom Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -41476,14 +41476,14 @@
         "geography": {
           "capital": "Italy Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -41861,14 +41861,14 @@
         "geography": {
           "capital": "Spain Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -42246,14 +42246,14 @@
         "geography": {
           "capital": "Poland Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -42631,14 +42631,14 @@
         "geography": {
           "capital": "Ukraine Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -43016,14 +43016,14 @@
         "geography": {
           "capital": "Netherlands Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -43401,14 +43401,14 @@
         "geography": {
           "capital": "Belgium Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -43786,14 +43786,14 @@
         "geography": {
           "capital": "Switzerland Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -44171,14 +44171,14 @@
         "geography": {
           "capital": "Sweden Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -44556,14 +44556,14 @@
         "geography": {
           "capital": "Norway Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -44941,14 +44941,14 @@
         "geography": {
           "capital": "Austria Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -45326,14 +45326,14 @@
         "geography": {
           "capital": "Finland Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -45711,14 +45711,14 @@
         "geography": {
           "capital": "Denmark Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -46096,14 +46096,14 @@
         "geography": {
           "capital": "Ireland Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -46481,14 +46481,14 @@
         "geography": {
           "capital": "Portugal Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -46866,14 +46866,14 @@
         "geography": {
           "capital": "Greece Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -47251,14 +47251,14 @@
         "geography": {
           "capital": "Czech Republic Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -47636,14 +47636,14 @@
         "geography": {
           "capital": "Romania Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -48021,14 +48021,14 @@
         "geography": {
           "capital": "Hungary Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -48406,14 +48406,14 @@
         "geography": {
           "capital": "Slovakia Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -48791,14 +48791,14 @@
         "geography": {
           "capital": "Bulgaria Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -49176,14 +49176,14 @@
         "geography": {
           "capital": "Serbia Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -49561,14 +49561,14 @@
         "geography": {
           "capital": "Croatia Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -49946,14 +49946,14 @@
         "geography": {
           "capital": "Slovenia Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -50331,14 +50331,14 @@
         "geography": {
           "capital": "Estonia Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -50716,14 +50716,14 @@
         "geography": {
           "capital": "Latvia Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -51101,14 +51101,14 @@
         "geography": {
           "capital": "Lithuania Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -51486,14 +51486,14 @@
         "geography": {
           "capital": "Belarus Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -51871,14 +51871,14 @@
         "geography": {
           "capital": "Moldova Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -52256,14 +52256,14 @@
         "geography": {
           "capital": "Albania Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -52641,14 +52641,14 @@
         "geography": {
           "capital": "North Macedonia Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -53026,14 +53026,14 @@
         "geography": {
           "capital": "Bosnia and Herzegovina Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -53411,14 +53411,14 @@
         "geography": {
           "capital": "Montenegro Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -53796,14 +53796,14 @@
         "geography": {
           "capital": "Iceland Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -54181,14 +54181,14 @@
         "geography": {
           "capital": "Luxembourg Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -54566,14 +54566,14 @@
         "geography": {
           "capital": "Malta Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -54951,14 +54951,14 @@
         "geography": {
           "capital": "Cyprus Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -55336,14 +55336,14 @@
         "geography": {
           "capital": "Andorra Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -55721,14 +55721,14 @@
         "geography": {
           "capital": "Monaco Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -56106,14 +56106,14 @@
         "geography": {
           "capital": "San Marino Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -56491,14 +56491,14 @@
         "geography": {
           "capital": "Liechtenstein Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -56876,14 +56876,14 @@
         "geography": {
           "capital": "Vatican City Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -58029,14 +58029,14 @@
         "geography": {
           "capital": "Mexico Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -58797,14 +58797,14 @@
         "geography": {
           "capital": "Argentina Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -59181,14 +59181,14 @@
         "geography": {
           "capital": "Chile Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -59565,14 +59565,14 @@
         "geography": {
           "capital": "Colombia Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -59949,14 +59949,14 @@
         "geography": {
           "capital": "Peru Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -60333,14 +60333,14 @@
         "geography": {
           "capital": "Venezuela Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -60719,14 +60719,14 @@
         "geography": {
           "capital": "Ecuador Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -61103,14 +61103,14 @@
         "geography": {
           "capital": "Bolivia Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -61487,14 +61487,14 @@
         "geography": {
           "capital": "Paraguay Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -61871,14 +61871,14 @@
         "geography": {
           "capital": "Uruguay Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -62255,14 +62255,14 @@
         "geography": {
           "capital": "Panama Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -62639,14 +62639,14 @@
         "geography": {
           "capital": "Costa Rica Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -63023,14 +63023,14 @@
         "geography": {
           "capital": "Nicaragua Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -63407,14 +63407,14 @@
         "geography": {
           "capital": "Honduras Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -63791,14 +63791,14 @@
         "geography": {
           "capital": "El Salvador Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -64175,14 +64175,14 @@
         "geography": {
           "capital": "Guatemala Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -64559,14 +64559,14 @@
         "geography": {
           "capital": "Belize Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -66269,5 +66269,568 @@
         }
       }
     }
+  },
+  "runtime_deposits": [
+    {
+      "id": "dep-ghawar-oil",
+      "name": "Ghawar Oil Super-Giant",
+      "country": "SAUDI ARABIA",
+      "countryCode": "SAU",
+      "lat": 25.4,
+      "lng": 49.6,
+      "resId": "crude_oil",
+      "category": "hydrocarbons",
+      "reserves": "48.2 Billion BBL",
+      "grade": "34° API Arab Light",
+      "status": "ACTIVE_PRODUCING",
+      "owner": "Saudi Aramco",
+      "operator": "Aramco Upstream"
+    },
+    {
+      "id": "dep-permian-oil",
+      "name": "Permian Basin Super-Play",
+      "country": "USA",
+      "countryCode": "USA",
+      "lat": 31.8,
+      "lng": -102.3,
+      "resId": "crude_oil",
+      "category": "hydrocarbons",
+      "reserves": "60.5 Billion BBL",
+      "grade": "40° API WTI Midland",
+      "status": "ACTIVE_PRODUCING",
+      "owner": "Multi-Operator Joint Basin",
+      "operator": "Pioneer & Chevron"
+    },
+    {
+      "id": "dep-escondida-cu",
+      "name": "Escondida Copper Mine",
+      "country": "CHILE",
+      "countryCode": "CHL",
+      "lat": -24.26,
+      "lng": -69.07,
+      "resId": "copper",
+      "category": "strategic_metals",
+      "reserves": "32.6 Million Tons",
+      "grade": "0.85% Cu Sulfide",
+      "status": "ACTIVE_PRODUCING",
+      "owner": "BHP & Rio Tinto",
+      "operator": "Minera Escondida"
+    },
+    {
+      "id": "dep-grasberg-au-cu",
+      "name": "Grasberg Mine Complex",
+      "country": "INDONESIA",
+      "countryCode": "IDN",
+      "lat": -4.05,
+      "lng": 137.11,
+      "resId": "gold",
+      "category": "monetary_strategic",
+      "reserves": "30.2 Million Oz Au / 15Mt Cu",
+      "grade": "0.98 g/t Au, 0.72% Cu",
+      "status": "ACTIVE_PRODUCING",
+      "owner": "PT Inalum / Freeport",
+      "operator": "PT Freeport Indonesia"
+    },
+    {
+      "id": "dep-bayan-obo-ree",
+      "name": "Bayan Obo Rare Earth Mine",
+      "country": "CHINA",
+      "countryCode": "CHN",
+      "lat": 41.77,
+      "lng": 109.96,
+      "resId": "rare_earth",
+      "category": "critical_minerals",
+      "reserves": "40.0 Million Tons REO",
+      "grade": "5.7% Bastnäsite / Monazite",
+      "status": "ACTIVE_PRODUCING",
+      "owner": "China Northern Rare Earth",
+      "operator": "Baogang Group"
+    },
+    {
+      "id": "dep-salar-atacama-li",
+      "name": "Salar de Atacama Brine Field",
+      "country": "CHILE",
+      "countryCode": "CHL",
+      "lat": -23.5,
+      "lng": -68.3,
+      "resId": "lithium",
+      "category": "battery_metals",
+      "reserves": "9.2 Million Tons LCE",
+      "grade": "1,400 mg/L Li Brine",
+      "status": "ACTIVE_PRODUCING",
+      "owner": "SQM & Albemarle",
+      "operator": "SQM Salar"
+    },
+    {
+      "id": "dep-norilsk-ni",
+      "name": "Norilsk Talnakh Ore Belt",
+      "country": "RUSSIA",
+      "countryCode": "RUS",
+      "lat": 69.35,
+      "lng": 88.2,
+      "resId": "nickel",
+      "category": "critical_minerals",
+      "reserves": "18.4 Million Tons Ni",
+      "grade": "1.75% Ni, 2.5% Cu, 8g/t PGM",
+      "status": "ACTIVE_PRODUCING",
+      "owner": "Nornickel Group",
+      "operator": "Polar Division"
+    },
+    {
+      "id": "dep-tenke-fung-co",
+      "name": "Tenke Fungurume Belt",
+      "country": "DR CONGO",
+      "countryCode": "COD",
+      "lat": -10.57,
+      "lng": 26.18,
+      "resId": "cobalt",
+      "category": "battery_metals",
+      "reserves": "2.8 Million Tons Co",
+      "grade": "0.35% Co, 2.8% Cu",
+      "status": "ACTIVE_PRODUCING",
+      "owner": "CMOC Group",
+      "operator": "TFM SARL"
+    },
+    {
+      "id": "dep-carajas-fe",
+      "name": "Carajás Iron Ore Province",
+      "country": "BRAZIL",
+      "countryCode": "BRA",
+      "lat": -6.06,
+      "lng": -50.18,
+      "resId": "iron_ore",
+      "category": "industrial_metals",
+      "reserves": "7.2 Billion Tons Fe",
+      "grade": "66.5% Fe Premium Fines",
+      "status": "ACTIVE_PRODUCING",
+      "owner": "Vale S.A.",
+      "operator": "Vale Carajás"
+    },
+    {
+      "id": "dep-cigar-lake-u",
+      "name": "Cigar Lake High-Grade Mine",
+      "country": "CANADA",
+      "countryCode": "CAN",
+      "lat": 58.06,
+      "lng": -104.53,
+      "resId": "uranium",
+      "category": "nuclear_energy",
+      "reserves": "165,000 Tons U3O8",
+      "grade": "15.9% U3O8 Ultra-Rich",
+      "status": "ACTIVE_PRODUCING",
+      "owner": "Cameco & Orano",
+      "operator": "Cameco Corporation"
+    },
+    {
+      "id": "dep-bou-craa-p",
+      "name": "Bou Craa Phosphate Open-Cast",
+      "country": "MOROCCO",
+      "countryCode": "MAR",
+      "lat": 26.32,
+      "lng": -12.85,
+      "resId": "phosphate",
+      "category": "agricultural_chemicals",
+      "reserves": "1.2 Billion Tons P2O5",
+      "grade": "72% BPL Sedimentary",
+      "status": "ACTIVE_PRODUCING",
+      "owner": "OCP Group",
+      "operator": "Phosboucraa"
+    },
+    {
+      "id": "dep-bibiyana-gas",
+      "name": "Bibiyana Natural Gas Field",
+      "country": "BANGLADESH",
+      "countryCode": "BGD",
+      "lat": 24.63,
+      "lng": 91.65,
+      "resId": "natural_gas",
+      "category": "hydrocarbons",
+      "reserves": "4.5 TCF Gas",
+      "grade": "High Methane Sweet Gas",
+      "status": "ACTIVE_PRODUCING",
+      "owner": "Petrobangla / Chevron",
+      "operator": "Chevron Bangladesh"
+    },
+    {
+      "id": "dep-barapukuria-coal",
+      "name": "Barapukuria Coal Basin",
+      "country": "BANGLADESH",
+      "countryCode": "BGD",
+      "lat": 25.55,
+      "lng": 88.96,
+      "resId": "iron_ore",
+      "category": "industrial_metals",
+      "reserves": "390 Million Tons Bituminous",
+      "grade": "Low Ash High Energy Coal",
+      "status": "ACTIVE_PRODUCING",
+      "owner": "Petrobangla",
+      "operator": "BCMCL"
+    },
+    {
+      "id": "dep-titas-gas",
+      "name": "Titas Gas Field Reservoir",
+      "country": "BANGLADESH",
+      "countryCode": "BGD",
+      "lat": 23.98,
+      "lng": 91.13,
+      "resId": "natural_gas",
+      "category": "hydrocarbons",
+      "reserves": "2.8 TCF Natural Gas",
+      "grade": "96.2% Pure Methane Gas",
+      "status": "ACTIVE_PRODUCING",
+      "owner": "BGFCL",
+      "operator": "Titas Gas T&D"
+    },
+    {
+      "id": "dep-kailashtila-cond",
+      "name": "Kailashtila Field & NGL Plant",
+      "country": "BANGLADESH",
+      "countryCode": "BGD",
+      "lat": 24.87,
+      "lng": 92.01,
+      "resId": "natural_gas",
+      "category": "hydrocarbons",
+      "reserves": "1.9 TCF Gas / 18M BBL Condensate",
+      "grade": "High Hydrocarbon Condensate",
+      "status": "ACTIVE_PRODUCING",
+      "owner": "Sylhet Gas Fields Ltd",
+      "operator": "SGFL"
+    },
+    {
+      "id": "dep-burgan-oil",
+      "name": "Greater Burgan Oilfield",
+      "country": "KUWAIT",
+      "countryCode": "KWT",
+      "lat": 29.07,
+      "lng": 47.96,
+      "resId": "crude_oil",
+      "category": "hydrocarbons",
+      "reserves": "66.0 Billion BBL",
+      "grade": "31.9° API Medium Crude",
+      "status": "ACTIVE_PRODUCING",
+      "owner": "Kuwait Oil Company",
+      "operator": "KOC Exploration"
+    },
+    {
+      "id": "dep-south-pars-gas",
+      "name": "South Pars / North Dome Gas",
+      "country": "QATAR",
+      "countryCode": "QAT",
+      "lat": 27.2,
+      "lng": 52,
+      "resId": "natural_gas",
+      "category": "hydrocarbons",
+      "reserves": "1,800 TCF Non-Associated Gas",
+      "grade": "Super-Giant Gas Field",
+      "status": "ACTIVE_PRODUCING",
+      "owner": "QatarEnergy & NIOC",
+      "operator": "Qatargas & POGC"
+    },
+    {
+      "id": "dep-safaniya-oil",
+      "name": "Safaniya Offshore Oilfield",
+      "country": "SAUDI ARABIA",
+      "countryCode": "SAU",
+      "lat": 28.05,
+      "lng": 48.77,
+      "resId": "crude_oil",
+      "category": "hydrocarbons",
+      "reserves": "37.0 Billion BBL",
+      "grade": "27° API Heavy Offshore",
+      "status": "ACTIVE_PRODUCING",
+      "owner": "Saudi Aramco",
+      "operator": "Aramco Offshore"
+    },
+    {
+      "id": "dep-daqing-oil",
+      "name": "Daqing Complex Oil Basin",
+      "country": "CHINA",
+      "countryCode": "CHN",
+      "lat": 46.59,
+      "lng": 125,
+      "resId": "crude_oil",
+      "category": "hydrocarbons",
+      "reserves": "16.0 Billion BBL",
+      "grade": "Waxy Sweet Crude",
+      "status": "ACTIVE_PRODUCING",
+      "owner": "PetroChina",
+      "operator": "Daqing Oilfield Co"
+    },
+    {
+      "id": "dep-samotlor-oil",
+      "name": "Samotlor West Siberian Field",
+      "country": "RUSSIA",
+      "countryCode": "RUS",
+      "lat": 61.12,
+      "lng": 76.71,
+      "resId": "crude_oil",
+      "category": "hydrocarbons",
+      "reserves": "20.5 Billion BBL",
+      "grade": "32° API Siberian Light",
+      "status": "ACTIVE_PRODUCING",
+      "owner": "Rosneft",
+      "operator": "Samotlorneftegaz"
+    },
+    {
+      "id": "dep-vaca-muerta-shale",
+      "name": "Vaca Muerta Shale Basin",
+      "country": "ARGENTINA",
+      "countryCode": "ARG",
+      "lat": -38.5,
+      "lng": -69,
+      "resId": "crude_oil",
+      "category": "hydrocarbons",
+      "reserves": "16.2 Billion BBL / 308 TCF",
+      "grade": "Unconventional Tight Oil/Gas",
+      "status": "ACTIVE_PRODUCING",
+      "owner": "YPF & Chevron",
+      "operator": "YPF S.A."
+    },
+    {
+      "id": "dep-marcellus-gas",
+      "name": "Marcellus Shale Gas Basin",
+      "country": "USA",
+      "countryCode": "USA",
+      "lat": 41,
+      "lng": -77.5,
+      "resId": "natural_gas",
+      "category": "hydrocarbons",
+      "reserves": "84.0 TCF Proved Gas",
+      "grade": "Dry Sweet Natural Gas",
+      "status": "ACTIVE_PRODUCING",
+      "owner": "EQT & Chesapeake",
+      "operator": "EQT Production"
+    },
+    {
+      "id": "dep-athabasca-oil",
+      "name": "Athabasca Bitumen Sands",
+      "country": "CANADA",
+      "countryCode": "CAN",
+      "lat": 57,
+      "lng": -111.5,
+      "resId": "crude_oil",
+      "category": "hydrocarbons",
+      "reserves": "165 Billion BBL Bitumen",
+      "grade": "8-10° API Heavy Bitumen",
+      "status": "ACTIVE_PRODUCING",
+      "owner": "Suncor & CNRL",
+      "operator": "Canadian Natural"
+    },
+    {
+      "id": "dep-muruntau-au",
+      "name": "Muruntau Open-Pit Gold Mine",
+      "country": "UZBEKISTAN",
+      "countryCode": "UZB",
+      "lat": 41.5,
+      "lng": 64.57,
+      "resId": "gold",
+      "category": "monetary_strategic",
+      "reserves": "4,500 Tons Gold (145M Oz)",
+      "grade": "2.4 g/t Quartz Vein Gold",
+      "status": "ACTIVE_PRODUCING",
+      "owner": "Navoi Mining & Metal",
+      "operator": "NMMC State Enterprise"
+    },
+    {
+      "id": "dep-carlin-au",
+      "name": "Carlin Trend Gold Province",
+      "country": "USA",
+      "countryCode": "USA",
+      "lat": 40.71,
+      "lng": -116.3,
+      "resId": "gold",
+      "category": "monetary_strategic",
+      "reserves": "84 Million Oz Gold",
+      "grade": "3.1 g/t Disseminated Au",
+      "status": "ACTIVE_PRODUCING",
+      "owner": "Nevada Gold Mines / Barrick",
+      "operator": "NGM Joint Venture"
+    },
+    {
+      "id": "dep-collahuasi-cu",
+      "name": "Collahuasi Porphyry Copper",
+      "country": "CHILE",
+      "countryCode": "CHL",
+      "lat": -20.97,
+      "lng": -68.65,
+      "resId": "copper",
+      "category": "strategic_metals",
+      "reserves": "28.5 Million Tons Cu",
+      "grade": "0.82% Cu Porphyry",
+      "status": "ACTIVE_PRODUCING",
+      "owner": "Anglo American & Glencore",
+      "operator": "Doña Inés de Collahuasi"
+    },
+    {
+      "id": "dep-el-teniente-cu",
+      "name": "El Teniente Underground Mine",
+      "country": "CHILE",
+      "countryCode": "CHL",
+      "lat": -34.09,
+      "lng": -70.35,
+      "resId": "copper",
+      "category": "strategic_metals",
+      "reserves": "34.0 Million Tons Cu",
+      "grade": "0.62% Cu Breccia Pipe",
+      "status": "ACTIVE_PRODUCING",
+      "owner": "Codelco State Corporation",
+      "operator": "División El Teniente"
+    },
+    {
+      "id": "dep-kiruna-fe",
+      "name": "Kiruna Magnetite Orebody",
+      "country": "SWEDEN",
+      "countryCode": "SWE",
+      "lat": 67.85,
+      "lng": 20.22,
+      "resId": "iron_ore",
+      "category": "industrial_metals",
+      "reserves": "1.2 Billion Tons Fe",
+      "grade": "60.0% Fe Dense Magnetite",
+      "status": "ACTIVE_PRODUCING",
+      "owner": "LKAB State Mining",
+      "operator": "LKAB Kiruna"
+    },
+    {
+      "id": "dep-sudbury-ni-cu",
+      "name": "Sudbury Impact Basin",
+      "country": "CANADA",
+      "countryCode": "CAN",
+      "lat": 46.6,
+      "lng": -81.2,
+      "resId": "nickel",
+      "category": "critical_minerals",
+      "reserves": "8.5 Million Tons Ni / 6Mt Cu",
+      "grade": "1.2% Ni, 1.4% Cu, PGM",
+      "status": "ACTIVE_PRODUCING",
+      "owner": "Vale Base Metals & Glencore",
+      "operator": "Vale Sudbury Ops"
+    },
+    {
+      "id": "dep-jinchuan-ni",
+      "name": "Jinchuan Ultramafic Nickel",
+      "country": "CHINA",
+      "countryCode": "CHN",
+      "lat": 38.5,
+      "lng": 102.18,
+      "resId": "nickel",
+      "category": "critical_minerals",
+      "reserves": "5.2 Million Tons Ni",
+      "grade": "1.06% Ni, 0.7% Cu",
+      "status": "ACTIVE_PRODUCING",
+      "owner": "Jinchuan Group",
+      "operator": "Jinchuan Mining Co"
+    },
+    {
+      "id": "dep-mountain-pass-ree",
+      "name": "Mountain Pass Carbonatite",
+      "country": "USA",
+      "countryCode": "USA",
+      "lat": 35.48,
+      "lng": -115.53,
+      "resId": "rare_earth",
+      "category": "critical_minerals",
+      "reserves": "2.1 Million Tons REO",
+      "grade": "6.3% Bastnäsite REO",
+      "status": "ACTIVE_PRODUCING",
+      "owner": "MP Materials Corp",
+      "operator": "MP Materials Ops"
+    },
+    {
+      "id": "dep-uyuni-li",
+      "name": "Salar de Uyuni Giant Basin",
+      "country": "BOLIVIA",
+      "countryCode": "BOL",
+      "lat": -20.13,
+      "lng": -67.48,
+      "resId": "lithium",
+      "category": "battery_metals",
+      "reserves": "21.0 Million Tons LCE",
+      "grade": "500-900 mg/L Li Brine",
+      "status": "ACTIVE_PRODUCING",
+      "owner": "YLB (Yacimientos de Litio)",
+      "operator": "YLB State Corp"
+    },
+    {
+      "id": "dep-sangaredi-al",
+      "name": "Sangaredi High-Grade Bauxite",
+      "country": "GUINEA",
+      "countryCode": "GIN",
+      "lat": 11.09,
+      "lng": -13.9,
+      "resId": "bauxite",
+      "category": "strategic_metals",
+      "reserves": "1.8 Billion Tons Bauxite",
+      "grade": "58.0% Al2O3 High Quality",
+      "status": "ACTIVE_PRODUCING",
+      "owner": "CBG (Compagnie des Bauxites)",
+      "operator": "CBG Guinea"
+    },
+    {
+      "id": "dep-khouribga-p",
+      "name": "Khouribga Phosphate Plateau",
+      "country": "MOROCCO",
+      "countryCode": "MAR",
+      "lat": 32.88,
+      "lng": -6.91,
+      "resId": "phosphate",
+      "category": "agricultural_chemicals",
+      "reserves": "35.0 Billion Tons Phosphate",
+      "grade": "70% BPL Premium Rock",
+      "status": "ACTIVE_PRODUCING",
+      "owner": "OCP Group",
+      "operator": "OCP Khouribga"
+    },
+    {
+      "id": "dep-uralkali-potash",
+      "name": "Berezniki Potash Basin",
+      "country": "RUSSIA",
+      "countryCode": "RUS",
+      "lat": 59.41,
+      "lng": 56.81,
+      "resId": "potash",
+      "category": "agricultural_chemicals",
+      "reserves": "3.8 Billion Tons KCl",
+      "grade": "28% K2O Sylvinite",
+      "status": "ACTIVE_PRODUCING",
+      "owner": "Uralkali JSC",
+      "operator": "Berezniki Mining Mine 4"
+    },
+    {
+      "id": "dep-sask-potash",
+      "name": "Saskatchewan Potash Basin",
+      "country": "CANADA",
+      "countryCode": "CAN",
+      "lat": 52,
+      "lng": -106,
+      "resId": "potash",
+      "category": "agricultural_chemicals",
+      "reserves": "9.5 Billion Tons KCl",
+      "grade": "25-30% K2O Evaporite",
+      "status": "ACTIVE_PRODUCING",
+      "owner": "Nutrien & Mosaic",
+      "operator": "Nutrien Allan & Rocanville"
+    },
+    {
+      "id": "dep-dead-sea-potash",
+      "name": "Dead Sea Minerals & Bromine",
+      "country": "JORDAN",
+      "countryCode": "JOR",
+      "lat": 31.05,
+      "lng": 35.36,
+      "resId": "potash",
+      "category": "agricultural_chemicals",
+      "reserves": "1.5 Billion Tons Carnallite",
+      "grade": "High Purity Potash/Bromine",
+      "status": "ACTIVE_PRODUCING",
+      "owner": "Arab Potash Company & ICL",
+      "operator": "APC Industrial Plant"
+    }
+  ],
+  "runtime_deposit_schema": {
+    "version": "1.0.0",
+    "authority": "RESOURCE_JSON",
+    "description": "Authoritative runtime mine/deposit records migrated from the legacy embedded catalog. Runtime simulation consumes this data layer.",
+    "recordCount": 37
   }
 }
