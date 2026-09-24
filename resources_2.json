@@ -2250,14 +2250,14 @@
         "geography": {
           "capital": "Bahamas Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -2632,14 +2632,14 @@
         "geography": {
           "capital": "Barbados Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -3014,14 +3014,14 @@
         "geography": {
           "capital": "Saint Lucia Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -3396,14 +3396,14 @@
         "geography": {
           "capital": "Saint Vincent and the Grenadines Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -3778,14 +3778,14 @@
         "geography": {
           "capital": "Grenada Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -4160,14 +4160,14 @@
         "geography": {
           "capital": "Antigua and Barbuda Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -4542,14 +4542,14 @@
         "geography": {
           "capital": "Saint Kitts and Nevis Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -4924,14 +4924,14 @@
         "geography": {
           "capital": "Dominica Capital City",
           "coordinates": {
-            "lat": 10.0,
-            "lng": 10.0
+            "lat": 10,
+            "lng": 10
           },
           "bounds": {
-            "north": 13.0,
-            "south": 7.0,
-            "east": 13.0,
-            "west": 7.0
+            "north": 13,
+            "south": 7,
+            "east": 13,
+            "west": 7
           },
           "landAreaKm2": 100000,
           "coastal": true,
@@ -12178,5 +12178,103 @@
         }
       }
     }
+  },
+  "runtime_deposits": [
+    {
+      "id": "dep-greenbushes-li",
+      "name": "Greenbushes Hard-Rock Lithium",
+      "country": "AUSTRALIA",
+      "countryCode": "AUS",
+      "lat": -33.86,
+      "lng": 116.01,
+      "resId": "lithium",
+      "category": "battery_metals",
+      "reserves": "8.4 Million Tons LCE",
+      "grade": "2.1% Li2O Spodumene",
+      "status": "ACTIVE_PRODUCING",
+      "owner": "Tianqi Lithium & IGO",
+      "operator": "Talison Lithium"
+    },
+    {
+      "id": "dep-olympic-dam-u",
+      "name": "Olympic Dam Orebody",
+      "country": "AUSTRALIA",
+      "countryCode": "AUS",
+      "lat": -30.43,
+      "lng": 136.88,
+      "resId": "uranium",
+      "category": "nuclear_energy",
+      "reserves": "2.1 Million Tons U3O8",
+      "grade": "0.05% U3O8, 0.8% Cu",
+      "status": "ACTIVE_PRODUCING",
+      "owner": "BHP",
+      "operator": "Olympic Dam Corp"
+    },
+    {
+      "id": "dep-pilbara-fe",
+      "name": "Pilbara Hamersley Province",
+      "country": "AUSTRALIA",
+      "countryCode": "AUS",
+      "lat": -22.5,
+      "lng": 118,
+      "resId": "iron_ore",
+      "category": "industrial_metals",
+      "reserves": "24.0 Billion Tons Fe",
+      "grade": "62.0% Fe Brockman Ore",
+      "status": "ACTIVE_PRODUCING",
+      "owner": "Rio Tinto & BHP",
+      "operator": "Pilbara Iron Ops"
+    },
+    {
+      "id": "dep-weipa-al",
+      "name": "Weipa Bauxite Plateau",
+      "country": "AUSTRALIA",
+      "countryCode": "AUS",
+      "lat": -12.63,
+      "lng": 141.87,
+      "resId": "bauxite",
+      "category": "strategic_metals",
+      "reserves": "1.4 Billion Tons Bauxite",
+      "grade": "52.5% Al2O3 Pisolitic",
+      "status": "ACTIVE_PRODUCING",
+      "owner": "Rio Tinto",
+      "operator": "Weipa Operations"
+    },
+    {
+      "id": "dep-mount-weld-ree",
+      "name": "Mount Weld Carbonatite Pipe",
+      "country": "AUSTRALIA",
+      "countryCode": "AUS",
+      "lat": -28.87,
+      "lng": 122.18,
+      "resId": "rare_earth",
+      "category": "critical_minerals",
+      "reserves": "3.2 Million Tons REO",
+      "grade": "5.4% NdPr Enriched REO",
+      "status": "ACTIVE_PRODUCING",
+      "owner": "Lynas Rare Earths",
+      "operator": "Lynas Mt Weld"
+    },
+    {
+      "id": "dep-pilgangoora-li",
+      "name": "Pilgangoora Spodumene Mine",
+      "country": "AUSTRALIA",
+      "countryCode": "AUS",
+      "lat": -21.03,
+      "lng": 118.91,
+      "resId": "lithium",
+      "category": "battery_metals",
+      "reserves": "5.8 Million Tons LCE",
+      "grade": "1.25% Li2O Pegmatite",
+      "status": "ACTIVE_PRODUCING",
+      "owner": "Pilbara Minerals",
+      "operator": "Pilbara Minerals Ltd"
+    }
+  ],
+  "runtime_deposit_schema": {
+    "version": "1.0.0",
+    "authority": "RESOURCE_JSON",
+    "description": "Authoritative runtime mine/deposit records migrated from the legacy embedded catalog for part 2 countries.",
+    "recordCount": 6
   }
 }
