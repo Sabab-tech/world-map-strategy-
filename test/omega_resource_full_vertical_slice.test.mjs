@@ -104,11 +104,11 @@ function makeContext(){
     OmegaGlobalTrade:{processAll(){}}
   };
   context.globalThis=context;
-  return {context,worldState,events};
+  return {context,worldState,events,handlers};
 }
 
 {
-  const {context,worldState,events}=makeContext();
+  const {context,worldState,events,handlers}=makeContext();
   vm.runInNewContext(readFileSync('omega_resource_transport_runtime_v1.js','utf8'),context,{filename:'omega_resource_transport_runtime_v1.js'});
   vm.runInNewContext(readFileSync('omega_resource_economy_runtime_v2.js','utf8'),context,{filename:'omega_resource_economy_runtime_v2.js'});
   assert(context.OmegaResourceTransport);
@@ -125,7 +125,8 @@ function makeContext(){
   console.log('TRANSPORT_EVENT_DEBUG',JSON.stringify({
     shipments,
     transportState:context.Game.state.transport.BGD,
-    handlers:[...context.Omega.ResourceTransport?[]:[]]
+    handlerKeys:[...handlers.keys()],
+    transportDiagnostics:context.OmegaResourceTransport.diagnostics()
   }));
   assert.equal(shipments.filter(x=>x.batchId==='EXTRACT-BATCH-1').length,1);
   assert.equal(shipments[0].resourceId,'iron_ore');
