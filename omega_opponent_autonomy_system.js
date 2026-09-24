@@ -261,6 +261,14 @@
       const x=provider?.get?.(cid,'resourceEngineState');
       if(x!==undefined)return{value:clone(x),availability:'AVAILABLE',sourceType:'AUTHORITATIVE_RUNTIME_STATE',source:'Game.state/resource',path:'resourceEngineState',authority:true};
     }catch(_){}
+    try{
+      const rs=g.Game?.state?.resource||g.gameState?.resource||{};
+      const rawId=id(countryId);
+      const key=Object.prototype.hasOwnProperty.call(rs,rawId)?rawId:(Object.prototype.hasOwnProperty.call(rs,cid)?cid:Object.keys(rs).find(function(k){return id(k)===rawId||id(k)===cid;}));
+      if(key!==undefined&&rs[key]&&typeof rs[key]==='object'){
+        return{value:clone(rs[key]),availability:'AVAILABLE',sourceType:'AUTHORITATIVE_RUNTIME_STATE',source:'Game.state.resource',path:'resource',authority:true};
+      }
+    }catch(_){}
     return{value:undefined,availability:'UNAVAILABLE',sourceType:'RESOURCE_ENGINE',source:'ResourceMinistryEngine',path:'getIntegratedResourceState',authority:false};
   }
 
