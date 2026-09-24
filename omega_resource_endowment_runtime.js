@@ -24,8 +24,16 @@
   const turn=()=>n(state()?.simulation?.turn??state()?.turn??state()?.simulationTurn??g.Omega?.Simulation?.clock?.turn)??0;
   const engine=()=>g.ResourceMinistryEngine||null;
   function countries(){
-    try{return[...new Set((registry()?.list?.('COUNTRY')||registry()?.list?.()||[]).map(canonical).filter(Boolean))].sort();}
-    catch(_){return Object.keys(state()?.resource||{}).map(canonical).filter(Boolean).sort();}
+    try{
+      const e=engine(),profiles=e?.countryProfiles&&typeof e.countryProfiles==='object'?e.countryProfiles:{},fromProfiles=Object.entries(profiles).map(function(entry){
+        const key=entry[0],profile=entry[1]||{},identity=profile.identity||profile;
+        return canonical(identity.iso3||identity.countryCode||identity.country_code||key);
+      }).filter(Boolean);
+      if(fromProfiles.length)return[...new Set(fromProfiles)].sort();
+      const exportRows=registry()?.exportData?.().countries||[];
+      if(Array.isArray(exportRows)&&exportRows.length)return[...new Set(exportRows.map(function(x){return canonical(x?.id||x?.iso3||x?.iso2||x);} ).filter(Boolean))].sort();
+      return Object.keys(state()?.resource||{}).map(canonical).filter(Boolean).sort();
+    }catch(_){return Object.keys(state()?.resource||{}).map(canonical).filter(Boolean).sort();}
   }
   function countryState(c){
     const cid=canonical(c),s=state();if(!s.resource)s.resource={};if(!s.resource[cid])s.resource[cid]={};
