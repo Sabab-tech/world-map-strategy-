@@ -163,8 +163,8 @@
     });
     return{
       version:'1.0.0',authority:'RESOURCE_BATCH_LEDGER',countryId:canonical(c),
-      lastUpdatedTurn:turn(),lotCount:lots.length,lots:lots,stockByResource:inventory,
-      locationBalances:locations
+      lastUpdatedTurn:turn(),lotCount:lots.length,lots:lots,
+      inventory:inventory,stockByResource:inventory,locationBalances:locations
     };
   }
 
@@ -196,7 +196,7 @@
     var physical=physicalFromBatches(rows,ctx.countryId);
     ctx.stateTransaction.set('resource.batches',rows);
     ctx.stateTransaction.set('resource.inventory',physical.inventory);
-    ctx.stateTransaction.set('resource.warehouse',physical.warehouse||physical);
+    ctx.stateTransaction.set('resource.warehouse',physical);
     return physical;
   }
   function inventoryGaps(inv,rows){
