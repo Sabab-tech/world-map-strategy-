@@ -1383,6 +1383,10 @@ Game.Map.renderResourceDeposits = function(){
         if(!this.resourceState.selectedResources||this.resourceState.selectedResources.size===0)this.resourceState.selectedResources=new Set(this.resourceCatalog.map(function(x){return x.id;}));
     }
     const rs=this.resourceState||{enabled:false,scope:'NATION',selectedResources:new Set()};
+    if(ontology&&typeof ontology==='object'&&Object.keys(ontology).length&&!this.__omegaCanonicalResourceSelectionMigrated){
+        this.resourceState.selectedResources=new Set(Object.keys(ontology).map(function(rawId){return String((ontology[rawId]||{}).key||rawId).replace(/^RES_TYPE:/i,'').trim().toLowerCase();}));
+        this.__omegaCanonicalResourceSelectionMigrated=true;
+    }
     if(!rs.enabled){const el=document.getElementById('resource-summary-count');if(el)el.textContent='0 deposits';return;}
     const selected=rs.selectedResources&&rs.selectedResources.size?rs.selectedResources:new Set();
     const gameState=window.Game?.state||window.gameState||{},resources=gameState.resource||{};
