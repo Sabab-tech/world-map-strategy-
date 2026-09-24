@@ -8541,125 +8541,110 @@ _globalScope.GSRSK_DataFoundation = (() => {
                 errors: []
             };
             this.isLoading = false;
+            this._initializationPromise = null;
             this.activeSurveys = new Set(['lithium', 'rare_earth']);
             this.facilityUpgrades = {};
             this.strategicReserves = {};
             this.cabinetVotes = {};
 
             // Synchronize on startup
-            this.init();
+            this._initializationPromise = this.init();
         }
 
         async init() {
-            if (this.isReady || this.isLoading) return;
+            if (this.isReady) return this.getDataLoadReport();
+            if (this.isLoading && this._initializationPromise) return this._initializationPromise;
             this.isLoading = true;
 
-            try {
-                const fetcher = (typeof window !== 'undefined' && window.fetchResilient) || (async (file) => {
-                    if (typeof fetch === 'undefined') throw new Error('FETCH_UNAVAILABLE');
-                    const res = await fetch(file + '?v=' + Date.now(), { cache: 'no-store' });
-                    if (!res.ok) throw new Error(`HTTP_${res.status}`);
-                    return await res.json();
-                });
+            this._initializationPromise = (async () => {
+                try {
+                    const fetcher = (typeof window !== 'undefined' && window.fetchResilient) || (async (file) => {
+                        if (typeof fetch === 'undefined') throw new Error('FETCH_UNAVAILABLE');
+                        const res = await fetch(file + '?v=' + Date.now(), { cache: 'no-store' });
+                        if (!res.ok) throw new Error('HTTP_' + res.status);
+                        return await res.json();
+                    });
 
-                const entries = await Promise.all([
-                    fetcher('resources.json')
-                        .then(data => ({ name: 'resources.json', data, status: 'LOADED' }))
-                        .catch(error => ({ name: 'resources.json', data: null, status: 'FAILED', error: String(error?.message || error) })),
-                    fetcher('resources_2.json')
-                        .then(data => ({ name: 'resources_2.json', data, status: 'LOADED' }))
-                        .catch(error => ({ name: 'resources_2.json', data: null, status: 'FAILED', error: String(error?.message || error) }))
-                ]);
+                    const entries = await Promise.all([
+                        fetcher('resources.json')
+                            .then(data => ({ name: 'resources.json', data, status: 'LOADED' }))
+                            .catch(error => ({ name: 'resources.json', data: null, status: 'FAILED', error: String(error?.message || error) })),
+                        fetcher('resources_2.json')
+                            .then(data => ({ name: 'resources_2.json', data, status: 'LOADED' }))
+                            .catch(error => ({ name: 'resources_2.json', data: null, status: 'FAILED', error: String(error?.message || error) }))
+                    ]);
 
-                this.resourceTypes = [];
-                this.deposits = [];
-                this.countryProfiles = {};
+                    this.resourceTypes = [];
+                    this.deposits = [];
+                    this.countryProfiles = {};
 
-                this.dataLoadReport = {
-                    status: 'LOADING',
-                    authority: 'RESOURCE_JSON',
-                    datasets: {},
-                    resourceTypeCount: 0,
-                    depositCount: 0,
-                    countryProfileCount: 0,
-                    fallbackUsed: false,
-                    errors: []
-                };
-
-                for (const entry of entries) {
-                    this.dataLoadReport.datasets[entry.name] = {
-                        status: entry.status,
-                        error: entry.error || null
+                    this.dataLoadReport = {
+                        status: 'LOADING',
+                        authority: 'RESOURCE_JSON',
+                        datasets: {},
+                        resourceTypeCount: 0,
+                        depositCount: 0,
+                        countryProfileCount: 0,
+                        fallbackUsed: false,
+                        errors: []
                     };
 
-                    if (!entry.data) {
-                        if (entry.error) this.dataLoadReport.errors.push({ dataset: entry.name, error: entry.error });
-                        continue;
+                    for (const entry of entries) {
+                        this.dataLoadReport.datasets[entry.name] = { status: entry.status, error: entry.error || null };
+                        if (!entry.data) {
+                            if (entry.error) this.dataLoadReport.errors.push({ dataset: entry.name, error: entry.error });
+                            continue;
+                        }
+
+                        const data = entry.data;
+                        const profiles = data.GSRSK_Master_CountryProfiles_v14?.countryProfiles || data.countryProfiles || {};
+                        Object.assign(this.countryProfiles, profiles);
+                        if (data.resource_types) this._mergeResourceTypes(data.resource_types);
+                        const nestedTypes = data.GSRSK_Master_Resource_Data_v14?.resource_types;
+                        if (nestedTypes) this._mergeResourceTypes(nestedTypes);
+                        this._mergeRuntimeDeposits(data.runtime_deposits || data.resource_deposits || data.deposits || [], entry.name);
                     }
 
-                    const data = entry.data;
-                    const profiles = data.GSRSK_Master_CountryProfiles_v14?.countryProfiles || data.countryProfiles || {};
-                    Object.assign(this.countryProfiles, profiles);
+                    this.dataLoadReport.resourceTypeCount = this.resourceTypes.length;
+                    this.dataLoadReport.depositCount = this.deposits.length;
+                    this.dataLoadReport.countryProfileCount = Object.keys(this.countryProfiles).length;
+                    if (this.resourceTypes.length === 0) throw new Error('RESOURCE_JSON_NO_RESOURCE_TYPES');
+                    if (this.deposits.length === 0) throw new Error('RESOURCE_JSON_NO_RUNTIME_DEPOSITS');
+                    if (Object.keys(this.countryProfiles).length === 0) throw new Error('RESOURCE_JSON_NO_COUNTRY_PROFILES');
 
-                    if (data.resource_types) this._mergeResourceTypes(data.resource_types);
-                    const nestedTypes = data.GSRSK_Master_Resource_Data_v14?.resource_types;
-                    if (nestedTypes) this._mergeResourceTypes(nestedTypes);
+                    const failedDatasets = entries.filter(x => !x.data).length;
+                    this.dataLoadReport.status = failedDatasets ? 'DEGRADED' : 'READY';
+                    if (global.GSRSK_MasterEngine && typeof global.GSRSK_MasterEngine.bootstrap === 'function') {
+                        global.GSRSK_MasterEngine.bootstrap({
+                            countries: Object.keys(this.countryProfiles),
+                            resourceTypes: this.resourceTypes,
+                            deposits: this.deposits
+                        });
+                    }
 
-                    this._mergeRuntimeDeposits(
-                        data.runtime_deposits || data.resource_deposits || data.deposits || [],
-                        entry.name
-                    );
+                    this.isReady = true;
+                    console.log('[GSRSK] Resource Ministry Engine ready from JSON: ' + this.dataLoadReport.countryProfileCount + ' country profiles, ' + this.deposits.length + ' runtime deposits, ' + this.resourceTypes.length + ' commodities. status=' + this.dataLoadReport.status);
+                    if (typeof window !== 'undefined') {
+                        window.dispatchEvent(new CustomEvent('RESOURCE_STATE_UPDATED', { detail: { engine: this } }));
+                    }
+                } catch (err) {
+                    this.dataLoadReport = {
+                        ...(this.dataLoadReport || {}),
+                        status: 'FAILED',
+                        authority: 'RESOURCE_JSON',
+                        fallbackUsed: false,
+                        errors: [...(this.dataLoadReport?.errors || []), { dataset: 'RESOURCE_ENGINE', error: String(err?.message || err) }]
+                    };
+                    this.isReady = false;
+                    console.error('[GSRSK] Resource initialization FAILED. No embedded mine fallback is permitted.', err);
+                } finally {
+                    this.isLoading = false;
                 }
+                return this.getDataLoadReport();
+            })();
 
-                this.dataLoadReport.resourceTypeCount = this.resourceTypes.length;
-                this.dataLoadReport.depositCount = this.deposits.length;
-                this.dataLoadReport.countryProfileCount = Object.keys(this.countryProfiles).length;
-
-                if (this.resourceTypes.length === 0) {
-                    throw new Error('RESOURCE_JSON_NO_RESOURCE_TYPES');
-                }
-                if (this.deposits.length === 0) {
-                    throw new Error('RESOURCE_JSON_NO_RUNTIME_DEPOSITS');
-                }
-                if (Object.keys(this.countryProfiles).length === 0) {
-                    throw new Error('RESOURCE_JSON_NO_COUNTRY_PROFILES');
-                }
-
-                const failedDatasets = entries.filter(x => !x.data).length;
-                this.dataLoadReport.status = failedDatasets ? 'DEGRADED' : 'READY';
-
-                // Hydrate into MasterGSRSKEngine if present
-                if (global.GSRSK_MasterEngine && typeof global.GSRSK_MasterEngine.bootstrap === 'function') {
-                    global.GSRSK_MasterEngine.bootstrap({
-                        countries: Object.keys(this.countryProfiles),
-                        resourceTypes: this.resourceTypes,
-                        deposits: this.deposits
-                    });
-                }
-
-                this.isReady = true;
-                console.log(
-                    `[GSRSK] Resource Ministry Engine ready from JSON: ${this.dataLoadReport.countryProfileCount} country profiles, ${this.deposits.length} runtime deposits, ${this.resourceTypes.length} commodities. status=${this.dataLoadReport.status}`
-                );
-
-                if (typeof window !== 'undefined') {
-                    window.dispatchEvent(new CustomEvent('RESOURCE_STATE_UPDATED', { detail: { engine: this } }));
-                }
-            } catch (err) {
-                this.dataLoadReport = {
-                    ...(this.dataLoadReport || {}),
-                    status: 'FAILED',
-                    authority: 'RESOURCE_JSON',
-                    fallbackUsed: false,
-                    errors: [...(this.dataLoadReport?.errors || []), { dataset: 'RESOURCE_ENGINE', error: String(err?.message || err) }]
-                };
-                this.isReady = false;
-                console.error("[GSRSK] Resource initialization FAILED. No embedded mine fallback is permitted.", err);
-            } finally {
-                this.isLoading = false;
-            }
+            return this._initializationPromise;
         }
-
         _mergeRuntimeDeposits(rows, sourceDatasetId) {
             if (!Array.isArray(rows)) return;
             const existing = new Map(this.deposits.map(row => [String(row.id || '').trim().toUpperCase(), row]));
