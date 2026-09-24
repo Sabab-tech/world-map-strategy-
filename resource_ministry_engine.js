@@ -8611,15 +8611,41 @@ _globalScope.GSRSK_DataFoundation = (() => {
                         this._mergeRuntimeDeposits(data.runtime_deposits || data.resource_deposits || data.deposits || [], entry.name);
                     }
 
+                    const primary = entries.find(entry => entry.name === 'resources.json');
+                    const primaryProfiles = primary?.data?.GSRSK_Master_CountryProfiles_v14?.countryProfiles
+                        || primary?.data?.countryProfiles
+                        || {};
+                    const primaryTypes = primary?.data?.resource_types
+                        || primary?.data?.GSRSK_Master_Resource_Data_v14?.resource_types
+                        || {};
+                    const primaryDeposits = primary?.data?.runtime_deposits
+                        || primary?.data?.resource_deposits
+                        || primary?.data?.deposits
+                        || [];
+
                     this.dataLoadReport.resourceTypeCount = this.resourceTypes.length;
                     this.dataLoadReport.depositCount = this.deposits.length;
                     this.dataLoadReport.countryProfileCount = Object.keys(this.countryProfiles).length;
+                    this.dataLoadReport.primaryDataset = {
+                        name: 'resources.json',
+                        status: primary?.data ? 'VALIDATING' : 'MISSING',
+                        countryProfileCount: Object.keys(primaryProfiles).length,
+                        resourceTypeCount: Object.keys(primaryTypes).length,
+                        runtimeDepositCount: Array.isArray(primaryDeposits) ? primaryDeposits.length : 0
+                    };
+
+                    if (!primary?.data) throw new Error('RESOURCE_JSON_PRIMARY_DATASET_MISSING');
+                    if (Object.keys(primaryProfiles).length === 0) throw new Error('RESOURCE_JSON_PRIMARY_COUNTRY_PROFILES_MISSING');
+                    if (Object.keys(primaryTypes).length === 0) throw new Error('RESOURCE_JSON_PRIMARY_RESOURCE_TYPES_MISSING');
+                    if (!Array.isArray(primaryDeposits) || primaryDeposits.length === 0) throw new Error('RESOURCE_JSON_PRIMARY_RUNTIME_DEPOSITS_MISSING');
                     if (this.resourceTypes.length === 0) throw new Error('RESOURCE_JSON_NO_RESOURCE_TYPES');
                     if (this.deposits.length === 0) throw new Error('RESOURCE_JSON_NO_RUNTIME_DEPOSITS');
                     if (Object.keys(this.countryProfiles).length === 0) throw new Error('RESOURCE_JSON_NO_COUNTRY_PROFILES');
 
                     const failedDatasets = entries.filter(x => !x.data).length;
-                    this.dataLoadReport.status = failedDatasets ? 'DEGRADED' : 'READY';
+                    if (failedDatasets) throw new Error('RESOURCE_JSON_SECONDARY_DATASET_LOAD_FAILED:' + failedDatasets);
+                    this.dataLoadReport.primaryDataset.status = 'READY';
+                    this.dataLoadReport.status = 'READY';
                     if (global.GSRSK_MasterEngine && typeof global.GSRSK_MasterEngine.bootstrap === 'function') {
                         global.GSRSK_MasterEngine.bootstrap({
                             countries: Object.keys(this.countryProfiles),
