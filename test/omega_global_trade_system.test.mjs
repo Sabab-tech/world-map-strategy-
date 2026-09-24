@@ -33,17 +33,6 @@ await import('../omega_opponent_second_order_consequence_system.js');
 const trade=globalThis.OmegaGlobalTrade;
 trade.processAll();
 const req=globalThis.Game.state.trade.BD.importRequests[0];
-console.log('TRADE_DEBUG',JSON.stringify({
-  req,
-  bdTrade:globalThis.Game.state.trade.BD,
-  saTrade:globalThis.Game.state.trade.SA,
-  bdFinance:globalThis.Game.state.finance.BD,
-  saFinance:globalThis.Game.state.finance.SA,
-  bdResource:globalThis.Game.state.resource.BD,
-  saResource:globalThis.Game.state.resource.SA,
-  diagnostics:trade.diagnostics(),
-  commands:[...globalThis.Omega?.MinistryInteroperability?.commands?.values?.()||[]].map(x=>({commandType:x.commandType,source:x.sourceMinistryId,country:x.countryId,status:x.status,result:x.result}))
-}));
 assert.equal(req.status,'SETTLED');
 assert.equal(globalThis.Game.state.resource.BD.inventory.crude_oil,1000);
 assert.equal(globalThis.Game.state.resource.SA.inventory.crude_oil,4000);
