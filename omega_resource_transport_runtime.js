@@ -665,7 +665,7 @@
         m.registerAction?.(type,{actionId:type,stateOwnerMinistry:owner,authority:'OMEGA_RESOURCE_TRANSPORT_RUNTIME'});
         m.registerCommandHandler(type,owner,(cmd,ctx)=>{
           const p=Object.assign({},cmd?.payload||{},ctx?.countryId?{countryId:ctx.countryId}:{});
-          const result=handler({payload:p});
+          const result=handler({payload:p},ctx);
           return result&&result.accepted===false?result:{accepted:true,result};
         });
       }
