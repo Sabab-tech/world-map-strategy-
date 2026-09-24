@@ -108,6 +108,14 @@
       "unit": "metric_tons",
       "strategicImportance": "high",
       "description": "Hematite and magnetite feed for primary steelmaking."
+    },
+    "coal": {
+      "id": "coal",
+      "name": "Coal",
+      "category": "bulk_energy",
+      "unit": "metric_tons",
+      "strategicImportance": "high",
+      "description": "Thermal and metallurgical coal feedstock for electricity generation, industrial heat, and steelmaking."
     }
   },
   "GSRSK_Master_Resource_Data_v14": {
@@ -222,6 +230,14 @@
         "unit": "metric_tons",
         "strategicImportance": "high",
         "description": "Hematite and magnetite feed for primary steelmaking."
+      },
+      "coal": {
+        "id": "coal",
+        "name": "Coal",
+        "category": "bulk_energy",
+        "unit": "metric_tons",
+        "strategicImportance": "high",
+        "description": "Thermal and metallurgical coal feedstock for electricity generation, industrial heat, and steelmaking."
       }
     },
     "processing_plants": {
@@ -66458,13 +66474,15 @@
       "countryCode": "BGD",
       "lat": 25.55,
       "lng": 88.96,
-      "resId": "iron_ore",
-      "category": "industrial_metals",
+      "resId": "coal",
+      "category": "energy_coal",
       "reserves": "390 Million Tons Bituminous",
       "grade": "Low Ash High Energy Coal",
       "status": "ACTIVE_PRODUCING",
       "owner": "Petrobangla",
-      "operator": "BCMCL"
+      "operator": "BCMCL",
+      "resourceTypeId": "coal",
+      "resourceTypeKey": "coal"
     },
     {
       "id": "dep-titas-gas",
