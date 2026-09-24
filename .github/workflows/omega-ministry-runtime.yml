@@ -51,7 +51,9 @@ jobs:
           node --check omega_opponent_second_order_consequence_system.js
           node --check omega_opponent_memory_trace_log_system.js
           node --check omega_resource_endowment_runtime.js
+          node --check omega_resource_transport_runtime.js
           node --check omega_resource_economy_runtime_v2.js
+          node --check test/omega_resource_transport_runtime.test.mjs
           node --check omega_global_market_system.js
           node --check test/omega_resource_economy_runtime_v2.test.mjs
           node --check opponent_country_rules.js
@@ -106,6 +108,7 @@ jobs:
             'omega_opponent_adaptive_strategy_system.js',
             'omega_opponent_autonomy_system.js',
             'omega_global_trade_system.js',
+            'omega_resource_transport_runtime.js',
             'omega_resource_economy_runtime_v2.js',
             'omega_opponent_treaty_lifecycle_system.js',
             'omega_opponent_second_order_consequence_system.js'
@@ -131,6 +134,7 @@ jobs:
           node test/omega_opponent_memory_trace_log_system.test.mjs
           node test/omega_global_market_system.test.mjs
           node test/omega_resource_endowment_runtime.test.mjs
+          node --test test/omega_resource_transport_runtime.test.mjs
           node --test test/omega_resource_economy_runtime_v2.test.mjs
           node test/omega_resource_request_and_settlement.test.mjs
           node test/omega_opponent_multi_country_integration.test.mjs
