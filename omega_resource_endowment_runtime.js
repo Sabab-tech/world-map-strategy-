@@ -91,7 +91,16 @@
       for(const occ of occurrences){
         const dep=reg.getDeposit?.(occ.depositKey);if(!dep)continue;
         const raw=(e.deposits||[]).find(x=>String(x?.name||'').trim().toUpperCase()===String(dep.depositRawName||'').trim().toUpperCase()&&id(x?.countryCode||x?.country||'')===wanted);
-        const resourceId=rid(occ.resourceTypeId||occ.resourceTypeKey);
+        let resourceId=rid(occ.resourceTypeId||occ.resourceTypeKey);
+        const rawId=rid(raw?.resId||raw?.resourceId||raw?.resource||'');
+        const semanticName=String(dep.depositRawName||raw?.name||'').toLowerCase();
+        /* Canonical semantic guard: a coal deposit cannot be routed as iron ore. */
+        if(/\\bcoal\\b|coal basin|bituminous|anthracite/.test(semanticName)&&resourceId==='iron_ore'){
+          resourceId='coal';
+        }else if(rawId&&rawId!==resourceId&&g.__OmegaResourceCanonicalResolver?.resolve){
+          const repaired=g.__OmegaResourceCanonicalResolver.resolve(rawId,{name:semanticName,deposit:raw});
+          if(repaired)resourceId=repaired;
+        }
         if(!resourceId)continue;
         const reserve=g.__OmegaResourceReserveRegistry?.getReserveState?.(occ.occurrenceKey);
         const capacity=g.__OmegaResourceReserveRegistry?.getCapacityForOccurrence?.(occ.occurrenceKey);
@@ -197,13 +206,29 @@
     const blocked=[];
     const mineOutputs=clone(ctx.stateTransaction.get('resource.mineOutputs')||{});
     const mines=clone(ctx.stateTransaction.get('resource.mines')||[]);
+    const batches=Array.isArray(ctx.stateTransaction.get('resource.batches'))?clone(ctx.stateTransaction.get('resource.batches')):[];
+    const inventoryLedger=Array.isArray(ctx.stateTransaction.get('resource.inventoryLedger'))?clone(ctx.stateTransaction.get('resource.inventoryLedger')):[];
     for(const x of selected){
-      const reserve=r.getReserveState(x.occurrenceKey);if(!reserve||reserve.residualQuantity<=0)continue;
-      if(!['ACTIVE_EXTRACTION','DEPLETING','RESERVE_DEPLETING'].some(s=>String(reserve.operationalStatus||'').toUpperCase().includes(s)))continue;
+      const reserve=r.getReserveState(x.occurrenceKey);
+      if(!reserve||reserve.residualQuantity<=0){
+        const row={occurrenceKey:x.occurrenceKey,resourceId:x.resourceId,status:'BLOCKED',reason:reserve?'RESERVE_EXHAUSTED':'RESERVE_STATE_UNAVAILABLE',simulationTurn:turn()};
+        blocked.push(row);mineOutputs[x.occurrenceKey]=row;continue;
+      }
+      if(!['ACTIVE_EXTRACTION','DEPLETING','RESERVE_DEPLETING'].some(s=>String(reserve.operationalStatus||'').toUpperCase().includes(s))){
+        const row={occurrenceKey:x.occurrenceKey,resourceId:x.resourceId,status:'BLOCKED',reason:'MINE_NOT_OPERATIONAL',operationalStatus:reserve.operationalStatus||'UNKNOWN',simulationTurn:turn()};
+        blocked.push(row);mineOutputs[x.occurrenceKey]=row;continue;
+      }
       let capacity=null;try{capacity=r.getCapacityForOccurrence(x.occurrenceKey);}catch(_){}
-      if(!capacity)continue;
-      let windowQuantity=0;try{windowQuantity=n(capacity.computeWindowCapacity(DAY_HOURS)?.windowCapacity)||0;}catch(_){windowQuantity=n(capacity.nominalRate)||0;}
-      if(windowQuantity<=0)continue;
+      if(!capacity){
+        const row={occurrenceKey:x.occurrenceKey,resourceId:x.resourceId,status:'BLOCKED',reason:'EXTRACTION_CAPACITY_UNAVAILABLE',simulationTurn:turn()};
+        blocked.push(row);mineOutputs[x.occurrenceKey]=row;continue;
+      }
+      let windowQuantity=0;let capacityTrace=null;
+      try{capacityTrace=capacity.computeWindowCapacity(DAY_HOURS);windowQuantity=n(capacityTrace?.windowCapacity)||0;}catch(_){windowQuantity=n(capacity.nominalRate)||0;}
+      if(windowQuantity<=0){
+        const row={occurrenceKey:x.occurrenceKey,resourceId:x.resourceId,status:'BLOCKED',reason:'EXTRACTION_WINDOW_ZERO',capacityTrace:clone(capacityTrace),simulationTurn:turn()};
+        blocked.push(row);mineOutputs[x.occurrenceKey]=row;continue;
+      }
       const request=new p5.ExtractionRequest({
         occurrenceKey:x.occurrenceKey,requestedQuantity:windowQuantity,requestedUnit:reserve.unit,
         requestedPeriod:p5.TemporalWindowUnit?.PER_DAY||'PER_DAY',assetReference:capacity.assetReference,
@@ -233,9 +258,29 @@
       inventory[resource]=(n(inventory[resource])||0)+q;
       reserves[resource]=n(result.reserveAfter.residualQuantity)||0;
       current[x.occurrenceKey]=clone(result.reserveAfter.toJSON?.()||result.reserveAfter);
+      const fallbackBatch={
+        batchId:'EXT-BATCH-'+turn()+'-'+c+'-'+String(x.occurrenceKey).replace(/[^A-Z0-9:_-]/gi,''),
+        resourceId:resource,materialIdentity:resource,quantity:q,remainingQuantity:q,
+        stage:'RAW',ownerCountryCode:c,ownerCompanyId:x.operatorKey||x.ownerKey||'UNOBSERVED',
+        sourceBatchIds:[],occurrenceKey:x.occurrenceKey,locationNodeId:'MINE:'+x.occurrenceKey,
+        extractionReference:null,processId:null,timestampTurn:turn(),
+        provenance:{source:'OMEGA_RESOURCE_ENDOWMENT_RUNTIME',extractionId:'EXT-'+turn()+'-'+c+'-'+String(x.occurrenceKey).replace(/[^A-Z0-9:_-]/gi,''),depositKey:x.depositKey,turn:turn()}
+      };
+      const producedBatch=clone(result.producedBatch?.toJSON?.()||result.producedBatch||fallbackBatch);
+      if(!producedBatch.batchId)producedBatch.batchId=fallbackBatch.batchId;
+      producedBatch.resourceId=resource;producedBatch.materialIdentity=resource;
+      producedBatch.quantity=n(producedBatch.quantity)??q;producedBatch.remainingQuantity=n(producedBatch.remainingQuantity)??producedBatch.quantity;
+      producedBatch.ownerCountryCode=producedBatch.ownerCountryCode||c;
+      producedBatch.ownerCompanyId=producedBatch.ownerCompanyId||fallbackBatch.ownerCompanyId;
+      producedBatch.occurrenceKey=x.occurrenceKey;producedBatch.locationNodeId=producedBatch.locationNodeId||('MINE:'+x.occurrenceKey);
+      if(!batches.some(b=>String(b?.batchId)===String(producedBatch.batchId)))batches.push(producedBatch);
+      inventoryLedger.push({type:'EXTRACTION_BATCH_CREATED',batchId:producedBatch.batchId,resourceId:resource,quantity:producedBatch.quantity,occurrenceKey:x.occurrenceKey,turn:turn(),extractionId:'EXT-'+turn()+'-'+c+'-'+String(x.occurrenceKey).replace(/[^A-Z0-9:_-]/gi,'')});
       mineOutputs[x.occurrenceKey]={
         occurrenceKey:x.occurrenceKey,depositKey:x.depositKey,resourceId:resource,simulationTurn:turn(),
-        producedQuantity:q,residualQuantity:n(result.reserveAfter.residualQuantity)||0,status:result.status
+        producedQuantity:q,residualQuantity:n(result.reserveAfter.residualQuantity)||0,status:result.status,
+        reserveBefore:clone(result.reserveBefore?.toJSON?.()||result.reserveBefore),
+        reserveAfter:clone(result.reserveAfter?.toJSON?.()||result.reserveAfter),
+        batchId:producedBatch.batchId,locationNodeId:producedBatch.locationNodeId
       };
       const mineIndex=mines.findIndex(m=>String(m.occurrenceKey)===String(x.occurrenceKey));
       if(mineIndex>=0){
@@ -250,7 +295,7 @@
         reserveAfter:clone(result.reserveAfter?.toJSON?.()||result.reserveAfter),
         calculationTrace:clone(result.calculationTrace?.toJSON?.()||result.calculationTrace),
         transition:clone(result.transition?.toJSON?.()||result.transition),
-        producedBatch:clone(result.producedBatch?.toJSON?.()||result.producedBatch),
+        producedBatch:clone(producedBatch),
         provenance:clone(result.provenance||request.provenance)
       };
       ledger.push(record);extracted.push(record);
@@ -266,6 +311,8 @@
     for(const [k,v] of Object.entries(inventory))tradeAvailability[k]=n(v)||0;
     ctx.stateTransaction.set('resource.tradeAvailability',tradeAvailability);
     ctx.stateTransaction.set('resource.extractionLedger',ledger.slice(-MAX_LEDGER));
+    ctx.stateTransaction.set('resource.batches',batches);
+    ctx.stateTransaction.set('resource.inventoryLedger',inventoryLedger.slice(-2048));
     for(const x of blocked)emit('OMEGA_RESOURCE_EXTRACTION_BLOCKED',c,{...x,simulationTurn:turn()},cmd.commandId);
     return{accepted:true,countryId:c,extracted:extracted.length,blocked:blocked.length,records:extracted};
   }
