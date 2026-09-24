@@ -11990,31 +11990,31 @@ _globalScope.GSRSK_DataFoundation = (() => {
             }
 
             _parseDeclaredReserveQuantity(reserveText, resourceTypeKey, targetUnit) {
-                const text = String(reserveText || '').replace(/,/g, ' ').replace(/\\s+/g, ' ').trim();
+                const text = String(reserveText || '').replace(/,/g, ' ').replace(/\s+/g, ' ').trim();
                 if (!text) return null;
                 const rid = String(resourceTypeKey || '').replace(/^RES_TYPE:/i, '').trim().toLowerCase();
                 if (rid === 'crude_oil') {
-                    const m = text.match(/([0-9]+(?:\\.[0-9]+)?)\\s*(billion|million|thousand)?\\s*(?:bb l|bbl|barrels?)/i) || text.match(/([0-9]+(?:\\.[0-9]+)?)\\s*(billion|million|thousand)?\\s*bb/i);
+                    const m = text.match(/([0-9]+(?:\.[0-9]+)?)\s*(billion|million|thousand)?\s*(?:bb l|bbl|barrels?)/i) || text.match(/([0-9]+(?:\.[0-9]+)?)\s*(billion|million|thousand)?\s*bb/i);
                     if (!m) return null;
                     const mult = String(m[2] || '').toLowerCase() === 'billion' ? 1e9 : String(m[2] || '').toLowerCase() === 'million' ? 1e6 : String(m[2] || '').toLowerCase() === 'thousand' ? 1e3 : 1;
                     return Number(m[1]) * mult;
                 }
                 if (rid === 'natural_gas') {
-                    const tcf = text.match(/([0-9]+(?:\\.[0-9]+)?)\\s*(?:TCF|TRILLION\\s*CUBIC\\s*FEET)/i);
+                    const tcf = text.match(/([0-9]+(?:\.[0-9]+)?)\s*(?:TCF|TRILLION\s*CUBIC\s*FEET)/i);
                     if (tcf) return Number(tcf[1]) * 1e6;
-                    const bcf = text.match(/([0-9]+(?:\\.[0-9]+)?)\\s*(?:BCF|BILLION\\s*CUBIC\\s*FEET)/i);
+                    const bcf = text.match(/([0-9]+(?:\.[0-9]+)?)\s*(?:BCF|BILLION\s*CUBIC\s*FEET)/i);
                     if (bcf) return Number(bcf[1]) * 1e3;
-                    const mcf = text.match(/([0-9]+(?:\\.[0-9]+)?)\\s*(?:MCF|MILLION\\s*CUBIC\\s*FEET)/i);
+                    const mcf = text.match(/([0-9]+(?:\.[0-9]+)?)\s*(?:MCF|MILLION\s*CUBIC\s*FEET)/i);
                     if (mcf) return Number(mcf[1]);
                     return null;
                 }
                 if (rid === 'gold') {
-                    const oz = text.match(/([0-9]+(?:\\.[0-9]+)?)\\s*(?:MILLION|BILLION|THOUSAND)?\\s*(?:OZ|OZT|TROY\\s*OUNCES?)/i);
+                    const oz = text.match(/([0-9]+(?:\.[0-9]+)?)\s*(?:MILLION|BILLION|THOUSAND)?\s*(?:OZ|OZT|TROY\s*OUNCES?)/i);
                     if (oz) {
                         const scale = /BILLION/i.test(oz[0]) ? 1e9 : /MILLION/i.test(oz[0]) ? 1e6 : /THOUSAND/i.test(oz[0]) ? 1e3 : 1;
                         return Number(oz[1]) * scale;
                     }
-                    const tons = text.match(/([0-9]+(?:\\.[0-9]+)?)\\s*(?:MILLION|BILLION|THOUSAND)?\\s*TONS?\\s+GOLD/i);
+                    const tons = text.match(/([0-9]+(?:\.[0-9]+)?)\s*(?:MILLION|BILLION|THOUSAND)?\s*TONS?\s+GOLD/i);
                     if (tons) {
                         const scale = /BILLION/i.test(tons[0]) ? 1e9 : /MILLION/i.test(tons[0]) ? 1e6 : /THOUSAND/i.test(tons[0]) ? 1e3 : 1;
                         return Number(tons[1]) * scale * 32150.7465686;
@@ -12022,14 +12022,14 @@ _globalScope.GSRSK_DataFoundation = (() => {
                     return null;
                 }
                 if (rid === 'uranium') {
-                    const m = text.match(/([0-9]+(?:\\.[0-9]+)?)\\s*(billion|million|thousand)?\\s*(?:metric\\s*)?tons?/i);
+                    const m = text.match(/([0-9]+(?:\.[0-9]+)?)\s*(billion|million|thousand)?\s*(?:metric\s*)?tons?/i);
                     if (!m) return null;
                     const scale = String(m[2] || '').toLowerCase() === 'billion' ? 1e9 : String(m[2] || '').toLowerCase() === 'million' ? 1e6 : String(m[2] || '').toLowerCase() === 'thousand' ? 1e3 : 1;
                     return Number(m[1]) * scale * 1000;
                 }
-                if (rid === 'iron_ore' && /\\bCOAL\\b/i.test(text)) return null;
+                if (rid === 'iron_ore' && /\bCOAL\b/i.test(text)) return null;
                 if (['iron_ore','rare_earth','lithium','phosphate','bauxite','nickel','cobalt','potash'].includes(rid)) {
-                    const m = text.match(/([0-9]+(?:\\.[0-9]+)?)\\s*(billion|million|thousand)?\\s*(?:metric\\s*)?tons?/i);
+                    const m = text.match(/([0-9]+(?:\.[0-9]+)?)\s*(billion|million|thousand)?\s*(?:metric\s*)?tons?/i);
                     if (!m) return null;
                     const scale = String(m[2] || '').toLowerCase() === 'billion' ? 1e9 : String(m[2] || '').toLowerCase() === 'million' ? 1e6 : String(m[2] || '').toLowerCase() === 'thousand' ? 1e3 : 1;
                     return Number(m[1]) * scale;
