@@ -314,7 +314,9 @@
     ctx.stateTransaction.set('resource.batches',batches);
     ctx.stateTransaction.set('resource.inventoryLedger',inventoryLedger.slice(-2048));
     for(const x of blocked)emit('OMEGA_RESOURCE_EXTRACTION_BLOCKED',c,{...x,simulationTurn:turn()},cmd.commandId);
-    return{accepted:true,countryId:c,extracted:extracted.length,blocked:blocked.length,records:extracted};
+    return{accepted:true,countryId:c,extracted:extracted.length,blocked:blocked.length,records:extracted,
+      eventType:extracted.length?'OMEGA_RESOURCE_EXTRACTION_COMPLETED':null,
+      eventPayload:extracted.length?{countryId:c,records:clone(extracted),extractedCount:extracted.length}:null};
   }
   function hydrateCountry(c){
     install();
