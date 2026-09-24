@@ -123,7 +123,9 @@
           countryId:canonical(c),lat:loc.lat,lng:loc.lng,locationAccuracy:loc.accuracy,locationSource:loc.source,
           liveOutput:num(outRow.producedQuantity)||0,liveStatus:liveStatus(m),tier:quantityTier(m),
           rawReserveText:m.rawDeposit&&(m.rawDeposit.reserves||m.rawDeposit.reserve)||null,
-          transport:(Array.isArray(state.transportShipments)?state.transportShipments.find(function(s){return s&&s.batchId&&((state.batches||[]).some(function(b){return b&&b.batchId===s.batchId&&b.occurrenceKey===m.occurrenceKey;}));}):null)
+          transport:(g.OmegaResourceTransport&&typeof g.OmegaResourceTransport.getCountryShipments==='function'
+            ? (g.OmegaResourceTransport.getCountryShipments(c)||[]).find(function(s){return s&&s.batchId&&String(s.batchId).length>0&&((state.batches||[]).some(function(b){return b&&b.batchId===s.batchId&&b.occurrenceKey===m.occurrenceKey;}));})
+            : null)
         }));
       });
     });
