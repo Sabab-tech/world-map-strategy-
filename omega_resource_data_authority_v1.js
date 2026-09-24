@@ -355,6 +355,73 @@
     return map;
   }
 
+
+  function deriveReserveQuantity(value, resourceId, targetUnit){
+    if(value===undefined||value===null||value==='')return null;
+    const s=clean(value).replace(/,/g,' ');
+    const numbers=s.match(/-?\d+(?:\.\d+)?/g);
+    if(!numbers||!numbers.length)return null;
+    const n=Number(numbers[0]); if(!Number.isFinite(n)||n<=0)return null;
+    const rid=canonicalResourceId(resourceId), unit=lower(targetUnit);
+    if(rid==='natural_gas'){
+      if(/\btcf\b|trillion\s+cubic\s+feet/i.test(s))return n*28.316846592;
+      if(/\bbcf\b|billion\s+cubic\s+feet/i.test(s))return n*0.028316846592;
+      if(/\bbcm\b|billion\s+cubic\s+metres?/i.test(s))return n;
+    }
+    const mult=/billion/i.test(s)?1e9:/million/i.test(s)?1e6:/thousand/i.test(s)?1e3:1;
+    if(/barrels?|bbl/i.test(s) || /barrel/i.test(unit)) return n*mult;
+    if(/troy\s*ounces?|ozt|\boz\b/i.test(s) || /ounce/i.test(unit)) return n*mult;
+    if(/metric\s*tons?|tonnes?/i.test(s) || /metric_tons?|tonnes?/i.test(unit)) return n*mult;
+    return n*mult;
+  }
+
+  function isOperationalSite(status){
+    const s=upper(status);
+    if(!s)return false;
+    if(/CLOSED|INACTIVE|SUSPENDED|ABANDONED|DEPLETED|PLANNED|EXPLORATION/.test(s))return false;
+    return /ACTIVE|PRODUCING|OPERATING|RUNNING/.test(s);
+  }
+
+  function applyCapacityRule(rows, resourceTypes, rule){
+    const cfg=rule&&rule.extraction?rule.extraction:{};
+    const horizon=Math.max(1,finite(cfg.reserveHorizonDays)||3650);
+    const availability=Math.max(0,Math.min(1,finite(cfg.availabilityFactor)??0.92));
+    const maintenance=Math.max(0,Math.min(1,finite(cfg.maintenanceFactor)??0.95));
+    const typeUnits=new Map(Array.from(resourceTypes.entries()).map(([rid,t])=>[rid,t.unit||null]));
+    return rows.map(row=>{
+      const out=clone(row);
+      const rid=canonicalResourceId(out.resourceId||out.resId);
+      const unit=out.unit||typeUnits.get(rid)||null;
+      out.resourceId=rid;out.resourceTypeKey=rid;out.resId=rid;out.unit=unit;
+      if(out.productionRatePerDay!==null && out.productionRatePerDay!==undefined && finite(out.productionRatePerDay)!==null){
+        out.productionRatePerDay=finite(out.productionRatePerDay);
+        out.productionRateStatus='OBSERVED_SOURCE';
+        out.productionRateProvenance=out.sourceDataset+'#productionRatePerDay';
+        out.capacityAvailabilityFactor=availability;
+        out.capacityMaintenanceFactor=maintenance;
+        return out;
+      }
+      if(isOperationalSite(out.status||out.operationalStatus) && cfg.capacityModel==='RESERVE_HORIZON'){
+        const q=deriveReserveQuantity(out.reserves??out.reserve,rid,unit);
+        if(q!==null && q>0){
+          out.productionRatePerDay=q/horizon;
+          out.productionRateStatus=cfg.fallbackProductionRateStatus||'DERIVED_GAME_RULE';
+          out.productionRateProvenance='resource_economy_rules.json#extraction.capacityModel';
+        }else{
+          out.productionRatePerDay=null;
+          out.productionRateStatus='UNOBSERVED';
+          out.productionRateProvenance='NO_SOURCE_RATE_AND_NO_NUMERIC_RESERVE';
+        }
+      }else{
+        out.productionRatePerDay=null;
+        out.productionRateStatus='UNOBSERVED';
+        out.productionRateProvenance='NO_SOURCE_RATE';
+      }
+      out.capacityAvailabilityFactor=availability;
+      out.capacityMaintenanceFactor=maintenance;
+      return out;
+    });
+  }
   function deduplicate(records){
     const map = new Map();
     for(const row of records){
@@ -381,7 +448,7 @@
       const engine = g.ResourceMinistryEngine || null;
       const sources = [];
       const sourceErrors = [];
-      for(const file of ['resources.json','resources_2.json']){
+      for(const file of ['resources.json','resources_2.json','resource_deposits.json']){
         try{
           sources.push({file,data:await fetchJson(file)});
         }catch(error){
@@ -389,6 +456,8 @@
         }
       }
 
+      let ruleSource = null;
+      try{ ruleSource = await fetchJson('resource_economy_rules.json'); }catch(error){ sourceErrors.push({file:'resource_economy_rules.json',error:String(error && error.message || error)}); }
       const collected = [];
       const rejects = {};
       for(const source of sources){
@@ -397,8 +466,8 @@
         rejects[source.file] = out.rejected;
       }
 
-      const records = deduplicate(collected);
       const resourceTypes = mergeResourceTypes(sources.map(x => x.data));
+      const records = applyCapacityRule(deduplicate(collected), resourceTypes, ruleSource);
 
       if(engine){
         if(!engine.__omegaResourceAuthoritativeSummaryV1){
@@ -479,7 +548,7 @@
         engine.deposits = records;
         engine.resourceDataSource = {
           authority: 'RESOURCE_JSON',
-          datasets: ['resources.json','resources_2.json'],
+          datasets: ['resources.json','resources_2.json','resource_deposits.json'],
           structuredDepositCount: records.length,
           resourceTypeCount: resourceTypes.size,
           sourceErrors: clone(sourceErrors),
@@ -489,7 +558,7 @@
         engine.resourceDataDiagnostics = {
           version: VERSION,
           status: records.length ? 'READY' : 'NO_STRUCTURED_DEPOSIT_RECORDS',
-          loadedDatasets: sources.map(x => x.file),
+          loadedDatasets: sources.map(x => x.file).concat(ruleSource?'resource_economy_rules.json':[]),
           failedDatasets: sourceErrors.map(x => x.file),
           structuredDepositCount: records.length,
           structuredMineCount: records.filter(x => x.kind === 'MINE').length,
@@ -508,7 +577,7 @@
         sourceErrors,
         structuredDepositCount: records.length,
         structuredMineCount: records.filter(x => x.kind === 'MINE').length,
-        datasetsLoaded: sources.map(x => x.file),
+        datasetsLoaded: sources.map(x => x.file).concat(ruleSource?'resource_economy_rules.json':[]),
         rejectionSummary: rejects
       };
 
