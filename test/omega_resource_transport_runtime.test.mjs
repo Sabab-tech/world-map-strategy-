@@ -13,6 +13,35 @@ class CustomEventMock{constructor(type,opts={}){this.type=type;this.detail=opts.
 function contextFor(state){
   const events=new EventTargetMock(),handlers=new Map();
   const identity={resolveCountry(v){return{id:String(v).toUpperCase()};},list(){return Object.keys(state.resource||{});}};
+  handlers.set('OMEGA_RESOURCE_TRANSPORT_RESERVE_CARGO',{owner:'resource',handler:(cmd,ctx)=>{
+    const p=cmd.payload||{},rid=String(p.resourceId),q=Number(p.quantity),node=String(p.sourceNodeId||''),inv=structuredClone(state.resource[ctx.countryId].inventory||{});
+    if((Number(inv[rid])||0)<q)return{accepted:false,reason:'TRANSPORT_SOURCE_INVENTORY_INSUFFICIENT'};
+    const batches=structuredClone(state.resource[ctx.countryId].batches||[]),allocations=[];let rem=q;
+    for(const b of batches){
+      if(rem<=1e-9||String(b.resourceId)!==rid)continue;
+      if(node&&String(b.locationNodeId||'')!==node)continue;
+      const free=Number(b.remainingQuantity)||0;if(free<=0)continue;
+      const take=Math.min(free,rem);b.remainingQuantity=free-take;b.inTransitQuantity=(Number(b.inTransitQuantity)||0)+take;rem-=take;
+      allocations.push({batchId:b.batchId,quantity:take,sourceNodeId:b.locationNodeId,ownerCompanyId:b.ownerCompanyId,stage:b.stage});
+    }
+    if(rem>1e-9)return{accepted:false,reason:'TRANSPORT_SOURCE_BATCH_LINEAGE_INSUFFICIENT'};
+    inv[rid]-=q;state.resource[ctx.countryId].inventory=inv;state.resource[ctx.countryId].batches=batches;
+    return{accepted:true,allocations};
+  }});
+  handlers.set('OMEGA_RESOURCE_TRANSPORT_CREDIT_DELIVERY',{owner:'resource',handler:(cmd,ctx)=>{
+    const p=cmd.payload||{},rid=String(p.resourceId),q=Number(p.quantity),rs=state.resource[ctx.countryId],inv=structuredClone(rs.inventory||{}),batches=structuredClone(rs.batches||[]);
+    inv[rid]=(Number(inv[rid])||0)+q;
+    batches.push({batchId:'TRANSIT-'+p.shipmentId,resourceId:rid,quantity:q,remainingQuantity:q,stage:'RAW',locationNodeId:p.destinationNodeId,facilityId:p.targetFacilityId||null,transportShipmentId:p.shipmentId,sourceBatchIds:p.sourceBatchIds||[]});
+    rs.inventory=inv;rs.batches=batches;
+    if(p.targetFacilityId){rs.facilityInventory=rs.facilityInventory||{};rs.facilityInventory[p.targetFacilityId]=rs.facilityInventory[p.targetFacilityId]||{};rs.facilityInventory[p.targetFacilityId][rid]=(Number(rs.facilityInventory[p.targetFacilityId][rid])||0)+q;}
+    return{accepted:true,batchId:'TRANSIT-'+p.shipmentId};
+  }});
+  handlers.set('OMEGA_RESOURCE_TRANSPORT_RELEASE_CARGO',{owner:'resource',handler:(cmd,ctx)=>{
+    const rs=state.resource[ctx.countryId],batches=structuredClone(rs.batches||[]);
+    for(const a of cmd.payload?.allocations||[]){const b=batches.find(x=>String(x.batchId)===String(a.batchId));if(b)b.inTransitQuantity=Math.max(0,(Number(b.inTransitQuantity)||0)-(Number(a.quantity)||0));}
+    rs.batches=batches;return{accepted:true};
+  }});
+
   const interoperability={
     commandHandlers:handlers,
     registerAction(){},
