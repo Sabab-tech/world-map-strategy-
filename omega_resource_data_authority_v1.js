@@ -352,7 +352,7 @@
 
   function deriveReserveQuantity(value, resourceId, targetUnit){
     if(value===undefined||value===null||value==='')return null;
-    const s=clean(value).replace(/,/g,' ');
+    const s=clean(value).replace(/,/g,'');
     const numbers=s.match(/-?\d+(?:\.\d+)?/g);
     if(!numbers||!numbers.length)return null;
     const n=Number(numbers[0]); if(!Number.isFinite(n)||n<=0)return null;
