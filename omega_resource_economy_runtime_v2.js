@@ -153,15 +153,21 @@
   }
 
   function reconcileHandler(cmd,ctx){
-    var c=canonical(ctx.countryId),inv=clone(ctx.stateTransaction.get('resource.inventory')||{}),bs=Array.isArray(ctx.stateTransaction.get('resource.batches'))?clone(ctx.stateTransaction.get('resource.batches')):[],ledger=Array.isArray(ctx.stateTransaction.get('resource.inventoryLedger'))?clone(ctx.stateTransaction.get('resource.inventoryLedger')):[];
+    var c=canonical(ctx.countryId),inv=clone(ctx.stateTransaction.get('resource.inventory')||{}),bs=Array.isArray(ctx.stateTransaction.get('resource.batches'))?clone(ctx.stateTransaction.get('resource.batches')):[],ledger=Array.isArray(ctx.stateTransaction.get('resource.inventoryLedger'))?clone(ctx.stateTransaction.get('resource.inventoryLedger')):[],warehouse=clone(ctx.stateTransaction.get('resource.warehouse')||{warehouseId:'WH-'+c+'-RAW',countryId:c,type:'SOVEREIGN_RAW_MATERIAL_WAREHOUSE',locationNodeKey:'WAREHOUSE:'+c+':RAW',status:'OPERATIONAL',availableByResource:{},storedBatchIds:[],receipts:[]});
     var before=inventoryGaps(inv,bs),allocated={};
     bs.forEach(function(b){var rid=String((b&&(b.resourceId||b.materialIdentity))||'').trim(),q=num(b&&(b.remainingQuantity!=null?b.remainingQuantity:b.quantity));if(rid&&q!==null&&q>0)allocated[rid]=(allocated[rid]||0)+q;});
     Object.keys(inv).forEach(function(rid){
       var q=num(inv[rid]);if(q===null||q<0)return;
       var diff=q-(num(allocated[rid])||0);
       if(diff>0){
-        bs.push({batchId:'LEGACY_OPENING_'+c+'_'+tok(rid),resourceId:rid,materialIdentity:rid,quantity:diff,remainingQuantity:diff,unit:null,stage:'RAW',ownerCountryCode:c,ownerCompanyId:'UNKNOWN_SOURCE',sourceBatchIds:[],purity:null,grade:null,quality:null,qualityState:{purity:null,purityStatus:'UNOBSERVED',source:'PRE_EXISTING_RESOURCE_INVENTORY'},warehouseId:'WH-'+c+'-RAW',locationNodeKey:'WAREHOUSE:'+c+':RAW',provenance:{source:'PRE_EXISTING_RESOURCE_INVENTORY',status:'UNALLOCATED_LEGACY_BALANCE',simulationTurn:turn()}});
-        ledger.push({type:'INVENTORY_RECONCILIATION',resourceId:rid,quantity:diff,policy:'PRESERVE_AND_MARK',status:'LEGACY_UNALLOCATED_BALANCE',turn:turn()});
+        var legacyBatchId='LEGACY_OPENING_'+c+'_'+tok(rid);
+        if(!bs.some(function(x){return String(x&&x.batchId)===legacyBatchId;})){
+          bs.push({batchId:legacyBatchId,resourceId:rid,materialIdentity:rid,quantity:diff,remainingQuantity:diff,unit:null,stage:'RAW',ownerCountryCode:c,ownerCompanyId:'UNKNOWN_SOURCE',sourceBatchIds:[],purity:null,grade:null,quality:null,qualityState:{purity:null,purityStatus:'UNOBSERVED',source:'PRE_EXISTING_RESOURCE_INVENTORY'},warehouseId:'WH-'+c+'-RAW',locationNodeKey:'WAREHOUSE:'+c+':RAW',provenance:{source:'PRE_EXISTING_RESOURCE_INVENTORY',status:'UNALLOCATED_LEGACY_BALANCE',simulationTurn:turn()}});
+        }
+        warehouse.availableByResource[rid]=(num(warehouse.availableByResource[rid])||0)+diff;
+        if(!Array.isArray(warehouse.storedBatchIds))warehouse.storedBatchIds=[];
+        if(!warehouse.storedBatchIds.includes(legacyBatchId))warehouse.storedBatchIds.push(legacyBatchId);
+        ledger.push({type:'INVENTORY_RECONCILIATION',resourceId:rid,quantity:diff,policy:'PRESERVE_AND_MARK',status:'LEGACY_UNALLOCATED_BALANCE',batchId:legacyBatchId,turn:turn()});
       }else if(diff<0){
         ledger.push({type:'INVENTORY_RECONCILIATION',resourceId:rid,quantity:-diff,policy:'OBSERVE_MISMATCH',status:'BATCH_LEDGER_EXCEEDS_INVENTORY',turn:turn()});
       }
@@ -171,6 +177,7 @@
     var after=inventoryGaps(inv,bs);
     ctx.stateTransaction.set('resource.batches',bs);
     ctx.stateTransaction.set('resource.inventoryLedger',ledger);
+    ctx.stateTransaction.set('resource.warehouse',warehouse);
     ctx.stateTransaction.set('resource.inventoryIntegrity',{status:after.length?'DEGRADED':'HEALTHY',checkedTurn:turn(),gaps:after.slice(-64),previousGaps:before.slice(-64),authority:'RESOURCE_INVENTORY_AUTHORITY'});
     return{accepted:true,countryId:c,status:after.length?'DEGRADED':'HEALTHY',gaps:after.slice(-64)};
   }
