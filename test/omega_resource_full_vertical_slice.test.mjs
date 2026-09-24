@@ -158,6 +158,12 @@ function makeContext(){
   assert.equal(processed.remainingQuantity,40);
 
   const dash=context.OmegaResourceEconomy.getCountryDashboard('BGD');
+  console.log('POST_TURN_TRANSPORT_DEBUG',JSON.stringify({
+    shipments:context.OmegaResourceTransport.getCountryShipments('BGD'),
+    batches:worldState.resource.BGD.batches,
+    productionLedger:worldState.economy.BGD.industrialRuntime&&worldState.economy.BGD.industrialRuntime.productionLedger,
+    dashboardTransport:dash.transport
+  }));
   assert.equal(dash.industry.refiningInput.iron_ore,50);
   assert.equal(dash.industry.refiningOutput.iron_intermediate,40);
   assert(dash.transport.shipmentCount>=2);
