@@ -107,6 +107,7 @@ const CANONICAL_AI_SCRIPTS = Object.freeze([
   'omega_country_semantic_bridge.js',
   'omega_resource_semantic_bridge.js',
   'resource_ministry_engine.js',
+  'omega_resource_data_authority_v1.js',
   'omega_minister_runtime_v2.js',
   'omega_ai_integrity_layer.js',
   'omega_ai_integrity_canonical_bridge.js',
