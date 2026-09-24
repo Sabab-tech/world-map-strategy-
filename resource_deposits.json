@@ -581,7 +581,7 @@
       "countryCode": "BGD",
       "lat": 25.55,
       "lng": 88.96,
-      "resId": "iron_ore",
+      "resId": "coal",
       "category": "industrial_metals",
       "reserves": "390 Million Tons Bituminous",
       "grade": "Low Ash High Energy Coal",
@@ -607,7 +607,8 @@
         "status",
         "owner",
         "operator"
-      ]
+      ],
+      "dataIntegrityNote": "RESOURCE_ID_CORRECTED_FROM_LEGACY_MIGRATION; verified against Petrobangla annual reports identifying Barapukuria as a coal mine."
     },
     {
       "id": "dep-titas-gas",
@@ -1519,5 +1520,15 @@
         "operator"
       ]
     }
-  ]
+  ],
+  "resource_types": {
+    "coal": {
+      "id": "coal",
+      "name": "Coal",
+      "category": "fossil_fuels",
+      "unit": "metric_tons",
+      "strategicImportance": "high",
+      "description": "Coal resource type used by explicitly identified coal extraction sites."
+    }
+  }
 }
