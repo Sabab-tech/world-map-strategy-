@@ -1366,6 +1366,22 @@ Game.Map.renderResourceDeposits = function(){
     if(!this.map)return;
     if(!this.resourceDepositsLayer)this.resourceDepositsLayer=L.layerGroup().addTo(this.map);
     this.resourceDepositsLayer.clearLayers();
+    if(!this.__omegaLiveResourceMapHooks){
+        this.__omegaLiveResourceMapHooks=true;
+        ['OMEGA_RESOURCE_EXTRACTION_COMPLETED','OMEGA_RESOURCE_EXTRACTION_BLOCKED','OMEGA_RESOURCE_TRANSPORT_PROGRESS','OMEGA_RESOURCE_TRANSPORT_DELIVERED','OMEGA_RESOURCE_PROCESSING_TELEMETRY_UPDATED','OMEGA_RESOURCE_ECONOMY_UPDATED'].forEach(function(evt){
+            window.addEventListener(evt,function(){if(Game.Map.resourceState?.enabled){clearTimeout(Game.Map.__omegaMapRefreshTimer);Game.Map.__omegaMapRefreshTimer=setTimeout(function(){Game.Map.renderResourceDeposits();},40);}});
+        });
+    }
+    const ontology=window.__OmegaResourceEconomyOntology;
+    if(ontology&&typeof ontology==='object'&&Object.keys(ontology).length){
+        const previous=this.resourceCatalog||[];
+        this.resourceCatalog=Object.keys(ontology).map(function(rawId){
+            const row=ontology[rawId]||{},id=String(row.key||rawId).replace(/^RES_TYPE:/i,'').trim().toLowerCase();
+            const old=previous.find(function(x){return String(x.id).toLowerCase()===id;});
+            return{id:id,name:row.name||row.label||id.replace(/_/g,' '),icon:row.icon||old?.icon||'⛏️',color:row.color||old?.color||'#38bdf8'};
+        });
+        if(!this.resourceState.selectedResources||this.resourceState.selectedResources.size===0)this.resourceState.selectedResources=new Set(this.resourceCatalog.map(function(x){return x.id;}));
+    }
     const rs=this.resourceState||{enabled:false,scope:'NATION',selectedResources:new Set()};
     if(!rs.enabled){const el=document.getElementById('resource-summary-count');if(el)el.textContent='0 deposits';return;}
     const selected=rs.selectedResources&&rs.selectedResources.size?rs.selectedResources:new Set();
