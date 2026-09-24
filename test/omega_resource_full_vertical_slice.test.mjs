@@ -54,8 +54,23 @@ function makeContext(){
   };
   const handlers=new Map();
   const stateTx=(countryId)=>({
-    get(path){ return deepGet(worldState,path); },
-    set(path,value){ deepSet(worldState,path,value); },
+    get(path){
+      const parts=String(path).split('.');
+      const domain=parts.shift();
+      let cur=worldState[domain]&&worldState[domain][String(countryId).toUpperCase()];
+      for(const p of parts){if(cur==null)return undefined;cur=cur[p];}
+      return cur;
+    },
+    set(path,value){
+      const parts=String(path).split('.');
+      const domain=parts.shift();
+      if(!worldState[domain]||typeof worldState[domain]!=='object')worldState[domain]={};
+      const cid=String(countryId).toUpperCase();
+      if(!worldState[domain][cid]||typeof worldState[domain][cid]!=='object')worldState[domain][cid]={};
+      let cur=worldState[domain][cid];
+      for(let i=0;i<parts.length-1;i++){if(!cur[parts[i]]||typeof cur[parts[i]]!=='object')cur[parts[i]]={};cur=cur[parts[i]];}
+      cur[parts[parts.length-1]]=value;
+    },
     _countryId:countryId
   });
   const interoperability={
