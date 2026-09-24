@@ -64,8 +64,23 @@ function createContext(){
 
   const handlers=new Map();
   const stateTx=(countryId)=>({
-    get(path){ return deepGet(worldState,path); },
-    set(path,value){ deepSet(worldState,path,value); },
+    get(path){
+      const parts=String(path).split('.');
+      const domain=parts.shift();
+      const root=worldState[domain];
+      let cur=root&&root[countryId]!==undefined?root[countryId]:root;
+      for(const p of parts){ if(cur==null)return undefined; cur=cur[p]; }
+      return cur;
+    },
+    set(path,value){
+      const parts=String(path).split('.');
+      const domain=parts.shift();
+      if(!worldState[domain]||typeof worldState[domain]!=='object')worldState[domain]={};
+      const country=worldState[domain][countryId];
+      if(country&&typeof country==='object')deepSet(country,parts.join('.'),value);
+      else if(parts.length)deepSet(worldState[domain],parts.join('.'),value);
+      else worldState[domain][countryId]=value;
+    },
     _countryId:countryId
   });
 
@@ -160,17 +175,7 @@ test('resource economy v2 completes mine-backed processing, domestic settlement 
   const {context,worldState}=createContext();
   const code=readFileSync('omega_resource_economy_runtime_v2.js','utf8');
   vm.runInNewContext(code,context,{filename:'omega_resource_economy_runtime_v2.js'});
-  const directResult=context.OmegaResourceEconomy.processCountry('BGD');
-  console.log('RESOURCE_PROCESS_DIRECT',JSON.stringify(directResult));
-  const runResult=await context.OmegaResourceEconomy.runTurn();
-  console.log('RESOURCE_ECON_DEBUG_STATE',JSON.stringify({
-    runResult,
-    inventory:worldState.resource.BGD.inventory,
-    batches:worldState.resource.BGD.batches,
-    economy:worldState.economy.BGD,
-    finance:worldState.finance.BGD,
-    trade:worldState.trade.BGD
-  }));
+  await context.OmegaResourceEconomy.runTurn();
 
   assert.equal(worldState.resource.BGD.inventory.iron_ore,50);
   assert.equal(worldState.resource.BGD.inventory.iron_intermediate,40);
