@@ -270,6 +270,12 @@
 
   function relationRecord(countryId,targetId){
     const a=canonicalId(countryId),b=canonicalId(targetId);
+    try{
+      const fs=g.Game?.state?.foreign||g.gameState?.foreign||{};
+      const source=fs[a]||fs[id(countryId)]||Object.values(fs).find(function(x){return x&&typeof x==='object'&&((x.relations&&x.relations[b])||(x.relations&&x.relations[id(targetId)]));});
+      const direct=source?.relations?.[b]||source?.relations?.[id(targetId)];
+      if(direct!==undefined)return clone(direct);
+    }catch(_){}
     const exact=[
       readState(a,'foreign.relations')?.value?.[b],
       readState(a,'trade.relations')?.value?.[b],
