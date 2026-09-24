@@ -11936,50 +11936,67 @@ _globalScope.GSRSK_DataFoundation = (() => {
             }
 
             _parseDeclaredReserveQuantity(reserveText, resourceTypeKey, targetUnit) {
-                const text = String(reserveText || '').replace(/,/g, ' ').replace(/\\s+/g, ' ').trim();
+                const text = String(reserveText || '').replace(/,/g, ' ').replace(/\s+/g, ' ').trim();
                 if (!text) return null;
                 const rid = String(resourceTypeKey || '').replace(/^RES_TYPE:/i, '').trim().toLowerCase();
-                if (rid === 'crude_oil') {
-                    const m = text.match(/([0-9]+(?:\\.[0-9]+)?)\\s*(billion|million|thousand)?\\s*(?:bb l|bbl|barrels?)/i) || text.match(/([0-9]+(?:\\.[0-9]+)?)\\s*(billion|million|thousand)?\\s*bb/i);
+                const parseScaled = (regex, index = 1) => {
+                    const m = text.match(regex);
                     if (!m) return null;
-                    const mult = String(m[2] || '').toLowerCase() === 'billion' ? 1e9 : String(m[2] || '').toLowerCase() === 'million' ? 1e6 : String(m[2] || '').toLowerCase() === 'thousand' ? 1e3 : 1;
-                    return Number(m[1]) * mult;
+                    const scaleName = String(m[2] || '').toLowerCase();
+                    const mult = scaleName === 'billion' ? 1e9 : scaleName === 'million' ? 1e6 : scaleName === 'thousand' ? 1e3 : 1;
+                    const value = Number(m[index]);
+                    return Number.isFinite(value) ? value * mult : null;
+                };
+
+                if (rid === 'crude_oil') {
+                    return parseScaled(/([0-9]+(?:\.[0-9]+)?)\s*(billion|million|thousand)?\s*(?:bbl|barrels?|bb)\b/i);
                 }
+
                 if (rid === 'natural_gas') {
-                    const tcf = text.match(/([0-9]+(?:\\.[0-9]+)?)\\s*(?:TCF|TRILLION\\s*CUBIC\\s*FEET)/i);
+                    const tcf = text.match(/([0-9]+(?:\.[0-9]+)?)\s*(?:TCF|TRILLION\s+CUBIC\s+FEET)\b/i);
                     if (tcf) return Number(tcf[1]) * 1e6;
-                    const bcf = text.match(/([0-9]+(?:\\.[0-9]+)?)\\s*(?:BCF|BILLION\\s*CUBIC\\s*FEET)/i);
+                    const bcf = text.match(/([0-9]+(?:\.[0-9]+)?)\s*(?:BCF|BILLION\s+CUBIC\s+FEET)\b/i);
                     if (bcf) return Number(bcf[1]) * 1e3;
-                    const mcf = text.match(/([0-9]+(?:\\.[0-9]+)?)\\s*(?:MCF|MILLION\\s*CUBIC\\s*FEET)/i);
+                    const mcf = text.match(/([0-9]+(?:\.[0-9]+)?)\s*(?:MCF|MILLION\s+CUBIC\s+FEET)\b/i);
                     if (mcf) return Number(mcf[1]);
                     return null;
                 }
+
                 if (rid === 'gold') {
-                    const oz = text.match(/([0-9]+(?:\\.[0-9]+)?)\\s*(?:MILLION|BILLION|THOUSAND)?\\s*(?:OZ|OZT|TROY\\s*OUNCES?)/i);
+                    const oz = text.match(/([0-9]+(?:\.[0-9]+)?)\s*(million|billion|thousand)?\s*(?:oz|ozt|troy\s+ounces?)\b/i);
                     if (oz) {
-                        const scale = /BILLION/i.test(oz[0]) ? 1e9 : /MILLION/i.test(oz[0]) ? 1e6 : /THOUSAND/i.test(oz[0]) ? 1e3 : 1;
-                        return Number(oz[1]) * scale;
+                        const scale = String(oz[2] || '').toLowerCase();
+                        const mult = scale === 'billion' ? 1e9 : scale === 'million' ? 1e6 : scale === 'thousand' ? 1e3 : 1;
+                        return Number(oz[1]) * mult;
                     }
-                    const tons = text.match(/([0-9]+(?:\\.[0-9]+)?)\\s*(?:MILLION|BILLION|THOUSAND)?\\s*TONS?\\s+GOLD/i);
+                    const tons = text.match(/([0-9]+(?:\.[0-9]+)?)\s*(million|billion|thousand)?\s*tons?\s+gold\b/i);
                     if (tons) {
-                        const scale = /BILLION/i.test(tons[0]) ? 1e9 : /MILLION/i.test(tons[0]) ? 1e6 : /THOUSAND/i.test(tons[0]) ? 1e3 : 1;
-                        return Number(tons[1]) * scale * 32150.7465686;
+                        const scale = String(tons[2] || '').toLowerCase();
+                        const mult = scale === 'billion' ? 1e9 : scale === 'million' ? 1e6 : scale === 'thousand' ? 1e3 : 1;
+                        return Number(tons[1]) * mult * 32150.7465686;
                     }
                     return null;
                 }
+
                 if (rid === 'uranium') {
-                    const m = text.match(/([0-9]+(?:\\.[0-9]+)?)\\s*(billion|million|thousand)?\\s*(?:metric\\s*)?tons?/i);
+                    const m = text.match(/([0-9]+(?:\.[0-9]+)?)\s*(billion|million|thousand)?\s*(?:metric\s*)?tons?\b/i);
                     if (!m) return null;
-                    const scale = String(m[2] || '').toLowerCase() === 'billion' ? 1e9 : String(m[2] || '').toLowerCase() === 'million' ? 1e6 : String(m[2] || '').toLowerCase() === 'thousand' ? 1e3 : 1;
-                    return Number(m[1]) * scale * 1000;
+                    const scale = String(m[2] || '').toLowerCase();
+                    const mult = scale === 'billion' ? 1e9 : scale === 'million' ? 1e6 : scale === 'thousand' ? 1e3 : 1;
+                    return Number(m[1]) * mult * 1000;
                 }
-                if (rid === 'iron_ore' && /\\bCOAL\\b/i.test(text)) return null;
-                if (['iron_ore','rare_earth','lithium','phosphate','bauxite','nickel','cobalt','potash'].includes(rid)) {
-                    const m = text.match(/([0-9]+(?:\\.[0-9]+)?)\\s*(billion|million|thousand)?\\s*(?:metric\\s*)?tons?/i);
+
+                if (rid === 'iron_ore' && /\bCOAL\b/i.test(text)) return null;
+
+                const massTonResources = ['iron_ore','coal','rare_earth','lithium','phosphate','bauxite','nickel','cobalt','potash','wheat','manganese','titanium','zinc','tin','silver','diamond','silicon'];
+                if (massTonResources.includes(rid)) {
+                    const m = text.match(/([0-9]+(?:\.[0-9]+)?)\s*(billion|million|thousand)?\s*(?:metric\s*)?tons?\b/i);
                     if (!m) return null;
-                    const scale = String(m[2] || '').toLowerCase() === 'billion' ? 1e9 : String(m[2] || '').toLowerCase() === 'million' ? 1e6 : String(m[2] || '').toLowerCase() === 'thousand' ? 1e3 : 1;
-                    return Number(m[1]) * scale;
+                    const scale = String(m[2] || '').toLowerCase();
+                    const mult = scale === 'billion' ? 1e9 : scale === 'million' ? 1e6 : scale === 'thousand' ? 1e3 : 1;
+                    return Number(m[1]) * mult;
                 }
+
                 return null;
             }
 
