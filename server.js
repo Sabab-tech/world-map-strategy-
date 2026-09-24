@@ -229,6 +229,23 @@ function executeProductionMinisterQuery(prompt, input, ir) {
   if (semantic?.targetDomain !== 'MINISTER') return null;
   const base = plan?.result || {};
   const ministerId = semantic?.entities?.minister?.id || input.ministerId || null;
+  if (!ministerId) return null;
+  const location = findMinisterRecordLocation(ministerId);
+  const record = location
+    ? cachedMinisters?.ministers_database?.[location.category]?.[location.index] || null
+    : null;
+  const result = {
+    ok: base?.ok !== false,
+    status: base?.status || (record ? 'VERIFIED_FACT' : 'MINISTER_RUNTIME_RESULT'),
+    value: base?.value ?? record ?? null,
+    evidence: Array.isArray(base?.evidence) ? base.evidence : [],
+    trace: [
+      ...(Array.isArray(base?.trace) ? base.trace : []),
+      { step: 'MINISTER_RUNTIME', status: record ? 'RECORD_RESOLVED' : 'PLAN_ONLY', ministerId }
+    ]
+  };
+  return { handled: true, result };
+}
 
 function buildRuntimeDataContext(input = {}) {
   const countryCode = String(input.countryCode || input.countryId || '').trim().toUpperCase();
