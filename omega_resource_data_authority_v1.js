@@ -387,6 +387,13 @@
       const rid=canonicalResourceId(out.resourceId||out.resId);
       const unit=out.unit||typeUnits.get(rid)||null;
       out.resourceId=rid;out.resourceTypeKey=rid;out.resId=rid;out.unit=unit;
+      out.sourceDataIntegrityStatus=typeUnits.has(rid)?'VALIDATED':'RESOURCE_TYPE_UNREGISTERED';
+      if(!typeUnits.has(rid)){
+        out.productionRatePerDay=null;
+        out.productionRateStatus='UNAVAILABLE';
+        out.productionRateProvenance='RESOURCE_TYPE_UNREGISTERED';
+        return out;
+      }
       if(out.productionRatePerDay!==null && out.productionRatePerDay!==undefined && finite(out.productionRatePerDay)!==null){
         out.productionRatePerDay=finite(out.productionRatePerDay);
         out.productionRateStatus='OBSERVED_SOURCE';
