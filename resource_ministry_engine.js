@@ -8741,171 +8741,107 @@ _globalScope.GSRSK_DataFoundation = (() => {
         }
 
         getSummary(countryKey) {
-            const activeIso = this.normalizeCountryCode(countryKey || (typeof window !== 'undefined' && window.currentActiveCountry) || 'BGD');
-            const countryProf = this.getCountryResourceProfile(activeIso);
-            const countryName = countryProf?.identity?.name || activeIso;
-
-            // Generate 17 commodities status with active multipliers
-            const resourcesList = this.resourceTypes.map(res => {
-                const upgradeMul = this.facilityUpgrades[res.id] || 1.0;
-                const bonusSPR = this.strategicReserves[res.id] || 0;
-                const prod = Math.round(res.dailyOutput * upgradeMul);
-                const demand = res.dailyDemand;
-                const net = prod - demand;
-                const selfSuff = Math.min(250, Math.round((prod / (demand || 1)) * 100));
-                const stockDays = Math.max(15, Math.round((bonusSPR + (prod * 45)) / (demand || 1)));
-                const warehouseStock = Math.round(bonusSPR + (prod * 60));
-                const activeFac = Math.round(3 + (upgradeMul * 4));
-
+            const activeIso = this.normalizeCountryCode(countryKey || (typeof window !== 'undefined' && window.currentActiveCountry) || null);
+            const state = global.Game?.state || global.gameState || {};
+            const runtime = state?.resource?.[activeIso] || state?.resource?.[String(countryKey || '').toUpperCase()] || null;
+            const mineRows = Array.isArray(runtime?.mines) ? runtime.mines : [];
+            const outputs = runtime?.mineOutputs && typeof runtime.mineOutputs === 'object' ? runtime.mineOutputs : {};
+            const inventory = runtime?.inventory && typeof runtime.inventory === 'object' ? runtime.inventory : {};
+            const production = runtime?.production && typeof runtime.production === 'object' ? runtime.production : {};
+            const reserves = runtime?.reserves && typeof runtime.reserves === 'object' ? runtime.reserves : {};
+            const consumption = runtime?.consumption && typeof runtime.consumption === 'object' ? runtime.consumption : {};
+            const batches = Array.isArray(runtime?.batches) ? runtime.batches : [];
+            const resourceIds = new Set([
+                ...Object.keys(production),
+                ...Object.keys(inventory),
+                ...Object.keys(reserves),
+                ...mineRows.map(x => x?.resourceId).filter(Boolean)
+            ]);
+            const rows = this.resourceTypes.filter(res => resourceIds.size === 0 || resourceIds.has(res.id)).map(res => {
+                const rid = res.id;
+                const mineForResource = mineRows.filter(x => String(x?.resourceId || '') === String(rid));
+                const outputThisTurn = mineForResource.reduce((sum, mine) => {
+                    const o = outputs[mine?.occurrenceKey];
+                    return sum + (Number(o?.producedQuantity) || 0);
+                }, 0);
+                const cumulativeOutput = mineForResource.reduce((sum, mine) => {
+                    const o = outputs[mine?.occurrenceKey];
+                    return sum + (Number(o?.cumulativeProducedQuantity) || 0);
+                }, 0);
+                const prod = production[rid] == null ? outputThisTurn : Number(production[rid]);
+                const demand = consumption[rid] == null ? null : Number(consumption[rid]);
                 return {
-                    id: res.id,
+                    id: rid,
                     name: res.name,
-                    bnName: res.bnName,
-                    icon: res.icon,
-                    category: res.category,
-                    color: res.color,
-                    unit: res.unit,
-                    basePrice: res.basePrice,
-                    dailyProduction: prod,
+                    bnName: res.bnName || null,
+                    icon: res.icon || null,
+                    category: res.category || null,
+                    color: res.color || null,
+                    unit: res.unit || null,
+                    basePrice: res.basePrice ?? null,
+                    dailyProduction: Number.isFinite(prod) ? prod : outputThisTurn,
                     dailyConsumption: demand,
-                    netBalance: net,
-                    selfSufficiencyRatio: selfSuff,
-                    stockDays: stockDays,
-                    activeFacilities: activeFac,
-                    warehouseStock: warehouseStock,
-                    processChain: res.processChain
+                    netBalance: demand == null ? null : ((Number.isFinite(prod) ? prod : outputThisTurn) - demand),
+                    selfSufficiencyRatio: demand == null ? null : (((Number.isFinite(prod) ? prod : outputThisTurn) / Math.max(demand, 1)) * 100),
+                    stockDays: null,
+                    activeFacilities: mineForResource.filter(x => /ACTIVE|OPERATING|RUNNING|DEPLETING/.test(String(x?.operationalStatus || '').toUpperCase())).length,
+                    warehouseStock: Number(inventory[rid]) || 0,
+                    reserveBalance: Number(reserves[rid]) || 0,
+                    outputThisTurn,
+                    cumulativeOutput,
+                    batchCount: batches.filter(x => String(x?.resourceId || x?.materialIdentity || '') === String(rid)).length,
+                    processChain: res.processChain || null,
+                    dataStatus: runtime ? 'AVAILABLE' : 'RUNTIME_STATE_UNAVAILABLE'
                 };
             });
-
-            // Global Metrics
-            const totalStockDays = Math.round(resourcesList.reduce((acc, r) => acc + r.stockDays, 0) / resourcesList.length);
-            const avgSufficiency = Math.round(resourcesList.reduce((acc, r) => acc + r.selfSufficiencyRatio, 0) / resourcesList.length);
-            const activeSurveysList = Array.from(this.activeSurveys);
-
-            const globalMetrics = {
-                autonomyIndex: avgSufficiency,
-                strategicReservesTotalDays: totalStockDays,
-                activeFacilitiesTotal: resourcesList.reduce((acc, r) => acc + r.activeFacilities, 0),
-                surveysUnderway: activeSurveysList.map(id => {
-                    const r = this.resourceTypes.find(x => x.id === id) || { name: id, icon: '⛏️' };
-                    return { id, name: r.name, icon: r.icon, progress: 68, yieldPotential: 'High (+18.4%)' };
-                })
-            };
-
-            const briefing = `Sovereign resource grid for ${countryName} is operating in full geopolitical equilibrium. 17 strategic commodities are monitored with continuous multi-facility SCADA telemetry. Strategic Autonomy Index is ${avgSufficiency}% with ${totalStockDays} days of aggregate sovereign emergency reserves.`;
-
-            const debates = [
-                {
-                    id: 'deb-lng-expansion',
-                    avatar: '🛢️',
-                    speaker: 'Dr. Tariqul Islam',
-                    role: 'Secretary of Energy & Hydrocarbons',
-                    text: `We recommend authorizing a $500M Sovereign Expansion into deepwater LNG liquefaction and offshore gas storage to guarantee continuous baseload grid power during winter peak demand.`,
-                    options: [
-                        { label: '✅ AUTHORIZE DECREE (+$25M/s Gas)', action: 'expand_gas' },
-                        { label: '❌ POSTPONE FOR SPR BUFFER', action: 'buffer_spr' }
-                    ]
-                },
-                {
-                    id: 'deb-critical-lithium',
-                    avatar: '🔋',
-                    speaker: 'Engr. Sarah Chen',
-                    role: 'Chief of Critical Minerals Council',
-                    text: `Global lithium and rare earth markets face escalating trade friction. Fast-tracking domestic geological survey radar will uncover local pegmatite and heavy mineral sand reserves.`,
-                    options: [
-                        { label: '⛏️ LAUNCH NATIONAL SURVEY', action: 'survey_lithium' },
-                        { label: '🤝 SIGN IMPORT TREATY', action: 'treaty_lithium' }
-                    ]
-                },
-                {
-                    id: 'deb-grain-mandate',
-                    avatar: '🌾',
-                    speaker: 'Director Mahmudur Rahman',
-                    role: 'Food & Strategic Grain Reserve Board',
-                    text: `Enforcing a 100% Hermetic Food Grain Mandate across national silos will insulate the population from trans-boundary fertilizer and wheat inflation shocks.`,
-                    options: [
-                        { label: '📦 ENFORCE GRAIN MANDATE', action: 'mandate_grain' },
-                        { label: '💵 ALLOCATE AGRI SUBSIDY', action: 'subsidy_agri' }
-                    ]
-                }
-            ];
-
+            const activeMineCount = mineRows.filter(x => /ACTIVE|OPERATING|RUNNING|DEPLETING/.test(String(x?.operationalStatus || '').toUpperCase())).length;
             return {
-                briefing,
-                globalMetrics,
-                resourcesList,
-                debates
+                briefing: runtime
+                    ? `Observed resource runtime for ${activeIso}: ${mineRows.length} registered extraction sites, ${activeMineCount} operational sites, ${batches.length} tracked material lots. Missing values remain explicitly unobserved.`
+                    : `Resource runtime state for ${activeIso} is unavailable. No synthetic production, demand, stock or reserve figures are generated.`,
+                globalMetrics: {
+                    countryId: activeIso,
+                    autonomyIndex: null,
+                    strategicReservesTotalDays: null,
+                    activeFacilitiesTotal: activeMineCount,
+                    surveysUnderway: []
+                },
+                resourcesList: rows,
+                debates: [],
+                runtimeState: runtime ? 'AVAILABLE' : 'UNAVAILABLE',
+                mineRegister: mineRows.map(mine => ({
+                    occurrenceKey: mine.occurrenceKey || null,
+                    resourceId: mine.resourceId || null,
+                    depositName: mine.depositName || null,
+                    status: mine.operationalStatus || null,
+                    reserve: Number(mine?.reserveState?.residualQuantity ?? mine?.residualQuantity) || 0,
+                    outputThisTurn: Number(outputs[mine?.occurrenceKey]?.producedQuantity) || 0,
+                    cumulativeOutput: Number(outputs[mine?.occurrenceKey]?.cumulativeProducedQuantity) || 0,
+                    lastBatchId: outputs[mine?.occurrenceKey]?.lastBatchId || null,
+                    qualityState: outputs[mine?.occurrenceKey]?.qualityState || null
+                }))
             };
         }
 
         executeDirective(action, resId, opt) {
-            const resObj = this.resourceTypes.find(r => r.id === resId) || { name: resId, icon: '💎' };
-            const countryName = (typeof window !== 'undefined' && window.currentActiveCountry) || 'BANGLADESH';
-
-            if (action === 'survey') {
-                this.activeSurveys.add(resId);
-                if (typeof window !== 'undefined' && window.showOmegaNotification) {
-                    window.showOmegaNotification('⛏️ GEOLOGICAL SURVEY DISPATCHED', `Autonomous deep-earth exploration initiated for ${resObj.name}! Discovered reserve confidence increased.`, 'success');
+            if (action === 'focus_map' && typeof window !== 'undefined' && window.Game?.Map) {
+                if (typeof window.Game.Map.activateResourceMode === 'function') {
+                    window.Game.Map.activateResourceMode([resId]);
+                    return { accepted: true, status: 'MAP_FOCUS_APPLIED', resourceId: resId || null };
                 }
-            } else if (action === 'expand_facility') {
-                const cur = this.facilityUpgrades[resId] || 1.0;
-                this.facilityUpgrades[resId] = +(cur + 0.25).toFixed(2);
-
-                if (typeof window !== 'undefined') {
-                    if (window.resources && window.resources.cash) {
-                        window.resources.cash = Math.max(0, window.resources.cash - 10000000);
-                    }
-                    if (window.resourceRates) {
-                        if (resId === 'crude_oil') window.resourceRates.oil += 250;
-                        if (resId === 'iron_ore') window.resourceRates.steel += 150;
-                        if (resId === 'uranium') window.resourceRates.uranium += 5;
-                    }
-                    if (window.showOmegaNotification) {
-                        window.showOmegaNotification('🏭 FACILITY EXPANSION AUTHORIZED', `Industrial processing throughput for ${resObj.name} boosted to ${(this.facilityUpgrades[resId] * 100)}%!`, 'success');
-                    }
-                }
-            } else if (action === 'add_reserve') {
-                const cur = this.strategicReserves[resId] || 0;
-                this.strategicReserves[resId] = cur + 50000;
-
-                if (typeof window !== 'undefined') {
-                    if (window.resources) {
-                        if (resId === 'crude_oil') window.resources.oil += 50000;
-                        if (resId === 'iron_ore') window.resources.steel += 20000;
-                        if (resId === 'uranium') window.resources.uranium += 100;
-                    }
-                    if (window.showOmegaNotification) {
-                        window.showOmegaNotification('📦 STRATEGIC RESERVE STOCKPILED', `+50,000 units of ${resObj.name} transferred to sovereign emergency bunkers!`, 'success');
-                    }
-                }
-            } else if (action === 'focus_map') {
-                if (typeof window !== 'undefined' && window.Game && window.Game.Map) {
-                    if (typeof window.Game.Map.activateResourceMode === 'function') {
-                        window.Game.Map.activateResourceMode([resId]);
-                    } else if (typeof window.Game.Map.applyResourceMapFilter === 'function') {
-                        window.Game.Map.applyResourceMapFilter(resId);
-                    }
-                    if (window.showOmegaNotification) {
-                        window.showOmegaNotification('🗺️ MAP SENSORS ENGAGED', `World map targeted on global ${resObj.name} deposits and logistic corridors!`, 'info');
-                    }
-                }
-            } else if (action === 'cabinet_vote') {
-                this.cabinetVotes[resId] = opt;
-                if (typeof window !== 'undefined') {
-                    if (window.resources && window.resourceRates) {
-                        window.resourceRates.cash += 1000;
-                    }
-                    if (window.showOmegaNotification) {
-                        window.showOmegaNotification('🏛️ EXECUTIVE DECREE ENACTED', `Cabinet policy decree for ${resId} successfully passed into law!`, 'success');
-                    }
+                if (typeof window.Game.Map.applyResourceMapFilter === 'function') {
+                    window.Game.Map.applyResourceMapFilter(resId);
+                    return { accepted: true, status: 'MAP_FOCUS_APPLIED', resourceId: resId || null };
                 }
             }
-
-            // Fire reactive event
-            if (typeof window !== 'undefined') {
-                window.dispatchEvent(new CustomEvent('RESOURCE_STATE_UPDATED', { detail: { action, resId, opt } }));
-                window.dispatchEvent(new CustomEvent('MINISTRY_STATE_CHANGED', { detail: { ministryId: 'economy' } }));
-            }
+            return {
+                accepted: false,
+                status: 'LEGACY_DIRECTIVE_DISABLED',
+                action: action || null,
+                resourceId: resId || null,
+                option: opt || null,
+                reason: 'Direct resource mutation directives are disabled. Use the validated resource command/runtime path.'
+            };
         }
 
         openModal(countryKey) {
@@ -9007,23 +8943,14 @@ _globalScope.GSRSK_DataFoundation = (() => {
                             </div>
 
                             <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; font-size:10px; background:rgba(0,0,0,0.3); padding:6px 8px; border-radius:6px;">
-                                <div>Output: <strong style="color:#22c55e;">+${r.dailyProduction.toLocaleString()}</strong></div>
-                                <div>Demand: <strong style="color:#f87171;">-${r.dailyConsumption.toLocaleString()}</strong></div>
+                                <div>Output: <strong style="color:#22c55e;">+${r.dailyProduction == null ? 'UNOBSERVED' : r.dailyProduction.toLocaleString()}</strong></div>
+                                <div>Demand: <strong style="color:#f87171;">-${r.dailyConsumption == null ? 'UNOBSERVED' : r.dailyConsumption.toLocaleString()}</strong></div>
                                 <div>Net: <strong style="color:${r.netBalance >= 0 ? '#22c55e' : '#f87171'};">${r.netBalance >= 0 ? '+' : ''}${r.netBalance.toLocaleString()}</strong></div>
-                                <div>Stock Days: <strong style="color:#ffd700;">${r.stockDays} D</strong></div>
+                                <div>Stock Days: <strong style="color:#ffd700;">${r.stockDays == null ? 'UNOBSERVED' : r.stockDays + ' D'}</strong></div>
                             </div>
 
-                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:4px; margin-top:2px;">
-                                <button onclick="window.ResourceMinistryEngine.executeDirective('survey', '${r.id}'); window.ResourceMinistryEngine.renderModalContent(document.getElementById('gsrsk-intelligence-modal'), '${countryKey}', 'matrix');" style="padding:6px 4px; background:rgba(0,229,255,0.15); border:1px solid #00e5ff; color:#00e5ff; font-size:10px; font-weight:bold; border-radius:4px; cursor:pointer;">
-                                    ⛏️ SURVEY
-                                </button>
-                                <button onclick="window.ResourceMinistryEngine.executeDirective('expand_facility', '${r.id}'); window.ResourceMinistryEngine.renderModalContent(document.getElementById('gsrsk-intelligence-modal'), '${countryKey}', 'matrix');" style="padding:6px 4px; background:rgba(34,197,94,0.15); border:1px solid #22c55e; color:#22c55e; font-size:10px; font-weight:bold; border-radius:4px; cursor:pointer;">
-                                    🏭 EXPAND (+25%)
-                                </button>
-                                <button onclick="window.ResourceMinistryEngine.executeDirective('add_reserve', '${r.id}'); window.ResourceMinistryEngine.renderModalContent(document.getElementById('gsrsk-intelligence-modal'), '${countryKey}', 'matrix');" style="padding:6px 4px; background:rgba(255,215,0,0.15); border:1px solid #ffd700; color:#ffd700; font-size:10px; font-weight:bold; border-radius:4px; cursor:pointer;">
-                                    📦 SPR BUFFER
-                                </button>
-                                <button onclick="window.ResourceMinistryEngine.executeDirective('focus_map', '${r.id}'); window.ResourceMinistryEngine.closeModal();" style="padding:6px 4px; background:rgba(168,85,247,0.15); border:1px solid #a855f7; color:#a855f7; font-size:10px; font-weight:bold; border-radius:4px; cursor:pointer;">
+                            <div style="display:grid; grid-template-columns:1fr; gap:4px; margin-top:2px;">
+                                <button onclick="window.ResourceMinistryEngine.executeDirective('focus_map', '\${countryKey}'); window.ResourceMinistryEngine.closeModal();" style="padding:6px 4px; background:rgba(168,85,247,0.15); border:1px solid #a855f7; color:#a855f7; font-size:10px; font-weight:bold; border-radius:4px; cursor:pointer;">
                                     🗺️ FOCUS MAP
                                 </button>
                             </div>
