@@ -323,11 +323,11 @@
   class MinistryInteroperabilitySystem{
     constructor(options={}){
       this.version=VERSION;
-      this.registry=options.registry||null;
-      this.provider=options.provider||null;
-      this.policy=options.policy||null;
-      this.decisionFramework=options.decisionFramework||null;
-      this.stateTransaction=options.stateTransaction||null;
+      this.registry=options.registry||global.OmegaMinistryRegistry||global.OmegaMinistryDomainEngines||null;
+      this.provider=options.provider||global.OmegaMinistryStateProvider?.instance||null;
+      this.policy=options.policy||global.OmegaMinistryInformationPolicy?.instance||null;
+      this.decisionFramework=options.decisionFramework||global.OmegaMinistryDecisionFramework?.instance||null;
+      this.stateTransaction=options.stateTransaction||global.OmegaMinistryStateTransaction||null;
       this.kernel=null;
       this.bridge=null;
       this.ids=normalizeIds(this.registry);
