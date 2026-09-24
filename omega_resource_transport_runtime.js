@@ -463,17 +463,16 @@
   }
 
   function onExtraction(e){
-    const d=e?.detail||{},p=d.payload||d,produced=p.producedBatch||p.batch;
-    const country=cid(p.countryId||d.countryId),rid=String(produced?.resourceId||p.resourceId||'').trim(),qty=num(produced?.quantity??p.producedQuantity);
-    if(!country||!rid||qty===null||qty<=0)return;
-    const mineKey=p.occurrenceKey||produced?.occurrenceKey;
-    const rb=resourceBucket(country,true),batch=rb.batches.find(x=>String(x.batchId)===String(produced?.batchId));
-    if(batch){
-      batch.locationNodeId=batch.locationNodeId||('MINE:'+String(mineKey||'UNKNOWN'));
-      batch.occurrenceKey=mineKey||batch.occurrenceKey||null;
-      return;
-    }
-    /* Endowment should normally create the batch itself. This is a defensive observer only. */
+    const d=e?.detail||{},p=d.payload||d,records=Array.isArray(p.records)?p.records:[p];
+    const country=cid(p.countryId||d.countryId);if(!country)return;
+    records.forEach(function(row){
+      const produced=row.producedBatch||row.batch||{},rid=String(produced.resourceId||row.resourceId||'').trim(),qty=num(produced.quantity??row.approvedQuantity??row.producedQuantity);
+      const mineKey=row.occurrenceKey||produced.occurrenceKey;
+      if(!rid||qty===null||qty<=0||!mineKey)return;
+      const rb=resourceBucket(country,true),batch=rb.batches.find(x=>String(x.batchId)===String(produced.batchId||row.batchId));
+      if(batch){batch.locationNodeId=batch.locationNodeId||('MINE:'+mineKey);batch.occurrenceKey=mineKey;}
+      ensureNode(country,'MINE:'+mineKey,'MINE',{occurrenceKey:mineKey,resourceId:rid,name:row.depositName||mineKey,location:row.location||null});
+    });
   }
 
   function onTurn(){
