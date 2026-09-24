@@ -11853,57 +11853,94 @@ _globalScope.GSRSK_DataFoundation = (() => {
             }
 
             _parseDeclaredReserveQuantity(reserveText, resourceTypeKey, targetUnit) {
-                const text = String(reserveText || '').replace(/,/g, ' ').replace(/\\s+/g, ' ').trim();
+                const text = String(reserveText || '').replace(/,/g, ' ').replace(/\s+/g, ' ').trim();
                 if (!text) return null;
+
                 const rid = String(resourceTypeKey || '').replace(/^RES_TYPE:/i, '').trim().toLowerCase();
+                const unit = String(targetUnit || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '_');
+
+                const scale = multiplier => {
+                    const source = String(multiplier || '').toLowerCase();
+                    if (source === 'billion') return 1e9;
+                    if (source === 'million') return 1e6;
+                    if (source === 'thousand') return 1e3;
+                    return 1;
+                };
+
                 if (rid === 'crude_oil') {
-                    const m = text.match(/([0-9]+(?:\\.[0-9]+)?)\\s*(billion|million|thousand)?\\s*(?:bb l|bbl|barrels?)/i) || text.match(/([0-9]+(?:\\.[0-9]+)?)\\s*(billion|million|thousand)?\\s*bb/i);
-                    if (!m) return null;
-                    const mult = String(m[2] || '').toLowerCase() === 'billion' ? 1e9 : String(m[2] || '').toLowerCase() === 'million' ? 1e6 : String(m[2] || '').toLowerCase() === 'thousand' ? 1e3 : 1;
-                    return Number(m[1]) * mult;
+                    const m = text.match(/([0-9]+(?:\.[0-9]+)?)\s*(billion|million|thousand)?\s*(?:bbl|barrels?)/i);
+                    return m ? Number(m[1]) * scale(m[2]) : null;
                 }
+
                 if (rid === 'natural_gas') {
-                    const tcf = text.match(/([0-9]+(?:\\.[0-9]+)?)\\s*(?:TCF|TRILLION\\s*CUBIC\\s*FEET)/i);
-                    if (tcf) return Number(tcf[1]) * 1e6;
-                    const bcf = text.match(/([0-9]+(?:\\.[0-9]+)?)\\s*(?:BCF|BILLION\\s*CUBIC\\s*FEET)/i);
-                    if (bcf) return Number(bcf[1]) * 1e3;
-                    const mcf = text.match(/([0-9]+(?:\\.[0-9]+)?)\\s*(?:MCF|MILLION\\s*CUBIC\\s*FEET)/i);
-                    if (mcf) return Number(mcf[1]);
+                    let m = text.match(/([0-9]+(?:\.[0-9]+)?)\s*TCF/i);
+                    if (m) {
+                        const value = Number(m[1]);
+                        if (unit === 'bcm' || unit === 'billion_cubic_metres' || unit === 'billion_cubic_meters') return value * 28.316846592;
+                        if (unit === 'bcf' || unit === 'billion_cubic_feet') return value * 1000;
+                        if (unit === 'mcf' || unit === 'million_cubic_feet') return value * 1e6;
+                        if (unit === 'cubic_metres' || unit === 'cubic_meters' || unit === 'm3') return value * 28.316846592e9;
+                        return value;
+                    }
+
+                    m = text.match(/([0-9]+(?:\.[0-9]+)?)\s*BCF/i);
+                    if (m) {
+                        const value = Number(m[1]);
+                        if (unit === 'bcm' || unit === 'billion_cubic_metres' || unit === 'billion_cubic_meters') return value * 0.028316846592;
+                        if (unit === 'mcf' || unit === 'million_cubic_feet') return value * 1000;
+                        if (unit === 'cubic_metres' || unit === 'cubic_meters' || unit === 'm3') return value * 28.316846592e6;
+                        return value;
+                    }
+
+                    m = text.match(/([0-9]+(?:\.[0-9]+)?)\s*MCF/i);
+                    if (m) {
+                        const value = Number(m[1]);
+                        if (unit === 'bcm' || unit === 'billion_cubic_metres' || unit === 'billion_cubic_meters') return value * 0.000028316846592;
+                        if (unit === 'cubic_metres' || unit === 'cubic_meters' || unit === 'm3') return value * 28.316846592;
+                        return value;
+                    }
+
                     return null;
                 }
+
                 if (rid === 'gold') {
-                    const oz = text.match(/([0-9]+(?:\\.[0-9]+)?)\\s*(?:MILLION|BILLION|THOUSAND)?\\s*(?:OZ|OZT|TROY\\s*OUNCES?)/i);
-                    if (oz) {
-                        const scale = /BILLION/i.test(oz[0]) ? 1e9 : /MILLION/i.test(oz[0]) ? 1e6 : /THOUSAND/i.test(oz[0]) ? 1e3 : 1;
-                        return Number(oz[1]) * scale;
-                    }
-                    const tons = text.match(/([0-9]+(?:\\.[0-9]+)?)\\s*(?:MILLION|BILLION|THOUSAND)?\\s*TONS?\\s+GOLD/i);
+                    const oz = text.match(/([0-9]+(?:\.[0-9]+)?)\s*(million|billion|thousand)?\s*(?:oz|ozt|troy\s*ounces?)/i);
+                    if (oz) return Number(oz[1]) * scale(oz[2]);
+
+                    const tons = text.match(/([0-9]+(?:\.[0-9]+)?)\s*(million|billion|thousand)?\s*(?:metric\s*)?tons?\s+gold/i);
                     if (tons) {
-                        const scale = /BILLION/i.test(tons[0]) ? 1e9 : /MILLION/i.test(tons[0]) ? 1e6 : /THOUSAND/i.test(tons[0]) ? 1e3 : 1;
-                        return Number(tons[1]) * scale * 32150.7465686;
+                        const tonnes = Number(tons[1]) * scale(tons[2]);
+                        return unit === 'troy_ounces' || unit === 'ozt' ? tonnes * 32150.7465686 : tonnes;
                     }
                     return null;
                 }
+
                 if (rid === 'uranium') {
-                    const m = text.match(/([0-9]+(?:\\.[0-9]+)?)\\s*(billion|million|thousand)?\\s*(?:metric\\s*)?tons?/i);
+                    const m = text.match(/([0-9]+(?:\.[0-9]+)?)\s*(billion|million|thousand)?\s*(?:metric\s*)?tons?/i);
                     if (!m) return null;
-                    const scale = String(m[2] || '').toLowerCase() === 'billion' ? 1e9 : String(m[2] || '').toLowerCase() === 'million' ? 1e6 : String(m[2] || '').toLowerCase() === 'thousand' ? 1e3 : 1;
-                    return Number(m[1]) * scale * 1000;
+                    const tonnes = Number(m[1]) * scale(m[2]);
+                    return unit === 'kg' || unit === 'kilograms' ? tonnes * 1000 : tonnes;
                 }
-                if (rid === 'iron_ore' && /\\bCOAL\\b/i.test(text)) return null;
-                if (['iron_ore','rare_earth','lithium','phosphate','bauxite','nickel','cobalt','potash'].includes(rid)) {
-                    const m = text.match(/([0-9]+(?:\\.[0-9]+)?)\\s*(billion|million|thousand)?\\s*(?:metric\\s*)?tons?/i);
+
+                if (rid === 'iron_ore' && /\bcoal\b/i.test(text)) return null;
+                if (['iron_ore','rare_earth','lithium','phosphate','bauxite','nickel','cobalt','potash','coal'].includes(rid)) {
+                    const m = text.match(/([0-9]+(?:\.[0-9]+)?)\s*(billion|million|thousand)?\s*(?:metric\s*)?tons?/i);
                     if (!m) return null;
-                    const scale = String(m[2] || '').toLowerCase() === 'billion' ? 1e9 : String(m[2] || '').toLowerCase() === 'million' ? 1e6 : String(m[2] || '').toLowerCase() === 'thousand' ? 1e3 : 1;
-                    return Number(m[1]) * scale;
+                    return Number(m[1]) * scale(m[2]);
                 }
+
                 return null;
             }
 
             _describeReserveConversion(rawDeposit, resourceTypeKey, targetUnit) {
                 const rid = String(resourceTypeKey || '').replace(/^RES_TYPE:/i, '').trim().toLowerCase();
                 const source = String(rawDeposit?.reserves || rawDeposit?.reserve || '');
-                if (rid === 'natural_gas' && /TCF/i.test(source)) return 'TCF_TO_MCF_1_TO_1000000';
+                if (rid === 'natural_gas' && /TCF/i.test(source)) {
+                    const unit = String(targetUnit || '').trim().toLowerCase();
+                    if (unit === 'bcm' || unit === 'billion_cubic_metres' || unit === 'billion_cubic_meters') return 'TCF_TO_BCM_1_TO_28.316846592';
+                    if (unit === 'mcf' || unit === 'million_cubic_feet') return 'TCF_TO_MCF_1_TO_1000000';
+                    return 'TCF_TO_SOURCE_UNIT';
+                }
                 if (rid === 'uranium' && /TON/i.test(source) && String(targetUnit).toUpperCase() === 'KG') return 'TONNES_TO_KG_1_TO_1000';
                 if (rid === 'gold' && /TON/i.test(source) && String(targetUnit).toUpperCase() === 'OZT') return 'TONNES_TO_TROY_OUNCE_1_TO_32150.7465686';
                 if (/BILLION/i.test(source)) return 'BILLION_TO_BASE_UNIT';
