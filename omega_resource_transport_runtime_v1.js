@@ -254,8 +254,9 @@
   function processOutputEvent(e){
     var d=e&&e.detail?e.detail:{},p=d.payload||d,c=canonical(p.countryId||d.countryId);if(!c)return;
     var outputRows=[];
-    if(Array.isArray(p.created))outputRows=p.created;
-    else if(p.created&&typeof p.created==='object')outputRows=[p.created];
+    if(Array.isArray(p.created))outputRows=outputRows.concat(p.created);
+    if(Array.isArray(p.createdBatches))outputRows=outputRows.concat(p.createdBatches);
+    else if(p.createdBatches&&typeof p.createdBatches==='object')outputRows.push(p.createdBatches);
     if(p.outputBatch)outputRows.push(p.outputBatch);
     outputRows.forEach(function(b){if(b&&b.batchId)registerOutputBatch(c,b);});
   }
