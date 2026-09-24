@@ -270,6 +270,8 @@
       sourceNodeId,destinationNodeId,mode,purpose:String(p.purpose||'DOMESTIC').toUpperCase(),
       sourceBatchAllocations:allocation.allocations,sourceBatchIds:allocation.allocations.map(a=>a.batchId).filter(Boolean),
       travelTurns,totalTravelTurns:travelTurns,distanceKm,costPerUnit,transportCost:qty*costPerUnit,
+      unitPrice:num(p.unitPrice),totalValue:num(p.totalValue),buyerValue:num(p.buyerValue),sellerTotal:num(p.sellerTotal),
+      fx:num(p.fx),buyerCurrency:p.buyerCurrency||null,sellerCurrency:p.sellerCurrency||null,
       status:travelTurns===0?'DELIVERED':'IN_TRANSIT',
       createdTurn:turn(),departureTurn:turn(),expectedArrivalTurn:turn()+travelTurns,
       targetFacilityId:p.targetFacilityId||null,settlementId:p.settlementId||null,requestId:p.requestId||null,
