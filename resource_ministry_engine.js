@@ -8621,7 +8621,7 @@ _globalScope.GSRSK_DataFoundation = (() => {
                 if (this.deposits.length === 0) {
                     throw new Error('RESOURCE_JSON_NO_RUNTIME_DEPOSITS');
                 }
-                if (this.countryProfiles.length === 0) {
+                if (Object.keys(this.countryProfiles).length === 0) {
                     throw new Error('RESOURCE_JSON_NO_COUNTRY_PROFILES');
                 }
 
@@ -8686,7 +8686,7 @@ _globalScope.GSRSK_DataFoundation = (() => {
                 ).trim();
                 const rawResource = String(
                     source.resId ?? source.resourceId ?? source.resource_id ?? source.resourceTypeId ?? source.resourceType ?? ''
-                ).trim().toLowerCase().replace(/\\s+/g, '_');
+                ).trim().toLowerCase().replace(/\s+/g, '_');
                 const resId = resourceAliases[rawResource] || rawResource;
 
                 if (!countryCode || !name || !resId) continue;
