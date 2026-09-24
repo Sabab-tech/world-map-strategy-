@@ -575,7 +575,6 @@
         const inbound=(t.inboundResourceShipments||[]).filter(function(x){return x&&x.status==='IN_TRANSIT'&&String(x.targetFacilityId||'')===String(f.facilityId)&&token(x.resourceId)===token(rid);})
           .reduce(function(sum,x){return sum+(num(x.quantity)||0);},0);
         const deficit=Math.max(0,target-facilityAvailable-pending-inbound);if(deficit<=1e-9)continue;
-        ensureLegacyInventoryBatch(country,rid);
         const allocation=sourceAllocations(country,rid,deficit,null);
         const byNode=new Map();
         for(const a of allocation.allocations){
@@ -622,27 +621,19 @@
     });
   }
 
+  function onShipmentCreated(e){
+    const d=e?.detail||{},p=d.payload||d,shipment=p.shipment||p;
+    if(!shipment?.shipmentId||String(shipment.sourceCountryId||'')===String(shipment.destinationCountryId||''))return;
+    command('transport','OMEGA_RESOURCE_TRANSPORT_REGISTER_INBOUND_MIRROR',shipment.destinationCountryId,{shipment});
+  }
+
   function onTurn(){
     installHandlers();
     const stateNow=state();
     const cs=[...new Set(Object.keys(stateNow.resource||{}).concat(Object.keys(stateNow.transport||{})).map(cid).filter(Boolean))];
     cs.forEach(function(c){
-      try{
-        const result=command('transport','OMEGA_RESOURCE_TRANSPORT_ADVANCE_COUNTRY',c,{countryId:c,correlationId:'TRANSPORT-TURN-'+turn()+'-'+c});
-        const payload=result?.result?.eventPayload||result?.result||{};
-        (payload.delivered||[]).forEach(function(sh){
-          if(String(sh.sourceCountryId)!==String(sh.destinationCountryId)){
-            command('transport','OMEGA_RESOURCE_TRANSPORT_MARK_INBOUND_DELIVERED',sh.destinationCountryId,{shipmentId:sh.shipmentId,shipment:sh});
-          }
-          if(sh.settlementId)settleDeliveredTrade(sh);
-        });
-        (payload.progressed||[]).forEach(function(sh){
-          if(String(sh.sourceCountryId)!==String(sh.destinationCountryId)){
-            command('transport','OMEGA_RESOURCE_TRANSPORT_REGISTER_INBOUND_MIRROR',sh.destinationCountryId,{shipment:sh});
-          }
-        });
-        planFacilityInputs(c);
-      }catch(e){emit('OMEGA_RESOURCE_TRANSPORT_HEALTH',c,{status:'DEGRADED',reason:String(e?.message||e),turn:turn()});}
+      try{command('transport','OMEGA_RESOURCE_TRANSPORT_ADVANCE_COUNTRY',c,{countryId:c,correlationId:'TRANSPORT-TURN-'+turn()+'-'+c});}
+      catch(e){emit('OMEGA_RESOURCE_TRANSPORT_HEALTH',c,{status:'DEGRADED',reason:String(e?.message||e),turn:turn()});}
     });
   }
 
@@ -692,6 +683,7 @@
     if(installed)return;
     installed=true;
     global.addEventListener?.('OMEGA_RESOURCE_EXTRACTION_COMPLETED',onExtraction);
+    global.addEventListener?.('OMEGA_RESOURCE_TRANSPORT_SHIPMENT_CREATED',onShipmentCreated);
     global.addEventListener?.('OMEGA_SIMULATION_TURN_COMMITTED',onTurn);
     global.addEventListener?.('OMEGA_READY',()=>{initialize();});
     global.addEventListener?.('OMEGA_GAME_SESSION_STARTED',()=>{initialize();});
