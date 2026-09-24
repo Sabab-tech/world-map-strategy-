@@ -511,7 +511,7 @@
 
   function processCountry(c){
     var cid=canonical(c),rs=bucket(cid,'resource')||{},before=clone(rs.inventory||{}),recon=dispatch('resource','OMEGA_RESOURCE_ECON_RECONCILE_INVENTORY',cid,{correlationId:'RECON-'+turn()+'-'+cid});
-    try{g.OmegaResourceTransport?.advanceCountry?.(cid);}catch(e){emit('OMEGA_RESOURCE_TRANSPORT_HEALTH',cid,{status:'DEGRADED',reason:String(e&&e.message||e)},'resource-economy');}
+    try{dispatch('transport','OMEGA_RESOURCE_TRANSPORT_ADVANCE_COUNTRY',cid,{countryId:cid,correlationId:'ECON-TRANSPORT-ADVANCE-'+turn()+'-'+cid});}catch(e){emit('OMEGA_RESOURCE_TRANSPORT_HEALTH',cid,{status:'DEGRADED',reason:String(e&&e.message||e)},'resource-economy');}
     try{g.OmegaResourceTransport?.planFacilityInputs?.(cid);}catch(e){emit('OMEGA_RESOURCE_TRANSPORT_HEALTH',cid,{status:'DEGRADED',reason:String(e&&e.message||e)},'resource-economy');}
     rs=bucket(cid,'resource')||{};
     var prod=executeFactories(cid),afterState=bucket(cid,'resource')||{},after=clone(afterState.inventory||{}),delta={},keys={};
