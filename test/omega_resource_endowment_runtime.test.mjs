@@ -35,7 +35,11 @@ assert.equal(dataReport.authority,'RESOURCE_JSON');
 assert.equal(dataReport.status,'READY');
 assert.equal(dataReport.depositCount,43);
 assert.equal(dataReport.fallbackUsed,false);
+assert.equal(dataReport.datasets['resources.json'].status,'LOADED');
+assert.equal(dataReport.datasets['resources_2.json'].status,'LOADED');
 assert.equal(engine.deposits.length,43);
+assert.equal(Object.keys(source.GSRSK_Master_CountryProfiles_v14.countryProfiles||{}).length,168);
+assert.equal(engine.resourceTypes.length,14);
 assert.equal(engine.deposits.some(x=>x.sourceAuthority==='RESOURCE_JSON'),true);
 assert.equal(engine.deposits.some(x=>x.id==='dep-barapukuria-coal'&&x.resId==='coal'),true);
 
