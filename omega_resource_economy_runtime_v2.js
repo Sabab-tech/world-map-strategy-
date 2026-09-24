@@ -146,13 +146,13 @@
       var q=num(b.remainingQuantity!=null?b.remainingQuantity:b.quantity);
       if(!rid||q===null||q<=0)return;
       inventory[rid]=(inventory[rid]||0)+q;
-      var location=String(b.locationKey||b.facilityKey||('WAREHOUSE_'+canonical(c))).trim();
+      var location=String(b.warehouseLocationKey||b.warehouseLocation||'WAREHOUSE_'+canonical(c)).trim();
       if(!locations[location])locations[location]={};
       locations[location][rid]=(locations[location][rid]||0)+q;
       lots.push({
         batchId:b.batchId||null,resourceId:rid,materialIdentity:b.materialIdentity||rid,
         quantity:num(b.quantity)||q,remainingQuantity:q,unit:b.unit||null,stage:b.stage||'RAW',
-        locationKey:location,ownerCompanyId:b.ownerCompanyId||null,
+        locationKey:location,warehouseLocationKey:location,sourceLocationKey:b.sourceLocationKey||null,ownerCompanyId:b.ownerCompanyId||null,
         extractionReference:b.extractionReference||null,processId:b.processId||null,
         timestampTurn:b.timestampTurn!=null?b.timestampTurn:turn(),
         qualityState:clone(b.qualityState||null),
@@ -270,8 +270,9 @@
       provenance:clone(row.provenance||p.provenance||{})
     };
     if(bs.some(function(x){return String(x&&x.batchId)===b.batchId;}))return{accepted:true,duplicate:true,batchId:b.batchId};
+    b.warehouseLocationKey='WAREHOUSE_'+canonical(ctx.countryId);
+    b.sourceLocationKey=p.sourceLocationKey||p.locationKey||null;
     bs.push(b);while(bs.length>(num(rules().runtime.maxBatches)||8192))bs.shift();
-    updateFactoryQueueConsumption(ctx,used);
     var physical=physicalFromBatches(bs,ctx.countryId);
     var ledger=Array.isArray(ctx.stateTransaction.get('resource.inventoryLedger'))?clone(ctx.stateTransaction.get('resource.inventoryLedger')):[];
     ledger.push({type:'BATCH_CREATED',batchId:b.batchId,resourceId:rid,quantity:q,stage:b.stage,turn:turn(),source:b.extractionReference?'EXTRACTION':'RUNTIME',qualityState:clone(b.qualityState||null)});
@@ -302,6 +303,7 @@
       used.push({batchId:b.batchId,quantity:take,stage:b.stage,ownerCompanyId:b.ownerCompanyId,qualityState:clone(b.qualityState||null)});
     }
     if(rem>1e-9)return{accepted:false,reason:'BATCH_LEDGER_UNDERALLOCATED',resourceId:rid,unallocated:rem};
+    updateFactoryQueueConsumption(ctx,used);
     var physical=physicalFromBatches(bs,ctx.countryId);
     var ledger=Array.isArray(ctx.stateTransaction.get('resource.inventoryLedger'))?clone(ctx.stateTransaction.get('resource.inventoryLedger')):[];
     ledger.push({type:'INVENTORY_CONSUMED',resourceId:rid,quantity:q,reason:p.reason||'PROCESSING_OR_FACTORY_INPUT',turn:turn(),consumed:clone(used)});
@@ -353,7 +355,8 @@
         resourceId:outId,materialIdentity:String(out.materialIdentity||outId),quantity:outQty,remainingQuantity:outQty,
         unit:out&&out.unit||null,stage:String(out&&out.stage||'FINISHED').toUpperCase(),
         ownerCountryCode:canonical(ctx.countryId),ownerCompanyId:String(p.companyId||('STATE_INDUSTRY_'+canonical(ctx.countryId))),
-        sourceBatchIds:Array.from(new Set(sourceBatchIds)),transformReference:p.transactionId||null,processId:p.facilityId||null,
+        sourceBatchIds:Array.from(new Set(sourceBatchIds)),warehouseLocationKey:'WAREHOUSE_'+canonical(ctx.countryId),
+        sourceLocationKey:p.sourceLocationKey||null,transformReference:p.transactionId||null,processId:p.facilityId||null,
         timestampTurn:turn(),
         qualityState:clone(out.qualityState||p.outputQualityState||{grade:null,purity:null,gradeStatus:'UNOBSERVED',purityStatus:'UNOBSERVED',qualityStatus:'TRANSFORM_OUTPUT_UNOBSERVED'}),
         sourceData:clone(out.sourceData||null),
@@ -362,6 +365,9 @@
       working.push(outBatch);created.push(outBatch);
     }
 
+    var queueUsed=[];
+    consumed.forEach(function(item){(item.consumed||[]).forEach(function(x){if(x.batchId)queueUsed.push(x);});});
+    updateFactoryQueueConsumption(ctx,queueUsed);
     var tx=String(p.transactionId||('PROD-'+turn()+'-'+canonical(ctx.countryId)+'-'+working.length));
     ledger.push({type:'PRODUCTION_TRANSACTION_COMMITTED',transactionId:tx,facilityId:p.facilityId||null,companyId:p.companyId||null,inputs:clone(consumed),outputs:clone(created),turn:turn()});
     while(working.length>(num(rules().runtime.maxBatches)||8192))working.shift();
@@ -392,7 +398,8 @@
       stage:String(p.stage||'FINISHED').toUpperCase(),ownerCountryCode:canonical(ctx.countryId),
       ownerCompanyId:String(p.ownerCompanyId||('STATE_INDUSTRY_'+canonical(ctx.countryId))),
       sourceBatchIds:Array.isArray(p.sourceBatchIds)?p.sourceBatchIds.slice():[],
-      transformReference:p.transactionId||null,processId:p.processId||null,timestampTurn:turn(),
+      transformReference:p.transactionId||null,processId:p.processId||null,warehouseLocationKey:'WAREHOUSE_'+canonical(ctx.countryId),
+      sourceLocationKey:p.sourceLocationKey||p.locationKey||null,timestampTurn:turn(),
       qualityState:clone(p.qualityState||{grade:null,purity:null,gradeStatus:'UNOBSERVED',purityStatus:'UNOBSERVED'}),
       sourceData:clone(p.sourceData||null),
       provenance:clone(p.provenance||{source:'OMEGA_RESOURCE_ECONOMY_RUNTIME',simulationTurn:turn()})
