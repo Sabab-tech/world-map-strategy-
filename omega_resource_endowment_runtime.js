@@ -267,7 +267,7 @@
     });
     batch.batchId=batch.batchId||('BATCH_EXT_'+turn()+'_'+canonical(c)+'_'+String(x.occurrenceKey).replace(/[^A-Z0-9:_-]/gi,''));
     batch.resourceId=x.resourceId||batch.resourceId||x.resourceTypeKey;
-    batch.materialIdentity=x.resourceTypeKey||x.resourceId||batch.materialIdentity;
+    batch.materialIdentity=x.resourceId||x.resourceTypeKey||batch.materialIdentity;
     batch.quantity=n(batch.quantity)!=null?n(batch.quantity):n(result.approvedQuantity)||0;
     batch.remainingQuantity=batch.quantity;
     batch.unit=batch.unit||x.reserveState?.unit||raw.unit||'UNKNOWN_UNIT';
@@ -312,7 +312,7 @@
     try{
       const identityRegistry=g.__OmegaResourceIdentityRegistry || registry;
       identityRegistry.occurrences?.forEach?.((occ,occKey)=>{
-        const deposit=registry.getDeposit?.(occ.depositKey);
+        const deposit=identityRegistry.getDeposit?.(occ.depositKey);
         const name=String(deposit?.depositRawName||'').trim().toUpperCase();
         const country=String(deposit?.hostCountryIso3||'').trim().toUpperCase();
         const raw=(e.deposits||[]).find(d=>String(d?.name||'').trim().toUpperCase()===name &&
@@ -321,13 +321,13 @@
         const status=String(raw?.operationalStatus||raw?.status||'').toUpperCase();
         const inactive=/CLOSED|INACTIVE|SUSPENDED|DEPLETED|ABANDONED|PLANNED|EXPLORATION/.test(status);
         const effective=rate!==null && rate>0 && !inactive ? rate : 0;
-        const res=registry.getResourceType?.(occ.resourceTypeKey);
+        const res=identityRegistry.getResourceType?.(occ.resourceTypeKey);
         const unit=res?.declaredStandardUnit||raw?.unit||'TONNES';
         const capacity=new p5.ExtractionCapacity({
           assetReference:'ASSET_'+occKey,
           occurrenceKey:occKey,
           nominalRate:effective,
-          rateUnit:unit,
+          unit:unit,
           period:p5.TemporalWindowUnit?.PER_DAY||'PER_DAY',
           availabilityFactor:Math.max(0,Math.min(1,n(raw?.capacityAvailabilityFactor)??0.92)),
           maintenanceFactor:Math.max(0,Math.min(1,n(raw?.capacityMaintenanceFactor)??0.95))
@@ -479,6 +479,8 @@
 
       const physical=persistPhysicalState(ctx,batches);
       appendEvent(ctx,'OMEGA_RESOURCE_BATCH_CREATED',{batchId:batch.batchId,resourceId:resource,quantity:q,qualityState:batch.qualityState,warehouse:physical.warehouse});
+      appendEvent(ctx,'OMEGA_RESOURCE_WAREHOUSE_RECEIPT_CREATED',{receiptId:'RCPT-'+batch.batchId,batchId:batch.batchId,resourceId:resource,quantity:q,warehouseLocationKey:batch.warehouseLocationKey,qualityState:batch.qualityState});
+      appendEvent(ctx,'OMEGA_RESOURCE_FACTORY_INPUT_AVAILABLE',{batchId:batch.batchId,resourceId:resource,quantity:q,warehouseLocationKey:batch.warehouseLocationKey,qualityState:batch.qualityState});
       appendEvent(ctx,'OMEGA_RESOURCE_EXTRACTION_COMPLETED',{extractionId:record.extractionId,batchId:batch.batchId,resourceId:resource,quantity:q});
       emit('OMEGA_RESOURCE_BATCH_CREATED',c,{batch:clone(batch),extractionId:record.extractionId,sourceData:clone(batch.sourceData||null)},cmd.commandId);
       emit('OMEGA_RESOURCE_WAREHOUSE_RECEIPT_CREATED',c,{receiptId:'RCPT-'+batch.batchId,batchId:batch.batchId,resourceId:resource,quantity:q,warehouseLocation:batch.locationKey,qualityState:clone(batch.qualityState)},cmd.commandId);
