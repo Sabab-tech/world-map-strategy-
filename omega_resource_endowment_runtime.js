@@ -224,6 +224,10 @@
       ['resource.tradeAvailability',projection.tradeAvailability],
       ['resource.mineStates',projection.mineStates],
       ['resource.mineOutputs',clone(existing.mineOutputs||{})],
+      ['resource.mineOutputTotals',projection.mineOutputTotals],
+      ['resource.mineProductionLedger',projection.mineProductionLedger],
+      ['resource.batches',projection.batches],
+      ['resource.warehouse',projection.warehouse],
       ['resource.extractionLedger',projection.extractionLedger],
       ['resource.authority',projection.resourceAuthority]
     ])ctx.stateTransaction.set(path,value);
