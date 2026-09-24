@@ -271,8 +271,8 @@
     if(offered <= price*0.95){
       result.quantityApproved=approved;
       result.unitPrice=price;
-      result.decision=willingness>=.75?'ACCEPT':'COUNTER';
-      result.reason=result.decision==='ACCEPT'?'DEBT_OR_DIPLOMATIC_LIQUIDITY_PRESSURE':'PRICE_BELOW_MARKET';
+      result.decision=(offered>=price||offered>=price*.95)?'ACCEPT':'COUNTER';
+      result.reason=result.decision==='ACCEPT'?'WITHIN_ACCEPTABLE_MARKET_BAND':'PRICE_BELOW_MARKET';
       result.confidence=.9;
       return result;
     }
