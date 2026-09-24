@@ -101,5 +101,18 @@ assert(after.warehouse.receipts.some(x=>x.batchId===batch.batchId&&x.status==='R
 assert(after.mineProductionLedger.some(x=>x.batchId===batch.batchId&&x.mineId===gasMine.occurrenceKey));
 assert(seen.some(x=>x&&x.payload&&x.payload.batch&&x.payload.batch.batchId===batch.batchId));
 
+const summary=engine.getSummary('BGD');
+const mineTelemetry=summary.mineTelemetry.find(x=>x.mineId===gasMine.occurrenceKey);
+assert(mineTelemetry);
+assert.equal(mineTelemetry.outputThisTurn,output.producedQuantity);
+assert.equal(mineTelemetry.batchId,batch.batchId);
+assert.equal(mineTelemetry.warehouseId,'WH-BGD-RAW');
+assert.equal(mineTelemetry.purity,0.962);
+const mineRegisterHtml=engine._renderDepositsTab(summary.deposits,'BGD');
+assert.match(mineRegisterHtml,/OPERATING MINE REGISTER/);
+assert.match(mineRegisterHtml,/Titas Gas Field Reservoir/);
+assert.match(mineRegisterHtml,/OUTPUT \/ TURN/);
+assert.match(mineRegisterHtml,/WH-BGD-RAW/);
+
 if(nativeFetch)globalThis.fetch=nativeFetch;
 console.log('OMEGA RESOURCE JSON -> MINE -> BATCH -> WAREHOUSE -> FACTORY EVENT TEST PASSED');
