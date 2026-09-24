@@ -270,8 +270,8 @@
     }
     if(offered <= price*0.95){
       result.quantityApproved=approved;
-      result.unitPrice=price;
-      result.decision=(offered>=price||offered>=price*.95)?'ACCEPT':'COUNTER';
+      result.unitPrice=offered;
+      result.decision='ACCEPT';
       result.reason=result.decision==='ACCEPT'?'WITHIN_ACCEPTABLE_MARKET_BAND':'PRICE_BELOW_MARKET';
       result.confidence=.9;
       return result;
