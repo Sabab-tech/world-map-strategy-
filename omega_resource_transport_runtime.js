@@ -251,6 +251,7 @@
     const t=txCountryBucket(ctx,'transport',true);
     const sourceNodeId=String(p.sourceNodeId||'STOCKPILE:'+sourceCountry),destinationNodeId=String(p.destinationNodeId||'STOCKPILE:'+destinationCountry);
     txEnsureNode(ctx,sourceNodeId,p.sourceNodeType||'STORAGE',p.sourceNodeMeta||{});
+    if(sourceCountry===destinationCountry)txEnsureNode(ctx,destinationNodeId,p.destinationNodeType||'STORAGE',p.destinationNodeMeta||{});
     const mode=modeFor(rid,p.purpose,p.mode),spec=rules().modes?.[mode]||rules().modes?.[rules().defaultMode];
     const explicitTurns=num(p.travelTurns),travelTurns=explicitTurns!==null&&explicitTurns>=0?Math.floor(explicitTurns):Math.max(1,Math.floor(num(spec?.defaultTravelTurns)||1));
     const distanceKm=num(p.distanceKm)??(sourceCountry===destinationCountry?50:1000),costPerUnit=num(spec?.costPerUnit)||0;
@@ -632,8 +633,21 @@
     const stateNow=state();
     const cs=[...new Set(Object.keys(stateNow.resource||{}).concat(Object.keys(stateNow.transport||{})).map(cid).filter(Boolean))];
     cs.forEach(function(c){
-      try{command('transport','OMEGA_RESOURCE_TRANSPORT_ADVANCE_COUNTRY',c,{countryId:c,correlationId:'TRANSPORT-TURN-'+turn()+'-'+c});}
-      catch(e){emit('OMEGA_RESOURCE_TRANSPORT_HEALTH',c,{status:'DEGRADED',reason:String(e?.message||e),turn:turn()});}
+      try{
+        const result=command('transport','OMEGA_RESOURCE_TRANSPORT_ADVANCE_COUNTRY',c,{countryId:c,correlationId:'TRANSPORT-TURN-'+turn()+'-'+c});
+        const payload=result?.result?.eventPayload||result?.result||{};
+        (payload.progressed||[]).forEach(function(sh){
+          if(String(sh.sourceCountryId)!==String(sh.destinationCountryId)){
+            command('transport','OMEGA_RESOURCE_TRANSPORT_REGISTER_INBOUND_MIRROR',sh.destinationCountryId,{shipment:sh});
+          }
+        });
+        (payload.delivered||[]).forEach(function(sh){
+          if(String(sh.sourceCountryId)!==String(sh.destinationCountryId)){
+            command('transport','OMEGA_RESOURCE_TRANSPORT_MARK_INBOUND_DELIVERED',sh.destinationCountryId,{shipment:sh});
+          }
+          if(sh.settlementId)settleDeliveredTrade(sh);
+        });
+      }catch(e){emit('OMEGA_RESOURCE_TRANSPORT_HEALTH',c,{status:'DEGRADED',reason:String(e?.message||e),turn:turn()});}
     });
   }
 
