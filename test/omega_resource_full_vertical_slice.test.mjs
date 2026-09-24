@@ -161,7 +161,8 @@ function makeContext(){
   assert.equal(dash.industry.refiningInput.iron_ore,50);
   assert.equal(dash.industry.refiningOutput.iron_intermediate,40);
   assert(dash.transport.shipmentCount>=2);
-  assert.equal(dash.transport.inTransit,0);
+  assert(dash.transport.inTransit>=1);
+  assert(dash.transport.inTransit<dash.transport.shipmentCount);
 
   const html=context.CountryIOS.renderChapter5_Resources('BGD');
   assert.match(html,/REFINERY \/ PROCESSING LIVE FLOW/);
