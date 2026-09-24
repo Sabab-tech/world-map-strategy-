@@ -224,10 +224,23 @@
   }
 
 
+  const TRANSPORT_TX_FIELDS=['nodes','routes','resourceShipments','inboundResourceShipments','ledger','transportLedger','capacity','resourceRevenue','runtimeRevision','nextShipmentSequence','lastAdvancedTurn'];
   function txCountryBucket(ctx,domain,create){
-    var raw=ctx.stateTransaction.get(domain);
-    if(!raw||typeof raw!=='object')raw={};
+    const raw={};
+    if(domain==='transport'){
+      for(const field of TRANSPORT_TX_FIELDS){
+        const value=ctx.stateTransaction.get('transport.'+field);
+        if(value!==undefined)raw[field]=value;
+      }
+    }else{
+      const value=ctx.stateTransaction.get(domain);
+      if(value&&typeof value==='object')Object.assign(raw,value);
+    }
     return raw;
+  }
+  function txCommitCountryBucket(ctx,domain,bucket){
+    if(!bucket||typeof bucket!=='object')return;
+    Object.keys(bucket).forEach(function(key){ctx.stateTransaction.set(domain+'.'+key,clone(bucket[key]));});
   }
 
   function txEnsureNode(ctx,nodeId,type,meta){
@@ -284,7 +297,7 @@
     const ledger=Array.isArray(t.ledger)?t.ledger:[];ledger.push({type:'SHIPMENT_CREATED',shipmentId,resourceId:rid,quantity:qty,sourceNodeId,destinationNodeId,mode,purpose:shipment.purpose,status:'IN_TRANSIT',turn:turn()});
     while(ledger.length>(num(rules().maxLedgerEntries)||4096))ledger.shift();
     t.ledger=ledger;
-    ctx.stateTransaction.set('transport',t);
+    txCommitCountryBucket(ctx,'transport',t);
     return{accepted:true,shipment:clone(shipment),eventType:'OMEGA_RESOURCE_TRANSPORT_SHIPMENT_CREATED',eventPayload:{shipment:clone(shipment)}};
   }
 
@@ -331,7 +344,7 @@
     progressed.forEach(p=>ledger.push({type:'SHIPMENT_PROGRESS',shipmentId:p.shipmentId,resourceId:p.resourceId,remainingTurns:p.travelTurns,status:'IN_TRANSIT',turn:turn()}));
     delivered.forEach(p=>ledger.push({type:'SHIPMENT_DELIVERED',shipmentId:p.shipmentId,resourceId:p.resourceId,quantity:p.quantity,status:'DELIVERED',turn:turn(),transportCost:p.transportCost}));
     while(ledger.length>(num(rules().maxLedgerEntries)||4096))ledger.shift();t.ledger=ledger;
-    ctx.stateTransaction.set('transport',t);
+    txCommitCountryBucket(ctx,'transport',t);
     return{accepted:true,countryId:country,turn:turn(),progressed,delivered,eventType:'OMEGA_RESOURCE_TRANSPORT_TURN_RESOLVED',eventPayload:{countryId:country,turn:turn(),progressed,delivered}};
   }
 
@@ -344,14 +357,14 @@
     const mirror=Object.assign({},shipment,{remoteMirror:true,mirrorSide:'DESTINATION'});
     if(i<0)t.inboundResourceShipments.push(mirror);else t.inboundResourceShipments[i]=Object.assign({},t.inboundResourceShipments[i],mirror);
     const max=num(rules().maxShipments)||16384;while(t.inboundResourceShipments.length>max)t.inboundResourceShipments.shift();
-    ctx.stateTransaction.set('transport',t);return{accepted:true,shipmentId:shipment.shipmentId,status:mirror.status};
+    txCommitCountryBucket(ctx,'transport',t);return{accepted:true,shipmentId:shipment.shipmentId,status:mirror.status};
   }
 
   function inboundDeliveredHandler(cmd,ctx){
     const p=cmd?.payload||{},sid=String(p.shipmentId||'').trim(),t=txCountryBucket(ctx,'transport',true);
     const row=t.inboundResourceShipments?.find(x=>String(x.shipmentId)===sid);if(!row)return{accepted:false,reason:'INBOUND_MIRROR_NOT_FOUND'};
     Object.assign(row,clone(p.shipment||{}),{status:'DELIVERED',remoteMirror:true,mirrorSide:'DESTINATION',deliveredTurn:turn(),remainingQuantity:0});
-    ctx.stateTransaction.set('transport',t);return{accepted:true,shipmentId:sid,status:'DELIVERED'};
+    txCommitCountryBucket(ctx,'transport',t);return{accepted:true,shipmentId:sid,status:'DELIVERED'};
   }
 
   function createShipment(args){
