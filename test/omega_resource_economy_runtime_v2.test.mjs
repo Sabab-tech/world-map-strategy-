@@ -43,8 +43,10 @@ function createContext(){
         batches:[{
           batchId:'MINE-BATCH-1',resourceId:'iron_ore',materialIdentity:'iron_ore',
           quantity:100,remainingQuantity:100,stage:'RAW',ownerCountryCode:'BGD',
-          ownerCompanyId:'MINER_CO',sourceBatchIds:[]
-        }]
+          ownerCompanyId:'MINER_CO',sourceBatchIds:[],locationNodeId:'FACILITY:PROC_1',facilityId:'PROC_1'
+        }],
+        facilityInventory:{PROC_1:{iron_ore:50}},
+        processingRuntime:{facilities:{},lastTurn:null}
       }
     },
     economy:{
@@ -164,6 +166,8 @@ test('resource economy v2 completes mine-backed processing, domestic settlement 
 
   assert.equal(worldState.resource.BGD.inventory.iron_ore,50);
   assert.equal(worldState.resource.BGD.inventory.iron_intermediate,40);
+  assert.equal(worldState.resource.BGD.facilityInventory.PROC_1.iron_ore,0);
+  assert.equal(worldState.resource.BGD.processingRuntime.facilities.PROC_1.outputsCreated[0].quantity,40);
 
   const fiscal=worldState.finance.BGD.resourceFiscal;
   assert.equal(fiscal.thisTurn.total,115);
