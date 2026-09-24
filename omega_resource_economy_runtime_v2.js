@@ -531,6 +531,8 @@
     });
     bs.forEach(function(b){
       if(!b||!b.batchId)return;
+      var stage=String(b.stage||'RAW').toUpperCase();
+      if(/FINISHED|SELLABLE|SOLD/.test(stage))return;
       var remaining=num(b.remainingQuantity!=null?b.remainingQuantity:b.quantity)||0;
       var rid=String(b.resourceId||b.materialIdentity||'').trim();
       if(!rid||remaining<=0)return;
@@ -729,7 +731,16 @@
   function installEvents(){
     if(g.__OmegaResourceEconomyV2Events||typeof g.addEventListener!=='function')return;
     g.__OmegaResourceEconomyV2Events=true;
-    g.addEventListener('OMEGA_RESOURCE_FACTORY_INPUT_AVAILABLE',function(e){var d=e&&e.detail?e.detail:{},p=d.payload||d;if(p.batchId){g.__OmegaResourceLastFactoryInput=p;}});
+    g.addEventListener('OMEGA_RESOURCE_FACTORY_INPUT_AVAILABLE',function(e){
+      var d=e&&e.detail?e.detail:{},p=d.payload||d;
+      if(!p.batchId)return;
+      var cid=canonical(p.countryId||d.countryId);
+      if(!cid)return;
+      if(!g.__OmegaResourceFactoryInputBuffer)g.__OmegaResourceFactoryInputBuffer={};
+      if(!Array.isArray(g.__OmegaResourceFactoryInputBuffer[cid]))g.__OmegaResourceFactoryInputBuffer[cid]=[];
+      g.__OmegaResourceFactoryInputBuffer[cid].push(clone(p));
+      if(g.__OmegaResourceFactoryInputBuffer[cid].length>1024)g.__OmegaResourceFactoryInputBuffer[cid]=g.__OmegaResourceFactoryInputBuffer[cid].slice(-1024);
+    });
     g.addEventListener('OMEGA_RESOURCE_PROCESSING_COMPLETED',function(e){var p=e&&e.detail?e.detail.payload||e.detail:{};recordOwner(p.countryId||e.detail&&e.detail.countryId,p);});
     g.addEventListener('OMEGA_INDUSTRIAL_PRODUCTION_COMPLETED',function(e){var p=e&&e.detail?e.detail.payload||e.detail:{};recordOwner(p.countryId||e.detail&&e.detail.countryId,p);});
     g.addEventListener('OMEGA_TRADE_SETTLEMENT_COMPLETED',fiscalizeTrade);
