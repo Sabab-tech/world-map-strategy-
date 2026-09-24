@@ -104,9 +104,7 @@
   function parsePercentLike(value){
     if(value === undefined || value === null || value === '') return null;
     if(typeof value === 'number' && Number.isFinite(value)){
-      if(value >= 0 && value <= 1) return value;
-      if(value > 1 && value <= 100) return value / 100;
-      return null;
+      return value >= 0 && value <= 1 ? value : null;
     }
     const s = clean(value).replace(/,/g, '');
     const m = s.match(/(-?\d+(?:\.\d+)?)\s*%/);
@@ -115,11 +113,7 @@
       return Number.isFinite(n) ? n / 100 : null;
     }
     const n = Number(s);
-    if(Number.isFinite(n)){
-      if(n >= 0 && n <= 1) return n;
-      if(n > 1 && n <= 100) return n / 100;
-    }
-    return null;
+    return Number.isFinite(n) && n >= 0 && n <= 1 ? n : null;
   }
 
   function parseNumericText(value){
