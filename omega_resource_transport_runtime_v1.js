@@ -1,13 +1,13 @@
-/* OMEGA RESOURCE TRANSPORT RUNTIME v1.0
-   Authoritative batch logistics:
-   MINE -> LOCAL COLLECTION -> REGIONAL LOGISTICS -> PROCESSING FEED
-   PROCESSING OUTPUT -> DOMESTIC DISTRIBUTION -> MARKET READY
-   TRADE SETTLEMENT -> EXPORT TRANSIT LEDGER
+/* OMEGA RESOURCE TRANSPORT RUNTIME v2.0
+   Canonical ownership:
+   - resource.* owns physical inventories and batches.
+   - transport.* owns shipment/logistics state.
+   No transport transaction writes resource.*.
 */
 (function(g){
   'use strict';
 
-  var VERSION='1.0.0';
+  var VERSION='2.0.0';
   var MAX_SHIPMENTS=8192;
   var DEFAULT_DOMESTIC_CAPACITY=Infinity;
 
@@ -26,8 +26,10 @@
   function num(v){var n=Number(v);return Number.isFinite(n)?n:null;}
   function id(v){return String(v==null?'':v).trim().toUpperCase();}
   function tok(v){return String(v==null?'':v).normalize('NFKC').trim().toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'');}
+
   function state(){return g.Game&&g.Game.state?g.Game.state:(g.gameState||{});}
   function turn(){var s=state(),x=num(s&&s.simulation&&s.simulation.turn);if(x!==null)return x;x=num(s&&s.turn);return x===null?0:x;}
+
   function registry(){return g.OmegaCanonicalIdentityRegistry||g.OmegaCountrySemanticBridge||(g.Omega&&g.Omega.CanonicalIdentity)||null;}
   function canonical(v){
     try{
@@ -41,22 +43,21 @@
     return id(v);
   }
   function countries(){
-    var r=registry(),out=[];
+    var out=new Set();
     try{
-      if(r&&typeof r.list==='function'){
-        var a=r.list('COUNTRY');if(!Array.isArray(a)||!a.length)a=r.list();
-        if(Array.isArray(a))a.forEach(function(v){var x=v&&typeof v==='object'?(v.id||v.canonicalId||v.code||v.countryId||v.key):v;x=canonical(x);if(x&&out.indexOf(x)<0)out.push(x);});
-      }
+      var r=registry(),a=r&&typeof r.list==='function'?(r.list('COUNTRY')||r.list()):[];
+      if(Array.isArray(a))a.forEach(function(v){var raw=typeof v==='object'?(v||{}):{id:v};var c=canonical(raw.iso3||raw.isoCode||raw.countryId||raw.id||raw.code||raw.key);if(c)out.add(c);});
     }catch(_){}
-    if(!out.length){
-      var rs=state().resource||{};Object.keys(rs).forEach(function(k){var x=canonical(k);if(x&&out.indexOf(x)<0)out.push(x);});
-    }
-    return out.sort();
+    Object.keys(state().resource||{}).forEach(function(k){var c=canonical(k);if(c)out.add(c);});
+    Object.keys(state().transport||{}).forEach(function(k){var c=canonical(k);if(c)out.add(c);});
+    return[...out].sort();
   }
   function bucket(c,domain){
     var root=state()[domain];if(!root||typeof root!=='object')return null;
-    var cid=canonical(c);if(root[cid]&&typeof root[cid]==='object')return root[cid];
-    var ks=Object.keys(root);for(var i=0;i<ks.length;i++)if(canonical(ks[i])===cid)return root[ks[i]];
+    var cid=canonical(c);
+    if(root[cid]&&typeof root[cid]==='object')return root[cid];
+    var ks=Object.keys(root);
+    for(var i=0;i<ks.length;i++)if(canonical(ks[i])===cid)return root[ks[i]];
     return null;
   }
   function interop(){return(g.Omega&&g.Omega.MinistryInteroperability)||g.OmegaMinistryInteroperability||null;}
@@ -67,42 +68,35 @@
   }
   function emit(type,c,payload,source){
     var m=interop(),cid=canonical(c);
-    try{if(m&&typeof m.emitEvent==='function')return m.emitEvent(type,cid,source||'resource-transport',{countryId:cid,payload:clone(payload||{})},{turn:turn(),correlationId:payload&&(payload.correlationId||payload.shipmentId||payload.batchId)||null});}catch(_){}
+    try{if(m&&typeof m.emitEvent==='function')return m.emitEvent(type,cid,source||'transport',{countryId:cid,payload:clone(payload||{})},{turn:turn(),correlationId:payload&&(payload.correlationId||payload.shipmentId||payload.batchId)||null});}catch(_){}
     try{if(typeof g.dispatchEvent==='function'&&typeof g.CustomEvent==='function')g.dispatchEvent(new g.CustomEvent(type,{detail:{eventType:type,countryId:cid,payload:clone(payload||{}),simulationTurn:turn()}}));}catch(_){}
     return null;
   }
 
   function resourceState(c){return bucket(c,'resource')||{};}
+  function transportState(c){return bucket(c,'transport')||{};}
   function economyState(c){return bucket(c,'economy')||{};}
-  function getTransportState(c){
-    var root=state().transport;if(!root||typeof root!=='object')return null;
-    var cid=canonical(c);var x=root[cid];
-    if(x&&typeof x==='object')return x;
-    var ks=Object.keys(root);for(var i=0;i<ks.length;i++)if(canonical(ks[i])===cid)return root[ks[i]];
+  function shipmentsForCountry(c){
+    var ts=transportState(c),rows=ts&&ts.resourceShipments;
+    return Array.isArray(rows)?rows:[];
+  }
+  function shipmentForBatch(c,batchId){
+    var bid=String(batchId||'');if(!bid)return null;
+    var ss=shipmentsForCountry(c);
+    for(var i=0;i<ss.length;i++)if(ss[i]&&String(ss[i].batchId||'')===bid)return ss[i];
     return null;
   }
-
-  function readNetworkMode(c,rid,kind){
-    var candidates=[
-      readPath(c,'transport.resourceNetworkMode'),
-      readPath(c,'transport.logisticsMode'),
-      readPath(c,'transport.mode'),
-      readPath(c,'trade.transportMode')
-    ];
-    for(var i=0;i<candidates.length;i++){
-      var x=candidates[i];
-      if(x&&typeof x==='object'&&x[rid]!=null)x=x[rid];
-      if(typeof x==='string'&&x.trim())return{mode:id(x),source:'OBSERVED_TRANSPORT_STATE'};
-    }
-    if(kind==='TRADE_EXPORT')return{mode:'INTERNATIONAL_TRANSIT',source:'TRADE_SETTLEMENT'};
-    return{mode:'UNSPECIFIED_LOGISTICS',source:'UNOBSERVED_TRANSPORT_MODE'};
+  function batchReadyForProcessing(c,batchId){
+    var s=shipmentForBatch(c,batchId);
+    if(!s)return true;
+    return ['DELIVERED','LOCAL_STOCK','MARKET_READY','DELIVERED_TO_PROCESSING'].indexOf(id(s.status))>=0;
   }
+
   function readPath(c,path){
     var parts=String(path||'').split('.'),cur=bucket(c,parts.shift());
     for(var i=0;i<parts.length;i++){if(cur==null)return undefined;cur=cur[parts[i]];}
     return cur;
   }
-
   function readObservedCapacity(c,rid){
     var paths=[
       ['transport','resourceRouteCapacity'],
@@ -111,261 +105,254 @@
     ];
     for(var i=0;i<paths.length;i++){
       var x=bucket(c,paths[i][0]);if(!x)continue;
-      var cap=x[paths[i][1]];
-      var ncap=cap&&typeof cap==='object'?num(cap[rid]):num(cap);
-      if(ncap!==null&&ncap>0)return{capacity:ncap,source:paths[i][0]+'.'+paths[i][1]};
+      var cap=x[paths[i][1]],v=cap&&typeof cap==='object'?num(cap[rid]):num(cap);
+      if(v!==null&&v>0)return{capacity:v,source:paths[i][0]+'.'+paths[i][1]};
     }
-    var ts=getTransportState(c);
-    var lc=ts&&ts.logistics&&ts.logistics.capacityByResource;
+    var ts=transportState(c),lc=ts&&ts.logistics&&ts.logistics.capacityByResource;
     if(lc&&typeof lc==='object'){var z=num(lc[rid]);if(z!==null&&z>0)return{capacity:z,source:'transport.logistics.capacityByResource'};}
     return{capacity:DEFAULT_DOMESTIC_CAPACITY,source:'SIMULATION_DEFAULT_DOMESTIC_CAPACITY'};
   }
-
+  function readNetworkMode(c,rid,kind){
+    var candidates=[readPath(c,'transport.resourceNetworkMode'),readPath(c,'transport.logisticsMode'),readPath(c,'transport.mode'),readPath(c,'trade.transportMode')];
+    for(var i=0;i<candidates.length;i++){
+      var x=candidates[i];
+      if(x&&typeof x==='object'&&x[rid]!=null)x=x[rid];
+      if(typeof x==='string'&&x.trim())return{mode:id(x),source:'OBSERVED_TRANSPORT_STATE'};
+    }
+    if(kind==='TRADE_EXPORT')return{mode:'INTERNATIONAL_TRANSIT',source:'TRADE_SETTLEMENT'};
+    return{mode:'UNSPECIFIED_LOGISTICS',source:'UNOBSERVED_TRANSPORT_MODE'};
+  }
   function findDestinationFacility(c,rid){
     var assets=economyState(c).productionAssets;
     if(!Array.isArray(assets))return null;
     for(var i=0;i<assets.length;i++){
       var a=assets[i]||{},inputs=a.inputCoefficients||a.inputs||a.inputProfile||{};
-      if(Object.prototype.hasOwnProperty.call(inputs,rid))return{id:String(a.projectId||a.assetId||a.id||a.siteId||('ASSET_'+i)),stage:String(a.stage||a.assetStage||'PROCESSING').toUpperCase()};
+      if(Object.keys(inputs).some(function(k){return tok(k)===tok(rid);}))return{id:String(a.projectId||a.assetId||a.id||a.siteId||('ASSET_'+i)),stage:String(a.stage||a.assetStage||'PROCESSING').toUpperCase()};
       var x=String(a.inputResourceId||a.inputResource||a.feedstockResourceId||a.feedstock||'');
       if(x&&tok(x)===tok(rid))return{id:String(a.projectId||a.assetId||a.id||a.siteId||('ASSET_'+i)),stage:String(a.stage||a.assetStage||'PROCESSING').toUpperCase()};
     }
     return null;
   }
-
+  function batchQuantity(b){return Math.max(0,num(b&&b.remainingQuantity!=null?b.remainingQuantity:b&&b.quantity)||0);}
   function isProcessReadyBatch(b){
     if(!b)return false;
-    var t=b.transport;
-    if(!t)return true;
-    var s=id(t.status||'');
-    return s==='DELIVERED'||s==='LOCAL_STOCK'||s==='MARKET_READY'||s==='DELIVERED_TO_PROCESSING';
+    if(!b.transport)return true;
+    return ['DELIVERED','LOCAL_STOCK','MARKET_READY','DELIVERED_TO_PROCESSING'].indexOf(id(b.transport.status))>=0;
   }
-
-  function totalBatchQuantity(bs,rid,readyOnly){
+  function totalBatchQuantity(bs,rid,readyOnly,c){
     var total=0;
     (Array.isArray(bs)?bs:[]).forEach(function(b){
       if(tok(b&&b.resourceId)!==tok(rid))return;
-      if(readyOnly&&!isProcessReadyBatch(b))return;
-      total+=num(b&&b.remainingQuantity!=null?b.remainingQuantity:b&&b.quantity)||0;
+      if(readyOnly&&c&&!batchReadyForProcessing(c,b.batchId))return;
+      if(readyOnly&&!c&&!isProcessReadyBatch(b))return;
+      total+=batchQuantity(b);
     });
     return total;
   }
-
   function inventoryAvailableForProcessing(c,rid){
     var rs=resourceState(c),inv=rs.inventory||{},bs=Array.isArray(rs.batches)?rs.batches:[];
     var key=Object.prototype.hasOwnProperty.call(inv,rid)?rid:Object.keys(inv).find(function(k){return tok(k)===tok(rid);});
     var inventory=num(key==null?undefined:inv[key]);if(inventory===null||inventory<0)inventory=0;
-    var totalBatches=totalBatchQuantity(bs,rid,false);
-    var legacy=Math.max(0,inventory-totalBatches);
-    return totalBatchQuantity(bs,rid,true)+legacy;
+    var total=totalBatchQuantity(bs,rid,false,c),ready=totalBatchQuantity(bs,rid,true,c),legacy=Math.max(0,inventory-total);
+    return ready+legacy;
   }
+  function sellableInventory(c,rid){return inventoryAvailableForProcessing(c,rid);}
 
-  function sellableInventory(c,rid){
-    return inventoryAvailableForProcessing(c,rid);
-  }
-
-  function makeShipment(c,batch,kind,destination){
-    var rs=resourceState(c),shipments=Array.isArray(rs.transportShipments)?clone(rs.transportShipments):[];
-    var existing=shipments.find(function(s){return s&&s.batchId===batch.batchId&&id(s.kind)===id(kind)&&Number(s.createdTurn)===turn();});
-    if(existing)return existing;
-    var quantity=num(batch.remainingQuantity!=null?batch.remainingQuantity:batch.quantity)||0;
-    if(quantity<=0)return null;
-    var capInfo=readObservedCapacity(c,batch.resourceId),cap=capInfo.capacity;
-    var network=readNetworkMode(c,batch.resourceId,kind);
-    // Creation registers the shipment. Movement is applied exactly once by advance(),
-    // so an observed route capacity cannot be consumed twice in the same turn.
-    var deliver=0;
-    var status='IN_TRANSIT';
+  function newShipment(c,batch,kind,destination){
+    var quantity=batchQuantity(batch);if(quantity<=0)return null;
+    var capInfo=readObservedCapacity(c,batch.resourceId),network=readNetworkMode(c,batch.resourceId,kind);
     var finalStage=destination&&destination.stage==='FACTORY'?'DOMESTIC_DISTRIBUTION':'PROCESSING_FEED';
-    var shipment={
-      shipmentId:'SHP-'+turn()+'-'+canonical(c)+'-'+String(batch.batchId).replace(/[^A-Z0-9_-]/gi,'')+'-'+shipments.length,
-      batchId:batch.batchId,resourceId:batch.resourceId,quantity:quantity,deliveredQuantity:deliver,remainingQuantity:Math.max(0,quantity-deliver),
-      kind:kind,status:status,fromStage:kind==='EXTRACTION'?'MINE_SITE':(kind==='PROCESSING_OUTPUT'?'PROCESSING_OUTPUT':'DOMESTIC_STOCK'),
-      currentStage:status==='DELIVERED'?finalStage:'LOCAL_COLLECTION',destinationStage:finalStage,destinationFacilityId:destination&&destination.id||null,
-      destinationCountryId:canonical(c),routeCapacityObserved:cap,capacitySource:capInfo.source,networkMode:network.mode,networkModeSource:network.source,createdTurn:turn(),updatedTurn:turn(),
+    return{
+      shipmentId:'SHP-'+turn()+'-'+canonical(c)+'-'+String(batch.batchId).replace(/[^A-Z0-9_-]/gi,'')+'-'+tok(kind),
+      batchId:String(batch.batchId),resourceId:String(batch.resourceId),quantity:quantity,deliveredQuantity:0,remainingQuantity:quantity,
+      kind:kind,status:'IN_TRANSIT',fromStage:kind==='EXTRACTION'?'MINE_SITE':(kind==='PROCESSING_OUTPUT'?'PROCESSING_OUTPUT':'DOMESTIC_STOCK'),
+      currentStage:'LOCAL_COLLECTION',destinationStage:finalStage,destinationFacilityId:destination&&destination.id||null,destinationCountryId:canonical(c),
+      routeCapacityObserved:capInfo.capacity,capacitySource:capInfo.source,networkMode:network.mode,networkModeSource:network.source,
+      createdTurn:turn(),updatedTurn:turn(),
       legs:[
-        {name:'LOCAL_COLLECTION',status:deliver>0?'COMPLETED':'PENDING'},
-        {name:'REGIONAL_LOGISTICS',status:deliver>=quantity?'COMPLETED':'IN_TRANSIT'},
-        {name:finalStage,status:status}
+        {name:'LOCAL_COLLECTION',status:'PENDING'},
+        {name:'REGIONAL_LOGISTICS',status:'PENDING'},
+        {name:finalStage,status:'PENDING'}
       ],
-      provenance:{source:'OMEGA_RESOURCE_TRANSPORT_RUNTIME_V1',simulationTurn:turn(),batchId:batch.batchId}
+      provenance:{source:'OMEGA_RESOURCE_TRANSPORT_RUNTIME_V2',simulationTurn:turn(),batchId:String(batch.batchId)}
     };
-    shipments.push(shipment);
-    return shipment;
   }
 
-  function updateBatchTransport(c,batch,shipment){
-    batch.transport={
-      shipmentId:shipment.shipmentId,status:shipment.status,currentStage:shipment.currentStage,destinationStage:shipment.destinationStage,
-      destinationFacilityId:shipment.destinationFacilityId,deliveredQuantity:shipment.deliveredQuantity,remainingQuantity:shipment.remainingQuantity,
-      updatedTurn:turn(),processingEligible:shipment.status==='DELIVERED'||shipment.status==='LOCAL_STOCK'||shipment.status==='MARKET_READY'
-    };
-    if(!batch.transport.processingEligible&&shipment.remainingQuantity<=0)batch.transport.processingEligible=true;
-    return batch;
-  }
-
-  function registerShipmentsForBatches(c,kind,filterFn,destinationFn){
-    var rs=resourceState(c),bs=Array.isArray(rs.batches)?clone(rs.batches):[],shipments=Array.isArray(rs.transportShipments)?clone(rs.transportShipments):[];
-    var changed=false;
-    bs.forEach(function(b){
-      if(!b||!b.batchId||!filterFn(b))return;
-      var attached=shipments.find(function(s){return s&&s.batchId===b.batchId;});
-      if(attached)return;
-      var destination=destinationFn(b)||null;
-      var shipment=makeShipment(c,b,kind,destination);if(!shipment)return;
-      shipments.push(shipment);updateBatchTransport(c,b,shipment);changed=true;
-    });
-    if(!changed)return{accepted:true,changed:false};
-    if(shipments.length>MAX_SHIPMENTS)shipments=shipments.slice(-MAX_SHIPMENTS);
-    return dispatch('transport','OMEGA_RESOURCE_TRANSPORT_COMMIT_STATE',c,{batches:bs,shipments:shipments,correlationId:'TRANSPORT-'+turn()+'-'+canonical(c)});
+  function commitShipments(c,shipments){
+    var rows=(Array.isArray(shipments)?shipments:[]).slice(-MAX_SHIPMENTS);
+    var result=dispatch('transport','OMEGA_RESOURCE_TRANSPORT_COMMIT_STATE',c,{shipments:rows,correlationId:'TRANSPORT-'+turn()+'-'+canonical(c)});
+    if(!result||result.status!=='APPLIED')return{status:result&&result.status||'FAILED',reason:result&&result.reason||'TRANSPORT_COMMIT_FAILED'};
+    return result;
   }
 
   function advance(c){
-    var rs=resourceState(c),bs=Array.isArray(rs.batches)?clone(rs.batches):[],shipments=Array.isArray(rs.transportShipments)?clone(rs.transportShipments):[];
-    var changed=false,capacityLeftByResource={};
+    var shipments=clone(shipmentsForCountry(c)),changed=false,capacityUsed={};
     shipments.forEach(function(s){
-      if(!s||id(s.status)==='DELIVERED'||id(s.status)==='MARKET_READY')return;
-      var capInfo=readObservedCapacity(c,s.resourceId);
-      var used=capacityLeftByResource[s.resourceId]||0;
-      var availableCap=Math.max(0,(capInfo.capacity===Infinity?Infinity:capInfo.capacity-used));
-      var move=Math.min(num(s.remainingQuantity)||0,availableCap);
+      if(!s||['DELIVERED','MARKET_READY'].indexOf(id(s.status))>=0)return;
+      var capInfo=readObservedCapacity(c,s.resourceId),used=capacityUsed[tok(s.resourceId)]||0,cap=capInfo.capacity===Infinity?Infinity:Math.max(0,capInfo.capacity-used),move=Math.min(Math.max(0,num(s.remainingQuantity)||0),cap);
       if(move>0){
-        s.deliveredQuantity=(num(s.deliveredQuantity)||0)+move;s.remainingQuantity=Math.max(0,(num(s.remainingQuantity)||0)-move);
-        s.routeCapacityObserved=capInfo.capacity;s.capacitySource=capInfo.source;var network=readNetworkMode(c,s.resourceId,s.kind);s.networkMode=network.mode;s.networkModeSource=network.source;s.updatedTurn=turn();capacityLeftByResource[s.resourceId]=(used===Infinity||move===Infinity)?Infinity:used+move;changed=true;
+        s.deliveredQuantity=(num(s.deliveredQuantity)||0)+move;
+        s.remainingQuantity=Math.max(0,(num(s.remainingQuantity)||0)-move);
+        capacityUsed[tok(s.resourceId)]=(cap===Infinity||move===Infinity)?Infinity:used+move;
+        s.routeCapacityObserved=capInfo.capacity;s.capacitySource=capInfo.source;
+        s.networkMode=readNetworkMode(c,s.resourceId,s.kind).mode;s.networkModeSource=readNetworkMode(c,s.resourceId,s.kind).source;
+        s.updatedTurn=turn();changed=true;
       }
-      if((num(s.remainingQuantity)||0)<=1e-9){
-        s.status='DELIVERED';s.currentStage=s.destinationStage;
-        s.legs.forEach(function(l){l.status='COMPLETED';});
+      if(s.remainingQuantity<=1e-9){
+        s.status='DELIVERED';s.currentStage=s.destinationStage;s.legs.forEach(function(l){l.status='COMPLETED';});
       }else{
-        s.status='IN_TRANSIT';s.currentStage=s.remainingQuantity===s.quantity?'LOCAL_COLLECTION':'REGIONAL_LOGISTICS';
+        s.status='IN_TRANSIT';
+        if(s.deliveredQuantity>0)s.currentStage='REGIONAL_LOGISTICS';
+        else s.currentStage='LOCAL_COLLECTION';
+        s.legs[0].status=s.deliveredQuantity>0?'COMPLETED':'IN_TRANSIT';
+        s.legs[1].status=s.remainingQuantity>0&&s.deliveredQuantity>0?'IN_TRANSIT':'PENDING';
       }
-      bs.forEach(function(b){if(b&&b.batchId===s.batchId){updateBatchTransport(c,b,s);}});
     });
-    if(!changed)return{accepted:true,changed:false,shipments:shipments,batches:bs};
-    if(shipments.length>MAX_SHIPMENTS)shipments=shipments.slice(-MAX_SHIPMENTS);
-    var result=dispatch('transport','OMEGA_RESOURCE_TRANSPORT_COMMIT_STATE',c,{batches:bs,shipments:shipments,correlationId:'TRANSPORT-ADVANCE-'+turn()+'-'+canonical(c)});
-    emit('OMEGA_RESOURCE_TRANSPORT_UPDATED',c,{countryId:canonical(c),turn:turn(),shipmentCount:shipments.length},'resource-transport');
-    return{accepted:true,changed:true,dispatchResult:result,shipments:shipments,batches:bs};
+    if(!changed)return{accepted:true,changed:false,shipments:shipments};
+    var committed=commitShipments(c,shipments);
+    if(committed.status!=='APPLIED')return{accepted:false,changed:false,reason:committed.reason||'TRANSPORT_COMMIT_FAILED',shipments:shipments};
+    emit('OMEGA_RESOURCE_TRANSPORT_UPDATED',c,{countryId:canonical(c),turn:turn(),shipmentCount:shipments.length},'transport');
+    return{accepted:true,changed:true,shipments:shipments};
+  }
+
+  function ensureBatchShipment(c,batch,kind){
+    var existing=shipmentForBatch(c,batch.batchId);
+    if(existing)return existing;
+    var s=newShipment(c,batch,kind,findDestinationFacility(c,String(batch.resourceId||'')));
+    if(!s)return null;
+    var rows=clone(shipmentsForCountry(c));rows.push(s);
+    var committed=commitShipments(c,rows);
+    if(committed.status!=='APPLIED')return null;
+    return s;
+  }
+
+  function prepareCountry(c){
+    installHandlers();var rs=resourceState(c),bs=Array.isArray(rs.batches)?rs.batches:[];
+    var created=0;
+    bs.forEach(function(b){
+      if(!b||!b.batchId||batchQuantity(b)<=0)return;
+      if(!shipmentForBatch(c,b.batchId)){if(ensureBatchShipment(c,b,'BATCH'))created++;}
+    });
+    var advanced=advance(c);
+    return{accepted:true,countryId:canonical(c),createdShipments:created,advance:advanced,shipmentCount:shipmentsForCountry(c).length};
+  }
+
+  function registerExtractionBatch(c,batch){
+    if(!batch||!batch.batchId)return{status:'REJECTED',reason:'BATCH_ID_REQUIRED'};
+    var existing=shipmentForBatch(c,batch.batchId);
+    if(existing)return{status:'ALREADY_REGISTERED',shipment:clone(existing)};
+    var s=ensureBatchShipment(c,batch,'EXTRACTION');
+    if(!s)return{status:'FAILED',reason:'TRANSPORT_SHIPMENT_COMMIT_FAILED',batchId:batch.batchId};
+    return{status:'APPLIED',shipment:clone(s)};
+  }
+
+  function registerOutputBatch(c,batch){
+    if(!batch||!batch.batchId)return{status:'REJECTED',reason:'BATCH_ID_REQUIRED'};
+    var existing=shipmentForBatch(c,batch.batchId);
+    if(existing)return{status:'ALREADY_REGISTERED',shipment:clone(existing)};
+    var s=ensureBatchShipment(c,batch,'PROCESSING_OUTPUT');
+    return s?{status:'APPLIED',shipment:clone(s)}:{status:'FAILED',reason:'TRANSPORT_SHIPMENT_COMMIT_FAILED'};
+  }
+
+  function processOutputEvent(e){
+    var d=e&&e.detail?e.detail:{},p=d.payload||d,c=canonical(p.countryId||d.countryId);if(!c)return;
+    var outputRows=[];
+    if(Array.isArray(p.created))outputRows=p.created;
+    else if(p.created&&typeof p.created==='object')outputRows=[p.created];
+    if(p.outputBatch)outputRows.push(p.outputBatch);
+    outputRows.forEach(function(b){if(b&&b.batchId)registerOutputBatch(c,b);});
+  }
+
+  function handleExtraction(e){
+    var d=e&&e.detail?e.detail:{},p=d.payload||d,c=canonical(p.countryId||d.countryId);
+    if(!c||!p.producedBatch)return;
+    registerExtractionBatch(c,p.producedBatch);
+  }
+
+  function handleTrade(e){
+    var d=e&&e.detail?e.detail:{},p=d.payload||d,c=canonical(p.sellerCountryId||p.targetCountryId||p.countryId);
+    var qty=num(p.quantity!=null?p.quantity:p.totalQuantity)||0;if(!c||!p.resourceId||qty<=0)return;
+    var rid=String(p.resourceId),sid=String(p.settlementId||p.requestId||('AUTO-'+qty+'-'+tok(rid)));
+    var shipment={
+      shipmentId:'TRADE-'+turn()+'-'+c+'-'+tok(rid)+'-'+sid.replace(/[^A-Z0-9_-]/gi,''),
+      batchId:p.batchId||null,resourceId:rid,quantity:qty,deliveredQuantity:qty,remainingQuantity:0,kind:'TRADE_EXPORT',status:'DELIVERED',
+      fromStage:'EXPORT_CORRIDOR',currentStage:'INTERNATIONAL_TRANSIT',destinationStage:'DESTINATION_COUNTRY',destinationFacilityId:null,
+      destinationCountryId:canonical(p.buyerCountryId||p.countryId||''),createdTurn:turn(),updatedTurn:turn(),
+      legs:[{name:'EXPORT_CORRIDOR',status:'COMPLETED'},{name:'PORT_GATE',status:'COMPLETED'},{name:'INTERNATIONAL_TRANSIT',status:'COMPLETED'},{name:'DESTINATION_COUNTRY',status:'COMPLETED'}],
+      provenance:{source:'OMEGA_RESOURCE_TRANSPORT_RUNTIME_V2',settlementId:p.settlementId||null}
+    };
+    var rows=clone(shipmentsForCountry(c));if(rows.some(function(s){return s&&s.shipmentId===shipment.shipmentId;}))return;
+    rows.push(shipment);commitShipments(c,rows);
   }
 
   function commitHandler(cmd,ctx){
-    var p=cmd&&cmd.payload||{},bs=Array.isArray(p.batches)?clone(p.batches):[],shipments=Array.isArray(p.shipments)?clone(p.shipments):[];
-    ctx.stateTransaction.set('resource.batches',bs);
-    ctx.stateTransaction.set('resource.transportShipments',shipments);
-    var status={},active=0,delivered=0,inTransit=0;
+    var p=cmd&&cmd.payload||{},shipments=Array.isArray(p.shipments)?clone(p.shipments):[],status={},delivered=0,inTransit=0;
     shipments.forEach(function(s){
-      status[s.resourceId]=status[s.resourceId]||{shipments:0,deliveredQuantity:0,inTransitQuantity:0};
-      status[s.resourceId].shipments+=1;status[s.resourceId].deliveredQuantity+=num(s.deliveredQuantity)||0;status[s.resourceId].inTransitQuantity+=num(s.remainingQuantity)||0;
-      if(id(s.status)==='DELIVERED')delivered+=1;else if(id(s.status)==='IN_TRANSIT')inTransit+=1;
+      var rid=String(s.resourceId||'');if(!status[rid])status[rid]={shipments:0,deliveredQuantity:0,inTransitQuantity:0};
+      status[rid].shipments+=1;status[rid].deliveredQuantity+=num(s.deliveredQuantity)||0;status[rid].inTransitQuantity+=num(s.remainingQuantity)||0;
+      if(id(s.status)==='DELIVERED')delivered++;else if(id(s.status)==='IN_TRANSIT')inTransit++;
     });
+    ctx.stateTransaction.set('transport.resourceShipments',shipments.slice(-MAX_SHIPMENTS));
     ctx.stateTransaction.set('transport.resourceBatchStatus',status);
     ctx.stateTransaction.set('transport.lastProcessedTurn',turn());
     ctx.stateTransaction.set('transport.runtimeStatus','READY');
-    return{accepted:true,shipmentCount:shipments.length,delivered,inTransit,resourceStatus:status};
+    return{accepted:true,shipmentCount:shipments.length,delivered:delivered,inTransit:inTransit,resourceStatus:status};
   }
 
   function installHandlers(){
     var m=interop();if(!m||typeof m.registerCommandHandler!=='function')return false;
     try{
-      // Command registration is the authoritative requirement. Action registration is optional,
-      // so an unavailable decision-framework adapter must never disable transport state commits.
-      try{m.registerAction&&m.registerAction('OMEGA_RESOURCE_TRANSPORT_COMMIT_STATE',{actionId:'OMEGA_RESOURCE_TRANSPORT_COMMIT_STATE',stateOwnerMinistry:'transport',authority:'OMEGA_RESOURCE_TRANSPORT_RUNTIME_V1'});}catch(_){}
+      try{m.registerAction&&m.registerAction('OMEGA_RESOURCE_TRANSPORT_COMMIT_STATE',{actionId:'OMEGA_RESOURCE_TRANSPORT_COMMIT_STATE',stateOwnerMinistry:'transport',authority:'OMEGA_RESOURCE_TRANSPORT_RUNTIME_V2'});}catch(_){}
       m.registerCommandHandler('OMEGA_RESOURCE_TRANSPORT_COMMIT_STATE','transport',commitHandler);
       return true;
     }catch(_){return false;}
   }
 
-  function registerExtractionBatch(c,batch){
-    if(!batch||!batch.batchId)return{accepted:false,reason:'BATCH_ID_REQUIRED'};
-    var rs=resourceState(c),bs=Array.isArray(rs.batches)?clone(rs.batches):[];
-    if(!bs.some(function(x){return x&&x.batchId===batch.batchId;}))bs.push(clone(batch));
-    var index=bs.findIndex(function(x){return x&&x.batchId===batch.batchId;}),b=bs[index];
-    if(!b.transport){
-      var dest=findDestinationFacility(c,String(b.resourceId||''));
-      var shipment=makeShipment(c,b,'EXTRACTION',dest);
-      if(shipment){bs[index]=updateBatchTransport(c,b,shipment);}
-    }
-    var existing=Array.isArray(rs.transportShipments)?clone(rs.transportShipments):[];
-    var attached=existing.find(function(s){return s&&s.batchId===b.batchId;});
-    if(attached&&b.transport)bs[index]=updateBatchTransport(c,b,attached);
-    if(existing.length>MAX_SHIPMENTS)existing=existing.slice(-MAX_SHIPMENTS);
-    if(b.transport&&!attached){
-      var ship=makeShipment(c,b,'EXTRACTION',findDestinationFacility(c,String(b.resourceId||'')));
-      if(ship)existing.push(ship);
-    }
-    return dispatch('transport','OMEGA_RESOURCE_TRANSPORT_COMMIT_STATE',c,{batches:bs,shipments:existing,correlationId:'TRANSPORT-REGISTER-'+turn()+'-'+b.batchId});
-  }
-
-  function prepareCountry(c){
-    installHandlers();
-    var rs=resourceState(c),bs=Array.isArray(rs.batches)?clone(rs.batches):[],shipments=Array.isArray(rs.transportShipments)?clone(rs.transportShipments):[];
-    var changed=false;
-    bs.forEach(function(b){
-      if(!b||!b.batchId||b.remainingQuantity===0)return;
-      if(b.transport)return;
-      var dest=findDestinationFacility(c,String(b.resourceId||'')),ship=makeShipment(c,b,'BATCH',dest);
-      if(ship){b=updateBatchTransport(c,b,ship);var idx=bs.findIndex(function(x){return x&&x.batchId===b.batchId;});if(idx>=0)bs[idx]=b;shipments.push(ship);changed=true;}
-    });
-    var advanced=advance(c);
-    if(changed){
-      var cap=dispatch('transport','OMEGA_RESOURCE_TRANSPORT_COMMIT_STATE',c,{batches:bs,shipments:shipments,correlationId:'TRANSPORT-PREPARE-'+turn()+'-'+canonical(c)});
-      return{accepted:true,changed:true,advance:advanced,commit:cap};
-    }
-    return advanced;
-  }
-
-  function handleExtraction(e){
-    var d=e&&e.detail?e.detail:{},p=d.payload||d,c=canonical(p.countryId||d.countryId);if(!c||!p.producedBatch)return;
-    registerExtractionBatch(c,p.producedBatch);
-  }
-  function handleProcessing(e){
-    var d=e&&e.detail?e.detail:{},p=d.payload||d,c=canonical(p.countryId||d.countryId);if(!c)return;
-    var rs=resourceState(c),bs=Array.isArray(rs.batches)?clone(rs.batches):[],shipments=Array.isArray(rs.transportShipments)?clone(rs.transportShipments):[],changed=false;
-    bs.forEach(function(b){
-      if(!b||!b.batchId||String(b.timestampTurn)!==String(turn()))return;
-      if(b.transport&&id(b.transport.status)!=='DELIVERED')return;
-      if(!/^FINISHED|INTERMEDIATE$/i.test(String(b.stage||'')))return;
-      if(shipments.some(function(s){return s&&s.batchId===b.batchId;}))return;
-      var s=makeShipment(c,b,'PROCESSING_OUTPUT',{id:'DOMESTIC_MARKET',stage:'FACTORY'});if(s){shipments.push(s);b.transport=Object.assign({},b.transport,{shipmentId:s.shipmentId,status:s.status,currentStage:s.currentStage,destinationStage:s.destinationStage,destinationFacilityId:s.destinationFacilityId,processingEligible:true,updatedTurn:turn()});changed=true;}
-    });
-    if(changed)dispatch('transport','OMEGA_RESOURCE_TRANSPORT_COMMIT_STATE',c,{batches:bs,shipments:shipments,correlationId:'TRANSPORT-PROCESSING-'+turn()+'-'+c});
-  }
-
-  function handleTrade(e){
-    var d=e&&e.detail?e.detail:{},p=d.payload||d,c=canonical(p.sellerCountryId||p.targetCountryId||p.countryId);if(!c||!p.resourceId)return;
-    var qty=num(p.quantity!=null?p.quantity:p.totalQuantity)||0;if(qty<=0)return;
-    var idBase='TRADE-'+turn()+'-'+c+'-'+tok(p.resourceId)+'-'+String(p.settlementId||p.requestId||('AUTO-'+qty+'-'+tok(p.resourceId))).replace(/[^A-Z0-9_-]/gi,'');
-    var shipment={shipmentId:idBase,batchId:p.batchId||null,resourceId:p.resourceId,quantity:qty,deliveredQuantity:qty,remainingQuantity:0,kind:'TRADE_EXPORT',status:'DELIVERED',fromStage:'EXPORT_CORRIDOR',currentStage:'INTERNATIONAL_TRANSIT',destinationStage:'DESTINATION_COUNTRY',destinationFacilityId:null,destinationCountryId:canonical(p.buyerCountryId||p.countryId||''),createdTurn:turn(),updatedTurn:turn(),legs:[{name:'EXPORT_CORRIDOR',status:'COMPLETED'},{name:'PORT_GATE',status:'COMPLETED'},{name:'INTERNATIONAL_TRANSIT',status:'COMPLETED'},{name:'DESTINATION_COUNTRY',status:'COMPLETED'}],provenance:{source:'OMEGA_RESOURCE_TRANSPORT_RUNTIME_V1',settlementId:p.settlementId||null}};
-    var rs=resourceState(c),shipments=Array.isArray(rs.transportShipments)?clone(rs.transportShipments):[];if(!shipments.some(function(s){return s&&s.shipmentId===shipment.shipmentId;})){shipments.push(shipment);if(shipments.length>MAX_SHIPMENTS)shipments=shipments.slice(-MAX_SHIPMENTS);dispatch('transport','OMEGA_RESOURCE_TRANSPORT_COMMIT_STATE',c,{batches:Array.isArray(rs.batches)?rs.batches:[],shipments:shipments,correlationId:shipment.shipmentId});}
-  }
-
   function installEvents(){
-    if(g.__OmegaResourceTransportEvents||typeof g.addEventListener!=='function')return;
-    g.__OmegaResourceTransportEvents=true;
+    if(g.__OmegaResourceTransportEventsV2||typeof g.addEventListener!=='function')return;
+    g.__OmegaResourceTransportEventsV2=true;
     g.addEventListener('OMEGA_RESOURCE_EXTRACTION_COMPLETED',handleExtraction);
-    g.addEventListener('OMEGA_RESOURCE_PROCESSING_COMPLETED',handleProcessing);
-    g.addEventListener('OMEGA_INDUSTRIAL_PRODUCTION_COMPLETED',handleProcessing);
+    g.addEventListener('OMEGA_RESOURCE_PROCESSING_COMPLETED',processOutputEvent);
+    g.addEventListener('OMEGA_INDUSTRIAL_PRODUCTION_COMPLETED',processOutputEvent);
     g.addEventListener('OMEGA_TRADE_SETTLEMENT_COMPLETED',handleTrade);
   }
 
   function diagnostics(){
-    var cs=countries(),ship=0,inTransit=0,delivered=0,ready=0;
-    cs.forEach(function(c){var rs=resourceState(c),bs=Array.isArray(rs.batches)?rs.batches:[],ss=Array.isArray(rs.transportShipments)?rs.transportShipments:[];ship+=ss.length;ss.forEach(function(s){if(id(s.status)==='DELIVERED')delivered++;if(id(s.status)==='IN_TRANSIT')inTransit++;});bs.forEach(function(b){if(isProcessReadyBatch(b))ready++;});});
-    return{version:VERSION,countryCount:cs.length,shipmentCount:ship,deliveredShipments:delivered,inTransitShipments:inTransit,processReadyBatches:ready,handlersReady:!!(interop()&&interop().commandHandlers),runtimeStatus:'READY'};
+    var cs=countries(),ship=0,delivered=0,inTransit=0,ready=0;
+    cs.forEach(function(c){
+      var bs=Array.isArray(resourceState(c).batches)?resourceState(c).batches:[],ss=shipmentsForCountry(c);
+      ship+=ss.length;
+      ss.forEach(function(s){if(id(s.status)==='DELIVERED')delivered++;if(id(s.status)==='IN_TRANSIT')inTransit++;});
+      bs.forEach(function(b){if(batchReadyForProcessing(c,b.batchId))ready++;});
+    });
+    return{version:VERSION,countryCount:cs.length,shipmentCount:ship,deliveredShipments:delivered,inTransitShipments:inTransit,processReadyBatches:ready,handlersReady:installHandlers(),runtimeStatus:'READY'};
   }
 
-  function onTurn(){
-    installHandlers();installEvents();
-    countries().forEach(function(c){try{prepareCountry(c);}catch(e){emit('OMEGA_RESOURCE_TRANSPORT_HEALTH',c,{status:'DEGRADED',reason:String(e&&e.message||e)},'resource-transport');}});
-  }
+  function onTurn(){installHandlers();installEvents();countries().forEach(function(c){try{prepareCountry(c);}catch(e){emit('OMEGA_RESOURCE_TRANSPORT_HEALTH',c,{status:'DEGRADED',reason:String(e&&e.message||e)},'transport');}});}
 
   var API=Object.freeze({
-    VERSION:VERSION,diagnostics,countries,prepareCountry,registerExtractionBatch,inventoryAvailableForProcessing,sellableInventory,isProcessReadyBatch,
-    getCountryTransportState:function(c){return clone(getTransportState(c));},
-    getCountryShipments:function(c){return clone(resourceState(c).transportShipments||[]);}
+    VERSION:VERSION,
+    diagnostics:diagnostics,
+    countries:countries,
+    prepareCountry:prepareCountry,
+    registerExtractionBatch:registerExtractionBatch,
+    registerOutputBatch:registerOutputBatch,
+    inventoryAvailableForProcessing:inventoryAvailableForProcessing,
+    sellableInventory:sellableInventory,
+    isProcessReadyBatch:isProcessReadyBatch,
+    isBatchProcessReady:batchReadyForProcessing,
+    getCountryTransportState:function(c){return clone(transportState(c));},
+    getCountryShipments:function(c){return clone(shipmentsForCountry(c));}
   });
+
   g.Omega=g.Omega||{};
   g.Omega.ResourceTransport=API;
   g.OmegaResourceTransport=API;
-  try{installHandlers();installEvents();g.addEventListener?.('OMEGA_SIMULATION_TURN_COMMITTED',onTurn);g.addEventListener?.('OMEGA_READY',function(){installHandlers();installEvents();});g.addEventListener?.('OMEGA_GAME_SESSION_STARTED',function(){installHandlers();installEvents();});}catch(e){g.OmegaResourceTransportError=String(e&&e.message||e);}
+
+  try{
+    installHandlers();installEvents();
+    g.addEventListener?.('OMEGA_SIMULATION_TURN_COMMITTED',onTurn);
+    g.addEventListener?.('OMEGA_READY',function(){installHandlers();installEvents();});
+    g.addEventListener?.('OMEGA_GAME_SESSION_STARTED',function(){installHandlers();installEvents();});
+  }catch(e){g.OmegaResourceTransportError=String(e&&e.message||e);}
 })(typeof window!=='undefined'?window:globalThis);
