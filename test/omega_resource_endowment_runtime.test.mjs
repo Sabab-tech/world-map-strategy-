@@ -54,6 +54,12 @@ console.log('RESOURCE_DEBUG',JSON.stringify({
   deposits:(engine.deposits||[]).filter(x=>String(x.countryCode||'').toUpperCase()==='BGD').map(x=>({name:x.name,resId:x.resId,reserves:x.reserves}))
 }));
 const before=runtime.countryResourceState('BGD');
+console.log('P5_PARSED_STATUS',JSON.stringify({
+  mineCount:before?.mines?.length||0,
+  resources:Object.keys(before?.reserves||{}),
+  gasReserve:before?.reserves?.natural_gas||0,
+  coalReserve:before?.reserves?.coal||0
+}));
 assert(before);
 assert(Array.isArray(before.mines));
 assert(before.mines.length>=2);
