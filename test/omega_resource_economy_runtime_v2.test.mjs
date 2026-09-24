@@ -201,6 +201,7 @@ test('resource economy v2 completes mine-backed processing, domestic settlement 
   assert.equal(dashboard.mines.total,1);
 
   const html=context.CountryIOS.renderChapter5_Resources('BGD');
+  console.log('HTML_DIAGNOSTIC',JSON.stringify({length:html.length,deposit:html.indexOf('DEPOSIT'),refinery:html.indexOf('REFINERY / PROCESSING LIVE FLOW'),mineRegister:html.indexOf('OPERATING MINE REGISTER'),transport:html.indexOf('RESOURCE TRANSPORTATION'),tail:html.slice(-1800)}));
   assert.match(html,/DEPOSIT/);
   assert.match(html,/TREASURY/);
   assert.match(html,/OPERATING MINE REGISTER/);
