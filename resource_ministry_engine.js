@@ -9105,7 +9105,7 @@ _globalScope.GSRSK_DataFoundation = (() => {
                                     <span style="font-size:11px; padding:2px 8px; border-radius:12px; background:rgba(34,197,94,0.2); border:1px solid #22c55e; color:#22c55e;">v14.0 ACTIVE</span>
                                 </div>
                                 <div style="font-size:11px; color:#cbd5e1; margin-top:2px;">
-                                    Sovereign Focus: <strong style="color:#ffd700;">${countryName}</strong> • Autonomy Rating: <strong style="color:#22c55e;">${summary.globalMetrics.autonomyIndex}%</strong> • Emergency Stock: <strong style="color:#00e5ff;">${summary.globalMetrics.strategicReservesTotalDays} Days</strong>
+                                    Sovereign Focus: <strong style="color:#ffd700;">${countryName}</strong> • Autonomy Rating: <strong style="color:#22c55e;">${this._formatResourcePercent(summary.globalMetrics.autonomyIndex)}</strong> • Emergency Stock: <strong style="color:#00e5ff;">${this._formatResourceNumber(summary.globalMetrics.strategicReservesTotalDays)} Days</strong>
                                 </div>
                             </div>
                         </div>
@@ -9203,8 +9203,59 @@ _globalScope.GSRSK_DataFoundation = (() => {
 
         _renderDepositsTab(countryDeposits, countryKey) {
             const allDeps = this.deposits;
+            const summary = this.getSummary(countryKey);
+            const mines = Array.isArray(summary.mineTelemetry) ? summary.mineTelemetry : [];
             return `
                 <div style="display:flex; flex-direction:column; gap:12px;">
+                    <section style="background:rgba(8,15,26,0.92); border:1px solid rgba(34,197,94,0.35); border-radius:10px; overflow:hidden;">
+                        <div style="padding:12px 14px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.08);">
+                            <div>
+                                <div style="color:#22c55e; font-size:12px; font-weight:bold; letter-spacing:.6px;">OPERATING MINE REGISTER</div>
+                                <div style="color:#94a3b8; font-size:10px; margin-top:3px;">Authoritative runtime telemetry for ${countryKey}</div>
+                            </div>
+                            <div style="color:#cbd5e1; font-size:10px;">${mines.length} runtime mine${mines.length === 1 ? '' : 's'}</div>
+                        </div>
+                        <div style="overflow-x:auto;">
+                            <table style="width:100%; border-collapse:collapse; min-width:1040px; font-size:10px;">
+                                <thead>
+                                    <tr style="background:rgba(0,0,0,0.3); color:#94a3b8; text-align:left;">
+                                        <th style="padding:9px 10px;">MINE / DEPOSIT</th>
+                                        <th style="padding:9px 10px;">RESOURCE</th>
+                                        <th style="padding:9px 10px;">STATUS</th>
+                                        <th style="padding:9px 10px;">OUTPUT / TURN</th>
+                                        <th style="padding:9px 10px;">CUMULATIVE</th>
+                                        <th style="padding:9px 10px;">RATE / DAY</th>
+                                        <th style="padding:9px 10px;">PURITY</th>
+                                        <th style="padding:9px 10px;">GRADE</th>
+                                        <th style="padding:9px 10px;">BATCH</th>
+                                        <th style="padding:9px 10px;">WAREHOUSE</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${mines.length ? mines.map(mine => `
+                                        <tr style="border-top:1px solid rgba(255,255,255,0.06); color:#cbd5e1;">
+                                            <td style="padding:9px 10px;">
+                                                <div style="color:#f8fafc; font-weight:bold;">${mine.depositName || mine.mineId || 'UNOBSERVED'}</div>
+                                                <div style="color:#64748b; margin-top:2px;">${mine.mineId || 'NO_MINE_ID'}</div>
+                                            </td>
+                                            <td style="padding:9px 10px; color:#00e5ff;">${mine.resourceId || 'UNOBSERVED'}</td>
+                                            <td style="padding:9px 10px;">${mine.status || 'UNOBSERVED'}</td>
+                                            <td style="padding:9px 10px; color:#22c55e; font-weight:bold;">${this._formatResourceNumber(mine.outputThisTurn)}</td>
+                                            <td style="padding:9px 10px;">${this._formatResourceNumber(mine.outputCumulative)}</td>
+                                            <td style="padding:9px 10px;">${this._formatResourceNumber(mine.outputRatePerDay)}</td>
+                                            <td style="padding:9px 10px;">${mine.purity === null ? 'UNOBSERVED' : this._formatResourcePercent(mine.purity * 100)}</td>
+                                            <td style="padding:9px 10px;">${mine.gradePercent === null ? 'UNOBSERVED' : this._formatResourcePercent(mine.gradePercent)}</td>
+                                            <td style="padding:9px 10px; color:#ffd700;">${mine.batchId || 'NO_BATCH_YET'}</td>
+                                            <td style="padding:9px 10px; color:#a5b4fc;">${mine.warehouseId || 'UNOBSERVED'}</td>
+                                        </tr>
+                                    `).join('') : `
+                                        <tr><td colspan="10" style="padding:18px; text-align:center; color:#64748b;">RUNTIME MINE STATE UNAVAILABLE. No hydrated mine telemetry is present for this country.</td></tr>
+                                    `}
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+
                     <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(0,0,0,0.4); padding:10px 14px; border-radius:8px; border:1px solid rgba(0,229,255,0.2);">
                         <span style="color:#00e5ff; font-size:12px; font-weight:bold;">CANONICAL GLOBAL STRATEGIC DEPOSIT CATALOG (${allDeps.length} WORLD DEPOSITS)</span>
                         <span style="color:#94a3b8; font-size:11px;">Real-World Geological Coordinates & Reserve Grades</span>
