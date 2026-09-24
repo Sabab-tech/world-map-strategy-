@@ -153,19 +153,38 @@
   }
   function occurrenceRows(c){
     const reg=g.__OmegaResourceIdentityRegistry;const e=engine();if(!reg||!e)return[];
-    const wanted=canonical(c),out=[];
+    const wanted=canonical(c),out=[],seen=new Set();
     try{
-      const occurrences=reg.getOccurrencesByCountry?.(wanted)||[];
-      for(const occ of occurrences){
+      const candidateMap=new Map();
+      const indexed=reg.getOccurrencesByCountry?.(wanted)||[];
+      indexed.forEach(function(occ){if(occ?.occurrenceKey)candidateMap.set(occ.occurrenceKey,occ);});
+
+      // Part 04 stores deposit-side country indexes using the source ISO3 while the
+      // canonical identity bridge may expose an ISO2 ID. Reconcile both through
+      // canonical(country) instead of assuming the raw index string is identical.
+      if(reg.occurrences&&typeof reg.occurrences.values==='function'){
+        for(const occ of reg.occurrences.values()){
+          if(!occ||!occ.occurrenceKey)continue;
+          const dep=reg.getDeposit?.(occ.depositKey);
+          const depCountry=canonical(dep?.hostCountryIso3||'');
+          if(depCountry===wanted)candidateMap.set(occ.occurrenceKey,occ);
+        }
+      }
+
+      for(const occ of candidateMap.values()){
         const dep=reg.getDeposit?.(occ.depositKey);if(!dep)continue;
-        const raw=(e.deposits||[]).find(x=>String(x?.name||'').trim().toUpperCase()===String(dep.depositRawName||'').trim().toUpperCase()&&id(x?.countryCode||x?.country||'')===wanted);
+        const depCountry=canonical(dep.hostCountryIso3||'');
+        if(depCountry!==wanted)continue;
+        const raw=(e.deposits||[]).find(x=>String(x?.name||'').trim().toUpperCase()===String(dep.depositRawName||'').trim().toUpperCase()&&canonical(x?.countryCode||x?.country||'')===wanted);
         const resourceId=rid(occ.resourceTypeId||occ.resourceTypeKey);
         if(!resourceId)continue;
         const reserve=g.__OmegaResourceReserveRegistry?.getReserveState?.(occ.occurrenceKey);
         const capacity=g.__OmegaResourceReserveRegistry?.getCapacityForOccurrence?.(occ.occurrenceKey);
         if(!reserve||!capacity)continue;
+        if(seen.has(occ.occurrenceKey))continue;seen.add(occ.occurrenceKey);
         out.push({
           occurrenceKey:occ.occurrenceKey,depositKey:occ.depositKey,resourceId,countryId:wanted,
+          sourceCountryIso3:dep.hostCountryIso3||null,
           depositName:dep.depositRawName,locationNodeKey:dep.locationNodeKey||occ.locationNodeKey||null,
           resourceTypeKey:occ.resourceTypeKey,reserveState:reserve,capacity,
           rawDeposit:clone(raw||null),ownerKey:occ.ownerKey||null,operatorKey:occ.operatorKey||null,
