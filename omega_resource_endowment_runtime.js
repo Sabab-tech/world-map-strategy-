@@ -19,7 +19,37 @@
   const n=v=>{const x=Number(v);return Number.isFinite(x)?x:null;};
   const state=()=>g.Game?.state||g.gameState||{};
   const registry=()=>g.OmegaCanonicalIdentityRegistry||g.OmegaCountrySemanticBridge||g.Omega?.CanonicalIdentity||null;
-  const canonical=v=>{try{const r=registry()?.resolveCountry?.(v);if(r?.id)return id(r.id);}catch(_){}return id(v);};
+  const canonical=v=>{
+    const raw=String(v??'').trim(),u=raw.toUpperCase(),e=engine(),profiles=e?.countryProfiles&&typeof e.countryProfiles==='object'?e.countryProfiles:{};
+    if(profiles[u])return u;
+    const direct=Object.entries(profiles).find(function(entry){
+      const key=String(entry[0]).toUpperCase(),p=entry[1]||{},i=p.identity||p;
+      return key===u||String(i.countryId||'').toUpperCase()===u||String(i.iso3||'').toUpperCase()===u;
+    });
+    if(direct)return String(direct[0]).toUpperCase();
+    const nameNorm=raw.normalize?.('NFKC').trim().toLowerCase();
+    if(nameNorm){
+      const matches=Object.entries(profiles).filter(function(entry){
+        const p=entry[1]||{},i=p.identity||p;
+        return [i.name,i.countryName,i.officialName,i.shortName,i.displayName].filter(Boolean).some(function(x){return String(x).normalize?.('NFKC').trim().toLowerCase()===nameNorm;});
+      });
+      if(matches.length===1)return String(matches[0][0]).toUpperCase();
+    }
+    try{
+      const r=registry()?.resolveCountry?.(v);
+      if(r?.id){
+        const resolved=id(r.id);
+        const byResolved=Object.entries(profiles).find(function(entry){
+          const i=entry[1]?.identity||entry[1]||{};
+          return String(entry[0]).toUpperCase()===resolved||String(i.countryId||'').toUpperCase()===resolved||String(i.iso3||'').toUpperCase()===resolved;
+        });
+        if(byResolved)return String(byResolved[0]).toUpperCase();
+        const byIso2=Object.entries(profiles).filter(function(entry){return String((entry[1]?.identity||entry[1]||{}).iso2||'').toUpperCase()===resolved;});
+        if(byIso2.length===1)return String(byIso2[0][0]).toUpperCase();
+      }
+    }catch(_){}
+    return u;
+  };
   const interop=()=>g.Omega?.MinistryInteroperability||g.OmegaMinistryInteroperability||null;
   const turn=()=>n(state()?.simulation?.turn??state()?.turn??state()?.simulationTurn??g.Omega?.Simulation?.clock?.turn)??0;
   const engine=()=>g.ResourceMinistryEngine||null;
