@@ -228,7 +228,11 @@
     const locationKey = clean(first(raw,['locationNodeKey','location_node_key','locationKey','location_key','regionId','region_id','siteCode','site_code'])) || null;
 
     const explicitKind = lower(first(raw,['entityType','entity_type','recordType','record_type','assetClass','asset_class']));
-    const kind = /mine|well|quarry|orebody|field/.test(explicitKind) ? 'MINE' : (/deposit|occurrence/.test(explicitKind) ? 'DEPOSIT' : (/(mine|well|quarry|field|orebody)/.test(lower(path)) ? 'MINE' : 'DEPOSIT'));
+    const hasMineId = Boolean(first(raw,['mineId','mine_id','mineID']));
+    const hasDepositId = Boolean(first(raw,['depositId','deposit_id','depositID']));
+    const kind = hasMineId || /mine|well|quarry|orebody|field/.test(explicitKind) || /(mine|well|quarry|field|orebody)/.test(lower(path))
+      ? 'MINE'
+      : (hasDepositId || /deposit|occurrence/.test(explicitKind) ? 'DEPOSIT' : 'DEPOSIT');
 
     return {
       id: recordId,
