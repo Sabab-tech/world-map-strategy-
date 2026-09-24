@@ -108,6 +108,14 @@
       "unit": "metric_tons",
       "strategicImportance": "high",
       "description": "Hematite and magnetite feed for primary steelmaking."
+    },
+    "coal": {
+      "id": "coal",
+      "name": "Coal",
+      "category": "bulk_energy",
+      "unit": "metric_tons",
+      "strategicImportance": "high",
+      "description": "Thermal and metallurgical coal feedstock for electricity generation, industrial heat, and steelmaking."
     }
   },
   "GSRSK_Master_Resource_Data_v14": {
@@ -222,6 +230,14 @@
         "unit": "metric_tons",
         "strategicImportance": "high",
         "description": "Hematite and magnetite feed for primary steelmaking."
+      },
+      "coal": {
+        "id": "coal",
+        "name": "Coal",
+        "category": "bulk_energy",
+        "unit": "metric_tons",
+        "strategicImportance": "high",
+        "description": "Thermal and metallurgical coal feedstock for electricity generation, industrial heat, and steelmaking."
       }
     },
     "processing_plants": {
