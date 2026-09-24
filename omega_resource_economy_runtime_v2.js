@@ -175,6 +175,15 @@
     while(bs.length>(num(rules().runtime.maxBatches)||8192))bs.shift();
     while(ledger.length>(num(rules().runtime.maxLedgerEntries)||2048))ledger.shift();
     var after=inventoryGaps(inv,bs);
+    warehouse.availableByResource={};warehouse.storedBatchIds=[];
+    bs.forEach(function(b){
+      var q=num(b&&b.remainingQuantity!=null?b.remainingQuantity:b&&b.quantity)||0;
+      if(q<=0)return;
+      var rid=String(b&&(b.resourceId||b.materialIdentity)||'').trim();if(!rid)return;
+      warehouse.availableByResource[rid]=(num(warehouse.availableByResource[rid])||0)+q;
+      if(b.batchId)warehouse.storedBatchIds.push(String(b.batchId));
+    });
+    warehouse.storedBatchIds=[...new Set(warehouse.storedBatchIds)];warehouse.lastReconciledTurn=turn();
     ctx.stateTransaction.set('resource.batches',bs);
     ctx.stateTransaction.set('resource.inventoryLedger',ledger);
     ctx.stateTransaction.set('resource.warehouse',warehouse);
