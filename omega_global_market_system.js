@@ -76,7 +76,13 @@
     const p=n(row?.basePrice);
     return p===null?null:{price:p,unit:row?.unit||null,source:'ResourceMinistryEngine.resourceTypes.basePrice',referenceOnly:true};
   }
-  function pushOrder(book,order){if(!order.resourceId||order.quantity<=0||order.price===null)return;const key=String(order.resourceId);if(!book[key])book[key]={bids:[],asks:[]};book[key][order.side].push(order);}
+  function pushOrder(book,order){
+    if(!order.resourceId||order.quantity<=0||order.price===null)return;
+    const side=String(order.side||'').toLowerCase();
+    if(side!=='bids'&&side!=='asks')return;
+    if(!Array.isArray(book[side]))book[side]=[];
+    book[side].push(order);
+  }
   function collectOrders(rid){
     const book={bids:[],asks:[]};
     for(const c of countries()){
