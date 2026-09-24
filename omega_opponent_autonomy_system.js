@@ -739,6 +739,14 @@
       const n=scalar(raw.value);
       if(n!==null)return{value:n,source:raw.source,path,availability:raw.availability};
     }
+    try{
+      const trade=g.Game?.state?.trade||g.gameState?.trade||{};
+      const rawId=id(countryId);
+      const bucket=trade[rawId]||trade[target]||Object.keys(trade).find(function(k){return id(k)===rawId||id(k)===target;});
+      const row=typeof bucket==='string'?null:(typeof bucket==='object'&&bucket?bucket:null);
+      const direct=scalar(row?.marketPrices?.[rid]??row?.marketPrice?.[rid]??row?.offers?.[rid]?.unitPrice??row?.offers?.[rid]?.price??row?.offerBook?.[rid]?.unitPrice??row?.offerBook?.[rid]?.price);
+      if(direct!==null)return{value:direct,source:'Game.state.trade',path:'trade.marketPrice.'+rid,availability:'AVAILABLE'};
+    }catch(_){}
     const engine=g.ResourceMinistryEngine;
     try{
       const integrated=engine?.getIntegratedResourceState?.(target);
