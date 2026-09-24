@@ -491,7 +491,14 @@
 
   function factoryInputEventHandler(cmd,ctx){
     var p=cmd&&cmd.payload||{},runtime=clone(ctx.stateTransaction.get('economy.industrialRuntime')||{}),events=Array.isArray(runtime.factoryInputEvents)?runtime.factoryInputEvents:[];
-    events.push({eventId:p.eventId||null,eventType:'OMEGA_RESOURCE_FACTORY_INPUT_AVAILABLE',countryId:canonical(ctx.countryId),extractionId:p.extractionId||null,batchId:p.batch&&p.batch.batchId||p.batchId||null,resourceId:p.resourceId||null,quantity:num(p.quantity)||0,purity:num(p.purity),gradePercent:num(p.gradePercent),warehouseId:p.warehouseId||null,simulationTurn:turn(),sourceAuthority:p.sourceAuthority||'RESOURCE_JSON'});
+    var resourceId=String(p.resourceId||p.batch&&p.batch.resourceId||'').trim();
+    var assets=Array.isArray(ctx.stateTransaction.get('economy.productionAssets'))?ctx.stateTransaction.get('economy.productionAssets'):[];
+    var candidateFactoryIds=assets.filter(function(asset){
+      var coeff=asset&&asset.inputCoefficients;
+      if(!coeff||typeof coeff!=='object'||!resourceId)return false;
+      return Object.keys(coeff).some(function(k){return tok(k)===tok(resourceId);});
+    }).map(function(asset){return String(asset.id||asset.facilityId||asset.nodeId||'').trim();}).filter(Boolean);
+    events.push({eventId:p.eventId||null,eventType:'OMEGA_RESOURCE_FACTORY_INPUT_AVAILABLE',countryId:canonical(ctx.countryId),extractionId:p.extractionId||null,batchId:p.batch&&p.batch.batchId||p.batchId||null,resourceId:resourceId,quantity:num(p.quantity)||0,purity:num(p.purity),gradePercent:num(p.gradePercent),warehouseId:p.warehouseId||null,candidateFactoryIds:candidateFactoryIds,dispatchStatus:candidateFactoryIds.length?'AVAILABLE_TO_MATCHING_FACTORIES':'NO_MATCHING_FACTORY',simulationTurn:turn(),sourceAuthority:p.sourceAuthority||'RESOURCE_JSON'});
     while(events.length>(num(rules().runtime.maxLedgerEntries)||2048))events.shift();
     runtime.factoryInputEvents=events;runtime.lastFactoryInputEventTurn=turn();
     ctx.stateTransaction.set('economy.industrialRuntime',runtime);
