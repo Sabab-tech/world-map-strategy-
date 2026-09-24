@@ -357,6 +357,13 @@
       const existingBatchIndex=batches.findIndex(function(b){return b&&b.batchId===producedBatch.batchId;});
       if(existingBatchIndex>=0)batches[existingBatchIndex]=clone(producedBatch);
       else batches.push(clone(producedBatch));
+      try{
+        if(g.OmegaResourceTransport&&typeof g.OmegaResourceTransport.registerExtractionBatch==='function'){
+          g.OmegaResourceTransport.registerExtractionBatch(c,producedBatch);
+        }
+      }catch(transportError){
+        emit('OMEGA_RESOURCE_TRANSPORT_HEALTH',c,{status:'DEGRADED',reason:String(transportError?.message||transportError),batchId:producedBatch.batchId},cmd.commandId);
+      }
       const record={
         extractionId:extractionId,
         countryId:c,simulationTurn:turn(),occurrenceKey:x.occurrenceKey,depositKey:x.depositKey,resourceId:resource,
