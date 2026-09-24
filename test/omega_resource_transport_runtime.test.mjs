@@ -50,8 +50,31 @@ function contextFor(state){
       const h=handlers.get(type);
       if(!h)return{status:'UNHANDLED',reason:'HANDLER_NOT_FOUND'};
       const tx={
-        get(path){let cur=state;for(const p of path.split('.')){if(cur==null)return undefined;cur=cur[p];}return structuredClone(cur);},
-        set(path,value){const ps=path.split('.');let cur=state;for(let i=0;i<ps.length-1;i++){if(!cur[ps[i]]||typeof cur[ps[i]]!=='object')cur[ps[i]]={};cur=cur[ps[i]];}cur[ps.at(-1)]=structuredClone(value);}
+        get(path){
+          const ps=path.split('.'),domain=ps.shift();
+          let cur=state;
+          cur=cur&&typeof cur==='object'?cur[domain]:undefined;
+          if(['resource','transport','economy','finance','trade'].includes(domain)){
+            cur=cur&&typeof cur==='object'?(cur[String(countryId).toUpperCase()]||{}):undefined;
+          }
+          for(const p of ps){if(cur==null)return undefined;cur=cur[p];}
+          return structuredClone(cur);
+        },
+        set(path,value){
+          const ps=path.split('.'),domain=ps.shift();
+          if(['resource','transport','economy','finance','trade'].includes(domain)){
+            if(!state[domain]||typeof state[domain]!=='object')state[domain]={};
+            const country=String(countryId).toUpperCase();
+            if(!state[domain][country]||typeof state[domain][country]!=='object')state[domain][country]={};
+            let cur=state[domain][country];
+            for(const p of ps.slice(0,-1)){if(!cur[p]||typeof cur[p]!=='object')cur[p]={};cur=cur[p];}
+            cur[ps.at(-1)]=structuredClone(value);
+            return;
+          }
+          let cur=state;
+          for(const p of ps.slice(0,-1)){if(!cur[p]||typeof cur[p]!=='object')cur[p]={};cur=cur[p];}
+          cur[ps.at(-1)]=structuredClone(value);
+        }
       };
       const result=h.handler({commandId:'TEST-'+type,commandType:type,payload},{countryId:String(countryId).toUpperCase(),stateTransaction:tx});
       return{status:result?.accepted===false?'FAILED':'APPLIED',result};
