@@ -377,8 +377,10 @@
     const p=cmd?.payload||{},rid=String(p.resourceId||'').trim(),q=n(p.quantity),shipmentId=String(p.shipmentId||'').trim(),destinationNodeId=String(p.destinationNodeId||('STOCKPILE:'+canonical(ctx.countryId))),facilityId=p.targetFacilityId?String(p.targetFacilityId):null;
     if(!rid||q===null||q<=0||!shipmentId)return{accepted:false,reason:'TRANSPORT_DELIVERY_INPUT_INVALID'};
     const inv=clone(ctx.stateTransaction.get('resource.inventory')||{}),key=Object.prototype.hasOwnProperty.call(inv,rid)?rid:(Object.keys(inv).find(k=>String(k).toLowerCase()===rid.toLowerCase())||rid);
-    inv[key]=(n(inv[key])||0)+q;
     const batches=Array.isArray(ctx.stateTransaction.get('resource.batches'))?clone(ctx.stateTransaction.get('resource.batches')):[];
+    const batchId='TRANSIT-'+shipmentId;
+    if(batches.some(function(b){return String(b&&b.batchId)===batchId;}))return{accepted:true,duplicate:true,shipmentId,batchId};
+    inv[key]=(n(inv[key])||0)+q;
     const batchId='TRANSIT-'+shipmentId;
     if(!batches.some(b=>String(b?.batchId)===batchId)){
       batches.push({
