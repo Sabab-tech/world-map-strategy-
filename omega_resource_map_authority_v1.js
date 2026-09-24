@@ -96,6 +96,30 @@
     }
     return'MEDIUM';
   }
+  function syncCatalog(){
+    var M=g.Game&&g.Game.Map;
+    if(!M)return;
+    var existing=Array.isArray(M.resourceCatalog)?M.resourceCatalog:[];
+    var byId={};
+    existing.forEach(function(x){if(x&&x.id)byId[tok(x.id)]=clone(x);});
+    var e=g.ResourceMinistryEngine;
+    (Array.isArray(e&&e.resourceTypes)?e.resourceTypes:[]).forEach(function(x){
+      if(!x||!x.id)return;
+      var k=tok(x.id),old=byId[k]||{};
+      byId[k]=Object.assign({},old,{id:String(x.id),name:x.name||old.name||String(x.id).replace(/_/g,' '),icon:x.icon||old.icon||'⛏',color:x.color||old.color||'#38bdf8',unit:x.unit||old.unit||null});
+    });
+    var rs=state();
+    if(rs&&rs.resource&&typeof rs.resource==='object')Object.keys(rs.resource).forEach(function(c){
+      var r=rs.resource[c]||{};
+      Object.keys(r.inventory||{}).concat(Object.keys(r.production||{})).forEach(function(rid){
+        var k=tok(rid);if(!byId[k])byId[k]={id:rid,name:String(rid).replace(/_/g,' '),icon:'⛏',color:'#38bdf8'};
+      });
+    });
+    M.resourceCatalog=Object.keys(byId).sort().map(function(k){return byId[k];});
+  }
+
+  function state(){return g.Game&&g.Game.state?g.Game.state:(g.gameState||{});}
+
   function selectedResources(){
     var s=g.Game&&g.Game.Map&&g.Game.Map.resourceState;
     var set=s&&s.selectedResources instanceof Set?s.selectedResources:new Set();
@@ -194,6 +218,7 @@
 
   function render(){
     var GameObj=g.Game;if(!GameObj||!GameObj.Map||!g.L)return;
+    syncCatalog();
     var M=GameObj.Map;M.map=M.map||g.map;if(!M.map)return;
     if(!M.resourceDepositsLayer)M.resourceDepositsLayer=g.L.layerGroup().addTo(M.map);
     M.resourceDepositsLayer.clearLayers();
