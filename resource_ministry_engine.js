@@ -8524,6 +8524,12 @@ _globalScope.GSRSK_DataFoundation = (() => {
     /**
      * Unified Autonomous Resource Ministry Engine
      */
+    function rootSimulationTurn(globalObject) {
+        const root = globalObject?.Game?.state || globalObject?.gameState || {};
+        const n = Number(root?.simulation?.turn ?? root?.turn ?? root?.simulationTurn);
+        return Number.isFinite(n) ? n : 0;
+    }
+
     class AutonomousResourceMinistryEngine {
         constructor() {
             this.resourceTypes = [];
@@ -8605,15 +8611,41 @@ _globalScope.GSRSK_DataFoundation = (() => {
                         this._mergeRuntimeDeposits(data.runtime_deposits || data.resource_deposits || data.deposits || [], entry.name);
                     }
 
+                    const primary = entries.find(entry => entry.name === 'resources.json');
+                    const primaryProfiles = primary?.data?.GSRSK_Master_CountryProfiles_v14?.countryProfiles
+                        || primary?.data?.countryProfiles
+                        || {};
+                    const primaryTypes = primary?.data?.resource_types
+                        || primary?.data?.GSRSK_Master_Resource_Data_v14?.resource_types
+                        || {};
+                    const primaryDeposits = primary?.data?.runtime_deposits
+                        || primary?.data?.resource_deposits
+                        || primary?.data?.deposits
+                        || [];
+
                     this.dataLoadReport.resourceTypeCount = this.resourceTypes.length;
                     this.dataLoadReport.depositCount = this.deposits.length;
                     this.dataLoadReport.countryProfileCount = Object.keys(this.countryProfiles).length;
+                    this.dataLoadReport.primaryDataset = {
+                        name: 'resources.json',
+                        status: primary?.data ? 'VALIDATING' : 'MISSING',
+                        countryProfileCount: Object.keys(primaryProfiles).length,
+                        resourceTypeCount: Object.keys(primaryTypes).length,
+                        runtimeDepositCount: Array.isArray(primaryDeposits) ? primaryDeposits.length : 0
+                    };
+
+                    if (!primary?.data) throw new Error('RESOURCE_JSON_PRIMARY_DATASET_MISSING');
+                    if (Object.keys(primaryProfiles).length === 0) throw new Error('RESOURCE_JSON_PRIMARY_COUNTRY_PROFILES_MISSING');
+                    if (Object.keys(primaryTypes).length === 0) throw new Error('RESOURCE_JSON_PRIMARY_RESOURCE_TYPES_MISSING');
+                    if (!Array.isArray(primaryDeposits) || primaryDeposits.length === 0) throw new Error('RESOURCE_JSON_PRIMARY_RUNTIME_DEPOSITS_MISSING');
                     if (this.resourceTypes.length === 0) throw new Error('RESOURCE_JSON_NO_RESOURCE_TYPES');
                     if (this.deposits.length === 0) throw new Error('RESOURCE_JSON_NO_RUNTIME_DEPOSITS');
                     if (Object.keys(this.countryProfiles).length === 0) throw new Error('RESOURCE_JSON_NO_COUNTRY_PROFILES');
 
                     const failedDatasets = entries.filter(x => !x.data).length;
-                    this.dataLoadReport.status = failedDatasets ? 'DEGRADED' : 'READY';
+                    if (failedDatasets) throw new Error('RESOURCE_JSON_SECONDARY_DATASET_LOAD_FAILED:' + failedDatasets);
+                    this.dataLoadReport.primaryDataset.status = 'READY';
+                    this.dataLoadReport.status = 'READY';
                     if (global.GSRSK_MasterEngine && typeof global.GSRSK_MasterEngine.bootstrap === 'function') {
                         global.GSRSK_MasterEngine.bootstrap({
                             countries: Object.keys(this.countryProfiles),
@@ -8716,26 +8748,26 @@ _globalScope.GSRSK_DataFoundation = (() => {
         }
 
         _mergeResourceTypes(typesObj) {
-            if (!typesObj) return;
-            const existingIds = new Set(this.resourceTypes.map(r => r.id));
+            if (!typesObj || typeof typesObj !== 'object') return;
+            const existingIds = new Set(this.resourceTypes.map(r => String(r.id)));
             Object.keys(typesObj).forEach(k => {
-                if (!existingIds.has(k)) {
-                    const t = typesObj[k];
-                    this.resourceTypes.push({
-                        id: k,
-                        name: t.name || k.replace(/_/g, ' ').toUpperCase(),
-                        bnName: t.bnName || k,
-                        icon: t.icon || '💎',
-                        category: t.category || 'strategic_minerals',
-                        color: t.color || '#00e5ff',
-                        unit: t.unit || 'TONS',
-                        basePrice: t.basePrice || 1000,
-                        dailyOutput: t.dailyOutput || 5000,
-                        dailyDemand: t.dailyDemand || 4500,
-                        strategicImportance: t.strategicImportance || 'high',
-                        processChain: t.description || 'Extraction ➔ Refining ➔ National Stockpile'
-                    });
-                }
+                if (existingIds.has(String(k))) return;
+                const t = typesObj[k] && typeof typesObj[k] === 'object' ? typesObj[k] : {};
+                this.resourceTypes.push({
+                    id: String(k),
+                    name: t.name || String(k).replace(/_/g, ' ').toUpperCase(),
+                    bnName: t.bnName ?? String(k),
+                    icon: t.icon ?? null,
+                    category: t.category ?? 'UNOBSERVED',
+                    color: t.color ?? null,
+                    unit: t.unit ?? null,
+                    basePrice: Number.isFinite(Number(t.basePrice)) ? Number(t.basePrice) : null,
+                    dailyOutput: Number.isFinite(Number(t.dailyOutput)) ? Number(t.dailyOutput) : null,
+                    dailyDemand: Number.isFinite(Number(t.dailyDemand)) ? Number(t.dailyDemand) : null,
+                    strategicImportance: t.strategicImportance ?? null,
+                    processChain: t.processChain ?? t.description ?? null,
+                    dataAuthority: 'RESOURCE_JSON'
+                });
             });
         }
 
@@ -8839,171 +8871,199 @@ _globalScope.GSRSK_DataFoundation = (() => {
         }
 
         getSummary(countryKey) {
-            const activeIso = this.normalizeCountryCode(countryKey || (typeof window !== 'undefined' && window.currentActiveCountry) || 'BGD');
-            const countryProf = this.getCountryResourceProfile(activeIso);
-            const countryName = countryProf?.identity?.name || activeIso;
+            const activeIso = this.normalizeCountryCode(
+                countryKey || (typeof window !== 'undefined' && window.currentActiveCountry) || 'BGD'
+            );
+            const root = global.Game?.state || global.gameState || {};
+            const state = root.resource?.[activeIso] && typeof root.resource[activeIso] === 'object'
+                ? root.resource[activeIso]
+                : {};
+            const profile = this.getCountryResourceProfile(activeIso);
+            const deposits = this.getDepositsForCountry(activeIso);
+            const inventory = state.inventory && typeof state.inventory === 'object' ? state.inventory : {};
+            const production = state.production && typeof state.production === 'object' ? state.production : {};
+            const consumption = state.consumption && typeof state.consumption === 'object' ? state.consumption : {};
+            const reserves = state.reserves && typeof state.reserves === 'object' ? state.reserves : {};
+            const warehouse = state.warehouse && typeof state.warehouse === 'object' ? state.warehouse : {};
+            const warehouseStock = warehouse.availableByResource && typeof warehouse.availableByResource === 'object'
+                ? warehouse.availableByResource
+                : {};
+            const mines = Array.isArray(state.mines) ? state.mines : [];
+            const batches = Array.isArray(state.batches) ? state.batches : [];
+            const mineOutputs = state.mineOutputs && typeof state.mineOutputs === 'object' ? state.mineOutputs : {};
+            const mineOutputTotals = state.mineOutputTotals && typeof state.mineOutputTotals === 'object'
+                ? state.mineOutputTotals
+                : {};
+            const mineProductionLedger = Array.isArray(state.mineProductionLedger)
+                ? state.mineProductionLedger.slice(-64)
+                : [];
 
-            // Generate 17 commodities status with active multipliers
-            const resourcesList = this.resourceTypes.map(res => {
-                const upgradeMul = this.facilityUpgrades[res.id] || 1.0;
-                const bonusSPR = this.strategicReserves[res.id] || 0;
-                const prod = Math.round(res.dailyOutput * upgradeMul);
-                const demand = res.dailyDemand;
-                const net = prod - demand;
-                const selfSuff = Math.min(250, Math.round((prod / (demand || 1)) * 100));
-                const stockDays = Math.max(15, Math.round((bonusSPR + (prod * 45)) / (demand || 1)));
-                const warehouseStock = Math.round(bonusSPR + (prod * 60));
-                const activeFac = Math.round(3 + (upgradeMul * 4));
+            const toNumber = value => {
+                const n = Number(value);
+                return Number.isFinite(n) ? n : null;
+            };
+            const resourceIds = new Set(this.resourceTypes.map(r => String(r.id)));
+            [
+                ...Object.keys(production),
+                ...Object.keys(consumption),
+                ...Object.keys(inventory),
+                ...Object.keys(reserves),
+                ...Object.keys(warehouseStock),
+                ...deposits.map(d => String(d.resId || '').trim()).filter(Boolean)
+            ].forEach(id => resourceIds.add(id));
+
+            const resourcesList = [...resourceIds].map(id => {
+                const res = this.resourceTypes.find(x => String(x.id) === id) || {};
+                const output = toNumber(production[id]);
+                const demand = toNumber(consumption[id]);
+                const stock = toNumber(
+                    Object.prototype.hasOwnProperty.call(warehouseStock, id)
+                        ? warehouseStock[id]
+                        : inventory[id]
+                );
+                const reserve = toNumber(reserves[id]);
+                const net = output !== null && demand !== null ? output - demand : null;
+                const selfSufficiency = output !== null && demand !== null && demand > 0
+                    ? Math.round((output / demand) * 100)
+                    : null;
+                const stockDays = stock !== null && demand !== null && demand > 0
+                    ? stock / demand
+                    : null;
+                const facilityAssets = Array.isArray(root.economy?.[activeIso]?.productionAssets)
+                    ? root.economy[activeIso].productionAssets.filter(asset => {
+                        const inputs = asset?.inputCoefficients;
+                        const outputs = asset?.outputProfile || asset?.outputCoefficients;
+                        return Object.keys(inputs || {}).some(k => String(k) === id) ||
+                            Object.keys(outputs || {}).some(k => String(k) === id);
+                    }).length
+                    : null;
 
                 return {
-                    id: res.id,
-                    name: res.name,
-                    bnName: res.bnName,
-                    icon: res.icon,
-                    category: res.category,
-                    color: res.color,
-                    unit: res.unit,
-                    basePrice: res.basePrice,
-                    dailyProduction: prod,
+                    id,
+                    name: res.name || id.replace(/_/g, ' ').toUpperCase(),
+                    bnName: res.bnName ?? null,
+                    icon: res.icon ?? null,
+                    category: res.category ?? null,
+                    color: res.color ?? null,
+                    unit: res.unit ?? null,
+                    basePrice: toNumber(res.basePrice),
+                    dailyProduction: output,
                     dailyConsumption: demand,
                     netBalance: net,
-                    selfSufficiencyRatio: selfSuff,
-                    stockDays: stockDays,
-                    activeFacilities: activeFac,
-                    warehouseStock: warehouseStock,
-                    processChain: res.processChain
+                    selfSufficiencyRatio: selfSufficiency,
+                    stockDays,
+                    activeFacilities: facilityAssets,
+                    warehouseStock: stock,
+                    reserveBalance: reserve,
+                    processChain: res.processChain ?? null,
+                    availability: output !== null || demand !== null || stock !== null || reserve !== null
+                        ? 'AVAILABLE'
+                        : 'UNOBSERVED',
+                    sourceAuthority: 'RESOURCE_JSON'
                 };
             });
 
-            // Global Metrics
-            const totalStockDays = Math.round(resourcesList.reduce((acc, r) => acc + r.stockDays, 0) / resourcesList.length);
-            const avgSufficiency = Math.round(resourcesList.reduce((acc, r) => acc + r.selfSufficiencyRatio, 0) / resourcesList.length);
-            const activeSurveysList = Array.from(this.activeSurveys);
+            const mineTelemetry = mines.map(mine => {
+                const latest = mineOutputs[mine.occurrenceKey] || {};
+                const totals = mineOutputTotals[mine.occurrenceKey] || {};
+                return {
+                    mineId: mine.occurrenceKey,
+                    depositKey: mine.depositKey || null,
+                    depositName: mine.depositName || mine.occurrenceKey || null,
+                    resourceId: mine.resourceId || null,
+                    status: latest.status || mine.operationalStatus || 'UNOBSERVED',
+                    outputThisTurn: toNumber(latest.producedQuantity) ?? 0,
+                    outputCumulative: toNumber(latest.outputCumulative ?? totals.cumulativeQuantity) ?? 0,
+                    outputRatePerDay: toNumber(mine.outputRatePerDay),
+                    purity: toNumber(latest.purity ?? mine.purity),
+                    gradePercent: toNumber(latest.grade ?? mine.gradePercent),
+                    qualityState: latest.qualityState || mine.qualityState || null,
+                    batchId: latest.batchId || mine.lastBatchId || null,
+                    warehouseId: latest.warehouseId || mine.warehouseId || warehouse.warehouseId || null,
+                    reserveRemaining: toNumber(latest.residualQuantity ?? mine.residualQuantity),
+                    sourceDatasetId: mine.sourceDatasetId || latest.sourceDatasetId || null
+                };
+            });
 
-            const globalMetrics = {
-                autonomyIndex: avgSufficiency,
-                strategicReservesTotalDays: totalStockDays,
-                activeFacilitiesTotal: resourcesList.reduce((acc, r) => acc + r.activeFacilities, 0),
-                surveysUnderway: activeSurveysList.map(id => {
-                    const r = this.resourceTypes.find(x => x.id === id) || { name: id, icon: '⛏️' };
-                    return { id, name: r.name, icon: r.icon, progress: 68, yieldPotential: 'High (+18.4%)' };
-                })
-            };
-
-            const briefing = `Sovereign resource grid for ${countryName} is operating in full geopolitical equilibrium. 17 strategic commodities are monitored with continuous multi-facility SCADA telemetry. Strategic Autonomy Index is ${avgSufficiency}% with ${totalStockDays} days of aggregate sovereign emergency reserves.`;
-
-            const debates = [
-                {
-                    id: 'deb-lng-expansion',
-                    avatar: '🛢️',
-                    speaker: 'Dr. Tariqul Islam',
-                    role: 'Secretary of Energy & Hydrocarbons',
-                    text: `We recommend authorizing a $500M Sovereign Expansion into deepwater LNG liquefaction and offshore gas storage to guarantee continuous baseload grid power during winter peak demand.`,
-                    options: [
-                        { label: '✅ AUTHORIZE DECREE (+$25M/s Gas)', action: 'expand_gas' },
-                        { label: '❌ POSTPONE FOR SPR BUFFER', action: 'buffer_spr' }
-                    ]
-                },
-                {
-                    id: 'deb-critical-lithium',
-                    avatar: '🔋',
-                    speaker: 'Engr. Sarah Chen',
-                    role: 'Chief of Critical Minerals Council',
-                    text: `Global lithium and rare earth markets face escalating trade friction. Fast-tracking domestic geological survey radar will uncover local pegmatite and heavy mineral sand reserves.`,
-                    options: [
-                        { label: '⛏️ LAUNCH NATIONAL SURVEY', action: 'survey_lithium' },
-                        { label: '🤝 SIGN IMPORT TREATY', action: 'treaty_lithium' }
-                    ]
-                },
-                {
-                    id: 'deb-grain-mandate',
-                    avatar: '🌾',
-                    speaker: 'Director Mahmudur Rahman',
-                    role: 'Food & Strategic Grain Reserve Board',
-                    text: `Enforcing a 100% Hermetic Food Grain Mandate across national silos will insulate the population from trans-boundary fertilizer and wheat inflation shocks.`,
-                    options: [
-                        { label: '📦 ENFORCE GRAIN MANDATE', action: 'mandate_grain' },
-                        { label: '💵 ALLOCATE AGRI SUBSIDY', action: 'subsidy_agri' }
-                    ]
-                }
-            ];
+            const countryName = profile?.identity?.name || activeIso;
+            const observedMineCount = mines.length;
+            const observedProductionEntries = resourcesList.filter(r => r.dailyProduction !== null).length;
+            const authority = state.resourceAuthority?.source || 'RESOURCE_JSON';
+            const dataStatus = this.dataLoadReport?.status || 'NOT_LOADED';
 
             return {
-                briefing,
-                globalMetrics,
+                briefing:
+                    'Authoritative resource runtime for ' + countryName +
+                    ': ' + observedMineCount + ' mine/deposit records, ' +
+                    observedProductionEntries + ' observed production series, and data status ' +
+                    dataStatus + '. Values marked UNOBSERVED are not replaced with fabricated zeroes.',
+                globalMetrics: {
+                    autonomyIndex: null,
+                    strategicReservesTotalDays: null,
+                    activeFacilitiesTotal: null,
+                    surveysUnderway: []
+                },
                 resourcesList,
-                debates
+                mineTelemetry,
+                inventory,
+                warehouse,
+                batches: batches.slice(-64),
+                production,
+                consumption,
+                reserves,
+                deposits: deposits.slice(),
+                resourceAuthority: authority,
+                dataStatus,
+                debates: []
             };
         }
 
         executeDirective(action, resId, opt) {
-            const resObj = this.resourceTypes.find(r => r.id === resId) || { name: resId, icon: '💎' };
-            const countryName = (typeof window !== 'undefined' && window.currentActiveCountry) || 'BANGLADESH';
+            const resObj = this.resourceTypes.find(r => String(r.id) === String(resId)) || { name: String(resId || ''), icon: null };
+            const countryName = (typeof window !== 'undefined' && window.currentActiveCountry) || 'BGD';
+            const countryId = this.normalizeCountryCode(countryName);
+            const eventMap = {
+                survey: 'OMEGA_RESOURCE_SURVEY_REQUESTED',
+                expand_facility: 'OMEGA_RESOURCE_FACILITY_EXPANSION_REQUESTED',
+                add_reserve: 'OMEGA_RESOURCE_STRATEGIC_RESERVE_REQUESTED',
+                cabinet_vote: 'OMEGA_RESOURCE_POLICY_REQUESTED'
+            };
 
-            if (action === 'survey') {
-                this.activeSurveys.add(resId);
-                if (typeof window !== 'undefined' && window.showOmegaNotification) {
-                    window.showOmegaNotification('⛏️ GEOLOGICAL SURVEY DISPATCHED', `Autonomous deep-earth exploration initiated for ${resObj.name}! Discovered reserve confidence increased.`, 'success');
-                }
-            } else if (action === 'expand_facility') {
-                const cur = this.facilityUpgrades[resId] || 1.0;
-                this.facilityUpgrades[resId] = +(cur + 0.25).toFixed(2);
-
-                if (typeof window !== 'undefined') {
-                    if (window.resources && window.resources.cash) {
-                        window.resources.cash = Math.max(0, window.resources.cash - 10000000);
-                    }
-                    if (window.resourceRates) {
-                        if (resId === 'crude_oil') window.resourceRates.oil += 250;
-                        if (resId === 'iron_ore') window.resourceRates.steel += 150;
-                        if (resId === 'uranium') window.resourceRates.uranium += 5;
-                    }
-                    if (window.showOmegaNotification) {
-                        window.showOmegaNotification('🏭 FACILITY EXPANSION AUTHORIZED', `Industrial processing throughput for ${resObj.name} boosted to ${(this.facilityUpgrades[resId] * 100)}%!`, 'success');
-                    }
-                }
-            } else if (action === 'add_reserve') {
-                const cur = this.strategicReserves[resId] || 0;
-                this.strategicReserves[resId] = cur + 50000;
-
-                if (typeof window !== 'undefined') {
-                    if (window.resources) {
-                        if (resId === 'crude_oil') window.resources.oil += 50000;
-                        if (resId === 'iron_ore') window.resources.steel += 20000;
-                        if (resId === 'uranium') window.resources.uranium += 100;
-                    }
-                    if (window.showOmegaNotification) {
-                        window.showOmegaNotification('📦 STRATEGIC RESERVE STOCKPILED', `+50,000 units of ${resObj.name} transferred to sovereign emergency bunkers!`, 'success');
-                    }
-                }
-            } else if (action === 'focus_map') {
-                if (typeof window !== 'undefined' && window.Game && window.Game.Map) {
+            if (action === 'focus_map') {
+                if (typeof window !== 'undefined' && window.Game?.Map) {
                     if (typeof window.Game.Map.activateResourceMode === 'function') {
                         window.Game.Map.activateResourceMode([resId]);
                     } else if (typeof window.Game.Map.applyResourceMapFilter === 'function') {
                         window.Game.Map.applyResourceMapFilter(resId);
                     }
-                    if (window.showOmegaNotification) {
-                        window.showOmegaNotification('🗺️ MAP SENSORS ENGAGED', `World map targeted on global ${resObj.name} deposits and logistic corridors!`, 'info');
-                    }
                 }
-            } else if (action === 'cabinet_vote') {
-                this.cabinetVotes[resId] = opt;
-                if (typeof window !== 'undefined') {
-                    if (window.resources && window.resourceRates) {
-                        window.resourceRates.cash += 1000;
-                    }
-                    if (window.showOmegaNotification) {
-                        window.showOmegaNotification('🏛️ EXECUTIVE DECREE ENACTED', `Cabinet policy decree for ${resId} successfully passed into law!`, 'success');
-                    }
+            } else {
+                const eventType = eventMap[action] || 'OMEGA_RESOURCE_DIRECTIVE_REQUESTED';
+                const detail = {
+                    action,
+                    resourceId: resId,
+                    resourceName: resObj.name,
+                    countryId,
+                    option: opt ?? null,
+                    simulationTurn: Number(
+                        rootSimulationTurn(global) ?? 0
+                    ),
+                    sourceAuthority: 'RESOURCE_MINISTRY_ENGINE'
+                };
+                if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
+                    try {
+                        window.dispatchEvent(new CustomEvent(eventType, { detail }));
+                        window.dispatchEvent(new CustomEvent('RESOURCE_STATE_UPDATED', { detail }));
+                    } catch (_) {}
                 }
             }
-
-            // Fire reactive event
-            if (typeof window !== 'undefined') {
-                window.dispatchEvent(new CustomEvent('RESOURCE_STATE_UPDATED', { detail: { action, resId, opt } }));
-                window.dispatchEvent(new CustomEvent('MINISTRY_STATE_CHANGED', { detail: { ministryId: 'economy' } }));
-            }
+            return {
+                accepted: true,
+                action,
+                resourceId: resId,
+                countryId,
+                effect: action === 'focus_map' ? 'MAP_FOCUS' : 'EVENT_REQUESTED'
+            };
         }
 
         openModal(countryKey) {
@@ -9045,7 +9105,7 @@ _globalScope.GSRSK_DataFoundation = (() => {
                                     <span style="font-size:11px; padding:2px 8px; border-radius:12px; background:rgba(34,197,94,0.2); border:1px solid #22c55e; color:#22c55e;">v14.0 ACTIVE</span>
                                 </div>
                                 <div style="font-size:11px; color:#cbd5e1; margin-top:2px;">
-                                    Sovereign Focus: <strong style="color:#ffd700;">${countryName}</strong> • Autonomy Rating: <strong style="color:#22c55e;">${summary.globalMetrics.autonomyIndex}%</strong> • Emergency Stock: <strong style="color:#00e5ff;">${summary.globalMetrics.strategicReservesTotalDays} Days</strong>
+                                    Sovereign Focus: <strong style="color:#ffd700;">${countryName}</strong> • Autonomy Rating: <strong style="color:#22c55e;">${this._formatResourcePercent(summary.globalMetrics.autonomyIndex)}</strong> • Emergency Stock: <strong style="color:#00e5ff;">${this._formatResourceNumber(summary.globalMetrics.strategicReservesTotalDays)} Days</strong>
                                 </div>
                             </div>
                         </div>
@@ -9077,6 +9137,16 @@ _globalScope.GSRSK_DataFoundation = (() => {
             `;
         }
 
+        _formatResourceNumber(value) {
+            const n = Number(value);
+            return Number.isFinite(n) ? n.toLocaleString() : 'UNOBSERVED';
+        }
+
+        _formatResourcePercent(value) {
+            const n = Number(value);
+            return Number.isFinite(n) ? n.toFixed(1) + '%' : 'UNOBSERVED';
+        }
+
         _renderMatrixTab(summary, countryKey) {
             return `
                 <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:12px;">
@@ -9097,18 +9167,18 @@ _globalScope.GSRSK_DataFoundation = (() => {
                             <div>
                                 <div style="display:flex; justify-content:space-between; font-size:10px; margin-bottom:3px;">
                                     <span style="color:#94a3b8;">Self-Sufficiency:</span>
-                                    <strong style="color:${r.selfSufficiencyRatio >= 100 ? '#22c55e' : '#ffd700'};">${r.selfSufficiencyRatio}%</strong>
+                                    <strong style="color:${r.selfSufficiencyRatio >= 100 ? '#22c55e' : '#ffd700'};">${this._formatResourcePercent(r.selfSufficiencyRatio)}</strong>
                                 </div>
                                 <div style="width:100%; height:6px; background:rgba(255,255,255,0.1); border-radius:3px; overflow:hidden;">
-                                    <div style="width:${Math.min(100, r.selfSufficiencyRatio)}%; height:100%; background:${r.selfSufficiencyRatio >= 100 ? '#22c55e' : '#ffd700'};"></div>
+                                    <div style="width:${Math.min(100, Number.isFinite(r.selfSufficiencyRatio) ? r.selfSufficiencyRatio : 0)}%; height:100%; background:${r.selfSufficiencyRatio >= 100 ? '#22c55e' : '#ffd700'};"></div>
                                 </div>
                             </div>
 
                             <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; font-size:10px; background:rgba(0,0,0,0.3); padding:6px 8px; border-radius:6px;">
-                                <div>Output: <strong style="color:#22c55e;">+${r.dailyProduction.toLocaleString()}</strong></div>
-                                <div>Demand: <strong style="color:#f87171;">-${r.dailyConsumption.toLocaleString()}</strong></div>
-                                <div>Net: <strong style="color:${r.netBalance >= 0 ? '#22c55e' : '#f87171'};">${r.netBalance >= 0 ? '+' : ''}${r.netBalance.toLocaleString()}</strong></div>
-                                <div>Stock Days: <strong style="color:#ffd700;">${r.stockDays} D</strong></div>
+                                <div>Output: <strong style="color:#22c55e;">+${this._formatResourceNumber(r.dailyProduction)}</strong></div>
+                                <div>Demand: <strong style="color:#f87171;">-${this._formatResourceNumber(r.dailyConsumption)}</strong></div>
+                                <div>Net: <strong style="color:${r.netBalance >= 0 ? '#22c55e' : '#f87171'};">${r.netBalance >= 0 ? '+' : ''}${this._formatResourceNumber(r.netBalance)}</strong></div>
+                                <div>Stock Days: <strong style="color:#ffd700;">${this._formatResourceNumber(r.stockDays)} D</strong></div>
                             </div>
 
                             <div style="display:grid; grid-template-columns:1fr 1fr; gap:4px; margin-top:2px;">
@@ -9133,8 +9203,59 @@ _globalScope.GSRSK_DataFoundation = (() => {
 
         _renderDepositsTab(countryDeposits, countryKey) {
             const allDeps = this.deposits;
+            const summary = this.getSummary(countryKey);
+            const mines = Array.isArray(summary.mineTelemetry) ? summary.mineTelemetry : [];
             return `
                 <div style="display:flex; flex-direction:column; gap:12px;">
+                    <section style="background:rgba(8,15,26,0.92); border:1px solid rgba(34,197,94,0.35); border-radius:10px; overflow:hidden;">
+                        <div style="padding:12px 14px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.08);">
+                            <div>
+                                <div style="color:#22c55e; font-size:12px; font-weight:bold; letter-spacing:.6px;">OPERATING MINE REGISTER</div>
+                                <div style="color:#94a3b8; font-size:10px; margin-top:3px;">Authoritative runtime telemetry for ${countryKey}</div>
+                            </div>
+                            <div style="color:#cbd5e1; font-size:10px;">${mines.length} runtime mine${mines.length === 1 ? '' : 's'}</div>
+                        </div>
+                        <div style="overflow-x:auto;">
+                            <table style="width:100%; border-collapse:collapse; min-width:1040px; font-size:10px;">
+                                <thead>
+                                    <tr style="background:rgba(0,0,0,0.3); color:#94a3b8; text-align:left;">
+                                        <th style="padding:9px 10px;">MINE / DEPOSIT</th>
+                                        <th style="padding:9px 10px;">RESOURCE</th>
+                                        <th style="padding:9px 10px;">STATUS</th>
+                                        <th style="padding:9px 10px;">OUTPUT / TURN</th>
+                                        <th style="padding:9px 10px;">CUMULATIVE</th>
+                                        <th style="padding:9px 10px;">RATE / DAY</th>
+                                        <th style="padding:9px 10px;">PURITY</th>
+                                        <th style="padding:9px 10px;">GRADE</th>
+                                        <th style="padding:9px 10px;">BATCH</th>
+                                        <th style="padding:9px 10px;">WAREHOUSE</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${mines.length ? mines.map(mine => `
+                                        <tr style="border-top:1px solid rgba(255,255,255,0.06); color:#cbd5e1;">
+                                            <td style="padding:9px 10px;">
+                                                <div style="color:#f8fafc; font-weight:bold;">${mine.depositName || mine.mineId || 'UNOBSERVED'}</div>
+                                                <div style="color:#64748b; margin-top:2px;">${mine.mineId || 'NO_MINE_ID'}</div>
+                                            </td>
+                                            <td style="padding:9px 10px; color:#00e5ff;">${mine.resourceId || 'UNOBSERVED'}</td>
+                                            <td style="padding:9px 10px;">${mine.status || 'UNOBSERVED'}</td>
+                                            <td style="padding:9px 10px; color:#22c55e; font-weight:bold;">${this._formatResourceNumber(mine.outputThisTurn)}</td>
+                                            <td style="padding:9px 10px;">${this._formatResourceNumber(mine.outputCumulative)}</td>
+                                            <td style="padding:9px 10px;">${this._formatResourceNumber(mine.outputRatePerDay)}</td>
+                                            <td style="padding:9px 10px;">${mine.purity === null ? 'UNOBSERVED' : this._formatResourcePercent(mine.purity * 100)}</td>
+                                            <td style="padding:9px 10px;">${mine.gradePercent === null ? 'UNOBSERVED' : this._formatResourcePercent(mine.gradePercent)}</td>
+                                            <td style="padding:9px 10px; color:#ffd700;">${mine.batchId || 'NO_BATCH_YET'}</td>
+                                            <td style="padding:9px 10px; color:#a5b4fc;">${mine.warehouseId || 'UNOBSERVED'}</td>
+                                        </tr>
+                                    `).join('') : `
+                                        <tr><td colspan="10" style="padding:18px; text-align:center; color:#64748b;">RUNTIME MINE STATE UNAVAILABLE. No hydrated mine telemetry is present for this country.</td></tr>
+                                    `}
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+
                     <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(0,0,0,0.4); padding:10px 14px; border-radius:8px; border:1px solid rgba(0,229,255,0.2);">
                         <span style="color:#00e5ff; font-size:12px; font-weight:bold;">CANONICAL GLOBAL STRATEGIC DEPOSIT CATALOG (${allDeps.length} WORLD DEPOSITS)</span>
                         <span style="color:#94a3b8; font-size:11px;">Real-World Geological Coordinates & Reserve Grades</span>

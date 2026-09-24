@@ -229,3 +229,132 @@ function executeProductionMinisterQuery(prompt, input, ir) {
   if (semantic?.targetDomain !== 'MINISTER') return null;
   const base = plan?.result || {};
   const ministerId = semantic?.entities?.minister?.id || input.ministerId || null;
+  if (!base?.ok) {
+    return {
+      handled: true,
+      result: {
+        ok: false,
+        status: base.reason || 'MINISTER_QUERY_UNRESOLVED',
+        value: base.value ?? null,
+        evidence: [],
+        trace: [
+          { step: 'QUESTION_INTERPRETATION', operation: semantic?.operation || null },
+          { step: 'MINISTER_IDENTITY_RESOLUTION', status: 'UNRESOLVED', ministerId: ministerId || null }
+        ],
+        dataAccess: { repositoryIndexed: true, authority: 'NODE_FILESYSTEM' }
+      }
+    };
+  }
+  const attribute = semantic?.attribute?.name || base?.attribute || null;
+  const location = findMinisterRecordLocation(ministerId);
+  const recordLocator = location
+    ? `ministers_database.${location.category}[${location.index}]`
+    : 'ministers_database';
+  const fieldPath = attribute && location
+    ? `ministers_database.${location.category}[${location.index}].${attribute}`
+    : attribute || null;
+  const evidence = [{
+    dataset: 'ministers.json',
+    physicalPath: 'ministers.json',
+    logicalDatasetId: 'ministers.json',
+    recordLocator,
+    fieldPath,
+    canonicalEntityId: ministerId,
+    entityType: 'MINISTER',
+    property: attribute,
+    rawValue: base.value,
+    operation: String(semantic?.operation || base?.operation || 'ATTRIBUTE').toUpperCase(),
+    relationPath: [],
+    authority: 'NODE_FILESYSTEM',
+    source: 'DEEP_CORE_PRODUCTION_MINISTER_EXECUTOR'
+  }];
+  return {
+    handled: true,
+    result: {
+      ok: true,
+      status: 'VERIFIED_FACT',
+      operation: base.operation || semantic.operation || 'ATTRIBUTE',
+      attribute,
+      value: base.value,
+      source: base.source || 'ministers.json',
+      evidence,
+      trace: [
+        { step: 'QUESTION_INTERPRETATION', operation: semantic.operation || null, attribute },
+        { step: 'MINISTER_IDENTITY_RESOLUTION', ministerId, status: 'RESOLVED', authority: 'OMEGA_PRODUCTION_SEMANTIC_RUNTIME' },
+        { step: 'RAW_RECORD_RESOLUTION', dataset: 'ministers.json', recordLocator },
+        { step: 'ATTRIBUTE_EXTRACTION', property: attribute },
+        { step: 'EVIDENCE_VALIDATION', status: 'VERIFIED_FACT' }
+      ],
+      dataAccess: { repositoryIndexed: true, authority: 'NODE_FILESYSTEM', dataset: 'ministers.json' }
+    }
+  };
+}
+function executeDeepCorePrompt(prompt, input = {}) {
+  const ir = buildDeepCoreIR(prompt, input);
+  const runtimeDataContext = {
+    ...input,
+    ir,
+    countryId: input.countryId || input.countryCode,
+    countryCode: input.countryCode || input.countryId,
+    ministerId: input.ministerId,
+    ministryId: input.ministryId
+  };
+  const ministerExecution = executeProductionMinisterQuery(prompt, runtimeDataContext, ir);
+  if (ministerExecution?.handled) {
+    const result = ministerExecution.result;
+    const evidenceLedger = OfflineQueryEngine?.buildEvidenceLedger ? OfflineQueryEngine.buildEvidenceLedger(result) : null;
+    return {
+      prompt,
+      ir,
+      searchStrategy: ir.searchStrategy || null,
+      executionPlan: {
+        version: OfflineQueryEngine?.VERSION || null,
+        authority: 'NODE_FILESYSTEM',
+        route: 'PRODUCTION_SEMANTIC_RUNTIME -> MINISTER_ATTRIBUTE_EXECUTOR',
+        runtimeContextKeys: Object.keys(runtimeDataContext),
+        identity: { ministerId: ir?.entities?.minister?.id || input.ministerId || null },
+        operation: ir?.operation || null
+      },
+      result,
+      evidenceLedger,
+      diagnostics: OfflineQueryEngine?.diagnostics ? OfflineQueryEngine.diagnostics() : null
+    };
+  }
+  const executionPlan = OfflineQueryEngine?.buildExecutionPlan ? OfflineQueryEngine.buildExecutionPlan(ir, runtimeDataContext) : null;
+  const result = OfflineQueryEngine?.execute ? OfflineQueryEngine.execute(ir, runtimeDataContext, ir.language || input.language || 'en', input) : { ok: false, status: 'DEEP_CORE_UNAVAILABLE', value: null, evidence: [] };
+  const evidenceLedger = OfflineQueryEngine?.buildEvidenceLedger ? OfflineQueryEngine.buildEvidenceLedger(result) : null;
+  return { prompt, ir, searchStrategy: ir.searchStrategy || null, executionPlan, result, evidenceLedger, diagnostics: OfflineQueryEngine?.diagnostics ? OfflineQueryEngine.diagnostics() : null };
+}
+
+app.get('/api/deep-core/diagnostics', (req, res) => { try { res.json(OfflineQueryEngine.diagnostics()); } catch (e) { res.status(500).json({ ok: false, error: e.message }); } });
+app.get('/api/deep-core/catalog', (req, res) => { try { res.json({ ok: true, version: OfflineQueryEngine.VERSION, catalog: OfflineQueryEngine.catalog() }); } catch (e) { res.status(500).json({ ok: false, error: e.message }); } });
+app.get('/api/deep-core/schema', (req, res) => { try { const dataset = String(req.query.dataset || '').trim(); if (!dataset) return res.status(400).json({ ok: false, error: 'dataset query parameter is required' }); const schema = OfflineQueryEngine.schema(dataset); if (!schema) return res.status(404).json({ ok: false, status: 'DATASET_NOT_FOUND', dataset }); res.json({ ok: true, dataset, schema }); } catch (e) { res.status(500).json({ ok: false, error: e.message }); } });
+app.get('/api/deep-core/lookup', (req, res) => { try { const id = String(req.query.id || '').trim(); if (!id) return res.status(400).json({ ok: false, error: 'id query parameter is required' }); const result = OfflineQueryEngine.lookupId(id); res.status(result.status === 'IDENTITY_NOT_FOUND' ? 404 : 200).json({ ok: result.status !== 'IDENTITY_NOT_FOUND', ...result }); } catch (e) { res.status(500).json({ ok: false, error: e.message }); } });
+app.get('/api/deep-core/resolve', (req, res) => { try { const id = String(req.query.id || '').trim(), type = String(req.query.type || '').trim(); if (!id) return res.status(400).json({ ok: false, error: 'id query parameter is required' }); const result = OfflineQueryEngine.resolve({ id, type: type || undefined }); res.status(result.status === 'IDENTITY_NOT_FOUND' ? 404 : 200).json({ ok: result.status !== 'IDENTITY_NOT_FOUND', ...result }); } catch (e) { res.status(500).json({ ok: false, error: e.message }); } });
+app.get('/api/deep-core/search', (req, res) => { try { const q = String(req.query.q || '').trim(); if (!q) return res.status(400).json({ ok: false, error: 'q query parameter is required' }); const result = OfflineQueryEngine.search(q, { dataset: req.query.dataset, type: req.query.type, limit: req.query.limit }); res.status(result.status === 'NOT_FOUND' ? 404 : 200).json({ ok: result.status !== 'NOT_FOUND', ...result }); } catch (e) { res.status(500).json({ ok: false, error: e.message }); } });
+app.get('/api/deep-core/select', (req, res) => { try { const q = String(req.query.q || '').trim(); if (!q) return res.status(400).json({ ok: false, error: 'q query parameter is required' }); const result = OfflineQueryEngine.select(q, req.query.type || null, Number(req.query.limit || 25)); res.status(result.status === 'NOT_FOUND' ? 404 : 200).json({ ok: result.status !== 'NOT_FOUND', ...result }); } catch (e) { res.status(500).json({ ok: false, error: e.message }); } });
+
+function respondDeepCoreQuery(req, res) {
+  try {
+    const input = deepCoreContext(req), prompt = String(input.prompt || input.question || '').trim();
+    if (!prompt) return res.status(400).json({ ok: false, error: 'prompt or question is required' });
+    const output = executeDeepCorePrompt(prompt, input), status = output.result?.status || 'UNRESOLVED';
+    return res.status(status === 'VERIFIED_FACT' ? 200 : 422).json({ ok: status === 'VERIFIED_FACT', ...output });
+  } catch (e) { return res.status(500).json({ ok: false, error: e.message, source: 'DEEP_CORE_GATEWAY' }); }
+}
+
+app.get('/api/deep-core/query', respondDeepCoreQuery);
+app.post('/api/deep-core/query', respondDeepCoreQuery);
+app.post('/api/deep-core/plan', (req, res) => { try { const input = deepCoreContext(req), prompt = String(input.prompt || input.question || '').trim(); if (!prompt) return res.status(400).json({ ok: false, error: 'prompt or question is required' }); const ir = buildDeepCoreIR(prompt, input); const runtimeDataContext = { ...input, ir }; const executionPlan = OfflineQueryEngine.buildExecutionPlan(ir, runtimeDataContext); res.json({ ok: true, prompt, ir, searchStrategy: ir.searchStrategy || null, executionPlan, diagnostics: OfflineQueryEngine.diagnostics() }); } catch (e) { res.status(500).json({ ok: false, error: e.message }); } });
+app.post('/api/deep-core/refresh', (req, res) => { try { res.json({ ok: true, refresh: OfflineQueryEngine.refresh(), diagnostics: OfflineQueryEngine.diagnostics() }); } catch (e) { res.status(500).json({ ok: false, error: e.message }); } });
+
+function canonicalPlan(prompt, input = {}) {
+  const ctx = { ...input, countryId: input.countryId || input.countryCode, countryCode: input.countryCode || input.countryId };
+  if (MinisterQueryRouter?.routeMinisterQuery) { const routed = MinisterQueryRouter.routeMinisterQuery(prompt, ctx, ctx); if (routed?.semantic && routed?.result) return { semantic: routed.semantic, result: routed.result, router: routed }; }
+  if (ProductionSemanticRuntime?.buildAnswerPlan) { try { const result = ProductionSemanticRuntime.buildAnswerPlan(prompt, { countryCode: ctx.countryCode, ministryId: ctx.ministryId, ministerId: ctx.ministerId, ministerName: ctx.ministerName }, ctx.gameState || ctx.worldState || {}, ctx.history || []); if (result?.semantic && result?.result) return result; } catch (e) { console.warn('[Canonical Plan] Production runtime fallback:', e.message); } }
+  return executeDeepCorePrompt(prompt, ctx);
+}
+function runCognitiveBridge(prompt, semantic, offlineResult, identity, language, gameState, conversationHistory) { if (!OmegaReasoningDispatcher?.dispatch) return { available: false, reason: 'COGNITIVE_DISPATCHER_UNAVAILABLE' }; try { const parsed = semantic || { operation: 'LOOKUP', language: language || 'en', surface: prompt }; const history = Array.isArray(conversationHistory) ? conversationHistory : []; return OmegaReasoningDispatcher.dispatch(prompt, parsed, offlineResult || {}, { ...identity, language, gameState: gameState || {}, history, timeHorizon: 'CURRENT' }); } catch (e) { return { available: false, reason: 'COGNITIVE_DISPATCH_ERROR', error: e.message }; } }
+app.get('/api/deep-core/health', (req, res) => { try { const diagnostics = OfflineQueryEngine.diagnostics(); res.json({ ok: diagnostics.initialized === true, engine: 'OMEGA_DEEP_CORE', version: OfflineQueryEngine.VERSION, diagnostics }); } catch (e) { res.status(500).json({ ok: false, error: e.message }); } });
+
+app.listen(PORT, () => { console.log(`[OMEGA Server] Listening on port ${PORT}`); try { console.log('[Deep Core Diagnostics]', JSON.stringify(OfflineQueryEngine.diagnostics())); } catch (e) { console.warn('[Deep Core Diagnostics] unavailable:', e.message); } });

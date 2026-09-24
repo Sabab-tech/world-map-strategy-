@@ -35,7 +35,11 @@ assert.equal(dataReport.authority,'RESOURCE_JSON');
 assert.equal(dataReport.status,'READY');
 assert.equal(dataReport.depositCount,43);
 assert.equal(dataReport.fallbackUsed,false);
+assert.equal(dataReport.datasets['resources.json'].status,'LOADED');
+assert.equal(dataReport.datasets['resources_2.json'].status,'LOADED');
 assert.equal(engine.deposits.length,43);
+assert.equal(Object.keys(source.GSRSK_Master_CountryProfiles_v14.countryProfiles||{}).length,168);
+assert.equal(engine.resourceTypes.length,14);
 assert.equal(engine.deposits.some(x=>x.sourceAuthority==='RESOURCE_JSON'),true);
 assert.equal(engine.deposits.some(x=>x.id==='dep-barapukuria-coal'&&x.resId==='coal'),true);
 
@@ -96,6 +100,19 @@ assert((after.warehouse.availableByResource.natural_gas||0)>=batch.quantity);
 assert(after.warehouse.receipts.some(x=>x.batchId===batch.batchId&&x.status==='RECEIVED'));
 assert(after.mineProductionLedger.some(x=>x.batchId===batch.batchId&&x.mineId===gasMine.occurrenceKey));
 assert(seen.some(x=>x&&x.payload&&x.payload.batch&&x.payload.batch.batchId===batch.batchId));
+
+const summary=engine.getSummary('BGD');
+const mineTelemetry=summary.mineTelemetry.find(x=>x.mineId===gasMine.occurrenceKey);
+assert(mineTelemetry);
+assert.equal(mineTelemetry.outputThisTurn,output.producedQuantity);
+assert.equal(mineTelemetry.batchId,batch.batchId);
+assert.equal(mineTelemetry.warehouseId,'WH-BGD-RAW');
+assert.equal(mineTelemetry.purity,0.962);
+const mineRegisterHtml=engine._renderDepositsTab(summary.deposits,'BGD');
+assert.match(mineRegisterHtml,/OPERATING MINE REGISTER/);
+assert.match(mineRegisterHtml,/Titas Gas Field Reservoir/);
+assert.match(mineRegisterHtml,/OUTPUT \/ TURN/);
+assert.match(mineRegisterHtml,/WH-BGD-RAW/);
 
 if(nativeFetch)globalThis.fetch=nativeFetch;
 console.log('OMEGA RESOURCE JSON -> MINE -> BATCH -> WAREHOUSE -> FACTORY EVENT TEST PASSED');

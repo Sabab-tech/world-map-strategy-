@@ -66,6 +66,9 @@ jobs:
           npm run test:architecture
           npm run test:country-roster
           npm run test:real-country-batch
+          npm run test:resource-endowment
+          npm run test:resource-request
+          node --test test/omega_resource_economy_runtime_v2.test.mjs
           npm run test:ministries
           npm run test:simulation
 
