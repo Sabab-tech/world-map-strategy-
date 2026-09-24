@@ -27,7 +27,7 @@
     const s=state();
     ['trade','resource','economy','finance','foreign'].forEach(function(domain){
       const b=s?.[domain];
-      if(b&&typeof b==='object')Object.keys(b).forEach(function(k){var c=canonical(k);if(c)out.add(c);});
+      if(b&&typeof b==='object')Object.keys(b).forEach(function(k){var c=id(k);if(c)out.add(c);});
     });
     return[...out].sort();
   };
