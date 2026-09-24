@@ -31,6 +31,7 @@ await import('../omega_global_trade_system.js');
 await import('../omega_opponent_second_order_consequence_system.js');
 
 const trade=globalThis.OmegaGlobalTrade;
+console.log('TRADE_REVIEW_DEBUG',JSON.stringify(trade.reviewRequest(globalThis.Game.state.trade.BD.importRequests[0])));
 trade.processAll();
 const req=globalThis.Game.state.trade.BD.importRequests[0];
 console.log('TRADE_DEBUG',JSON.stringify({
