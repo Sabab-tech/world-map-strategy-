@@ -8878,7 +8878,7 @@ _globalScope.GSRSK_DataFoundation = (() => {
                                     <span style="font-size:11px; padding:2px 8px; border-radius:12px; background:rgba(34,197,94,0.2); border:1px solid #22c55e; color:#22c55e;">v14.0 ACTIVE</span>
                                 </div>
                                 <div style="font-size:11px; color:#cbd5e1; margin-top:2px;">
-                                    Sovereign Focus: <strong style="color:#ffd700;">${countryName}</strong> • Autonomy Rating: <strong style="color:#22c55e;">${summary.globalMetrics.autonomyIndex}%</strong> • Emergency Stock: <strong style="color:#00e5ff;">${summary.globalMetrics.strategicReservesTotalDays} Days</strong>
+                                    Sovereign Focus: <strong style="color:#ffd700;">${countryName}</strong> • Autonomy Rating: <strong style="color:#22c55e;">${summary.globalMetrics.autonomyIndex == null ? 'UNOBSERVED' : summary.globalMetrics.autonomyIndex + '%'}</strong> • Emergency Stock: <strong style="color:#00e5ff;">${summary.globalMetrics.strategicReservesTotalDays == null ? 'UNOBSERVED' : summary.globalMetrics.strategicReservesTotalDays + ' Days'}</strong>
                                 </div>
                             </div>
                         </div>
@@ -8911,46 +8911,85 @@ _globalScope.GSRSK_DataFoundation = (() => {
         }
 
         _renderMatrixTab(summary, countryKey) {
+            const mineRegister = Array.isArray(summary?.mineRegister) ? summary.mineRegister : [];
+            const mineRows = mineRegister.length ? mineRegister.map(m => {
+                const q = m.qualityState || {};
+                const grade = q.grade == null ? 'UNOBSERVED' : (Number(q.grade) * 100).toFixed(2) + '%';
+                const purity = q.purity == null ? 'UNOBSERVED' : (Number(q.purity) * 100).toFixed(2) + '%';
+                const output = Number.isFinite(Number(m.outputThisTurn)) ? Number(m.outputThisTurn).toLocaleString() : 'UNOBSERVED';
+                const cumulative = Number.isFinite(Number(m.cumulativeOutput)) ? Number(m.cumulativeOutput).toLocaleString() : 'UNOBSERVED';
+                const reserve = Number.isFinite(Number(m.reserve)) ? Number(m.reserve).toLocaleString() : 'UNOBSERVED';
+                return `
+                    <div style="display:grid;grid-template-columns:1.8fr .8fr .9fr .9fr .9fr .8fr .8fr;gap:8px;align-items:center;padding:8px 10px;border-bottom:1px solid rgba(255,255,255,0.07);font-size:10px;">
+                        <div><strong style="color:#f8fafc;">${m.depositName || m.occurrenceKey || 'UNNAMED SITE'}</strong><div style="color:#64748b;margin-top:2px;">${m.resourceId || 'UNOBSERVED'} · ${m.status || 'UNKNOWN'}</div></div>
+                        <span style="color:#00e5ff;">${reserve}</span>
+                        <span style="color:#22c55e;">+${output}</span>
+                        <span style="color:#cbd5e1;">${cumulative}</span>
+                        <span style="color:#a855f7;">${grade}</span>
+                        <span style="color:#f59e0b;">${purity}</span>
+                        <span style="color:#94a3b8;">${m.lastBatchId || 'NO BATCH'}</span>
+                    </div>`;
+            }).join('') : '<div style="padding:14px;color:#94a3b8;font-size:11px;">No runtime mine records are currently available.</div>';
+
             return `
+                <div style="margin-bottom:16px;background:rgba(8,15,26,0.94);border:1px solid rgba(0,229,255,0.25);border-radius:10px;overflow:hidden;">
+                    <div style="padding:10px 12px;background:rgba(0,229,255,0.06);display:flex;justify-content:space-between;align-items:center;">
+                        <strong style="color:#00e5ff;font-size:11px;">LIVE MINE OUTPUT REGISTER</strong>
+                        <span style="color:#94a3b8;font-size:10px;">${mineRegister.length} sites · output is batch-ledger derived</span>
+                    </div>
+                    <div style="display:grid;grid-template-columns:1.8fr .8fr .9fr .9fr .9fr .8fr .8fr;gap:8px;padding:7px 10px;color:#64748b;font-size:9px;text-transform:uppercase;border-bottom:1px solid rgba(255,255,255,0.09);">
+                        <span>MINE / STATUS</span><span>RESERVE</span><span>OUTPUT/TURN</span><span>CUMULATIVE</span><span>GRADE</span><span>PURITY</span><span>LAST BATCH</span>
+                    </div>
+                    ${mineRows}
+                </div>
+
                 <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:12px;">
-                    ${summary.resourcesList.map(r => `
-                        <div style="background:rgba(8,15,26,0.9); border:1px solid ${r.color || 'rgba(0,229,255,0.3)'}; border-radius:10px; padding:12px; display:flex; flex-direction:column; gap:8px;">
-                            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-                                <div style="display:flex; align-items:center; gap:8px;">
-                                    <span style="font-size:22px;">${r.icon}</span>
-                                    <div>
-                                        <div style="font-size:12px; font-weight:bold; color:#f8fafc;">${r.name}</div>
-                                        <div style="font-size:10px; color:#94a3b8;">${r.bnName || ''} • ${r.category}</div>
+                    ${summary.resourcesList.map(r => {
+                        const dailyProduction = r.dailyProduction == null ? 'UNOBSERVED' : Number(r.dailyProduction).toLocaleString();
+                        const dailyConsumption = r.dailyConsumption == null ? 'UNOBSERVED' : Number(r.dailyConsumption).toLocaleString();
+                        const netBalance = r.netBalance == null ? 'UNOBSERVED' : ((r.netBalance >= 0 ? '+' : '') + Number(r.netBalance).toLocaleString());
+                        const stockDays = r.stockDays == null ? 'UNOBSERVED' : r.stockDays + ' D';
+                        const suff = r.selfSufficiencyRatio == null ? 'UNOBSERVED' : Number(r.selfSufficiencyRatio).toFixed(1) + '%';
+                        const progress = r.selfSufficiencyRatio == null ? 0 : Math.max(0, Math.min(100, Number(r.selfSufficiencyRatio)));
+                        return `
+                            <div style="background:rgba(8,15,26,0.9); border:1px solid ${r.color || 'rgba(0,229,255,0.3)'}; border-radius:10px; padding:12px; display:flex; flex-direction:column; gap:8px;">
+                                <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                                    <div style="display:flex; align-items:center; gap:8px;">
+                                        <span style="font-size:22px;">${r.icon || ''}</span>
+                                        <div>
+                                            <div style="font-size:12px; font-weight:bold; color:#f8fafc;">${r.name}</div>
+                                            <div style="font-size:10px; color:#94a3b8;">${r.bnName || ''} ${r.category ? '• ' + r.category : ''}</div>
+                                        </div>
+                                    </div>
+                                    <span style="font-size:10px; padding:2px 6px; border-radius:4px; background:rgba(0,229,255,0.1); color:#00e5ff; font-weight:bold;">${r.unit || 'UNOBSERVED'}</span>
+                                </div>
+
+                                <div>
+                                    <div style="display:flex; justify-content:space-between; font-size:10px; margin-bottom:3px;">
+                                        <span style="color:#94a3b8;">Self-Sufficiency:</span>
+                                        <strong style="color:#94a3b8;">${suff}</strong>
+                                    </div>
+                                    <div style="width:100%; height:6px; background:rgba(255,255,255,0.1); border-radius:3px; overflow:hidden;">
+                                        <div style="width:${progress}%; height:100%; background:#64748b;"></div>
                                     </div>
                                 </div>
-                                <span style="font-size:10px; padding:2px 6px; border-radius:4px; background:rgba(0,229,255,0.1); color:#00e5ff; font-weight:bold;">${r.unit}</span>
-                            </div>
 
-                            <!-- SELF-SUFFICIENCY BAR -->
-                            <div>
-                                <div style="display:flex; justify-content:space-between; font-size:10px; margin-bottom:3px;">
-                                    <span style="color:#94a3b8;">Self-Sufficiency:</span>
-                                    <strong style="color:${r.selfSufficiencyRatio >= 100 ? '#22c55e' : '#ffd700'};">${r.selfSufficiencyRatio}%</strong>
+                                <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; font-size:10px; background:rgba(0,0,0,0.3); padding:6px 8px; border-radius:6px;">
+                                    <div>Output: <strong style="color:#22c55e;">+${dailyProduction}</strong></div>
+                                    <div>Demand: <strong style="color:#f87171;">-${dailyConsumption}</strong></div>
+                                    <div>Net: <strong style="color:#cbd5e1;">${netBalance}</strong></div>
+                                    <div>Stock Days: <strong style="color:#ffd700;">${stockDays}</strong></div>
+                                    <div>Warehouse: <strong style="color:#00e5ff;">${r.warehouseStock == null ? 'UNOBSERVED' : Number(r.warehouseStock).toLocaleString()}</strong></div>
+                                    <div>Reserve: <strong style="color:#a855f7;">${r.reserveBalance == null ? 'UNOBSERVED' : Number(r.reserveBalance).toLocaleString()}</strong></div>
                                 </div>
-                                <div style="width:100%; height:6px; background:rgba(255,255,255,0.1); border-radius:3px; overflow:hidden;">
-                                    <div style="width:${Math.min(100, r.selfSufficiencyRatio)}%; height:100%; background:${r.selfSufficiencyRatio >= 100 ? '#22c55e' : '#ffd700'};"></div>
+
+                                <div style="display:grid; grid-template-columns:1fr; gap:4px; margin-top:2px;">
+                                    <button onclick="window.ResourceMinistryEngine.executeDirective('focus_map', '${countryKey}'); window.ResourceMinistryEngine.closeModal();" style="padding:6px 4px; background:rgba(168,85,247,0.15); border:1px solid #a855f7; color:#a855f7; font-size:10px; font-weight:bold; border-radius:4px; cursor:pointer;">
+                                        FOCUS MAP
+                                    </button>
                                 </div>
-                            </div>
-
-                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; font-size:10px; background:rgba(0,0,0,0.3); padding:6px 8px; border-radius:6px;">
-                                <div>Output: <strong style="color:#22c55e;">+${r.dailyProduction == null ? 'UNOBSERVED' : r.dailyProduction.toLocaleString()}</strong></div>
-                                <div>Demand: <strong style="color:#f87171;">-${r.dailyConsumption == null ? 'UNOBSERVED' : r.dailyConsumption.toLocaleString()}</strong></div>
-                                <div>Net: <strong style="color:${r.netBalance >= 0 ? '#22c55e' : '#f87171'};">${r.netBalance >= 0 ? '+' : ''}${r.netBalance.toLocaleString()}</strong></div>
-                                <div>Stock Days: <strong style="color:#ffd700;">${r.stockDays == null ? 'UNOBSERVED' : r.stockDays + ' D'}</strong></div>
-                            </div>
-
-                            <div style="display:grid; grid-template-columns:1fr; gap:4px; margin-top:2px;">
-                                <button onclick="window.ResourceMinistryEngine.executeDirective('focus_map', '\${countryKey}'); window.ResourceMinistryEngine.closeModal();" style="padding:6px 4px; background:rgba(168,85,247,0.15); border:1px solid #a855f7; color:#a855f7; font-size:10px; font-weight:bold; border-radius:4px; cursor:pointer;">
-                                    🗺️ FOCUS MAP
-                                </button>
-                            </div>
-                        </div>
-                    `).join('')}
+                            </div>`;
+                    }).join('') || '<div style="padding:14px;color:#94a3b8;">No resource runtime records are available.</div>'}
                 </div>
             `;
         }
