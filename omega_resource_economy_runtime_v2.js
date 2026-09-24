@@ -620,6 +620,12 @@
       g.addEventListener('OMEGA_GAME_SESSION_STARTED',function(){installHandlers();installEvents();ui();refreshUI();});
       g.addEventListener('RESOURCE_STATE_UPDATED',function(){ui();refreshUI();});
       g.addEventListener('OMEGA_RESOURCE_ECONOMY_UPDATED',function(){ui();refreshUI();});
+      g.addEventListener('OMEGA_RESOURCE_EXTRACTION_COMPLETED',function(){ui();refreshUI();});
+      g.addEventListener('OMEGA_RESOURCE_PROCESSING_COMPLETED',function(){ui();refreshUI();});
+      g.addEventListener('OMEGA_INDUSTRIAL_PRODUCTION_COMPLETED',function(){ui();refreshUI();});
+      g.addEventListener('OMEGA_RESOURCE_TRANSPORT_UPDATED',function(){ui();refreshUI();});
+      g.addEventListener('OMEGA_RESOURCE_DOMESTIC_SALE_SETTLED',function(){ui();refreshUI();});
+      g.addEventListener('OMEGA_TRADE_SETTLEMENT_COMPLETED',function(){ui();refreshUI();});
     }
   }
   function initOntology(){
