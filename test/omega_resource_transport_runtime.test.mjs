@@ -131,7 +131,10 @@ test('resource batches move from exact mine node to a country-owned refinery wit
   assert.equal(state.transport.BGD.resourceShipments[0].status,'IN_TRANSIT');
   assert.equal(state.resource.BGD.batches[0].remainingQuantity,60);
   assert.equal(state.resource.BGD.batches[0].inTransitQuantity,40);
-  assert.equal(state.resource.BGD.facilityInventory['REF-1'],undefined);
+  assert.equal(state.resource.BGD.facilityInventory['REF-1'].iron_ore||0,0);
+  const firstAdvance=ctx.OmegaResourceTransport.advanceCountry('BGD');
+  assert.equal(firstAdvance.arrived.length,0);
+  assert.equal(state.transport.BGD.resourceShipments[0].status,'IN_TRANSIT');
   const advanced=ctx.OmegaResourceTransport.advanceCountry('BGD');
   assert.equal(advanced.arrived.length,1);
   assert.equal(state.resource.BGD.inventory.iron_ore,100);
@@ -159,7 +162,11 @@ test('cross-border resource shipment preserves seller/buyer country scope and cr
   assert.equal(state.resource.BGD.inventory.crude_oil,0);
   assert.equal(state.transport.BGD.inboundResourceShipments.length,1);
   assert.equal(state.transport.BGD.inboundResourceShipments[0].status,'IN_TRANSIT');
-  ctx.OmegaResourceTransport.advanceCountry('USA');
+  const first=ctx.OmegaResourceTransport.advanceCountry('USA');
+  assert.equal(first.arrived.length,0);
+  assert.equal(state.resource.BGD.inventory.crude_oil,0);
+  const second=ctx.OmegaResourceTransport.advanceCountry('USA');
+  assert.equal(second.arrived.length,1);
   assert.equal(state.resource.BGD.inventory.crude_oil,30);
   assert.equal(state.transport.BGD.inboundResourceShipments[0].status,'DELIVERED');
   assert.ok(state.resource.BGD.batches.some(x=>x.transportShipmentId===result.shipment.shipmentId));
