@@ -8522,25 +8522,7 @@ _globalScope.GSRSK_DataFoundation = (() => {
     // Deposits Catalog, 17 Commodities, and Interactive Command Hubs
     // =========================================================================
 
-    const CANONICAL_RESOURCE_TYPES = [
-        { id: 'crude_oil', name: 'Crude Petroleum', bnName: 'অপরিশোধিত তেল', icon: '🛢️', category: 'hydrocarbons', color: '#eab308', unit: 'BBL', basePrice: 82.5, dailyOutput: 18500, dailyDemand: 16200, strategicImportance: 'critical', processChain: 'Drilling ➔ Distillation ➔ Petrochem Refineries ➔ Strategic Reserves' },
-        { id: 'natural_gas', name: 'Natural Gas / LNG', bnName: 'প্রাকৃতিক গ্যাস', icon: '🔥', category: 'hydrocarbons', color: '#38bdf8', unit: 'MCF', basePrice: 3.4, dailyOutput: 32000, dailyDemand: 28500, strategicImportance: 'critical', processChain: 'Wellhead Extraction ➔ Dehydration ➔ LNG Cryogenic Liquefaction ➔ Baseload Power' },
-        { id: 'uranium', name: 'Uranium Yellowcake', bnName: 'ইউরেনিয়াম', icon: '⚛️', category: 'nuclear_energy', color: '#a855f7', unit: 'KG', basePrice: 85.0, dailyOutput: 120, dailyDemand: 95, strategicImportance: 'critical', processChain: 'In-situ Leaching ➔ Centrifuge Enrichment (3-5% / 90%) ➔ Fuel Bundles ➔ Baseload Reactor' },
-        { id: 'iron_ore', name: 'Iron Ore / Steel', bnName: 'লোহা ও ইস্পাত', icon: '⚙️', category: 'industrial_metals', color: '#cbd5e1', unit: 'TONS', basePrice: 120.0, dailyOutput: 45000, dailyDemand: 41000, strategicImportance: 'high', processChain: 'Open-Pit Beneficiation ➔ Blast Furnace Smelting ➔ Hot Rolled Coil ➔ Heavy Industry' },
-        { id: 'rare_earth', name: 'Rare Earth Elements', bnName: 'বিরল মৃত্তিকা মৌল', icon: '🔬', category: 'critical_minerals', color: '#ec4899', unit: 'TONS', basePrice: 48000.0, dailyOutput: 350, dailyDemand: 320, strategicImportance: 'critical', processChain: 'Solvent Extraction ➔ Chromatographic Refining ➔ Permanent NdFeB Magnets ➔ Defense & EV' },
-        { id: 'lithium', name: 'Lithium Carbonate', bnName: 'লিথিয়াম', icon: '🔋', category: 'battery_metals', color: '#00e5ff', unit: 'TONS', basePrice: 18500.0, dailyOutput: 850, dailyDemand: 780, strategicImportance: 'critical', processChain: 'Brine Evaporation / Spodumene Calcination ➔ Hydroxide Conversion ➔ LFP/NMC Battery Cells' },
-        { id: 'phosphate', name: 'Phosphate Rock', bnName: 'ফসফেট ও সার', icon: '🌾', category: 'agricultural_chemicals', color: '#84cc16', unit: 'TONS', basePrice: 155.0, dailyOutput: 22000, dailyDemand: 19500, strategicImportance: 'high', processChain: 'Phosphorite Mining ➔ Sulfuric Acid Digestion ➔ DAP/MAP Fertilizer ➔ Agrarian Security' },
-        { id: 'copper', name: 'Refined Copper', bnName: 'তামা', icon: '⚡', category: 'strategic_metals', color: '#f97316', unit: 'TONS', basePrice: 8900.0, dailyOutput: 14200, dailyDemand: 13500, strategicImportance: 'critical', processChain: 'Flotation Concentration ➔ Flash Smelting ➔ Electrolytic Refining ➔ Power Grid & HVDC' },
-        { id: 'bauxite', name: 'Bauxite / Aluminum', bnName: 'বক্সাইট ও অ্যালুমিনিয়াম', icon: '✈️', category: 'strategic_metals', color: '#94a3b8', unit: 'TONS', basePrice: 2400.0, dailyOutput: 18000, dailyDemand: 16500, strategicImportance: 'high', processChain: 'Bayer Process Digestion ➔ Hall-Héroult Reduction ➔ Aerospace Grade Ingots ➔ Defense Hull' },
-        { id: 'nickel', name: 'Class 1 Nickel', bnName: 'নিকেল', icon: '🛡️', category: 'critical_minerals', color: '#10b981', unit: 'TONS', basePrice: 16800.0, dailyOutput: 1900, dailyDemand: 1750, strategicImportance: 'high', processChain: 'HPAL Autoclave Leaching ➔ Matte Refining ➔ Superalloy & High-Nickel Cathodes' },
-        { id: 'cobalt', name: 'Cobalt Hydroxide', bnName: 'কোবাল্ট', icon: '🔋', category: 'battery_metals', color: '#6366f1', unit: 'TONS', basePrice: 32000.0, dailyOutput: 420, dailyDemand: 390, strategicImportance: 'critical', processChain: 'Heterogenite Leaching ➔ Organic Solvent Separation ➔ Cobalt Sulfate Crystals ➔ Energy Cells' },
-        { id: 'gold', name: 'Monetary Gold Bullion', bnName: 'স্বর্ণ রিজার্ভ', icon: '💰', category: 'monetary_strategic', color: '#ffd700', unit: 'OZT', basePrice: 2350.0, dailyOutput: 8500, dailyDemand: 6200, strategicImportance: 'high', processChain: 'Underground/Placer Cyanidation ➔ Merrill-Crowe / CIP ➔ Doré Smelting ➔ Central Bank Vaults' },
-        { id: 'potash', name: 'Potash / Potassium', bnName: 'পটাশ সার', icon: '🌱', category: 'agricultural_chemicals', color: '#14b8a6', unit: 'TONS', basePrice: 320.0, dailyOutput: 16500, dailyDemand: 15000, strategicImportance: 'high', processChain: 'Deep Shaft Evaporite Mining ➔ Flotation Crystallization ➔ MOP Granulation ➔ Food Crops' },
-        { id: 'silicon', name: 'Polysilicon Wafers', bnName: 'সিলিকন ওয়েফার', icon: '💻', category: 'high_tech_materials', color: '#3b82f6', unit: 'TONS', basePrice: 18000.0, dailyOutput: 920, dailyDemand: 860, strategicImportance: 'critical', processChain: 'Quartzite Reduction ➔ Siemens Trichlorosilane ➔ Czochralski Ingot Pulling ➔ EUV Fab' },
-        { id: 'timber', name: 'Strategic Hardwood', bnName: 'কাঠ ও বনজ সম্পদ', icon: '🌲', category: 'natural_infrastructure', color: '#78716c', unit: 'M3', basePrice: 450.0, dailyOutput: 28000, dailyDemand: 25000, strategicImportance: 'medium', processChain: 'Sustainable Forestry ➔ Kiln Drying ➔ Structural Engineered Timber ➔ Defense/Logistics' },
-        { id: 'fresh_water', name: 'Potable Aquifer Water', bnName: 'মিঠা পানি ও সেচ', icon: '💧', category: 'sovereign_life_support', color: '#06b6d4', unit: 'ML', basePrice: 12.0, dailyOutput: 95000, dailyDemand: 91000, strategicImportance: 'critical', processChain: 'Deep Confined Aquifers ➔ Reverse Osmosis Desalination ➔ Pressurized Canals ➔ National Grid' },
-        { id: 'wheat', name: 'Strategic Food Grain', bnName: 'খাদ্য শস্য ও গম', icon: '🍞', category: 'food_security', color: '#f59e0b', unit: 'TONS', basePrice: 280.0, dailyOutput: 65000, dailyDemand: 59000, strategicImportance: 'critical', processChain: 'Precision Irrigation ➔ Automated Harvesting ➔ Grain Silo Hermetic Storage ➔ Food Reserve' }
-    ];
+    const CANONICAL_RESOURCE_TYPES = Object.freeze([]);
 
     const CANONICAL_GLOBAL_DEPOSITS = Object.freeze([]);
 
@@ -8554,10 +8536,10 @@ _globalScope.GSRSK_DataFoundation = (() => {
             this.countryProfiles = {};
             this.isReady = false;
             this.isLoading = false;
-            this.activeSurveys = new Set(['lithium', 'rare_earth']);
-            this.facilityUpgrades = {};
-            this.strategicReserves = {};
-            this.cabinetVotes = {};
+            this.activeSurveys = new Set();
+            this.facilityUpgrades = Object.create(null);
+            this.strategicReserves = Object.create(null);
+            this.cabinetVotes = Object.create(null);
 
             // Synchronize on startup
             this.init();
@@ -8574,9 +8556,11 @@ _globalScope.GSRSK_DataFoundation = (() => {
                     return res.ok ? await res.json() : null;
                 });
 
-                const [res1, res2] = await Promise.all([
+                const [res1, res2, resourceTypesData, resourceDepositsData] = await Promise.all([
                     fetcher('resources.json').catch(() => null),
-                    fetcher('resources_2.json').catch(() => null)
+                    fetcher('resources_2.json').catch(() => null),
+                    fetcher('resource_types.json').catch(() => null),
+                    fetcher('resource_deposits.json').catch(() => null)
                 ]);
 
                 if (res1) {
@@ -8595,6 +8579,17 @@ _globalScope.GSRSK_DataFoundation = (() => {
                     }
                 }
 
+                if (resourceTypesData?.resource_types) {
+                    this._mergeResourceTypes(resourceTypesData.resource_types);
+                }
+
+                if (resourceDepositsData && Array.isArray(resourceDepositsData.deposits)) {
+                    this.deposits = resourceDepositsData.deposits.map(row => ({ ...row }));
+                    if (resourceDepositsData.resource_types) {
+                        this._mergeResourceTypes(resourceDepositsData.resource_types);
+                    }
+                }
+
                 // Hydrate into MasterGSRSKEngine if present
                 if (global.GSRSK_MasterEngine && typeof global.GSRSK_MasterEngine.bootstrap === 'function') {
                     global.GSRSK_MasterEngine.bootstrap({
@@ -8605,13 +8600,13 @@ _globalScope.GSRSK_DataFoundation = (() => {
                 }
 
                 this.isReady = true;
-                console.log(`[GSRSK] Resource Ministry Engine Fully Ready: ${Object.keys(this.countryProfiles).length} sovereign country profiles, ${this.deposits.length} strategic deposits, ${this.resourceTypes.length} commodities.`);
+                console.log(`[GSRSK] Resource Ministry Engine Ready: ${Object.keys(this.countryProfiles).length} sovereign country profiles, ${this.deposits.length} site records, ${this.resourceTypes.length} resource types loaded from data files.`);
 
                 if (typeof window !== 'undefined') {
                     window.dispatchEvent(new CustomEvent('RESOURCE_STATE_UPDATED', { detail: { engine: this } }));
                 }
             } catch (err) {
-                console.warn("[GSRSK] Resource initialization notice (using verified fallback data):", err);
+                console.warn("[GSRSK] Resource initialization failed; data-only runtime will remain unavailable until sources load:", err);
                 this.isReady = true;
             } finally {
                 this.isLoading = false;
@@ -8627,16 +8622,16 @@ _globalScope.GSRSK_DataFoundation = (() => {
                     this.resourceTypes.push({
                         id: k,
                         name: t.name || k.replace(/_/g, ' ').toUpperCase(),
-                        bnName: t.bnName || k,
-                        icon: t.icon || '💎',
-                        category: t.category || 'strategic_minerals',
-                        color: t.color || '#00e5ff',
-                        unit: t.unit || 'TONS',
-                        basePrice: t.basePrice || 1000,
+                        bnName: t.bnName || null,
+                        icon: t.icon || null,
+                        category: t.category || null,
+                        color: t.color || null,
+                        unit: t.unit || null,
+                        basePrice: t.basePrice ?? null,
                         dailyOutput: null,
                         dailyDemand: null,
-                        strategicImportance: t.strategicImportance || 'high',
-                        processChain: t.description || 'Extraction ➔ Refining ➔ National Stockpile'
+                        strategicImportance: t.strategicImportance || null,
+                        processChain: t.processChain || t.description || null
                     });
                 }
             });
