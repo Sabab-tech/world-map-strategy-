@@ -122,6 +122,11 @@ function makeContext(){
   }}}));
 
   const shipments=context.OmegaResourceTransport.getCountryShipments('BGD');
+  console.log('TRANSPORT_EVENT_DEBUG',JSON.stringify({
+    shipments,
+    transportState:context.Game.state.transport.BGD,
+    handlers:[...context.Omega.ResourceTransport?[]:[]]
+  }));
   assert.equal(shipments.filter(x=>x.batchId==='EXTRACT-BATCH-1').length,1);
   assert.equal(shipments[0].resourceId,'iron_ore');
 
