@@ -81,7 +81,7 @@
     }
     return base;
   }
-  function relationScore(r){
+  function relationScore(r,buyer,seller){
     if(!r)return null;
     if(r.war_state===true||r.sanctions===true)return 0;
     const vals=[
@@ -310,7 +310,7 @@
   }
 
   function relScoreForBuyer(buyer,seller){
-    return relationScore(relation(buyer,seller))??0.5;
+    return relationScore(relation(buyer,seller),buyer,seller)??0.5;
   }
 
   function buyerResponseHandler(cmd,ctx){
