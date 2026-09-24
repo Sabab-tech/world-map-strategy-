@@ -380,7 +380,7 @@
     const row=clone(bucket.importRequests[idx]);
     if(String(row.status||'').toUpperCase()!=='REJECTED')return{accepted:false,reason:'TRADE_REQUEST_NOT_REJECTED'};
     const cooldown=num(p.cooldownTurns)??RETRY_COOLDOWN;
-    row.nextRetryTurn=turn()+Math.max(1,cooldown);row.stage='PRESSURE_WAIT';
+    row.nextRetryTurn=turn()+Math.max(1,cooldown);row.stage='POLITICAL_PRESSURE_RETRY';
     row.refusalCount=num(p.refusalCount)??num(row.refusalCount)??1;
     bucket.importRequests[idx]=row;
     bucket.globalTradeLedger=bucket.globalTradeLedger||{requests:[],decisions:[],settlements:[]};
