@@ -229,7 +229,9 @@
     if(provider?.describe){
       try{
         const d=provider.describe(cid,path);
-        return {value:d?.value,availability:d?.availability||'UNOBSERVED',sourceType:d?.provenance?.sourceType||'AUTHORITATIVE_RUNTIME_STATE',source:d?.provenance?.source||'Game.state',path,authority:true};
+        if(d?.value!==undefined){
+          return {value:d.value,availability:d?.availability||'AVAILABLE',sourceType:d?.provenance?.sourceType||'AUTHORITATIVE_RUNTIME_STATE',source:d?.provenance?.source||'Game.state',path,authority:true};
+        }
       }catch(_){}
     }
     const state=g.Game?.state||g.gameState||{};
