@@ -267,7 +267,9 @@
   function installHandlers(){
     var m=interop();if(!m||typeof m.registerCommandHandler!=='function')return false;
     try{
-      m.registerAction&&m.registerAction('OMEGA_RESOURCE_TRANSPORT_COMMIT_STATE',{actionId:'OMEGA_RESOURCE_TRANSPORT_COMMIT_STATE',stateOwnerMinistry:'transport',authority:'OMEGA_RESOURCE_TRANSPORT_RUNTIME_V1'});
+      // Command registration is the authoritative requirement. Action registration is optional,
+      // so an unavailable decision-framework adapter must never disable transport state commits.
+      try{m.registerAction&&m.registerAction('OMEGA_RESOURCE_TRANSPORT_COMMIT_STATE',{actionId:'OMEGA_RESOURCE_TRANSPORT_COMMIT_STATE',stateOwnerMinistry:'transport',authority:'OMEGA_RESOURCE_TRANSPORT_RUNTIME_V1'});}catch(_){}
       m.registerCommandHandler('OMEGA_RESOURCE_TRANSPORT_COMMIT_STATE','transport',commitHandler);
       return true;
     }catch(_){return false;}
