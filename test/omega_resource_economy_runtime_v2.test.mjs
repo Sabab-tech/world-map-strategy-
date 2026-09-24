@@ -238,6 +238,23 @@ test('factory input availability event is persisted as an economy runtime event 
   assert.ok(events.listeners.has('OMEGA_RESOURCE_FACTORY_INPUT_AVAILABLE'));
 });
 
+test('legacy opening inventory reconciliation creates a warehouse-backed unobserved batch', async()=>{
+  const {context,worldState}=createContext();
+  worldState.resource.BGD.inventory.copper=25;
+  delete worldState.resource.BGD.warehouse.availableByResource.copper;
+  const code=readFileSync('omega_resource_economy_runtime_v2.js','utf8');
+  vm.runInNewContext(code,context,{filename:'omega_resource_economy_runtime_v2.js'});
+  context.OmegaResourceEconomy.reconcileCountry('BGD');
+
+  const legacy=worldState.resource.BGD.batches.find(x=>x.batchId==='LEGACY_OPENING_BGD_COPPER');
+  assert.ok(legacy);
+  assert.equal(legacy.remainingQuantity,25);
+  assert.equal(legacy.purity,null);
+  assert.equal(legacy.qualityState.purityStatus,'UNOBSERVED');
+  assert.equal(worldState.resource.BGD.warehouse.availableByResource.copper,25);
+  assert.ok(worldState.resource.BGD.warehouse.storedBatchIds.includes(legacy.batchId));
+});
+
 test('factory input failure does not consume a resource that lacks the other required input', async()=>{
   const {context,state}=createContext();
   worldState.economy.BGD.productionAssets.push({
