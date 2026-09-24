@@ -95,7 +95,7 @@
         const rawId=rid(raw?.resId||raw?.resourceId||raw?.resource||'');
         const semanticName=String(dep.depositRawName||raw?.name||'').toLowerCase();
         /* Canonical semantic guard: a coal deposit cannot be routed as iron ore. */
-        if(/\\bcoal\\b|coal basin|bituminous|anthracite/.test(semanticName)&&resourceId==='iron_ore'){
+        if(/\bcoal\b|coal basin|bituminous|anthracite/.test(semanticName)&&resourceId==='iron_ore'){
           resourceId='coal';
         }else if(rawId&&rawId!==resourceId&&g.__OmegaResourceCanonicalResolver?.resolve){
           const repaired=g.__OmegaResourceCanonicalResolver.resolve(rawId,{name:semanticName,deposit:raw});
@@ -299,7 +299,7 @@
         provenance:clone(result.provenance||request.provenance)
       };
       ledger.push(record);extracted.push(record);
-      emit('OMEGA_RESOURCE_EXTRACTION_COMPLETED',c,record,cmd.commandId);
+      /* Batch is already committed by this resource transaction; downstream systems consume it after commit. */
     }
     ctx.stateTransaction.set('resource.mineStates',current);
     ctx.stateTransaction.set('resource.mineOutputs',mineOutputs);
