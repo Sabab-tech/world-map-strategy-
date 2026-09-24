@@ -192,7 +192,7 @@ test('resource economy v2 completes mine-backed processing, domestic settlement 
 });
 
 test('factory input failure does not consume a resource that lacks the other required input', async()=>{
-  const {context,state}=createContext();
+  const {context,worldState}=createContext();
   worldState.economy.BGD.productionAssets.push({
     id:'FACTORY_2',stage:'FACTORY',capacity:10,
     inputCoefficients:{iron_ore:1,copper:1},
