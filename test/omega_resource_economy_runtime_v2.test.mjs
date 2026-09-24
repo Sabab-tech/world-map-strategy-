@@ -160,7 +160,15 @@ test('resource economy v2 completes mine-backed processing, domestic settlement 
   const {context,worldState}=createContext();
   const code=readFileSync('omega_resource_economy_runtime_v2.js','utf8');
   vm.runInNewContext(code,context,{filename:'omega_resource_economy_runtime_v2.js'});
-  await context.OmegaResourceEconomy.runTurn();
+  const runResult=await context.OmegaResourceEconomy.runTurn();
+  console.log('RESOURCE_ECON_DEBUG_STATE',JSON.stringify({
+    runResult,
+    inventory:worldState.resource.BGD.inventory,
+    batches:worldState.resource.BGD.batches,
+    economy:worldState.economy.BGD,
+    finance:worldState.finance.BGD,
+    trade:worldState.trade.BGD
+  }));
 
   assert.equal(worldState.resource.BGD.inventory.iron_ore,50);
   assert.equal(worldState.resource.BGD.inventory.iron_intermediate,40);
