@@ -422,7 +422,7 @@
       if(scale<=0){
         var inTransit=(read(c,'transport.resourceShipments')||[]).filter(function(x){return x&&x.status==='IN_TRANSIT'&&String(x.targetFacilityId||'')===fid;});
         row.reason=inTransit.length?'INPUT_IN_TRANSIT':'INPUT_STOCK_UNAVAILABLE';row.inputsAvailable=available;
-        row.inTransitShipments=inTransit.map(function(x){return{x.shipmentId:x.shipmentId,resourceId:x.resourceId,quantity:x.quantity,remainingTurns:x.travelTurns};});
+        row.inTransitShipments=inTransit.map(function(x){return{shipmentId:x.shipmentId,resourceId:x.resourceId,quantity:x.quantity,remainingTurns:x.travelTurns};});
         blocked.push(row);records.push(row);return;}
       row.status='READY';row.plannedScale=scale;row.inputsAvailable=available;row.computedOutputs={};
       Object.keys(rc.outputs).forEach(function(rid){row.computedOutputs[rid]=scale*rc.outputs[rid];});
