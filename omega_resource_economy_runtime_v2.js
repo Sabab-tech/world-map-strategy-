@@ -407,13 +407,16 @@
       if(cap===null||cap<=0){row.reason='PRODUCTION_CAPACITY_UNAVAILABLE';blocked.push(row);records.push(row);return;}
       if(!Object.keys(rc.inputs).length){row.reason='INPUT_RECIPE_UNOBSERVED';blocked.push(row);records.push(row);return;}
       if(!Object.keys(rc.outputs).length){row.reason='OUTPUT_RECIPE_UNOBSERVED';blocked.push(row);records.push(row);return;}
-      var scale=cap,available={};
+      var facilityInventory=read(c,'resource.facilityInventory')||{},localStock=facilityInventory[fid]&&typeof facilityInventory[fid]==='object'?facilityInventory[fid]:{},scale=cap,available={};
       Object.keys(rc.inputs).forEach(function(rid){
-        var key=Object.prototype.hasOwnProperty.call(inv,rid)?rid:Object.keys(inv).find(function(k){return tok(k)===tok(rid);});
-        var a=key==null?null:num(inv[key]);available[rid]=a===null?0:a;
+        var a=num(localStock[rid]);available[rid]=a===null?0:a;
         if(a===null||a<scale*rc.inputs[rid])scale=Math.min(scale,a===null?0:a/rc.inputs[rid]);
       });
-      if(scale<=0){row.reason='INPUT_STOCK_UNAVAILABLE';row.inputsAvailable=available;blocked.push(row);records.push(row);return;}
+      if(scale<=0){
+        var inTransit=(read(c,'transport.resourceShipments')||[]).filter(function(x){return x&&x.status==='IN_TRANSIT'&&String(x.targetFacilityId||'')===fid;});
+        row.reason=inTransit.length?'INPUT_IN_TRANSIT':'INPUT_STOCK_UNAVAILABLE';row.inputsAvailable=available;
+        row.inTransitShipments=inTransit.map(function(x){return{x.shipmentId:x.shipmentId,resourceId:x.resourceId,quantity:x.quantity,remainingTurns:x.travelTurns};});
+        blocked.push(row);records.push(row);return;}
       row.status='READY';row.plannedScale=scale;row.inputsAvailable=available;row.computedOutputs={};
       Object.keys(rc.outputs).forEach(function(rid){row.computedOutputs[rid]=scale*rc.outputs[rid];});
       records.push(row);
@@ -499,7 +502,11 @@
   }
 
   function processCountry(c){
-    var cid=canonical(c),rs=bucket(cid,'resource')||{},before=clone(rs.inventory||{}),recon=dispatch('resource','OMEGA_RESOURCE_ECON_RECONCILE_INVENTORY',cid,{correlationId:'RECON-'+turn()+'-'+cid}),prod=executeFactories(cid),afterState=bucket(cid,'resource')||{},after=clone(afterState.inventory||{}),delta={},keys={};
+    var cid=canonical(c),rs=bucket(cid,'resource')||{},before=clone(rs.inventory||{}),recon=dispatch('resource','OMEGA_RESOURCE_ECON_RECONCILE_INVENTORY',cid,{correlationId:'RECON-'+turn()+'-'+cid});
+    try{g.OmegaResourceTransport?.advanceCountry?.(cid);}catch(e){emit('OMEGA_RESOURCE_TRANSPORT_HEALTH',cid,{status:'DEGRADED',reason:String(e&&e.message||e)},'resource-economy');}
+    try{g.OmegaResourceTransport?.planFacilityInputs?.(cid);}catch(e){emit('OMEGA_RESOURCE_TRANSPORT_HEALTH',cid,{status:'DEGRADED',reason:String(e&&e.message||e)},'resource-economy');}
+    rs=bucket(cid,'resource')||{};
+    var prod=executeFactories(cid),afterState=bucket(cid,'resource')||{},after=clone(afterState.inventory||{}),delta={},keys={};
     Object.keys(before).forEach(function(k){keys[k]=true;});Object.keys(after).forEach(function(k){keys[k]=true;});Object.keys(keys).forEach(function(k){delta[k]=(num(after[k])||0)-(num(before[k])||0);});
     var updateResource=dispatch('resource','OMEGA_RESOURCE_ECON_PUBLISH_RESOURCE_RUNTIME',cid,{inventoryDelta:delta,integrity:clone(afterState.inventoryIntegrity||((recon&&recon.result)||null)),correlationId:'RES-RUNTIME-'+turn()+'-'+cid});
     publishOffers(cid);
@@ -521,8 +528,22 @@
 
   function diagnostics(){var cs=countries(),mine=0,active=0,blocked=0;cs.forEach(function(c){var d=dashboard(c);mine+=d.mines.total;active+=d.mines.active;blocked+=d.mines.blocked;});return{version:VERSION,countryCount:cs.length,mineCount:mine,activeMines:active,blockedMines:blocked,allMineRowsUncapped:true,handlersReady:!!(interop()&&interop().commandHandlers),rulesLoaded:!!g.__OmegaResourceEconomyRules};}
 
+  function applyMacroCausalImpact(c){
+    var cid=canonical(c),econ=bucket(cid,'economy')||{},rs=bucket(cid,'resource')||{},prices=(bucket(cid,'trade')||{}).marketPrice||{};
+    var extractionValue=0,outputValue=0,inputValue=0,mineOut=rs.mineOutputs||{},factoryOutput=econ.factoryOutput||{},runtime=econ.industrialRuntime||{},ledger=Array.isArray(runtime.productionLedger)?runtime.productionLedger:[];
+    Object.keys(mineOut).forEach(function(k){var x=mineOut[k];if(num(x.simulationTurn)===turn())extractionValue+=(num(x.producedQuantity)||0)*(num(prices[x.resourceId])||0);});
+    Object.keys(factoryOutput).forEach(function(rid){outputValue+=(num(factoryOutput[rid])||0)*(num(prices[rid])||0);});
+    ledger.filter(function(x){return num(x.turn)===turn();}).forEach(function(x){Object.keys(x.inputQuantities||{}).forEach(function(rid){inputValue+=(num(x.inputQuantities[rid])||0)*(num(prices[rid])||0);});});
+    var valueAdded=extractionValue+Math.max(0,outputValue-inputValue),assets=Array.isArray(econ.productionAssets)?econ.productionAssets.length:0,blocked=Array.isArray(runtime.blockedFacilities)?runtime.blockedFacilities.length:0,utilization=assets?Math.max(0,Math.min(1,(assets-blocked)/assets)):null;
+    var impact={turn:turn(),countryId:cid,availability:'AVAILABLE',extractionValue:extractionValue,industrialOutputValue:outputValue,industrialInputValue:inputValue,valueAdded:valueAdded,blockedFacilities:blocked,assetCount:assets,utilization:utilization};
+    if(num(econ.gdp)!==null){impact.gdpBefore=num(econ.gdp);impact.gdpDelta=valueAdded;econ.gdp=(num(econ.gdp)||0)+valueAdded;impact.gdpAfter=econ.gdp;}else impact.gdpAvailability='UNOBSERVED';
+    if(num(econ.inflation)!==null&&utilization!==null){var pressure=(1-utilization)*0.10;econ.inflation=(num(econ.inflation)||0)+pressure;impact.inflationDelta=pressure;}else impact.inflationAvailability='UNOBSERVED';
+    if(num(econ.unemployment)!==null&&utilization!==null){var laborDelta=(0.5-utilization)*0.05;econ.unemployment=Math.max(0,(num(econ.unemployment)||0)+laborDelta);impact.unemploymentDelta=laborDelta;}else impact.unemploymentAvailability='UNOBSERVED';
+    econ.resourceCausalImpact=impact;econ.resourceValueAddedThisTurn=valueAdded;state().economy=state().economy||{};state().economy[cid]=econ;emit('OMEGA_RESOURCE_MACRO_CAUSAL_IMPACT_UPDATED',cid,impact,'resource-economy');return impact;
+  }
+
   function runTurn(){
-    return loadRules().then(function(){installHandlers();installEvents();countries().forEach(function(c){try{processCountry(c);}catch(e){emit('OMEGA_RESOURCE_ECONOMY_RUNTIME_HEALTH',c,{status:'DEGRADED',reason:String(e&&e.message||e)},'resource-economy');}});if(g.OmegaGlobalMarket&&typeof g.OmegaGlobalMarket.rebuild==='function'){try{g.OmegaGlobalMarket.rebuild();}catch(_){}}if(g.OmegaGlobalTrade&&typeof g.OmegaGlobalTrade.processAll==='function'){try{g.OmegaGlobalTrade.processAll();}catch(_){}}countries().forEach(function(c){var d=dashboard(c);emit('OMEGA_RESOURCE_ECONOMY_RUNTIME_HEALTH',c,d.health,'resource-economy');try{if(typeof g.dispatchEvent==='function'&&typeof g.CustomEvent==='function')g.dispatchEvent(new g.CustomEvent('OMEGA_RESOURCE_ECONOMY_UPDATED',{detail:d}));}catch(_){}});return true;});
+    return loadRules().then(function(){installHandlers();installEvents();countries().forEach(function(c){try{processCountry(c);}catch(e){emit('OMEGA_RESOURCE_ECONOMY_RUNTIME_HEALTH',c,{status:'DEGRADED',reason:String(e&&e.message||e)},'resource-economy');}});countries().forEach(function(c){try{applyMacroCausalImpact(c);}catch(e){emit('OMEGA_RESOURCE_ECONOMY_RUNTIME_HEALTH',c,{status:'DEGRADED',reason:'MACRO_CAUSAL_IMPACT_FAILED',detail:String(e&&e.message||e)},'resource-economy');}});if(g.OmegaGlobalMarket&&typeof g.OmegaGlobalMarket.rebuild==='function'){try{g.OmegaGlobalMarket.rebuild();}catch(_){}}if(g.OmegaGlobalTrade&&typeof g.OmegaGlobalTrade.processAll==='function'){try{g.OmegaGlobalTrade.processAll();}catch(_){}}countries().forEach(function(c){var d=dashboard(c);emit('OMEGA_RESOURCE_ECONOMY_RUNTIME_HEALTH',c,d.health,'resource-economy');try{if(typeof g.dispatchEvent==='function'&&typeof g.CustomEvent==='function')g.dispatchEvent(new g.CustomEvent('OMEGA_RESOURCE_ECONOMY_UPDATED',{detail:d}));}catch(_){}});return true;});
   }
   var uiOriginal=null;
   function esc(v){return String(v==null?'':v).replace(/[&<>"]/g,function(ch){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch];});}
