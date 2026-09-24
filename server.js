@@ -387,4 +387,3 @@ const server = app.listen(PORT, () => {
   console.log(`[OMEGA Server] listening on http://127.0.0.1:${PORT}`);
 });
 
-export { app, server, executeDeepCorePrompt };
