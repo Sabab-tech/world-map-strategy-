@@ -1361,215 +1361,86 @@ Game.Map.applyResourceFilterAndClose = function() {
     this.renderResourceDeposits();
 };
 
-Game.Map.renderResourceDeposits = function() {
-    this.map = this.map || window.map;
-    if (!this.map) return;
-
-    // Initialize SINGLE layer group if needed
-    if (!this.resourceDepositsLayer) {
-        this.resourceDepositsLayer = L.layerGroup().addTo(this.map);
-    }
-
-    // CRITICAL MANDATE 11: ONE LAYER ONLY. Always clear before adding new markers.
+Game.Map.renderResourceDeposits = function(){
+    this.map=this.map||window.map;
+    if(!this.map)return;
+    if(!this.resourceDepositsLayer)this.resourceDepositsLayer=L.layerGroup().addTo(this.map);
     this.resourceDepositsLayer.clearLayers();
-
-    // Auto-populate all catalog resources if selectedResources is empty but enabled
-    if (this.resourceState && this.resourceState.enabled && (!this.resourceState.selectedResources || this.resourceState.selectedResources.size === 0)) {
-        if (Array.isArray(this.resourceCatalog)) {
-            this.resourceState.selectedResources = new Set(this.resourceCatalog.map(r => r.id.toLowerCase()));
-        }
+    if(!this.__omegaLiveResourceMapHooks){
+        this.__omegaLiveResourceMapHooks=true;
+        ['OMEGA_RESOURCE_EXTRACTION_COMPLETED','OMEGA_RESOURCE_EXTRACTION_BLOCKED','OMEGA_RESOURCE_TRANSPORT_PROGRESS','OMEGA_RESOURCE_TRANSPORT_DELIVERED','OMEGA_RESOURCE_PROCESSING_TELEMETRY_UPDATED','OMEGA_RESOURCE_ECONOMY_UPDATED'].forEach(function(evt){
+            window.addEventListener(evt,function(){if(Game.Map.resourceState?.enabled){clearTimeout(Game.Map.__omegaMapRefreshTimer);Game.Map.__omegaMapRefreshTimer=setTimeout(function(){Game.Map.renderResourceDeposits();},40);}});
+        });
     }
-
-    // Check if mode is active or any resources selected
-    if (!this.resourceState.enabled || this.resourceState.selectedResources.size === 0) {
-        const summaryCountElem = document.getElementById('resource-summary-count');
-        if (summaryCountElem) summaryCountElem.textContent = '0 deposits';
-        return;
+    if(!this.resourceState)this.resourceState={enabled:false,scope:'NATION',selectedResources:new Set()};
+    const ontology=window.__OmegaResourceEconomyOntology;
+    if(ontology&&typeof ontology==='object'&&Object.keys(ontology).length){
+        const previous=this.resourceCatalog||[];
+        this.resourceCatalog=Object.keys(ontology).map(function(rawId){
+            const row=ontology[rawId]||{},id=String(row.key||rawId).replace(/^RES_TYPE:/i,'').trim().toLowerCase();
+            const old=previous.find(function(x){return String(x.id).toLowerCase()===id;});
+            return{id:id,name:row.name||row.label||id.replace(/_/g,' '),icon:row.icon||old?.icon||'⛏️',color:row.color||old?.color||'#38bdf8'};
+        });
+        if(!this.resourceState.selectedResources||this.resourceState.selectedResources.size===0)this.resourceState.selectedResources=new Set(this.resourceCatalog.map(function(x){return x.id;}));
     }
-
-    // Hide City Hubs when Resource Mode is Active
-    if (this.hubsGroupLayer) {
-        this.hubsGroupLayer.clearLayers();
+    const rs=this.resourceState||{enabled:false,scope:'NATION',selectedResources:new Set()};
+    if(ontology&&typeof ontology==='object'&&Object.keys(ontology).length&&!this.__omegaCanonicalResourceSelectionMigrated){
+        this.resourceState.selectedResources=new Set(Object.keys(ontology).map(function(rawId){return String((ontology[rawId]||{}).key||rawId).replace(/^RES_TYPE:/i,'').trim().toLowerCase();}));
+        this.__omegaCanonicalResourceSelectionMigrated=true;
     }
-
-    const engine = window.ResourceMinistryEngine;
-    const deposits = (engine && engine.deposits && engine.deposits.length > 0) ? engine.deposits : [];
-    
-    const normCountry = (c) => {
-        if (!c) return '';
-        let s = String(c).replace(/_/g, " ").toUpperCase().trim();
-        const map = {
-            'UNITED STATES OF AMERICA': 'USA', 'UNITED STATES': 'USA', 'AMERICA': 'USA',
-            'IVORY COAST': "COTE D'IVOIRE", "CÔTE D'IVOIRE": "COTE D'IVOIRE",
-            'DEMOCRATIC REPUBLIC OF THE CONGO': 'DR CONGO', 'CONGO (KINSHASA)': 'DR CONGO', 'CONGO': 'DR CONGO',
-            'BANGLADESH': 'BANGLADESH', 'INDIA': 'INDIA', 'PAKISTAN': 'PAKISTAN', 'CHINA': 'CHINA', 'RUSSIA': 'RUSSIA'
-        };
-        return map[s] || s;
-    };
-
-    const activeCountryNorm = normCountry(Game.currentActiveCountry || (window.CountryIOS && window.CountryIOS.activeCountry) || 'BANGLADESH');
-    const scope = this.resourceState.scope || 'WORLD'; // Default to global scope so all 197 countries show!
-    const selectedRes = this.resourceState.selectedResources;
-
-    // Deduplication & Safety Validation Loop
-    const seenKeys = new Set();
-    const matchingDeposits = [];
-
-    deposits.forEach(dep => {
-        // SAFETY GATE: Valid finite coordinates within earth lat/lng range
-        const lat = Number(dep.lat);
-        const lng = Number(dep.lng);
-        if (!Number.isFinite(lat) || !Number.isFinite(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
-            return; // Skip invalid coordinates
-        }
-
-        const resId = (dep.resId || '').toLowerCase().trim();
-        // Check if selected or tag matches
-        const hasMatch = selectedRes.has(resId) || (Array.isArray(dep.resourceTags) && dep.resourceTags.some(t => selectedRes.has(String(t).toLowerCase())));
-        if (!hasMatch && selectedRes.size > 0 && !selectedRes.has('all')) return; // Filtered out
-
-        const cNorm = normCountry(dep.country || dep.countryCode || '');
-
-        // Scope Filter: NATION vs WORLD
-        if (scope === 'NATION') {
-            const isMatch = (cNorm === activeCountryNorm) ||
-                            (dep.countryCode && String(dep.countryCode).toUpperCase() === activeCountryNorm) ||
-                            (cNorm.length > 3 && activeCountryNorm.length > 3 && (cNorm.includes(activeCountryNorm) || activeCountryNorm.includes(cNorm)));
-            if (!isMatch) return;
-        }
-
-        // Deduplication Key
-        const dedupKey = `${cNorm}|${resId}|${lat.toFixed(3)}|${lng.toFixed(3)}`;
-        if (seenKeys.has(dedupKey)) return;
-        seenKeys.add(dedupKey);
-
-        matchingDeposits.push({ ...dep, lat, lng, resId });
-    });
-
-    const summaryCountElem = document.getElementById('resource-summary-count');
-    if (summaryCountElem) {
-        summaryCountElem.textContent = `${matchingDeposits.length} deposit${matchingDeposits.length === 1 ? '' : 's'}`;
-    }
-
-    // Exact Geographic Placement with micro-offset only for overlapping identical coordinates
-    const coordMap = new Map();
-    matchingDeposits.forEach((dep) => {
-        const coordKey = `${dep.lat.toFixed(3)}_${dep.lng.toFixed(3)}`;
-        if (!coordMap.has(coordKey)) {
-            coordMap.set(coordKey, []);
-        }
-        coordMap.get(coordKey).push(dep);
-    });
-
-    // Render screen-space fixed markers with Leaflet divIcon
-    coordMap.forEach((items) => {
-        const total = items.length;
-        items.forEach((dep, index) => {
-            let renderLat = dep.lat;
-            let renderLng = dep.lng;
-
-            // Apply slight micro-separation ONLY if multiple deposits share the exact same coordinates
-            if (total > 1) {
-                const angle = index * (2 * Math.PI / total);
-                const microOffset = 0.035; // micro-separation to allow clean clicking
-                renderLat = dep.lat + microOffset * Math.sin(angle);
-                renderLng = dep.lng + (microOffset * Math.cos(angle)) / Math.max(0.2, Math.cos(dep.lat * Math.PI / 180));
-            }
-
-            const catalogItem = (Array.isArray(this.resourceCatalog) ? this.resourceCatalog.find(r => r.id === dep.resId) : null) || { icon: '⛏️', color: '#ffd700' };
-            const icon = catalogItem.icon || '⛏️';
-            const color = catalogItem.color || '#38bdf8';
-
-            // Visual Yield Intensity Rating (Low/Medium/High/Massive)
-            const depStr = `${dep.reserves || dep.reserve || ''} ${dep.name || ''} ${dep.status || ''}`.toUpperCase();
-            let quantityTier = 'MEDIUM';
-            if (depStr.includes('WORLD TOP') || depStr.includes('WORLD NO1') || depStr.includes('TOP EXPORTER') || depStr.includes('WORLD LEADER') || depStr.includes('SUPERGIANT') || depStr.includes('MASSIVE') || depStr.includes('TIER 1') || depStr.includes('TCF') || depStr.includes('1.8B') || depStr.includes('8.5B') || depStr.includes('2.4M')) {
-                quantityTier = 'MASSIVE';
-            } else if (depStr.includes('MAJOR') || depStr.includes('STRATEGIC') || depStr.includes('ACTIVE') || depStr.includes('890,000') || depStr.includes('650M') || depStr.includes('MILLION')) {
-                quantityTier = 'HIGH';
-            }
-
-            let size = 26;
-            let glowStyle = `0 0 8px ${color}`;
-            let auraHtml = '';
-            let badgeHtml = '';
-
-            if (quantityTier === 'MASSIVE') {
-                size = 28;
-                glowStyle = `0 0 12px ${color}, 0 0 22px ${color}`;
-                auraHtml = `<div style="position:absolute; inset:-5px; border-radius:50%; border:1.5px solid ${color}; animation: resMarkerPulse 1.8s infinite ease-in-out; pointer-events:none;"></div>`;
-                badgeHtml = `<span style="position:absolute; top:-4px; right:-4px; background:#ef4444; color:#ffffff; font-size:8px; font-weight:900; line-height:1; width:12px; height:12px; border-radius:50%; display:flex; align-items:center; justify-content:center; box-shadow:0 0 5px #ef4444; z-index:10; border:1px solid #fff;">★</span>`;
-            } else if (quantityTier === 'HIGH') {
-                size = 26;
-                glowStyle = `0 0 10px ${color}`;
-                auraHtml = `<div style="position:absolute; inset:-3px; border-radius:50%; border:1px solid ${color}; animation: resMarkerPulse 2.5s infinite ease-in-out; pointer-events:none;"></div>`;
-                badgeHtml = `<span style="position:absolute; top:-3px; right:-3px; background:#eab308; color:#000; font-size:7px; font-weight:bold; width:10px; height:10px; border-radius:50%; display:flex; align-items:center; justify-content:center;">▲</span>`;
-            }
-
-            const halfSize = Math.round(size / 2);
-
-            const markerHtml = `
-                <div title="${dep.name} (${dep.country}) - ${quantityTier} YIELD" style="
-                    position: relative;
-                    background: rgba(11, 19, 35, 0.95);
-                    border: 1.5px solid ${color};
-                    border-radius: 50%;
-                    width: ${size}px;
-                    height: ${size}px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    box-shadow: ${glowStyle};
-                    font-size: 11px;
-                    cursor: pointer;
-                    transition: transform 0.2s ease;
-                ">
-                    ${auraHtml}
-                    ${badgeHtml}
-                    <span style="z-index:2; line-height:1;">${icon}</span>
-                </div>
-            `;
-
-            const customIcon = L.divIcon({
-                html: markerHtml,
-                className: 'resource-deposit-compact-icon',
-                iconSize: [size, size],
-                iconAnchor: [halfSize, halfSize]
-            });
-
-            const marker = L.marker([renderLat, renderLng], { icon: customIcon });
-
-            const reservesText = dep.reserves || dep.reserve || 'Authoritative In-situ Sovereign Assessment';
-            const popupContent = `
-                <div style="font-family:'Segoe UI', sans-serif; color:#f8fafc; width:250px; padding:8px; background:rgba(15,23,42,0.95); border:1px solid ${color}; border-radius:8px;">
-                    <div style="font-size:13px; font-weight:bold; color:${color}; border-bottom:1px solid rgba(0,229,255,0.3); padding-bottom:4px; margin-bottom:6px; display:flex; align-items:center; gap:6px;">
-                        <span>${icon}</span> <span>${(dep.name || '').toUpperCase()}</span>
-                    </div>
-                    <div style="font-size:11px; color:#cbd5e1; line-height:1.6; margin-bottom:8px;">
-                        <div>🌍 Country: <strong style="color:#00e5ff;">${dep.country || dep.countryCode}</strong></div>
-                        <div>⛏️ Commodity: <strong style="color:#facc15;">${(dep.resId || '').toUpperCase().replace(/_/g, ' ')}</strong></div>
-                        <div>📊 Reserves: <strong style="color:#22c55e;">${reservesText}</strong></div>
-                        <div>🏛️ Operator: <span style="color:#94a3b8;">${dep.operator || 'State Resource Authority'}</span></div>
-                        <div>⚡ Status: <strong style="color:#a855f7;">${dep.status || 'Active Producing'}</strong></div>
-                    </div>
-                    <div style="display:flex; flex-direction:column; gap:5px; margin-top:8px;">
-                        <button onclick="if(window.ResourceMinistryEngine) window.ResourceMinistryEngine.executeDirective('expand_facility', '${dep.resId}');" style="padding:6px 10px; background:rgba(34,197,94,0.25); border:1px solid #22c55e; color:#22c55e; font-size:10px; font-weight:bold; border-radius:4px; cursor:pointer; text-align:center;">
-                            🏭 EXPAND FACILITY CAPACITY (+25%)
-                        </button>
-                        <button onclick="if(window.ResourceMinistryEngine) window.ResourceMinistryEngine.executeDirective('survey', '${dep.resId}');" style="padding:6px 10px; background:rgba(234,179,8,0.25); border:1px solid #eab308; color:#eab308; font-size:10px; font-weight:bold; border-radius:4px; cursor:pointer; text-align:center;">
-                            ⛏️ DISPATCH GEOLOGICAL SURVEY
-                        </button>
-                        <button onclick="if(window.ResourceMinistryEngine) window.ResourceMinistryEngine.openModal('${dep.country || dep.countryCode}', 'matrix');" style="padding:6px 10px; background:rgba(0,229,255,0.25); border:1px solid #00e5ff; color:#00e5ff; font-size:10px; font-weight:bold; border-radius:4px; cursor:pointer; text-align:center;">
-                            💎 AUDIT PROVEN IN-SITU LEDGER
-                        </button>
-                    </div>
-                </div>
-            `;
-
-            marker.bindPopup(popupContent, { className: 'dark-theme-popup' });
-            this.resourceDepositsLayer.addLayer(marker);
+    if(!rs.enabled){const el=document.getElementById('resource-summary-count');if(el)el.textContent='0 deposits';return;}
+    const selected=rs.selectedResources&&rs.selectedResources.size?rs.selectedResources:new Set();
+    const gameState=window.Game?.state||window.gameState||{},resources=gameState.resource||{};
+    const normCountry=v=>String(v||'').replace(/_/g,' ').trim().toUpperCase();
+    const active=normCountry(Game.currentActiveCountry||(window.CountryIOS&&window.CountryIOS.activeCountry)||'BANGLADESH');
+    const countries=Object.keys(resources);
+    const scopeCountries=rs.scope==='WORLD'?countries:countries.filter(c=>{const x=normCountry(c);return x===active||x.includes(active)||active.includes(x);});
+    const rows=[];
+    scopeCountries.forEach(function(c){
+        const country=resources[c]||{},mines=Array.isArray(country.mines)?country.mines:[],outputs=country.mineOutputs||{},states=country.mineStates||{};
+        mines.forEach(function(mine){
+            const name=String(mine.depositName||mine.rawDeposit?.name||'').trim(),raw=mine.rawDeposit||{},rawRid=String(mine.resourceId||'').trim().toLowerCase();
+            const rid=/\bcoal\b|coal basin|bituminous|anthracite/i.test(name)&&rawRid==='iron_ore'?'coal':rawRid;
+            if(!rid)return;
+            if(selected.size&&!selected.has('all')&&!selected.has(rid))return;
+            const lat=Number(raw.lat??mine.lat),lng=Number(raw.lng??raw.lon??mine.lng);
+            if(!Number.isFinite(lat)||!Number.isFinite(lng)||lat<-90||lat>90||lng<-180||lng>180)return;
+            const output=outputs[mine.occurrenceKey]||{},reserve=states[mine.occurrenceKey]||mine.reserveState||{},residual=Number(reserve.residualQuantity??output.residualQuantity),produced=Number(output.producedQuantity)||0;
+            rows.push({countryId:c,mine,raw,rid,name,lat,lng,output,reserve,residual:Number.isFinite(residual)?residual:null,produced});
         });
     });
+    const count=document.getElementById('resource-summary-count');if(count)count.textContent=rows.length+' deposit'+(rows.length===1?'':'s');
+    const groups=new Map();rows.forEach(x=>{const k=x.lat.toFixed(3)+'_'+x.lng.toFixed(3);if(!groups.has(k))groups.set(k,[]);groups.get(k).push(x);});
+    const catalog=this.resourceCatalog||[];
+    const esc=v=>String(v??'').replace(/[&<>"]/g,function(ch){return({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch])||ch;});
+    const mapSelf=this;
+    groups.forEach(function(items){items.forEach(function(x,index){
+        const ci=catalog.find(r=>String(r.id).toLowerCase()===x.rid)||{id:x.rid,name:x.rid.replace(/_/g,' '),icon:'⛏️',color:'#38bdf8'};
+        const status=String(x.output.status||x.mine.operationalStatus||x.reserve.operationalStatus||'UNOBSERVED').toUpperCase();
+        const live=x.produced>0?'EXTRACTING':(status.indexOf('EXHAUST')>=0?'EXHAUSTED':(status.indexOf('BLOCK')>=0?'BLOCKED':'READY'));
+        const dot=live==='EXTRACTING'?'#22c55e':(live==='EXHAUSTED'?'#ef4444':(live==='BLOCKED'?'#f59e0b':'#38bdf8'));
+        let lat=x.lat,lng=x.lng;
+        if(items.length>1){const angle=index*(2*Math.PI/items.length),off=.025;lat+=off*Math.sin(angle);lng+=(off*Math.cos(angle))/Math.max(.2,Math.cos(x.lat*Math.PI/180));}
+        const iconHtml='<div title="'+esc(x.name)+'" style="position:relative;background:rgba(8,15,26,.96);border:1.5px solid '+ci.color+';border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;box-shadow:0 0 10px '+ci.color+'66;cursor:pointer"><span style="position:absolute;right:-5px;top:-5px;width:10px;height:10px;border-radius:50%;background:'+dot+';border:1px solid #07111d"></span><span style="font-size:12px">'+ci.icon+'</span></div>';
+        const marker=L.marker([lat,lng],{icon:L.divIcon({html:iconHtml,className:'resource-deposit-live-icon',iconSize:[28,28],iconAnchor:[14,14]})});
+        const transport=Array.isArray(gameState.transport?.[x.countryId]?.resourceShipments)?gameState.transport[x.countryId].resourceShipments:[];
+        const transit=transport.filter(sh=>sh.status==='IN_TRANSIT'&&(String(sh.sourceNodeId||'')==='MINE:'+x.mine.occurrenceKey||String(sh.resourceId||'').toLowerCase()===x.rid));
+        const popup='<div style="font-family:Segoe UI,sans-serif;color:#f8fafc;width:270px;background:#0f172a;padding:9px;border:1px solid '+ci.color+';border-radius:8px">'+
+            '<div style="font-size:13px;font-weight:700;color:'+ci.color+';margin-bottom:6px">'+esc(x.name||'RESOURCE OCCURRENCE')+'</div>'+
+            '<div style="font-size:10px;color:#cbd5e1;line-height:1.65">'+
+            '<div>COUNTRY: <b>'+esc(x.countryId)+'</b></div>'+
+            '<div>COMMODITY: <b>'+esc(ci.name)+'</b></div>'+
+            '<div>LIVE RESERVE: <b>'+esc(x.residual===null?'UNKNOWN':x.residual.toLocaleString())+(x.mine.unit?' '+esc(x.mine.unit):'')+'</b></div>'+
+            '<div>THIS TURN EXTRACTION: <b>'+esc(x.produced.toLocaleString())+'</b></div>'+
+            '<div>LIVE STATUS: <b style="color:'+dot+'">'+esc(live)+'</b></div>'+
+            '<div>OCCURRENCE: <b>'+esc(x.mine.occurrenceKey)+'</b></div>'+
+            '<div>IN-TRANSIT FROM OCCURRENCE: <b>'+transit.length+'</b></div>'+
+            '</div>'+
+            '<button style="margin-top:7px;width:100%;padding:5px;background:rgba(0,229,255,.1);border:1px solid #00e5ff;color:#00e5ff;border-radius:4px" onclick="if(window.CountryIOS)window.CountryIOS.open(\''+esc(x.countryId)+'\',5)">OPEN RESOURCE MINISTRY</button>'+
+            '</div>';
+        marker.bindPopup(popup,{className:'dark-theme-popup'});
+        mapSelf.resourceDepositsLayer.addLayer(marker);
+    });});
 };
 
 Game.Map.toggleResourceOverlay = function() {

@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "1.0.0",
+  "defaultMode": "ROAD",
+  "modes": {
+    "PIPELINE": { "capacityPerTurn": 500000, "defaultTravelTurns": 1, "costPerUnit": 0.004 },
+    "RAIL": { "capacityPerTurn": 100000, "defaultTravelTurns": 1, "costPerUnit": 0.006 },
+    "ROAD": { "capacityPerTurn": 50000, "defaultTravelTurns": 1, "costPerUnit": 0.01 },
+    "PORT": { "capacityPerTurn": 250000, "defaultTravelTurns": 2, "costPerUnit": 0.008 },
+    "SEA": { "capacityPerTurn": 500000, "defaultTravelTurns": 2, "costPerUnit": 0.003 },
+    "AIR": { "capacityPerTurn": 5000, "defaultTravelTurns": 1, "costPerUnit": 0.08 }
+  },
+  "nodeCapacityDefault": 1000000000,
+  "maxShipments": 16384,
+  "maxLedgerEntries": 4096,
+  "sameCountryDefaultMode": "RAIL",
+  "tradeDefaultMode": "SEA"
+}

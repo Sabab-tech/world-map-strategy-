@@ -150,6 +150,13 @@
     OMEGA_RESOURCE_TRADE_RECONCILED:'OMEGA_RESOURCE_TRADE_RECONCILED',
     OMEGA_RESOURCE_ECONOMY_RUNTIME_HEALTH:'OMEGA_RESOURCE_ECONOMY_RUNTIME_HEALTH',
     OMEGA_RESOURCE_DOMESTIC_SALE_SETTLED:'OMEGA_RESOURCE_DOMESTIC_SALE_SETTLED',
+    OMEGA_RESOURCE_TRANSPORT_SHIPMENT_CREATED:'OMEGA_RESOURCE_TRANSPORT_SHIPMENT_CREATED',
+    OMEGA_RESOURCE_TRANSPORT_PROGRESS:'OMEGA_RESOURCE_TRANSPORT_PROGRESS',
+    OMEGA_RESOURCE_TRANSPORT_DELIVERED:'OMEGA_RESOURCE_TRANSPORT_DELIVERED',
+    OMEGA_RESOURCE_TRANSPORT_HEALTH:'OMEGA_RESOURCE_TRANSPORT_HEALTH',
+    OMEGA_RESOURCE_TRANSPORT_TURN_RESOLVED:'OMEGA_RESOURCE_TRANSPORT_TURN_RESOLVED',
+    OMEGA_RESOURCE_PROCESSING_TELEMETRY_UPDATED:'OMEGA_RESOURCE_PROCESSING_TELEMETRY_UPDATED',
+    OMEGA_RESOURCE_MACRO_CAUSAL_IMPACT_UPDATED:'OMEGA_RESOURCE_MACRO_CAUSAL_IMPACT_UPDATED',
 
     MINISTRY_STATE_CHANGED:'MINISTRY_STATE_CHANGED'
   });
@@ -168,7 +175,7 @@
     economy:[
       'economy.gdp','economy.debt','economy.inflation','economy.unemployment',
       'economy.production','economy.productionCapacity','economy.revenue','economy.reserves','economy.productionAssets',
-      'economy.industrialRuntime','economy.companyAccounts','economy.workerIncome','economy.supplierRevenue','economy.factoryOutput'
+      'economy.industrialRuntime','economy.companyAccounts','economy.workerIncome','economy.supplierRevenue','economy.factoryOutput','economy.resourceCausalImpact','economy.resourceValueAddedThisTurn'
     ],
     trade:[
       'trade.relations','trade.balance','trade.exports','trade.imports',
@@ -193,12 +200,16 @@
       'interior.stability','interior.corruption','interior.security','interior.housingAssets','cities.housing.available'
     ],
     transport:[
-      'transport.infrastructure','transport.infrastructure.capacity','transport.logistics','transport.ports','transport.rail','transport.resourceRevenue'
+      'transport.infrastructure','transport.infrastructure.capacity','transport.logistics','transport.ports','transport.rail',
+      'transport.nodes','transport.routes','transport.resourceShipments','transport.inboundResourceShipments',
+      'transport.capacity','transport.ledger','transport.transportLedger','transport.runtimeRevision','transport.nextShipmentSequence',
+      'transport.resourceRevenue'
     ],
     resource:[
       'resourceSummary','resourceInventory','resourceDeposits','resource.inventory','resource.production','resource.consumption','resource.reserves',
       'resource.endowment','resource.mines','resource.mineStates','resource.tradeAvailability','resource.extractionLedger','resource.resourceDomain','resource.authority',
-      'resource.batches','resource.inventoryLedger','resource.inventoryIntegrity','resource.lastExtractionTurn'
+      'resource.batches','resource.inventoryLedger','resource.inventoryIntegrity','resource.lastExtractionTurn',
+      'resource.facilityInventory','resource.processingRuntime','resource.inventoryDelta','resource.lastEconomyTurn','resource.resourceCausalImpact','resource.resourceValueAddedThisTurn'
     ],
     health:[
       'health.state','health.welfare','health.hospitals'
