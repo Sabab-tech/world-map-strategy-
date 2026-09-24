@@ -28,6 +28,18 @@ await import('../omega_resource_transport_runtime_v1.js');
 const runtime=globalThis.OmegaResourceEndowmentRuntime;
 const initialized=await runtime.initialize();
 assert.equal(initialized.status,'READY');
+console.log('RESOURCE_DEBUG',JSON.stringify({
+  initialized,
+  canonicalBGD:countryIdentity.resolveCountry('BGD'),
+  canonicalBangladesh:countryIdentity.resolveCountry('BANGLADESH'),
+  runtime:runtime.diagnostics(),
+  resourceStateKeys:Object.keys(globalThis.Game.state.resource||{}),
+  reserveCount:globalThis.__OmegaResourceReserveRegistry?.reserveStates?.size||null,
+  identityOccurrences:globalThis.__OmegaResourceIdentityRegistry?.occurrences?.size||null,
+  bgdIndex:globalThis.__OmegaResourceIdentityRegistry?.getOccurrencesByCountry?.('BGD')?.length||null,
+  bdIndex:globalThis.__OmegaResourceIdentityRegistry?.getOccurrencesByCountry?.('BD')?.length||null,
+  deposits:(engine.deposits||[]).filter(x=>String(x.countryCode||'').toUpperCase()==='BGD').map(x=>({name:x.name,resId:x.resId,reserves:x.reserves}))
+}));
 const before=runtime.countryResourceState('BGD');
 assert(before);
 assert(Array.isArray(before.mines));
