@@ -12028,7 +12028,7 @@ _globalScope.GSRSK_DataFoundation = (() => {
                     return Number(m[1]) * scale * 1000;
                 }
                 if (rid === 'iron_ore' && /\bCOAL\b/i.test(text)) return null;
-                if (['iron_ore','rare_earth','lithium','phosphate','bauxite','nickel','cobalt','potash'].includes(rid)) {
+                if (['coal','iron_ore','rare_earth','lithium','phosphate','bauxite','nickel','cobalt','potash'].includes(rid)) {
                     const m = text.match(/([0-9]+(?:\.[0-9]+)?)\s*(billion|million|thousand)?\s*(?:metric\s*)?tons?/i);
                     if (!m) return null;
                     const scale = String(m[2] || '').toLowerCase() === 'billion' ? 1e9 : String(m[2] || '').toLowerCase() === 'million' ? 1e6 : String(m[2] || '').toLowerCase() === 'thousand' ? 1e3 : 1;
