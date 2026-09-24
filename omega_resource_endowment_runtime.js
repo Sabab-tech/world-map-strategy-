@@ -305,38 +305,31 @@
     return batch;
   }
   function syncSourceCapacities(registry){
-    const p5=g.GSRSK_Part05||g.GSRSK_ResourceReserveExtractionEngine;
     const e=engine();
-    if(!registry||!p5?.ExtractionCapacity||typeof registry.registerCapacity!=='function'||!e)return {updated:0,zeroed:0};
-    let updated=0,zeroed=0;
-    try{
-      const identityRegistry=g.__OmegaResourceIdentityRegistry || registry;
-      identityRegistry.occurrences?.forEach?.((occ,occKey)=>{
-        const deposit=identityRegistry.getDeposit?.(occ.depositKey);
-        const name=String(deposit?.depositRawName||'').trim().toUpperCase();
-        const country=String(deposit?.hostCountryIso3||'').trim().toUpperCase();
-        const raw=(e.deposits||[]).find(d=>String(d?.name||'').trim().toUpperCase()===name &&
-          (!country||String(d?.countryCode||d?.country||'').trim().toUpperCase()===country));
-        const rate=n(raw?.productionRatePerDay??raw?.dailyProduction??raw?.dailyOutput??raw?.capacityPerDay);
-        const status=String(raw?.operationalStatus||raw?.status||'').toUpperCase();
-        const inactive=/CLOSED|INACTIVE|SUSPENDED|DEPLETED|ABANDONED|PLANNED|EXPLORATION/.test(status);
-        const effective=rate!==null && rate>0 && !inactive ? rate : 0;
-        const res=identityRegistry.getResourceType?.(occ.resourceTypeKey);
-        const unit=res?.declaredStandardUnit||raw?.unit||'TONNES';
-        const capacity=new p5.ExtractionCapacity({
-          assetReference:'ASSET_'+occKey,
-          occurrenceKey:occKey,
-          nominalRate:effective,
-          unit:unit,
-          period:p5.TemporalWindowUnit?.PER_DAY||'PER_DAY',
-          availabilityFactor:Math.max(0,Math.min(1,n(raw?.capacityAvailabilityFactor)??0.92)),
-          maintenanceFactor:Math.max(0,Math.min(1,n(raw?.capacityMaintenanceFactor)??0.95))
-        });
-        registry.registerCapacity(capacity);
-        if(effective>0)updated++;else zeroed++;
-      });
-    }catch(_){}
-    return{updated,zeroed,source:'RESOURCE_JSON',identityOccurrences:identityRegistry?.occurrences?.size||0};
+    const identityRegistry=g.__OmegaResourceIdentityRegistry;
+    const rows=identityRegistry?.occurrences instanceof Map ? Array.from(identityRegistry.occurrences.values()) : [];
+    const sites=Array.isArray(e?.deposits)?e.deposits:[];
+    let observedSourceRates=0,derivedRates=0,unobservedRates=0;
+    for(const occ of rows){
+      const dep=identityRegistry.getDeposit?.(occ.depositKey);
+      const name=String(dep?.depositRawName||'').trim().toUpperCase();
+      const country=String(dep?.hostCountryIso3||'').trim().toUpperCase();
+      const raw=sites.find(x=>String(x?.name||'').trim().toUpperCase()===name &&
+        (!country||String(x?.countryCode||x?.country||'').trim().toUpperCase()===country));
+      const rate=n(raw?.productionRatePerDay);
+      const status=String(raw?.productionRateStatus||'').toUpperCase();
+      if(rate!==null&&rate>0&&status!=='DERIVED_GAME_RULE')observedSourceRates++;
+      else if(rate!==null&&rate>0)derivedRates++;
+      else unobservedRates++;
+    }
+    return{
+      status:'PART05_DATA_BACKED',
+      totalOccurrences:rows.length,
+      observedSourceRates,
+      derivedRates,
+      unobservedRates,
+      authority:'RESOURCE_JSON + RESOURCE_ECONOMY_RULES'
+    };
   }
   function hydrateHandler(cmd,ctx){
     const c=canonical(ctx.countryId),rows=occurrenceRows(c),existing=clone(state()?.resource?.[c]||{});
