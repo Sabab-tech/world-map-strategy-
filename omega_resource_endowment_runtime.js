@@ -255,15 +255,23 @@
     const purityRaw=raw.purity??raw.orePurity??raw.ore_purity??raw.quality??null;
     const grade=parseObservedQuality(raw.gradeValue??gradeRaw);
     const purity=parseObservedQuality(raw.purityValue??purityRaw);
+    const rid=String(x.resourceId||x.resourceTypeKey||'').replace(/^RES_TYPE:/i,'').toLowerCase();
+    const gasLike=rid==='natural_gas';
+    const oilLike=rid==='crude_oil';
+    const liquidLike=oilLike;
     const quality=Object.assign({},clone(batch.qualityState||{}),{
       grade,
       purity,
       gradeRaw:gradeRaw===undefined?null:gradeRaw,
       purityRaw:purityRaw===undefined?null:purityRaw,
-      gradeStatus:grade===null?'UNOBSERVED':'OBSERVED_SOURCE',
+      gradeStatus:grade===null
+        ? (gradeRaw===undefined||gradeRaw===null||gradeRaw===''?'UNOBSERVED':'OBSERVED_TEXT_ONLY')
+        : 'OBSERVED_SOURCE',
       purityStatus:purity===null?'UNOBSERVED':'OBSERVED_SOURCE',
-      physicalState:raw.physicalState||batch.qualityState?.physicalState||'SOLID_RUN_OF_MINE',
-      chemicalState:raw.chemicalState||batch.qualityState?.chemicalState||'RAW_EXTRACTED_ORE'
+      physicalState:raw.physicalState||batch.qualityState?.physicalState||
+        (gasLike?'GAS_RAW':(liquidLike?'LIQUID_CRUDE':'SOLID_RUN_OF_MINE')),
+      chemicalState:raw.chemicalState||batch.qualityState?.chemicalState||
+        (gasLike?'RAW_NATURAL_GAS':(liquidLike?'RAW_CRUDE_OIL':'RAW_EXTRACTED_ORE'))
     });
     batch.batchId=batch.batchId||('BATCH_EXT_'+turn()+'_'+canonical(c)+'_'+String(x.occurrenceKey).replace(/[^A-Z0-9:_-]/gi,''));
     batch.resourceId=x.resourceId||batch.resourceId||x.resourceTypeKey;
