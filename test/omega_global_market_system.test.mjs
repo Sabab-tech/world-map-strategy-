@@ -28,6 +28,7 @@ await import('../omega_ministry_interoperability_system.js');
 await import('../omega_global_market_system.js');
 const market=globalThis.OmegaGlobalMarket;
 const books=market.rebuild();
+console.log('MARKET_DEBUG',JSON.stringify({books,state:globalThis.Game.state,market:globalThis.OmegaGlobalMarket&&Object.keys(globalThis.OmegaGlobalMarket)}));
 assert(books.crude_oil);
 const q=market.quote('crude_oil');
 assert.equal(q.status,'CLEARED');
