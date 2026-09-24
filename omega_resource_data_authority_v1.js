@@ -421,17 +421,17 @@
                   const mineRows=rows.filter(x=>String(x.resourceId||'')===String(rid));
                   return{
                     id:rid,
-                    production:num(production[rid])||0,
+                    production:finite(production[rid])||0,
                     productionObserved:true,
                     demand:null,
                     demandStatus:'UNOBSERVED',
                     net:null,
-                    inventory:num(inventory[rid])||0,
-                    warehouseStock:num(c?.warehouse?.stockByResource?.[rid])||num(inventory[rid])||0,
-                    reserve:num(reserves[rid])||0,
+                    inventory:finite(inventory[rid])||0,
+                    warehouseStock:finite(c?.warehouse?.stockByResource?.[rid])||finite(inventory[rid])||0,
+                    reserve:finite(reserves[rid])||0,
                     mineCount:mineRows.length,
-                    outputThisTurn:mineRows.reduce((s,x)=>s+(num(x.outputThisTurn)||0),0),
-                    cumulativeOutput:mineRows.reduce((s,x)=>s+(num(x.cumulativeOutput)||0),0),
+                    outputThisTurn:mineRows.reduce((s,x)=>s+(finite(x.outputThisTurn)||0),0),
+                    cumulativeOutput:mineRows.reduce((s,x)=>s+(finite(x.cumulativeOutput)||0),0),
                     selfSufficiency:null,
                     stockDays:null
                   };
@@ -440,7 +440,7 @@
                   mineCount:rows.length,
                   activeMines:c?.mines?.active||0,
                   blockedMines:c?.mines?.blocked||0,
-                  inventory:resourceIds.reduce((s,rid)=>s+(num(inventory[rid])||0),0),
+                  inventory:resourceIds.reduce((s,rid)=>s+(finite(inventory[rid])||0),0),
                   warehouseLots:c?.warehouse?.lotCount||0
                 }
               };
