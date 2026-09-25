@@ -14,7 +14,14 @@
     </script>
     <title>Global Geopolitical Strategy Simulator | OMEGA CORE</title>
 
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Share+Tech+Mono&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <script>
+        if (!window.OMEGA_ANDROID_OFFLINE) {
+            const link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.href = 'https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Share+Tech+Mono:wght@400;600&family=Inter:wght@400;600;700&display=swap';
+            document.head.appendChild(link);
+        }
+    </script>
     <link rel="stylesheet" href="leaflet.css">
     <link rel="stylesheet" href="style.css">
 
@@ -801,9 +808,13 @@
         </div>
     </div>
 
-<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-<script src="https://unpkg.com/recharts@2.12.7/umd/Recharts.min.js"></script>
+<script>
+    if (!window.OMEGA_ANDROID_OFFLINE) {
+        document.write('<script src="https://unpkg.com/react@18/umd/react.production.min.js"><\/script>');
+        document.write('<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"><\/script>');
+        document.write('<script src="https://unpkg.com/recharts@2.12.7/umd/Recharts.min.js"><\/script>');
+    }
+</script>
 
 <script src="design-tokens.js"></script>
 <script src="leaflet.js" defer onload="window.__OMEGA_DIAG__.boot.scriptStatus['leaflet.js']='LOADED'"></script>
