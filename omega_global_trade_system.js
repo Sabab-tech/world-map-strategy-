@@ -32,11 +32,27 @@
   const memory=()=>g.OmegaOpponentDeepMemory||g.Omega?.OpponentDeepMemory||null;
 
   function ids(){
+    const out=new Set();
     try{
       const b=registry();
       const a=b?.list?.('COUNTRY')||b?.list?.()||[];
-      return [...new Set(a.map(canonical).filter(Boolean))].sort();
-    }catch(_){return Object.keys(state()?.trade||{}).map(canonical).filter(Boolean).sort();}
+      for(const x of a){
+        const raw=x&&typeof x==='object'?(x.iso3||x.iso3Code||x.countryCode||x.country_id||x.id||x.canonicalId||x.code||x):x;
+        const v=canonical(raw);
+        if(v)out.add(v);
+      }
+    }catch(_){}
+    const s=state()||{};
+    for(const domain of ['trade','resource','finance','foreign','economy']){
+      const section=s[domain];
+      if(section&&typeof section==='object'){
+        for(const key of Object.keys(section)){
+          const v=canonical(key);
+          if(v)out.add(v);
+        }
+      }
+    }
+    return [...out].filter(Boolean).sort();
   }
   function read(root,path){
     let cur=root;
