@@ -104,7 +104,8 @@ assert(seen.some(x=>x&&x.payload&&x.payload.batch&&x.payload.batch.batchId===bat
 
 const preGlobal=runtime.diagnostics();
 const expectedCountries=countryIdentity.exportData().countries;
-assert.equal(preGlobal.countryCount,expectedCountries.length);
+const expectedResourceCountries=Object.keys(engine.countryProfiles||{});
+assert.equal(preGlobal.countryCount,expectedResourceCountries.length);
 assert.equal(preGlobal.mineSiteReferenceCount,199);
 assert.equal(preGlobal.mineSiteControllerCount,199);
 const globalExtraction=await runtime.extractAll();
