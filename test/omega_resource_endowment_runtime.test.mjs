@@ -109,9 +109,13 @@ assert.equal(globalExtraction.results.length,expectedCountries.length);
 
 const worldState=globalThis.Game.state.resource;
 const hydratedMineRows=Object.values(worldState).reduce((sum,row)=>sum+(Array.isArray(row?.mines)?row.mines.length:0),0);
-const evaluatedMineRows=Object.values(worldState).reduce((sum,row)=>sum+(row?.mineOutputs&&typeof row.mineOutputs==='object'?Object.keys(row.mineOutputs).length:0),0);
+const siteReferenceRows=Object.values(worldState).reduce((sum,row)=>sum+(Array.isArray(row?.mineSiteReferences)?row.mineSiteReferences.length:0),0);
+const siteControllerRows=Object.values(worldState).reduce((sum,row)=>sum+(row?.mineSiteControllers&&typeof row.mineSiteControllers==='object'?Object.keys(row.mineSiteControllers).length:0),0);
+const executableMineOutputs=Object.values(worldState).reduce((sum,row)=>sum+(row?.mineOutputs&&typeof row.mineOutputs==='object'?Object.keys(row.mineOutputs).filter(k=>String(k).startsWith('OCC:')).length:0),0);
 assert.equal(hydratedMineRows,engine.deposits.length);
-assert.equal(evaluatedMineRows,engine.deposits.length);
+assert.equal(siteReferenceRows,199);
+assert.equal(siteControllerRows,199);
+assert.equal(executableMineOutputs,engine.deposits.length);
 
 for(const [countryId,row] of Object.entries(worldState)){
   if(!row||!Array.isArray(row.mines))continue;
