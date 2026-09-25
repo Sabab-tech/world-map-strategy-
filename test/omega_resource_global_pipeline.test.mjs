@@ -26,6 +26,7 @@ function buildEngine(){
   },0);
   return{
     isReady:true,countryProfiles:profiles,deposits,
+    mineSiteReferenceCount,
     resourceTypes:Object.values(resourceTypes),
     getDataLoadReport(){return{authority:'RESOURCE_JSON',countryProfileCount:Object.keys(profiles).length,depositCount:deposits.length};},
     normalizeCountryCode(v){return String(v||'').trim().toUpperCase();}
@@ -112,6 +113,7 @@ test('global resource pipeline runs every RESOURCE_JSON mine and keeps each resu
   const knowledge={sovereignEntities:{resourceTypes:engine.resourceTypes},refCatalog:{allReferences:engine.deposits}};
   const idResult=part04.compileIdentities(knowledge);
   const reserveResult=part05.compileReserves(idResult,null,knowledge,{});
+  const mineSiteReferenceCount=engine.mineSiteReferenceCount;
   const expectedOccurrenceCount=engine.deposits.length+mineSiteReferenceCount;
   assert.equal(idResult.occurrenceCount,expectedOccurrenceCount);
   assert.equal(reserveResult.occurrenceCount,expectedOccurrenceCount);
@@ -123,6 +125,8 @@ test('global resource pipeline runs every RESOURCE_JSON mine and keeps each resu
   assert.equal(new Set(siteRefs.map(x=>x.siteReferenceKey)).size,mineSiteReferenceCount);
   assert.equal(new Set(siteRefs.map(x=>x.countryId+'|'+x.siteName)).size,mineSiteReferenceCount);
   assert.ok(siteRefs.every(x=>x.status==='ACTIVE_SITE_REFERENCE'));
+  assert.ok(siteRefs.every(x=>x.extractionExecutable===true));
+  assert.ok(siteRefs.every(x=>x.runtimeExecutionMode==='UNIFIED_PART04_PART05_PIPELINE'));
   assert.ok(siteRefs.every(x=>x.extractionExecutable===false));
 
   const siteOccurrences=idResult.registry.listOccurrences().filter(x=>x?.profileDerivedSimulation===true&&x?.siteReferenceKey);
