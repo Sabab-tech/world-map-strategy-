@@ -137,6 +137,11 @@
       }
     }
   }
+  function mineSiteReferenceRows(c){
+    const reg=g.__OmegaResourceIdentityRegistry;
+    if(!reg?.getMineSiteReferencesByCountry)return[];
+    try{return clone(reg.getMineSiteReferencesByCountry(canonical(c))||[]);}catch(_){return[];}
+  }
   function occurrenceRows(c){
     const reg=g.__OmegaResourceIdentityRegistry;const e=engine();if(!reg||!e)return[];
     const wanted=canonical(c),out=[];
@@ -235,7 +240,7 @@
     return out;
   }
   function buildCountryProjection(c,rows,existing={}){
-    const byResource={},mines=[];
+    const byResource={},mines=[],mineSiteReferences=mineSiteReferenceRows(c);
     for(const x of rows){
       const rs=x.reserveState,raw=x.rawDeposit;if(!rs)continue;
       const resource=x.resourceId;
@@ -269,7 +274,8 @@
     for(const x of rows)mineStates[x.occurrenceKey]=clone(x.reserveState.toJSON?.()||x.reserveState);
     return{
       ...clone(existing),countryResourceProfile:clone(profile(c)),resourceDomain:clone(profile(c)?.resource_domain||null),
-      mines,endowment,reserves:merge(reserves,existing.reserves),inventory,production,consumption,tradeAvailability,mineStates,
+      mines,mineSiteReferences,mineSiteReferenceCount:mineSiteReferences.length,
+      endowment,reserves:merge(reserves,existing.reserves),inventory,production,consumption,tradeAvailability,mineStates,
       strategicReserve,
       batches:Array.isArray(existing.batches)?existing.batches.slice(-MAX_LEDGER):[],
       warehouse:clone(existing.warehouse||{
@@ -281,8 +287,13 @@
       extractionLedger:Array.isArray(existing.extractionLedger)?existing.extractionLedger.slice(-MAX_LEDGER):[],
       resourceAuthority:{
         source:'RESOURCE_JSON->PART04->PART05->RESOURCE_RUNTIME',
-        knowledgeSources:['resources.json','resources_2.json'],mineSource:'RESOURCE_JSON.runtime_deposits',
-        reserveSource:'GSRSK_Part05.ResourceReserveExtractionEngine',countryScoped:true,simulationTurn:turn(),dataLoadReport:eDataReport()
+        knowledgeSources:['resources.json','resources_2.json'],
+        mineSource:'RESOURCE_JSON.runtime_deposits',
+        mineSiteSource:'RESOURCE_JSON.countryProfiles.*.resource_infrastructure_context.mineSites',
+        executableMineCount:rows.length,
+        mineSiteReferenceCount:mineSiteReferences.length,
+        reserveSource:'GSRSK_Part05.ResourceReserveExtractionEngine',
+        countryScoped:true,simulationTurn:turn(),dataLoadReport:eDataReport()
       }
     };
   }
@@ -295,6 +306,8 @@
       ['resource.countryResourceProfile',projection.countryResourceProfile],
       ['resource.resourceDomain',projection.resourceDomain],
       ['resource.mines',projection.mines],
+      ['resource.mineSiteReferences',projection.mineSiteReferences],
+      ['resource.mineSiteReferenceCount',projection.mineSiteReferenceCount],
       ['resource.endowment',projection.endowment],
       ['resource.reserves',projection.reserves],
       ['resource.inventory',projection.inventory],
@@ -311,8 +324,11 @@
       ['resource.extractionLedger',projection.extractionLedger],
       ['resource.authority',projection.resourceAuthority]
     ])ctx.stateTransaction.set(path,value);
-    emit('OMEGA_RESOURCE_ENDOWMENT_HYDRATED',c,{countryId:c,mineCount:rows.length,resourceCount:Object.keys(projection.endowment).length,resourceIds:Object.keys(projection.endowment)},cmd.commandId);
-    return{accepted:true,countryId:c,mineCount:rows.length,resourceCount:Object.keys(projection.endowment).length};
+    emit('OMEGA_RESOURCE_ENDOWMENT_HYDRATED',c,{
+      countryId:c,mineCount:rows.length,mineSiteReferenceCount:mineSiteReferences.length,
+      resourceCount:Object.keys(projection.endowment).length,resourceIds:Object.keys(projection.endowment)
+    },cmd.commandId);
+    return{accepted:true,countryId:c,mineCount:rows.length,mineSiteReferenceCount:mineSiteReferences.length,resourceCount:Object.keys(projection.endowment).length};
   }
   function extractHandler(cmd,ctx){
     const c=canonical(ctx.countryId),r=g.__OmegaResourceReserveRegistry,p5=g.GSRSK_Part05||g.GSRSK_ResourceReserveExtractionEngine;
@@ -616,16 +632,17 @@
     for(const c of countries()){
       const m=state()?.resource?.[c]?.mines;if(Array.isArray(m))mines.push(...m);
     }
-    let batchCount=0,warehouseCount=0,latestMineOutputs=0,inventoryLotCount=0,minePathCount=0;
+    let batchCount=0,warehouseCount=0,latestMineOutputs=0,inventoryLotCount=0,minePathCount=0,mineSiteReferenceCount=0;
     for(const c of countries()){
       const rs=state()?.resource?.[c]||{};
+      mineSiteReferenceCount+=Array.isArray(rs.mineSiteReferences)?rs.mineSiteReferences.length:0;
       batchCount+=Array.isArray(rs.batches)?rs.batches.length:0;
       warehouseCount+=rs.warehouse?.warehouseId?1:0;
       latestMineOutputs+=rs.mineOutputs&&typeof rs.mineOutputs==='object'?Object.keys(rs.mineOutputs).length:0;
       inventoryLotCount+=rs.inventoryLots&&typeof rs.inventoryLots==='object'?Object.keys(rs.inventoryLots).length:0;
       minePathCount+=rs.minePaths&&typeof rs.minePaths==='object'?Object.keys(rs.minePaths).length:0;
     }
-    return{version:VERSION,engineReady:!!e?.isReady,dataAuthority:'RESOURCE_JSON',dataLoad:clone(e?.getDataLoadReport?.()||e?.dataLoadReport||null),identityRegistryReady:!!g.__OmegaResourceIdentityRegistry,reserveRegistryReady:!!r,countryCount:countries().length,mineCount:mines.length,compiledReserveStates:r?.reserveStates?.size||0,batchCount,warehouseCount,latestMineOutputs,inventoryLotCount,minePathCount};
+    return{version:VERSION,engineReady:!!e?.isReady,dataAuthority:'RESOURCE_JSON',dataLoad:clone(e?.getDataLoadReport?.()||e?.dataLoadReport||null),identityRegistryReady:!!g.__OmegaResourceIdentityRegistry,reserveRegistryReady:!!r,countryCount:countries().length,mineCount:mines.length,mineSiteReferenceCount,compiledReserveStates:r?.reserveStates?.size||0,batchCount,warehouseCount,latestMineOutputs,inventoryLotCount,minePathCount};
   }
   function init(){
     install();
@@ -636,7 +653,7 @@
     g.addEventListener?.('OMEGA_SIMULATION_TURN_COMMITTED',onTurn);
     return diagnostics();
   }
-  const API=Object.freeze({VERSION,diagnostics,initialize,extractAll,extractCountry,hydrateCountry,countryResourceState,countryMines,compile});
+  const API=Object.freeze({VERSION,diagnostics,initialize,extractAll,extractCountry,hydrateCountry,countryResourceState,countryMines,countryMineSiteReferences:function(c){return clone(state()?.resource?.[canonical(c)]?.mineSiteReferences||mineSiteReferenceRows(c));},compile});
   g.Omega=g.Omega||{};g.Omega.ResourceEndowmentRuntime=API;g.OmegaResourceEndowmentRuntime=API;
   try{init();}catch(e){g.OmegaResourceEndowmentRuntimeError=String(e?.message||e);}
 })(typeof window!=='undefined'?window:globalThis);
