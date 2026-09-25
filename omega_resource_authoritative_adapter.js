@@ -582,7 +582,7 @@
             modalEl.innerHTML = modalEl.innerHTML
               .replace(/17 COMMODITIES MATRIX/g, String(s.resourcesList.length) + ' COMMODITIES MATRIX')
               .replace(/18 COMMODITY ONTOLOGY/g, String(s.resourcesList.length) + ' COMMODITY ONTOLOGY')
-              .replace(/593 geocoded global mining concessions, ore purities, and spatial reserve clusters\\./g, 'Authoritative runtime mine and deposit records are shown where observed.')
+              .replace(/593 geocoded global mining concessions, ore purities, and spatial reserve clusters\./g, 'Authoritative runtime mine and deposit records are shown where observed.')
               .replace(/Real-World Geological Coordinates & Reserve Grades/g, 'Authoritative deposit records and observed evidence');
 
             Array.from(modalEl.querySelectorAll ? modalEl.querySelectorAll('button') : []).forEach(function (button) {
