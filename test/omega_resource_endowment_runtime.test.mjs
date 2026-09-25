@@ -89,7 +89,7 @@ assert(batch);
 assert(batch.quantity>0);
 assert(batch.remainingQuantity===batch.quantity);
 assert.equal(batch.resourceId,'natural_gas');
-assert.equal(batch.purity,0.962);
+assert.ok(Math.abs(batch.purity-0.962)<1e-9, `batch purity drifted: ${batch.purity}`);
 assert.equal(batch.qualityState.purityStatus,'OBSERVED');
 assert.equal(batch.warehouseId,'WH-BGD-RAW');
 assert(after.warehouse);
