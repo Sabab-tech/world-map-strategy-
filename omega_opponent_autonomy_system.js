@@ -692,7 +692,7 @@
           const inv=scalar(inventory[rid]);
           const supply=direct!==null?direct:inv;
           if(supply!==null&&supply>0&&!out.some(y=>y.countryId===cid)){
-            out.push({countryId:cid,source:'Game.state.resource',recordId:null});
+            out.push({countryId:cid,source:'Game.state.resource',recordId:null,supplyObserved:true,supply});
           }
         }
       }
@@ -763,7 +763,7 @@
       const rs=resourceRuntime(x.countryId);
       const inv=rs.value?.inventory,prod=rs.value?.production,resv=rs.value?.reserves,tradeable=rs.value?.tradeAvailability;
       const protectedStock=scalar(rs.value?.strategicReserve?.availableByResource?.[resourceId])??0;
-      const currentSupply=scalar(tradeable?.[resourceId])??(scalar(inv?.[resourceId])!==null?Math.max(0,scalar(inv?.[resourceId])-protectedStock):null)??scalar(prod?.[resourceId])??scalar(resv?.[resourceId]);
+      const currentSupply=scalar(tradeable?.[resourceId])??(scalar(inv?.[resourceId])!==null?Math.max(0,scalar(inv?.[resourceId])-protectedStock):null)??scalar(prod?.[resourceId])??scalar(resv?.[resourceId])??scalar(x.supply);
       const supplyObserved=currentSupply!==null;
       const hasSupply=supplyObserved?currentSupply>0:false;
       const routeObserved=[
