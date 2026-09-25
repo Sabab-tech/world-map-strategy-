@@ -33,7 +33,7 @@ android {
 
     sourceSets {
         main {
-            assets.srcDir(layout.buildDirectory.dir('generated/omegaWebAssets'))
+            assets.srcDir("$buildDir/generated/omegaWebAssets")
         }
     }
 }
@@ -63,7 +63,7 @@ tasks.register('syncOmegaWebAssets', Sync) {
         exclude 'server_bootstrap.js'
         exclude '.env*'
     }
-    into(layout.buildDirectory.dir('generated/omegaWebAssets'))
+    into("$buildDir/generated/omegaWebAssets")
 }
 
 tasks.named('preBuild').configure {
