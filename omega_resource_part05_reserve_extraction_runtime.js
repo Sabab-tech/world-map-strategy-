@@ -142,6 +142,7 @@
           sourceDatasetId:raw.sourceDatasetId||'resources.json',
           reserveField:'runtime_deposits.reserves',
           reserveText:String(raw.reserves||''),
+          effortUtilization:1,
           capacitySource:raw.productionRate||raw.dailyRate||raw.outputRate?'RESOURCE_JSON':'SIMULATION_DEFAULT_NO_DATA_RATE',
           simulationExtractionHorizonDays:horizon
         }
@@ -154,6 +155,7 @@
         nominalRate:nominalRate,
         dailyRate:nominalRate,
         assetReference:'MINE:'+occ.occurrenceKey,
+        effortUtilization:1,
         authority:raw.productionRate||raw.dailyRate||raw.outputRate?'RESOURCE_JSON':'SIMULATION_DEFAULT_NO_DATA_RATE',
         simulationExtractionHorizonDays:horizon
       });
