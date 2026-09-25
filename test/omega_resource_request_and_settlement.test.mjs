@@ -46,6 +46,7 @@ assert.equal(sent.status,'APPLIED');
 assert.equal(globalThis.Game.state.trade.BDG.importRequests[0].status,'SENT');
 
 const trade=globalThis.OmegaGlobalTrade;
+console.log('REVIEW_DIAG', JSON.stringify(trade.reviewRequest(globalThis.Game.state.trade.BDG.importRequests[0]), null, 2));
 trade.processAll();
 const req=globalThis.Game.state.trade.BDG.importRequests[0];
 assert.equal(req.status,'SETTLED');
