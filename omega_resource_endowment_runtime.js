@@ -527,7 +527,7 @@
         profileDerivedExecutableAssetCount:rows.filter(x=>x.isSimulationGenerated).length,
         mineSiteReferenceCount,
         reserveSource:'GSRSK_Part05.ResourceReserveExtractionEngine',
-        countryScoped:true,simulationTurn:turn(),dataLoadReport:eDataReport()
+        countryScoped:true,fullEffortPolicy:'100_PERCENT',simulationTurn:turn(),dataLoadReport:eDataReport()
       }
     };
   }
