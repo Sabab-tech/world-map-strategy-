@@ -63,7 +63,7 @@ assert(before.mines.length>=4);
 assert((before.reserves.natural_gas||0)>0);
 assert((before.endowment.natural_gas||0)>0);
 assert(before.resourceAuthority);
-assert.equal(before.resourceAuthority.mineSource,'RESOURCE_JSON.runtime_deposits');
+assert.equal(String(before.resourceAuthority.mineSource).includes('RESOURCE_JSON.runtime_deposits'),true);
 assert.equal(before.resourceAuthority.dataLoadReport.authority,'RESOURCE_JSON');
 
 const gasMine=before.mines.find(x=>x.depositName==='Titas Gas Field Reservoir');
@@ -102,20 +102,52 @@ assert(seen.some(x=>x&&x.payload&&x.payload.batch&&x.payload.batch.batchId===bat
 const preGlobal=runtime.diagnostics();
 const expectedCountries=countryIdentity.exportData().countries;
 assert.equal(preGlobal.countryCount,expectedCountries.length);
-assert.equal(preGlobal.mineCount,engine.deposits.length);
+assert.equal(preGlobal.mineSiteReferenceCount,199);
+assert.equal(preGlobal.mineSiteControllerCount,199);
 const globalExtraction=await runtime.extractAll();
 assert.equal(globalExtraction.status,'COMPLETED');
 assert.equal(globalExtraction.results.length,expectedCountries.length);
 
 const worldState=globalThis.Game.state.resource;
-const hydratedMineRows=Object.values(worldState).reduce((sum,row)=>sum+(Array.isArray(row?.mines)?row.mines.length:0),0);
+const hydratedAssetRows=Object.values(worldState).reduce((sum,row)=>sum+(Array.isArray(row?.mines)?row.mines.length:0),0);
+const structuredMineRows=Object.values(worldState).reduce((sum,row)=>sum+(Array.isArray(row?.mines)?row.mines.filter(x=>!x?.simulationGenerated).length:0),0);
 const siteReferenceRows=Object.values(worldState).reduce((sum,row)=>sum+(Array.isArray(row?.mineSiteReferences)?row.mineSiteReferences.length:0),0);
 const siteControllerRows=Object.values(worldState).reduce((sum,row)=>sum+(row?.mineSiteControllers&&typeof row.mineSiteControllers==='object'?Object.keys(row.mineSiteControllers).length:0),0);
-const executableMineOutputs=Object.values(worldState).reduce((sum,row)=>sum+(row?.mineOutputs&&typeof row.mineOutputs==='object'?Object.keys(row.mineOutputs).filter(k=>String(k).startsWith('OCC:')).length:0),0);
-assert.equal(hydratedMineRows,engine.deposits.length);
+const simulatedMineOutputs=Object.values(worldState).flatMap(row=>Object.values(row?.mineOutputs&&typeof row.mineOutputs==='object'?row.mineOutputs:{})).filter(x=>x?.simulationGenerated===true&&x?.assetType==='MINE_SITE');
+const simulatedFieldOutputs=Object.values(worldState).flatMap(row=>Object.values(row?.mineOutputs&&typeof row.mineOutputs==='object'?row.mineOutputs:{})).filter(x=>x?.simulationGenerated===true&&['OIL_FIELD','GAS_FIELD'].includes(x?.assetType));
 assert.equal(siteReferenceRows,199);
 assert.equal(siteControllerRows,199);
-assert.equal(executableMineOutputs,engine.deposits.length);
+assert.equal(structuredMineRows,engine.deposits.length);
+assert.equal(simulatedMineOutputs.length,199);
+assert(simulatedFieldOutputs.length>0,'expected hydrocarbon field execution assets');
+assert(simulatedMineOutputs.every(x=>(x?.producedQuantity||0)>0&&x?.effortUtilization===1),'some profile mine site did not execute at full effort');
+assert(simulatedFieldOutputs.every(x=>(x?.producedQuantity||0)>0&&x?.effortUtilization===1),'some hydrocarbon field did not execute at full effort');
+
+const controllerCountrySets=new Set();
+for(const [countryId,row] of Object.entries(worldState)){
+  if(!row)continue;
+  for(const [siteKey,controller] of Object.entries(row.mineSiteControllers||{})){
+    assert.equal(controller.countryId,countryId);
+    assert.equal(controller.controllerStatus,'RUNNING');
+    assert.equal(controller.extractionExecutable,true,countryId+' controller not executable '+siteKey);
+    assert.equal(controller.extractionPathStatus,'EXECUTABLE_OCCURRENCE_ATTACHED');
+    assert(Array.isArray(controller.linkedOccurrenceKeys)&&controller.linkedOccurrenceKeys.length===1);
+    const occurrenceKey=controller.linkedOccurrenceKeys[0];
+    const output=row.mineOutputs?.[occurrenceKey];
+    assert(output,countryId+' missing site output '+siteKey);
+    assert.equal(output.simulationGenerated,true);
+    assert.equal(output.assetType,'MINE_SITE');
+    assert(output.batchId,countryId+' missing site batch '+siteKey);
+    assert.equal(output.effortUtilization,1);
+    const lot=row.inventoryLots?.[output.batchId];
+    assert(lot,countryId+' missing site inventory lot '+siteKey);
+    assert.equal(lot.countryId,countryId);
+    assert.equal(lot.warehouseId,'WH-'+countryId+'-RAW');
+    assert(row.mineProductionLedger.some(x=>x.batchId===output.batchId&&x.countryId===undefined?x.mineId===occurrenceKey:x.mineId===occurrenceKey),countryId+' missing site production ledger '+siteKey);
+    controllerCountrySets.add(countryId);
+  }
+}
+assert.equal(simulatedMineOutputs.length,199);
 
 for(const [countryId,row] of Object.entries(worldState)){
   if(!row||!Array.isArray(row.mines))continue;
