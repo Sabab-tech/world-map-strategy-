@@ -99,5 +99,36 @@ assert(after.warehouse.receipts.some(x=>x.batchId===batch.batchId&&x.status==='R
 assert(after.mineProductionLedger.some(x=>x.batchId===batch.batchId&&x.mineId===gasMine.occurrenceKey));
 assert(seen.some(x=>x&&x.payload&&x.payload.batch&&x.payload.batch.batchId===batch.batchId));
 
+const preGlobal=runtime.diagnostics();
+const expectedCountries=countryIdentity.exportData().countries;
+assert.equal(preGlobal.countryCount,expectedCountries.length);
+assert.equal(preGlobal.mineCount,engine.deposits.length);
+const globalExtraction=await runtime.extractAll();
+assert.equal(globalExtraction.status,'COMPLETED');
+assert.equal(globalExtraction.results.length,expectedCountries.length);
+
+const worldState=globalThis.Game.state.resource;
+const hydratedMineRows=Object.values(worldState).reduce((sum,row)=>sum+(Array.isArray(row?.mines)?row.mines.length:0),0);
+const evaluatedMineRows=Object.values(worldState).reduce((sum,row)=>sum+(row?.mineOutputs&&typeof row.mineOutputs==='object'?Object.keys(row.mineOutputs).length:0),0);
+assert.equal(hydratedMineRows,engine.deposits.length);
+assert.equal(evaluatedMineRows,engine.deposits.length);
+
+for(const [countryId,row] of Object.entries(worldState)){
+  if(!row||!Array.isArray(row.mines))continue;
+  for(const mine of row.mines){
+    const output=row.mineOutputs?.[mine.occurrenceKey];
+    assert.ok(output, countryId+' missing mine evaluation '+mine.occurrenceKey);
+    if(output.batchId){
+      const mineBatch=row.batches.find(x=>x.batchId===output.batchId);
+      assert.ok(mineBatch, countryId+' missing batch '+output.batchId);
+      assert.equal(mineBatch.countryId,countryId);
+      assert.equal(mineBatch.sourceCountryId,countryId);
+      assert.equal(mineBatch.ownerCountryCode,countryId);
+      assert.equal(mineBatch.destinationCountryId,countryId);
+      assert.equal(mineBatch.warehouseId,'WH-'+countryId+'-RAW');
+    }
+  }
+}
+
 if(nativeFetch)globalThis.fetch=nativeFetch;
 console.log('OMEGA RESOURCE JSON -> MINE -> BATCH -> WAREHOUSE -> FACTORY EVENT TEST PASSED');
