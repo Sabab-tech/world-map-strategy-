@@ -65,6 +65,7 @@ assert((before.endowment.natural_gas||0)>0);
 assert(before.resourceAuthority);
 assert.equal(String(before.resourceAuthority.mineSource).includes('RESOURCE_JSON.runtime_deposits'),true);
 assert.equal(before.resourceAuthority.dataLoadReport.authority,'RESOURCE_JSON');
+assert.equal(before.resourceAuthority.fullEffortPolicy,'100_PERCENT');
 
 const gasMine=before.mines.find(x=>x.depositName==='Titas Gas Field Reservoir');
 assert(gasMine);
@@ -77,6 +78,8 @@ assert.equal(extraction.status,'APPLIED');
 const after=runtime.countryResourceState('BGD');
 const output=after.mineOutputs[gasMine.occurrenceKey];
 assert(output);
+assert.equal(output.effortUtilization,1);
+assert.equal(output.simulationGenerated,false);
 assert((after.production.natural_gas||0)>0);
 assert((after.inventory.natural_gas||0)>0);
 assert((after.reserves.natural_gas||0)<(before.reserves.natural_gas||0));
