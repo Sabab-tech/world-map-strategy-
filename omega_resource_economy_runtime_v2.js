@@ -166,7 +166,7 @@
       var q=num(inv[rid]);if(q===null||q<0)return;
       var diff=q-(num(allocated[rid])||0);
       if(diff>0){
-        var legacyBatchId='LEGACY_OPENING_'+c+'_'+tok(rid);
+        var legacyBatchId='LEGACY_OPENING_'+c+'_'+String(rid).trim().toUpperCase();
         if(!bs.some(function(x){return String(x&&x.batchId)===legacyBatchId;})){
           bs.push({batchId:legacyBatchId,resourceId:rid,materialIdentity:rid,quantity:diff,remainingQuantity:diff,unit:null,stage:'RAW',ownerCountryCode:c,ownerCompanyId:'UNKNOWN_SOURCE',sourceBatchIds:[],purity:null,grade:null,quality:null,qualityState:{purity:null,purityStatus:'UNOBSERVED',source:'PRE_EXISTING_RESOURCE_INVENTORY'},warehouseId:'WH-'+c+'-RAW',locationNodeKey:'WAREHOUSE:'+c+':RAW',provenance:{source:'PRE_EXISTING_RESOURCE_INVENTORY',status:'UNALLOCATED_LEGACY_BALANCE',simulationTurn:turn()}});
         }
