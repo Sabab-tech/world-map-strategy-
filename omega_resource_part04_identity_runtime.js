@@ -51,9 +51,54 @@
     return String(row?.id||row?.depositId||row?.mineId||('DEP-'+index+'-'+tok(row?.name||row?.resId||'unknown'))).trim();
   }
 
+  function sourceMineSiteReferences(){
+    const e=engine(),profiles=e?.countryProfiles&&typeof e.countryProfiles==='object'?e.countryProfiles:{};
+    const rows=[];
+    for(const [profileKey,profile] of Object.entries(profiles)){
+      const identity=profile?.identity||profile||{};
+      const countryId=canonicalCountry(identity.countryId||identity.iso3||profileKey);
+      if(!countryId)continue;
+      const sites=profile?.resource_infrastructure_context?.mineSites||
+        profile?.infrastructure_context?.mineSites||
+        profile?.resourceInfrastructureContext?.mineSites||
+        [];
+      if(!Array.isArray(sites))continue;
+      sites.forEach(function(rawSite,index){
+        const siteName=String(
+          typeof rawSite==='string'?rawSite:
+          rawSite?.name||rawSite?.siteName||rawSite?.mineName||rawSite?.depositName||''
+        ).trim();
+        if(!siteName)return;
+        const siteReferenceKey='SITE:'+countryId+':'+tok(siteName);
+        rows.push({
+          siteReferenceKey,
+          countryId,
+          countryCode:countryId,
+          profileKey:String(profileKey),
+          siteName,
+          status:'ACTIVE_SITE_REFERENCE',
+          activationState:'ACTIVE_REFERENCE',
+          extractionExecutable:false,
+          quantitativeExtractionDataAvailable:false,
+          sourceAuthority:'RESOURCE_JSON',
+          sourceDatasetId:'RESOURCE_JSON.countryProfiles',
+          sourcePath:'GSRSK_Master_CountryProfiles_v14.countryProfiles.'+String(profileKey)+'.resource_infrastructure_context.mineSites['+index+']',
+          rawSiteReference:clone(rawSite)
+        });
+      });
+    }
+    return rows;
+  }
+
   function compileIdentities(){
     const deposits=sourceDeposits();
     const byCountry=new Map(),byDeposit=new Map(),rows=[];
+    const siteReferences=sourceMineSiteReferences();
+    const siteRefsByCountry=new Map();
+    siteReferences.forEach(function(site){
+      if(!siteRefsByCountry.has(site.countryId))siteRefsByCountry.set(site.countryId,[]);
+      siteRefsByCountry.get(site.countryId).push(site);
+    });
     deposits.forEach(function(raw,index){
       const countryId=canonicalCountry(raw?.countryCode||raw?.countryIso3||raw?.countryId||raw?.iso3||raw?.country);
       const resourceId=String(raw?.resourceTypeId||raw?.resourceTypeKey||raw?.resId||raw?.resourceId||'').replace(/^RES_TYPE:/i,'').trim().toLowerCase();
@@ -85,7 +130,10 @@
       version:VERSION,
       authority:'RESOURCE_JSON',
       occurrenceCount:rows.length,
+      siteReferenceCount:siteReferences.length,
       getOccurrencesByCountry:function(countryId){return clone(byCountry.get(canonicalCountry(countryId))||[]);},
+      getMineSiteReferencesByCountry:function(countryId){return clone(siteRefsByCountry.get(canonicalCountry(countryId))||[]);},
+      listMineSiteReferences:function(){return clone(siteReferences);},
       getDeposit:function(depositKey){
         const hit=byDeposit.get(String(depositKey||'').trim());
         if(!hit)return null;
@@ -98,7 +146,7 @@
       },
       listOccurrences:function(){return clone(rows);}
     };
-    return{status:'READY',registry,occurrenceCount:rows.length};
+    return{status:'READY',registry,occurrenceCount:rows.length,siteReferenceCount:siteReferences.length};
   }
 
   const API=Object.freeze({
