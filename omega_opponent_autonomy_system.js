@@ -680,7 +680,8 @@
       }
     }catch(_){}
     try{
-      const resourceRoot=state()?.resource;
+      const runtimeState=g.Game?.state||g.gameState||{};
+      const resourceRoot=runtimeState.resource;
       if(resourceRoot&&typeof resourceRoot==='object'){
         for(const [countryKey,bucketValue] of Object.entries(resourceRoot)){
           const cid=id(countryKey);
