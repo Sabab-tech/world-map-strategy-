@@ -149,6 +149,27 @@ test('global resource pipeline runs every RESOURCE_JSON mine and keeps each resu
   const extractedRecords=nonEmptyResults.flatMap(x=>x.result.result.records||[]);
   assert.equal(extractedRecords.length,engine.deposits.length);
 
+  const executableOccurrenceKeys=new Set(extractedRecords.map(x=>String(x.occurrenceKey||'')));
+  assert.equal(executableOccurrenceKeys.size,engine.deposits.length);
+  for(const record of extractedRecords){
+    const countryId=record.countryId;
+    const row=state.resource[countryId];
+    assert.ok(row, 'Missing country resource state for '+countryId);
+    assert.equal(record.status,'APPROVED');
+    assert.ok((Number(record.approvedQuantity)||0)>0);
+    assert.ok(row.mineOutputs?.[record.occurrenceKey]);
+    assert.ok((Number(row.mineOutputs[record.occurrenceKey].producedQuantity)||0)>0);
+    assert.equal(row.mineOutputs[record.occurrenceKey].batchId,record.producedBatch.batchId);
+    assert.ok(row.minePaths?.[record.occurrenceKey]);
+    assert.ok((row.minePaths[record.occurrenceKey].batchIds||[]).includes(record.producedBatch.batchId));
+    assert.ok(row.inventoryLots?.[record.producedBatch.batchId]);
+    assert.equal(row.inventoryLots[record.producedBatch.batchId].occurrenceKey,record.occurrenceKey);
+    assert.equal(row.inventoryLots[record.producedBatch.batchId].countryId,countryId);
+    assert.equal(row.inventoryLots[record.producedBatch.batchId].warehouseId,'WH-'+countryId+'-RAW');
+  }
+  const productionLedgerCount=Object.values(state.resource).reduce((sum,row)=>sum+(Array.isArray(row?.mineProductionLedger)?row.mineProductionLedger.length:0),0);
+  assert.equal(productionLedgerCount,engine.deposits.length);
+
   const mineCount=Object.values(state.resource).reduce((sum,row)=>sum+(Array.isArray(row?.mines)?row.mines.length:0),0);
   const activeSiteReferenceCount=Object.values(state.resource).reduce((sum,row)=>sum+(Array.isArray(row?.mineSiteReferences)?row.mineSiteReferences.length:0),0);
   const siteControllerCount=Object.values(state.resource).reduce((sum,row)=>sum+(row?.mineSiteControllers&&typeof row.mineSiteControllers==='object'?Object.keys(row.mineSiteControllers).length:0),0);
