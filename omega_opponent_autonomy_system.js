@@ -783,7 +783,28 @@
         routeCapacity:routeObserved??null,legalAccess:relationAvailable&&agreementObserved&&supplyObserved&&hasSupply,
         supplyObserved,supply:currentSupply};
     }).filter(x=>x.legalAccess&&(!x.supplyObserved||x.supply>0));
-    if(!rows.length)return{countryId:null,reason:'NO_SUPPLIER_WITH_RELATION_AND_TRADE_AGREEMENT'};
+    if(!rows.length){
+      const diagnostics=suppliers.map(x=>{
+        const rel=relationRecord(countryId,x.countryId);
+        const price=supplierPrice(x.countryId,resourceId);
+        const rs=resourceRuntime(x.countryId);
+        const inv=rs.value?.inventory,tradeable=rs.value?.tradeAvailability;
+        const candidateSupply=scalar(x.supply);
+        const liveSupply=scalar(tradeable?.[resourceId])??scalar(inv?.[resourceId]);
+        return{
+          countryId:x.countryId,
+          source:x.source||null,
+          relationAvailable:!!rel,
+          relation:rel?{trade_agreement:rel.trade_agreement,overall:rel.overall,trade:rel.trade,trust:rel.trust,sanctions:rel.sanctions,war_state:rel.war_state}:null,
+          agreementObserved:rel?.trade_agreement===true || !!readState(countryId,'foreign.treaties').value?.[canonicalId(x.countryId)],
+          candidateSupply,
+          liveSupply,
+          price:price.value,
+          priceAvailability:price.availability
+        };
+      });
+      return{countryId:null,reason:'NO_SUPPLIER_WITH_RELATION_AND_TRADE_AGREEMENT',diagnostics};
+    }
     const priced=rows.filter(x=>x.priceAvailable);
     if(!priced.length)return{countryId:null,reason:'SUPPLIER_PRICE_NOT_OBSERVED'};
     priced.sort((a,b)=>(a.unitPrice-b.unitPrice)||((b.relationScore??0)-(a.relationScore??0))||a.countryId.localeCompare(b.countryId));
