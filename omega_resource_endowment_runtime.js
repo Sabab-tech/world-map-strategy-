@@ -338,7 +338,7 @@
     for(const x of rows)mineStates[x.occurrenceKey]=clone(x.reserveState.toJSON?.()||x.reserveState);
     return{
       ...clone(existing),countryResourceProfile:clone(profile(c)),resourceDomain:clone(profile(c)?.resource_domain||null),
-      mines,mineSiteReferences,mineSiteReferenceCount:mineSiteReferences.length,mineSiteControllers,
+      mines,mineSiteReferences,mineSiteReferenceCount,mineSiteControllers,
       endowment,reserves:merge(reserves,existing.reserves),inventory,production,consumption,tradeAvailability,mineStates,
       strategicReserve,
       batches:Array.isArray(existing.batches)?existing.batches.slice(-MAX_LEDGER):[],
@@ -355,7 +355,7 @@
         mineSource:'RESOURCE_JSON.runtime_deposits',
         mineSiteSource:'RESOURCE_JSON.countryProfiles.*.resource_infrastructure_context.mineSites',
         executableMineCount:rows.length,
-        mineSiteReferenceCount:mineSiteReferences.length,
+        mineSiteReferenceCount,
         reserveSource:'GSRSK_Part05.ResourceReserveExtractionEngine',
         countryScoped:true,simulationTurn:turn(),dataLoadReport:eDataReport()
       }
@@ -366,6 +366,7 @@
   function hydrateHandler(cmd,ctx){
     const c=canonical(ctx.countryId),rows=occurrenceRows(c),existing=clone(state()?.resource?.[c]||{});
     const projection=buildCountryProjection(c,rows,existing);
+    const mineSiteReferenceCount=Number(projection.mineSiteReferenceCount)||0;
     for(const [path,value] of [
       ['resource.countryResourceProfile',projection.countryResourceProfile],
       ['resource.resourceDomain',projection.resourceDomain],
@@ -390,10 +391,10 @@
       ['resource.authority',projection.resourceAuthority]
     ])ctx.stateTransaction.set(path,value);
     emit('OMEGA_RESOURCE_ENDOWMENT_HYDRATED',c,{
-      countryId:c,mineCount:rows.length,mineSiteReferenceCount:mineSiteReferences.length,
+      countryId:c,mineCount:rows.length,mineSiteReferenceCount,
       resourceCount:Object.keys(projection.endowment).length,resourceIds:Object.keys(projection.endowment)
     },cmd.commandId);
-    return{accepted:true,countryId:c,mineCount:rows.length,mineSiteReferenceCount:mineSiteReferences.length,resourceCount:Object.keys(projection.endowment).length};
+    return{accepted:true,countryId:c,mineCount:rows.length,mineSiteReferenceCount,resourceCount:Object.keys(projection.endowment).length};
   }
   function extractHandler(cmd,ctx){
     const c=canonical(ctx.countryId),r=g.__OmegaResourceReserveRegistry,p5=g.GSRSK_Part05||g.GSRSK_ResourceReserveExtractionEngine;
