@@ -197,6 +197,22 @@
     };
   }
   function appendBounded(arr,row,max){const next=Array.isArray(arr)?arr.slice():[];next.push(clone(row));while(next.length>max)next.shift();return next;}
+  function strategicReserveMap(existing){
+    const spr=existing&&typeof existing==='object'&&existing.strategicReserve&&typeof existing.strategicReserve==='object' ? existing.strategicReserve : {};
+    return spr.availableByResource&&typeof spr.availableByResource==='object'?spr.availableByResource:{};
+  }
+  function computeTradeAvailability(inventory,sprMap){
+    const out={};
+    for(const [k,v] of Object.entries(inventory&&typeof inventory==='object'?inventory:{})){
+      const total=n(v); if(total===null)continue;
+      out[k]=Math.max(0,total-(n(sprMap?.[k])??0));
+    }
+    for(const [k,v] of Object.entries(sprMap&&typeof sprMap==='object'?sprMap:{})){
+      if(out[k]!==undefined)continue;
+      out[k]=Math.max(0,(n(inventory?.[k])??0)-(n(v)??0));
+    }
+    return out;
+  }
   function buildCountryProjection(c,rows,existing={}){
     const byResource={},mines=[];
     for(const x of rows){
@@ -223,13 +239,17 @@
     };
     const reserves={},endowment={};
     for(const [k,v] of Object.entries(byResource)){reserves[k]=v.residual;endowment[k]=v.recoverable;}
-    const inventory=merge({},existing.inventory),production=merge({},existing.production),consumption=merge({},existing.consumption),tradeAvailability={};
-    for(const resource of Object.keys(byResource))tradeAvailability[resource]=n(inventory[resource])||0;
+    const inventory=merge({},existing.inventory),production=merge({},existing.production),consumption=merge({},existing.consumption);
+    const strategicReserve=clone(existing.strategicReserve||{
+      warehouseId:'WH-'+canonical(c)+'-SPR',countryId:canonical(c),type:'STRATEGIC_RESERVE_STOCKPILE',locationNodeKey:'WAREHOUSE:'+canonical(c)+':SPR',status:'OPERATIONAL',availableByResource:{},storedBatchIds:[],receipts:[],transfers:[],lastTransferTurn:null
+    });
+    const tradeAvailability=computeTradeAvailability(inventory,strategicReserve.availableByResource);
     const mineStates=existing.mineStates&&typeof existing.mineStates==='object'?clone(existing.mineStates):{};
     for(const x of rows)mineStates[x.occurrenceKey]=clone(x.reserveState.toJSON?.()||x.reserveState);
     return{
       ...clone(existing),countryResourceProfile:clone(profile(c)),resourceDomain:clone(profile(c)?.resource_domain||null),
       mines,endowment,reserves:merge(reserves,existing.reserves),inventory,production,consumption,tradeAvailability,mineStates,
+      strategicReserve,
       batches:Array.isArray(existing.batches)?existing.batches.slice(-MAX_LEDGER):[],
       warehouse:clone(existing.warehouse||{
         warehouseId:'WH-'+canonical(c)+'-RAW',countryId:canonical(c),type:'SOVEREIGN_RAW_MATERIAL_WAREHOUSE',
@@ -260,6 +280,7 @@
       ['resource.production',projection.production],
       ['resource.consumption',projection.consumption],
       ['resource.tradeAvailability',projection.tradeAvailability],
+      ['resource.strategicReserve',projection.strategicReserve],
       ['resource.mineStates',projection.mineStates],
       ['resource.mineOutputs',clone(existing.mineOutputs||{})],
       ['resource.mineOutputTotals',projection.mineOutputTotals],
@@ -397,8 +418,11 @@
     ctx.stateTransaction.set('resource.production',production);
     ctx.stateTransaction.set('resource.inventory',inventory);
     ctx.stateTransaction.set('resource.reserves',reserves);
-    const tradeAvailability={};
-    for(const [k,v] of Object.entries(inventory))tradeAvailability[k]=n(v)||0;
+    const strategicReserve=clone(ctx.stateTransaction.get('resource.strategicReserve')||{
+      warehouseId:'WH-'+c+'-SPR',countryId:c,type:'STRATEGIC_RESERVE_STOCKPILE',locationNodeKey:'WAREHOUSE:'+c+':SPR',status:'OPERATIONAL',availableByResource:{},storedBatchIds:[],receipts:[],transfers:[],lastTransferTurn:null
+    });
+    ctx.stateTransaction.set('resource.strategicReserve',strategicReserve);
+    const tradeAvailability=computeTradeAvailability(inventory,strategicReserve.availableByResource);
     ctx.stateTransaction.set('resource.tradeAvailability',tradeAvailability);
     ctx.stateTransaction.set('resource.extractionLedger',ledger.slice(-MAX_LEDGER));
     for(const x of blocked)emit('OMEGA_RESOURCE_EXTRACTION_BLOCKED',c,{...x,simulationTurn:turn()},cmd.commandId);
