@@ -33,7 +33,8 @@
     "test:memory-trace": "node test/omega_opponent_memory_trace_log_system.test.mjs",
     "test:global-market": "node test/omega_global_market_system.test.mjs",
     "test:resource-endowment": "node test/omega_resource_endowment_runtime.test.mjs",
-    "test:resource-request": "node test/omega_resource_request_and_settlement.test.mjs"
+    "test:resource-request": "node test/omega_resource_request_and_settlement.test.mjs",
+    "test:resource-authoritative": "node --test test/omega_resource_authoritative_adapter.test.mjs"
   },
   "dependencies": {
     "@google/genai": "^2.21.0",
