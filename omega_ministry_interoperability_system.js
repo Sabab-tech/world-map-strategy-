@@ -169,6 +169,7 @@
     economy:[
       'economy.gdp','economy.debt','economy.inflation','economy.unemployment',
       'economy.production','economy.productionCapacity','economy.revenue','economy.reserves','economy.productionAssets',
+      'economy.capacityUpgradeRequests',
       'economy.industrialRuntime','economy.companyAccounts','economy.workerIncome','economy.supplierRevenue','economy.factoryOutput'
     ],
     trade:[
@@ -198,8 +199,9 @@
     ],
     resource:[
       'resourceSummary','resourceInventory','resourceDeposits','resource.inventory','resource.production','resource.consumption','resource.reserves',
-      'resource.endowment','resource.mines','resource.mineStates','resource.tradeAvailability','resource.extractionLedger','resource.resourceDomain','resource.authority',
-      'resource.batches','resource.inventoryLedger','resource.inventoryIntegrity','resource.lastExtractionTurn'
+      'resource.endowment','resource.mines','resource.mineStates','resource.tradeAvailability','resource.strategicReserve',
+      'resource.extractionLedger','resource.resourceDomain','resource.authority','resource.batches','resource.inventoryLedger',
+      'resource.inventoryIntegrity','resource.lastExtractionTurn','resource.surveyRequests','resource.surveyResults','resource.reserveBufferRequests'
     ],
     health:[
       'health.state','health.welfare','health.hospitals'
