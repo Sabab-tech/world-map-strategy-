@@ -471,7 +471,7 @@
   }
 
   function buildCountryProjection(c,rows,existing={}){
-    const byResource={},mines=[],mineSiteReferences=mineSiteReferenceRows(c);
+    const byResource={},mines=[],mineSiteReferences=mineSiteReferenceRows(c),mineSiteReferenceCount=mineSiteReferences.length;
     const mineSiteControllers=buildMineSiteControllers(c,rows,existing);
     for(const x of rows){
       const rs=x.reserveState,raw=x.rawDeposit;if(!rs)continue;
