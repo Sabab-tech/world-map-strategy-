@@ -11,12 +11,14 @@ import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.webkit.RenderProcessGoneDetail;
 
 import androidx.annotation.Nullable;
 import androidx.webkit.WebViewAssetLoader;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.Locale;
 
 public final class MainActivity extends Activity {
@@ -153,10 +155,13 @@ public final class MainActivity extends Activity {
             );
         }
 
+        final byte[] transparentPng = Base64.getDecoder().decode(
+                "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
+        );
         return new WebResourceResponse(
                 "image/png",
                 null,
-                new ByteArrayInputStream(new byte[0])
+                new ByteArrayInputStream(transparentPng)
         );
     }
 
