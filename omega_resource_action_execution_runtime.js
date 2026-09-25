@@ -182,7 +182,7 @@
       const tags=[d?.resourceId,d?.resId,d?.resourceTypeId,d?.resourceTypeKey,d?.resource,d?.resId,d?.name]
         .filter(Boolean).map(tok);
       return tags.some(t=>t===wanted||t.includes(wanted));
-    }).map(clone);
+    }).map(function(x){ return clone(x); });
   }
 
   function updateSurveyRequest(tx,c,requestId,mutator){
