@@ -567,12 +567,17 @@
     }
     if(status==='SENT'&&(/PENDING|OPEN|RETRY|PRESSURE/.test(stage)||stage==='COUNTERPARTY_DATA_PENDING')){
       const result=command('trade','OMEGA_TRADE_COUNTERPARTY_REVIEW',seller,{request:req});
+      g.__OMEGA_LAST_TRADE_PROCESS_TRACE={requestId:req.requestId,buyer,seller,reviewStatus:result?.status||null,reviewResult:clone(result?.result||result||null)};
       if(result?.status==='APPLIED'){
         const d=result.result?.tradeDecision||result.tradeDecision;
         if(d?.decision==='WAITING_DATA')return;
+        g.__OMEGA_LAST_TRADE_PROCESS_TRACE.reviewDecision=clone(d||null);
         const response=command('trade','OMEGA_TRADE_APPLY_BUYER_RESPONSE',buyer,{requestId:req.requestId,response:d});
+        g.__OMEGA_LAST_TRADE_PROCESS_TRACE.responseStatus=response?.status||null;
+        g.__OMEGA_LAST_TRADE_PROCESS_TRACE.responseResult=clone(response?.result||response||null);
         if(response?.status==='APPLIED'){
           const next=response.result?.request;
+          g.__OMEGA_LAST_TRADE_PROCESS_TRACE.nextRequest=clone(next||null);
           if(String(next?.status||'').toUpperCase()==='ACCEPTED')settleRequest(next);
           if(String(next?.status||'').toUpperCase()==='REJECTED'&&d?.decision==='REJECT')handleRejection(next,d);
         }
