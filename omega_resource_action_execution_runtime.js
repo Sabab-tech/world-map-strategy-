@@ -36,6 +36,7 @@
   const tok=v=>String(v??'').trim().toLowerCase().replace(/[\s-]+/g,'_');
   const state=()=>g.Game?.state||g.gameState||{};
   const interop=()=>g.Omega?.MinistryInteroperability||g.OmegaMinistryInteroperability||null;
+  const boundary=()=>g.Omega?.ResourceCountryBoundaryGuard||g.OmegaResourceCountryBoundaryGuard||null;
   const turn=()=>num(state()?.simulation?.turn??state()?.turn??state()?.simulationTurn??g.Omega?.Simulation?.clock?.turn)??0;
 
   function canonicalCountry(v){
@@ -121,6 +122,23 @@
 
   function countryIds(){
     const s=state(),out=new Set();
+    try{
+      const bridge=g.OmegaCanonicalIdentityRegistry||g.OmegaCountrySemanticBridge||g.Omega?.CanonicalIdentity;
+      const list=bridge?.list?.('COUNTRY')||bridge?.list?.()||[];
+      if(Array.isArray(list))list.forEach(function(v){
+        const raw=v&&typeof v==='object'?(v.iso3||v.iso3Code||v.countryCode||v.countryId||v.id||v.canonicalId||v.code):v;
+        const c=canonicalCountry(raw);if(c)out.add(c);
+      });
+    }catch(_){}
+    try{
+      const e=g.ResourceMinistryEngine;
+      const profiles=e?.countryProfiles||{};
+      Object.keys(profiles).forEach(c=>{const x=canonicalCountry(c);if(x)out.add(x);});
+      (Array.isArray(e?.deposits)?e.deposits:[]).forEach(function(row){
+        const x=canonicalCountry(row?.countryCode||row?.countryIso3||row?.countryId||row?.country||'');
+        if(x)out.add(x);
+      });
+    }catch(_){}
     Object.keys(s?.resource||{}).forEach(c=>{const x=canonicalCountry(c);if(x)out.add(x);});
     Object.keys(s?.economy||{}).forEach(c=>{const x=canonicalCountry(c);if(x)out.add(x);});
     return [...out].sort();
@@ -474,7 +492,15 @@
 
       for(let bIndex=0;bIndex<batches.length&&remaining>1e-9&&usedBatches<maxBatches;bIndex++){
         const b=batches[bIndex];
-        if(!b||String(b.warehouseId||'')!==String(rawWh.warehouseId))continue;
+        if(!b)continue;
+        const localBatch=boundary()?.validateLocalBatch?.(b,c);
+        if(localBatch&&!localBatch.ok){
+          blocked++;
+          rows[i]={...row,status:'BLOCKED',blockedTurn:turn(),reason:'CROSS_COUNTRY_RESOURCE_BREACH',detail:clone(localBatch)};
+          emit('OMEGA_RESOURCE_COUNTRY_BOUNDARY_VIOLATION',c,{violation:clone(localBatch),batchId:b.batchId||null,turn:turn()});
+          continue;
+        }
+        if(String(b.warehouseId||'')!==String(rawWh.warehouseId))continue;
         if(tok(b.resourceId||b.materialIdentity)!==tok(rid))continue;
         const stage=String(b.stage||'').toUpperCase();
         if(!['RAW','RAW_EXTRACTED'].includes(stage))continue;
