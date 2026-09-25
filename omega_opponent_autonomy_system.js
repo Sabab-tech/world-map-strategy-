@@ -743,7 +743,8 @@
       const priceAvailable=unitPrice!==null;
       const rs=resourceRuntime(x.countryId);
       const inv=rs.value?.inventory,prod=rs.value?.production,resv=rs.value?.reserves,tradeable=rs.value?.tradeAvailability;
-      const currentSupply=scalar(tradeable?.[resourceId])??scalar(inv?.[resourceId])??scalar(prod?.[resourceId])??scalar(resv?.[resourceId]);
+      const protectedStock=scalar(rs.value?.strategicReserve?.availableByResource?.[resourceId])??0;
+      const currentSupply=scalar(tradeable?.[resourceId])??(scalar(inv?.[resourceId])!==null?Math.max(0,scalar(inv?.[resourceId])-protectedStock):null)??scalar(prod?.[resourceId])??scalar(resv?.[resourceId]);
       const supplyObserved=currentSupply!==null;
       const hasSupply=supplyObserved?currentSupply>0:false;
       const routeObserved=[
