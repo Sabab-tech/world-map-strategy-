@@ -743,9 +743,12 @@ var Game = window.Game = {
             attr = 'OpenTopoMap Weather Grid';
         }
 
-        window.currentMapTileLayer = L.tileLayer(tileUrl, { attribution: attr, maxZoom: 18, opacity: 0.95 }).addTo(window.map);
-        window.currentMapTileLayer.bringToBack();
-
+        if (window.OMEGA_ANDROID_OFFLINE) {
+            window.currentMapTileLayer = null;
+        } else {
+            window.currentMapTileLayer = L.tileLayer(tileUrl, { attribution: attr, maxZoom: 18, opacity: 0.95 }).addTo(window.map);
+            window.currentMapTileLayer.bringToBack();
+        }
         if (layerType === "resources") {
             if (Game.Map && Game.Map.toggleResourceOverlay) {
                 Game.Map.toggleResourceOverlay();
@@ -864,16 +867,20 @@ window.map = L.map('map', {
 }).setView([20, 0], 2.5);
 
 // 🛰️ ULTRA HD SATELLITE TILE LAYER (ArcGIS World Imagery)
-window.satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-    attribution: 'Esri World Imagery Satellite',
-    maxZoom: 18,
-    opacity: 0.95,
-    errorTileUrl: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256"><rect width="256" height="256" fill="%231a2620"/><text x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" fill="%23384e3d" font-family="monospace" font-size="12">SATELLITE TILE</text></svg>'
-}).addTo(window.map);
+if (!window.OMEGA_ANDROID_OFFLINE) {
+    window.satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        attribution: 'Esri World Imagery Satellite',
+        maxZoom: 18,
+        opacity: 0.95,
+        errorTileUrl: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256"><rect width="256" height="256" fill="%231a2620"/><text x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" fill="%23384e3d" font-family="monospace" font-size="12">SATELLITE TILE</text></svg>'
+    }).addTo(window.map);
 
-window.satelliteLayer.on('tileerror', function(e) {
-    console.warn('[Map Engine] Satellite tile load glitch handled gracefully:', e.coords);
-});
+    window.satelliteLayer.on('tileerror', function(e) {
+        console.warn('[Map Engine] Satellite tile load glitch handled gracefully:', e.coords);
+    });
+} else {
+    window.satelliteLayer = null;
+}
 
 window.hubsGroupLayer = L.layerGroup().addTo(window.map);
 
