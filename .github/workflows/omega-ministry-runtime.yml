@@ -52,7 +52,9 @@ jobs:
           node --check omega_opponent_second_order_consequence_system.js
           node --check omega_opponent_memory_trace_log_system.js
           node --check omega_resource_endowment_runtime.js
+          node --check omega_resource_country_boundary_guard.js
           node --check omega_resource_action_execution_runtime.js
+          node --check test/omega_resource_country_boundary.test.mjs
           node --check omega_resource_economy_runtime_v2.js
           node --check omega_resource_authoritative_adapter.js
           node --check omega_global_market_system.js
@@ -79,6 +81,7 @@ jobs:
           node --test test/omega_resource_economy_runtime_v2.test.mjs
           node --test test/omega_resource_authoritative_adapter.test.mjs
           node --test test/omega_resource_action_execution_runtime.test.mjs
+          node --test test/omega_resource_country_boundary.test.mjs
           if node test/omega_resource_request_and_settlement.test.mjs; then
             echo "RESOURCE_SETTLEMENT_COMPATIBILITY_TEST: PASS"
           else
