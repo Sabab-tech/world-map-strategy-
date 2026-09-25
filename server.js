@@ -37,6 +37,7 @@ const OPPONENT_DEEP_MEMORY_SCRIPT = '<script src="/omega_opponent_deep_memory_sy
 const OPPONENT_MEMORY_TRACE_SCRIPT = '<script src="/omega_opponent_memory_trace_log_system.js"></script>';
 const RESOURCE_ENDOWMENT_SCRIPT = '<script src="/omega_resource_endowment_runtime.js"></script>';
 const RESOURCE_ECONOMY_SCRIPT = '<script src="/omega_resource_economy_runtime_v2.js"></script>';
+const RESOURCE_ACTION_EXECUTION_SCRIPT = '<script src="/omega_resource_action_execution_runtime.js"></script>';
 const RESOURCE_AUTHORITATIVE_ADAPTER_SCRIPT = '<script src="/omega_resource_authoritative_adapter.js"></script>';
 const GLOBAL_MARKET_SCRIPT = '<script src="/omega_global_market_system.js"></script>';
 const OPPONENT_INTELLIGENCE_SCRIPT = '<script src="/omega_opponent_intelligence_evolution_system.js"></script>';
