@@ -81,7 +81,7 @@
       byCountry.get(countryId).push(occurrence);
     });
 
-    return{
+    const registry={
       version:VERSION,
       authority:'RESOURCE_JSON',
       occurrenceCount:rows.length,
@@ -98,6 +98,7 @@
       },
       listOccurrences:function(){return clone(rows);}
     };
+    return{status:'READY',registry,occurrenceCount:rows.length};
   }
 
   const API=Object.freeze({
