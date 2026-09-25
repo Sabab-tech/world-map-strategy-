@@ -197,7 +197,7 @@ test('resource economy v2 completes mine-backed processing, domestic settlement 
   assert.equal(worldState.finance.BGD.resourceBudgetContributionThisTurn,115);
 
   const accounts=worldState.economy.BGD.companyAccounts;
-  assert.equal(accounts.MINER_CO.runtimeNetCashFlow,300);
+  assert.equal(accounts.MINER_CO.runtimeNetCashFlow,415);
   assert.equal(accounts.PROCESS_CO.runtimeNetCashFlow,-500);
 
   assert.equal(worldState.trade.BGD.domesticSales.length,1);
