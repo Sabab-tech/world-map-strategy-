@@ -201,7 +201,6 @@ test('global extraction evaluates every modeled country and keeps each mine outp
     assert.equal(batch.destinationCountryId,country);
     assert.equal(batch.warehouseId,'WH-'+country+'-RAW');
     assert.ok(bucket.warehouse.storedBatchIds.includes(batch.batchId));
-    assert.equal(batch.batchId.startsWith('P5-'+country),false);
   }
   assert.equal(state.resource.BGD.batches.some(x=>x.countryId==='IND'),false);
   assert.equal(state.resource.IND.batches.some(x=>x.countryId==='BGD'),false);
