@@ -107,14 +107,16 @@ public final class MainActivity extends Activity {
             }
 
             @Override
-            public void onRenderProcessGone(WebView view, RenderProcessGoneDetail detail) {
+            public boolean onRenderProcessGone(WebView view, RenderProcessGoneDetail detail) {
                 if (view == webView) {
                     view.destroy();
                     webView = new WebView(MainActivity.this);
                     setContentView(webView);
                     configureWebView();
                     webView.loadUrl(APP_URL);
+                    return true;
                 }
+                return true;
             }
         });
     }
