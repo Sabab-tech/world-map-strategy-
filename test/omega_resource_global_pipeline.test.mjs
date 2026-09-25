@@ -151,14 +151,19 @@ test('global resource pipeline runs every RESOURCE_JSON mine and keeps each resu
 
   const mineCount=Object.values(state.resource).reduce((sum,row)=>sum+(Array.isArray(row?.mines)?row.mines.length:0),0);
   const activeSiteReferenceCount=Object.values(state.resource).reduce((sum,row)=>sum+(Array.isArray(row?.mineSiteReferences)?row.mineSiteReferences.length:0),0);
+  const siteControllerCount=Object.values(state.resource).reduce((sum,row)=>sum+(row?.mineSiteControllers&&typeof row.mineSiteControllers==='object'?Object.keys(row.mineSiteControllers).length:0),0);
   assert.equal(activeSiteReferenceCount,mineSiteReferenceCount);
+  assert.equal(siteControllerCount,mineSiteReferenceCount);
   assert.equal(Object.values(state.resource).reduce((sum,row)=>sum+(Number(row?.mineSiteReferenceCount)||0),0),mineSiteReferenceCount);
+  assert.equal(Object.values(state.resource).reduce((sum,row)=>sum+(Object.values(row?.mineSiteControllers||{}).filter(x=>x?.controllerStatus==='RUNNING').length||0),0),mineSiteReferenceCount);
   const batchCount=Object.values(state.resource).reduce((sum,row)=>sum+(Array.isArray(row?.batches)?row.batches.length:0),0);
   const pathCount=Object.values(state.resource).reduce((sum,row)=>sum+(row?.minePaths&&typeof row.minePaths==='object'?Object.keys(row.minePaths).length:0),0);
+  const sitePathCount=Object.values(state.resource).reduce((sum,row)=>sum+Object.keys(row?.mineSiteControllers||{}).filter(k=>row.minePaths?.[k]).length,0);
   const lotCount=Object.values(state.resource).reduce((sum,row)=>sum+(row?.inventoryLots&&typeof row.inventoryLots==='object'?Object.keys(row.inventoryLots).length:0),0);
   assert.equal(mineCount,engine.deposits.length);
   assert.equal(batchCount,engine.deposits.length);
-  assert.equal(pathCount,engine.deposits.length);
+  assert.equal(sitePathCount,mineSiteReferenceCount);
+  assert.equal(pathCount,mineSiteReferenceCount+engine.deposits.length);
   assert.equal(lotCount,engine.deposits.length);
 
   for(const [countryId,row] of Object.entries(state.resource)){
