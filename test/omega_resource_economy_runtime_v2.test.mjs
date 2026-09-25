@@ -262,7 +262,12 @@ test('legacy opening inventory reconciliation creates a warehouse-backed unobser
   delete worldState.resource.BGD.warehouse.availableByResource.copper;
   const code=readFileSync('omega_resource_economy_runtime_v2.js','utf8');
   vm.runInNewContext(code,context,{filename:'omega_resource_economy_runtime_v2.js'});
-  context.OmegaResourceEconomy.reconcileCountry('BGD');
+  const reconResult=context.OmegaResourceEconomy.reconcileCountry('BGD');
+  console.log('LEGACY_RECON_DIAG', JSON.stringify({
+    reconResult,
+    batches:worldState.resource.BGD.batches,
+    warehouse:worldState.resource.BGD.warehouse
+  }));
 
   const legacy=worldState.resource.BGD.batches.find(x=>x.batchId==='LEGACY_OPENING_BGD_COPPER');
   assert.ok(legacy);
