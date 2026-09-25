@@ -451,6 +451,22 @@
       existingPath.status='INVENTORY_AVAILABLE';
       existingPath.lastTurn=turn();
       minePaths[x.occurrenceKey]=existingPath;
+      const fiscalPending=dispatch('OMEGA_RESOURCE_ECON_EXTRACTION_FISCAL_PENDING',c,{
+        record:{
+          countryId:c,mineId:x.occurrenceKey,depositKey:x.depositKey,batchId:batch.batchId,resourceId:resource,
+          quantity:q,unit:batch.unit,purity:batch.purity,gradePercent:batch.grade,
+          occurrencePathId:pathId,warehouseId:batch.warehouseId,extractionId:record.extractionId,
+          valuationStatus:'UNOBSERVED_MARKET_VALUE',cashPosted:false
+        },
+        correlationId:record.extractionId
+      });
+      if(fiscalPending?.status!=='APPLIED'){
+        existingPath.stages.push({stage:'TREASURY_FISCAL_LEDGER_PENDING',turn:turn(),status:'DEGRADED',reason:fiscalPending?.reason||'FISCAL_LEDGER_HANDLER_UNAVAILABLE'});
+        minePaths[x.occurrenceKey]=existingPath;
+      } else {
+        existingPath.stages.push({stage:'TREASURY_FISCAL_LEDGER_PENDING',turn:turn(),status:'RECORDED',cashPosted:false});
+        minePaths[x.occurrenceKey]=existingPath;
+      }
       if(!mineOutputTotals[x.occurrenceKey])mineOutputTotals[x.occurrenceKey]={cumulativeQuantity:0,turnCount:0,lastTurn:null};
       mineOutputTotals[x.occurrenceKey].cumulativeQuantity=(n(mineOutputTotals[x.occurrenceKey].cumulativeQuantity)||0)+q;
       mineOutputTotals[x.occurrenceKey].turnCount=(n(mineOutputTotals[x.occurrenceKey].turnCount)||0)+1;
