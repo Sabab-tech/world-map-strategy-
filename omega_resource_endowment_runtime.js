@@ -55,18 +55,18 @@
   const turn=()=>n(state()?.simulation?.turn??state()?.turn??state()?.simulationTurn??g.Omega?.Simulation?.clock?.turn)??0;
   const engine=()=>g.ResourceMinistryEngine||null;
   function countries(){
-    const out=new Set();
+    const out=new Set(),authoritative=new Set(),allowedExtras=new Set();
     try{
       const e=engine(),profiles=e?.countryProfiles&&typeof e.countryProfiles==='object'?e.countryProfiles:{};
       Object.entries(profiles).forEach(function(entry){
         const key=entry[0],profile=entry[1]||{},identity=profile.identity||profile;
         const c=canonical(identity.iso3||identity.countryCode||identity.country_code||key);
-        if(c)out.add(c);
+        if(c){out.add(c);authoritative.add(c);}
       });
       const deposits=Array.isArray(e?.deposits)?e.deposits:[];
       deposits.forEach(function(row){
         const c=canonical(row?.countryCode||row?.countryIso3||row?.countryId||row?.iso3||row?.country||'');
-        if(c)out.add(c);
+        if(c){allowedExtras.add(c);out.add(c);}
       });
     }catch(_){}
     try{
@@ -77,9 +77,9 @@
       });
     }catch(_){}
     try{
-      Object.keys(state()?.resource||{}).forEach(function(x){const c=canonical(x);if(c)out.add(c);});
+      Object.keys(state()?.resource||{}).forEach(function(x){const c=canonical(x);if(c&&(authoritative.has(c)||allowedExtras.has(c)))out.add(c);});
     }catch(_){}
-    return[...out].filter(Boolean).sort();
+    return[...out].filter(function(c){return authoritative.has(c)||allowedExtras.has(c);}).sort();
   }
   function countryState(c){
     const cid=canonical(c),s=state();if(!s.resource)s.resource={};if(!s.resource[cid])s.resource[cid]={};
