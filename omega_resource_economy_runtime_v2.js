@@ -246,18 +246,27 @@
     if(warehouseCheck&&!warehouseCheck.ok)return{accepted:false,reason:'CROSS_COUNTRY_WAREHOUSE_BREACH',countryId:c,detail:clone(warehouseCheck)};
     if(cur===null||cur<q)return{accepted:false,reason:'RESOURCE_INVENTORY_INSUFFICIENT',resourceId:rid,requested:q,available:cur===null?0:cur};
     inv[key]=cur-q;
-    var bs=Array.isArray(ctx.stateTransaction.get('resource.batches'))?clone(ctx.stateTransaction.get('resource.batches')):[],rem=q,used=[],warehouse=clone(ctx.stateTransaction.get('resource.warehouse')||null);
+    var bs=Array.isArray(ctx.stateTransaction.get('resource.batches'))?clone(ctx.stateTransaction.get('resource.batches')):[],rem=q,used=[],warehouse=clone(ctx.stateTransaction.get('resource.warehouse')||null),inventoryLots=clone(ctx.stateTransaction.get('resource.inventoryLots')||{});
     for(var i=0;i<bs.length&&rem>1e-9;i++){
       var b=bs[i];if(tok(b&&(b.resourceId||b.materialIdentity))!==tok(rid))continue;
       var avail=num(b&&(b.remainingQuantity!=null?b.remainingQuantity:b.quantity))||0;if(avail<=0)continue;
-      var take=Math.min(avail,rem);b.remainingQuantity=avail-take;rem-=take;used.push({batchId:b.batchId,quantity:take,stage:b.stage,ownerCompanyId:b.ownerCompanyId,purity:num(b.purity),grade:num(b.grade!=null?b.grade:b.gradePercent),quality:num(b.quality),qualityState:clone(b.qualityState||null)});
+      var take=Math.min(avail,rem);b.remainingQuantity=avail-take;rem-=take;
+      if(b.batchId&&inventoryLots[b.batchId]){
+        var lot=clone(inventoryLots[b.batchId]);
+        lot.remainingQuantity=Math.max(0,num(b.remainingQuantity)??0);
+        lot.status=lot.remainingQuantity>0?'PARTIALLY_CONSUMED':'CONSUMED';
+        lot.lastMovementTurn=turn();
+        lot.lastMovementType='CONSUME';
+        inventoryLots[b.batchId]=lot;
+      }
+      used.push({batchId:b.batchId,quantity:take,stage:b.stage,ownerCompanyId:b.ownerCompanyId,purity:num(b.purity),grade:num(b.grade!=null?b.grade:b.gradePercent),quality:num(b.quality),qualityState:clone(b.qualityState||null)});
     }
     if(rem>1e-9)used.push({batchId:null,quantity:rem,stage:'LEGACY_UNALLOCATED',ownerCompanyId:'UNKNOWN_SOURCE'});
     var ledger=Array.isArray(ctx.stateTransaction.get('resource.inventoryLedger'))?clone(ctx.stateTransaction.get('resource.inventoryLedger')):[];
     ledger.push({type:'INVENTORY_CONSUMED',resourceId:rid,quantity:q,reason:p.reason||'PROCESSING_OR_FACTORY_INPUT',turn:turn(),consumed:used});
     while(ledger.length>(num(rules().runtime.maxLedgerEntries)||2048))ledger.shift();
     if(warehouse&&warehouse.availableByResource){warehouse.availableByResource[rid]=Math.max(0,(num(warehouse.availableByResource[rid])||0)-q);warehouse.lastMovementTurn=turn();warehouse.lastMovementType='CONSUME';}
-    ctx.stateTransaction.set('resource.inventory',inv);ctx.stateTransaction.set('resource.batches',bs);ctx.stateTransaction.set('resource.inventoryLedger',ledger);if(warehouse)ctx.stateTransaction.set('resource.warehouse',warehouse);
+    ctx.stateTransaction.set('resource.inventory',inv);ctx.stateTransaction.set('resource.batches',bs);ctx.stateTransaction.set('resource.inventoryLots',inventoryLots);ctx.stateTransaction.set('resource.inventoryLedger',ledger);if(warehouse)ctx.stateTransaction.set('resource.warehouse',warehouse);
     emit('OMEGA_RESOURCE_INVENTORY_CHANGED',ctx.countryId,{resourceId:rid,delta:-q,newQuantity:inv[key],warehouseQuantity:warehouse&&warehouse.availableByResource?warehouse.availableByResource[rid]:null},'resource');
     return{accepted:true,resourceId:rid,quantity:q,consumed:used};
   }
@@ -266,6 +275,7 @@
     var p=cmd&&cmd.payload||{},inputs=Array.isArray(p.inputs)?p.inputs:[],outputs=Array.isArray(p.outputs)?p.outputs:[],
         inv=clone(ctx.stateTransaction.get('resource.inventory')||{}),
         working=Array.isArray(ctx.stateTransaction.get('resource.batches'))?clone(ctx.stateTransaction.get('resource.batches')):[],
+        inventoryLots=clone(ctx.stateTransaction.get('resource.inventoryLots')||{}),
         ledger=Array.isArray(ctx.stateTransaction.get('resource.inventoryLedger'))?clone(ctx.stateTransaction.get('resource.inventoryLedger')):[],
         warehouse=clone(ctx.stateTransaction.get('resource.warehouse')||null),
         consumed=[],sourceBatchIds=[],inputQuality={},c=canonical(ctx.countryId);
@@ -297,6 +307,14 @@
         var take=Math.min(batchQty,remaining);
         batch.remainingQuantity=batchQty-take;
         remaining-=take;
+        if(batch.batchId&&inventoryLots[batch.batchId]){
+          var processLot=clone(inventoryLots[batch.batchId]);
+          processLot.remainingQuantity=Math.max(0,num(batch.remainingQuantity)??0);
+          processLot.status=processLot.remainingQuantity>0?'PARTIALLY_CONSUMED':'CONSUMED';
+          processLot.lastMovementTurn=turn();
+          processLot.lastMovementType='PROCESSING';
+          inventoryLots[batch.batchId]=processLot;
+        }
         used.push({batchId:batch.batchId,quantity:take,stage:batch.stage,ownerCompanyId:batch.ownerCompanyId,purity:num(batch.purity),grade:num(batch.grade!=null?batch.grade:batch.gradePercent),quality:num(batch.quality),qualityState:clone(batch.qualityState||null)});
         if(num(batch.purity)!==null){if(!inputQuality[resId])inputQuality[resId]={quantity:0,purityMass:0};inputQuality[resId].quantity+=take;inputQuality[resId].purityMass+=take*num(batch.purity);}
         if(batch.batchId)sourceBatchIds.push(batch.batchId);
@@ -340,6 +358,7 @@
     if(warehouse)ctx.stateTransaction.set('resource.warehouse',warehouse);
     ctx.stateTransaction.set('resource.inventory',inv);
     ctx.stateTransaction.set('resource.batches',working);
+    ctx.stateTransaction.set('resource.inventoryLots',inventoryLots);
     ctx.stateTransaction.set('resource.inventoryLedger',ledger);
     emit('OMEGA_RESOURCE_INVENTORY_CHANGED',ctx.countryId,{transactionId:tx,type:'PRODUCTION_TRANSACTION_COMMITTED'},'resource');
     return{accepted:true,transactionId:tx,consumed:consumed,created:created};
@@ -410,6 +429,16 @@
     if(av!==null)ctx.stateTransaction.set('finance.available',av+total);else if(res!==null)ctx.stateTransaction.set('finance.reserves',res+total);
     return{accepted:true,total:total};
   }
+  function extractionFiscalPendingHandler(cmd,ctx){
+    var p=cmd&&cmd.payload||{},r=clone(p.record||p),c=canonical(ctx.countryId);
+    if(!r.batchId||!r.resourceId||num(r.quantity)===null||num(r.quantity)<=0)return{accepted:false,reason:'EXTRACTION_FISCAL_RECORD_INVALID'};
+    var ledger=Array.isArray(ctx.stateTransaction.get('finance.resourceExtractionFiscalLedger'))?clone(ctx.stateTransaction.get('finance.resourceExtractionFiscalLedger')):[];
+    r.countryId=c;r.turn=turn();r.status='PENDING_MARKET_VALUATION';r.cashPosted=false;r.sourceAuthority='RESOURCE_JSON';
+    ledger.push(r);while(ledger.length>(num(rules().runtime.maxLedgerEntries)||2048))ledger.shift();
+    ctx.stateTransaction.set('finance.resourceExtractionFiscalLedger',ledger);
+    return{accepted:true,countryId:c,batchId:r.batchId,status:r.status};
+  }
+
   function recordDomesticSaleHandler(cmd,ctx){
     var p=cmd&&cmd.payload||{},sale=clone(p.sale||p),rows=Array.isArray(ctx.stateTransaction.get('trade.domesticSales'))?clone(ctx.stateTransaction.get('trade.domesticSales')):[];
     rows.push({sale:sale,turn:turn(),status:sale.status||'SETTLED'});while(rows.length>(num(rules().runtime.maxLedgerEntries)||2048))rows.shift();ctx.stateTransaction.set('trade.domesticSales',rows);return{accepted:true};
@@ -582,6 +611,7 @@
       ['OMEGA_RESOURCE_ECON_SUPPLIER_FLOW','economy',flowHandler('economy.supplierRevenue','SUPPLIER')],
       ['OMEGA_RESOURCE_ECON_TRANSPORT_REVENUE','transport',flowHandler('transport.resourceRevenue','TRANSPORT')],
       ['OMEGA_RESOURCE_ECON_FISCAL_RECEIPT','finance',fiscalHandler],
+      ['OMEGA_RESOURCE_ECON_EXTRACTION_FISCAL_PENDING','finance',extractionFiscalPendingHandler],
       ['OMEGA_RESOURCE_ECON_TRADE_CLEAR_TO_COMPANY','finance',financeClearHandler],
       ['OMEGA_RESOURCE_ECON_RECORD_DOMESTIC_SALE','trade',recordDomesticSaleHandler],
       ['OMEGA_RESOURCE_ECON_PUBLISH_OFFER_BOOK','trade',publishOffersHandler]
