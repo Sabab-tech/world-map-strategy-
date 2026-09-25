@@ -201,7 +201,7 @@ test('authoritative adapter uses live resource values and disables synthetic sum
   assert.equal(iron.dailyConsumption, 25);
   assert.equal(iron.stockDays, 4);
   assert.equal(iron.warehouseStock, 90);
-  assert.equal(iron.basePrice, 100);
+  assert.equal(iron.basePrice, null);
   assert.notEqual(iron.dailyProduction, 5000);
   assert.equal(context.OmegaResourceAuthoritativeAdapter.diagnostics().syntheticSummaryDisabled, true);
 });
