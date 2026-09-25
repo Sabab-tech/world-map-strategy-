@@ -35,6 +35,7 @@ assert(plan.countryId==='BDG');
 assert(plan.runtimeMeasurement?.selected?.action==='IMPORT');
 
 const supplier=autonomy.chooseImportSupplier('BDG',{runtimeMeasurement:{resourceId:'crude_oil',selected:{quantity:1000}}});
+console.log('SUPPLIER_DIAG',JSON.stringify(supplier,null,2));
 assert.equal(supplier.countryId,'SAU');
 assert.equal(supplier.supply,5000);
 assert.equal(supplier.agreementObserved,true);
