@@ -228,6 +228,9 @@
       const reserve = valueByToken(bucket && bucket.reserves, rid);
       const endowment = valueByToken(bucket && bucket.endowment, rid);
       const warehouse = valueByToken(bucket && bucket.warehouse && bucket.warehouse.availableByResource, rid);
+      const strategicReserveState = bucket && bucket.strategicReserve;
+      const strategicReserve = strategicReserveState ? (valueByToken(strategicReserveState.availableByResource, rid) ?? 0) : null;
+      const strategicReserveDays = strategicReserve !== null ? days(strategicReserve, demand) : null;
       const tradeAvailability = valueByToken(bucket && bucket.tradeAvailability, rid);
       const marketPrices = bucket && (bucket.marketPrices || bucket.priceBook || bucket.supplierPrices);
       const price = valueByToken(marketPrices, rid);
@@ -247,6 +250,8 @@
         selfSufficiencyRatio: percent(production, demand),
         stockDays: days(inventory, demand),
         reserve: reserve,
+        strategicReserveStock: strategicReserve,
+        strategicReserveDays: strategicReserveDays,
         endowment: endowment,
         warehouseStock: warehouse,
         tradeAvailability: tradeAvailability,
@@ -258,6 +263,12 @@
     });
   }
 
+  function resourceNameForModal(resourceId) {
+    const types = resourceTypes();
+    const row = types.get(token(resourceId));
+    return row && row.name ? row.name : String(resourceId || '').replace(/_/g, ' ');
+  }
+
   function summary(countryId) {
     const cid = canonicalCountry(countryId);
     const bucket = liveBucket(cid);
@@ -267,8 +278,15 @@
     const surveys = Array.isArray(bucket && bucket.surveyRequests)
       ? bucket.surveyRequests.filter(function (row) {
           return ['REQUESTED', 'IN_PROGRESS', 'PENDING', 'ACTIVE'].indexOf(String(row && row.status || '').toUpperCase()) >= 0;
-        }).map(clone)
+        }).map(function (row) {
+          const out = clone(row);
+          out.resName = out.resourceName || resourceNameForModal(out.resourceId);
+          out.country = out.country || (profile && profile.identity && (profile.identity.name || profile.identity.officialName)) || cid;
+          out.progress = numberOrNull(out.progress) === null ? 0 : numberOrNull(out.progress);
+          return out;
+        })
       : [];
+
 
     return {
       version: VERSION,
@@ -278,7 +296,7 @@
         : 'Live resource runtime state is unavailable for this country. No synthetic production, demand, stock or reserve values are generated.',
       globalMetrics: {
         autonomyIndex: average(rows, 'selfSufficiencyRatio'),
-        strategicReservesTotalDays: average(rows, 'stockDays'),
+        strategicReservesTotalDays: average(rows, 'strategicReserveDays'),
         activeFacilitiesTotal: rows.reduce(function (sum, row) {
           const value = numberOrNull(row.activeFacilities);
           return sum + (value === null ? 0 : value);
@@ -299,7 +317,9 @@
         warehouse: clone(bucket && bucket.warehouse || null),
         mineOutputs: clone(bucket && bucket.mineOutputs || {}),
         mineProductionLedger: clone(Array.isArray(bucket && bucket.mineProductionLedger) ? bucket.mineProductionLedger.slice(-64) : []),
-        extractionLedger: clone(Array.isArray(bucket && bucket.extractionLedger) ? bucket.extractionLedger.slice(-64) : [])
+        extractionLedger: clone(Array.isArray(bucket && bucket.extractionLedger) ? bucket.extractionLedger.slice(-64) : []),
+        strategicReserve: clone(bucket && bucket.strategicReserve || null),
+        surveyResults: clone(Array.isArray(bucket && bucket.surveyResults) ? bucket.surveyResults.slice(-64) : [])
       },
       directives: {
         survey: 'REQUEST_ONLY_NO_AUTOMATIC_DISCOVERY',
@@ -354,7 +374,9 @@
       extractionLedger: clone(Array.isArray(bucket && bucket.extractionLedger) ? bucket.extractionLedger : []),
       batches: clone(Array.isArray(bucket && bucket.batches) ? bucket.batches : []),
       warehouse: clone(bucket && bucket.warehouse || null),
+      strategicReserve: clone(bucket && bucket.strategicReserve || null),
       surveyRequests: clone(Array.isArray(bucket && bucket.surveyRequests) ? bucket.surveyRequests : []),
+      surveyResults: clone(Array.isArray(bucket && bucket.surveyResults) ? bucket.surveyResults : []),
       capacityUpgradeRequests: clone(Array.isArray(bucket && bucket.capacityUpgradeRequests) ? bucket.capacityUpgradeRequests : []),
       reserveBufferRequests: clone(Array.isArray(bucket && bucket.reserveBufferRequests) ? bucket.reserveBufferRequests : []),
       availability: bucket ? 'AVAILABLE' : 'RUNTIME_STATE_UNAVAILABLE',
@@ -595,8 +617,8 @@
                 button.textContent = 'REQUEST CAPACITY EXPANSION';
                 button.title = 'Records a request without fabricating capacity or spending money.';
               } else if (onclick.indexOf("executeDirective('add_reserve'") >= 0) {
-                button.textContent = 'REQUEST SPR BUFFER';
-                button.title = 'Records a request without fabricating stock.';
+                button.textContent = 'BUILD SPR BUFFER';
+                button.title = 'Builds a physical strategic stockpile from observed warehouse batches.';
               }
             });
           }
