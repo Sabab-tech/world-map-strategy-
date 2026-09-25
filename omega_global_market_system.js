@@ -93,7 +93,8 @@
         pushOrder({[rid]:book},{resourceId:rid,side:'asks',countryId:canonical(c),quantity:n(q.quantity)||n(q.available)||0,price:n(q.unitPrice??q.price),priceUsd:usd,currency:currency(c),source:'TRADE_OFFER_BOOK',referenceOnly:false,offerId:q.offerId||q.id||null});
       }
       const inv=countryValue(c,'resource.inventory'),prod=countryValue(c,'resource.production'),tradeable=countryValue(c,'resource.tradeAvailability');
-      const available=n(tradeable?.[rid])??((n(inv?.[rid])||0)+(n(prod?.[rid])||0));
+      const spr=countryValue(c,'resource.strategicReserve'),protectedStock=n(spr?.availableByResource?.[rid])||0;
+      const available=n(tradeable?.[rid])??Math.max(0,(n(inv?.[rid])||0)-protectedStock)+(n(prod?.[rid])||0);
       if(available>0){
         const ref=referencePrice(rid);
         const usd=ref?toUsd(c,ref.price):null;
@@ -169,7 +170,8 @@
     for(const c of countries()){
       if(c===target)continue;
       const inv=countryValue(c,'resource.inventory'),prod=countryValue(c,'resource.production'),tradeable=countryValue(c,'resource.tradeAvailability');
-      const available=n(tradeable?.[rid])??((n(inv?.[rid])||0)+(n(prod?.[rid])||0));
+      const spr=countryValue(c,'resource.strategicReserve'),protectedStock=n(spr?.availableByResource?.[rid])||0;
+      const available=n(tradeable?.[rid])??Math.max(0,(n(inv?.[rid])||0)-protectedStock)+(n(prod?.[rid])||0);
       if(available<=0||available<quantity)continue;
       const q=quote(rid),rel=countryValue(target,'foreign.relations')?.[c]||countryValue(c,'foreign.relations')?.[target]||null;
       out.push({countryId:c,resourceId:rid,available,marketQuote:q,relationObserved:!!rel,tradeAgreementObserved:rel?.trade_agreement===true});
