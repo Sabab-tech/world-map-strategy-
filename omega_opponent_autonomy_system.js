@@ -954,6 +954,18 @@
       progressPerTurn:1/Math.floor(duration),
       completionTurn:turn()+Math.floor(duration),
       linkedMinistries:clone(p.linkedMinistries||[]),dependencies:clone(p.dependencies||[]),
+      facilityType:p.facilityType||p.factoryType||null,
+      parentFactoryId:p.parentFactoryId||null,
+      siteId:p.siteId||p.site?.id||null,
+      location:clone(p.location||p.site?.location||null),
+      workforce:clone(p.workforce||null),
+      energyProfile:clone(p.energyProfile||p.energy||null),
+      inputCoefficients:clone(p.inputCoefficients||p.inputs||null),
+      outputProfile:clone(p.outputProfile||p.outputs||null),
+      inventoryPolicy:clone(p.inventoryPolicy||null),
+      utilization:num(p.utilization),
+      wageIndex:num(p.wageIndex),
+      taxProfile:clone(p.taxProfile||null),
       autonomy:true,executionBoundary:'OMEGA_PROJECT_EXECUTOR',stateMutationAuthority:true
     };
     ctx.stateTransaction.set('projects.registry',projects.concat([project]).slice(-512));
