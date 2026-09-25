@@ -46,7 +46,9 @@ assert.equal(sent.status,'APPLIED');
 assert.equal(globalThis.Game.state.trade.BDG.importRequests[0].status,'SENT');
 
 const trade=globalThis.OmegaGlobalTrade;
+console.log('TRADE_REVIEW_DIAG', JSON.stringify(trade.reviewRequest(globalThis.Game.state.trade.BDG.importRequests[0]), null, 2));
 trade.processAll();
+console.log('TRADE_AFTER_DIAG', JSON.stringify(globalThis.Game.state.trade.BDG.importRequests[0], null, 2));
 const req=globalThis.Game.state.trade.BDG.importRequests[0];
 assert.equal(req.status,'SETTLED');
 assert.equal(globalThis.Game.state.resource.BDG.inventory.crude_oil,1000);
