@@ -92,6 +92,7 @@
     return cur;
   }
   function interop(){return(g.Omega&&g.Omega.MinistryInteroperability)||g.OmegaMinistryInteroperability||null;}
+  function boundary(){return(g.Omega&&g.Omega.ResourceCountryBoundaryGuard)||g.OmegaResourceCountryBoundaryGuard||null;}
   function dispatch(owner,type,c,payload){
     var m=interop();
     if(!m||typeof m.dispatchCommand!=='function')return{status:'UNAVAILABLE',reason:'MINISTRY_INTEROPERABILITY_UNAVAILABLE'};
@@ -160,6 +161,18 @@
 
   function reconcileHandler(cmd,ctx){
     var c=canonical(ctx.countryId),inv=clone(ctx.stateTransaction.get('resource.inventory')||{}),bs=Array.isArray(ctx.stateTransaction.get('resource.batches'))?clone(ctx.stateTransaction.get('resource.batches')):[],ledger=Array.isArray(ctx.stateTransaction.get('resource.inventoryLedger'))?clone(ctx.stateTransaction.get('resource.inventoryLedger')):[],warehouse=clone(ctx.stateTransaction.get('resource.warehouse')||{warehouseId:'WH-'+c+'-RAW',countryId:c,type:'SOVEREIGN_RAW_MATERIAL_WAREHOUSE',locationNodeKey:'WAREHOUSE:'+c+':RAW',status:'OPERATIONAL',availableByResource:{},storedBatchIds:[],receipts:[]});
+    var boundaryCheck=boundary()?.validateResourceCollection?.(bs,c);
+    if(boundaryCheck&&!boundaryCheck.ok){
+      ctx.stateTransaction.set('resource.inventoryIntegrity',{status:'DEGRADED',checkedTurn:turn(),gaps:[],boundaryViolations:clone(boundaryCheck.violations||[]),authority:'RESOURCE_INVENTORY_AUTHORITY'});
+      emit('OMEGA_RESOURCE_COUNTRY_BOUNDARY_VIOLATION',c,{violations:clone(boundaryCheck.violations||[]),turn:turn()});
+      return{accepted:false,status:'DEGRADED',countryId:c,reason:'CROSS_COUNTRY_RESOURCE_BREACH',violations:clone(boundaryCheck.violations||[])};
+    }
+    var warehouseBoundary=boundary()?.validateWarehouse?.(warehouse,c);
+    if(warehouseBoundary&&!warehouseBoundary.ok){
+      ctx.stateTransaction.set('resource.inventoryIntegrity',{status:'DEGRADED',checkedTurn:turn(),gaps:[],boundaryViolations:[clone(warehouseBoundary)],authority:'RESOURCE_INVENTORY_AUTHORITY'});
+      emit('OMEGA_RESOURCE_COUNTRY_BOUNDARY_VIOLATION',c,{violations:[clone(warehouseBoundary)],turn:turn()});
+      return{accepted:false,status:'DEGRADED',countryId:c,reason:'CROSS_COUNTRY_WAREHOUSE_BREACH',violations:[clone(warehouseBoundary)]};
+    }
     var before=inventoryGaps(inv,bs),allocated={};
     bs.forEach(function(b){var rid=String((b&&(b.resourceId||b.materialIdentity))||'').trim(),q=num(b&&(b.remainingQuantity!=null?b.remainingQuantity:b.quantity));if(rid&&q!==null&&q>0)allocated[rid]=(allocated[rid]||0)+q;});
     Object.keys(inv).forEach(function(rid){
@@ -198,10 +211,17 @@
   }
 
   function registerBatchHandler(cmd,ctx){
-    var p=cmd&&cmd.payload||{},row=clone(p.batch||p.producedBatch||p),rid=String(row.resourceId||row.materialIdentity||p.resourceId||'').trim(),q=num(row.quantity!=null?row.quantity:(row.approvedQuantity!=null?row.approvedQuantity:p.quantity));
+    var c=canonical(ctx.countryId),p=cmd&&cmd.payload||{},row=clone(p.batch||p.producedBatch||p),rid=String(row.resourceId||row.materialIdentity||p.resourceId||'').trim(),q=num(row.quantity!=null?row.quantity:(row.approvedQuantity!=null?row.approvedQuantity:p.quantity));
     if(!rid||q===null||q<=0)return{accepted:false,reason:'BATCH_INPUT_INVALID'};
+    var boundaryCheck=boundary()?.validateLocalBatch?.(row,c);
+    if(boundaryCheck&&!boundaryCheck.ok)return{accepted:false,reason:boundaryCheck.reason||'CROSS_COUNTRY_RESOURCE_BREACH',countryId:c,detail:clone(boundaryCheck)};
     var bs=Array.isArray(ctx.stateTransaction.get('resource.batches'))?clone(ctx.stateTransaction.get('resource.batches')):[];
-    var b={batchId:String(row.batchId||p.batchId||('BATCH_'+turn()+'_'+canonical(ctx.countryId)+'_'+tok(rid)+'_'+(bs.length+1))),resourceId:rid,materialIdentity:String(row.materialIdentity||rid),quantity:q,remainingQuantity:q,unit:row.unit||null,stage:String(row.stage||'RAW').toUpperCase(),ownerCountryCode:canonical(ctx.countryId),ownerCompanyId:String(row.ownerCompanyId||p.ownerCompanyId||mineCompany(ctx.countryId,rid)),sourceBatchIds:Array.isArray(row.sourceBatchIds)?row.sourceBatchIds.slice():[],purity:num(row.purity),grade:num(row.grade!=null?row.grade:row.gradePercent),quality:num(row.quality),qualityState:clone(row.qualityState||{purity:num(row.purity),purityStatus:num(row.purity)!==null?'OBSERVED':'UNOBSERVED',gradePercent:num(row.grade!=null?row.grade:row.gradePercent)}),warehouseId:row.warehouseId||'WH-'+canonical(ctx.countryId)+'-RAW',locationNodeKey:row.locationNodeKey||'WAREHOUSE:'+canonical(ctx.countryId)+':RAW',extractionReference:row.extractionReference||p.extractionId||null,processId:row.processId||null,timestampTurn:turn(),provenance:clone(row.provenance||p.provenance||{})};
+    var stage=String(row.stage||'RAW').toUpperCase();
+    var localWarehouseId=stage==='PROCESSED'||stage==='INTERMEDIATE'||stage==='FINISHED'?'WH-'+c+'-PROCESSED':'WH-'+c+'-RAW';
+    var localLocation='WAREHOUSE:'+c+':'+(localWarehouseId.endsWith('-PROCESSED')?'PROCESSED':'RAW');
+    var b={batchId:String(row.batchId||p.batchId||('BATCH_'+turn()+'_'+c+'_'+tok(rid)+'_'+(bs.length+1))),resourceId:rid,materialIdentity:String(row.materialIdentity||rid),quantity:q,remainingQuantity:q,unit:row.unit||null,stage:stage,countryId:c,sourceCountryId:c,originCountryId:c,ownerCountryCode:c,custodianKey:c,destinationCountryId:c,ownerCompanyId:String(row.ownerCompanyId||p.ownerCompanyId||mineCompany(c,rid)),sourceBatchIds:Array.isArray(row.sourceBatchIds)?row.sourceBatchIds.slice():[],purity:num(row.purity),grade:num(row.grade!=null?row.grade:row.gradePercent),quality:num(row.quality),qualityState:clone(row.qualityState||{purity:num(row.purity),purityStatus:num(row.purity)!==null?'OBSERVED':'UNOBSERVED',gradePercent:num(row.grade!=null?row.grade:row.gradePercent)}),warehouseId:localWarehouseId,locationNodeKey:localLocation,extractionReference:row.extractionReference||p.extractionId||null,processId:row.processId||null,timestampTurn:turn(),transferType:'LOCAL_RUNTIME',provenance:clone(row.provenance||p.provenance||{})};
+    var localCheck=boundary()?.validateLocalBatch?.(b,c);
+    if(localCheck&&!localCheck.ok)return{accepted:false,reason:localCheck.reason||'CROSS_COUNTRY_RESOURCE_BREACH',countryId:c,detail:clone(localCheck)};
     if(bs.some(function(x){return String(x&&x.batchId)===b.batchId;}))return{accepted:true,duplicate:true,batchId:b.batchId};
     bs.push(b);while(bs.length>(num(rules().runtime.maxBatches)||8192))bs.shift();
     var ledger=Array.isArray(ctx.stateTransaction.get('resource.inventoryLedger'))?clone(ctx.stateTransaction.get('resource.inventoryLedger')):[];
@@ -216,9 +236,14 @@
   }
 
   function consumeHandler(cmd,ctx){
-    var p=cmd&&cmd.payload||{},rid=String(p.resourceId||'').trim(),q=num(p.quantity);
+    var c=canonical(ctx.countryId),p=cmd&&cmd.payload||{},rid=String(p.resourceId||'').trim(),q=num(p.quantity);
     if(!rid||q===null||q<=0)return{accepted:false,reason:'CONSUME_INPUT_INVALID'};
     var inv=clone(ctx.stateTransaction.get('resource.inventory')||{}),key=Object.prototype.hasOwnProperty.call(inv,rid)?rid:Object.keys(inv).find(function(k){return tok(k)===tok(rid);}),cur=key==null?null:num(inv[key]);
+    var existingBatches=Array.isArray(ctx.stateTransaction.get('resource.batches'))?clone(ctx.stateTransaction.get('resource.batches')):[];
+    var boundaryCheck=boundary()?.validateResourceCollection?.(existingBatches,c);
+    if(boundaryCheck&&!boundaryCheck.ok)return{accepted:false,reason:'CROSS_COUNTRY_RESOURCE_BREACH',countryId:c,violations:clone(boundaryCheck.violations||[])};
+    var warehouseCheck=boundary()?.validateWarehouse?.(ctx.stateTransaction.get('resource.warehouse'),c);
+    if(warehouseCheck&&!warehouseCheck.ok)return{accepted:false,reason:'CROSS_COUNTRY_WAREHOUSE_BREACH',countryId:c,detail:clone(warehouseCheck)};
     if(cur===null||cur<q)return{accepted:false,reason:'RESOURCE_INVENTORY_INSUFFICIENT',resourceId:rid,requested:q,available:cur===null?0:cur};
     inv[key]=cur-q;
     var bs=Array.isArray(ctx.stateTransaction.get('resource.batches'))?clone(ctx.stateTransaction.get('resource.batches')):[],rem=q,used=[],warehouse=clone(ctx.stateTransaction.get('resource.warehouse')||null);
@@ -243,8 +268,12 @@
         working=Array.isArray(ctx.stateTransaction.get('resource.batches'))?clone(ctx.stateTransaction.get('resource.batches')):[],
         ledger=Array.isArray(ctx.stateTransaction.get('resource.inventoryLedger'))?clone(ctx.stateTransaction.get('resource.inventoryLedger')):[],
         warehouse=clone(ctx.stateTransaction.get('resource.warehouse')||null),
-        consumed=[],sourceBatchIds=[],inputQuality={};
+        consumed=[],sourceBatchIds=[],inputQuality={},c=canonical(ctx.countryId);
     if(!inputs.length||!outputs.length)return{accepted:false,reason:'PRODUCTION_TRANSACTION_SHAPE_INVALID'};
+    var productionBoundary=boundary()?.validateResourceCollection?.(working,c);
+    if(productionBoundary&&!productionBoundary.ok)return{accepted:false,reason:'CROSS_COUNTRY_RESOURCE_BREACH',countryId:c,violations:clone(productionBoundary.violations||[])};
+    var productionWarehouseBoundary=boundary()?.validateWarehouse?.(warehouse,c);
+    if(productionWarehouseBoundary&&!productionWarehouseBoundary.ok)return{accepted:false,reason:'CROSS_COUNTRY_WAREHOUSE_BREACH',countryId:c,detail:clone(productionWarehouseBoundary)};
 
     for(var i=0;i<inputs.length;i++){
       var item=inputs[i],rid=String(item&&item.resourceId||'').trim(),q=num(item&&item.quantity);
@@ -293,10 +322,13 @@
         unit:out&&out.unit||null,stage:String(out&&out.stage||'FINISHED').toUpperCase(),
         ownerCountryCode:canonical(ctx.countryId),ownerCompanyId:String(p.companyId||('STATE_INDUSTRY_'+canonical(ctx.countryId))),
         sourceBatchIds:[...new Set(sourceBatchIds)],purity:derivedPurity,grade:derivedGrade,quality:derivedPurity,qualityState:outputQualityState,
-        warehouseId:'WH-'+canonical(ctx.countryId)+'-PROCESSED',locationNodeKey:'WAREHOUSE:'+canonical(ctx.countryId)+':PROCESSED',
-        transformReference:p.transactionId||null,processId:p.facilityId||null,timestampTurn:turn(),
+        countryId:c,sourceCountryId:c,originCountryId:c,ownerCountryCode:c,custodianKey:c,destinationCountryId:c,
+        warehouseId:'WH-'+c+'-PROCESSED',locationNodeKey:'WAREHOUSE:'+c+':PROCESSED',
+        transformReference:p.transactionId||null,processId:p.facilityId||null,timestampTurn:turn(),transferType:'LOCAL_PROCESSING',
         provenance:clone(p.provenance||{source:'OMEGA_RESOURCE_ECONOMY_RUNTIME_V2',simulationTurn:turn()})
       };
+      var outputBoundary=boundary()?.validateLocalBatch?.(newBatch,c);
+      if(outputBoundary&&!outputBoundary.ok)return{accepted:false,reason:outputBoundary.reason||'CROSS_COUNTRY_RESOURCE_BREACH',countryId:c,detail:clone(outputBoundary)};
       working.push(newBatch);created.push(newBatch);
       if(warehouse){warehouse.availableByResource=warehouse.availableByResource||{};warehouse.availableByResource[outId]=(num(warehouse.availableByResource[outId])||0)+outQty;warehouse.storedBatchIds=Array.isArray(warehouse.storedBatchIds)?warehouse.storedBatchIds:[];if(!warehouse.storedBatchIds.includes(newBatch.batchId))warehouse.storedBatchIds.push(newBatch.batchId);warehouse.lastMovementTurn=turn();warehouse.lastMovementType='PRODUCTION_OUTPUT';}
     }
