@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
+import android.util.Base64;
 import android.view.ViewGroup;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebResourceRequest;
@@ -18,7 +19,6 @@ import androidx.webkit.WebViewAssetLoader;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.Base64;
 import java.util.Locale;
 
 public final class MainActivity extends Activity {
@@ -155,8 +155,9 @@ public final class MainActivity extends Activity {
             );
         }
 
-        final byte[] transparentPng = Base64.getDecoder().decode(
-                "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
+        final byte[] transparentPng = Base64.decode(
+                "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+                Base64.DEFAULT
         );
         return new WebResourceResponse(
                 "image/png",
