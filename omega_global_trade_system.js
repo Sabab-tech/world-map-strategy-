@@ -27,7 +27,7 @@
   const state=()=>g.Game?.state||g.gameState||null;
   const turn=()=>{const s=state();return num(s?.simulation?.turn??s?.turn??s?.simulationTurn??g.Omega?.Simulation?.clock?.turn)??0;};
   const registry=()=>g.OmegaCanonicalIdentityRegistry||g.OmegaCountrySemanticBridge||g.Omega?.CanonicalIdentity||null;
-  const canonical=v=>{try{const r=registry()?.resolveCountry?.(v);if(r?.id)return id(r.id);}catch(_){}return id(v);};
+  const canonical=v=>{const raw=String(v??'').trim();if(/^[A-Z]{3}$/i.test(raw))return id(raw);try{const r=registry()?.resolveCountry?.(v);if(r?.id)return id(r.id);}catch(_){}return id(v);};
   const interop=()=>g.Omega?.MinistryInteroperability||g.OmegaMinistryInteroperability||null;
   const memory=()=>g.OmegaOpponentDeepMemory||g.Omega?.OpponentDeepMemory||null;
 
