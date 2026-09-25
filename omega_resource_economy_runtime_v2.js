@@ -13,8 +13,8 @@
     fiscal:{royaltyRate:0.02,resourceTaxRate:0.01,corporateTaxRate:0.20,exportDutyRate:0,otherReceiptRate:0},
     operatingAllocation:{workerIncomeRate:0.12,transportRevenueRate:0.05},
     runtime:{maxLedgerEntries:2048,maxBatches:8192},
-    market:{offerFractionOfObservedInventory:0.25,minOfferQuantity:1}
-     actions:{
+    market:{offerFractionOfObservedInventory:0.25,minOfferQuantity:1},
+    actions:{
        survey:{durationTurns:2,maxResultRecords:64},
        facilityExpansion:{capacityIncreaseFraction:0.25,durationTurns:4,budgetUnitsPerCapacityUnit:10,reservationExpiresAfterTurns:64},
        strategicBuffer:{targetDays:30,maxTransferBatches:128}
@@ -122,8 +122,8 @@
         fiscal:Object.assign({},DEFAULT_RULES.fiscal,d.fiscal||{}),
         operatingAllocation:Object.assign({},DEFAULT_RULES.operatingAllocation,d.operatingAllocation||{}),
         runtime:Object.assign({},DEFAULT_RULES.runtime,d.runtime||{}),
-        market:Object.assign({},DEFAULT_RULES.market,d.market||{})
-         actions:Object.assign({},DEFAULT_RULES.actions,d.actions||{})
+        market:Object.assign({},DEFAULT_RULES.market,d.market||{}),
+        actions:Object.assign({},DEFAULT_RULES.actions,d.actions||{})
       };
       return g.__OmegaResourceEconomyRules;
     }).catch(function(e){
