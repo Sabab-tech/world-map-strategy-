@@ -1,0 +1,75 @@
+plugins {
+    id 'com.android.application'
+}
+
+def omegaRepoRoot = rootProject.projectDir.parentFile
+
+android {
+    namespace 'com.omega.globalsupremecommander'
+    compileSdk 36
+
+    defaultConfig {
+        applicationId 'com.omega.globalsupremecommander'
+        minSdk 24
+        targetSdk 35
+        versionCode 1
+        versionName '0.1.0'
+    }
+
+    buildFeatures {
+        buildConfig true
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    packaging {
+        resources {
+            excludes += ['/META-INF/{AL2.0,LGPL2.1}']
+        }
+    }
+
+    sourceSets {
+        main {
+            assets.srcDir(layout.buildDirectory.dir('generated/omegaWebAssets'))
+        }
+    }
+}
+
+tasks.register('syncOmegaWebAssets', Sync) {
+    from(omegaRepoRoot) {
+        include '*.html'
+        include '*.js'
+        include '*.json'
+        include '*.css'
+        include '*.png'
+        include '*.jpg'
+        include '*.jpeg'
+        include '*.webp'
+        include '*.svg'
+        include 'assets/**'
+        exclude 'android/**'
+        exclude 'test/**'
+        exclude 'reports/**'
+        exclude '.github/**'
+        exclude '.git/**'
+        exclude 'node_modules/**'
+        exclude '*.md'
+        exclude 'package.json'
+        exclude 'bun.lock'
+        exclude 'server.js'
+        exclude 'server_bootstrap.js'
+        exclude '.env*'
+    }
+    into(layout.buildDirectory.dir('generated/omegaWebAssets'))
+}
+
+tasks.named('preBuild').configure {
+    dependsOn(tasks.named('syncOmegaWebAssets'))
+}
+
+dependencies {
+    implementation 'androidx.webkit:webkit:1.17.1'
+}
