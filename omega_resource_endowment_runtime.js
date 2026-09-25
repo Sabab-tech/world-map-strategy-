@@ -675,7 +675,9 @@
         requestedPeriod:p5.TemporalWindowUnit?.PER_DAY||'PER_DAY',assetReference:capacity.assetReference,
         expectedStateVersion:n(reserve.stateVersion)||1,simulationTick:turn(),timeWindowDurationHours:DAY_HOURS,
         extractionMethod:p5.ExtractionMethodEnum?.UNKNOWN||'UNKNOWN',
-        provenance:{sourceSubsystem:'OMEGA_RESOURCE_ENDOWMENT_RUNTIME',sourceId:x.depositKey,timestamp:0}
+        provenance:{sourceSubsystem:'OMEGA_RESOURCE_ENDOWMENT_RUNTIME',sourceId:x.depositKey,timestamp:0,
+          sourceAuthority:x.isSimulationGenerated?'SIMULATION_RULESET':'RESOURCE_JSON',sourceDatasetId:x.sourceDatasetId||x.rawDeposit?.sourceDatasetId||null,
+          quantityAuthority:x.isSimulationGenerated?'DERIVED_SIMULATION_BASELINE':'RESOURCE_JSON',effortUtilization:x.isSimulationGenerated?1:(n(x.capacity?.effortUtilization)??1)}
       });
       let result;
       try{
@@ -778,7 +780,7 @@
         resourceId:resource,quantity:q,unit:batch.unit,purity:batch.purity,gradePercent:batch.grade,batchId:batch.batchId,
         warehouseId:batch.warehouseId,turn:turn(),reserveBefore:n(result.reserveBefore?.residualQuantity),
         reserveAfter:n(result.reserveAfter?.residualQuantity),status:result.status,
-        sourceDatasetId:x.sourceDatasetId||x.rawDeposit?.sourceDatasetId||null
+        sourceDatasetId:x.sourceDatasetId||x.rawDeposit?.sourceDatasetId||null,sourceAuthority:x.isSimulationGenerated?'SIMULATION_RULESET':'RESOURCE_JSON',simulationGenerated:!!x.isSimulationGenerated
       });
       while(mineProductionLedger.length>MAX_MINE_HISTORY)mineProductionLedger.shift();
       ledger.push({...record,producedBatch:batch});
