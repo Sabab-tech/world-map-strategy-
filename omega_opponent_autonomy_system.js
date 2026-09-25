@@ -680,8 +680,27 @@
       }
     }catch(_){}
     try{
+      const resourceRoot=state()?.resource;
+      if(resourceRoot&&typeof resourceRoot==='object'){
+        for(const [countryKey,bucketValue] of Object.entries(resourceRoot)){
+          const cid=id(countryKey);
+          if(!cid)continue;
+          const live=bucketValue&&typeof bucketValue==='object'?bucketValue:{};
+          const tradeable=live.tradeAvailability&&typeof live.tradeAvailability==='object'?live.tradeAvailability:{};
+          const inventory=live.inventory&&typeof live.inventory==='object'?live.inventory:{};
+          const direct=scalar(tradeable[rid]);
+          const inv=scalar(inventory[rid]);
+          const supply=direct!==null?direct:inv;
+          if(supply!==null&&supply>0&&!out.some(y=>y.countryId===cid)){
+            out.push({countryId:cid,source:'Game.state.resource',recordId:null});
+          }
+        }
+      }
+    }catch(_){}
+    try{
       const engine=g.ResourceMinistryEngine;
       for(const dep of Array.isArray(engine?.deposits)?engine.deposits:[]){
+
         const candidate=id(dep.countryCode||dep.country||dep.countryId);
         const tags=[dep.resourceId,dep.resId,dep.resourceTypeId,dep.resource,dep.name].filter(Boolean).map(token);
         if(candidate&&tags.some(x=>x===token(rid)||x.includes(token(rid))))if(!out.some(y=>y.countryId===candidate))out.push({countryId:candidate,source:'ResourceMinistryEngine',recordId:dep.resId||dep.id||null});
