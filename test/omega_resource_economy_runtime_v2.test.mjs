@@ -214,7 +214,7 @@ test('resource economy v2 completes mine-backed processing, domestic settlement 
   assert.equal(outputBatch.quantity,40);
   assert.equal(outputBatch.purity,0.62);
   assert.equal(outputBatch.qualityState.purityStatus,'INHERITED_FROM_INPUT');
-  assert.deepEqual(outputBatch.sourceBatchIds,['MINE-BATCH-1']);
+  assert.deepEqual([...outputBatch.sourceBatchIds],['MINE-BATCH-1']);
 
   const dashboard=context.OmegaResourceEconomy.getCountryDashboard('BGD');
   assert.equal(dashboard.health.warehouseAuthoritative,true);
