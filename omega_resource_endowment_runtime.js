@@ -101,13 +101,41 @@
   }
   function buildKnowledge(){
     const e=engine();if(!e?.isReady)return null;
-    const profiles=e.countryProfiles&&typeof e.countryProfiles==='object'?Object.values(e.countryProfiles):[];
-    const countriesRaw=profiles.map(p=>clone(p?.identity||p)).filter(Boolean).map(p=>{
+    const profiles=e.countryProfiles&&typeof e.countryProfiles==='object'?e.countryProfiles:{};
+    const profileList=Object.values(profiles);
+    const countriesRaw=profileList.map(p=>clone(p?.identity||p)).filter(Boolean).map(p=>{
       const x=clone(p);if(!x.iso3)x.iso3=x.countryId||x.isoCode||null;if(!x.id)x.id=x.iso3;return x;
+    });
+    const refs=Array.isArray(e.deposits)?e.deposits.slice():[];
+    for(const [profileKey,p] of Object.entries(profiles)){
+      const identity=p?.identity||p||{};
+      const countryId=canonical(identity.countryId||identity.iso3||profileKey);
+      const sites=p?.resource_infrastructure_context?.mineSites||p?.infrastructure_context?.mineSites||[];
+      if(!Array.isArray(sites))continue;
+      sites.forEach((site,index)=>{
+        const name=typeof site==='string'?site:String(site?.name||site?.siteName||site?.mineName||site?.depositName||('MINE_SITE_'+index)).trim();
+        if(!name)return;
+        refs.push({
+          ...(site&&typeof site==='object'?clone(site):{}),
+          id:'SITE_REF_'+countryId+'_'+String(index+1).padStart(3,'0'),
+          name,
+          countryCode:countryId,
+          country:identity.name||countryId,
+          metadata:{...(site&&typeof site==='object'&&site.metadata&&typeof site.metadata==='object'?clone(site.metadata):{}),subType:'mineSites'},
+          sourceAuthority:'RESOURCE_JSON',
+          sourceDatasetId:'resources.json.countryProfiles',
+          sourcePath:'GSRSK_Master_CountryProfiles_v14.countryProfiles.'+String(profileKey)+'.resource_infrastructure_context.mineSites['+index+']'
+        });
+      });
+    }
+    const dedup=new Map();
+    refs.forEach(ref=>{
+      const key=String(ref?.id||'').trim().toUpperCase();
+      if(key)dedup.set(key,ref);
     });
     return{
       sovereignEntities:{countries:countriesRaw,resourceTypes:clone(e.resourceTypes||[])},
-      refCatalog:{allReferences:clone(Array.isArray(e.deposits)?e.deposits:[])}
+      refCatalog:{allReferences:[...dedup.values()]}
     };
   }
   function compile(){
