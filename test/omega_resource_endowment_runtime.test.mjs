@@ -143,7 +143,7 @@ for(const [countryId,row] of Object.entries(worldState)){
     assert(lot,countryId+' missing site inventory lot '+siteKey);
     assert.equal(lot.countryId,countryId);
     assert.equal(lot.warehouseId,'WH-'+countryId+'-RAW');
-    assert(row.mineProductionLedger.some(x=>x.batchId===output.batchId&&x.countryId===undefined?x.mineId===occurrenceKey:x.mineId===occurrenceKey),countryId+' missing site production ledger '+siteKey);
+    assert(row.mineProductionLedger.some(x=>x.batchId===output.batchId&&x.mineId===occurrenceKey),countryId+' missing site production ledger '+siteKey);
     controllerCountrySets.add(countryId);
   }
 }
