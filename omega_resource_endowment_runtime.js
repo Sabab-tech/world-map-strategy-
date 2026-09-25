@@ -239,8 +239,44 @@
     }
     return out;
   }
+  function buildMineSiteControllers(c,rows,existing={}){
+    const refs=mineSiteReferenceRows(c);
+    const executableKeys=new Set((rows||[]).map(x=>String(x.occurrenceKey)));
+    const old=existing&&typeof existing.mineSiteControllers==='object'&&existing.mineSiteControllers?existing.mineSiteControllers:{};
+    const controllers={};
+    for(const site of refs){
+      const siteKey=String(site.siteReferenceKey||'');
+      if(!siteKey)continue;
+      const prior=old[siteKey]&&typeof old[siteKey]==='object'?clone(old[siteKey]):{};
+      const pathId='MINE_PATH:'+canonical(c)+':'+siteKey;
+      const existingLinked=Array.isArray(prior.linkedOccurrenceKeys)?prior.linkedOccurrenceKeys:[];
+      const linked=existingLinked.filter(k=>executableKeys.has(String(k)));
+      controllers[siteKey]={
+        ...prior,
+        siteReferenceKey:siteKey,
+        siteName:site.siteName,
+        countryId:canonical(c),
+        countryCode:canonical(c),
+        sourcePath:site.sourcePath||null,
+        sourceDatasetId:site.sourceDatasetId||'RESOURCE_JSON.countryProfiles',
+        sourceAuthority:'RESOURCE_JSON',
+        activationState:'ACTIVE_SITE_CONTROLLER',
+        controllerStatus:'RUNNING',
+        extractionExecutable:linked.length>0,
+        quantitativeDataState:linked.length>0?'AVAILABLE':'MISSING_FROM_SITE_REFERENCE',
+        linkedOccurrenceKeys:linked,
+        pathId,
+        extractionPathStatus:linked.length>0?'EXECUTABLE_OCCURRENCE_ATTACHED':'BLOCKED_MISSING_QUANTITATIVE_DATA',
+        lastEvaluationTurn:turn(),
+        rawSiteReference:clone(site.rawSiteReference||site.rawSite||null)
+      };
+    }
+    return controllers;
+  }
+
   function buildCountryProjection(c,rows,existing={}){
     const byResource={},mines=[],mineSiteReferences=mineSiteReferenceRows(c);
+    const mineSiteControllers=buildMineSiteControllers(c,rows,existing);
     for(const x of rows){
       const rs=x.reserveState,raw=x.rawDeposit;if(!rs)continue;
       const resource=x.resourceId;
@@ -274,7 +310,7 @@
     for(const x of rows)mineStates[x.occurrenceKey]=clone(x.reserveState.toJSON?.()||x.reserveState);
     return{
       ...clone(existing),countryResourceProfile:clone(profile(c)),resourceDomain:clone(profile(c)?.resource_domain||null),
-      mines,mineSiteReferences,mineSiteReferenceCount:mineSiteReferences.length,
+      mines,mineSiteReferences,mineSiteReferenceCount:mineSiteReferences.length,mineSiteControllers,
       endowment,reserves:merge(reserves,existing.reserves),inventory,production,consumption,tradeAvailability,mineStates,
       strategicReserve,
       batches:Array.isArray(existing.batches)?existing.batches.slice(-MAX_LEDGER):[],
@@ -308,6 +344,7 @@
       ['resource.mines',projection.mines],
       ['resource.mineSiteReferences',projection.mineSiteReferences],
       ['resource.mineSiteReferenceCount',projection.mineSiteReferenceCount],
+      ['resource.mineSiteControllers',projection.mineSiteControllers],
       ['resource.endowment',projection.endowment],
       ['resource.reserves',projection.reserves],
       ['resource.inventory',projection.inventory],
@@ -358,7 +395,31 @@
     const extracted=[];
     const blocked=[];
     const mineOutputs=clone(ctx.stateTransaction.get('resource.mineOutputs')||{});
+    const mineSiteControllers=clone(ctx.stateTransaction.get('resource.mineSiteControllers')||{});
     const mines=clone(ctx.stateTransaction.get('resource.mines')||[]);
+    const allSiteKeys=Object.keys(mineSiteControllers);
+    for(const siteKey of allSiteKeys){
+      const controller=mineSiteControllers[siteKey];
+      const hasExecutable=Array.isArray(controller.linkedOccurrenceKeys)&&controller.linkedOccurrenceKeys.length>0;
+      const pathId=controller.pathId||('MINE_PATH:'+c+':'+siteKey);
+      const path=minePaths[siteKey]&&typeof minePaths[siteKey]==='object'?clone(minePaths[siteKey]):{
+        pathId,siteReferenceKey:siteKey,siteName:controller.siteName,countryId:c,resourceId:null,
+        sourceCountryId:c,destinationCountryId:c,stages:[],status:hasExecutable?'READY':'BLOCKED_MISSING_QUANTITATIVE_DATA',
+        lastTurn:null,batchIds:[],inventoryAllocations:[]
+      };
+      if(!Array.isArray(path.stages))path.stages=[];
+      if(path.stages.length===0)path.stages.push({stage:'SITE_CONTROLLER_SCAN',turn:turn(),status:hasExecutable?'EXECUTABLE':'BLOCKED_MISSING_QUANTITATIVE_DATA'});
+      path.lastTurn=turn();
+      minePaths[siteKey]=path;
+      if(!hasExecutable){
+        mineOutputs[siteKey]={
+          siteReferenceKey:siteKey,siteName:controller.siteName,countryId:c,simulationTurn:turn(),
+          producedQuantity:0,status:'BLOCKED_MISSING_QUANTITATIVE_DATA',
+          blockReason:'SITE_REFERENCE_HAS_NO_QUANTITATIVE_MINE_RECORD',
+          pathId
+        };
+      }
+    }
     for(const x of selected){
       const pathId='MINE_PATH:'+c+':'+String(x.occurrenceKey);
       const existingPath=minePaths[x.occurrenceKey]&&typeof minePaths[x.occurrenceKey]==='object'?clone(minePaths[x.occurrenceKey]):{
@@ -523,6 +584,7 @@
     const warehouseCheck=boundary()?.validateWarehouse?.(warehouse,c);
     if(warehouseCheck&&!warehouseCheck.ok)return{accepted:false,countryId:c,extracted:0,blocked:[warehouseCheck],records:[]};
     ctx.stateTransaction.set('resource.mineStates',current);
+    ctx.stateTransaction.set('resource.mineSiteControllers',mineSiteControllers);
     ctx.stateTransaction.set('resource.mineOutputs',mineOutputs);
     ctx.stateTransaction.set('resource.mineOutputTotals',mineOutputTotals);
     ctx.stateTransaction.set('resource.mineProductionLedger',mineProductionLedger.slice(-MAX_MINE_HISTORY));
@@ -632,17 +694,18 @@
     for(const c of countries()){
       const m=state()?.resource?.[c]?.mines;if(Array.isArray(m))mines.push(...m);
     }
-    let batchCount=0,warehouseCount=0,latestMineOutputs=0,inventoryLotCount=0,minePathCount=0,mineSiteReferenceCount=0;
+    let batchCount=0,warehouseCount=0,latestMineOutputs=0,inventoryLotCount=0,minePathCount=0,mineSiteReferenceCount=0,mineSiteControllerCount=0;
     for(const c of countries()){
       const rs=state()?.resource?.[c]||{};
       mineSiteReferenceCount+=Array.isArray(rs.mineSiteReferences)?rs.mineSiteReferences.length:0;
+      mineSiteControllerCount+=rs.mineSiteControllers&&typeof rs.mineSiteControllers==='object'?Object.keys(rs.mineSiteControllers).length:0;
       batchCount+=Array.isArray(rs.batches)?rs.batches.length:0;
       warehouseCount+=rs.warehouse?.warehouseId?1:0;
       latestMineOutputs+=rs.mineOutputs&&typeof rs.mineOutputs==='object'?Object.keys(rs.mineOutputs).length:0;
       inventoryLotCount+=rs.inventoryLots&&typeof rs.inventoryLots==='object'?Object.keys(rs.inventoryLots).length:0;
       minePathCount+=rs.minePaths&&typeof rs.minePaths==='object'?Object.keys(rs.minePaths).length:0;
     }
-    return{version:VERSION,engineReady:!!e?.isReady,dataAuthority:'RESOURCE_JSON',dataLoad:clone(e?.getDataLoadReport?.()||e?.dataLoadReport||null),identityRegistryReady:!!g.__OmegaResourceIdentityRegistry,reserveRegistryReady:!!r,countryCount:countries().length,mineCount:mines.length,mineSiteReferenceCount,compiledReserveStates:r?.reserveStates?.size||0,batchCount,warehouseCount,latestMineOutputs,inventoryLotCount,minePathCount};
+    return{version:VERSION,engineReady:!!e?.isReady,dataAuthority:'RESOURCE_JSON',dataLoad:clone(e?.getDataLoadReport?.()||e?.dataLoadReport||null),identityRegistryReady:!!g.__OmegaResourceIdentityRegistry,reserveRegistryReady:!!r,countryCount:countries().length,mineCount:mines.length,mineSiteReferenceCount,mineSiteControllerCount,compiledReserveStates:r?.reserveStates?.size||0,batchCount,warehouseCount,latestMineOutputs,inventoryLotCount,minePathCount};
   }
   function init(){
     install();
@@ -653,7 +716,12 @@
     g.addEventListener?.('OMEGA_SIMULATION_TURN_COMMITTED',onTurn);
     return diagnostics();
   }
-  const API=Object.freeze({VERSION,diagnostics,initialize,extractAll,extractCountry,hydrateCountry,countryResourceState,countryMines,countryMineSiteReferences:function(c){return clone(state()?.resource?.[canonical(c)]?.mineSiteReferences||mineSiteReferenceRows(c));},compile});
+  const API=Object.freeze({
+    VERSION,diagnostics,initialize,extractAll,extractCountry,hydrateCountry,countryResourceState,countryMines,
+    countryMineSiteReferences:function(c){return clone(state()?.resource?.[canonical(c)]?.mineSiteReferences||mineSiteReferenceRows(c));},
+    countryMineSiteControllers:function(c){return clone(state()?.resource?.[canonical(c)]?.mineSiteControllers||{});},
+    compile
+  });
   g.Omega=g.Omega||{};g.Omega.ResourceEndowmentRuntime=API;g.OmegaResourceEndowmentRuntime=API;
   try{init();}catch(e){g.OmegaResourceEndowmentRuntimeError=String(e?.message||e);}
 })(typeof window!=='undefined'?window:globalThis);
