@@ -127,7 +127,6 @@ test('global resource pipeline runs every RESOURCE_JSON mine and keeps each resu
   assert.ok(siteRefs.every(x=>x.status==='ACTIVE_SITE_REFERENCE'));
   assert.ok(siteRefs.every(x=>x.extractionExecutable===true));
   assert.ok(siteRefs.every(x=>x.runtimeExecutionMode==='UNIFIED_PART04_PART05_PIPELINE'));
-  assert.ok(siteRefs.every(x=>x.extractionExecutable===false));
 
   const siteOccurrences=idResult.registry.listOccurrences().filter(x=>x?.profileDerivedSimulation===true&&x?.siteReferenceKey);
   assert.equal(siteOccurrences.length,mineSiteReferenceCount);
