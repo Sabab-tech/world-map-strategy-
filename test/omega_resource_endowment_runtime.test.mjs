@@ -69,7 +69,7 @@ assert.equal(before.resourceAuthority.dataLoadReport.authority,'RESOURCE_JSON');
 const gasMine=before.mines.find(x=>x.depositName==='Titas Gas Field Reservoir');
 assert(gasMine);
 assert.equal(gasMine.resourceId,'natural_gas');
-assert.equal(gasMine.purity,0.962);
+assert.ok(Math.abs(gasMine.purity-0.962)<1e-9, `purity drifted: ${gasMine.purity}`);
 assert.equal(gasMine.qualityState.purityStatus,'OBSERVED');
 
 const extraction=await runtime.extractCountry('BGD',[gasMine.occurrenceKey]);
