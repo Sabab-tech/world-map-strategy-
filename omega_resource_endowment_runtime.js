@@ -171,24 +171,26 @@
     try{return clone(reg.getMineSiteReferencesByCountry(canonical(c))||[]);}catch(_){return[];}
   }
   function occurrenceRows(c){
-    const reg=g.__OmegaResourceIdentityRegistry;const e=engine();if(!reg||!e)return[];
+    const reg=g.__OmegaResourceIdentityRegistry;
+    if(!reg)return[];
     const wanted=canonical(c),out=[];
     try{
       const occurrences=reg.getOccurrencesByCountry?.(wanted)||[];
       for(const occ of occurrences){
-        const dep=reg.getDeposit?.(occ.depositKey);if(!dep)continue;
-        const raw=(e.deposits||[]).find(x=>String(x?.name||'').trim().toUpperCase()===String(dep.depositRawName||'').trim().toUpperCase()&&id(x?.countryCode||x?.country||'')===wanted);
-        const resourceId=rid(occ.resourceTypeId||occ.resourceTypeKey);
+        const raw=clone(occ.rawDeposit||{});
+        const resourceId=rid(occ.resourceTypeId||occ.resourceTypeKey||raw.resourceId||raw.resId);
         if(!resourceId)continue;
         const reserve=g.__OmegaResourceReserveRegistry?.getReserveState?.(occ.occurrenceKey);
         const capacity=g.__OmegaResourceReserveRegistry?.getCapacityForOccurrence?.(occ.occurrenceKey);
         if(!reserve||!capacity)continue;
         out.push({
           occurrenceKey:occ.occurrenceKey,depositKey:occ.depositKey,resourceId,countryId:wanted,
-          depositName:dep.depositRawName,locationNodeKey:dep.locationNodeKey||occ.locationNodeKey||null,
-          resourceTypeKey:occ.resourceTypeKey,reserveState:reserve,capacity,
-          rawDeposit:clone(raw||null),ownerKey:occ.ownerKey||null,operatorKey:occ.operatorKey||null,
-          sourceDatasetId:raw?.sourceDatasetId||raw?.provenance?.sourceDatasetId||null,
+          depositName:occ.depositRawName,locationNodeKey:raw.locationNodeKey||occ.locationNodeKey||null,
+          resourceTypeKey:occ.resourceTypeKey,reserveState:reserve,capacity,rawDeposit:raw,
+          ownerKey:occ.ownerKey||null,operatorKey:occ.operatorKey||null,siteReferenceKey:occ.siteReferenceKey||raw.siteReferenceKey||null,
+          assetType:occ.assetType||raw.assetType||(occ.profileDerivedSimulation?'MINE_SITE':'STRUCTURED_MINE'),
+          isSimulationGenerated:!!occ.profileDerivedSimulation,
+          sourceDatasetId:occ.sourceDatasetId||raw.sourceDatasetId||null,
           lifecycle:g.__OmegaResourceReserveRegistry?.lifecycles?.get?.(occ.occurrenceKey)||null,
           accessibility:g.__OmegaResourceReserveRegistry?.accessibilityStates?.get?.(occ.occurrenceKey)||null
         });
@@ -409,65 +411,7 @@
     return n(SIM_RESOURCE_DAILY_RATES[resourceId])||1000;
   }
   function siteExecutionRows(c,existing={}){
-    const p=profile(c)||{},rows=[],seen=new Set();
-    const add=(asset,index,explicitResource=null,assetType='MINE_SITE')=>{
-      const siteName=String(asset?.siteName||asset?.name||asset?.mineName||asset?.depositName||asset||'').trim();
-      if(!siteName)return;
-      const siteKey=String(asset?.siteReferenceKey||('SITE:'+canonical(c)+':'+tok(siteName))).trim();
-      const occurrenceKey=(assetType==='MINE_SITE'?'SITE_OCC:':'FIELD_OCC:')+canonical(c)+':'+tok(siteKey);
-      if(seen.has(occurrenceKey))return;
-      seen.add(occurrenceKey);
-      const resourceId=simulationSiteResourceId(c,siteName,explicitResource);
-      if(!resourceId)return;
-      const old=existing?.mineStates?.[occurrenceKey];
-      const p5=g.GSRSK_Part05||g.GSRSK_ResourceReserveExtractionEngine;
-      const unit=simulationUnit(resourceId),daily=simulationDailyRate(resourceId);
-      const reserve=old&&typeof old==='object'&&p5?.ReserveState
-        ?new p5.ReserveState(clone(old))
-        :(p5?.ReserveState?new p5.ReserveState({
-          occurrenceKey,countryId:canonical(c),depositKey:'SIM_'+tok(occurrenceKey),resourceId,
-          geologicalQuantity:daily*SIM_RESERVE_HORIZON_DAYS,recoverableQuantity:daily*SIM_RESERVE_HORIZON_DAYS,
-          residualQuantity:daily*SIM_RESERVE_HORIZON_DAYS,unit,operationalStatus:'ACTIVE_EXTRACTION',
-          stateVersion:1,provenance:{
-            sourceAuthority:'SIMULATION_RULESET',sourceDatasetId:'RESOURCE_JSON.countryProfiles',
-            sourcePath:asset?.sourcePath||null,quantityAuthority:'DERIVED_SIMULATION_BASELINE',
-            simulationExtractionHorizonDays:SIM_RESERVE_HORIZON_DAYS
-          }
-        }):null);
-      if(!reserve)return;
-      const capacity=p5?.Capacity?new p5.Capacity({
-        occurrenceKey,countryId:canonical(c),resourceId,unit,nominalRate:daily,dailyRate:daily,
-        assetReference:assetType+':'+occurrenceKey,authority:'SIMULATION_RULESET',
-        effortUtilization:1,quantityAuthority:'DERIVED_SIMULATION_BASELINE',
-        simulationExtractionHorizonDays:SIM_RESERVE_HORIZON_DAYS
-      }):{
-        occurrenceKey,countryId:canonical(c),resourceId,unit,nominalRate:daily,dailyRate:daily,
-        effortUtilization:1,assetReference:assetType+':'+occurrenceKey,
-        computeWindowCapacity(hours){const h=n(hours);return{windowCapacity:(this.nominalRate||0)*(h===null?1:Math.max(0,h/24))};}
-      };
-      rows.push({
-        occurrenceKey,siteReferenceKey:siteKey,depositKey:'SIM_'+tok(occurrenceKey),depositName:siteName,resourceId,countryId:canonical(c),resourceTypeKey:resourceId,
-        locationNodeKey:'ASSET:'+canonical(c)+':'+tok(siteName),ownerKey:null,operatorKey:null,status:'ACTIVE_PRODUCING',
-        rawDeposit:{
-          id:occurrenceKey,name:siteName,countryCode:canonical(c),resId:resourceId,status:'ACTIVE_PRODUCING',
-          assetType,simulation:true,effortUtilization:1,
-          sourceDatasetId:'RESOURCE_JSON.countryProfiles',
-          sourcePath:asset?.sourcePath||null
-        },
-        ownerKey:null,operatorKey:null,sourceDatasetId:'RESOURCE_JSON.countryProfiles',
-        lifecycle:{status:'ACTIVE_EXTRACTION',mode:'PROFILE_DERIVED_SIMULATION_BASELINE',assetType},
-        accessibility:{state:'AVAILABLE',sourceAuthority:'RESOURCE_JSON_PROFILE'},
-        reserveState:reserve,capacity,isSimulationGenerated:true,assetType
-      });
-    };
-    const mineRefs=mineSiteReferenceRows(c);
-    mineRefs.forEach((ref)=>add(ref,null,null,'MINE_SITE'));
-    const h=p?.hydrocarbon_resource_base||{};
-    for(const key of ['oil','naturalGas']){
-      const list=Array.isArray(h[key])?h[key]:[];
-      list.forEach((name)=>add({name,sourcePath:'GSRSK_Master_CountryProfiles_v14.countryProfiles.'+canonical(c)+'.hydrocarbon_resource_base.'+key},key==='oil'?'crude_oil':'natural_gas',key==='oil'?'OIL_FIELD':'GAS_FIELD'));
-    }
-    return rows;
+    return occurrenceRows(c).filter(x=>x.isSimulationGenerated===true);
   }
 
   function buildCountryProjection(c,rows,existing={}){
@@ -520,7 +464,7 @@
       resourceAuthority:{
         source:'RESOURCE_JSON->PART04->PART05->RESOURCE_RUNTIME',
         knowledgeSources:['resources.json','resources_2.json'],
-        mineSource:'RESOURCE_JSON.runtime_deposits + PROFILE_DERIVED_SIMULATION_ASSETS',
+        mineSource:'RESOURCE_JSON.runtime_deposits + RESOURCE_JSON.countryProfiles.*.mineSites -> PART04 -> PART05',
         mineSiteSource:'RESOURCE_JSON.countryProfiles.*.resource_infrastructure_context.mineSites',
         executableMineCount:rows.length,
         structuredExecutableMineCount:occurrenceRows(c).length,
@@ -590,7 +534,7 @@
     });
     const existingResourceState=ctx.stateTransaction.get('resource')||{};
     const persistedMineStates=ctx.stateTransaction.get('resource.mineStates')||{};
-    const rows=[...occurrenceRows(c),...siteExecutionRows(c,{mineStates:persistedMineStates})];
+    const rows=occurrenceRows(c);
     const selected=Array.isArray(cmd?.payload?.occurrenceKeys)&&cmd.payload.occurrenceKeys.length
       ?rows.filter(x=>cmd.payload.occurrenceKeys.includes(x.occurrenceKey)):rows;
     const extracted=[];
@@ -912,7 +856,7 @@
       minePathCount+=rs.minePaths&&typeof rs.minePaths==='object'?Object.keys(rs.minePaths).length:0;
       if(Array.isArray(rs.mines)){structuredMineCount+=rs.mines.filter(x=>!x?.simulationGenerated).length;executableAssetCount+=rs.mines.filter(x=>x?.simulationGenerated===true).length;fieldAssetCount+=rs.mines.filter(x=>x?.simulationGenerated===true&&['OIL_FIELD','GAS_FIELD'].includes(x?.assetType)).length;}
     }
-    let profileDerivedExecutableAssetCount=0,profileDerivedActiveAssetCount=0,profileDerivedBlockedAssetCount=0;for(const c of countries()){const rs=state()?.resource?.[c]||{};const outs=rs.mineOutputs&&typeof rs.mineOutputs==='object'?Object.values(rs.mineOutputs):[];const simOuts=outs.filter(x=>x?.simulationGenerated===true);profileDerivedExecutableAssetCount+=simOuts.length;profileDerivedActiveAssetCount+=simOuts.filter(x=>x?.status==='APPROVED'||x?.status==='PARTIALLY_APPROVED').length;profileDerivedBlockedAssetCount+=simOuts.filter(x=>String(x?.status||'').startsWith('BLOCKED')).length;} return{version:VERSION,engineReady:!!e?.isReady,dataAuthority:'RESOURCE_JSON + SIMULATION_RULESET_FOR_UNQUANTIFIED_PROFILE_SITES',dataLoad:clone(e?.getDataLoadReport?.()||e?.dataLoadReport||null),identityRegistryReady:!!g.__OmegaResourceIdentityRegistry,reserveRegistryReady:!!r,countryCount:countries().length,mineCount:mines.length,structuredMineCount,executableAssetCount,fieldAssetCount,mineSiteReferenceCount,mineSiteControllerCount,compiledReserveStates:r?.reserveStates?.size||0,batchCount,warehouseCount,latestMineOutputs,inventoryLotCount,minePathCount,profileDerivedExecutableAssetCount,profileDerivedActiveAssetCount,profileDerivedBlockedAssetCount,fullEffortPolicy:'100_PERCENT'};
+    let profileDerivedExecutableAssetCount=0,profileDerivedActiveAssetCount=0,profileDerivedBlockedAssetCount=0;for(const c of countries()){const rs=state()?.resource?.[c]||{};const outs=rs.mineOutputs&&typeof rs.mineOutputs==='object'?Object.values(rs.mineOutputs):[];const simOuts=outs.filter(x=>x?.simulationGenerated===true);profileDerivedExecutableAssetCount+=simOuts.length;profileDerivedActiveAssetCount+=simOuts.filter(x=>x?.status==='APPROVED'||x?.status==='PARTIALLY_APPROVED').length;profileDerivedBlockedAssetCount+=simOuts.filter(x=>String(x?.status||'').startsWith('BLOCKED')).length;} return{version:VERSION,engineReady:!!e?.isReady,dataAuthority:'RESOURCE_JSON + DETERMINISTIC_PROFILE_SITE_RUNTIME_BASELINE_FOR_MISSING_QUANTITATIVE_FIELDS',dataLoad:clone(e?.getDataLoadReport?.()||e?.dataLoadReport||null),identityRegistryReady:!!g.__OmegaResourceIdentityRegistry,reserveRegistryReady:!!r,countryCount:countries().length,mineCount:mines.length,structuredMineCount,executableAssetCount,fieldAssetCount,mineSiteReferenceCount,mineSiteControllerCount,compiledReserveStates:r?.reserveStates?.size||0,batchCount,warehouseCount,latestMineOutputs,inventoryLotCount,minePathCount,profileDerivedExecutableAssetCount,profileDerivedActiveAssetCount,profileDerivedBlockedAssetCount,fullEffortPolicy:'100_PERCENT'};
   }
   function init(){
     install();
