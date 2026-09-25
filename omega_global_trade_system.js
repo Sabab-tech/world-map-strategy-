@@ -100,9 +100,6 @@
     if(!vals.length)return null;
     const sw=vals.reduce((s,[,w])=>s+w,0);
     let score=vals.reduce((s,[x,w])=>s+x*w,0)/sw;
-    const adj=countryValue(buyer,'foreign.relationAdjustments')?.[canonical(seller)];
-    if(Array.isArray(adj))score+=adj.reduce((s,x)=>s+(num(x.delta)||0)/100,0);
-    else if(adj)score+=(num(adj.delta)||0)/100;
     return clamp(score);
   }
   function agreement(r,buyer,seller){
