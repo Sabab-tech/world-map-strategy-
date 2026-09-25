@@ -330,6 +330,8 @@
     const mineProductionLedger=Array.isArray(ctx.stateTransaction.get('resource.mineProductionLedger'))?clone(ctx.stateTransaction.get('resource.mineProductionLedger')):[];
     const mineOutputTotals=clone(ctx.stateTransaction.get('resource.mineOutputTotals')||{});
     const existingBatches=Array.isArray(ctx.stateTransaction.get('resource.batches'))?clone(ctx.stateTransaction.get('resource.batches')):[];
+    const inventoryLots=clone(ctx.stateTransaction.get('resource.inventoryLots')||{});
+    const minePaths=clone(ctx.stateTransaction.get('resource.minePaths')||{});
     const warehouse=clone(ctx.stateTransaction.get('resource.warehouse')||{
       warehouseId:'WH-'+c+'-RAW',countryId:c,type:'SOVEREIGN_RAW_MATERIAL_WAREHOUSE',
       locationNodeKey:'WAREHOUSE:'+c+':RAW',status:'OPERATIONAL',availableByResource:{},storedBatchIds:[],receipts:[],lastReceiptTurn:null
@@ -342,6 +344,17 @@
     const mineOutputs=clone(ctx.stateTransaction.get('resource.mineOutputs')||{});
     const mines=clone(ctx.stateTransaction.get('resource.mines')||[]);
     for(const x of selected){
+      const pathId='MINE_PATH:'+c+':'+String(x.occurrenceKey);
+      const existingPath=minePaths[x.occurrenceKey]&&typeof minePaths[x.occurrenceKey]==='object'?clone(minePaths[x.occurrenceKey]):{
+        pathId,occurrenceKey:x.occurrenceKey,depositKey:x.depositKey,countryId:c,resourceId:x.resourceId,
+        sourceCountryId:c,destinationCountryId:c,stages:[],status:'READY',lastTurn:null,batchIds:[],inventoryAllocations:[]
+      };
+      if(!Array.isArray(existingPath.stages))existingPath.stages=[];
+      if(!Array.isArray(existingPath.batchIds))existingPath.batchIds=[];
+      if(!Array.isArray(existingPath.inventoryAllocations))existingPath.inventoryAllocations=[];
+      existingPath.stages.push({stage:'EXTRACTION_SCAN',turn:turn()});
+      existingPath.lastTurn=turn();
+      minePaths[x.occurrenceKey]=existingPath;
       const reserve=r.getReserveState(x.occurrenceKey);
       if(!reserve){
         const reason={occurrenceKey:x.occurrenceKey,resourceId:x.resourceId,reason:'RESERVE_STATE_UNAVAILABLE'};
@@ -425,6 +438,19 @@
       if(batchCheck&&!batchCheck.ok)throw new Error(batchCheck.reason||'RESOURCE_COUNTRY_BOUNDARY_VIOLATION');
       if(!batch.batchId||batch.quantity<=0)throw new Error('EXTRACTION_BATCH_CREATION_FAILED');
       if(!existingBatches.some(b=>String(b?.batchId)===batch.batchId))existingBatches.push(batch);
+      inventoryLots[batch.batchId]={
+        batchId:batch.batchId,resourceId:resource,countryId:c,sourceCountryId:c,originCountryId:c,
+        destinationCountryId:c,warehouseId:batch.warehouseId,quantity:q,remainingQuantity:q,
+        stage:'RAW_INVENTORY',purity:batch.purity,gradePercent:batch.grade,qualityState:clone(batch.qualityState),
+        occurrenceKey:x.occurrenceKey,depositKey:x.depositKey,pathId,
+        extractionReference:record.extractionId,simulationTurn:turn(),status:'AVAILABLE'
+      };
+      existingPath.stages.push({stage:'BATCH_CREATED',turn:turn(),batchId:batch.batchId,quantity:q});
+      existingPath.batchIds.push(batch.batchId);
+      existingPath.inventoryAllocations.push({batchId:batch.batchId,resourceId:resource,quantity:q,warehouseId:batch.warehouseId,turn:turn(),status:'ALLOCATED_TO_COUNTRY_INVENTORY'});
+      existingPath.status='INVENTORY_AVAILABLE';
+      existingPath.lastTurn=turn();
+      minePaths[x.occurrenceKey]=existingPath;
       if(!mineOutputTotals[x.occurrenceKey])mineOutputTotals[x.occurrenceKey]={cumulativeQuantity:0,turnCount:0,lastTurn:null};
       mineOutputTotals[x.occurrenceKey].cumulativeQuantity=(n(mineOutputTotals[x.occurrenceKey].cumulativeQuantity)||0)+q;
       mineOutputTotals[x.occurrenceKey].turnCount=(n(mineOutputTotals[x.occurrenceKey].turnCount)||0)+1;
@@ -469,6 +495,8 @@
     ctx.stateTransaction.set('resource.mineOutputTotals',mineOutputTotals);
     ctx.stateTransaction.set('resource.mineProductionLedger',mineProductionLedger.slice(-MAX_MINE_HISTORY));
     ctx.stateTransaction.set('resource.batches',existingBatches.slice(-MAX_LEDGER));
+    ctx.stateTransaction.set('resource.inventoryLots',inventoryLots);
+    ctx.stateTransaction.set('resource.minePaths',minePaths);
     ctx.stateTransaction.set('resource.warehouse',warehouse);
     ctx.stateTransaction.set('resource.mines',mines);
     ctx.stateTransaction.set('resource.production',production);
@@ -572,9 +600,16 @@
     for(const c of countries()){
       const m=state()?.resource?.[c]?.mines;if(Array.isArray(m))mines.push(...m);
     }
-    let batchCount=0,warehouseCount=0,latestMineOutputs=0;
-    for(const c of countries()){const rs=state()?.resource?.[c]||{};batchCount+=Array.isArray(rs.batches)?rs.batches.length:0;warehouseCount+=rs.warehouse?.warehouseId?1:0;latestMineOutputs+=rs.mineOutputs&&typeof rs.mineOutputs==='object'?Object.keys(rs.mineOutputs).length:0;}
-    return{version:VERSION,engineReady:!!e?.isReady,dataAuthority:'RESOURCE_JSON',dataLoad:clone(e?.getDataLoadReport?.()||e?.dataLoadReport||null),identityRegistryReady:!!g.__OmegaResourceIdentityRegistry,reserveRegistryReady:!!r,countryCount:countries().length,mineCount:mines.length,compiledReserveStates:r?.reserveStates?.size||0,batchCount,warehouseCount,latestMineOutputs};
+    let batchCount=0,warehouseCount=0,latestMineOutputs=0,inventoryLotCount=0,minePathCount=0;
+    for(const c of countries()){
+      const rs=state()?.resource?.[c]||{};
+      batchCount+=Array.isArray(rs.batches)?rs.batches.length:0;
+      warehouseCount+=rs.warehouse?.warehouseId?1:0;
+      latestMineOutputs+=rs.mineOutputs&&typeof rs.mineOutputs==='object'?Object.keys(rs.mineOutputs).length:0;
+      inventoryLotCount+=rs.inventoryLots&&typeof rs.inventoryLots==='object'?Object.keys(rs.inventoryLots).length:0;
+      minePathCount+=rs.minePaths&&typeof rs.minePaths==='object'?Object.keys(rs.minePaths).length:0;
+    }
+    return{version:VERSION,engineReady:!!e?.isReady,dataAuthority:'RESOURCE_JSON',dataLoad:clone(e?.getDataLoadReport?.()||e?.dataLoadReport||null),identityRegistryReady:!!g.__OmegaResourceIdentityRegistry,reserveRegistryReady:!!r,countryCount:countries().length,mineCount:mines.length,compiledReserveStates:r?.reserveStates?.size||0,batchCount,warehouseCount,latestMineOutputs,inventoryLotCount,minePathCount};
   }
   function init(){
     install();
