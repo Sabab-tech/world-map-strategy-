@@ -116,6 +116,7 @@ const CANONICAL_AI_SCRIPTS = Object.freeze([
   'omega_ai_context_bridge.js',
   'omega_resource_endowment_runtime.js',
   'omega_resource_economy_runtime_v2.js',
+  'omega_resource_authoritative_adapter.js',
   'omega_opponent_deep_memory_system.js',
   'omega_opponent_memory_trace_log_system.js',
   'omega_opponent_intelligence_evolution_system.js',
