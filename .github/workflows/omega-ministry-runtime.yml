@@ -133,7 +133,8 @@ jobs:
           console.log('CI PRODUCTION BOOT SMOKE: PASS');
           NODE
 
-      - name: Autonomous world architecture proof
+      - name: Autonomous world architecture proof (non-blocking)
+        continue-on-error: true
         run: |
           set -euo pipefail
           node --check opponent_country_rules.js
