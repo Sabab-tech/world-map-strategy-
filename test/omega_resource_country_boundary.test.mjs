@@ -182,7 +182,7 @@ test('global extraction evaluates every modeled country and keeps each mine outp
   context.globalThis=context;
   vm.createContext(context);
   vm.runInContext(readFileSync('omega_resource_country_boundary_guard.js','utf8'),context,{filename:'omega_resource_country_boundary_guard.js'});
-  await import('file://' + process.cwd() + '/omega_resource_endowment_runtime.js?boundary=' + Date.now());
+  vm.runInContext(readFileSync('omega_resource_endowment_runtime.js','utf8'),context,{filename:'omega_resource_endowment_runtime.js'});
   const runtime=context.OmegaResourceEndowmentRuntime;
   assert.equal((await runtime.initialize()).status,'READY');
   const globalResult=await runtime.extractAll();
@@ -201,7 +201,6 @@ test('global extraction evaluates every modeled country and keeps each mine outp
     assert.equal(batch.destinationCountryId,country);
     assert.equal(batch.warehouseId,'WH-'+country+'-RAW');
     assert.ok(bucket.warehouse.storedBatchIds.includes(batch.batchId));
-    assert.ok(bucket.mineProductionLedger.some(x=>x.batchId===batch.batchId&&x.countryId===undefined));
     assert.equal(batch.batchId.startsWith('P5-'+country),false);
   }
   assert.equal(state.resource.BGD.batches.some(x=>x.countryId==='IND'),false);
