@@ -1438,6 +1438,9 @@
     }
 
     dispatchCommand(sourceMinistry,actionId,countryId,payload={},options={}){
+      if((!Array.isArray(this.ids)||this.ids.length===0) && (global.OmegaMinistryRegistry||global.OmegaMinistryDomainEngines)){
+        this.configure({});
+      }
       const source=String(sourceMinistry||'');
       const country=String(countryId||'').trim().toUpperCase();
       if(!this.ids.includes(source)||!country)throw new Error('INVALID_COMMAND_SOURCE_OR_COUNTRY');
