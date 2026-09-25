@@ -455,7 +455,11 @@
     publishCommittedExtractionEvents(c,result);
     return result;
   }
-  function countryResourceState(c){return clone(state()?.resource?.[canonical(c)]||null);}
+  function countryResourceState(c){
+    const out=clone(state()?.resource?.[canonical(c)]||null);
+    if(out && !out.resourceAuthority && out.authority)out.resourceAuthority=clone(out.authority);
+    return out;
+  }
   function countryMines(c){return clone(state()?.resource?.[canonical(c)]?.mines||[]);}
   function install(){
     const m=interop();if(!m?.registerCommandHandler)return false;
