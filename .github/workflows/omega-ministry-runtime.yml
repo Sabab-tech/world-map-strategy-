@@ -89,6 +89,7 @@ jobs:
           node --test test/omega_resource_country_boundary.test.mjs
           node --test test/omega_resource_global_pipeline.test.mjs
           node test/omega_resource_realism_runtime_v1.test.mjs
+          node test/omega_resource_logistics_runtime_v1.test.mjs
           if node test/omega_resource_request_and_settlement.test.mjs; then
             echo "RESOURCE_SETTLEMENT_COMPATIBILITY_TEST: PASS"
           else
