@@ -5,13 +5,13 @@
  */
 (function(g){
 'use strict';
-const VERSION='1.0.0';
+const VERSION='1.1.0';
 const FAMILY={
  TONNES:['T','TON','TONS','TONNE','TONNES','MT','MILLION TONNES','METRIC TON','METRIC TONS'],
  TROY_OUNCES:['OZ','OZ.','OZT','TROY OZ','TROY OUNCE','TROY OUNCES'],
  BBL:['BBL','BBLS','BARREL','BARRELS'],
  TCF:['TCF'],BCF:['BCF'],BCM:['BCM'],MCM:['MCM'],MCF:['MCF'],
- PERCENT:['%','PERCENT'],GT:['G/T','G PER T','GRAMS/T','GRAMS PER TONNE'],MG_L:['MG/L'],API:['API','API GRAVITY']
+ PERCENT:['%','PERCENT'],GT:['G/T','G PER T','GRAMS/T','GRAMS PER TONNE'],MG_L:['MG/L'],API:['API','API GRAVITY'],CARATS:['CARAT','CARATS','CT']
 };
 const alias={
  crude_oil:['crude_oil','crude oil','petroleum','oil','crude'],natural_gas:['natural_gas','natural gas','gas','lng','associated gas'],
@@ -19,7 +19,10 @@ const alias={
  nickel:['nickel','ni'],cobalt:['cobalt','co'],lithium:['lithium'],rare_earth:['rare_earth','rare earth','ree','neodymium','dysprosium'],
  uranium:['uranium','u3o8'],coal:['coal'],phosphate:['phosphate','phosphate rock','p2o5'],potash:['potash','potassium','k2o'],
  limestone:['limestone'],gypsum:['gypsum'],marble:['marble'],chromium:['chromium','chromite'],silica_sand:['silica sand','silica_sand','sand'],
- clay:['clay','kaolin','bentonite'],zeolite:['zeolite'],zircon:['zircon','zirconium']
+ clay:['clay','kaolin','bentonite'],zeolite:['zeolite'],zircon:['zircon','zirconium'],
+ graphite:['graphite'],rutile:['rutile','titanium mineral'],manganese:['manganese'],diamond:['diamond'],tin:['tin','cassiterite'],tungsten:['tungsten','wolfram'],
+ chromite:['chromite','chromium'],silver:['silver','ag'],zinc:['zinc','zn'],platinum:['platinum','pgm'],basalt:['basalt'],construction_aggregate:['aggregate','sand','gravel','crushed stone'],
+ coral_aggregate:['coral aggregate','coral'],salt:['salt','brine'],dolomite:['dolomite'],magnesite:['magnesite'],oil_shale:['oil shale'],marble:['marble'],boron:['boron','borate'],aragonite:['aragonite'],granite:['granite'],ilmenite:['ilmenite','titanium'],diatomite:['diatomite','diatomaceous earth']
 };
 const ranges={
  crude_oil:{unit:'BBL',min:5000,max:50000,lifeMin:12,lifeMax:35,gradeMin:20,gradeMax:50},
@@ -35,7 +38,30 @@ const ranges={
  uranium:{unit:'TONNES',min:100,max:2500,lifeMin:10,lifeMax:30,gradeMin:.03,gradeMax:.5},
  coal:{unit:'TONNES',min:5000,max:70000,lifeMin:10,lifeMax:45,gradeMin:35,gradeMax:85},
  phosphate:{unit:'TONNES',min:5000,max:60000,lifeMin:10,lifeMax:40,gradeMin:15,gradeMax:35},
- potash:{unit:'TONNES',min:5000,max:60000,lifeMin:10,lifeMax:40,gradeMin:10,gradeMax:35}
+ potash:{unit:'TONNES',min:5000,max:60000,lifeMin:10,lifeMax:40,gradeMin:10,gradeMax:35},
+ graphite:{unit:'TONNES',min:100,max:5000,lifeMin:8,lifeMax:30,gradeMin:70,gradeMax:98},
+ rutile:{unit:'TONNES',min:1000,max:100000,lifeMin:10,lifeMax:40,gradeMin:.3,gradeMax:2},
+ manganese:{unit:'TONNES',min:5000,max:200000,lifeMin:10,lifeMax:40,gradeMin:20,gradeMax:55},
+ diamond:{unit:'CARATS',min:100000,max:2000000,lifeMin:8,lifeMax:25,gradeMin:0,gradeMax:1},
+ tin:{unit:'TONNES',min:100,max:10000,lifeMin:8,lifeMax:30,gradeMin:.1,gradeMax:5},
+ tungsten:{unit:'TONNES',min:100,max:10000,lifeMin:8,lifeMax:30,gradeMin:.1,gradeMax:2},
+ chromite:{unit:'TONNES',min:1000,max:100000,lifeMin:10,lifeMax:35,gradeMin:20,gradeMax:55},
+ silver:{unit:'TROY_OUNCES',min:100000,max:10000000,lifeMin:8,lifeMax:30,gradeMin:20,gradeMax:500},
+ zinc:{unit:'TONNES',min:1000,max:100000,lifeMin:8,lifeMax:30,gradeMin:2,gradeMax:20},
+ platinum:{unit:'TROY_OUNCES',min:100000,max:5000000,lifeMin:8,lifeMax:35,gradeMin:1,gradeMax:10},
+ basalt:{unit:'TONNES',min:10000,max:500000,lifeMin:5,lifeMax:25,gradeMin:90,gradeMax:99},
+ construction_aggregate:{unit:'TONNES',min:10000,max:500000,lifeMin:5,lifeMax:25,gradeMin:90,gradeMax:99},
+ coral_aggregate:{unit:'TONNES',min:10000,max:300000,lifeMin:5,lifeMax:20,gradeMin:90,gradeMax:99},
+ salt:{unit:'TONNES',min:10000,max:1000000,lifeMin:10,lifeMax:40,gradeMin:80,gradeMax:99},
+ dolomite:{unit:'TONNES',min:10000,max:500000,lifeMin:10,lifeMax:30,gradeMin:70,gradeMax:98},
+ magnesite:{unit:'TONNES',min:1000,max:100000,lifeMin:10,lifeMax:30,gradeMin:70,gradeMax:95},
+ oil_shale:{unit:'TONNES',min:10000,max:500000,lifeMin:10,lifeMax:40,gradeMin:1,gradeMax:20},
+ marble:{unit:'TONNES',min:5000,max:100000,lifeMin:10,lifeMax:30,gradeMin:90,gradeMax:99},
+ boron:{unit:'TONNES',min:5000,max:100000,lifeMin:10,lifeMax:40,gradeMin:10,gradeMax:50},
+ aragonite:{unit:'TONNES',min:10000,max:500000,lifeMin:5,lifeMax:20,gradeMin:90,gradeMax:99},
+ granite:{unit:'TONNES',min:10000,max:500000,lifeMin:5,lifeMax:25,gradeMin:90,gradeMax:99},
+ ilmenite:{unit:'TONNES',min:1000,max:100000,lifeMin:10,lifeMax:35,gradeMin:20,gradeMax:65},
+ diatomite:{unit:'TONNES',min:1000,max:100000,lifeMin:10,lifeMax:35,gradeMin:50,gradeMax:95}
 };
 const modes={
  truck:{capacity:25000,speedKmh:55,costPerTonneKm:.055,defaultDistanceKm:120},
@@ -62,7 +88,7 @@ function extractMeasure(text,family){
  if(!m)return null;
  return{value:Number(m[1].replace(/,/g,''))*scale(m[2]),unitFamily:unitFamily(m[3]),sourceUnit:m[3].toUpperCase(),raw:String(text??'')};
 }
-function canonicalReserveSpec(resourceId){const r=rid(resourceId);if(r==='crude_oil')return{family:'BBL',unit:'BBL'};if(r==='natural_gas')return{family:'GAS',unit:'BCM'};if(r==='gold')return{family:'GOLD',unit:'TROY_OUNCES'};return{family:'TONNES',unit:'TONNES'}}
+function canonicalReserveSpec(resourceId){const r=rid(resourceId);if(r==='crude_oil')return{family:'BBL',unit:'BBL'};if(r==='natural_gas')return{family:'GAS',unit:'BCM'};if(r==='gold'||r==='silver'||r==='platinum')return{family:'GOLD',unit:'TROY_OUNCES'};if(r==='diamond')return{family:'CARATS',unit:'CARATS'};return{family:'TONNES',unit:'TONNES'}}
 function convertReserve(value,sourceFamily,targetFamily){
  const v=Number(value);if(!Number.isFinite(v))return null;
  if(sourceFamily===targetFamily||sourceFamily===null||targetFamily===null)return v;
@@ -167,6 +193,8 @@ function siteModel(site,profile,countryId){
    const seed=hash(String(countryId||'')+'|'+name+'|'+resourceId),u=seed/4294967296;
    const nominalObs=num(src?.nominalCapacity??src?.nominalRate??productionInput?.nominalCapacity??productionInput?.nominalRate);
    const observedRate=num(src?.productionRate??src?.dailyRate??src?.outputRate??productionInput?.productionRate??productionInput?.dailyRate??productionInput?.outputRate);
+   const annualValue=num(src?.annualProduction?.value??productionInput?.annualProduction?.value);
+   const annualRate=annualValue!==null?annualValue/365:null;
    const minObs=num(src?.minimumCapacity??src?.minimumRate??productionInput?.minimumCapacity??productionInput?.minimumRate);
    const maxObs=num(src?.maximumCapacity??src?.maximumRate??productionInput?.maximumCapacity??productionInput?.maximumRate);
    const utilRaw=src?.utilization??src?.utilisation??productionInput?.utilization??productionInput?.utilisation;
@@ -179,10 +207,11 @@ function siteModel(site,profile,countryId){
    const decline=declineRaw===undefined?(.005+.02*((seed>>>4)%100)/100):Number(declineRaw)>1?Number(declineRaw)/100:Number(declineRaw);
    const maintenance=maintenanceRaw===undefined?(.03+.12*((seed>>>24)%100)/100):Number(maintenanceRaw)>1?Number(maintenanceRaw)/100:Number(maintenanceRaw);
    const modeledNominal=r.min+(r.max-r.min)*(.25+.7*u);
-   const nominal=nominalObs??observedRate??modeledNominal;
-   const minimum=minObs??(observedRate!==null?observedRate*.55:nominal*.55);
-   const maximum=maxObs??(observedRate!==null?observedRate*1.25:nominal*1.3);
-   const activeRate=observedRate!==null?observedRate:Math.max(0,nominal*utilization*(1-maintenance)*(1-decline));
+   const effectiveObservedRate=observedRate??annualRate;
+   const nominal=nominalObs??effectiveObservedRate??modeledNominal;
+   const minimum=minObs??(effectiveObservedRate!==null?effectiveObservedRate*.55:nominal*.55);
+   const maximum=maxObs??(effectiveObservedRate!==null?effectiveObservedRate*1.25:nominal*1.3);
+   const activeRate=effectiveObservedRate!==null?effectiveObservedRate:Math.max(0,nominal*utilization*(1-maintenance)*(1-decline));
    const life=r.lifeMin+(r.lifeMax-r.lifeMin)*u;
    const observedReserve=num(src?.reserveQuantity??src?.geologicalQuantity??src?.reservesQuantity);
    const reserveQuantity=observedReserve!==null?observedReserve:nominal*365*life*recovery;
@@ -193,7 +222,7 @@ function siteModel(site,profile,countryId){
    const gradeAuthority=rawGrade!==null?'OBSERVED':'SIMULATED';
    const purity=src?.purity??site?.purity??null,apiRaw=src?.APIGravity??src?.apiGravity??site?.APIGravity??null;
    const api=apiRaw===null?(resourceId==='crude_oil'?20+25*u:null):Number(apiRaw);
-   const productionObserved=nominalObs!==null||observedRate!==null||minObs!==null||maxObs!==null;
+   const productionObserved=nominalObs!==null||observedRate!==null||annualRate!==null||minObs!==null||maxObs!==null;
    const streamAuthority=productionObserved||reserveAuthority==='OBSERVED'||rawGrade!==null||costObs!==null?'OBSERVED':'SIMULATED';
    return{
      resourceId,
@@ -205,6 +234,7 @@ function siteModel(site,profile,countryId){
        resourceId},
      production:{nominalCapacity:nominal,minimumCapacity:minimum,maximumCapacity:maximum,utilization,recovery,decline,maintenance,operatingCost:costObs??null,activeRate,observedRate,
        authority:productionObserved?'OBSERVED':'SIMULATED',dataStatus:productionObserved?'AVAILABLE':'SIMULATED',
+       annualProduction:src?.annualProduction??productionInput?.annualProduction??null,
        rangeDataStatus:minObs!==null&&maxObs!==null?'OBSERVED':productionObserved?'DERIVED_FROM_OBSERVED_RATE':'SIMULATED',
        operatingCostStatus:costObs!==null?'OBSERVED':'UNOBSERVED'}
    };
