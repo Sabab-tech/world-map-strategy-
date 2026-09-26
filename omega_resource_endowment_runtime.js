@@ -169,38 +169,40 @@
   }
   function mineSiteReferenceRows(c){
     const wanted=canonical(c),reg=g.__OmegaResourceIdentityRegistry,e=engine(),out=[],seen=new Set();
-    const add=(ref,nameOverride=null)=>{
-      const name=String(nameOverride||ref?.rawReferenceString||'').trim();if(!name||seen.has(name.toUpperCase()))return;
-      const category=String(ref?.category||'').toUpperCase(),subType=String(ref?.metadata?.subType||'');
-      if(category&&category!=='INFRASTRUCTURE_REFERENCE')return;
-      if(subType&&subType!=='mineSites')return;
-      seen.add(name.toUpperCase());
+    const add=(row)=>{
+      if(!row)return;
+      const rowCountry=canonical(row.countryId||row.countryCode||row.parentCountryId||row.iso3||row.country);
+      if(rowCountry!==wanted)return;
+      const name=String(row.siteName||row.rawReferenceString||row.name||row.rawSiteReference||'').trim();if(!name)return;
+      const key='SITE:'+wanted+':'+tok(name);if(seen.has(key))return;seen.add(key);
       out.push({
-        siteReferenceKey:'SITE:'+wanted+':'+tok(name),countryId:wanted,countryCode:wanted,profileKey:wanted,siteName:name,
+        siteReferenceKey:key,countryId:wanted,countryCode:wanted,profileKey:String(row.profileKey||wanted),siteName:name,
         status:'ACTIVE_SITE_REFERENCE',activationState:'REFERENCE_ONLY',extractionExecutable:false,
         quantitativeExtractionDataAvailable:false,authorityLevel:'REFERENCE_ONLY',resourceDataStatus:'UNOBSERVED',
-        sourceAuthority:'RESOURCE_JSON',sourceDatasetId:ref?.sourceDatasetId||'resources.json',
-        sourcePath:ref?.sourceContextPath||null,rawSiteReference:clone(ref?.rawReferenceString||name),referenceId:ref?.referenceId||null
+        sourceAuthority:row.sourceAuthority||'RESOURCE_JSON',
+        sourceDatasetId:row.sourceDatasetId||'RESOURCE_JSON.countryProfiles',
+        sourcePath:row.sourcePath||row.sourceContextPath||null,
+        rawSiteReference:clone(row.rawSiteReference||row.rawSite||row.rawReferenceString||row),
+        referenceId:row.referenceId||null
       });
     };
+    try{for(const row of reg?.listMineSiteReferences?.()||[])add(row);}catch(_){}
+    if(out.length)return out;
     try{
-      const profile=e?.getCountryResourceProfile?.(wanted)||e?.countryProfiles?.[wanted]||null;
-      const ids=Array.isArray(profile?.infrastructureReferences)?profile.infrastructureReferences:[];
-      ids.forEach(refId=>add(e?.referenceCatalog?.getReference?.(refId)||null));
+      const model=g.__OmegaResourceKnowledgeModel,refs=model?.refCatalog?.allReferences||[];
+      for(const row of refs)add(row);
     }catch(_){}
-    if(!out.length&&reg?.getMineSiteReferencesByCountry){
-      try{for(const row of clone(reg.getMineSiteReferencesByCountry(wanted)||[]))add({category:'INFRASTRUCTURE_REFERENCE',metadata:{subType:'mineSites'},rawReferenceString:row.siteName,sourceDatasetId:row.sourceDatasetId,sourceContextPath:row.sourcePath,referenceId:row.referenceId});}catch(_){}
-    }
-    if(!out.length){
-      try{
-        for(const ref of e?.referenceCatalog?.getAllReferences?.()||[]){
-          let parentCanonical=null,parentNormalized=null;
-          try{parentCanonical=canonical(ref?.parentCountryId);parentNormalized=e?.normalizeCountryCode?.(ref?.parentCountryId);}catch(_){}
-          if(parentCanonical!==wanted&&String(parentNormalized||'').toUpperCase()!==wanted)continue;
-          add(ref);
-        }
-      }catch(_){}
-    }
+    if(out.length)return out;
+    try{
+      const profile=e?.countryProfiles?.[wanted]||null;
+      const sites=profile?.resource_infrastructure_context?.mineSites||profile?.infrastructure_context?.mineSites||profile?.resourceInfrastructureContext?.mineSites||[];
+      sites.forEach((site,index)=>add({
+        countryId:wanted,profileKey:wanted,siteName:typeof site==='string'?site:site?.name||site?.siteName||site?.mineName||site?.depositName,
+        sourceDatasetId:'RESOURCE_JSON.countryProfiles',
+        sourcePath:'GSRSK_Master_CountryProfiles_v14.countryProfiles.'+wanted+'.resource_infrastructure_context.mineSites['+index+']',
+        rawSiteReference:site
+      }));
+    }catch(_){}
     return out;
   }
 
