@@ -60,6 +60,14 @@ console.log('RESOURCE_P5_PROBE',JSON.stringify({
   realismRuntime:!!globalThis.Omega?.ResourceRealism,
   productionModelGlobal:globalThis.OmegaResourceProductionModelV2?.VERSION||null
 }));
+const p4Probe=globalThis.GSRSK_Part04||globalThis.GSRSK_ResourceIdentityEngine;
+const p4ResultProbe=p4Probe?.compileIdentities?.();
+console.log('RESOURCE_P4_PROBE',JSON.stringify({
+  version:p4Probe?.VERSION||null,
+  keys:Object.keys(p4ResultProbe||{}),
+  registryKeys:Object.keys(p4ResultProbe?.registry||{}),
+  hasListOccurrences:typeof p4ResultProbe?.registry?.listOccurrences==='function'
+}));
 const runtime=globalThis.OmegaResourceEndowmentRuntime;
 const compileProbe=runtime.compile();
 console.log('RESOURCE_COMPILE_PROBE',JSON.stringify({
