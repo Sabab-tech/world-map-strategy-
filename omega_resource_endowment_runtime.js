@@ -216,7 +216,10 @@
     return list.find(x=>rid0(x?.id)===key)||null;
   }
   function mineQuality(x){
-    const raw=x?.rawDeposit||{},q=parsePurityFromGrade(raw.grade,x?.resourceId);
+    const raw=x?.rawDeposit||{},q=sci()?.parseQuality?.(raw.grade||raw.quality||'',x?.resourceId)||{
+      purity:null,purityStatus:'UNOBSERVED',gradePercent:null,gradeBasis:null,gradeStatus:'UNOBSERVED',
+      assayGpt:null,concentrationMgPerL:null,apiGravity:null,sourceAuthority:'UNOBSERVED'
+    };
     return{
       purity:q.purity,purityStatus:q.purityStatus,gradePercent:q.gradePercent,gradeText:raw.grade||null,
       qualitySource:raw.grade?'RESOURCE_JSON:'+(x?.sourceDatasetId||raw.sourceDatasetId||'UNKNOWN'):'UNOBSERVED',
