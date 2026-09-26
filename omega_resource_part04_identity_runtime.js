@@ -32,6 +32,10 @@
     if(!raw)return null;
     try{
       const bridge=g.OmegaCanonicalIdentityRegistry||g.OmegaCountrySemanticBridge||g.Omega?.CanonicalIdentity;
+      const profiles=engine()?.countryProfiles&&typeof engine().countryProfiles==='object'?engine().countryProfiles:{};
+      const direct=profiles[raw]||profiles[raw.toUpperCase()];
+      const directIdentity=direct?.identity||direct;
+      if(directIdentity?.iso3)return id(directIdentity.iso3);
       const hit=bridge?.resolveCountry?.(raw);
       const source=hit?.raw?.raw||hit?.raw?.datasets?.['countries.json']||hit?.raw;
       const resolvedIso3=source?.iso3||source?.iso3Code||source?.countryCode||source?.countryId;

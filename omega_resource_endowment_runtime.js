@@ -22,12 +22,18 @@
   const registry=()=>g.OmegaCanonicalIdentityRegistry||g.OmegaCountrySemanticBridge||g.Omega?.CanonicalIdentity||null;
   const canonical=v=>{
     const raw=String(v??'').trim(),u=raw.toUpperCase(),e=engine(),profiles=e?.countryProfiles&&typeof e.countryProfiles==='object'?e.countryProfiles:{};
-    if(profiles[u])return u;
+    if(profiles[u]){
+      const identity=profiles[u]?.identity||profiles[u]||{};
+      return id(identity.iso3||identity.countryId||u);
+    }
     const direct=Object.entries(profiles).find(function(entry){
       const key=String(entry[0]).toUpperCase(),p=entry[1]||{},i=p.identity||p;
       return key===u||String(i.countryId||'').toUpperCase()===u||String(i.iso3||'').toUpperCase()===u;
     });
-    if(direct)return String(direct[0]).toUpperCase();
+    if(direct){
+      const identity=direct[1]?.identity||direct[1]||{};
+      return id(identity.iso3||identity.countryId||direct[0]);
+    }
     const nameNorm=raw.normalize?.('NFKC').trim().toLowerCase();
     if(nameNorm){
       const matches=Object.entries(profiles).filter(function(entry){
