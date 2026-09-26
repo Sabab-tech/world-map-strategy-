@@ -46,43 +46,10 @@
   function sourceDeposits(){
     const e=engine();
     const runtime=Array.isArray(e?.deposits)?e.deposits.slice():[];
-    const profiles=e?.countryProfiles&&typeof e.countryProfiles==='object'?e.countryProfiles:{};
-    for(const [profileKey,profile] of Object.entries(profiles)){
-      const identity=profile?.identity||profile||{};
-      const countryId=canonicalCountry(identity.countryId||identity.iso3||profileKey);
-      const sites=profile?.resource_infrastructure_context?.mineSites||
-        profile?.infrastructure_context?.mineSites||
-        profile?.resourceInfrastructureContext?.mineSites||
-        [];
-      if(!Array.isArray(sites))continue;
-      sites.forEach(function(site,index){
-        if(!site||typeof site!=='object')return;
-        const hasResource=site.resId||site.resourceId||site.resourceTypeId||site.resourceTypeKey||site.resourceType;
-        const hasReserve=site.reserves||site.reserve||site.residualQuantity||site.geologicalQuantity||site.recoverableQuantity;
-        if(!hasResource||!hasReserve)return;
-        const name=String(site.name||site.siteName||site.mineName||site.depositName||('MINE_SITE_'+index)).trim();
-        if(!name)return;
-        const idValue=String(site.id||site.depositId||site.mineId||site.occurrenceId||('site-'+String(countryId||'GLOBAL').toLowerCase()+'-'+tok(name))).trim();
-        runtime.push({
-          ...clone(site),
-          id:idValue,name,countryCode:countryId,country:site.country||identity.name||countryId,
-          sourceDatasetId:'resources.json.countryProfiles',
-          sourceAuthority:'RESOURCE_JSON',
-          provenance:{
-            ...(site.provenance&&typeof site.provenance==='object'?site.provenance:{}),
-            sourceAuthority:'RESOURCE_JSON',
-            sourceDatasetId:'resources.json.countryProfiles',
-            sourcePath:'GSRSK_Master_CountryProfiles_v14.countryProfiles.'+String(profileKey)+'.resource_infrastructure_context.mineSites'
-          }
-        });
-      });
-    }
-    const unique=new Map();
-    runtime.forEach(row=>{
-      const key=String(row?.id||'').trim().toUpperCase();
-      if(key)unique.set(key,row);
-    });
-    return [...unique.values()];
+    // Profile mine/site records are canonicalized once as PROFILE_SITE_REFERENCE
+    // assets below. Do not promote them into a second structured occurrence list,
+    // or the same site would enter Part05 twice.
+    return runtime;
   }
 
   function depositKeyFor(row,index){
