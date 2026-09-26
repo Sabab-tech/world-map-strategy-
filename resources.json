@@ -77954,7 +77954,7 @@
                 "sourceQuery": "No Verified Commercial Mining Site, Monaco, MCO",
                 "legacyReferenceName": "Monaco Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
-                "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
+                "note": "Explicit non-commercial reference, not a mine. Resource identity is NOT_APPLICABLE; missing resource quantities are not zero."
               },
               "extractionEligibility": "NOT_APPLICABLE",
               "currentStatus": "NOT_APPLICABLE",
@@ -78025,7 +78025,7 @@
               },
               "dataCompleteness": {
                 "identity": "COMPLETE",
-                "resource": "NOT_APPLICABLE",
+                "resource": "COMPLETE",
                 "location": "COMPLETE",
                 "operation": "COMPLETE",
                 "ownership": "UNOBSERVED",
@@ -78035,7 +78035,7 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "NOT_PER_SITE_VERIFIED"
+                "webResearch": "ABSENCE_CLASSIFIED"
               }
             }
           ],
@@ -78475,7 +78475,7 @@
                 "sourceQuery": "No Verified Commercial Mining Site, San Marino, SMR",
                 "legacyReferenceName": "San Marino Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
-                "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
+                "note": "Explicit non-commercial reference, not a mine. Resource identity is NOT_APPLICABLE; missing resource quantities are not zero."
               },
               "extractionEligibility": "NOT_APPLICABLE",
               "currentStatus": "NOT_APPLICABLE",
@@ -78546,7 +78546,7 @@
               },
               "dataCompleteness": {
                 "identity": "COMPLETE",
-                "resource": "NOT_APPLICABLE",
+                "resource": "COMPLETE",
                 "location": "COMPLETE",
                 "operation": "COMPLETE",
                 "ownership": "UNOBSERVED",
@@ -78556,7 +78556,7 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "NOT_PER_SITE_VERIFIED"
+                "webResearch": "ABSENCE_CLASSIFIED"
               }
             }
           ],
@@ -78996,7 +78996,7 @@
                 "sourceQuery": "No Verified Commercial Mining Site, Liechtenstein, LIE",
                 "legacyReferenceName": "Liechtenstein Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
-                "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
+                "note": "Explicit non-commercial reference, not a mine. Resource identity is NOT_APPLICABLE; missing resource quantities are not zero."
               },
               "extractionEligibility": "NOT_APPLICABLE",
               "currentStatus": "NOT_APPLICABLE",
@@ -79067,7 +79067,7 @@
               },
               "dataCompleteness": {
                 "identity": "COMPLETE",
-                "resource": "NOT_APPLICABLE",
+                "resource": "COMPLETE",
                 "location": "COMPLETE",
                 "operation": "COMPLETE",
                 "ownership": "UNOBSERVED",
@@ -79077,7 +79077,7 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "NOT_PER_SITE_VERIFIED"
+                "webResearch": "ABSENCE_CLASSIFIED"
               }
             }
           ],
@@ -79517,7 +79517,7 @@
                 "sourceQuery": "No Verified Commercial Mining Site, Vatican City, VAT",
                 "legacyReferenceName": "Vatican City Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
-                "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
+                "note": "Explicit non-commercial reference, not a mine. Resource identity is NOT_APPLICABLE; missing resource quantities are not zero."
               },
               "extractionEligibility": "NOT_APPLICABLE",
               "currentStatus": "NOT_APPLICABLE",
@@ -79588,7 +79588,7 @@
               },
               "dataCompleteness": {
                 "identity": "COMPLETE",
-                "resource": "NOT_APPLICABLE",
+                "resource": "COMPLETE",
                 "location": "COMPLETE",
                 "operation": "COMPLETE",
                 "ownership": "UNOBSERVED",
@@ -79598,7 +79598,7 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "NOT_PER_SITE_VERIFIED"
+                "webResearch": "ABSENCE_CLASSIFIED"
               }
             }
           ],
@@ -87400,9 +87400,9 @@
               "locationNodeKey": "ASSET:CRI:bellavista_gold_mine",
               "status": "HISTORICAL_INACTIVE",
               "operationalStatus": "HISTORICAL_INACTIVE",
-              "owner": "Private concession holders",
-              "operator": "None",
-              "extractionMethod": "open-pit mining, inactive",
+              "owner": "Golden Sun Resources Ltd.",
+              "operator": "Golden Sun Resources Ltd.",
+              "extractionMethod": "historical open-pit mining; mine suspended after 2007 landslide; later redevelopment and processing activity reported",
               "startYear": 1997,
               "legacyReferenceName": "Costa Rica Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -87436,8 +87436,8 @@
                 "sourceRegion": "1 of 2",
                 "sourceQuery": "Bellavista Gold Mine, Puntarenas, CRI",
                 "legacyReferenceName": "Costa Rica Primary Mining and Extraction Sites",
-                "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
-                "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
+                "quantitativeSourceStatus": "NO_CURRENT_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
+                "note": "Ownership/operator identity updated from public investor disclosures. Historical production figures are not treated as current production."
               },
               "extractionEligibility": "NON_EXECUTABLE",
               "currentStatus": "HISTORICAL_INACTIVE",
@@ -87465,13 +87465,13 @@
               },
               "extractionProfile": {
                 "siteType": "HISTORICAL_MINE",
-                "method": "open-pit mining, inactive",
+                "method": "historical open-pit mining; mine suspended after 2007 landslide; later redevelopment and processing activity reported",
                 "lifecycleStatus": "HISTORICAL_INACTIVE",
                 "operationalStatus": "HISTORICAL_INACTIVE",
-                "owner": "Private concession holders",
-                "operator": "None",
-                "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-                "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+                "owner": "Golden Sun Resources Ltd.",
+                "operator": "Golden Sun Resources Ltd.",
+                "ownerEvidenceStatus": "REPORTED_PUBLIC_SOURCE",
+                "operatorEvidenceStatus": "REPORTED_PUBLIC_SOURCE"
               },
               "quantitativeProfile": {
                 "reserve": {
@@ -87524,8 +87524,20 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "NOT_PER_SITE_VERIFIED"
-              }
+                "webResearch": "PER_SITE_RESEARCHED"
+              },
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.investegate.co.uk/announcement/rns/mineral-financial-investments-limited-di---mafl/investment-update-golden-sun-resources-ltd/7481543",
+                  "accessed": "2026-09-27",
+                  "scope": "operator_and_redevelopment_status"
+                },
+                {
+                  "url": "https://www.lse.co.uk/rns/investment-in-golden-sun-resources-ltd-5qpddo9cb684xlq.html",
+                  "accessed": "2026-09-27",
+                  "scope": "ownership_permits_historical_production_and_redevelopment"
+                }
+              ]
             }
           ],
           "processingFacilities": [
@@ -88965,7 +88977,7 @@
               "id": "SITE_SLV_el_dorado_gold_project",
               "name": "El Dorado Gold Project",
               "siteName": "El Dorado Gold Project",
-              "siteType": "PROJECT",
+              "siteType": "HISTORICAL_MINE",
               "resourceId": "gold",
               "resourceTypeId": "gold",
               "resourceTypeKey": "gold",
@@ -88975,11 +88987,11 @@
               "lat": 13.96,
               "lng": -88.93,
               "locationNodeKey": "ASSET:SLV:el_dorado_gold_project",
-              "status": "UNDEVELOPED",
-              "operationalStatus": "UNDEVELOPED",
-              "owner": "Project concession interests",
-              "operator": "No current commercial operator",
-              "extractionMethod": "planned gold development",
+              "status": "HISTORICAL_INACTIVE",
+              "operationalStatus": "HISTORICAL_INACTIVE",
+              "owner": "UNOBSERVED",
+              "operator": "UNOBSERVED",
+              "extractionMethod": "historical underground gold mining; no confirmed current commercial operation",
               "startYear": 2004,
               "legacyReferenceName": "El Salvador Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -88988,7 +89000,7 @@
                 "location": "WEB_RESEARCHED_APPROXIMATE",
                 "resource": "WEB_RESEARCHED_CURATED",
                 "status": "WEB_RESEARCHED_CURATED",
-                "ownership": "WEB_RESEARCHED_CURATED",
+                "ownership": "UNOBSERVED",
                 "operation": "WEB_RESEARCHED_CURATED",
                 "extractionMethod": "WEB_RESEARCHED_CURATED",
                 "reserve": "UNOBSERVED",
@@ -89002,7 +89014,7 @@
                 "reserve": "UNOBSERVED",
                 "production": "UNOBSERVED",
                 "grade": "UNOBSERVED",
-                "ownership": "OBSERVED",
+                "ownership": "UNOBSERVED",
                 "operation": "OBSERVED",
                 "extractionMethod": "OBSERVED",
                 "provenance": "RESOURCE_JSON_WEB_RESEARCH_CATALOG"
@@ -89014,10 +89026,10 @@
                 "sourceQuery": "El Dorado Gold Project, Cabañas, SLV",
                 "legacyReferenceName": "El Salvador Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
-                "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
+                "note": "Historical El Dorado identity retained. Current ownership/operator is not asserted without evidence. Public sources document closure by OceanaGold and the later restoration of a national metal-mining legal framework; no current commercial operator is assigned."
               },
               "extractionEligibility": "NON_EXECUTABLE",
-              "currentStatus": "UNDEVELOPED",
+              "currentStatus": "HISTORICAL_INACTIVE",
               "statusAuthority": "OBSERVED",
               "commercialExtraction": true,
               "siteIdentity": {
@@ -89041,14 +89053,14 @@
                 "coordinateStatus": "ESTIMATED_SITE_POINT"
               },
               "extractionProfile": {
-                "siteType": "PROJECT",
-                "method": "planned gold development",
-                "lifecycleStatus": "UNDEVELOPED",
-                "operationalStatus": "UNDEVELOPED",
-                "owner": "Project concession interests",
-                "operator": "No current commercial operator",
-                "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-                "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+                "siteType": "HISTORICAL_MINE",
+                "method": "historical underground gold mining; no confirmed current commercial operation",
+                "lifecycleStatus": "HISTORICAL_INACTIVE",
+                "operationalStatus": "HISTORICAL_INACTIVE",
+                "owner": "UNOBSERVED",
+                "operator": "UNOBSERVED",
+                "ownerEvidenceStatus": "UNOBSERVED_SITE_SPECIFIC",
+                "operatorEvidenceStatus": "UNOBSERVED_SITE_SPECIFIC"
               },
               "quantitativeProfile": {
                 "reserve": {
@@ -89094,15 +89106,27 @@
                 "resource": "COMPLETE",
                 "location": "COMPLETE",
                 "operation": "COMPLETE",
-                "ownership": "REPORTED",
+                "ownership": "UNOBSERVED",
                 "quantitative": {
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "NOT_PER_SITE_VERIFIED"
-              }
+                "webResearch": "PER_SITE_RESEARCHED"
+              },
+              "webResearchEvidence": [
+                {
+                  "url": "https://assets.oceanagold.com/documents/Reports/Sustainability-Reports/2017/SustainabilityReport2017.pdf",
+                  "accessed": "2026-09-27",
+                  "scope": "historical_operation_closure_and_company_exit"
+                },
+                {
+                  "url": "https://www.asamblea.gob.sv/node/13444",
+                  "accessed": "2026-09-27",
+                  "scope": "current_metal_mining_legal_framework"
+                }
+              ]
             }
           ],
           "processingFacilities": [
