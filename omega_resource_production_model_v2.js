@@ -27,7 +27,27 @@ function parseReserve(text,resourceId,targetUnit){
 }
 const pick=(o,keys)=>{for(const k of keys)if(o?.[k]!==undefined&&o?.[k]!==null&&o?.[k]!=='')return o[k];return null};
 const frac=v=>{const n=num(v);return n===null?null:n>1?n/100:n};
-function productionModel(raw,reserve){const p=raw?.productionModel&&typeof raw.productionModel==='object'?raw.productionModel:{};const nominal=num(pick(p,['nominalRate','nominalCapacity','dailyRate','productionRate','outputRate'])??pick(raw,['nominalRate','nominalCapacity','dailyRate','productionRate','outputRate']));const min=num(pick(p,['minimumRate','minimumCapacity','minRate','minCapacity'])??pick(raw,['minimumRate','minimumCapacity','minRate','minCapacity']));const max=num(pick(p,['maximumRate','maximumCapacity','maxRate','maxCapacity'])??pick(raw,['maximumRate','maximumCapacity','maxRate','maxCapacity']));const utilization=frac(pick(p,['utilization','utilisation'])??pick(raw,['utilization','utilisation']))??.85;const recovery=frac(pick(p,['recovery'])??pick(raw,['recovery']))??1;const decline=frac(pick(p,['decline','declineRate'])??pick(raw,['decline','declineRate']))??0;const maintenance=frac(pick(p,['maintenance','maintenanceFraction','maintenanceRate'])??pick(raw,['maintenance','maintenanceFraction','maintenanceRate']))??0;const cost=num(pick(p,['operatingCost','operatingCostPerUnit'])??pick(raw,['operatingCost','operatingCostPerUnit']));const horizon=num(pick(p,['simulationHorizonDays'])??pick(raw,['simulationHorizonDays']))||HORIZON;const observed=nominal!==null||min!==null||max!==null;const simulatedRate=reserve>0?reserve/horizon:null;const base=nominal??simulatedRate;const activeRate=base===null?null:Math.max(0,base*utilization*(1-maintenance)*(1-decline));return{nominalCapacity:nominal,minimumCapacity:min,maximumCapacity:max,utilization,recovery,decline,maintenance,operatingCost:cost,simulatedRate,activeRate,authority:observed?'OBSERVED':'SIMULATED',dataStatus:observed?'AVAILABLE':'UNOBSERVED',simulationHorizonDays:horizon,modelVersion:VERSION}}
+function productionModel(raw,reserve){
+ const p=raw?.productionModel&&typeof raw.productionModel==='object'?raw.productionModel:{};
+ const read=(scope,keys)=>pick(scope,keys);
+ const nominal= num(read(p,['nominalRate','nominalCapacity'])??read(raw,['nominalRate','nominalCapacity']));
+ const observedRate=num(read(p,['productionRate','dailyRate','outputRate'])??read(raw,['productionRate','dailyRate','outputRate']));
+ const min=num(read(p,['minimumRate','minimumCapacity','minRate','minCapacity'])??read(raw,['minimumRate','minimumCapacity','minRate','minCapacity']));
+ const max=num(read(p,['maximumRate','maximumCapacity','maxRate','maxCapacity'])??read(raw,['maximumRate','maximumCapacity','maxRate','maxCapacity']));
+ const utilization=frac(read(p,['utilization','utilisation'])??read(raw,['utilization','utilisation']))??.85;
+ const recovery=frac(read(p,['recovery'])??read(raw,['recovery']))??1;
+ const decline=frac(read(p,['decline','declineRate'])??read(raw,['decline','declineRate']))??0;
+ const maintenance=frac(read(p,['maintenance','maintenanceFraction','maintenanceRate'])??read(raw,['maintenance','maintenanceFraction','maintenanceRate']))??0;
+ const cost=num(read(p,['operatingCost','operatingCostPerUnit'])??read(raw,['operatingCost','operatingCostPerUnit']));
+ const horizon=num(read(p,['simulationHorizonDays'])??read(raw,['simulationHorizonDays']))||HORIZON;
+ const observed=nominal!==null||observedRate!==null||min!==null||max!==null;
+ const simulatedRate=reserve>0?reserve/horizon:null;
+ const nominalBase=nominal??observedRate??simulatedRate;
+ const activeRate=observedRate!==null?observedRate:(nominalBase===null?null:Math.max(0,nominalBase*utilization*(1-maintenance)*(1-decline)));
+ const derivedMin=min!==null?min:(observedRate!==null?observedRate*.55:null);
+ const derivedMax=max!==null?max:(observedRate!==null?observedRate*1.25:null);
+ return{nominalCapacity:nominal??observedRate,minimumCapacity:derivedMin,maximumCapacity:derivedMax,utilization,recovery,decline,maintenance,operatingCost:cost,observedRate,simulatedRate,activeRate,authority:observed?'OBSERVED':'SIMULATED',dataStatus:observed?'AVAILABLE':'UNOBSERVED',rangeDataStatus:min!==null&&max!==null?'OBSERVED':observedRate!==null?'DERIVED_FROM_OBSERVED_RATE':'UNOBSERVED',simulationHorizonDays:horizon,modelVersion:VERSION};
+}
 function quality(raw,resourceId){
  const external=g.Omega?.ResourceRealism?.quality;
  if(typeof external==='function'){const q=external(raw,resourceId);if(q)return q;}
