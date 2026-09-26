@@ -41,6 +41,8 @@ assert.equal(engine.deposits.some(x=>x.sourceAuthority==='RESOURCE_JSON'),true);
 assert.equal(engine.deposits.some(x=>x.id==='dep-barapukuria-coal'&&x.resId==='coal'),true);
 
 await import('../omega_resource_science_runtime.js');
+await import('../omega_resource_part04_identity_runtime.js');
+await import('../omega_resource_part05_reserve_extraction_runtime.js');
 await import('../omega_ministry_registry.js');
 await import('../omega_ministry_state_provider.js');
 await import('../omega_ministry_information_policy.js');
