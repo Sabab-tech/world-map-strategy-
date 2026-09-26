@@ -1,5 +1,9 @@
 name: OMEGA Resource Verification Certificate
 
+concurrency:
+  group: omega-resource-verification-${{ github.ref }}
+  cancel-in-progress: true
+
 on:
   push:
     branches: [main]
@@ -16,6 +20,7 @@ env:
 jobs:
   resource-verification-certificate:
     runs-on: ubuntu-24.04
+    timeout-minutes: 5
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
