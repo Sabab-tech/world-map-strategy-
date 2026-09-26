@@ -54,21 +54,6 @@ await import('../omega_resource_part05_reserve_extraction_runtime.js');
 await import('../omega_resource_production_model_v2.js');
 await import('../omega_resource_realism_runtime_v1.js');
 await import('../omega_resource_endowment_runtime.js');
-const p4Diagnostic=globalThis.GSRSK_Part04||globalThis.GSRSK_ResourceIdentityEngine;
-const p4ResultProbe=p4Diagnostic?.compileIdentities?.({
-  sovereignEntities:{countries:[],resourceTypes:engine.resourceTypes},
-  refCatalog:{}
-});
-const sourceProfileProbe=Object.fromEntries(Object.entries(engine.countryProfileSources||{}).map(([k,profiles])=>[k,{profiles:Object.keys(profiles||{}).length,mineSites:Object.values(profiles||{}).reduce((n,p)=>n+(Array.isArray(p?.resource_infrastructure_context?.mineSites)?p.resource_infrastructure_context.mineSites.length:0),0)}]));
-const p4IdentityProbe=(await import('../omega_resource_part04_identity_runtime.js'),globalThis.GSRSK_Part04);
-const p4CompiledProbe=p4IdentityProbe?.compileIdentities?.({
-  sovereignEntities:{countries:[],resourceTypes:engine.resourceTypes},
-  refCatalog:{}
-});
-console.log('RESOURCE_PROFILE_SOURCE_PROBE',JSON.stringify(sourceProfileProbe));
-console.log('RESOURCE_P4_SITE_PROBE',JSON.stringify({status:p4CompiledProbe?.status,siteReferenceCount:p4CompiledProbe?.siteReferenceCount,occurrenceCount:p4CompiledProbe?.occurrenceCount}));
-const p4Dist=Object.fromEntries(Object.keys(engine.countryProfiles||{}).map(c=>[c,p4ResultProbe?.registry?.getMineSiteReferencesByCountry?.(c)?.length||0]).filter(([,n])=>n>0));
-console.log('RESOURCE_P4_COUNTRY_DIST',JSON.stringify({count:Object.keys(p4Dist).length,total:Object.values(p4Dist).reduce((a,b)=>a+b,0),sample:Object.entries(p4Dist).slice(0,20)}));
 const runtime=globalThis.OmegaResourceEndowmentRuntime;
 const initialized=await runtime.initialize();
 assert.equal(initialized.status,'READY',JSON.stringify(initialized));
@@ -89,7 +74,6 @@ assert.equal(before.resourceAuthority.fullEffortPolicy,'MODEL_DRIVEN');
 const gasMine=before.mines.find(x=>x.depositName==='Titas Gas Field Reservoir');
 assert(gasMine);
 assert.equal(gasMine.resourceId,'natural_gas');
-console.log('TITAS_QUALITY_PROBE',JSON.stringify({grade:gasMine.qualityState?.grade,concentration:gasMine.qualityState?.concentration,gradePercent:gasMine.qualityState?.normalized?.gradePercent,concentrationPercent:gasMine.qualityState?.normalized?.concentrationPercent,purity:gasMine.qualityState?.purity},null,2));
 assert.equal(gasMine.purity,null);
 assert.ok(Math.abs(gasMine.qualityState.normalized.concentrationPercent-96.2)<1e-9);
 assert.equal(gasMine.qualityState.concentrationStatus,'OBSERVED');
@@ -124,18 +108,14 @@ assert(after.warehouse.receipts.some(x=>x.batchId===batch.batchId&&x.status==='R
 assert(after.mineProductionLedger.some(x=>x.batchId===batch.batchId&&x.mineId===gasMine.occurrenceKey));
 assert(seen.some(x=>x&&x.payload&&x.payload.batch&&x.payload.batch.batchId===batch.batchId));
 
-const endowmentRefDist=Object.fromEntries(Object.entries(globalThis.Game.state.resource||{}).map(([c,row])=>[c,Array.isArray(row?.mineSiteReferences)?row.mineSiteReferences.length:0]).filter(([,n])=>n>0));
-const directRefDist=Object.fromEntries(Object.keys(engine.countryProfiles||{}).map(c=>[c,runtime.countryMineSiteReferences(c).length]).filter(([,n])=>n>0));
-console.log('RESOURCE_ENDOWMENT_REF_DIST',JSON.stringify({state:Object.entries(endowmentRefDist).slice(0,30),stateCount:Object.keys(endowmentRefDist).length,stateTotal:Object.values(endowmentRefDist).reduce((a,b)=>a+b,0),direct:Object.entries(directRefDist).slice(0,30),directCount:Object.keys(directRefDist).length,directTotal:Object.values(directRefDist).reduce((a,b)=>a+b,0)}));
 const preGlobal=runtime.diagnostics();
-const expectedCountries=countryIdentity.exportData().countries;
 const expectedResourceCountries=Object.keys(engine.countryProfiles||{});
 assert.equal(preGlobal.countryCount,expectedResourceCountries.length);
 assert.equal(preGlobal.mineSiteReferenceCount,199);
 assert.equal(preGlobal.mineSiteControllerCount,199);
 const globalExtraction=await runtime.extractAll();
 assert.equal(globalExtraction.status,'COMPLETED');
-assert.equal(globalExtraction.results.length,expectedCountries.length);
+assert.equal(globalExtraction.results.length,expectedResourceCountries.length);
 
 const worldState=globalThis.Game.state.resource;
 const hydratedAssetRows=Object.values(worldState).reduce((sum,row)=>sum+(Array.isArray(row?.mines)?row.mines.length:0),0);
