@@ -70,6 +70,11 @@ assert(before.resourceAuthority);
 assert.equal(String(before.resourceAuthority.mineSource).includes('RESOURCE_JSON.runtime_deposits'),true);
 assert.equal(before.resourceAuthority.dataLoadReport.authority,'RESOURCE_JSON');
 assert.equal(before.resourceAuthority.fullEffortPolicy,'MODEL_DRIVEN');
+assert.ok(before.mines.every(x=>x.resourceAsset&&x.resourceAsset.schemaVersion==='1.0.0'));
+const unifiedMineKeys=Object.keys(before.mines[0]?.resourceAsset||{}).sort();
+assert.ok(before.mines.every(x=>Object.keys(x.resourceAsset||{}).sort().join('|')===unifiedMineKeys.join('|')));
+assert.equal(before.mines[0].resourceAsset.countryId,'BGD');
+assert(before.mines[0].resourceAsset.warehouse.id==='WH-BGD-RAW');
 
 const gasMine=before.mines.find(x=>x.depositName==='Titas Gas Field Reservoir');
 assert(gasMine);
@@ -128,6 +133,11 @@ const simulatedFieldOutputs=Object.values(worldState).flatMap(row=>Object.values
 assert.equal(siteReferenceRows,199);
 assert.equal(siteControllerRows,199);
 assert.equal(structuredMineRows,engine.deposits.length);
+const unifiedReferences=Object.values(worldState).flatMap(row=>Array.isArray(row?.mineSiteReferences)?row.mineSiteReferences:[]);
+assert.equal(unifiedReferences.length,199);
+assert.ok(unifiedReferences.every(x=>x.resourceAsset&&x.resourceAsset.schemaVersion==='1.0.0'));
+assert.ok(unifiedReferences.every(x=>x.resourceAsset.assetId===x.siteReferenceKey));
+assert.deepEqual(Object.keys(unifiedReferences[0]?.resourceAsset||{}).sort(),unifiedMineKeys);
 assert.equal(profileMineOutputs.length,199);
 assert(simulatedFieldOutputs.length>0,'expected hydrocarbon field execution assets');
 assert(profileMineOutputs.every(x=>(x?.producedQuantity||0)>0&&x?.effortUtilization>0&&x?.effortUtilization<=1),'some profile mine site did not execute with valid utilization');
