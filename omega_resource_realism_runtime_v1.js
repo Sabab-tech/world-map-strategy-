@@ -62,15 +62,29 @@ function extractMeasure(text,family){
  if(!m)return null;
  return{value:Number(m[1].replace(/,/g,''))*scale(m[2]),unitFamily:unitFamily(m[3]),sourceUnit:m[3].toUpperCase(),raw:String(text??'')};
 }
+function canonicalReserveSpec(resourceId){const r=rid(resourceId);if(r==='crude_oil')return{family:'BBL',unit:'BBL'};if(r==='natural_gas')return{family:'GAS',unit:'BCM'};if(r==='gold')return{family:'GOLD',unit:'TROY_OUNCES'};return{family:'TONNES',unit:'TONNES'}}
+function convertReserve(value,sourceFamily,targetFamily){
+ const v=Number(value);if(!Number.isFinite(v))return null;
+ if(sourceFamily===targetFamily||sourceFamily===null||targetFamily===null)return v;
+ if(sourceFamily==='TCF'&&targetFamily==='BCM')return v*28.316846592;
+ if(sourceFamily==='BCF'&&targetFamily==='BCM')return v*0.028316846592;
+ if(sourceFamily==='MCM'&&targetFamily==='BCM')return v*0.001;
+ if(sourceFamily==='MCF'&&targetFamily==='BCM')return v*0.000000028316846592;
+ if(sourceFamily==='TONNES'&&targetFamily==='TROY_OUNCES')return v*32150.74656862745;
+ if(sourceFamily==='TROY_OUNCES'&&targetFamily==='TONNES')return v/32150.74656862745;
+ return v;
+}
 function parseReserve(raw,resourceId){
- const r=rid(resourceId),text=typeof raw==='string'?raw:raw?.reserves??raw?.reserve??raw?.geologicalQuantity??'';
- if(r==='crude_oil'){const x=extractMeasure(text,'BBL');return x?{status:'OBSERVED',...x,resourceId:r}:missing(text);}
- if(r==='natural_gas'){
-   for(const f of ['TCF','BCF','BCM','MCM','MCF']){const x=extractMeasure(text,f);if(x)return{status:'OBSERVED',...x,resourceId:r};}
-   return missing(text);
- }
- if(r==='gold'){for(const f of ['TROY_OUNCES','TONNES']){const x=extractMeasure(text,f);if(x)return{status:'OBSERVED',...x,resourceId:r};}return missing(text);}
- const x=extractMeasure(text,'TONNES');return x?{status:'OBSERVED',...x,resourceId:r}:missing(text);
+ const spec=canonicalReserveSpec(resourceId),r=rid(resourceId),text=typeof raw==='string'?raw:raw?.reserves??raw?.reserve??raw?.geologicalQuantity??'';
+ let x=null;
+ if(r==='crude_oil')x=extractMeasure(text,'BBL');
+ else if(r==='natural_gas'){for(const f of ['TCF','BCF','BCM','MCM','MCF']){x=extractMeasure(text,f);if(x)break;}}
+ else if(r==='gold'){for(const f of ['TROY_OUNCES','TONNES']){x=extractMeasure(text,f);if(x)break;}}
+ else x=extractMeasure(text,'TONNES');
+ if(!x)return missing(text);
+ const value=convertReserve(x.value,x.unitFamily,spec.family);
+ if(value===null)return missing(text);
+ return{status:'OBSERVED',value,unit:spec.unit,unitFamily:spec.family,sourceUnit:x.sourceUnit,sourceUnitFamily:x.unitFamily,raw:x.raw,resourceId:r};
 }
 function missing(raw){return{status:'UNOBSERVED',value:null,unitFamily:null,sourceUnit:null,raw:String(raw??'')}}
 function commodityText(raw,resourceId){
