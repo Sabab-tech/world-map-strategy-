@@ -54,6 +54,14 @@ await import('../omega_resource_part05_reserve_extraction_runtime.js');
 await import('../omega_resource_production_model_v2.js');
 await import('../omega_resource_realism_runtime_v1.js');
 await import('../omega_resource_endowment_runtime.js');
+const sourceProfileProbe=Object.fromEntries(Object.entries(engine.countryProfileSources||{}).map(([k,profiles])=>[k,{profiles:Object.keys(profiles||{}).length,mineSites:Object.values(profiles||{}).reduce((n,p)=>n+(Array.isArray(p?.resource_infrastructure_context?.mineSites)?p.resource_infrastructure_context.mineSites.length:0),0)}]));
+const p4IdentityProbe=(await import('../omega_resource_part04_identity_runtime.js'),globalThis.GSRSK_Part04);
+const p4CompiledProbe=p4IdentityProbe?.compileIdentities?.({
+  sovereignEntities:{countries:[],resourceTypes:engine.resourceTypes},
+  refCatalog:{}
+});
+console.log('RESOURCE_PROFILE_SOURCE_PROBE',JSON.stringify(sourceProfileProbe));
+console.log('RESOURCE_P4_SITE_PROBE',JSON.stringify({status:p4CompiledProbe?.status,siteReferenceCount:p4CompiledProbe?.siteReferenceCount,occurrenceCount:p4CompiledProbe?.occurrenceCount}));
 const runtime=globalThis.OmegaResourceEndowmentRuntime;
 const initialized=await runtime.initialize();
 assert.equal(initialized.status,'READY',JSON.stringify(initialized));
