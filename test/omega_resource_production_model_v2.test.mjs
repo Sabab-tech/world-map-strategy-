@@ -22,6 +22,10 @@ const samples=[
   ['62 %','PERCENT'],
   ['35 API','API_GRAVITY']
 ];
+for(const [raw,expected] of samples){
+  const token=raw.match(/[A-Za-z%/]+$/)?.[0]||'';
+  assert.equal(P.canonicalUnit(token),expected);
+}
 for(const [raw,expected] of samples) assert.equal(P.canonicalUnit(P.parseReserve(raw,'iron_ore').unit||raw.match(/[A-Za-z%/]+/)?.[0]),expected);
 
 const identity={
