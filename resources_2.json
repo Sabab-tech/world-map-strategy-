@@ -1157,6 +1157,82 @@
                 "reviewedAt": "2026-09-27",
                 "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVALIDATION",
                 "currentEvidence": "Sherritt reports full-year 2025 Moa Joint Venture production of 25,240 tonnes nickel and 2,728 tonnes cobalt on a 100% basis."
+              },
+              "siteDataPackage": {
+                "schemaVersion": "1.0.0",
+                "siteId": "SITE_CUB_moa_bay_nickel_mine",
+                "siteName": "Moa Bay Nickel Mine",
+                "identity": {
+                  "countryIso3": "CUB",
+                  "siteType": "MINE",
+                  "resourceTypeId": "nickel",
+                  "resourceName": "Nickel Ore & Concentrates",
+                  "ontologyKey": "NICKEL"
+                },
+                "location": {
+                  "countryName": "Cuba",
+                  "adminRegion": "Holguín",
+                  "locality": "Holguín",
+                  "coordinates": {
+                    "lat": 20.65,
+                    "lng": -74.93
+                  },
+                  "coordinateStatus": "ESTIMATED_SITE_POINT"
+                },
+                "ownership": {
+                  "owner": "Moa Joint Venture",
+                  "operator": "Moa Nickel S.A. / Sherritt-led joint venture",
+                  "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
+                  "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+                },
+                "operation": {
+                  "status": "ACTIVE_PRODUCING",
+                  "operationalStatus": "ACTIVE_PRODUCING",
+                  "extractionMethod": "open-pit lateritic nickel mining feeding pressure-acid-leach processing",
+                  "extractionEligibility": null,
+                  "commercialExtraction": true
+                },
+                "processing": {
+                  "upstreamProcess": "Open-Pit / Underground Laterite or Sulfide Mining",
+                  "midstreamProcess": "Crushing, Flotation, Smelting or HPAL",
+                  "refinedOutputs": [
+                    "NICKEL_MATTE",
+                    "NICKEL_CATHODE",
+                    "STAINLESS_STEEL"
+                  ],
+                  "downstreamSectors": [
+                    "BATTERIES",
+                    "SPECIALTY_ALLOYS"
+                  ]
+                },
+                "quantitative": {
+                  "reserve": {
+                    "quantity": null,
+                    "unit": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "production": {
+                    "annual": {
+                      "value": 25240,
+                      "unit": "metric_tons_nickel",
+                      "year": 2025,
+                      "status": "OBSERVED"
+                    },
+                    "status": "OBSERVED"
+                  },
+                  "grade": {
+                    "value": null,
+                    "unit": null,
+                    "status": "UNOBSERVED"
+                  }
+                },
+                "verification": {
+                  "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
+                  "reviewedAt": "2026-09-27",
+                  "sourceCount": 1,
+                  "sourceAuthorities": [],
+                  "dataLimitations": null
+                }
               }
             },
             {
@@ -1315,6 +1391,80 @@
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
+              },
+              "siteDataPackage": {
+                "schemaVersion": "1.0.0",
+                "siteId": "SITE_CUB_punta_gorda_extraction_facility",
+                "siteName": "Punta Gorda Extraction Facility",
+                "identity": {
+                  "countryIso3": "CUB",
+                  "siteType": "MINE",
+                  "resourceTypeId": "nickel",
+                  "resourceName": "Nickel Ore & Concentrates",
+                  "ontologyKey": "NICKEL"
+                },
+                "location": {
+                  "countryName": "Cuba",
+                  "adminRegion": "Holguín",
+                  "locality": "Holguín",
+                  "coordinates": {
+                    "lat": 20.57,
+                    "lng": -75.95
+                  },
+                  "coordinateStatus": "ESTIMATED_SITE_POINT"
+                },
+                "ownership": {
+                  "owner": "Empresa del Níquel “Comandante Ernesto Che Guevara”",
+                  "operator": "Empresa del Níquel “Comandante Ernesto Che Guevara”",
+                  "ownerEvidenceStatus": "SITE_SPECIFIC_WEB_VERIFIED",
+                  "operatorEvidenceStatus": "SITE_SPECIFIC_WEB_VERIFIED"
+                },
+                "operation": {
+                  "status": "ACTIVE_PRODUCING",
+                  "operationalStatus": "ACTIVE_PRODUCING",
+                  "extractionMethod": "laterite mining and processing",
+                  "extractionEligibility": null,
+                  "commercialExtraction": true
+                },
+                "processing": {
+                  "upstreamProcess": "Open-Pit / Underground Laterite or Sulfide Mining",
+                  "midstreamProcess": "Crushing, Flotation, Smelting or HPAL",
+                  "refinedOutputs": [
+                    "NICKEL_MATTE",
+                    "NICKEL_CATHODE",
+                    "STAINLESS_STEEL"
+                  ],
+                  "downstreamSectors": [
+                    "BATTERIES",
+                    "SPECIALTY_ALLOYS"
+                  ]
+                },
+                "quantitative": {
+                  "reserve": {
+                    "quantity": null,
+                    "unit": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "production": {
+                    "annual": null,
+                    "rate": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "grade": {
+                    "value": null,
+                    "unit": null,
+                    "status": "UNOBSERVED"
+                  }
+                },
+                "verification": {
+                  "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+                  "reviewedAt": null,
+                  "sourceCount": 1,
+                  "sourceAuthorities": [],
+                  "dataLimitations": null
+                }
               }
             },
             {
@@ -1473,6 +1623,80 @@
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
+              },
+              "siteDataPackage": {
+                "schemaVersion": "1.0.0",
+                "siteId": "SITE_CUB_nicaro_nickel_complex",
+                "siteName": "Nicaro Nickel Complex",
+                "identity": {
+                  "countryIso3": "CUB",
+                  "siteType": "MINE",
+                  "resourceTypeId": "nickel",
+                  "resourceName": "Nickel Ore & Concentrates",
+                  "ontologyKey": "NICKEL"
+                },
+                "location": {
+                  "countryName": "Cuba",
+                  "adminRegion": "Holguín",
+                  "locality": "Holguín",
+                  "coordinates": {
+                    "lat": 20.69,
+                    "lng": -75.52
+                  },
+                  "coordinateStatus": "ESTIMATED_SITE_POINT"
+                },
+                "ownership": {
+                  "owner": "UNOBSERVED",
+                  "operator": "UNOBSERVED",
+                  "ownerEvidenceStatus": "UNOBSERVED",
+                  "operatorEvidenceStatus": "UNOBSERVED"
+                },
+                "operation": {
+                  "status": "HISTORICAL_INACTIVE",
+                  "operationalStatus": "CLOSED",
+                  "extractionMethod": "LATERITIC_NICKEL_MINING_AND_CARON_PROCESS_HISTORY",
+                  "extractionEligibility": null,
+                  "commercialExtraction": true
+                },
+                "processing": {
+                  "upstreamProcess": "Open-Pit / Underground Laterite or Sulfide Mining",
+                  "midstreamProcess": "Crushing, Flotation, Smelting or HPAL",
+                  "refinedOutputs": [
+                    "NICKEL_MATTE",
+                    "NICKEL_CATHODE",
+                    "STAINLESS_STEEL"
+                  ],
+                  "downstreamSectors": [
+                    "BATTERIES",
+                    "SPECIALTY_ALLOYS"
+                  ]
+                },
+                "quantitative": {
+                  "reserve": {
+                    "quantity": null,
+                    "unit": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "production": {
+                    "annual": null,
+                    "rate": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "grade": {
+                    "value": null,
+                    "unit": null,
+                    "status": "UNOBSERVED"
+                  }
+                },
+                "verification": {
+                  "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+                  "reviewedAt": null,
+                  "sourceCount": 2,
+                  "sourceAuthorities": [],
+                  "dataLimitations": null
+                }
               }
             }
           ],
@@ -2004,6 +2228,82 @@
                 },
                 "provenance": "PRESENT",
                 "webResearch": "NOT_PER_SITE_VERIFIED"
+              },
+              "siteDataPackage": {
+                "schemaVersion": "1.0.0",
+                "siteId": "SITE_JAM_noranda_st_ann_bauxite_mine",
+                "siteName": "Noranda St Ann Bauxite Mine",
+                "identity": {
+                  "countryIso3": "JAM",
+                  "siteType": "MINE",
+                  "resourceTypeId": "bauxite",
+                  "resourceName": "Bauxite Ore & Primary Smelted Aluminum",
+                  "ontologyKey": "BAUXITE_ALUMINUM"
+                },
+                "location": {
+                  "countryName": "Jamaica",
+                  "adminRegion": "St Ann",
+                  "locality": "St Ann",
+                  "coordinates": {
+                    "lat": 18.42,
+                    "lng": -77.16
+                  },
+                  "coordinateStatus": "ESTIMATED_SITE_POINT"
+                },
+                "ownership": {
+                  "owner": "Noranda Bauxite / Jamaica",
+                  "operator": "Noranda Bauxite",
+                  "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
+                  "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+                },
+                "operation": {
+                  "status": "ACTIVE_PRODUCING",
+                  "operationalStatus": "ACTIVE_PRODUCING",
+                  "extractionMethod": "open-pit bauxite mining",
+                  "extractionEligibility": null,
+                  "commercialExtraction": true
+                },
+                "processing": {
+                  "upstreamProcess": "Open-Cast Strip Mining in Tropical / Subtropical Laterite Belts",
+                  "midstreamProcess": "Bayer Process (Bauxite to Alumina Al2O3), Hall-Héroult Electrolytic Smelting to Metal",
+                  "refinedOutputs": [
+                    "PRIMARY_ALUMINUM_INGOTS",
+                    "AEROSPACE_ALLOY_SHEETS",
+                    "EXTRUSION_BILLET",
+                    "ALUMINUM_FOIL"
+                  ],
+                  "downstreamSectors": [
+                    "AEROSPACE_DEFENSE",
+                    "AUTOMOTIVE",
+                    "POWER_TRANSMISSION",
+                    "PACKAGING_CONSTRUCTION"
+                  ]
+                },
+                "quantitative": {
+                  "reserve": {
+                    "quantity": null,
+                    "unit": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "production": {
+                    "annual": null,
+                    "rate": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "grade": {
+                    "value": null,
+                    "unit": null,
+                    "status": "UNOBSERVED"
+                  }
+                },
+                "verification": {
+                  "reviewedAt": null,
+                  "sourceCount": 0,
+                  "sourceAuthorities": [],
+                  "dataLimitations": null
+                }
               }
             }
           ],
@@ -2533,6 +2833,79 @@
                 },
                 "provenance": "PRESENT",
                 "webResearch": "NOT_PER_SITE_VERIFIED"
+              },
+              "siteDataPackage": {
+                "schemaVersion": "1.0.0",
+                "siteId": "SITE_HTI_gona_ves_limestone_quarry_zone",
+                "siteName": "Gonaïves Limestone Quarry Zone",
+                "identity": {
+                  "countryIso3": "HTI",
+                  "siteType": "QUARRY",
+                  "resourceTypeId": "limestone",
+                  "resourceName": "Limestone & Industrial Carbonate Rock",
+                  "ontologyKey": "LIMESTONE"
+                },
+                "location": {
+                  "countryName": "Haiti",
+                  "adminRegion": "Artibonite",
+                  "locality": "Artibonite",
+                  "coordinates": {
+                    "lat": 19.45,
+                    "lng": -72.69
+                  },
+                  "coordinateStatus": "ESTIMATED_SITE_POINT"
+                },
+                "ownership": {
+                  "owner": "UNOBSERVED",
+                  "operator": "UNOBSERVED",
+                  "ownerEvidenceStatus": "UNOBSERVED",
+                  "operatorEvidenceStatus": "UNOBSERVED"
+                },
+                "operation": {
+                  "status": "LIMITED",
+                  "operationalStatus": "LIMITED",
+                  "extractionMethod": "surface quarrying",
+                  "extractionEligibility": null,
+                  "commercialExtraction": true
+                },
+                "processing": {
+                  "upstreamProcess": "Drilling, Blasting, Quarry Excavation",
+                  "midstreamProcess": "Crushing, Screening, Calcination, Cement Kiln Feed",
+                  "refinedOutputs": [
+                    "CEMENT_CLINKER",
+                    "CONSTRUCTION_AGGREGATES",
+                    "CEMENT"
+                  ],
+                  "downstreamSectors": [
+                    "LIME",
+                    "GLASS"
+                  ]
+                },
+                "quantitative": {
+                  "reserve": {
+                    "quantity": null,
+                    "unit": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "production": {
+                    "annual": null,
+                    "rate": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "grade": {
+                    "value": null,
+                    "unit": null,
+                    "status": "UNOBSERVED"
+                  }
+                },
+                "verification": {
+                  "reviewedAt": null,
+                  "sourceCount": 0,
+                  "sourceAuthorities": [],
+                  "dataLimitations": null
+                }
               }
             }
           ],
@@ -3056,6 +3429,79 @@
                 },
                 "provenance": "PRESENT",
                 "webResearch": "NOT_PER_SITE_VERIFIED"
+              },
+              "siteDataPackage": {
+                "schemaVersion": "1.0.0",
+                "siteId": "SITE_DOM_pueblo_viejo_gold_mine",
+                "siteName": "Pueblo Viejo Gold Mine",
+                "identity": {
+                  "countryIso3": "DOM",
+                  "siteType": "MINE",
+                  "resourceTypeId": "gold",
+                  "resourceName": "Gold Ore & Doré",
+                  "ontologyKey": "GOLD"
+                },
+                "location": {
+                  "countryName": "Dominican Republic",
+                  "adminRegion": "Sánchez Ramírez",
+                  "locality": "Sánchez Ramírez",
+                  "coordinates": {
+                    "lat": 18.94,
+                    "lng": -70.1
+                  },
+                  "coordinateStatus": "ESTIMATED_SITE_POINT"
+                },
+                "ownership": {
+                  "owner": "Barrick / Dominican state",
+                  "operator": "Pueblo Viejo Dominicana",
+                  "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
+                  "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+                },
+                "operation": {
+                  "status": "ACTIVE_PRODUCING",
+                  "operationalStatus": "ACTIVE_PRODUCING",
+                  "extractionMethod": "open-pit and refractory processing",
+                  "extractionEligibility": null,
+                  "commercialExtraction": true
+                },
+                "processing": {
+                  "upstreamProcess": "Open-Pit / Underground Mining, Gravity, Flotation",
+                  "midstreamProcess": "Crushing, Grinding, Gravity/Flotation, Cyanide Leaching, Smelting",
+                  "refinedOutputs": [
+                    "GOLD_DORE",
+                    "JEWELRY",
+                    "ELECTRONICS"
+                  ],
+                  "downstreamSectors": [
+                    "CENTRAL_BANK_RESERVES",
+                    "INDUSTRIAL_CHEMICALS"
+                  ]
+                },
+                "quantitative": {
+                  "reserve": {
+                    "quantity": null,
+                    "unit": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "production": {
+                    "annual": null,
+                    "rate": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "grade": {
+                    "value": null,
+                    "unit": null,
+                    "status": "UNOBSERVED"
+                  }
+                },
+                "verification": {
+                  "reviewedAt": null,
+                  "sourceCount": 0,
+                  "sourceAuthorities": [],
+                  "dataLimitations": null
+                }
               }
             }
           ],
@@ -3584,6 +4030,84 @@
                 },
                 "provenance": "PRESENT",
                 "webResearch": "NOT_PER_SITE_VERIFIED"
+              },
+              "siteDataPackage": {
+                "schemaVersion": "1.0.0",
+                "siteId": "SITE_TTO_juniper_oil_field",
+                "siteName": "Juniper Oil Field",
+                "identity": {
+                  "countryIso3": "TTO",
+                  "siteType": "OIL_FIELD",
+                  "resourceTypeId": "crude_oil",
+                  "resourceName": "Crude Petroleum & Hydrocarbons",
+                  "ontologyKey": "CRUDE_OIL"
+                },
+                "location": {
+                  "countryName": "Trinidad and Tobago",
+                  "adminRegion": "Offshore Trinidad",
+                  "locality": "Offshore Trinidad",
+                  "coordinates": {
+                    "lat": 10.08,
+                    "lng": -60.9
+                  },
+                  "coordinateStatus": "ESTIMATED_SITE_POINT"
+                },
+                "ownership": {
+                  "owner": "bpTT / Trinidad and Tobago",
+                  "operator": "bp Trinidad and Tobago",
+                  "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
+                  "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+                },
+                "operation": {
+                  "status": "ACTIVE_PRODUCING",
+                  "operationalStatus": "ACTIVE_PRODUCING",
+                  "extractionMethod": "offshore platforms and subsea wells",
+                  "extractionEligibility": null,
+                  "commercialExtraction": true
+                },
+                "processing": {
+                  "upstreamProcess": "Deep Drilling, Subsea Extraction, Thermal EOR",
+                  "midstreamProcess": "Atmospheric & Vacuum Distillation, Fluid Catalytic Cracking, Hydrotreating",
+                  "refinedOutputs": [
+                    "REFINED_DIESEL",
+                    "JET_A1_FUEL",
+                    "GASOLINE",
+                    "NAPHTHA",
+                    "HEAVY_FUEL_OIL",
+                    "ASPHALT"
+                  ],
+                  "downstreamSectors": [
+                    "LOGISTICS_TRANSPORT",
+                    "DEFENSE_MOBILITY",
+                    "PETROCHEMICALS",
+                    "AGRICULTURE_MECHANIZATION"
+                  ]
+                },
+                "quantitative": {
+                  "reserve": {
+                    "quantity": null,
+                    "unit": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "production": {
+                    "annual": null,
+                    "rate": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "grade": {
+                    "value": null,
+                    "unit": null,
+                    "status": "UNOBSERVED"
+                  }
+                },
+                "verification": {
+                  "reviewedAt": null,
+                  "sourceCount": 0,
+                  "sourceAuthorities": [],
+                  "dataLimitations": null
+                }
               }
             }
           ],
@@ -4122,6 +4646,79 @@
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
+              },
+              "siteDataPackage": {
+                "schemaVersion": "1.0.0",
+                "siteId": "SITE_BHS_ocean_cay_aragonite_site",
+                "siteName": "Ocean Cay Aragonite Site",
+                "identity": {
+                  "countryIso3": "BHS",
+                  "siteType": "EXTRACTION_SITE",
+                  "resourceTypeId": "aragonite",
+                  "resourceName": "Aragonite Sand & Carbonate Mineral",
+                  "ontologyKey": "ARAGONITE"
+                },
+                "location": {
+                  "countryName": "Bahamas",
+                  "adminRegion": "Bimini / Ocean Cay",
+                  "locality": "Bimini / Ocean Cay",
+                  "coordinates": {
+                    "lat": 25.45,
+                    "lng": -79.15
+                  },
+                  "coordinateStatus": "ESTIMATED_SITE_POINT"
+                },
+                "ownership": {
+                  "owner": "Ocean Industries Incorporated",
+                  "operator": "Ocean Industries Incorporated",
+                  "ownerEvidenceStatus": "SITE_SPECIFIC_WEB_VERIFIED",
+                  "operatorEvidenceStatus": "SITE_SPECIFIC_WEB_VERIFIED"
+                },
+                "operation": {
+                  "status": "HISTORICAL_INACTIVE",
+                  "operationalStatus": "HISTORICAL_INACTIVE",
+                  "extractionMethod": "MARINE_DREDGING",
+                  "extractionEligibility": null,
+                  "commercialExtraction": true
+                },
+                "processing": {
+                  "upstreamProcess": "Marine Dredging / Sand Extraction",
+                  "midstreamProcess": "Screening, Washing, Grading, Calcium-Carbonate Processing",
+                  "refinedOutputs": [
+                    "ARAGONITE_SAND",
+                    "CALCIUM_CARBONATE_FEED",
+                    "CEMENT"
+                  ],
+                  "downstreamSectors": [
+                    "GLASS"
+                  ]
+                },
+                "quantitative": {
+                  "reserve": {
+                    "quantity": null,
+                    "unit": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "production": {
+                    "annual": null,
+                    "rate": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "grade": {
+                    "value": null,
+                    "unit": null,
+                    "status": "UNOBSERVED"
+                  }
+                },
+                "verification": {
+                  "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+                  "reviewedAt": null,
+                  "sourceCount": 2,
+                  "sourceAuthorities": [],
+                  "dataLimitations": null
+                }
               }
             }
           ],
@@ -4645,6 +5242,79 @@
                 },
                 "provenance": "PRESENT",
                 "webResearch": "NOT_PER_SITE_VERIFIED"
+              },
+              "siteDataPackage": {
+                "schemaVersion": "1.0.0",
+                "siteId": "SITE_BRB_arawak_cement_limestone_quarry",
+                "siteName": "Arawak Cement Limestone Quarry",
+                "identity": {
+                  "countryIso3": "BRB",
+                  "siteType": "QUARRY",
+                  "resourceTypeId": "limestone",
+                  "resourceName": "Limestone & Industrial Carbonate Rock",
+                  "ontologyKey": "LIMESTONE"
+                },
+                "location": {
+                  "countryName": "Barbados",
+                  "adminRegion": "St Lucy",
+                  "locality": "St Lucy",
+                  "coordinates": {
+                    "lat": 13.33,
+                    "lng": -59.64
+                  },
+                  "coordinateStatus": "ESTIMATED_SITE_POINT"
+                },
+                "ownership": {
+                  "owner": "Arawak Cement",
+                  "operator": "Arawak Cement",
+                  "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
+                  "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+                },
+                "operation": {
+                  "status": "ACTIVE_PRODUCING",
+                  "operationalStatus": "ACTIVE_PRODUCING",
+                  "extractionMethod": "surface quarrying",
+                  "extractionEligibility": null,
+                  "commercialExtraction": true
+                },
+                "processing": {
+                  "upstreamProcess": "Drilling, Blasting, Quarry Excavation",
+                  "midstreamProcess": "Crushing, Screening, Calcination, Cement Kiln Feed",
+                  "refinedOutputs": [
+                    "CEMENT_CLINKER",
+                    "CONSTRUCTION_AGGREGATES",
+                    "CEMENT"
+                  ],
+                  "downstreamSectors": [
+                    "LIME",
+                    "GLASS"
+                  ]
+                },
+                "quantitative": {
+                  "reserve": {
+                    "quantity": null,
+                    "unit": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "production": {
+                    "annual": null,
+                    "rate": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "grade": {
+                    "value": null,
+                    "unit": null,
+                    "status": "UNOBSERVED"
+                  }
+                },
+                "verification": {
+                  "reviewedAt": null,
+                  "sourceCount": 0,
+                  "sourceAuthorities": [],
+                  "dataLimitations": null
+                }
               }
             }
           ],
@@ -5186,6 +5856,79 @@
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
+              },
+              "siteDataPackage": {
+                "schemaVersion": "1.0.0",
+                "siteId": "SITE_LCA_cul_de_sac_aggregate_quarry_zone",
+                "siteName": "Cul de Sac Aggregate Quarry Zone",
+                "identity": {
+                  "countryIso3": "LCA",
+                  "siteType": "QUARRY",
+                  "resourceTypeId": "construction_aggregate",
+                  "resourceName": "Construction Aggregates, Sand & Gravel",
+                  "ontologyKey": "CONSTRUCTION_AGGREGATE"
+                },
+                "location": {
+                  "countryName": "Saint Lucia",
+                  "adminRegion": "Castries",
+                  "locality": "Castries",
+                  "coordinates": {
+                    "lat": 13.99,
+                    "lng": -60.97
+                  },
+                  "coordinateStatus": "ESTIMATED_SITE_POINT"
+                },
+                "ownership": {
+                  "owner": "RG Quarry Limited",
+                  "operator": "RG Quarry Limited",
+                  "ownerEvidenceStatus": "SITE_SPECIFIC_WEB_VERIFIED",
+                  "operatorEvidenceStatus": "SITE_SPECIFIC_WEB_VERIFIED"
+                },
+                "operation": {
+                  "status": "ACTIVE_PRODUCING",
+                  "operationalStatus": "LIMITED",
+                  "extractionMethod": "surface aggregate quarrying",
+                  "extractionEligibility": null,
+                  "commercialExtraction": true
+                },
+                "processing": {
+                  "upstreamProcess": "Quarrying, Dredging, Borrow-Pit Extraction",
+                  "midstreamProcess": "Crushing, Screening, Washing, Grading",
+                  "refinedOutputs": [
+                    "GRADED_AGGREGATE",
+                    "READY_MIX_CONCRETE",
+                    "ASPHALT_FEED"
+                  ],
+                  "downstreamSectors": [
+                    "ROAD_BASE"
+                  ]
+                },
+                "quantitative": {
+                  "reserve": {
+                    "quantity": null,
+                    "unit": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "production": {
+                    "annual": null,
+                    "rate": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "grade": {
+                    "value": null,
+                    "unit": null,
+                    "status": "UNOBSERVED"
+                  }
+                },
+                "verification": {
+                  "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+                  "reviewedAt": null,
+                  "sourceCount": 1,
+                  "sourceAuthorities": [],
+                  "dataLimitations": null
+                }
               }
             }
           ],
@@ -5714,6 +6457,78 @@
                 },
                 "provenance": "PRESENT",
                 "webResearch": "NOT_PER_SITE_VERIFIED"
+              },
+              "siteDataPackage": {
+                "schemaVersion": "1.0.0",
+                "siteId": "SITE_VCT_diamond_quarry",
+                "siteName": "Diamond Quarry",
+                "identity": {
+                  "countryIso3": "VCT",
+                  "siteType": "QUARRY",
+                  "resourceTypeId": "construction_aggregate",
+                  "resourceName": "Construction Aggregates, Sand & Gravel",
+                  "ontologyKey": "CONSTRUCTION_AGGREGATE"
+                },
+                "location": {
+                  "countryName": "Saint Vincent and the Grenadines",
+                  "adminRegion": "St Vincent",
+                  "locality": "St Vincent",
+                  "coordinates": {
+                    "lat": 13.15,
+                    "lng": -61.22
+                  },
+                  "coordinateStatus": "ESTIMATED_SITE_POINT"
+                },
+                "ownership": {
+                  "owner": "UNOBSERVED",
+                  "operator": "UNOBSERVED",
+                  "ownerEvidenceStatus": "UNOBSERVED",
+                  "operatorEvidenceStatus": "UNOBSERVED"
+                },
+                "operation": {
+                  "status": "LIMITED",
+                  "operationalStatus": "LIMITED",
+                  "extractionMethod": "surface aggregate quarrying",
+                  "extractionEligibility": null,
+                  "commercialExtraction": true
+                },
+                "processing": {
+                  "upstreamProcess": "Quarrying, Dredging, Borrow-Pit Extraction",
+                  "midstreamProcess": "Crushing, Screening, Washing, Grading",
+                  "refinedOutputs": [
+                    "GRADED_AGGREGATE",
+                    "READY_MIX_CONCRETE",
+                    "ASPHALT_FEED"
+                  ],
+                  "downstreamSectors": [
+                    "ROAD_BASE"
+                  ]
+                },
+                "quantitative": {
+                  "reserve": {
+                    "quantity": null,
+                    "unit": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "production": {
+                    "annual": null,
+                    "rate": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "grade": {
+                    "value": null,
+                    "unit": null,
+                    "status": "UNOBSERVED"
+                  }
+                },
+                "verification": {
+                  "reviewedAt": null,
+                  "sourceCount": 0,
+                  "sourceAuthorities": [],
+                  "dataLimitations": null
+                }
               }
             }
           ],
@@ -6252,6 +7067,79 @@
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
+              },
+              "siteDataPackage": {
+                "schemaVersion": "1.0.0",
+                "siteId": "SITE_GRD_telescope_quarry",
+                "siteName": "Telescope Quarry",
+                "identity": {
+                  "countryIso3": "GRD",
+                  "siteType": "QUARRY",
+                  "resourceTypeId": "construction_aggregate",
+                  "resourceName": "Construction Aggregates, Sand & Gravel",
+                  "ontologyKey": "CONSTRUCTION_AGGREGATE"
+                },
+                "location": {
+                  "countryName": "Grenada",
+                  "adminRegion": "Saint Andrew",
+                  "locality": "Saint Andrew",
+                  "coordinates": {
+                    "lat": 12.08,
+                    "lng": -61.72
+                  },
+                  "coordinateStatus": "ESTIMATED_SITE_POINT"
+                },
+                "ownership": {
+                  "owner": "Gravel, Concrete & Emulsion Production Corporation",
+                  "operator": "Gravel, Concrete & Emulsion Production Corporation",
+                  "ownerEvidenceStatus": "SITE_SPECIFIC_WEB_VERIFIED",
+                  "operatorEvidenceStatus": "SITE_SPECIFIC_WEB_VERIFIED"
+                },
+                "operation": {
+                  "status": "ACTIVE_PRODUCING",
+                  "operationalStatus": "LIMITED",
+                  "extractionMethod": "HARD_ROCK_BASALT_QUARRYING_AND_CRUSHING",
+                  "extractionEligibility": null,
+                  "commercialExtraction": true
+                },
+                "processing": {
+                  "upstreamProcess": "Quarrying, Dredging, Borrow-Pit Extraction",
+                  "midstreamProcess": "Crushing, Screening, Washing, Grading",
+                  "refinedOutputs": [
+                    "GRADED_AGGREGATE",
+                    "READY_MIX_CONCRETE",
+                    "ASPHALT_FEED"
+                  ],
+                  "downstreamSectors": [
+                    "ROAD_BASE"
+                  ]
+                },
+                "quantitative": {
+                  "reserve": {
+                    "quantity": null,
+                    "unit": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "production": {
+                    "annual": null,
+                    "rate": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "grade": {
+                    "value": null,
+                    "unit": null,
+                    "status": "UNOBSERVED"
+                  }
+                },
+                "verification": {
+                  "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+                  "reviewedAt": null,
+                  "sourceCount": 2,
+                  "sourceAuthorities": [],
+                  "dataLimitations": null
+                }
               }
             }
           ],
@@ -6781,6 +7669,79 @@
                 },
                 "provenance": "PRESENT",
                 "webResearch": "NOT_PER_SITE_VERIFIED"
+              },
+              "siteDataPackage": {
+                "schemaVersion": "1.0.0",
+                "siteId": "SITE_ATG_gunthorpes_quarry",
+                "siteName": "Gunthorpes Quarry",
+                "identity": {
+                  "countryIso3": "ATG",
+                  "siteType": "QUARRY",
+                  "resourceTypeId": "limestone",
+                  "resourceName": "Limestone & Industrial Carbonate Rock",
+                  "ontologyKey": "LIMESTONE"
+                },
+                "location": {
+                  "countryName": "Antigua and Barbuda",
+                  "adminRegion": "Saint George",
+                  "locality": "Saint George",
+                  "coordinates": {
+                    "lat": 17.08,
+                    "lng": -61.82
+                  },
+                  "coordinateStatus": "ESTIMATED_SITE_POINT"
+                },
+                "ownership": {
+                  "owner": "UNOBSERVED",
+                  "operator": "UNOBSERVED",
+                  "ownerEvidenceStatus": "UNOBSERVED",
+                  "operatorEvidenceStatus": "UNOBSERVED"
+                },
+                "operation": {
+                  "status": "LIMITED",
+                  "operationalStatus": "LIMITED",
+                  "extractionMethod": "surface quarrying",
+                  "extractionEligibility": null,
+                  "commercialExtraction": true
+                },
+                "processing": {
+                  "upstreamProcess": "Drilling, Blasting, Quarry Excavation",
+                  "midstreamProcess": "Crushing, Screening, Calcination, Cement Kiln Feed",
+                  "refinedOutputs": [
+                    "CEMENT_CLINKER",
+                    "CONSTRUCTION_AGGREGATES",
+                    "CEMENT"
+                  ],
+                  "downstreamSectors": [
+                    "LIME",
+                    "GLASS"
+                  ]
+                },
+                "quantitative": {
+                  "reserve": {
+                    "quantity": null,
+                    "unit": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "production": {
+                    "annual": null,
+                    "rate": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "grade": {
+                    "value": null,
+                    "unit": null,
+                    "status": "UNOBSERVED"
+                  }
+                },
+                "verification": {
+                  "reviewedAt": null,
+                  "sourceCount": 0,
+                  "sourceAuthorities": [],
+                  "dataLimitations": null
+                }
               }
             }
           ],
@@ -7310,6 +8271,79 @@
                 },
                 "provenance": "PRESENT",
                 "webResearch": "NOT_PER_SITE_VERIFIED"
+              },
+              "siteDataPackage": {
+                "schemaVersion": "1.0.0",
+                "siteId": "SITE_KNA_ross_lands_quarry_zone",
+                "siteName": "Ross Lands Quarry Zone",
+                "identity": {
+                  "countryIso3": "KNA",
+                  "siteType": "QUARRY",
+                  "resourceTypeId": "limestone",
+                  "resourceName": "Limestone & Industrial Carbonate Rock",
+                  "ontologyKey": "LIMESTONE"
+                },
+                "location": {
+                  "countryName": "Saint Kitts and Nevis",
+                  "adminRegion": "Saint Kitts",
+                  "locality": "Saint Kitts",
+                  "coordinates": {
+                    "lat": 17.35,
+                    "lng": -62.76
+                  },
+                  "coordinateStatus": "ESTIMATED_SITE_POINT"
+                },
+                "ownership": {
+                  "owner": "UNOBSERVED",
+                  "operator": "UNOBSERVED",
+                  "ownerEvidenceStatus": "UNOBSERVED",
+                  "operatorEvidenceStatus": "UNOBSERVED"
+                },
+                "operation": {
+                  "status": "LIMITED",
+                  "operationalStatus": "LIMITED",
+                  "extractionMethod": "surface quarrying",
+                  "extractionEligibility": null,
+                  "commercialExtraction": true
+                },
+                "processing": {
+                  "upstreamProcess": "Drilling, Blasting, Quarry Excavation",
+                  "midstreamProcess": "Crushing, Screening, Calcination, Cement Kiln Feed",
+                  "refinedOutputs": [
+                    "CEMENT_CLINKER",
+                    "CONSTRUCTION_AGGREGATES",
+                    "CEMENT"
+                  ],
+                  "downstreamSectors": [
+                    "LIME",
+                    "GLASS"
+                  ]
+                },
+                "quantitative": {
+                  "reserve": {
+                    "quantity": null,
+                    "unit": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "production": {
+                    "annual": null,
+                    "rate": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "grade": {
+                    "value": null,
+                    "unit": null,
+                    "status": "UNOBSERVED"
+                  }
+                },
+                "verification": {
+                  "reviewedAt": null,
+                  "sourceCount": 0,
+                  "sourceAuthorities": [],
+                  "dataLimitations": null
+                }
               }
             }
           ],
@@ -7843,6 +8877,79 @@
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
+              },
+              "siteDataPackage": {
+                "schemaVersion": "1.0.0",
+                "siteId": "SITE_DMA_pointe_michel_stone_quarry",
+                "siteName": "Pointe Michel Stone Quarry",
+                "identity": {
+                  "countryIso3": "DMA",
+                  "siteType": "QUARRY",
+                  "resourceTypeId": "construction_aggregate",
+                  "resourceName": "Construction Aggregates, Sand & Gravel",
+                  "ontologyKey": "CONSTRUCTION_AGGREGATE"
+                },
+                "location": {
+                  "countryName": "Dominica",
+                  "adminRegion": "Saint Luke",
+                  "locality": "Saint Luke",
+                  "coordinates": {
+                    "lat": 15.23,
+                    "lng": -61.39
+                  },
+                  "coordinateStatus": "ESTIMATED_SITE_POINT"
+                },
+                "ownership": {
+                  "owner": "Carib Sand and Stone Ltd. (CSS)",
+                  "operator": "Carib Sand and Stone Ltd. (CSS)",
+                  "ownerEvidenceStatus": "SITE_SPECIFIC_WEB_VERIFIED",
+                  "operatorEvidenceStatus": "SITE_SPECIFIC_WEB_VERIFIED"
+                },
+                "operation": {
+                  "status": "ACTIVE_PRODUCING",
+                  "operationalStatus": "LIMITED",
+                  "extractionMethod": "QUARRYING_AND_CRUSHING",
+                  "extractionEligibility": null,
+                  "commercialExtraction": true
+                },
+                "processing": {
+                  "upstreamProcess": "Quarrying, Dredging, Borrow-Pit Extraction",
+                  "midstreamProcess": "Crushing, Screening, Washing, Grading",
+                  "refinedOutputs": [
+                    "GRADED_AGGREGATE",
+                    "READY_MIX_CONCRETE",
+                    "ASPHALT_FEED"
+                  ],
+                  "downstreamSectors": [
+                    "ROAD_BASE"
+                  ]
+                },
+                "quantitative": {
+                  "reserve": {
+                    "quantity": null,
+                    "unit": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "production": {
+                    "annual": null,
+                    "rate": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "grade": {
+                    "value": null,
+                    "unit": null,
+                    "status": "UNOBSERVED"
+                  }
+                },
+                "verification": {
+                  "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+                  "reviewedAt": null,
+                  "sourceCount": 1,
+                  "sourceAuthorities": [],
+                  "dataLimitations": null
+                }
               }
             }
           ],
@@ -8369,6 +9476,79 @@
                 },
                 "provenance": "PRESENT",
                 "webResearch": "NOT_PER_SITE_VERIFIED"
+              },
+              "siteDataPackage": {
+                "schemaVersion": "1.0.0",
+                "siteId": "SITE_SUR_merian_gold_mine",
+                "siteName": "Merian Gold Mine",
+                "identity": {
+                  "countryIso3": "SUR",
+                  "siteType": "MINE",
+                  "resourceTypeId": "gold",
+                  "resourceName": "Gold Ore & Doré",
+                  "ontologyKey": "GOLD"
+                },
+                "location": {
+                  "countryName": "Suriname",
+                  "adminRegion": "Sipaliwini",
+                  "locality": "Sipaliwini",
+                  "coordinates": {
+                    "lat": 5.85,
+                    "lng": -54.52
+                  },
+                  "coordinateStatus": "ESTIMATED_SITE_POINT"
+                },
+                "ownership": {
+                  "owner": "Newmont / Staatsolie",
+                  "operator": "Newmont Suriname",
+                  "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
+                  "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+                },
+                "operation": {
+                  "status": "ACTIVE_PRODUCING",
+                  "operationalStatus": "ACTIVE_PRODUCING",
+                  "extractionMethod": "open-pit",
+                  "extractionEligibility": null,
+                  "commercialExtraction": true
+                },
+                "processing": {
+                  "upstreamProcess": "Open-Pit / Underground Mining, Gravity, Flotation",
+                  "midstreamProcess": "Crushing, Grinding, Gravity/Flotation, Cyanide Leaching, Smelting",
+                  "refinedOutputs": [
+                    "GOLD_DORE",
+                    "JEWELRY",
+                    "ELECTRONICS"
+                  ],
+                  "downstreamSectors": [
+                    "CENTRAL_BANK_RESERVES",
+                    "INDUSTRIAL_CHEMICALS"
+                  ]
+                },
+                "quantitative": {
+                  "reserve": {
+                    "quantity": null,
+                    "unit": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "production": {
+                    "annual": null,
+                    "rate": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "grade": {
+                    "value": null,
+                    "unit": null,
+                    "status": "UNOBSERVED"
+                  }
+                },
+                "verification": {
+                  "reviewedAt": null,
+                  "sourceCount": 0,
+                  "sourceAuthorities": [],
+                  "dataLimitations": null
+                }
               }
             }
           ],
@@ -8894,6 +10074,79 @@
                 },
                 "provenance": "PRESENT",
                 "webResearch": "NOT_PER_SITE_VERIFIED"
+              },
+              "siteDataPackage": {
+                "schemaVersion": "1.0.0",
+                "siteId": "SITE_GUY_aurora_gold_mine",
+                "siteName": "Aurora Gold Mine",
+                "identity": {
+                  "countryIso3": "GUY",
+                  "siteType": "MINE",
+                  "resourceTypeId": "gold",
+                  "resourceName": "Gold Ore & Doré",
+                  "ontologyKey": "GOLD"
+                },
+                "location": {
+                  "countryName": "Guyana",
+                  "adminRegion": "Cuyuni-Mazaruni",
+                  "locality": "Cuyuni-Mazaruni",
+                  "coordinates": {
+                    "lat": 6.77,
+                    "lng": -60.71
+                  },
+                  "coordinateStatus": "ESTIMATED_SITE_POINT"
+                },
+                "ownership": {
+                  "owner": "Zijin / Guyana",
+                  "operator": "Aurora operations",
+                  "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
+                  "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+                },
+                "operation": {
+                  "status": "ACTIVE_PRODUCING",
+                  "operationalStatus": "ACTIVE_PRODUCING",
+                  "extractionMethod": "open-pit and underground",
+                  "extractionEligibility": null,
+                  "commercialExtraction": true
+                },
+                "processing": {
+                  "upstreamProcess": "Open-Pit / Underground Mining, Gravity, Flotation",
+                  "midstreamProcess": "Crushing, Grinding, Gravity/Flotation, Cyanide Leaching, Smelting",
+                  "refinedOutputs": [
+                    "GOLD_DORE",
+                    "JEWELRY",
+                    "ELECTRONICS"
+                  ],
+                  "downstreamSectors": [
+                    "CENTRAL_BANK_RESERVES",
+                    "INDUSTRIAL_CHEMICALS"
+                  ]
+                },
+                "quantitative": {
+                  "reserve": {
+                    "quantity": null,
+                    "unit": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "production": {
+                    "annual": null,
+                    "rate": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "grade": {
+                    "value": null,
+                    "unit": null,
+                    "status": "UNOBSERVED"
+                  }
+                },
+                "verification": {
+                  "reviewedAt": null,
+                  "sourceCount": 0,
+                  "sourceAuthorities": [],
+                  "dataLimitations": null
+                }
               }
             }
           ],
@@ -9416,6 +10669,79 @@
                 },
                 "provenance": "PRESENT",
                 "webResearch": "NOT_PER_SITE_VERIFIED"
+              },
+              "siteDataPackage": {
+                "schemaVersion": "1.0.0",
+                "siteId": "SITE_AUS_boddington_gold_mine",
+                "siteName": "Boddington Gold Mine",
+                "identity": {
+                  "countryIso3": "AUS",
+                  "siteType": "MINE",
+                  "resourceTypeId": "gold",
+                  "resourceName": "Gold Ore & Doré",
+                  "ontologyKey": "GOLD"
+                },
+                "location": {
+                  "countryName": "Australia",
+                  "adminRegion": "Western Australia",
+                  "locality": "Western Australia",
+                  "coordinates": {
+                    "lat": -32.8,
+                    "lng": 116.37
+                  },
+                  "coordinateStatus": "ESTIMATED_SITE_POINT"
+                },
+                "ownership": {
+                  "owner": "Newmont",
+                  "operator": "Newmont Boddington Gold",
+                  "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
+                  "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+                },
+                "operation": {
+                  "status": "ACTIVE_PRODUCING",
+                  "operationalStatus": "ACTIVE_PRODUCING",
+                  "extractionMethod": "large open-pit and processing",
+                  "extractionEligibility": null,
+                  "commercialExtraction": true
+                },
+                "processing": {
+                  "upstreamProcess": "Open-Pit / Underground Mining, Gravity, Flotation",
+                  "midstreamProcess": "Crushing, Grinding, Gravity/Flotation, Cyanide Leaching, Smelting",
+                  "refinedOutputs": [
+                    "GOLD_DORE",
+                    "JEWELRY",
+                    "ELECTRONICS"
+                  ],
+                  "downstreamSectors": [
+                    "CENTRAL_BANK_RESERVES",
+                    "INDUSTRIAL_CHEMICALS"
+                  ]
+                },
+                "quantitative": {
+                  "reserve": {
+                    "quantity": null,
+                    "unit": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "production": {
+                    "annual": null,
+                    "rate": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "grade": {
+                    "value": null,
+                    "unit": null,
+                    "status": "UNOBSERVED"
+                  }
+                },
+                "verification": {
+                  "reviewedAt": null,
+                  "sourceCount": 0,
+                  "sourceAuthorities": [],
+                  "dataLimitations": null
+                }
               }
             }
           ],
@@ -9939,6 +11265,79 @@
                 },
                 "provenance": "PRESENT",
                 "webResearch": "NOT_PER_SITE_VERIFIED"
+              },
+              "siteDataPackage": {
+                "schemaVersion": "1.0.0",
+                "siteId": "SITE_NZL_macraes_gold_mine",
+                "siteName": "Macraes Gold Mine",
+                "identity": {
+                  "countryIso3": "NZL",
+                  "siteType": "MINE",
+                  "resourceTypeId": "gold",
+                  "resourceName": "Gold Ore & Doré",
+                  "ontologyKey": "GOLD"
+                },
+                "location": {
+                  "countryName": "New Zealand",
+                  "adminRegion": "Otago",
+                  "locality": "Otago",
+                  "coordinates": {
+                    "lat": -45.37,
+                    "lng": 170.1
+                  },
+                  "coordinateStatus": "ESTIMATED_SITE_POINT"
+                },
+                "ownership": {
+                  "owner": "OceanaGold",
+                  "operator": "OceanaGold New Zealand",
+                  "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
+                  "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+                },
+                "operation": {
+                  "status": "ACTIVE_PRODUCING",
+                  "operationalStatus": "ACTIVE_PRODUCING",
+                  "extractionMethod": "open-pit and underground",
+                  "extractionEligibility": null,
+                  "commercialExtraction": true
+                },
+                "processing": {
+                  "upstreamProcess": "Open-Pit / Underground Mining, Gravity, Flotation",
+                  "midstreamProcess": "Crushing, Grinding, Gravity/Flotation, Cyanide Leaching, Smelting",
+                  "refinedOutputs": [
+                    "GOLD_DORE",
+                    "JEWELRY",
+                    "ELECTRONICS"
+                  ],
+                  "downstreamSectors": [
+                    "CENTRAL_BANK_RESERVES",
+                    "INDUSTRIAL_CHEMICALS"
+                  ]
+                },
+                "quantitative": {
+                  "reserve": {
+                    "quantity": null,
+                    "unit": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "production": {
+                    "annual": null,
+                    "rate": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "grade": {
+                    "value": null,
+                    "unit": null,
+                    "status": "UNOBSERVED"
+                  }
+                },
+                "verification": {
+                  "reviewedAt": null,
+                  "sourceCount": 0,
+                  "sourceAuthorities": [],
+                  "dataLimitations": null
+                }
               }
             }
           ],
@@ -10485,6 +11884,79 @@
                 },
                 "provenance": "PRESENT",
                 "webResearch": "NOT_PER_SITE_VERIFIED"
+              },
+              "siteDataPackage": {
+                "schemaVersion": "1.0.0",
+                "siteId": "SITE_PNG_lihir_gold_mine",
+                "siteName": "Lihir Gold Mine",
+                "identity": {
+                  "countryIso3": "PNG",
+                  "siteType": "MINE",
+                  "resourceTypeId": "gold",
+                  "resourceName": "Gold Ore & Doré",
+                  "ontologyKey": "GOLD"
+                },
+                "location": {
+                  "countryName": "Papua New Guinea",
+                  "adminRegion": "New Ireland",
+                  "locality": "New Ireland",
+                  "coordinates": {
+                    "lat": -3.13,
+                    "lng": 152.64
+                  },
+                  "coordinateStatus": "ESTIMATED_SITE_POINT"
+                },
+                "ownership": {
+                  "owner": "Newmont",
+                  "operator": "Lihir operation",
+                  "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
+                  "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+                },
+                "operation": {
+                  "status": "ACTIVE_PRODUCING",
+                  "operationalStatus": "ACTIVE_PRODUCING",
+                  "extractionMethod": "open-pit",
+                  "extractionEligibility": null,
+                  "commercialExtraction": true
+                },
+                "processing": {
+                  "upstreamProcess": "Open-Pit / Underground Mining, Gravity, Flotation",
+                  "midstreamProcess": "Crushing, Grinding, Gravity/Flotation, Cyanide Leaching, Smelting",
+                  "refinedOutputs": [
+                    "GOLD_DORE",
+                    "JEWELRY",
+                    "ELECTRONICS"
+                  ],
+                  "downstreamSectors": [
+                    "CENTRAL_BANK_RESERVES",
+                    "INDUSTRIAL_CHEMICALS"
+                  ]
+                },
+                "quantitative": {
+                  "reserve": {
+                    "quantity": null,
+                    "unit": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "production": {
+                    "annual": null,
+                    "rate": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "grade": {
+                    "value": null,
+                    "unit": null,
+                    "status": "UNOBSERVED"
+                  }
+                },
+                "verification": {
+                  "reviewedAt": null,
+                  "sourceCount": 0,
+                  "sourceAuthorities": [],
+                  "dataLimitations": null
+                }
               }
             }
           ],
@@ -11031,6 +12503,79 @@
                 },
                 "provenance": "PRESENT",
                 "webResearch": "NOT_PER_SITE_VERIFIED"
+              },
+              "siteDataPackage": {
+                "schemaVersion": "1.0.0",
+                "siteId": "SITE_FJI_vatukoula_gold_mine",
+                "siteName": "Vatukoula Gold Mine",
+                "identity": {
+                  "countryIso3": "FJI",
+                  "siteType": "MINE",
+                  "resourceTypeId": "gold",
+                  "resourceName": "Gold Ore & Doré",
+                  "ontologyKey": "GOLD"
+                },
+                "location": {
+                  "countryName": "Fiji",
+                  "adminRegion": "Viti Levu",
+                  "locality": "Viti Levu",
+                  "coordinates": {
+                    "lat": -17.59,
+                    "lng": 177.54
+                  },
+                  "coordinateStatus": "ESTIMATED_SITE_POINT"
+                },
+                "ownership": {
+                  "owner": "Vatukoula Gold Mines",
+                  "operator": "Vatukoula Gold Mines",
+                  "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
+                  "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+                },
+                "operation": {
+                  "status": "ACTIVE_PRODUCING",
+                  "operationalStatus": "ACTIVE_PRODUCING",
+                  "extractionMethod": "underground",
+                  "extractionEligibility": null,
+                  "commercialExtraction": true
+                },
+                "processing": {
+                  "upstreamProcess": "Open-Pit / Underground Mining, Gravity, Flotation",
+                  "midstreamProcess": "Crushing, Grinding, Gravity/Flotation, Cyanide Leaching, Smelting",
+                  "refinedOutputs": [
+                    "GOLD_DORE",
+                    "JEWELRY",
+                    "ELECTRONICS"
+                  ],
+                  "downstreamSectors": [
+                    "CENTRAL_BANK_RESERVES",
+                    "INDUSTRIAL_CHEMICALS"
+                  ]
+                },
+                "quantitative": {
+                  "reserve": {
+                    "quantity": null,
+                    "unit": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "production": {
+                    "annual": null,
+                    "rate": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "grade": {
+                    "value": null,
+                    "unit": null,
+                    "status": "UNOBSERVED"
+                  }
+                },
+                "verification": {
+                  "reviewedAt": null,
+                  "sourceCount": 0,
+                  "sourceAuthorities": [],
+                  "dataLimitations": null
+                }
               }
             }
           ],
@@ -11594,6 +13139,80 @@
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
+              },
+              "siteDataPackage": {
+                "schemaVersion": "1.0.0",
+                "siteId": "SITE_SLB_gold_ridge_mine",
+                "siteName": "Gold Ridge Mine",
+                "identity": {
+                  "countryIso3": "SLB",
+                  "siteType": "MINE",
+                  "resourceTypeId": "gold",
+                  "resourceName": "Gold Ore & Doré",
+                  "ontologyKey": "GOLD"
+                },
+                "location": {
+                  "countryName": "Solomon Islands",
+                  "adminRegion": "Guadalcanal",
+                  "locality": "Guadalcanal",
+                  "coordinates": {
+                    "lat": -9.56,
+                    "lng": 160.03
+                  },
+                  "coordinateStatus": "ESTIMATED_SITE_POINT"
+                },
+                "ownership": {
+                  "owner": "Gold Ridge Mining Limited (majority-owned by Wanguo Gold Group; landowner-controlled minority interest)",
+                  "operator": "Gold Ridge Mining Limited",
+                  "ownerEvidenceStatus": "SITE_SPECIFIC_WEB_VERIFIED",
+                  "operatorEvidenceStatus": "SITE_SPECIFIC_WEB_VERIFIED"
+                },
+                "operation": {
+                  "status": "ACTIVE_PRODUCING",
+                  "operationalStatus": "RESTARTING",
+                  "extractionMethod": "OPEN_PIT_MINING",
+                  "extractionEligibility": null,
+                  "commercialExtraction": true
+                },
+                "processing": {
+                  "upstreamProcess": "Open-Pit / Underground Mining, Gravity, Flotation",
+                  "midstreamProcess": "Crushing, Grinding, Gravity/Flotation, Cyanide Leaching, Smelting",
+                  "refinedOutputs": [
+                    "GOLD_DORE",
+                    "JEWELRY",
+                    "ELECTRONICS"
+                  ],
+                  "downstreamSectors": [
+                    "CENTRAL_BANK_RESERVES",
+                    "INDUSTRIAL_CHEMICALS"
+                  ]
+                },
+                "quantitative": {
+                  "reserve": {
+                    "quantity": null,
+                    "unit": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "production": {
+                    "annual": null,
+                    "rate": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "grade": {
+                    "value": null,
+                    "unit": null,
+                    "status": "UNOBSERVED"
+                  }
+                },
+                "verification": {
+                  "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+                  "reviewedAt": null,
+                  "sourceCount": 2,
+                  "sourceAuthorities": [],
+                  "dataLimitations": null
+                }
               }
             }
           ],
@@ -12122,6 +13741,78 @@
                 },
                 "provenance": "PRESENT",
                 "webResearch": "NOT_PER_SITE_VERIFIED"
+              },
+              "siteDataPackage": {
+                "schemaVersion": "1.0.0",
+                "siteId": "SITE_VUT_luganville_aggregate_quarry_zone",
+                "siteName": "Luganville Aggregate Quarry Zone",
+                "identity": {
+                  "countryIso3": "VUT",
+                  "siteType": "QUARRY",
+                  "resourceTypeId": "construction_aggregate",
+                  "resourceName": "Construction Aggregates, Sand & Gravel",
+                  "ontologyKey": "CONSTRUCTION_AGGREGATE"
+                },
+                "location": {
+                  "countryName": "Vanuatu",
+                  "adminRegion": "Espiritu Santo",
+                  "locality": "Espiritu Santo",
+                  "coordinates": {
+                    "lat": -15.51,
+                    "lng": 167.17
+                  },
+                  "coordinateStatus": "ESTIMATED_SITE_POINT"
+                },
+                "ownership": {
+                  "owner": "UNOBSERVED",
+                  "operator": "UNOBSERVED",
+                  "ownerEvidenceStatus": "UNOBSERVED",
+                  "operatorEvidenceStatus": "UNOBSERVED"
+                },
+                "operation": {
+                  "status": "LIMITED",
+                  "operationalStatus": "LIMITED",
+                  "extractionMethod": "surface aggregate",
+                  "extractionEligibility": null,
+                  "commercialExtraction": true
+                },
+                "processing": {
+                  "upstreamProcess": "Quarrying, Dredging, Borrow-Pit Extraction",
+                  "midstreamProcess": "Crushing, Screening, Washing, Grading",
+                  "refinedOutputs": [
+                    "GRADED_AGGREGATE",
+                    "READY_MIX_CONCRETE",
+                    "ASPHALT_FEED"
+                  ],
+                  "downstreamSectors": [
+                    "ROAD_BASE"
+                  ]
+                },
+                "quantitative": {
+                  "reserve": {
+                    "quantity": null,
+                    "unit": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "production": {
+                    "annual": null,
+                    "rate": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "grade": {
+                    "value": null,
+                    "unit": null,
+                    "status": "UNOBSERVED"
+                  }
+                },
+                "verification": {
+                  "reviewedAt": null,
+                  "sourceCount": 0,
+                  "sourceAuthorities": [],
+                  "dataLimitations": null
+                }
               }
             }
           ],
@@ -12655,6 +14346,79 @@
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
+              },
+              "siteDataPackage": {
+                "schemaVersion": "1.0.0",
+                "siteId": "SITE_WSM_lefaga_aggregate_quarry_zone",
+                "siteName": "Lefaga Aggregate Quarry Zone",
+                "identity": {
+                  "countryIso3": "WSM",
+                  "siteType": "QUARRY",
+                  "resourceTypeId": "construction_aggregate",
+                  "resourceName": "Construction Aggregates, Sand & Gravel",
+                  "ontologyKey": "CONSTRUCTION_AGGREGATE"
+                },
+                "location": {
+                  "countryName": "Samoa",
+                  "adminRegion": "Upolu",
+                  "locality": "Upolu",
+                  "coordinates": {
+                    "lat": -13.82,
+                    "lng": -171.96
+                  },
+                  "coordinateStatus": "ESTIMATED_SITE_POINT"
+                },
+                "ownership": {
+                  "owner": "UNOBSERVED",
+                  "operator": "UNOBSERVED",
+                  "ownerEvidenceStatus": "UNOBSERVED",
+                  "operatorEvidenceStatus": "UNOBSERVED"
+                },
+                "operation": {
+                  "status": "LIMITED",
+                  "operationalStatus": "LIMITED",
+                  "extractionMethod": "VOLCANIC_BASALT_QUARRYING_AND_CRUSHING",
+                  "extractionEligibility": null,
+                  "commercialExtraction": true
+                },
+                "processing": {
+                  "upstreamProcess": "Quarrying, Dredging, Borrow-Pit Extraction",
+                  "midstreamProcess": "Crushing, Screening, Washing, Grading",
+                  "refinedOutputs": [
+                    "GRADED_AGGREGATE",
+                    "READY_MIX_CONCRETE",
+                    "ASPHALT_FEED"
+                  ],
+                  "downstreamSectors": [
+                    "ROAD_BASE"
+                  ]
+                },
+                "quantitative": {
+                  "reserve": {
+                    "quantity": null,
+                    "unit": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "production": {
+                    "annual": null,
+                    "rate": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "grade": {
+                    "value": null,
+                    "unit": null,
+                    "status": "UNOBSERVED"
+                  }
+                },
+                "verification": {
+                  "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+                  "reviewedAt": null,
+                  "sourceCount": 1,
+                  "sourceAuthorities": [],
+                  "dataLimitations": null
+                }
               }
             }
           ],
@@ -13197,6 +14961,79 @@
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
+              },
+              "siteDataPackage": {
+                "schemaVersion": "1.0.0",
+                "siteId": "SITE_TON_nuku_alofa_aggregate_quarry_zone",
+                "siteName": "Nuku'alofa Aggregate Quarry Zone",
+                "identity": {
+                  "countryIso3": "TON",
+                  "siteType": "QUARRY",
+                  "resourceTypeId": "construction_aggregate",
+                  "resourceName": "Construction Aggregates, Sand & Gravel",
+                  "ontologyKey": "CONSTRUCTION_AGGREGATE"
+                },
+                "location": {
+                  "countryName": "Tonga",
+                  "adminRegion": "Tongatapu",
+                  "locality": "Tongatapu",
+                  "coordinates": {
+                    "lat": -21.13,
+                    "lng": -175.2
+                  },
+                  "coordinateStatus": "ESTIMATED_SITE_POINT"
+                },
+                "ownership": {
+                  "owner": "UNOBSERVED",
+                  "operator": "UNOBSERVED",
+                  "ownerEvidenceStatus": "UNOBSERVED",
+                  "operatorEvidenceStatus": "UNOBSERVED"
+                },
+                "operation": {
+                  "status": "LIMITED",
+                  "operationalStatus": "LIMITED",
+                  "extractionMethod": "VOLCANIC_AGGREGATE_QUARRYING_AND_CRUSHING",
+                  "extractionEligibility": null,
+                  "commercialExtraction": true
+                },
+                "processing": {
+                  "upstreamProcess": "Quarrying, Dredging, Borrow-Pit Extraction",
+                  "midstreamProcess": "Crushing, Screening, Washing, Grading",
+                  "refinedOutputs": [
+                    "GRADED_AGGREGATE",
+                    "READY_MIX_CONCRETE",
+                    "ASPHALT_FEED"
+                  ],
+                  "downstreamSectors": [
+                    "ROAD_BASE"
+                  ]
+                },
+                "quantitative": {
+                  "reserve": {
+                    "quantity": null,
+                    "unit": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "production": {
+                    "annual": null,
+                    "rate": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "grade": {
+                    "value": null,
+                    "unit": null,
+                    "status": "UNOBSERVED"
+                  }
+                },
+                "verification": {
+                  "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+                  "reviewedAt": null,
+                  "sourceCount": 2,
+                  "sourceAuthorities": [],
+                  "dataLimitations": null
+                }
               }
             }
           ],
@@ -13751,6 +15588,79 @@
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
+              },
+              "siteDataPackage": {
+                "schemaVersion": "1.0.0",
+                "siteId": "SITE_KIR_betio_coral_aggregate_extraction_sites",
+                "siteName": "Betio Coral Aggregate Extraction Sites",
+                "identity": {
+                  "countryIso3": "KIR",
+                  "siteType": "DREDGING_AND_PROCESSING_SITE",
+                  "resourceTypeId": "coral_aggregate",
+                  "resourceName": "Coral Aggregate & Carbonate Dredged Material",
+                  "ontologyKey": "CORAL_AGGREGATE"
+                },
+                "location": {
+                  "countryName": "Kiribati",
+                  "adminRegion": "South Tarawa",
+                  "locality": "South Tarawa",
+                  "coordinates": {
+                    "lat": 1.35,
+                    "lng": 172.98
+                  },
+                  "coordinateStatus": "ESTIMATED_SITE_POINT"
+                },
+                "ownership": {
+                  "owner": "Te Atinimarawa Company Limited",
+                  "operator": "Te Atinimarawa Company Limited",
+                  "ownerEvidenceStatus": "SITE_SPECIFIC_WEB_VERIFIED",
+                  "operatorEvidenceStatus": "SITE_SPECIFIC_WEB_VERIFIED"
+                },
+                "operation": {
+                  "status": "ACTIVE_PRODUCING",
+                  "operationalStatus": "LIMITED",
+                  "extractionMethod": "LAGOON_DREDGING_AND_CORAL_CRUSHING",
+                  "extractionEligibility": null,
+                  "commercialExtraction": true
+                },
+                "processing": {
+                  "upstreamProcess": "Lagoon Dredging, Coral Sand/Gravel Extraction",
+                  "midstreamProcess": "Screening, Crushing, Washing, Grading",
+                  "refinedOutputs": [
+                    "CORAL_AGGREGATE",
+                    "CONCRETE_AGGREGATE",
+                    "ROAD_BASE"
+                  ],
+                  "downstreamSectors": [
+                    "RECLAMATION_FILL"
+                  ]
+                },
+                "quantitative": {
+                  "reserve": {
+                    "quantity": null,
+                    "unit": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "production": {
+                    "annual": null,
+                    "rate": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "grade": {
+                    "value": null,
+                    "unit": null,
+                    "status": "UNOBSERVED"
+                  }
+                },
+                "verification": {
+                  "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+                  "reviewedAt": null,
+                  "sourceCount": 3,
+                  "sourceAuthorities": [],
+                  "dataLimitations": null
+                }
               }
             }
           ],
@@ -14291,6 +16201,79 @@
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
+              },
+              "siteDataPackage": {
+                "schemaVersion": "1.0.0",
+                "siteId": "SITE_TUV_funafuti_borrow_pits",
+                "siteName": "Funafuti Borrow Pits",
+                "identity": {
+                  "countryIso3": "TUV",
+                  "siteType": "QUARRY",
+                  "resourceTypeId": "construction_aggregate",
+                  "resourceName": "Construction Aggregates, Sand & Gravel",
+                  "ontologyKey": "CONSTRUCTION_AGGREGATE"
+                },
+                "location": {
+                  "countryName": "Tuvalu",
+                  "adminRegion": "Funafuti",
+                  "locality": "Funafuti",
+                  "coordinates": {
+                    "lat": -8.52,
+                    "lng": 179.2
+                  },
+                  "coordinateStatus": "ESTIMATED_SITE_POINT"
+                },
+                "ownership": {
+                  "owner": "UNOBSERVED",
+                  "operator": "UNOBSERVED",
+                  "ownerEvidenceStatus": "UNOBSERVED",
+                  "operatorEvidenceStatus": "UNOBSERVED"
+                },
+                "operation": {
+                  "status": "HISTORICAL_INACTIVE",
+                  "operationalStatus": "LIMITED",
+                  "extractionMethod": "CORAL_AGGREGATE_BORROW_PITS",
+                  "extractionEligibility": null,
+                  "commercialExtraction": true
+                },
+                "processing": {
+                  "upstreamProcess": "Quarrying, Dredging, Borrow-Pit Extraction",
+                  "midstreamProcess": "Crushing, Screening, Washing, Grading",
+                  "refinedOutputs": [
+                    "GRADED_AGGREGATE",
+                    "READY_MIX_CONCRETE",
+                    "ASPHALT_FEED"
+                  ],
+                  "downstreamSectors": [
+                    "ROAD_BASE"
+                  ]
+                },
+                "quantitative": {
+                  "reserve": {
+                    "quantity": null,
+                    "unit": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "production": {
+                    "annual": null,
+                    "rate": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "grade": {
+                    "value": null,
+                    "unit": null,
+                    "status": "UNOBSERVED"
+                  }
+                },
+                "verification": {
+                  "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+                  "reviewedAt": null,
+                  "sourceCount": 2,
+                  "sourceAuthorities": [],
+                  "dataLimitations": null
+                }
               }
             }
           ],
@@ -14831,6 +16814,83 @@
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
+              },
+              "siteDataPackage": {
+                "schemaVersion": "1.0.0",
+                "siteId": "SITE_NRU_nauru_phosphate_mining_area",
+                "siteName": "Nauru Phosphate Mining Area",
+                "identity": {
+                  "countryIso3": "NRU",
+                  "siteType": "MINE",
+                  "resourceTypeId": "phosphate",
+                  "resourceName": "Phosphate Rock (P2O5)",
+                  "ontologyKey": "PHOSPHATE"
+                },
+                "location": {
+                  "countryName": "Nauru",
+                  "adminRegion": "Aiwo/Boe",
+                  "locality": "Aiwo/Boe",
+                  "coordinates": {
+                    "lat": -0.53,
+                    "lng": 166.93
+                  },
+                  "coordinateStatus": "ESTIMATED_SITE_POINT"
+                },
+                "ownership": {
+                  "owner": "Republic of Nauru Phosphate Corporation (RONPHOS)",
+                  "operator": "Republic of Nauru Phosphate Corporation (RONPHOS)",
+                  "ownerEvidenceStatus": "SITE_SPECIFIC_WEB_VERIFIED",
+                  "operatorEvidenceStatus": "SITE_SPECIFIC_WEB_VERIFIED"
+                },
+                "operation": {
+                  "status": "ACTIVE_PRODUCING",
+                  "operationalStatus": "LIMITED",
+                  "extractionMethod": "secondary surface extraction",
+                  "extractionEligibility": null,
+                  "commercialExtraction": true
+                },
+                "processing": {
+                  "upstreamProcess": "Open-pit phosphate mining, excavation or dragline mining, crushing and screening",
+                  "midstreamProcess": "Washing, desliming, flotation or other beneficiation, followed by phosphoric-acid and fertilizer conversion",
+                  "refinedOutputs": [
+                    "PHOSPHATE_CONCENTRATE",
+                    "PHOSPHORIC_ACID",
+                    "DAP_FERTILIZER",
+                    "MAP_FERTILIZER",
+                    "NPK_COMPOUND"
+                  ],
+                  "downstreamSectors": [
+                    "FOOD_AGRICULTURE",
+                    "LIVESTOCK_FEED",
+                    "CHEMICAL_PROCESSING"
+                  ]
+                },
+                "quantitative": {
+                  "reserve": {
+                    "quantity": null,
+                    "unit": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "production": {
+                    "annual": 130000,
+                    "rate": null,
+                    "unit": "tonnes/year",
+                    "year": 2024,
+                    "status": "OBSERVED"
+                  },
+                  "grade": {
+                    "value": null,
+                    "unit": null,
+                    "status": "UNOBSERVED"
+                  }
+                },
+                "verification": {
+                  "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+                  "reviewedAt": null,
+                  "sourceCount": 1,
+                  "sourceAuthorities": [],
+                  "dataLimitations": null
+                }
               }
             }
           ],
@@ -15368,6 +17428,79 @@
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
+              },
+              "siteDataPackage": {
+                "schemaVersion": "1.0.0",
+                "siteId": "SITE_MHL_majuro_aggregate_extraction_sites",
+                "siteName": "Majuro Aggregate Extraction Sites",
+                "identity": {
+                  "countryIso3": "MHL",
+                  "siteType": "QUARRY",
+                  "resourceTypeId": "construction_aggregate",
+                  "resourceName": "Construction Aggregates, Sand & Gravel",
+                  "ontologyKey": "CONSTRUCTION_AGGREGATE"
+                },
+                "location": {
+                  "countryName": "Marshall Islands",
+                  "adminRegion": "Majuro",
+                  "locality": "Majuro",
+                  "coordinates": {
+                    "lat": 7.09,
+                    "lng": 171.38
+                  },
+                  "coordinateStatus": "ESTIMATED_SITE_POINT"
+                },
+                "ownership": {
+                  "owner": "Pacific International, Inc.",
+                  "operator": "Pacific International, Inc.",
+                  "ownerEvidenceStatus": "SITE_SPECIFIC_WEB_VERIFIED",
+                  "operatorEvidenceStatus": "SITE_SPECIFIC_WEB_VERIFIED"
+                },
+                "operation": {
+                  "status": "ACTIVE_PRODUCING",
+                  "operationalStatus": "LIMITED",
+                  "extractionMethod": "QUARRYING_AND_AGGREGATE_CRUSHING",
+                  "extractionEligibility": null,
+                  "commercialExtraction": true
+                },
+                "processing": {
+                  "upstreamProcess": "Quarrying, Dredging, Borrow-Pit Extraction",
+                  "midstreamProcess": "Crushing, Screening, Washing, Grading",
+                  "refinedOutputs": [
+                    "GRADED_AGGREGATE",
+                    "READY_MIX_CONCRETE",
+                    "ASPHALT_FEED"
+                  ],
+                  "downstreamSectors": [
+                    "ROAD_BASE"
+                  ]
+                },
+                "quantitative": {
+                  "reserve": {
+                    "quantity": null,
+                    "unit": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "production": {
+                    "annual": null,
+                    "rate": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "grade": {
+                    "value": null,
+                    "unit": null,
+                    "status": "UNOBSERVED"
+                  }
+                },
+                "verification": {
+                  "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+                  "reviewedAt": null,
+                  "sourceCount": 1,
+                  "sourceAuthorities": [],
+                  "dataLimitations": null
+                }
               }
             }
           ],
@@ -15901,6 +18034,79 @@
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
+              },
+              "siteDataPackage": {
+                "schemaVersion": "1.0.0",
+                "siteId": "SITE_FSM_pohnpei_aggregate_quarry_zone",
+                "siteName": "Pohnpei Aggregate Quarry Zone",
+                "identity": {
+                  "countryIso3": "FSM",
+                  "siteType": "QUARRY",
+                  "resourceTypeId": "construction_aggregate",
+                  "resourceName": "Construction Aggregates, Sand & Gravel",
+                  "ontologyKey": "CONSTRUCTION_AGGREGATE"
+                },
+                "location": {
+                  "countryName": "Micronesia",
+                  "adminRegion": "Pohnpei",
+                  "locality": "Pohnpei",
+                  "coordinates": {
+                    "lat": 6.97,
+                    "lng": 158.21
+                  },
+                  "coordinateStatus": "ESTIMATED_SITE_POINT"
+                },
+                "ownership": {
+                  "owner": "UNOBSERVED",
+                  "operator": "UNOBSERVED",
+                  "ownerEvidenceStatus": "UNOBSERVED",
+                  "operatorEvidenceStatus": "UNOBSERVED"
+                },
+                "operation": {
+                  "status": "LIMITED",
+                  "operationalStatus": "LIMITED",
+                  "extractionMethod": "VOLCANIC_AGGREGATE_QUARRYING_AND_CRUSHING",
+                  "extractionEligibility": null,
+                  "commercialExtraction": true
+                },
+                "processing": {
+                  "upstreamProcess": "Quarrying, Dredging, Borrow-Pit Extraction",
+                  "midstreamProcess": "Crushing, Screening, Washing, Grading",
+                  "refinedOutputs": [
+                    "GRADED_AGGREGATE",
+                    "READY_MIX_CONCRETE",
+                    "ASPHALT_FEED"
+                  ],
+                  "downstreamSectors": [
+                    "ROAD_BASE"
+                  ]
+                },
+                "quantitative": {
+                  "reserve": {
+                    "quantity": null,
+                    "unit": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "production": {
+                    "annual": null,
+                    "rate": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "grade": {
+                    "value": null,
+                    "unit": null,
+                    "status": "UNOBSERVED"
+                  }
+                },
+                "verification": {
+                  "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+                  "reviewedAt": null,
+                  "sourceCount": 1,
+                  "sourceAuthorities": [],
+                  "dataLimitations": null
+                }
               }
             }
           ],
@@ -16436,6 +18642,80 @@
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
+              },
+              "siteDataPackage": {
+                "schemaVersion": "1.0.0",
+                "siteId": "SITE_PLW_airai_limestone_quarry_zone",
+                "siteName": "Airai Limestone Quarry Zone",
+                "identity": {
+                  "countryIso3": "PLW",
+                  "siteType": "QUARRY",
+                  "resourceTypeId": "limestone",
+                  "resourceName": "Limestone & Industrial Carbonate Rock",
+                  "ontologyKey": "LIMESTONE"
+                },
+                "location": {
+                  "countryName": "Palau",
+                  "adminRegion": "Babeldaob/Airai",
+                  "locality": "Oikull, Airai, Palau",
+                  "coordinates": {
+                    "lat": 7.35,
+                    "lng": 134.55
+                  },
+                  "coordinateStatus": "ESTIMATED_SITE_POINT"
+                },
+                "ownership": {
+                  "owner": "UNOBSERVED",
+                  "operator": "UNOBSERVED",
+                  "ownerEvidenceStatus": "UNOBSERVED",
+                  "operatorEvidenceStatus": "UNOBSERVED"
+                },
+                "operation": {
+                  "status": "LIMITED",
+                  "operationalStatus": "LIMITED",
+                  "extractionMethod": "surface quarrying",
+                  "extractionEligibility": null,
+                  "commercialExtraction": true
+                },
+                "processing": {
+                  "upstreamProcess": "Drilling, Blasting, Quarry Excavation",
+                  "midstreamProcess": "Crushing, Screening, Calcination, Cement Kiln Feed",
+                  "refinedOutputs": [
+                    "CEMENT_CLINKER",
+                    "CONSTRUCTION_AGGREGATES",
+                    "CEMENT"
+                  ],
+                  "downstreamSectors": [
+                    "LIME",
+                    "GLASS"
+                  ]
+                },
+                "quantitative": {
+                  "reserve": {
+                    "quantity": null,
+                    "unit": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "production": {
+                    "annual": null,
+                    "rate": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "grade": {
+                    "value": null,
+                    "unit": null,
+                    "status": "UNOBSERVED"
+                  }
+                },
+                "verification": {
+                  "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+                  "reviewedAt": null,
+                  "sourceCount": 1,
+                  "sourceAuthorities": [],
+                  "dataLimitations": null
+                }
               }
             }
           ],
