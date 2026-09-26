@@ -177,7 +177,7 @@
       const occurrences=reg.getOccurrencesByCountry?.(wanted)||[];
       for(const occ of occurrences){
         const dep=reg.getDeposit?.(occ.depositKey);if(!dep)continue;
-        const raw=(e.deposits||[]).find(x=>String(x?.name||'').trim().toUpperCase()===String(dep.depositRawName||'').trim().toUpperCase()&&id(x?.countryCode||x?.country||'')===wanted);
+        const raw=clone(occ.rawDeposit||dep.rawDeposit||((e.deposits||[]).find(x=>String(x?.name||'').trim().toUpperCase()===String(dep.depositRawName||'').trim().toUpperCase()&&id(x?.countryCode||x?.country||'')===wanted)||null));
         const parentKey=String(occ.occurrenceKey||'');
         const keys=[];
         const addKey=k=>{const s=String(k||'');if(s&&!seen.has(s))keys.push(s);};
