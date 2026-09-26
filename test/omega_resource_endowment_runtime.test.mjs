@@ -112,7 +112,7 @@ assert(seen.some(x=>x&&x.payload&&x.payload.batch&&x.payload.batch.batchId===bat
 const preGlobal=runtime.diagnostics();
 const expectedResourceCountries=Object.keys(engine.countryProfiles||{});
 const registryAssetsBeforeGlobal=globalThis.__OmegaResourceIdentityRegistry?.listUnifiedAssets?.()||[];
-const expectedExecutableStructuredAssetCount=registryAssetsBeforeGlobal.filter(x=>x?.assetType==='STRUCTURED_DEPOSIT'&&x?.execution?.extractionExecutable===true).length;
+const expectedExecutableStructuredAssetCount=registryAssetsBeforeGlobal.filter(x=>x?.assetType==='STRUCTURED_DEPOSIT'&&x?.execution?.runtimeExecutable===true).length;
 const stateAssetsBeforeGlobal=Object.values(globalThis.Game.state.resource||{}).flatMap(row=>Array.isArray(row?.unifiedAssets)?row.unifiedAssets:[]);
 console.log('[UNIFIED-DIAGNOSTIC-BEFORE-EXTRACT]',JSON.stringify({
   engineDeposits:engine.deposits.length,
