@@ -8615,6 +8615,8 @@ _globalScope.GSRSK_DataFoundation = (() => {
                                 profile?.resource_infrastructure_context?.mineSites ||
                                 profile?.infrastructure_context?.mineSites ||
                                 profile?.resourceInfrastructureContext?.mineSites ||
+                                profile?.infrastructure?.mineSites ||
+                                profile?.resource_infrastructure?.mineSites ||
                                 [];
                             if (!Array.isArray(sites)) continue;
                             sites.forEach((site, index) => {
