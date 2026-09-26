@@ -10,7 +10,7 @@ context.globalThis=context;
 
 load('omega_resource_realism_runtime_v1.js',context);
 const R=context.Omega.ResourceRealism;
-assert.equal(R.VERSION,'1.0.0');
+assert.equal(R.VERSION,'1.1.0');
 
 // Priority 3: separate unit families.
 assert.equal(R.parseReserve('120 million BBL','crude_oil').unitFamily,'BBL');
