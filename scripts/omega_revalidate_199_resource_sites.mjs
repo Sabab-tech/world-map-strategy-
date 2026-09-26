@@ -149,8 +149,8 @@ async function googleSearch(site) {
   const candidates = [];
   for (const match of html.matchAll(new RegExp('<a[^>]+href="([^"]+)"[^>]*>([\\s\\S]*?)</a>', 'gi'))) {
     const href = decodeSearchHref(match[1]);
-    if (!/^https?:\\/\\//i.test(href)) continue;
-    if (/google\\.(com|co\\.|org)/i.test(href)) continue;
+    if (!(href.startsWith('http://') || href.startsWith('https://'))) continue;
+    if (href.toLowerCase().includes('google.')) continue;
     const title = stripHtml(match[2]);
     if (!title) continue;
     const score = scoreTitle(site.siteName, title);
@@ -186,7 +186,7 @@ function extractWebProfile(site, source) {
   if (!textValue) return null;
   const siteTokens = tokens(site.siteName);
   const sentences = textValue
-    .split(/(?<=[.!?])\\s+/)
+    .split(/(?<=[.!?])\s+/)
     .map((x) => x.trim())
     .filter((x) => x.length >= 40 && x.length <= 500);
   const relevant = sentences.filter((sentence) => {
