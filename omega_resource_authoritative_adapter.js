@@ -216,49 +216,29 @@
     return Math.round((values.reduce(function (a, b) { return a + b; }, 0) / values.length) * 100) / 100;
   }
 
+  function resourceAuthority(countryId, resourceId) {
+    const bucket=liveBucket(countryId),rows=Array.isArray(bucket&&bucket.mines)?bucket.mines:[],wanted=token(resourceId);
+    const matched=rows.filter(function(row){return token(row&&row.resourceId)===wanted;});
+    if(!matched.length)return{stateAuthority:'UNOBSERVED',reserveAuthority:'UNOBSERVED',productionAuthority:'UNOBSERVED',qualityAuthority:'UNOBSERVED'};
+    const rank=function(v){return String(v||'').toUpperCase()==='OBSERVED'?2:String(v||'').toUpperCase()==='SIMULATED'?1:0};
+    const strongest=function(values){return values.reduce(function(best,v){return rank(v)>rank(best)?v:best},'UNOBSERVED')};
+    return{
+      stateAuthority:strongest(matched.map(function(x){return x?.productionModel?.stateAuthority||x?.rawDeposit?.stateAuthority||x?.reserveState?.stateAuthority})),
+      reserveAuthority:strongest(matched.map(function(x){return x?.reserveState?.provenance?.quantityAuthority||x?.rawDeposit?.reserveAuthority||x?.reserveAuthority})),
+      productionAuthority:strongest(matched.map(function(x){return x?.productionModel?.authority||x?.capacity?.authority})),
+      qualityAuthority:strongest(matched.map(function(x){return x?.qualityState?.qualityAuthority||x?.qualityAuthority||x?.productionModel?.qualityAuthority}))
+    };
+  }
+
   function liveRows(countryId) {
-    const bucket = liveBucket(countryId);
-    const types = resourceTypes();
-    return resourceKeys(countryId).map(function (entry) {
-      const rid = entry.original;
-      const type = types.get(entry.normalized) || null;
-      const inventory = valueByToken(bucket && bucket.inventory, rid);
-      const production = valueByToken(bucket && bucket.production, rid);
-      const demand = valueByToken(bucket && bucket.consumption, rid);
-      const reserve = valueByToken(bucket && bucket.reserves, rid);
-      const endowment = valueByToken(bucket && bucket.endowment, rid);
-      const warehouse = valueByToken(bucket && bucket.warehouse && bucket.warehouse.availableByResource, rid);
-      const strategicReserveState = bucket && bucket.strategicReserve;
-      const strategicReserve = strategicReserveState ? (valueByToken(strategicReserveState.availableByResource, rid) ?? 0) : null;
-      const strategicReserveDays = strategicReserve !== null ? days(strategicReserve, demand) : null;
-      const tradeAvailability = valueByToken(bucket && bucket.tradeAvailability, rid);
-      const marketPrices = bucket && (bucket.marketPrices || bucket.priceBook || bucket.supplierPrices);
-      const price = valueByToken(marketPrices, rid);
-      return {
-        id: type && type.id || rid,
-        name: type && type.name || String(rid).replace(/_/g, ' ').toUpperCase(),
-        bnName: type && type.bnName || null,
-        icon: type && type.icon || null,
-        category: type && type.category || null,
-        color: type && type.color || null,
-        unit: type && type.unit || null,
-        basePrice: price,
-        inventory: inventory,
-        dailyProduction: production,
-        dailyConsumption: demand,
-        netBalance: production !== null && demand !== null ? production - demand : null,
-        selfSufficiencyRatio: percent(production, demand),
-        stockDays: days(inventory, demand),
-        reserve: reserve,
-        strategicReserveStock: strategicReserve,
-        strategicReserveDays: strategicReserveDays,
-        endowment: endowment,
-        warehouseStock: warehouse,
-        tradeAvailability: tradeAvailability,
-        activeFacilities: activeFacilityCount(countryId, rid),
-        processChain: type && type.processChain || null,
-        availability: bucket ? 'AVAILABLE' : 'RUNTIME_STATE_UNAVAILABLE',
-        source: bucket ? 'Game.state.resource' : 'NO_LIVE_RUNTIME_STATE'
+    const bucket=liveBucket(countryId),types=resourceTypes();
+    return resourceKeys(countryId).map(function(entry){
+      const rid=entry.original,type=types.get(entry.normalized)||null,inventory=valueByToken(bucket&&bucket.inventory,rid),production=valueByToken(bucket&&bucket.production,rid),demand=valueByToken(bucket&&bucket.consumption,rid),reserve=valueByToken(bucket&&bucket.reserves,rid),endowment=valueByToken(bucket&&bucket.endowment,rid),warehouse=valueByToken(bucket&&bucket.warehouse&&bucket.warehouse.availableByResource,rid),strategicReserveState=bucket&&bucket.strategicReserve,strategicReserve=strategicReserveState?(valueByToken(strategicReserveState.availableByResource,rid)??0):null,strategicReserveDays=strategicReserve!==null?days(strategicReserve,demand):null,tradeAvailability=valueByToken(bucket&&bucket.tradeAvailability,rid),marketPrices=bucket&&(bucket.marketPrices||bucket.priceBook||bucket.supplierPrices),price=valueByToken(marketPrices,rid),authority=resourceAuthority(countryId,rid);
+      return{
+        id:type&&type.id||rid,name:type&&type.name||String(rid).replace(/_/g,' ').toUpperCase(),bnName:type&&type.bnName||null,icon:type&&type.icon||null,category:type&&type.category||null,color:type&&type.color||null,unit:type&&type.unit||null,basePrice:price,
+        inventory,dailyProduction:production,dailyConsumption:demand,netBalance:production!==null&&demand!==null?production-demand:null,selfSufficiencyRatio:percent(production,demand),stockDays:days(inventory,demand),reserve,strategicReserveStock:strategicReserve,strategicReserveDays,endowment,warehouseStock:warehouse,tradeAvailability,
+        activeFacilities:activeFacilityCount(countryId,rid),processChain:type&&type.processChain||null,availability:bucket?'AVAILABLE':'RUNTIME_STATE_UNAVAILABLE',source:bucket?'Game.state.resource':'NO_LIVE_RUNTIME_STATE',
+        authority, stateAuthority:authority.stateAuthority, reserveAuthority:authority.reserveAuthority, productionAuthority:authority.productionAuthority, qualityAuthority:authority.qualityAuthority
       };
     });
   }
