@@ -111,7 +111,7 @@ const preGlobal=runtime.diagnostics();
 const expectedCountries=countryIdentity.exportData().countries;
 const expectedResourceCountries=Object.keys(engine.countryProfiles||{});
 assert.equal(preGlobal.countryCount,expectedResourceCountries.length);
-assert.equal(preGlobal.mineSiteReferenceCount,199);
+assert.equal(preGlobal.mineSiteReferenceCount,199, `mineSiteReferenceCount=${preGlobal.mineSiteReferenceCount}; catalogMineRefs=${(engine.referenceCatalog?.getAllReferences?.()||[]).filter(r=>String(r?.category||'').includes('INFRASTRUCTURE')).filter(r=>String(r?.metadata?.subType||'').toLowerCase().includes('mine')).length}; sample=${JSON.stringify((engine.referenceCatalog?.getAllReferences?.()||[]).slice(0,5))}`);
 assert.equal(preGlobal.mineSiteControllerCount,199);
 const globalExtraction=await runtime.extractAll();
 assert.equal(globalExtraction.status,'COMPLETED');
