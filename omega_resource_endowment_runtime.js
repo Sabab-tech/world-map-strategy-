@@ -253,15 +253,15 @@
     const spr=existing&&typeof existing==='object'&&existing.strategicReserve&&typeof existing.strategicReserve==='object' ? existing.strategicReserve : {};
     return spr.availableByResource&&typeof spr.availableByResource==='object'?spr.availableByResource:{};
   }
-  function computeTradeAvailability(inventory,sprMap){
-    const out={};
-    for(const [k,v] of Object.entries(inventory&&typeof inventory==='object'?inventory:{})){
-      const total=n(v); if(total===null)continue;
-      out[k]=Math.max(0,total-(n(sprMap?.[k])??0));
-    }
-    for(const [k,v] of Object.entries(sprMap&&typeof sprMap==='object'?sprMap:{})){
-      if(out[k]!==undefined)continue;
-      out[k]=Math.max(0,(n(inventory?.[k])??0)-(n(v)??0));
+  function computeTradeAvailability(inventory,sprMap,committedMap){
+    const out={},keys=new Set([
+      ...Object.keys(inventory&&typeof inventory==='object'?inventory:{}),
+      ...Object.keys(sprMap&&typeof sprMap==='object'?sprMap:{}),
+      ...Object.keys(committedMap&&typeof committedMap==='object'?committedMap:{})
+    ]);
+    for(const k of keys){
+      const total=n(inventory?.[k]);if(total===null)continue;
+      out[k]=Math.max(0,total-(n(sprMap?.[k])??0)-(n(committedMap?.[k])??0));
     }
     return out;
   }
