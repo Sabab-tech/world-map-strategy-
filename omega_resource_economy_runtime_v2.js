@@ -124,7 +124,10 @@
         operatingAllocation:Object.assign({},DEFAULT_RULES.operatingAllocation,d.operatingAllocation||{}),
         runtime:Object.assign({},DEFAULT_RULES.runtime,d.runtime||{}),
         market:Object.assign({},DEFAULT_RULES.market,d.market||{}),
-        actions:Object.assign({},DEFAULT_RULES.actions,d.actions||{})
+        actions:Object.assign({},DEFAULT_RULES.actions,d.actions||{}),
+        extraction:Object.assign({},DEFAULT_RULES.extraction,d.extraction||{}),
+        industrialPhysics:Object.assign({},DEFAULT_RULES.industrialPhysics,d.industrialPhysics||{}),
+        logistics:Object.assign({},DEFAULT_RULES.logistics,d.logistics||{})
       };
       return g.__OmegaResourceEconomyRules;
     }).catch(function(e){
@@ -547,9 +550,17 @@
   }
 
   function publishOffers(c){
-    var inv=invObj(c),prices=read(c,'trade.marketPrice')||{},offers=[],f=num(rules().market.offerFractionOfObservedInventory);if(f===null)f=0.25;f=Math.max(0,Math.min(1,f));
+    var inv=invObj(c),rs=bucket(c,'resource')||{},prices=read(c,'trade.marketPrice')||{},offers=[];
+    var fraction=num(rules().market.offerFractionOfObservedInventory);if(fraction===null)fraction=num(rules().market.referenceOfferFraction);if(fraction===null)fraction=0.25;fraction=Math.max(0,Math.min(1,fraction));
     var min=num(rules().market.minOfferQuantity);if(min===null)min=1;
-    Object.keys(inv).forEach(function(rid){var q=num(inv[rid])||0;if(q<min)return;var p=num(prices[rid]);if(p===null&&g.OmegaGlobalMarket&&typeof g.OmegaGlobalMarket.localPrice==='function'){try{p=num(g.OmegaGlobalMarket.localPrice(c,rid));}catch(_){}}if(p===null||p<=0)return;var oq=q*f;if(oq<min)return;offers.push({offerId:'AUTO-'+turn()+'-'+canonical(c)+'-'+tok(rid),resourceId:rid,quantity:oq,available:oq,price:p,unitPrice:p,countryId:canonical(c),source:'OMEGA_RESOURCE_ECON_AUTO_OFFER',referenceOnly:false,simulationTurn:turn()});});
+    var spr=rs.strategicReserve&&rs.strategicReserve.availableByResource||{},committed=rs.committedStock||rs.committedInventory||{},sellable=clone(rs.sellableInventory||{});
+    if(!Object.keys(sellable).length)Object.keys(inv).forEach(function(rid){sellable[rid]=Math.max(0,(num(inv[rid])||0)-(num(spr[rid])||0)-(num(committed[rid])||0));});
+    Object.keys(sellable).forEach(function(rid){
+      var q=num(sellable[rid])||0;if(q<min)return;
+      var p=num(prices[rid]);if(p===null&&g.OmegaGlobalMarket&&typeof g.OmegaGlobalMarket.localPrice==='function'){try{p=num(g.OmegaGlobalMarket.localPrice(c,rid));}catch(_){}}if(p===null||p<=0)return;
+      var oq=q*fraction;if(oq<min)return;
+      offers.push({offerId:'AUTO-'+turn()+'-'+canonical(c)+'-'+tok(rid),resourceId:rid,quantity:oq,available:oq,price:p,unitPrice:p,countryId:canonical(c),source:'OMEGA_RESOURCE_ECON_AUTO_OFFER',referenceOnly:false,simulationTurn:turn(),sellableInventory:q,reservedInventory:num(spr[rid])||0,committedInventory:num(committed[rid])||0});
+    });
     return dispatch('trade','OMEGA_RESOURCE_ECON_PUBLISH_OFFER_BOOK',c,{offers:offers,correlationId:'AUTO-OFFER-'+turn()+'-'+canonical(c)});
   }
 
