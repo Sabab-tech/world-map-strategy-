@@ -157,7 +157,7 @@ function firewall(existing,incoming){
 function planRoute(input={}){
  const mode=String(input.mode||'truck').toLowerCase(),m=modes[mode]||modes.truck,qty=Math.max(0,num(input.quantity)||0),distance=Math.max(0,num(input.distanceKm)||m.defaultDistanceKm);
  const tonnageFactor=String(input.unit||'').toUpperCase()==='BBL'?1/7.33:String(input.unit||'').toUpperCase()==='BCM'?136000:1;
- const capacity=m.capacity*tonnageFactor,legs=Math.max(1,Math.ceil(qty/Math.max(capacity,1))),hours=distance/Math.max(m.speedKmh,1),timeDays=hours/24,cost=qty*distance*m.costPerTonneKm;
+ const tonnageEquivalent=qty*tonnageFactor,capacity=m.capacity*tonnageFactor,legs=Math.max(1,Math.ceil(qty/Math.max(capacity,1))),hours=distance/Math.max(m.speedKmh,1),timeDays=hours/24,cost=tonnageEquivalent*distance*m.costPerTonneKm;
  return {status:'PLANNED',transportMode:mode,routeId:'ROUTE:'+String(input.sourceNode||'SRC')+'>'+String(input.destinationNode||'DST')+':'+mode,
   sourceNode:input.sourceNode||null,destinationNode:input.destinationNode||null,distanceKm:distance,capacity,requestedQuantity:qty,dispatchQuantity:Math.min(qty,capacity),
   legs,travelTimeDays:timeDays,costEstimate:cost,costUnit:'SIMULATED_CURRENCY',capacityAuthority:'SIMULATED',costAuthority:'SIMULATED',timeAuthority:'SIMULATED',
