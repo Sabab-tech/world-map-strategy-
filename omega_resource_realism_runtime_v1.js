@@ -156,9 +156,13 @@ function planRoute(input={}){
   legs,travelTimeDays:timeDays,costEstimate:cost,costUnit:'SIMULATED_CURRENCY',capacityAuthority:'SIMULATED',costAuthority:'SIMULATED',timeAuthority:'SIMULATED',
   routeAuthority:'SIMULATED',deliveryStatus:qty<=capacity?'READY':'MULTI_LEG_REQUIRED'};
 }
+function planFactoryRoutes(input={}){
+ const ids=Array.isArray(input.factoryIds)?input.factoryIds.filter(Boolean):[];
+ return ids.map((factoryId,index)=>dispatchFromWarehouse({...input,destinationNode:String(factoryId),quantity:index===0?input.quantity:0})).filter(x=>x.requestedQuantity>0||ids.length===1);
+}
 function dispatchFromWarehouse(input={}){
  const route=planRoute(input);return {...route,delivery:{shipmentId:'SHIP:'+hash(JSON.stringify(input)+'|'+route.routeId),warehouseId:input.warehouseId||null,batchId:input.batchId||null,stage:'WAREHOUSE_DISPATCH',status:'READY_FOR_DELIVERY',quantity:route.dispatchQuantity}};
 }
-const API={VERSION,unitFamily,resourceFamily,parseReserve,commodityText,splitCommodities,quality,siteModel,firewall,authorityRank,planRoute,dispatchFromWarehouse,transportModes:modes};
+const API={VERSION,unitFamily,resourceFamily,parseReserve,commodityText,splitCommodities,quality,siteModel,firewall,authorityRank,planRoute,dispatchFromWarehouse,planFactoryRoutes,transportModes:modes};
 g.Omega=g.Omega||{};g.Omega.ResourceRealism=API;g.OmegaResourceRealism=API;
 })(typeof window!=='undefined'?window:globalThis);
