@@ -8812,7 +8812,8 @@ _globalScope.GSRSK_DataFoundation = (() => {
                 const identity = global.OmegaCanonicalIdentityRegistry || global.OmegaCountrySemanticBridge;
                 const hit = identity && typeof identity.resolveCountry === 'function' ? identity.resolveCountry(countryKey) : null;
                 if (hit?.raw) {
-                    const resolvedIso3 = hit.raw.iso3 || hit.raw.iso3Code || hit.raw.countryCode || hit.raw.countryId;
+                    const source = hit.raw?.raw || hit.raw?.datasets?.['countries.json'] || hit.raw;
+                    const resolvedIso3 = source?.iso3 || source?.iso3Code || source?.countryCode || source?.countryId;
                     if (resolvedIso3) canonicalCountryId = String(resolvedIso3).trim().toUpperCase();
                 } else if (hit?.id) {
                     canonicalCountryId = String(hit.id).trim().toUpperCase();

@@ -33,7 +33,8 @@
     try{
       const bridge=g.OmegaCanonicalIdentityRegistry||g.OmegaCountrySemanticBridge||g.Omega?.CanonicalIdentity;
       const hit=bridge?.resolveCountry?.(raw);
-      const resolvedIso3=hit?.raw?.iso3||hit?.raw?.iso3Code||hit?.raw?.countryCode||hit?.raw?.countryId;
+      const source=hit?.raw?.raw||hit?.raw?.datasets?.['countries.json']||hit?.raw;
+      const resolvedIso3=source?.iso3||source?.iso3Code||source?.countryCode||source?.countryId;
       if(resolvedIso3)return id(resolvedIso3);
       if(hit?.id)return id(hit.id);
     }catch(_){}
