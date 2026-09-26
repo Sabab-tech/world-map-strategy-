@@ -132,7 +132,7 @@ function quality(raw,resourceId){
  const apiValue=APIGravity===null?null:numeric(APIGravity);
  let concentration=concentrationRaw,concentrationPercent=concentrationParsed?.family==='PERCENT'?concentrationParsed.value:null;
  let concentrationValue=concentrationParsed?.value??null,concentrationUnitFamily=concentrationParsed?.family??null;
- if(concentration===null&&r==='natural_gas'&&/%\s*(?:methane|gas)|(?:methane|gas).*%/i.test(gradeText)){concentration=gradeText;concentrationPercent=pct(gradeText);concentrationValue=concentrationPercent;concentrationUnitFamily='PERCENT'}
+ if(concentration===null&&r==='natural_gas'&&/[0-9]+(?:\.[0-9]+)?\s*%[^,;]*(?:\bmethane\b|\bgas\b)/i.test(gradeText)){concentration=gradeText;concentrationPercent=pct(gradeText);concentrationValue=concentrationPercent;concentrationUnitFamily='PERCENT'}
  return{grade,oreGrade,concentration,assay,metalContent,purity,APIGravity,
    gradeStatus:(grade??oreGrade)!==null?'OBSERVED':'UNOBSERVED',concentrationStatus:concentration!==null?'OBSERVED':'UNOBSERVED',
    assayStatus:assay!==null?'OBSERVED':'UNOBSERVED',metalContentStatus:metalContent!==null?'OBSERVED':'UNOBSERVED',
