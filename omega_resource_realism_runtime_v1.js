@@ -132,7 +132,7 @@ function resourceFromSite(site,profile){
 function siteModel(site,profile,countryId){
  const name=String(site?.siteName||site?.name||site?.mineName||site?.depositName||site||'').trim(),resourceId=resourceFromSite(site,profile);
  if(!name||!resourceId)return{status:'UNOBSERVED',siteName:name,resourceId:null,authority:'SIMULATED',dataStatus:'UNOBSERVED'};
- const r=ranges[resourceId]||ranges.coal,seed=hash(String(countryId||'')+'|'+name+'|'+resourceId),u=seed/4294967296;
+ const r=ranges[resourceId]||{unit:'TONNES',min:250,max:5000,lifeMin:8,lifeMax:30,gradeMin:1,gradeMax:50},seed=hash(String(countryId||'')+'|'+name+'|'+resourceId),u=seed/4294967296;
  const nominal=r.min+(r.max-r.min)*(.25+.7*u),minimum=nominal*.55,maximum=nominal*1.3,utilization=.65+.25*((seed>>>8)%100)/100,recovery=.65+.3*((seed>>>16)%100)/100,maintenance=.03+.12*((seed>>>24)%100)/100,decline=.005+.02*((seed>>>4)%100)/100;
  const life=r.lifeMin+(r.lifeMax-r.lifeMin)*u,reserve=nominal*365*life*recovery;
  const grade=r.gradeMin+(r.gradeMax-r.gradeMin)*((seed>>>12)%10000)/10000;
