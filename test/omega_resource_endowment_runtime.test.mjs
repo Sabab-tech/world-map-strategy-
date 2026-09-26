@@ -111,6 +111,20 @@ assert(seen.some(x=>x&&x.payload&&x.payload.batch&&x.payload.batch.batchId===bat
 
 const preGlobal=runtime.diagnostics();
 const expectedResourceCountries=Object.keys(engine.countryProfiles||{});
+const registryAssetsBeforeGlobal=globalThis.__OmegaResourceIdentityRegistry?.listUnifiedAssets?.()||[];
+const stateAssetsBeforeGlobal=Object.values(globalThis.Game.state.resource||{}).flatMap(row=>Array.isArray(row?.unifiedAssets)?row.unifiedAssets:[]);
+console.log('[UNIFIED-DIAGNOSTIC-BEFORE-EXTRACT]',JSON.stringify({
+  engineDeposits:engine.deposits.length,
+  registryTotal:registryAssetsBeforeGlobal.length,
+  registryStructured:registryAssetsBeforeGlobal.filter(x=>x?.assetType==='STRUCTURED_DEPOSIT').length,
+  registryProfileSites:registryAssetsBeforeGlobal.filter(x=>x?.assetType==='PROFILE_SITE_REFERENCE').length,
+  registryUniqueIds:new Set(registryAssetsBeforeGlobal.map(x=>x?.assetId).filter(Boolean)).size,
+  stateTotal:stateAssetsBeforeGlobal.length,
+  stateStructured:stateAssetsBeforeGlobal.filter(x=>x?.assetType==='STRUCTURED_DEPOSIT').length,
+  stateProfileSites:stateAssetsBeforeGlobal.filter(x=>x?.assetType==='PROFILE_SITE_REFERENCE').length,
+  preGlobalUnifiedAssetCount:preGlobal.unifiedAssetCount,
+  preGlobalStructuredMineCount:preGlobal.structuredMineCount
+},null,2));
 assert.equal(preGlobal.countryCount,expectedResourceCountries.length);
 assert.equal(preGlobal.mineSiteReferenceCount,199);
 assert.equal(preGlobal.mineSiteControllerCount,199);
