@@ -2445,11 +2445,6 @@
               "operator": "Pueblo Viejo Dominicana",
               "extractionMethod": "open-pit and refractory processing",
               "startYear": 2012,
-              "annualProduction": {
-                "value": 1850000,
-                "unit": "troy_ounces_gold_equivalent",
-                "year": 2025
-              },
               "legacyReferenceName": "Dominican Republic Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
               "dataAuthority": {
@@ -2461,7 +2456,7 @@
                 "operation": "WEB_RESEARCHED_CURATED",
                 "extractionMethod": "WEB_RESEARCHED_CURATED",
                 "reserve": "UNOBSERVED",
-                "production": "WEB_SOURCE_BACKED",
+                "production": "UNOBSERVED",
                 "grade": "UNOBSERVED"
               },
               "dataStatus": {
@@ -2469,7 +2464,7 @@
                 "location": "ESTIMATED_SITE_POINT",
                 "resource": "OBSERVED",
                 "reserve": "UNOBSERVED",
-                "production": "OBSERVED",
+                "production": "UNOBSERVED",
                 "grade": "UNOBSERVED",
                 "ownership": "OBSERVED",
                 "operation": "OBSERVED",
@@ -2481,7 +2476,7 @@
                 "sourceRegion": "2 of 2",
                 "sourceQuery": "Pueblo Viejo Gold Mine, Sánchez Ramírez, DOM",
                 "legacyReferenceName": "Dominican Republic Primary Mining and Extraction Sites",
-                "quantitativeSourceStatus": "EXPLICIT_PUBLIC_VALUE_AVAILABLE",
+                "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
               }
             }
