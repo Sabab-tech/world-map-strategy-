@@ -453,6 +453,12 @@
     return{accepted:true,countryId:c,batchId:r.batchId,status:r.status};
   }
 
+  function logisticsLedgerHandler(cmd,ctx){
+    var p=cmd&&cmd.payload||{},row=clone(p.record||p);if(!row.logisticsId||!row.resourceId||num(row.quantity)===null||num(row.quantity)<=0)return{accepted:false,reason:'LOGISTICS_RECORD_INVALID'};
+    var ledger=Array.isArray(ctx.stateTransaction.get('transport.resourceLogisticsLedger'))?clone(ctx.stateTransaction.get('transport.resourceLogisticsLedger')):[];
+    ledger.push(row);while(ledger.length>(num(rules().runtime.maxLedgerEntries)||2048))ledger.shift();
+    ctx.stateTransaction.set('transport.resourceLogisticsLedger',ledger);return{accepted:true,logisticsId:row.logisticsId,status:row.status};
+  }
   function recordDomesticSaleHandler(cmd,ctx){
     var p=cmd&&cmd.payload||{},sale=clone(p.sale||p),rows=Array.isArray(ctx.stateTransaction.get('trade.domesticSales'))?clone(ctx.stateTransaction.get('trade.domesticSales')):[];
     rows.push({sale:sale,turn:turn(),status:sale.status||'SETTLED'});while(rows.length>(num(rules().runtime.maxLedgerEntries)||2048))rows.shift();ctx.stateTransaction.set('trade.domesticSales',rows);return{accepted:true};
@@ -479,6 +485,29 @@
     return{gross:gross,royalty:royalty,resourceTax:resourceTax,corporateTax:corporate,exportDuty:exportDuty,other:other,total:royalty+resourceTax+corporate+exportDuty+other,policySource:'resource_economy_rules.json'};
   }
 
+  function processProfile(asset){
+    var defaults=(rules().industrialPhysics&&rules().industrialPhysics.defaults)||{};
+    var provided=asset&&asset.processProfile&&typeof asset.processProfile==='object'?asset.processProfile:{};
+    var observed=Object.keys(provided).length>0;
+    return{
+      yieldFactor:num(provided.yieldFactor)!=null?Math.max(0,num(provided.yieldFactor)):num(defaults.yieldFactor)!=null?Math.max(0,num(defaults.yieldFactor)):1,
+      energyPerUnit:num(provided.energyPerUnit),
+      waterPerUnit:num(provided.waterPerUnit),
+      maintenanceFactor:num(provided.maintenanceFactor)!=null?Math.max(0,Math.min(1,num(provided.maintenanceFactor))):num(defaults.maintenanceFactor)!=null?Math.max(0,Math.min(1,num(defaults.maintenanceFactor))):1,
+      reagentInputs:clone(provided.reagentInputs&&typeof provided.reagentInputs==='object'?provided.reagentInputs:{}),
+      byproducts:clone(provided.byproducts&&typeof provided.byproducts==='object'?provided.byproducts:{}),
+      wasteFactors:clone(provided.wasteFactors&&typeof provided.wasteFactors==='object'?provided.wasteFactors:{}),
+      modelAuthority:observed?'RESOURCE_OR_ASSET_DECLARED':'UNOBSERVED',
+      modelStatus:observed?'OBSERVED':'UNOBSERVED_PROCESS_MODEL'
+    };
+  }
+  function resolveLogistics(c,rid,q,facility){
+    var econ=bucket(c,'economy')||{},assets=Array.isArray(econ.productionAssets)?econ.productionAssets:[],asset=assets.find(function(x){return String(x?.id||x?.facilityId||x?.projectId||'')===String(facility);})||null;
+    var routeId=asset?.routeId||asset?.logisticsRouteId||asset?.route?.id||null,network=read(c,'transport.routes')||read(c,'trade.routes')||{},route=routeId&&network&&typeof network==='object'?network[routeId]||null:null;
+    var capacity=num(route?.capacity??route?.throughput??route?.dailyCapacity),distanceKm=num(route?.distanceKm??asset?.distanceKm),transitTurns=num(route?.transitTurns??route?.transitTimeTurns),mode=route?.mode||asset?.transportMode||null;
+    var status=capacity!==null&&capacity<q?'ROUTE_CAPACITY_INSUFFICIENT':(route&&(mode||distanceKm!==null||transitTurns!==null)?'ROUTE_BACKED':'UNOBSERVED_LOGISTICS');
+    return{logisticsId:'LOG-'+turn()+'-'+canonical(c)+'-'+tok(rid)+'-'+tok(facility),countryId:canonical(c),resourceId:rid,quantity:q,facilityId:String(facility),routeId:routeId,mode:mode,distanceKm:distanceKm,transitTurns:transitTurns,capacity:capacity,status:status,authority:route?'OBSERVED_RUNTIME_ROUTE':'UNOBSERVED',policy:rules().logistics?.missingRoutePolicy||'RECORD_UNOBSERVED_LOGISTICS_DO_NOT_INVENT_ROUTE',turn:turn()};
+  }
   function settleDomestic(c,rid,q,consumed,buyer,facility,tx){
     var pm=read(c,'trade.marketPrice')||{},price=num(pm[rid]);
     if(price===null&&g.OmegaGlobalMarket&&typeof g.OmegaGlobalMarket.localPrice==='function'){try{price=num(g.OmegaGlobalMarket.localPrice(c,rid));}catch(_){}}
@@ -636,6 +665,7 @@
       ['OMEGA_RESOURCE_ECON_EXTRACTION_FISCAL_PENDING','finance',extractionFiscalPendingHandler],
       ['OMEGA_RESOURCE_ECON_TRADE_CLEAR_TO_COMPANY','finance',financeClearHandler],
       ['OMEGA_RESOURCE_ECON_RECORD_DOMESTIC_SALE','trade',recordDomesticSaleHandler],
+      ['OMEGA_RESOURCE_ECON_RECORD_LOGISTICS','transport',logisticsLedgerHandler],
       ['OMEGA_RESOURCE_ECON_PUBLISH_OFFER_BOOK','trade',publishOffersHandler]
     ];
     try{list.forEach(function(x){if(m.registerAction)m.registerAction(x[0],{actionId:x[0],stateOwnerMinistry:x[1],authority:'OMEGA_RESOURCE_ECONOMY_RUNTIME_V2'});m.registerCommandHandler(x[0],x[1],x[2]);});return true;}catch(_){return false;}
