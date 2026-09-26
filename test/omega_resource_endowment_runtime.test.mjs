@@ -38,6 +38,7 @@ assert.equal(dataReport.depositCount,43);
 assert.equal(dataReport.mineSiteReferenceCount,199);
 assert.equal(dataReport.fallbackUsed,false);
 assert.equal(engine.deposits.length,43);
+console.log('[RESOURCE DEBUG] mineSiteReferenceCount='+engine.getDataLoadReport().mineSiteReferenceCount+' direct='+engine.getMineSiteReferences().length+' sample='+JSON.stringify(engine.getMineSiteReferences().slice(0,5)));
 assert.equal(engine.deposits.some(x=>x.sourceAuthority==='RESOURCE_JSON'),true);
 assert.equal(engine.deposits.some(x=>x.id==='dep-barapukuria-coal'&&x.resId==='coal'),true);
 
