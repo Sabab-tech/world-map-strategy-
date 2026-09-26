@@ -98,8 +98,17 @@
     catch(_){return null;}
   }
   function profile(c){
-    const e=engine(),cid=canonical(c);
-    return e?.countryProfiles?.[cid]||e?.countryProfiles?.[Object.keys(e?.countryProfiles||{}).find(k=>id(k)===cid)]||null;
+    const e=engine(),cid=canonical(c),profiles=e?.countryProfiles&&typeof e.countryProfiles==='object'?e.countryProfiles:{};
+    if(profiles[cid])return profiles[cid];
+    const directKey=Object.keys(profiles).find(k=>id(k)===cid);
+    if(directKey)return profiles[directKey];
+    const resolved=Object.values(profiles).find(p=>{
+      const i=p?.identity||p||{};
+      return [i.iso2,i.iso3,i.countryCode,i.country_code,i.countryId,i.id,i.name].some(v=>{
+        try{return canonical(v)===cid;}catch(_){return false;}
+      });
+    });
+    return resolved||null;
   }
   function buildKnowledge(){
     const e=engine();if(!e?.isReady)return null;
