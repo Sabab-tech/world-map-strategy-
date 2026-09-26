@@ -42,8 +42,10 @@ function createContext() {
           depositName: 'Test Iron Mine',
           resourceId: 'iron_ore',
           operationalStatus: 'OPERATING',
-          reserveState: { residualQuantity: 1000 },
+          reserveState: { residualQuantity: 1000, provenance: { quantityAuthority: 'OBSERVED', stateAuthority: 'OBSERVED' } },
           outputRatePerDay: 20,
+          productionModel: { authority: 'SIMULATED', stateAuthority: 'SIMULATED' },
+          qualityState: { qualityAuthority: 'OBSERVED' },
           purity: 0.62
         }],
         mineOutputs: {},
@@ -195,7 +197,11 @@ test('authoritative adapter uses live resource values and disables synthetic sum
   const summary = context.ResourceMinistryEngine.getSummary('BGD');
   const iron = summary.resourcesList.find(row => row.id === 'iron_ore');
 
-  assert.equal(context.OmegaResourceAuthoritativeAdapter.VERSION, '1.0.0');
+  assert.equal(context.OmegaResourceAuthoritativeAdapter.VERSION, '1.0.0');\n  const authorityRow = context.OmegaResourceAuthoritativeAdapter.getSummary('BGD').resourcesList.find(row => row.id === 'iron_ore');
+  assert.equal(authorityRow.reserveAuthority, 'OBSERVED');
+  assert.equal(authorityRow.productionAuthority, 'SIMULATED');
+  assert.equal(authorityRow.qualityAuthority, 'OBSERVED');
+
   assert.equal(summary.globalMetrics.autonomyIndex, 80);
   assert.equal(iron.dailyProduction, 20);
   assert.equal(iron.dailyConsumption, 25);
