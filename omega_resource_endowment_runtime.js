@@ -813,6 +813,12 @@ function batchFromExtraction(x,record){
     }
     const warehouseCheck=boundary()?.validateWarehouse?.(warehouse,c);
     if(warehouseCheck&&!warehouseCheck.ok)return{accepted:false,countryId:c,extracted:0,blocked:[warehouseCheck],records:[]};
+    for(const [outputKey,output] of Object.entries(mineOutputs)){
+      if(!output||typeof output!=='object')continue;
+      if(output.assetId)continue;
+      if(output.siteReferenceKey)output.assetId='ASSET:SITE:'+String(output.siteReferenceKey).toUpperCase();
+      else if(output.assetType==='MINE_SITE')output.assetId='ASSET:OCC:'+String(output.occurrenceKey||outputKey).toUpperCase();
+    }
     ctx.stateTransaction.set('resource.mineStates',current);
     ctx.stateTransaction.set('resource.mineSiteControllers',mineSiteControllers);
     ctx.stateTransaction.set('resource.mineOutputs',mineOutputs);
