@@ -43,6 +43,7 @@ jobs:
           node --test test/omega_resource_action_execution_runtime.test.mjs
           node --test test/omega_resource_country_boundary.test.mjs
           node --test test/omega_resource_global_pipeline.test.mjs
+          node --test test/omega_resource_unified_asset_system.test.mjs
           node test/omega_resource_production_model_v2.test.mjs
           node test/omega_resource_realism_runtime_v1.test.mjs
           node test/omega_resource_logistics_runtime_v1.test.mjs
