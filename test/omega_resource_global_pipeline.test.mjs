@@ -116,6 +116,10 @@ test('global resource pipeline runs every RESOURCE_JSON mine and keeps each resu
   assert.equal(reserveResult.occurrenceCount,engine.deposits.length);
   assert.equal(reserveResult.reserveCount,engine.deposits.length);
   assert.equal(reserveResult.capacityCount,engine.deposits.length);
+  const occurrenceRows=idResult.registry.listOccurrences();
+  assert.equal(occurrenceRows.length,engine.deposits.length);
+  assert.ok(occurrenceRows.every(x=>x.resourceAsset&&x.resourceAsset.schemaVersion==='1.0.0'));
+  assert.deepEqual(Object.keys(occurrenceRows[0]?.resourceAsset||{}).sort(),unifiedSiteKeys);
   assert.equal(idResult.siteReferenceCount,mineSiteReferenceCount);
   const siteRefs=idResult.registry.listMineSiteReferences();
   assert.equal(siteRefs.length,mineSiteReferenceCount);
@@ -123,6 +127,14 @@ test('global resource pipeline runs every RESOURCE_JSON mine and keeps each resu
   assert.equal(new Set(siteRefs.map(x=>x.countryId+'|'+x.siteName)).size,mineSiteReferenceCount);
   assert.ok(siteRefs.every(x=>x.status==='ACTIVE_SITE_REFERENCE'));
   assert.ok(siteRefs.every(x=>x.extractionExecutable===false));
+  assert.ok(siteRefs.every(x=>x.resourceAsset&&x.resourceAsset.schemaVersion==='1.0.0'));
+  assert.ok(siteRefs.every(x=>Object.prototype.hasOwnProperty.call(x.resourceAsset,'siteId')));
+  assert.ok(siteRefs.every(x=>x.resourceAsset.assetId===x.siteReferenceKey));
+  assert.ok(siteRefs.every(x=>x.resourceAsset.resourceType===null));
+  assert.ok(siteRefs.every(x=>x.resourceAsset.reserve.geologicalQuantity===null));
+  assert.ok(siteRefs.every(x=>x.resourceAsset.productionRate===null));
+  assert.ok(siteRefs.every(x=>x.resourceAsset.dataStatus.overall==='UNOBSERVED'));
+  const unifiedSiteKeys=Object.keys(siteRefs[0]?.resourceAsset||{}).sort();
 
   const byCountry={};
   for(const d of engine.deposits){const c=d.countryCode;byCountry[c]=(byCountry[c]||0)+1;}
@@ -183,6 +195,9 @@ test('global resource pipeline runs every RESOURCE_JSON mine and keeps each resu
   const lotCount=Object.values(state.resource).reduce((sum,row)=>sum+(row?.inventoryLots&&typeof row.inventoryLots==='object'?Object.keys(row.inventoryLots).length:0),0);
   assert.equal(mineCount,engine.deposits.length);
   assert.equal(batchCount,engine.deposits.length);
+  const projectedMines=Object.values(state.resource).flatMap(row=>Array.isArray(row?.mines)?row.mines:[]);
+  assert.ok(projectedMines.every(x=>x.resourceAsset&&x.resourceAsset.schemaVersion==='1.0.0'));
+  assert.ok(projectedMines.every(x=>Object.keys(x.resourceAsset).sort().join('|')===unifiedSiteKeys.join('|')));
   assert.equal(sitePathCount,mineSiteReferenceCount);
   assert.equal(pathCount,mineSiteReferenceCount+engine.deposits.length);
   assert.equal(lotCount,engine.deposits.length);
