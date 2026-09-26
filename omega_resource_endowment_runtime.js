@@ -319,6 +319,7 @@ function batchFromExtraction(x,record){
       const linked=[...new Set([...existingLinked,...attachedKeys])].filter(k=>executableKeys.has(String(k)));
       controllers[siteKey]={
         ...prior,
+        assetId:site.assetId||('ASSET:SITE:'+String(siteKey).toUpperCase()),
         siteReferenceKey:siteKey,
         siteName:site.siteName,
         countryId:canonical(c),
