@@ -1139,9 +1139,15 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "NOT_PER_SITE_VERIFIED"
+                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
               },
-              "extractionEligibility": "EXECUTABLE"
+              "extractionEligibility": "EXECUTABLE",
+              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchMetadata": {
+                "reviewedAt": "NOT_PERFORMED_IN_CURRENT_WEB_REVALIDATION_PASS",
+                "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
+                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass."
+              }
             },
             {
               "id": "SITE_CUB_punta_gorda_extraction_facility",
@@ -1988,9 +1994,15 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "NOT_PER_SITE_VERIFIED"
+                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
               },
-              "extractionEligibility": "EXECUTABLE"
+              "extractionEligibility": "EXECUTABLE",
+              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchMetadata": {
+                "reviewedAt": "NOT_PERFORMED_IN_CURRENT_WEB_REVALIDATION_PASS",
+                "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
+                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass."
+              }
             }
           ],
           "processingFacilities": [
@@ -2516,7 +2528,13 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "NOT_PER_SITE_VERIFIED"
+                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+              },
+              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchMetadata": {
+                "reviewedAt": "NOT_PERFORMED_IN_CURRENT_WEB_REVALIDATION_PASS",
+                "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
+                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass."
               }
             }
           ],
@@ -3580,9 +3598,15 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "NOT_PER_SITE_VERIFIED"
+                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
               },
-              "extractionEligibility": "EXECUTABLE"
+              "extractionEligibility": "EXECUTABLE",
+              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchMetadata": {
+                "reviewedAt": "NOT_PERFORMED_IN_CURRENT_WEB_REVALIDATION_PASS",
+                "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
+                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass."
+              }
             }
           ],
           "processingFacilities": [
@@ -4638,9 +4662,15 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "NOT_PER_SITE_VERIFIED"
+                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
               },
-              "extractionEligibility": "EXECUTABLE"
+              "extractionEligibility": "EXECUTABLE",
+              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchMetadata": {
+                "reviewedAt": "NOT_PERFORMED_IN_CURRENT_WEB_REVALIDATION_PASS",
+                "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
+                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass."
+              }
             }
           ],
           "processingFacilities": [
@@ -5705,7 +5735,13 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "NOT_PER_SITE_VERIFIED"
+                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+              },
+              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchMetadata": {
+                "reviewedAt": "NOT_PERFORMED_IN_CURRENT_WEB_REVALIDATION_PASS",
+                "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
+                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass."
               }
             }
           ],
@@ -6769,7 +6805,13 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "NOT_PER_SITE_VERIFIED"
+                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+              },
+              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchMetadata": {
+                "reviewedAt": "NOT_PERFORMED_IN_CURRENT_WEB_REVALIDATION_PASS",
+                "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
+                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass."
               }
             }
           ],
@@ -7296,7 +7338,13 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "NOT_PER_SITE_VERIFIED"
+                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+              },
+              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchMetadata": {
+                "reviewedAt": "NOT_PERFORMED_IN_CURRENT_WEB_REVALIDATION_PASS",
+                "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
+                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass."
               }
             }
           ],
@@ -12210,7 +12258,13 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "NOT_PER_SITE_VERIFIED"
+                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+              },
+              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchMetadata": {
+                "reviewedAt": "NOT_PERFORMED_IN_CURRENT_WEB_REVALIDATION_PASS",
+                "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
+                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass."
               }
             }
           ],
