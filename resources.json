@@ -23304,16 +23304,35 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
               },
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
               "researchMetadata": {
                 "reviewedAt": "2026-09-27",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
-                "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
-              }
+                "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
+                "secondarySourceAuthority": "Wikipedia/MediaWiki (secondary)",
+                "secondarySourceTitle": "Lega Dembi Mine",
+                "secondarySourceType": "WIKIPEDIA",
+                "webSearchMatchScore": 1,
+                "webInfobox": {
+                  "owner": "MIDROC",
+                  "products": "Gold and silver",
+                  "location": "near Shakiso, Oromia, Oromia"
+                }
+              },
+              "webResearchEvidence": [
+                {
+                  "url": "https://en.wikipedia.org/wiki/Lega_Dembi_Mine",
+                  "accessed": "2026-09-27",
+                  "scope": "site_identity_location_resource_operation_web_revalidation",
+                  "sourceType": "WIKIPEDIA",
+                  "matchScore": 1,
+                  "sourceTitle": "Lega Dembi Mine"
+                }
+              ]
             }
           ],
           "processingFacilities": [

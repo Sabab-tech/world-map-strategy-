@@ -904,26 +904,26 @@
       },
       "resourceIdentity": {
         "resourceTypeId": "phosphate",
-        "ontologyKey": "POTASH_PHOSPHATE",
-        "commodityName": "Muriate of Potash (KCl) & Phosphate Rock (P2O5)",
+        "ontologyKey": "PHOSPHATE",
+        "commodityName": "Phosphate Rock (P2O5)",
         "category": "AGRO_MINERAL_FERTILIZER",
-        "physicalForm": "GRANULAR_SALT_AND_ROCK",
-        "upstreamProcess": "Deep Underground Shaft Solution Mining (Potash), Open-Cast Dragline Mining (Phosphate)",
-        "midstreamProcess": "Beneficiation, Flotation, Sulfuric Acid Acidulation to Phosphoric Acid / DAP / MAP",
+        "physicalForm": "SOLID_PHOSPHATE_ROCK",
+        "upstreamProcess": "Open-pit phosphate mining, excavation or dragline mining, crushing and screening",
+        "midstreamProcess": "Washing, desliming, flotation or other beneficiation, followed by phosphoric-acid and fertilizer conversion",
         "refinedOutputs": [
+          "PHOSPHATE_CONCENTRATE",
+          "PHOSPHORIC_ACID",
           "DAP_FERTILIZER",
           "MAP_FERTILIZER",
-          "MOP_GRANULAR",
-          "NPK_COMPOUND",
-          "PURIFIED_PHOSPHORIC_ACID"
+          "NPK_COMPOUND"
         ],
         "downstreamSectors": [
           "FOOD_AGRICULTURE",
           "LIVESTOCK_FEED",
-          "LFP_BATTERIES",
           "CHEMICAL_PROCESSING"
         ],
-        "ontologyStatus": "RESOLVED_FROM_RESOURCE_ONTOLOGY"
+        "ontologyStatus": "RESOLVED_FROM_RESOURCE_ONTOLOGY",
+        "legacyOntologyKey": "POTASH_PHOSPHATE"
       },
       "quantitativeProfile": {
         "reserve": {
@@ -999,26 +999,26 @@
       },
       "resourceIdentity": {
         "resourceTypeId": "phosphate",
-        "ontologyKey": "POTASH_PHOSPHATE",
-        "commodityName": "Muriate of Potash (KCl) & Phosphate Rock (P2O5)",
+        "ontologyKey": "PHOSPHATE",
+        "commodityName": "Phosphate Rock (P2O5)",
         "category": "AGRO_MINERAL_FERTILIZER",
-        "physicalForm": "GRANULAR_SALT_AND_ROCK",
-        "upstreamProcess": "Deep Underground Shaft Solution Mining (Potash), Open-Cast Dragline Mining (Phosphate)",
-        "midstreamProcess": "Beneficiation, Flotation, Sulfuric Acid Acidulation to Phosphoric Acid / DAP / MAP",
+        "physicalForm": "SOLID_PHOSPHATE_ROCK",
+        "upstreamProcess": "Open-pit phosphate mining, excavation or dragline mining, crushing and screening",
+        "midstreamProcess": "Washing, desliming, flotation or other beneficiation, followed by phosphoric-acid and fertilizer conversion",
         "refinedOutputs": [
+          "PHOSPHATE_CONCENTRATE",
+          "PHOSPHORIC_ACID",
           "DAP_FERTILIZER",
           "MAP_FERTILIZER",
-          "MOP_GRANULAR",
-          "NPK_COMPOUND",
-          "PURIFIED_PHOSPHORIC_ACID"
+          "NPK_COMPOUND"
         ],
         "downstreamSectors": [
           "FOOD_AGRICULTURE",
           "LIVESTOCK_FEED",
-          "LFP_BATTERIES",
           "CHEMICAL_PROCESSING"
         ],
-        "ontologyStatus": "RESOLVED_FROM_RESOURCE_ONTOLOGY"
+        "ontologyStatus": "RESOLVED_FROM_RESOURCE_ONTOLOGY",
+        "legacyOntologyKey": "POTASH_PHOSPHATE"
       },
       "quantitativeProfile": {
         "reserve": {
@@ -1374,26 +1374,26 @@
       },
       "resourceIdentity": {
         "resourceTypeId": "phosphate",
-        "ontologyKey": "POTASH_PHOSPHATE",
-        "commodityName": "Muriate of Potash (KCl) & Phosphate Rock (P2O5)",
+        "ontologyKey": "PHOSPHATE",
+        "commodityName": "Phosphate Rock (P2O5)",
         "category": "AGRO_MINERAL_FERTILIZER",
-        "physicalForm": "GRANULAR_SALT_AND_ROCK",
-        "upstreamProcess": "Deep Underground Shaft Solution Mining (Potash), Open-Cast Dragline Mining (Phosphate)",
-        "midstreamProcess": "Beneficiation, Flotation, Sulfuric Acid Acidulation to Phosphoric Acid / DAP / MAP",
+        "physicalForm": "SOLID_PHOSPHATE_ROCK",
+        "upstreamProcess": "Open-pit phosphate mining, excavation or dragline mining, crushing and screening",
+        "midstreamProcess": "Washing, desliming, flotation or other beneficiation, followed by phosphoric-acid and fertilizer conversion",
         "refinedOutputs": [
+          "PHOSPHATE_CONCENTRATE",
+          "PHOSPHORIC_ACID",
           "DAP_FERTILIZER",
           "MAP_FERTILIZER",
-          "MOP_GRANULAR",
-          "NPK_COMPOUND",
-          "PURIFIED_PHOSPHORIC_ACID"
+          "NPK_COMPOUND"
         ],
         "downstreamSectors": [
           "FOOD_AGRICULTURE",
           "LIVESTOCK_FEED",
-          "LFP_BATTERIES",
           "CHEMICAL_PROCESSING"
         ],
-        "ontologyStatus": "RESOLVED_FROM_RESOURCE_ONTOLOGY"
+        "ontologyStatus": "RESOLVED_FROM_RESOURCE_ONTOLOGY",
+        "legacyOntologyKey": "POTASH_PHOSPHATE"
       },
       "quantitativeProfile": {
         "reserve": {
@@ -1881,26 +1881,26 @@
       },
       "resourceIdentity": {
         "resourceTypeId": "phosphate",
-        "ontologyKey": "POTASH_PHOSPHATE",
-        "commodityName": "Muriate of Potash (KCl) & Phosphate Rock (P2O5)",
+        "ontologyKey": "PHOSPHATE",
+        "commodityName": "Phosphate Rock (P2O5)",
         "category": "AGRO_MINERAL_FERTILIZER",
-        "physicalForm": "GRANULAR_SALT_AND_ROCK",
-        "upstreamProcess": "Deep Underground Shaft Solution Mining (Potash), Open-Cast Dragline Mining (Phosphate)",
-        "midstreamProcess": "Beneficiation, Flotation, Sulfuric Acid Acidulation to Phosphoric Acid / DAP / MAP",
+        "physicalForm": "SOLID_PHOSPHATE_ROCK",
+        "upstreamProcess": "Open-pit phosphate mining, excavation or dragline mining, crushing and screening",
+        "midstreamProcess": "Washing, desliming, flotation or other beneficiation, followed by phosphoric-acid and fertilizer conversion",
         "refinedOutputs": [
+          "PHOSPHATE_CONCENTRATE",
+          "PHOSPHORIC_ACID",
           "DAP_FERTILIZER",
           "MAP_FERTILIZER",
-          "MOP_GRANULAR",
-          "NPK_COMPOUND",
-          "PURIFIED_PHOSPHORIC_ACID"
+          "NPK_COMPOUND"
         ],
         "downstreamSectors": [
           "FOOD_AGRICULTURE",
           "LIVESTOCK_FEED",
-          "LFP_BATTERIES",
           "CHEMICAL_PROCESSING"
         ],
-        "ontologyStatus": "RESOLVED_FROM_RESOURCE_ONTOLOGY"
+        "ontologyStatus": "RESOLVED_FROM_RESOURCE_ONTOLOGY",
+        "legacyOntologyKey": "POTASH_PHOSPHATE"
       },
       "quantitativeProfile": {
         "reserve": {
@@ -2442,26 +2442,26 @@
       },
       "resourceIdentity": {
         "resourceTypeId": "phosphate",
-        "ontologyKey": "POTASH_PHOSPHATE",
-        "commodityName": "Muriate of Potash (KCl) & Phosphate Rock (P2O5)",
+        "ontologyKey": "PHOSPHATE",
+        "commodityName": "Phosphate Rock (P2O5)",
         "category": "AGRO_MINERAL_FERTILIZER",
-        "physicalForm": "GRANULAR_SALT_AND_ROCK",
-        "upstreamProcess": "Deep Underground Shaft Solution Mining (Potash), Open-Cast Dragline Mining (Phosphate)",
-        "midstreamProcess": "Beneficiation, Flotation, Sulfuric Acid Acidulation to Phosphoric Acid / DAP / MAP",
+        "physicalForm": "SOLID_PHOSPHATE_ROCK",
+        "upstreamProcess": "Open-pit phosphate mining, excavation or dragline mining, crushing and screening",
+        "midstreamProcess": "Washing, desliming, flotation or other beneficiation, followed by phosphoric-acid and fertilizer conversion",
         "refinedOutputs": [
+          "PHOSPHATE_CONCENTRATE",
+          "PHOSPHORIC_ACID",
           "DAP_FERTILIZER",
           "MAP_FERTILIZER",
-          "MOP_GRANULAR",
-          "NPK_COMPOUND",
-          "PURIFIED_PHOSPHORIC_ACID"
+          "NPK_COMPOUND"
         ],
         "downstreamSectors": [
           "FOOD_AGRICULTURE",
           "LIVESTOCK_FEED",
-          "LFP_BATTERIES",
           "CHEMICAL_PROCESSING"
         ],
-        "ontologyStatus": "RESOLVED_FROM_RESOURCE_ONTOLOGY"
+        "ontologyStatus": "RESOLVED_FROM_RESOURCE_ONTOLOGY",
+        "legacyOntologyKey": "POTASH_PHOSPHATE"
       },
       "quantitativeProfile": {
         "reserve": {
@@ -3258,15 +3258,33 @@
         },
         "quantitativeExtractionDataAvailable": false
       },
-      "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+      "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
       "researchMetadata": {
         "reviewedAt": "2026-09-27",
         "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
         "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
         "webSearchMethod": "SITE_NAME + COUNTRY",
-        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
+        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
+        "secondarySourceAuthority": "Wikipedia/MediaWiki (secondary)",
+        "secondarySourceTitle": "Lega Dembi Mine",
+        "secondarySourceType": "WIKIPEDIA",
+        "webSearchMatchScore": 1,
+        "webInfobox": {
+          "owner": "MIDROC",
+          "products": "Gold and silver",
+          "location": "near Shakiso, Oromia, Oromia"
+        }
       },
-      "webResearchEvidence": []
+      "webResearchEvidence": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Lega_Dembi_Mine",
+          "accessed": "2026-09-27",
+          "scope": "site_identity_location_resource_operation_web_revalidation",
+          "sourceType": "WIKIPEDIA",
+          "matchScore": 1,
+          "sourceTitle": "Lega Dembi Mine"
+        }
+      ]
     },
     {
       "countryId": "KEN",
@@ -5803,26 +5821,26 @@
       },
       "resourceIdentity": {
         "resourceTypeId": "phosphate",
-        "ontologyKey": "POTASH_PHOSPHATE",
-        "commodityName": "Muriate of Potash (KCl) & Phosphate Rock (P2O5)",
+        "ontologyKey": "PHOSPHATE",
+        "commodityName": "Phosphate Rock (P2O5)",
         "category": "AGRO_MINERAL_FERTILIZER",
-        "physicalForm": "GRANULAR_SALT_AND_ROCK",
-        "upstreamProcess": "Deep Underground Shaft Solution Mining (Potash), Open-Cast Dragline Mining (Phosphate)",
-        "midstreamProcess": "Beneficiation, Flotation, Sulfuric Acid Acidulation to Phosphoric Acid / DAP / MAP",
+        "physicalForm": "SOLID_PHOSPHATE_ROCK",
+        "upstreamProcess": "Open-pit phosphate mining, excavation or dragline mining, crushing and screening",
+        "midstreamProcess": "Washing, desliming, flotation or other beneficiation, followed by phosphoric-acid and fertilizer conversion",
         "refinedOutputs": [
+          "PHOSPHATE_CONCENTRATE",
+          "PHOSPHORIC_ACID",
           "DAP_FERTILIZER",
           "MAP_FERTILIZER",
-          "MOP_GRANULAR",
-          "NPK_COMPOUND",
-          "PURIFIED_PHOSPHORIC_ACID"
+          "NPK_COMPOUND"
         ],
         "downstreamSectors": [
           "FOOD_AGRICULTURE",
           "LIVESTOCK_FEED",
-          "LFP_BATTERIES",
           "CHEMICAL_PROCESSING"
         ],
-        "ontologyStatus": "RESOLVED_FROM_RESOURCE_ONTOLOGY"
+        "ontologyStatus": "RESOLVED_FROM_RESOURCE_ONTOLOGY",
+        "legacyOntologyKey": "POTASH_PHOSPHATE"
       },
       "quantitativeProfile": {
         "reserve": {
@@ -8256,26 +8274,23 @@
       },
       "resourceIdentity": {
         "resourceTypeId": "potash",
-        "ontologyKey": "POTASH_PHOSPHATE",
-        "commodityName": "Muriate of Potash (KCl) & Phosphate Rock (P2O5)",
+        "ontologyKey": "POTASH",
+        "commodityName": "Potash (Potassium Chloride, KCl)",
         "category": "AGRO_MINERAL_FERTILIZER",
-        "physicalForm": "GRANULAR_SALT_AND_ROCK",
-        "upstreamProcess": "Deep Underground Shaft Solution Mining (Potash), Open-Cast Dragline Mining (Phosphate)",
-        "midstreamProcess": "Beneficiation, Flotation, Sulfuric Acid Acidulation to Phosphoric Acid / DAP / MAP",
+        "physicalForm": "GRANULAR_POTASSIUM_SALT",
+        "upstreamProcess": "Underground potash mining of sylvinite or solution mining",
+        "midstreamProcess": "Crushing, screening and flotation/separation to marketable muriate of potash",
         "refinedOutputs": [
-          "DAP_FERTILIZER",
-          "MAP_FERTILIZER",
           "MOP_GRANULAR",
-          "NPK_COMPOUND",
-          "PURIFIED_PHOSPHORIC_ACID"
+          "SOP_GRANULAR",
+          "POTASSIUM_FERTILIZER"
         ],
         "downstreamSectors": [
           "FOOD_AGRICULTURE",
-          "LIVESTOCK_FEED",
-          "LFP_BATTERIES",
-          "CHEMICAL_PROCESSING"
+          "FERTILIZER_MANUFACTURING"
         ],
-        "ontologyStatus": "RESOLVED_FROM_RESOURCE_ONTOLOGY"
+        "ontologyStatus": "RESOLVED_FROM_RESOURCE_ONTOLOGY",
+        "legacyOntologyKey": "POTASH_PHOSPHATE"
       },
       "quantitativeProfile": {
         "reserve": {
@@ -10166,26 +10181,23 @@
       },
       "resourceIdentity": {
         "resourceTypeId": "potash",
-        "ontologyKey": "POTASH_PHOSPHATE",
-        "commodityName": "Muriate of Potash (KCl) & Phosphate Rock (P2O5)",
+        "ontologyKey": "POTASH",
+        "commodityName": "Potash (Potassium Chloride, KCl)",
         "category": "AGRO_MINERAL_FERTILIZER",
-        "physicalForm": "GRANULAR_SALT_AND_ROCK",
-        "upstreamProcess": "Deep Underground Shaft Solution Mining (Potash), Open-Cast Dragline Mining (Phosphate)",
-        "midstreamProcess": "Beneficiation, Flotation, Sulfuric Acid Acidulation to Phosphoric Acid / DAP / MAP",
+        "physicalForm": "GRANULAR_POTASSIUM_SALT",
+        "upstreamProcess": "Underground potash mining of sylvinite or solution mining",
+        "midstreamProcess": "Crushing, screening and flotation/separation to marketable muriate of potash",
         "refinedOutputs": [
-          "DAP_FERTILIZER",
-          "MAP_FERTILIZER",
           "MOP_GRANULAR",
-          "NPK_COMPOUND",
-          "PURIFIED_PHOSPHORIC_ACID"
+          "SOP_GRANULAR",
+          "POTASSIUM_FERTILIZER"
         ],
         "downstreamSectors": [
           "FOOD_AGRICULTURE",
-          "LIVESTOCK_FEED",
-          "LFP_BATTERIES",
-          "CHEMICAL_PROCESSING"
+          "FERTILIZER_MANUFACTURING"
         ],
-        "ontologyStatus": "RESOLVED_FROM_RESOURCE_ONTOLOGY"
+        "ontologyStatus": "RESOLVED_FROM_RESOURCE_ONTOLOGY",
+        "legacyOntologyKey": "POTASH_PHOSPHATE"
       },
       "quantitativeProfile": {
         "reserve": {
@@ -14480,26 +14492,26 @@
       },
       "resourceIdentity": {
         "resourceTypeId": "phosphate",
-        "ontologyKey": "POTASH_PHOSPHATE",
-        "commodityName": "Muriate of Potash (KCl) & Phosphate Rock (P2O5)",
+        "ontologyKey": "PHOSPHATE",
+        "commodityName": "Phosphate Rock (P2O5)",
         "category": "AGRO_MINERAL_FERTILIZER",
-        "physicalForm": "GRANULAR_SALT_AND_ROCK",
-        "upstreamProcess": "Deep Underground Shaft Solution Mining (Potash), Open-Cast Dragline Mining (Phosphate)",
-        "midstreamProcess": "Beneficiation, Flotation, Sulfuric Acid Acidulation to Phosphoric Acid / DAP / MAP",
+        "physicalForm": "SOLID_PHOSPHATE_ROCK",
+        "upstreamProcess": "Open-pit phosphate mining, excavation or dragline mining, crushing and screening",
+        "midstreamProcess": "Washing, desliming, flotation or other beneficiation, followed by phosphoric-acid and fertilizer conversion",
         "refinedOutputs": [
+          "PHOSPHATE_CONCENTRATE",
+          "PHOSPHORIC_ACID",
           "DAP_FERTILIZER",
           "MAP_FERTILIZER",
-          "MOP_GRANULAR",
-          "NPK_COMPOUND",
-          "PURIFIED_PHOSPHORIC_ACID"
+          "NPK_COMPOUND"
         ],
         "downstreamSectors": [
           "FOOD_AGRICULTURE",
           "LIVESTOCK_FEED",
-          "LFP_BATTERIES",
           "CHEMICAL_PROCESSING"
         ],
-        "ontologyStatus": "RESOLVED_FROM_RESOURCE_ONTOLOGY"
+        "ontologyStatus": "RESOLVED_FROM_RESOURCE_ONTOLOGY",
+        "legacyOntologyKey": "POTASH_PHOSPHATE"
       },
       "quantitativeProfile": {
         "reserve": {

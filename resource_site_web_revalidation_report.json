@@ -1,9 +1,9 @@
 {
   "runDate": "2026-09-27",
   "totalSites": 199,
-  "legacyTargets": 90,
+  "legacyTargets": 88,
   "matchedByWebSearch": 0,
-  "wikipediaMatches": 0,
+  "wikipediaMatches": 1,
   "wikidataMatches": 0,
   "unresolved": [
     {
@@ -15,11 +15,6 @@
       "id": "SITE_SDN_hassai_gold_mine",
       "siteName": "Hassai Gold Mine",
       "countryCode": "SDN"
-    },
-    {
-      "id": "SITE_TGO_hahoto_kpogam_phosphate_mine",
-      "siteName": "Hahotoé-Kpogamé Phosphate Mine",
-      "countryCode": "TGO"
     },
     {
       "id": "SITE_CPV_santiago_pozzolana_quarry_zone",
@@ -42,19 +37,9 @@
       "countryCode": "COG"
     },
     {
-      "id": "SITE_GNQ_zafiro_oil_field",
-      "siteName": "Zafiro Oil Field",
-      "countryCode": "GNQ"
-    },
-    {
       "id": "SITE_STP_s_o_tom_aggregate_quarry_zone",
       "siteName": "São Tomé Aggregate Quarry Zone",
       "countryCode": "STP"
-    },
-    {
-      "id": "SITE_ETH_lega_dembi_gold_mine",
-      "siteName": "Lega Dembi Gold Mine",
-      "countryCode": "ETH"
     },
     {
       "id": "SITE_UGA_tororo_limestone_quarry",
