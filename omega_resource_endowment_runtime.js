@@ -917,13 +917,22 @@
   function countryMines(c){return clone(state()?.resource?.[canonical(c)]?.mines||[]);}
   function install(){
     const m=interop();if(!m?.registerCommandHandler)return false;
+    let handlerRegistered=false;
     try{
       m.registerAction?.('OMEGA_RESOURCE_ENDOWMENT_HYDRATE',{actionId:'OMEGA_RESOURCE_ENDOWMENT_HYDRATE',stateOwnerMinistry:'resource',authority:'OMEGA_RESOURCE_ENDOWMENT_RUNTIME'});
+    }catch(_){}
+    try{
       m.registerAction?.('OMEGA_RESOURCE_EXTRACT_TICK',{actionId:'OMEGA_RESOURCE_EXTRACT_TICK',stateOwnerMinistry:'resource',authority:'OMEGA_RESOURCE_ENDOWMENT_RUNTIME'});
+    }catch(_){}
+    try{
       m.registerCommandHandler('OMEGA_RESOURCE_ENDOWMENT_HYDRATE','resource',hydrateHandler);
+      handlerRegistered=true;
+    }catch(_){}
+    try{
       m.registerCommandHandler('OMEGA_RESOURCE_EXTRACT_TICK','resource',extractHandler);
-      return true;
-    }catch(_){return false;}
+      handlerRegistered=true;
+    }catch(_){}
+    return handlerRegistered;
   }
   async function ensureRules(){
     if(g.__OmegaResourceEconomyRules?.extraction)return true;
