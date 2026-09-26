@@ -26,6 +26,7 @@ function buildEngine(){
   },0);
   return{
     isReady:true,countryProfiles:profiles,deposits,
+    mineSiteReferenceCount,
     resourceTypes:Object.values(resourceTypes),
     getDataLoadReport(){return{authority:'RESOURCE_JSON',countryProfileCount:Object.keys(profiles).length,depositCount:deposits.length};},
     normalizeCountryCode(v){return String(v||'').trim().toUpperCase();}
@@ -112,17 +113,42 @@ test('global resource pipeline runs every RESOURCE_JSON mine and keeps each resu
   const knowledge={sovereignEntities:{resourceTypes:engine.resourceTypes},refCatalog:{allReferences:engine.deposits}};
   const idResult=part04.compileIdentities(knowledge);
   const reserveResult=part05.compileReserves(idResult,null,knowledge,{});
-  assert.equal(idResult.occurrenceCount,engine.deposits.length);
-  assert.equal(reserveResult.occurrenceCount,engine.deposits.length);
-  assert.equal(reserveResult.reserveCount,engine.deposits.length);
-  assert.equal(reserveResult.capacityCount,engine.deposits.length);
+  const mineSiteReferenceCount=engine.mineSiteReferenceCount;
+  const expectedOccurrenceCount=engine.deposits.length+mineSiteReferenceCount;
+  assert.equal(mineSiteReferenceCount,199);
+  assert.equal(idResult.occurrenceCount,expectedOccurrenceCount);
+  assert.equal(reserveResult.occurrenceCount,expectedOccurrenceCount);
+  assert.equal(reserveResult.reserveCount,expectedOccurrenceCount);
+  assert.equal(reserveResult.capacityCount,expectedOccurrenceCount);
   assert.equal(idResult.siteReferenceCount,mineSiteReferenceCount);
   const siteRefs=idResult.registry.listMineSiteReferences();
   assert.equal(siteRefs.length,mineSiteReferenceCount);
   assert.equal(new Set(siteRefs.map(x=>x.siteReferenceKey)).size,mineSiteReferenceCount);
   assert.equal(new Set(siteRefs.map(x=>x.countryId+'|'+x.siteName)).size,mineSiteReferenceCount);
   assert.ok(siteRefs.every(x=>x.status==='ACTIVE_SITE_REFERENCE'));
-  assert.ok(siteRefs.every(x=>x.extractionExecutable===false));
+  assert.ok(siteRefs.every(x=>x.extractionExecutable===true));
+  assert.ok(siteRefs.every(x=>x.runtimeExecutionMode==='UNIFIED_PART04_PART05_PIPELINE'));
+
+  const siteOccurrences=idResult.registry.listOccurrences().filter(x=>x?.profileDerivedSimulation===true&&x?.siteReferenceKey);
+  const unifiedMineRecordShape=[
+    'id','name','country','countryCode','lat','lng','resId','category','reserves','grade','status','owner','operator',
+    'resourceId','resourceTypeId','resourceTypeKey','locationNodeKey','ownerKey','operatorKey',
+    'productionRate','dailyRate','outputRate','physicalState','runtimeExecutionMode'
+  ];
+  const structuredOccurrences=idResult.registry.listOccurrences().filter(x=>x?.profileDerivedSimulation!==true);
+  assert.ok(siteOccurrences.every(x=>unifiedMineRecordShape.every(key=>Object.prototype.hasOwnProperty.call(x.rawDeposit||{},key))), 'Profile mine site missing unified runtime mine-record fields');
+  assert.ok(structuredOccurrences.every(x=>unifiedMineRecordShape.every(key=>Object.prototype.hasOwnProperty.call(x.rawDeposit||{},key))), 'Structured mine missing unified runtime mine-record fields');
+  assert.ok(siteOccurrences.every(x=>x.rawDeposit.runtimeExecutionMode==='UNIFIED_PART04_PART05_PIPELINE'));
+  assert.ok(structuredOccurrences.every(x=>x.rawDeposit.runtimeExecutionMode==='UNIFIED_PART04_PART05_PIPELINE'));
+  assert.equal(siteOccurrences.length,mineSiteReferenceCount);
+  assert.equal(new Set(siteOccurrences.map(x=>x.siteReferenceKey)).size,mineSiteReferenceCount);
+  assert.ok(siteOccurrences.every(x=>x.resourceTypeId&&x.countryId));
+  const compiledSiteStates=reserveResult.registry.listReserveStates().filter(x=>x?.profileDerivedSimulation===true);
+  assert.equal(compiledSiteStates.length,mineSiteReferenceCount);
+  assert.ok(compiledSiteStates.every(x=>(Number(x.residualQuantity)||0)>0&&x.operationalStatus==='ACTIVE_EXTRACTION'));
+  const compiledSiteCapacities=[...reserveResult.registry.capacities.values()].filter(x=>x?.profileDerivedSimulation===true);
+  assert.equal(compiledSiteCapacities.length,mineSiteReferenceCount);
+  assert.ok(compiledSiteCapacities.every(x=>(Number(x.dailyRate)||0)>0&&x.effortUtilization===1));
 
   const byCountry={};
   for(const d of engine.deposits){const c=d.countryCode;byCountry[c]=(byCountry[c]||0)+1;}
@@ -147,10 +173,10 @@ test('global resource pipeline runs every RESOURCE_JSON mine and keeps each resu
   assert.equal(globalResult.status,'COMPLETED');
   const nonEmptyResults=globalResult.results.filter(x=>x.result?.result?.extracted>0);
   const extractedRecords=nonEmptyResults.flatMap(x=>x.result.result.records||[]);
-  assert.equal(extractedRecords.length,engine.deposits.length);
+  assert.equal(extractedRecords.length,expectedOccurrenceCount);
 
   const executableOccurrenceKeys=new Set(extractedRecords.map(x=>String(x.occurrenceKey||'')));
-  assert.equal(executableOccurrenceKeys.size,engine.deposits.length);
+  assert.equal(executableOccurrenceKeys.size,expectedOccurrenceCount);
   for(const record of extractedRecords){
     const countryId=record.countryId;
     const row=state.resource[countryId];
@@ -168,7 +194,7 @@ test('global resource pipeline runs every RESOURCE_JSON mine and keeps each resu
     assert.equal(row.inventoryLots[record.producedBatch.batchId].warehouseId,'WH-'+countryId+'-RAW');
   }
   const productionLedgerCount=Object.values(state.resource).reduce((sum,row)=>sum+(Array.isArray(row?.mineProductionLedger)?row.mineProductionLedger.length:0),0);
-  assert.equal(productionLedgerCount,engine.deposits.length);
+  assert.equal(productionLedgerCount,expectedOccurrenceCount);
 
   const mineCount=Object.values(state.resource).reduce((sum,row)=>sum+(Array.isArray(row?.mines)?row.mines.length:0),0);
   const activeSiteReferenceCount=Object.values(state.resource).reduce((sum,row)=>sum+(Array.isArray(row?.mineSiteReferences)?row.mineSiteReferences.length:0),0);
@@ -181,11 +207,11 @@ test('global resource pipeline runs every RESOURCE_JSON mine and keeps each resu
   const pathCount=Object.values(state.resource).reduce((sum,row)=>sum+(row?.minePaths&&typeof row.minePaths==='object'?Object.keys(row.minePaths).length:0),0);
   const sitePathCount=Object.values(state.resource).reduce((sum,row)=>sum+Object.keys(row?.mineSiteControllers||{}).filter(k=>row.minePaths?.[k]).length,0);
   const lotCount=Object.values(state.resource).reduce((sum,row)=>sum+(row?.inventoryLots&&typeof row.inventoryLots==='object'?Object.keys(row.inventoryLots).length:0),0);
-  assert.equal(mineCount,engine.deposits.length);
-  assert.equal(batchCount,engine.deposits.length);
+  assert.equal(mineCount,expectedOccurrenceCount);
+  assert.equal(batchCount,expectedOccurrenceCount);
   assert.equal(sitePathCount,mineSiteReferenceCount);
-  assert.equal(pathCount,mineSiteReferenceCount+engine.deposits.length);
-  assert.equal(lotCount,engine.deposits.length);
+  assert.equal(pathCount,mineSiteReferenceCount+expectedOccurrenceCount);
+  assert.equal(lotCount,expectedOccurrenceCount);
 
   for(const [countryId,row] of Object.entries(state.resource)){
     const batches=Array.isArray(row.batches)?row.batches:[];
@@ -222,7 +248,7 @@ test('global resource pipeline runs every RESOURCE_JSON mine and keeps each resu
     if((state.resource[a].batches||[]).some(x=>x.countryId===b))crossCountryViolations.push([a,b]);
   }
   assert.equal(crossCountryViolations.length,0);
-  assert.equal(fiscalPendingCount,engine.deposits.length);
+  assert.equal(fiscalPendingCount,expectedOccurrenceCount);
   const siteRefsByCountry=new Map();
   for(const s of siteRefs){
     const arr=siteRefsByCountry.get(s.countryId)||[];arr.push(s.siteName);siteRefsByCountry.set(s.countryId,arr);

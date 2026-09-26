@@ -1,13 +1,11 @@
 /* ============================================================================
  * OMEGA RESOURCE PART 05 - RESERVE + EXTRACTION CAPACITY RUNTIME
  *
- * The RESOURCE_JSON mine records do not publish production-capacity fields.
- * Therefore this layer:
- *   1. never invents deposits,
- *   2. preserves RESOURCE_JSON reserve evidence,
- *   3. activates ACTIVE_PRODUCING runtime mines,
- *   4. supplies one deterministic simulation-only extraction rate when a
- *      real capacity is absent, explicitly tagged as a fallback.
+ * Canonical reserve/capacity compiler for all resource occurrences.
+ * runtime_deposits keep their RESOURCE_JSON reserve evidence. Profile mine sites
+ * without quantitative capacity still become executable occurrences through a
+ * deterministic gameplay baseline, explicitly marked as derived simulation data.
+ * No site is silently dropped from the runtime graph.
  *
  * Fallback horizon is a gameplay baseline, not a real-world production claim.
  * ========================================================================== */
@@ -16,6 +14,19 @@
 
   const VERSION='1.0.0';
   const DEFAULT_DEPLETION_HORIZON_DAYS=100000;
+  const PROFILE_SITE_DEPLETION_HORIZON_DAYS=3650;
+  const PROFILE_SITE_DAILY_RATES=Object.freeze({
+    crude_oil:10000,natural_gas:0.01,gold:500,uranium:50,lithium:500,rare_earth:100,cobalt:150,
+    nickel:800,copper:1000,bauxite:4000,iron_ore:8000,coal:5000,phosphate:4000,potash:3000,
+    limestone:5000,gypsum:2500,marble:1500,chromium:1000,silica_sand:5000,clay:3000,zeolite:1000,zircon:500
+  });
+  const PROFILE_SITE_UNITS=Object.freeze({
+    crude_oil:'BARRELS',natural_gas:'BCM',gold:'TROY_OZ',uranium:'TONNES',lithium:'TONNES',
+    rare_earth:'TONNES',cobalt:'TONNES',nickel:'TONNES',copper:'TONNES',bauxite:'TONNES',
+    iron_ore:'TONNES',coal:'TONNES',phosphate:'TONNES',potash:'TONNES',limestone:'TONNES',
+    gypsum:'TONNES',marble:'TONNES',chromium:'TONNES',silica_sand:'TONNES',clay:'TONNES',
+    zeolite:'TONNES',zircon:'TONNES'
+  });
 
   function clone(v,seen){
     if(v===null||typeof v!=='object')return v;
@@ -40,6 +51,14 @@
       if(hit?.id)return id(hit.id);
     }catch(_){}
     return id(raw);
+  }
+
+  function profileSiteRate(resourceId){
+    return num(PROFILE_SITE_DAILY_RATES[String(resourceId||'').replace(/^RES_TYPE:/i,'').trim().toLowerCase()]||0);
+  }
+  function profileSiteUnit(resourceId,fallback){
+    const key=String(resourceId||'').replace(/^RES_TYPE:/i,'').trim().toLowerCase();
+    return fallback||PROFILE_SITE_UNITS[key]||'TONNES';
   }
 
   function multiplier(text){
@@ -118,13 +137,29 @@
       const raw=occ.rawDeposit||{};
       const type=typeById.get(String(occ.resourceTypeId||'').toLowerCase())||{};
       const parsed=parseReserve(raw.reserves,occ.resourceTypeId,type.unit);
-      const declared=parsed.quantity;
+      const profileDerived=raw.profileDerivedSimulation===true;
+      let declared=parsed.quantity;
+      let runtimeUnit=parsed.targetUnit||type.unit||null;
+      let reserveQuantityAuthority='RESOURCE_JSON';
+      let capacityAuthority=raw.productionRate||raw.dailyRate||raw.outputRate?'RESOURCE_JSON':'SIMULATION_DEFAULT_NO_DATA_RATE';
+      let horizon=DEFAULT_DEPLETION_HORIZON_DAYS;
+      let nominalRate=null;
+      if((declared===null||declared<=0)&&profileDerived){
+        runtimeUnit=profileSiteUnit(occ.resourceTypeId,runtimeUnit);
+        nominalRate=profileSiteRate(occ.resourceTypeId);
+        if(nominalRate<=0)return;
+        horizon=PROFILE_SITE_DEPLETION_HORIZON_DAYS;
+        declared=nominalRate*horizon;
+        reserveQuantityAuthority='DERIVED_SIMULATION_BASELINE';
+        capacityAuthority='PROFILE_SITE_SIMULATION_BASELINE';
+      }
       if(declared===null||declared<=0)return;
+      if(nominalRate===null)nominalRate=declared/horizon;
 
       const rawStatus=String(raw.status||occ.status||'UNKNOWN').toUpperCase();
-      const active=/ACTIVE|PRODUCING|OPERATING|RUNNING/.test(rawStatus) && !/SUSPEND|BLOCK|CLOSED|ABANDON/.test(rawStatus);
-      const horizon=DEFAULT_DEPLETION_HORIZON_DAYS;
-      const nominalRate=declared/horizon;
+      const active=profileDerived
+        ? true
+        : /ACTIVE|PRODUCING|OPERATING|RUNNING/.test(rawStatus) && !/SUSPEND|BLOCK|CLOSED|ABANDON/.test(rawStatus);
 
       const reserve=new ReserveState({
         occurrenceKey:occ.occurrenceKey,
@@ -134,16 +169,19 @@
         geologicalQuantity:declared,
         recoverableQuantity:declared,
         residualQuantity:declared,
-        unit:parsed.targetUnit||type.unit||null,
+        unit:runtimeUnit||null,
         operationalStatus:active?'ACTIVE_EXTRACTION':'BLOCKED',
+        profileDerivedSimulation:profileDerived,
+        runtimeActivationMode:profileDerived?'PROFILE_SITE_RUNTIME':'RESOURCE_JSON_RUNTIME',
         stateVersion:1,
         provenance:{
           sourceAuthority:'RESOURCE_JSON',
           sourceDatasetId:raw.sourceDatasetId||'resources.json',
-          reserveField:'runtime_deposits.reserves',
+          reserveField:raw.reserves?'runtime_deposits.reserves':profileDerived?'PROFILE_SITE_RUNTIME_BASELINE':'UNKNOWN',
           reserveText:String(raw.reserves||''),
           effortUtilization:1,
-          capacitySource:raw.productionRate||raw.dailyRate||raw.outputRate?'RESOURCE_JSON':'SIMULATION_DEFAULT_NO_DATA_RATE',
+          capacitySource:capacityAuthority,
+          quantityAuthority:reserveQuantityAuthority,
           simulationExtractionHorizonDays:horizon
         }
       });
@@ -151,12 +189,14 @@
         occurrenceKey:occ.occurrenceKey,
         countryId:canonicalCountry(occ.countryId),
         resourceId:occ.resourceTypeId,
-        unit:parsed.targetUnit||type.unit||null,
+        unit:runtimeUnit||null,
         nominalRate:nominalRate,
         dailyRate:nominalRate,
         assetReference:'MINE:'+occ.occurrenceKey,
         effortUtilization:1,
-        authority:raw.productionRate||raw.dailyRate||raw.outputRate?'RESOURCE_JSON':'SIMULATION_DEFAULT_NO_DATA_RATE',
+        authority:capacityAuthority,
+        quantityAuthority:reserveQuantityAuthority==='RESOURCE_JSON'?'RESOURCE_JSON':'DERIVED_SIMULATION_BASELINE',
+        profileDerivedSimulation:profileDerived,
         simulationExtractionHorizonDays:horizon
       });
       reserves.set(occ.occurrenceKey,reserve);
