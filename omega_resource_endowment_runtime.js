@@ -200,10 +200,26 @@
 
   function rid0(v){return sci()?.normalizeResourceId?.(v)||String(v??'').replace(/^RES_TYPE:/i,'').trim().toLowerCase();}
   function mineQuality(x){
-    const raw=x?.rawDeposit||{},q=sci()?.parseQuality?.(raw.grade||raw.quality||'',x?.resourceId)||{
+    const raw=x?.rawDeposit||{};
+    const qualityText=[
+      raw.grade,raw.quality,raw.qualityText,raw.assay,raw.description,raw.composition,
+      raw.specification,raw.specs,raw.properties,raw.resourceQuality,raw.mineralGrade,
+      raw.methaneContent,raw.methanePercentage,raw.methanePercent,raw.ch4
+    ].filter(v=>v!==undefined&&v!==null&&v!=='').join(' | ');
+    let q=sci()?.parseQuality?.(qualityText,x?.resourceId)||{
       purity:null,purityStatus:'UNOBSERVED',gradePercent:null,gradeBasis:null,gradeStatus:'UNOBSERVED',
       assayGpt:null,concentrationMgPerL:null,apiGravity:null,sourceAuthority:'UNOBSERVED'
     };
+    const directPurity=Number(raw.purity);
+    if(Number.isFinite(directPurity)&&directPurity>=0&&directPurity<=1)q={...q,purity:directPurity,purityStatus:'OBSERVED'};
+    const directGrade=Number(raw.gradePercent??raw.oreGradePercent??raw.methanePercent??raw.methanePercentage);
+    if(Number.isFinite(directGrade)&&directGrade>=0&&directGrade<=100){
+      q={...q,gradePercent:directGrade,gradeBasis:String(x?.resourceId)==='natural_gas'?'METHANE_CONCENTRATION':'SOURCE_GRADE_PERCENT',gradeStatus:'OBSERVED'};
+    }
+    if(String(x?.resourceId)==='natural_gas'&&q.gradePercent===null){
+      const onlyPercent=qualityText.match(/([0-9]+(?:\.[0-9]+)?)\s*%/);
+      if(onlyPercent){q={...q,gradePercent:Number(onlyPercent[1]),gradeBasis:'METHANE_CONCENTRATION',gradeStatus:'OBSERVED'};}
+    }
     return{
       purity:q.purity,purityStatus:q.purityStatus,gradePercent:q.gradePercent,gradeBasis:q.gradeBasis,
       gradeStatus:q.gradeStatus,assayGpt:q.assayGpt,concentrationMgPerL:q.concentrationMgPerL,apiGravity:q.apiGravity,
