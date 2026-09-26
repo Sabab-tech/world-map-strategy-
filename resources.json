@@ -11043,11 +11043,7 @@
               "reserveQuantity": 1270000,
               "reserveUnit": "metric_tons",
               "grade": "0.93% rutile",
-              "annualProduction": {
-                "value": 84000,
-                "unit": "metric_tons",
-                "year": 2024
-              },
+              "annualProduction": 84000,
               "legacyReferenceName": "Sierra Leone Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
               "dataAuthority": {
@@ -11114,8 +11110,8 @@
                 "operationalStatus": "ACTIVE_PRODUCING",
                 "owner": "Leonoil / Sierra Rutile",
                 "operator": "Sierra Rutile",
-                "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-                "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+                "ownerEvidenceStatus": "UNOBSERVED",
+                "operatorEvidenceStatus": "UNOBSERVED"
               },
               "quantitativeProfile": {
                 "reserve": {
@@ -11166,7 +11162,22 @@
                 },
                 "provenance": "PRESENT",
                 "webResearch": "NOT_PER_SITE_VERIFIED"
-              }
+              },
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.sierra-rutile.com/area-1/",
+                  "accessed": "2026-09-26",
+                  "scope": "current_Area_1_operation_reserves_method_products"
+                }
+              ],
+              "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+              "currentOperatingMethod": "Dry mining using truck/excavator with dozer support feeding wet concentrator plants",
+              "oreReserveQuantity": "137 Mt ore",
+              "containedRutileReserveQuantity": "1.27 Mt rutile",
+              "reserveGrade": "0.93% rutile",
+              "productionContractorStatus": "Contract mining service used at Area 1",
+              "productionYear": 2024,
+              "productionUnit": "metric_tons/year"
             }
           ],
           "processingFacilities": [
@@ -18399,8 +18410,8 @@
               "locationNodeKey": "ASSET:TCD:kouri_bougoudi_gold_mining_area",
               "status": "ARTISANAL_AND_LIMITED",
               "operationalStatus": "ARTISANAL_AND_LIMITED",
-              "owner": "Chad / local operators",
-              "operator": "Artisanal and licensed miners",
+              "owner": null,
+              "operator": null,
               "extractionMethod": "surface small-scale mining",
               "startYear": 2000,
               "legacyReferenceName": "Chad Primary Mining and Extraction Sites",
@@ -18424,7 +18435,7 @@
                 "reserve": "UNOBSERVED",
                 "production": "UNOBSERVED",
                 "grade": "UNOBSERVED",
-                "ownership": "OBSERVED",
+                "ownership": "UNOBSERVED",
                 "operation": "OBSERVED",
                 "extractionMethod": "OBSERVED",
                 "provenance": "RESOURCE_JSON_WEB_RESEARCH_CATALOG"
@@ -18467,10 +18478,10 @@
                 "method": "surface small-scale mining",
                 "lifecycleStatus": "ARTISANAL_AND_LIMITED",
                 "operationalStatus": "ARTISANAL_AND_LIMITED",
-                "owner": "Chad / local operators",
-                "operator": "Artisanal and licensed miners",
-                "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-                "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+                "owner": null,
+                "operator": null,
+                "ownerEvidenceStatus": "UNOBSERVED_SITE_SPECIFIC",
+                "operatorEvidenceStatus": "UNOBSERVED_SITE_SPECIFIC"
               },
               "quantitativeProfile": {
                 "reserve": {
@@ -18517,7 +18528,14 @@
                 },
                 "provenance": "PRESENT",
                 "webResearch": "NOT_PER_SITE_VERIFIED"
-              }
+              },
+              "ownerEvidenceStatus": "UNOBSERVED_SITE_SPECIFIC",
+              "operatorEvidenceStatus": "UNOBSERVED_SITE_SPECIFIC",
+              "unverifiedLegacyValues": {
+                "owner": "Chad / local operators",
+                "operator": "Artisanal and licensed miners"
+              },
+              "siteScope": "MINING_AREA_REFERENCE"
             }
           ],
           "processingFacilities": [
@@ -29398,7 +29416,7 @@
           "mineSites": [
             {
               "id": "SITE_COM_grande_comore_basalt_aggregate_sites",
-              "name": "Grande Comore Basalt Aggregate Sites",
+              "name": "Ngazidja Aggregate Quarry Cluster (Handouli / Pvanamboini and other licensed sites)",
               "siteName": "Grande Comore Basalt Aggregate Sites",
               "siteType": "QUARRY",
               "resourceId": "basalt",
@@ -29437,7 +29455,7 @@
                 "reserve": "UNOBSERVED",
                 "production": "UNOBSERVED",
                 "grade": "UNOBSERVED",
-                "ownership": "OBSERVED",
+                "ownership": "UNOBSERVED",
                 "operation": "OBSERVED",
                 "extractionMethod": "OBSERVED",
                 "provenance": "RESOURCE_JSON_WEB_RESEARCH_CATALOG"
@@ -29463,7 +29481,7 @@
               "operatorEvidenceStatus": "UNOBSERVED_SITE_SPECIFIC",
               "siteIdentity": {
                 "siteId": "SITE_COM_grande_comore_basalt_aggregate_sites",
-                "siteName": "Grande Comore Basalt Aggregate Sites",
+                "siteName": "Ngazidja Aggregate Quarry Cluster (Handouli / Pvanamboini and other licensed sites)",
                 "siteClass": "QUARRY",
                 "countryIso3": "COM",
                 "countryName": "Comoros",
@@ -29536,7 +29554,36 @@
                 },
                 "provenance": "PRESENT",
                 "webResearch": "NOT_PER_SITE_VERIFIED"
-              }
+              },
+              "siteScope": "ISLAND_QUARRY_CLUSTER_REFERENCE",
+              "knownQuarrySites": [
+                "Helios Crushers SARL – Chamle",
+                "Chomoni Global Stone – Mboude/Macoco",
+                "NRK Engineering and Infrastructure SARL – Dzahadjou",
+                "Dzahadjou WAC Djivani",
+                "Handouli – Societe du Groupe d’Investissement de l’Archipel des Comores SA Holding",
+                "Handouli COLAS",
+                "Handouli CBE/Hadoudja",
+                "EGT – Handouli",
+                "Ntsaouni SSC SARL",
+                "SCC SARL – Ntsaweni-Mboini",
+                "Carrier Fahari – Mtsagadjou",
+                "WITEC Comores SARL – Oichili Yadjou"
+              ],
+              "regulatorySurveyPeriod": "2019-2025",
+              "currentSurveyDate": "2026-08-20",
+              "surveyedNgazidjaQuarryCount": 16,
+              "compliantNgazidjaQuarryCount": 6,
+              "quantitativeConsolidationStatus": "UNAVAILABLE_AT_BGC_CONSOLIDATED_LEVEL",
+              "licenceRenewalPeriodYears": 2,
+              "webResearchEvidence": [
+                {
+                  "url": "https://fr.scribd.com/document/1076751791/Donnees-Car-INSEED",
+                  "accessed": "2026-09-26",
+                  "scope": "BGC_2026_quarry_census_transcription"
+                }
+              ],
+              "researchState": "SITE_SPECIFIC_WEB_REVIEWED"
             }
           ],
           "processingFacilities": [
@@ -48441,7 +48488,7 @@
           "mineSites": [
             {
               "id": "SITE_SGP_pulau_ubin_granite_quarry_sites",
-              "name": "Pulau Ubin Granite Quarry Sites",
+              "name": "Pulau Ubin Granite Quarries (6 Historical Sites)",
               "siteName": "Pulau Ubin Granite Quarry Sites",
               "siteType": "HISTORICAL_MINE",
               "resourceId": "granite",
@@ -48456,8 +48503,8 @@
               "status": "HISTORICAL_INACTIVE",
               "operationalStatus": "HISTORICAL_INACTIVE",
               "owner": "Government of Singapore",
-              "operator": "None",
-              "extractionMethod": "historical quarrying",
+              "operator": null,
+              "extractionMethod": "HISTORICAL_GRANITE_QUARRYING",
               "startYear": 1970,
               "legacyReferenceName": "Singapore Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -48500,7 +48547,7 @@
               "commercialExtraction": true,
               "siteIdentity": {
                 "siteId": "SITE_SGP_pulau_ubin_granite_quarry_sites",
-                "siteName": "Pulau Ubin Granite Quarry Sites",
+                "siteName": "Pulau Ubin Granite Quarries (6 Historical Sites)",
                 "siteClass": "HISTORICAL_MINE",
                 "countryIso3": "SGP",
                 "countryName": "Singapore",
@@ -48520,13 +48567,13 @@
               },
               "extractionProfile": {
                 "siteType": "HISTORICAL_MINE",
-                "method": "historical quarrying",
+                "method": "HISTORICAL_GRANITE_QUARRYING",
                 "lifecycleStatus": "HISTORICAL_INACTIVE",
                 "operationalStatus": "HISTORICAL_INACTIVE",
                 "owner": "Government of Singapore",
-                "operator": "None",
-                "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-                "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+                "operator": null,
+                "ownerEvidenceStatus": "UNOBSERVED",
+                "operatorEvidenceStatus": "UNOBSERVED"
               },
               "quantitativeProfile": {
                 "reserve": {
@@ -48573,7 +48620,31 @@
                 },
                 "provenance": "PRESENT",
                 "webResearch": "NOT_PER_SITE_VERIFIED"
-              }
+              },
+              "siteScope": "HISTORICAL_MULTI_SITE_CLUSTER_REFERENCE",
+              "knownQuarrySites": [
+                "Balai Quarry",
+                "Kekek Quarry",
+                "Ketam Quarry",
+                "Pekan Quarry",
+                "Petai Quarry",
+                "Ubin Quarry"
+              ],
+              "lastOperationalQuarryClosedYear": 1999,
+              "currentUse": "Scenic viewpoints and biodiversity habitats",
+              "webResearchEvidence": [
+                {
+                  "url": "https://pulau-ubin.nparks.gov.sg/biodiversity/placesofinterest/quarries-of-pulau-ubin/",
+                  "accessed": "2026-09-26",
+                  "scope": "six_quarries_current_status"
+                },
+                {
+                  "url": "https://pulau-ubin.nparks.gov.sg/cultural-heritage/biodiversity-and-heritage-of-pulau-ubin/",
+                  "accessed": "2026-09-26",
+                  "scope": "granite_mining_history"
+                }
+              ],
+              "researchState": "SITE_SPECIFIC_WEB_REVIEWED"
             }
           ],
           "processingFacilities": [
@@ -88784,7 +88855,7 @@
           "mineSites": [
             {
               "id": "SITE_BLZ_hattieville_sand_and_aggregate_sites",
-              "name": "Hattieville Sand and Aggregate Sites",
+              "name": "Hattieville Sand and Aggregate Resource Area",
               "siteName": "Hattieville Sand and Aggregate Sites",
               "siteType": "QUARRY",
               "resourceId": "construction_aggregate",
@@ -88823,7 +88894,7 @@
                 "reserve": "UNOBSERVED",
                 "production": "UNOBSERVED",
                 "grade": "UNOBSERVED",
-                "ownership": "OBSERVED",
+                "ownership": "UNOBSERVED",
                 "operation": "OBSERVED",
                 "extractionMethod": "OBSERVED",
                 "provenance": "RESOURCE_JSON_WEB_RESEARCH_CATALOG"
@@ -88846,10 +88917,10 @@
                 "operator": "Licensed quarry operators"
               },
               "ownerEvidenceStatus": "UNOBSERVED_SITE_SPECIFIC",
-              "operatorEvidenceStatus": "UNOBSERVED_SITE_SPECIFIC",
+              "operatorEvidenceStatus": "REGIONAL_ENVIRONMENTAL_RECORD_ONLY",
               "siteIdentity": {
                 "siteId": "SITE_BLZ_hattieville_sand_and_aggregate_sites",
-                "siteName": "Hattieville Sand and Aggregate Sites",
+                "siteName": "Hattieville Sand and Aggregate Resource Area",
                 "siteClass": "QUARRY",
                 "countryIso3": "BLZ",
                 "countryName": "Belize",
@@ -88875,7 +88946,7 @@
                 "owner": null,
                 "operator": null,
                 "ownerEvidenceStatus": "UNOBSERVED_SITE_SPECIFIC",
-                "operatorEvidenceStatus": "UNOBSERVED_SITE_SPECIFIC"
+                "operatorEvidenceStatus": "REGIONAL_ENVIRONMENTAL_RECORD_ONLY"
               },
               "quantitativeProfile": {
                 "reserve": {
@@ -88922,7 +88993,20 @@
                 },
                 "provenance": "PRESENT",
                 "webResearch": "NOT_PER_SITE_VERIFIED"
-              }
+              },
+              "siteScope": "RESOURCE_AREA_REFERENCE",
+              "knownLocalOperators": [
+                "HNH Company Limited",
+                "Island Aggregates Limited"
+              ],
+              "webResearchEvidence": [
+                {
+                  "url": "https://doe.gov.bz/download/isai-sandoval/",
+                  "accessed": "2026-09-26",
+                  "scope": "2026_environmental_record_listing_aggregate_companies"
+                }
+              ],
+              "researchState": "SITE_SPECIFIC_WEB_REVIEWED"
             }
           ],
           "processingFacilities": [

@@ -11785,7 +11785,7 @@
           "mineSites": [
             {
               "id": "SITE_VUT_luganville_aggregate_quarry_zone",
-              "name": "Luganville Aggregate Quarry Zone",
+              "name": "Luganville Aggregate Quarry Resource Area",
               "siteName": "Luganville Aggregate Quarry Zone",
               "siteType": "QUARRY",
               "resourceId": "construction_aggregate",
@@ -11824,7 +11824,7 @@
                 "reserve": "UNOBSERVED",
                 "production": "UNOBSERVED",
                 "grade": "UNOBSERVED",
-                "ownership": "OBSERVED",
+                "ownership": "UNOBSERVED",
                 "operation": "OBSERVED",
                 "extractionMethod": "OBSERVED",
                 "provenance": "RESOURCE_JSON_WEB_RESEARCH_CATALOG"
@@ -11844,10 +11844,10 @@
                 "operator": "Licensed operators"
               },
               "ownerEvidenceStatus": "UNOBSERVED_SITE_SPECIFIC",
-              "operatorEvidenceStatus": "UNOBSERVED_SITE_SPECIFIC",
+              "operatorEvidenceStatus": "REGIONAL_LOCAL_BUSINESS_EVIDENCE",
               "siteIdentity": {
                 "siteId": "SITE_VUT_luganville_aggregate_quarry_zone",
-                "siteName": "Luganville Aggregate Quarry Zone",
+                "siteName": "Luganville Aggregate Quarry Resource Area",
                 "siteClass": "QUARRY",
                 "countryIso3": "VUT",
                 "countryName": "Vanuatu",
@@ -11873,7 +11873,7 @@
                 "owner": null,
                 "operator": null,
                 "ownerEvidenceStatus": "UNOBSERVED_SITE_SPECIFIC",
-                "operatorEvidenceStatus": "UNOBSERVED_SITE_SPECIFIC"
+                "operatorEvidenceStatus": "REGIONAL_LOCAL_BUSINESS_EVIDENCE"
               },
               "quantitativeProfile": {
                 "reserve": {
@@ -11920,7 +11920,20 @@
                 },
                 "provenance": "PRESENT",
                 "webResearch": "NOT_PER_SITE_VERIFIED"
-              }
+              },
+              "siteScope": "RESOURCE_AREA_REFERENCE",
+              "knownLocalOperators": [
+                "KD Enterprise",
+                "Santo Earthworks Ltd."
+              ],
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.kdentreprise.com/about",
+                  "accessed": "2026-09-26",
+                  "scope": "current_crushing_screening_aggregate_operation"
+                }
+              ],
+              "researchState": "SITE_SPECIFIC_WEB_REVIEWED"
             }
           ],
           "processingFacilities": [
