@@ -1110,15 +1110,22 @@
               },
               "resourceIdentity": {
                 "resourceTypeId": "nickel",
-                "ontologyKey": null,
-                "commodityName": null,
-                "category": null,
-                "physicalForm": null,
-                "upstreamProcess": null,
-                "midstreamProcess": null,
-                "refinedOutputs": [],
-                "downstreamSectors": [],
-                "ontologyStatus": "UNMAPPED_RESOURCE_TYPE"
+                "ontologyKey": "NICKEL",
+                "commodityName": "Nickel Ore & Concentrates",
+                "category": "BASE_METAL",
+                "physicalForm": "SOLID_ORE_AND_CONCENTRATE",
+                "upstreamProcess": "Open-Pit / Underground Laterite or Sulfide Mining",
+                "midstreamProcess": "Crushing, Flotation, Smelting or HPAL",
+                "refinedOutputs": [
+                  "NICKEL_MATTE",
+                  "NICKEL_CATHODE",
+                  "STAINLESS_STEEL"
+                ],
+                "downstreamSectors": [
+                  "BATTERIES",
+                  "SPECIALTY_ALLOYS"
+                ],
+                "ontologyStatus": "RESOLVED_FROM_RESOURCE_ONTOLOGY"
               },
               "dataCompleteness": {
                 "identity": "COMPLETE",
@@ -1259,15 +1266,22 @@
               },
               "resourceIdentity": {
                 "resourceTypeId": "nickel",
-                "ontologyKey": null,
-                "commodityName": null,
-                "category": null,
-                "physicalForm": null,
-                "upstreamProcess": null,
-                "midstreamProcess": null,
-                "refinedOutputs": [],
-                "downstreamSectors": [],
-                "ontologyStatus": "UNMAPPED_RESOURCE_TYPE"
+                "ontologyKey": "NICKEL",
+                "commodityName": "Nickel Ore & Concentrates",
+                "category": "BASE_METAL",
+                "physicalForm": "SOLID_ORE_AND_CONCENTRATE",
+                "upstreamProcess": "Open-Pit / Underground Laterite or Sulfide Mining",
+                "midstreamProcess": "Crushing, Flotation, Smelting or HPAL",
+                "refinedOutputs": [
+                  "NICKEL_MATTE",
+                  "NICKEL_CATHODE",
+                  "STAINLESS_STEEL"
+                ],
+                "downstreamSectors": [
+                  "BATTERIES",
+                  "SPECIALTY_ALLOYS"
+                ],
+                "ontologyStatus": "RESOLVED_FROM_RESOURCE_ONTOLOGY"
               },
               "dataCompleteness": {
                 "identity": "COMPLETE",
@@ -1408,15 +1422,22 @@
               },
               "resourceIdentity": {
                 "resourceTypeId": "nickel",
-                "ontologyKey": null,
-                "commodityName": null,
-                "category": null,
-                "physicalForm": null,
-                "upstreamProcess": null,
-                "midstreamProcess": null,
-                "refinedOutputs": [],
-                "downstreamSectors": [],
-                "ontologyStatus": "UNMAPPED_RESOURCE_TYPE"
+                "ontologyKey": "NICKEL",
+                "commodityName": "Nickel Ore & Concentrates",
+                "category": "BASE_METAL",
+                "physicalForm": "SOLID_ORE_AND_CONCENTRATE",
+                "upstreamProcess": "Open-Pit / Underground Laterite or Sulfide Mining",
+                "midstreamProcess": "Crushing, Flotation, Smelting or HPAL",
+                "refinedOutputs": [
+                  "NICKEL_MATTE",
+                  "NICKEL_CATHODE",
+                  "STAINLESS_STEEL"
+                ],
+                "downstreamSectors": [
+                  "BATTERIES",
+                  "SPECIALTY_ALLOYS"
+                ],
+                "ontologyStatus": "RESOLVED_FROM_RESOURCE_ONTOLOGY"
               },
               "dataCompleteness": {
                 "identity": "COMPLETE",
@@ -2457,15 +2478,22 @@
               },
               "resourceIdentity": {
                 "resourceTypeId": "limestone",
-                "ontologyKey": null,
-                "commodityName": null,
-                "category": null,
-                "physicalForm": null,
-                "upstreamProcess": null,
-                "midstreamProcess": null,
-                "refinedOutputs": [],
-                "downstreamSectors": [],
-                "ontologyStatus": "UNMAPPED_RESOURCE_TYPE"
+                "ontologyKey": "LIMESTONE",
+                "commodityName": "Limestone & Industrial Carbonate Rock",
+                "category": "INDUSTRIAL_MINERAL",
+                "physicalForm": "SOLID_ROCK",
+                "upstreamProcess": "Drilling, Blasting, Quarry Excavation",
+                "midstreamProcess": "Crushing, Screening, Calcination, Cement Kiln Feed",
+                "refinedOutputs": [
+                  "CEMENT_CLINKER",
+                  "CONSTRUCTION_AGGREGATES",
+                  "CEMENT"
+                ],
+                "downstreamSectors": [
+                  "LIME",
+                  "GLASS"
+                ],
+                "ontologyStatus": "RESOLVED_FROM_RESOURCE_ONTOLOGY"
               },
               "dataCompleteness": {
                 "identity": "COMPLETE",
@@ -2971,15 +2999,22 @@
               },
               "resourceIdentity": {
                 "resourceTypeId": "gold",
-                "ontologyKey": null,
-                "commodityName": null,
-                "category": null,
-                "physicalForm": null,
-                "upstreamProcess": null,
-                "midstreamProcess": null,
-                "refinedOutputs": [],
-                "downstreamSectors": [],
-                "ontologyStatus": "UNMAPPED_RESOURCE_TYPE"
+                "ontologyKey": "GOLD",
+                "commodityName": "Gold Ore & Doré",
+                "category": "PRECIOUS_METAL",
+                "physicalForm": "SOLID_ORE_AND_DORE",
+                "upstreamProcess": "Open-Pit / Underground Mining, Gravity, Flotation",
+                "midstreamProcess": "Crushing, Grinding, Gravity/Flotation, Cyanide Leaching, Smelting",
+                "refinedOutputs": [
+                  "GOLD_DORE",
+                  "JEWELRY",
+                  "ELECTRONICS"
+                ],
+                "downstreamSectors": [
+                  "CENTRAL_BANK_RESERVES",
+                  "INDUSTRIAL_CHEMICALS"
+                ],
+                "ontologyStatus": "RESOLVED_FROM_RESOURCE_ONTOLOGY"
               },
               "dataCompleteness": {
                 "identity": "COMPLETE",
@@ -4027,15 +4062,21 @@
               },
               "resourceIdentity": {
                 "resourceTypeId": "aragonite",
-                "ontologyKey": null,
-                "commodityName": null,
-                "category": null,
-                "physicalForm": null,
-                "upstreamProcess": null,
-                "midstreamProcess": null,
-                "refinedOutputs": [],
-                "downstreamSectors": [],
-                "ontologyStatus": "UNMAPPED_RESOURCE_TYPE"
+                "ontologyKey": "ARAGONITE",
+                "commodityName": "Aragonite Sand & Carbonate Mineral",
+                "category": "MARINE_INDUSTRIAL_MINERAL",
+                "physicalForm": "CALCIUM_CARBONATE_SEDIMENT",
+                "upstreamProcess": "Marine Dredging / Sand Extraction",
+                "midstreamProcess": "Screening, Washing, Grading, Calcium-Carbonate Processing",
+                "refinedOutputs": [
+                  "ARAGONITE_SAND",
+                  "CALCIUM_CARBONATE_FEED",
+                  "CEMENT"
+                ],
+                "downstreamSectors": [
+                  "GLASS"
+                ],
+                "ontologyStatus": "RESOLVED_FROM_RESOURCE_ONTOLOGY"
               },
               "dataCompleteness": {
                 "identity": "COMPLETE",
@@ -4541,15 +4582,22 @@
               },
               "resourceIdentity": {
                 "resourceTypeId": "limestone",
-                "ontologyKey": null,
-                "commodityName": null,
-                "category": null,
-                "physicalForm": null,
-                "upstreamProcess": null,
-                "midstreamProcess": null,
-                "refinedOutputs": [],
-                "downstreamSectors": [],
-                "ontologyStatus": "UNMAPPED_RESOURCE_TYPE"
+                "ontologyKey": "LIMESTONE",
+                "commodityName": "Limestone & Industrial Carbonate Rock",
+                "category": "INDUSTRIAL_MINERAL",
+                "physicalForm": "SOLID_ROCK",
+                "upstreamProcess": "Drilling, Blasting, Quarry Excavation",
+                "midstreamProcess": "Crushing, Screening, Calcination, Cement Kiln Feed",
+                "refinedOutputs": [
+                  "CEMENT_CLINKER",
+                  "CONSTRUCTION_AGGREGATES",
+                  "CEMENT"
+                ],
+                "downstreamSectors": [
+                  "LIME",
+                  "GLASS"
+                ],
+                "ontologyStatus": "RESOLVED_FROM_RESOURCE_ONTOLOGY"
               },
               "dataCompleteness": {
                 "identity": "COMPLETE",
@@ -5074,15 +5122,21 @@
               },
               "resourceIdentity": {
                 "resourceTypeId": "construction_aggregate",
-                "ontologyKey": null,
-                "commodityName": null,
-                "category": null,
-                "physicalForm": null,
-                "upstreamProcess": null,
-                "midstreamProcess": null,
-                "refinedOutputs": [],
-                "downstreamSectors": [],
-                "ontologyStatus": "UNMAPPED_RESOURCE_TYPE"
+                "ontologyKey": "CONSTRUCTION_AGGREGATE",
+                "commodityName": "Construction Aggregates, Sand & Gravel",
+                "category": "CONSTRUCTION_MATERIAL",
+                "physicalForm": "CRUSHED_STONE_SAND_GRAVEL",
+                "upstreamProcess": "Quarrying, Dredging, Borrow-Pit Extraction",
+                "midstreamProcess": "Crushing, Screening, Washing, Grading",
+                "refinedOutputs": [
+                  "GRADED_AGGREGATE",
+                  "READY_MIX_CONCRETE",
+                  "ASPHALT_FEED"
+                ],
+                "downstreamSectors": [
+                  "ROAD_BASE"
+                ],
+                "ontologyStatus": "RESOLVED_FROM_RESOURCE_ONTOLOGY"
               },
               "dataCompleteness": {
                 "identity": "COMPLETE",
@@ -5594,15 +5648,21 @@
               },
               "resourceIdentity": {
                 "resourceTypeId": "construction_aggregate",
-                "ontologyKey": null,
-                "commodityName": null,
-                "category": null,
-                "physicalForm": null,
-                "upstreamProcess": null,
-                "midstreamProcess": null,
-                "refinedOutputs": [],
-                "downstreamSectors": [],
-                "ontologyStatus": "UNMAPPED_RESOURCE_TYPE"
+                "ontologyKey": "CONSTRUCTION_AGGREGATE",
+                "commodityName": "Construction Aggregates, Sand & Gravel",
+                "category": "CONSTRUCTION_MATERIAL",
+                "physicalForm": "CRUSHED_STONE_SAND_GRAVEL",
+                "upstreamProcess": "Quarrying, Dredging, Borrow-Pit Extraction",
+                "midstreamProcess": "Crushing, Screening, Washing, Grading",
+                "refinedOutputs": [
+                  "GRADED_AGGREGATE",
+                  "READY_MIX_CONCRETE",
+                  "ASPHALT_FEED"
+                ],
+                "downstreamSectors": [
+                  "ROAD_BASE"
+                ],
+                "ontologyStatus": "RESOLVED_FROM_RESOURCE_ONTOLOGY"
               },
               "dataCompleteness": {
                 "identity": "COMPLETE",
@@ -6124,15 +6184,21 @@
               },
               "resourceIdentity": {
                 "resourceTypeId": "construction_aggregate",
-                "ontologyKey": null,
-                "commodityName": null,
-                "category": null,
-                "physicalForm": null,
-                "upstreamProcess": null,
-                "midstreamProcess": null,
-                "refinedOutputs": [],
-                "downstreamSectors": [],
-                "ontologyStatus": "UNMAPPED_RESOURCE_TYPE"
+                "ontologyKey": "CONSTRUCTION_AGGREGATE",
+                "commodityName": "Construction Aggregates, Sand & Gravel",
+                "category": "CONSTRUCTION_MATERIAL",
+                "physicalForm": "CRUSHED_STONE_SAND_GRAVEL",
+                "upstreamProcess": "Quarrying, Dredging, Borrow-Pit Extraction",
+                "midstreamProcess": "Crushing, Screening, Washing, Grading",
+                "refinedOutputs": [
+                  "GRADED_AGGREGATE",
+                  "READY_MIX_CONCRETE",
+                  "ASPHALT_FEED"
+                ],
+                "downstreamSectors": [
+                  "ROAD_BASE"
+                ],
+                "ontologyStatus": "RESOLVED_FROM_RESOURCE_ONTOLOGY"
               },
               "dataCompleteness": {
                 "identity": "COMPLETE",
@@ -6644,15 +6710,22 @@
               },
               "resourceIdentity": {
                 "resourceTypeId": "limestone",
-                "ontologyKey": null,
-                "commodityName": null,
-                "category": null,
-                "physicalForm": null,
-                "upstreamProcess": null,
-                "midstreamProcess": null,
-                "refinedOutputs": [],
-                "downstreamSectors": [],
-                "ontologyStatus": "UNMAPPED_RESOURCE_TYPE"
+                "ontologyKey": "LIMESTONE",
+                "commodityName": "Limestone & Industrial Carbonate Rock",
+                "category": "INDUSTRIAL_MINERAL",
+                "physicalForm": "SOLID_ROCK",
+                "upstreamProcess": "Drilling, Blasting, Quarry Excavation",
+                "midstreamProcess": "Crushing, Screening, Calcination, Cement Kiln Feed",
+                "refinedOutputs": [
+                  "CEMENT_CLINKER",
+                  "CONSTRUCTION_AGGREGATES",
+                  "CEMENT"
+                ],
+                "downstreamSectors": [
+                  "LIME",
+                  "GLASS"
+                ],
+                "ontologyStatus": "RESOLVED_FROM_RESOURCE_ONTOLOGY"
               },
               "dataCompleteness": {
                 "identity": "COMPLETE",
@@ -7164,15 +7237,22 @@
               },
               "resourceIdentity": {
                 "resourceTypeId": "limestone",
-                "ontologyKey": null,
-                "commodityName": null,
-                "category": null,
-                "physicalForm": null,
-                "upstreamProcess": null,
-                "midstreamProcess": null,
-                "refinedOutputs": [],
-                "downstreamSectors": [],
-                "ontologyStatus": "UNMAPPED_RESOURCE_TYPE"
+                "ontologyKey": "LIMESTONE",
+                "commodityName": "Limestone & Industrial Carbonate Rock",
+                "category": "INDUSTRIAL_MINERAL",
+                "physicalForm": "SOLID_ROCK",
+                "upstreamProcess": "Drilling, Blasting, Quarry Excavation",
+                "midstreamProcess": "Crushing, Screening, Calcination, Cement Kiln Feed",
+                "refinedOutputs": [
+                  "CEMENT_CLINKER",
+                  "CONSTRUCTION_AGGREGATES",
+                  "CEMENT"
+                ],
+                "downstreamSectors": [
+                  "LIME",
+                  "GLASS"
+                ],
+                "ontologyStatus": "RESOLVED_FROM_RESOURCE_ONTOLOGY"
               },
               "dataCompleteness": {
                 "identity": "COMPLETE",
@@ -7689,15 +7769,21 @@
               },
               "resourceIdentity": {
                 "resourceTypeId": "construction_aggregate",
-                "ontologyKey": null,
-                "commodityName": null,
-                "category": null,
-                "physicalForm": null,
-                "upstreamProcess": null,
-                "midstreamProcess": null,
-                "refinedOutputs": [],
-                "downstreamSectors": [],
-                "ontologyStatus": "UNMAPPED_RESOURCE_TYPE"
+                "ontologyKey": "CONSTRUCTION_AGGREGATE",
+                "commodityName": "Construction Aggregates, Sand & Gravel",
+                "category": "CONSTRUCTION_MATERIAL",
+                "physicalForm": "CRUSHED_STONE_SAND_GRAVEL",
+                "upstreamProcess": "Quarrying, Dredging, Borrow-Pit Extraction",
+                "midstreamProcess": "Crushing, Screening, Washing, Grading",
+                "refinedOutputs": [
+                  "GRADED_AGGREGATE",
+                  "READY_MIX_CONCRETE",
+                  "ASPHALT_FEED"
+                ],
+                "downstreamSectors": [
+                  "ROAD_BASE"
+                ],
+                "ontologyStatus": "RESOLVED_FROM_RESOURCE_ONTOLOGY"
               },
               "dataCompleteness": {
                 "identity": "COMPLETE",
@@ -8206,15 +8292,22 @@
               },
               "resourceIdentity": {
                 "resourceTypeId": "gold",
-                "ontologyKey": null,
-                "commodityName": null,
-                "category": null,
-                "physicalForm": null,
-                "upstreamProcess": null,
-                "midstreamProcess": null,
-                "refinedOutputs": [],
-                "downstreamSectors": [],
-                "ontologyStatus": "UNMAPPED_RESOURCE_TYPE"
+                "ontologyKey": "GOLD",
+                "commodityName": "Gold Ore & Doré",
+                "category": "PRECIOUS_METAL",
+                "physicalForm": "SOLID_ORE_AND_DORE",
+                "upstreamProcess": "Open-Pit / Underground Mining, Gravity, Flotation",
+                "midstreamProcess": "Crushing, Grinding, Gravity/Flotation, Cyanide Leaching, Smelting",
+                "refinedOutputs": [
+                  "GOLD_DORE",
+                  "JEWELRY",
+                  "ELECTRONICS"
+                ],
+                "downstreamSectors": [
+                  "CENTRAL_BANK_RESERVES",
+                  "INDUSTRIAL_CHEMICALS"
+                ],
+                "ontologyStatus": "RESOLVED_FROM_RESOURCE_ONTOLOGY"
               },
               "dataCompleteness": {
                 "identity": "COMPLETE",
@@ -8722,15 +8815,22 @@
               },
               "resourceIdentity": {
                 "resourceTypeId": "gold",
-                "ontologyKey": null,
-                "commodityName": null,
-                "category": null,
-                "physicalForm": null,
-                "upstreamProcess": null,
-                "midstreamProcess": null,
-                "refinedOutputs": [],
-                "downstreamSectors": [],
-                "ontologyStatus": "UNMAPPED_RESOURCE_TYPE"
+                "ontologyKey": "GOLD",
+                "commodityName": "Gold Ore & Doré",
+                "category": "PRECIOUS_METAL",
+                "physicalForm": "SOLID_ORE_AND_DORE",
+                "upstreamProcess": "Open-Pit / Underground Mining, Gravity, Flotation",
+                "midstreamProcess": "Crushing, Grinding, Gravity/Flotation, Cyanide Leaching, Smelting",
+                "refinedOutputs": [
+                  "GOLD_DORE",
+                  "JEWELRY",
+                  "ELECTRONICS"
+                ],
+                "downstreamSectors": [
+                  "CENTRAL_BANK_RESERVES",
+                  "INDUSTRIAL_CHEMICALS"
+                ],
+                "ontologyStatus": "RESOLVED_FROM_RESOURCE_ONTOLOGY"
               },
               "dataCompleteness": {
                 "identity": "COMPLETE",
@@ -9235,15 +9335,22 @@
               },
               "resourceIdentity": {
                 "resourceTypeId": "gold",
-                "ontologyKey": null,
-                "commodityName": null,
-                "category": null,
-                "physicalForm": null,
-                "upstreamProcess": null,
-                "midstreamProcess": null,
-                "refinedOutputs": [],
-                "downstreamSectors": [],
-                "ontologyStatus": "UNMAPPED_RESOURCE_TYPE"
+                "ontologyKey": "GOLD",
+                "commodityName": "Gold Ore & Doré",
+                "category": "PRECIOUS_METAL",
+                "physicalForm": "SOLID_ORE_AND_DORE",
+                "upstreamProcess": "Open-Pit / Underground Mining, Gravity, Flotation",
+                "midstreamProcess": "Crushing, Grinding, Gravity/Flotation, Cyanide Leaching, Smelting",
+                "refinedOutputs": [
+                  "GOLD_DORE",
+                  "JEWELRY",
+                  "ELECTRONICS"
+                ],
+                "downstreamSectors": [
+                  "CENTRAL_BANK_RESERVES",
+                  "INDUSTRIAL_CHEMICALS"
+                ],
+                "ontologyStatus": "RESOLVED_FROM_RESOURCE_ONTOLOGY"
               },
               "dataCompleteness": {
                 "identity": "COMPLETE",
@@ -9749,15 +9856,22 @@
               },
               "resourceIdentity": {
                 "resourceTypeId": "gold",
-                "ontologyKey": null,
-                "commodityName": null,
-                "category": null,
-                "physicalForm": null,
-                "upstreamProcess": null,
-                "midstreamProcess": null,
-                "refinedOutputs": [],
-                "downstreamSectors": [],
-                "ontologyStatus": "UNMAPPED_RESOURCE_TYPE"
+                "ontologyKey": "GOLD",
+                "commodityName": "Gold Ore & Doré",
+                "category": "PRECIOUS_METAL",
+                "physicalForm": "SOLID_ORE_AND_DORE",
+                "upstreamProcess": "Open-Pit / Underground Mining, Gravity, Flotation",
+                "midstreamProcess": "Crushing, Grinding, Gravity/Flotation, Cyanide Leaching, Smelting",
+                "refinedOutputs": [
+                  "GOLD_DORE",
+                  "JEWELRY",
+                  "ELECTRONICS"
+                ],
+                "downstreamSectors": [
+                  "CENTRAL_BANK_RESERVES",
+                  "INDUSTRIAL_CHEMICALS"
+                ],
+                "ontologyStatus": "RESOLVED_FROM_RESOURCE_ONTOLOGY"
               },
               "dataCompleteness": {
                 "identity": "COMPLETE",
@@ -10286,15 +10400,22 @@
               },
               "resourceIdentity": {
                 "resourceTypeId": "gold",
-                "ontologyKey": null,
-                "commodityName": null,
-                "category": null,
-                "physicalForm": null,
-                "upstreamProcess": null,
-                "midstreamProcess": null,
-                "refinedOutputs": [],
-                "downstreamSectors": [],
-                "ontologyStatus": "UNMAPPED_RESOURCE_TYPE"
+                "ontologyKey": "GOLD",
+                "commodityName": "Gold Ore & Doré",
+                "category": "PRECIOUS_METAL",
+                "physicalForm": "SOLID_ORE_AND_DORE",
+                "upstreamProcess": "Open-Pit / Underground Mining, Gravity, Flotation",
+                "midstreamProcess": "Crushing, Grinding, Gravity/Flotation, Cyanide Leaching, Smelting",
+                "refinedOutputs": [
+                  "GOLD_DORE",
+                  "JEWELRY",
+                  "ELECTRONICS"
+                ],
+                "downstreamSectors": [
+                  "CENTRAL_BANK_RESERVES",
+                  "INDUSTRIAL_CHEMICALS"
+                ],
+                "ontologyStatus": "RESOLVED_FROM_RESOURCE_ONTOLOGY"
               },
               "dataCompleteness": {
                 "identity": "COMPLETE",
@@ -10823,15 +10944,22 @@
               },
               "resourceIdentity": {
                 "resourceTypeId": "gold",
-                "ontologyKey": null,
-                "commodityName": null,
-                "category": null,
-                "physicalForm": null,
-                "upstreamProcess": null,
-                "midstreamProcess": null,
-                "refinedOutputs": [],
-                "downstreamSectors": [],
-                "ontologyStatus": "UNMAPPED_RESOURCE_TYPE"
+                "ontologyKey": "GOLD",
+                "commodityName": "Gold Ore & Doré",
+                "category": "PRECIOUS_METAL",
+                "physicalForm": "SOLID_ORE_AND_DORE",
+                "upstreamProcess": "Open-Pit / Underground Mining, Gravity, Flotation",
+                "midstreamProcess": "Crushing, Grinding, Gravity/Flotation, Cyanide Leaching, Smelting",
+                "refinedOutputs": [
+                  "GOLD_DORE",
+                  "JEWELRY",
+                  "ELECTRONICS"
+                ],
+                "downstreamSectors": [
+                  "CENTRAL_BANK_RESERVES",
+                  "INDUSTRIAL_CHEMICALS"
+                ],
+                "ontologyStatus": "RESOLVED_FROM_RESOURCE_ONTOLOGY"
               },
               "dataCompleteness": {
                 "identity": "COMPLETE",
@@ -11377,15 +11505,22 @@
               },
               "resourceIdentity": {
                 "resourceTypeId": "gold",
-                "ontologyKey": null,
-                "commodityName": null,
-                "category": null,
-                "physicalForm": null,
-                "upstreamProcess": null,
-                "midstreamProcess": null,
-                "refinedOutputs": [],
-                "downstreamSectors": [],
-                "ontologyStatus": "UNMAPPED_RESOURCE_TYPE"
+                "ontologyKey": "GOLD",
+                "commodityName": "Gold Ore & Doré",
+                "category": "PRECIOUS_METAL",
+                "physicalForm": "SOLID_ORE_AND_DORE",
+                "upstreamProcess": "Open-Pit / Underground Mining, Gravity, Flotation",
+                "midstreamProcess": "Crushing, Grinding, Gravity/Flotation, Cyanide Leaching, Smelting",
+                "refinedOutputs": [
+                  "GOLD_DORE",
+                  "JEWELRY",
+                  "ELECTRONICS"
+                ],
+                "downstreamSectors": [
+                  "CENTRAL_BANK_RESERVES",
+                  "INDUSTRIAL_CHEMICALS"
+                ],
+                "ontologyStatus": "RESOLVED_FROM_RESOURCE_ONTOLOGY"
               },
               "dataCompleteness": {
                 "identity": "COMPLETE",
@@ -11785,7 +11920,7 @@
           "mineSites": [
             {
               "id": "SITE_VUT_luganville_aggregate_quarry_zone",
-              "name": "Luganville Aggregate Quarry Resource Area",
+              "name": "Luganville Aggregate Quarry Zone",
               "siteName": "Luganville Aggregate Quarry Zone",
               "siteType": "QUARRY",
               "resourceId": "construction_aggregate",
@@ -11824,7 +11959,7 @@
                 "reserve": "UNOBSERVED",
                 "production": "UNOBSERVED",
                 "grade": "UNOBSERVED",
-                "ownership": "UNOBSERVED",
+                "ownership": "OBSERVED",
                 "operation": "OBSERVED",
                 "extractionMethod": "OBSERVED",
                 "provenance": "RESOURCE_JSON_WEB_RESEARCH_CATALOG"
@@ -11844,10 +11979,10 @@
                 "operator": "Licensed operators"
               },
               "ownerEvidenceStatus": "UNOBSERVED_SITE_SPECIFIC",
-              "operatorEvidenceStatus": "REGIONAL_LOCAL_BUSINESS_EVIDENCE",
+              "operatorEvidenceStatus": "UNOBSERVED_SITE_SPECIFIC",
               "siteIdentity": {
                 "siteId": "SITE_VUT_luganville_aggregate_quarry_zone",
-                "siteName": "Luganville Aggregate Quarry Resource Area",
+                "siteName": "Luganville Aggregate Quarry Zone",
                 "siteClass": "QUARRY",
                 "countryIso3": "VUT",
                 "countryName": "Vanuatu",
@@ -11873,7 +12008,7 @@
                 "owner": null,
                 "operator": null,
                 "ownerEvidenceStatus": "UNOBSERVED_SITE_SPECIFIC",
-                "operatorEvidenceStatus": "REGIONAL_LOCAL_BUSINESS_EVIDENCE"
+                "operatorEvidenceStatus": "UNOBSERVED_SITE_SPECIFIC"
               },
               "quantitativeProfile": {
                 "reserve": {
@@ -11897,15 +12032,21 @@
               },
               "resourceIdentity": {
                 "resourceTypeId": "construction_aggregate",
-                "ontologyKey": null,
-                "commodityName": null,
-                "category": null,
-                "physicalForm": null,
-                "upstreamProcess": null,
-                "midstreamProcess": null,
-                "refinedOutputs": [],
-                "downstreamSectors": [],
-                "ontologyStatus": "UNMAPPED_RESOURCE_TYPE"
+                "ontologyKey": "CONSTRUCTION_AGGREGATE",
+                "commodityName": "Construction Aggregates, Sand & Gravel",
+                "category": "CONSTRUCTION_MATERIAL",
+                "physicalForm": "CRUSHED_STONE_SAND_GRAVEL",
+                "upstreamProcess": "Quarrying, Dredging, Borrow-Pit Extraction",
+                "midstreamProcess": "Crushing, Screening, Washing, Grading",
+                "refinedOutputs": [
+                  "GRADED_AGGREGATE",
+                  "READY_MIX_CONCRETE",
+                  "ASPHALT_FEED"
+                ],
+                "downstreamSectors": [
+                  "ROAD_BASE"
+                ],
+                "ontologyStatus": "RESOLVED_FROM_RESOURCE_ONTOLOGY"
               },
               "dataCompleteness": {
                 "identity": "COMPLETE",
@@ -11920,20 +12061,7 @@
                 },
                 "provenance": "PRESENT",
                 "webResearch": "NOT_PER_SITE_VERIFIED"
-              },
-              "siteScope": "RESOURCE_AREA_REFERENCE",
-              "knownLocalOperators": [
-                "KD Enterprise",
-                "Santo Earthworks Ltd."
-              ],
-              "webResearchEvidence": [
-                {
-                  "url": "https://www.kdentreprise.com/about",
-                  "accessed": "2026-09-26",
-                  "scope": "current_crushing_screening_aggregate_operation"
-                }
-              ],
-              "researchState": "SITE_SPECIFIC_WEB_REVIEWED"
+              }
             }
           ],
           "processingFacilities": [
@@ -12435,15 +12563,21 @@
               },
               "resourceIdentity": {
                 "resourceTypeId": "construction_aggregate",
-                "ontologyKey": null,
-                "commodityName": null,
-                "category": null,
-                "physicalForm": null,
-                "upstreamProcess": null,
-                "midstreamProcess": null,
-                "refinedOutputs": [],
-                "downstreamSectors": [],
-                "ontologyStatus": "UNMAPPED_RESOURCE_TYPE"
+                "ontologyKey": "CONSTRUCTION_AGGREGATE",
+                "commodityName": "Construction Aggregates, Sand & Gravel",
+                "category": "CONSTRUCTION_MATERIAL",
+                "physicalForm": "CRUSHED_STONE_SAND_GRAVEL",
+                "upstreamProcess": "Quarrying, Dredging, Borrow-Pit Extraction",
+                "midstreamProcess": "Crushing, Screening, Washing, Grading",
+                "refinedOutputs": [
+                  "GRADED_AGGREGATE",
+                  "READY_MIX_CONCRETE",
+                  "ASPHALT_FEED"
+                ],
+                "downstreamSectors": [
+                  "ROAD_BASE"
+                ],
+                "ontologyStatus": "RESOLVED_FROM_RESOURCE_ONTOLOGY"
               },
               "dataCompleteness": {
                 "identity": "COMPLETE",
@@ -12969,15 +13103,21 @@
               },
               "resourceIdentity": {
                 "resourceTypeId": "construction_aggregate",
-                "ontologyKey": null,
-                "commodityName": null,
-                "category": null,
-                "physicalForm": null,
-                "upstreamProcess": null,
-                "midstreamProcess": null,
-                "refinedOutputs": [],
-                "downstreamSectors": [],
-                "ontologyStatus": "UNMAPPED_RESOURCE_TYPE"
+                "ontologyKey": "CONSTRUCTION_AGGREGATE",
+                "commodityName": "Construction Aggregates, Sand & Gravel",
+                "category": "CONSTRUCTION_MATERIAL",
+                "physicalForm": "CRUSHED_STONE_SAND_GRAVEL",
+                "upstreamProcess": "Quarrying, Dredging, Borrow-Pit Extraction",
+                "midstreamProcess": "Crushing, Screening, Washing, Grading",
+                "refinedOutputs": [
+                  "GRADED_AGGREGATE",
+                  "READY_MIX_CONCRETE",
+                  "ASPHALT_FEED"
+                ],
+                "downstreamSectors": [
+                  "ROAD_BASE"
+                ],
+                "ontologyStatus": "RESOLVED_FROM_RESOURCE_ONTOLOGY"
               },
               "dataCompleteness": {
                 "identity": "COMPLETE",
@@ -13515,15 +13655,21 @@
               },
               "resourceIdentity": {
                 "resourceTypeId": "coral_aggregate",
-                "ontologyKey": null,
-                "commodityName": null,
-                "category": null,
-                "physicalForm": null,
-                "upstreamProcess": null,
-                "midstreamProcess": null,
-                "refinedOutputs": [],
-                "downstreamSectors": [],
-                "ontologyStatus": "UNMAPPED_RESOURCE_TYPE"
+                "ontologyKey": "CORAL_AGGREGATE",
+                "commodityName": "Coral Aggregate & Carbonate Dredged Material",
+                "category": "CONSTRUCTION_MATERIAL",
+                "physicalForm": "SEDIMENT_AND_CARBONATE",
+                "upstreamProcess": "Lagoon Dredging, Coral Sand/Gravel Extraction",
+                "midstreamProcess": "Screening, Crushing, Washing, Grading",
+                "refinedOutputs": [
+                  "CORAL_AGGREGATE",
+                  "CONCRETE_AGGREGATE",
+                  "ROAD_BASE"
+                ],
+                "downstreamSectors": [
+                  "RECLAMATION_FILL"
+                ],
+                "ontologyStatus": "RESOLVED_FROM_RESOURCE_ONTOLOGY"
               },
               "dataCompleteness": {
                 "identity": "COMPLETE",
@@ -14047,15 +14193,21 @@
               },
               "resourceIdentity": {
                 "resourceTypeId": "construction_aggregate",
-                "ontologyKey": null,
-                "commodityName": null,
-                "category": null,
-                "physicalForm": null,
-                "upstreamProcess": null,
-                "midstreamProcess": null,
-                "refinedOutputs": [],
-                "downstreamSectors": [],
-                "ontologyStatus": "UNMAPPED_RESOURCE_TYPE"
+                "ontologyKey": "CONSTRUCTION_AGGREGATE",
+                "commodityName": "Construction Aggregates, Sand & Gravel",
+                "category": "CONSTRUCTION_MATERIAL",
+                "physicalForm": "CRUSHED_STONE_SAND_GRAVEL",
+                "upstreamProcess": "Quarrying, Dredging, Borrow-Pit Extraction",
+                "midstreamProcess": "Crushing, Screening, Washing, Grading",
+                "refinedOutputs": [
+                  "GRADED_AGGREGATE",
+                  "READY_MIX_CONCRETE",
+                  "ASPHALT_FEED"
+                ],
+                "downstreamSectors": [
+                  "ROAD_BASE"
+                ],
+                "ontologyStatus": "RESOLVED_FROM_RESOURCE_ONTOLOGY"
               },
               "dataCompleteness": {
                 "identity": "COMPLETE",
@@ -15114,15 +15266,21 @@
               },
               "resourceIdentity": {
                 "resourceTypeId": "construction_aggregate",
-                "ontologyKey": null,
-                "commodityName": null,
-                "category": null,
-                "physicalForm": null,
-                "upstreamProcess": null,
-                "midstreamProcess": null,
-                "refinedOutputs": [],
-                "downstreamSectors": [],
-                "ontologyStatus": "UNMAPPED_RESOURCE_TYPE"
+                "ontologyKey": "CONSTRUCTION_AGGREGATE",
+                "commodityName": "Construction Aggregates, Sand & Gravel",
+                "category": "CONSTRUCTION_MATERIAL",
+                "physicalForm": "CRUSHED_STONE_SAND_GRAVEL",
+                "upstreamProcess": "Quarrying, Dredging, Borrow-Pit Extraction",
+                "midstreamProcess": "Crushing, Screening, Washing, Grading",
+                "refinedOutputs": [
+                  "GRADED_AGGREGATE",
+                  "READY_MIX_CONCRETE",
+                  "ASPHALT_FEED"
+                ],
+                "downstreamSectors": [
+                  "ROAD_BASE"
+                ],
+                "ontologyStatus": "RESOLVED_FROM_RESOURCE_ONTOLOGY"
               },
               "dataCompleteness": {
                 "identity": "COMPLETE",
@@ -15639,15 +15797,21 @@
               },
               "resourceIdentity": {
                 "resourceTypeId": "construction_aggregate",
-                "ontologyKey": null,
-                "commodityName": null,
-                "category": null,
-                "physicalForm": null,
-                "upstreamProcess": null,
-                "midstreamProcess": null,
-                "refinedOutputs": [],
-                "downstreamSectors": [],
-                "ontologyStatus": "UNMAPPED_RESOURCE_TYPE"
+                "ontologyKey": "CONSTRUCTION_AGGREGATE",
+                "commodityName": "Construction Aggregates, Sand & Gravel",
+                "category": "CONSTRUCTION_MATERIAL",
+                "physicalForm": "CRUSHED_STONE_SAND_GRAVEL",
+                "upstreamProcess": "Quarrying, Dredging, Borrow-Pit Extraction",
+                "midstreamProcess": "Crushing, Screening, Washing, Grading",
+                "refinedOutputs": [
+                  "GRADED_AGGREGATE",
+                  "READY_MIX_CONCRETE",
+                  "ASPHALT_FEED"
+                ],
+                "downstreamSectors": [
+                  "ROAD_BASE"
+                ],
+                "ontologyStatus": "RESOLVED_FROM_RESOURCE_ONTOLOGY"
               },
               "dataCompleteness": {
                 "identity": "COMPLETE",
@@ -16165,15 +16329,22 @@
               },
               "resourceIdentity": {
                 "resourceTypeId": "limestone",
-                "ontologyKey": null,
-                "commodityName": null,
-                "category": null,
-                "physicalForm": null,
-                "upstreamProcess": null,
-                "midstreamProcess": null,
-                "refinedOutputs": [],
-                "downstreamSectors": [],
-                "ontologyStatus": "UNMAPPED_RESOURCE_TYPE"
+                "ontologyKey": "LIMESTONE",
+                "commodityName": "Limestone & Industrial Carbonate Rock",
+                "category": "INDUSTRIAL_MINERAL",
+                "physicalForm": "SOLID_ROCK",
+                "upstreamProcess": "Drilling, Blasting, Quarry Excavation",
+                "midstreamProcess": "Crushing, Screening, Calcination, Cement Kiln Feed",
+                "refinedOutputs": [
+                  "CEMENT_CLINKER",
+                  "CONSTRUCTION_AGGREGATES",
+                  "CEMENT"
+                ],
+                "downstreamSectors": [
+                  "LIME",
+                  "GLASS"
+                ],
+                "ontologyStatus": "RESOLVED_FROM_RESOURCE_ONTOLOGY"
               },
               "dataCompleteness": {
                 "identity": "COMPLETE",
