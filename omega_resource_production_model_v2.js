@@ -21,9 +21,27 @@ const scale=s=>{const x=String(s||'').toLowerCase();return x.includes('trillion'
 function measure(text,allowed){const m=String(text??'').match(new RegExp('([0-9]+(?:\\.[0-9]+)?)\\s*(trillion|billion|million|thousand)?\\s*('+allowed.join('|')+')\\b','i'));if(!m)return{status:'UNOBSERVED',value:null,unit:null,raw:String(text??'')};return{status:'OBSERVED',value:Number(m[1])*scale(m[2]),unit:unit(m[3]),sourceUnit:m[3].toUpperCase(),raw:String(text??'')}}
 function parseReserve(text,resourceId,targetUnit){
  const external=g.Omega?.ResourceRealism?.parseReserve;
- if(typeof external==='function'){const x=external(text,resourceId);if(x?.status)return{...x,targetUnit:targetUnit||x.unitFamily||x.sourceUnit||null};}
+ if(typeof external==='function'){const x=external(text,resourceId);if(x?.status){
+   const family=x.unitFamily||x.sourceUnit||null;
+   const target=targetUnit||family;
+   let value=x.value;
+   if(family==='TCF'&&target==='BCM')value=Number(x.value)*28.316846592;
+   else if(family==='BCF'&&target==='BCM')value=Number(x.value)*0.028316846592;
+   else if(family==='MCM'&&target==='BCM')value=Number(x.value)*0.001;
+   else if(family==='MCF'&&target==='BCM')value=Number(x.value)*0.000000028316846592;
+   else if(family==='TONNES'&&target==='TROY_OZ')value=Number(x.value)*32150.74656862745;
+   return{...x,value,unit:target,targetUnit:target};
+ }}
  const r=rid(resourceId),t=String(text??''),u=r==='crude_oil'?UNITS.BBL:r==='natural_gas'?[...UNITS.TCF,...UNITS.BCF,...UNITS.BCM,...UNITS.MCM,...UNITS.MCF]:r==='gold'?[...UNITS.TROY_OZ,...UNITS.TONNES]:UNITS.TONNES;
- const x=measure(t,u);return x.status==='OBSERVED'?{...x,targetUnit:targetUnit||x.unit}:{status:'UNOBSERVED',value:null,unit:targetUnit||null,raw:t}
+ const x=measure(t,u);if(x.status!=='OBSERVED')return{status:'UNOBSERVED',value:null,unit:targetUnit||null,raw:t};
+ const target=targetUnit||(r==='natural_gas'?'BCM':r==='gold'?'TROY_OZ':x.unit);
+ let value=x.value;
+ if(x.unit==='TCF'&&target==='BCM')value*=28.316846592;
+ else if(x.unit==='BCF'&&target==='BCM')value*=0.028316846592;
+ else if(x.unit==='MCM'&&target==='BCM')value*=0.001;
+ else if(x.unit==='MCF'&&target==='BCM')value*=0.000000028316846592;
+ else if(x.unit==='TONNES'&&target==='TROY_OZ')value*=32150.74656862745;
+ return{...x,value,unit:target,targetUnit:target};
 }
 const pick=(o,keys)=>{for(const k of keys)if(o?.[k]!==undefined&&o?.[k]!==null&&o?.[k]!=='')return o[k];return null};
 const frac=v=>{const n=num(v);return n===null?null:n>1?n/100:n};
