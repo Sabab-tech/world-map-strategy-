@@ -401,8 +401,9 @@
   }
   function extractionRules(){const r=g.__OmegaResourceEconomyRules;return r&&typeof r==='object'?r.extraction||{}:{};}
   function simulationDailyRate(resourceId){
-    const rate=n(extractionRules().baselineDailyRates?.[rid0(resourceId)]);
-    return rate!==null&&rate>0?rate:null;
+    const rid=rid0(resourceId),rate=n(extractionRules().baselineDailyRates?.[rid]),unit=String(extractionRules().baselineRateUnits?.[rid]||'').toUpperCase();
+    if(rate===null||rate<=0)return null;
+    return unit==='BCM_PER_YEAR'?rate/365:rate;
   }
   function simulationEffort(){return Math.max(0,Math.min(1,n(extractionRules().defaultEffortUtilization)??0.82));}
   function simulationFactors(){
