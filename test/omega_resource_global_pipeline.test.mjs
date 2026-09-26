@@ -104,6 +104,8 @@ test('global resource pipeline runs every RESOURCE_JSON mine and keeps each resu
   context.globalThis=context;
   vm.createContext(context);
 
+  context.__OmegaResourceEconomyRules=loadJson('resource_economy_rules.json');
+  vm.runInContext(readFileSync('omega_resource_science_runtime.js','utf8'),context,{filename:'omega_resource_science_runtime.js'});
   vm.runInContext(readFileSync('omega_resource_part04_identity_runtime.js','utf8'),context,{filename:'omega_resource_part04_identity_runtime.js'});
   vm.runInContext(readFileSync('omega_resource_part05_reserve_extraction_runtime.js','utf8'),context,{filename:'omega_resource_part05_reserve_extraction_runtime.js'});
   vm.runInContext(readFileSync('omega_resource_country_boundary_guard.js','utf8'),context,{filename:'omega_resource_country_boundary_guard.js'});
