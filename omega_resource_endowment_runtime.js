@@ -422,14 +422,14 @@
   }
   function simulationRecovery(resourceId){return Math.max(0,Math.min(1,n(extractionRules().recoveryFactors?.[rid0(resourceId)])??0.75));}
   function siteExecutionRows(c,existing={}){
-    const p=profile(c)||{},rows=[],seen=new Set(),p5=g.GSRSK_Part05||g.GSRSK_ResourceReserveExtractionEngine,rules=extractionRules(),refs=mineSiteReferenceRows(c);
+    const p=profile(c)||{},rows=[],seen=new Set(),p5=g.GSRSK_Part05||g.GSRSK_ResourceReserveExtractionEngine,rules=extractionRules(),refs=mineSiteReferenceRows(c),horizon=Math.max(1,n(rules.simulationReserveHorizonDays)??3650);
     const add=(asset,explicitResource=null,assetType='MINE_SITE')=>{
       const siteName=String(asset?.siteName||asset?.name||asset?.mineName||asset?.depositName||asset||'').trim();if(!siteName)return;
       const siteKey=String(asset?.siteReferenceKey||('SITE:'+canonical(c)+':'+tok(siteName))).trim();
       const occurrenceKey=(assetType==='MINE_SITE'?'SITE_OCC:':'FIELD_OCC:')+canonical(c)+':'+tok(siteKey);if(seen.has(occurrenceKey))return;seen.add(occurrenceKey);
       const resourceId=simulationSiteResourceId(c,siteName,explicitResource),daily=simulationDailyRate(resourceId);if(!resourceId||daily===null)return;
       if(rules.syntheticSitePolicy!=='SIMULATED_ONLY_WITH_EXPLICIT_RULESET')return;
-      const old=existing?.mineStates?.[occurrenceKey],recovery=simulationRecovery(resourceId),reserveBase=daily*3650;
+      const old=existing?.mineStates?.[occurrenceKey],recovery=simulationRecovery(resourceId),reserveBase=daily*horizon;
       const reserve=old&&typeof old==='object'&&p5?.ReserveState?new p5.ReserveState(clone(old)):
         p5?.ReserveState?new p5.ReserveState({
           occurrenceKey,countryId:canonical(c),depositKey:'SIM_'+tok(occurrenceKey),resourceId,
@@ -438,7 +438,7 @@
           quantityAuthority:'SIMULATION_RULESET',recoverabilityAuthority:'SIMULATION_RULESET',
           operationalStatus:'ACTIVE_EXTRACTION',stateVersion:1,
           provenance:{sourceAuthority:'SIMULATION_RULESET',sourceDatasetId:'RESOURCE_JSON.countryProfiles',sourcePath:asset?.sourcePath||null,
-            quantityAuthority:'SIMULATION_RULESET',capacityAuthority:'SIMULATION_RULESET',simulationExtractionHorizonDays:3650}
+            quantityAuthority:'SIMULATION_RULESET',capacityAuthority:'SIMULATION_RULESET',simulationExtractionHorizonDays:horizon}
         }):null;
       if(!reserve)return;
       const cap=p5?.Capacity?new p5.Capacity({
