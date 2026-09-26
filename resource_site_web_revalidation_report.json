@@ -1,0 +1,460 @@
+{
+  "runDate": "2026-09-27",
+  "totalSites": 199,
+  "legacyTargets": 90,
+  "matchedByWebSearch": 0,
+  "wikipediaMatches": 0,
+  "wikidataMatches": 0,
+  "unresolved": [
+    {
+      "id": "SITE_TUN_mdhilla_phosphate_mine",
+      "siteName": "Mdhilla Phosphate Mine",
+      "countryCode": "TUN"
+    },
+    {
+      "id": "SITE_SDN_hassai_gold_mine",
+      "siteName": "Hassai Gold Mine",
+      "countryCode": "SDN"
+    },
+    {
+      "id": "SITE_TGO_hahoto_kpogam_phosphate_mine",
+      "siteName": "Hahotoé-Kpogamé Phosphate Mine",
+      "countryCode": "TGO"
+    },
+    {
+      "id": "SITE_CPV_santiago_pozzolana_quarry_zone",
+      "siteName": "Santiago Pozzolana Quarry Zone",
+      "countryCode": "CPV"
+    },
+    {
+      "id": "SITE_CAF_ndassima_gold_project",
+      "siteName": "Ndassima Gold Project",
+      "countryCode": "CAF"
+    },
+    {
+      "id": "SITE_TCD_kouri_bougoudi_gold_mining_area",
+      "siteName": "Kouri Bougoudi Gold Mining Area",
+      "countryCode": "TCD"
+    },
+    {
+      "id": "SITE_COG_mayoko_iron_ore_mine",
+      "siteName": "Mayoko Iron Ore Mine",
+      "countryCode": "COG"
+    },
+    {
+      "id": "SITE_GNQ_zafiro_oil_field",
+      "siteName": "Zafiro Oil Field",
+      "countryCode": "GNQ"
+    },
+    {
+      "id": "SITE_STP_s_o_tom_aggregate_quarry_zone",
+      "siteName": "São Tomé Aggregate Quarry Zone",
+      "countryCode": "STP"
+    },
+    {
+      "id": "SITE_ETH_lega_dembi_gold_mine",
+      "siteName": "Lega Dembi Gold Mine",
+      "countryCode": "ETH"
+    },
+    {
+      "id": "SITE_UGA_tororo_limestone_quarry",
+      "siteName": "Tororo Limestone Quarry",
+      "countryCode": "UGA"
+    },
+    {
+      "id": "SITE_SOM_el_buur_gold_mining_area",
+      "siteName": "El Buur Gold Mining Area",
+      "countryCode": "SOM"
+    },
+    {
+      "id": "SITE_SSD_paloch_oil_field",
+      "siteName": "Paloch Oil Field",
+      "countryCode": "SSD"
+    },
+    {
+      "id": "SITE_COM_grande_comore_basalt_aggregate_sites",
+      "siteName": "Grande Comore Basalt Aggregate Sites",
+      "countryCode": "COM"
+    },
+    {
+      "id": "SITE_MOZ_moatize_coal_mine",
+      "siteName": "Moatize Coal Mine",
+      "countryCode": "MOZ"
+    },
+    {
+      "id": "SITE_SWZ_ngwenya_iron_mine",
+      "siteName": "Ngwenya Iron Mine",
+      "countryCode": "SWZ"
+    },
+    {
+      "id": "SITE_SAU_ad_duwayhi_gold_mine",
+      "siteName": "Ad Duwayhi Gold Mine",
+      "countryCode": "SAU"
+    },
+    {
+      "id": "SITE_QAT_north_field_gas",
+      "siteName": "North Field Gas",
+      "countryCode": "QAT"
+    },
+    {
+      "id": "SITE_KWT_greater_burgan_oilfield",
+      "siteName": "Greater Burgan Oilfield",
+      "countryCode": "KWT"
+    },
+    {
+      "id": "SITE_OMN_lasail_copper_mine",
+      "siteName": "Lasail Copper Mine",
+      "countryCode": "OMN"
+    },
+    {
+      "id": "SITE_BHR_awali_oil_field",
+      "siteName": "Awali Oil Field",
+      "countryCode": "BHR"
+    },
+    {
+      "id": "SITE_YEM_marib_jawf_oil_fields",
+      "siteName": "Marib-Jawf Oil Fields",
+      "countryCode": "YEM"
+    },
+    {
+      "id": "SITE_IRQ_rumaila_oil_field",
+      "siteName": "Rumaila Oil Field",
+      "countryCode": "IRQ"
+    },
+    {
+      "id": "SITE_TUR_k_rka_boron_mining_complex",
+      "siteName": "Kırka Boron Mining Complex",
+      "countryCode": "TUR"
+    },
+    {
+      "id": "SITE_SYR_al_omar_oil_field",
+      "siteName": "Al-Omar Oil Field",
+      "countryCode": "SYR"
+    },
+    {
+      "id": "SITE_CHN_jinchuan_nickel_mine_complex",
+      "siteName": "Jinchuan Nickel Mine Complex",
+      "countryCode": "CHN"
+    },
+    {
+      "id": "SITE_JPN_kushiro_coal_mine",
+      "siteName": "Kushiro Coal Mine",
+      "countryCode": "JPN"
+    },
+    {
+      "id": "SITE_KOR_samcheok_limestone_mining_district",
+      "siteName": "Samcheok Limestone Mining District",
+      "countryCode": "KOR"
+    },
+    {
+      "id": "SITE_PRK_musan_iron_mine",
+      "siteName": "Musan Iron Mine",
+      "countryCode": "PRK"
+    },
+    {
+      "id": "SITE_TWN_hualien_marble_quarry_zone",
+      "siteName": "Hualien Marble Quarry Zone",
+      "countryCode": "TWN"
+    },
+    {
+      "id": "SITE_IDN_batu_hijau_copper_gold_mine",
+      "siteName": "Batu Hijau Copper-Gold Mine",
+      "countryCode": "IDN"
+    },
+    {
+      "id": "SITE_MYS_penjom_gold_mine",
+      "siteName": "Penjom Gold Mine",
+      "countryCode": "MYS"
+    },
+    {
+      "id": "SITE_MMR_letpadaung_copper_mine",
+      "siteName": "Letpadaung Copper Mine",
+      "countryCode": "MMR"
+    },
+    {
+      "id": "SITE_SGP_pulau_ubin_granite_quarry_sites",
+      "siteName": "Pulau Ubin Granite Quarry Sites",
+      "countryCode": "SGP"
+    },
+    {
+      "id": "SITE_BRN_champion_west_oil_field",
+      "siteName": "Champion West Oil Field",
+      "countryCode": "BRN"
+    },
+    {
+      "id": "SITE_LAO_phu_kham_copper_gold_mine",
+      "siteName": "Phu Kham Copper-Gold Mine",
+      "countryCode": "LAO"
+    },
+    {
+      "id": "SITE_GEO_chiatura_manganese_mining_district",
+      "siteName": "Chiatura Manganese Mining District",
+      "countryCode": "GEO"
+    },
+    {
+      "id": "SITE_RUS_lebedinsky_iron_ore_mine",
+      "siteName": "Lebedinsky Iron Ore Mine",
+      "countryCode": "RUS"
+    },
+    {
+      "id": "SITE_DEU_hambach_lignite_mine",
+      "siteName": "Hambach Lignite Mine",
+      "countryCode": "DEU"
+    },
+    {
+      "id": "SITE_FRA_prasville_limestone_quarry",
+      "siteName": "Prasville Limestone Quarry",
+      "countryCode": "FRA"
+    },
+    {
+      "id": "SITE_GBR_boulby_potash_mine",
+      "siteName": "Boulby Potash Mine",
+      "countryCode": "GBR"
+    },
+    {
+      "id": "SITE_ITA_carrara_marble_quarries",
+      "siteName": "Carrara Marble Quarries",
+      "countryCode": "ITA"
+    },
+    {
+      "id": "SITE_ESP_cobre_las_cruces_mine",
+      "siteName": "Cobre Las Cruces Mine",
+      "countryCode": "ESP"
+    },
+    {
+      "id": "SITE_POL_be_chat_w_lignite_mine",
+      "siteName": "Bełchatów Lignite Mine",
+      "countryCode": "POL"
+    },
+    {
+      "id": "SITE_UKR_kryvyi_rih_iron_ore_district",
+      "siteName": "Kryvyi Rih Iron Ore District",
+      "countryCode": "UKR"
+    },
+    {
+      "id": "SITE_NLD_veendam_salt_mine",
+      "siteName": "Veendam Salt Mine",
+      "countryCode": "NLD"
+    },
+    {
+      "id": "SITE_BEL_antoing_limestone_quarry",
+      "siteName": "Antoing Limestone Quarry",
+      "countryCode": "BEL"
+    },
+    {
+      "id": "SITE_CHE_bex_salt_mine",
+      "siteName": "Bex Salt Mine",
+      "countryCode": "CHE"
+    },
+    {
+      "id": "SITE_NOR_tellnes_ilmenite_mine",
+      "siteName": "Tellnes Ilmenite Mine",
+      "countryCode": "NOR"
+    },
+    {
+      "id": "SITE_AUT_erzberg_iron_ore_mine",
+      "siteName": "Erzberg Iron Ore Mine",
+      "countryCode": "AUT"
+    },
+    {
+      "id": "SITE_FIN_kittil_gold_mine",
+      "siteName": "Kittilä Gold Mine",
+      "countryCode": "FIN"
+    },
+    {
+      "id": "SITE_DNK_faxe_limestone_quarry",
+      "siteName": "Faxe Limestone Quarry",
+      "countryCode": "DNK"
+    },
+    {
+      "id": "SITE_IRL_tara_zinc_mine",
+      "siteName": "Tara Zinc Mine",
+      "countryCode": "IRL"
+    },
+    {
+      "id": "SITE_PRT_panasqueira_tungsten_mine",
+      "siteName": "Panasqueira Tungsten Mine",
+      "countryCode": "PRT"
+    },
+    {
+      "id": "SITE_GRC_olympias_gold_mine",
+      "siteName": "Olympias Gold Mine",
+      "countryCode": "GRC"
+    },
+    {
+      "id": "SITE_CZE_doln_ro_nka_uranium_mine",
+      "siteName": "Dolní Rožínka Uranium Mine",
+      "countryCode": "CZE"
+    },
+    {
+      "id": "SITE_ROU_ro_ia_poieni_copper_mine",
+      "siteName": "Roșia Poieni Copper Mine",
+      "countryCode": "ROU"
+    },
+    {
+      "id": "SITE_HUN_visonta_lignite_mine",
+      "siteName": "Visonta Lignite Mine",
+      "countryCode": "HUN"
+    },
+    {
+      "id": "SITE_SVK_jel_ava_magnesite_mine",
+      "siteName": "Jelšava Magnesite Mine",
+      "countryCode": "SVK"
+    },
+    {
+      "id": "SITE_BGR_chelopech_copper_gold_mine",
+      "siteName": "Chelopech Copper-Gold Mine",
+      "countryCode": "BGR"
+    },
+    {
+      "id": "SITE_SRB_majdanpek_copper_mine",
+      "siteName": "Majdanpek Copper Mine",
+      "countryCode": "SRB"
+    },
+    {
+      "id": "SITE_HRV_koroma_no_limestone_quarry",
+      "siteName": "Koromačno Limestone Quarry",
+      "countryCode": "HRV"
+    },
+    {
+      "id": "SITE_EST_narva_oil_shale_mine",
+      "siteName": "Narva Oil Shale Mine",
+      "countryCode": "EST"
+    },
+    {
+      "id": "SITE_LVA_saulkalne_dolomite_quarry",
+      "siteName": "Saulkalne Dolomite Quarry",
+      "countryCode": "LVA"
+    },
+    {
+      "id": "SITE_LTU_akmen_limestone_quarry",
+      "siteName": "Akmenė Limestone Quarry",
+      "countryCode": "LTU"
+    },
+    {
+      "id": "SITE_BLR_soligorsk_potash_mine",
+      "siteName": "Soligorsk Potash Mine",
+      "countryCode": "BLR"
+    },
+    {
+      "id": "SITE_MDA_cricova_limestone_mine",
+      "siteName": "Cricova Limestone Mine",
+      "countryCode": "MDA"
+    },
+    {
+      "id": "SITE_ALB_bulqiz_chromite_mine",
+      "siteName": "Bulqizë Chromite Mine",
+      "countryCode": "ALB"
+    },
+    {
+      "id": "SITE_MKD_sasa_lead_zinc_mine",
+      "siteName": "Sasa Lead-Zinc Mine",
+      "countryCode": "MKD"
+    },
+    {
+      "id": "SITE_BIH_vare_silver_lead_zinc_mine",
+      "siteName": "Vareš Silver-Lead-Zinc Mine",
+      "countryCode": "BIH"
+    },
+    {
+      "id": "SITE_MNE_pljevlja_coal_mine",
+      "siteName": "Pljevlja Coal Mine",
+      "countryCode": "MNE"
+    },
+    {
+      "id": "SITE_ISL_h_lasandur_aggregate_quarry",
+      "siteName": "Hólasandur Aggregate Quarry",
+      "countryCode": "ISL"
+    },
+    {
+      "id": "SITE_LUX_rumelange_iron_mine",
+      "siteName": "Rumelange Iron Mine",
+      "countryCode": "LUX"
+    },
+    {
+      "id": "SITE_CYP_skouriotissa_copper_mine",
+      "siteName": "Skouriotissa Copper Mine",
+      "countryCode": "CYP"
+    },
+    {
+      "id": "SITE_AND_llorts_iron_mine",
+      "siteName": "Llorts Iron Mine",
+      "countryCode": "AND"
+    },
+    {
+      "id": "SITE_USA_morenci_copper_mine",
+      "siteName": "Morenci Copper Mine",
+      "countryCode": "USA"
+    },
+    {
+      "id": "SITE_ARG_cerro_negro_gold_mine",
+      "siteName": "Cerro Negro Gold Mine",
+      "countryCode": "ARG"
+    },
+    {
+      "id": "SITE_COL_cerrej_n_coal_mine",
+      "siteName": "Cerrejón Coal Mine",
+      "countryCode": "COL"
+    },
+    {
+      "id": "SITE_PER_antamina_copper_zinc_mine",
+      "siteName": "Antamina Copper-Zinc Mine",
+      "countryCode": "PER"
+    },
+    {
+      "id": "SITE_VEN_bachaquero_lagunillas_oil_field",
+      "siteName": "Bachaquero-Lagunillas Oil Field",
+      "countryCode": "VEN"
+    },
+    {
+      "id": "SITE_ECU_mirador_copper_mine",
+      "siteName": "Mirador Copper Mine",
+      "countryCode": "ECU"
+    },
+    {
+      "id": "SITE_PRY_vallem_limestone_quarry",
+      "siteName": "Vallemí Limestone Quarry",
+      "countryCode": "PRY"
+    },
+    {
+      "id": "SITE_URY_minas_de_corrales_gold_mining_district",
+      "siteName": "Minas de Corrales Gold Mining District",
+      "countryCode": "URY"
+    },
+    {
+      "id": "SITE_PAN_cobre_panam_mine",
+      "siteName": "Cobre Panamá Mine",
+      "countryCode": "PAN"
+    },
+    {
+      "id": "SITE_CRI_bellavista_gold_mine",
+      "siteName": "Bellavista Gold Mine",
+      "countryCode": "CRI"
+    },
+    {
+      "id": "SITE_NIC_el_lim_n_gold_mine",
+      "siteName": "El Limón Gold Mine",
+      "countryCode": "NIC"
+    },
+    {
+      "id": "SITE_HND_el_mochito_mine",
+      "siteName": "El Mochito Mine",
+      "countryCode": "HND"
+    },
+    {
+      "id": "SITE_SLV_el_dorado_gold_project",
+      "siteName": "El Dorado Gold Project",
+      "countryCode": "SLV"
+    },
+    {
+      "id": "SITE_GTM_fenix_nickel_mine",
+      "siteName": "Fenix Nickel Mine",
+      "countryCode": "GTM"
+    },
+    {
+      "id": "SITE_BLZ_hattieville_sand_and_aggregate_sites",
+      "siteName": "Hattieville Sand and Aggregate Sites",
+      "countryCode": "BLZ"
+    }
+  ]
+}
