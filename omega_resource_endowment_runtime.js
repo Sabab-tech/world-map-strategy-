@@ -231,9 +231,21 @@
   }
   function mineQuality(x){
     const raw=x?.rawDeposit||{},stateQuality=x?.reserveState?.quality||null,model=x?.siteModel?.commodityStreams?.find?.(s=>rid(s?.resourceId)===rid(x?.resourceId))?.quality;
-    if(stateQuality)return{...clone(stateQuality),gradePercent:stateQuality.normalized?.gradePercent??null,concentrationPercent:stateQuality.normalized?.concentrationPercent??null,purity:stateQuality.normalized?.purityFraction??stateQuality.purity??null,APIGravity:stateQuality.normalized?.APIGravity??stateQuality.APIGravity??null,qualityAuthority:(stateQuality.gradeStatus==='OBSERVED'||stateQuality.concentrationStatus==='OBSERVED'||stateQuality.purityStatus==='OBSERVED'||stateQuality.apiGravityStatus==='OBSERVED')?'OBSERVED':'UNOBSERVED'};
-    const q=(g.Omega?.ResourceRealism?.quality&&raw&&!model)?g.Omega.ResourceRealism.quality(raw,x.resourceId):model;
-    if(q)return{...clone(q),gradePercent:q.normalized?.gradePercent??null,concentrationPercent:q.normalized?.concentrationPercent??null,purity:q.normalized?.purityFraction??q.purity??null,APIGravity:q.normalized?.APIGravity??q.APIGravity??null,qualityAuthority:q.gradeStatus==='OBSERVED'||q.concentrationStatus==='OBSERVED'||q.purityStatus==='OBSERVED'||q.apiGravityStatus==='OBSERVED'?'OBSERVED':'SIMULATED'};
+    const rawQuality=(g.Omega?.ResourceRealism?.quality&&raw)?g.Omega.ResourceRealism.quality(raw,x.resourceId):model;
+    const base=stateQuality||rawQuality||model;
+    if(base){
+      const mergedQuality={...clone(rawQuality||{}),...clone(stateQuality||{}),normalized:{...clone(rawQuality?.normalized||{}),...clone(stateQuality?.normalized||{})}};
+      if(mergedQuality.concentration==null&&rawQuality?.concentration!=null)mergedQuality.concentration=rawQuality.concentration;
+      if(mergedQuality.purity==null&&stateQuality?.purity==null&&rawQuality?.purity!=null)mergedQuality.purity=rawQuality.purity;
+      if(mergedQuality.APIGravity==null&&rawQuality?.APIGravity!=null)mergedQuality.APIGravity=rawQuality.APIGravity;
+      return{...mergedQuality,
+        gradePercent:mergedQuality.normalized?.gradePercent??null,
+        concentrationPercent:mergedQuality.normalized?.concentrationPercent??null,
+        purity:mergedQuality.normalized?.purityFraction??mergedQuality.purity??null,
+        APIGravity:mergedQuality.normalized?.APIGravity??mergedQuality.APIGravity??null,
+        qualityAuthority:mergedQuality.gradeStatus==='OBSERVED'||mergedQuality.concentrationStatus==='OBSERVED'||mergedQuality.purityStatus==='OBSERVED'||mergedQuality.apiGravityStatus==='OBSERVED'?'OBSERVED':'SIMULATED'
+      };
+    }
     const legacy=parsePurityFromGrade(raw.grade,x?.resourceId);
     return{purity:legacy.purity,purityStatus:legacy.purityStatus,gradePercent:legacy.gradePercent,gradeText:raw.grade||null,qualityAuthority:'UNOBSERVED',qualitySource:'UNOBSERVED',physicalState:String(raw.physicalState||'SOLID_RUN_OF_MINE').toUpperCase()};
   }
