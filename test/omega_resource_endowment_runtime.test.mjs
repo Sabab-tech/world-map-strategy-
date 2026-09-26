@@ -36,7 +36,8 @@ assert.equal(dataReport.authority,'RESOURCE_JSON');
 assert.equal(dataReport.status,'READY');
 assert.equal(dataReport.depositCount,43);
 assert.equal(dataReport.fallbackUsed,false);
-assert.equal(engine.deposits.length,43);
+const sourceBackedDepositCount=engine.deposits.length;
+assert.equal(sourceBackedDepositCount,43);
 assert.equal(engine.deposits.some(x=>x.sourceAuthority==='RESOURCE_JSON'),true);
 assert.equal(engine.deposits.some(x=>x.id==='dep-barapukuria-coal'&&x.resId==='coal'),true);
 
@@ -119,7 +120,7 @@ assert.equal(globalExtraction.results.length,expectedResourceCountries.length);
 
 const worldState=globalThis.Game.state.resource;
 const hydratedAssetRows=Object.values(worldState).reduce((sum,row)=>sum+(Array.isArray(row?.mines)?row.mines.length:0),0);
-const structuredMineRows=Object.values(worldState).reduce((sum,row)=>sum+(Array.isArray(row?.mines)?row.mines.filter(x=>!x?.simulationGenerated).length:0),0);
+const structuredMineRows=Object.values(worldState).reduce((sum,row)=>sum+(Array.isArray(row?.mines)?row.mines.filter(x=>String(x?.assetType||'').toUpperCase()==='STRUCTURED_DEPOSIT').length:0),0);
 const siteReferenceRows=Object.values(worldState).reduce((sum,row)=>sum+(Array.isArray(row?.mineSiteReferences)?row.mineSiteReferences.length:0),0);
 const siteControllerRows=Object.values(worldState).reduce((sum,row)=>sum+(row?.mineSiteControllers&&typeof row.mineSiteControllers==='object'?Object.keys(row.mineSiteControllers).length:0),0);
 const unifiedAssetRows=Object.values(worldState).flatMap(row=>Array.isArray(row?.unifiedAssets)?row.unifiedAssets:[]);
@@ -129,12 +130,12 @@ const simulatedMineOutputs=profileMineOutputs.filter(x=>x?.simulationGenerated==
 const simulatedFieldOutputs=Object.values(worldState).flatMap(row=>Object.values(row?.mineOutputs&&typeof row.mineOutputs==='object'?row.mineOutputs:{})).filter(x=>x?.simulationGenerated===true&&['OIL_FIELD','GAS_FIELD'].includes(x?.assetType));
 assert.equal(siteReferenceRows,199);
 assert.equal(siteControllerRows,199);
-assert.equal(unifiedAssetRows.length,engine.deposits.length+199);
+assert.equal(unifiedAssetRows.length,sourceBackedDepositCount+199);
 assert.equal(unifiedAssetIds.size,unifiedAssetRows.length);
-assert.equal(unifiedAssetRows.filter(x=>x?.assetType==='STRUCTURED_DEPOSIT').length,engine.deposits.length);
+assert.equal(unifiedAssetRows.filter(x=>x?.assetType==='STRUCTURED_DEPOSIT').length,sourceBackedDepositCount);
 assert.equal(unifiedAssetRows.filter(x=>x?.assetType==='PROFILE_SITE_REFERENCE').length,199);
 assert.ok(unifiedAssetRows.every(x=>x?.schemaVersion&&x?.assetId&&x?.resourceType&&x?.reserve&&x?.production&&x?.quality&&x?.ownership&&x?.flow&&x?.dataAuthority&&x?.provenance));
-assert.equal(structuredMineRows,engine.deposits.length);
+assert.equal(structuredMineRows,sourceBackedDepositCount);
 assert.equal(profileMineOutputs.length,199);
 assert(simulatedFieldOutputs.length>0,'expected hydrocarbon field execution assets');
 assert(profileMineOutputs.every(x=>(x?.producedQuantity||0)>0&&x?.effortUtilization>0&&x?.effortUtilization<=1),'some profile mine site did not execute with valid utilization');
