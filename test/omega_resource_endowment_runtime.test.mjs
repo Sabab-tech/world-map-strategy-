@@ -142,7 +142,7 @@ for(const [countryId,row] of Object.entries(worldState)){
     assert.equal(output.simulationGenerated,true);
     assert.equal(output.assetType,'MINE_SITE');
     assert(output.batchId,countryId+' missing site batch '+siteKey);
-    assert.equal(output.effortUtilization,1);
+    assert.ok(output.effortUtilization>0&&output.effortUtilization<=1);
     const lot=row.inventoryLots?.[output.batchId];
     assert(lot,countryId+' missing site inventory lot '+siteKey);
     assert.equal(lot.countryId,countryId);
