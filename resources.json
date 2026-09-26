@@ -47909,8 +47909,8 @@
               "status": "ACTIVE_PRODUCING",
               "operationalStatus": "ACTIVE_PRODUCING",
               "owner": "Masan High-Tech Materials",
-              "operator": "Nui Phao Mining",
-              "extractionMethod": "open-pit and processing",
+              "operator": "Nui Phao Mining Company Limited",
+              "extractionMethod": "open-pit polymetallic mining with ore processing and recovery of tungsten and other minerals",
               "startYear": 2013,
               "legacyReferenceName": "Vietnam Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -47988,18 +47988,19 @@
                   "status": "UNOBSERVED"
                 },
                 "production": {
-                  "annual": null,
-                  "rate": null,
-                  "unit": null,
-                  "year": null,
-                  "status": "UNOBSERVED"
+                  "annual": {
+                    "value": 2005420,
+                    "unit": "metric_tons_mined_ore",
+                    "year": 2025,
+                    "status": "OBSERVED"
+                  }
                 },
                 "grade": {
                   "value": null,
                   "unit": null,
                   "status": "UNOBSERVED"
                 },
-                "quantitativeExtractionDataAvailable": false
+                "quantitativeExtractionDataAvailable": true
               },
               "resourceIdentity": {
                 "resourceTypeId": "tungsten",
@@ -48027,18 +48028,27 @@
                 "ownership": "REPORTED",
                 "quantitative": {
                   "reserve": "UNOBSERVED",
-                  "production": "UNOBSERVED",
+                  "production": "OBSERVED",
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED"
               },
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "NOT_PERFORMED_IN_CURRENT_WEB_REVALIDATION_PASS",
-                "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
-                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass."
-              }
+                "reviewedAt": "2026-09-27",
+                "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVALIDATION",
+                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
+                "currentEvidence": "Nui Phao Mining Company reported 2,005,420 tonnes of ore mined in 2025, with continued processing of lower-grade stockpiled ore and resource-optimization work.",
+                "sourceAuthority": "Masan High-Tech Materials / NPMC"
+              },
+              "webResearchEvidence": [
+                {
+                  "url": "https://static2.vietstock.vn/vietstock/2026/4/6/1_msr_2026_4_6_54e01fb_en_annualreport_2025_.pdf",
+                  "accessed": "2026-09-27",
+                  "scope": "2025_nui_phao_mined_ore"
+                }
+              ]
             }
           ],
           "processingFacilities": [
@@ -48431,7 +48441,7 @@
               "resourceId": "coal",
               "resourceTypeId": "coal",
               "resourceTypeKey": "coal",
-              "region": "Lampang",
+              "region": "Lampang Province",
               "countryCode": "THA",
               "country": "THA",
               "lat": 18.36,
@@ -48439,9 +48449,9 @@
               "locationNodeKey": "ASSET:THA:mae_moh_lignite_mine",
               "status": "ACTIVE_PRODUCING",
               "operationalStatus": "ACTIVE_PRODUCING",
-              "owner": "EGAT",
-              "operator": "EGAT",
-              "extractionMethod": "open-pit lignite mining",
+              "owner": "Electricity Generating Authority of Thailand (EGAT)",
+              "operator": "EGAT – Mae Moh Mine",
+              "extractionMethod": "large-scale lignite open-pit mining with excavation and coal transport to Mae Moh Power Plant",
               "startYear": 1978,
               "legacyReferenceName": "Thailand Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -48566,14 +48576,34 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED"
               },
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "NOT_PERFORMED_IN_CURRENT_WEB_REVALIDATION_PASS",
-                "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
-                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass."
-              }
+                "reviewedAt": "2026-09-27",
+                "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVALIDATION",
+                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
+                "currentEvidence": "EGAT reports 12.55 Mt lignite used from Mae Moh Mine in 2025; its mine has a reported production capacity of 16 Mt/year.",
+                "sourceAuthority": "EGAT"
+              },
+              "capacityProfile": {
+                "annualLigniteProductionCapacity": 16000000,
+                "unit": "metric_tons_per_year",
+                "status": "REPORTED"
+              },
+              "productionContext": {
+                "ligniteUsedByMaeMohPowerPlant2025": 12550000,
+                "unit": "metric_tons",
+                "year": 2025,
+                "scope": "plant fuel consumption from Mae Moh Mine"
+              },
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.egat.co.th/sustainability/en/environment/energy-management-%E0%B8%81%E0%B8%B2%E0%B8%A3%E0%B8%88%E0%B8%B1%E0%B8%94%E0%B8%81%E0%B8%B2%E0%B8%A3%E0%B8%9E%E0%B8%A5%E0%B8%B1%E0%B8%87%E0%B8%87%E0%B8%B2%E0%B8%99/",
+                  "accessed": "2026-09-27",
+                  "scope": "2025_lignite_use_and_current_operation"
+                }
+              ]
             }
           ],
           "processingFacilities": [
@@ -52750,7 +52780,7 @@
               "resourceId": "coal",
               "resourceTypeId": "coal",
               "resourceTypeKey": "coal",
-              "region": "Pavlodar",
+              "region": "Pavlodar Region / Ekibastuz",
               "countryCode": "KAZ",
               "country": "KAZ",
               "lat": 51.81,
@@ -52758,9 +52788,9 @@
               "locationNodeKey": "ASSET:KAZ:bogatyr_komir_coal_mine",
               "status": "ACTIVE_PRODUCING",
               "operationalStatus": "ACTIVE_PRODUCING",
-              "owner": "Bogatyr Komir / Samruk-Kazyna",
-              "operator": "Bogatyr Komir",
-              "extractionMethod": "large open-pit dragline",
+              "owner": "Samruk-Energy / Bogatyr Komir LLP",
+              "operator": "Bogatyr Komir LLP",
+              "extractionMethod": "open-pit coal mining in the Bogatyr and Severny mines",
               "startYear": 1980,
               "legacyReferenceName": "Kazakhstan Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -52838,18 +52868,19 @@
                   "status": "UNOBSERVED"
                 },
                 "production": {
-                  "annual": null,
-                  "rate": null,
-                  "unit": null,
-                  "year": null,
-                  "status": "UNOBSERVED"
+                  "annual": {
+                    "value": 45251000,
+                    "unit": "metric_tons_coal",
+                    "year": 2025,
+                    "status": "OBSERVED"
+                  }
                 },
                 "grade": {
                   "value": null,
                   "unit": null,
                   "status": "UNOBSERVED"
                 },
-                "quantitativeExtractionDataAvailable": false
+                "quantitativeExtractionDataAvailable": true
               },
               "resourceIdentity": {
                 "resourceTypeId": "coal",
@@ -52881,18 +52912,38 @@
                 "ownership": "REPORTED",
                 "quantitative": {
                   "reserve": "UNOBSERVED",
-                  "production": "UNOBSERVED",
+                  "production": "OBSERVED",
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED"
               },
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "NOT_PERFORMED_IN_CURRENT_WEB_REVALIDATION_PASS",
-                "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
-                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass."
-              }
+                "reviewedAt": "2026-09-27",
+                "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVALIDATION",
+                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
+                "currentEvidence": "Bogatyr Komir operates the Bogatyr and Severny open-pit mines in the Ekibastuz basin; 2025 coal production was 45.3 Mt and reserves at 1 Jan 2025 were about 2.45 billion tonnes.",
+                "sourceAuthority": "Samruk-Energy"
+              },
+              "capacityProfile": {
+                "annualCoalProduction2025": 45251000,
+                "unit": "metric_tons_per_year",
+                "year": 2025,
+                "status": "OBSERVED"
+              },
+              "reserveContext": {
+                "balanceCoalReservesAt2025_01_01": 2450000000,
+                "unit": "metric_tons",
+                "status": "REPORTED"
+              },
+              "webResearchEvidence": [
+                {
+                  "url": "https://ar2025.samruk-energy.kz/en/index/coal-enterprises.html",
+                  "accessed": "2026-09-27",
+                  "scope": "2025_production_reserves_mines"
+                }
+              ]
             }
           ],
           "processingFacilities": [
@@ -53846,9 +53897,9 @@
               "locationNodeKey": "ASSET:TKM:galkynysh_gas_field",
               "status": "ACTIVE_PRODUCING",
               "operationalStatus": "ACTIVE_PRODUCING",
-              "owner": "Turkmengas",
-              "operator": "Turkmengas",
-              "extractionMethod": "onshore gas wells",
+              "owner": "State Concern Turkmengas",
+              "operator": "Turkmengas / Galkynysh field development system",
+              "extractionMethod": "deep gas-well drilling and phased natural-gas field development",
               "startYear": 2013,
               "legacyReferenceName": "Turkmenistan Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -53974,14 +54025,30 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED"
               },
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "NOT_PERFORMED_IN_CURRENT_WEB_REVALIDATION_PASS",
-                "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
-                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass."
-              }
+                "reviewedAt": "2026-09-27",
+                "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVALIDATION",
+                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
+                "currentEvidence": "Turkmenistan's oil and gas authority reported pilot production at Galkynysh with 52 active production wells, seven preparing for connection and eight drilling wells; the field is being developed in seven stages.",
+                "sourceAuthority": "Turkmenistan State Concern Turkmengas / oilgas.gov.tm"
+              },
+              "operationalProfile": {
+                "activeProductionWells": 52,
+                "wellsPreparingForConnection": 7,
+                "activeDrillingWells": 8,
+                "developmentStages": 7,
+                "status": "PILOT_PRODUCTION"
+              },
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.oilgas.gov.tm/en/posts/habarlar/15416/galkynysh-field-development-stages-presented-at-ogt-2025",
+                  "accessed": "2026-09-27",
+                  "scope": "2025_current_well_and_development_state"
+                }
+              ]
             }
           ],
           "processingFacilities": [
