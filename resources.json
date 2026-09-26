@@ -16297,7 +16297,7 @@
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
               },
-              "extractionEligibility": "CONDITIONAL",
+              "extractionEligibility": "EXECUTABLE",
               "currentStatus": "LIMITED",
               "statusAuthority": "OBSERVED",
               "annualProduction": 160000,
@@ -30712,7 +30712,8 @@
                 "sourceQuery": "Mogalakwena PGM Mine, Limpopo, ZAF",
                 "legacyReferenceName": "South Africa Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
-                "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
+                "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
+                "webReview": "Site-specific current/recent source rechecked 2026-09-27"
               },
               "extractionEligibility": "EXECUTABLE",
               "currentStatus": "ACTIVE_PRODUCING",
@@ -30799,7 +30800,21 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "NOT_PER_SITE_VERIFIED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED"
+              },
+              "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
+              "webResearchEvidence": [
+                {
+                  "url": "https://southafrica.angloamerican.com/~/media/Files/A/Anglo-American-Group-v9/South-Africa/media/press-release/2025pr/q1-2025-production-report.pdf",
+                  "accessed": "2026-09-27",
+                  "scope": "2025_production_and_mining"
+                }
+              ],
+              "researchMetadata": {
+                "reviewedAt": "2026-09-27",
+                "annualProduction2025": "about 948 koz 6E PGM",
+                "mineMethod": "open pit; Sandsloot underground project under development",
+                "sourceAuthority": "Anglo American"
               }
             }
           ],
@@ -31238,7 +31253,8 @@
                 "sourceQuery": "Kansanshi Copper-Gold Mine, North-Western, ZMB",
                 "legacyReferenceName": "Zambia Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
-                "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
+                "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
+                "webReview": "Site-specific current/recent source rechecked 2026-09-27"
               },
               "extractionEligibility": "EXECUTABLE",
               "currentStatus": "ACTIVE_PRODUCING",
@@ -31333,7 +31349,27 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "NOT_PER_SITE_VERIFIED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED"
+              },
+              "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.first-quantum.com/wp-content/uploads/2026/03/First-Quantum-2025-AR-Final-Web.pdf",
+                  "accessed": "2026-09-27",
+                  "scope": "2025_final_production"
+                },
+                {
+                  "url": "https://www.first-quantum.com/news/first-quantum-minerals-announces-2025-preliminary-production-and-2026-2028-guidance/",
+                  "accessed": "2026-09-27",
+                  "scope": "2025_production_and_2026_guidance"
+                }
+              ],
+              "researchMetadata": {
+                "reviewedAt": "2026-09-27",
+                "copperProduction2025": "181,183 t",
+                "goldProduction2025": "116,123 oz",
+                "S3CommercialProductionDate": "2025-12-01",
+                "sourceAuthority": "First Quantum Minerals"
               }
             }
           ],
@@ -32827,7 +32863,8 @@
                 "sourceQuery": "Jwaneng Diamond Mine, Southern District, BWA",
                 "legacyReferenceName": "Botswana Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
-                "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
+                "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
+                "webReview": "Site-specific current/recent source rechecked 2026-09-27"
               },
               "extractionEligibility": "EXECUTABLE",
               "currentStatus": "ACTIVE_PRODUCING",
@@ -32918,7 +32955,21 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "NOT_PER_SITE_VERIFIED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED"
+              },
+              "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.debeersgroup.com/news-insights/latest-group-news/2026/production-report-for-the-fourth-quarter-of-2025",
+                  "accessed": "2026-09-27",
+                  "scope": "2025_production_and_maintenance"
+                }
+              ],
+              "researchMetadata": {
+                "reviewedAt": "2026-09-27",
+                "diamondProduction2025": "7.259 million carats",
+                "Q4_2025": "planned maintenance shutdown",
+                "sourceAuthority": "De Beers"
               }
             }
           ],
@@ -48353,7 +48404,8 @@
                 "sourceQuery": "Didipio Gold-Copper Mine, Nueva Vizcaya / Quirino, PHL",
                 "legacyReferenceName": "Philippines Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
-                "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
+                "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
+                "webReview": "Site-specific current/recent source rechecked 2026-09-27"
               },
               "extractionEligibility": "EXECUTABLE",
               "currentStatus": "ACTIVE_PRODUCING",
@@ -48444,7 +48496,28 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "NOT_PER_SITE_VERIFIED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED"
+              },
+              "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
+              "webResearchEvidence": [
+                {
+                  "url": "https://oceanagold.com/operations/didipio",
+                  "accessed": "2026-09-27",
+                  "scope": "current_asset_profile_and_ownership"
+                },
+                {
+                  "url": "https://www.sec.gov/Archives/edgar/data/1487326/000162828026021651/oceanagold-ex9911xmdafy202.htm",
+                  "accessed": "2026-09-27",
+                  "scope": "2025_production_and_grade"
+                }
+              ],
+              "researchMetadata": {
+                "reviewedAt": "2026-09-27",
+                "goldProduction2025": "90.7 koz",
+                "copperProduction2025": "13.3 kt",
+                "mineMethod": "open-pit stockpile + underground",
+                "ownership": "80% OceanaGold / 20% PSE-listed holding company",
+                "sourceAuthority": "OceanaGold"
               }
             }
           ],
@@ -50469,7 +50542,8 @@
                 "sourceQuery": "Okvau Gold Mine, Mondulkiri, KHM",
                 "legacyReferenceName": "Cambodia Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
-                "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
+                "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
+                "webReview": "Site-specific current/recent source rechecked 2026-09-27"
               },
               "extractionEligibility": "EXECUTABLE",
               "currentStatus": "ACTIVE_PRODUCING",
@@ -50560,7 +50634,23 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "NOT_PER_SITE_VERIFIED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED"
+              },
+              "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.emeraldresources.com.au/operations/cambodia-gold-projects/okvau-gold-project/",
+                  "accessed": "2026-09-27",
+                  "scope": "current_production_reserves_resources"
+                }
+              ],
+              "researchMetadata": {
+                "reviewedAt": "2026-09-27",
+                "goldProductionFY2025": "98 koz",
+                "openPitReserve": "9.9 Mt at 1.8 g/t Au for 560 koz",
+                "undergroundResource": "1.7 Mt at 5.5 g/t Au for 310 koz",
+                "plantNameplate": "2.0 Mtpa",
+                "sourceAuthority": "Emerald Resources"
               }
             }
           ],
@@ -51529,7 +51619,8 @@
                 "sourceQuery": "Bayu-Undan Gas and Condensate Field, Offshore Timor Sea, TLS",
                 "legacyReferenceName": "Timor-Leste Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
-                "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
+                "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
+                "webReview": "Site-specific current/recent source rechecked 2026-09-27"
               },
               "extractionEligibility": "NON_EXECUTABLE",
               "currentStatus": "CESSATION_OF_PRODUCTION",
@@ -51620,7 +51711,21 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "NOT_PER_SITE_VERIFIED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED"
+              },
+              "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.anp.tl/bayu-undan-cessation-of-production/",
+                  "accessed": "2026-09-27",
+                  "scope": "official_cessation_and_decommissioning"
+                }
+              ],
+              "researchMetadata": {
+                "reviewedAt": "2026-09-27",
+                "cessationDate": "2025-06-04 10:52 Dili time",
+                "currentStatus": "production ceased; PSCs terminated; decommissioning agreement effective",
+                "sourceAuthority": "Timor-Leste ANP"
               }
             }
           ],
@@ -77956,7 +78061,7 @@
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Explicit non-commercial reference, not a mine. Resource identity is NOT_APPLICABLE; missing resource quantities are not zero."
               },
-              "extractionEligibility": "NOT_APPLICABLE",
+              "extractionEligibility": "NON_EXECUTABLE",
               "currentStatus": "NOT_APPLICABLE",
               "statusAuthority": "OBSERVED",
               "assetClass": "NON_COMMERCIAL_EXTRACTION_REFERENCE",
@@ -78035,8 +78140,9 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "ABSENCE_CLASSIFIED"
-              }
+                "webResearch": "NOT_APPLICABLE"
+              },
+              "researchState": "NOT_APPLICABLE_NO_COMMERCIAL_SITE"
             }
           ],
           "processingFacilities": [
@@ -78477,7 +78583,7 @@
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Explicit non-commercial reference, not a mine. Resource identity is NOT_APPLICABLE; missing resource quantities are not zero."
               },
-              "extractionEligibility": "NOT_APPLICABLE",
+              "extractionEligibility": "NON_EXECUTABLE",
               "currentStatus": "NOT_APPLICABLE",
               "statusAuthority": "OBSERVED",
               "assetClass": "NON_COMMERCIAL_EXTRACTION_REFERENCE",
@@ -78556,8 +78662,9 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "ABSENCE_CLASSIFIED"
-              }
+                "webResearch": "NOT_APPLICABLE"
+              },
+              "researchState": "NOT_APPLICABLE_NO_COMMERCIAL_SITE"
             }
           ],
           "processingFacilities": [
@@ -78998,7 +79105,7 @@
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Explicit non-commercial reference, not a mine. Resource identity is NOT_APPLICABLE; missing resource quantities are not zero."
               },
-              "extractionEligibility": "NOT_APPLICABLE",
+              "extractionEligibility": "NON_EXECUTABLE",
               "currentStatus": "NOT_APPLICABLE",
               "statusAuthority": "OBSERVED",
               "assetClass": "NON_COMMERCIAL_EXTRACTION_REFERENCE",
@@ -79077,8 +79184,9 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "ABSENCE_CLASSIFIED"
-              }
+                "webResearch": "NOT_APPLICABLE"
+              },
+              "researchState": "NOT_APPLICABLE_NO_COMMERCIAL_SITE"
             }
           ],
           "processingFacilities": [
@@ -79519,7 +79627,7 @@
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Explicit non-commercial reference, not a mine. Resource identity is NOT_APPLICABLE; missing resource quantities are not zero."
               },
-              "extractionEligibility": "NOT_APPLICABLE",
+              "extractionEligibility": "NON_EXECUTABLE",
               "currentStatus": "NOT_APPLICABLE",
               "statusAuthority": "OBSERVED",
               "assetClass": "NON_COMMERCIAL_EXTRACTION_REFERENCE",
@@ -79598,8 +79706,9 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "ABSENCE_CLASSIFIED"
-              }
+                "webResearch": "NOT_APPLICABLE"
+              },
+              "researchState": "NOT_APPLICABLE_NO_COMMERCIAL_SITE"
             }
           ],
           "processingFacilities": [
