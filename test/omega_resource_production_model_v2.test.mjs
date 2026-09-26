@@ -69,7 +69,9 @@ assert.equal(copper.productionModel.maintenance,0.05);
 
 const simulated=P.productionModel({},1000000);
 assert.equal(simulated.authority,'SIMULATED');
-assert.equal(simulated.nominalCapacity,null);
+assert.equal(simulated.nominalCapacity,10);
+assert.equal(simulated.minimumCapacity,5.5);
+assert.equal(simulated.maximumCapacity,13);
 assert.equal(simulated.simulatedRate,10);
 assert.equal(simulated.dataStatus,'UNOBSERVED');
 
