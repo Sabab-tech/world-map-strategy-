@@ -178,13 +178,13 @@
   function recomputeTradeAvailability(tx,c){
     const inventory=tx.get('resource.inventory')||{};
     const spr=ensureStrategicReserve(tx.get('resource.strategicReserve'),c);
+    const committed=tx.get('resource.committedStock')||tx.get('resource.committedInventory')||{};
     const out={};
-    const keys=new Set([...Object.keys(inventory||{}),...Object.keys(spr.availableByResource||{})]);
+    const keys=new Set([...Object.keys(inventory||{}),...Object.keys(spr.availableByResource||{}),...Object.keys(committed||{})]);
     for(const k of keys){
       const total=num(inventory?.[k]);
-      const protectedAmount=num(spr.availableByResource?.[k]);
       if(total===null)continue;
-      out[k]=Math.max(0,total-(protectedAmount??0));
+      out[k]=Math.max(0,total-(num(spr.availableByResource?.[k])??0)-(num(committed?.[k])??0));
     }
     tx.set('resource.tradeAvailability',out);
     return out;
