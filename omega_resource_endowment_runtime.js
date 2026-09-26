@@ -819,9 +819,21 @@ function batchFromExtraction(x,record){
         const compiled=compile();
         if(compiled.status!=='READY')return compiled;
         applyPersistedReserveStates();install();
-        for(const c of countries())dispatch('OMEGA_RESOURCE_ENDOWMENT_HYDRATE',c,{correlationId:'RESOURCE-HYDRATE-'+turn()+'-'+c});
+        const countryList=countries(),hydrateFailures=[];
+        for(const countryId of countryList){
+          const hydrateResult=dispatch('OMEGA_RESOURCE_ENDOWMENT_HYDRATE',countryId,{correlationId:'RESOURCE-HYDRATE-'+turn()+'-'+countryId});
+          if(hydrateResult?.status!=='APPLIED')hydrateFailures.push({
+            countryId,status:hydrateResult?.status||'UNKNOWN',
+            reason:hydrateResult?.result?.error||hydrateResult?.result?.reason||hydrateResult?.reason||'HYDRATION_NOT_APPLIED'
+          });
+        }
+        if(hydrateFailures.length)return{
+          status:'FAILED',reason:'COUNTRY_HYDRATION_INCOMPLETE',
+          expectedCountries:countryList.length,appliedCountries:countryList.length-hydrateFailures.length,
+          failures:hydrateFailures.slice(0,64)
+        };
         g.__omegaResourceEndowmentReady=true;
-        return{status:'READY',countries:countries().length,reused:false};
+        return{status:'READY',countries:countryList.length,reused:false};
       }catch(e){
         return{status:'FAILED',reason:String(e?.message||e)};
       }finally{
