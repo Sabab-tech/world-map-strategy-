@@ -190,9 +190,18 @@
     const reg=g.__OmegaResourceIdentityRegistry;const e=engine();const rr=g.__OmegaResourceReserveRegistry;if(!reg||!e||!rr)return[];
     const wanted=canonical(c),out=[],seen=new Set();
     try{
+      const engineDepositKeys=new Set();
+      for(const row of (Array.isArray(e.deposits)?e.deposits:[])){
+        for(const key of [row?.id,row?.depositId,row?.mineId]){
+          const s=String(key??'').trim();
+          if(s)engineDepositKeys.add(s);
+        }
+      }
       const occurrences=reg.getOccurrencesByCountry?.(wanted)||[];
       for(const occ of occurrences){
-        const dep=reg.getDeposit?.(occ.depositKey);if(!dep)continue;
+        const depositKey=String(occ?.depositKey??'').trim();
+        if(!engineDepositKeys.has(depositKey))continue;
+        const dep=reg.getDeposit?.(depositKey);if(!dep)continue;
         const raw=clone(occ.rawDeposit||dep.rawDeposit||((e.deposits||[]).find(x=>String(x?.name||'').trim().toUpperCase()===String(dep.depositRawName||'').trim().toUpperCase()&&id(x?.countryCode||x?.country||'')===wanted)||null));
         const parentKey=String(occ.occurrenceKey||'');
         const keys=[];
