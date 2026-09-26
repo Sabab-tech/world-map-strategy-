@@ -540,6 +540,10 @@ function batchFromExtraction(x,record){
   function hydrateHandler(cmd,ctx){
     const c=canonical(ctx.countryId),existing=clone(state()?.resource?.[c]||{}),rows=[...occurrenceRows(c),...siteExecutionRows(c,existing)];
     const projection=buildCountryProjection(c,rows,existing);
+    for(const [siteKey,controller] of Object.entries(projection.mineSiteControllers||{})){
+      controller.assetId=controller.assetId||('ASSET:SITE:'+String(siteKey).toUpperCase());
+      controller.siteReferenceKey=controller.siteReferenceKey||siteKey;
+    }
     const mineSiteReferenceCount=Number(projection.mineSiteReferenceCount)||0;
     for(const [path,value] of [
       ['resource.countryResourceProfile',projection.countryResourceProfile],
@@ -603,6 +607,10 @@ function batchFromExtraction(x,record){
     const mineOutputs=clone(ctx.stateTransaction.get('resource.mineOutputs')||{});
     const mineSiteControllers=clone(ctx.stateTransaction.get('resource.mineSiteControllers')||{});
     const mines=clone(ctx.stateTransaction.get('resource.mines')||[]);
+    for(const [siteKey,controller] of Object.entries(mineSiteControllers)){
+      controller.assetId=controller.assetId||('ASSET:SITE:'+String(siteKey).toUpperCase());
+      controller.siteReferenceKey=controller.siteReferenceKey||siteKey;
+    }
     const allSiteKeys=Object.keys(mineSiteControllers);
     for(const siteKey of allSiteKeys){
       const controller=mineSiteControllers[siteKey];
