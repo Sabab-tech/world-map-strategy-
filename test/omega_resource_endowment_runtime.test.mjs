@@ -62,6 +62,8 @@ const p4CompiledProbe=p4IdentityProbe?.compileIdentities?.({
 });
 console.log('RESOURCE_PROFILE_SOURCE_PROBE',JSON.stringify(sourceProfileProbe));
 console.log('RESOURCE_P4_SITE_PROBE',JSON.stringify({status:p4CompiledProbe?.status,siteReferenceCount:p4CompiledProbe?.siteReferenceCount,occurrenceCount:p4CompiledProbe?.occurrenceCount}));
+const p4Dist=Object.fromEntries(Object.keys(engine.countryProfiles||{}).map(c=>[c,p4ResultProbe?.registry?.getMineSiteReferencesByCountry?.(c)?.length||0]).filter(([,n])=>n>0));
+console.log('RESOURCE_P4_COUNTRY_DIST',JSON.stringify({count:Object.keys(p4Dist).length,total:Object.values(p4Dist).reduce((a,b)=>a+b,0),sample:Object.entries(p4Dist).slice(0,20)}));
 const runtime=globalThis.OmegaResourceEndowmentRuntime;
 const initialized=await runtime.initialize();
 assert.equal(initialized.status,'READY',JSON.stringify(initialized));
