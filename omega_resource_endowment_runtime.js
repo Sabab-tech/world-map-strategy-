@@ -231,17 +231,6 @@
     const e=engine(),key=rid0(resourceId),list=Array.isArray(e?.resourceTypes)?e.resourceTypes:[];
     return list.find(x=>rid0(x?.id)===key)||null;
   }
-  function mineQuality(x){
-    const raw=x?.rawDeposit||{},q=sci()?.parseQuality?.(raw.grade||raw.quality||'',x?.resourceId)||{
-      purity:null,purityStatus:'UNOBSERVED',gradePercent:null,gradeBasis:null,gradeStatus:'UNOBSERVED',
-      assayGpt:null,concentrationMgPerL:null,apiGravity:null,sourceAuthority:'UNOBSERVED'
-    };
-    return{
-      purity:q.purity,purityStatus:q.purityStatus,gradePercent:q.gradePercent,gradeText:raw.grade||null,
-      qualitySource:raw.grade?'RESOURCE_JSON:'+(x?.sourceDatasetId||raw.sourceDatasetId||'UNKNOWN'):'UNOBSERVED',
-      physicalState:String(raw.physicalState||((/gas/i.test(String(raw.category||'')+' '+String(raw.name||'')))?'GAS':'SOLID_RUN_OF_MINE')).toUpperCase()
-    };
-  }
   function batchFromExtraction(x,record){
     const q=mineQuality(x),rs=record?.reserveAfter||{},base=record?.producedBatch||{},qty=n(record?.approvedQuantity)||0;
     const batchId=String(base?.batchId||('BATCH_EXT_'+turn()+'_'+canonical(x.countryId)+'_'+String(x.occurrenceKey).replace(/[^A-Z0-9:_-]/gi,'')));
