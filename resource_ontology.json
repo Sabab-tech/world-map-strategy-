@@ -1,6 +1,6 @@
 {
   "VERSION": "1.0.0-CANONICAL",
-  "LAST_UPDATED": "2026-08-27",
+  "LAST_UPDATED": "2026-09-26",
   "DESCRIPTION": "Canonical Resource Ontology and Industrial Dependency Knowledge Base for Sovereign Intelligence",
   "COMMODITY_ONTOLOGIES": {
     "CRUDE_OIL": {
@@ -537,6 +537,925 @@
         "strategicLeverage": "Domestic thermal and metallurgical fuel security",
         "sovereignWealth": "Mining royalties, export revenue, downstream coking and steel integration",
         "hazards": "Mine safety, land disturbance, water contamination and carbon emissions"
+      }
+    },
+    "GOLD": {
+      "key": "GOLD",
+      "name": "Gold Ore & Doré",
+      "category": "PRECIOUS_METAL",
+      "physicalForm": "SOLID_ORE_AND_DORE",
+      "upstreamProcess": "Open-Pit / Underground Mining, Gravity, Flotation",
+      "midstreamProcess": "Crushing, Grinding, Gravity/Flotation, Cyanide Leaching, Smelting",
+      "refinedOutputs": [
+        "GOLD_DORE",
+        "JEWELRY",
+        "ELECTRONICS"
+      ],
+      "downstreamSectors": [
+        "CENTRAL_BANK_RESERVES",
+        "INDUSTRIAL_CHEMICALS"
+      ],
+      "keyUtilities": [
+        "Industrial feedstock and strategic raw material",
+        "Processed into sector-specific intermediate or finished materials"
+      ],
+      "baseSubstitutionElasticity": 0.3,
+      "baseGestationTicks": 25,
+      "baseCostMultiplier": 1.5,
+      "substitutes": [],
+      "lackConsequences": {
+        "shortTerm": "Supply tightening and processing cost pressure",
+        "mediumTerm": "Industrial input shortages and project delays",
+        "catastrophic": "Sustained supply disruption across dependent sectors"
+      },
+      "enrichmentDynamics": {
+        "strategicLeverage": "Supply-chain influence through control of a constrained raw material",
+        "sovereignWealth": "Resource rents and downstream processing opportunities",
+        "hazards": "Site-specific environmental, land-use and processing liabilities"
+      }
+    },
+    "LIMESTONE": {
+      "key": "LIMESTONE",
+      "name": "Limestone & Industrial Carbonate Rock",
+      "category": "INDUSTRIAL_MINERAL",
+      "physicalForm": "SOLID_ROCK",
+      "upstreamProcess": "Drilling, Blasting, Quarry Excavation",
+      "midstreamProcess": "Crushing, Screening, Calcination, Cement Kiln Feed",
+      "refinedOutputs": [
+        "CEMENT_CLINKER",
+        "CONSTRUCTION_AGGREGATES",
+        "CEMENT"
+      ],
+      "downstreamSectors": [
+        "LIME",
+        "GLASS"
+      ],
+      "keyUtilities": [
+        "Industrial feedstock and strategic raw material",
+        "Processed into sector-specific intermediate or finished materials"
+      ],
+      "baseSubstitutionElasticity": 0.3,
+      "baseGestationTicks": 25,
+      "baseCostMultiplier": 1.5,
+      "substitutes": [],
+      "lackConsequences": {
+        "shortTerm": "Supply tightening and processing cost pressure",
+        "mediumTerm": "Industrial input shortages and project delays",
+        "catastrophic": "Sustained supply disruption across dependent sectors"
+      },
+      "enrichmentDynamics": {
+        "strategicLeverage": "Supply-chain influence through control of a constrained raw material",
+        "sovereignWealth": "Resource rents and downstream processing opportunities",
+        "hazards": "Site-specific environmental, land-use and processing liabilities"
+      }
+    },
+    "CONSTRUCTION_AGGREGATE": {
+      "key": "CONSTRUCTION_AGGREGATE",
+      "name": "Construction Aggregates, Sand & Gravel",
+      "category": "CONSTRUCTION_MATERIAL",
+      "physicalForm": "CRUSHED_STONE_SAND_GRAVEL",
+      "upstreamProcess": "Quarrying, Dredging, Borrow-Pit Extraction",
+      "midstreamProcess": "Crushing, Screening, Washing, Grading",
+      "refinedOutputs": [
+        "GRADED_AGGREGATE",
+        "READY_MIX_CONCRETE",
+        "ASPHALT_FEED"
+      ],
+      "downstreamSectors": [
+        "ROAD_BASE"
+      ],
+      "keyUtilities": [
+        "Industrial feedstock and strategic raw material",
+        "Processed into sector-specific intermediate or finished materials"
+      ],
+      "baseSubstitutionElasticity": 0.3,
+      "baseGestationTicks": 25,
+      "baseCostMultiplier": 1.5,
+      "substitutes": [],
+      "lackConsequences": {
+        "shortTerm": "Supply tightening and processing cost pressure",
+        "mediumTerm": "Industrial input shortages and project delays",
+        "catastrophic": "Sustained supply disruption across dependent sectors"
+      },
+      "enrichmentDynamics": {
+        "strategicLeverage": "Supply-chain influence through control of a constrained raw material",
+        "sovereignWealth": "Resource rents and downstream processing opportunities",
+        "hazards": "Site-specific environmental, land-use and processing liabilities"
+      }
+    },
+    "IRON_ORE": {
+      "key": "IRON_ORE",
+      "name": "Iron Ore & Concentrates",
+      "category": "FERROUS_BASE_METAL",
+      "physicalForm": "SOLID_ORE",
+      "upstreamProcess": "Open-Pit Mining, Drilling, Blasting",
+      "midstreamProcess": "Crushing, Beneficiation, Sinter/Pellet Preparation",
+      "refinedOutputs": [
+        "IRON_CONCENTRATE",
+        "IRON_PELLETS",
+        "STEEL"
+      ],
+      "downstreamSectors": [
+        "CONSTRUCTION",
+        "MACHINERY"
+      ],
+      "keyUtilities": [
+        "Industrial feedstock and strategic raw material",
+        "Processed into sector-specific intermediate or finished materials"
+      ],
+      "baseSubstitutionElasticity": 0.3,
+      "baseGestationTicks": 25,
+      "baseCostMultiplier": 1.5,
+      "substitutes": [],
+      "lackConsequences": {
+        "shortTerm": "Supply tightening and processing cost pressure",
+        "mediumTerm": "Industrial input shortages and project delays",
+        "catastrophic": "Sustained supply disruption across dependent sectors"
+      },
+      "enrichmentDynamics": {
+        "strategicLeverage": "Supply-chain influence through control of a constrained raw material",
+        "sovereignWealth": "Resource rents and downstream processing opportunities",
+        "hazards": "Site-specific environmental, land-use and processing liabilities"
+      }
+    },
+    "NICKEL": {
+      "key": "NICKEL",
+      "name": "Nickel Ore & Concentrates",
+      "category": "BASE_METAL",
+      "physicalForm": "SOLID_ORE_AND_CONCENTRATE",
+      "upstreamProcess": "Open-Pit / Underground Laterite or Sulfide Mining",
+      "midstreamProcess": "Crushing, Flotation, Smelting or HPAL",
+      "refinedOutputs": [
+        "NICKEL_MATTE",
+        "NICKEL_CATHODE",
+        "STAINLESS_STEEL"
+      ],
+      "downstreamSectors": [
+        "BATTERIES",
+        "SPECIALTY_ALLOYS"
+      ],
+      "keyUtilities": [
+        "Industrial feedstock and strategic raw material",
+        "Processed into sector-specific intermediate or finished materials"
+      ],
+      "baseSubstitutionElasticity": 0.3,
+      "baseGestationTicks": 25,
+      "baseCostMultiplier": 1.5,
+      "substitutes": [],
+      "lackConsequences": {
+        "shortTerm": "Supply tightening and processing cost pressure",
+        "mediumTerm": "Industrial input shortages and project delays",
+        "catastrophic": "Sustained supply disruption across dependent sectors"
+      },
+      "enrichmentDynamics": {
+        "strategicLeverage": "Supply-chain influence through control of a constrained raw material",
+        "sovereignWealth": "Resource rents and downstream processing opportunities",
+        "hazards": "Site-specific environmental, land-use and processing liabilities"
+      }
+    },
+    "DIAMOND": {
+      "key": "DIAMOND",
+      "name": "Gem & Industrial Diamonds",
+      "category": "PRECIOUS_GEMSTONE",
+      "physicalForm": "CRYSTALLINE_CARBON",
+      "upstreamProcess": "Open-Pit / Underground / Alluvial Mining",
+      "midstreamProcess": "Dense-Media Separation, X-Ray Sorting, Final Recovery",
+      "refinedOutputs": [
+        "ROUGH_DIAMONDS",
+        "CUT_AND_POLISHED_DIAMONDS",
+        "JEWELRY"
+      ],
+      "downstreamSectors": [
+        "CUTTING_TOOLS",
+        "ABRASIVES"
+      ],
+      "keyUtilities": [
+        "Industrial feedstock and strategic raw material",
+        "Processed into sector-specific intermediate or finished materials"
+      ],
+      "baseSubstitutionElasticity": 0.3,
+      "baseGestationTicks": 25,
+      "baseCostMultiplier": 1.5,
+      "substitutes": [],
+      "lackConsequences": {
+        "shortTerm": "Supply tightening and processing cost pressure",
+        "mediumTerm": "Industrial input shortages and project delays",
+        "catastrophic": "Sustained supply disruption across dependent sectors"
+      },
+      "enrichmentDynamics": {
+        "strategicLeverage": "Supply-chain influence through control of a constrained raw material",
+        "sovereignWealth": "Resource rents and downstream processing opportunities",
+        "hazards": "Site-specific environmental, land-use and processing liabilities"
+      }
+    },
+    "ZINC": {
+      "key": "ZINC",
+      "name": "Zinc Ore & Concentrates",
+      "category": "BASE_METAL",
+      "physicalForm": "SOLID_ORE_AND_CONCENTRATE",
+      "upstreamProcess": "Underground / Open-Pit Sulfide Mining",
+      "midstreamProcess": "Flotation, Roasting, Leaching, Electrowinning",
+      "refinedOutputs": [
+        "SPECIAL_HIGH_GRADE_ZINC",
+        "GALVANIZED_STEEL",
+        "BRASS"
+      ],
+      "downstreamSectors": [
+        "BATTERIES"
+      ],
+      "keyUtilities": [
+        "Industrial feedstock and strategic raw material",
+        "Processed into sector-specific intermediate or finished materials"
+      ],
+      "baseSubstitutionElasticity": 0.3,
+      "baseGestationTicks": 25,
+      "baseCostMultiplier": 1.5,
+      "substitutes": [],
+      "lackConsequences": {
+        "shortTerm": "Supply tightening and processing cost pressure",
+        "mediumTerm": "Industrial input shortages and project delays",
+        "catastrophic": "Sustained supply disruption across dependent sectors"
+      },
+      "enrichmentDynamics": {
+        "strategicLeverage": "Supply-chain influence through control of a constrained raw material",
+        "sovereignWealth": "Resource rents and downstream processing opportunities",
+        "hazards": "Site-specific environmental, land-use and processing liabilities"
+      }
+    },
+    "CORAL_AGGREGATE": {
+      "key": "CORAL_AGGREGATE",
+      "name": "Coral Aggregate & Carbonate Dredged Material",
+      "category": "CONSTRUCTION_MATERIAL",
+      "physicalForm": "SEDIMENT_AND_CARBONATE",
+      "upstreamProcess": "Lagoon Dredging, Coral Sand/Gravel Extraction",
+      "midstreamProcess": "Screening, Crushing, Washing, Grading",
+      "refinedOutputs": [
+        "CORAL_AGGREGATE",
+        "CONCRETE_AGGREGATE",
+        "ROAD_BASE"
+      ],
+      "downstreamSectors": [
+        "RECLAMATION_FILL"
+      ],
+      "keyUtilities": [
+        "Industrial feedstock and strategic raw material",
+        "Processed into sector-specific intermediate or finished materials"
+      ],
+      "baseSubstitutionElasticity": 0.3,
+      "baseGestationTicks": 25,
+      "baseCostMultiplier": 1.5,
+      "substitutes": [],
+      "lackConsequences": {
+        "shortTerm": "Supply tightening and processing cost pressure",
+        "mediumTerm": "Industrial input shortages and project delays",
+        "catastrophic": "Sustained supply disruption across dependent sectors"
+      },
+      "enrichmentDynamics": {
+        "strategicLeverage": "Supply-chain influence through control of a constrained raw material",
+        "sovereignWealth": "Resource rents and downstream processing opportunities",
+        "hazards": "Site-specific environmental, land-use and processing liabilities"
+      }
+    },
+    "MANGANESE": {
+      "key": "MANGANESE",
+      "name": "Manganese Ore & Concentrates",
+      "category": "FERROALLOY_MINERAL",
+      "physicalForm": "SOLID_ORE",
+      "upstreamProcess": "Open-Pit / Underground Mining",
+      "midstreamProcess": "Crushing, Screening, Gravity/Beneficiation",
+      "refinedOutputs": [
+        "MANGANESE_CONCENTRATE",
+        "FERROMANGANESE",
+        "STEEL"
+      ],
+      "downstreamSectors": [
+        "BATTERIES"
+      ],
+      "keyUtilities": [
+        "Industrial feedstock and strategic raw material",
+        "Processed into sector-specific intermediate or finished materials"
+      ],
+      "baseSubstitutionElasticity": 0.3,
+      "baseGestationTicks": 25,
+      "baseCostMultiplier": 1.5,
+      "substitutes": [],
+      "lackConsequences": {
+        "shortTerm": "Supply tightening and processing cost pressure",
+        "mediumTerm": "Industrial input shortages and project delays",
+        "catastrophic": "Sustained supply disruption across dependent sectors"
+      },
+      "enrichmentDynamics": {
+        "strategicLeverage": "Supply-chain influence through control of a constrained raw material",
+        "sovereignWealth": "Resource rents and downstream processing opportunities",
+        "hazards": "Site-specific environmental, land-use and processing liabilities"
+      }
+    },
+    "BASALT": {
+      "key": "BASALT",
+      "name": "Basalt Dimension Stone & Aggregate",
+      "category": "VOLCANIC_CONSTRUCTION_MINERAL",
+      "physicalForm": "SOLID_VOLCANIC_ROCK",
+      "upstreamProcess": "Hard-Rock Quarrying",
+      "midstreamProcess": "Drilling, Blasting, Crushing, Screening, Sizing",
+      "refinedOutputs": [
+        "BASALT_AGGREGATE",
+        "PAVING_STONE",
+        "ROAD_BASE"
+      ],
+      "downstreamSectors": [
+        "CONCRETE",
+        "ASPHALT"
+      ],
+      "keyUtilities": [
+        "Industrial feedstock and strategic raw material",
+        "Processed into sector-specific intermediate or finished materials"
+      ],
+      "baseSubstitutionElasticity": 0.3,
+      "baseGestationTicks": 25,
+      "baseCostMultiplier": 1.5,
+      "substitutes": [],
+      "lackConsequences": {
+        "shortTerm": "Supply tightening and processing cost pressure",
+        "mediumTerm": "Industrial input shortages and project delays",
+        "catastrophic": "Sustained supply disruption across dependent sectors"
+      },
+      "enrichmentDynamics": {
+        "strategicLeverage": "Supply-chain influence through control of a constrained raw material",
+        "sovereignWealth": "Resource rents and downstream processing opportunities",
+        "hazards": "Site-specific environmental, land-use and processing liabilities"
+      }
+    },
+    "GRANITE": {
+      "key": "GRANITE",
+      "name": "Granite Dimension Stone & Aggregate",
+      "category": "DIMENSION_STONE",
+      "physicalForm": "SOLID_IGNEOUS_ROCK",
+      "upstreamProcess": "Quarry Block Extraction",
+      "midstreamProcess": "Wire Sawing, Cutting, Crushing, Polishing",
+      "refinedOutputs": [
+        "GRANITE_BLOCKS",
+        "CRUSHED_GRANITE",
+        "COUNTERTOPS"
+      ],
+      "downstreamSectors": [
+        "BUILDING_STONE"
+      ],
+      "keyUtilities": [
+        "Industrial feedstock and strategic raw material",
+        "Processed into sector-specific intermediate or finished materials"
+      ],
+      "baseSubstitutionElasticity": 0.3,
+      "baseGestationTicks": 25,
+      "baseCostMultiplier": 1.5,
+      "substitutes": [],
+      "lackConsequences": {
+        "shortTerm": "Supply tightening and processing cost pressure",
+        "mediumTerm": "Industrial input shortages and project delays",
+        "catastrophic": "Sustained supply disruption across dependent sectors"
+      },
+      "enrichmentDynamics": {
+        "strategicLeverage": "Supply-chain influence through control of a constrained raw material",
+        "sovereignWealth": "Resource rents and downstream processing opportunities",
+        "hazards": "Site-specific environmental, land-use and processing liabilities"
+      }
+    },
+    "PLATINUM": {
+      "key": "PLATINUM",
+      "name": "Platinum Group Metals Ore & Concentrates",
+      "category": "PRECIOUS_GROUP_METALS",
+      "physicalForm": "SOLID_ORE_AND_CONCENTRATE",
+      "upstreamProcess": "Open-Pit / Underground PGM Mining",
+      "midstreamProcess": "Crushing, Flotation, Smelting, Refining",
+      "refinedOutputs": [
+        "PLATINUM_METALS",
+        "CATALYTIC_CONVERTERS",
+        "CHEMICAL_CATALYSTS"
+      ],
+      "downstreamSectors": [
+        "JEWELRY",
+        "ELECTRONICS"
+      ],
+      "keyUtilities": [
+        "Industrial feedstock and strategic raw material",
+        "Processed into sector-specific intermediate or finished materials"
+      ],
+      "baseSubstitutionElasticity": 0.3,
+      "baseGestationTicks": 25,
+      "baseCostMultiplier": 1.5,
+      "substitutes": [],
+      "lackConsequences": {
+        "shortTerm": "Supply tightening and processing cost pressure",
+        "mediumTerm": "Industrial input shortages and project delays",
+        "catastrophic": "Sustained supply disruption across dependent sectors"
+      },
+      "enrichmentDynamics": {
+        "strategicLeverage": "Supply-chain influence through control of a constrained raw material",
+        "sovereignWealth": "Resource rents and downstream processing opportunities",
+        "hazards": "Site-specific environmental, land-use and processing liabilities"
+      }
+    },
+    "MARBLE": {
+      "key": "MARBLE",
+      "name": "Marble Dimension Stone",
+      "category": "DIMENSION_STONE",
+      "physicalForm": "SOLID_METAMORPHIC_ROCK",
+      "upstreamProcess": "Quarry Block Extraction",
+      "midstreamProcess": "Diamond Wire Cutting, Block Sizing, Sawing, Polishing",
+      "refinedOutputs": [
+        "MARBLE_SLABS",
+        "TILES",
+        "ARCHITECTURAL_STONE"
+      ],
+      "downstreamSectors": [],
+      "keyUtilities": [
+        "Industrial feedstock and strategic raw material",
+        "Processed into sector-specific intermediate or finished materials"
+      ],
+      "baseSubstitutionElasticity": 0.3,
+      "baseGestationTicks": 25,
+      "baseCostMultiplier": 1.5,
+      "substitutes": [],
+      "lackConsequences": {
+        "shortTerm": "Supply tightening and processing cost pressure",
+        "mediumTerm": "Industrial input shortages and project delays",
+        "catastrophic": "Sustained supply disruption across dependent sectors"
+      },
+      "enrichmentDynamics": {
+        "strategicLeverage": "Supply-chain influence through control of a constrained raw material",
+        "sovereignWealth": "Resource rents and downstream processing opportunities",
+        "hazards": "Site-specific environmental, land-use and processing liabilities"
+      }
+    },
+    "TUNGSTEN": {
+      "key": "TUNGSTEN",
+      "name": "Tungsten Ore & Concentrates",
+      "category": "CRITICAL_METAL",
+      "physicalForm": "SOLID_ORE_AND_CONCENTRATE",
+      "upstreamProcess": "Underground / Open-Pit Mining",
+      "midstreamProcess": "Crushing, Gravity, Flotation, Roasting, Chemical Conversion",
+      "refinedOutputs": [
+        "TUNGSTEN_CONCENTRATE",
+        "AMMONIUM_PARATUNGSTATE",
+        "TUNGSTEN_CARBIDE"
+      ],
+      "downstreamSectors": [
+        "HARD_METALS"
+      ],
+      "keyUtilities": [
+        "Industrial feedstock and strategic raw material",
+        "Processed into sector-specific intermediate or finished materials"
+      ],
+      "baseSubstitutionElasticity": 0.3,
+      "baseGestationTicks": 25,
+      "baseCostMultiplier": 1.5,
+      "substitutes": [],
+      "lackConsequences": {
+        "shortTerm": "Supply tightening and processing cost pressure",
+        "mediumTerm": "Industrial input shortages and project delays",
+        "catastrophic": "Sustained supply disruption across dependent sectors"
+      },
+      "enrichmentDynamics": {
+        "strategicLeverage": "Supply-chain influence through control of a constrained raw material",
+        "sovereignWealth": "Resource rents and downstream processing opportunities",
+        "hazards": "Site-specific environmental, land-use and processing liabilities"
+      }
+    },
+    "SALT": {
+      "key": "SALT",
+      "name": "Rock Salt, Brine Salt & Industrial Sodium Chloride",
+      "category": "INDUSTRIAL_MINERAL",
+      "physicalForm": "CRYSTALLINE_SALT",
+      "upstreamProcess": "Solution Mining, Rock-Salt Underground Mining, Solar Evaporation",
+      "midstreamProcess": "Brine Purification, Evaporation, Crystallization",
+      "refinedOutputs": [
+        "FOOD_GRADE_SALT",
+        "CHLOR_ALKALI_FEEDSTOCK",
+        "DEICING_SALT"
+      ],
+      "downstreamSectors": [
+        "CHEMICAL_PROCESSING"
+      ],
+      "keyUtilities": [
+        "Industrial feedstock and strategic raw material",
+        "Processed into sector-specific intermediate or finished materials"
+      ],
+      "baseSubstitutionElasticity": 0.3,
+      "baseGestationTicks": 25,
+      "baseCostMultiplier": 1.5,
+      "substitutes": [],
+      "lackConsequences": {
+        "shortTerm": "Supply tightening and processing cost pressure",
+        "mediumTerm": "Industrial input shortages and project delays",
+        "catastrophic": "Sustained supply disruption across dependent sectors"
+      },
+      "enrichmentDynamics": {
+        "strategicLeverage": "Supply-chain influence through control of a constrained raw material",
+        "sovereignWealth": "Resource rents and downstream processing opportunities",
+        "hazards": "Site-specific environmental, land-use and processing liabilities"
+      }
+    },
+    "SILVER": {
+      "key": "SILVER",
+      "name": "Silver Ore & Concentrates",
+      "category": "PRECIOUS_METAL",
+      "physicalForm": "SOLID_ORE_AND_REFINED_METAL",
+      "upstreamProcess": "Open-Pit / Underground Mining",
+      "midstreamProcess": "Crushing, Flotation, Smelting, Electrorefining",
+      "refinedOutputs": [
+        "REFINED_SILVER",
+        "ELECTRONICS",
+        "SOLAR_PV"
+      ],
+      "downstreamSectors": [
+        "JEWELRY"
+      ],
+      "keyUtilities": [
+        "Industrial feedstock and strategic raw material",
+        "Processed into sector-specific intermediate or finished materials"
+      ],
+      "baseSubstitutionElasticity": 0.3,
+      "baseGestationTicks": 25,
+      "baseCostMultiplier": 1.5,
+      "substitutes": [],
+      "lackConsequences": {
+        "shortTerm": "Supply tightening and processing cost pressure",
+        "mediumTerm": "Industrial input shortages and project delays",
+        "catastrophic": "Sustained supply disruption across dependent sectors"
+      },
+      "enrichmentDynamics": {
+        "strategicLeverage": "Supply-chain influence through control of a constrained raw material",
+        "sovereignWealth": "Resource rents and downstream processing opportunities",
+        "hazards": "Site-specific environmental, land-use and processing liabilities"
+      }
+    },
+    "GRAPHITE": {
+      "key": "GRAPHITE",
+      "name": "Natural Graphite Ore & Concentrate",
+      "category": "CRITICAL_MINERAL",
+      "physicalForm": "CRYSTALLINE_CARBON",
+      "upstreamProcess": "Open-Pit / Underground Mining",
+      "midstreamProcess": "Crushing, Grinding, Flotation, Purification, Spheronization",
+      "refinedOutputs": [
+        "GRAPHITE_CONCENTRATE",
+        "SPHERICAL_GRAPHITE",
+        "BATTERY_ANODES"
+      ],
+      "downstreamSectors": [
+        "REFRACTORIES",
+        "LUBRICANTS"
+      ],
+      "keyUtilities": [
+        "Industrial feedstock and strategic raw material",
+        "Processed into sector-specific intermediate or finished materials"
+      ],
+      "baseSubstitutionElasticity": 0.3,
+      "baseGestationTicks": 25,
+      "baseCostMultiplier": 1.5,
+      "substitutes": [],
+      "lackConsequences": {
+        "shortTerm": "Supply tightening and processing cost pressure",
+        "mediumTerm": "Industrial input shortages and project delays",
+        "catastrophic": "Sustained supply disruption across dependent sectors"
+      },
+      "enrichmentDynamics": {
+        "strategicLeverage": "Supply-chain influence through control of a constrained raw material",
+        "sovereignWealth": "Resource rents and downstream processing opportunities",
+        "hazards": "Site-specific environmental, land-use and processing liabilities"
+      }
+    },
+    "RUTILE": {
+      "key": "RUTILE",
+      "name": "Natural Rutile (Titanium Dioxide Mineral)",
+      "category": "TITANIUM_MINERAL",
+      "physicalForm": "HEAVY_MINERAL_SAND",
+      "upstreamProcess": "Open-Pit Surface Mining, Mineral-Sand Dredging",
+      "midstreamProcess": "Gravity, Magnetic/Electrostatic Separation, Chloride Feed Preparation",
+      "refinedOutputs": [
+        "TITANIUM_DIOXIDE_PIGMENT",
+        "TITANIUM_METAL",
+        "WELDING_ROD_COATINGS"
+      ],
+      "downstreamSectors": [],
+      "keyUtilities": [
+        "Industrial feedstock and strategic raw material",
+        "Processed into sector-specific intermediate or finished materials"
+      ],
+      "baseSubstitutionElasticity": 0.3,
+      "baseGestationTicks": 25,
+      "baseCostMultiplier": 1.5,
+      "substitutes": [],
+      "lackConsequences": {
+        "shortTerm": "Supply tightening and processing cost pressure",
+        "mediumTerm": "Industrial input shortages and project delays",
+        "catastrophic": "Sustained supply disruption across dependent sectors"
+      },
+      "enrichmentDynamics": {
+        "strategicLeverage": "Supply-chain influence through control of a constrained raw material",
+        "sovereignWealth": "Resource rents and downstream processing opportunities",
+        "hazards": "Site-specific environmental, land-use and processing liabilities"
+      }
+    },
+    "DIATOMITE": {
+      "key": "DIATOMITE",
+      "name": "Diatomite / Diatomaceous Earth",
+      "category": "INDUSTRIAL_MINERAL",
+      "physicalForm": "POROUS_SILICEOUS_SEDIMENT",
+      "upstreamProcess": "Open-Pit Quarrying",
+      "midstreamProcess": "Drying, Milling, Calcination, Classification",
+      "refinedOutputs": [
+        "FILTER_AID",
+        "ABSORBENT_MINERAL",
+        "CEMENT_ADDITIVE"
+      ],
+      "downstreamSectors": [
+        "FILLER"
+      ],
+      "keyUtilities": [
+        "Industrial feedstock and strategic raw material",
+        "Processed into sector-specific intermediate or finished materials"
+      ],
+      "baseSubstitutionElasticity": 0.3,
+      "baseGestationTicks": 25,
+      "baseCostMultiplier": 1.5,
+      "substitutes": [],
+      "lackConsequences": {
+        "shortTerm": "Supply tightening and processing cost pressure",
+        "mediumTerm": "Industrial input shortages and project delays",
+        "catastrophic": "Sustained supply disruption across dependent sectors"
+      },
+      "enrichmentDynamics": {
+        "strategicLeverage": "Supply-chain influence through control of a constrained raw material",
+        "sovereignWealth": "Resource rents and downstream processing opportunities",
+        "hazards": "Site-specific environmental, land-use and processing liabilities"
+      }
+    },
+    "TIN": {
+      "key": "TIN",
+      "name": "Tin Ore & Concentrates",
+      "category": "CRITICAL_BASE_METAL",
+      "physicalForm": "SOLID_ORE_AND_CONCENTRATE",
+      "upstreamProcess": "Alluvial / Underground / Open-Pit Mining",
+      "midstreamProcess": "Gravity Separation, Flotation, Smelting, Refining",
+      "refinedOutputs": [
+        "TIN_METAL",
+        "SOLDER",
+        "TINPLATE"
+      ],
+      "downstreamSectors": [
+        "ELECTRONICS"
+      ],
+      "keyUtilities": [
+        "Industrial feedstock and strategic raw material",
+        "Processed into sector-specific intermediate or finished materials"
+      ],
+      "baseSubstitutionElasticity": 0.3,
+      "baseGestationTicks": 25,
+      "baseCostMultiplier": 1.5,
+      "substitutes": [],
+      "lackConsequences": {
+        "shortTerm": "Supply tightening and processing cost pressure",
+        "mediumTerm": "Industrial input shortages and project delays",
+        "catastrophic": "Sustained supply disruption across dependent sectors"
+      },
+      "enrichmentDynamics": {
+        "strategicLeverage": "Supply-chain influence through control of a constrained raw material",
+        "sovereignWealth": "Resource rents and downstream processing opportunities",
+        "hazards": "Site-specific environmental, land-use and processing liabilities"
+      }
+    },
+    "BORON": {
+      "key": "BORON",
+      "name": "Boron Minerals & Borate Concentrates",
+      "category": "CRITICAL_INDUSTRIAL_MINERAL",
+      "physicalForm": "EVAPORITE_BORATE_MINERAL",
+      "upstreamProcess": "Open-Pit Mining",
+      "midstreamProcess": "Crushing, Washing, Dissolution, Crystallization, Refining",
+      "refinedOutputs": [
+        "BORIC_ACID",
+        "BORAX",
+        "SPECIALTY_GLASS"
+      ],
+      "downstreamSectors": [
+        "CERAMICS",
+        "FERTILIZER"
+      ],
+      "keyUtilities": [
+        "Industrial feedstock and strategic raw material",
+        "Processed into sector-specific intermediate or finished materials"
+      ],
+      "baseSubstitutionElasticity": 0.3,
+      "baseGestationTicks": 25,
+      "baseCostMultiplier": 1.5,
+      "substitutes": [],
+      "lackConsequences": {
+        "shortTerm": "Supply tightening and processing cost pressure",
+        "mediumTerm": "Industrial input shortages and project delays",
+        "catastrophic": "Sustained supply disruption across dependent sectors"
+      },
+      "enrichmentDynamics": {
+        "strategicLeverage": "Supply-chain influence through control of a constrained raw material",
+        "sovereignWealth": "Resource rents and downstream processing opportunities",
+        "hazards": "Site-specific environmental, land-use and processing liabilities"
+      }
+    },
+    "ILMENITE": {
+      "key": "ILMENITE",
+      "name": "Ilmenite Mineral Sands",
+      "category": "TITANIUM_MINERAL",
+      "physicalForm": "HEAVY_MINERAL_SAND",
+      "upstreamProcess": "Surface Mining / Dredging of Mineral Sands",
+      "midstreamProcess": "Gravity, Magnetic Separation, Upgrading, Smelting",
+      "refinedOutputs": [
+        "TITANIUM_SLAG",
+        "SYNTHETIC_RUTILE",
+        "TITANIUM_DIOXIDE_PIGMENT"
+      ],
+      "downstreamSectors": [],
+      "keyUtilities": [
+        "Industrial feedstock and strategic raw material",
+        "Processed into sector-specific intermediate or finished materials"
+      ],
+      "baseSubstitutionElasticity": 0.3,
+      "baseGestationTicks": 25,
+      "baseCostMultiplier": 1.5,
+      "substitutes": [],
+      "lackConsequences": {
+        "shortTerm": "Supply tightening and processing cost pressure",
+        "mediumTerm": "Industrial input shortages and project delays",
+        "catastrophic": "Sustained supply disruption across dependent sectors"
+      },
+      "enrichmentDynamics": {
+        "strategicLeverage": "Supply-chain influence through control of a constrained raw material",
+        "sovereignWealth": "Resource rents and downstream processing opportunities",
+        "hazards": "Site-specific environmental, land-use and processing liabilities"
+      }
+    },
+    "MAGNESITE": {
+      "key": "MAGNESITE",
+      "name": "Magnesite Ore & Concentrate",
+      "category": "INDUSTRIAL_MINERAL",
+      "physicalForm": "MAGNESIUM_CARBONATE_ROCK",
+      "upstreamProcess": "Open-Pit Quarrying / Mining",
+      "midstreamProcess": "Crushing, Beneficiation, Calcination, Sintering",
+      "refinedOutputs": [
+        "DEAD_BURNED_MAGNESIA",
+        "CAUSTIC_CALCINED_MAGNESIA",
+        "REFRACTORIES"
+      ],
+      "downstreamSectors": [
+        "STEEL"
+      ],
+      "keyUtilities": [
+        "Industrial feedstock and strategic raw material",
+        "Processed into sector-specific intermediate or finished materials"
+      ],
+      "baseSubstitutionElasticity": 0.3,
+      "baseGestationTicks": 25,
+      "baseCostMultiplier": 1.5,
+      "substitutes": [],
+      "lackConsequences": {
+        "shortTerm": "Supply tightening and processing cost pressure",
+        "mediumTerm": "Industrial input shortages and project delays",
+        "catastrophic": "Sustained supply disruption across dependent sectors"
+      },
+      "enrichmentDynamics": {
+        "strategicLeverage": "Supply-chain influence through control of a constrained raw material",
+        "sovereignWealth": "Resource rents and downstream processing opportunities",
+        "hazards": "Site-specific environmental, land-use and processing liabilities"
+      }
+    },
+    "OIL_SHALE": {
+      "key": "OIL_SHALE",
+      "name": "Oil Shale",
+      "category": "ENERGY_MINERAL",
+      "physicalForm": "KEROGEN_BEARING_SEDIMENT",
+      "upstreamProcess": "Surface Mining / Underground Mining",
+      "midstreamProcess": "Crushing, Retorting, Thermal Processing, Gas Treatment",
+      "refinedOutputs": [
+        "SHALE_OIL",
+        "SHALE_GAS",
+        "PROCESS_HEAT"
+      ],
+      "downstreamSectors": [],
+      "keyUtilities": [
+        "Industrial feedstock and strategic raw material",
+        "Processed into sector-specific intermediate or finished materials"
+      ],
+      "baseSubstitutionElasticity": 0.3,
+      "baseGestationTicks": 25,
+      "baseCostMultiplier": 1.5,
+      "substitutes": [],
+      "lackConsequences": {
+        "shortTerm": "Supply tightening and processing cost pressure",
+        "mediumTerm": "Industrial input shortages and project delays",
+        "catastrophic": "Sustained supply disruption across dependent sectors"
+      },
+      "enrichmentDynamics": {
+        "strategicLeverage": "Supply-chain influence through control of a constrained raw material",
+        "sovereignWealth": "Resource rents and downstream processing opportunities",
+        "hazards": "Site-specific environmental, land-use and processing liabilities"
+      }
+    },
+    "DOLOMITE": {
+      "key": "DOLOMITE",
+      "name": "Dolomite Rock & Industrial Carbonate",
+      "category": "INDUSTRIAL_MINERAL",
+      "physicalForm": "SOLID_CARBONATE_ROCK",
+      "upstreamProcess": "Quarrying, Open-Pit Mining",
+      "midstreamProcess": "Crushing, Screening, Calcination, Sintering",
+      "refinedOutputs": [
+        "DOLOMITE_AGGREGATE",
+        "DOLOMA",
+        "REFRACTORIES"
+      ],
+      "downstreamSectors": [
+        "STEEL_FLUX"
+      ],
+      "keyUtilities": [
+        "Industrial feedstock and strategic raw material",
+        "Processed into sector-specific intermediate or finished materials"
+      ],
+      "baseSubstitutionElasticity": 0.3,
+      "baseGestationTicks": 25,
+      "baseCostMultiplier": 1.5,
+      "substitutes": [],
+      "lackConsequences": {
+        "shortTerm": "Supply tightening and processing cost pressure",
+        "mediumTerm": "Industrial input shortages and project delays",
+        "catastrophic": "Sustained supply disruption across dependent sectors"
+      },
+      "enrichmentDynamics": {
+        "strategicLeverage": "Supply-chain influence through control of a constrained raw material",
+        "sovereignWealth": "Resource rents and downstream processing opportunities",
+        "hazards": "Site-specific environmental, land-use and processing liabilities"
+      }
+    },
+    "CHROMITE": {
+      "key": "CHROMITE",
+      "name": "Chromite Ore & Chromium Concentrates",
+      "category": "FERROALLOY_MINERAL",
+      "physicalForm": "CHROMIUM_BEARING_ORE",
+      "upstreamProcess": "Open-Pit / Underground Mining",
+      "midstreamProcess": "Crushing, Gravity Separation, Spiral Concentration",
+      "refinedOutputs": [
+        "CHROMITE_CONCENTRATE",
+        "FERROCHROME",
+        "STAINLESS_STEEL"
+      ],
+      "downstreamSectors": [
+        "ALLOYS"
+      ],
+      "keyUtilities": [
+        "Industrial feedstock and strategic raw material",
+        "Processed into sector-specific intermediate or finished materials"
+      ],
+      "baseSubstitutionElasticity": 0.3,
+      "baseGestationTicks": 25,
+      "baseCostMultiplier": 1.5,
+      "substitutes": [],
+      "lackConsequences": {
+        "shortTerm": "Supply tightening and processing cost pressure",
+        "mediumTerm": "Industrial input shortages and project delays",
+        "catastrophic": "Sustained supply disruption across dependent sectors"
+      },
+      "enrichmentDynamics": {
+        "strategicLeverage": "Supply-chain influence through control of a constrained raw material",
+        "sovereignWealth": "Resource rents and downstream processing opportunities",
+        "hazards": "Site-specific environmental, land-use and processing liabilities"
+      }
+    },
+    "ARAGONITE": {
+      "key": "ARAGONITE",
+      "name": "Aragonite Sand & Carbonate Mineral",
+      "category": "MARINE_INDUSTRIAL_MINERAL",
+      "physicalForm": "CALCIUM_CARBONATE_SEDIMENT",
+      "upstreamProcess": "Marine Dredging / Sand Extraction",
+      "midstreamProcess": "Screening, Washing, Grading, Calcium-Carbonate Processing",
+      "refinedOutputs": [
+        "ARAGONITE_SAND",
+        "CALCIUM_CARBONATE_FEED",
+        "CEMENT"
+      ],
+      "downstreamSectors": [
+        "GLASS"
+      ],
+      "keyUtilities": [
+        "Industrial feedstock and strategic raw material",
+        "Processed into sector-specific intermediate or finished materials"
+      ],
+      "baseSubstitutionElasticity": 0.3,
+      "baseGestationTicks": 25,
+      "baseCostMultiplier": 1.5,
+      "substitutes": [],
+      "lackConsequences": {
+        "shortTerm": "Supply tightening and processing cost pressure",
+        "mediumTerm": "Industrial input shortages and project delays",
+        "catastrophic": "Sustained supply disruption across dependent sectors"
+      },
+      "enrichmentDynamics": {
+        "strategicLeverage": "Supply-chain influence through control of a constrained raw material",
+        "sovereignWealth": "Resource rents and downstream processing opportunities",
+        "hazards": "Site-specific environmental, land-use and processing liabilities"
       }
     }
   }
