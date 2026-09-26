@@ -124,7 +124,7 @@
     return rows;
   }
 
-  function compileIdentities(){
+  function compileIdentities(knowledge=null){
     const deposits=sourceDeposits(),byCountry=new Map(),byDeposit=new Map(),rows=[],siteReferences=sourceMineSiteReferences(knowledge),siteRefsByCountry=new Map();
     siteReferences.forEach(site=>{if(!siteRefsByCountry.has(site.countryId))siteRefsByCountry.set(site.countryId,[]);siteRefsByCountry.get(site.countryId).push(site);});
     deposits.forEach((raw,index)=>{
