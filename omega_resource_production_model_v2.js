@@ -44,9 +44,9 @@ function productionModel(raw,reserve){
  const simulatedRate=reserve>0?reserve/horizon:null;
  const nominalBase=nominal??observedRate??simulatedRate;
  const activeRate=observedRate!==null?observedRate:(nominalBase===null?null:Math.max(0,nominalBase*utilization*(1-maintenance)*(1-decline)));
- const derivedMin=min!==null?min:(observedRate!==null?observedRate*.55:null);
- const derivedMax=max!==null?max:(observedRate!==null?observedRate*1.25:null);
- return{nominalCapacity:nominal??observedRate,minimumCapacity:derivedMin,maximumCapacity:derivedMax,utilization,recovery,decline,maintenance,operatingCost:cost,observedRate,simulatedRate,activeRate,authority:observed?'OBSERVED':'SIMULATED',dataStatus:observed?'AVAILABLE':'UNOBSERVED',rangeDataStatus:min!==null&&max!==null?'OBSERVED':observedRate!==null?'DERIVED_FROM_OBSERVED_RATE':'UNOBSERVED',simulationHorizonDays:horizon,modelVersion:VERSION};
+ const derivedMin=min!==null?min:(observedRate!==null?observedRate*.55:(nominalBase!==null?nominalBase*.55:null));
+ const derivedMax=max!==null?max:(observedRate!==null?observedRate*1.25:(nominalBase!==null?nominalBase*1.3:null));
+ return{nominalCapacity:nominal??observedRate??simulatedRate,minimumCapacity:derivedMin,maximumCapacity:derivedMax,utilization,recovery,decline,maintenance,operatingCost:cost,observedRate,simulatedRate,activeRate,authority:observed?'OBSERVED':'SIMULATED',dataStatus:observed?'AVAILABLE':'UNOBSERVED',rangeDataStatus:min!==null&&max!==null?'OBSERVED':observedRate!==null?'DERIVED_FROM_OBSERVED_RATE':'UNOBSERVED',simulationHorizonDays:horizon,modelVersion:VERSION};
 }
 function quality(raw,resourceId){
  const external=g.Omega?.ResourceRealism?.quality;
