@@ -206,6 +206,10 @@
           }
           out.push({
             assetId:'ASSET:OCC:'+String(key).toUpperCase(),
+            parentAssetId:child?'ASSET:OCC:'+String(parentKey).toUpperCase():null,
+            assetType:child?'STRUCTURED_RESOURCE_OCCURRENCE':'STRUCTURED_DEPOSIT',
+            sourceKind:'STRUCTURED_DEPOSIT',
+            occurrenceRole:child?'CHILD_RESOURCE_OCCURRENCE':'PRIMARY_DEPOSIT_OCCURRENCE',
             occurrenceKey:key,parentOccurrenceKey:reserve.parentOccurrenceKey||occ.occurrenceKey,depositKey:occ.depositKey,resourceId,countryId:wanted,
             depositName:dep.depositRawName,locationNodeKey:dep.locationNodeKey||occ.locationNodeKey||null,
             resourceTypeKey:resourceId,reserveState:reserve,capacity,
