@@ -1,0 +1,84 @@
+name: OMEGA Resource Verification Certificate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  resource-verification-certificate:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 24
+      - name: Single-stage resource verification and certificate
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check omega_resource_endowment_runtime.js
+          node --check omega_resource_part04_identity_runtime.js
+          node --check omega_resource_part05_reserve_extraction_runtime.js
+          node --check omega_resource_production_model_v2.js
+          node --check omega_resource_realism_runtime_v1.js
+          node --check omega_resource_logistics_runtime_v1.js
+          node --check omega_resource_country_boundary_guard.js
+          node --check omega_resource_action_execution_runtime.js
+          node --check omega_resource_economy_runtime_v2.js
+          node --check omega_resource_authoritative_adapter.js
+          node test/omega_resource_endowment_runtime.test.mjs
+          node --test test/omega_resource_economy_runtime_v2.test.mjs
+          node --test test/omega_resource_authoritative_adapter.test.mjs
+          node --test test/omega_resource_action_execution_runtime.test.mjs
+          node --test test/omega_resource_country_boundary.test.mjs
+          node --test test/omega_resource_global_pipeline.test.mjs
+          node test/omega_resource_production_model_v2.test.mjs
+          node test/omega_resource_realism_runtime_v1.test.mjs
+          node test/omega_resource_logistics_runtime_v1.test.mjs
+          node test/omega_resource_request_and_settlement.test.mjs
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const certificate = {
+            certificate: 'OMEGA-RESOURCE-VERIFICATION',
+            status: 'VERIFIED',
+            workflow: 'OMEGA Resource Verification Certificate',
+            commit: process.env.GITHUB_SHA,
+            run: process.env.GITHUB_RUN_NUMBER,
+            generatedAt: new Date().toISOString(),
+            gates: {
+              syntax: 'PASS',
+              resourceEndowment: 'PASS',
+              resourceEconomy: 'PASS',
+              authoritativeAdapter: 'PASS',
+              resourceActions: 'PASS',
+              countryBoundary: 'PASS',
+              globalPipeline: 'PASS',
+              productionModelV2: 'PASS',
+              realismV1: 'PASS',
+              logisticsV1: 'PASS',
+              settlementCompatibility: 'PASS'
+            },
+            authorityPolicy: {
+              observedStateCanNotBeOverwrittenBySimulatedState: true,
+              simulatedValuesAreExplicit: true
+            }
+          };
+          fs.writeFileSync('omega_resource_verification_certificate.json', JSON.stringify(certificate, null, 2)+'\n');
+          console.log(JSON.stringify(certificate, null, 2));
+          NODE
+      - name: Upload verified certificate
+        uses: actions/upload-artifact@v4
+        with:
+          name: omega-resource-verification-certificate
+          path: omega_resource_verification_certificate.json
