@@ -75,29 +75,36 @@ function parseReserve(raw,resourceId){
 function missing(raw){return{status:'UNOBSERVED',value:null,unitFamily:null,sourceUnit:null,raw:String(raw??'')}}
 function commodityText(raw,resourceId){
  if(raw===null||raw===undefined)return null;
+ const target=rid(resourceId);
  if(typeof raw==='object'&&!Array.isArray(raw)){
-   const r=rid(resourceId);
    for(const k of ['commodities','resources','resourceStreams','commodityDeposits'])if(Array.isArray(raw[k])){
-     const hit=raw[k].find(x=>rid(typeof x==='string'?x:x?.resourceId||x?.resourceTypeId||x?.resId||x?.resource)===r);
+     const hit=raw[k].find(x=>rid(typeof x==='string'?x:x?.resourceId||x?.resourceTypeId||x?.resId||x?.resource)===target);
      if(hit!==undefined)return typeof hit==='string'?hit:hit?.reserves??hit?.reserve??hit?.quantity??null;
    }
    const map=raw.reserves||raw.reserve;
-   if(map&&typeof map==='object'&&!Array.isArray(map)){
-     for(const [k,v] of Object.entries(map))if(rid(k)===r)return typeof v==='string'?v:v?.value??v?.quantity??null;
-   }
+   if(map&&typeof map==='object'&&!Array.isArray(map))for(const [k,v] of Object.entries(map))if(rid(k)===target)return typeof v==='string'?v:v?.value??v?.quantity??null;
    return raw.reserves??raw.reserve??null;
  }
- const text=String(raw);
- const tokens=(alias[rid(resourceId)]||[rid(resourceId)]).map(x=>String(x).replace(/[-/\\^$*+?.()|[\]{}]/g,'\\$&'));
- const marker=tokens.join('|');
- const unitPattern=r=== 'crude_oil'?'(?:trillion|billion|million|thousand)?\\s*(?:BBL|BBLS|BARREL|BARRELS)':r==='natural_gas'?'(?:trillion|billion|million|thousand)?\\s*(?:TCF|BCF|BCM|MCM|MCF)':r==='gold'?'(?:trillion|billion|million|thousand)?\\s*(?:OZ|OZT|TROY\\s+OUNCES?|TONS?|TONNES?)':'(?:trillion|billion|million|thousand)?\\s*(?:T|TONS?|TONNES?|METRIC\\s+TONS?)';
- const m=text.match(new RegExp('([0-9][0-9,]*(?:\\.[0-9]+)?)\\s*'+unitPattern+'(?:\\s*(?:OF|OF\\s+RESOURCE)?\\s*(?:'+marker+'))?','i'));
- return m?m[0]:text;
+ const text=String(raw),words=(alias[target]||[target]).map(clean).filter(Boolean);
+ const families=target==='crude_oil'?['BBL']:target==='natural_gas'?['TCF','BCF','BCM','MCM','MCF']:target==='gold'?['TROY_OUNCES','TONNES']:['TONNES'];
+ for(const family of families){
+   const vals=FAMILY[family]||[],pat=vals.map(x=>String(x).replace(/[.*+?^{}()|[\]\\]/g,'\\$&')).join('|');
+   const re=new RegExp('([0-9][0-9,]*(?:\\.[0-9]+)?)\\s*(trillion|billion|million|thousand)?\\s*('+pat+')\\b','ig');
+   let m;while((m=re.exec(text))){
+     const context=text.slice(Math.max(0,m.index-90),Math.min(text.length,m.index+m[0].length+90)).toLowerCase();
+     if(words.some(w=>context.includes(w)))return m[0];
+   }
+ }
+ const matches=[];for(const family of families){const vals=FAMILY[family]||[],pat=vals.map(x=>String(x).replace(/[.*+?^{}()|[\]\\]/g,'\\$&')).join('|');const re=new RegExp('([0-9][0-9,]*(?:\\.[0-9]+)?)\\s*(trillion|billion|million|thousand)?\\s*('+pat+')\\b','ig');let m;while((m=re.exec(text)))matches.push(m[0]);}
+ return matches.length===1?matches[0]:null;
 }
-function splitCommodities(raw){
- const out=[];const arr=raw&&typeof raw==='object'&&Array.isArray(raw.commodities)?raw.commodities:[];
+function splitCommodities(raw,resourceIds=[]){
+ const out=[],arr=raw&&typeof raw==='object'&&Array.isArray(raw.commodities)?raw.commodities:[];
  for(const x of arr){const r=rid(typeof x==='string'?x:x?.resourceId||x?.resourceTypeId||x?.resId||x?.resource);if(r)out.push({...((x&&typeof x==='object')?x:{}),resourceId:r});}
- return out;
+ if(!out.length){
+   for(const candidate of Array.isArray(resourceIds)?resourceIds:[]){const r=rid(candidate),snippet=commodityText(raw?.reserves??raw?.reserve??raw,r);if(r&&snippet)out.push({resourceId:r,reserves:snippet});}
+ }
+ return [...new Map(out.filter(x=>x.resourceId).map(x=>[x.resourceId,x])).values()];
 }
 function quality(raw,resourceId){
  const r=rid(resourceId),o=typeof raw==='object'&&raw?raw:{},pick=(...ks)=>{for(const k of ks)if(o[k]!==undefined&&o[k]!==null&&o[k]!=='')return o[k];return null};
