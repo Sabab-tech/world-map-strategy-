@@ -16,6 +16,7 @@
   };
   const id=v=>String(v??'').trim().toUpperCase();
   const rid=v=>String(v??'').replace(/^RES_TYPE:/i,'').trim().toLowerCase();
+  const tok=v=>String(v??'').trim().toLowerCase().replace(/[\s-]+/g,'_');
   const n=v=>{const x=Number(v);return Number.isFinite(x)?x:null;};
   const state=()=>g.Game?.state||g.gameState||{};
   const registry=()=>g.OmegaCanonicalIdentityRegistry||g.OmegaCountrySemanticBridge||g.Omega?.CanonicalIdentity||null;
