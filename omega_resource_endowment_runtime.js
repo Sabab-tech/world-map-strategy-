@@ -139,6 +139,7 @@
     };
   }
   function compile(){
+    try{g.Omega?.ResourceProductionModelV2?.patch?.();}catch(_){}
     const p4=g.GSRSK_Part04||g.GSRSK_ResourceIdentityEngine;
     const p5=g.GSRSK_Part05||g.GSRSK_ResourceReserveExtractionEngine;
     const knowledge=buildKnowledge();
