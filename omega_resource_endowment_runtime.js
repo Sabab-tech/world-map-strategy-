@@ -207,7 +207,7 @@
     return out;
   }
 
-  function rid0  function rid0(v){return String(v??'').replace(/^RES_TYPE:/i,'').trim().toLowerCase();}
+  function rid0(v){return String(v??'').replace(/^RES_TYPE:/i,'').trim().toLowerCase();}
   function parsePurityFromGrade(text,resourceId){
     const raw=String(text||'').trim();if(!raw)return{purity:null,purityStatus:'UNOBSERVED',gradePercent:null};
     const key=rid0(resourceId),patterns=[];
