@@ -74,7 +74,7 @@ assert(gasMine);
 assert.equal(gasMine.resourceId,'natural_gas');
 assert.equal(gasMine.purity,null);
 assert.equal(gasMine.qualityState.purityStatus,'UNOBSERVED');
-assert.ok(Math.abs(gasMine.qualityState.gradePercent-96.2)<1e-9, `grade drifted: ${gasMine.qualityState.gradePercent}`);
+assert.ok(Math.abs(gasMine.qualityState.gradePercent-96.2)<1e-9, `grade drifted: ${gasMine.qualityState.gradePercent}; rawDeposit=${JSON.stringify(gasMine.rawDeposit)}`);
 assert.equal(gasMine.qualityState.gradeBasis,'METHANE_CONCENTRATION');
 
 const extraction=await runtime.extractCountry('BGD',[gasMine.occurrenceKey]);
