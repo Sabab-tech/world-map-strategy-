@@ -112,6 +112,7 @@ assert(seen.some(x=>x&&x.payload&&x.payload.batch&&x.payload.batch.batchId===bat
 const preGlobal=runtime.diagnostics();
 const expectedResourceCountries=Object.keys(engine.countryProfiles||{});
 const registryAssetsBeforeGlobal=globalThis.__OmegaResourceIdentityRegistry?.listUnifiedAssets?.()||[];
+const expectedExecutableStructuredAssetCount=registryAssetsBeforeGlobal.filter(x=>x?.assetType==='STRUCTURED_DEPOSIT'&&x?.execution?.extractionExecutable===true).length;
 const stateAssetsBeforeGlobal=Object.values(globalThis.Game.state.resource||{}).flatMap(row=>Array.isArray(row?.unifiedAssets)?row.unifiedAssets:[]);
 console.log('[UNIFIED-DIAGNOSTIC-BEFORE-EXTRACT]',JSON.stringify({
   engineDeposits:engine.deposits.length,
@@ -149,7 +150,7 @@ assert.equal(unifiedAssetIds.size,unifiedAssetRows.length);
 assert.equal(unifiedAssetRows.filter(x=>x?.assetType==='STRUCTURED_DEPOSIT').length,sourceBackedDepositCount);
 assert.equal(unifiedAssetRows.filter(x=>x?.assetType==='PROFILE_SITE_REFERENCE').length,199);
 assert.ok(unifiedAssetRows.every(x=>x?.schemaVersion&&x?.assetId&&x?.resourceType&&x?.reserve&&x?.production&&x?.quality&&x?.ownership&&x?.flow&&x?.dataAuthority&&x?.provenance));
-assert.equal(structuredMineRows,sourceBackedDepositCount);
+assert.equal(structuredMineRows,expectedExecutableStructuredAssetCount);
 assert.equal(profileMineOutputs.length,199);
 assert(simulatedFieldOutputs.length>0,'expected hydrocarbon field execution assets');
 assert(profileMineOutputs.every(x=>(x?.producedQuantity||0)>0&&x?.effortUtilization>0&&x?.effortUtilization<=1),'some profile mine site did not execute with valid utilization');
