@@ -342,6 +342,18 @@ function batchFromExtraction(x,record){
 
   function siteExecutionRows(c,existing={}){
     const p=profile(c)||{},rows=[],seen=new Set(),realism=g.Omega?.ResourceRealism||g.OmegaResourceRealism;
+    const identityRegistry=g.__OmegaResourceIdentityRegistry;
+    const unifiedSiteAssets=(identityRegistry?.getUnifiedAssetsByCountry?.(c)||[]).filter(function(asset){return asset?.sourceKind==='PROFILE_SITE_REFERENCE';});
+    const refs=unifiedSiteAssets.length
+      ? unifiedSiteAssets.map(function(asset){
+          return{
+            ...(asset.rawSource&&typeof asset.rawSource==='object'?clone(asset.rawSource):{}),
+            assetId:asset.assetId,siteReferenceKey:asset.siteReferenceKey,siteName:asset.siteName,name:asset.siteName,
+            countryId:asset.countryId,countryCode:asset.countryCode,sourcePath:asset.provenance?.sourcePath||null,
+            sourceDatasetId:asset.provenance?.sourceDatasetId||null,normalizedAsset:asset
+          };
+        })
+      :mineSiteReferenceRows(c);
     const add=(asset,index,explicitResource=null,assetType='MINE_SITE')=>{
       const siteName=String(asset?.siteName||asset?.name||asset?.mineName||asset?.depositName||asset||'').trim();if(!siteName)return;
       const siteKey=String(asset?.siteReferenceKey||('SITE:'+canonical(c)+':'+tok(siteName))).trim();
@@ -383,9 +395,10 @@ function batchFromExtraction(x,record){
           productionAuthority:prod.authority||'SIMULATED',dataStatus:prod.dataStatus||'SIMULATED',assetReference:assetType+':'+occurrenceKey,
           computeWindowCapacity(hours){const h=n(hours);return{windowCapacity:(this.activeRate||this.nominalRate||0)*(h===null?1:Math.max(0,h/24))};}};
         rows.push({
+          assetId:asset?.assetId||model?.assetId||('ASSET:'+occurrenceKey),
           occurrenceKey,parentOccurrenceKey:streams.length>1?baseOccurrenceKey:null,siteReferenceKey:siteKey,depositKey:'SIM_'+tok(occurrenceKey),depositName:siteName,resourceId:stream.resourceId,countryId:canonical(c),resourceTypeKey:stream.resourceId,
           locationNodeKey:'ASSET:'+canonical(c)+':'+tok(siteName),ownerKey:null,operatorKey:null,status:'ACTIVE_PRODUCING',
-          rawDeposit:{id:occurrenceKey,name:siteName,countryCode:canonical(c),resId:stream.resourceId,status:'ACTIVE_PRODUCING',assetType,simulation:true,stateAuthority:reserve.provenance?.stateAuthority||'SIMULATED',
+          rawDeposit:{id:occurrenceKey,assetId:asset?.assetId||null,name:siteName,countryCode:canonical(c),resId:stream.resourceId,status:'ACTIVE_PRODUCING',assetType,simulation:true,stateAuthority:reserve.provenance?.stateAuthority||'SIMULATED',
             sourceDatasetId:'RESOURCE_JSON.countryProfiles',sourcePath:asset?.sourcePath||null,productionModel:prod,quality:q,reserveModel:stream.reserve},
           sourceDatasetId:'RESOURCE_JSON.countryProfiles',
           lifecycle:{status:'ACTIVE_EXTRACTION',mode:'PROFILE_DERIVED_SITE_MODEL',assetType,authority:prod.authority||'SIMULATED'},
@@ -395,7 +408,7 @@ function batchFromExtraction(x,record){
         });
       }
     };
-    mineSiteReferenceRows(c).forEach(ref=>add(ref,null,null,'MINE_SITE'));
+    refs.forEach(ref=>add(ref,null,null,'MINE_SITE'));
     const h=p?.hydrocarbon_resource_base||{};
     for(const key of ['oil','naturalGas']){
       const list=Array.isArray(h[key])?h[key]:[];
