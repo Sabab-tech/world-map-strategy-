@@ -8529,6 +8529,7 @@ _globalScope.GSRSK_DataFoundation = (() => {
             this.resourceTypes = [];
             this.deposits = [];
             this.countryProfiles = {};
+            this.countryProfileSources = {};
             this.isReady = false;
             this.dataLoadReport = {
                 status: 'NOT_LOADED',
@@ -8577,6 +8578,7 @@ _globalScope.GSRSK_DataFoundation = (() => {
                     this.resourceTypes = [];
                     this.deposits = [];
                     this.countryProfiles = {};
+                    this.countryProfileSources = {};
 
                     this.dataLoadReport = {
                         status: 'LOADING',
@@ -8598,6 +8600,7 @@ _globalScope.GSRSK_DataFoundation = (() => {
 
                         const data = entry.data;
                         const profiles = data.GSRSK_Master_CountryProfiles_v14?.countryProfiles || data.countryProfiles || {};
+                        this.countryProfileSources[entry.name] = profiles;
                         Object.assign(this.countryProfiles, profiles);
                         if (data.resource_types) this._mergeResourceTypes(data.resource_types);
                         const nestedTypes = data.GSRSK_Master_Resource_Data_v14?.resource_types;
