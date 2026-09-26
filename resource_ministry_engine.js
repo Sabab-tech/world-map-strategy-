@@ -125,7 +125,7 @@ _globalScope.GSRSK_DataFoundation = (() => {
         }
 
         static convert(value, fromUnit, toUnit) {
-            if (typeof value !== 'number' || isNaN(value)) return 0;
+            if (typeof value !== 'number' || !Number.isFinite(value)) return null;
             const fromRes = this.resolveUnit(fromUnit);
             const toRes = this.resolveUnit(toUnit);
 
