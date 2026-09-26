@@ -464,8 +464,8 @@ function batchFromExtraction(x,record){
         reserveAuthority:rs.provenance?.quantityAuthority||raw?.reserveAuthority||'UNOBSERVED',
         productionAuthority:x.capacity?.authority||'UNOBSERVED',
         qualityAuthority:quality?.qualityAuthority||'UNOBSERVED'
+        });
       }
-      });
     }
     const merge=(derived,old)=>{
       const out=clone(derived||{});if(old&&typeof old==='object')for(const [k,v] of Object.entries(old))if(v!==undefined)out[k]=clone(v);return out;
