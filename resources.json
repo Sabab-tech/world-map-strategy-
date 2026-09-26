@@ -2118,7 +2118,8 @@
                 "sourceQuery": "Thar Block II Coal Mine, Tharparkar, Sindh, PAK",
                 "legacyReferenceName": "Pakistan Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "EXPLICIT_PUBLIC_VALUE_AVAILABLE",
-                "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
+                "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
+                "webReview": "Site-specific current/recent source rechecked 2026-09-27"
               },
               "extractionEligibility": "EXECUTABLE",
               "currentStatus": "ACTIVE_PRODUCING",
@@ -2208,7 +2209,21 @@
                   "grade": "OBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "NOT_PER_SITE_VERIFIED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED"
+              },
+              "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.tceb.gos.pk/tariff-determinations/",
+                  "accessed": "2026-09-27",
+                  "scope": "mine_capacity_and_current_tariff"
+                }
+              ],
+              "researchMetadata": {
+                "reviewedAt": "2026-09-27",
+                "capacity": "7.6 Mtpa Phase-I/II; 11.2 Mtpa Phase-III petition",
+                "location": "Block-II, Thar Coalfield, Sindh",
+                "sourceAuthority": "Thar Coal & Energy Board"
               }
             }
           ],
@@ -5375,7 +5390,8 @@
                 "sourceQuery": "Gara Djebilet Iron Mine, Tindouf, DZA",
                 "legacyReferenceName": "Algeria Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
-                "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
+                "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
+                "webReview": "Site-specific current/recent source rechecked 2026-09-27"
               },
               "extractionEligibility": "NON_EXECUTABLE",
               "currentStatus": "DEVELOPMENT",
@@ -5462,7 +5478,20 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "NOT_PER_SITE_VERIFIED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED"
+              },
+              "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.aps.dz/fr/economie/industrieenergie-et-mines/mqfivp9v-le-taux-d-avancement-des-travaux-depasse-95",
+                  "accessed": "2026-09-27",
+                  "scope": "2026_project_progress"
+                }
+              ],
+              "researchMetadata": {
+                "reviewedAt": "2026-09-27",
+                "currentStatus": "Primary ore processing unit construction exceeded 95% in June 2026, with exploitation/commissioning approaching",
+                "sourceAuthority": "Algeria Press Service"
               }
             }
           ],
@@ -8638,7 +8667,8 @@
                 "sourceQuery": "Guelb el Rhein Iron Ore Mine, Tiris Zemmour, MRT",
                 "legacyReferenceName": "Mauritania Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "EXPLICIT_PUBLIC_VALUE_AVAILABLE",
-                "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
+                "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
+                "webReview": "Site-specific current/recent source rechecked 2026-09-27"
               },
               "extractionEligibility": "EXECUTABLE",
               "currentStatus": "ACTIVE_PRODUCING",
@@ -8725,7 +8755,23 @@
                   "grade": "OBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "NOT_PER_SITE_VERIFIED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED"
+              },
+              "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.woodmac.com/reports/metals-guelb-el-rhein-iron-ore-mine-16551979/",
+                  "accessed": "2026-09-27",
+                  "scope": "owner_method_grade_and_processing"
+                }
+              ],
+              "researchMetadata": {
+                "reviewedAt": "2026-09-27",
+                "mineMethod": "surface mine",
+                "ownerOperator": "SNIM",
+                "rawOreGrade": "35.4% Fe",
+                "beneficiationMassRecovery": "about 42%",
+                "sourceAuthority": "Wood Mackenzie, 2025-10-13 asset report"
               }
             }
           ],
@@ -9164,7 +9210,8 @@
                 "sourceQuery": "Sabodala-Massawa Gold Mine, Kédougou, SEN",
                 "legacyReferenceName": "Senegal Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
-                "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
+                "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
+                "webReview": "Site-specific current/recent source rechecked 2026-09-27"
               },
               "extractionEligibility": "EXECUTABLE",
               "currentStatus": "ACTIVE_PRODUCING",
@@ -9251,7 +9298,27 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "NOT_PER_SITE_VERIFIED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED"
+              },
+              "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.endeavourmining.com/our-portfolio/sabodala-massawa-mine/",
+                  "accessed": "2026-09-27",
+                  "scope": "2025_production_and_asset_profile"
+                },
+                {
+                  "url": "https://www.endeavourmining.com/our-portfolio/reserves-and-resources/",
+                  "accessed": "2026-09-27",
+                  "scope": "2025_reserves_resources"
+                }
+              ],
+              "researchMetadata": {
+                "reviewedAt": "2026-09-27",
+                "production2025": "274 koz gold",
+                "ownership": "90% Endeavour Mining",
+                "reserve2025": "42.8 Mt P&P at 2.01 g/t containing 2.768 Moz, 100% basis",
+                "sourceAuthority": "Endeavour Mining"
               }
             }
           ],
@@ -21040,7 +21107,8 @@
                 "sourceQuery": "Moanda Manganese Mine, Haut-Ogooué, GAB",
                 "legacyReferenceName": "Gabon Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
-                "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
+                "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
+                "webReview": "Site-specific current/recent source rechecked 2026-09-27"
               },
               "extractionEligibility": "EXECUTABLE",
               "currentStatus": "ACTIVE_PRODUCING",
@@ -21126,7 +21194,25 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "NOT_PER_SITE_VERIFIED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED"
+              },
+              "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.eramet.com/wp-content/uploads/2026/05/2026-05-07-Eramet-Group-Presentation-May-2026.pdf",
+                  "accessed": "2026-09-27",
+                  "scope": "2025_production_resources_and_operation"
+                }
+              ],
+              "researchMetadata": {
+                "reviewedAt": "2026-09-27",
+                "mineMethod": "open pit",
+                "oreProduction2025": "7.1 Mt",
+                "oreTransport2025": "6.1 Mt",
+                "MnContentTransported2025": "2.7 Mt Mn",
+                "resources": "454 Mt wet metric tons",
+                "operator": "Comilog",
+                "sourceAuthority": "Eramet"
               }
             }
           ],
