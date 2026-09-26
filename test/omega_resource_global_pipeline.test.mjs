@@ -129,6 +129,8 @@ test('global resource pipeline runs every RESOURCE_JSON mine and keeps each resu
   assert.ok(siteRefs.every(x=>x.runtimeExecutionMode==='UNIFIED_PART04_PART05_PIPELINE'));
 
   const siteOccurrences=idResult.registry.listOccurrences().filter(x=>x?.profileDerivedSimulation===true&&x?.siteReferenceKey);
+  const unifiedMineRecordShape=['id','name','countryCode','country','resId','resourceId','resourceTypeId','resourceTypeKey','locationNodeKey','owner','ownerKey','operator','operatorKey','reserves','productionRate','dailyRate','outputRate','grade','physicalState','status'];
+  assert.ok(siteOccurrences.every(x=>unifiedMineRecordShape.every(key=>Object.prototype.hasOwnProperty.call(x.rawDeposit||{},key))), 'Profile mine site missing unified mine-record fields');
   assert.equal(siteOccurrences.length,mineSiteReferenceCount);
   assert.equal(new Set(siteOccurrences.map(x=>x.siteReferenceKey)).size,mineSiteReferenceCount);
   assert.ok(siteOccurrences.every(x=>x.resourceTypeId&&x.countryId));
