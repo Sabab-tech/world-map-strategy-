@@ -80,8 +80,12 @@
     return [...unique.values()];
   }
 
-  function sourceMineSiteReferences(){
+  function sourceMineSiteReferences(knowledge=null){
     const e=engine(),profiles=e?.countryProfiles&&typeof e.countryProfiles==='object'?e.countryProfiles:{},rows=[],seen=new Set();
+    try{
+      const refs=knowledge?.refCatalog?.allReferences||[];
+      refs.forEach(ref=>{if(String(ref?.metadata?.subType||'')==='mineSites')add(ref.parentCountryId,ref.rawReferenceString,0,ref.sourceContextPath,ref);});
+    }catch(_){}
     const add=(countryId,siteName,index,sourcePath,rawSite)=>{
       const c=canonicalCountry(countryId),name=String(siteName||'').trim();if(!c||!name)return;
       const siteReferenceKey='SITE:'+c+':'+tok(name);if(seen.has(siteReferenceKey))return;seen.add(siteReferenceKey);
@@ -109,7 +113,7 @@
   }
 
   function compileIdentities(){
-    const deposits=sourceDeposits(),byCountry=new Map(),byDeposit=new Map(),rows=[],siteReferences=sourceMineSiteReferences(),siteRefsByCountry=new Map();
+    const deposits=sourceDeposits(),byCountry=new Map(),byDeposit=new Map(),rows=[],siteReferences=sourceMineSiteReferences(knowledge),siteRefsByCountry=new Map();
     siteReferences.forEach(site=>{if(!siteRefsByCountry.has(site.countryId))siteRefsByCountry.set(site.countryId,[]);siteRefsByCountry.get(site.countryId).push(site);});
     deposits.forEach((raw,index)=>{
       const countryId=canonicalCountry(raw?.countryCode||raw?.countryIso3||raw?.countryId||raw?.iso3||raw?.country);
