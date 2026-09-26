@@ -61,7 +61,8 @@
   function normalizeResourceId(value,e){
     const raw=String(value??'').normalize('NFKC').trim().toLowerCase().replace(/[-]+/g,'_').replace(/\s+/g,' ');
     if(!raw)return null;
-    const known=Array.isArray(e?.resourceTypes)?e.resourceTypes:[];
+    const known=Array.isArray(e?.resourceTypes)?e.resourceTypes:
+      (e?.resourceTypes&&typeof e.resourceTypes==='object'?Object.values(e.resourceTypes):[]);
     const exact=known.find(x=>String(x?.id??'').trim().toLowerCase().replace(/^res_type:/i,'')===raw);
     if(exact?.id)return String(exact.id).replace(/^RES_TYPE:/i,'').trim().toLowerCase();
     for(const [rid,list] of Object.entries(SITE_RESOURCE_ALIASES)){
@@ -119,24 +120,68 @@
     return out;
   }
 
+  function resourceTypeInfo(resourceId,e){
+    const rid=String(resourceId??'').replace(/^RES_TYPE:/i,'').trim().toLowerCase();
+    const list=Array.isArray(e?.resourceTypes)?e.resourceTypes:
+      (e?.resourceTypes&&typeof e.resourceTypes==='object'?Object.values(e.resourceTypes):[]);
+    return list.find(function(x){
+      const key=String(x?.id||x?.resourceId||x?.resourceTypeId||x?.name||'').replace(/^RES_TYPE:/i,'').trim().toLowerCase();
+      return key===rid;
+    })||null;
+  }
+
+  function finiteNumber(v){
+    const n=Number(v);
+    return Number.isFinite(n)?n:null;
+  }
+
   function normalizeMineRecord(raw,input={}){
+    const e=engine();
     const site=raw&&typeof raw==='object'?clone(raw):{};
     const countryId=id(input.countryId||site.countryCode||site.countryId||site.country||'');
     const name=String(input.name||site.name||site.siteName||site.mineName||site.depositName||'').trim();
-    const resourceId=String(input.resourceId||site.resourceTypeId||site.resourceTypeKey||site.resId||site.resourceId||'').replace(/^RES_TYPE:/i,'').trim().toLowerCase()||null;
+    const resourceId=String(
+      input.resourceId||site.resourceTypeId||site.resourceTypeKey||site.resId||site.resourceId||''
+    ).replace(/^RES_TYPE:/i,'').trim().toLowerCase()||null;
     const recordId=String(input.id||site.id||('MINE_'+countryId+'_'+tok(name))).trim();
-    const locationNodeKey=site.locationNodeKey||site.location?.nodeKey||site.locationKey||('MINE:'+countryId+':'+recordId);
+    const type=resourceTypeInfo(resourceId,e)||{};
+    const coordinates=site.coordinates||site.location?.coordinates||site.location||{};
+    const lat=finiteNumber(site.lat??coordinates.lat);
+    const lng=finiteNumber(site.lng??site.lon??coordinates.lng??coordinates.lon);
     const reserveValue=site.reserves??site.reserve??site.residualQuantity??site.geologicalQuantity??site.recoverableQuantity??null;
     const productionRate=site.productionRate??site.dailyRate??site.outputRate??null;
+    const category=site.category??input.category??type.category??null;
+    const countryName=site.country??input.countryName??countryId;
+    const owner=site.owner??site.ownerKey??input.owner??null;
+    const operator=site.operator??site.operatorKey??input.operator??null;
+    const grade=site.grade??input.grade??null;
+    const status=String(site.status||input.status||'ACTIVE_PRODUCING').trim()||'ACTIVE_PRODUCING';
+    const locationNodeKey=site.locationNodeKey||site.location?.nodeKey||site.locationKey||('MINE:'+countryId+':'+recordId);
     return{
-      ...site,
-      id:recordId,name,countryCode:countryId,country:site.country||input.countryName||countryId,
-      resId:resourceId,resourceId,resourceTypeId:resourceId,resourceTypeKey:resourceId,
+      id:recordId,
+      name,
+      country:countryName,
+      countryCode:countryId,
+      lat,
+      lng,
+      resId:resourceId,
+      category,
+      reserves:reserveValue,
+      grade,
+      status,
+      owner,
+      operator,
+      resourceId,
+      resourceTypeId:resourceId,
+      resourceTypeKey:resourceId,
       locationNodeKey,
-      owner:site.owner??site.ownerKey??null,ownerKey:site.ownerKey??site.owner??null,
-      operator:site.operator??site.operatorKey??null,operatorKey:site.operatorKey??site.operator??null,
-      reserves:reserveValue,productionRate,dailyRate:site.dailyRate??productionRate,outputRate:site.outputRate??productionRate,
-      grade:site.grade??null,physicalState:site.physicalState??null,status:site.status||'ACTIVE_PRODUCING'
+      ownerKey:owner,
+      operatorKey:operator,
+      productionRate,
+      dailyRate:site.dailyRate??productionRate,
+      outputRate:site.outputRate??productionRate,
+      physicalState:site.physicalState??type.physicalState??null,
+      runtimeExecutionMode:'UNIFIED_PART04_PART05_PIPELINE'
     };
   }
 
@@ -163,7 +208,18 @@
 
   function sourceDeposits(){
     const e=engine();
-    const runtime=Array.isArray(e?.deposits)?e.deposits.map(clone):[];
+    const runtime=Array.isArray(e?.deposits)?e.deposits.map(function(raw){
+      const countryId=canonicalCountry(raw?.countryCode||raw?.countryIso3||raw?.countryId||raw?.iso3||raw?.country);
+      const resourceId=String(raw?.resourceTypeId||raw?.resourceTypeKey||raw?.resId||raw?.resourceId||'')
+        .replace(/^RES_TYPE:/i,'').trim().toLowerCase()||null;
+      return normalizeMineRecord(raw,{
+        id:raw?.id,
+        name:raw?.name,
+        countryId,
+        countryName:raw?.country,
+        resourceId
+      });
+    }):[];
     const profiles=e?.countryProfiles&&typeof e.countryProfiles==='object'?e.countryProfiles:{};
     for(const [profileKey,profile] of Object.entries(profiles)){
       const identity=profile?.identity||profile||{};
@@ -199,7 +255,7 @@
             sourceDatasetId:'resources.json.countryProfiles',
             sourcePath:'GSRSK_Master_CountryProfiles_v14.countryProfiles.'+String(profileKey)+'.resource_infrastructure_context.mineSites['+index+']',
             identityAuthority:'RESOURCE_JSON_PROFILE_SITE',
-            runtimeActivationMode:'PROFILE_SITE_RUNTIME',
+            runtimeActivationMode:'UNIFIED_PART04_PART05_PIPELINE',
             quantityAuthority:rawSite?.reserves||rawSite?.reserve||rawSite?.residualQuantity||rawSite?.geologicalQuantity||rawSite?.recoverableQuantity
               ?'RESOURCE_JSON':'DERIVED_SIMULATION_BASELINE'
           }
@@ -282,6 +338,7 @@
         siteReferenceKey:raw?.siteReferenceKey||null,
         profileDerivedSimulation:raw?.profileDerivedSimulation===true,
         assetType:raw?.assetType||(raw?.profileDerivedSimulation===true?'MINE_SITE':'STRUCTURED_MINE'),
+        runtimeExecutionMode:raw?.runtimeExecutionMode||'UNIFIED_PART04_PART05_PIPELINE',
         locationNodeKey:raw?.locationNodeKey||('MINE:'+countryId+':'+depositKey),
         status:String(raw?.status||'UNKNOWN').trim().toUpperCase(),
         sourceDatasetId:raw?.sourceDatasetId||raw?.provenance?.sourceDatasetId||'resources.json',
