@@ -82,6 +82,129 @@ async function fetchJson(url, timeoutMs = 6500) {
   }
 }
 
+async function fetchText(url, timeoutMs = 5000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(url, {
+      signal: controller.signal,
+      headers: {
+        'user-agent': 'Mozilla/5.0 OMEGA-resource-site-revalidation/1.0',
+        'accept': 'text/html,text/plain;q=0.9,*/*;q=0.8'
+      }
+    });
+    if (!response.ok) return null;
+    return await response.text();
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function stripHtml(value) {
+  return String(value ?? '')
+    .replace(/<script[\\s\\S]*?<\\/script>/gi, ' ')
+    .replace(/<style[\\s\\S]*?<\\/style>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&amp;/g, '&')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/\\s+/g, ' ')
+    .trim();
+}
+
+function decodeSearchHref(value) {
+  try {
+    const raw = String(value ?? '')
+      .replace(/^\\/url\\?q=/i, '')
+      .replace(/^\\/url\\?url=/i, '')
+      .split('&')[0];
+    return decodeURIComponent(raw);
+  } catch {
+    return String(value ?? '');
+  }
+}
+
+function authorityWeight(url) {
+  const value = String(url ?? '').toLowerCase();
+  let weight = 0;
+  if (value.includes('.gov')) weight += 0.20;
+  if (value.includes('.gov.')) weight += 0.10;
+  if (value.includes('.edu')) weight += 0.10;
+  if (value.includes('.org')) weight += 0.05;
+  if (value.includes('company') || value.includes('corporate') || value.includes('investor') || value.includes('mining')) weight += 0.05;
+  if (value.includes('wikipedia.org') || value.includes('wikidata.org')) weight -= 0.05;
+  return weight;
+}
+
+async function googleSearch(site) {
+  const countryName = site?.locationIdentity?.countryName || site?.country || site?.countryCode || '';
+  const query = '"' + site.siteName + '" "' + countryName + '" mine';
+  const url = 'https://www.google.com/search?hl=en&num=6&q=' + encodeURIComponent(query);
+  const html = await fetchText(url, 5000);
+  if (!html) return null;
+
+  const candidates = [];
+  for (const match of html.matchAll(/<a[^>]+href="([^"]+)"[^>]*>([\\s\\S]*?)<\\/a>/gi)) {
+    const href = decodeSearchHref(match[1]);
+    if (!/^https?:\\/\\//i.test(href)) continue;
+    if (/google\\.(com|co\\.|org)/i.test(href)) continue;
+    const title = stripHtml(match[2]);
+    if (!title) continue;
+    const score = scoreTitle(site.siteName, title);
+    if (score < 0.45) continue;
+    candidates.push({
+      type: 'WEB_SEARCH',
+      title,
+      url: href,
+      score: Math.min(0.99, score + authorityWeight(href))
+    });
+  }
+
+  candidates.sort((a, b) => b.score - a.score);
+  const best = candidates.find((item) => exactEnough(site.siteName, item.title));
+  if (!best) return null;
+
+  const readerUrl = 'https://r.jina.ai/' + best.url;
+  const pageText = await fetchText(readerUrl, 5000);
+  const normalizedPage = stripHtml(pageText || '').slice(0, 180000);
+  const pageTokenScore = scoreTitle(site.siteName, best.title + ' ' + normalizedPage.slice(0, 30000));
+  if (pageText && pageTokenScore < 0.55) return null;
+
+  return {
+    ...best,
+    readerUrl,
+    pageText: normalizedPage,
+    pageTokenScore: Number(pageTokenScore.toFixed(3))
+  };
+}
+
+function extractWebProfile(site, source) {
+  const textValue = String(source?.pageText || '');
+  if (!textValue) return null;
+  const siteTokens = tokens(site.siteName);
+  const sentences = textValue
+    .split(/(?<=[.!?])\\s+/)
+    .map((x) => x.trim())
+    .filter((x) => x.length >= 40 && x.length <= 500);
+  const relevant = sentences.filter((sentence) => {
+    const lower = sentence.toLowerCase();
+    const hits = siteTokens.filter((token) => lower.includes(token)).length;
+    return hits >= Math.min(2, Math.max(1, siteTokens.length)) &&
+      /(mine|quarry|field|deposit|operation|production|reserve|operator|owned|located|open-pit|underground|processing|project|status)/i.test(sentence);
+  });
+  return {
+    sourceTitle: source.title,
+    sourceUrl: source.url,
+    sourceDomain: (() => { try { return new URL(source.url).hostname; } catch { return 'UNKNOWN'; } })(),
+    titleMatchScore: source.score,
+    pageMatchScore: source.pageTokenScore,
+    extractedSentences: relevant.slice(0, 8)
+  };
+}
+
 async function wikipediaSearch(site) {
   const countryName = site?.locationIdentity?.countryName || site?.country || site?.countryCode || '';
   const query = `"${site.siteName}" ${countryName}`;
@@ -451,11 +574,12 @@ async function worker() {
     const i = cursor++;
     if (i >= legacyTargets.length) return;
     const item = legacyTargets[i];
-    let source = await wikipediaSearch(item.site);
+    let source = await googleSearch(item.site);
+    if (!source) source = await wikipediaSearch(item.site);
     if (!source) source = await wikidataSearch(item.site);
     let infobox = {};
     if (source?.type === 'WIKIPEDIA') infobox = await wikiInfobox(source.title);
-    results[i] = { ...item, source, infobox };
+    results[i] = { ...item, source, infobox, webProfile: extractWebProfile(item.site, source) };
   }
 }
 
@@ -465,7 +589,7 @@ const report = {
   runDate: REVIEW_DATE,
   totalSites: allSites.length,
   legacyTargets: legacyTargets.length,
-  matchedByWebSearch: results.filter((x) => x.source).length,
+  matchedByWebSearch: results.filter((x) => x.source?.type === 'WEB_SEARCH').length,
   wikipediaMatches: results.filter((x) => x.source?.type === 'WIKIPEDIA').length,
   wikidataMatches: results.filter((x) => x.source?.type === 'WIKIDATA').length,
   unresolved: results.filter((x) => !x.source).map((x) => ({ id: x.site.id, siteName: x.site.siteName, countryCode: x.site.countryCode }))
@@ -536,6 +660,22 @@ for (const item of results) {
       webSearchMatchScore: Number(source.score.toFixed(3))
     };
 
+    if (item.webProfile) {
+      site.researchMetadata = {
+        ...(site.researchMetadata || {}),
+        currentWebProfile: item.webProfile,
+        reviewedAt: REVIEW_DATE,
+        webSearchMethod: 'GOOGLE_HTML + JINA_READER'
+      };
+      mergeEvidence(site, {
+        url: item.webProfile.sourceUrl,
+        accessed: REVIEW_DATE,
+        scope: 'site_specific_identity_location_operation_web_page_review',
+        sourceType: item.source?.type || 'WEB_SEARCH',
+        sourceTitle: item.webProfile.sourceTitle,
+        matchScore: item.webProfile.pageMatchScore
+      });
+    }
     if (item.infobox) {
       const ib = item.infobox;
       site.researchMetadata.webInfobox = {
