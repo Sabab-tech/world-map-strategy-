@@ -151,10 +151,15 @@ async function searchEngineHtml(url, parser) {
 
 function searchCandidateListGoogle(html) {
   const out = [];
-  for (const match of html.matchAll(new RegExp('<a[^>]+href="([^"]+)"[^>]*>[\\\\s\\\\S]*?<h3[^>]*>([\\\\s\\\\S]*?)</h3>[\\\\s\\\\S]*?</a>', 'gi'))) {
-    const href = decodeSearchHref(match[1]);
-    const title = stripHtml(match[2]);
-    if (href.startsWith('http://') || href.startsWith('https://')) out.push({ href, title });
+  const h3Matches = [...html.matchAll(new RegExp('<h3[^>]*>([\\s\\S]*?)</h3>', 'gi'))];
+  for (const match of h3Matches) {
+    const before = html.slice(Math.max(0, match.index - 2500), match.index);
+    const hrefMatches = [...before.matchAll(new RegExp('<a[^>]+href="([^"]+)"', 'gi'))];
+    const href = hrefMatches.length ? decodeSearchHref(hrefMatches[hrefMatches.length - 1][1]) : '';
+    const title = stripHtml(match[1]);
+    if (href.startsWith('http://') || href.startsWith('https://') || href.startsWith('/url?q=')) {
+      out.push({ href, title });
+    }
   }
   return out;
 }
