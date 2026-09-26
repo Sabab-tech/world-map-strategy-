@@ -81,18 +81,28 @@
   }
 
   function sourceMineSiteReferences(){
-    const e=engine(),profiles=e?.countryProfiles&&typeof e.countryProfiles==='object'?e.countryProfiles:{},rows=[];
+    const e=engine(),profiles=e?.countryProfiles&&typeof e.countryProfiles==='object'?e.countryProfiles:{},rows=[],seen=new Set();
+    const add=(countryId,siteName,index,sourcePath,rawSite)=>{
+      const c=canonicalCountry(countryId),name=String(siteName||'').trim();if(!c||!name)return;
+      const siteReferenceKey='SITE:'+c+':'+tok(name);if(seen.has(siteReferenceKey))return;seen.add(siteReferenceKey);
+      rows.push({siteReferenceKey,countryId:c,countryCode:c,profileKey:String(countryId),siteName:name,status:'ACTIVE_SITE_REFERENCE',
+        activationState:'REFERENCE_ONLY',extractionExecutable:false,quantitativeExtractionDataAvailable:false,authorityLevel:'REFERENCE_ONLY',
+        resourceDataStatus:'UNOBSERVED',sourceAuthority:'RESOURCE_JSON',sourceDatasetId:'RESOURCE_JSON.countryProfiles',
+        sourcePath:sourcePath||null,rawSiteReference:clone(rawSite)});
+    };
     for(const [profileKey,profile] of Object.entries(profiles)){
       const identity=profile?.identity||profile||{},countryId=canonicalCountry(identity.countryId||identity.iso3||profileKey);if(!countryId)continue;
-      profileSites(profile).forEach((rawSite,index)=>{
-        const siteName=String(typeof rawSite==='string'?rawSite:rawSite?.name||rawSite?.siteName||rawSite?.mineName||rawSite?.depositName||'').trim();if(!siteName)return;
-        const siteReferenceKey='SITE:'+countryId+':'+tok(siteName);
-        rows.push({siteReferenceKey,countryId,countryCode:countryId,profileKey:String(profileKey),siteName,
-          status:'ACTIVE_SITE_REFERENCE',activationState:'REFERENCE_ONLY',extractionExecutable:false,
-          quantitativeExtractionDataAvailable:false,authorityLevel:'REFERENCE_ONLY',
-          resourceDataStatus:'UNOBSERVED',sourceAuthority:'RESOURCE_JSON',sourceDatasetId:'RESOURCE_JSON.countryProfiles',
-          sourcePath:'GSRSK_Master_CountryProfiles_v14.countryProfiles.'+String(profileKey)+'.resource_infrastructure_context.mineSites['+index+']',
-          rawSiteReference:clone(rawSite)});
+      const sites=profileSites(profile);
+      sites.forEach((rawSite,index)=>{
+        const siteName=String(typeof rawSite==='string'?rawSite:rawSite?.name||rawSite?.siteName||rawSite?.mineName||rawSite?.depositName||'').trim();
+        add(countryId,siteName,index,'GSRSK_Master_CountryProfiles_v14.countryProfiles.'+String(profileKey)+'.resource_infrastructure_context.mineSites['+index+']',rawSite);
+      });
+    }
+    if(rows.length===0&&e?.referenceCatalog?.getAllReferences){
+      e.referenceCatalog.getAllReferences().forEach(ref=>{
+        if(String(ref?.category||'').toUpperCase()!=='INFRASTRUCTURE_REFERENCE')return;
+        if(String(ref?.metadata?.subType||'')!=='mineSites')return;
+        add(ref.parentCountryId,ref.rawReferenceString,0,ref.sourceContextPath,ref);
       });
     }
     return rows;
