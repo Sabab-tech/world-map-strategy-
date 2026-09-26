@@ -27,6 +27,7 @@ function buildEngine(){
   return{
     isReady:true,countryProfiles:profiles,deposits,
     resourceTypes:Object.values(resourceTypes),
+    mineSiteReferenceCount,
     getDataLoadReport(){return{authority:'RESOURCE_JSON',countryProfileCount:Object.keys(profiles).length,depositCount:deposits.length};},
     normalizeCountryCode(v){return String(v||'').trim().toUpperCase();}
   };
@@ -78,6 +79,7 @@ function makeInterop(state){
 
 test('global resource pipeline runs every RESOURCE_JSON mine and keeps each result sovereign',async()=>{
   const engine=buildEngine();
+  const {mineSiteReferenceCount}=engine;
   const state={simulation:{turn:1},resource:{},finance:{}};
   const identity={
     resolveCountry(v){
