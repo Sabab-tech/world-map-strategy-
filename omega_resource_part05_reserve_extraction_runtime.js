@@ -124,7 +124,9 @@
       const rawStatus=String(raw.status||occ.status||'UNKNOWN').toUpperCase();
       const active=/ACTIVE|PRODUCING|OPERATING|RUNNING/.test(rawStatus) && !/SUSPEND|BLOCK|CLOSED|ABANDON/.test(rawStatus);
       const horizon=DEFAULT_DEPLETION_HORIZON_DAYS;
+      const utilization=0.85;
       const nominalRate=declared/horizon;
+      const activeRate=nominalRate*utilization;
 
       const reserve=new ReserveState({
         occurrenceKey:occ.occurrenceKey,
@@ -142,7 +144,11 @@
           sourceDatasetId:raw.sourceDatasetId||'resources.json',
           reserveField:'runtime_deposits.reserves',
           reserveText:String(raw.reserves||''),
-          effortUtilization:1,
+          effortUtilization:utilization,
+          utilization,
+          minimumCapacity:nominalRate*0.55,
+          maximumCapacity:nominalRate*1.25,
+          activeRate,
           capacitySource:raw.productionRate||raw.dailyRate||raw.outputRate?'RESOURCE_JSON':'SIMULATION_DEFAULT_NO_DATA_RATE',
           simulationExtractionHorizonDays:horizon
         }
@@ -152,10 +158,15 @@
         countryId:canonicalCountry(occ.countryId),
         resourceId:occ.resourceTypeId,
         unit:parsed.targetUnit||type.unit||null,
-        nominalRate:nominalRate,
-        dailyRate:nominalRate,
+        nominalRate:activeRate,
+        dailyRate:activeRate,
+        nominalCapacity:nominalRate,
+        minimumCapacity:nominalRate*0.55,
+        maximumCapacity:nominalRate*1.25,
+        utilization,
+        activeRate,
         assetReference:'MINE:'+occ.occurrenceKey,
-        effortUtilization:1,
+        effortUtilization:utilization,
         authority:raw.productionRate||raw.dailyRate||raw.outputRate?'RESOURCE_JSON':'SIMULATION_DEFAULT_NO_DATA_RATE',
         simulationExtractionHorizonDays:horizon
       });
