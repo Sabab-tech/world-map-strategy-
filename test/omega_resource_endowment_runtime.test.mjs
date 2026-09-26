@@ -54,8 +54,17 @@ await import('../omega_resource_production_model_v2.js');
 await import('../omega_resource_realism_runtime_v1.js');
 await import('../omega_resource_endowment_runtime.js');
 const runtime=globalThis.OmegaResourceEndowmentRuntime;
+const compileProbe=runtime.compile();
+console.log('RESOURCE_COMPILE_PROBE',JSON.stringify({
+  status:compileProbe?.status,
+  reason:compileProbe?.reason||null,
+  identity:compileProbe?.identity?.status||null,
+  reserve:compileProbe?.reserve?.status||null,
+  reserveReason:compileProbe?.reserve?.reason||null,
+  detail:compileProbe?.detail?.reason||compileProbe?.detail?.status||null
+}));
 const initialized=await runtime.initialize();
-assert.equal(initialized.status,'READY');
+assert.equal(initialized.status,'READY',JSON.stringify(initialized));
 const hydrated=runtime.hydrateCountry('BGD');
 assert.equal(hydrated.status,'APPLIED', JSON.stringify(hydrated));
 
