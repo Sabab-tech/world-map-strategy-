@@ -304,30 +304,6 @@
   }
 
 
-  const SIM_RESOURCE_ALIASES=Object.freeze({
-    crude_oil:['crude_oil','crude oil','petroleum','oil','heavy_crude','heavy crude','light_crude','light crude'],
-    natural_gas:['natural_gas','natural gas','gas','lng','associated_gas','associated gas'],
-    iron_ore:['iron_ore','iron ore','iron'],
-    bauxite:['bauxite','alumina','aluminum','aluminium'],
-    copper:['copper'],
-    nickel:['nickel'],
-    cobalt:['cobalt'],
-    lithium:['lithium'],
-    rare_earth:['rare_earth','rare earth','rare earths','ree','neodymium','dysprosium'],
-    uranium:['uranium','u3o8'],
-    gold:['gold','gold_occurrences'],
-    coal:['coal'],
-    phosphate:['phosphate','phosphate rock','p2o5'],
-    potash:['potash','potassium'],
-    limestone:['limestone','limestone_aggregates'],
-    gypsum:['gypsum'],
-    marble:['marble'],
-    chromium:['chromium','chromite'],
-    silica_sand:['silica_sand','silica sand','sand_and_gravel'],
-    clay:['clay','kaolin','bentonite'],
-    zeolite:['zeolite'],
-    zircon:['zircon','zirconium']
-  });
   const SIM_EXCLUDED_NON_EXTRACTIVE=new Set([
     'fisheries','fish','coconuts','coconut','tropical_timber','timber','solar_energy','wind_energy','hydropower',
     'sugar_cane','sugarcane','tobacco','coffee','cassava','rice','food','water','potable_water','forestry'
