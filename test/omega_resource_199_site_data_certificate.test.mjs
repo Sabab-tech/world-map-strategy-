@@ -78,8 +78,12 @@ for (const { countryId, index, site } of sites) {
     'unverified',
     'unknown'
   ]);
-  assert(!placeholders.has(lower), countryId + '[' + index + ']: placeholder ' + field + ' value');
 
+  for (const field of ['owner', 'operator']) {
+    assert(typeof site[field] === 'string', countryId + '[' + index + ']: ' + field + ' must be explicit string or UNOBSERVED');
+    const lower = site[field].trim().toLowerCase();
+    assert(!placeholders.has(lower), countryId + '[' + index + ']: placeholder ' + field + ' value');
+  }
   assert(allowedResearchStates.has(site.researchState), countryId + '[' + index + ']: invalid researchState');
   if (site.researchState === 'NOT_APPLICABLE_NO_COMMERCIAL_SITE') {
     assert.equal(site.dataCompleteness?.webResearch, 'NOT_APPLICABLE');
