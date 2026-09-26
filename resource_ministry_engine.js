@@ -80,6 +80,11 @@ _globalScope.GSRSK_DataFoundation = (() => {
                 LITERS: { dimension: 'VOLUME', baseMultiplier: 0.001, aliases: ['L', 'LT', 'LITER', 'LITERS', 'LITRE', 'LITRES'] },
                 BARRELS: { dimension: 'VOLUME', baseMultiplier: 0.1589873, aliases: ['BBL', 'BBLS', 'BARREL', 'BARRELS', 'BOE'] },
                 BCM: { dimension: 'VOLUME', baseMultiplier: 1000000000.0, aliases: ['BCM', 'BILLION_CUBIC_METERS'] },
+                TCF: { dimension: 'VOLUME', baseMultiplier: 28316846592.0, aliases: ['TCF', 'TRILLION_CUBIC_FEET'] },
+                METRIC_TONS_U: { dimension: 'MASS', baseMultiplier: 1.0, aliases: ['METRIC_TONS_U', 'TONNES_U', 'T_U'] },
+                METRIC_TONS_LCE: { dimension: 'MASS', baseMultiplier: 1.0, aliases: ['METRIC_TONS_LCE', 'TONNES_LCE', 'LCE_TONS'] },
+                BARRELS_PER_DAY: { dimension: 'FLOW_RATE', baseMultiplier: 1.0, aliases: ['BBL/D', 'BBLS/D', 'BARRELS/DAY', 'BARRELS_PER_DAY'] },
+                TONNES_PER_DAY: { dimension: 'FLOW_RATE', baseMultiplier: 1.0, aliases: ['T/D', 'TONNES/DAY', 'TONS/DAY', 'TONNES_PER_DAY', 'METRIC_TONS_PER_DAY'] },
 
                 // ENERGY (Base: GIGAWATT_HOURS)
                 GIGAWATT_HOURS: { dimension: 'ENERGY', baseMultiplier: 1.0, aliases: ['GWH', 'GIGAWATT_HOUR', 'GIGAWATT_HOURS'] },
@@ -8729,9 +8734,9 @@ _globalScope.GSRSK_DataFoundation = (() => {
                         category: t.category || 'strategic_minerals',
                         color: t.color || '#00e5ff',
                         unit: t.unit || 'TONS',
-                        basePrice: t.basePrice || 1000,
-                        dailyOutput: t.dailyOutput || 5000,
-                        dailyDemand: t.dailyDemand || 4500,
+                        basePrice: t.basePrice ?? null,
+                        dailyOutput: t.dailyOutput ?? null,
+                        dailyDemand: t.dailyDemand ?? null,
                         strategicImportance: t.strategicImportance || 'high',
                         processChain: t.description || 'Extraction ➔ Refining ➔ National Stockpile'
                     });
