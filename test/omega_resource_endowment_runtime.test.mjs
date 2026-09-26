@@ -53,6 +53,13 @@ await import('../omega_resource_part05_reserve_extraction_runtime.js');
 await import('../omega_resource_production_model_v2.js');
 await import('../omega_resource_realism_runtime_v1.js');
 await import('../omega_resource_endowment_runtime.js');
+const p5Probe=globalThis.GSRSK_Part05||globalThis.GSRSK_ResourceReserveExtractionEngine;
+console.log('RESOURCE_P5_PROBE',JSON.stringify({
+  version:p5Probe?.VERSION||null,
+  productionModelV2:!!p5Probe?.__productionModelV2,
+  realismRuntime:!!globalThis.Omega?.ResourceRealism,
+  productionModelGlobal:globalThis.OmegaResourceProductionModelV2?.VERSION||null
+}));
 const runtime=globalThis.OmegaResourceEndowmentRuntime;
 const compileProbe=runtime.compile();
 console.log('RESOURCE_COMPILE_PROBE',JSON.stringify({
