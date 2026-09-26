@@ -78,6 +78,13 @@ assert.equal(observedSite.commodityStreams[0].production.activeRate,900);
 assert.equal(observedSite.commodityStreams[1].reserve.quantity,120000);
 assert.equal(observedSite.commodityStreams[1].production.activeRate,600);
 
+const gasQuality=R.quality({grade:'96.2% Pure Methane Gas'},'natural_gas');
+assert.equal(gasQuality.grade,'96.2% Pure Methane Gas');
+assert.equal(gasQuality.gradeStatus,'OBSERVED');
+assert.equal(gasQuality.concentrationStatus,'OBSERVED');
+assert.equal(gasQuality.normalized.concentrationPercent,96.2);
+assert.equal(gasQuality.purity,null);
+
 // Priority 7: authority firewall never allows simulation to overwrite observed state.
 const observed={value:100,stateAuthority:'OBSERVED',authority:'OBSERVED'};
 const simulated={value:50,stateAuthority:'SIMULATED',authority:'SIMULATED'};
