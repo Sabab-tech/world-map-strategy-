@@ -60,6 +60,7 @@ await import('../omega_resource_endowment_runtime.js');
 const runtime=globalThis.OmegaResourceEndowmentRuntime;
 const initialized=await runtime.initialize();
 assert.equal(initialized.status,'READY');
+console.log('[RESOURCE STATE DEBUG] initialized='+JSON.stringify(initialized)+' stateCountries='+Object.keys(globalThis.Game.state.resource||{}).length+' BGDrefs='+((globalThis.Game.state.resource?.BGD?.mineSiteReferences||[]).length)+' INDrefs='+((globalThis.Game.state.resource?.IND?.mineSiteReferences||[]).length)+' BGDcontrollers='+Object.keys(globalThis.Game.state.resource?.BGD?.mineSiteControllers||{}).length);
 const hydrated=runtime.hydrateCountry('BGD');
 assert.equal(hydrated.status,'APPLIED', JSON.stringify(hydrated));
 
