@@ -84,7 +84,7 @@ test('199 profile site references and structured deposits expose one canonical a
 
   const firstKeys=Object.keys(unifiedAssets[0]||{}).sort();
   assert.ok(firstKeys.length>0,'Unified asset schema must not be empty');
-  assert.ok(unifiedAssets.every(asset=>assert.deepEqual(Object.keys(asset).sort(),firstKeys)===undefined));
+  for(const asset of unifiedAssets)assert.deepEqual(Object.keys(asset).sort(),firstKeys);
   assert.equal(new Set(unifiedAssets.map(asset=>asset.assetId)).size,unifiedAssets.length,'Unified asset IDs must be unique');
 
   const structured=unifiedAssets.filter(asset=>asset.assetType==='STRUCTURED_DEPOSIT');
