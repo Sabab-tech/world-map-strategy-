@@ -139,46 +139,104 @@ function authorityWeight(url) {
   return weight;
 }
 
-async function googleSearch(site) {
-  const countryName = site?.locationIdentity?.countryName || site?.country || site?.countryCode || '';
-  const query = '"' + site.siteName + '" "' + countryName + '" mine';
-  const url = 'https://www.google.com/search?hl=en&num=6&q=' + encodeURIComponent(query);
+async function searchEngineHtml(url, parser) {
   const html = await fetchText(url, 5000);
-  if (!html) return null;
-
-  const candidates = [];
-  for (const match of html.matchAll(new RegExp('<a[^>]+href="([^"]+)"[^>]*>([\\s\\S]*?)</a>', 'gi'))) {
-    const href = decodeSearchHref(match[1]);
-    if (!(href.startsWith('http://') || href.startsWith('https://'))) continue;
-    if (href.toLowerCase().includes('google.')) continue;
-    const title = stripHtml(match[2]);
-    if (!title) continue;
-    const score = scoreTitle(site.siteName, title);
-    if (score < 0.45) continue;
-    candidates.push({
-      type: 'WEB_SEARCH',
-      title,
-      url: href,
-      score: Math.min(0.99, score + authorityWeight(href))
-    });
+  if (!html) return [];
+  try {
+    return parser(html);
+  } catch {
+    return [];
   }
+}
 
-  candidates.sort((a, b) => b.score - a.score);
-  const best = candidates.find((item) => exactEnough(site.siteName, item.title));
-  if (!best) return null;
+function searchCandidateListGoogle(html) {
+  const out = [];
+  for (const match of html.matchAll(new RegExp('<a[^>]+href="([^"]+)"[^>]*>[\\\\s\\\\S]*?<h3[^>]*>([\\\\s\\\\S]*?)</h3>[\\\\s\\\\S]*?</a>', 'gi'))) {
+    const href = decodeSearchHref(match[1]);
+    const title = stripHtml(match[2]);
+    if (href.startsWith('http://') || href.startsWith('https://')) out.push({ href, title });
+  }
+  return out;
+}
 
-  const readerUrl = 'https://r.jina.ai/' + best.url;
-  const pageText = await fetchText(readerUrl, 5000);
-  const normalizedPage = stripHtml(pageText || '').slice(0, 180000);
-  const pageTokenScore = scoreTitle(site.siteName, best.title + ' ' + normalizedPage.slice(0, 30000));
-  if (pageText && pageTokenScore < 0.55) return null;
+function searchCandidateListBing(html) {
+  const out = [];
+  for (const match of html.matchAll(new RegExp('<li[^>]+class="[^"]*b_algo[^"]*"[^>]*>[\\\\s\\\\S]*?<h2[^>]*><a[^>]+href="([^"]+)"[^>]*>([\\\\s\\\\S]*?)</a>', 'gi'))) {
+    const href = decodeSearchHref(match[1]);
+    const title = stripHtml(match[2]);
+    if (href.startsWith('http://') || href.startsWith('https://')) out.push({ href, title });
+  }
+  return out;
+}
 
-  return {
-    ...best,
-    readerUrl,
-    pageText: normalizedPage,
-    pageTokenScore: Number(pageTokenScore.toFixed(3))
-  };
+function searchCandidateListDdg(html) {
+  const out = [];
+  for (const match of html.matchAll(new RegExp('<a[^>]+class="[^"]*result__a[^"]*"[^>]+href="([^"]+)"[^>]*>([\\\\s\\\\S]*?)</a>', 'gi'))) {
+    const href = decodeSearchHref(match[1]);
+    const title = stripHtml(match[2]);
+    if (href.startsWith('http://') || href.startsWith('https://')) out.push({ href, title });
+  }
+  return out;
+}
+
+function rankSearchCandidates(site, candidates, type) {
+  return candidates
+    .filter((item) => item.title)
+    .map((item) => ({
+      type,
+      title: item.title,
+      url: item.href,
+      score: Math.min(0.99, scoreTitle(site.siteName, item.title) + authorityWeight(item.href))
+    }))
+    .filter((item) => item.score >= 0.45)
+    .sort((a, b) => b.score - a.score);
+}
+
+async function externalWebSearch(site) {
+  const countryName = site?.locationIdentity?.countryName || site?.country || site?.countryCode || '';
+  const query = '"' + site.siteName + '" "' + countryName + '"';
+  const urls = [
+    {
+      type: 'GOOGLE_HTML',
+      url: 'https://www.google.com/search?hl=en&num=8&q=' + encodeURIComponent(query),
+      parser: searchCandidateListGoogle
+    },
+    {
+      type: 'BING_HTML',
+      url: 'https://www.bing.com/search?setlang=en&q=' + encodeURIComponent(query),
+      parser: searchCandidateListBing
+    },
+    {
+      type: 'DDG_HTML',
+      url: 'https://html.duckduckgo.com/html/?q=' + encodeURIComponent(query),
+      parser: searchCandidateListDdg
+    }
+  ];
+
+  const settled = await Promise.all(urls.map(async (entry) => ({
+    type: entry.type,
+    candidates: await searchEngineHtml(entry.url, entry.parser)
+  })));
+
+  const ranked = settled
+    .flatMap((entry) => rankSearchCandidates(site, entry.candidates, entry.type))
+    .filter((item) => exactEnough(site.siteName, item.title))
+    .sort((a, b) => b.score - a.score);
+
+  for (const best of ranked.slice(0, 8)) {
+    const readerUrl = 'https://r.jina.ai/' + best.url;
+    const pageText = await fetchText(readerUrl, 5000);
+    const normalizedPage = stripHtml(pageText || '').slice(0, 180000);
+    const pageTokenScore = scoreTitle(site.siteName, best.title + ' ' + normalizedPage.slice(0, 30000));
+    if (pageText && pageTokenScore < 0.55) continue;
+    return {
+      ...best,
+      readerUrl,
+      pageText: normalizedPage,
+      pageTokenScore: Number(pageTokenScore.toFixed(3))
+    };
+  }
+  return null;
 }
 
 function extractWebProfile(site, source) {
@@ -574,7 +632,7 @@ async function worker() {
     const i = cursor++;
     if (i >= legacyTargets.length) return;
     const item = legacyTargets[i];
-    let source = await googleSearch(item.site);
+    let source = await externalWebSearch(item.site);
     if (!source) source = await wikipediaSearch(item.site);
     if (!source) source = await wikidataSearch(item.site);
     let infobox = {};
