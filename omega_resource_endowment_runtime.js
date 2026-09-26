@@ -399,67 +399,60 @@
   function simulationUnit(resourceId){
     return SIM_RESOURCE_UNITS[resourceId]||'metric_tons';
   }
+  function extractionRules(){const r=g.__OmegaResourceEconomyRules;return r&&typeof r==='object'?r.extraction||{}:{};}
   function simulationDailyRate(resourceId){
-    return n(SIM_RESOURCE_DAILY_RATES[resourceId])||1000;
+    const rate=n(extractionRules().baselineDailyRates?.[rid0(resourceId)]);
+    return rate!==null&&rate>0?rate:null;
   }
+  function simulationEffort(){return Math.max(0,Math.min(1,n(extractionRules().defaultEffortUtilization)??0.82));}
+  function simulationFactors(){
+    const f=extractionRules().constraintFactors||{};
+    return Object.fromEntries(Object.entries(f).map(([k,v])=>[k,Math.max(0,Math.min(1,n(v)??1))]));
+  }
+  function simulationRecovery(resourceId){return Math.max(0,Math.min(1,n(extractionRules().recoveryFactors?.[rid0(resourceId)])??0.75));}
   function siteExecutionRows(c,existing={}){
-    const p=profile(c)||{},rows=[],seen=new Set();
-    const add=(asset,index,explicitResource=null,assetType='MINE_SITE')=>{
-      const siteName=String(asset?.siteName||asset?.name||asset?.mineName||asset?.depositName||asset||'').trim();
-      if(!siteName)return;
+    const p=profile(c)||{},rows=[],seen=new Set(),p5=g.GSRSK_Part05||g.GSRSK_ResourceReserveExtractionEngine,rules=extractionRules(),refs=mineSiteReferenceRows(c);
+    const add=(asset,explicitResource=null,assetType='MINE_SITE')=>{
+      const siteName=String(asset?.siteName||asset?.name||asset?.mineName||asset?.depositName||asset||'').trim();if(!siteName)return;
       const siteKey=String(asset?.siteReferenceKey||('SITE:'+canonical(c)+':'+tok(siteName))).trim();
-      const occurrenceKey=(assetType==='MINE_SITE'?'SITE_OCC:':'FIELD_OCC:')+canonical(c)+':'+tok(siteKey);
-      if(seen.has(occurrenceKey))return;
-      seen.add(occurrenceKey);
-      const resourceId=simulationSiteResourceId(c,siteName,explicitResource);
-      if(!resourceId)return;
-      const old=existing?.mineStates?.[occurrenceKey];
-      const p5=g.GSRSK_Part05||g.GSRSK_ResourceReserveExtractionEngine;
-      const unit=simulationUnit(resourceId),daily=simulationDailyRate(resourceId);
-      const reserve=old&&typeof old==='object'&&p5?.ReserveState
-        ?new p5.ReserveState(clone(old))
-        :(p5?.ReserveState?new p5.ReserveState({
+      const occurrenceKey=(assetType==='MINE_SITE'?'SITE_OCC:':'FIELD_OCC:')+canonical(c)+':'+tok(siteKey);if(seen.has(occurrenceKey))return;seen.add(occurrenceKey);
+      const resourceId=simulationSiteResourceId(c,siteName,explicitResource),daily=simulationDailyRate(resourceId);if(!resourceId||daily===null)return;
+      if(rules.syntheticSitePolicy!=='SIMULATED_ONLY_WITH_EXPLICIT_RULESET')return;
+      const old=existing?.mineStates?.[occurrenceKey],recovery=simulationRecovery(resourceId),reserveBase=daily*3650;
+      const reserve=old&&typeof old==='object'&&p5?.ReserveState?new p5.ReserveState(clone(old)):
+        p5?.ReserveState?new p5.ReserveState({
           occurrenceKey,countryId:canonical(c),depositKey:'SIM_'+tok(occurrenceKey),resourceId,
-          geologicalQuantity:daily*SIM_RESERVE_HORIZON_DAYS,recoverableQuantity:daily*SIM_RESERVE_HORIZON_DAYS,
-          residualQuantity:daily*SIM_RESERVE_HORIZON_DAYS,unit,operationalStatus:'ACTIVE_EXTRACTION',
-          stateVersion:1,provenance:{
-            sourceAuthority:'SIMULATION_RULESET',sourceDatasetId:'RESOURCE_JSON.countryProfiles',
-            sourcePath:asset?.sourcePath||null,quantityAuthority:'DERIVED_SIMULATION_BASELINE',
-            simulationExtractionHorizonDays:SIM_RESERVE_HORIZON_DAYS
-          }
-        }):null);
+          geologicalQuantity:reserveBase,recoverableQuantity:reserveBase*recovery,residualQuantity:reserveBase*recovery,
+          unit:simulationUnit(resourceId),recoverabilityFactor:recovery,recoverabilityBasis:'DEFAULT_RESOURCE_RECOVERABILITY_MODEL',
+          quantityAuthority:'SIMULATION_RULESET',recoverabilityAuthority:'SIMULATION_RULESET',
+          operationalStatus:'ACTIVE_EXTRACTION',stateVersion:1,
+          provenance:{sourceAuthority:'SIMULATION_RULESET',sourceDatasetId:'RESOURCE_JSON.countryProfiles',sourcePath:asset?.sourcePath||null,
+            quantityAuthority:'SIMULATION_RULESET',capacityAuthority:'SIMULATION_RULESET',simulationExtractionHorizonDays:3650}
+        }):null;
       if(!reserve)return;
-      const capacity=p5?.Capacity?new p5.Capacity({
-        occurrenceKey,countryId:canonical(c),resourceId,unit,nominalRate:daily,dailyRate:daily,
-        assetReference:assetType+':'+occurrenceKey,authority:'SIMULATION_RULESET',
-        effortUtilization:1,quantityAuthority:'DERIVED_SIMULATION_BASELINE',
-        simulationExtractionHorizonDays:SIM_RESERVE_HORIZON_DAYS
-      }):{
-        occurrenceKey,countryId:canonical(c),resourceId,unit,nominalRate:daily,dailyRate:daily,
-        effortUtilization:1,assetReference:assetType+':'+occurrenceKey,
-        computeWindowCapacity(hours){const h=n(hours);return{windowCapacity:(this.nominalRate||0)*(h===null?1:Math.max(0,h/24))};}
-      };
+      const cap=p5?.Capacity?new p5.Capacity({
+        occurrenceKey,countryId:canonical(c),resourceId,unit:simulationUnit(resourceId),nominalRate:daily,dailyRate:daily,
+        assetReference:assetType+':'+occurrenceKey,authority:'SIMULATION_RULESET',rateSource:'SIMULATION_RULESET',
+        simulationBaseline:true,effortUtilization:simulationEffort(),constraintFactors:simulationFactors()
+      }):null;if(!cap)return;
       rows.push({
         occurrenceKey,siteReferenceKey:siteKey,depositKey:'SIM_'+tok(occurrenceKey),depositName:siteName,resourceId,countryId:canonical(c),resourceTypeKey:resourceId,
         locationNodeKey:'ASSET:'+canonical(c)+':'+tok(siteName),ownerKey:null,operatorKey:null,status:'ACTIVE_PRODUCING',
-        rawDeposit:{
-          id:occurrenceKey,name:siteName,countryCode:canonical(c),resId:resourceId,status:'ACTIVE_PRODUCING',
-          assetType,simulation:true,effortUtilization:1,
-          sourceDatasetId:'RESOURCE_JSON.countryProfiles',
-          sourcePath:asset?.sourcePath||null
-        },
+        rawDeposit:{id:occurrenceKey,name:siteName,countryCode:canonical(c),resId:resourceId,status:'ACTIVE_PRODUCING',assetType,simulation:true,
+          authorityLevel:'SIMULATION',resourceInference:'PROFILE_OR_NAME_INFERENCE',sourceDatasetId:'RESOURCE_JSON.countryProfiles',sourcePath:asset?.sourcePath||null},
         ownerKey:null,operatorKey:null,sourceDatasetId:'RESOURCE_JSON.countryProfiles',
         lifecycle:{status:'ACTIVE_EXTRACTION',mode:'PROFILE_DERIVED_SIMULATION_BASELINE',assetType},
-        accessibility:{state:'AVAILABLE',sourceAuthority:'RESOURCE_JSON_PROFILE'},
-        reserveState:reserve,capacity,isSimulationGenerated:true,assetType
+        accessibility:{state:'AVAILABLE',sourceAuthority:'RESOURCE_JSON_PROFILE',executionAuthority:'SIMULATION_RULESET'},
+        reserveState:reserve,capacity:cap,isSimulationGenerated:true,authorityLevel:'SIMULATION',
+        dataCompleteness:{resourceId:'INFERRED',reserve:'DERIVED',grade:'UNOBSERVED',productionRate:'DERIVED',authority:'SIMULATION_RULESET'},
+        assetType
       });
     };
-    const mineRefs=mineSiteReferenceRows(c);
-    mineRefs.forEach((ref)=>add(ref,null,null,'MINE_SITE'));
+    refs.forEach(ref=>add(ref,null,'MINE_SITE'));
     const h=p?.hydrocarbon_resource_base||{};
     for(const key of ['oil','naturalGas']){
       const list=Array.isArray(h[key])?h[key]:[];
-      list.forEach((name)=>add({name,sourcePath:'GSRSK_Master_CountryProfiles_v14.countryProfiles.'+canonical(c)+'.hydrocarbon_resource_base.'+key},key==='oil'?'crude_oil':'natural_gas',key==='oil'?'OIL_FIELD':'GAS_FIELD'));
+      list.forEach(name=>add({name,sourcePath:'GSRSK_Master_CountryProfiles_v14.countryProfiles.'+canonical(c)+'.hydrocarbon_resource_base.'+key},key==='oil'?'crude_oil':'natural_gas',key==='oil'?'OIL_FIELD':'GAS_FIELD'));
     }
     return rows;
   }
