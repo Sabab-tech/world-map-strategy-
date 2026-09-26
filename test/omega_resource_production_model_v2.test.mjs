@@ -43,10 +43,9 @@ const identity={
       resId:'copper',
       reserves:'100 million tonnes',
       commodities:[
-        {resourceId:'copper',reserves:'100 million tonnes',grade:'1.2%'},
-        {resourceId:'gold',reserves:'10 million oz',grade:'4.5 g/t'}
-      ],
-      productionModel:{nominalCapacity:1000,minimumCapacity:500,maximumCapacity:1200,utilization:0.8,recovery:0.9,decline:0.02,maintenance:0.05,operatingCost:20}
+        {resourceId:'copper',reserves:'100 million tonnes',grade:'1.2%',productionModel:{nominalCapacity:1000,minimumCapacity:500,maximumCapacity:1200,utilization:0.8,recovery:0.9,decline:0.02,maintenance:0.05,operatingCost:20}},
+        {resourceId:'gold',reserves:'10 million oz',grade:'4.5 g/t',productionModel:{nominalCapacity:120,minimumCapacity:60,maximumCapacity:160,utilization:0.7,recovery:0.8}}
+      ]
     }
   }]}
 };
