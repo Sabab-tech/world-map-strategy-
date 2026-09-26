@@ -109,7 +109,8 @@
       "potash": "TONNES_PER_DAY",
       "iron_ore": "TONNES_PER_DAY",
       "coal": "TONNES_PER_DAY"
-    }
+    },
+    "simulationReserveHorizonDays": 3650
   },
   "industrialPhysics": {
     "missingProcessModelPolicy": "KEEP_GENERIC_RECIPE_BUT_MARK_UNOBSERVED",
