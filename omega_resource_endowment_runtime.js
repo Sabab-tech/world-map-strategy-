@@ -327,11 +327,7 @@
   const SIM_RESOURCE_UNITS=Object.freeze({
     crude_oil:'barrels',natural_gas:'bcm',gold:'troy_ounces',uranium:'metric_tons_u',lithium:'metric_tons_lce'
   });
-  const SIM_EXCLUDED_NON_EXTRACTIVE=new Set([
-    'fisheries','fish','coconuts','coconut','tropical_timber','timber','solar_energy','wind_energy','hydropower',
-    'sugar_cane','sugarcane','tobacco','coffee','cassava','rice','food','water','potable_water','forestry'
-  ]);
-  function normalizeSimulationResource(value){
+ function normalizeSimulationResource(value){
     const raw=String(value??'').normalize('NFKC').trim().toLowerCase().replace(/[-]+/g,'_').replace(/\s+/g,' ');
     if(!raw||SIM_EXCLUDED_NON_EXTRACTIVE.has(raw))return null;
     for(const [id,list] of Object.entries(SIM_RESOURCE_ALIASES)){
