@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
+// FINAL DATA CERTIFICATE [resource-data-certificate]
 const load = (path) => JSON.parse(readFileSync(path, 'utf8'));
 const a = load('resources.json');
 const b = load('resources_2.json');
