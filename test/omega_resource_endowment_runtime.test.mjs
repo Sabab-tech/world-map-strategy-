@@ -5,7 +5,8 @@ import { fileURLToPath } from 'node:url';
 const repoRoot=new URL('../',import.meta.url);
 const resourceFiles=new Map([
   ['resources.json',new URL('../resources.json',import.meta.url)],
-  ['resources_2.json',new URL('../resources_2.json',import.meta.url)]
+  ['resources_2.json',new URL('../resources_2.json',import.meta.url)],
+  ['resource_economy_rules.json',new URL('../resource_economy_rules.json',import.meta.url)]
 ]);
 const nativeFetch=globalThis.fetch;
 globalThis.fetch=async function(input){
@@ -39,6 +40,7 @@ assert.equal(engine.deposits.length,43);
 assert.equal(engine.deposits.some(x=>x.sourceAuthority==='RESOURCE_JSON'),true);
 assert.equal(engine.deposits.some(x=>x.id==='dep-barapukuria-coal'&&x.resId==='coal'),true);
 
+await import('../omega_resource_science_runtime.js');
 await import('../omega_ministry_registry.js');
 await import('../omega_ministry_state_provider.js');
 await import('../omega_ministry_information_policy.js');
