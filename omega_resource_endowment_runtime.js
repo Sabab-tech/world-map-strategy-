@@ -502,7 +502,15 @@
         ownerKey:x.ownerKey,operatorKey:x.operatorKey,rawDeposit:raw,
         reserveState:clone(rs.toJSON?.()||rs),operationalStatus:rs.operationalStatus,unit:rs.unit,
         qualityState:quality,purity:quality.purity,gradePercent:quality.gradePercent,
-        outputRatePerDay:n(x.capacity?.nominalRate)||n(x.capacity?.dailyRate)||null,
+        outputRatePerDay:n(x.capacity?.activeRate)||n(x.capacity?.nominalRate)||n(x.capacity?.dailyRate)||null,
+        productionModel:{
+          nominalCapacity:n(x.capacity?.nominalCapacity)||n(x.capacity?.nominalRate)||null,
+          minimumCapacity:n(x.capacity?.minimumCapacity)||null,maximumCapacity:n(x.capacity?.maximumCapacity)||null,
+          utilization:n(x.capacity?.utilization??x.capacity?.effortUtilization)||null,recovery:n(x.capacity?.recovery)||null,
+          decline:n(x.capacity?.decline)||null,maintenance:n(x.capacity?.maintenance)||null,operatingCost:n(x.capacity?.operatingCost),
+          activeRate:n(x.capacity?.activeRate)||n(x.capacity?.nominalRate)||null,authority:x.capacity?.authority||'UNOBSERVED',
+          stateAuthority:x.capacity?.stateAuthority||x.capacity?.authority||'UNOBSERVED',dataStatus:x.capacity?.dataStatus||'UNOBSERVED'
+        },
         sourceDatasetId:x.sourceDatasetId||raw?.sourceDatasetId||null,provenance:clone(rs.provenance||raw?.provenance||null)
       });
     }
