@@ -57,6 +57,7 @@ const p5Probe=globalThis.GSRSK_Part05||globalThis.GSRSK_ResourceReserveExtractio
 console.log('RESOURCE_P5_PROBE',JSON.stringify({
   version:p5Probe?.VERSION||null,
   productionModelV2:!!p5Probe?.__productionModelV2,
+  capacityConstructor:typeof p5Probe?.Capacity==='function',
   realismRuntime:!!globalThis.Omega?.ResourceRealism,
   productionModelGlobal:globalThis.OmegaResourceProductionModelV2?.VERSION||null
 }));
