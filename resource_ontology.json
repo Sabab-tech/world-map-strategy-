@@ -1457,6 +1457,86 @@
         "sovereignWealth": "Resource rents and downstream processing opportunities",
         "hazards": "Site-specific environmental, land-use and processing liabilities"
       }
+    },
+    "PHOSPHATE": {
+      "key": "PHOSPHATE",
+      "name": "Phosphate Rock (P2O5)",
+      "category": "AGRO_MINERAL_FERTILIZER",
+      "physicalForm": "SOLID_PHOSPHATE_ROCK",
+      "upstreamProcess": "Open-pit phosphate mining, excavation or dragline mining, crushing and screening",
+      "midstreamProcess": "Washing, desliming, flotation or other beneficiation, followed by phosphoric-acid and fertilizer conversion",
+      "refinedOutputs": [
+        "PHOSPHATE_CONCENTRATE",
+        "PHOSPHORIC_ACID",
+        "DAP_FERTILIZER",
+        "MAP_FERTILIZER",
+        "NPK_COMPOUND"
+      ],
+      "keyUtilities": [
+        "Crop phosphorus nutrient for root development and yield",
+        "Feed phosphates for livestock",
+        "Industrial phosphoric-acid and phosphate-chemical feedstock"
+      ],
+      "downstreamSectors": [
+        "FOOD_AGRICULTURE",
+        "LIVESTOCK_FEED",
+        "CHEMICAL_PROCESSING"
+      ],
+      "baseSubstitutionElasticity": 0.05,
+      "baseGestationTicks": 40,
+      "baseCostMultiplier": 2.5,
+      "substitutes": [
+        "RECYCLED_PHOSPHORUS",
+        "ORGANIC_MANURE"
+      ],
+      "lackConsequences": {
+        "shortTerm": "Fertilizer price pressure and reduced phosphate availability",
+        "mediumTerm": "Lower crop yields where phosphorus application is deficient",
+        "catastrophic": "Persistent fertilizer shortage and agricultural production stress"
+      },
+      "enrichmentDynamics": {
+        "strategicLeverage": "Control of phosphate rock and fertilizer supply",
+        "sovereignWealth": "Mining royalties and downstream fertilizer processing",
+        "hazards": "Tailings, water use and phosphogypsum management"
+      }
+    },
+    "POTASH": {
+      "key": "POTASH",
+      "name": "Potash (Potassium Chloride, KCl)",
+      "category": "AGRO_MINERAL_FERTILIZER",
+      "physicalForm": "GRANULAR_POTASSIUM_SALT",
+      "upstreamProcess": "Underground potash mining of sylvinite or solution mining",
+      "midstreamProcess": "Crushing, screening and flotation/separation to marketable muriate of potash",
+      "refinedOutputs": [
+        "MOP_GRANULAR",
+        "SOP_GRANULAR",
+        "POTASSIUM_FERTILIZER"
+      ],
+      "keyUtilities": [
+        "Potassium nutrient for crop water regulation and yield",
+        "Fertilizer feedstock for blended NPK products"
+      ],
+      "downstreamSectors": [
+        "FOOD_AGRICULTURE",
+        "FERTILIZER_MANUFACTURING"
+      ],
+      "baseSubstitutionElasticity": 0.05,
+      "baseGestationTicks": 40,
+      "baseCostMultiplier": 2.5,
+      "substitutes": [
+        "POTASSIUM_SULFATE",
+        "RECYCLED_POTASSIUM"
+      ],
+      "lackConsequences": {
+        "shortTerm": "Potash price pressure and fertilizer allocation",
+        "mediumTerm": "Reduced crop resilience and yield where potassium is limiting",
+        "catastrophic": "Large-scale fertilizer shortages with persistent agricultural stress"
+      },
+      "enrichmentDynamics": {
+        "strategicLeverage": "Control of global potassium fertilizer supply",
+        "sovereignWealth": "Mining royalties and fertilizer-processing income",
+        "hazards": "Salt tailings, brine management and mine-water impacts"
+      }
     }
   }
 }
