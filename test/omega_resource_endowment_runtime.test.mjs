@@ -160,7 +160,7 @@ const structuredRuntimeAssetIds=new Set(Object.values(worldState).flatMap(row=>
 const unifiedStructuredAssetIds=new Set(unifiedAssetRows.filter(x=>x?.assetType==='STRUCTURED_DEPOSIT').map(x=>x.assetId));
 assert.equal(unifiedStructuredAssetIds.size,sourceBackedDepositCount);
 assert.ok([...structuredRuntimeAssetIds].every(id=>unifiedStructuredAssetIds.has(id)));
-assert.equal(structuredMineRows,expectedExecutableStructuredAssetCount);
+assert.equal(structuredRuntimeAssetIds.size,expectedExecutableStructuredAssetCount);
 const profileControllerRows=Object.values(worldState).flatMap(row=>Object.values(row?.mineSiteControllers&&typeof row.mineSiteControllers==='object'?row.mineSiteControllers:{}));
 const profileControllerAssetIds=new Set(profileControllerRows.map(x=>x?.assetId).filter(Boolean));
 const unifiedProfileAssetIds=new Set(unifiedAssetRows.filter(x=>x?.assetType==='PROFILE_SITE_REFERENCE').map(x=>x.assetId));
