@@ -995,7 +995,10 @@
                 "productionSource": "EMRD dashboard September 2026"
               },
               "productionRate": 4896.3,
-              "productionRateUnit": "metric_tons_per_day"
+              "productionRateUnit": "metric_tons_per_day",
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -1441,7 +1444,10 @@
                 "legacyReferenceName": "India Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "EXPLICIT_PUBLIC_VALUE_AVAILABLE",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -1882,7 +1888,10 @@
                 "legacyReferenceName": "Pakistan Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "EXPLICIT_PUBLIC_VALUE_AVAILABLE",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -2326,7 +2335,10 @@
                 "legacyReferenceName": "Sri Lanka Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "EXPLICIT_PUBLIC_VALUE_AVAILABLE",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -2764,7 +2776,10 @@
                 "legacyReferenceName": "Nepal Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -3202,7 +3217,10 @@
                 "legacyReferenceName": "Bhutan Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -3640,7 +3658,10 @@
                 "legacyReferenceName": "Afghanistan Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "NON_EXECUTABLE",
+              "currentStatus": "DEVELOPMENT",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -4078,7 +4099,10 @@
                 "legacyReferenceName": "Maldives Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "NON_EXECUTABLE",
+              "currentStatus": "RESTRICTED",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -4521,7 +4545,10 @@
                 "legacyReferenceName": "Algeria Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "NON_EXECUTABLE",
+              "currentStatus": "DEVELOPMENT",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -4973,7 +5000,10 @@
                 "legacyReferenceName": "Egypt Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "EXPLICIT_PUBLIC_VALUE_AVAILABLE",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -5416,7 +5446,10 @@
                 "legacyReferenceName": "Libya Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -5859,7 +5892,10 @@
                 "legacyReferenceName": "Morocco Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -6302,7 +6338,10 @@
                 "legacyReferenceName": "Tunisia Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -6745,7 +6784,10 @@
                 "legacyReferenceName": "Sudan Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "NON_EXECUTABLE",
+              "currentStatus": "DISRUPTED",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -7189,7 +7231,10 @@
                 "legacyReferenceName": "Mauritania Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "EXPLICIT_PUBLIC_VALUE_AVAILABLE",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -7627,7 +7672,10 @@
                 "legacyReferenceName": "Senegal Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -8065,7 +8113,10 @@
                 "legacyReferenceName": "Gambia Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "CONDITIONAL",
+              "currentStatus": "LIMITED",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -8503,7 +8554,10 @@
                 "legacyReferenceName": "Guinea-Bissau Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "NON_EXECUTABLE",
+              "currentStatus": "DEVELOPMENT",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -8941,7 +8995,10 @@
                 "legacyReferenceName": "Guinea Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -9387,7 +9444,10 @@
                 "legacyReferenceName": "Sierra Leone Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "EXPLICIT_PUBLIC_VALUE_AVAILABLE",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -9825,7 +9885,10 @@
                 "legacyReferenceName": "Liberia Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -10263,7 +10326,10 @@
                 "legacyReferenceName": "Côte d'Ivoire Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -10707,7 +10773,10 @@
                 "legacyReferenceName": "Ghana Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "EXPLICIT_PUBLIC_VALUE_AVAILABLE",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -11145,7 +11214,10 @@
                 "legacyReferenceName": "Togo Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -11583,7 +11655,10 @@
                 "legacyReferenceName": "Benin Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -12021,7 +12096,10 @@
                 "legacyReferenceName": "Burkina Faso Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -12459,7 +12537,10 @@
                 "legacyReferenceName": "Mali Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -12897,7 +12978,10 @@
                 "legacyReferenceName": "Niger Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "NON_EXECUTABLE",
+              "currentStatus": "CARE_AND_MAINTENANCE",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -13335,7 +13419,10 @@
                 "legacyReferenceName": "Nigeria Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "CONDITIONAL",
+              "currentStatus": "LIMITED",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -13773,7 +13860,10 @@
                 "legacyReferenceName": "Cabo Verde Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "CONDITIONAL",
+              "currentStatus": "LIMITED",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -14216,7 +14306,10 @@
                 "legacyReferenceName": "Western Sahara Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -14654,7 +14747,10 @@
                 "legacyReferenceName": "Cameroon Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "NON_EXECUTABLE",
+              "currentStatus": "DEVELOPMENT",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -15092,7 +15188,10 @@
                 "legacyReferenceName": "Central African Republic Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "NON_EXECUTABLE",
+              "currentStatus": "DEVELOPMENT",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -15530,7 +15629,10 @@
                 "legacyReferenceName": "Chad Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "CONDITIONAL",
+              "currentStatus": "ARTISANAL_AND_LIMITED",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -15968,7 +16070,10 @@
                 "legacyReferenceName": "Republic of the Congo Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "NON_EXECUTABLE",
+              "currentStatus": "DEVELOPMENT",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -16406,7 +16511,10 @@
                 "legacyReferenceName": "Angola Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -16849,7 +16957,10 @@
                 "legacyReferenceName": "Democratic Republic of the Congo Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "EXPLICIT_PUBLIC_VALUE_AVAILABLE",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -17287,7 +17398,10 @@
                 "legacyReferenceName": "Gabon Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -17725,7 +17839,10 @@
                 "legacyReferenceName": "Equatorial Guinea Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -18163,7 +18280,10 @@
                 "legacyReferenceName": "São Tomé and Príncipe Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "CONDITIONAL",
+              "currentStatus": "LIMITED",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -18601,7 +18721,10 @@
                 "legacyReferenceName": "Ethiopia Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "NON_EXECUTABLE",
+              "currentStatus": "SUSPENDED",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -19039,7 +19162,10 @@
                 "legacyReferenceName": "Kenya Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -19477,7 +19603,10 @@
                 "legacyReferenceName": "Tanzania Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -19915,7 +20044,10 @@
                 "legacyReferenceName": "Uganda Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -20353,7 +20485,10 @@
                 "legacyReferenceName": "Rwanda Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -20791,7 +20926,10 @@
                 "legacyReferenceName": "Burundi Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "NON_EXECUTABLE",
+              "currentStatus": "DEVELOPMENT",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -21229,7 +21367,10 @@
                 "legacyReferenceName": "Somalia Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "CONDITIONAL",
+              "currentStatus": "ARTISANAL_AND_LIMITED",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -21667,7 +21808,10 @@
                 "legacyReferenceName": "Djibouti Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -22105,7 +22249,10 @@
                 "legacyReferenceName": "Eritrea Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -22543,7 +22690,10 @@
                 "legacyReferenceName": "South Sudan Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -22981,7 +23131,10 @@
                 "legacyReferenceName": "Malawi Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "NON_EXECUTABLE",
+              "currentStatus": "RESTARTING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -23419,7 +23572,10 @@
                 "legacyReferenceName": "Madagascar Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -23857,7 +24013,10 @@
                 "legacyReferenceName": "Mauritius Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -24295,7 +24454,10 @@
                 "legacyReferenceName": "Seychelles Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "CONDITIONAL",
+              "currentStatus": "LIMITED",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -24733,7 +24895,10 @@
                 "legacyReferenceName": "Comoros Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "CONDITIONAL",
+              "currentStatus": "LIMITED",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -25171,7 +25336,10 @@
                 "legacyReferenceName": "South Africa Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -25609,7 +25777,10 @@
                 "legacyReferenceName": "Zambia Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -26047,7 +26218,10 @@
                 "legacyReferenceName": "Zimbabwe Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -26485,7 +26659,10 @@
                 "legacyReferenceName": "Namibia Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -26923,7 +27100,10 @@
                 "legacyReferenceName": "Botswana Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -27361,7 +27541,10 @@
                 "legacyReferenceName": "Mozambique Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -27799,7 +27982,10 @@
                 "legacyReferenceName": "Lesotho Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -28237,7 +28423,10 @@
                 "legacyReferenceName": "Eswatini Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "NON_EXECUTABLE",
+              "currentStatus": "HISTORICAL_INACTIVE",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -28680,7 +28869,10 @@
                 "legacyReferenceName": "Saudi Arabia Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -29123,7 +29315,10 @@
                 "legacyReferenceName": "United Arab Emirates Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -29566,7 +29761,10 @@
                 "legacyReferenceName": "Qatar Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -30009,7 +30207,10 @@
                 "legacyReferenceName": "Kuwait Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -30452,7 +30653,10 @@
                 "legacyReferenceName": "Oman Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -30895,7 +31099,10 @@
                 "legacyReferenceName": "Bahrain Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -31338,7 +31545,10 @@
                 "legacyReferenceName": "Yemen Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "NON_EXECUTABLE",
+              "currentStatus": "DISRUPTED",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -31781,7 +31991,10 @@
                 "legacyReferenceName": "Iraq Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -32224,7 +32437,10 @@
                 "legacyReferenceName": "Iran Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -32669,7 +32885,10 @@
                 "legacyReferenceName": "Turkey Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -33112,7 +33331,10 @@
                 "legacyReferenceName": "Syria Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "NON_EXECUTABLE",
+              "currentStatus": "DISPUTED_OPERATION",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -33557,7 +33779,10 @@
                 "legacyReferenceName": "Jordan Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -34000,7 +34225,10 @@
                 "legacyReferenceName": "Lebanon Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -34443,7 +34671,10 @@
                 "legacyReferenceName": "Israel Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -34886,7 +35117,10 @@
                 "legacyReferenceName": "Palestine Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "NON_EXECUTABLE",
+              "currentStatus": "UNDEVELOPED",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -35324,7 +35558,10 @@
                 "legacyReferenceName": "China Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -35762,7 +35999,10 @@
                 "legacyReferenceName": "Japan Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -36200,7 +36440,10 @@
                 "legacyReferenceName": "South Korea Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -36638,7 +36881,10 @@
                 "legacyReferenceName": "North Korea Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -37086,7 +37332,10 @@
                 "legacyReferenceName": "Mongolia Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -37524,7 +37773,10 @@
                 "legacyReferenceName": "Taiwan Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -37962,7 +38214,10 @@
                 "legacyReferenceName": "Indonesia Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -38400,7 +38655,10 @@
                 "legacyReferenceName": "Malaysia Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "CONDITIONAL",
+              "currentStatus": "LIMITED",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -38838,7 +39096,10 @@
                 "legacyReferenceName": "Vietnam Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -39276,7 +39537,10 @@
                 "legacyReferenceName": "Thailand Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -39714,7 +39978,10 @@
                 "legacyReferenceName": "Philippines Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -40152,7 +40419,10 @@
                 "legacyReferenceName": "Myanmar Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -40590,7 +40860,10 @@
                 "legacyReferenceName": "Singapore Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "NON_EXECUTABLE",
+              "currentStatus": "HISTORICAL_INACTIVE",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -41028,7 +41301,10 @@
                 "legacyReferenceName": "Brunei Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -41466,7 +41742,10 @@
                 "legacyReferenceName": "Cambodia Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -41904,7 +42183,10 @@
                 "legacyReferenceName": "Laos Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -42342,7 +42624,10 @@
                 "legacyReferenceName": "Timor-Leste Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "NON_EXECUTABLE",
+              "currentStatus": "CESSATION_OF_PRODUCTION",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -42780,7 +43065,10 @@
                 "legacyReferenceName": "Kazakhstan Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -43218,7 +43506,10 @@
                 "legacyReferenceName": "Uzbekistan Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -43656,7 +43947,10 @@
                 "legacyReferenceName": "Turkmenistan Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -44094,7 +44388,10 @@
                 "legacyReferenceName": "Kyrgyzstan Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -44532,7 +44829,10 @@
                 "legacyReferenceName": "Tajikistan Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -44970,7 +45270,10 @@
                 "legacyReferenceName": "Georgia Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "CONDITIONAL",
+              "currentStatus": "LIMITED",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -45408,7 +45711,10 @@
                 "legacyReferenceName": "Armenia Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -45846,7 +46152,10 @@
                 "legacyReferenceName": "Azerbaijan Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -46284,7 +46593,10 @@
                 "legacyReferenceName": "Russia Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -46722,7 +47034,10 @@
                 "legacyReferenceName": "Germany Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -47161,7 +47476,10 @@
                 "legacyReferenceName": "France Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -47600,7 +47918,10 @@
                 "legacyReferenceName": "United Kingdom Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -48039,7 +48360,10 @@
                 "legacyReferenceName": "Italy Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -48478,7 +48802,10 @@
                 "legacyReferenceName": "Spain Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -48917,7 +49244,10 @@
                 "legacyReferenceName": "Poland Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -49356,7 +49686,10 @@
                 "legacyReferenceName": "Ukraine Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "NON_EXECUTABLE",
+              "currentStatus": "DISRUPTED",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -49795,7 +50128,10 @@
                 "legacyReferenceName": "Netherlands Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -50234,7 +50570,10 @@
                 "legacyReferenceName": "Belgium Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -50673,7 +51012,10 @@
                 "legacyReferenceName": "Switzerland Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -51112,7 +51454,10 @@
                 "legacyReferenceName": "Sweden Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -51551,7 +51896,10 @@
                 "legacyReferenceName": "Norway Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -51990,7 +52338,10 @@
                 "legacyReferenceName": "Austria Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -52429,7 +52780,10 @@
                 "legacyReferenceName": "Finland Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -52868,7 +53222,10 @@
                 "legacyReferenceName": "Denmark Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -53307,7 +53664,10 @@
                 "legacyReferenceName": "Ireland Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -53746,7 +54106,10 @@
                 "legacyReferenceName": "Portugal Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -54185,7 +54548,10 @@
                 "legacyReferenceName": "Greece Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -54624,7 +54990,10 @@
                 "legacyReferenceName": "Czech Republic Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "NON_EXECUTABLE",
+              "currentStatus": "HISTORICAL_INACTIVE",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -55063,7 +55432,10 @@
                 "legacyReferenceName": "Romania Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -55502,7 +55874,10 @@
                 "legacyReferenceName": "Hungary Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -55941,7 +56316,10 @@
                 "legacyReferenceName": "Slovakia Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -56380,7 +56758,10 @@
                 "legacyReferenceName": "Bulgaria Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -56819,7 +57200,10 @@
                 "legacyReferenceName": "Serbia Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -57258,7 +57642,10 @@
                 "legacyReferenceName": "Croatia Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -57697,7 +58084,10 @@
                 "legacyReferenceName": "Slovenia Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "CONDITIONAL",
+              "currentStatus": "LIMITED",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -58136,7 +58526,10 @@
                 "legacyReferenceName": "Estonia Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -58575,7 +58968,10 @@
                 "legacyReferenceName": "Latvia Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -59014,7 +59410,10 @@
                 "legacyReferenceName": "Lithuania Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -59453,7 +59852,10 @@
                 "legacyReferenceName": "Belarus Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -59892,7 +60294,10 @@
                 "legacyReferenceName": "Moldova Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -60331,7 +60736,10 @@
                 "legacyReferenceName": "Albania Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -60770,7 +61178,10 @@
                 "legacyReferenceName": "North Macedonia Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -61209,7 +61620,10 @@
                 "legacyReferenceName": "Bosnia and Herzegovina Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -61648,7 +62062,10 @@
                 "legacyReferenceName": "Montenegro Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -62087,7 +62504,10 @@
                 "legacyReferenceName": "Iceland Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -62526,7 +62946,10 @@
                 "legacyReferenceName": "Luxembourg Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "NON_EXECUTABLE",
+              "currentStatus": "HISTORICAL_INACTIVE",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -62965,7 +63388,10 @@
                 "legacyReferenceName": "Malta Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -63404,7 +63830,10 @@
                 "legacyReferenceName": "Cyprus Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "CONDITIONAL",
+              "currentStatus": "LIMITED",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -63843,7 +64272,10 @@
                 "legacyReferenceName": "Andorra Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "NON_EXECUTABLE",
+              "currentStatus": "HISTORICAL_INACTIVE",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -64282,7 +64714,10 @@
                 "legacyReferenceName": "Monaco Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "NON_EXECUTABLE",
+              "currentStatus": "NOT_APPLICABLE",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -64721,7 +65156,10 @@
                 "legacyReferenceName": "San Marino Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "NON_EXECUTABLE",
+              "currentStatus": "NOT_APPLICABLE",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -65160,7 +65598,10 @@
                 "legacyReferenceName": "Liechtenstein Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "NON_EXECUTABLE",
+              "currentStatus": "NOT_APPLICABLE",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -65599,7 +66040,10 @@
                 "legacyReferenceName": "Vatican City Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "NON_EXECUTABLE",
+              "currentStatus": "NOT_APPLICABLE",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -66038,7 +66482,10 @@
                 "legacyReferenceName": "United States Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -66476,7 +66923,10 @@
                 "legacyReferenceName": "Canada Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -66914,7 +67364,10 @@
                 "legacyReferenceName": "Mexico Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -67352,7 +67805,10 @@
                 "legacyReferenceName": "Brazil Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -67790,7 +68246,10 @@
                 "legacyReferenceName": "Argentina Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -68228,7 +68687,10 @@
                 "legacyReferenceName": "Chile Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -68666,7 +69128,10 @@
                 "legacyReferenceName": "Colombia Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -69104,7 +69569,10 @@
                 "legacyReferenceName": "Peru Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -69542,7 +70010,10 @@
                 "legacyReferenceName": "Venezuela Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -69982,7 +70453,10 @@
                 "legacyReferenceName": "Ecuador Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -70420,7 +70894,10 @@
                 "legacyReferenceName": "Bolivia Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -70858,7 +71335,10 @@
                 "legacyReferenceName": "Paraguay Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -71296,7 +71776,10 @@
                 "legacyReferenceName": "Uruguay Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "CONDITIONAL",
+              "currentStatus": "LIMITED",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -71734,7 +72217,10 @@
                 "legacyReferenceName": "Panama Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "NON_EXECUTABLE",
+              "currentStatus": "SUSPENDED",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -72172,7 +72658,10 @@
                 "legacyReferenceName": "Costa Rica Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "NON_EXECUTABLE",
+              "currentStatus": "HISTORICAL_INACTIVE",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -72610,7 +73099,10 @@
                 "legacyReferenceName": "Nicaragua Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -73048,7 +73540,10 @@
                 "legacyReferenceName": "Honduras Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "CONDITIONAL",
+              "currentStatus": "LIMITED",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -73486,7 +73981,10 @@
                 "legacyReferenceName": "El Salvador Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "NON_EXECUTABLE",
+              "currentStatus": "UNDEVELOPED",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -73924,7 +74422,10 @@
                 "legacyReferenceName": "Guatemala Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "EXECUTABLE",
+              "currentStatus": "ACTIVE_PRODUCING",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
@@ -74362,7 +74863,10 @@
                 "legacyReferenceName": "Belize Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+              },
+              "extractionEligibility": "CONDITIONAL",
+              "currentStatus": "LIMITED",
+              "statusAuthority": "OBSERVED"
             }
           ],
           "processingFacilities": [
