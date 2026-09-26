@@ -449,6 +449,7 @@ function batchFromExtraction(x,record){
         sourcePath:x.sourcePath||raw?.sourcePath||raw?.provenance?.sourcePath||null,
         extractionExecutable:true
       })||null;
+      if(!x.isSimulationGenerated){
       mines.push({
         occurrenceKey:x.occurrenceKey,depositKey:x.depositKey,resourceId:resource,depositName:x.depositName,
         countryId:canonical(c),locationNodeKey:x.locationNodeKey,resourceTypeKey:x.resourceTypeKey,
@@ -463,6 +464,7 @@ function batchFromExtraction(x,record){
         reserveAuthority:rs.provenance?.quantityAuthority||raw?.reserveAuthority||'UNOBSERVED',
         productionAuthority:x.capacity?.authority||'UNOBSERVED',
         qualityAuthority:quality?.qualityAuthority||'UNOBSERVED'
+      }
       });
     }
     const merge=(derived,old)=>{
