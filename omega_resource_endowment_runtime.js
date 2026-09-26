@@ -225,19 +225,22 @@
   function batchFromExtraction(x,record){
     const q=mineQuality(x),rs=record?.reserveAfter||{},base=record?.producedBatch||{},qty=n(record?.approvedQuantity)||0;
     const batchId=String(base?.batchId||('BATCH_EXT_'+turn()+'_'+canonical(x.countryId)+'_'+String(x.occurrenceKey).replace(/[^A-Z0-9:_-]/gi,'')));
-    const c=canonical(x.countryId);
+    const c=canonical(x.countryId),authority=x.isSimulationGenerated?'SIMULATION_RULESET':'RESOURCE_JSON';
     const local={
       batchId,resourceId:x.resourceId,materialIdentity:'RES_TYPE:'+x.resourceId,resourceIdentityKey:'RES_TYPE:'+x.resourceId,
       quantity:qty,remainingQuantity:qty,unit:base?.unit||rs?.unit||x?.capacity?.unit||resourceDefinition(x.resourceId)?.unit||null,
-      stage:'RAW_EXTRACTED',quality:q.purity===null?null:q.purity,grade:q.gradePercent,purity:q.purity,qualityState:q,
-      epistemicState:x.isSimulationGenerated?'SIMULATION_BASELINE':'VERIFIED_FACT',countryId:c,sourceCountryId:c,originCountryId:c,
-      ownerCountryCode:c,ownerKey:x.ownerKey||null,custodianKey:c,destinationCountryId:c,
+      stage:'RAW_EXTRACTED',quality:q.purity,grade:q.gradePercent,purity:q.purity,qualityState:q,
+      epistemicState:x.isSimulationGenerated?'SIMULATION_BASELINE':'VERIFIED_FACT',
+      authorityLevel:x.isSimulationGenerated?'SIMULATION':'OBSERVED',
+      countryId:c,sourceCountryId:c,originCountryId:c,ownerCountryCode:c,ownerKey:x.ownerKey||null,custodianKey:c,destinationCountryId:c,
       locationNodeKey:'WAREHOUSE:'+c+':RAW',warehouseId:'WH-'+c+'-RAW',
       originKey:x.occurrenceKey,facilityKey:x.occurrenceKey,extractionReference:record?.extractionId||null,sourceBatchIds:[],
       lifecycleStatus:'AVAILABLE',timestampTurn:turn(),transferType:'LOCAL_EXTRACTION',
       provenance:{
-        sourceSubsystem:'OMEGA_RESOURCE_ENDOWMENT_RUNTIME_V2',sourceAuthority:x.isSimulationGenerated?'SIMULATION_RULESET':'RESOURCE_JSON',
-        sourceDatasetId:x.sourceDatasetId||x.rawDeposit?.sourceDatasetId||null,depositKey:x.depositKey,occurrenceKey:x.occurrenceKey,simulationTurn:turn(),quantityAuthority:x.isSimulationGenerated?'DERIVED_SIMULATION_BASELINE':'RESOURCE_JSON'
+        sourceSubsystem:'OMEGA_RESOURCE_ENDOWMENT_RUNTIME_V3',sourceAuthority:authority,
+        sourceDatasetId:x.sourceDatasetId||x.rawDeposit?.sourceDatasetId||null,depositKey:x.depositKey,occurrenceKey:x.occurrenceKey,
+        simulationTurn:turn(),quantityAuthority:x.isSimulationGenerated?'SIMULATION_RULESET':'RESOURCE_JSON',
+        qualityAuthority:q.sourceAuthority||'UNOBSERVED',componentResourceId:x.componentResourceId||null,parentDepositId:x.parentDepositId||null
       },
       reserveAfter:clone(rs)
     };
