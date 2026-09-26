@@ -8718,7 +8718,7 @@
                   "status": "UNOBSERVED"
                 },
                 "grade": {
-                  "value": "35.4% Fe raw ore",
+                  "value": 35.4,
                   "unit": "percent_Fe",
                   "status": "OBSERVED"
                 },
@@ -51572,22 +51572,18 @@
                   "status": "UNOBSERVED"
                 },
                 "production": {
-                  "annual": {
-                    "value": null,
-                    "unit": null,
-                    "year": null
-                  },
+                  "annual": null,
                   "rate": null,
                   "unit": null,
                   "year": null,
-                  "status": "OBSERVED"
+                  "status": "UNOBSERVED"
                 },
                 "grade": {
                   "value": null,
                   "unit": null,
                   "status": "UNOBSERVED"
                 },
-                "quantitativeExtractionDataAvailable": true
+                "quantitativeExtractionDataAvailable": false
               },
               "resourceIdentity": {
                 "resourceTypeId": "natural_gas",
