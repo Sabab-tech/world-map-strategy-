@@ -68,6 +68,9 @@ const observed={value:100,stateAuthority:'OBSERVED',authority:'OBSERVED'};
 const simulated={value:50,stateAuthority:'SIMULATED',authority:'SIMULATED'};
 assert.deepEqual(R.firewall(observed,simulated),observed);
 assert.deepEqual(R.firewall(undefined,simulated),simulated);
+const mixed=R.firewall({reserve:100,reserveAuthority:'OBSERVED',stateAuthority:'OBSERVED'},{reserve:50,productionModel:{activeRate:5},stateAuthority:'SIMULATED'});
+assert.equal(mixed.reserve,100);
+assert.equal(mixed.productionModel.activeRate,5);
 
 // Priority 6: logistics route carries mode, route, capacity, cost, time and delivery.
 const route=R.planRoute({
