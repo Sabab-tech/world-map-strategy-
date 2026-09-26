@@ -195,7 +195,7 @@
     const raw=String(value??'').trim(),direct=id(raw);
     if(/^[A-Z]{3}$/i.test(raw))return{id:direct,raw:null,authority:'OMEGA_RUNTIME_ISO3_INPUT'};
     const bridge=g.OmegaCanonicalIdentityRegistry||g.OmegaCountrySemanticBridge||g.Omega?.CanonicalIdentity;
-    try{const hit=bridge?.resolveCountry?.(value);if(hit?.id){const raw=clone(hit.raw||null);const canonicalRaw=raw?.iso2||raw?.countryCode||raw?.code||raw?.countryId||raw?.id||null;return{id:id(canonicalRaw||hit.id),raw,authority:'OMEGA_CANONICAL_COUNTRY_IDENTITY'};}}catch(_){}
+    try{const hit=bridge?.resolveCountry?.(value);if(hit?.id){const raw=clone(hit.raw||null);return{id:id(hit.id),raw,authority:'OMEGA_CANONICAL_COUNTRY_IDENTITY'};}}catch(_){}
     return direct?{id:direct,raw:null,authority:'UNVERIFIED_INPUT'}:null;
   }
   function canonicalId(value){const hit=canonicalCountry(value);return hit?.id||id(value);}
