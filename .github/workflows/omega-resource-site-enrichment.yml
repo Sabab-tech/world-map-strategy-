@@ -29,6 +29,9 @@ jobs:
       - name: Revalidate and enrich 199 resource sites
         run: node scripts/omega_revalidate_199_resource_sites.mjs
 
+      - name: Apply authoritative corrections and build canonical site packages
+        run: node scripts/omega_apply_authoritative_resource_corrections.mjs
+
       - name: Commit enriched resource data
         run: |
           set -euo pipefail
