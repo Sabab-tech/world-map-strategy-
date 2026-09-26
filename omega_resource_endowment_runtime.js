@@ -511,7 +511,11 @@
           activeRate:n(x.capacity?.activeRate)||n(x.capacity?.nominalRate)||null,authority:x.capacity?.authority||'UNOBSERVED',
           stateAuthority:x.capacity?.stateAuthority||x.capacity?.authority||'UNOBSERVED',dataStatus:x.capacity?.dataStatus||'UNOBSERVED'
         },
-        sourceDatasetId:x.sourceDatasetId||raw?.sourceDatasetId||null,provenance:clone(rs.provenance||raw?.provenance||null)
+        sourceDatasetId:x.sourceDatasetId||raw?.sourceDatasetId||null,provenance:clone(rs.provenance||raw?.provenance||null),
+        stateAuthority:x.capacity?.stateAuthority||rs.provenance?.stateAuthority||raw?.stateAuthority||'UNOBSERVED',
+        reserveAuthority:rs.provenance?.quantityAuthority||raw?.reserveAuthority||'UNOBSERVED',
+        productionAuthority:x.capacity?.authority||'UNOBSERVED',
+        qualityAuthority:quality?.qualityAuthority||'UNOBSERVED'
       });
     }
     const merge=(derived,old)=>{
