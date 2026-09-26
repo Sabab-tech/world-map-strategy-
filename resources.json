@@ -28200,7 +28200,8 @@
                 "sourceQuery": "Kayelekera Uranium Mine, Karonga, MWI",
                 "legacyReferenceName": "Malawi Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
-                "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
+                "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
+                "webReview": "Site-specific current/recent source rechecked 2026-09-27"
               },
               "extractionEligibility": "NON_EXECUTABLE",
               "currentStatus": "RESTARTING",
@@ -28290,14 +28291,25 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED"
               },
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "NOT_PERFORMED_IN_CURRENT_WEB_REVALIDATION_PASS",
-                "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
-                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass."
-              }
+                "reviewedAt": "2026-09-27",
+                "productionRestart": "August 2025",
+                "currentPhase": "ramping up after restart",
+                "ownership": "85% Lotus Resources / 15% Malawi Government",
+                "currentResource": "51.1 Mlb U3O8 equivalent",
+                "targetSteadyState": "2.4 Mlb U3O8/year",
+                "sourceAuthority": "Lotus Resources"
+              },
+              "webResearchEvidence": [
+                {
+                  "url": "https://lotusresources.com.au/projects/kayelekera-overview",
+                  "accessed": "2026-09-27",
+                  "scope": "current_restart_and_resource"
+                }
+              ]
             }
           ],
           "processingFacilities": [
@@ -31988,7 +32000,8 @@
                 "sourceQuery": "Ngezi Platinum Mine, Mashonaland West, ZWE",
                 "legacyReferenceName": "Zimbabwe Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
-                "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
+                "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
+                "webReview": "Site-specific current/recent source rechecked 2026-09-27"
               },
               "extractionEligibility": "EXECUTABLE",
               "currentStatus": "ACTIVE_PRODUCING",
@@ -32075,14 +32088,31 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED"
               },
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "NOT_PERFORMED_IN_CURRENT_WEB_REVALIDATION_PASS",
-                "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
-                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass."
-              }
+                "reviewedAt": "2026-09-27",
+                "oreMinedFY2025": "7.715 Mt",
+                "oreMilledFY2025": "7.471 Mt",
+                "headGradeFY2025": "3.37 g/t 6E",
+                "finalProductFY2025": "606,343 oz 6E",
+                "recoveryFY2025": "77.6%",
+                "mineMethod": "mechanised bord-and-pillar underground with limited open-cast operations",
+                "sourceAuthority": "Zimplats / Implats"
+              },
+              "webResearchEvidence": [
+                {
+                  "url": "https://zimplats.com/data/2026/05/2025-Integrated-Annual-Report.pdf",
+                  "accessed": "2026-09-27",
+                  "scope": "FY2025_operating_statistics"
+                },
+                {
+                  "url": "https://www.implats.co.za/implats-at-a-glance.php",
+                  "accessed": "2026-09-27",
+                  "scope": "current_operation_profile"
+                }
+              ]
             }
           ],
           "processingFacilities": [
@@ -45535,7 +45565,8 @@
                 "sourceQuery": "Oyu Tolgoi Copper-Gold Mine, South Gobi, MNG",
                 "legacyReferenceName": "Mongolia Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
-                "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
+                "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
+                "webReview": "Site-specific current/recent source rechecked 2026-09-27"
               },
               "extractionEligibility": "EXECUTABLE",
               "currentStatus": "ACTIVE_PRODUCING",
@@ -45626,14 +45657,30 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED"
               },
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "NOT_PERFORMED_IN_CURRENT_WEB_REVALIDATION_PASS",
-                "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
-                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass."
-              }
+                "reviewedAt": "2026-09-27",
+                "production2025": "345.2 kt copper in concentrates (100% basis)",
+                "oreTreated2025": "41.422 Mt total",
+                "undergroundOreTreated2025": "11.908 Mt",
+                "totalCopperGrade2025": "0.97%",
+                "ownership": "66% Rio Tinto / 34% Government of Mongolia",
+                "mineMethod": "open pit + underground; underground ramp-up"
+              },
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.riotinto.com/news/releases/2026/rio-tinto-releases-fourth-quarter-2025-production-results",
+                  "accessed": "2026-09-27",
+                  "scope": "2025_production_and_ramp_up"
+                },
+                {
+                  "url": "https://www.sec.gov/Archives/edgar/data/863064/000086306426000006/ex1_2025-q4results.htm",
+                  "accessed": "2026-09-27",
+                  "scope": "2025_ore_grade_and_production"
+                }
+              ]
             }
           ],
           "processingFacilities": [
@@ -54127,7 +54174,8 @@
                 "sourceQuery": "Kumtor Gold Mine, Issyk-Kul, KGZ",
                 "legacyReferenceName": "Kyrgyzstan Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
-                "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
+                "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
+                "webReview": "Site-specific current/recent source rechecked 2026-09-27"
               },
               "extractionEligibility": "EXECUTABLE",
               "currentStatus": "ACTIVE_PRODUCING",
@@ -54170,18 +54218,19 @@
                   "status": "UNOBSERVED"
                 },
                 "production": {
-                  "annual": null,
-                  "rate": null,
-                  "unit": null,
-                  "year": null,
-                  "status": "UNOBSERVED"
+                  "annual": {
+                    "value": 388418,
+                    "unit": "troy_ounces_gold",
+                    "year": 2025
+                  },
+                  "status": "OBSERVED"
                 },
                 "grade": {
                   "value": null,
                   "unit": null,
                   "status": "UNOBSERVED"
                 },
-                "quantitativeExtractionDataAvailable": false
+                "quantitativeExtractionDataAvailable": true
               },
               "resourceIdentity": {
                 "resourceTypeId": "gold",
@@ -54214,14 +54263,21 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED"
               },
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "NOT_PERFORMED_IN_CURRENT_WEB_REVALIDATION_PASS",
-                "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
-                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass."
-              }
+                "reviewedAt": "2026-09-27",
+                "goldProduction2025": "388,418 oz",
+                "sourceAuthority": "Kumtor Gold Company"
+              },
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.kumtor.kg/en/2026-zhyldyn-13-martyndagy-maalymattyk-bildir%D2%AF%D2%AF/",
+                  "accessed": "2026-09-27",
+                  "scope": "2025_production"
+                }
+              ]
             }
           ],
           "processingFacilities": [
@@ -56258,7 +56314,8 @@
                 "sourceQuery": "Azeri-Chirag-Gunashli Oil Field, Caspian Sea, AZE",
                 "legacyReferenceName": "Azerbaijan Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
-                "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
+                "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
+                "webReview": "Site-specific current/recent source rechecked 2026-09-27"
               },
               "extractionEligibility": "EXECUTABLE",
               "currentStatus": "ACTIVE_PRODUCING",
@@ -56350,14 +56407,21 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED"
               },
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "NOT_PERFORMED_IN_CURRENT_WEB_REVALIDATION_PASS",
-                "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
-                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass."
-              }
+                "reviewedAt": "2026-09-27",
+                "production2025": "about 330,000 b/d average; about 120 million barrels for the year",
+                "sourceAuthority": "bp / Azerbaijan state reporting"
+              },
+              "webResearchEvidence": [
+                {
+                  "url": "https://special.azertag.az/en/xeber/4017687",
+                  "accessed": "2026-09-27",
+                  "scope": "2025_full_year_production"
+                }
+              ]
             }
           ],
           "processingFacilities": [
