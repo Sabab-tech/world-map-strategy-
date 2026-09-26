@@ -62,8 +62,8 @@ console.log('RESOURCE_P5_PROBE',JSON.stringify({
   realismRuntime:!!globalThis.Omega?.ResourceRealism,
   productionModelGlobal:globalThis.OmegaResourceProductionModelV2?.VERSION||null
 }));
-const p4Probe=globalThis.GSRSK_Part04||globalThis.GSRSK_ResourceIdentityEngine;
-const p4ResultProbe=p4Probe?.compileIdentities?.();
+
+const p4ResultProbe=null;
 console.log('RESOURCE_P4_PROBE',JSON.stringify({
   version:p4Probe?.VERSION||null,
   keys:Object.keys(p4ResultProbe||{}),
