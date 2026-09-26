@@ -124,6 +124,9 @@ assert(after.warehouse.receipts.some(x=>x.batchId===batch.batchId&&x.status==='R
 assert(after.mineProductionLedger.some(x=>x.batchId===batch.batchId&&x.mineId===gasMine.occurrenceKey));
 assert(seen.some(x=>x&&x.payload&&x.payload.batch&&x.payload.batch.batchId===batch.batchId));
 
+const endowmentRefDist=Object.fromEntries(Object.entries(globalThis.Game.state.resource||{}).map(([c,row])=>[c,Array.isArray(row?.mineSiteReferences)?row.mineSiteReferences.length:0]).filter(([,n])=>n>0));
+const directRefDist=Object.fromEntries(Object.keys(engine.countryProfiles||{}).map(c=>[c,runtime.countryMineSiteReferences(c).length]).filter(([,n])=>n>0));
+console.log('RESOURCE_ENDOWMENT_REF_DIST',JSON.stringify({state:Object.entries(endowmentRefDist).slice(0,30),stateCount:Object.keys(endowmentRefDist).length,stateTotal:Object.values(endowmentRefDist).reduce((a,b)=>a+b,0),direct:Object.entries(directRefDist).slice(0,30),directCount:Object.keys(directRefDist).length,directTotal:Object.values(directRefDist).reduce((a,b)=>a+b,0)}));
 const preGlobal=runtime.diagnostics();
 const expectedCountries=countryIdentity.exportData().countries;
 const expectedResourceCountries=Object.keys(engine.countryProfiles||{});
