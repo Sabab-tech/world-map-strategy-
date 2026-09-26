@@ -249,4 +249,5 @@
   g.Omega=g.Omega||{};
   g.Omega.ResourcePart05ReserveExtractionRuntime=API;
   g.OmegaResourcePart05ReserveExtractionRuntime=API;
+  try{ import('./omega_resource_production_model_v2.js').catch(function(){}); }catch(_){}
 })(typeof window!=='undefined'?window:globalThis);
