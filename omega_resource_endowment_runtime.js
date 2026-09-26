@@ -637,6 +637,11 @@ function batchFromExtraction(x,record){
       }
     }
     for(const x of selected){
+      const canonicalAssetId=x.assetId||(
+        x.siteReferenceKey
+          ? 'ASSET:SITE:'+String(x.siteReferenceKey).toUpperCase()
+          : 'ASSET:OCC:'+String(x.occurrenceKey||'').toUpperCase()
+      );
       const pathId='MINE_PATH:'+c+':'+String(x.occurrenceKey);
       const existingPath=minePaths[x.occurrenceKey]&&typeof minePaths[x.occurrenceKey]==='object'?clone(minePaths[x.occurrenceKey]):{
         pathId,occurrenceKey:x.occurrenceKey,depositKey:x.depositKey,countryId:c,resourceId:x.resourceId,
@@ -719,7 +724,7 @@ function batchFromExtraction(x,record){
       current[x.occurrenceKey]=clone(result.reserveAfter.toJSON?.()||result.reserveAfter);
       const record={
         extractionId:'EXT-'+turn()+'-'+c+'-'+String(x.occurrenceKey).replace(/[^A-Z0-9:_-]/gi,''),
-        assetId:x.assetId||null,sourceKind:x.sourceKind||null,
+        assetId:canonicalAssetId,sourceKind:x.sourceKind||null,
         countryId:c,simulationTurn:turn(),occurrenceKey:x.occurrenceKey,depositKey:x.depositKey,resourceId:resource,
         requestedQuantity:request.requestedQuantity,approvedQuantity:q,status:result.status,
         effortUtilization:n(x.capacity?.utilization??x.capacity?.effortUtilization??0.85),simulationGenerated:!!x.isSimulationGenerated,
@@ -736,7 +741,7 @@ function batchFromExtraction(x,record){
       if(!batch.batchId||batch.quantity<=0)throw new Error('EXTRACTION_BATCH_CREATION_FAILED');
       if(!existingBatches.some(b=>String(b?.batchId)===batch.batchId))existingBatches.push(batch);
       inventoryLots[batch.batchId]={
-        batchId:batch.batchId,assetId:x.assetId||record.assetId||batch.assetId||null,sourceKind:x.sourceKind||record.sourceKind||batch.sourceKind||null,
+        batchId:batch.batchId,assetId:canonicalAssetId,sourceKind:x.sourceKind||record.sourceKind||batch.sourceKind||null,
         batchId:batch.batchId,resourceId:resource,countryId:c,sourceCountryId:c,originCountryId:c,
         destinationCountryId:c,warehouseId:batch.warehouseId,quantity:q,remainingQuantity:q,
         stage:'RAW_INVENTORY',purity:batch.purity,gradePercent:batch.grade,qualityState:clone(batch.qualityState),
@@ -770,7 +775,7 @@ function batchFromExtraction(x,record){
       mineOutputTotals[x.occurrenceKey].turnCount=(n(mineOutputTotals[x.occurrenceKey].turnCount)||0)+1;
       mineOutputTotals[x.occurrenceKey].lastTurn=turn();
       mineOutputs[x.occurrenceKey]={
-        assetId:x.assetId||record.assetId||null,sourceKind:x.sourceKind||record.sourceKind||null,
+        assetId:canonicalAssetId,sourceKind:x.sourceKind||record.sourceKind||null,
         occurrenceKey:x.occurrenceKey,depositKey:x.depositKey,resourceId:resource,simulationTurn:turn(),
         assetType:x.assetType||'STRUCTURED_MINE',simulationGenerated:!!x.isSimulationGenerated,effortUtilization:x.isSimulationGenerated?1:null,
         producedQuantity:q,residualQuantity:n(result.reserveAfter.residualQuantity)||0,status:result.status,
