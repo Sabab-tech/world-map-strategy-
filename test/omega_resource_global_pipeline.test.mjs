@@ -116,10 +116,6 @@ test('global resource pipeline runs every RESOURCE_JSON mine and keeps each resu
   assert.equal(reserveResult.occurrenceCount,engine.deposits.length);
   assert.equal(reserveResult.reserveCount,engine.deposits.length);
   assert.equal(reserveResult.capacityCount,engine.deposits.length);
-  const occurrenceRows=idResult.registry.listOccurrences();
-  assert.equal(occurrenceRows.length,engine.deposits.length);
-  assert.ok(occurrenceRows.every(x=>x.resourceAsset&&x.resourceAsset.schemaVersion==='1.0.0'));
-  assert.deepEqual(Object.keys(occurrenceRows[0]?.resourceAsset||{}).sort(),unifiedSiteKeys);
   assert.equal(idResult.siteReferenceCount,mineSiteReferenceCount);
   const siteRefs=idResult.registry.listMineSiteReferences();
   assert.equal(siteRefs.length,mineSiteReferenceCount);
@@ -135,6 +131,10 @@ test('global resource pipeline runs every RESOURCE_JSON mine and keeps each resu
   assert.ok(siteRefs.every(x=>x.resourceAsset.productionRate===null));
   assert.ok(siteRefs.every(x=>x.resourceAsset.dataStatus.overall==='UNOBSERVED'));
   const unifiedSiteKeys=Object.keys(siteRefs[0]?.resourceAsset||{}).sort();
+  const occurrenceRows=idResult.registry.listOccurrences();
+  assert.equal(occurrenceRows.length,engine.deposits.length);
+  assert.ok(occurrenceRows.every(x=>x.resourceAsset&&x.resourceAsset.schemaVersion==='1.0.0'));
+  assert.ok(occurrenceRows.every(x=>Object.keys(x.resourceAsset).sort().join('|')===unifiedSiteKeys.join('|')));
 
   const byCountry={};
   for(const d of engine.deposits){const c=d.countryCode;byCountry[c]=(byCountry[c]||0)+1;}
