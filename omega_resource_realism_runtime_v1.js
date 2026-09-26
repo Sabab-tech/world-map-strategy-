@@ -158,22 +158,68 @@ function resourceFromSite(site,profile){
  return candidates.length?candidates[hash(site?.siteName||site)%candidates.length]:null;
 }
 function siteModel(site,profile,countryId){
- const name=String(site?.siteName||site?.name||site?.mineName||site?.depositName||site||'').trim(),resourceId=resourceFromSite(site,profile);
- if(!name||!resourceId)return{status:'UNOBSERVED',siteName:name,resourceId:null,authority:'SIMULATED',dataStatus:'UNOBSERVED'};
- const r=ranges[resourceId]||{unit:'TONNES',min:250,max:5000,lifeMin:8,lifeMax:30,gradeMin:1,gradeMax:50},seed=hash(String(countryId||'')+'|'+name+'|'+resourceId),u=seed/4294967296;
- const nominal=r.min+(r.max-r.min)*(.25+.7*u),minimum=nominal*.55,maximum=nominal*1.3,utilization=.65+.25*((seed>>>8)%100)/100,recovery=.65+.3*((seed>>>16)%100)/100,maintenance=.03+.12*((seed>>>24)%100)/100,decline=.005+.02*((seed>>>4)%100)/100;
- const life=r.lifeMin+(r.lifeMax-r.lifeMin)*u,reserve=nominal*365*life*recovery;
- const grade=r.gradeMin+(r.gradeMax-r.gradeMin)*((seed>>>12)%10000)/10000;
- const gradeField=resourceId==='crude_oil'||resourceId==='natural_gas'?null:grade;
- const api=resourceId==='crude_oil'?20+25*u:null;
- return {status:'READY',siteReferenceKey:site?.siteReferenceKey||null,siteName:name,countryId:String(countryId||'').toUpperCase(),commodityStreams:[{
-   resourceId,reserve:{quantity:reserve,unit:r.unit,authority:'SIMULATED',status:'SIMULATED',basis:'production_capacity_x_modeled_asset_life'},
-   quality:{grade:gradeField,oreGrade:gradeField,concentration:null,assay:null,metalContent:null,purity:null,APIGravity:api,
-     gradeStatus:gradeField===null?'UNOBSERVED':'SIMULATED',purityStatus:'UNOBSERVED',apiGravityStatus:api===null?'UNOBSERVED':'SIMULATED'},
-   production:{nominalCapacity:nominal,minimumCapacity:minimum,maximumCapacity:maximum,utilization,recovery,decline,maintenance,
-     operatingCost:null,activeRate:nominal*utilization*(1-maintenance)*(1-decline),authority:'SIMULATED',dataStatus:'SIMULATED'}
- }],location:{nodeKey:site?.locationNodeKey||null,status:'UNOBSERVED'},authority:'SIMULATED',stateAuthority:'SIMULATED',
- dataStatus:'SIMULATED',provenance:{sourceAuthority:'RESOURCE_JSON.countryProfiles.mineSites',simulationRuleVersion:VERSION,sourcePath:site?.sourcePath||null}};
+ const name=String(site?.siteName||site?.name||site?.mineName||site?.depositName||site||'').trim();
+ if(!name)return{status:'UNOBSERVED',siteName:'',resourceId:null,authority:'SIMULATED',stateAuthority:'SIMULATED',dataStatus:'UNOBSERVED'};
+ const explicitStreams=Array.isArray(site?.commodities)?site.commodities:Array.isArray(site?.resources)?site.resources:Array.isArray(site?.resourceStreams)?site.resourceStreams:[];
+ const requested=explicitStreams.length?explicitStreams.map(x=>rid(typeof x==='string'?x:x?.resourceId||x?.resourceTypeId||x?.resId||x?.resource)).filter(Boolean):[resourceFromSite(site,profile)];
+ const unique=[...new Set(requested.filter(Boolean))];
+ const productionInput=site?.productionModel&&typeof site.productionModel==='object'?site.productionModel:site||{};
+ const streams=unique.map((resourceId,index)=>{
+   const src=explicitStreams[index]&&typeof explicitStreams[index]==='object'?explicitStreams[index]:site||{};
+   const r=ranges[resourceId]||{unit:'TONNES',min:250,max:5000,lifeMin:8,lifeMax:30,gradeMin:1,gradeMax:50};
+   const seed=hash(String(countryId||'')+'|'+name+'|'+resourceId),u=seed/4294967296;
+   const nominalObs=num(src?.nominalCapacity??src?.nominalRate??productionInput?.nominalCapacity??productionInput?.nominalRate);
+   const observedRate=num(src?.productionRate??src?.dailyRate??src?.outputRate??productionInput?.productionRate??productionInput?.dailyRate??productionInput?.outputRate);
+   const minObs=num(src?.minimumCapacity??src?.minimumRate??productionInput?.minimumCapacity??productionInput?.minimumRate);
+   const maxObs=num(src?.maximumCapacity??src?.maximumRate??productionInput?.maximumCapacity??productionInput?.maximumRate);
+   const utilRaw=src?.utilization??src?.utilisation??productionInput?.utilization??productionInput?.utilisation;
+   const recoveryRaw=src?.recovery??productionInput?.recovery;
+   const declineRaw=src?.decline??src?.declineRate??productionInput?.decline??productionInput?.declineRate;
+   const maintenanceRaw=src?.maintenance??src?.maintenanceRate??productionInput?.maintenance??productionInput?.maintenanceRate;
+   const costObs=num(src?.operatingCost??src?.operatingCostPerUnit??productionInput?.operatingCost??productionInput?.operatingCostPerUnit);
+   const utilization=utilRaw===undefined?(.65+.25*((seed>>>8)%100)/100):Number(utilRaw)>1?Number(utilRaw)/100:Number(utilRaw);
+   const recovery=recoveryRaw===undefined?(.65+.3*((seed>>>16)%100)/100):Number(recoveryRaw)>1?Number(recoveryRaw)/100:Number(recoveryRaw);
+   const decline=declineRaw===undefined?(.005+.02*((seed>>>4)%100)/100):Number(declineRaw)>1?Number(declineRaw)/100:Number(declineRaw);
+   const maintenance=maintenanceRaw===undefined?(.03+.12*((seed>>>24)%100)/100):Number(maintenanceRaw)>1?Number(maintenanceRaw)/100:Number(maintenanceRaw);
+   const modeledNominal=r.min+(r.max-r.min)*(.25+.7*u);
+   const nominal=nominalObs??observedRate??modeledNominal;
+   const minimum=minObs??(observedRate!==null?observedRate*.55:nominal*.55);
+   const maximum=maxObs??(observedRate!==null?observedRate*1.25:nominal*1.3);
+   const activeRate=observedRate!==null?observedRate:Math.max(0,nominal*utilization*(1-maintenance)*(1-decline));
+   const life=r.lifeMin+(r.lifeMax-r.lifeMin)*u;
+   const observedReserve=num(src?.reserveQuantity??src?.geologicalQuantity??src?.reservesQuantity);
+   const reserveQuantity=observedReserve!==null?observedReserve:nominal*365*life*recovery;
+   const reserveAuthority=observedReserve!==null?'OBSERVED':'SIMULATED';
+   const rawGrade=src?.grade??src?.oreGrade??site?.grade??null;
+   const gradeNumeric=rawGrade===null?null:(Number(String(rawGrade).match(/[-+]?\d+(?:\.\d+)?/)?.[0]));
+   const grade=Number.isFinite(gradeNumeric)?gradeNumeric:(resourceId==='crude_oil'||resourceId==='natural_gas'?null:r.gradeMin+(r.gradeMax-r.gradeMin)*((seed>>>12)%10000)/10000);
+   const gradeAuthority=rawGrade!==null?'OBSERVED':'SIMULATED';
+   const purity=src?.purity??site?.purity??null,apiRaw=src?.APIGravity??src?.apiGravity??site?.APIGravity??null;
+   const api=apiRaw===null?(resourceId==='crude_oil'?20+25*u:null):Number(apiRaw);
+   const productionObserved=nominalObs!==null||observedRate!==null||minObs!==null||maxObs!==null;
+   const streamAuthority=productionObserved||reserveAuthority==='OBSERVED'||rawGrade!==null||costObs!==null?'OBSERVED':'SIMULATED';
+   return{
+     resourceId,
+     reserve:{quantity:reserveQuantity,unit:r.unit,authority:reserveAuthority,status:reserveAuthority,basis:reserveAuthority==='OBSERVED'?'RESOURCE_JSON_SITE_FIELD':'production_capacity_x_modeled_asset_life',fieldAuthority:reserveAuthority},
+     quality:{grade:rawGrade??grade,oreGrade:src?.oreGrade??rawGrade??grade,concentration:src?.concentration??null,assay:src?.assay??null,metalContent:src?.metalContent??null,purity,
+       APIGravity:api,gradeStatus:gradeAuthority,concentrationStatus:src?.concentration!=null?'OBSERVED':'UNOBSERVED',assayStatus:src?.assay!=null?'OBSERVED':'UNOBSERVED',metalContentStatus:src?.metalContent!=null?'OBSERVED':'UNOBSERVED',
+       purityStatus:purity!==null?'OBSERVED':'UNOBSERVED',apiGravityStatus:apiRaw!==null?'OBSERVED':'SIMULATED',
+       normalized:{gradePercent:grade,concentrationPercent:null,purityFraction:purity===null?null:(Number(purity)>1?Number(purity)/100:Number(purity)),APIGravity:api},
+       resourceId},
+     production:{nominalCapacity:nominal,minimumCapacity:minimum,maximumCapacity:maximum,utilization,recovery,decline,maintenance,operatingCost:costObs??null,activeRate,observedRate,
+       authority:productionObserved?'OBSERVED':'SIMULATED',dataStatus:productionObserved?'AVAILABLE':'SIMULATED',
+       rangeDataStatus:minObs!==null&&maxObs!==null?'OBSERVED':productionObserved?'DERIVED_FROM_OBSERVED_RATE':'SIMULATED',
+       operatingCostStatus:costObs!==null?'OBSERVED':'UNOBSERVED'}
+   };
+ });
+ if(!streams.length)return{status:'UNOBSERVED',siteName:name,resourceId:null,authority:'SIMULATED',stateAuthority:'SIMULATED',dataStatus:'UNOBSERVED'};
+ const allObserved=streams.every(s=>s.reserve.authority==='OBSERVED'&&s.production.authority==='OBSERVED');
+ return{status:'READY',siteReferenceKey:site?.siteReferenceKey||null,siteName:name,countryId:String(countryId||'').toUpperCase(),commodityStreams:streams,
+   location:{nodeKey:site?.locationNodeKey||null,status:site?.locationNodeKey?'OBSERVED':'UNOBSERVED'},
+   authority:allObserved?'OBSERVED':'SIMULATED',stateAuthority:allObserved?'OBSERVED':'SIMULATED',
+   dataStatus:allObserved?'OBSERVED':'SIMULATED',
+   provenance:{sourceAuthority:'RESOURCE_JSON.countryProfiles.mineSites',simulationRuleVersion:VERSION,sourcePath:site?.sourcePath||null,
+     fieldAuthority:{reserve:streams.map(s=>s.reserve.authority),production:streams.map(s=>s.production.authority),quality:streams.map(s=>s.quality.gradeStatus)}}};
 }
 function authorityRank(v){return String(v||'UNOBSERVED').toUpperCase()==='OBSERVED'?2:String(v||'').toUpperCase()==='SIMULATED'?1:0}
 function firewall(existing,incoming){
