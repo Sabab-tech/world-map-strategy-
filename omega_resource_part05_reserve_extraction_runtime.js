@@ -60,8 +60,32 @@
   }
 
   function parseReserve(raw,resourceId,targetUnit){
-    const text=String(raw||'').trim();
     const rid=String(resourceId||'').toLowerCase();
+    const sourceObject=raw&&typeof raw==='object'?raw:null;
+    const direct=Number(sourceObject?.reserveQuantity);
+    if(Number.isFinite(direct)&&direct>0){
+      const sourceUnit=String(sourceObject?.reserveUnit||targetUnit||'').trim().toLowerCase();
+      const normalizedUnit=sourceUnit.includes('kilogram')||sourceUnit==='kg'?'KILOGRAMS':
+        sourceUnit.includes('ounce')||sourceUnit==='oz'?'TROY_OUNCES':
+        sourceUnit.includes('carat')?'CARATS':
+        sourceUnit.includes('barrel')||sourceUnit==='bbl'?'BBL':
+        sourceUnit.includes('tcf')?'TCF':
+        sourceUnit.includes('bcm')?'BCM':'METRIC_TONS';
+      let quantity=direct;
+      let outputUnit=targetUnit||sourceUnit||null;
+      if(rid==='gold'&&normalizedUnit==='KILOGRAMS'){
+        quantity*=32.1507465686;
+        outputUnit='troy_ounces';
+      }else if(rid==='natural_gas'&&normalizedUnit==='TCF'){
+        quantity*=28.316846592;
+        outputUnit='BCM';
+      }else if(normalizedUnit==='CARATS'){
+        outputUnit='carats';
+      }
+      return{quantity,sourceUnit:normalizedUnit,targetUnit:outputUnit||normalizedUnit};
+    }
+
+    const text=String(sourceObject?.reserves??sourceObject?.reserve??raw??'').trim();
     let quantity=null,sourceUnit=null;
     if(rid==='crude_oil'){
       quantity=firstNumber(text,/([\d,.]+)\s*(?:trillion|billion|million|thousand)?\s*BBL/i);
@@ -72,17 +96,17 @@
       if(quantity!==null)quantity*=28.316846592;
     }else if(rid==='gold'){
       quantity=firstNumber(text,/([\d,.]+)\s*(?:trillion|billion|million|thousand)?\s*(?:MILLION\s+)?OZ\b/i);
+      if(quantity===null)quantity=firstNumber(text,/([\d,.]+)\s*(?:trillion|billion|million|thousand)?\s*KG\b/i);
+      if(quantity!==null&&/KG\b/i.test(text)&&! /OZ\b/i.test(text))quantity*=32.1507465686;
       if(quantity===null)quantity=firstNumber(text,/([\d,.]+)\s*(?:trillion|billion|million|thousand)?\s*TONS?/i);
-      sourceUnit=targetUnit||'troy_ounces';
+      sourceUnit=/KG\b/i.test(text)?'KILOGRAMS':'TROY_OUNCES';
     }else{
       quantity=firstNumber(text,/([\d,.]+)\s*(?:trillion|billion|million|thousand)?\s*(?:M|MT|MN)?\s*T(?:ONS)?\b/i);
       if(quantity===null)quantity=firstNumber(text,/([\d,.]+)\s*(?:trillion|billion|million|thousand)?\s*M\s*T\b/i);
       sourceUnit=targetUnit||'metric_tons';
     }
     if(quantity===null||quantity<=0){
-      const generic=String(text.match(/[\d,.]+/)?.[0]||'').replace(/,/g,'');
-      const n=Number(generic);
-      if(Number.isFinite(n)&&n>0){quantity=n;sourceUnit=targetUnit||'UNOBSERVED_UNIT';}
+      return{quantity:null,sourceUnit:null,targetUnit:targetUnit||null};
     }
     return{quantity,sourceUnit,targetUnit:targetUnit||sourceUnit||null};
   }
@@ -117,16 +141,27 @@
     occurrences.forEach(function(occ){
       const raw=occ.rawDeposit||{};
       const type=typeById.get(String(occ.resourceTypeId||'').toLowerCase())||{};
-      const parsed=parseReserve(raw.reserves,occ.resourceTypeId,type.unit);
+      const parsed=parseReserve(raw,occ.resourceTypeId,type.unit);
       const declared=parsed.quantity;
       if(declared===null||declared<=0)return;
 
       const rawStatus=String(raw.status||occ.status||'UNKNOWN').toUpperCase();
-      const active=/ACTIVE|PRODUCING|OPERATING|RUNNING/.test(rawStatus) && !/SUSPEND|BLOCK|CLOSED|ABANDON/.test(rawStatus);
+      const active=/ACTIVE|PRODUCING|OPERATING|RUNNING|RESTARTING|LATE_LIFE/.test(rawStatus) && !/SUSPEND|BLOCK|CLOSED|ABANDON|HISTORICAL/.test(rawStatus);
       const horizon=DEFAULT_DEPLETION_HORIZON_DAYS;
-      const utilization=0.85;
-      const nominalRate=declared/horizon;
-      const activeRate=nominalRate*utilization;
+      const utilization=Number.isFinite(Number(raw.utilization))?Math.max(0,Math.min(1,Number(raw.utilization))):0.85;
+      const explicitRate=Number(raw.productionRate??raw.dailyRate??raw.outputRate??raw.nominalRate);
+      const annualValue=Number(raw.annualProduction?.value);
+      const annualUnit=String(raw.annualProduction?.unit||'').toLowerCase();
+      const annualCompatible=Number.isFinite(annualValue)&&annualValue>0&&(
+        String(type.unit||parsed.targetUnit||'').toLowerCase().includes('ounce') ? annualUnit.includes('ounce') :
+        String(type.unit||parsed.targetUnit||'').toLowerCase().includes('carat') ? annualUnit.includes('carat') :
+        annualUnit.includes('metric_ton')||annualUnit.includes('ton')
+      );
+      const annualRate=annualCompatible?annualValue/365:null;
+      const observedRate=Number.isFinite(explicitRate)&&explicitRate>0?explicitRate:(annualRate!==null?annualRate:null);
+      const nominalRate=observedRate!==null?observedRate:declared/horizon;
+      const activeRate=observedRate!==null?observedRate:nominalRate*utilization;
+      const capacityAuthority=observedRate!==null?'OBSERVED':'SIMULATION_DEFAULT_NO_DATA_RATE';
 
       const reserve=new ReserveState({
         occurrenceKey:occ.occurrenceKey,
@@ -142,14 +177,15 @@
         provenance:{
           sourceAuthority:'RESOURCE_JSON',
           sourceDatasetId:raw.sourceDatasetId||'resources.json',
-          reserveField:'runtime_deposits.reserves',
+          reserveField:raw.reserveQuantity!=null?'site.reserveQuantity':'runtime_deposits.reserves',
           reserveText:String(raw.reserves||''),
           effortUtilization:utilization,
           utilization,
           minimumCapacity:nominalRate*0.55,
           maximumCapacity:nominalRate*1.25,
           activeRate,
-          capacitySource:raw.productionRate||raw.dailyRate||raw.outputRate?'RESOURCE_JSON':'SIMULATION_DEFAULT_NO_DATA_RATE',
+          capacitySource:observedRate!==null?(explicitRate?'RESOURCE_JSON_SITE_RATE':'RESOURCE_JSON_ANNUAL_PRODUCTION'):'SIMULATION_DEFAULT_NO_DATA_RATE',
+          productionAnnual:raw.annualProduction||null,
           simulationExtractionHorizonDays:horizon
         }
       });
@@ -167,7 +203,10 @@
         activeRate,
         assetReference:'MINE:'+occ.occurrenceKey,
         effortUtilization:utilization,
-        authority:raw.productionRate||raw.dailyRate||raw.outputRate?'RESOURCE_JSON':'SIMULATION_DEFAULT_NO_DATA_RATE',
+        authority:capacityAuthority,
+        productionAuthority:capacityAuthority,
+        stateAuthority:capacityAuthority,
+        dataStatus:capacityAuthority==='OBSERVED'?'OBSERVED':'SIMULATED',
         simulationExtractionHorizonDays:horizon
       });
       reserves.set(occ.occurrenceKey,reserve);
