@@ -197,23 +197,18 @@
     return out;
   }
 
-  function rid0(v){return String(v??'').replace(/^RES_TYPE:/i,'').trim().toLowerCase();}
-  function parsePurityFromGrade(text,resourceId){
-    const raw=String(text||'').trim();if(!raw)return{purity:null,purityStatus:'UNOBSERVED',gradePercent:null};
-    const key=rid0(resourceId),patterns=[];
-    if(key==='natural_gas')patterns.push(/([0-9]+(?:\.[0-9]+)?)\s*%[^,;]*(?:methane|gas)/i);
-    if(key==='iron_ore')patterns.push(/([0-9]+(?:\.[0-9]+)?)\s*%[^,;]*fe/i);
-    if(key==='bauxite')patterns.push(/([0-9]+(?:\.[0-9]+)?)\s*%[^,;]*(?:al2o3|aluminum|alumina)/i);
-    if(key==='copper')patterns.push(/([0-9]+(?:\.[0-9]+)?)\s*%[^,;]*cu/i);
-    if(key==='nickel')patterns.push(/([0-9]+(?:\.[0-9]+)?)\s*%[^,;]*ni/i);
-    if(key==='cobalt')patterns.push(/([0-9]+(?:\.[0-9]+)?)\s*%[^,;]*co/i);
-    if(key==='rare_earth')patterns.push(/([0-9]+(?:\.[0-9]+)?)\s*%[^,;]*(?:reo|rare|bastn)/i);
-    if(key==='phosphate')patterns.push(/([0-9]+(?:\.[0-9]+)?)\s*%[^,;]*(?:p2o5|bpl|phosphate)/i);
-    if(key==='potash')patterns.push(/([0-9]+(?:\.[0-9]+)?)\s*%[^,;]*(?:k2o|potash)/i);
-    for(const pattern of patterns){const m=raw.match(pattern);if(m){const p=n(m[1]);if(p!==null&&p>=0&&p<=100)return{purity:p/100,purityStatus:'OBSERVED',gradePercent:p};}}
-    const generic=raw.match(/([0-9]+(?:\.[0-9]+)?)\s*%/);
-    if(generic){const p=n(generic[1]);if(p!==null&&p>=0&&p<=100)return{purity:p/100,purityStatus:'OBSERVED',gradePercent:p};}
-    return{purity:null,purityStatus:'UNOBSERVED',gradePercent:null};
+  function rid0(v){return sci()?.normalizeResourceId?.(v)||String(v??'').replace(/^RES_TYPE:/i,'').trim().toLowerCase();}
+  function mineQuality(x){
+    const raw=x?.rawDeposit||{},q=sci()?.parseQuality?.(raw.grade||raw.quality||'',x?.resourceId)||{
+      purity:null,purityStatus:'UNOBSERVED',gradePercent:null,gradeBasis:null,gradeStatus:'UNOBSERVED',
+      assayGpt:null,concentrationMgPerL:null,apiGravity:null,sourceAuthority:'UNOBSERVED'
+    };
+    return{
+      purity:q.purity,purityStatus:q.purityStatus,gradePercent:q.gradePercent,gradeBasis:q.gradeBasis,
+      gradeStatus:q.gradeStatus,assayGpt:q.assayGpt,concentrationMgPerL:q.concentrationMgPerL,apiGravity:q.apiGravity,
+      gradeText:raw.grade||null,qualitySource:q.sourceAuthority==='RESOURCE_JSON'?'RESOURCE_JSON':'UNOBSERVED',
+      physicalState:String(raw.physicalState||((/gas/i.test(String(raw.category||'')+' '+String(raw.name||'')))?'GAS':'SOLID_RUN_OF_MINE')).toUpperCase()
+    };
   }
   function resourceDefinition(resourceId){
     const e=engine(),key=rid0(resourceId),list=Array.isArray(e?.resourceTypes)?e.resourceTypes:[];
