@@ -7,6 +7,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: omega-resource-site-enrichment-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   enrich:
     if: contains(github.event.head_commit.message, '[resource-site-enrichment]')
@@ -34,4 +38,12 @@ jobs:
             exit 0
           fi
           git commit -m "chore(resource): revalidate and enrich 199 resource sites"
-          git push origin HEAD:main
+          for attempt in 1 2 3; do
+            git fetch origin main
+            git rebase origin/main
+            if git push origin HEAD:main; then
+              exit 0
+            fi
+          done
+          echo "Failed to push enriched resource data after three synchronized attempts." >&2
+          exit 1
