@@ -173,6 +173,13 @@ test('global resource pipeline runs every RESOURCE_JSON mine and keeps each resu
   const mineCount=Object.values(state.resource).reduce((sum,row)=>sum+(Array.isArray(row?.mines)?row.mines.length:0),0);
   const primaryStructuredMineCount=Object.values(state.resource).reduce((sum,row)=>sum+(Array.isArray(row?.mines)?row.mines.filter(x=>x?.assetType==='STRUCTURED_DEPOSIT').length:0),0);
   const structuredOccurrenceStreamCount=Object.values(state.resource).reduce((sum,row)=>sum+(Array.isArray(row?.mines)?row.mines.filter(x=>x?.assetType==='STRUCTURED_RESOURCE_OCCURRENCE').length:0),0);
+  const structuredRuntimeAssetIds=new Set(Object.values(state.resource).flatMap(row=>
+    (Array.isArray(row?.mines)?row.mines:[]).flatMap(x=>{
+      if(x?.assetType==='STRUCTURED_DEPOSIT'&&x?.assetId)return[x.assetId];
+      if(x?.assetType==='STRUCTURED_RESOURCE_OCCURRENCE'&&x?.parentAssetId)return[x.parentAssetId];
+      return[];
+    })
+  ));
   const activeSiteReferenceCount=Object.values(state.resource).reduce((sum,row)=>sum+(Array.isArray(row?.mineSiteReferences)?row.mineSiteReferences.length:0),0);
   const siteControllerCount=Object.values(state.resource).reduce((sum,row)=>sum+(row?.mineSiteControllers&&typeof row.mineSiteControllers==='object'?Object.keys(row.mineSiteControllers).length:0),0);
   assert.equal(activeSiteReferenceCount,mineSiteReferenceCount);
@@ -183,6 +190,7 @@ test('global resource pipeline runs every RESOURCE_JSON mine and keeps each resu
   const pathCount=Object.values(state.resource).reduce((sum,row)=>sum+(row?.minePaths&&typeof row.minePaths==='object'?Object.keys(row.minePaths).length:0),0);
   const sitePathCount=Object.values(state.resource).reduce((sum,row)=>sum+Object.keys(row?.mineSiteControllers||{}).filter(k=>row.minePaths?.[k]).length,0);
   const lotCount=Object.values(state.resource).reduce((sum,row)=>sum+(row?.inventoryLots&&typeof row.inventoryLots==='object'?Object.keys(row.inventoryLots).length:0),0);
+  assert.equal(structuredRuntimeAssetIds.size,engine.deposits.length);
   assert.equal(primaryStructuredMineCount,expectedExecutableStructuredAssetCount);
   assert.equal(primaryStructuredMineCount+structuredOccurrenceStreamCount,mineCount);
   assert.equal(batchCount,extractedRecords.length);
