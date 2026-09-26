@@ -170,20 +170,14 @@
     }
   }
   function mineSiteReferenceRows(c){
-    const wanted=canonical(c),reg=g.__OmegaResourceIdentityRegistry,merged=new Map();
+    const wanted=canonical(c),reg=g.__OmegaResourceIdentityRegistry;
     try{
       const primary=reg?.getMineSiteReferencesByCountry?.(wanted)||[];
-      if(Array.isArray(primary))for(const ref of primary){
-        const key=String(ref?.siteReferenceKey||ref?.referenceId||ref?.id||ref?.siteName||ref?.name||'').trim().toUpperCase();
-        if(key)merged.set(key,clone(ref));
-      }
+      if(Array.isArray(primary)&&primary.length)return clone(primary);
     }catch(_){}
     const refs=g.__OmegaResourceKnowledgeModel?.refCatalog?.allReferences;
-    if(Array.isArray(refs))for(const ref of refs.filter(ref=>canonical(ref?.countryCode||ref?.countryId||ref?.country)===wanted)){
-      const key=String(ref?.siteReferenceKey||ref?.referenceId||ref?.id||ref?.siteName||ref?.name||'').trim().toUpperCase();
-      if(key&&!merged.has(key))merged.set(key,clone(ref));
-    }
-    return[...merged.values()];
+    if(Array.isArray(refs))return clone(refs.filter(ref=>canonical(ref?.countryCode||ref?.countryId||ref?.country)===wanted));
+    return[];
   }
   function occurrenceRows(c){
     const reg=g.__OmegaResourceIdentityRegistry;const e=engine();const rr=g.__OmegaResourceReserveRegistry;if(!reg||!e||!rr)return[];
