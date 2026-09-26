@@ -10,6 +10,7 @@
   'use strict';
 
   const VERSION='1.0.0';
+  const UNIFIED_ASSET_SCHEMA_VERSION='1.0.0';
 
   function clone(v,seen){
     if(v===null||typeof v!=='object')return v;
@@ -30,12 +31,22 @@
   function canonicalCountry(v){
     const raw=String(v??'').trim();
     if(!raw)return null;
+    const rawId=id(raw);
     try{
+      // Preserve exact resource-country keys/ISO codes before semantic alias resolution.
+      // This prevents a country alias bridge from collapsing distinct country buckets.
+      const e=engine();
+      const profiles=e?.countryProfiles&&typeof e.countryProfiles==='object'?e.countryProfiles:{};
+      if(Object.prototype.hasOwnProperty.call(profiles,raw)||Object.prototype.hasOwnProperty.call(profiles,rawId))return rawId;
+      for(const [profileKey,profile] of Object.entries(profiles)){
+        const identity=profile?.identity||profile||{};
+        if([identity.iso3,identity.iso2,identity.countryId,identity.id].some(x=>id(x)===rawId))return rawId;
+      }
       const bridge=g.OmegaCanonicalIdentityRegistry||g.OmegaCountrySemanticBridge||g.Omega?.CanonicalIdentity;
       const hit=bridge?.resolveCountry?.(raw);
       if(hit?.id)return id(hit.id);
     }catch(_){}
-    return id(raw);
+    return rawId;
   }
 
   function engine(){
@@ -45,43 +56,10 @@
   function sourceDeposits(){
     const e=engine();
     const runtime=Array.isArray(e?.deposits)?e.deposits.slice():[];
-    const profiles=e?.countryProfiles&&typeof e.countryProfiles==='object'?e.countryProfiles:{};
-    for(const [profileKey,profile] of Object.entries(profiles)){
-      const identity=profile?.identity||profile||{};
-      const countryId=canonicalCountry(identity.countryId||identity.iso3||profileKey);
-      const sites=profile?.resource_infrastructure_context?.mineSites||
-        profile?.infrastructure_context?.mineSites||
-        profile?.resourceInfrastructureContext?.mineSites||
-        [];
-      if(!Array.isArray(sites))continue;
-      sites.forEach(function(site,index){
-        if(!site||typeof site!=='object')return;
-        const hasResource=site.resId||site.resourceId||site.resourceTypeId||site.resourceTypeKey||site.resourceType;
-        const hasReserve=site.reserves||site.reserve||site.residualQuantity||site.geologicalQuantity||site.recoverableQuantity;
-        if(!hasResource||!hasReserve)return;
-        const name=String(site.name||site.siteName||site.mineName||site.depositName||('MINE_SITE_'+index)).trim();
-        if(!name)return;
-        const idValue=String(site.id||site.depositId||site.mineId||site.occurrenceId||('site-'+String(countryId||'GLOBAL').toLowerCase()+'-'+tok(name))).trim();
-        runtime.push({
-          ...clone(site),
-          id:idValue,name,countryCode:countryId,country:site.country||identity.name||countryId,
-          sourceDatasetId:'resources.json.countryProfiles',
-          sourceAuthority:'RESOURCE_JSON',
-          provenance:{
-            ...(site.provenance&&typeof site.provenance==='object'?site.provenance:{}),
-            sourceAuthority:'RESOURCE_JSON',
-            sourceDatasetId:'resources.json.countryProfiles',
-            sourcePath:'GSRSK_Master_CountryProfiles_v14.countryProfiles.'+String(profileKey)+'.resource_infrastructure_context.mineSites'
-          }
-        });
-      });
-    }
-    const unique=new Map();
-    runtime.forEach(row=>{
-      const key=String(row?.id||'').trim().toUpperCase();
-      if(key)unique.set(key,row);
-    });
-    return [...unique.values()];
+    // Profile mine/site records are canonicalized once as PROFILE_SITE_REFERENCE
+    // assets below. Do not promote them into a second structured occurrence list,
+    // or the same site would enter Part05 twice.
+    return runtime;
   }
 
   function depositKeyFor(row,index){
@@ -108,7 +86,9 @@
           const dedupeKey=sourceDatasetId+'|'+countryId+'|'+index+'|'+siteName.toUpperCase();
           if(seen.has(dedupeKey))return;seen.add(dedupeKey);
           rows.push({
-            siteReferenceKey,countryId,countryCode:countryId,profileKey:String(profileKey),siteName,
+            siteReferenceKey,
+            assetId:'ASSET:SITE:'+String(siteReferenceKey).toUpperCase(),
+            countryId,countryCode:countryId,profileKey:String(profileKey),siteName,
             status:'ACTIVE_SITE_REFERENCE',activationState:'ACTIVE_REFERENCE',
             extractionExecutable:false,quantitativeExtractionDataAvailable:false,
             sourceAuthority:'RESOURCE_JSON',sourceDatasetId,
@@ -119,6 +99,86 @@
       }
     }
     return rows;
+  }
+
+  function numeric(v){
+    const x=Number(v);
+    return Number.isFinite(x)?x:null;
+  }
+
+  function normalizeUnifiedAsset(input,sourceKind,context={}){
+    const raw=clone(input&&typeof input==='object'?input:{});
+    const countryId=canonicalCountry(context.countryId||raw.countryCode||raw.countryId||raw.iso3||raw.country);
+    const siteName=String(context.siteName||raw.siteName||raw.name||raw.depositName||raw.mineName||raw.fieldName||raw.reservoirName||'').trim();
+    const resourceId=String(context.resourceId||raw.resourceTypeId||raw.resourceTypeKey||raw.resId||raw.resourceId||'').replace(/^RES_TYPE:/i,'').trim().toLowerCase()||null;
+    const occurrenceKey=context.occurrenceKey||raw.occurrenceKey||null;
+    const depositKey=context.depositKey||raw.depositKey||raw.depositId||raw.mineId||null;
+    const siteReferenceKey=context.siteReferenceKey||raw.siteReferenceKey||null;
+    const assetId=String(context.assetId||(
+      sourceKind==='PROFILE_SITE_REFERENCE'
+        ? 'ASSET:SITE:'+String(siteReferenceKey||('SITE:'+String(countryId||'GLOBAL')+':'+tok(siteName))).toUpperCase()
+        : 'ASSET:OCC:'+String(occurrenceKey||depositKey||('DEP:'+String(countryId||'GLOBAL')+':'+tok(siteName))).toUpperCase()
+    ));
+    const locationRaw=raw.location&&typeof raw.location==='object'?raw.location:{};
+    const coordinates=raw.coordinates&&typeof raw.coordinates==='object'?raw.coordinates:{};
+    const lat=numeric(raw.lat??raw.latitude??locationRaw.lat??locationRaw.latitude??coordinates.lat??coordinates.latitude);
+    const lon=numeric(raw.lon??raw.lng??raw.longitude??locationRaw.lon??locationRaw.lng??locationRaw.longitude??coordinates.lon??coordinates.lng??coordinates.longitude);
+    const reserveRaw=raw.reserves??raw.reserve??raw.geologicalQuantity??raw.reserveQuantity??null;
+    const recoverableRaw=raw.recoverableQuantity??raw.recoverableReserve??null;
+    const residualRaw=raw.residualQuantity??raw.remainingQuantity??null;
+    const productionRate=raw.productionRate??raw.dailyRate??raw.outputRate??raw.currentProductionRate??raw.currentProduction??null;
+    const nominalCapacity=raw.nominalCapacity??raw.productionCapacity??raw.capacity??null;
+    const qualityGrade=raw.grade??raw.oreGrade??raw.gradePercent??null;
+    const purity=raw.purity??raw.purityFraction??null;
+    const concentration=raw.concentration??raw.concentrationPercent??null;
+    const recoveryRate=raw.recovery??raw.recoveryRate??null;
+    const sourceAuthority=String(context.sourceAuthority||raw.sourceAuthority||'RESOURCE_JSON').toUpperCase();
+    const hasResource=!!resourceId;
+    const hasReserve=reserveRaw!==null&&reserveRaw!==undefined&&String(reserveRaw).trim()!=='';
+    const hasProduction=productionRate!==null&&productionRate!==undefined&&String(productionRate).trim()!=='';
+    const hasQuality=qualityGrade!==null||purity!==null||concentration!==null;
+    return{
+      schemaVersion:UNIFIED_ASSET_SCHEMA_VERSION,
+      assetId,
+      assetType:sourceKind,
+      sourceKind,
+      siteReferenceKey,
+      occurrenceKey,
+      depositKey,
+      siteName,
+      countryId:countryId||null,
+      countryCode:countryId||null,
+      resourceType:{id:resourceId,name:raw.resourceName||raw.resourceTypeName||null,status:hasResource?'OBSERVED':'UNOBSERVED'},
+      location:{nodeKey:raw.locationNodeKey||locationRaw.nodeKey||null,latitude:lat,longitude:lon,name:raw.locationName||locationRaw.name||null,status:(lat!==null||lon!==null||raw.locationNodeKey)?'OBSERVED':'UNOBSERVED'},
+      reserve:{geologicalQuantity:numeric(raw.geologicalQuantity??raw.reserveQuantity),recoverableQuantity:numeric(recoverableRaw),residualQuantity:numeric(residualRaw),unit:raw.unit||raw.reserveUnit||null,declared:reserveRaw},
+      production:{ratePerDay:numeric(productionRate),currentProduction:numeric(raw.currentProduction??raw.currentProductionRate),nominalCapacity:numeric(nominalCapacity),minimumCapacity:numeric(raw.minimumCapacity??raw.minimumRate),maximumCapacity:numeric(raw.maximumCapacity??raw.maximumRate)},
+      operating:{status:raw.status||raw.operatingStatus||'UNKNOWN',startYear:numeric(raw.startYear??raw.commissioningYear??raw.productionStartYear),extractionMethod:raw.extractionMethod||raw.miningMethod||null},
+      quality:{grade:qualityGrade,purity,concentration,recoveryRate},
+      ownership:{owner:raw.owner??raw.ownerKey??null,operator:raw.operator??raw.operatorKey??null},
+      flow:{warehouseId:raw.warehouseId||null,inventoryRef:raw.inventoryRef||raw.inventoryKey||null,factoryInputRoute:raw.factoryInputRoute||raw.factoryRoute||null},
+      execution:{
+        extractionExecutable:sourceKind==='STRUCTURED_DEPOSIT'&&hasResource&&hasReserve,
+        runtimeExecutable:false,
+        runtimeExecutionStatus:'NOT_EVALUATED',
+        quantitativeDataAvailable:hasResource&&hasReserve,
+        simulationEligible:sourceKind==='PROFILE_SITE_REFERENCE'&&(!hasResource||!hasReserve||!hasProduction)
+      },
+      dataAuthority:{
+        identity:countryId&&siteName?'OBSERVED':'UNOBSERVED',
+        resourceType:hasResource?'OBSERVED':'UNOBSERVED',
+        reserve:hasReserve?'OBSERVED':'UNOBSERVED',
+        production:hasProduction?'OBSERVED':'UNOBSERVED',
+        quality:hasQuality?'OBSERVED':'UNOBSERVED'
+      },
+      provenance:{
+        sourceAuthority,
+        sourceDatasetId:context.sourceDatasetId||raw.sourceDatasetId||raw.provenance?.sourceDatasetId||'resources.json',
+        sourcePath:context.sourcePath||raw.sourcePath||raw.provenance?.sourcePath||null,
+        sourceKind,
+        rawReferencePreserved:true
+      },
+      rawSource:raw
+    };
   }
 
   function compileIdentities(){
@@ -157,14 +217,59 @@
       byCountry.get(countryId).push(occurrence);
     });
 
+    const unifiedAssets=[
+      ...rows.map(function(occurrence){
+        return normalizeUnifiedAsset(occurrence.rawDeposit||{},'STRUCTURED_DEPOSIT',{
+          countryId:occurrence.countryId,occurrenceKey:occurrence.occurrenceKey,depositKey:occurrence.depositKey,
+          resourceId:occurrence.resourceTypeId,sourceDatasetId:occurrence.sourceDatasetId,
+          sourceAuthority:'RESOURCE_JSON'
+        });
+      }),
+      ...siteReferences.map(function(site){
+        return normalizeUnifiedAsset(site.rawSiteReference&&typeof site.rawSiteReference==='object'?site.rawSiteReference:{name:site.siteName},'PROFILE_SITE_REFERENCE',{
+          countryId:site.countryId,siteName:site.siteName,siteReferenceKey:site.siteReferenceKey,
+          sourceDatasetId:site.sourceDatasetId,sourcePath:site.sourcePath,sourceAuthority:'RESOURCE_JSON'
+        });
+      })
+    ];
+    const unifiedById=new Map(unifiedAssets.map(function(asset){return [String(asset.assetId).toUpperCase(),asset];}));
+
     const registry={
       version:VERSION,
+      unifiedAssetSchemaVersion:UNIFIED_ASSET_SCHEMA_VERSION,
       authority:'RESOURCE_JSON',
       occurrenceCount:rows.length,
       siteReferenceCount:siteReferences.length,
-      getOccurrencesByCountry:function(countryId){return clone(byCountry.get(canonicalCountry(countryId))||[]);},
+      unifiedAssetCount:unifiedAssets.length,
+      getOccurrencesByCountry:function(countryId){
+        const wanted=id(countryId);
+        const exact=rows.filter(function(row){return id(row.countryId)===wanted;});
+        if(exact.length)return clone(exact);
+        return clone(byCountry.get(canonicalCountry(countryId))||[]);
+      },
       getMineSiteReferencesByCountry:function(countryId){return clone(siteRefsByCountry.get(canonicalCountry(countryId))||[]);},
       listMineSiteReferences:function(){return clone(siteReferences);},
+      listUnifiedAssets:function(){return clone(unifiedAssets);},
+      getUnifiedAsset:function(assetId){
+        const hit=unifiedById.get(String(assetId||'').trim().toUpperCase());
+        return hit?clone(hit):null;
+      },
+      setUnifiedAssetRuntimeExecution:function(assetId,status,reason=''){
+        const hit=unifiedById.get(String(assetId||'').trim().toUpperCase());
+        if(!hit)return false;
+        hit.execution=hit.execution||{};
+        hit.execution.runtimeExecutable=!!(status==='EXECUTABLE');
+        hit.execution.runtimeExecutionStatus=String(status||'NOT_EVALUATED').toUpperCase();
+        hit.execution.runtimeExecutionReason=reason||null;
+        return true;
+      },
+      getUnifiedAssetsByCountry:function(countryId){
+        const wanted=id(countryId);
+        const exact=unifiedAssets.filter(function(asset){return id(asset.countryId)===wanted;});
+        if(exact.length)return clone(exact);
+        const fallback=canonicalCountry(countryId);
+        return clone(unifiedAssets.filter(function(asset){return canonicalCountry(asset.countryId)===fallback;}));
+      },
       getDeposit:function(depositKey){
         const hit=byDeposit.get(String(depositKey||'').trim());
         if(!hit)return null;
@@ -182,6 +287,7 @@
 
   const API=Object.freeze({
     VERSION,
+    UNIFIED_ASSET_SCHEMA_VERSION,
     compileIdentities
   });
 

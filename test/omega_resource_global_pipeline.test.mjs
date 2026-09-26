@@ -112,6 +112,8 @@ test('global resource pipeline runs every RESOURCE_JSON mine and keeps each resu
   const knowledge={sovereignEntities:{resourceTypes:engine.resourceTypes},refCatalog:{allReferences:engine.deposits}};
   const idResult=part04.compileIdentities(knowledge);
   const reserveResult=part05.compileReserves(idResult,null,knowledge,{});
+  const unifiedAssets=idResult.registry.listUnifiedAssets();
+  const expectedExecutableStructuredAssetCount=unifiedAssets.filter(x=>x?.assetType==='STRUCTURED_DEPOSIT'&&x?.execution?.extractionExecutable===true).length;
   assert.equal(idResult.occurrenceCount,engine.deposits.length);
   assert.equal(reserveResult.occurrenceCount,engine.deposits.length);
   assert.equal(reserveResult.reserveCount,engine.deposits.length);
@@ -147,10 +149,8 @@ test('global resource pipeline runs every RESOURCE_JSON mine and keeps each resu
   assert.equal(globalResult.status,'COMPLETED');
   const nonEmptyResults=globalResult.results.filter(x=>x.result?.result?.extracted>0);
   const extractedRecords=nonEmptyResults.flatMap(x=>x.result.result.records||[]);
-  assert.equal(extractedRecords.length,engine.deposits.length);
-
-  const executableOccurrenceKeys=new Set(extractedRecords.map(x=>String(x.occurrenceKey||'')));
-  assert.equal(executableOccurrenceKeys.size,engine.deposits.length);
+  const executableOccurrenceKeys=new Set(extractedRecords.map(x=>String(x.occurrenceKey||'')).filter(Boolean));
+  assert.ok(executableOccurrenceKeys.size>=engine.deposits.length,'Every source-backed deposit must produce at least one executable occurrence stream');
   for(const record of extractedRecords){
     const countryId=record.countryId;
     const row=state.resource[countryId];
@@ -171,6 +171,15 @@ test('global resource pipeline runs every RESOURCE_JSON mine and keeps each resu
   assert.equal(productionLedgerCount,engine.deposits.length);
 
   const mineCount=Object.values(state.resource).reduce((sum,row)=>sum+(Array.isArray(row?.mines)?row.mines.length:0),0);
+  const primaryStructuredMineCount=Object.values(state.resource).reduce((sum,row)=>sum+(Array.isArray(row?.mines)?row.mines.filter(x=>x?.assetType==='STRUCTURED_DEPOSIT').length:0),0);
+  const structuredOccurrenceStreamCount=Object.values(state.resource).reduce((sum,row)=>sum+(Array.isArray(row?.mines)?row.mines.filter(x=>x?.assetType==='STRUCTURED_RESOURCE_OCCURRENCE').length:0),0);
+  const structuredRuntimeAssetIds=new Set(Object.values(state.resource).flatMap(row=>
+    (Array.isArray(row?.mines)?row.mines:[]).flatMap(x=>{
+      if(x?.assetType==='STRUCTURED_DEPOSIT'&&x?.assetId)return[x.assetId];
+      if(x?.assetType==='STRUCTURED_RESOURCE_OCCURRENCE'&&x?.parentAssetId)return[x.parentAssetId];
+      return[];
+    })
+  ));
   const activeSiteReferenceCount=Object.values(state.resource).reduce((sum,row)=>sum+(Array.isArray(row?.mineSiteReferences)?row.mineSiteReferences.length:0),0);
   const siteControllerCount=Object.values(state.resource).reduce((sum,row)=>sum+(row?.mineSiteControllers&&typeof row.mineSiteControllers==='object'?Object.keys(row.mineSiteControllers).length:0),0);
   assert.equal(activeSiteReferenceCount,mineSiteReferenceCount);
@@ -181,11 +190,13 @@ test('global resource pipeline runs every RESOURCE_JSON mine and keeps each resu
   const pathCount=Object.values(state.resource).reduce((sum,row)=>sum+(row?.minePaths&&typeof row.minePaths==='object'?Object.keys(row.minePaths).length:0),0);
   const sitePathCount=Object.values(state.resource).reduce((sum,row)=>sum+Object.keys(row?.mineSiteControllers||{}).filter(k=>row.minePaths?.[k]).length,0);
   const lotCount=Object.values(state.resource).reduce((sum,row)=>sum+(row?.inventoryLots&&typeof row.inventoryLots==='object'?Object.keys(row.inventoryLots).length:0),0);
-  assert.equal(mineCount,engine.deposits.length);
-  assert.equal(batchCount,engine.deposits.length);
+  assert.equal(structuredRuntimeAssetIds.size,engine.deposits.length);
+  assert.equal(primaryStructuredMineCount,expectedExecutableStructuredAssetCount);
+  assert.equal(primaryStructuredMineCount+structuredOccurrenceStreamCount,mineCount);
+  assert.equal(batchCount,extractedRecords.length);
   assert.equal(sitePathCount,mineSiteReferenceCount);
-  assert.equal(pathCount,mineSiteReferenceCount+engine.deposits.length);
-  assert.equal(lotCount,engine.deposits.length);
+  assert.equal(pathCount,mineSiteReferenceCount+extractedRecords.length);
+  assert.equal(lotCount,extractedRecords.length);
 
   for(const [countryId,row] of Object.entries(state.resource)){
     const batches=Array.isArray(row.batches)?row.batches:[];
