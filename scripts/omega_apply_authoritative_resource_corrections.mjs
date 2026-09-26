@@ -488,6 +488,20 @@ const placeholders = new Set([
   'former midroc'
 ]);
 for (const { site } of sites) {
+  site.dataCompleteness = site.dataCompleteness || {};
+  if (String(site.status).toUpperCase() === 'NOT_APPLICABLE' || site.commercialExtraction === false) {
+    site.researchState = 'NOT_APPLICABLE_NO_COMMERCIAL_SITE';
+    site.dataCompleteness.webResearch = 'NOT_APPLICABLE';
+  } else if (!site.researchState) {
+    site.researchState = Array.isArray(site.webResearchEvidence) && site.webResearchEvidence.length > 0
+      ? 'SITE_SPECIFIC_WEB_REVIEWED'
+      : 'LEGACY_CURATED_NOT_RECENTLY_REVALIDATED';
+    site.dataCompleteness.webResearch = site.researchState;
+  } else if (site.researchState === 'LEGACY_CURATED_NOT_RECENTLY_REVALIDATED') {
+    site.dataCompleteness.webResearch = 'LEGACY_CURATED_NOT_RECENTLY_REVALIDATED';
+  } else if (site.researchState === 'SITE_SPECIFIC_WEB_REVALIDATED' || site.researchState === 'SITE_SPECIFIC_WEB_REVIEWED') {
+    site.dataCompleteness.webResearch = site.researchState;
+  }
   if (String(site.status).toUpperCase() === 'ACTIVE_PRODUCING' && site.commercialExtraction !== false) {
     site.extractionEligibility = 'EXECUTABLE';
   } else if (String(site.status).toUpperCase() === 'NOT_APPLICABLE' || site.commercialExtraction === false) {
