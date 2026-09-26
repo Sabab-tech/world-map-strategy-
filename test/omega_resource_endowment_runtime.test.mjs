@@ -159,9 +159,17 @@ const structuredRuntimeAssetIds=new Set(Object.values(worldState).flatMap(row=>
 ));
 assert.equal(structuredRuntimeAssetIds.size,sourceBackedDepositCount);
 assert.equal(structuredMineRows,expectedExecutableStructuredAssetCount);
-assert.equal(profileMineOutputs.length,199);
+const profileControllerRows=Object.values(worldState).flatMap(row=>Object.values(row?.mineSiteControllers&&typeof row.mineSiteControllers==='object'?row.mineSiteControllers:{}));
+const profileControllerAssetIds=new Set(profileControllerRows.map(x=>x?.assetId).filter(Boolean));
+const unifiedProfileAssetIds=new Set(unifiedAssetRows.filter(x=>x?.assetType==='PROFILE_SITE_REFERENCE').map(x=>x.assetId));
+assert.equal(profileControllerRows.length,199);
+assert.equal(profileControllerAssetIds.size,199);
+assert.deepEqual(profileControllerAssetIds,unifiedProfileAssetIds);
+assert.ok(profileControllerRows.every(x=>x?.pathId&&x?.siteReferenceKey&&x?.controllerStatus==='RUNNING'),'some profile site lacks unified runtime controller/path');
+assert.ok(profileMineOutputs.length<=199);
+assert.ok(profileMineOutputs.every(x=>unifiedProfileAssetIds.has(x?.assetId)),'profile output escaped the unified site asset registry');
 assert(simulatedFieldOutputs.length>0,'expected hydrocarbon field execution assets');
-assert(profileMineOutputs.every(x=>(x?.producedQuantity||0)>0&&x?.effortUtilization>0&&x?.effortUtilization<=1),'some profile mine site did not execute with valid utilization');
+assert(profileMineOutputs.every(x=>(x?.producedQuantity||0)>0&&x?.effortUtilization>0&&x?.effortUtilization<=1),'some executable profile mine site did not execute with valid utilization');
 assert(simulatedFieldOutputs.every(x=>(x?.producedQuantity||0)>0&&x?.effortUtilization>0&&x?.effortUtilization<=1),'some hydrocarbon field did not execute with modeled utilization');
 
 const controllerCountrySets=new Set();
