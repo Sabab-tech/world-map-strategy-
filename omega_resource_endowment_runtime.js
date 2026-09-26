@@ -231,11 +231,13 @@
   }
   function mineQuality(x){
     const raw=x?.rawDeposit||{},stateQuality=x?.reserveState?.quality||null,model=x?.siteModel?.commodityStreams?.find?.(s=>rid(s?.resourceId)===rid(x?.resourceId))?.quality;
-    const rawQuality=(g.Omega?.ResourceRealism?.quality&&raw)?g.Omega.ResourceRealism.quality(raw,x.resourceId):model;
+    const mergedInput=stateQuality?{...clone(stateQuality),...clone(raw)}:raw;
+    const rawQuality=(g.Omega?.ResourceRealism?.quality&&(raw||stateQuality))?g.Omega.ResourceRealism.quality(mergedInput,x.resourceId):model;
     const base=stateQuality||rawQuality||model;
     if(base){
       const mergedQuality={...clone(rawQuality||{}),...clone(stateQuality||{}),normalized:{...clone(rawQuality?.normalized||{}),...clone(stateQuality?.normalized||{})}};
       if(mergedQuality.concentration==null&&rawQuality?.concentration!=null)mergedQuality.concentration=rawQuality.concentration;
+      if(mergedQuality.concentrationStatus!=='OBSERVED'&&rawQuality?.concentrationStatus==='OBSERVED')mergedQuality.concentrationStatus='OBSERVED';
       if(mergedQuality.purity==null&&stateQuality?.purity==null&&rawQuality?.purity!=null)mergedQuality.purity=rawQuality.purity;
       if(mergedQuality.APIGravity==null&&rawQuality?.APIGravity!=null)mergedQuality.APIGravity=rawQuality.APIGravity;
       return{...mergedQuality,
