@@ -83,7 +83,8 @@ async function fetchJson(url, timeoutMs = 6500) {
 }
 
 async function wikipediaSearch(site) {
-  const query = `"${site.siteName}" ${site.country || site.countryCode}`;
+  const countryName = site?.locationIdentity?.countryName || site?.country || site?.countryCode || '';
+  const query = `"${site.siteName}" ${countryName}`;
   const url = WIKI_API + '?' + new URLSearchParams({
     action: 'query',
     list: 'search',
@@ -108,7 +109,8 @@ async function wikipediaSearch(site) {
 }
 
 async function wikidataSearch(site) {
-  const query = `${site.siteName} ${site.country || site.countryCode}`;
+  const countryName = site?.locationIdentity?.countryName || site?.country || site?.countryCode || '';
+  const query = `${site.siteName} ${countryName}`;
   const url = WD_API + '?' + new URLSearchParams({
     action: 'wbsearchentities',
     search: query,
@@ -251,6 +253,7 @@ const overrides = {
     operator: 'Sierra Rutile Limited',
     reserveQuantity: 137000000,
     reserveUnit: 'metric_tons',
+    quantitativeReserve: { quantity: 137000000, unit: 'metric_tons', year: 2024, status: 'OBSERVED' },
     grade: '0.93% rutile in ore',
     quantitativeGrade: { value: 0.93, unit: 'percent_rutile', status: 'OBSERVED' },
     metadata: {
@@ -325,6 +328,7 @@ const overrides = {
     operator: 'Itafos (Farim Project)',
     reserveQuantity: 43800000,
     reserveUnit: 'metric_tons',
+    quantitativeReserve: { quantity: 43800000, unit: 'metric_tons', year: 2023, status: 'OBSERVED' },
     grade: '30.0% P2O5',
     quantitativeGrade: { value: 30.0, unit: 'percent_P2O5', status: 'OBSERVED' },
     metadata: {
@@ -382,6 +386,7 @@ const overrides = {
   },
   SITE_AGO_catoca_diamond_mine: {
     annualProduction: { value: 6500000, unit: 'carats', year: 2024 },
+    quantitativeProduction: { annual: { value: 6500000, unit: 'carats', year: 2024, status: 'OBSERVED' } },
     metadata: {
       sourceAuthority: 'USGS / Catoca',
       production2024: 'Estimated 6.5 million carats in 2024',
@@ -474,13 +479,15 @@ for (const item of allSites) {
   const override = overrides[site.id];
   if (override) {
     for (const [key, value] of Object.entries(override)) {
-      if (['metadata','evidence','evidence2','quantitativeGrade','currentStatus'].includes(key)) continue;
+      if (['metadata','evidence','evidence2','quantitativeGrade','quantitativeReserve','quantitativeProduction','currentStatus'].includes(key)) continue;
       site[key] = value;
     }
     site.extractionProfile = site.extractionProfile || {};
     if (override.owner) site.extractionProfile.owner = override.owner;
     if (override.operator) site.extractionProfile.operator = override.operator;
+    if (override.quantitativeReserve) site.quantitativeProfile.reserve = { ...override.quantitativeReserve };
     if (override.quantitativeGrade) site.quantitativeProfile.grade = { ...override.quantitativeGrade };
+    if (override.quantitativeProduction) site.quantitativeProfile.production = { ...override.quantitativeProduction };
     site.researchMetadata = {
       ...(site.researchMetadata || {}),
       reviewedAt: REVIEW_DATE,
