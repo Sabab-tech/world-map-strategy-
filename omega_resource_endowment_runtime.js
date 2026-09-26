@@ -417,6 +417,31 @@ function batchFromExtraction(x,record){
       byResource[resource].residual+=n(rs.residualQuantity)||0;
       byResource[resource].mineCount+=1;
       const quality=mineQuality(x);
+      const productionModel={
+        nominalCapacity:n(x.capacity?.nominalCapacity)||n(x.capacity?.nominalRate)||null,
+        minimumCapacity:n(x.capacity?.minimumCapacity)||null,maximumCapacity:n(x.capacity?.maximumCapacity)||null,
+        utilization:n(x.capacity?.utilization??x.capacity?.effortUtilization)||null,recovery:n(x.capacity?.recovery)||null,
+        decline:n(x.capacity?.decline)||null,maintenance:n(x.capacity?.maintenance)||null,operatingCost:n(x.capacity?.operatingCost),
+        activeRate:n(x.capacity?.activeRate)||n(x.capacity?.nominalRate)||null,authority:x.capacity?.authority||'UNOBSERVED',
+        stateAuthority:x.capacity?.stateAuthority||x.capacity?.authority||'UNOBSERVED',dataStatus:x.capacity?.dataStatus||'UNOBSERVED'
+      };
+      const resourceAsset=g.GSRSK_Part04?.normalizeUnifiedAsset?.({
+        ...clone(x),
+        assetType:x.assetType||'RESOURCE_MINE',
+        assetId:x.occurrenceKey,
+        siteName:x.depositName,
+        countryId:canonical(c),
+        resourceId:resource,
+        resourceTypeId:resource,
+        reserveState:rs,
+        capacity:x.capacity,
+        productionModel,
+        qualityState:quality,
+        warehouseId:'WH-'+canonical(c)+'-RAW',
+        sourceDatasetId:x.sourceDatasetId||raw?.sourceDatasetId||null,
+        sourcePath:x.sourcePath||raw?.sourcePath||raw?.provenance?.sourcePath||null,
+        extractionExecutable:true
+      })||null;
       mines.push({
         occurrenceKey:x.occurrenceKey,depositKey:x.depositKey,resourceId:resource,depositName:x.depositName,
         countryId:canonical(c),locationNodeKey:x.locationNodeKey,resourceTypeKey:x.resourceTypeKey,
@@ -424,14 +449,8 @@ function batchFromExtraction(x,record){
         reserveState:clone(rs.toJSON?.()||rs),operationalStatus:rs.operationalStatus,unit:rs.unit,
         qualityState:quality,purity:quality.purity,gradePercent:quality.gradePercent,
         outputRatePerDay:n(x.capacity?.activeRate)||n(x.capacity?.nominalRate)||n(x.capacity?.dailyRate)||null,
-        productionModel:{
-          nominalCapacity:n(x.capacity?.nominalCapacity)||n(x.capacity?.nominalRate)||null,
-          minimumCapacity:n(x.capacity?.minimumCapacity)||null,maximumCapacity:n(x.capacity?.maximumCapacity)||null,
-          utilization:n(x.capacity?.utilization??x.capacity?.effortUtilization)||null,recovery:n(x.capacity?.recovery)||null,
-          decline:n(x.capacity?.decline)||null,maintenance:n(x.capacity?.maintenance)||null,operatingCost:n(x.capacity?.operatingCost),
-          activeRate:n(x.capacity?.activeRate)||n(x.capacity?.nominalRate)||null,authority:x.capacity?.authority||'UNOBSERVED',
-          stateAuthority:x.capacity?.stateAuthority||x.capacity?.authority||'UNOBSERVED',dataStatus:x.capacity?.dataStatus||'UNOBSERVED'
-        },
+        productionModel,
+        resourceAsset,
         sourceDatasetId:x.sourceDatasetId||raw?.sourceDatasetId||null,provenance:clone(rs.provenance||raw?.provenance||null),
         stateAuthority:x.capacity?.stateAuthority||rs.provenance?.stateAuthority||raw?.stateAuthority||'UNOBSERVED',
         reserveAuthority:rs.provenance?.quantityAuthority||raw?.reserveAuthority||'UNOBSERVED',
