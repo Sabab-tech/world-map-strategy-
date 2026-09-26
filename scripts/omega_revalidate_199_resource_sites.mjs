@@ -520,15 +520,18 @@ for (const item of results) {
       matchScore: Number(source.score.toFixed(3)),
       sourceTitle: source.title
     });
-    site.researchState = 'SITE_SPECIFIC_WEB_REVIEWED';
-    site.dataCompleteness = site.dataCompleteness || {};
-    site.dataCompleteness.webResearch = 'SITE_SPECIFIC_WEB_REVIEWED';
+    const alreadyPrimaryRevalidated = site.researchState === 'SITE_SPECIFIC_WEB_REVALIDATED';
+    if (!alreadyPrimaryRevalidated) {
+      site.researchState = 'SITE_SPECIFIC_WEB_REVIEWED';
+      site.dataCompleteness = site.dataCompleteness || {};
+      site.dataCompleteness.webResearch = 'SITE_SPECIFIC_WEB_REVIEWED';
+    }
     site.researchMetadata = {
       ...(site.researchMetadata || {}),
       reviewedAt: REVIEW_DATE,
-      sourceAuthority: source.type === 'WIKIPEDIA' ? 'Wikipedia/MediaWiki (secondary)' : 'Wikidata (secondary)',
-      sourceTitle: source.title,
-      sourceType: source.type,
+      secondarySourceAuthority: source.type === 'WIKIPEDIA' ? 'Wikipedia/MediaWiki (secondary)' : 'Wikidata (secondary)',
+      secondarySourceTitle: source.title,
+      secondarySourceType: source.type,
       webSearchMethod: 'SITE_NAME + COUNTRY',
       webSearchMatchScore: Number(source.score.toFixed(3))
     };
