@@ -583,7 +583,7 @@
       if(!coeff||typeof coeff!=='object'||!resourceId)return false;
       return Object.keys(coeff).some(function(k){return tok(k)===tok(resourceId);});
     }).map(function(asset){return String(asset.id||asset.facilityId||asset.nodeId||'').trim();}).filter(Boolean);
-    var logisticsPlans=[];try{const lr=g.Omega?.ResourceLogisticsRuntime||g.OmegaResourceLogisticsRuntime;if(lr?.plan)logisticsPlans=lr.plan({...p,candidateFactoryIds});}catch(_){}
+    var logisticsPlans=[];try{const lr=g.Omega?.ResourceLogisticsRuntime||g.OmegaResourceLogisticsRuntime;if(lr?.plan)logisticsPlans=lr.plan({...p,candidateFactoryIds});if(lr?.planFromFactoryInput)lr.planFromFactoryInput({...p,candidateFactoryIds});}catch(_){}
     events.push({eventId:p.eventId||null,eventType:'OMEGA_RESOURCE_FACTORY_INPUT_AVAILABLE',countryId:canonical(ctx.countryId),extractionId:p.extractionId||null,batchId:p.batch&&p.batch.batchId||p.batchId||null,resourceId:resourceId,quantity:num(p.quantity)||0,purity:num(p.purity),gradePercent:num(p.gradePercent),warehouseId:p.warehouseId||null,candidateFactoryIds:candidateFactoryIds,dispatchStatus:candidateFactoryIds.length?'AVAILABLE_TO_MATCHING_FACTORIES':'NO_MATCHING_FACTORY',logisticsPlans:logisticsPlans.map(function(x){return clone(x)}),simulationTurn:turn(),sourceAuthority:p.sourceAuthority||'RESOURCE_JSON'});
     while(events.length>(num(rules().runtime.maxLedgerEntries)||2048))events.shift();
     runtime.factoryInputEvents=events;runtime.lastFactoryInputEventTurn=turn();
