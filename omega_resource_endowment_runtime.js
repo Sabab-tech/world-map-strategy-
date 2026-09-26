@@ -874,8 +874,29 @@ function batchFromExtraction(x,record){
     try{m.registerAction?.('OMEGA_RESOURCE_EXTRACT_TICK',{actionId:'OMEGA_RESOURCE_EXTRACT_TICK',stateOwnerMinistry:'resource',authority:'OMEGA_RESOURCE_ENDOWMENT_RUNTIME'});}catch(_){}
     return handlersRegistered;
   }
+  function migratePersistedUnifiedState(){
+    for(const c of countries()){
+      const rs=state()?.resource?.[c];if(!rs||typeof rs!=='object')continue;
+      const controllers=rs.mineSiteControllers&&typeof rs.mineSiteControllers==='object'?rs.mineSiteControllers:{};
+      for(const [siteKey,controller] of Object.entries(controllers)){
+        if(!controller||typeof controller!=='object')continue;
+        controller.assetId=controller.assetId||('ASSET:SITE:'+String(siteKey).toUpperCase());
+        controller.siteReferenceKey=controller.siteReferenceKey||siteKey;
+      }
+      if(!rs.unifiedAssets||!Array.isArray(rs.unifiedAssets)){
+        rs.unifiedAssets=clone(g.__OmegaResourceIdentityRegistry?.getUnifiedAssetsByCountry?.(c)||[]);
+      }else{
+        const byId=new Map(rs.unifiedAssets.filter(x=>x?.assetId).map(x=>[x.assetId,x]));
+        for(const asset of g.__OmegaResourceIdentityRegistry?.getUnifiedAssetsByCountry?.(c)||[])if(asset?.assetId&&!byId.has(asset.assetId))rs.unifiedAssets.push(clone(asset));
+      }
+    }
+    return true;
+  }
   async function initialize(){
-    if(g.__omegaResourceEndowmentReady)return{status:'READY',countries:countries().length,reused:true};
+    if(g.__omegaResourceEndowmentReady){
+      migratePersistedUnifiedState();
+      return{status:'READY',countries:countries().length,reused:true};
+    }
     if(g.__omegaResourceEndowmentPromise)return g.__omegaResourceEndowmentPromise;
     g.__omegaResourceEndowmentInitializing=true;
     g.__omegaResourceEndowmentPromise=(async function(){
@@ -884,7 +905,7 @@ function batchFromExtraction(x,record){
         if(!engine()?.isReady)return{status:'FAILED',reason:'RESOURCE_MINISTRY_ENGINE_NOT_READY'};
         const compiled=compile();
         if(compiled.status!=='READY')return compiled;
-        applyPersistedReserveStates();install();
+        applyPersistedReserveStates();install();migratePersistedUnifiedState();
         const countryList=countries(),hydrateFailures=[];
         for(const countryId of countryList){
           const hydrateResult=dispatch('OMEGA_RESOURCE_ENDOWMENT_HYDRATE',countryId,{correlationId:'RESOURCE-HYDRATE-'+turn()+'-'+countryId});
