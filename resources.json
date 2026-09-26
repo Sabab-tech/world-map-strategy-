@@ -3193,11 +3193,11 @@
               "lat": 26.99,
               "lng": 86.91,
               "locationNodeKey": "ASSET:NPL:udayapur_limestone_mine",
-              "status": "ACTIVE_PRODUCING",
-              "operationalStatus": "ACTIVE_PRODUCING",
-              "owner": "Udayapur Cement Industry",
-              "operator": "Udayapur Cement",
-              "extractionMethod": "surface quarry blasting",
+              "status": "SUSPENDED",
+              "operationalStatus": "SUSPENDED",
+              "owner": "Government of Nepal (owner of Udayapur Cement Industries Ltd.)",
+              "operator": "Udayapur Cement Industries Ltd.",
+              "extractionMethod": "open-cast limestone quarrying with drilling, blasting, loading and truck haulage",
               "startYear": 1987,
               "legacyReferenceName": "Nepal Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -3234,8 +3234,8 @@
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
               },
-              "extractionEligibility": "EXECUTABLE",
-              "currentStatus": "ACTIVE_PRODUCING",
+              "extractionEligibility": "NON_EXECUTABLE",
+              "currentStatus": "SUSPENDED",
               "statusAuthority": "OBSERVED",
               "commercialExtraction": true,
               "siteIdentity": {
@@ -3260,19 +3260,23 @@
               },
               "extractionProfile": {
                 "siteType": "QUARRY",
-                "method": "surface quarry blasting",
-                "lifecycleStatus": "ACTIVE_PRODUCING",
-                "operationalStatus": "ACTIVE_PRODUCING",
-                "owner": "Udayapur Cement Industry",
-                "operator": "Udayapur Cement",
-                "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-                "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+                "method": "open-cast limestone quarrying with drilling, blasting, loading and truck haulage",
+                "lifecycleStatus": "SUSPENDED",
+                "operationalStatus": "SUSPENDED",
+                "owner": "Government of Nepal (owner of Udayapur Cement Industries Ltd.)",
+                "operator": "Udayapur Cement Industries Ltd.",
+                "ownerEvidenceStatus": "WEB_REVALIDATED",
+                "operatorEvidenceStatus": "WEB_REVALIDATED"
               },
               "quantitativeProfile": {
                 "reserve": {
-                  "quantity": null,
-                  "unit": null,
-                  "status": "UNOBSERVED"
+                  "quantity": 74000000,
+                  "unit": "metric_tons",
+                  "status": "DECLARED",
+                  "range": {
+                    "min": 73000000,
+                    "max": 75000000
+                  }
                 },
                 "production": {
                   "annual": null,
@@ -3282,11 +3286,11 @@
                   "status": "UNOBSERVED"
                 },
                 "grade": {
-                  "value": null,
-                  "unit": null,
-                  "status": "UNOBSERVED"
+                  "value": 52,
+                  "unit": "percent_CaO",
+                  "status": "REPORTED"
                 },
-                "quantitativeExtractionDataAvailable": false
+                "quantitativeExtractionDataAvailable": true
               },
               "resourceIdentity": {
                 "resourceTypeId": "limestone",
@@ -3314,19 +3318,40 @@
                 "operation": "COMPLETE",
                 "ownership": "REPORTED",
                 "quantitative": {
-                  "reserve": "UNOBSERVED",
+                  "reserve": "DECLARED",
                   "production": "UNOBSERVED",
-                  "grade": "UNOBSERVED"
+                  "grade": "REPORTED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED"
               },
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "NOT_PERFORMED_IN_CURRENT_WEB_REVALIDATION_PASS",
-                "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
-                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass."
-              }
+                "reviewedAt": "2026-09-27",
+                "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVALIDATION",
+                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
+                "currentEvidence": "The company mine is about 27 km from the plant; August 2026 reporting states production had halted and the mine is estimated at 73–75 Mt limestone.",
+                "currentEvidenceDate": "2026-08-23",
+                "sourceAuthority": "UCIL / Kathmandu Post"
+              },
+              "reserveEstimate": {
+                "quantityMin": 73000000,
+                "quantityMax": 75000000,
+                "unit": "metric_tons",
+                "status": "REPORTED_ESTIMATE"
+              },
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.ucil.org.np/?lang=en",
+                  "accessed": "2026-09-27",
+                  "scope": "mine_identity_location_extraction"
+                },
+                {
+                  "url": "https://kathmandupost.com/money/2026/08/23/udayapur-cement-once-nepals-pride-teeters-on-the-brink-of-bankruptcy",
+                  "accessed": "2026-09-27",
+                  "scope": "2026_operational_status_and_limestone_estimate"
+                }
+              ]
             }
           ],
           "processingFacilities": [
@@ -7035,8 +7060,8 @@
               "status": "ACTIVE_PRODUCING",
               "operationalStatus": "ACTIVE_PRODUCING",
               "owner": "OCP Group",
-              "operator": "OCP Khouribga",
-              "extractionMethod": "open-pit mining",
+              "operator": "OCP Group / Khouribga mining operations",
+              "extractionMethod": "open-pit phosphate mining with beneficiation and slurry transport integration",
               "startYear": 1921,
               "legacyReferenceName": "Morocco Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -7099,13 +7124,13 @@
               },
               "extractionProfile": {
                 "siteType": "MINE",
-                "method": "open-pit mining",
+                "method": "open-pit phosphate mining with beneficiation and slurry transport integration",
                 "lifecycleStatus": "ACTIVE_PRODUCING",
                 "operationalStatus": "ACTIVE_PRODUCING",
                 "owner": "OCP Group",
-                "operator": "OCP Khouribga",
-                "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-                "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+                "operator": "OCP Group / Khouribga mining operations",
+                "ownerEvidenceStatus": "WEB_REVALIDATED",
+                "operatorEvidenceStatus": "WEB_REVALIDATED"
               },
               "quantitativeProfile": {
                 "reserve": {
@@ -7162,14 +7187,35 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED"
               },
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "NOT_PERFORMED_IN_CURRENT_WEB_REVALIDATION_PASS",
-                "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
-                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass."
-              }
+                "reviewedAt": "2026-09-27",
+                "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVALIDATION",
+                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
+                "currentEvidence": "OCP identifies Khouribga as a principal phosphate mining centre; its 2023 reference document reports 34.025 Mt extraction capacity.",
+                "currentEvidenceDate": "2026-09-27",
+                "sourceAuthority": "OCP Group"
+              },
+              "capacityProfile": {
+                "annualCapacity": 34025000,
+                "unit": "metric_tons_per_year",
+                "year": 2023,
+                "status": "REPORTED"
+              },
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.ocpgroup.ma/",
+                  "accessed": "2026-09-27",
+                  "scope": "khouribga_mining_operations"
+                },
+                {
+                  "url": "https://fr.scribd.com/document/848741192/DR-OCP-FY23",
+                  "accessed": "2026-09-27",
+                  "scope": "2023_extraction_capacity_reference"
+                }
+              ]
             }
           ],
           "processingFacilities": [
@@ -10293,9 +10339,9 @@
               "locationNodeKey": "ASSET:GNB:farim_phosphate_project",
               "status": "DEVELOPMENT",
               "operationalStatus": "DEVELOPMENT",
-              "owner": "Guinea-Bissau / investors",
-              "operator": "Farim project",
-              "extractionMethod": "planned open-pit mining",
+              "owner": "Itafos",
+              "operator": "Itafos Farim",
+              "extractionMethod": "planned open-pit phosphate mining with beneficiation",
               "startYear": 2014,
               "legacyReferenceName": "Guinea-Bissau Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -10358,19 +10404,19 @@
               },
               "extractionProfile": {
                 "siteType": "PROJECT",
-                "method": "planned open-pit mining",
+                "method": "planned open-pit phosphate mining with beneficiation",
                 "lifecycleStatus": "DEVELOPMENT",
                 "operationalStatus": "DEVELOPMENT",
-                "owner": "Guinea-Bissau / investors",
-                "operator": "Farim project",
-                "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-                "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+                "owner": "Itafos",
+                "operator": "Itafos Farim",
+                "ownerEvidenceStatus": "WEB_REVALIDATED",
+                "operatorEvidenceStatus": "WEB_REVALIDATED"
               },
               "quantitativeProfile": {
                 "reserve": {
-                  "quantity": null,
-                  "unit": null,
-                  "status": "UNOBSERVED"
+                  "quantity": 44000000,
+                  "unit": "metric_tons",
+                  "status": "OBSERVED"
                 },
                 "production": {
                   "annual": null,
@@ -10380,11 +10426,11 @@
                   "status": "UNOBSERVED"
                 },
                 "grade": {
-                  "value": null,
-                  "unit": null,
-                  "status": "UNOBSERVED"
+                  "value": 30,
+                  "unit": "percent_P2O5",
+                  "status": "OBSERVED"
                 },
-                "quantitativeExtractionDataAvailable": false
+                "quantitativeExtractionDataAvailable": true
               },
               "resourceIdentity": {
                 "resourceTypeId": "phosphate",
@@ -10416,19 +10462,48 @@
                 "operation": "COMPLETE",
                 "ownership": "REPORTED",
                 "quantitative": {
-                  "reserve": "UNOBSERVED",
+                  "reserve": "OBSERVED",
                   "production": "UNOBSERVED",
-                  "grade": "UNOBSERVED"
+                  "grade": "OBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED"
               },
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "NOT_PERFORMED_IN_CURRENT_WEB_REVALIDATION_PASS",
-                "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
-                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass."
-              }
+                "reviewedAt": "2026-09-27",
+                "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVALIDATION",
+                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
+                "currentEvidence": "Itafos reports 44.0 Mt reserves at 30.0% P2O5, 25-year mine life and 1.3 Mt annual production and sales capacity.",
+                "currentEvidenceDate": "2026-09-27",
+                "sourceAuthority": "Itafos"
+              },
+              "reserveEstimate": {
+                "quantity": 44000000,
+                "unit": "metric_tons",
+                "status": "REPORTED_RESERVE",
+                "gradeValue": 30,
+                "gradeUnit": "percent_P2O5"
+              },
+              "capacityProfile": {
+                "annualProductionAndSalesCapacity": 1300000,
+                "unit": "metric_tons_per_year",
+                "status": "REPORTED"
+              },
+              "resourceEstimateProfile": {
+                "measuredAndIndicatedIncludingReserves": 105600000,
+                "unit": "metric_tons",
+                "averageGradePercentP2O5": 28.4,
+                "inferred": 37600000,
+                "inferredGradePercentP2O5": 27.7
+              },
+              "webResearchEvidence": [
+                {
+                  "url": "https://itafos.com/projects/itafos-farim-1/",
+                  "accessed": "2026-09-27",
+                  "scope": "reserve_resource_capacity_and_project_status"
+                }
+              ]
             }
           ],
           "processingFacilities": [
@@ -11378,7 +11453,7 @@
               "resourceId": "rutile",
               "resourceTypeId": "rutile",
               "resourceTypeKey": "rutile",
-              "region": "Moyamba and Bonthe",
+              "region": "Bonthe District",
               "countryCode": "SLE",
               "country": "SLE",
               "lat": 7.65,
@@ -11388,7 +11463,7 @@
               "operationalStatus": "ACTIVE_PRODUCING",
               "owner": "Leonoil / Sierra Rutile",
               "operator": "Sierra Rutile",
-              "extractionMethod": "dry mineral-sands mining",
+              "extractionMethod": "mineral-sands mining feeding wet concentrator plants and mineral separation facilities",
               "startYear": 1967,
               "reserveQuantity": 1270000,
               "reserveUnit": "metric_tons",
@@ -11449,8 +11524,8 @@
               "locationIdentity": {
                 "countryIso3": "SLE",
                 "countryName": "Sierra Leone",
-                "adminRegion": "Moyamba and Bonthe",
-                "locality": "Moyamba and Bonthe",
+                "adminRegion": "Bonthe District",
+                "locality": "Area 1, Sierra Rutile, Sierra Leone",
                 "coordinates": {
                   "lat": 7.65,
                   "lng": -12.65
@@ -11519,14 +11594,36 @@
                   "grade": "OBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED"
               },
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "NOT_PERFORMED_IN_CURRENT_WEB_REVALIDATION_PASS",
-                "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
-                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass."
-              }
+                "reviewedAt": "2026-09-27",
+                "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVALIDATION",
+                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
+                "currentEvidence": "Sierra Rutile reports Area 1 in Bonthe District as in production with three wet concentrator plants, a mineral separation plant and 120,000 t/y capacity.",
+                "currentEvidenceDate": "2026-09-27",
+                "sourceAuthority": "Sierra Rutile Limited"
+              },
+              "capacityProfile": {
+                "annualRutileProductionCapacity": 120000,
+                "unit": "metric_tons_per_year",
+                "status": "REPORTED"
+              },
+              "infrastructureProfile": {
+                "wetConcentratorPlants": 3,
+                "mineralSeparationPlant": true,
+                "powerhouse": true,
+                "staffCamps": true,
+                "port": "Nitti River Terminal"
+              },
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.sierra-rutile.com/our-operations/",
+                  "accessed": "2026-09-27",
+                  "scope": "area_1_location_capacity_processing"
+                }
+              ]
             }
           ],
           "processingFacilities": [
@@ -11913,8 +12010,8 @@
           "mineSites": [
             {
               "id": "SITE_LBR_yekepa_iron_ore_mine",
-              "name": "Yekepa Iron Ore Mine",
-              "siteName": "Yekepa Iron Ore Mine",
+              "name": "Nimba (Yekepa) Iron Ore Operations",
+              "siteName": "Nimba (Yekepa) Iron Ore Operations",
               "siteType": "MINE",
               "resourceId": "iron_ore",
               "resourceTypeId": "iron_ore",
@@ -11929,7 +12026,7 @@
               "operationalStatus": "ACTIVE_PRODUCING",
               "owner": "ArcelorMittal Liberia",
               "operator": "ArcelorMittal Liberia",
-              "extractionMethod": "open-pit and beneficiation",
+              "extractionMethod": "open-pit iron ore mining with crushing and screening of DSO and concentration of lower-grade ore",
               "startYear": 2011,
               "legacyReferenceName": "Liberia Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -11983,7 +12080,7 @@
                 "countryIso3": "LBR",
                 "countryName": "Liberia",
                 "adminRegion": "Nimba County",
-                "locality": "Nimba County",
+                "locality": "Yekepa / Nimba County",
                 "coordinates": {
                   "lat": 7.58,
                   "lng": -8.62
@@ -11992,13 +12089,13 @@
               },
               "extractionProfile": {
                 "siteType": "MINE",
-                "method": "open-pit and beneficiation",
+                "method": "open-pit iron ore mining with crushing and screening of DSO and concentration of lower-grade ore",
                 "lifecycleStatus": "ACTIVE_PRODUCING",
                 "operationalStatus": "ACTIVE_PRODUCING",
                 "owner": "ArcelorMittal Liberia",
                 "operator": "ArcelorMittal Liberia",
-                "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-                "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+                "ownerEvidenceStatus": "WEB_REVALIDATED",
+                "operatorEvidenceStatus": "WEB_REVALIDATED"
               },
               "quantitativeProfile": {
                 "reserve": {
@@ -12051,14 +12148,39 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED"
               },
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "NOT_PERFORMED_IN_CURRENT_WEB_REVALIDATION_PASS",
-                "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
-                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass."
-              }
+                "reviewedAt": "2026-09-27",
+                "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVALIDATION",
+                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
+                "currentEvidence": "ArcelorMittal's 2025 report identifies ArcelorMittal Liberia as operator of the Western Range iron deposits; Liberia's Mines Ministry inspected Yekepa operations in June 2026.",
+                "currentEvidenceDate": "2026-06-04",
+                "sourceAuthority": "ArcelorMittal / Liberia Ministry of Mines"
+              },
+              "capacityProfile": {
+                "phase2ConcentrateCapacity": 15000000,
+                "unit": "metric_tons_per_year",
+                "status": "REPORTED_DESIGN_CAPACITY"
+              },
+              "transportProfile": {
+                "railway": "Yekepa–Buchanan",
+                "approxRailDistanceKm": 250,
+                "port": "Buchanan"
+              },
+              "webResearchEvidence": [
+                {
+                  "url": "https://corporate.arcelormittal.com/media/dvck4ncb/annual-report-2025.pdf",
+                  "accessed": "2026-09-27",
+                  "scope": "2025_mining_rights_operator_phase_2"
+                },
+                {
+                  "url": "https://mme.gov.lr/others.php?e49c7921cb156014099756961908d03f94e3584c=ODQ2",
+                  "accessed": "2026-09-27",
+                  "scope": "2026_yekepa_compliance_inspection"
+                }
+              ]
             }
           ],
           "processingFacilities": [
@@ -15781,10 +15903,10 @@
               "lat": 18.73,
               "lng": 7.39,
               "locationNodeKey": "ASSET:NER:soma_r_uranium_mine",
-              "status": "CARE_AND_MAINTENANCE",
-              "operationalStatus": "CARE_AND_MAINTENANCE",
-              "owner": "Government of Niger / former Orano interests",
-              "operator": "Somaïr",
+              "status": "DISPUTED_OPERATION",
+              "operationalStatus": "DISPUTED_OPERATION",
+              "owner": "State of Niger (expropriation reported by Orano on 19 June 2025; legal position disputed)",
+              "operator": "Somaïr / current operating control not independently revalidated",
               "extractionMethod": "open-pit uranium mining",
               "startYear": 1971,
               "legacyReferenceName": "Niger Primary Mining and Extraction Sites",
@@ -15823,7 +15945,7 @@
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
               },
               "extractionEligibility": "NON_EXECUTABLE",
-              "currentStatus": "CARE_AND_MAINTENANCE",
+              "currentStatus": "DISPUTED_OPERATION",
               "statusAuthority": "OBSERVED",
               "commercialExtraction": true,
               "siteIdentity": {
@@ -15849,18 +15971,19 @@
               "extractionProfile": {
                 "siteType": "MINE",
                 "method": "open-pit uranium mining",
-                "lifecycleStatus": "CARE_AND_MAINTENANCE",
-                "operationalStatus": "CARE_AND_MAINTENANCE",
-                "owner": "Government of Niger / former Orano interests",
-                "operator": "Somaïr",
-                "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-                "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+                "lifecycleStatus": "DISPUTED_OPERATION",
+                "operationalStatus": "DISPUTED_OPERATION",
+                "owner": "State of Niger (expropriation reported by Orano on 19 June 2025; legal position disputed)",
+                "operator": "Somaïr / current operating control not independently revalidated",
+                "ownerEvidenceStatus": "WEB_REVALIDATED",
+                "operatorEvidenceStatus": "UNVERIFIED_CURRENT_CONTROL"
               },
               "quantitativeProfile": {
                 "reserve": {
-                  "quantity": null,
-                  "unit": null,
-                  "status": "UNOBSERVED"
+                  "quantity": 40108,
+                  "unit": "metric_tons_uranium",
+                  "status": "REPORTED",
+                  "year": 2024
                 },
                 "production": {
                   "annual": null,
@@ -15874,7 +15997,7 @@
                   "unit": null,
                   "status": "UNOBSERVED"
                 },
-                "quantitativeExtractionDataAvailable": false
+                "quantitativeExtractionDataAvailable": true
               },
               "resourceIdentity": {
                 "resourceTypeId": "uranium",
@@ -15905,19 +16028,29 @@
                 "operation": "COMPLETE",
                 "ownership": "REPORTED",
                 "quantitative": {
-                  "reserve": "UNOBSERVED",
+                  "reserve": "REPORTED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED"
               },
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "NOT_PERFORMED_IN_CURRENT_WEB_REVALIDATION_PASS",
-                "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
-                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass."
-              }
+                "reviewedAt": "2026-09-27",
+                "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVALIDATION",
+                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
+                "currentEvidence": "Orano reports that Niger expropriated Orano on 19 June 2025 and that Somaïr's total proven plus probable reserves at end-2024 were 40,108 tU.",
+                "currentEvidenceDate": "2026-09-27",
+                "sourceAuthority": "Orano"
+              },
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.orano.group/finance-raa/2025/en/35/",
+                  "accessed": "2026-09-27",
+                  "scope": "2025_expropriation_and_2024_somair_reserves"
+                }
+              ]
             }
           ],
           "processingFacilities": [
@@ -20069,9 +20202,9 @@
               "locationNodeKey": "ASSET:AGO:catoca_diamond_mine",
               "status": "ACTIVE_PRODUCING",
               "operationalStatus": "ACTIVE_PRODUCING",
-              "owner": "Endiama / Catoca shareholders",
-              "operator": "Sociedade Mineira de Catoca",
-              "extractionMethod": "open-pit kimberlite",
+              "owner": "Endiama E.P. (59%); Taadeen Investment LLC (41%)",
+              "operator": "Sociedade Mineira de Catoca, Lda.",
+              "extractionMethod": "open-pit kimberlite mining using large excavators and haul trucks, followed by diamond recovery and sorting",
               "startYear": 1997,
               "legacyReferenceName": "Angola Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -20125,7 +20258,7 @@
                 "countryIso3": "AGO",
                 "countryName": "Angola",
                 "adminRegion": "Lunda Sul",
-                "locality": "Lunda Sul",
+                "locality": "Catoca, about 35 km from Saurimo",
                 "coordinates": {
                   "lat": -9.41,
                   "lng": 20.3
@@ -20134,13 +20267,13 @@
               },
               "extractionProfile": {
                 "siteType": "MINE",
-                "method": "open-pit kimberlite",
+                "method": "open-pit kimberlite mining using large excavators and haul trucks, followed by diamond recovery and sorting",
                 "lifecycleStatus": "ACTIVE_PRODUCING",
                 "operationalStatus": "ACTIVE_PRODUCING",
-                "owner": "Endiama / Catoca shareholders",
-                "operator": "Sociedade Mineira de Catoca",
-                "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-                "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+                "owner": "Endiama E.P. (59%); Taadeen Investment LLC (41%)",
+                "operator": "Sociedade Mineira de Catoca, Lda.",
+                "ownerEvidenceStatus": "WEB_REVALIDATED",
+                "operatorEvidenceStatus": "WEB_REVALIDATED"
               },
               "quantitativeProfile": {
                 "reserve": {
@@ -20149,18 +20282,19 @@
                   "status": "UNOBSERVED"
                 },
                 "production": {
-                  "annual": null,
-                  "rate": null,
-                  "unit": null,
-                  "year": null,
-                  "status": "UNOBSERVED"
+                  "annual": {
+                    "value": 6500000,
+                    "unit": "carats",
+                    "year": 2024,
+                    "status": "ESTIMATED"
+                  }
                 },
                 "grade": {
                   "value": null,
                   "unit": null,
                   "status": "UNOBSERVED"
                 },
-                "quantitativeExtractionDataAvailable": false
+                "quantitativeExtractionDataAvailable": true
               },
               "resourceIdentity": {
                 "resourceTypeId": "diamond",
@@ -20193,14 +20327,34 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED"
               },
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "NOT_PERFORMED_IN_CURRENT_WEB_REVALIDATION_PASS",
-                "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
-                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass."
-              }
+                "reviewedAt": "2026-09-27",
+                "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVALIDATION",
+                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
+                "currentEvidence": "Catoca confirms current ownership, Lunda Sul location and open-pit extraction; USGS estimated 2024 output at 6.5 million carats.",
+                "currentEvidenceDate": "2026-09-27",
+                "sourceAuthority": "Catoca / USGS"
+              },
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.catoca.com/sobre-nos/",
+                  "accessed": "2026-09-27",
+                  "scope": "current_ownership_location_operation"
+                },
+                {
+                  "url": "https://www.catoca.com/nosso-produto/",
+                  "accessed": "2026-09-27",
+                  "scope": "current_extraction_processing_method"
+                },
+                {
+                  "url": "https://www.usgs.gov/centers/national-minerals-information-center/angola",
+                  "accessed": "2026-09-27",
+                  "scope": "2024_catoca_output"
+                }
+              ]
             }
           ],
           "processingFacilities": [
@@ -24947,7 +25101,7 @@
               "resourceId": "tin",
               "resourceTypeId": "tin",
               "resourceTypeKey": "tin",
-              "region": "Kigali",
+              "region": "Northern Province / Rutongo",
               "countryCode": "RWA",
               "country": "RWA",
               "lat": -1.91,
@@ -24955,9 +25109,9 @@
               "locationNodeKey": "ASSET:RWA:rutongo_tin_mine",
               "status": "ACTIVE_PRODUCING",
               "operationalStatus": "ACTIVE_PRODUCING",
-              "owner": "Private concession operators",
-              "operator": "Rutongo Mines",
-              "extractionMethod": "underground and surface cassiterite mining",
+              "owner": "Trinity Metals Group",
+              "operator": "Trinity Metals Group",
+              "extractionMethod": "underground tin mining across six mines with ore concentration",
               "startYear": 1932,
               "legacyReferenceName": "Rwanda Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -25010,8 +25164,8 @@
               "locationIdentity": {
                 "countryIso3": "RWA",
                 "countryName": "Rwanda",
-                "adminRegion": "Kigali",
-                "locality": "Kigali",
+                "adminRegion": "Northern Province",
+                "locality": "26 km north of Kigali, Rwanda",
                 "coordinates": {
                   "lat": -1.91,
                   "lng": 30.03
@@ -25020,19 +25174,19 @@
               },
               "extractionProfile": {
                 "siteType": "MINE",
-                "method": "underground and surface cassiterite mining",
+                "method": "underground tin mining across six mines with ore concentration",
                 "lifecycleStatus": "ACTIVE_PRODUCING",
                 "operationalStatus": "ACTIVE_PRODUCING",
-                "owner": "Private concession operators",
-                "operator": "Rutongo Mines",
+                "owner": "Trinity Metals Group",
+                "operator": "Trinity Metals Group",
                 "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
                 "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
               },
               "quantitativeProfile": {
                 "reserve": {
-                  "quantity": null,
-                  "unit": null,
-                  "status": "UNOBSERVED"
+                  "quantity": 54000,
+                  "unit": "metric_tons_recoverable_tin",
+                  "status": "REPORTED"
                 },
                 "production": {
                   "annual": null,
@@ -25042,11 +25196,11 @@
                   "status": "UNOBSERVED"
                 },
                 "grade": {
-                  "value": null,
-                  "unit": null,
-                  "status": "UNOBSERVED"
+                  "value": 63,
+                  "unit": "percent_tin",
+                  "status": "OBSERVED"
                 },
-                "quantitativeExtractionDataAvailable": false
+                "quantitativeExtractionDataAvailable": true
               },
               "resourceIdentity": {
                 "resourceTypeId": "tin",
@@ -25073,19 +25227,45 @@
                 "operation": "COMPLETE",
                 "ownership": "REPORTED",
                 "quantitative": {
-                  "reserve": "UNOBSERVED",
+                  "reserve": "REPORTED",
                   "production": "UNOBSERVED",
-                  "grade": "UNOBSERVED"
+                  "grade": "OBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED"
               },
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "NOT_PERFORMED_IN_CURRENT_WEB_REVALIDATION_PASS",
-                "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
-                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass."
-              }
+                "reviewedAt": "2026-09-27",
+                "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVALIDATION",
+                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
+                "currentEvidence": "Trinity identifies six underground Rutongo mines with ~54,000 t recoverable tin and current production of 40–70 t/month; USGS reports 63% average tin content for domestically mined cassiterite.",
+                "currentEvidenceDate": "2026-09-27",
+                "sourceAuthority": "Trinity Metals / USGS"
+              },
+              "productionRange": {
+                "min": 40,
+                "max": 70,
+                "unit": "metric_tons_per_month",
+                "status": "CURRENT_REPORTED_RANGE"
+              },
+              "reserveEstimate": {
+                "quantity": 54000,
+                "unit": "metric_tons_recoverable_tin",
+                "status": "REPORTED_ESTIMATE"
+              },
+              "webResearchEvidence": [
+                {
+                  "url": "https://trinity-metals.com/en/projects/rutongo-mine",
+                  "accessed": "2026-09-27",
+                  "scope": "current_license_reserves_production"
+                },
+                {
+                  "url": "https://www.usgs.gov/centers/national-minerals-information-center/rwanda",
+                  "accessed": "2026-09-27",
+                  "scope": "2024_cassiterite_and_tin_content"
+                }
+              ]
             }
           ],
           "processingFacilities": [
@@ -34128,9 +34308,9 @@
               "locationNodeKey": "ASSET:LSO:letseng_diamond_mine",
               "status": "ACTIVE_PRODUCING",
               "operationalStatus": "ACTIVE_PRODUCING",
-              "owner": "Gem Diamonds / Lesotho",
-              "operator": "Letseng Diamonds",
-              "extractionMethod": "open-pit kimberlite",
+              "owner": "Gem Diamonds 70%; Government of Lesotho 30%",
+              "operator": "Letšeng Diamonds",
+              "extractionMethod": "open-pit diamond mining from Main Pipe and Satellite Pipe kimberlite followed by ore treatment and diamond recovery",
               "startYear": 2004,
               "legacyReferenceName": "Lesotho Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -34193,13 +34373,13 @@
               },
               "extractionProfile": {
                 "siteType": "MINE",
-                "method": "open-pit kimberlite",
+                "method": "open-pit diamond mining from Main Pipe and Satellite Pipe kimberlite followed by ore treatment and diamond recovery",
                 "lifecycleStatus": "ACTIVE_PRODUCING",
                 "operationalStatus": "ACTIVE_PRODUCING",
-                "owner": "Gem Diamonds / Lesotho",
-                "operator": "Letseng Diamonds",
-                "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-                "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+                "owner": "Gem Diamonds 70%; Government of Lesotho 30%",
+                "operator": "Letšeng Diamonds",
+                "ownerEvidenceStatus": "WEB_REVALIDATED",
+                "operatorEvidenceStatus": "WEB_REVALIDATED"
               },
               "quantitativeProfile": {
                 "reserve": {
@@ -34208,18 +34388,19 @@
                   "status": "UNOBSERVED"
                 },
                 "production": {
-                  "annual": null,
-                  "rate": null,
-                  "unit": null,
-                  "year": null,
-                  "status": "UNOBSERVED"
+                  "annual": {
+                    "value": 90354,
+                    "unit": "carats",
+                    "year": 2025,
+                    "status": "OBSERVED"
+                  }
                 },
                 "grade": {
-                  "value": null,
-                  "unit": null,
-                  "status": "UNOBSERVED"
+                  "value": 1.74,
+                  "unit": "carats_per_hundred_tonnes",
+                  "status": "OBSERVED"
                 },
-                "quantitativeExtractionDataAvailable": false
+                "quantitativeExtractionDataAvailable": true
               },
               "resourceIdentity": {
                 "resourceTypeId": "diamond",
@@ -34249,17 +34430,33 @@
                 "quantitative": {
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
-                  "grade": "UNOBSERVED"
+                  "grade": "OBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED"
               },
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "NOT_PERFORMED_IN_CURRENT_WEB_REVALIDATION_PASS",
-                "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
-                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass."
-              }
+                "reviewedAt": "2026-09-27",
+                "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVALIDATION",
+                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
+                "currentEvidence": "Gem Diamonds reports 5.2 Mt ore treated and 90,354 carats recovered at Letšeng in 2025, with overall grade 1.74 cpht.",
+                "currentEvidenceDate": "2026-09-27",
+                "sourceAuthority": "Gem Diamonds"
+              },
+              "capacityProfile": {
+                "oreTreatedAnnual": 5200000,
+                "unit": "metric_tons_per_year",
+                "year": 2025,
+                "status": "OBSERVED"
+              },
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.gemdiamonds.com/downloads/2026/annual-report/annual-report-2025.pdf",
+                  "accessed": "2026-09-27",
+                  "scope": "2025_ore_treated_grade_and_recovery"
+                }
+              ]
             }
           ],
           "processingFacilities": [
@@ -39523,7 +39720,7 @@
               "resourceId": "copper",
               "resourceTypeId": "copper",
               "resourceTypeKey": "copper",
-              "region": "Kerman",
+              "region": "Kerman Province",
               "countryCode": "IRN",
               "country": "IRN",
               "lat": 29.98,
@@ -39531,8 +39728,8 @@
               "locationNodeKey": "ASSET:IRN:sarcheshmeh_copper_mine",
               "status": "ACTIVE_PRODUCING",
               "operationalStatus": "ACTIVE_PRODUCING",
-              "owner": "NICICO",
-              "operator": "NICICO",
+              "owner": "National Iranian Copper Industries Company (NICICO)",
+              "operator": "Sarcheshmeh Copper Complex / NICICO",
               "extractionMethod": "open-pit and concentrator",
               "startYear": 1972,
               "legacyReferenceName": "Iran Primary Mining and Extraction Sites",
@@ -39586,8 +39783,8 @@
               "locationIdentity": {
                 "countryIso3": "IRN",
                 "countryName": "Iran",
-                "adminRegion": "Kerman",
-                "locality": "Kerman",
+                "adminRegion": "Kerman Province",
+                "locality": "Sarcheshmeh, Kerman",
                 "coordinates": {
                   "lat": 29.98,
                   "lng": 55.86
@@ -39611,18 +39808,19 @@
                   "status": "UNOBSERVED"
                 },
                 "production": {
-                  "annual": null,
-                  "rate": null,
-                  "unit": null,
-                  "year": null,
-                  "status": "UNOBSERVED"
+                  "annual": {
+                    "value": 30000000,
+                    "unit": "metric_tons_copper_ore",
+                    "year": 2024,
+                    "status": "ESTIMATED"
+                  }
                 },
                 "grade": {
-                  "value": null,
-                  "unit": null,
-                  "status": "UNOBSERVED"
+                  "value": 0.61,
+                  "unit": "percent_Cu",
+                  "status": "OBSERVED"
                 },
-                "quantitativeExtractionDataAvailable": false
+                "quantitativeExtractionDataAvailable": true
               },
               "resourceIdentity": {
                 "resourceTypeId": "copper",
@@ -39656,17 +39854,32 @@
                 "quantitative": {
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
-                  "grade": "UNOBSERVED"
+                  "grade": "OBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED"
               },
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "NOT_PERFORMED_IN_CURRENT_WEB_REVALIDATION_PASS",
-                "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
-                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass."
-              }
+                "reviewedAt": "2026-09-27",
+                "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVALIDATION",
+                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
+                "currentEvidence": "USGS reports 30 Mt copper ore at Sarcheshmeh at 0.61% Cu in 2024; the 2025 expansion raised concentrate capacity to 810,000 t/y.",
+                "currentEvidenceDate": "2026-09-27",
+                "sourceAuthority": "USGS"
+              },
+              "capacityProfile": {
+                "copperConcentrateProductionCapacity": 810000,
+                "unit": "metric_tons_per_year",
+                "status": "REPORTED_AFTER_2025_EXPANSION"
+              },
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.usgs.gov/centers/national-minerals-information-center/iran",
+                  "accessed": "2026-09-27",
+                  "scope": "2024_sarcheshmeh_ore_grade_and_expansion"
+                }
+              ]
             }
           ],
           "processingFacilities": [
@@ -41155,8 +41368,8 @@
               "locationNodeKey": "ASSET:JOR:eshidiya_phosphate_mine",
               "status": "ACTIVE_PRODUCING",
               "operationalStatus": "ACTIVE_PRODUCING",
-              "owner": "JPMC",
-              "operator": "JPMC",
+              "owner": "Jordan Phosphate Mines Company (JPMC)",
+              "operator": "Jordan Phosphate Mines Company (JPMC)",
               "extractionMethod": "open-pit phosphate mining",
               "startYear": 1984,
               "legacyReferenceName": "Jordan Primary Mining and Extraction Sites",
@@ -41235,18 +41448,19 @@
                   "status": "UNOBSERVED"
                 },
                 "production": {
-                  "annual": null,
-                  "rate": null,
-                  "unit": null,
-                  "year": null,
-                  "status": "UNOBSERVED"
+                  "annual": {
+                    "value": 7500000,
+                    "unit": "metric_tons_phosphate_ore",
+                    "year": 2024,
+                    "status": "OBSERVED"
+                  }
                 },
                 "grade": {
                   "value": null,
                   "unit": null,
                   "status": "UNOBSERVED"
                 },
-                "quantitativeExtractionDataAvailable": false
+                "quantitativeExtractionDataAvailable": true
               },
               "resourceIdentity": {
                 "resourceTypeId": "phosphate",
@@ -41283,14 +41497,24 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED"
               },
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "NOT_PERFORMED_IN_CURRENT_WEB_REVALIDATION_PASS",
-                "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
-                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass."
-              }
+                "reviewedAt": "2026-09-27",
+                "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVALIDATION",
+                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
+                "currentEvidence": "USGS reports 7.5 Mt phosphate ore from Eshidiya in 2024 and identifies JPMC as Jordan's sole phosphate producer.",
+                "currentEvidenceDate": "2026-09-27",
+                "sourceAuthority": "USGS / JPMC"
+              },
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.usgs.gov/centers/national-minerals-information-center/jordan",
+                  "accessed": "2026-09-27",
+                  "scope": "2024_eshidiya_production"
+                }
+              ]
             }
           ],
           "processingFacilities": [
@@ -53069,9 +53293,9 @@
               "locationNodeKey": "ASSET:UZB:muruntau_gold_mine",
               "status": "ACTIVE_PRODUCING",
               "operationalStatus": "ACTIVE_PRODUCING",
-              "owner": "NMMC",
+              "owner": "Navoi Mining and Metallurgical Company (NMMC)",
               "operator": "NMMC",
-              "extractionMethod": "large open-pit",
+              "extractionMethod": "large-scale open-pit mining with drilling, blasting, haulage and ore delivery to processing plants",
               "startYear": 1969,
               "legacyReferenceName": "Uzbekistan Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -53134,10 +53358,10 @@
               },
               "extractionProfile": {
                 "siteType": "MINE",
-                "method": "large open-pit",
+                "method": "large-scale open-pit mining with drilling, blasting, haulage and ore delivery to processing plants",
                 "lifecycleStatus": "ACTIVE_PRODUCING",
                 "operationalStatus": "ACTIVE_PRODUCING",
-                "owner": "NMMC",
+                "owner": "Navoi Mining and Metallurgical Company (NMMC)",
                 "operator": "NMMC",
                 "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
                 "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
@@ -53193,14 +53417,35 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED"
               },
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "NOT_PERFORMED_IN_CURRENT_WEB_REVALIDATION_PASS",
-                "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
-                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass."
-              }
+                "reviewedAt": "2026-09-27",
+                "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVALIDATION",
+                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
+                "currentEvidence": "NMMC reports completion of Phase V Stage 1 and 120 million m3 of run-of-mine material transported at Muruntau in 2025.",
+                "currentEvidenceDate": "2026-09-27",
+                "sourceAuthority": "NMMC"
+              },
+              "processingProfile": {
+                "rockMassMovedOrTransported2025": 120000000,
+                "unit": "cubic_meters_run_of_mine_material",
+                "year": 2025,
+                "status": "REPORTED"
+              },
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.ngmk.uz/en/press-center/news-and-press-releases/Muruntov-konida-2025-yil-sarhisobi/",
+                  "accessed": "2026-09-27",
+                  "scope": "2025_muruntau_development_and_ore_movement"
+                },
+                {
+                  "url": "https://www.ngmk.uz/wp-content/uploads/2026/01/PR-13.01.2026-en.pdf",
+                  "accessed": "2026-09-27",
+                  "scope": "2025_nmmc_results"
+                }
+              ]
             }
           ],
           "processingFacilities": [
@@ -54678,9 +54923,9 @@
               "locationNodeKey": "ASSET:TJK:jilau_gold_mine",
               "status": "ACTIVE_PRODUCING",
               "operationalStatus": "ACTIVE_PRODUCING",
-              "owner": "Zeravshan JV",
-              "operator": "Zeravshan Mining",
-              "extractionMethod": "open-pit and underground",
+              "owner": "Zeravshan Joint Venture / Zijin Mining",
+              "operator": "Zeravshan, Zijin-managed",
+              "extractionMethod": "open-pit mining with CIL processing",
               "startYear": 1997,
               "legacyReferenceName": "Tajikistan Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -54743,11 +54988,11 @@
               },
               "extractionProfile": {
                 "siteType": "MINE",
-                "method": "open-pit and underground",
+                "method": "open-pit mining with CIL processing",
                 "lifecycleStatus": "ACTIVE_PRODUCING",
                 "operationalStatus": "ACTIVE_PRODUCING",
-                "owner": "Zeravshan JV",
-                "operator": "Zeravshan Mining",
+                "owner": "Zeravshan Joint Venture / Zijin Mining",
+                "operator": "Zeravshan, Zijin-managed",
                 "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
                 "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
               },
@@ -54802,14 +55047,36 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED"
               },
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "NOT_PERFORMED_IN_CURRENT_WEB_REVALIDATION_PASS",
-                "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
-                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass."
-              }
+                "reviewedAt": "2026-09-27",
+                "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVALIDATION",
+                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
+                "currentEvidence": "Zijin lists Jilau in Sughd as in production using open-pit mining and CIL; some published resource and 2025 production figures are combined with Taror.",
+                "currentEvidenceDate": "2026-09-27",
+                "sourceAuthority": "Zijin Mining"
+              },
+              "resourceEstimateProfile": {
+                "containedGold": 87.6,
+                "unit": "metric_tons",
+                "averageGrade": 1.95,
+                "gradeUnit": "grams_per_tonne",
+                "status": "REPORTED_COMBINED_JILAU_TAROR"
+              },
+              "productionContext": {
+                "combinedJilauTarorGold2025": 6.1,
+                "unit": "metric_tons",
+                "basis": "combined Jilau and Taror operations"
+              },
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.zijinmining.com/global/program-detail-71760.htm",
+                  "accessed": "2026-09-27",
+                  "scope": "jilau_status_resources_method_and_combined_output"
+                }
+              ]
             }
           ],
           "processingFacilities": [
@@ -55733,7 +56000,7 @@
               "resourceId": "copper",
               "resourceTypeId": "copper",
               "resourceTypeKey": "copper",
-              "region": "Syunik",
+              "region": "Syunik Province",
               "countryCode": "ARM",
               "country": "ARM",
               "lat": 39.16,
@@ -55741,7 +56008,7 @@
               "locationNodeKey": "ASSET:ARM:zangezur_copper_molybdenum_mine",
               "status": "ACTIVE_PRODUCING",
               "operationalStatus": "ACTIVE_PRODUCING",
-              "owner": "ZCMC / Armenian interests",
+              "owner": "Zangezur Copper Molybdenum Combine (ZCMC)",
               "operator": "ZCMC",
               "extractionMethod": "large open-pit",
               "startYear": 1951,
@@ -55796,8 +56063,8 @@
               "locationIdentity": {
                 "countryIso3": "ARM",
                 "countryName": "Armenia",
-                "adminRegion": "Syunik",
-                "locality": "Syunik",
+                "adminRegion": "Syunik Province",
+                "locality": "Kajaran / Syunik",
                 "coordinates": {
                   "lat": 39.16,
                   "lng": 46.38
@@ -55869,14 +56136,30 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED"
               },
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "NOT_PERFORMED_IN_CURRENT_WEB_REVALIDATION_PASS",
-                "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
-                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass."
-              }
+                "reviewedAt": "2026-09-27",
+                "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVALIDATION",
+                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
+                "currentEvidence": "ZCMC reports 22.674 Mt ore processed in 2025 at its Kajaran copper-molybdenum operation.",
+                "currentEvidenceDate": "2026-09-27",
+                "sourceAuthority": "ZCMC"
+              },
+              "processingProfile": {
+                "oreProcessed2025": 22674000,
+                "unit": "metric_tons",
+                "year": 2025,
+                "status": "REPORTED"
+              },
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.zcmc.am/",
+                  "accessed": "2026-09-27",
+                  "scope": "2025_ore_processing_and_operation"
+                }
+              ]
             }
           ],
           "processingFacilities": [
