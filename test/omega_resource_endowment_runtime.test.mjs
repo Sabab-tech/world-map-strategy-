@@ -25,6 +25,7 @@ const countryIdentity=globalThis.OmegaCanonicalIdentityRegistry||globalThis.Omeg
 await countryIdentity.init();
 
 await import('../resource_ministry_engine.js');
+await import('../omega_resource_part04_identity_runtime.js');
 const engine=globalThis.ResourceMinistryEngine;
 await engine.init();
 const source=JSON.parse(fs.readFileSync(new URL('../resources.json',import.meta.url),'utf8'));
