@@ -488,6 +488,11 @@ const placeholders = new Set([
   'former midroc'
 ]);
 for (const { site } of sites) {
+  if (String(site.status).toUpperCase() === 'ACTIVE_PRODUCING' && site.commercialExtraction !== false) {
+    site.extractionEligibility = 'EXECUTABLE';
+  } else if (String(site.status).toUpperCase() === 'NOT_APPLICABLE' || site.commercialExtraction === false) {
+    site.extractionEligibility = 'NON_EXECUTABLE';
+  }
   for (const field of ['owner','operator']) {
     const value = String(site[field] ?? '').trim().toLowerCase();
     if (placeholders.has(value)) {
