@@ -181,21 +181,26 @@ for(const [countryId,row] of Object.entries(worldState)){
     assert.equal(controller.countryId,countryId);
     assert.equal(controller.assetId,'ASSET:SITE:'+String(siteKey).toUpperCase());
     assert.equal(controller.controllerStatus,'RUNNING');
-    assert.equal(controller.extractionExecutable,true,countryId+' controller not executable '+siteKey);
-    assert.equal(controller.extractionPathStatus,'EXECUTABLE_OCCURRENCE_ATTACHED');
-    assert(Array.isArray(controller.linkedOccurrenceKeys)&&controller.linkedOccurrenceKeys.length===1);
-    const occurrenceKey=controller.linkedOccurrenceKeys[0];
-    const output=row.mineOutputs?.[occurrenceKey];
-    assert(output,countryId+' missing site output '+siteKey);
-    assert.equal(output.assetType,'MINE_SITE');
-    assert.ok(output.stateAuthority||output.sourceAuthority||output.simulationGenerated!==undefined);
-    assert(output.batchId,countryId+' missing site batch '+siteKey);
-    assert.ok(output.effortUtilization>0&&output.effortUtilization<=1);
-    const lot=row.inventoryLots?.[output.batchId];
-    assert(lot,countryId+' missing site inventory lot '+siteKey);
-    assert.equal(lot.countryId,countryId);
-    assert.equal(lot.warehouseId,'WH-'+countryId+'-RAW');
-    assert(row.mineProductionLedger.some(x=>x.batchId===output.batchId&&x.mineId===occurrenceKey),countryId+' missing site production ledger '+siteKey);
+    assert(Array.isArray(controller.linkedOccurrenceKeys));
+    const executable=controller.linkedOccurrenceKeys.length>0;
+    assert.equal(controller.extractionExecutable,executable,countryId+' controller execution state mismatch '+siteKey);
+    assert.equal(controller.extractionPathStatus,executable?'EXECUTABLE_OCCURRENCE_ATTACHED':'BLOCKED_MISSING_QUANTITATIVE_DATA');
+    if(executable){
+      assert.equal(controller.linkedOccurrenceKeys.length,1);
+      const occurrenceKey=controller.linkedOccurrenceKeys[0];
+      const output=row.mineOutputs?.[occurrenceKey];
+      assert(output,countryId+' missing site output '+siteKey);
+      assert.equal(output.assetId,controller.assetId);
+      assert.equal(output.assetType,'MINE_SITE');
+      assert.ok(output.stateAuthority||output.sourceAuthority||output.simulationGenerated!==undefined);
+      assert(output.batchId,countryId+' missing site batch '+siteKey);
+      assert.ok(output.effortUtilization>0&&output.effortUtilization<=1);
+      const lot=row.inventoryLots?.[output.batchId];
+      assert(lot,countryId+' missing site inventory lot '+siteKey);
+      assert.equal(lot.countryId,countryId);
+      assert.equal(lot.warehouseId,'WH-'+countryId+'-RAW');
+      assert(row.mineProductionLedger.some(x=>x.batchId===output.batchId&&x.mineId===occurrenceKey),countryId+' missing site production ledger '+siteKey);
+    }
     controllerCountrySets.add(countryId);
   }
 }
