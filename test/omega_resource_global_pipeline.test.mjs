@@ -115,6 +115,7 @@ test('global resource pipeline runs every RESOURCE_JSON mine and keeps each resu
   const reserveResult=part05.compileReserves(idResult,null,knowledge,{});
   const mineSiteReferenceCount=engine.mineSiteReferenceCount;
   const expectedOccurrenceCount=engine.deposits.length+mineSiteReferenceCount;
+  assert.equal(mineSiteReferenceCount,199);
   assert.equal(idResult.occurrenceCount,expectedOccurrenceCount);
   assert.equal(reserveResult.occurrenceCount,expectedOccurrenceCount);
   assert.equal(reserveResult.reserveCount,expectedOccurrenceCount);
@@ -129,8 +130,16 @@ test('global resource pipeline runs every RESOURCE_JSON mine and keeps each resu
   assert.ok(siteRefs.every(x=>x.runtimeExecutionMode==='UNIFIED_PART04_PART05_PIPELINE'));
 
   const siteOccurrences=idResult.registry.listOccurrences().filter(x=>x?.profileDerivedSimulation===true&&x?.siteReferenceKey);
-  const unifiedMineRecordShape=['id','name','countryCode','country','resId','resourceId','resourceTypeId','resourceTypeKey','locationNodeKey','owner','ownerKey','operator','operatorKey','reserves','productionRate','dailyRate','outputRate','grade','physicalState','status'];
-  assert.ok(siteOccurrences.every(x=>unifiedMineRecordShape.every(key=>Object.prototype.hasOwnProperty.call(x.rawDeposit||{},key))), 'Profile mine site missing unified mine-record fields');
+  const unifiedMineRecordShape=[
+    'id','name','country','countryCode','lat','lng','resId','category','reserves','grade','status','owner','operator',
+    'resourceId','resourceTypeId','resourceTypeKey','locationNodeKey','ownerKey','operatorKey',
+    'productionRate','dailyRate','outputRate','physicalState','runtimeExecutionMode'
+  ];
+  const structuredOccurrences=idResult.registry.listOccurrences().filter(x=>x?.profileDerivedSimulation!==true);
+  assert.ok(siteOccurrences.every(x=>unifiedMineRecordShape.every(key=>Object.prototype.hasOwnProperty.call(x.rawDeposit||{},key))), 'Profile mine site missing unified runtime mine-record fields');
+  assert.ok(structuredOccurrences.every(x=>unifiedMineRecordShape.every(key=>Object.prototype.hasOwnProperty.call(x.rawDeposit||{},key))), 'Structured mine missing unified runtime mine-record fields');
+  assert.ok(siteOccurrences.every(x=>x.rawDeposit.runtimeExecutionMode==='UNIFIED_PART04_PART05_PIPELINE'));
+  assert.ok(structuredOccurrences.every(x=>x.rawDeposit.runtimeExecutionMode==='UNIFIED_PART04_PART05_PIPELINE'));
   assert.equal(siteOccurrences.length,mineSiteReferenceCount);
   assert.equal(new Set(siteOccurrences.map(x=>x.siteReferenceKey)).size,mineSiteReferenceCount);
   assert.ok(siteOccurrences.every(x=>x.resourceTypeId&&x.countryId));
