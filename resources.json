@@ -300,6 +300,14 @@
       "unit": "metric_tons",
       "strategicImportance": "high",
       "description": "Ilmenite titanium-iron mineral."
+    },
+    "limestone": {
+      "id": "limestone",
+      "name": "Limestone & Industrial Carbonate Rock",
+      "category": "industrial_mineral",
+      "unit": "metric_tons",
+      "strategicImportance": "important_industrial_mineral",
+      "description": "Industrial limestone and carbonate rock used for cement, lime, aggregates and related processing."
     }
   },
   "GSRSK_Master_Resource_Data_v14": {
@@ -606,6 +614,14 @@
         "unit": "metric_tons",
         "strategicImportance": "high",
         "description": "Ilmenite titanium-iron mineral."
+      },
+      "limestone": {
+        "id": "limestone",
+        "name": "Limestone & Industrial Carbonate Rock",
+        "category": "industrial_mineral",
+        "unit": "metric_tons",
+        "strategicImportance": "important_industrial_mineral",
+        "description": "Industrial limestone and carbonate rock used for cement, lime, aggregates and related processing."
       }
     },
     "processing_plants": {
@@ -993,7 +1009,8 @@
                 "legacyReferenceName": "Bangladesh Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "EXPLICIT_PUBLIC_VALUE_AVAILABLE",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "productionSource": "EMRD dashboard September 2026"
+                "productionSource": "EMRD dashboard September 2026",
+                "webReview": "BCMCL public company site rechecked 2026-09-27"
               },
               "productionRate": 4896.3,
               "productionRateUnit": "metric_tons_per_day",
@@ -1085,7 +1102,21 @@
                   "grade": "OBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "NOT_PER_SITE_VERIFIED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED"
+              },
+              "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
+              "webResearchEvidence": [
+                {
+                  "url": "https://bcmcl.org.bd/",
+                  "accessed": "2026-09-27",
+                  "scope": "site_identity_operator_current_production"
+                }
+              ],
+              "researchMetadata": {
+                "reviewedAt": "2026-09-27",
+                "currentEvidence": "BCMCL identifies the Barapukuria operation and publishes current coal extraction/dispatch figures.",
+                "currentEvidenceDate": "2026-06-13",
+                "sourceAuthority": "BCMCL"
               }
             }
           ],
@@ -1532,7 +1563,8 @@
                 "sourceQuery": "Gevra OC Mine, Korba, Chhattisgarh, IND",
                 "legacyReferenceName": "India Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "EXPLICIT_PUBLIC_VALUE_AVAILABLE",
-                "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
+                "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
+                "webReview": "Coal India/SECL and GEM rechecked 2026-09-27"
               },
               "extractionEligibility": "EXECUTABLE",
               "currentStatus": "ACTIVE_PRODUCING",
@@ -1626,7 +1658,25 @@
                   "grade": "OBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "NOT_PER_SITE_VERIFIED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED"
+              },
+              "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
+              "webResearchEvidence": [
+                {
+                  "url": "https://apps.coalindia.in/ords/f?p=159%3A1%3A321026583883%3A%3A%3A%3A%3A",
+                  "accessed": "2026-09-27",
+                  "scope": "site_identity_operator_current_operational_feed"
+                },
+                {
+                  "url": "https://www.gem.wiki/Gevra_Coal_Mine",
+                  "accessed": "2026-09-27",
+                  "scope": "site_identity_mining_method_capacity"
+                }
+              ],
+              "researchMetadata": {
+                "reviewedAt": "2026-09-27",
+                "currentEvidence": "SECL operates the opencast Gevra coal mine complex; Coal India operational data contains current Gevra mine telemetry.",
+                "sourceAuthority": "Coal India/SECL + Global Energy Monitor"
               }
             }
           ],
@@ -2603,7 +2653,8 @@
                 "sourceQuery": "Kahatagaha Graphite Mine, Kegalle District, LKA",
                 "legacyReferenceName": "Sri Lanka Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "EXPLICIT_PUBLIC_VALUE_AVAILABLE",
-                "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
+                "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
+                "webReview": "Sri Lankan ministry 2025 progress report rechecked 2026-09-27"
               },
               "extractionEligibility": "EXECUTABLE",
               "currentStatus": "ACTIVE_PRODUCING",
@@ -2694,7 +2745,40 @@
                   "grade": "OBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "NOT_PER_SITE_VERIFIED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED"
+              },
+              "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.industry.gov.lk/web/wp-content/uploads/2025/11/Ministry-of-Industry-and-Entrepreneurship-Development-_E_compressed.pdf",
+                  "accessed": "2026-09-27",
+                  "scope": "site_operator_production_2024_2025_mining_method"
+                }
+              ],
+              "researchMetadata": {
+                "reviewedAt": "2026-09-27",
+                "productionJanSep2025": "451 MT ROM graphite",
+                "productionAprSep2025": "278 MT ROM graphite",
+                "production2024_25": "405 MT ROM graphite",
+                "mineMethod": "underground vein mining",
+                "sourceAuthority": "Sri Lanka Ministry of Industry; Kahatagaha Graphite Lanka"
+              },
+              "webVerifiedMetrics": {
+                "productionJanSep2025": {
+                  "value": 451,
+                  "unit": "metric_tons",
+                  "basis": "ROM"
+                },
+                "productionAprSep2025": {
+                  "value": 278,
+                  "unit": "metric_tons",
+                  "basis": "ROM"
+                },
+                "productionFY2024_25": {
+                  "value": 405,
+                  "unit": "metric_tons",
+                  "basis": "ROM"
+                }
               }
             }
           ],
@@ -4196,7 +4280,8 @@
                 "sourceQuery": "Mes Aynak Copper Mine, Logar, AFG",
                 "legacyReferenceName": "Afghanistan Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
-                "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
+                "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
+                "webReview": "MoMP 2026 pages rechecked 2026-09-27"
               },
               "extractionEligibility": "NON_EXECUTABLE",
               "currentStatus": "DEVELOPMENT",
@@ -4287,7 +4372,25 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "NOT_PER_SITE_VERIFIED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED"
+              },
+              "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
+              "webResearchEvidence": [
+                {
+                  "url": "https://momp.gov.af/mes-aynak",
+                  "accessed": "2026-09-27",
+                  "scope": "site_identity_location_project_history"
+                },
+                {
+                  "url": "https://momp.gov.af/review-and-audit-feasibility-study-aynak-copper-mine-project",
+                  "accessed": "2026-09-27",
+                  "scope": "current_project_development_2026"
+                }
+              ],
+              "researchMetadata": {
+                "reviewedAt": "2026-09-27",
+                "currentEvidence": "Afghanistan's Ministry of Mines lists Mes Aynak as the Logar copper project and issued a 2026 tender to review/audit its feasibility study; 2026 reporting also describes work toward construction.",
+                "sourceAuthority": "Afghanistan Ministry of Mines and Petroleum"
               }
             }
           ],
@@ -5812,7 +5915,8 @@
                 "sourceQuery": "Sukari Gold Mine, Eastern Desert, EGY",
                 "legacyReferenceName": "Egypt Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "EXPLICIT_PUBLIC_VALUE_AVAILABLE",
-                "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
+                "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
+                "webReview": "AngloGold Ashanti 2025 operational report and current asset page rechecked 2026-09-27"
               },
               "extractionEligibility": "EXECUTABLE",
               "currentStatus": "ACTIVE_PRODUCING",
@@ -5903,7 +6007,40 @@
                   "grade": "OBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "NOT_PER_SITE_VERIFIED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED"
+              },
+              "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.anglogoldashanti.com/portfolio/africa/sukari-egypt/",
+                  "accessed": "2026-09-27",
+                  "scope": "site_identity_owner_operator_mining_method_reserve_production_2025"
+                },
+                {
+                  "url": "https://reports.anglogoldashanti.com/25/wp-content/uploads/2026/03/AGA-OP25.pdf",
+                  "accessed": "2026-09-27",
+                  "scope": "2025_operational_profile"
+                }
+              ],
+              "researchMetadata": {
+                "reviewedAt": "2026-09-27",
+                "goldProduction2025": "500000 oz attributable",
+                "attributableReserve2025": "2.36 Moz at 2025-12-31",
+                "miningMethod": "open pit + underground",
+                "owner": "Egyptian Mineral Resources and Mining Industries Authority 50%; AngloGold Ashanti subsidiary 50%",
+                "sourceAuthority": "AngloGold Ashanti"
+              },
+              "webVerifiedMetrics": {
+                "goldProduction2025": {
+                  "value": 500000,
+                  "unit": "troy_ounces",
+                  "basis": "attributable"
+                },
+                "mineralReserve2025": {
+                  "value": 2360000,
+                  "unit": "troy_ounces_gold",
+                  "basis": "attributable"
+                }
               }
             }
           ],
@@ -6347,7 +6484,8 @@
                 "sourceQuery": "Sharara Oil Field, Murzuq Basin, LBY",
                 "legacyReferenceName": "Libya Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
-                "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
+                "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
+                "webReview": "Reuters/NOC current event rechecked 2026-09-27"
               },
               "extractionEligibility": "EXECUTABLE",
               "currentStatus": "ACTIVE_PRODUCING",
@@ -6439,8 +6577,23 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "NOT_PER_SITE_VERIFIED"
-              }
+                "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED"
+              },
+              "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.reuters.com/business/energy/armed-group-shuts-valve-libyas-sharara-crude-pipeline-cuts-output-noc-says-2026-09-21/",
+                  "accessed": "2026-09-27",
+                  "scope": "current_2026_operational_disruption"
+                }
+              ],
+              "researchMetadata": {
+                "reviewedAt": "2026-09-27",
+                "currentOperationalCondition": "Output was significantly reduced on 2026-09-21 after a valve on the Sharara crude pipeline was closed; National Oil Corporation reported the disruption.",
+                "sourceAuthority": "Reuters citing Libya NOC",
+                "currentEventDate": "2026-09-21"
+              },
+              "currentOperationalCondition": "OUTPUT_REDUCED_PIPELINE_DISRUPTION"
             }
           ],
           "processingFacilities": [
@@ -10612,7 +10765,8 @@
                 "sourceQuery": "Sangaredi Bauxite Mine, Boké, GIN",
                 "legacyReferenceName": "Guinea Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
-                "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
+                "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
+                "webReview": "Rio Tinto/CBG and IFC CAO current pages rechecked 2026-09-27"
               },
               "extractionEligibility": "EXECUTABLE",
               "currentStatus": "ACTIVE_PRODUCING",
@@ -10702,7 +10856,34 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "NOT_PER_SITE_VERIFIED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED"
+              },
+              "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.riotinto.com/en/operations/africa/cbg",
+                  "accessed": "2026-09-27",
+                  "scope": "site_identity_owner_capacity_location"
+                },
+                {
+                  "url": "https://www.cao-ombudsman.org/case/guinea-cbg-01-sangaredi",
+                  "accessed": "2026-09-27",
+                  "scope": "project_ownership_and_expansion"
+                }
+              ],
+              "researchMetadata": {
+                "reviewedAt": "2026-09-27",
+                "annualCapacity": "18.5 million tonnes bauxite",
+                "ownership": "Halco 51%; Government of Guinea 49%; Rio Tinto holds 22.95% of mine through Halco",
+                "opened": "1973",
+                "sourceAuthority": "Rio Tinto/CBG + IFC CAO"
+              },
+              "webVerifiedMetrics": {
+                "annualCapacity": {
+                  "value": 18500000,
+                  "unit": "metric_tons_bauxite",
+                  "basis": "annual_capacity"
+                }
               }
             }
           ],
@@ -12202,7 +12383,8 @@
                 "sourceQuery": "Ity Gold Mine, Zouan-Hounien, CIV",
                 "legacyReferenceName": "Côte d'Ivoire Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
-                "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
+                "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
+                "webReview": "Endeavour Mining current Ity asset page rechecked 2026-09-27"
               },
               "extractionEligibility": "EXECUTABLE",
               "currentStatus": "ACTIVE_PRODUCING",
@@ -12289,7 +12471,30 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "NOT_PER_SITE_VERIFIED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED"
+              },
+              "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.endeavourmining.com/our-portfolio/ity-mine/",
+                  "accessed": "2026-09-27",
+                  "scope": "site_identity_operator_production_2025_mine_history"
+                }
+              ],
+              "researchMetadata": {
+                "reviewedAt": "2026-09-27",
+                "production2025": "319 koz gold",
+                "productionHistory": "over 1.4 Moz produced since 1991",
+                "operatorOwnership": "Endeavour Mining 85% stake",
+                "processing": "CIL plant",
+                "sourceAuthority": "Endeavour Mining"
+              },
+              "webVerifiedMetrics": {
+                "goldProduction2025": {
+                  "value": 319000,
+                  "unit": "troy_ounces",
+                  "basis": "site_production"
+                }
               }
             }
           ],
@@ -12734,7 +12939,8 @@
                 "sourceQuery": "Tarkwa Gold Mine, Western Region, GHA",
                 "legacyReferenceName": "Ghana Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "EXPLICIT_PUBLIC_VALUE_AVAILABLE",
-                "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
+                "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
+                "webReview": "Gold Fields and Ghana Minerals Commission current data rechecked 2026-09-27"
               },
               "extractionEligibility": "EXECUTABLE",
               "currentStatus": "ACTIVE_PRODUCING",
@@ -12825,7 +13031,45 @@
                   "grade": "OBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "NOT_PER_SITE_VERIFIED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED"
+              },
+              "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.goldfields.com/reports/q4-2026/review-commentary.php",
+                  "accessed": "2026-09-27",
+                  "scope": "2025_operating_statistics"
+                },
+                {
+                  "url": "https://www.goldfields.com/pdf/investors/integrated-annual-reports/2025/iar-2025-interactive.pdf",
+                  "accessed": "2026-09-27",
+                  "scope": "ownership_mining_method_2025_production_2026_guidance"
+                }
+              ],
+              "researchMetadata": {
+                "reviewedAt": "2026-09-27",
+                "mineMethod": "open pit",
+                "ownership": "Gold Fields 90%; Government of Ghana 10%",
+                "production2025": "474.5 koz gold",
+                "oreMined2025": "10.649 Mt at 1.23 g/t Au",
+                "sourceAuthority": "Gold Fields + Ghana Minerals Commission"
+              },
+              "webVerifiedMetrics": {
+                "goldProduction2025": {
+                  "value": 474500,
+                  "unit": "troy_ounces",
+                  "basis": "site_production"
+                },
+                "oreMined2025": {
+                  "value": 10649000,
+                  "unit": "metric_tons",
+                  "basis": "ore_mined"
+                },
+                "gradeMined2025": {
+                  "value": 1.23,
+                  "unit": "grams_per_tonne_gold",
+                  "basis": "ore_grade"
+                }
               }
             }
           ],
@@ -14326,7 +14570,8 @@
                 "sourceQuery": "Essakane Gold Mine, Sahel Region, BFA",
                 "legacyReferenceName": "Burkina Faso Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
-                "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
+                "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
+                "webReview": "IAMGOLD 2025 annual SEC filings rechecked 2026-09-27"
               },
               "extractionEligibility": "EXECUTABLE",
               "currentStatus": "ACTIVE_PRODUCING",
@@ -14413,7 +14658,52 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "NOT_PER_SITE_VERIFIED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED"
+              },
+              "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.sec.gov/Archives/edgar/data/1203464/000106299326001022/exhibit99-1.htm",
+                  "accessed": "2026-09-27",
+                  "scope": "2025_production_ore_milled_grade_recovery"
+                },
+                {
+                  "url": "https://www.sec.gov/Archives/edgar/data/1203464/000162828026008683/q42025mda.htm",
+                  "accessed": "2026-09-27",
+                  "scope": "2025_Q4_mining_operations"
+                }
+              ],
+              "researchMetadata": {
+                "reviewedAt": "2026-09-27",
+                "goldProduction2025": "427,200 oz 100% basis; 372,100 oz attributable",
+                "oreMilled2025": "12.56 Mt",
+                "headGrade2025": "1.18 g/t Au",
+                "recovery2025": "90%",
+                "sourceAuthority": "IAMGOLD SEC filings"
+              },
+              "webVerifiedMetrics": {
+                "goldProduction2025": {
+                  "value": 427200,
+                  "unit": "troy_ounces",
+                  "basis": "100% mine"
+                },
+                "attributableGoldProduction2025": {
+                  "value": 372100,
+                  "unit": "troy_ounces",
+                  "basis": "company_attributable"
+                },
+                "oreMilled2025": {
+                  "value": 12560000,
+                  "unit": "metric_tons"
+                },
+                "headGrade2025": {
+                  "value": 1.18,
+                  "unit": "grams_per_tonne_gold"
+                },
+                "recovery2025": {
+                  "value": 90,
+                  "unit": "percent"
+                }
               }
             }
           ],
@@ -14852,7 +15142,8 @@
                 "sourceQuery": "Loulo-Gounkoto Complex, Kayes, MLI",
                 "legacyReferenceName": "Mali Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
-                "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
+                "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
+                "webReview": "Barrick SEC filing and Reuters September 2026 coverage rechecked 2026-09-27"
               },
               "extractionEligibility": "EXECUTABLE",
               "currentStatus": "ACTIVE_PRODUCING",
@@ -14939,7 +15230,33 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "NOT_PER_SITE_VERIFIED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED"
+              },
+              "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.sec.gov/Archives/edgar/data/756894/000119312526343857/d67611dex992.htm",
+                  "accessed": "2026-09-27",
+                  "scope": "2026_H1_current_mining_production"
+                },
+                {
+                  "url": "https://www.reuters.com/business/world-at-work/multiple-unions-threaten-strikes-barricks-flagship-mali-gold-mine-documents-show-2026-09-18/",
+                  "accessed": "2026-09-27",
+                  "scope": "current_operations_labor_disruption_risk"
+                }
+              ],
+              "researchMetadata": {
+                "reviewedAt": "2026-09-27",
+                "current2026H1Production": "190,000 oz gold",
+                "currentMiningStatus": "operational control returned to mine management and production resumed in 2026; labor strike notices reported for late September",
+                "sourceAuthority": "Barrick SEC filing + Reuters"
+              },
+              "webVerifiedMetrics": {
+                "goldProduction2026H1": {
+                  "value": 190000,
+                  "unit": "troy_ounces",
+                  "basis": "site_attributable_80_percent"
+                }
               }
             }
           ],
@@ -20153,7 +20470,8 @@
                 "sourceQuery": "Kamoa-Kakula Copper Complex, Lualaba, COD",
                 "legacyReferenceName": "Democratic Republic of the Congo Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "EXPLICIT_PUBLIC_VALUE_AVAILABLE",
-                "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
+                "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
+                "webReview": "Ivanhoe Mines and Kamoa Copper current pages rechecked 2026-09-27"
               },
               "extractionEligibility": "EXECUTABLE",
               "currentStatus": "ACTIVE_PRODUCING",
@@ -20248,7 +20566,42 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "NOT_PER_SITE_VERIFIED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED"
+              },
+              "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.ivanhoemines.com/news-stories/news-release/ivanhoe-mines-issues-2025-fourth-quarter-and-annual-financial-results/",
+                  "accessed": "2026-09-27",
+                  "scope": "2025_production_grade_milled_current_2026_guidance"
+                },
+                {
+                  "url": "https://www.kamoacopper.com/en/q3-operational-update/",
+                  "accessed": "2026-09-27",
+                  "scope": "2025_operational_mining_and_processing"
+                }
+              ],
+              "researchMetadata": {
+                "reviewedAt": "2026-09-27",
+                "production2025": "388,841 t copper in concentrate",
+                "oreMilled2025": "14.3 Mt",
+                "averageGrade2025": "3.14% Cu",
+                "mineMethod": "underground",
+                "sourceAuthority": "Ivanhoe Mines/Kamoa Copper"
+              },
+              "webVerifiedMetrics": {
+                "copperProduction2025": {
+                  "value": 388841,
+                  "unit": "metric_tons_copper_in_concentrate"
+                },
+                "oreMilled2025": {
+                  "value": 14300000,
+                  "unit": "metric_tons"
+                },
+                "averageFeedGrade2025": {
+                  "value": 3.14,
+                  "unit": "percent_copper"
+                }
               }
             }
           ],
@@ -23325,7 +23678,8 @@
                 "sourceQuery": "Geita Gold Mine, Geita, TZA",
                 "legacyReferenceName": "Tanzania Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
-                "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
+                "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
+                "webReview": "AngloGold Ashanti 2025 technical report and annual report rechecked 2026-09-27"
               },
               "extractionEligibility": "EXECUTABLE",
               "currentStatus": "ACTIVE_PRODUCING",
@@ -23412,7 +23766,42 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "NOT_PER_SITE_VERIFIED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED"
+              },
+              "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.sec.gov/Archives/edgar/data/1973832/000197383226000062/geitatechnicalreportsumm.htm",
+                  "accessed": "2026-09-27",
+                  "scope": "2025_production_grade_recovery_mining_method"
+                },
+                {
+                  "url": "https://www.sec.gov/Archives/edgar/data/1973832/000197383226000070/a12025agaukannualreport_25.pdf",
+                  "accessed": "2026-09-27",
+                  "scope": "2025_operational_performance"
+                }
+              ],
+              "researchMetadata": {
+                "reviewedAt": "2026-09-27",
+                "goldProduction2025": "491,644 oz",
+                "headGrade2025": "3.26 g/t Au",
+                "plantRecovery2025": "90.2%",
+                "miningMethod": "open pit + underground",
+                "sourceAuthority": "AngloGold Ashanti SEC filings"
+              },
+              "webVerifiedMetrics": {
+                "goldProduction2025": {
+                  "value": 491644,
+                  "unit": "troy_ounces"
+                },
+                "headGrade2025": {
+                  "value": 3.26,
+                  "unit": "grams_per_tonne_gold"
+                },
+                "plantRecovery2025": {
+                  "value": 90.2,
+                  "unit": "percent"
+                }
               }
             }
           ],
@@ -41441,7 +41830,8 @@
                 "sourceQuery": "Leviathan Gas Field, Eastern Mediterranean, ISR",
                 "legacyReferenceName": "Israel Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
-                "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
+                "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
+                "webReview": "Chevron and GEM current pages rechecked 2026-09-27"
               },
               "extractionEligibility": "EXECUTABLE",
               "currentStatus": "ACTIVE_PRODUCING",
@@ -41532,7 +41922,29 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "NOT_PER_SITE_VERIFIED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED"
+              },
+              "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.chevron.com/newsroom/2026/q1/chevron-takes-final-investment-decision-on-leviathan-gas-expansion",
+                  "accessed": "2026-09-27",
+                  "scope": "operator_ownership_current_expansion_2026"
+                },
+                {
+                  "url": "https://www.gem.wiki/Leviathan_Gas_Field_%28Israel%29",
+                  "accessed": "2026-09-27",
+                  "scope": "field_identity_status_operator_owner"
+                }
+              ],
+              "researchMetadata": {
+                "reviewedAt": "2026-09-27",
+                "operator": "Chevron Mediterranean Limited",
+                "workingInterest": "Chevron 39.66%; NewMed Energy 45.34%; Ratio Energies 15%",
+                "productionStartYear": 2019,
+                "currentStatus": "operating",
+                "expansion": "FID January 2026; three additional offshore wells planned; expansion targets approximately 21 BCM/year total gas delivery",
+                "sourceAuthority": "Chevron + GEM"
               }
             }
           ],
@@ -41937,11 +42349,11 @@
               "lat": 31.4,
               "lng": 34.3,
               "locationNodeKey": "ASSET:PSE:gaza_marine_gas_field",
-              "status": "UNDEVELOPED",
-              "operationalStatus": "UNDEVELOPED",
-              "owner": "Palestinian Authority / concession partners",
-              "operator": "No current producer",
-              "extractionMethod": "planned offshore production",
+              "status": "DEVELOPMENT",
+              "operationalStatus": "DEVELOPMENT",
+              "owner": "Palestine Investment Fund / CCC Oil & Gas with development-right restructuring",
+              "operator": "Development consortium / planned international operator",
+              "extractionMethod": "offshore subsea wells; subsea pipeline to Al-Arish, Egypt",
               "startYear": 2000,
               "legacyReferenceName": "Palestine Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -41961,7 +42373,7 @@
                 "identity": "OBSERVED",
                 "location": "ESTIMATED_SITE_POINT",
                 "resource": "OBSERVED",
-                "reserve": "UNOBSERVED",
+                "reserve": "DECLARED",
                 "production": "UNOBSERVED",
                 "grade": "UNOBSERVED",
                 "ownership": "OBSERVED",
@@ -41976,10 +42388,11 @@
                 "sourceQuery": "Gaza Marine Gas Field, Offshore Gaza, PSE",
                 "legacyReferenceName": "Palestine Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
-                "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
+                "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
+                "webReview": "PIF, PIF projects and CC Energy current pages rechecked 2026-09-27"
               },
               "extractionEligibility": "NON_EXECUTABLE",
-              "currentStatus": "UNDEVELOPED",
+              "currentStatus": "DEVELOPMENT",
               "statusAuthority": "OBSERVED",
               "commercialExtraction": true,
               "siteIdentity": {
@@ -42014,9 +42427,9 @@
               },
               "quantitativeProfile": {
                 "reserve": {
-                  "quantity": null,
-                  "unit": null,
-                  "status": "UNOBSERVED"
+                  "quantity": 31,
+                  "unit": "billion_cubic_meters",
+                  "status": "DECLARED"
                 },
                 "production": {
                   "annual": null,
@@ -42067,7 +42480,47 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "NOT_PER_SITE_VERIFIED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED"
+              },
+              "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
+              "webResearchEvidence": [
+                {
+                  "url": "https://pifprojects.ps/en/projects-under-construction/%D8%AD%D9%82%D9%84-%D8%A7%D9%84%D8%BA%D8%A7%D8%B2-%D8%A7%D9%84%D9%81%D9%84%D8%B3%D8%B7%D9%8A%D9%86%D9%8A-%D8%BA%D8%B2%D8%A9-%D9%85%D8%A7%D8%B1%D9%8A%D9%86/",
+                  "accessed": "2026-09-27",
+                  "scope": "current_project_reserve_development"
+                },
+                {
+                  "url": "https://www.pif.ps/items/view/78545",
+                  "accessed": "2026-09-27",
+                  "scope": "2026_license_restructuring"
+                },
+                {
+                  "url": "https://www.ccenergyltd.com/operations/gaza/",
+                  "accessed": "2026-09-27",
+                  "scope": "field_discovery_reserve_license_partners"
+                }
+              ],
+              "researchMetadata": {
+                "reviewedAt": "2026-09-27",
+                "currentStatus": "DEVELOPMENT",
+                "reserve": "approximately 1 TCF / 31-32 BCM declared",
+                "developmentConcept": "six subsea wells and subsea pipeline to Al-Arish, Egypt",
+                "offshoreDistance": "approximately 35 km west of Gaza",
+                "sourceAuthority": "Palestine Investment Fund / CC Energy"
+              },
+              "webVerifiedMetrics": {
+                "declaredGasReserve": {
+                  "value": 31,
+                  "unit": "billion_cubic_meters",
+                  "basis": "PIF declared estimate",
+                  "epistemicState": "DECLARED"
+                },
+                "plannedAnnualOutput": {
+                  "value": 1.5,
+                  "unit": "billion_cubic_meters_per_year",
+                  "basis": "PIF declared estimate",
+                  "epistemicState": "DECLARED"
+                }
               }
             }
           ],
