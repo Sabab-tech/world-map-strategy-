@@ -983,8 +983,8 @@
       "resourceTypeId": "phosphate",
       "siteType": "MINE",
       "status": "ACTIVE_PRODUCING",
-      "owner": "CPG",
-      "operator": "CPG",
+      "owner": "Compagnie des Phosphates de Gafsa (CPG)",
+      "operator": "Compagnie des Phosphates de Gafsa (CPG)",
       "extractionMethod": "surface and underground phosphate mining",
       "location": {
         "countryIso3": "TUN",
@@ -1040,15 +1040,30 @@
         },
         "quantitativeExtractionDataAvailable": false
       },
-      "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+      "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
       "researchMetadata": {
         "reviewedAt": "2026-09-27",
         "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
         "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
         "webSearchMethod": "SITE_NAME + COUNTRY",
-        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
+        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
+        "sourceAuthority": "Tunisian Ministry of Energy, Mines and Renewable Energies / ONM / CPG",
+        "currentEvidence": "Tunisia government documentation identifies CPG as the Gafsa phosphate mining company and documents the Mdhilla mining area and associated phosphate production infrastructure."
       },
-      "webResearchEvidence": []
+      "webResearchEvidence": [
+        {
+          "url": "https://www.onm.nat.tn/en/index.php/files/fr/pages/editions/ar/index.php?findtype=details&id=15967&p=notices",
+          "accessed": "2026-09-27",
+          "scope": "site_identity_and_mining_area",
+          "sourceType": "GOVERNMENT"
+        },
+        {
+          "url": "https://www.energiemines.gov.tn/fr/themes/mines/developpement-des-ressources-minieres/phosphate/projets-et-etudes/oum-lakhcheb/",
+          "accessed": "2026-09-27",
+          "scope": "regional_phosphate_operations_and_mining_context",
+          "sourceType": "GOVERNMENT"
+        }
+      ]
     },
     {
       "countryId": "SDN",
@@ -1057,8 +1072,8 @@
       "resourceTypeId": "gold",
       "siteType": "MINE",
       "status": "DISRUPTED",
-      "owner": "Ariab Mining / Sudan interests",
-      "operator": "Ariab Mining",
+      "owner": "Ariab Mining Company (AMC)",
+      "operator": "Ariab Mining Company (AMC)",
       "extractionMethod": "open-pit and underground",
       "location": {
         "countryIso3": "SDN",
@@ -1110,15 +1125,24 @@
         },
         "quantitativeExtractionDataAvailable": false
       },
-      "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+      "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
       "researchMetadata": {
         "reviewedAt": "2026-09-27",
         "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
         "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
         "webSearchMethod": "SITE_NAME + COUNTRY",
-        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
+        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
+        "sourceAuthority": "Ariab Mining Company",
+        "currentEvidence": "AMC states that it holds and operates large concessions in the Red Sea Hills, with the Hassai camp serving nearby mine operations and heap-leach/CIL processing infrastructure."
       },
-      "webResearchEvidence": []
+      "webResearchEvidence": [
+        {
+          "url": "https://ariabmining.net/operations/",
+          "accessed": "2026-09-27",
+          "scope": "ownership_operator_processing_and_current_operations",
+          "sourceType": "OPERATOR"
+        }
+      ]
     },
     {
       "countryId": "MRT",
@@ -2722,9 +2746,9 @@
       "siteName": "Mayoko Iron Ore Mine",
       "resourceTypeId": "iron_ore",
       "siteType": "MINE",
-      "status": "DEVELOPMENT",
-      "owner": "Sapro Mayoko / state interests",
-      "operator": "Sapro Mayoko",
+      "status": "SUSPENDED",
+      "owner": "Sapro Mayoko SA / Sapro group interests",
+      "operator": "Sapro Mayoko SA",
       "extractionMethod": "open-pit",
       "location": {
         "countryIso3": "COG",
@@ -2776,15 +2800,31 @@
         },
         "quantitativeExtractionDataAvailable": false
       },
-      "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+      "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
       "researchMetadata": {
         "reviewedAt": "2026-09-27",
         "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
         "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
         "webSearchMethod": "SITE_NAME + COUNTRY",
-        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
+        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
+        "sourceAuthority": "Wood Mackenzie / Sapro",
+        "currentEvidence": "Public industry reporting describes small production in 2018 followed by suspension in early 2020, with the project seeking finance for rail infrastructure to restore commercial viability.",
+        "currentInterpretation": "No current commercial extraction should be assumed from the legacy DEVELOPMENT label."
       },
-      "webResearchEvidence": []
+      "webResearchEvidence": [
+        {
+          "url": "https://www.woodmac.com/reports/metals-mayoko-iron-ore-mine-4783624/",
+          "accessed": "2026-09-27",
+          "scope": "current_status_suspension_and_development_constraints",
+          "sourceType": "INDUSTRY_ANALYSIS"
+        },
+        {
+          "url": "https://www.sapro-group.com/",
+          "accessed": "2026-09-27",
+          "scope": "operator_identity_and_project_context",
+          "sourceType": "OPERATOR"
+        }
+      ]
     },
     {
       "countryId": "AGO",
@@ -3188,15 +3228,25 @@
         },
         "quantitativeExtractionDataAvailable": false
       },
-      "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+      "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
       "researchMetadata": {
         "reviewedAt": "2026-09-27",
         "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
         "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
         "webSearchMethod": "SITE_NAME + COUNTRY",
-        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
+        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
+        "sourceAuthority": "USGS National Minerals Information Center",
+        "currentEvidence": "USGS reports that aggregates, basalt, sand and gravel may be produced in São Tomé and Príncipe, but available information is inadequate for reliable output estimates; the national mineral-sector regulator is the Directorate General for Natural Resources and Energy.",
+        "dataLimitation": "No site-specific commercial owner/operator is asserted without evidence."
       },
-      "webResearchEvidence": []
+      "webResearchEvidence": [
+        {
+          "url": "https://www.usgs.gov/centers/national-minerals-information-center/sao-tome-e-principe",
+          "accessed": "2026-09-27",
+          "scope": "resource_identity_regulatory_context_and_data_limitation",
+          "sourceType": "GOVERNMENT_GEOLOGICAL_SURVEY"
+        }
+      ]
     },
     {
       "countryId": "ETH",
@@ -3206,7 +3256,7 @@
       "siteType": "MINE",
       "status": "SUSPENDED",
       "owner": "Ethiopian state / former concession",
-      "operator": "Former MIDROC",
+      "operator": "UNOBSERVED",
       "extractionMethod": "open-pit and underground",
       "location": {
         "countryIso3": "ETH",
@@ -3450,8 +3500,8 @@
       "resourceTypeId": "limestone",
       "siteType": "QUARRY",
       "status": "ACTIVE_PRODUCING",
-      "owner": "Cement-sector operators",
-      "operator": "Hima Cement",
+      "owner": "Tororo Cement Limited",
+      "operator": "Tororo Cement Limited",
       "extractionMethod": "surface quarrying",
       "location": {
         "countryIso3": "UGA",
@@ -3503,15 +3553,31 @@
         },
         "quantitativeExtractionDataAvailable": false
       },
-      "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+      "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
       "researchMetadata": {
         "reviewedAt": "2026-09-27",
         "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
         "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
         "webSearchMethod": "SITE_NAME + COUNTRY",
-        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
+        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
+        "sourceAuthority": "Tororo Cement / Uganda EITI",
+        "currentEvidence": "Tororo Cement identifies Tororo carbonate limestone as the raw material base for its cement operation; Uganda EITI licensing records associate Tororo Cement with limestone-related mining licences.",
+        "locationContext": "Tororo, eastern Uganda"
       },
-      "webResearchEvidence": []
+      "webResearchEvidence": [
+        {
+          "url": "https://www.tororocement.com/company-overview/",
+          "accessed": "2026-09-27",
+          "scope": "resource_identity_company_and_location",
+          "sourceType": "OPERATOR"
+        },
+        {
+          "url": "https://www.tororocement.com/location-contacts/",
+          "accessed": "2026-09-27",
+          "scope": "site_region_and_operator_identity",
+          "sourceType": "OPERATOR"
+        }
+      ]
     },
     {
       "countryId": "RWA",
@@ -3910,8 +3976,8 @@
       "resourceTypeId": "crude_oil",
       "siteType": "OIL_FIELD",
       "status": "ACTIVE_PRODUCING",
-      "owner": "NilePet / consortium",
-      "operator": "Dar Petroleum",
+      "owner": "Dar Petroleum Operating Company (DPOC)",
+      "operator": "Dar Petroleum Operating Company (DPOC)",
       "extractionMethod": "onshore production wells",
       "location": {
         "countryIso3": "SSD",
@@ -3968,15 +4034,24 @@
         },
         "quantitativeExtractionDataAvailable": false
       },
-      "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+      "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
       "researchMetadata": {
         "reviewedAt": "2026-09-27",
         "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
         "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
         "webSearchMethod": "SITE_NAME + COUNTRY",
-        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
+        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
+        "sourceAuthority": "Global Energy Monitor",
+        "currentEvidence": "GEM identifies Paloch/Palogue as an operating conventional oil field with DPOC as operator and owner of record in its current project database."
       },
-      "webResearchEvidence": []
+      "webResearchEvidence": [
+        {
+          "url": "https://www.gem.wiki/Palouch_oil_field",
+          "accessed": "2026-09-27",
+          "scope": "field_identity_owner_operator_and_operating_status",
+          "sourceType": "INDUSTRY_DATABASE"
+        }
+      ]
     },
     {
       "countryId": "MWI",
@@ -4768,7 +4843,7 @@
       "resourceTypeId": "coal",
       "siteType": "COAL_MINE",
       "status": "ACTIVE_PRODUCING",
-      "owner": "Vulcan",
+      "owner": "Vulcan International",
       "operator": "Vulcan Moçambique",
       "extractionMethod": "open-pit",
       "location": {
@@ -4824,15 +4899,30 @@
         },
         "quantitativeExtractionDataAvailable": false
       },
-      "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+      "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
       "researchMetadata": {
         "reviewedAt": "2026-09-27",
         "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
         "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
         "webSearchMethod": "SITE_NAME + COUNTRY",
-        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
+        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
+        "sourceAuthority": "Vulcan International",
+        "currentEvidence": "Vulcan identifies itself as responsible for operating the Moatize Coal Mine and describes the concession in Tete, with metallurgical and thermal coal production and estimated reserves of 2.3 billion tonnes."
       },
-      "webResearchEvidence": []
+      "webResearchEvidence": [
+        {
+          "url": "https://www.vulcaninternational.com/",
+          "accessed": "2026-09-27",
+          "scope": "current_operator_and_corporate_identity",
+          "sourceType": "OPERATOR"
+        },
+        {
+          "url": "https://www.vulcaninternational.com/products-services/",
+          "accessed": "2026-09-27",
+          "scope": "mine_location_resource_types_reserves_and_processing",
+          "sourceType": "OPERATOR"
+        }
+      ]
     },
     {
       "countryId": "LSO",
@@ -4990,8 +5080,8 @@
       "resourceTypeId": "gold",
       "siteType": "MINE",
       "status": "ACTIVE_PRODUCING",
-      "owner": "Ma'aden",
-      "operator": "Ma'aden Gold and Base Metals",
+      "owner": "Ma’aden",
+      "operator": "Ma’aden Gold and Base Metals Company",
       "extractionMethod": "open-pit and CIL",
       "location": {
         "countryIso3": "SAU",
@@ -5043,15 +5133,30 @@
         },
         "quantitativeExtractionDataAvailable": false
       },
-      "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+      "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
       "researchMetadata": {
         "reviewedAt": "2026-09-27",
         "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
         "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
         "webSearchMethod": "SITE_NAME + COUNTRY",
-        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
+        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
+        "sourceAuthority": "Saudipedia / Ma’aden",
+        "currentEvidence": "Ad Duwayhi is a Ma’aden-operated gold mine in Makkah Region with commercial production from 2016 and reported annual capacity around 180,000 troy ounces."
       },
-      "webResearchEvidence": []
+      "webResearchEvidence": [
+        {
+          "url": "https://saudipedia.com/en/ad-duwayhi-gold-mine",
+          "accessed": "2026-09-27",
+          "scope": "mine_identity_operator_capacity_processing_and_location",
+          "sourceType": "GOVERNMENT"
+        },
+        {
+          "url": "https://www.maaden.com/",
+          "accessed": "2026-09-27",
+          "scope": "corporate_operator_identity",
+          "sourceType": "OPERATOR"
+        }
+      ]
     },
     {
       "countryId": "ARE",
@@ -5130,7 +5235,7 @@
       "siteType": "GAS_FIELD",
       "status": "ACTIVE_PRODUCING",
       "owner": "QatarEnergy",
-      "operator": "QatarEnergy LNG",
+      "operator": "QatarEnergy",
       "extractionMethod": "offshore platforms and subsea wells",
       "location": {
         "countryIso3": "QAT",
@@ -5186,15 +5291,32 @@
         },
         "quantitativeExtractionDataAvailable": false
       },
-      "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+      "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
       "researchMetadata": {
         "reviewedAt": "2026-09-27",
         "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
         "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
         "webSearchMethod": "SITE_NAME + COUNTRY",
-        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
+        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
+        "sourceAuthority": "QatarEnergy / Reuters",
+        "currentEvidence": "QatarEnergy identifies North Field as the world’s largest single non-associated gas field and operates its offshore production facilities; September 2026 reporting notes damage to parts of LNG export capacity and possible delays to expansion projects.",
+        "currentProductionContext": "The field remains a producing asset; downstream LNG export capacity has been affected by 2026 infrastructure damage.",
+        "capacity2025Context": "QatarEnergy investor material lists 77 MTPA current North Field LNG capacity."
       },
-      "webResearchEvidence": []
+      "webResearchEvidence": [
+        {
+          "url": "https://www.qatarenergy.qa/en/MediaCenter/Publications/QatarEnergy_Investors_Presentation_November_2025.pdf",
+          "accessed": "2026-09-27",
+          "scope": "field_identity_reserves_and_current_lng_capacity_context",
+          "sourceType": "OPERATOR"
+        },
+        {
+          "url": "https://www.reuters.com/business/energy/qatarenergy-says-hormuz-crisis-may-delay-some-expansion-projects-2026-09-20/",
+          "accessed": "2026-09-27",
+          "scope": "current_2026_operational_and_expansion_risk",
+          "sourceType": "NEWS"
+        }
+      ]
     },
     {
       "countryId": "KWT",
@@ -5203,8 +5325,8 @@
       "resourceTypeId": "crude_oil",
       "siteType": "OIL_FIELD",
       "status": "ACTIVE_PRODUCING",
-      "owner": "KPC",
-      "operator": "Kuwait Oil Company",
+      "owner": "Kuwait Petroleum Corporation (KPC)",
+      "operator": "Kuwait Oil Company (KOC)",
       "extractionMethod": "onshore drilling and gathering",
       "location": {
         "countryIso3": "KWT",
@@ -5261,15 +5383,24 @@
         },
         "quantitativeExtractionDataAvailable": false
       },
-      "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+      "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
       "researchMetadata": {
         "reviewedAt": "2026-09-27",
         "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
         "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
         "webSearchMethod": "SITE_NAME + COUNTRY",
-        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
+        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
+        "sourceAuthority": "Kuwait Oil Company / public field references",
+        "currentEvidence": "Greater Burgan is Kuwait’s major onshore producing field complex comprising Burgan, Magwa and Ahmadi; KOC is the operating company."
       },
-      "webResearchEvidence": []
+      "webResearchEvidence": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Greater_Burgan_Field",
+          "accessed": "2026-09-27",
+          "scope": "field_identity_location_operator_and_structure",
+          "sourceType": "SECONDARY_REFERENCE"
+        }
+      ]
     },
     {
       "countryId": "OMN",
@@ -5352,8 +5483,8 @@
       "resourceTypeId": "crude_oil",
       "siteType": "OIL_FIELD",
       "status": "ACTIVE_PRODUCING",
-      "owner": "Bapco / NOGA",
-      "operator": "Bapco Energies",
+      "owner": "Bahrain / Bapco Energies",
+      "operator": "Bapco Upstream",
       "extractionMethod": "onshore well-field",
       "location": {
         "countryIso3": "BHR",
@@ -5410,15 +5541,30 @@
         },
         "quantitativeExtractionDataAvailable": false
       },
-      "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+      "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
       "researchMetadata": {
         "reviewedAt": "2026-09-27",
         "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
         "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
         "webSearchMethod": "SITE_NAME + COUNTRY",
-        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
+        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
+        "sourceAuthority": "Kingdom of Bahrain / Bapco Energies",
+        "currentEvidence": "Bahrain public documentation identifies Awali as the country’s only onshore oil field and Bapco Upstream as the operating entity; 2025 average crude production was reported at 37,007 barrels per day."
       },
-      "webResearchEvidence": []
+      "webResearchEvidence": [
+        {
+          "url": "https://www.bapcoenergies.com/",
+          "accessed": "2026-09-27",
+          "scope": "operator_identity",
+          "sourceType": "OPERATOR"
+        },
+        {
+          "url": "https://www.bahrain.bh/",
+          "accessed": "2026-09-27",
+          "scope": "national_field_and_energy_sector_context",
+          "sourceType": "GOVERNMENT"
+        }
+      ]
     },
     {
       "countryId": "YEM",
@@ -5427,8 +5573,8 @@
       "resourceTypeId": "crude_oil",
       "siteType": "OIL_FIELD",
       "status": "DISRUPTED",
-      "owner": "Yemen state / consortium",
-      "operator": "Safer E&P",
+      "owner": "Republic of Yemen / state oil interests",
+      "operator": "Safer Exploration & Production Operations Company (SEPOC)",
       "extractionMethod": "onshore drilling",
       "location": {
         "countryIso3": "YEM",
@@ -5485,15 +5631,30 @@
         },
         "quantitativeExtractionDataAvailable": false
       },
-      "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+      "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
       "researchMetadata": {
         "reviewedAt": "2026-09-27",
         "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
         "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
         "webSearchMethod": "SITE_NAME + COUNTRY",
-        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
+        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
+        "sourceAuthority": "SEPOC / Yemen Ministry of Oil and Minerals",
+        "currentEvidence": "SEPOC states that it has operated and managed Block 18 Marib-Al Jawf petroleum operations since November 2005 and continues operating under current war conditions."
       },
-      "webResearchEvidence": []
+      "webResearchEvidence": [
+        {
+          "url": "https://www.sepocye.com/",
+          "accessed": "2026-09-27",
+          "scope": "operator_identity_and_current_operations",
+          "sourceType": "OPERATOR"
+        },
+        {
+          "url": "https://www.sepocye.com/DEFAULTDET.ASPX?SUB_ID=171020",
+          "accessed": "2026-09-27",
+          "scope": "2026_current_operational_context",
+          "sourceType": "OPERATOR"
+        }
+      ]
     },
     {
       "countryId": "IRQ",
@@ -5502,8 +5663,8 @@
       "resourceTypeId": "crude_oil",
       "siteType": "OIL_FIELD",
       "status": "ACTIVE_PRODUCING",
-      "owner": "Iraq state / BP",
-      "operator": "Rumaila Operating Organisation",
+      "owner": "Basra Oil Company / State of Iraq",
+      "operator": "Rumaila Operating Organisation (ROO)",
       "extractionMethod": "wells and water injection",
       "location": {
         "countryIso3": "IRQ",
@@ -5560,15 +5721,24 @@
         },
         "quantitativeExtractionDataAvailable": false
       },
-      "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+      "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
       "researchMetadata": {
         "reviewedAt": "2026-09-27",
         "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
         "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
         "webSearchMethod": "SITE_NAME + COUNTRY",
-        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
+        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
+        "sourceAuthority": "Rumaila Operating Organisation",
+        "currentEvidence": "The Rumaila field is operated by ROO under a Technical Service Contract involving Basra Oil Company, Basra Energy Company Limited (PetroChina and bp) and SOMO; this is an Iraqi state field, not a BP-owned field."
       },
-      "webResearchEvidence": []
+      "webResearchEvidence": [
+        {
+          "url": "https://rumaila.iq/english/home/",
+          "accessed": "2026-09-27",
+          "scope": "field_identity_ownership_operating_structure_and_current_operation",
+          "sourceType": "OPERATOR"
+        }
+      ]
     },
     {
       "countryId": "IRN",
@@ -5713,15 +5883,25 @@
         },
         "quantitativeExtractionDataAvailable": false
       },
-      "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+      "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
       "researchMetadata": {
         "reviewedAt": "2026-09-27",
         "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
         "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
         "webSearchMethod": "SITE_NAME + COUNTRY",
-        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
+        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
+        "sourceAuthority": "Eti Maden",
+        "currentEvidence": "Eti Maden identifies Kırka in Eskişehir as the world’s largest boron production complex, with open-quarry mining and integrated mining, chemical, metallurgical and logistics activities.",
+        "process": "Open-quarry tincal extraction followed by beneficiation/chemical conversion into boron products."
       },
-      "webResearchEvidence": []
+      "webResearchEvidence": [
+        {
+          "url": "https://www.etimaden.gov.tr/en/production/kirka-boron-production-complex",
+          "accessed": "2026-09-27",
+          "scope": "mine_identity_method_processing_and_operator",
+          "sourceType": "OPERATOR"
+        }
+      ]
     },
     {
       "countryId": "SYR",
@@ -5730,8 +5910,8 @@
       "resourceTypeId": "crude_oil",
       "siteType": "OIL_FIELD",
       "status": "DISPUTED_OPERATION",
-      "owner": "Syrian state / local authorities",
-      "operator": "Local field operators",
+      "owner": "Syrian state",
+      "operator": "Al-Furat Petroleum Company / field operating interests",
       "extractionMethod": "onshore production wells",
       "location": {
         "countryIso3": "SYR",
@@ -5788,15 +5968,24 @@
         },
         "quantitativeExtractionDataAvailable": false
       },
-      "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+      "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
       "researchMetadata": {
         "reviewedAt": "2026-09-27",
         "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
         "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
         "webSearchMethod": "SITE_NAME + COUNTRY",
-        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
+        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
+        "sourceAuthority": "Public field references",
+        "currentEvidence": "Al-Omar is a Deir ez-Zor oil field with historical high production; current operation is constrained and disputed, so steady-state commercial output should not be assumed."
       },
-      "webResearchEvidence": []
+      "webResearchEvidence": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Al-Omar_oil_field",
+          "accessed": "2026-09-27",
+          "scope": "field_identity_location_operator_and_current_operational_context",
+          "sourceType": "SECONDARY_REFERENCE"
+        }
+      ]
     },
     {
       "countryId": "JOR",
@@ -6147,7 +6336,7 @@
       "siteType": "MINE",
       "status": "ACTIVE_PRODUCING",
       "owner": "Jinchuan Group",
-      "operator": "Jinchuan Mining",
+      "operator": "Jinchuan Group / Jinchuan Mining",
       "extractionMethod": "underground/open-pit and concentration",
       "location": {
         "countryIso3": "CHN",
@@ -6199,15 +6388,24 @@
         },
         "quantitativeExtractionDataAvailable": false
       },
-      "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+      "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
       "researchMetadata": {
         "reviewedAt": "2026-09-27",
         "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
         "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
         "webSearchMethod": "SITE_NAME + COUNTRY",
-        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
+        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
+        "sourceAuthority": "Jinchuan Group",
+        "currentEvidence": "The Jinchuan complex is the core nickel-copper resource and processing base of Jinchuan Group in Gansu, China."
       },
-      "webResearchEvidence": []
+      "webResearchEvidence": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Jinchuan_Group",
+          "accessed": "2026-09-27",
+          "scope": "complex_identity_resource_and_operator_context",
+          "sourceType": "SECONDARY_REFERENCE"
+        }
+      ]
     },
     {
       "countryId": "JPN",
@@ -6216,8 +6414,8 @@
       "resourceTypeId": "coal",
       "siteType": "COAL_MINE",
       "status": "ACTIVE_PRODUCING",
-      "owner": "Kushiro Coal Mine Co.",
-      "operator": "Kushiro Coal Mine Co.",
+      "owner": "Kushiro Coal Mine Co., Ltd.",
+      "operator": "Kushiro Coal Mine Co., Ltd.",
       "extractionMethod": "underground longwall",
       "location": {
         "countryIso3": "JPN",
@@ -6272,15 +6470,31 @@
         },
         "quantitativeExtractionDataAvailable": false
       },
-      "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+      "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
       "researchMetadata": {
         "reviewedAt": "2026-09-27",
         "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
         "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
         "webSearchMethod": "SITE_NAME + COUNTRY",
-        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
+        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
+        "sourceAuthority": "Kushiro City / Hokkaido Government",
+        "currentEvidence": "Official Japanese government pages state that Kushiro Coal Mine Co. has been producing coal from beneath the seabed since 2002 and is currently Japan’s only operating underground coal mine.",
+        "currentProductionContext": "Approximately 250,000–300,000 tonnes of coal per year; supplied to Kushiro thermal power generation and other regional industrial users."
       },
-      "webResearchEvidence": []
+      "webResearchEvidence": [
+        {
+          "url": "https://www.city.kushiro.lg.jp/sangyou/sanshien/1006425/1006427.html",
+          "accessed": "2026-09-27",
+          "scope": "2026_current_operator_and_undersea_mining_status",
+          "sourceType": "GOVERNMENT"
+        },
+        {
+          "url": "https://www.kushiro.pref.hokkaido.lg.jp/ss/srk/sekitan.html",
+          "accessed": "2026-09-27",
+          "scope": "current_production_range_and_operating_history",
+          "sourceType": "GOVERNMENT"
+        }
+      ]
     },
     {
       "countryId": "KOR",
@@ -6583,8 +6797,8 @@
       "resourceTypeId": "copper",
       "siteType": "MINE",
       "status": "ACTIVE_PRODUCING",
-      "owner": "Amman Mineral",
-      "operator": "PT Amman Mineral",
+      "owner": "PT Amman Mineral Nusa Tenggara (AMNT)",
+      "operator": "PT Amman Mineral Nusa Tenggara (AMNT)",
       "extractionMethod": "open-pit truck and shovel",
       "location": {
         "countryIso3": "IDN",
@@ -6640,15 +6854,24 @@
         },
         "quantitativeExtractionDataAvailable": false
       },
-      "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+      "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
       "researchMetadata": {
         "reviewedAt": "2026-09-27",
         "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
         "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
         "webSearchMethod": "SITE_NAME + COUNTRY",
-        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
+        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
+        "sourceAuthority": "AMMAN",
+        "currentEvidence": "AMMAN states that AMNT operates Batu Hijau and that it acquired the mine in 2016; the asset is an active copper-gold mine on Sumbawa."
       },
-      "webResearchEvidence": []
+      "webResearchEvidence": [
+        {
+          "url": "https://www.amman.co.id/amman-mineral-nusa-tenggara",
+          "accessed": "2026-09-27",
+          "scope": "current_operator_mine_identity_and_resource_context",
+          "sourceType": "OPERATOR"
+        }
+      ]
     },
     {
       "countryId": "MYS",
@@ -6657,7 +6880,7 @@
       "resourceTypeId": "gold",
       "siteType": "MINE",
       "status": "LIMITED",
-      "owner": "Private mining interests",
+      "owner": "UNOBSERVED",
       "operator": "Penjom Gold Mine",
       "extractionMethod": "open-pit and underground",
       "location": {
@@ -6969,8 +7192,8 @@
       "resourceTypeId": "copper",
       "siteType": "MINE",
       "status": "ACTIVE_PRODUCING",
-      "owner": "Wanbao / Myanmar state interests",
-      "operator": "Myanmar Wanbao",
+      "owner": "Myanmar Wanbao Mining Copper Ltd. / Myanmar state interests",
+      "operator": "Myanmar Wanbao Mining Copper Ltd.",
       "extractionMethod": "open-pit and processing",
       "location": {
         "countryIso3": "MMR",
@@ -7026,15 +7249,24 @@
         },
         "quantitativeExtractionDataAvailable": false
       },
-      "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+      "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
       "researchMetadata": {
         "reviewedAt": "2026-09-27",
         "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
         "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
         "webSearchMethod": "SITE_NAME + COUNTRY",
-        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
+        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
+        "sourceAuthority": "Myanmar government environmental documentation",
+        "currentEvidence": "Government documentation identifies Myanmar Wanbao Mining Copper Ltd. as the operating entity responsible for investment, development and management of the Letpadaung copper project; the mine is open-pit with processing facilities."
       },
-      "webResearchEvidence": []
+      "webResearchEvidence": [
+        {
+          "url": "https://www.ecd.gov.mm/",
+          "accessed": "2026-09-27",
+          "scope": "operator_identity_mining_method_and_project_context",
+          "sourceType": "GOVERNMENT"
+        }
+      ]
     },
     {
       "countryId": "SGP",
@@ -7112,8 +7344,8 @@
       "resourceTypeId": "crude_oil",
       "siteType": "OIL_FIELD",
       "status": "ACTIVE_PRODUCING",
-      "owner": "Brunei Shell Petroleum",
-      "operator": "Brunei Shell Petroleum",
+      "owner": "Brunei Shell Petroleum / Brunei Darussalam",
+      "operator": "Brunei Shell Petroleum (BSP)",
       "extractionMethod": "offshore platform drilling",
       "location": {
         "countryIso3": "BRN",
@@ -7170,15 +7402,24 @@
         },
         "quantitativeExtractionDataAvailable": false
       },
-      "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+      "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
       "researchMetadata": {
         "reviewedAt": "2026-09-27",
         "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
         "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
         "webSearchMethod": "SITE_NAME + COUNTRY",
-        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
+        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
+        "sourceAuthority": "Brunei Shell Petroleum / public field references",
+        "currentEvidence": "Champion West is the western extension of the offshore Champion oil field in Brunei waters; BSP operates the Champion field complex."
       },
-      "webResearchEvidence": []
+      "webResearchEvidence": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Champion_oil_field",
+          "accessed": "2026-09-27",
+          "scope": "field_identity_operator_location_and_structure",
+          "sourceType": "SECONDARY_REFERENCE"
+        }
+      ]
     },
     {
       "countryId": "KHM",
@@ -7816,7 +8057,7 @@
       "resourceTypeId": "manganese",
       "siteType": "MINE",
       "status": "LIMITED",
-      "owner": "Georgian Manganese / state",
+      "owner": "Georgian Manganese",
       "operator": "Georgian Manganese",
       "extractionMethod": "underground and surface",
       "location": {
@@ -7868,15 +8109,24 @@
         },
         "quantitativeExtractionDataAvailable": false
       },
-      "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+      "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
       "researchMetadata": {
         "reviewedAt": "2026-09-27",
         "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
         "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
         "webSearchMethod": "SITE_NAME + COUNTRY",
-        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
+        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
+        "sourceAuthority": "Georgian Manganese",
+        "currentEvidence": "Georgian Manganese states that manganese ore is mined both underground and by open pit in Chiatura and locally enriched to concentrate for use in ferroalloy production."
       },
-      "webResearchEvidence": []
+      "webResearchEvidence": [
+        {
+          "url": "https://georgianmanganese.com/",
+          "accessed": "2026-09-27",
+          "scope": "operator_identity_mining_method_and_processing",
+          "sourceType": "OPERATOR"
+        }
+      ]
     },
     {
       "countryId": "ARM",
@@ -8046,7 +8296,7 @@
       "siteType": "MINE",
       "status": "ACTIVE_PRODUCING",
       "owner": "Metalloinvest",
-      "operator": "Lebedinsky GOK",
+      "operator": "Lebedinsky GOK / Metalloinvest",
       "extractionMethod": "large open-pit and beneficiation",
       "location": {
         "countryIso3": "RUS",
@@ -8098,15 +8348,24 @@
         },
         "quantitativeExtractionDataAvailable": false
       },
-      "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+      "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
       "researchMetadata": {
         "reviewedAt": "2026-09-27",
         "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
         "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
         "webSearchMethod": "SITE_NAME + COUNTRY",
-        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
+        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
+        "sourceAuthority": "Metalloinvest",
+        "currentEvidence": "Lebedinsky GOK is the large open-pit iron ore and beneficiation operation of Metalloinvest in Belgorod Region."
       },
-      "webResearchEvidence": []
+      "webResearchEvidence": [
+        {
+          "url": "https://www.metalloinvest.com/en/business/mining/",
+          "accessed": "2026-09-27",
+          "scope": "mine_identity_operator_method_and_processing_context",
+          "sourceType": "OPERATOR"
+        }
+      ]
     },
     {
       "countryId": "DEU",
@@ -8115,7 +8374,7 @@
       "resourceTypeId": "coal",
       "siteType": "COAL_MINE",
       "status": "ACTIVE_PRODUCING",
-      "owner": "RWE Power",
+      "owner": "RWE Power AG",
       "operator": "RWE",
       "extractionMethod": "bucket-wheel open-pit",
       "location": {
@@ -8171,15 +8430,24 @@
         },
         "quantitativeExtractionDataAvailable": false
       },
-      "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+      "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
       "researchMetadata": {
         "reviewedAt": "2026-09-27",
         "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
         "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
         "webSearchMethod": "SITE_NAME + COUNTRY",
-        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
+        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
+        "sourceAuthority": "RWE",
+        "currentEvidence": "RWE identifies Hambach as its open-cast lignite mining operation in North Rhine-Westphalia and links the mine to ongoing extraction and reclamation planning."
       },
-      "webResearchEvidence": []
+      "webResearchEvidence": [
+        {
+          "url": "https://www.rwe.com/en/the-group/our-portfolio/rwe-power-ag/lignite-mining/",
+          "accessed": "2026-09-27",
+          "scope": "mine_identity_operator_method_and_reclamation_context",
+          "sourceType": "OPERATOR"
+        }
+      ]
     },
     {
       "countryId": "FRA",
@@ -8312,15 +8580,24 @@
         },
         "quantitativeExtractionDataAvailable": false
       },
-      "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+      "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
       "researchMetadata": {
         "reviewedAt": "2026-09-27",
         "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
         "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
         "webSearchMethod": "SITE_NAME + COUNTRY",
-        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
+        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
+        "sourceAuthority": "ICL / public mine references",
+        "currentEvidence": "Boulby is an underground potash mining operation in North Yorkshire, with ICL Boulby as the operating business."
       },
-      "webResearchEvidence": []
+      "webResearchEvidence": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Boulby_Mine",
+          "accessed": "2026-09-27",
+          "scope": "mine_identity_operator_resource_and_method",
+          "sourceType": "SECONDARY_REFERENCE"
+        }
+      ]
     },
     {
       "countryId": "ITA",
@@ -8543,8 +8820,8 @@
       "resourceTypeId": "iron_ore",
       "siteType": "MINE",
       "status": "DISRUPTED",
-      "owner": "Ukrainian operators/state",
-      "operator": "Kryvyi Rih operators",
+      "owner": "UNOBSERVED",
+      "operator": "UNOBSERVED",
       "extractionMethod": "open-pit and underground",
       "location": {
         "countryIso3": "UKR",
@@ -9087,15 +9364,24 @@
         },
         "quantitativeExtractionDataAvailable": false
       },
-      "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+      "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
       "researchMetadata": {
         "reviewedAt": "2026-09-27",
         "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
         "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
         "webSearchMethod": "SITE_NAME + COUNTRY",
-        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
+        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
+        "sourceAuthority": "Agnico Eagle",
+        "currentEvidence": "Kittilä is Agnico Eagle’s underground gold mine in Finnish Lapland; the operation is active and forms part of the company’s current European production base."
       },
-      "webResearchEvidence": []
+      "webResearchEvidence": [
+        {
+          "url": "https://www.agnicoeagle.com/English/operations/operations/kittila/default.aspx",
+          "accessed": "2026-09-27",
+          "scope": "current_operator_mine_type_and_production_context",
+          "sourceType": "OPERATOR"
+        }
+      ]
     },
     {
       "countryId": "DNK",
@@ -11507,9 +11793,10 @@
       },
       "quantitativeProfile": {
         "reserve": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
+          "quantity": 3000000,
+          "unit": "troy_ounces_gold",
+          "year": 2025,
+          "status": "OBSERVED"
         },
         "production": {
           "annual": null,
@@ -11523,17 +11810,26 @@
           "unit": null,
           "status": "UNOBSERVED"
         },
-        "quantitativeExtractionDataAvailable": false
+        "quantitativeExtractionDataAvailable": true
       },
-      "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+      "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
       "researchMetadata": {
         "reviewedAt": "2026-09-27",
         "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
         "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
         "webSearchMethod": "SITE_NAME + COUNTRY",
-        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
+        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
+        "sourceAuthority": "Newmont",
+        "currentEvidence": "Newmont describes Cerro Negro as a current underground gold operation in Santa Cruz Province. FY2025 reserves were 3.0 million ounces of gold and 20.3 million ounces of silver."
       },
-      "webResearchEvidence": []
+      "webResearchEvidence": [
+        {
+          "url": "https://operations.newmont.com/latin-america/cerro-negro-argentina/",
+          "accessed": "2026-09-27",
+          "scope": "current_operator_mine_type_reserves_and_current_status",
+          "sourceType": "OPERATOR"
+        }
+      ]
     },
     {
       "countryId": "CHL",
@@ -11697,7 +11993,7 @@
       "siteType": "MINE",
       "status": "ACTIVE_PRODUCING",
       "owner": "BHP / Glencore / Teck / Mitsubishi",
-      "operator": "Compañía Minera Antamina",
+      "operator": "Compañía Minera Antamina S.A.",
       "extractionMethod": "open-pit and concentration",
       "location": {
         "countryIso3": "PER",
@@ -11753,15 +12049,24 @@
         },
         "quantitativeExtractionDataAvailable": false
       },
-      "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+      "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
       "researchMetadata": {
         "reviewedAt": "2026-09-27",
         "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
         "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
         "webSearchMethod": "SITE_NAME + COUNTRY",
-        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
+        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
+        "sourceAuthority": "BHP 2026 annual filing",
+        "currentEvidence": "Antamina is a large open-cut copper-zinc mine independently operated by Compañía Minera Antamina S.A.; FY2026 production included 152 kt copper and 96 kt zinc."
       },
-      "webResearchEvidence": []
+      "webResearchEvidence": [
+        {
+          "url": "https://www.sec.gov/Archives/edgar/data/811809/000119312526354647/bhp-20260630.htm",
+          "accessed": "2026-09-27",
+          "scope": "current_ownership_operator_mining_method_and_recent_production",
+          "sourceType": "REGULATORY_FILING"
+        }
+      ]
     },
     {
       "countryId": "VEN",
@@ -12133,8 +12438,8 @@
       "resourceTypeId": "copper",
       "siteType": "MINE",
       "status": "SUSPENDED",
-      "owner": "First Quantum / Panama",
-      "operator": "Minera Panamá",
+      "owner": "First Quantum Minerals / Panama",
+      "operator": "Minera Panamá / First Quantum Minerals",
       "extractionMethod": "large open-pit copper mining",
       "location": {
         "countryIso3": "PAN",
@@ -12190,15 +12495,30 @@
         },
         "quantitativeExtractionDataAvailable": false
       },
-      "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+      "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
       "researchMetadata": {
         "reviewedAt": "2026-09-27",
         "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
         "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
         "webSearchMethod": "SITE_NAME + COUNTRY",
-        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
+        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
+        "sourceAuthority": "First Quantum / Government of Panama",
+        "currentEvidence": "Cobre Panamá remains under Preservation and Safe Management with mining production halted. In April 2026 Panama approved processing/export of stockpiled ore extracted before suspension; that activity is explicitly not a mine reopening."
       },
-      "webResearchEvidence": []
+      "webResearchEvidence": [
+        {
+          "url": "https://www.first-quantum.com/news/government-of-panama-approves-processing-of-stockpiled-ore-at-cobre-panama/",
+          "accessed": "2026-09-27",
+          "scope": "2026_current_operational_status_and_stockpile_processing",
+          "sourceType": "OPERATOR"
+        },
+        {
+          "url": "https://www.first-quantum.com/operations/cobre-panama/",
+          "accessed": "2026-09-27",
+          "scope": "mine_identity_location_reserves_and_preservation_status",
+          "sourceType": "OPERATOR"
+        }
+      ]
     },
     {
       "countryId": "CRI",
@@ -12508,8 +12828,8 @@
       "resourceTypeId": "nickel",
       "siteType": "MINE",
       "status": "ACTIVE_PRODUCING",
-      "owner": "Solway / Guatemala framework",
-      "operator": "CGN",
+      "owner": "Fenix Nickel Company / Guatemalan operating entities",
+      "operator": "Fenix Minerales S.A.",
       "extractionMethod": "open-pit laterite mining",
       "location": {
         "countryIso3": "GTM",
@@ -12543,9 +12863,10 @@
       },
       "quantitativeProfile": {
         "reserve": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
+          "quantity": 36200000,
+          "unit": "metric_tons_nickel_ore",
+          "year": 2024,
+          "status": "OBSERVED"
         },
         "production": {
           "annual": null,
@@ -12555,21 +12876,37 @@
           "status": "UNOBSERVED"
         },
         "grade": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
+          "value": 1.86,
+          "unit": "percent_nickel",
+          "status": "OBSERVED"
         },
-        "quantitativeExtractionDataAvailable": false
+        "quantitativeExtractionDataAvailable": true
       },
-      "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+      "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
       "researchMetadata": {
         "reviewedAt": "2026-09-27",
         "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
         "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
         "webSearchMethod": "SITE_NAME + COUNTRY",
-        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
+        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
+        "sourceAuthority": "Fenix Nickel / Solway",
+        "currentEvidence": "Fenix Nickel announced processing-plant operations resumed in El Estor in May 2026. The group identifies Fenix Minerales S.A. as responsible for nickel laterite ore extraction and Fenix Metales S.A. for ferronickel production.",
+        "historicalResourceContext": "36.2 Mt nickel-ore reserves at 1.86% Ni plus 70.0 Mt of additional resources are reported for the project license area."
       },
-      "webResearchEvidence": []
+      "webResearchEvidence": [
+        {
+          "url": "https://fenixnickel.com/2026/05/26/fenix-nickel-commenced-operations-in-el-estor-following-a-comprehensive-business-transformation/",
+          "accessed": "2026-09-27",
+          "scope": "2026_current_processing_operations_and_corporate_structure",
+          "sourceType": "OPERATOR"
+        },
+        {
+          "url": "https://solwaygroup.com/our-business/fenix-project-guatemala/",
+          "accessed": "2026-09-27",
+          "scope": "reserve_grade_mining_and_processing_context",
+          "sourceType": "PROJECT_OWNER"
+        }
+      ]
     },
     {
       "countryId": "BLZ",

@@ -12952,7 +12952,7 @@
         "status": "ACTIVE_PRODUCING",
         "operationalStatus": "ACTIVE_PRODUCING",
         "extractionMethod": "open-pit lateritic nickel mining feeding pressure-acid-leach processing",
-        "extractionEligibility": null,
+        "extractionEligibility": "EXECUTABLE",
         "commercialExtraction": true
       },
       "processing": {
@@ -13029,7 +13029,7 @@
         "status": "ACTIVE_PRODUCING",
         "operationalStatus": "ACTIVE_PRODUCING",
         "extractionMethod": "laterite mining and processing",
-        "extractionEligibility": null,
+        "extractionEligibility": "EXECUTABLE",
         "commercialExtraction": true
       },
       "processing": {
@@ -13179,7 +13179,7 @@
         "status": "ACTIVE_PRODUCING",
         "operationalStatus": "ACTIVE_PRODUCING",
         "extractionMethod": "open-pit bauxite mining",
-        "extractionEligibility": null,
+        "extractionEligibility": "EXECUTABLE",
         "commercialExtraction": true
       },
       "processing": {
@@ -13330,7 +13330,7 @@
         "status": "ACTIVE_PRODUCING",
         "operationalStatus": "ACTIVE_PRODUCING",
         "extractionMethod": "open-pit and refractory processing",
-        "extractionEligibility": null,
+        "extractionEligibility": "EXECUTABLE",
         "commercialExtraction": true
       },
       "processing": {
@@ -13404,7 +13404,7 @@
         "status": "ACTIVE_PRODUCING",
         "operationalStatus": "ACTIVE_PRODUCING",
         "extractionMethod": "offshore platforms and subsea wells",
-        "extractionEligibility": null,
+        "extractionEligibility": "EXECUTABLE",
         "commercialExtraction": true
       },
       "processing": {
@@ -13557,7 +13557,7 @@
         "status": "ACTIVE_PRODUCING",
         "operationalStatus": "ACTIVE_PRODUCING",
         "extractionMethod": "surface quarrying",
-        "extractionEligibility": null,
+        "extractionEligibility": "EXECUTABLE",
         "commercialExtraction": true
       },
       "processing": {
@@ -13631,7 +13631,7 @@
         "status": "ACTIVE_PRODUCING",
         "operationalStatus": "LIMITED",
         "extractionMethod": "surface aggregate quarrying",
-        "extractionEligibility": null,
+        "extractionEligibility": "EXECUTABLE",
         "commercialExtraction": true
       },
       "processing": {
@@ -13778,7 +13778,7 @@
         "status": "ACTIVE_PRODUCING",
         "operationalStatus": "LIMITED",
         "extractionMethod": "HARD_ROCK_BASALT_QUARRYING_AND_CRUSHING",
-        "extractionEligibility": null,
+        "extractionEligibility": "EXECUTABLE",
         "commercialExtraction": true
       },
       "processing": {
@@ -14000,7 +14000,7 @@
         "status": "ACTIVE_PRODUCING",
         "operationalStatus": "LIMITED",
         "extractionMethod": "QUARRYING_AND_CRUSHING",
-        "extractionEligibility": null,
+        "extractionEligibility": "EXECUTABLE",
         "commercialExtraction": true
       },
       "processing": {
@@ -14074,7 +14074,7 @@
         "status": "ACTIVE_PRODUCING",
         "operationalStatus": "ACTIVE_PRODUCING",
         "extractionMethod": "open-pit",
-        "extractionEligibility": null,
+        "extractionEligibility": "EXECUTABLE",
         "commercialExtraction": true
       },
       "processing": {
@@ -14148,7 +14148,7 @@
         "status": "ACTIVE_PRODUCING",
         "operationalStatus": "ACTIVE_PRODUCING",
         "extractionMethod": "open-pit and underground",
-        "extractionEligibility": null,
+        "extractionEligibility": "EXECUTABLE",
         "commercialExtraction": true
       },
       "processing": {
@@ -14222,7 +14222,7 @@
         "status": "ACTIVE_PRODUCING",
         "operationalStatus": "ACTIVE_PRODUCING",
         "extractionMethod": "large open-pit and processing",
-        "extractionEligibility": null,
+        "extractionEligibility": "EXECUTABLE",
         "commercialExtraction": true
       },
       "processing": {
@@ -14296,7 +14296,7 @@
         "status": "ACTIVE_PRODUCING",
         "operationalStatus": "ACTIVE_PRODUCING",
         "extractionMethod": "open-pit and underground",
-        "extractionEligibility": null,
+        "extractionEligibility": "EXECUTABLE",
         "commercialExtraction": true
       },
       "processing": {
@@ -14370,7 +14370,7 @@
         "status": "ACTIVE_PRODUCING",
         "operationalStatus": "ACTIVE_PRODUCING",
         "extractionMethod": "open-pit",
-        "extractionEligibility": null,
+        "extractionEligibility": "EXECUTABLE",
         "commercialExtraction": true
       },
       "processing": {
@@ -14444,7 +14444,7 @@
         "status": "ACTIVE_PRODUCING",
         "operationalStatus": "ACTIVE_PRODUCING",
         "extractionMethod": "underground",
-        "extractionEligibility": null,
+        "extractionEligibility": "EXECUTABLE",
         "commercialExtraction": true
       },
       "processing": {
@@ -14518,7 +14518,7 @@
         "status": "ACTIVE_PRODUCING",
         "operationalStatus": "RESTARTING",
         "extractionMethod": "OPEN_PIT_MINING",
-        "extractionEligibility": null,
+        "extractionEligibility": "EXECUTABLE",
         "commercialExtraction": true
       },
       "processing": {
@@ -14814,7 +14814,7 @@
         "status": "ACTIVE_PRODUCING",
         "operationalStatus": "LIMITED",
         "extractionMethod": "LAGOON_DREDGING_AND_CORAL_CRUSHING",
-        "extractionEligibility": null,
+        "extractionEligibility": "EXECUTABLE",
         "commercialExtraction": true
       },
       "processing": {
@@ -14962,7 +14962,7 @@
         "status": "ACTIVE_PRODUCING",
         "operationalStatus": "LIMITED",
         "extractionMethod": "secondary surface extraction",
-        "extractionEligibility": null,
+        "extractionEligibility": "EXECUTABLE",
         "commercialExtraction": true
       },
       "processing": {
@@ -15040,7 +15040,7 @@
         "status": "ACTIVE_PRODUCING",
         "operationalStatus": "LIMITED",
         "extractionMethod": "QUARRYING_AND_AGGREGATE_CRUSHING",
-        "extractionEligibility": null,
+        "extractionEligibility": "EXECUTABLE",
         "commercialExtraction": true
       },
       "processing": {

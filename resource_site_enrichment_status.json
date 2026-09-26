@@ -1,11 +1,11 @@
 {
   "totalSites": 199,
-  "legacyTargets": 87,
+  "legacyTargets": 58,
   "matchedByWebSearch": 0,
   "wikipediaMatches": 0,
   "wikidataMatches": 0,
-  "unresolved": 87,
-  "stillLegacyAfterPass": 87,
-  "commercialSitesWithExplicitOwner": 164,
-  "commercialSitesWithExplicitOperator": 164
+  "unresolved": 58,
+  "stillLegacyAfterPass": 58,
+  "commercialSitesWithExplicitOwner": 162,
+  "commercialSitesWithExplicitOperator": 162
 }

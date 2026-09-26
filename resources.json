@@ -96015,7 +96015,7 @@
                   "unit": null,
                   "status": "UNOBSERVED"
                 },
-                "quantitativeExtractionDataAvailable": false
+                "quantitativeExtractionDataAvailable": true
               },
               "resourceIdentity": {
                 "resourceTypeId": "gold",
@@ -96043,7 +96043,7 @@
                 "operation": "COMPLETE",
                 "ownership": "REPORTED",
                 "quantitative": {
-                  "reserve": "UNOBSERVED",
+                  "reserve": "OBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED"
                 },
@@ -104709,7 +104709,7 @@
                   "unit": "percent_nickel",
                   "status": "OBSERVED"
                 },
-                "quantitativeExtractionDataAvailable": false
+                "quantitativeExtractionDataAvailable": true
               },
               "resourceIdentity": {
                 "resourceTypeId": "nickel",
@@ -104737,9 +104737,9 @@
                 "operation": "COMPLETE",
                 "ownership": "REPORTED",
                 "quantitative": {
-                  "reserve": "UNOBSERVED",
+                  "reserve": "OBSERVED",
                   "production": "UNOBSERVED",
-                  "grade": "UNOBSERVED"
+                  "grade": "OBSERVED"
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
