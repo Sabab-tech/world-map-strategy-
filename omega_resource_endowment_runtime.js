@@ -948,7 +948,10 @@
         const compiled=compile();
         if(compiled.status!=='READY')return compiled;
         applyPersistedReserveStates();install();
-        for(const c of countries())dispatch('OMEGA_RESOURCE_ENDOWMENT_HYDRATE',c,{correlationId:'RESOURCE-HYDRATE-'+turn()+'-'+c});
+        for(const c of countries()){
+          const hydrationResult=dispatch('OMEGA_RESOURCE_ENDOWMENT_HYDRATE',c,{correlationId:'RESOURCE-HYDRATE-'+turn()+'-'+c});
+          await Promise.resolve(hydrationResult);
+        }
         g.__omegaResourceEndowmentReady=true;
         return{status:'READY',countries:countries().length,reused:false};
       }catch(e){
