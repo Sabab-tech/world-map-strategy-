@@ -82,7 +82,11 @@ for (const {countryId, index, site} of sites) {
   if (site.researchState || Array.isArray(site.webResearchEvidence)) researched++;
 
   assert.equal(site.dataCompleteness.identity, 'COMPLETE', countryId + '[' + index + ']: identity completeness gate');
-  assert.equal(site.dataCompleteness.resource, 'COMPLETE', countryId + '[' + index + ']: resource completeness gate');
+  if (isNA) {
+    assert.equal(site.dataCompleteness.resource, 'COMPLETE', countryId + '[' + index + ']: non-commercial resource classification must be COMPLETE');
+  } else {
+    assert.equal(site.dataCompleteness.resource, 'COMPLETE', countryId + '[' + index + ']: resource completeness gate');
+  }
   assert.equal(site.dataCompleteness.location, 'COMPLETE', countryId + '[' + index + ']: location completeness gate');
   assert.equal(site.dataCompleteness.operation, 'COMPLETE', countryId + '[' + index + ']: operation completeness gate');
   assert.equal(site.dataCompleteness.provenance, 'PRESENT', countryId + '[' + index + ']: provenance gate');
