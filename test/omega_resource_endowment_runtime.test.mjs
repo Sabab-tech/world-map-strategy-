@@ -150,6 +150,14 @@ assert.equal(unifiedAssetIds.size,unifiedAssetRows.length);
 assert.equal(unifiedAssetRows.filter(x=>x?.assetType==='STRUCTURED_DEPOSIT').length,sourceBackedDepositCount);
 assert.equal(unifiedAssetRows.filter(x=>x?.assetType==='PROFILE_SITE_REFERENCE').length,199);
 assert.ok(unifiedAssetRows.every(x=>x?.schemaVersion&&x?.assetId&&x?.resourceType&&x?.reserve&&x?.production&&x?.quality&&x?.ownership&&x?.flow&&x?.dataAuthority&&x?.provenance));
+const structuredRuntimeAssetIds=new Set(Object.values(worldState).flatMap(row=>
+  (Array.isArray(row?.mines)?row.mines:[]).flatMap(x=>{
+    if(x?.assetType==='STRUCTURED_DEPOSIT'&&x?.assetId)return[x.assetId];
+    if(x?.assetType==='STRUCTURED_RESOURCE_OCCURRENCE'&&x?.parentAssetId)return[x.parentAssetId];
+    return[];
+  })
+));
+assert.equal(structuredRuntimeAssetIds.size,sourceBackedDepositCount);
 assert.equal(structuredMineRows,expectedExecutableStructuredAssetCount);
 assert.equal(profileMineOutputs.length,199);
 assert(simulatedFieldOutputs.length>0,'expected hydrocarbon field execution assets');
