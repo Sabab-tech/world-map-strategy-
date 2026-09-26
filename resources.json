@@ -2169,7 +2169,7 @@
                   "status": "UNOBSERVED"
                 },
                 "grade": {
-                  "value": "Lignite",
+                  "value": "Thermal coal",
                   "unit": null,
                   "status": "OBSERVED"
                 },
@@ -5441,11 +5441,11 @@
                   "status": "UNOBSERVED"
                 },
                 "grade": {
-                  "value": null,
+                  "value": "Iron ore; primary processing unit nearing completion",
                   "unit": null,
-                  "status": "UNOBSERVED"
+                  "status": "OBSERVED"
                 },
-                "quantitativeExtractionDataAvailable": false
+                "quantitativeExtractionDataAvailable": true
               },
               "resourceIdentity": {
                 "resourceTypeId": "iron_ore",
@@ -8719,10 +8719,10 @@
                 },
                 "grade": {
                   "value": "35.4% Fe raw ore",
-                  "unit": null,
+                  "unit": "percent_Fe",
                   "status": "OBSERVED"
                 },
-                "quantitativeExtractionDataAvailable": false
+                "quantitativeExtractionDataAvailable": true
               },
               "resourceIdentity": {
                 "resourceTypeId": "iron_ore",
@@ -9254,18 +9254,22 @@
                   "status": "UNOBSERVED"
                 },
                 "production": {
-                  "annual": null,
+                  "annual": {
+                    "value": 274000,
+                    "unit": "troy_ounces",
+                    "year": 2025
+                  },
                   "rate": null,
                   "unit": null,
                   "year": null,
-                  "status": "UNOBSERVED"
+                  "status": "OBSERVED"
                 },
                 "grade": {
-                  "value": null,
-                  "unit": null,
-                  "status": "UNOBSERVED"
+                  "value": 2.01,
+                  "unit": "grams_per_tonne_gold",
+                  "status": "OBSERVED"
                 },
-                "quantitativeExtractionDataAvailable": false
+                "quantitativeExtractionDataAvailable": true
               },
               "resourceIdentity": {
                 "resourceTypeId": "gold",
@@ -21146,23 +21150,27 @@
               },
               "quantitativeProfile": {
                 "reserve": {
-                  "quantity": null,
-                  "unit": null,
-                  "status": "UNOBSERVED"
+                  "quantity": 454000000,
+                  "unit": "wet_metric_tons",
+                  "status": "OBSERVED"
                 },
                 "production": {
-                  "annual": null,
+                  "annual": {
+                    "value": 7100000,
+                    "unit": "metric_tons",
+                    "year": 2025
+                  },
                   "rate": null,
                   "unit": null,
                   "year": null,
-                  "status": "UNOBSERVED"
+                  "status": "OBSERVED"
                 },
                 "grade": {
                   "value": null,
                   "unit": null,
                   "status": "UNOBSERVED"
                 },
-                "quantitativeExtractionDataAvailable": false
+                "quantitativeExtractionDataAvailable": true
               },
               "resourceIdentity": {
                 "resourceTypeId": "manganese",
@@ -31273,18 +31281,22 @@
                   "status": "UNOBSERVED"
                 },
                 "production": {
-                  "annual": null,
+                  "annual": {
+                    "value": 181183,
+                    "unit": "metric_tons",
+                    "year": 2025
+                  },
                   "rate": null,
                   "unit": null,
                   "year": null,
-                  "status": "UNOBSERVED"
+                  "status": "OBSERVED"
                 },
                 "grade": {
                   "value": null,
                   "unit": null,
                   "status": "UNOBSERVED"
                 },
-                "quantitativeExtractionDataAvailable": false
+                "quantitativeExtractionDataAvailable": true
               },
               "resourceIdentity": {
                 "resourceTypeId": "copper",
@@ -32858,18 +32870,22 @@
                   "status": "UNOBSERVED"
                 },
                 "production": {
-                  "annual": null,
+                  "annual": {
+                    "value": 7259000,
+                    "unit": "carats",
+                    "year": 2025
+                  },
                   "rate": null,
                   "unit": null,
                   "year": null,
-                  "status": "UNOBSERVED"
+                  "status": "OBSERVED"
                 },
                 "grade": {
                   "value": null,
                   "unit": null,
                   "status": "UNOBSERVED"
                 },
-                "quantitativeExtractionDataAvailable": false
+                "quantitativeExtractionDataAvailable": true
               },
               "resourceIdentity": {
                 "resourceTypeId": "diamond",
@@ -48380,18 +48396,22 @@
                   "status": "UNOBSERVED"
                 },
                 "production": {
-                  "annual": null,
+                  "annual": {
+                    "value": 90700,
+                    "unit": "troy_ounces",
+                    "year": 2025
+                  },
                   "rate": null,
                   "unit": null,
                   "year": null,
-                  "status": "UNOBSERVED"
+                  "status": "OBSERVED"
                 },
                 "grade": {
-                  "value": null,
-                  "unit": null,
-                  "status": "UNOBSERVED"
+                  "value": 1.58,
+                  "unit": "grams_per_tonne_gold",
+                  "status": "OBSERVED"
                 },
-                "quantitativeExtractionDataAvailable": false
+                "quantitativeExtractionDataAvailable": true
               },
               "resourceIdentity": {
                 "resourceTypeId": "gold",
@@ -50487,23 +50507,27 @@
               },
               "quantitativeProfile": {
                 "reserve": {
-                  "quantity": null,
-                  "unit": null,
-                  "status": "UNOBSERVED"
+                  "quantity": 9900000,
+                  "unit": "metric_tons",
+                  "status": "OBSERVED"
                 },
                 "production": {
-                  "annual": null,
+                  "annual": {
+                    "value": 98000,
+                    "unit": "troy_ounces",
+                    "year": 2025
+                  },
                   "rate": null,
                   "unit": null,
                   "year": null,
-                  "status": "UNOBSERVED"
+                  "status": "OBSERVED"
                 },
                 "grade": {
-                  "value": null,
-                  "unit": null,
-                  "status": "UNOBSERVED"
+                  "value": 1.8,
+                  "unit": "grams_per_tonne_gold",
+                  "status": "OBSERVED"
                 },
-                "quantitativeExtractionDataAvailable": false
+                "quantitativeExtractionDataAvailable": true
               },
               "resourceIdentity": {
                 "resourceTypeId": "gold",
@@ -51548,18 +51572,22 @@
                   "status": "UNOBSERVED"
                 },
                 "production": {
-                  "annual": null,
+                  "annual": {
+                    "value": null,
+                    "unit": null,
+                    "year": null
+                  },
                   "rate": null,
                   "unit": null,
                   "year": null,
-                  "status": "UNOBSERVED"
+                  "status": "OBSERVED"
                 },
                 "grade": {
                   "value": null,
                   "unit": null,
                   "status": "UNOBSERVED"
                 },
-                "quantitativeExtractionDataAvailable": false
+                "quantitativeExtractionDataAvailable": true
               },
               "resourceIdentity": {
                 "resourceTypeId": "natural_gas",
