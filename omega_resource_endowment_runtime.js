@@ -332,16 +332,12 @@
     'sugar_cane','sugarcane','tobacco','coffee','cassava','rice','food','water','potable_water','forestry'
   ]);
   const SIM_RESOURCE_UNITS=Object.freeze({
-    crude_oil:'barrels',natural_gas:'bcm',gold:'troy_ounces',uranium:'metric_tons_u',
-    lithium:'metric_tons_lce'
+    crude_oil:'barrels',natural_gas:'bcm',gold:'troy_ounces',uranium:'metric_tons_u',lithium:'metric_tons_lce'
   });
-  const SIM_RESOURCE_DAILY_RATES=Object.freeze({
-    crude_oil:10000,natural_gas:0.01,gold:500,uranium:50,lithium:500,rare_earth:100,cobalt:150,
-    nickel:800,copper:1000,bauxite:4000,iron_ore:8000,coal:5000,phosphate:4000,potash:3000,
-    limestone:5000,gypsum:2500,marble:1500,chromium:1000,silica_sand:5000,clay:3000,zeolite:1000,zircon:500
-  });
-  const SIM_RESERVE_HORIZON_DAYS=3650;
-
+  const SIM_EXCLUDED_NON_EXTRACTIVE=new Set([
+    'fisheries','fish','coconuts','coconut','tropical_timber','timber','solar_energy','wind_energy','hydropower',
+    'sugar_cane','sugarcane','tobacco','coffee','cassava','rice','food','water','potable_water','forestry'
+  ]);
   function normalizeSimulationResource(value){
     const raw=String(value??'').normalize('NFKC').trim().toLowerCase().replace(/[-]+/g,'_').replace(/\s+/g,' ');
     if(!raw||SIM_EXCLUDED_NON_EXTRACTIVE.has(raw))return null;
