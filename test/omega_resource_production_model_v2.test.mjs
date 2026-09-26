@@ -7,26 +7,28 @@ context.globalThis=context;
 vm.createContext(context);
 
 vm.runInContext(fs.readFileSync('omega_resource_part05_reserve_extraction_runtime.js','utf8'),context,{filename:'omega_resource_part05_reserve_extraction_runtime.js'});
+vm.runInContext(fs.readFileSync('omega_resource_realism_runtime_v1.js','utf8'),context,{filename:'omega_resource_realism_runtime_v1.js'});
 vm.runInContext(fs.readFileSync('omega_resource_production_model_v2.js','utf8'),context,{filename:'omega_resource_production_model_v2.js'});
 
 const P=context.GSRSK_Part05;
 assert.equal(P.VERSION,'2.0.0');
 
-const samples=[
-  ['100 million tonnes','TONNES'],
-  ['2.5 billion BBL','BBL'],
-  ['8.2 TCF','TCF'],
-  ['4.5 BCM','BCM'],
-  ['12.4 g/t','G_T'],
-  ['850 mg/L','MG_L'],
-  ['62 %','PERCENT'],
-  ['35 API','API_GRAVITY']
-];
-for(const [raw,expected] of samples){
-  const token=raw.match(/[A-Za-z%/]+$/)?.[0]||'';
-  assert.equal(P.canonicalUnit(token),expected);
-}
-for(const [raw,expected] of samples) assert.equal(P.canonicalUnit(P.parseReserve(raw,'iron_ore').unit||raw.match(/[A-Za-z%/]+/)?.[0]),expected);
+assert.equal(P.canonicalUnit('tonnes'),'TONNES');
+assert.equal(P.canonicalUnit('ounces'),'TROY_OZ');
+assert.equal(P.canonicalUnit('BBL'),'BBL');
+assert.equal(P.canonicalUnit('TCF'),'TCF');
+assert.equal(P.canonicalUnit('BCM'),'BCM');
+assert.equal(P.canonicalUnit('g/t'),'G_T');
+assert.equal(P.canonicalUnit('mg/L'),'MG_L');
+assert.equal(P.canonicalUnit('%'),'PERCENT');
+assert.equal(P.canonicalUnit('API'),'API_GRAVITY');
+
+const gasReserve=P.parseReserve('1 TCF','natural_gas');
+assert.equal(gasReserve.unit,'BCM');
+assert.ok(Math.abs(gasReserve.value-28.316846592)<1e-9);
+const goldReserve=P.parseReserve('1 tonne','gold');
+assert.equal(goldReserve.unit,'TROY_OUNCES');
+assert.ok(Math.abs(goldReserve.value-32150.74656862745)<1e-6);
 
 const identity={
   listOccurrences(){return[{
