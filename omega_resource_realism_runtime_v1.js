@@ -123,25 +123,22 @@ function splitCommodities(raw,resourceIds=[]){
 function quality(raw,resourceId){
  const r=rid(resourceId),o=typeof raw==='object'&&raw?raw:{},pick=(...ks)=>{for(const k of ks)if(o[k]!==undefined&&o[k]!==null&&o[k]!=='')return o[k];return null};
  const grade=pick('grade'),oreGrade=pick('oreGrade'),concentrationRaw=pick('concentration'),assay=pick('assay'),metalContent=pick('metalContent'),purity=pick('purity'),APIGravity=pick('APIGravity','apiGravity','api');
- const text=String(grade??oreGrade??'');
- const pct=s=>{const m=String(s??'').match(/([0-9]+(?:\.[0-9]+)?)\s*%/);return m?Number(m[1]):null};
- const numeric=v=>{const n=Number(v);return Number.isFinite(n)?n:null};
- const gradePercent=pct(oreGrade??grade),purityFraction=purity===null?null:(pct(purity)!==null?pct(purity)/100:numeric(purity));
+ const gradeText=String(oreGrade??grade??''),pct=s=>{const m=String(s??'').match(/([0-9]+(?:\.[0-9]+)?)\s*%/);return m?Number(m[1]):null};
+ const unitMatch=s=>{const t=String(s??'');if(/g\s*\/\s*t/i.test(t))return{value:Number(t.match(/[-+]?[0-9]+(?:\.[0-9]+)?/)?.[0]),family:'GT'};if(/ppm/i.test(t))return{value:Number(t.match(/[-+]?[0-9]+(?:\.[0-9]+)?/)?.[0]),family:'PPM'};if(/mg\s*\/\s*l/i.test(t))return{value:Number(t.match(/[-+]?[0-9]+(?:\.[0-9]+)?/)?.[0]),family:'MG_L'};if(pct(t)!==null)return{value:pct(t),family:'PERCENT'};const n=Number(t);return Number.isFinite(n)?{value:n,family:'UNKNOWN'}:null};
+ const gradeParsed=unitMatch(gradeText),numeric=v=>{const n=Number(v);return Number.isFinite(n)?n:null};
+ const concentrationParsed=unitMatch(concentrationRaw);
+ const gradePercent=gradeParsed?.family==='PERCENT'?gradeParsed.value:null;
+ const purityFraction=purity===null?null:(pct(purity)!==null?pct(purity)/100:numeric(purity));
  const apiValue=APIGravity===null?null:numeric(APIGravity);
- let concentration=concentrationRaw,concentrationPercent=pct(concentrationRaw);
- if(concentration===null&&r==='natural_gas'&&/%\s*(?:methane|gas)|(?:methane|gas).*%/i.test(text)){
-   concentration=text;concentrationPercent=pct(text);
- }
+ let concentration=concentrationRaw,concentrationPercent=concentrationParsed?.family==='PERCENT'?concentrationParsed.value:null;
+ let concentrationValue=concentrationParsed?.value??null,concentrationUnitFamily=concentrationParsed?.family??null;
+ if(concentration===null&&r==='natural_gas'&&/%\s*(?:methane|gas)|(?:methane|gas).*%/i.test(gradeText)){concentration=gradeText;concentrationPercent=pct(gradeText);concentrationValue=concentrationPercent;concentrationUnitFamily='PERCENT'}
  return{grade,oreGrade,concentration,assay,metalContent,purity,APIGravity,
-   gradeStatus:(grade??oreGrade)!==null?'OBSERVED':'UNOBSERVED',
-   concentrationStatus:concentration!==null?'OBSERVED':'UNOBSERVED',
-   assayStatus:assay!==null?'OBSERVED':'UNOBSERVED',
-   metalContentStatus:metalContent!==null?'OBSERVED':'UNOBSERVED',
-   purityStatus:purity!==null?'OBSERVED':'UNOBSERVED',
-   apiGravityStatus:APIGravity!==null?'OBSERVED':'UNOBSERVED',
-   normalized:{gradePercent,concentrationPercent,purityFraction,APIGravity:apiValue},
-   semantics:{grade:'ore_or_feed_composition',oreGrade:'ore_head_grade',concentration:'element_or_compound_concentration',assay:'laboratory_assay',metalContent:'contained_metal_fraction',purity:'refined_or_product_composition',APIGravity:'petroleum_liquid_density_index'},
-   resourceId:r};
+   gradeStatus:(grade??oreGrade)!==null?'OBSERVED':'UNOBSERVED',concentrationStatus:concentration!==null?'OBSERVED':'UNOBSERVED',
+   assayStatus:assay!==null?'OBSERVED':'UNOBSERVED',metalContentStatus:metalContent!==null?'OBSERVED':'UNOBSERVED',
+   purityStatus:purity!==null?'OBSERVED':'UNOBSERVED',apiGravityStatus:APIGravity!==null?'OBSERVED':'UNOBSERVED',
+   normalized:{gradeValue:gradeParsed?.value??null,gradeUnitFamily:gradeParsed?.family??null,gradePercent,concentrationValue,concentrationUnitFamily,concentrationPercent,purityFraction,APIGravity:apiValue},
+   semantics:{grade:'ore_or_feed_composition',oreGrade:'ore_head_grade',concentration:'element_or_compound_concentration',assay:'laboratory_assay',metalContent:'contained_metal_fraction',purity:'refined_or_product_composition',APIGravity:'petroleum_liquid_density_index'},resourceId:r};
 }
 function resourceFromSite(site,profile){
  const explicit=rid(site?.resourceId||site?.resourceTypeId||site?.resId||site?.resource||'');
