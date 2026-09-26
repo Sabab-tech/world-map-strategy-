@@ -8825,8 +8825,11 @@ _globalScope.GSRSK_DataFoundation = (() => {
         getMineSiteReferences(countryKey = null) {
             const rows = Array.isArray(this.mineSiteReferences) ? this.mineSiteReferences : [];
             if (countryKey == null) return rows.slice();
-            const iso = this.normalizeCountryCode(countryKey);
-            return rows.filter(row => String(row.countryCode || row.countryId || '').toUpperCase() === String(iso).toUpperCase()).slice();
+            const raw = String(countryKey || '').trim().toUpperCase();
+            let normalized = raw;
+            try { normalized = String(this.normalizeCountryCode(countryKey) || raw).trim().toUpperCase(); } catch (_) {}
+            const candidates = new Set([raw, normalized]);
+            return rows.filter(row => candidates.has(String(row.countryCode || row.countryId || '').trim().toUpperCase())).slice();
         }
 
         getCountryResourceProfile(countryKey) {
