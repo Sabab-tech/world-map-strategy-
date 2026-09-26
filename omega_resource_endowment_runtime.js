@@ -201,6 +201,7 @@
             /* parent record may be a legacy single-commodity stream */
           }
           out.push({
+            assetId:'ASSET:OCC:'+String(key).toUpperCase(),
             occurrenceKey:key,parentOccurrenceKey:reserve.parentOccurrenceKey||occ.occurrenceKey,depositKey:occ.depositKey,resourceId,countryId:wanted,
             depositName:dep.depositRawName,locationNodeKey:dep.locationNodeKey||occ.locationNodeKey||null,
             resourceTypeKey:resourceId,reserveState:reserve,capacity,
@@ -486,6 +487,7 @@ function batchFromExtraction(x,record){
         structuredExecutableMineCount:occurrenceRows(c).length,
         profileDerivedExecutableAssetCount:rows.filter(x=>x.isSimulationGenerated).length,
         mineSiteReferenceCount,
+        unifiedAssetCount:Number(g.__OmegaResourceIdentityRegistry?.getUnifiedAssetsByCountry?.(c)?.length)||0,
         reserveSource:'GSRSK_Part05.ResourceReserveExtractionEngine',
         countryScoped:true,fullEffortPolicy:'MODEL_DRIVEN',simulationTurn:turn(),dataLoadReport:eDataReport()
       }
@@ -878,10 +880,11 @@ function batchFromExtraction(x,record){
     for(const c of countries()){
       const m=state()?.resource?.[c]?.mines;if(Array.isArray(m))mines.push(...m);
     }
-    let batchCount=0,warehouseCount=0,latestMineOutputs=0,inventoryLotCount=0,minePathCount=0,mineSiteReferenceCount=0,mineSiteControllerCount=0,structuredMineCount=0,executableAssetCount=0,fieldAssetCount=0;
+    let batchCount=0,warehouseCount=0,latestMineOutputs=0,inventoryLotCount=0,minePathCount=0,mineSiteReferenceCount=0,mineSiteControllerCount=0,structuredMineCount=0,executableAssetCount=0,fieldAssetCount=0,unifiedAssetCount=0;
     for(const c of countries()){
       const rs=state()?.resource?.[c]||{};
       mineSiteReferenceCount+=Array.isArray(rs.mineSiteReferences)?rs.mineSiteReferences.length:0;
+      unifiedAssetCount+=Number(g.__OmegaResourceIdentityRegistry?.getUnifiedAssetsByCountry?.(c)?.length)||0;
       mineSiteControllerCount+=rs.mineSiteControllers&&typeof rs.mineSiteControllers==='object'?Object.keys(rs.mineSiteControllers).length:0;
       batchCount+=Array.isArray(rs.batches)?rs.batches.length:0;
       warehouseCount+=rs.warehouse?.warehouseId?1:0;
@@ -890,7 +893,7 @@ function batchFromExtraction(x,record){
       minePathCount+=rs.minePaths&&typeof rs.minePaths==='object'?Object.keys(rs.minePaths).length:0;
       if(Array.isArray(rs.mines)){structuredMineCount+=rs.mines.filter(x=>!x?.simulationGenerated).length;executableAssetCount+=rs.mines.filter(x=>x?.simulationGenerated===true).length;fieldAssetCount+=rs.mines.filter(x=>x?.simulationGenerated===true&&['OIL_FIELD','GAS_FIELD'].includes(x?.assetType)).length;}
     }
-    let profileDerivedExecutableAssetCount=0,profileDerivedActiveAssetCount=0,profileDerivedBlockedAssetCount=0;for(const c of countries()){const rs=state()?.resource?.[c]||{};const outs=rs.mineOutputs&&typeof rs.mineOutputs==='object'?Object.values(rs.mineOutputs):[];const simOuts=outs.filter(x=>x?.simulationGenerated===true);profileDerivedExecutableAssetCount+=simOuts.length;profileDerivedActiveAssetCount+=simOuts.filter(x=>x?.status==='APPROVED'||x?.status==='PARTIALLY_APPROVED').length;profileDerivedBlockedAssetCount+=simOuts.filter(x=>String(x?.status||'').startsWith('BLOCKED')).length;} return{version:VERSION,engineReady:!!e?.isReady,dataAuthority:'RESOURCE_JSON + SIMULATION_RULESET_FOR_UNQUANTIFIED_PROFILE_SITES',dataLoad:clone(e?.getDataLoadReport?.()||e?.dataLoadReport||null),identityRegistryReady:!!g.__OmegaResourceIdentityRegistry,reserveRegistryReady:!!r,countryCount:countries().length,mineCount:mines.length,structuredMineCount,executableAssetCount,fieldAssetCount,mineSiteReferenceCount,mineSiteControllerCount,compiledReserveStates:r?.reserveStates?.size||0,batchCount,warehouseCount,latestMineOutputs,inventoryLotCount,minePathCount,profileDerivedExecutableAssetCount,profileDerivedActiveAssetCount,profileDerivedBlockedAssetCount,fullEffortPolicy:'MODEL_DRIVEN'};
+    let profileDerivedExecutableAssetCount=0,profileDerivedActiveAssetCount=0,profileDerivedBlockedAssetCount=0;for(const c of countries()){const rs=state()?.resource?.[c]||{};const outs=rs.mineOutputs&&typeof rs.mineOutputs==='object'?Object.values(rs.mineOutputs):[];const simOuts=outs.filter(x=>x?.simulationGenerated===true);profileDerivedExecutableAssetCount+=simOuts.length;profileDerivedActiveAssetCount+=simOuts.filter(x=>x?.status==='APPROVED'||x?.status==='PARTIALLY_APPROVED').length;profileDerivedBlockedAssetCount+=simOuts.filter(x=>String(x?.status||'').startsWith('BLOCKED')).length;} return{version:VERSION,engineReady:!!e?.isReady,dataAuthority:'RESOURCE_JSON + SIMULATION_RULESET_FOR_UNQUANTIFIED_PROFILE_SITES',dataLoad:clone(e?.getDataLoadReport?.()||e?.dataLoadReport||null),identityRegistryReady:!!g.__OmegaResourceIdentityRegistry,reserveRegistryReady:!!r,countryCount:countries().length,mineCount:mines.length,structuredMineCount,executableAssetCount,fieldAssetCount,mineSiteReferenceCount,unifiedAssetCount,mineSiteControllerCount,compiledReserveStates:r?.reserveStates?.size||0,batchCount,warehouseCount,latestMineOutputs,inventoryLotCount,minePathCount,profileDerivedExecutableAssetCount,profileDerivedActiveAssetCount,profileDerivedBlockedAssetCount,fullEffortPolicy:'MODEL_DRIVEN'};
   }
   function init(){
     install();
