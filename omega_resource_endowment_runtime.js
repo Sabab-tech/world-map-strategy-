@@ -146,9 +146,11 @@
     if(!knowledge||!p4?.compileIdentities||!p5?.compileReserves)return{status:'WAITING_DEPENDENCIES'};
     const identityResult=p4.compileIdentities(knowledge,null,null);
     if(!identityResult?.registry)return{status:'FAILED',reason:'RESOURCE_IDENTITY_COMPILATION_FAILED',detail:clone(identityResult)};
-    const reserveResult=p5.compileReserves(identityResult.registry,null,knowledge,{});
+    const identityRegistry=g.OmegaResourceProductionModelV2?.normalizeIdentityRegistry?.(identityResult.registry)||identityResult.registry;
+    const reserveResult=p5.compileReserves(identityRegistry,null,knowledge,{});
+
     if(!reserveResult?.registry)return{status:'FAILED',reason:'RESOURCE_RESERVE_COMPILATION_FAILED',detail:clone(reserveResult)};
-    g.__OmegaResourceIdentityRegistry=identityResult.registry;
+    g.__OmegaResourceIdentityRegistry=identityRegistry;
     g.__OmegaResourceReserveRegistry=reserveResult.registry;
     g.__OmegaResourceKnowledgeModel=knowledge;
     return{status:'READY',identity:identityResult,reserve:reserveResult};
