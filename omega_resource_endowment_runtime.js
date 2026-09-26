@@ -359,7 +359,16 @@ function batchFromExtraction(x,record){
           return{
             ...(asset.rawSource&&typeof asset.rawSource==='object'?clone(asset.rawSource):{}),
             assetId:asset.assetId,siteReferenceKey:asset.siteReferenceKey,siteName:asset.siteName,name:asset.siteName,
-            countryId:asset.countryId,countryCode:asset.countryCode,sourcePath:asset.provenance?.sourcePath||null,
+            countryId:asset.countryId,countryCode:asset.countryCode,
+            resourceId:asset.resourceType?.id||null,resourceTypeId:asset.resourceType?.id||null,resourceTypeKey:asset.resourceType?.id||null,
+            reserves:asset.reserve?.declared??asset.reserve?.geologicalQuantity??null,
+            reserveQuantity:asset.reserve?.declared??asset.reserve?.geologicalQuantity??null,
+            productionRate:asset.production?.ratePerDay??asset.production?.currentProduction??null,
+            currentProduction:asset.production?.currentProduction??asset.production?.ratePerDay??null,
+            productionCapacity:asset.production?.nominalCapacity??null,
+            grade:asset.quality?.grade??null,purity:asset.quality?.purity??null,concentration:asset.quality?.concentration??null,
+            status:asset.operating?.status||'UNKNOWN',operatingStatus:asset.operating?.status||'UNKNOWN',
+            sourcePath:asset.provenance?.sourcePath||null,
             sourceDatasetId:asset.provenance?.sourceDatasetId||null,normalizedAsset:asset
           };
         })
