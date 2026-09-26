@@ -371,7 +371,7 @@
   function eDataReport(){try{return clone(engine()?.getDataLoadReport?.()||engine()?.dataLoadReport||null);}catch(_){return null;}}
 
   function hydrateHandler(cmd,ctx){
-    const c=canonical(ctx.countryId),existing=clone(state()?.resource?.[c]||{}),rows=[...occurrenceRows(c),...siteExecutionRows(c,existing)];
+    const c=canonical(ctx.countryId),existing=clone(state()?.resource?.[c]||{}),rows=occurrenceRows(c);
     const projection=buildCountryProjection(c,rows,existing);
     const mineSiteReferenceCount=Number(projection.mineSiteReferenceCount)||0;
     for(const [path,value] of [
