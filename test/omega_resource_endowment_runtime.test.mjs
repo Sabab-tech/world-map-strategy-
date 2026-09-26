@@ -54,32 +54,7 @@ await import('../omega_resource_part05_reserve_extraction_runtime.js');
 await import('../omega_resource_production_model_v2.js');
 await import('../omega_resource_realism_runtime_v1.js');
 await import('../omega_resource_endowment_runtime.js');
-const p5Probe=globalThis.GSRSK_Part05||globalThis.GSRSK_ResourceReserveExtractionEngine;
-console.log('RESOURCE_P5_PROBE',JSON.stringify({
-  version:p5Probe?.VERSION||null,
-  productionModelV2:!!p5Probe?.__productionModelV2,
-  capacityConstructor:typeof p5Probe?.Capacity==='function',
-  realismRuntime:!!globalThis.Omega?.ResourceRealism,
-  productionModelGlobal:globalThis.OmegaResourceProductionModelV2?.VERSION||null
-}));
-
-const p4ResultProbe=null;
-console.log('RESOURCE_P4_PROBE',JSON.stringify({
-  version:p4Probe?.VERSION||null,
-  keys:Object.keys(p4ResultProbe||{}),
-  registryKeys:Object.keys(p4ResultProbe?.registry||{}),
-  hasListOccurrences:typeof p4ResultProbe?.registry?.listOccurrences==='function'
-}));
 const runtime=globalThis.OmegaResourceEndowmentRuntime;
-const compileProbe=runtime.compile();
-console.log('RESOURCE_COMPILE_PROBE',JSON.stringify({
-  status:compileProbe?.status,
-  reason:compileProbe?.reason||null,
-  identity:compileProbe?.identity?.status||null,
-  reserve:compileProbe?.reserve?.status||null,
-  reserveReason:compileProbe?.reserve?.reason||null,
-  detail:compileProbe?.detail?.reason||compileProbe?.detail?.status||null
-}));
 const initialized=await runtime.initialize();
 assert.equal(initialized.status,'READY',JSON.stringify(initialized));
 const hydrated=runtime.hydrateCountry('BGD');
