@@ -117,9 +117,14 @@ vm.runInNewContext(resourceBridgeSource, sandbox, { filename: 'omega_resource_se
   assert.equal(bridgeDiag.countries, 249, `Resource bridge must mirror all 249 canonical country IDs, got ${bridgeDiag.countries}`);
 
   const ontology = files.get('resource_ontology.json');
-  const resourceTypes = ontology?.COMMODITY_ONTOLOGIES || {};
-  assert.equal(Object.keys(resourceTypes).length, 18, `Expected 18 canonical resource types, got ${Object.keys(resourceTypes).length}`);
-  for (const [id, record] of Object.entries(resourceTypes)) {
+  const resourceTypes = ontology?.RUNTIME_RESOURCE_ONTOLOGIES || {};
+  const runtimeResourceIds = ontology?.runtimeResourceIds || Object.keys(resourceTypes);
+  assert.equal(runtimeResourceIds.length, 14, `Expected 14 canonical runtime resource types, got ${runtimeResourceIds.length}`);
+  assert.equal(Object.keys(resourceTypes).length, 14, `Runtime ontology must expose 14 canonical resource IDs, got ${Object.keys(resourceTypes).length}`);
+  for (const id of runtimeResourceIds) {
+    const record=resourceTypes[id];
+    assert.ok(record, `Missing runtime ontology record for ${id}`);
+
     assert.equal(String(record?.key || id).toUpperCase(), id.toUpperCase(), `Resource ID mismatch for ${id}`);
     assert.ok(record?.name, `Resource ${id} must have a canonical name`);
     assert.ok(resourceBridge.resolveResource(id)?.id === id, `Resource ${id} must resolve by ID`);
