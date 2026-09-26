@@ -1018,9 +1018,9 @@
               "locationNodeKey": "ASSET:CUB:moa_bay_nickel_mine",
               "status": "ACTIVE_PRODUCING",
               "operationalStatus": "ACTIVE_PRODUCING",
-              "owner": "Cuban state / Sherritt framework",
-              "operator": "Moa Joint Venture",
-              "extractionMethod": "open-pit laterite and hydrometallurgy",
+              "owner": "Moa Joint Venture",
+              "operator": "Moa Nickel S.A. / Sherritt-led joint venture",
+              "extractionMethod": "open-pit lateritic nickel mining feeding pressure-acid-leach processing",
               "startYear": 1959,
               "legacyReferenceName": "Moa Bay Nickel Mine",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -1095,18 +1095,19 @@
                   "status": "UNOBSERVED"
                 },
                 "production": {
-                  "annual": null,
-                  "rate": null,
-                  "unit": null,
-                  "year": null,
-                  "status": "UNOBSERVED"
+                  "annual": {
+                    "value": 25240,
+                    "unit": "metric_tons_nickel",
+                    "year": 2025,
+                    "status": "OBSERVED"
+                  }
                 },
                 "grade": {
                   "value": null,
                   "unit": null,
                   "status": "UNOBSERVED"
                 },
-                "quantitativeExtractionDataAvailable": false
+                "quantitativeExtractionDataAvailable": true
               },
               "resourceIdentity": {
                 "resourceTypeId": "nickel",
@@ -1139,14 +1140,20 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED"
               },
-              "extractionEligibility": "EXECUTABLE",
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "webResearchEvidence": [
+                {
+                  "url": "https://sherritt.com/sherritt-reports-fourth-quarter-and-full-year-2025-results-provides-2026-guidance/",
+                  "accessed": "2026-09-27",
+                  "scope": "2025_Moa_nickel"
+                }
+              ],
+              "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "NOT_PERFORMED_IN_CURRENT_WEB_REVALIDATION_PASS",
-                "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
-                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass."
+                "reviewedAt": "2026-09-27",
+                "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVALIDATION",
+                "currentEvidence": "Sherritt reports full-year 2025 Moa Joint Venture production of 25,240 tonnes nickel and 2,728 tonnes cobalt on a 100% basis."
               }
             },
             {
@@ -1202,8 +1209,7 @@
                 "sourceQuery": "Punta Gorda Extraction Facility, Holguín, CUB",
                 "legacyReferenceName": "Punta Gorda Extraction Facility",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
-                "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "webReview": "Site-specific current/recent source rechecked 2026-09-27"
+                "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
               },
               "mineralTarget": "limonite and serpentine",
               "products": [
@@ -1214,11 +1220,11 @@
               "webResearchEvidence": [
                 {
                   "url": "https://www.directoriocubano.com/servicios/gaceta-oficial/2026/extraordinaria/49/",
-                  "accessed": "2026-09-27",
-                  "scope": "2026_concession_extension_and_processing"
+                  "accessed": "2026-09-26",
+                  "scope": "site_identity_or_operation"
                 }
               ],
-              "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
+              "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
               "commercialExtraction": true,
               "ownerEvidenceStatus": "SITE_SPECIFIC_WEB_VERIFIED",
               "operatorEvidenceStatus": "SITE_SPECIFIC_WEB_VERIFIED",
@@ -1303,14 +1309,8 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED"
-              },
-              "researchMetadata": {
-                "reviewedAt": "2026-09-27",
-                "currentConcession": "Cuba extended Punta Gorda exploitation and processing concession to 23 April 2051 for limonite and serpentine to produce nickel/cobalt concentrates",
-                "sourceAuthority": "Official Gazette of Cuba, Agreement 10330 dated 2026-03-16"
-              },
-              "extractionEligibility": "EXECUTABLE"
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
+              }
             },
             {
               "id": "SITE_CUB_nicaro_nickel_complex",
@@ -1994,14 +1994,7 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
-              },
-              "extractionEligibility": "EXECUTABLE",
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-              "researchMetadata": {
-                "reviewedAt": "NOT_PERFORMED_IN_CURRENT_WEB_REVALIDATION_PASS",
-                "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
-                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass."
+                "webResearch": "NOT_PER_SITE_VERIFIED"
               }
             }
           ],
@@ -2528,13 +2521,7 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
-              },
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-              "researchMetadata": {
-                "reviewedAt": "NOT_PERFORMED_IN_CURRENT_WEB_REVALIDATION_PASS",
-                "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
-                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass."
+                "webResearch": "NOT_PER_SITE_VERIFIED"
               }
             }
           ],
@@ -2971,8 +2958,7 @@
                 "sourceQuery": "Pueblo Viejo Gold Mine, Sánchez Ramírez, DOM",
                 "legacyReferenceName": "Dominican Republic Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
-                "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "webReview": "Site-specific current/recent source rechecked 2026-09-27"
+                "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
               },
               "commercialExtraction": true,
               "siteIdentity": {
@@ -3056,24 +3042,8 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED"
-              },
-              "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
-              "webResearchEvidence": [
-                {
-                  "url": "https://www.sec.gov/Archives/edgar/data/756894/000119312526079253/d833573dex991.htm",
-                  "accessed": "2026-09-27",
-                  "scope": "2025_production_and_mining_method"
-                }
-              ],
-              "researchMetadata": {
-                "reviewedAt": "2026-09-27",
-                "production2025": "379,014 oz gold, Barrick 60% share",
-                "mineMethod": "open pit conventional truck-and-shovel",
-                "mineLife": "open-pit mining expected through 2048 under current reserves and tailings plan",
-                "sourceAuthority": "Barrick technical report filed with SEC"
-              },
-              "extractionEligibility": "EXECUTABLE"
+                "webResearch": "NOT_PER_SITE_VERIFIED"
+              }
             }
           ],
           "processingFacilities": [
@@ -3598,14 +3568,7 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
-              },
-              "extractionEligibility": "EXECUTABLE",
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-              "researchMetadata": {
-                "reviewedAt": "NOT_PERFORMED_IN_CURRENT_WEB_REVALIDATION_PASS",
-                "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
-                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass."
+                "webResearch": "NOT_PER_SITE_VERIFIED"
               }
             }
           ],
@@ -4662,14 +4625,7 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
-              },
-              "extractionEligibility": "EXECUTABLE",
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-              "researchMetadata": {
-                "reviewedAt": "NOT_PERFORMED_IN_CURRENT_WEB_REVALIDATION_PASS",
-                "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
-                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass."
+                "webResearch": "NOT_PER_SITE_VERIFIED"
               }
             }
           ],
@@ -5209,8 +5165,7 @@
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
-              },
-              "extractionEligibility": "EXECUTABLE"
+              }
             }
           ],
           "processingFacilities": [
@@ -5735,13 +5690,7 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
-              },
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-              "researchMetadata": {
-                "reviewedAt": "NOT_PERFORMED_IN_CURRENT_WEB_REVALIDATION_PASS",
-                "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
-                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass."
+                "webResearch": "NOT_PER_SITE_VERIFIED"
               }
             }
           ],
@@ -6278,8 +6227,7 @@
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
-              },
-              "extractionEligibility": "EXECUTABLE"
+              }
             }
           ],
           "processingFacilities": [
@@ -6805,13 +6753,7 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
-              },
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-              "researchMetadata": {
-                "reviewedAt": "NOT_PERFORMED_IN_CURRENT_WEB_REVALIDATION_PASS",
-                "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
-                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass."
+                "webResearch": "NOT_PER_SITE_VERIFIED"
               }
             }
           ],
@@ -7338,13 +7280,7 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
-              },
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-              "researchMetadata": {
-                "reviewedAt": "NOT_PERFORMED_IN_CURRENT_WEB_REVALIDATION_PASS",
-                "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
-                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass."
+                "webResearch": "NOT_PER_SITE_VERIFIED"
               }
             }
           ],
@@ -7876,8 +7812,7 @@
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
-              },
-              "extractionEligibility": "EXECUTABLE"
+              }
             }
           ],
           "processingFacilities": [
@@ -8316,8 +8251,7 @@
                 "sourceQuery": "Merian Gold Mine, Sipaliwini, SUR",
                 "legacyReferenceName": "Suriname Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
-                "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "webReview": "Site-specific current/recent source rechecked 2026-09-27"
+                "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
               },
               "commercialExtraction": true,
               "siteIdentity": {
@@ -8401,22 +8335,8 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED"
-              },
-              "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
-              "webResearchEvidence": [
-                {
-                  "url": "https://www.zijinmining.com/upload/file/2026/03/23/b282f1b639b749299a379c72d3e7b979.pdf",
-                  "accessed": "2026-09-27",
-                  "scope": "2025_production_and_2026_guidance"
-                }
-              ],
-              "researchMetadata": {
-                "reviewedAt": "2026-09-27",
-                "production2025": "reported 8.3 tonnes mine-produced gold",
-                "sourceAuthority": "Zijin Mining 2025 annual report"
-              },
-              "extractionEligibility": "EXECUTABLE"
+                "webResearch": "NOT_PER_SITE_VERIFIED"
+              }
             }
           ],
           "processingFacilities": [
@@ -8854,8 +8774,7 @@
                 "sourceQuery": "Aurora Gold Mine, Cuyuni-Mazaruni, GUY",
                 "legacyReferenceName": "Guyana Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
-                "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "webReview": "Site-specific current/recent source rechecked 2026-09-27"
+                "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
               },
               "commercialExtraction": true,
               "siteIdentity": {
@@ -8939,37 +8858,8 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED"
-              },
-              "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
-              "webResearchEvidence": [
-                {
-                  "url": "https://www.zijinmining.com/global/program-detail-71743.htm",
-                  "accessed": "2026-09-27",
-                  "scope": "current_asset_profile_and_2025_production"
-                },
-                {
-                  "url": "https://www.zijinmining.com/upload/file/2026/03/23/b282f1b639b749299a379c72d3e7b979.pdf",
-                  "accessed": "2026-09-27",
-                  "scope": "2025_actual_and_2026_guidance"
-                },
-                {
-                  "url": "https://www1.hkexnews.hk/listedco/listconews/sehk/2025/0919/2025091900073.pdf",
-                  "accessed": "2026-09-27",
-                  "scope": "2025_H1_operating_profile"
-                }
-              ],
-              "researchMetadata": {
-                "reviewedAt": "2026-09-27",
-                "production2025": "4.5 tonnes mine-produced gold, 100% basis",
-                "productionH1_2026": "about 2.2 tonnes",
-                "resources": "181 tonnes contained gold; 2.37 g/t",
-                "processingCapacity": "10,000 tonnes/day",
-                "mineMethod": "open pit + underground + gravity + cyanide leaching",
-                "ownership": "Zijin 85%",
-                "sourceAuthority": "Zijin Mining"
-              },
-              "extractionEligibility": "EXECUTABLE"
+                "webResearch": "NOT_PER_SITE_VERIFIED"
+              }
             }
           ],
           "processingFacilities": [
@@ -9404,8 +9294,7 @@
                 "sourceQuery": "Boddington Gold Mine, Western Australia, AUS",
                 "legacyReferenceName": "Australia Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
-                "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "webReview": "Site-specific current/recent source rechecked 2026-09-27"
+                "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
               },
               "commercialExtraction": true,
               "siteIdentity": {
@@ -9489,25 +9378,8 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED"
-              },
-              "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
-              "webResearchEvidence": [
-                {
-                  "url": "https://www.sec.gov/Archives/edgar/data/1164727/000110465926035231/nem-20251231xars.pdf",
-                  "accessed": "2026-09-27",
-                  "scope": "2025_asset_reserve_and_mining_profile"
-                }
-              ],
-              "researchMetadata": {
-                "reviewedAt": "2026-09-27",
-                "ownership": "100% Newmont",
-                "mineMethod": "two open pits",
-                "currentMiningCapacity": "about 200,000-250,000 tonnes material/day",
-                "reserveAt2025End": "10.2 Moz gold and 0.5 Mt copper",
-                "sourceAuthority": "Newmont 2025 Form 10-K"
-              },
-              "extractionEligibility": "EXECUTABLE"
+                "webResearch": "NOT_PER_SITE_VERIFIED"
+              }
             }
           ],
           "processingFacilities": [
@@ -9943,8 +9815,7 @@
                 "sourceQuery": "Macraes Gold Mine, Otago, NZL",
                 "legacyReferenceName": "New Zealand Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
-                "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "webReview": "Site-specific current/recent source rechecked 2026-09-27"
+                "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
               },
               "commercialExtraction": true,
               "siteIdentity": {
@@ -10028,30 +9899,8 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED"
-              },
-              "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
-              "webResearchEvidence": [
-                {
-                  "url": "https://oceanagold.com/operations/macraes",
-                  "accessed": "2026-09-27",
-                  "scope": "current_asset_profile_and_2025_results"
-                },
-                {
-                  "url": "https://www.sec.gov/Archives/edgar/data/1487326/000162828026021651/oceanagold-ex992xannualinf.htm",
-                  "accessed": "2026-09-27",
-                  "scope": "2025_production_and_2026_guidance"
-                }
-              ],
-              "researchMetadata": {
-                "reviewedAt": "2026-09-27",
-                "production2025": "147,007 oz gold",
-                "production2026Guidance": "135,000-155,000 oz",
-                "mineMethod": "open pit + underground",
-                "ownership": "100%",
-                "sourceAuthority": "OceanaGold"
-              },
-              "extractionEligibility": "EXECUTABLE"
+                "webResearch": "NOT_PER_SITE_VERIFIED"
+              }
             }
           ],
           "processingFacilities": [
@@ -10510,8 +10359,7 @@
                 "sourceQuery": "Lihir Gold Mine, New Ireland, PNG",
                 "legacyReferenceName": "Papua New Guinea Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
-                "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "webReview": "Site-specific current/recent source rechecked 2026-09-27"
+                "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
               },
               "commercialExtraction": true,
               "siteIdentity": {
@@ -10595,24 +10443,8 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED"
-              },
-              "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
-              "webResearchEvidence": [
-                {
-                  "url": "https://www.newmont.com/investors/news-release/news-details/2026/Newmont-Reports-2025-Mineral-Reserves-of-118-2-Million-Gold-Ounces-and-12-5-Million-Tonnes-of-Copper/default.aspx",
-                  "accessed": "2026-09-27",
-                  "scope": "2025_reserves_and_grade"
-                }
-              ],
-              "researchMetadata": {
-                "reviewedAt": "2026-09-27",
-                "reserveAt2025End": "18.3 Moz gold reserves on reported 100% basis",
-                "reserveGrade": "2.4 g/t Au",
-                "mineLifeReserveYears": "75",
-                "sourceAuthority": "Newmont 2025 reserve disclosure"
-              },
-              "extractionEligibility": "EXECUTABLE"
+                "webResearch": "NOT_PER_SITE_VERIFIED"
+              }
             }
           ],
           "processingFacilities": [
@@ -11071,8 +10903,7 @@
                 "sourceQuery": "Vatukoula Gold Mine, Viti Levu, FJI",
                 "legacyReferenceName": "Fiji Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
-                "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "webReview": "Site-specific current/recent source rechecked 2026-09-27"
+                "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
               },
               "commercialExtraction": true,
               "siteIdentity": {
@@ -11156,22 +10987,8 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED"
-              },
-              "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
-              "webResearchEvidence": [
-                {
-                  "url": "https://www.fijitimes.com.fj/rbf-clarifies-gold-output-calculations/",
-                  "accessed": "2026-09-27",
-                  "scope": "2025_output_reporting_and_operator"
-                }
-              ],
-              "researchMetadata": {
-                "reviewedAt": "2026-09-27",
-                "currentProductionContext": "VGML continues production; 2025 reporting changed because output is now reported separately as gold ore and gold concentrates",
-                "sourceAuthority": "Reserve Bank of Fiji / Fiji Times report citing VGML"
-              },
-              "extractionEligibility": "EXECUTABLE"
+                "webResearch": "NOT_PER_SITE_VERIFIED"
+              }
             }
           ],
           "processingFacilities": [
@@ -11732,8 +11549,7 @@
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
-              },
-              "extractionEligibility": "EXECUTABLE"
+              }
             }
           ],
           "processingFacilities": [
@@ -12258,13 +12074,7 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
-              },
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-              "researchMetadata": {
-                "reviewedAt": "NOT_PERFORMED_IN_CURRENT_WEB_REVALIDATION_PASS",
-                "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
-                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass."
+                "webResearch": "NOT_PER_SITE_VERIFIED"
               }
             }
           ],
@@ -13888,8 +13698,7 @@
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
-              },
-              "extractionEligibility": "EXECUTABLE"
+              }
             }
           ],
           "processingFacilities": [
@@ -14965,8 +14774,7 @@
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
-              },
-              "extractionEligibility": "EXECUTABLE"
+              }
             }
           ],
           "processingFacilities": [
@@ -15501,8 +15309,7 @@
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
-              },
-              "extractionEligibility": "EXECUTABLE"
+              }
             }
           ],
           "processingFacilities": [

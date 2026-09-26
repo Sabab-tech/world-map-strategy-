@@ -62989,8 +62989,8 @@
               "status": "ACTIVE_PRODUCING",
               "operationalStatus": "ACTIVE_PRODUCING",
               "owner": "LKAB",
-              "operator": "LKAB",
-              "extractionMethod": "underground sublevel caving",
+              "operator": "LKAB – Kiruna Mine",
+              "extractionMethod": "large-scale underground iron ore mining with drilling, blasting, haulage and processing",
               "startYear": 1899,
               "legacyReferenceName": "Sweden Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -63043,8 +63043,8 @@
               "locationIdentity": {
                 "countryIso3": "SWE",
                 "countryName": "Sweden",
-                "adminRegion": "Norrbotten",
-                "locality": "Norrbotten",
+                "adminRegion": "Norrbotten County",
+                "locality": "Kiruna",
                 "coordinates": {
                   "lat": 67.86,
                   "lng": 20.23
@@ -63063,9 +63063,10 @@
               },
               "quantitativeProfile": {
                 "reserve": {
-                  "quantity": null,
-                  "unit": null,
-                  "status": "UNOBSERVED"
+                  "quantity": 544000000,
+                  "unit": "metric_tons_iron_ore",
+                  "year": 2025,
+                  "status": "OBSERVED"
                 },
                 "production": {
                   "annual": null,
@@ -63075,11 +63076,11 @@
                   "status": "UNOBSERVED"
                 },
                 "grade": {
-                  "value": null,
-                  "unit": null,
-                  "status": "UNOBSERVED"
+                  "value": 45.5,
+                  "unit": "percent_Fe",
+                  "status": "OBSERVED"
                 },
-                "quantitativeExtractionDataAvailable": false
+                "quantitativeExtractionDataAvailable": true
               },
               "resourceIdentity": {
                 "resourceTypeId": "iron_ore",
@@ -63107,19 +63108,32 @@
                 "operation": "COMPLETE",
                 "ownership": "REPORTED",
                 "quantitative": {
-                  "reserve": "UNOBSERVED",
+                  "reserve": "OBSERVED",
                   "production": "UNOBSERVED",
-                  "grade": "UNOBSERVED"
+                  "grade": "OBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED"
               },
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "NOT_PERFORMED_IN_CURRENT_WEB_REVALIDATION_PASS",
-                "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
-                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass."
-              }
+                "reviewedAt": "2026-09-27",
+                "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVALIDATION",
+                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
+                "currentEvidence": "LKAB reports 544 Mt Kiruna mineral reserves at 45.5% Fe in 2025."
+              },
+              "reserveContext": {
+                "mineralResourcesExcludingReserves": 1129000000,
+                "unit": "metric_tons",
+                "year": 2025
+              },
+              "webResearchEvidence": [
+                {
+                  "url": "https://lkab.com/wp-content/uploads/2026/04/LKAB_Annual-and-Sustainability-Report-2025_260423.pdf",
+                  "accessed": "2026-09-27",
+                  "scope": "2025_Kiruna_reserves_grade"
+                }
+              ]
             }
           ],
           "processingFacilities": [
@@ -81635,9 +81649,9 @@
               "locationNodeKey": "ASSET:CAN:voisey_s_bay_nickel_mine",
               "status": "ACTIVE_PRODUCING",
               "operationalStatus": "ACTIVE_PRODUCING",
-              "owner": "Vale Base Metals / state interests",
-              "operator": "Vale Newfoundland & Labrador",
-              "extractionMethod": "open-pit and underground",
+              "owner": "Vale S.A.",
+              "operator": "Vale Base Metals – Voisey's Bay",
+              "extractionMethod": "open-pit and underground nickel mining with processing of nickel-bearing ore",
               "startYear": 2005,
               "legacyReferenceName": "Canada Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -81715,18 +81729,19 @@
                   "status": "UNOBSERVED"
                 },
                 "production": {
-                  "annual": null,
-                  "rate": null,
-                  "unit": null,
-                  "year": null,
-                  "status": "UNOBSERVED"
+                  "annual": {
+                    "value": 33100,
+                    "unit": "metric_tons_contained_nickel",
+                    "year": 2025,
+                    "status": "OBSERVED"
+                  }
                 },
                 "grade": {
                   "value": null,
                   "unit": null,
                   "status": "UNOBSERVED"
                 },
-                "quantitativeExtractionDataAvailable": false
+                "quantitativeExtractionDataAvailable": true
               },
               "resourceIdentity": {
                 "resourceTypeId": "nickel",
@@ -81759,14 +81774,22 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED"
               },
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "NOT_PERFORMED_IN_CURRENT_WEB_REVALIDATION_PASS",
-                "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
-                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass."
-              }
+                "reviewedAt": "2026-09-27",
+                "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVALIDATION",
+                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
+                "currentEvidence": "Vale reports 33.1 kt contained nickel production from Voisey's Bay in 2025 and identifies the mine as open-pit/underground."
+              },
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.sec.gov/Archives/edgar/data/917851/000129281426001844/valeform20f_2025.htm",
+                  "accessed": "2026-09-27",
+                  "scope": "2025_Voiseys_Bay_nickel"
+                }
+              ]
             }
           ],
           "processingFacilities": [
@@ -82167,9 +82190,9 @@
               "locationNodeKey": "ASSET:MEX:pe_asquito_gold_silver_mine",
               "status": "ACTIVE_PRODUCING",
               "operationalStatus": "ACTIVE_PRODUCING",
-              "owner": "Newmont",
-              "operator": "Newmont Peñasquito",
-              "extractionMethod": "open-pit and processing",
+              "owner": "Newmont Corporation",
+              "operator": "Newmont – Peñasquito",
+              "extractionMethod": "large-scale open-pit polymetallic mining with processing circuits",
               "startYear": 2010,
               "legacyReferenceName": "Mexico Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -82247,18 +82270,19 @@
                   "status": "UNOBSERVED"
                 },
                 "production": {
-                  "annual": null,
-                  "rate": null,
-                  "unit": null,
-                  "year": null,
-                  "status": "UNOBSERVED"
+                  "annual": {
+                    "value": 415000,
+                    "unit": "troy_ounces_gold",
+                    "year": 2025,
+                    "status": "OBSERVED"
+                  }
                 },
                 "grade": {
                   "value": null,
                   "unit": null,
                   "status": "UNOBSERVED"
                 },
-                "quantitativeExtractionDataAvailable": false
+                "quantitativeExtractionDataAvailable": true
               },
               "resourceIdentity": {
                 "resourceTypeId": "gold",
@@ -82291,14 +82315,29 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED"
               },
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "NOT_PERFORMED_IN_CURRENT_WEB_REVALIDATION_PASS",
-                "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
-                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass."
-              }
+                "reviewedAt": "2026-09-27",
+                "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVALIDATION",
+                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
+                "currentEvidence": "The 2025 Peñasquito production table reports 415 koz payable gold and 27,702 koz payable silver on a 100% basis."
+              },
+              "productionContext": {
+                "silver2025": {
+                  "value": 27702000,
+                  "unit": "troy_ounces",
+                  "year": 2025
+                }
+              },
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.sec.gov/Archives/edgar/data/1323404/000119312526134908/d56281dex991.htm",
+                  "accessed": "2026-09-27",
+                  "scope": "2025_Penasquito_gold_silver"
+                }
+              ]
             }
           ],
           "processingFacilities": [
@@ -82699,9 +82738,9 @@
               "locationNodeKey": "ASSET:BRA:s11d_iron_ore_mine",
               "status": "ACTIVE_PRODUCING",
               "operationalStatus": "ACTIVE_PRODUCING",
-              "owner": "Vale",
-              "operator": "Vale",
-              "extractionMethod": "open-pit autonomous truck mining",
+              "owner": "Vale S.A.",
+              "operator": "Vale – Carajás / S11D",
+              "extractionMethod": "large-scale open-pit iron ore mining with high-capacity haulage and processing",
               "startYear": 2016,
               "legacyReferenceName": "Brazil Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -82779,18 +82818,19 @@
                   "status": "UNOBSERVED"
                 },
                 "production": {
-                  "annual": null,
-                  "rate": null,
-                  "unit": null,
-                  "year": null,
-                  "status": "UNOBSERVED"
+                  "annual": {
+                    "value": 86000000,
+                    "unit": "metric_tons_iron_ore",
+                    "year": 2025,
+                    "status": "OBSERVED"
+                  }
                 },
                 "grade": {
                   "value": null,
                   "unit": null,
                   "status": "UNOBSERVED"
                 },
-                "quantitativeExtractionDataAvailable": false
+                "quantitativeExtractionDataAvailable": true
               },
               "resourceIdentity": {
                 "resourceTypeId": "iron_ore",
@@ -82823,14 +82863,22 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED"
               },
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "NOT_PERFORMED_IN_CURRENT_WEB_REVALIDATION_PASS",
-                "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
-                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass."
-              }
+                "reviewedAt": "2026-09-27",
+                "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVALIDATION",
+                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
+                "currentEvidence": "Vale reports record S11D output of 86.0 Mt in 2025."
+              },
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.vale.com/en/check-out-the-production-and-sales-results-for-4q25/-/categories/64940",
+                  "accessed": "2026-09-27",
+                  "scope": "2025_S11D_output"
+                }
+              ]
             }
           ],
           "processingFacilities": [
@@ -83763,9 +83811,9 @@
               "locationNodeKey": "ASSET:CHL:chuquicamata_copper_mine",
               "status": "ACTIVE_PRODUCING",
               "operationalStatus": "ACTIVE_PRODUCING",
-              "owner": "Codelco",
-              "operator": "Codelco Chuquicamata",
-              "extractionMethod": "open-pit to underground block cave",
+              "owner": "Corporación Nacional del Cobre de Chile (Codelco)",
+              "operator": "Codelco – Chuquicamata Division",
+              "extractionMethod": "open-pit and underground copper mining with concentration and processing",
               "startYear": 1915,
               "legacyReferenceName": "Chile Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -83818,8 +83866,8 @@
               "locationIdentity": {
                 "countryIso3": "CHL",
                 "countryName": "Chile",
-                "adminRegion": "Antofagasta",
-                "locality": "Antofagasta",
+                "adminRegion": "Antofagasta Region",
+                "locality": "Calama / Chuquicamata",
                 "coordinates": {
                   "lat": -22.31,
                   "lng": -68.9
@@ -83843,18 +83891,19 @@
                   "status": "UNOBSERVED"
                 },
                 "production": {
-                  "annual": null,
-                  "rate": null,
-                  "unit": null,
-                  "year": null,
-                  "status": "UNOBSERVED"
+                  "annual": {
+                    "value": 266000,
+                    "unit": "metric_tons_copper_fine",
+                    "year": 2025,
+                    "status": "OBSERVED"
+                  }
                 },
                 "grade": {
                   "value": null,
                   "unit": null,
                   "status": "UNOBSERVED"
                 },
-                "quantitativeExtractionDataAvailable": false
+                "quantitativeExtractionDataAvailable": true
               },
               "resourceIdentity": {
                 "resourceTypeId": "copper",
@@ -83891,14 +83940,22 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED"
               },
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "NOT_PERFORMED_IN_CURRENT_WEB_REVALIDATION_PASS",
-                "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
-                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass."
-              }
+                "reviewedAt": "2026-09-27",
+                "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVALIDATION",
+                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
+                "currentEvidence": "Codelco reports Chuquicamata as an open-pit and underground mine with 266 thousand tonnes of fine copper produced in 2025."
+              },
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.codelco.com/chuquicamata",
+                  "accessed": "2026-09-27",
+                  "scope": "2025_production_method_location"
+                }
+              ]
             }
           ],
           "processingFacilities": [
@@ -86446,8 +86503,8 @@
               "status": "ACTIVE_PRODUCING",
               "operationalStatus": "ACTIVE_PRODUCING",
               "owner": "Sumitomo Corporation",
-              "operator": "Minera San Cristóbal",
-              "extractionMethod": "large open-pit and flotation",
+              "operator": "Minera San Cristóbal S.A.",
+              "extractionMethod": "open-pit polymetallic mining with crushing, milling, flotation and concentrate transport",
               "startYear": 2007,
               "legacyReferenceName": "Bolivia Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -86568,14 +86625,40 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED"
               },
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "NOT_PERFORMED_IN_CURRENT_WEB_REVALIDATION_PASS",
-                "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
-                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass."
-              }
+                "reviewedAt": "2026-09-27",
+                "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVALIDATION",
+                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
+                "currentEvidence": "Minera San Cristóbal reports 345 kt zinc-silver and 89 kt lead-silver concentrates in 2025, with 17.90 Mt sent to crusher and 18.40 Mt processed in the SAG mill."
+              },
+              "productionContext": {
+                "concentrates2025": [
+                  {
+                    "type": "zinc-silver",
+                    "quantity": 345000,
+                    "unit": "metric_tons",
+                    "year": 2025
+                  },
+                  {
+                    "type": "lead-silver",
+                    "quantity": 89000,
+                    "unit": "metric_tons",
+                    "year": 2025
+                  }
+                ],
+                "averageConcentrateProductionPerDay": 1228,
+                "blastedMaterial2025": 75140000
+              },
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.minerasancristobal.com/reportesostenibilidad2025/",
+                  "accessed": "2026-09-27",
+                  "scope": "2025_processing_and_concentrate_output"
+                }
+              ]
             }
           ],
           "processingFacilities": [
