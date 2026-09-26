@@ -779,7 +779,7 @@
   }
   function initOntology(){
     if(typeof fetch!=='function')return;
-    fetch('./resource_ontology.json',{cache:'no-store'}).then(function(r){return r&&r.ok?r.json():null;}).then(function(d){if(d)g.__OmegaResourceEconomyOntology=d.COMMODITY_ONTOLOGIES||d.commodity_ontologies||{};}).catch(function(e){g.__OmegaResourceEconomyOntologyError=String(e&&e.message||e);});
+    fetch('./resource_ontology.json',{cache:'no-store'}).then(function(r){return r&&r.ok?r.json():null;}).then(function(d){if(d){g.__OmegaResourceEconomyOntology=d.RUNTIME_RESOURCE_ONTOLOGIES||d.runtime_resource_ontologies||{};g.__OmegaResourceEconomyOntologyLegacy=d.COMMODITY_ONTOLOGIES||d.commodity_ontologies||{};g.__OmegaResourceRuntimeResourceIds=Array.isArray(d.runtimeResourceIds)?d.runtimeResourceIds.slice():Object.keys(g.__OmegaResourceEconomyOntology);}}).catch(function(e){g.__OmegaResourceEconomyOntologyError=String(e&&e.message||e);});
   }
 
   var API={VERSION:VERSION,diagnostics:diagnostics,getCountryDashboard:dashboard,processCountry:processCountry,runTurn:runTurn,reconcileCountry:function(c){installHandlers();return dispatch('resource','OMEGA_RESOURCE_ECON_RECONCILE_INVENTORY',canonical(c),{correlationId:'MANUAL-RECON-'+turn()+'-'+canonical(c)});},executeCountryFactories:executeFactories};
