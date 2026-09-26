@@ -421,6 +421,7 @@ function batchFromExtraction(x,record){
 
   function buildCountryProjection(c,rows,existing={}){
     const byResource={},mines=[],mineSiteReferences=mineSiteReferenceRows(c),mineSiteReferenceCount=mineSiteReferences.length;
+    const unifiedAssets=clone(g.__OmegaResourceIdentityRegistry?.getUnifiedAssetsByCountry?.(c)||[]);
     const mineSiteControllers=buildMineSiteControllers(c,rows,existing);
     for(const x of rows){
       const rs=x.reserveState,raw=x.rawDeposit;if(!rs)continue;
@@ -467,7 +468,7 @@ function batchFromExtraction(x,record){
     for(const x of rows)mineStates[x.occurrenceKey]=clone(x.reserveState.toJSON?.()||x.reserveState);
     return{
       ...clone(existing),countryResourceProfile:clone(profile(c)),resourceDomain:clone(profile(c)?.resource_domain||null),
-      mines,mineSiteReferences,mineSiteReferenceCount,mineSiteControllers,
+      mines,unifiedAssets,mineSiteReferences,mineSiteReferenceCount,mineSiteControllers,
       endowment,reserves:merge(reserves,existing.reserves),inventory,production,consumption,tradeAvailability,mineStates,
       strategicReserve,
       batches:Array.isArray(existing.batches)?existing.batches.slice(-MAX_LEDGER):[],
@@ -503,6 +504,7 @@ function batchFromExtraction(x,record){
       ['resource.countryResourceProfile',projection.countryResourceProfile],
       ['resource.resourceDomain',projection.resourceDomain],
       ['resource.mines',projection.mines],
+      ['resource.unifiedAssets',projection.unifiedAssets],
       ['resource.mineSiteReferences',projection.mineSiteReferences],
       ['resource.mineSiteReferenceCount',projection.mineSiteReferenceCount],
       ['resource.mineSiteControllers',projection.mineSiteControllers],
