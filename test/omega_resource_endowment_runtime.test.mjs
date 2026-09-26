@@ -122,11 +122,18 @@ const hydratedAssetRows=Object.values(worldState).reduce((sum,row)=>sum+(Array.i
 const structuredMineRows=Object.values(worldState).reduce((sum,row)=>sum+(Array.isArray(row?.mines)?row.mines.filter(x=>!x?.simulationGenerated).length:0),0);
 const siteReferenceRows=Object.values(worldState).reduce((sum,row)=>sum+(Array.isArray(row?.mineSiteReferences)?row.mineSiteReferences.length:0),0);
 const siteControllerRows=Object.values(worldState).reduce((sum,row)=>sum+(row?.mineSiteControllers&&typeof row.mineSiteControllers==='object'?Object.keys(row.mineSiteControllers).length:0),0);
+const unifiedAssetRows=Object.values(worldState).flatMap(row=>Array.isArray(row?.unifiedAssets)?row.unifiedAssets:[]);
+const unifiedAssetIds=new Set(unifiedAssetRows.map(x=>x?.assetId).filter(Boolean));
 const profileMineOutputs=Object.values(worldState).flatMap(row=>Object.values(row?.mineOutputs&&typeof row.mineOutputs==='object'?row.mineOutputs:{})).filter(x=>x?.assetType==='MINE_SITE');
 const simulatedMineOutputs=profileMineOutputs.filter(x=>x?.simulationGenerated===true);
 const simulatedFieldOutputs=Object.values(worldState).flatMap(row=>Object.values(row?.mineOutputs&&typeof row.mineOutputs==='object'?row.mineOutputs:{})).filter(x=>x?.simulationGenerated===true&&['OIL_FIELD','GAS_FIELD'].includes(x?.assetType));
 assert.equal(siteReferenceRows,199);
 assert.equal(siteControllerRows,199);
+assert.equal(unifiedAssetRows.length,engine.deposits.length+199);
+assert.equal(unifiedAssetIds.size,unifiedAssetRows.length);
+assert.equal(unifiedAssetRows.filter(x=>x?.assetType==='STRUCTURED_DEPOSIT').length,engine.deposits.length);
+assert.equal(unifiedAssetRows.filter(x=>x?.assetType==='PROFILE_SITE_REFERENCE').length,199);
+assert.ok(unifiedAssetRows.every(x=>x?.schemaVersion&&x?.assetId&&x?.resourceType&&x?.reserve&&x?.production&&x?.quality&&x?.ownership&&x?.flow&&x?.dataAuthority&&x?.provenance));
 assert.equal(structuredMineRows,engine.deposits.length);
 assert.equal(profileMineOutputs.length,199);
 assert(simulatedFieldOutputs.length>0,'expected hydrocarbon field execution assets');
@@ -138,6 +145,7 @@ for(const [countryId,row] of Object.entries(worldState)){
   if(!row)continue;
   for(const [siteKey,controller] of Object.entries(row.mineSiteControllers||{})){
     assert.equal(controller.countryId,countryId);
+    assert.equal(controller.assetId,'ASSET:SITE:'+String(siteKey).toUpperCase());
     assert.equal(controller.controllerStatus,'RUNNING');
     assert.equal(controller.extractionExecutable,true,countryId+' controller not executable '+siteKey);
     assert.equal(controller.extractionPathStatus,'EXECUTABLE_OCCURRENCE_ATTACHED');
