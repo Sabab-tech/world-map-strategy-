@@ -14242,9 +14242,9 @@
               "locationNodeKey": "ASSET:BEN:onigbolo_limestone_quarry",
               "status": "ACTIVE_PRODUCING",
               "operationalStatus": "ACTIVE_PRODUCING",
-              "owner": null,
-              "operator": null,
-              "extractionMethod": "surface quarrying",
+              "owner": "SCB Lafarge / LafargeHolcim group operating interest",
+              "operator": "Société des Ciments du Bénin (SCB Lafarge)",
+              "extractionMethod": "industrial limestone quarrying for cement manufacture",
               "startYear": 1978,
               "legacyReferenceName": "Benin Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -14303,8 +14303,8 @@
               "locationIdentity": {
                 "countryIso3": "BEN",
                 "countryName": "Benin",
-                "adminRegion": "Collines",
-                "locality": "Collines",
+                "adminRegion": "Zou Department",
+                "locality": "Onigbolo",
                 "coordinates": {
                   "lat": 7.03,
                   "lng": 2.25
@@ -14313,13 +14313,13 @@
               },
               "extractionProfile": {
                 "siteType": "QUARRY",
-                "method": "surface quarrying",
+                "method": "industrial limestone quarrying for cement manufacture",
                 "lifecycleStatus": "ACTIVE_PRODUCING",
                 "operationalStatus": "ACTIVE_PRODUCING",
-                "owner": null,
-                "operator": null,
-                "ownerEvidenceStatus": "UNOBSERVED_SITE_SPECIFIC",
-                "operatorEvidenceStatus": "UNOBSERVED_SITE_SPECIFIC"
+                "owner": "SCB Lafarge / LafargeHolcim group operating interest",
+                "operator": "Société des Ciments du Bénin (SCB Lafarge)",
+                "ownerEvidenceStatus": "WEB_REVALIDATED",
+                "operatorEvidenceStatus": "WEB_REVALIDATED"
               },
               "quantitativeProfile": {
                 "reserve": {
@@ -14372,14 +14372,30 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED"
               },
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "NOT_PERFORMED_IN_CURRENT_WEB_REVALIDATION_PASS",
-                "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
-                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass."
-              }
+                "reviewedAt": "2026-09-27",
+                "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVALIDATION",
+                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
+                "currentEvidence": "Benin Ministry of Water and Mines states that limestone deposits at Onigbolo, Massè and Bakpodji total more than 140 Mt and that the Onigbolo deposit is being exploited by SCB LAFARGE.",
+                "sourceAuthority": "Ministry of Water and Mines of Benin",
+                "currentEvidenceDate": "2026-09-27"
+              },
+              "capacityProfile": {
+                "geologicalDepositSizeEstimate": 140000000,
+                "unit": "metric_tons",
+                "status": "GOVERNMENT_MINISTRY_ESTIMATE",
+                "scope": "Onigbolo + Massè + Bakpodji not site-exclusive"
+              },
+              "webResearchEvidence": [
+                {
+                  "url": "https://eau-mines.gouv.bj/web/public/index.php/potentialites-minieres/",
+                  "accessed": "2026-09-27",
+                  "scope": "ministry_mining_potential_and_Onigbolo_operator"
+                }
+              ]
             }
           ],
           "processingFacilities": [
@@ -17539,8 +17555,8 @@
               "status": "ACTIVE_PRODUCING",
               "operationalStatus": "ACTIVE_PRODUCING",
               "owner": "OCP Group",
-              "operator": "Phosboucraa",
-              "extractionMethod": "open-pit phosphate mining",
+              "operator": "OCP / Boucraa mining operations",
+              "extractionMethod": "large-scale open-cast phosphate mining with beneficiation and long-distance conveyor transport to Laayoune",
               "startYear": 1972,
               "legacyReferenceName": "Western Sahara Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -17603,13 +17619,13 @@
               },
               "extractionProfile": {
                 "siteType": "MINE",
-                "method": "open-pit phosphate mining",
+                "method": "large-scale open-cast phosphate mining with beneficiation and long-distance conveyor transport to Laayoune",
                 "lifecycleStatus": "ACTIVE_PRODUCING",
                 "operationalStatus": "ACTIVE_PRODUCING",
                 "owner": "OCP Group",
-                "operator": "Phosboucraa",
-                "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-                "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+                "operator": "OCP / Boucraa mining operations",
+                "ownerEvidenceStatus": "WEB_REVALIDATED",
+                "operatorEvidenceStatus": "WEB_REVALIDATED"
               },
               "quantitativeProfile": {
                 "reserve": {
@@ -17666,14 +17682,27 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED"
               },
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "NOT_PERFORMED_IN_CURRENT_WEB_REVALIDATION_PASS",
-                "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
-                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass."
-              }
+                "reviewedAt": "2026-09-27",
+                "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVALIDATION",
+                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
+                "currentEvidence": "OCP's current industrial-operations page identifies the Boucraa–Laayoune conveyor as 102 km long and reports 50 Mt annual phosphate-rock production for OCP Group in 2025; the 50 Mt figure is group-wide, not Boucraa-only.",
+                "sourceAuthority": "OCP Group",
+                "currentEvidenceDate": "2026-09-27"
+              },
+              "infrastructureProfile": {
+                "conveyorToLaayouneKm": 102
+              },
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.ocpgroup.ma/en/what-we-do/industrial-operations",
+                  "accessed": "2026-09-27",
+                  "scope": "current_OCP_Boucraa_conveyor_and_group_production"
+                }
+              ]
             }
           ],
           "processingFacilities": [
@@ -25703,9 +25732,9 @@
               "locationNodeKey": "ASSET:BDI:musongati_nickel_project",
               "status": "DEVELOPMENT",
               "operationalStatus": "DEVELOPMENT",
-              "owner": "Burundi / project investors",
-              "operator": "Musongati consortium",
-              "extractionMethod": "planned open-pit mining",
+              "owner": "Government of Burundi / Lifezone Metals exclusivity agreement",
+              "operator": "Lifezone Metals (evaluation/exclusivity phase; not producing)",
+              "extractionMethod": "planned open-pit laterite nickel mining with drilling, resource definition and future beneficiation",
               "startYear": 2000,
               "legacyReferenceName": "Burundi Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -25743,7 +25772,7 @@
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
               },
               "extractionEligibility": "NON_EXECUTABLE",
-              "currentStatus": "DEVELOPMENT",
+              "currentStatus": "EVALUATION_AND_EXPLORATION",
               "statusAuthority": "OBSERVED",
               "commercialExtraction": true,
               "siteIdentity": {
@@ -25768,11 +25797,11 @@
               },
               "extractionProfile": {
                 "siteType": "PROJECT",
-                "method": "planned open-pit mining",
+                "method": "planned open-pit laterite nickel mining with drilling, resource definition and future beneficiation",
                 "lifecycleStatus": "DEVELOPMENT",
                 "operationalStatus": "DEVELOPMENT",
-                "owner": "Burundi / project investors",
-                "operator": "Musongati consortium",
+                "owner": "Government of Burundi / Lifezone Metals exclusivity agreement",
+                "operator": "Lifezone Metals (evaluation/exclusivity phase; not producing)",
                 "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
                 "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
               },
@@ -25827,14 +25856,47 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED"
               },
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "NOT_PERFORMED_IN_CURRENT_WEB_REVALIDATION_PASS",
-                "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
-                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass."
-              }
+                "reviewedAt": "2026-09-27",
+                "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVALIDATION",
+                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
+                "currentEvidence": "Lifezone entered a 14-month exclusivity agreement with Burundi on 2026-03-10. Historical 2011 work defined >140 Mt at 1.31% Ni, but Lifezone states this estimate is historical and requires updating; current work is evaluation and planned infill drilling.",
+                "sourceAuthority": "Lifezone Metals",
+                "currentEvidenceDate": "2026-07-29"
+              },
+              "historicalResourceEstimate": {
+                "quantity": "more_than_140000000",
+                "unit": "metric_tons",
+                "grade": 1.31,
+                "gradeUnit": "percent_Ni",
+                "referenceYear": 2011,
+                "status": "HISTORICAL_NOT_CURRENT_RESERVE",
+                "cutoff": "0.8% Ni"
+              },
+              "projectDevelopment": {
+                "exclusivityAgreementDate": "2026-03-10",
+                "exclusivityPeriodMonths": 14,
+                "plannedDeposits": [
+                  "Buhinda",
+                  "Rubara"
+                ],
+                "currentWork": "data review, site visits and preliminary laterite infill drilling program planning"
+              },
+              "webResearchEvidence": [
+                {
+                  "url": "https://ir.lifezonemetals.com/news/press-releases/news-details/2026/Lifezone-Announces-Exclusivity-Agreement-over-the-Musongati-Nickel-Project-in-Burundi/default.aspx",
+                  "accessed": "2026-09-27",
+                  "scope": "2026_exclusivity_and_historical_resource"
+                },
+                {
+                  "url": "https://ir.lifezonemetals.com/news/press-releases/news-details/2026/Lifezone-Metals-Announces-H1-2026-Interim-Financial-Results/default.aspx",
+                  "accessed": "2026-09-27",
+                  "scope": "2026_site_visits_and_infill_planning"
+                }
+              ]
             }
           ],
           "processingFacilities": [
@@ -32791,9 +32853,9 @@
               "locationNodeKey": "ASSET:NAM:husab_uranium_mine",
               "status": "ACTIVE_PRODUCING",
               "operationalStatus": "ACTIVE_PRODUCING",
-              "owner": "Swakop Uranium / CGN",
+              "owner": "Swakop Uranium (China General Nuclear / CNNC group)",
               "operator": "Swakop Uranium",
-              "extractionMethod": "open-pit and processing",
+              "extractionMethod": "large-scale open-pit uranium mining with conventional truck-and-shovel excavation and ore processing",
               "startYear": 2016,
               "legacyReferenceName": "Namibia Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -32856,10 +32918,10 @@
               },
               "extractionProfile": {
                 "siteType": "MINE",
-                "method": "open-pit and processing",
+                "method": "large-scale open-pit uranium mining with conventional truck-and-shovel excavation and ore processing",
                 "lifecycleStatus": "ACTIVE_PRODUCING",
                 "operationalStatus": "ACTIVE_PRODUCING",
-                "owner": "Swakop Uranium / CGN",
+                "owner": "Swakop Uranium (China General Nuclear / CNNC group)",
                 "operator": "Swakop Uranium",
                 "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
                 "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
@@ -32918,14 +32980,27 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED"
               },
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "NOT_PERFORMED_IN_CURRENT_WEB_REVALIDATION_PASS",
-                "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
-                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass."
-              }
+                "reviewedAt": "2026-09-27",
+                "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVALIDATION",
+                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
+                "currentEvidence": "CGN's 2026 sustainability report launch states Swakop Uranium continued Husab operations in 2025 and Husab output reached another record high.",
+                "sourceAuthority": "China General Nuclear / Swakop Uranium",
+                "currentEvidenceDate": "2026-07-21"
+              },
+              "productionContext": {
+                "year2025": "record-high Husab output reported by CGN; exact site tonnage not captured in this patch"
+              },
+              "webResearchEvidence": [
+                {
+                  "url": "https://en.cgnpc.com.cn/encgn/pressReleases/2026-07/21/content_48d0b6a8465b4e97be8888a0208858f2.shtml",
+                  "accessed": "2026-09-27",
+                  "scope": "2025_Husab_record_output_and_operation"
+                }
+              ]
             }
           ],
           "processingFacilities": [
