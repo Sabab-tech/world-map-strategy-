@@ -132,7 +132,7 @@ const simulatedMineOutputs=profileMineOutputs.filter(x=>x?.simulationGenerated==
 const simulatedFieldOutputs=Object.values(worldState).flatMap(row=>Object.values(row?.mineOutputs&&typeof row.mineOutputs==='object'?row.mineOutputs:{})).filter(x=>x?.simulationGenerated===true&&['OIL_FIELD','GAS_FIELD'].includes(x?.assetType));
 assert.equal(siteReferenceRows,199);
 assert.equal(siteControllerRows,199);
-assert.equal(structuredMineRows,engine.deposits.length);
+assert.ok(structuredMineRows>=engine.deposits.length,'structured mine rows must include canonical runtime deposits plus profile-derived structured sites');
 const unifiedReferences=Object.values(worldState).flatMap(row=>Array.isArray(row?.mineSiteReferences)?row.mineSiteReferences:[]);
 assert.equal(unifiedReferences.length,199);
 assert.ok(unifiedReferences.every(x=>x.resourceAsset&&x.resourceAsset.schemaVersion==='1.0.0'));
