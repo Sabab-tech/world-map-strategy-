@@ -18074,9 +18074,9 @@
               "locationNodeKey": "ASSET:CMR:mbalam_nabeba_iron_ore_project",
               "status": "DEVELOPMENT",
               "operationalStatus": "DEVELOPMENT",
-              "owner": "Cameroon / project investors",
-              "operator": "Mbalam consortium",
-              "extractionMethod": "planned open-pit mining",
+              "owner": "Sundance Resources majority interest through Cam Iron and Congo Iron; project rights disputed",
+              "operator": "Cam Iron / Congo Iron; current operating control not independently verified",
+              "extractionMethod": "planned large-scale iron ore mining with beneficiation and export infrastructure",
               "startYear": 2012,
               "legacyReferenceName": "Cameroon Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -18114,7 +18114,7 @@
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
               },
               "extractionEligibility": "NON_EXECUTABLE",
-              "currentStatus": "DEVELOPMENT",
+              "currentStatus": "PERMIT_DISPUTE",
               "statusAuthority": "OBSERVED",
               "commercialExtraction": true,
               "siteIdentity": {
@@ -18198,14 +18198,35 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED"
               },
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "NOT_PERFORMED_IN_CURRENT_WEB_REVALIDATION_PASS",
-                "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
-                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass."
-              }
+                "reviewedAt": "2026-09-27",
+                "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVALIDATION",
+                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
+                "currentEvidence": "The July 2026 project update describes Mbalam-Nabeba as spanning Cameroon and Republic of Congo, with Sundance holding majority interests through Cam Iron and Congo Iron and permit rights disputed.",
+                "sourceAuthority": "Mining Weekly"
+              },
+              "legalStatus": {
+                "status": "PERMIT_DISPUTE",
+                "basis": "Republic of Congo expropriated Nabeba permit in 2020; Cameroon later issued Mbalam permit to another party"
+              },
+              "projectIdentity": {
+                "locations": [
+                  "Mbalam, Cameroon",
+                  "Nabeba, Republic of Congo"
+                ],
+                "stage1DFSYear": 2011,
+                "stage2PFSYear": 2011
+              },
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.miningweekly.com/article/mbalam-nabeba-iron-ore-project-republic-of-congo-update-2026-07-30",
+                  "accessed": "2026-09-27",
+                  "scope": "2026_project_owner_permit_status"
+                }
+              ]
             }
           ],
           "processingFacilities": [
@@ -23476,7 +23497,7 @@
               "resourceId": "diatomite",
               "resourceTypeId": "diatomite",
               "resourceTypeKey": "diatomite",
-              "region": "Nakuru",
+              "region": "Nakuru County / Kariandusi",
               "countryCode": "KEN",
               "country": "KEN",
               "lat": -0.8,
@@ -23484,9 +23505,9 @@
               "locationNodeKey": "ASSET:KEN:kariandusi_diatomite_mine",
               "status": "ACTIVE_PRODUCING",
               "operationalStatus": "ACTIVE_PRODUCING",
-              "owner": "Private industrial operator",
-              "operator": "Licensed diatomite operator",
-              "extractionMethod": "surface excavation and processing",
+              "owner": "African Diatomite Industries Limited (ADIL)",
+              "operator": "African Diatomite Industries Limited",
+              "extractionMethod": "surface extraction and processing of diatomaceous earth",
               "startYear": 1942,
               "legacyReferenceName": "Kenya Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -23539,8 +23560,8 @@
               "locationIdentity": {
                 "countryIso3": "KEN",
                 "countryName": "Kenya",
-                "adminRegion": "Nakuru",
-                "locality": "Nakuru",
+                "adminRegion": "Nakuru County",
+                "locality": "Kariandusi near Gilgil",
                 "coordinates": {
                   "lat": -0.8,
                   "lng": 36.26
@@ -23607,14 +23628,30 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED"
               },
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "NOT_PERFORMED_IN_CURRENT_WEB_REVALIDATION_PASS",
-                "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
-                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass."
-              }
+                "reviewedAt": "2026-09-27",
+                "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVALIDATION",
+                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
+                "currentEvidence": "ADIL states its operations are based in Kariandusi near Gilgil in Nakuru County and that it extracts and processes diatomaceous earth for filtration and industrial applications.",
+                "sourceAuthority": "African Diatomite Industries Limited"
+              },
+              "productionContext": {
+                "products": [
+                  "filter aid",
+                  "industrial-grade diatomaceous earth"
+                ],
+                "marketScope": "domestic and international"
+              },
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.africandiatomite.com/about-us/",
+                  "accessed": "2026-09-27",
+                  "scope": "current_kariandusi_operator_location_processing"
+                }
+              ]
             }
           ],
           "processingFacilities": [
@@ -27263,9 +27300,9 @@
               "name": "Bisha Mine",
               "siteName": "Bisha Mine",
               "siteType": "MINE",
-              "resourceId": "gold",
-              "resourceTypeId": "gold",
-              "resourceTypeKey": "gold",
+              "resourceId": "zinc",
+              "resourceTypeId": "zinc",
+              "resourceTypeKey": "zinc",
               "region": "Gash-Barka",
               "countryCode": "ERI",
               "country": "ERI",
@@ -27274,9 +27311,9 @@
               "locationNodeKey": "ASSET:ERI:bisha_mine",
               "status": "ACTIVE_PRODUCING",
               "operationalStatus": "ACTIVE_PRODUCING",
-              "owner": "Eritrean state / legacy Nevsun interests",
-              "operator": "Bisha Mining",
-              "extractionMethod": "open-pit and underground",
+              "owner": "Zijin Mining 55%; Eritrean National Mining Corporation (ENAMCO) 45%",
+              "operator": "Bisha Mining Share Company / Zijin-managed",
+              "extractionMethod": "open-pit and underground mining with flotation processing",
               "startYear": 2011,
               "legacyReferenceName": "Eritrea Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -27314,7 +27351,7 @@
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
               },
               "extractionEligibility": "EXECUTABLE",
-              "currentStatus": "ACTIVE_PRODUCING",
+              "currentStatus": "IN_PRODUCTION",
               "statusAuthority": "OBSERVED",
               "commercialExtraction": true,
               "siteIdentity": {
@@ -27354,18 +27391,19 @@
                   "status": "UNOBSERVED"
                 },
                 "production": {
-                  "annual": null,
-                  "rate": null,
-                  "unit": null,
-                  "year": null,
-                  "status": "UNOBSERVED"
+                  "annual": {
+                    "value": 83000,
+                    "unit": "metric_tons_zinc",
+                    "year": 2025,
+                    "status": "OBSERVED"
+                  }
                 },
                 "grade": {
-                  "value": null,
-                  "unit": null,
-                  "status": "UNOBSERVED"
+                  "value": 3.64,
+                  "unit": "percent_zinc",
+                  "status": "OBSERVED"
                 },
-                "quantitativeExtractionDataAvailable": false
+                "quantitativeExtractionDataAvailable": true
               },
               "resourceIdentity": {
                 "resourceTypeId": "gold",
@@ -27384,7 +27422,13 @@
                   "CENTRAL_BANK_RESERVES",
                   "INDUSTRIAL_CHEMICALS"
                 ],
-                "ontologyStatus": "RESOLVED_FROM_RESOURCE_ONTOLOGY"
+                "ontologyStatus": "RESOLVED_FROM_RESOURCE_ONTOLOGY",
+                "canonicalResourceId": "zinc",
+                "primaryCommodity": "zinc",
+                "secondaryCommodities": [
+                  "copper",
+                  "silver"
+                ]
               },
               "dataCompleteness": {
                 "identity": "COMPLETE",
@@ -27394,18 +27438,46 @@
                 "ownership": "REPORTED",
                 "quantitative": {
                   "reserve": "UNOBSERVED",
-                  "production": "UNOBSERVED",
-                  "grade": "UNOBSERVED"
+                  "production": "OBSERVED",
+                  "grade": "OBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED"
               },
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "NOT_PERFORMED_IN_CURRENT_WEB_REVALIDATION_PASS",
-                "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
-                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass."
-              }
+                "reviewedAt": "2026-09-27",
+                "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVALIDATION",
+                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
+                "currentEvidence": "Zijin identifies Bisha as a producing copper-zinc mine in Eritrea, with 2.9 Mt/y ore, open-pit plus underground mining, flotation, and 2025 output of 83 kt zinc, 23 kt copper and 63.4 t silver.",
+                "sourceAuthority": "Zijin Mining"
+              },
+              "secondaryResourceIds": [
+                "copper",
+                "silver"
+              ],
+              "capacityProfile": {
+                "oreExtractionAnnual": 2900000,
+                "unit": "metric_tons_per_year",
+                "status": "REPORTED"
+              },
+              "productionContext": {
+                "copper2025": {
+                  "value": 23000,
+                  "unit": "metric_tons"
+                },
+                "silver2025": {
+                  "value": 63.4,
+                  "unit": "metric_tons"
+                }
+              },
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.zijinmining.com/global/program-detail-71760.htm",
+                  "accessed": "2026-09-27",
+                  "scope": "2025_Bisha_identity_ownership_output_method"
+                }
+              ]
             }
           ],
           "processingFacilities": [
@@ -28882,7 +28954,7 @@
               "resourceId": "nickel",
               "resourceTypeId": "nickel",
               "resourceTypeKey": "nickel",
-              "region": "Moramanga",
+              "region": "Moramanga / Alaotra-Mangoro",
               "countryCode": "MDG",
               "country": "MDG",
               "lat": -18.83,
@@ -28890,9 +28962,9 @@
               "locationNodeKey": "ASSET:MDG:ambatovy_mine",
               "status": "ACTIVE_PRODUCING",
               "operationalStatus": "ACTIVE_PRODUCING",
-              "owner": "Sumitomo / consortium",
-              "operator": "Ambatovy Minerals",
-              "extractionMethod": "open-pit and hydromet processing",
+              "owner": "Ambatovy Joint Venture",
+              "operator": "Ambatovy",
+              "extractionMethod": "surface lateritic nickel mining using hydraulic excavators and articulated haulage",
               "startYear": 2014,
               "legacyReferenceName": "Madagascar Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -28945,8 +29017,8 @@
               "locationIdentity": {
                 "countryIso3": "MDG",
                 "countryName": "Madagascar",
-                "adminRegion": "Moramanga",
-                "locality": "Moramanga",
+                "adminRegion": "Alaotra-Mangoro",
+                "locality": "near Moramanga, about 80 km east of Antananarivo",
                 "coordinates": {
                   "lat": -18.83,
                   "lng": 48.31
@@ -29014,14 +29086,40 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED"
               },
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "NOT_PERFORMED_IN_CURRENT_WEB_REVALIDATION_PASS",
-                "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
-                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass."
-              }
+                "reviewedAt": "2026-09-27",
+                "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVALIDATION",
+                "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
+                "currentEvidence": "Ambatovy reports two lateritic nickel deposits near Moramanga, covering about 1,600 ha at 20–100 m depth; ore is surface-mined by hydraulic excavators and hauled to the ore-preparation plant, with annual design outputs of 40 kt nickel and 4 kt cobalt.",
+                "sourceAuthority": "Ambatovy"
+              },
+              "capacityProfile": {
+                "refinedNickelAnnual": 40000,
+                "refinedCobaltAnnual": 4000,
+                "ammoniumSulfateAnnual": 120000,
+                "unit": "metric_tons_per_year",
+                "status": "REPORTED_OPERATIONAL_DESIGN"
+              },
+              "geologicalProfile": {
+                "depositType": "weathered lateritic nickel",
+                "depositCount": 2,
+                "depositSeparationKm": 3,
+                "mineAreaHa": 1600,
+                "depthRangeMeters": {
+                  "min": 20,
+                  "max": 100
+                }
+              },
+              "webResearchEvidence": [
+                {
+                  "url": "https://ambatovy.com/en/operations/operations-components/",
+                  "accessed": "2026-09-27",
+                  "scope": "current_mine_location_geology_method_capacity"
+                }
+              ]
             }
           ],
           "processingFacilities": [
