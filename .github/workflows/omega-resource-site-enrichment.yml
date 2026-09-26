@@ -9,9 +9,6 @@ permissions:
 
 # SINGLE RESOURCE-SITE ENRICHMENT EXECUTION
 
-concurrency:
-  group: omega-resource-site-enrichment-${{ github.ref }}
-  cancel-in-progress: true
 
 jobs:
   enrich:
