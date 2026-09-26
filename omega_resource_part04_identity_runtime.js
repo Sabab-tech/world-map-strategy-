@@ -91,10 +91,19 @@
         sourcePath:sourcePath||null,rawSiteReference:clone(rawSite),referenceId:rawSite?.referenceId||null});
     };
     try{
-      const refs=knowledge?.refCatalog?.allReferences||[];
+      const catalog=knowledge?.referenceCatalog||knowledge?.refCatalog;
+      const refs=catalog?.getAllReferences?.() ||
+        (Array.isArray(catalog?.allReferences)?catalog.allReferences:null) ||
+        (catalog?.references instanceof Map?Array.from(catalog.references.values()):[]);
       refs.forEach(ref=>{
         if(String(ref?.metadata?.subType||'')!=='mineSites')return;
-        add(ref.parentCountryId||ref.countryCode||ref.countryId,ref.rawReferenceString||ref.name||ref.siteName,0,ref.sourceContextPath||ref.sourcePath,ref);
+        add(
+          ref.parentCountryId||ref.countryCode||ref.countryId||ref.hostCountryIso3||ref.iso3||ref.country,
+          ref.rawReferenceString||ref.name||ref.siteName||ref.title||ref.rawString,
+          0,
+          ref.sourceContextPath||ref.sourcePath,
+          ref
+        );
       });
     }catch(_){}
     for(const [profileKey,profile] of Object.entries(profiles)){
