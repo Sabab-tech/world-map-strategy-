@@ -819,7 +819,8 @@
       warehouseId:'WH-'+c+'-SPR',countryId:c,type:'STRATEGIC_RESERVE_STOCKPILE',locationNodeKey:'WAREHOUSE:'+c+':SPR',status:'OPERATIONAL',availableByResource:{},storedBatchIds:[],receipts:[],transfers:[],lastTransferTurn:null
     });
     ctx.stateTransaction.set('resource.strategicReserve',strategicReserve);
-    const tradeAvailability=computeTradeAvailability(inventory,strategicReserve.availableByResource);
+    const committedStockFinal=clone(ctx.stateTransaction.get('resource.committedStock')||{});
+    const tradeAvailability=computeTradeAvailability(inventory,strategicReserve.availableByResource,committedStockFinal);
     ctx.stateTransaction.set('resource.tradeAvailability',tradeAvailability);
     ctx.stateTransaction.set('resource.extractionLedger',ledger.slice(-MAX_LEDGER));
     for(const x of blocked)emit('OMEGA_RESOURCE_EXTRACTION_BLOCKED',c,{...x,simulationTurn:turn()},cmd.commandId);
