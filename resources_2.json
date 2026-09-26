@@ -2229,7 +2229,7 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "NOT_PER_SITE_VERIFIED"
+                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -2301,13 +2301,15 @@
                   }
                 },
                 "verification": {
+                  "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
                   "reviewedAt": null,
                   "sourceCount": 0,
                   "sourceAuthorities": [],
                   "dataLimitations": null
                 }
               },
-              "extractionEligibility": "EXECUTABLE"
+              "extractionEligibility": "EXECUTABLE",
+              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
             }
           ],
           "processingFacilities": [
@@ -2835,7 +2837,7 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "NOT_PER_SITE_VERIFIED"
+                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -2904,12 +2906,14 @@
                   }
                 },
                 "verification": {
+                  "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
                   "reviewedAt": null,
                   "sourceCount": 0,
                   "sourceAuthorities": [],
                   "dataLimitations": null
                 }
-              }
+              },
+              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
             }
           ],
           "processingFacilities": [
@@ -3431,7 +3435,7 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "NOT_PER_SITE_VERIFIED"
+                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -3500,13 +3504,15 @@
                   }
                 },
                 "verification": {
+                  "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
                   "reviewedAt": null,
                   "sourceCount": 0,
                   "sourceAuthorities": [],
                   "dataLimitations": null
                 }
               },
-              "extractionEligibility": "EXECUTABLE"
+              "extractionEligibility": "EXECUTABLE",
+              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
             }
           ],
           "processingFacilities": [
@@ -4033,7 +4039,7 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "NOT_PER_SITE_VERIFIED"
+                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -4107,13 +4113,15 @@
                   }
                 },
                 "verification": {
+                  "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
                   "reviewedAt": null,
                   "sourceCount": 0,
                   "sourceAuthorities": [],
                   "dataLimitations": null
                 }
               },
-              "extractionEligibility": "EXECUTABLE"
+              "extractionEligibility": "EXECUTABLE",
+              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
             }
           ],
           "processingFacilities": [
@@ -5246,7 +5254,7 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "NOT_PER_SITE_VERIFIED"
+                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -5315,13 +5323,15 @@
                   }
                 },
                 "verification": {
+                  "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
                   "reviewedAt": null,
                   "sourceCount": 0,
                   "sourceAuthorities": [],
                   "dataLimitations": null
                 }
               },
-              "extractionEligibility": "EXECUTABLE"
+              "extractionEligibility": "EXECUTABLE",
+              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
             }
           ],
           "processingFacilities": [
@@ -6463,7 +6473,7 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "NOT_PER_SITE_VERIFIED"
+                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -6531,12 +6541,14 @@
                   }
                 },
                 "verification": {
+                  "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
                   "reviewedAt": null,
                   "sourceCount": 0,
                   "sourceAuthorities": [],
                   "dataLimitations": null
                 }
-              }
+              },
+              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
             }
           ],
           "processingFacilities": [
@@ -7676,7 +7688,7 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "NOT_PER_SITE_VERIFIED"
+                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -7745,12 +7757,14 @@
                   }
                 },
                 "verification": {
+                  "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
                   "reviewedAt": null,
                   "sourceCount": 0,
                   "sourceAuthorities": [],
                   "dataLimitations": null
                 }
-              }
+              },
+              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
             }
           ],
           "processingFacilities": [
@@ -8278,7 +8292,7 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "NOT_PER_SITE_VERIFIED"
+                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -8347,12 +8361,14 @@
                   }
                 },
                 "verification": {
+                  "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
                   "reviewedAt": null,
                   "sourceCount": 0,
                   "sourceAuthorities": [],
                   "dataLimitations": null
                 }
-              }
+              },
+              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
             }
           ],
           "processingFacilities": [
@@ -9484,7 +9500,7 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "NOT_PER_SITE_VERIFIED"
+                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -9553,13 +9569,15 @@
                   }
                 },
                 "verification": {
+                  "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
                   "reviewedAt": null,
                   "sourceCount": 0,
                   "sourceAuthorities": [],
                   "dataLimitations": null
                 }
               },
-              "extractionEligibility": "EXECUTABLE"
+              "extractionEligibility": "EXECUTABLE",
+              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
             }
           ],
           "processingFacilities": [
@@ -10083,7 +10101,7 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "NOT_PER_SITE_VERIFIED"
+                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -10152,13 +10170,15 @@
                   }
                 },
                 "verification": {
+                  "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
                   "reviewedAt": null,
                   "sourceCount": 0,
                   "sourceAuthorities": [],
                   "dataLimitations": null
                 }
               },
-              "extractionEligibility": "EXECUTABLE"
+              "extractionEligibility": "EXECUTABLE",
+              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
             }
           ],
           "processingFacilities": [
@@ -10679,7 +10699,7 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "NOT_PER_SITE_VERIFIED"
+                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -10748,13 +10768,15 @@
                   }
                 },
                 "verification": {
+                  "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
                   "reviewedAt": null,
                   "sourceCount": 0,
                   "sourceAuthorities": [],
                   "dataLimitations": null
                 }
               },
-              "extractionEligibility": "EXECUTABLE"
+              "extractionEligibility": "EXECUTABLE",
+              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
             }
           ],
           "processingFacilities": [
@@ -11276,7 +11298,7 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "NOT_PER_SITE_VERIFIED"
+                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -11345,13 +11367,15 @@
                   }
                 },
                 "verification": {
+                  "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
                   "reviewedAt": null,
                   "sourceCount": 0,
                   "sourceAuthorities": [],
                   "dataLimitations": null
                 }
               },
-              "extractionEligibility": "EXECUTABLE"
+              "extractionEligibility": "EXECUTABLE",
+              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
             }
           ],
           "processingFacilities": [
@@ -11896,7 +11920,7 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "NOT_PER_SITE_VERIFIED"
+                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -11965,13 +11989,15 @@
                   }
                 },
                 "verification": {
+                  "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
                   "reviewedAt": null,
                   "sourceCount": 0,
                   "sourceAuthorities": [],
                   "dataLimitations": null
                 }
               },
-              "extractionEligibility": "EXECUTABLE"
+              "extractionEligibility": "EXECUTABLE",
+              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
             }
           ],
           "processingFacilities": [
@@ -12516,7 +12542,7 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "NOT_PER_SITE_VERIFIED"
+                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -12585,13 +12611,15 @@
                   }
                 },
                 "verification": {
+                  "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
                   "reviewedAt": null,
                   "sourceCount": 0,
                   "sourceAuthorities": [],
                   "dataLimitations": null
                 }
               },
-              "extractionEligibility": "EXECUTABLE"
+              "extractionEligibility": "EXECUTABLE",
+              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
             }
           ],
           "processingFacilities": [
@@ -13756,7 +13784,7 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "NOT_PER_SITE_VERIFIED"
+                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -13824,12 +13852,14 @@
                   }
                 },
                 "verification": {
+                  "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
                   "reviewedAt": null,
                   "sourceCount": 0,
                   "sourceAuthorities": [],
                   "dataLimitations": null
                 }
-              }
+              },
+              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
             }
           ],
           "processingFacilities": [
