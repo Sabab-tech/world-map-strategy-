@@ -104,22 +104,22 @@ async function fetchText(url, timeoutMs = 5000) {
 
 function stripHtml(value) {
   return String(value ?? '')
-    .replace(/<script[\\s\\S]*?<\\/script>/gi, ' ')
-    .replace(/<style[\\s\\S]*?<\\/style>/gi, ' ')
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
     .replace(/<[^>]+>/g, ' ')
     .replace(/&quot;/g, '"')
     .replace(/&#39;/g, "'")
     .replace(/&amp;/g, '&')
     .replace(/&nbsp;/g, ' ')
-    .replace(/\\s+/g, ' ')
+    .replace(/\s+/g, ' ')
     .trim();
 }
 
 function decodeSearchHref(value) {
   try {
     const raw = String(value ?? '')
-      .replace(/^\\/url\\?q=/i, '')
-      .replace(/^\\/url\\?url=/i, '')
+      .replace(/^\/url\?q=/i, '')
+      .replace(/^\/url\?url=/i, '')
       .split('&')[0];
     return decodeURIComponent(raw);
   } catch {
