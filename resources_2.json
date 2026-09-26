@@ -1045,7 +1045,8 @@
                 "grade": "UNOBSERVED",
                 "ownership": "OBSERVED",
                 "operation": "OBSERVED",
-                "extractionMethod": "OBSERVED"
+                "extractionMethod": "OBSERVED",
+                "provenance": "RESOURCE_JSON_WEB_RESEARCH_CATALOG"
               },
               "sourceAuthority": "PUBLIC_WEB_RESEARCH_CURATED",
               "provenance": {
@@ -1055,11 +1056,88 @@
                 "legacyReferenceName": "Moa Bay Nickel Mine",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
+              },
+              "commercialExtraction": true,
+              "siteIdentity": {
+                "siteId": "SITE_CUB_moa_bay_nickel_mine",
+                "siteName": "Moa Bay Nickel Mine",
+                "siteClass": "MINE",
+                "countryIso3": "CUB",
+                "countryName": "Cuba",
+                "resourceTypeId": "nickel",
+                "identityStatus": "OBSERVED"
+              },
+              "locationIdentity": {
+                "countryIso3": "CUB",
+                "countryName": "Cuba",
+                "adminRegion": "Holguín",
+                "locality": "Holguín",
+                "coordinates": {
+                  "lat": 20.65,
+                  "lng": -74.93
+                },
+                "coordinateStatus": "ESTIMATED_SITE_POINT"
+              },
+              "extractionProfile": {
+                "siteType": "MINE",
+                "method": "open-pit laterite and hydrometallurgy",
+                "lifecycleStatus": "ACTIVE_PRODUCING",
+                "operationalStatus": "ACTIVE_PRODUCING",
+                "owner": "Cuban state / Sherritt framework",
+                "operator": "Moa Joint Venture",
+                "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
+                "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+              },
+              "quantitativeProfile": {
+                "reserve": {
+                  "quantity": null,
+                  "unit": null,
+                  "status": "UNOBSERVED"
+                },
+                "production": {
+                  "annual": null,
+                  "rate": null,
+                  "unit": null,
+                  "year": null,
+                  "status": "UNOBSERVED"
+                },
+                "grade": {
+                  "value": null,
+                  "unit": null,
+                  "status": "UNOBSERVED"
+                },
+                "quantitativeExtractionDataAvailable": false
+              },
+              "resourceIdentity": {
+                "resourceTypeId": "nickel",
+                "ontologyKey": null,
+                "commodityName": null,
+                "category": null,
+                "physicalForm": null,
+                "upstreamProcess": null,
+                "midstreamProcess": null,
+                "refinedOutputs": [],
+                "downstreamSectors": [],
+                "ontologyStatus": "UNMAPPED_RESOURCE_TYPE"
+              },
+              "dataCompleteness": {
+                "identity": "COMPLETE",
+                "resource": "COMPLETE",
+                "location": "COMPLETE",
+                "operation": "COMPLETE",
+                "ownership": "REPORTED",
+                "quantitative": {
+                  "reserve": "UNOBSERVED",
+                  "production": "UNOBSERVED",
+                  "grade": "UNOBSERVED"
+                },
+                "provenance": "PRESENT",
+                "webResearch": "NOT_PER_SITE_VERIFIED"
               }
             },
             {
               "id": "SITE_CUB_punta_gorda_extraction_facility",
-              "name": "Punta Gorda Extraction Facility",
+              "name": "Punta Gorda Nickel–Cobalt Mining & Processing Area",
               "siteName": "Punta Gorda Extraction Facility",
               "siteType": "MINE",
               "resourceId": "nickel",
@@ -1073,8 +1151,8 @@
               "locationNodeKey": "ASSET:CUB:punta_gorda_extraction_facility",
               "status": "ACTIVE_PRODUCING",
               "operationalStatus": "ACTIVE_PRODUCING",
-              "owner": "Cuban state",
-              "operator": "Pedro Sotto Alba facilities",
+              "owner": "Empresa del Níquel “Comandante Ernesto Che Guevara”",
+              "operator": "Empresa del Níquel “Comandante Ernesto Che Guevara”",
               "extractionMethod": "laterite mining and processing",
               "startYear": 1960,
               "legacyReferenceName": "Punta Gorda Extraction Facility",
@@ -1100,7 +1178,8 @@
                 "grade": "UNOBSERVED",
                 "ownership": "OBSERVED",
                 "operation": "OBSERVED",
-                "extractionMethod": "OBSERVED"
+                "extractionMethod": "OBSERVED",
+                "provenance": "RESOURCE_JSON_WEB_RESEARCH_CATALOG"
               },
               "sourceAuthority": "PUBLIC_WEB_RESEARCH_CURATED",
               "provenance": {
@@ -1110,11 +1189,104 @@
                 "legacyReferenceName": "Punta Gorda Extraction Facility",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
+              },
+              "mineralTarget": "limonite and serpentine",
+              "products": [
+                "nickel concentrate",
+                "cobalt concentrate"
+              ],
+              "concessionValidTo": "2051-04-23",
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.directoriocubano.com/servicios/gaceta-oficial/2026/extraordinaria/49/",
+                  "accessed": "2026-09-26",
+                  "scope": "site_identity_or_operation"
+                }
+              ],
+              "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+              "commercialExtraction": true,
+              "ownerEvidenceStatus": "SITE_SPECIFIC_WEB_VERIFIED",
+              "operatorEvidenceStatus": "SITE_SPECIFIC_WEB_VERIFIED",
+              "siteIdentity": {
+                "siteId": "SITE_CUB_punta_gorda_extraction_facility",
+                "siteName": "Punta Gorda Nickel–Cobalt Mining & Processing Area",
+                "siteClass": "MINE",
+                "countryIso3": "CUB",
+                "countryName": "Cuba",
+                "resourceTypeId": "nickel",
+                "identityStatus": "OBSERVED"
+              },
+              "locationIdentity": {
+                "countryIso3": "CUB",
+                "countryName": "Cuba",
+                "adminRegion": "Holguín",
+                "locality": "Holguín",
+                "coordinates": {
+                  "lat": 20.57,
+                  "lng": -75.95
+                },
+                "coordinateStatus": "ESTIMATED_SITE_POINT"
+              },
+              "extractionProfile": {
+                "siteType": "MINE",
+                "method": "laterite mining and processing",
+                "lifecycleStatus": "ACTIVE_PRODUCING",
+                "operationalStatus": "ACTIVE_PRODUCING",
+                "owner": "Empresa del Níquel “Comandante Ernesto Che Guevara”",
+                "operator": "Empresa del Níquel “Comandante Ernesto Che Guevara”",
+                "ownerEvidenceStatus": "SITE_SPECIFIC_WEB_VERIFIED",
+                "operatorEvidenceStatus": "SITE_SPECIFIC_WEB_VERIFIED"
+              },
+              "quantitativeProfile": {
+                "reserve": {
+                  "quantity": null,
+                  "unit": null,
+                  "status": "UNOBSERVED"
+                },
+                "production": {
+                  "annual": null,
+                  "rate": null,
+                  "unit": null,
+                  "year": null,
+                  "status": "UNOBSERVED"
+                },
+                "grade": {
+                  "value": null,
+                  "unit": null,
+                  "status": "UNOBSERVED"
+                },
+                "quantitativeExtractionDataAvailable": false
+              },
+              "resourceIdentity": {
+                "resourceTypeId": "nickel",
+                "ontologyKey": null,
+                "commodityName": null,
+                "category": null,
+                "physicalForm": null,
+                "upstreamProcess": null,
+                "midstreamProcess": null,
+                "refinedOutputs": [],
+                "downstreamSectors": [],
+                "ontologyStatus": "UNMAPPED_RESOURCE_TYPE"
+              },
+              "dataCompleteness": {
+                "identity": "COMPLETE",
+                "resource": "COMPLETE",
+                "location": "COMPLETE",
+                "operation": "COMPLETE",
+                "ownership": "REPORTED",
+                "quantitative": {
+                  "reserve": "UNOBSERVED",
+                  "production": "UNOBSERVED",
+                  "grade": "UNOBSERVED"
+                },
+                "provenance": "PRESENT",
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
               }
             },
             {
               "id": "SITE_CUB_nicaro_nickel_complex",
-              "name": "Nicaro Nickel Complex",
+              "name": "Nicaro Nickel Plant / René Ramos Latour",
               "siteName": "Nicaro Nickel Complex",
               "siteType": "MINE",
               "resourceId": "nickel",
@@ -1126,11 +1298,11 @@
               "lat": 20.69,
               "lng": -75.52,
               "locationNodeKey": "ASSET:CUB:nicaro_nickel_complex",
-              "status": "ACTIVE_PRODUCING",
-              "operationalStatus": "ACTIVE_PRODUCING",
-              "owner": "Cuban state",
-              "operator": "René Ramos Latour/state operator",
-              "extractionMethod": "laterite mining and processing",
+              "status": "HISTORICAL_INACTIVE",
+              "operationalStatus": "CLOSED",
+              "owner": null,
+              "operator": null,
+              "extractionMethod": "LATERITIC_NICKEL_MINING_AND_CARON_PROCESS_HISTORY",
               "startYear": 1943,
               "legacyReferenceName": "Nicaro Nickel Complex",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -1155,7 +1327,8 @@
                 "grade": "UNOBSERVED",
                 "ownership": "OBSERVED",
                 "operation": "OBSERVED",
-                "extractionMethod": "OBSERVED"
+                "extractionMethod": "OBSERVED",
+                "provenance": "RESOURCE_JSON_WEB_RESEARCH_CATALOG"
               },
               "sourceAuthority": "PUBLIC_WEB_RESEARCH_CURATED",
               "provenance": {
@@ -1165,6 +1338,99 @@
                 "legacyReferenceName": "Nicaro Nickel Complex",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
+              },
+              "closedYear": 2012,
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.woodmac.com/reports/metals-nicaro-closed-nickel-operation-15929805/",
+                  "accessed": "2026-09-26",
+                  "scope": "site_identity_or_operation"
+                },
+                {
+                  "url": "https://cubanew.com/opportunity/factory-nicaro-nickel",
+                  "accessed": "2026-09-26",
+                  "scope": "site_identity_or_operation"
+                }
+              ],
+              "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+              "commercialExtraction": true,
+              "ownerEvidenceStatus": "UNOBSERVED_SITE_SPECIFIC",
+              "operatorEvidenceStatus": "UNOBSERVED_SITE_SPECIFIC",
+              "siteIdentity": {
+                "siteId": "SITE_CUB_nicaro_nickel_complex",
+                "siteName": "Nicaro Nickel Plant / René Ramos Latour",
+                "siteClass": "MINE",
+                "countryIso3": "CUB",
+                "countryName": "Cuba",
+                "resourceTypeId": "nickel",
+                "identityStatus": "OBSERVED"
+              },
+              "locationIdentity": {
+                "countryIso3": "CUB",
+                "countryName": "Cuba",
+                "adminRegion": "Holguín",
+                "locality": "Holguín",
+                "coordinates": {
+                  "lat": 20.69,
+                  "lng": -75.52
+                },
+                "coordinateStatus": "ESTIMATED_SITE_POINT"
+              },
+              "extractionProfile": {
+                "siteType": "MINE",
+                "method": "LATERITIC_NICKEL_MINING_AND_CARON_PROCESS_HISTORY",
+                "lifecycleStatus": "HISTORICAL_INACTIVE",
+                "operationalStatus": "CLOSED",
+                "owner": null,
+                "operator": null,
+                "ownerEvidenceStatus": "UNOBSERVED_SITE_SPECIFIC",
+                "operatorEvidenceStatus": "UNOBSERVED_SITE_SPECIFIC"
+              },
+              "quantitativeProfile": {
+                "reserve": {
+                  "quantity": null,
+                  "unit": null,
+                  "status": "UNOBSERVED"
+                },
+                "production": {
+                  "annual": null,
+                  "rate": null,
+                  "unit": null,
+                  "year": null,
+                  "status": "UNOBSERVED"
+                },
+                "grade": {
+                  "value": null,
+                  "unit": null,
+                  "status": "UNOBSERVED"
+                },
+                "quantitativeExtractionDataAvailable": false
+              },
+              "resourceIdentity": {
+                "resourceTypeId": "nickel",
+                "ontologyKey": null,
+                "commodityName": null,
+                "category": null,
+                "physicalForm": null,
+                "upstreamProcess": null,
+                "midstreamProcess": null,
+                "refinedOutputs": [],
+                "downstreamSectors": [],
+                "ontologyStatus": "UNMAPPED_RESOURCE_TYPE"
+              },
+              "dataCompleteness": {
+                "identity": "COMPLETE",
+                "resource": "COMPLETE",
+                "location": "COMPLETE",
+                "operation": "COMPLETE",
+                "ownership": "UNOBSERVED",
+                "quantitative": {
+                  "reserve": "UNOBSERVED",
+                  "production": "UNOBSERVED",
+                  "grade": "UNOBSERVED"
+                },
+                "provenance": "PRESENT",
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
               }
             }
           ],
@@ -1596,7 +1862,8 @@
                 "grade": "UNOBSERVED",
                 "ownership": "OBSERVED",
                 "operation": "OBSERVED",
-                "extractionMethod": "OBSERVED"
+                "extractionMethod": "OBSERVED",
+                "provenance": "RESOURCE_JSON_WEB_RESEARCH_CATALOG"
               },
               "sourceAuthority": "PUBLIC_WEB_RESEARCH_CURATED",
               "provenance": {
@@ -1606,6 +1873,93 @@
                 "legacyReferenceName": "Jamaica Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
+              },
+              "commercialExtraction": true,
+              "siteIdentity": {
+                "siteId": "SITE_JAM_noranda_st_ann_bauxite_mine",
+                "siteName": "Noranda St Ann Bauxite Mine",
+                "siteClass": "MINE",
+                "countryIso3": "JAM",
+                "countryName": "Jamaica",
+                "resourceTypeId": "bauxite",
+                "identityStatus": "OBSERVED"
+              },
+              "locationIdentity": {
+                "countryIso3": "JAM",
+                "countryName": "Jamaica",
+                "adminRegion": "St Ann",
+                "locality": "St Ann",
+                "coordinates": {
+                  "lat": 18.42,
+                  "lng": -77.16
+                },
+                "coordinateStatus": "ESTIMATED_SITE_POINT"
+              },
+              "extractionProfile": {
+                "siteType": "MINE",
+                "method": "open-pit bauxite mining",
+                "lifecycleStatus": "ACTIVE_PRODUCING",
+                "operationalStatus": "ACTIVE_PRODUCING",
+                "owner": "Noranda Bauxite / Jamaica",
+                "operator": "Noranda Bauxite",
+                "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
+                "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+              },
+              "quantitativeProfile": {
+                "reserve": {
+                  "quantity": null,
+                  "unit": null,
+                  "status": "UNOBSERVED"
+                },
+                "production": {
+                  "annual": null,
+                  "rate": null,
+                  "unit": null,
+                  "year": null,
+                  "status": "UNOBSERVED"
+                },
+                "grade": {
+                  "value": null,
+                  "unit": null,
+                  "status": "UNOBSERVED"
+                },
+                "quantitativeExtractionDataAvailable": false
+              },
+              "resourceIdentity": {
+                "resourceTypeId": "bauxite",
+                "ontologyKey": "BAUXITE_ALUMINUM",
+                "commodityName": "Bauxite Ore & Primary Smelted Aluminum",
+                "category": "LIGHT_STRUCTURAL_METAL",
+                "physicalForm": "RAW_EARTH_AND_INGOTS",
+                "upstreamProcess": "Open-Cast Strip Mining in Tropical / Subtropical Laterite Belts",
+                "midstreamProcess": "Bayer Process (Bauxite to Alumina Al2O3), Hall-Héroult Electrolytic Smelting to Metal",
+                "refinedOutputs": [
+                  "PRIMARY_ALUMINUM_INGOTS",
+                  "AEROSPACE_ALLOY_SHEETS",
+                  "EXTRUSION_BILLET",
+                  "ALUMINUM_FOIL"
+                ],
+                "downstreamSectors": [
+                  "AEROSPACE_DEFENSE",
+                  "AUTOMOTIVE",
+                  "POWER_TRANSMISSION",
+                  "PACKAGING_CONSTRUCTION"
+                ],
+                "ontologyStatus": "RESOLVED_FROM_RESOURCE_ONTOLOGY"
+              },
+              "dataCompleteness": {
+                "identity": "COMPLETE",
+                "resource": "COMPLETE",
+                "location": "COMPLETE",
+                "operation": "COMPLETE",
+                "ownership": "REPORTED",
+                "quantitative": {
+                  "reserve": "UNOBSERVED",
+                  "production": "UNOBSERVED",
+                  "grade": "UNOBSERVED"
+                },
+                "provenance": "PRESENT",
+                "webResearch": "NOT_PER_SITE_VERIFIED"
               }
             }
           ],
@@ -2005,8 +2359,8 @@
               "locationNodeKey": "ASSET:HTI:gona_ves_limestone_quarry_zone",
               "status": "LIMITED",
               "operationalStatus": "LIMITED",
-              "owner": "Private operators",
-              "operator": "Licensed quarry operators",
+              "owner": null,
+              "operator": null,
               "extractionMethod": "surface quarrying",
               "startYear": 1980,
               "legacyReferenceName": "Haiti Primary Mining and Extraction Sites",
@@ -2032,7 +2386,8 @@
                 "grade": "UNOBSERVED",
                 "ownership": "OBSERVED",
                 "operation": "OBSERVED",
-                "extractionMethod": "OBSERVED"
+                "extractionMethod": "OBSERVED",
+                "provenance": "RESOURCE_JSON_WEB_RESEARCH_CATALOG"
               },
               "sourceAuthority": "PUBLIC_WEB_RESEARCH_CURATED",
               "provenance": {
@@ -2042,6 +2397,89 @@
                 "legacyReferenceName": "Haiti Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
+              },
+              "commercialExtraction": true,
+              "unverifiedLegacyValues": {
+                "owner": "Private operators",
+                "operator": "Licensed quarry operators"
+              },
+              "ownerEvidenceStatus": "UNOBSERVED_SITE_SPECIFIC",
+              "operatorEvidenceStatus": "UNOBSERVED_SITE_SPECIFIC",
+              "siteIdentity": {
+                "siteId": "SITE_HTI_gona_ves_limestone_quarry_zone",
+                "siteName": "Gonaïves Limestone Quarry Zone",
+                "siteClass": "QUARRY",
+                "countryIso3": "HTI",
+                "countryName": "Haiti",
+                "resourceTypeId": "limestone",
+                "identityStatus": "OBSERVED"
+              },
+              "locationIdentity": {
+                "countryIso3": "HTI",
+                "countryName": "Haiti",
+                "adminRegion": "Artibonite",
+                "locality": "Artibonite",
+                "coordinates": {
+                  "lat": 19.45,
+                  "lng": -72.69
+                },
+                "coordinateStatus": "ESTIMATED_SITE_POINT"
+              },
+              "extractionProfile": {
+                "siteType": "QUARRY",
+                "method": "surface quarrying",
+                "lifecycleStatus": "LIMITED",
+                "operationalStatus": "LIMITED",
+                "owner": null,
+                "operator": null,
+                "ownerEvidenceStatus": "UNOBSERVED_SITE_SPECIFIC",
+                "operatorEvidenceStatus": "UNOBSERVED_SITE_SPECIFIC"
+              },
+              "quantitativeProfile": {
+                "reserve": {
+                  "quantity": null,
+                  "unit": null,
+                  "status": "UNOBSERVED"
+                },
+                "production": {
+                  "annual": null,
+                  "rate": null,
+                  "unit": null,
+                  "year": null,
+                  "status": "UNOBSERVED"
+                },
+                "grade": {
+                  "value": null,
+                  "unit": null,
+                  "status": "UNOBSERVED"
+                },
+                "quantitativeExtractionDataAvailable": false
+              },
+              "resourceIdentity": {
+                "resourceTypeId": "limestone",
+                "ontologyKey": null,
+                "commodityName": null,
+                "category": null,
+                "physicalForm": null,
+                "upstreamProcess": null,
+                "midstreamProcess": null,
+                "refinedOutputs": [],
+                "downstreamSectors": [],
+                "ontologyStatus": "UNMAPPED_RESOURCE_TYPE"
+              },
+              "dataCompleteness": {
+                "identity": "COMPLETE",
+                "resource": "COMPLETE",
+                "location": "COMPLETE",
+                "operation": "COMPLETE",
+                "ownership": "UNOBSERVED",
+                "quantitative": {
+                  "reserve": "UNOBSERVED",
+                  "production": "UNOBSERVED",
+                  "grade": "UNOBSERVED"
+                },
+                "provenance": "PRESENT",
+                "webResearch": "NOT_PER_SITE_VERIFIED"
               }
             }
           ],
@@ -2468,7 +2906,8 @@
                 "grade": "UNOBSERVED",
                 "ownership": "OBSERVED",
                 "operation": "OBSERVED",
-                "extractionMethod": "OBSERVED"
+                "extractionMethod": "OBSERVED",
+                "provenance": "RESOURCE_JSON_WEB_RESEARCH_CATALOG"
               },
               "sourceAuthority": "PUBLIC_WEB_RESEARCH_CURATED",
               "provenance": {
@@ -2478,6 +2917,83 @@
                 "legacyReferenceName": "Dominican Republic Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
+              },
+              "commercialExtraction": true,
+              "siteIdentity": {
+                "siteId": "SITE_DOM_pueblo_viejo_gold_mine",
+                "siteName": "Pueblo Viejo Gold Mine",
+                "siteClass": "MINE",
+                "countryIso3": "DOM",
+                "countryName": "Dominican Republic",
+                "resourceTypeId": "gold",
+                "identityStatus": "OBSERVED"
+              },
+              "locationIdentity": {
+                "countryIso3": "DOM",
+                "countryName": "Dominican Republic",
+                "adminRegion": "Sánchez Ramírez",
+                "locality": "Sánchez Ramírez",
+                "coordinates": {
+                  "lat": 18.94,
+                  "lng": -70.1
+                },
+                "coordinateStatus": "ESTIMATED_SITE_POINT"
+              },
+              "extractionProfile": {
+                "siteType": "MINE",
+                "method": "open-pit and refractory processing",
+                "lifecycleStatus": "ACTIVE_PRODUCING",
+                "operationalStatus": "ACTIVE_PRODUCING",
+                "owner": "Barrick / Dominican state",
+                "operator": "Pueblo Viejo Dominicana",
+                "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
+                "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+              },
+              "quantitativeProfile": {
+                "reserve": {
+                  "quantity": null,
+                  "unit": null,
+                  "status": "UNOBSERVED"
+                },
+                "production": {
+                  "annual": null,
+                  "rate": null,
+                  "unit": null,
+                  "year": null,
+                  "status": "UNOBSERVED"
+                },
+                "grade": {
+                  "value": null,
+                  "unit": null,
+                  "status": "UNOBSERVED"
+                },
+                "quantitativeExtractionDataAvailable": false
+              },
+              "resourceIdentity": {
+                "resourceTypeId": "gold",
+                "ontologyKey": null,
+                "commodityName": null,
+                "category": null,
+                "physicalForm": null,
+                "upstreamProcess": null,
+                "midstreamProcess": null,
+                "refinedOutputs": [],
+                "downstreamSectors": [],
+                "ontologyStatus": "UNMAPPED_RESOURCE_TYPE"
+              },
+              "dataCompleteness": {
+                "identity": "COMPLETE",
+                "resource": "COMPLETE",
+                "location": "COMPLETE",
+                "operation": "COMPLETE",
+                "ownership": "REPORTED",
+                "quantitative": {
+                  "reserve": "UNOBSERVED",
+                  "production": "UNOBSERVED",
+                  "grade": "UNOBSERVED"
+                },
+                "provenance": "PRESENT",
+                "webResearch": "NOT_PER_SITE_VERIFIED"
               }
             }
           ],
@@ -2904,7 +3420,8 @@
                 "grade": "UNOBSERVED",
                 "ownership": "OBSERVED",
                 "operation": "OBSERVED",
-                "extractionMethod": "OBSERVED"
+                "extractionMethod": "OBSERVED",
+                "provenance": "RESOURCE_JSON_WEB_RESEARCH_CATALOG"
               },
               "sourceAuthority": "PUBLIC_WEB_RESEARCH_CURATED",
               "provenance": {
@@ -2914,6 +3431,95 @@
                 "legacyReferenceName": "Trinidad and Tobago Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
+              },
+              "commercialExtraction": true,
+              "siteIdentity": {
+                "siteId": "SITE_TTO_juniper_oil_field",
+                "siteName": "Juniper Oil Field",
+                "siteClass": "OIL_FIELD",
+                "countryIso3": "TTO",
+                "countryName": "Trinidad and Tobago",
+                "resourceTypeId": "crude_oil",
+                "identityStatus": "OBSERVED"
+              },
+              "locationIdentity": {
+                "countryIso3": "TTO",
+                "countryName": "Trinidad and Tobago",
+                "adminRegion": "Offshore Trinidad",
+                "locality": "Offshore Trinidad",
+                "coordinates": {
+                  "lat": 10.08,
+                  "lng": -60.9
+                },
+                "coordinateStatus": "ESTIMATED_SITE_POINT"
+              },
+              "extractionProfile": {
+                "siteType": "OIL_FIELD",
+                "method": "offshore platforms and subsea wells",
+                "lifecycleStatus": "ACTIVE_PRODUCING",
+                "operationalStatus": "ACTIVE_PRODUCING",
+                "owner": "bpTT / Trinidad and Tobago",
+                "operator": "bp Trinidad and Tobago",
+                "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
+                "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+              },
+              "quantitativeProfile": {
+                "reserve": {
+                  "quantity": null,
+                  "unit": null,
+                  "status": "UNOBSERVED"
+                },
+                "production": {
+                  "annual": null,
+                  "rate": null,
+                  "unit": null,
+                  "year": null,
+                  "status": "UNOBSERVED"
+                },
+                "grade": {
+                  "value": null,
+                  "unit": null,
+                  "status": "UNOBSERVED"
+                },
+                "quantitativeExtractionDataAvailable": false
+              },
+              "resourceIdentity": {
+                "resourceTypeId": "crude_oil",
+                "ontologyKey": "CRUDE_OIL",
+                "commodityName": "Crude Petroleum & Hydrocarbons",
+                "category": "ENERGY_HYDROCARBON",
+                "physicalForm": "LIQUID",
+                "upstreamProcess": "Deep Drilling, Subsea Extraction, Thermal EOR",
+                "midstreamProcess": "Atmospheric & Vacuum Distillation, Fluid Catalytic Cracking, Hydrotreating",
+                "refinedOutputs": [
+                  "REFINED_DIESEL",
+                  "JET_A1_FUEL",
+                  "GASOLINE",
+                  "NAPHTHA",
+                  "HEAVY_FUEL_OIL",
+                  "ASPHALT"
+                ],
+                "downstreamSectors": [
+                  "LOGISTICS_TRANSPORT",
+                  "DEFENSE_MOBILITY",
+                  "PETROCHEMICALS",
+                  "AGRICULTURE_MECHANIZATION"
+                ],
+                "ontologyStatus": "RESOLVED_FROM_RESOURCE_ONTOLOGY"
+              },
+              "dataCompleteness": {
+                "identity": "COMPLETE",
+                "resource": "COMPLETE",
+                "location": "COMPLETE",
+                "operation": "COMPLETE",
+                "ownership": "REPORTED",
+                "quantitative": {
+                  "reserve": "UNOBSERVED",
+                  "production": "UNOBSERVED",
+                  "grade": "UNOBSERVED"
+                },
+                "provenance": "PRESENT",
+                "webResearch": "NOT_PER_SITE_VERIFIED"
               }
             }
           ],
@@ -3313,9 +3919,9 @@
               "locationNodeKey": "ASSET:BHS:ocean_cay_aragonite_site",
               "status": "HISTORICAL_INACTIVE",
               "operationalStatus": "HISTORICAL_INACTIVE",
-              "owner": "Former operators",
-              "operator": "None",
-              "extractionMethod": "dredging and surface extraction",
+              "owner": "Ocean Industries Incorporated",
+              "operator": "Ocean Industries Incorporated",
+              "extractionMethod": "MARINE_DREDGING",
               "startYear": 1960,
               "legacyReferenceName": "Bahamas Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -3340,7 +3946,8 @@
                 "grade": "UNOBSERVED",
                 "ownership": "OBSERVED",
                 "operation": "OBSERVED",
-                "extractionMethod": "OBSERVED"
+                "extractionMethod": "OBSERVED",
+                "provenance": "RESOURCE_JSON_WEB_RESEARCH_CATALOG"
               },
               "sourceAuthority": "PUBLIC_WEB_RESEARCH_CURATED",
               "provenance": {
@@ -3350,6 +3957,99 @@
                 "legacyReferenceName": "Bahamas Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
+              },
+              "historicalUse": "Industrial aragonite sand mining; artificial-island and access-channel dredging",
+              "webResearchEvidence": [
+                {
+                  "url": "https://laws.bahamas.gov.bs/cms/images/LEGISLATION/PRINCIPAL/1971/1971-0005/1971-0005.pdf",
+                  "accessed": "2026-09-26",
+                  "scope": "site_identity_or_operation"
+                },
+                {
+                  "url": "https://en.wikipedia.org/wiki/Ocean_Cay",
+                  "accessed": "2026-09-26",
+                  "scope": "site_identity_or_operation"
+                }
+              ],
+              "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+              "commercialExtraction": true,
+              "ownerEvidenceStatus": "SITE_SPECIFIC_WEB_VERIFIED",
+              "operatorEvidenceStatus": "SITE_SPECIFIC_WEB_VERIFIED",
+              "siteIdentity": {
+                "siteId": "SITE_BHS_ocean_cay_aragonite_site",
+                "siteName": "Ocean Cay Aragonite Site",
+                "siteClass": "EXTRACTION_SITE",
+                "countryIso3": "BHS",
+                "countryName": "Bahamas",
+                "resourceTypeId": "aragonite",
+                "identityStatus": "OBSERVED"
+              },
+              "locationIdentity": {
+                "countryIso3": "BHS",
+                "countryName": "Bahamas",
+                "adminRegion": "Bimini / Ocean Cay",
+                "locality": "Bimini / Ocean Cay",
+                "coordinates": {
+                  "lat": 25.45,
+                  "lng": -79.15
+                },
+                "coordinateStatus": "ESTIMATED_SITE_POINT"
+              },
+              "extractionProfile": {
+                "siteType": "EXTRACTION_SITE",
+                "method": "MARINE_DREDGING",
+                "lifecycleStatus": "HISTORICAL_INACTIVE",
+                "operationalStatus": "HISTORICAL_INACTIVE",
+                "owner": "Ocean Industries Incorporated",
+                "operator": "Ocean Industries Incorporated",
+                "ownerEvidenceStatus": "SITE_SPECIFIC_WEB_VERIFIED",
+                "operatorEvidenceStatus": "SITE_SPECIFIC_WEB_VERIFIED"
+              },
+              "quantitativeProfile": {
+                "reserve": {
+                  "quantity": null,
+                  "unit": null,
+                  "status": "UNOBSERVED"
+                },
+                "production": {
+                  "annual": null,
+                  "rate": null,
+                  "unit": null,
+                  "year": null,
+                  "status": "UNOBSERVED"
+                },
+                "grade": {
+                  "value": null,
+                  "unit": null,
+                  "status": "UNOBSERVED"
+                },
+                "quantitativeExtractionDataAvailable": false
+              },
+              "resourceIdentity": {
+                "resourceTypeId": "aragonite",
+                "ontologyKey": null,
+                "commodityName": null,
+                "category": null,
+                "physicalForm": null,
+                "upstreamProcess": null,
+                "midstreamProcess": null,
+                "refinedOutputs": [],
+                "downstreamSectors": [],
+                "ontologyStatus": "UNMAPPED_RESOURCE_TYPE"
+              },
+              "dataCompleteness": {
+                "identity": "COMPLETE",
+                "resource": "COMPLETE",
+                "location": "COMPLETE",
+                "operation": "COMPLETE",
+                "ownership": "REPORTED",
+                "quantitative": {
+                  "reserve": "UNOBSERVED",
+                  "production": "UNOBSERVED",
+                  "grade": "UNOBSERVED"
+                },
+                "provenance": "PRESENT",
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
               }
             }
           ],
@@ -3776,7 +4476,8 @@
                 "grade": "UNOBSERVED",
                 "ownership": "OBSERVED",
                 "operation": "OBSERVED",
-                "extractionMethod": "OBSERVED"
+                "extractionMethod": "OBSERVED",
+                "provenance": "RESOURCE_JSON_WEB_RESEARCH_CATALOG"
               },
               "sourceAuthority": "PUBLIC_WEB_RESEARCH_CURATED",
               "provenance": {
@@ -3786,6 +4487,83 @@
                 "legacyReferenceName": "Barbados Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
+              },
+              "commercialExtraction": true,
+              "siteIdentity": {
+                "siteId": "SITE_BRB_arawak_cement_limestone_quarry",
+                "siteName": "Arawak Cement Limestone Quarry",
+                "siteClass": "QUARRY",
+                "countryIso3": "BRB",
+                "countryName": "Barbados",
+                "resourceTypeId": "limestone",
+                "identityStatus": "OBSERVED"
+              },
+              "locationIdentity": {
+                "countryIso3": "BRB",
+                "countryName": "Barbados",
+                "adminRegion": "St Lucy",
+                "locality": "St Lucy",
+                "coordinates": {
+                  "lat": 13.33,
+                  "lng": -59.64
+                },
+                "coordinateStatus": "ESTIMATED_SITE_POINT"
+              },
+              "extractionProfile": {
+                "siteType": "QUARRY",
+                "method": "surface quarrying",
+                "lifecycleStatus": "ACTIVE_PRODUCING",
+                "operationalStatus": "ACTIVE_PRODUCING",
+                "owner": "Arawak Cement",
+                "operator": "Arawak Cement",
+                "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
+                "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+              },
+              "quantitativeProfile": {
+                "reserve": {
+                  "quantity": null,
+                  "unit": null,
+                  "status": "UNOBSERVED"
+                },
+                "production": {
+                  "annual": null,
+                  "rate": null,
+                  "unit": null,
+                  "year": null,
+                  "status": "UNOBSERVED"
+                },
+                "grade": {
+                  "value": null,
+                  "unit": null,
+                  "status": "UNOBSERVED"
+                },
+                "quantitativeExtractionDataAvailable": false
+              },
+              "resourceIdentity": {
+                "resourceTypeId": "limestone",
+                "ontologyKey": null,
+                "commodityName": null,
+                "category": null,
+                "physicalForm": null,
+                "upstreamProcess": null,
+                "midstreamProcess": null,
+                "refinedOutputs": [],
+                "downstreamSectors": [],
+                "ontologyStatus": "UNMAPPED_RESOURCE_TYPE"
+              },
+              "dataCompleteness": {
+                "identity": "COMPLETE",
+                "resource": "COMPLETE",
+                "location": "COMPLETE",
+                "operation": "COMPLETE",
+                "ownership": "REPORTED",
+                "quantitative": {
+                  "reserve": "UNOBSERVED",
+                  "production": "UNOBSERVED",
+                  "grade": "UNOBSERVED"
+                },
+                "provenance": "PRESENT",
+                "webResearch": "NOT_PER_SITE_VERIFIED"
               }
             }
           ],
@@ -4171,7 +4949,7 @@
           "mineSites": [
             {
               "id": "SITE_LCA_cul_de_sac_aggregate_quarry_zone",
-              "name": "Cul de Sac Aggregate Quarry Zone",
+              "name": "RG Quarry – Cul de Sac",
               "siteName": "Cul de Sac Aggregate Quarry Zone",
               "siteType": "QUARRY",
               "resourceId": "construction_aggregate",
@@ -4183,10 +4961,10 @@
               "lat": 13.99,
               "lng": -60.97,
               "locationNodeKey": "ASSET:LCA:cul_de_sac_aggregate_quarry_zone",
-              "status": "LIMITED",
+              "status": "ACTIVE_PRODUCING",
               "operationalStatus": "LIMITED",
-              "owner": "Private operators",
-              "operator": "Licensed quarry operators",
+              "owner": "RG Quarry Limited",
+              "operator": "RG Quarry Limited",
               "extractionMethod": "surface aggregate quarrying",
               "startYear": 1980,
               "legacyReferenceName": "Saint Lucia Primary Mining and Extraction Sites",
@@ -4212,7 +4990,8 @@
                 "grade": "UNOBSERVED",
                 "ownership": "OBSERVED",
                 "operation": "OBSERVED",
-                "extractionMethod": "OBSERVED"
+                "extractionMethod": "OBSERVED",
+                "provenance": "RESOURCE_JSON_WEB_RESEARCH_CATALOG"
               },
               "sourceAuthority": "PUBLIC_WEB_RESEARCH_CURATED",
               "provenance": {
@@ -4222,6 +5001,102 @@
                 "legacyReferenceName": "Saint Lucia Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
+              },
+              "materialProducts": [
+                "stone",
+                "aggregates",
+                "sand",
+                "gravel",
+                "pumice",
+                "fill material"
+              ],
+              "processingPath": "CRUSHING_AND_GRADING",
+              "webResearchEvidence": [
+                {
+                  "url": "https://rayneau.blogspot.com/2024/07/delivering-foundation-of-strength-rg.html",
+                  "accessed": "2026-09-26",
+                  "scope": "site_identity_or_operation"
+                }
+              ],
+              "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+              "commercialExtraction": true,
+              "ownerEvidenceStatus": "SITE_SPECIFIC_WEB_VERIFIED",
+              "operatorEvidenceStatus": "SITE_SPECIFIC_WEB_VERIFIED",
+              "siteIdentity": {
+                "siteId": "SITE_LCA_cul_de_sac_aggregate_quarry_zone",
+                "siteName": "RG Quarry – Cul de Sac",
+                "siteClass": "QUARRY",
+                "countryIso3": "LCA",
+                "countryName": "Saint Lucia",
+                "resourceTypeId": "construction_aggregate",
+                "identityStatus": "OBSERVED"
+              },
+              "locationIdentity": {
+                "countryIso3": "LCA",
+                "countryName": "Saint Lucia",
+                "adminRegion": "Castries",
+                "locality": "Castries",
+                "coordinates": {
+                  "lat": 13.99,
+                  "lng": -60.97
+                },
+                "coordinateStatus": "ESTIMATED_SITE_POINT"
+              },
+              "extractionProfile": {
+                "siteType": "QUARRY",
+                "method": "surface aggregate quarrying",
+                "lifecycleStatus": "ACTIVE_PRODUCING",
+                "operationalStatus": "LIMITED",
+                "owner": "RG Quarry Limited",
+                "operator": "RG Quarry Limited",
+                "ownerEvidenceStatus": "SITE_SPECIFIC_WEB_VERIFIED",
+                "operatorEvidenceStatus": "SITE_SPECIFIC_WEB_VERIFIED"
+              },
+              "quantitativeProfile": {
+                "reserve": {
+                  "quantity": null,
+                  "unit": null,
+                  "status": "UNOBSERVED"
+                },
+                "production": {
+                  "annual": null,
+                  "rate": null,
+                  "unit": null,
+                  "year": null,
+                  "status": "UNOBSERVED"
+                },
+                "grade": {
+                  "value": null,
+                  "unit": null,
+                  "status": "UNOBSERVED"
+                },
+                "quantitativeExtractionDataAvailable": false
+              },
+              "resourceIdentity": {
+                "resourceTypeId": "construction_aggregate",
+                "ontologyKey": null,
+                "commodityName": null,
+                "category": null,
+                "physicalForm": null,
+                "upstreamProcess": null,
+                "midstreamProcess": null,
+                "refinedOutputs": [],
+                "downstreamSectors": [],
+                "ontologyStatus": "UNMAPPED_RESOURCE_TYPE"
+              },
+              "dataCompleteness": {
+                "identity": "COMPLETE",
+                "resource": "COMPLETE",
+                "location": "COMPLETE",
+                "operation": "COMPLETE",
+                "ownership": "REPORTED",
+                "quantitative": {
+                  "reserve": "UNOBSERVED",
+                  "production": "UNOBSERVED",
+                  "grade": "UNOBSERVED"
+                },
+                "provenance": "PRESENT",
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
               }
             }
           ],
@@ -4621,8 +5496,8 @@
               "locationNodeKey": "ASSET:VCT:diamond_quarry",
               "status": "LIMITED",
               "operationalStatus": "LIMITED",
-              "owner": "Private operators",
-              "operator": "Licensed quarry operators",
+              "owner": null,
+              "operator": null,
               "extractionMethod": "surface aggregate quarrying",
               "startYear": 1980,
               "legacyReferenceName": "Saint Vincent and the Grenadines Primary Mining and Extraction Sites",
@@ -4648,7 +5523,8 @@
                 "grade": "UNOBSERVED",
                 "ownership": "OBSERVED",
                 "operation": "OBSERVED",
-                "extractionMethod": "OBSERVED"
+                "extractionMethod": "OBSERVED",
+                "provenance": "RESOURCE_JSON_WEB_RESEARCH_CATALOG"
               },
               "sourceAuthority": "PUBLIC_WEB_RESEARCH_CURATED",
               "provenance": {
@@ -4658,6 +5534,89 @@
                 "legacyReferenceName": "Saint Vincent and the Grenadines Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
+              },
+              "commercialExtraction": true,
+              "unverifiedLegacyValues": {
+                "owner": "Private operators",
+                "operator": "Licensed quarry operators"
+              },
+              "ownerEvidenceStatus": "UNOBSERVED_SITE_SPECIFIC",
+              "operatorEvidenceStatus": "UNOBSERVED_SITE_SPECIFIC",
+              "siteIdentity": {
+                "siteId": "SITE_VCT_diamond_quarry",
+                "siteName": "Diamond Quarry",
+                "siteClass": "QUARRY",
+                "countryIso3": "VCT",
+                "countryName": "Saint Vincent and the Grenadines",
+                "resourceTypeId": "construction_aggregate",
+                "identityStatus": "OBSERVED"
+              },
+              "locationIdentity": {
+                "countryIso3": "VCT",
+                "countryName": "Saint Vincent and the Grenadines",
+                "adminRegion": "St Vincent",
+                "locality": "St Vincent",
+                "coordinates": {
+                  "lat": 13.15,
+                  "lng": -61.22
+                },
+                "coordinateStatus": "ESTIMATED_SITE_POINT"
+              },
+              "extractionProfile": {
+                "siteType": "QUARRY",
+                "method": "surface aggregate quarrying",
+                "lifecycleStatus": "LIMITED",
+                "operationalStatus": "LIMITED",
+                "owner": null,
+                "operator": null,
+                "ownerEvidenceStatus": "UNOBSERVED_SITE_SPECIFIC",
+                "operatorEvidenceStatus": "UNOBSERVED_SITE_SPECIFIC"
+              },
+              "quantitativeProfile": {
+                "reserve": {
+                  "quantity": null,
+                  "unit": null,
+                  "status": "UNOBSERVED"
+                },
+                "production": {
+                  "annual": null,
+                  "rate": null,
+                  "unit": null,
+                  "year": null,
+                  "status": "UNOBSERVED"
+                },
+                "grade": {
+                  "value": null,
+                  "unit": null,
+                  "status": "UNOBSERVED"
+                },
+                "quantitativeExtractionDataAvailable": false
+              },
+              "resourceIdentity": {
+                "resourceTypeId": "construction_aggregate",
+                "ontologyKey": null,
+                "commodityName": null,
+                "category": null,
+                "physicalForm": null,
+                "upstreamProcess": null,
+                "midstreamProcess": null,
+                "refinedOutputs": [],
+                "downstreamSectors": [],
+                "ontologyStatus": "UNMAPPED_RESOURCE_TYPE"
+              },
+              "dataCompleteness": {
+                "identity": "COMPLETE",
+                "resource": "COMPLETE",
+                "location": "COMPLETE",
+                "operation": "COMPLETE",
+                "ownership": "UNOBSERVED",
+                "quantitative": {
+                  "reserve": "UNOBSERVED",
+                  "production": "UNOBSERVED",
+                  "grade": "UNOBSERVED"
+                },
+                "provenance": "PRESENT",
+                "webResearch": "NOT_PER_SITE_VERIFIED"
               }
             }
           ],
@@ -5043,7 +6002,7 @@
           "mineSites": [
             {
               "id": "SITE_GRD_telescope_quarry",
-              "name": "Telescope Quarry",
+              "name": "Telescope Point Basalt Quarry",
               "siteName": "Telescope Quarry",
               "siteType": "QUARRY",
               "resourceId": "construction_aggregate",
@@ -5055,12 +6014,12 @@
               "lat": 12.08,
               "lng": -61.72,
               "locationNodeKey": "ASSET:GRD:telescope_quarry",
-              "status": "LIMITED",
+              "status": "ACTIVE_PRODUCING",
               "operationalStatus": "LIMITED",
-              "owner": "Private operators",
-              "operator": "Licensed quarry operators",
-              "extractionMethod": "surface aggregate quarrying",
-              "startYear": 1980,
+              "owner": "Gravel, Concrete & Emulsion Production Corporation",
+              "operator": "Gravel, Concrete & Emulsion Production Corporation",
+              "extractionMethod": "HARD_ROCK_BASALT_QUARRYING_AND_CRUSHING",
+              "startYear": 1944,
               "legacyReferenceName": "Grenada Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
               "dataAuthority": {
@@ -5084,7 +6043,8 @@
                 "grade": "UNOBSERVED",
                 "ownership": "OBSERVED",
                 "operation": "OBSERVED",
-                "extractionMethod": "OBSERVED"
+                "extractionMethod": "OBSERVED",
+                "provenance": "RESOURCE_JSON_WEB_RESEARCH_CATALOG"
               },
               "sourceAuthority": "PUBLIC_WEB_RESEARCH_CURATED",
               "provenance": {
@@ -5094,6 +6054,99 @@
                 "legacyReferenceName": "Grenada Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
+              },
+              "materialSubtype": "Basalt aggregate",
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.mindat.org/loc-435038.html",
+                  "accessed": "2026-09-26",
+                  "scope": "site_identity_or_operation"
+                },
+                {
+                  "url": "https://www.gov.uk/government/publications/commonwealth-marine-economies-cme-programme-grenada/grenada-maritime-economy-plan-march-2021",
+                  "accessed": "2026-09-26",
+                  "scope": "site_identity_or_operation"
+                }
+              ],
+              "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+              "commercialExtraction": true,
+              "ownerEvidenceStatus": "SITE_SPECIFIC_WEB_VERIFIED",
+              "operatorEvidenceStatus": "SITE_SPECIFIC_WEB_VERIFIED",
+              "siteIdentity": {
+                "siteId": "SITE_GRD_telescope_quarry",
+                "siteName": "Telescope Point Basalt Quarry",
+                "siteClass": "QUARRY",
+                "countryIso3": "GRD",
+                "countryName": "Grenada",
+                "resourceTypeId": "construction_aggregate",
+                "identityStatus": "OBSERVED"
+              },
+              "locationIdentity": {
+                "countryIso3": "GRD",
+                "countryName": "Grenada",
+                "adminRegion": "Saint Andrew",
+                "locality": "Saint Andrew",
+                "coordinates": {
+                  "lat": 12.08,
+                  "lng": -61.72
+                },
+                "coordinateStatus": "ESTIMATED_SITE_POINT"
+              },
+              "extractionProfile": {
+                "siteType": "QUARRY",
+                "method": "HARD_ROCK_BASALT_QUARRYING_AND_CRUSHING",
+                "lifecycleStatus": "ACTIVE_PRODUCING",
+                "operationalStatus": "LIMITED",
+                "owner": "Gravel, Concrete & Emulsion Production Corporation",
+                "operator": "Gravel, Concrete & Emulsion Production Corporation",
+                "ownerEvidenceStatus": "SITE_SPECIFIC_WEB_VERIFIED",
+                "operatorEvidenceStatus": "SITE_SPECIFIC_WEB_VERIFIED"
+              },
+              "quantitativeProfile": {
+                "reserve": {
+                  "quantity": null,
+                  "unit": null,
+                  "status": "UNOBSERVED"
+                },
+                "production": {
+                  "annual": null,
+                  "rate": null,
+                  "unit": null,
+                  "year": null,
+                  "status": "UNOBSERVED"
+                },
+                "grade": {
+                  "value": null,
+                  "unit": null,
+                  "status": "UNOBSERVED"
+                },
+                "quantitativeExtractionDataAvailable": false
+              },
+              "resourceIdentity": {
+                "resourceTypeId": "construction_aggregate",
+                "ontologyKey": null,
+                "commodityName": null,
+                "category": null,
+                "physicalForm": null,
+                "upstreamProcess": null,
+                "midstreamProcess": null,
+                "refinedOutputs": [],
+                "downstreamSectors": [],
+                "ontologyStatus": "UNMAPPED_RESOURCE_TYPE"
+              },
+              "dataCompleteness": {
+                "identity": "COMPLETE",
+                "resource": "COMPLETE",
+                "location": "COMPLETE",
+                "operation": "COMPLETE",
+                "ownership": "REPORTED",
+                "quantitative": {
+                  "reserve": "UNOBSERVED",
+                  "production": "UNOBSERVED",
+                  "grade": "UNOBSERVED"
+                },
+                "provenance": "PRESENT",
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
               }
             }
           ],
@@ -5493,8 +6546,8 @@
               "locationNodeKey": "ASSET:ATG:gunthorpes_quarry",
               "status": "LIMITED",
               "operationalStatus": "LIMITED",
-              "owner": "Private operators",
-              "operator": "Licensed quarry operators",
+              "owner": null,
+              "operator": null,
               "extractionMethod": "surface quarrying",
               "startYear": 1980,
               "legacyReferenceName": "Antigua and Barbuda Primary Mining and Extraction Sites",
@@ -5520,7 +6573,8 @@
                 "grade": "UNOBSERVED",
                 "ownership": "OBSERVED",
                 "operation": "OBSERVED",
-                "extractionMethod": "OBSERVED"
+                "extractionMethod": "OBSERVED",
+                "provenance": "RESOURCE_JSON_WEB_RESEARCH_CATALOG"
               },
               "sourceAuthority": "PUBLIC_WEB_RESEARCH_CURATED",
               "provenance": {
@@ -5530,6 +6584,89 @@
                 "legacyReferenceName": "Antigua and Barbuda Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
+              },
+              "commercialExtraction": true,
+              "unverifiedLegacyValues": {
+                "owner": "Private operators",
+                "operator": "Licensed quarry operators"
+              },
+              "ownerEvidenceStatus": "UNOBSERVED_SITE_SPECIFIC",
+              "operatorEvidenceStatus": "UNOBSERVED_SITE_SPECIFIC",
+              "siteIdentity": {
+                "siteId": "SITE_ATG_gunthorpes_quarry",
+                "siteName": "Gunthorpes Quarry",
+                "siteClass": "QUARRY",
+                "countryIso3": "ATG",
+                "countryName": "Antigua and Barbuda",
+                "resourceTypeId": "limestone",
+                "identityStatus": "OBSERVED"
+              },
+              "locationIdentity": {
+                "countryIso3": "ATG",
+                "countryName": "Antigua and Barbuda",
+                "adminRegion": "Saint George",
+                "locality": "Saint George",
+                "coordinates": {
+                  "lat": 17.08,
+                  "lng": -61.82
+                },
+                "coordinateStatus": "ESTIMATED_SITE_POINT"
+              },
+              "extractionProfile": {
+                "siteType": "QUARRY",
+                "method": "surface quarrying",
+                "lifecycleStatus": "LIMITED",
+                "operationalStatus": "LIMITED",
+                "owner": null,
+                "operator": null,
+                "ownerEvidenceStatus": "UNOBSERVED_SITE_SPECIFIC",
+                "operatorEvidenceStatus": "UNOBSERVED_SITE_SPECIFIC"
+              },
+              "quantitativeProfile": {
+                "reserve": {
+                  "quantity": null,
+                  "unit": null,
+                  "status": "UNOBSERVED"
+                },
+                "production": {
+                  "annual": null,
+                  "rate": null,
+                  "unit": null,
+                  "year": null,
+                  "status": "UNOBSERVED"
+                },
+                "grade": {
+                  "value": null,
+                  "unit": null,
+                  "status": "UNOBSERVED"
+                },
+                "quantitativeExtractionDataAvailable": false
+              },
+              "resourceIdentity": {
+                "resourceTypeId": "limestone",
+                "ontologyKey": null,
+                "commodityName": null,
+                "category": null,
+                "physicalForm": null,
+                "upstreamProcess": null,
+                "midstreamProcess": null,
+                "refinedOutputs": [],
+                "downstreamSectors": [],
+                "ontologyStatus": "UNMAPPED_RESOURCE_TYPE"
+              },
+              "dataCompleteness": {
+                "identity": "COMPLETE",
+                "resource": "COMPLETE",
+                "location": "COMPLETE",
+                "operation": "COMPLETE",
+                "ownership": "UNOBSERVED",
+                "quantitative": {
+                  "reserve": "UNOBSERVED",
+                  "production": "UNOBSERVED",
+                  "grade": "UNOBSERVED"
+                },
+                "provenance": "PRESENT",
+                "webResearch": "NOT_PER_SITE_VERIFIED"
               }
             }
           ],
@@ -5929,8 +7066,8 @@
               "locationNodeKey": "ASSET:KNA:ross_lands_quarry_zone",
               "status": "LIMITED",
               "operationalStatus": "LIMITED",
-              "owner": "Private operators",
-              "operator": "Licensed quarry operators",
+              "owner": null,
+              "operator": null,
               "extractionMethod": "surface quarrying",
               "startYear": 1980,
               "legacyReferenceName": "Saint Kitts and Nevis Primary Mining and Extraction Sites",
@@ -5956,7 +7093,8 @@
                 "grade": "UNOBSERVED",
                 "ownership": "OBSERVED",
                 "operation": "OBSERVED",
-                "extractionMethod": "OBSERVED"
+                "extractionMethod": "OBSERVED",
+                "provenance": "RESOURCE_JSON_WEB_RESEARCH_CATALOG"
               },
               "sourceAuthority": "PUBLIC_WEB_RESEARCH_CURATED",
               "provenance": {
@@ -5966,6 +7104,89 @@
                 "legacyReferenceName": "Saint Kitts and Nevis Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
+              },
+              "commercialExtraction": true,
+              "unverifiedLegacyValues": {
+                "owner": "Private operators",
+                "operator": "Licensed quarry operators"
+              },
+              "ownerEvidenceStatus": "UNOBSERVED_SITE_SPECIFIC",
+              "operatorEvidenceStatus": "UNOBSERVED_SITE_SPECIFIC",
+              "siteIdentity": {
+                "siteId": "SITE_KNA_ross_lands_quarry_zone",
+                "siteName": "Ross Lands Quarry Zone",
+                "siteClass": "QUARRY",
+                "countryIso3": "KNA",
+                "countryName": "Saint Kitts and Nevis",
+                "resourceTypeId": "limestone",
+                "identityStatus": "OBSERVED"
+              },
+              "locationIdentity": {
+                "countryIso3": "KNA",
+                "countryName": "Saint Kitts and Nevis",
+                "adminRegion": "Saint Kitts",
+                "locality": "Saint Kitts",
+                "coordinates": {
+                  "lat": 17.35,
+                  "lng": -62.76
+                },
+                "coordinateStatus": "ESTIMATED_SITE_POINT"
+              },
+              "extractionProfile": {
+                "siteType": "QUARRY",
+                "method": "surface quarrying",
+                "lifecycleStatus": "LIMITED",
+                "operationalStatus": "LIMITED",
+                "owner": null,
+                "operator": null,
+                "ownerEvidenceStatus": "UNOBSERVED_SITE_SPECIFIC",
+                "operatorEvidenceStatus": "UNOBSERVED_SITE_SPECIFIC"
+              },
+              "quantitativeProfile": {
+                "reserve": {
+                  "quantity": null,
+                  "unit": null,
+                  "status": "UNOBSERVED"
+                },
+                "production": {
+                  "annual": null,
+                  "rate": null,
+                  "unit": null,
+                  "year": null,
+                  "status": "UNOBSERVED"
+                },
+                "grade": {
+                  "value": null,
+                  "unit": null,
+                  "status": "UNOBSERVED"
+                },
+                "quantitativeExtractionDataAvailable": false
+              },
+              "resourceIdentity": {
+                "resourceTypeId": "limestone",
+                "ontologyKey": null,
+                "commodityName": null,
+                "category": null,
+                "physicalForm": null,
+                "upstreamProcess": null,
+                "midstreamProcess": null,
+                "refinedOutputs": [],
+                "downstreamSectors": [],
+                "ontologyStatus": "UNMAPPED_RESOURCE_TYPE"
+              },
+              "dataCompleteness": {
+                "identity": "COMPLETE",
+                "resource": "COMPLETE",
+                "location": "COMPLETE",
+                "operation": "COMPLETE",
+                "ownership": "UNOBSERVED",
+                "quantitative": {
+                  "reserve": "UNOBSERVED",
+                  "production": "UNOBSERVED",
+                  "grade": "UNOBSERVED"
+                },
+                "provenance": "PRESENT",
+                "webResearch": "NOT_PER_SITE_VERIFIED"
               }
             }
           ],
@@ -6351,7 +7572,7 @@
           "mineSites": [
             {
               "id": "SITE_DMA_pointe_michel_stone_quarry",
-              "name": "Pointe Michel Stone Quarry",
+              "name": "Pointe Michel Pumice Quarry",
               "siteName": "Pointe Michel Stone Quarry",
               "siteType": "QUARRY",
               "resourceId": "construction_aggregate",
@@ -6363,11 +7584,11 @@
               "lat": 15.23,
               "lng": -61.39,
               "locationNodeKey": "ASSET:DMA:pointe_michel_stone_quarry",
-              "status": "LIMITED",
+              "status": "ACTIVE_PRODUCING",
               "operationalStatus": "LIMITED",
-              "owner": "Private operators",
-              "operator": "Licensed operators",
-              "extractionMethod": "surface aggregate quarrying",
+              "owner": "Carib Sand and Stone Ltd. (CSS)",
+              "operator": "Carib Sand and Stone Ltd. (CSS)",
+              "extractionMethod": "QUARRYING_AND_CRUSHING",
               "startYear": 1980,
               "legacyReferenceName": "Dominica Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -6392,7 +7613,8 @@
                 "grade": "UNOBSERVED",
                 "ownership": "OBSERVED",
                 "operation": "OBSERVED",
-                "extractionMethod": "OBSERVED"
+                "extractionMethod": "OBSERVED",
+                "provenance": "RESOURCE_JSON_WEB_RESEARCH_CATALOG"
               },
               "sourceAuthority": "PUBLIC_WEB_RESEARCH_CURATED",
               "provenance": {
@@ -6402,6 +7624,94 @@
                 "legacyReferenceName": "Dominica Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
+              },
+              "materialSubtype": "Pumice",
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.physicalplanning.gov.dm/requirements/index.php?Itemid=165&catid=10&id=47&option=com_content&view=article",
+                  "accessed": "2026-09-26",
+                  "scope": "site_identity_or_operation"
+                }
+              ],
+              "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+              "commercialExtraction": true,
+              "ownerEvidenceStatus": "SITE_SPECIFIC_WEB_VERIFIED",
+              "operatorEvidenceStatus": "SITE_SPECIFIC_WEB_VERIFIED",
+              "siteIdentity": {
+                "siteId": "SITE_DMA_pointe_michel_stone_quarry",
+                "siteName": "Pointe Michel Pumice Quarry",
+                "siteClass": "QUARRY",
+                "countryIso3": "DMA",
+                "countryName": "Dominica",
+                "resourceTypeId": "construction_aggregate",
+                "identityStatus": "OBSERVED"
+              },
+              "locationIdentity": {
+                "countryIso3": "DMA",
+                "countryName": "Dominica",
+                "adminRegion": "Saint Luke",
+                "locality": "Saint Luke",
+                "coordinates": {
+                  "lat": 15.23,
+                  "lng": -61.39
+                },
+                "coordinateStatus": "ESTIMATED_SITE_POINT"
+              },
+              "extractionProfile": {
+                "siteType": "QUARRY",
+                "method": "QUARRYING_AND_CRUSHING",
+                "lifecycleStatus": "ACTIVE_PRODUCING",
+                "operationalStatus": "LIMITED",
+                "owner": "Carib Sand and Stone Ltd. (CSS)",
+                "operator": "Carib Sand and Stone Ltd. (CSS)",
+                "ownerEvidenceStatus": "SITE_SPECIFIC_WEB_VERIFIED",
+                "operatorEvidenceStatus": "SITE_SPECIFIC_WEB_VERIFIED"
+              },
+              "quantitativeProfile": {
+                "reserve": {
+                  "quantity": null,
+                  "unit": null,
+                  "status": "UNOBSERVED"
+                },
+                "production": {
+                  "annual": null,
+                  "rate": null,
+                  "unit": null,
+                  "year": null,
+                  "status": "UNOBSERVED"
+                },
+                "grade": {
+                  "value": null,
+                  "unit": null,
+                  "status": "UNOBSERVED"
+                },
+                "quantitativeExtractionDataAvailable": false
+              },
+              "resourceIdentity": {
+                "resourceTypeId": "construction_aggregate",
+                "ontologyKey": null,
+                "commodityName": null,
+                "category": null,
+                "physicalForm": null,
+                "upstreamProcess": null,
+                "midstreamProcess": null,
+                "refinedOutputs": [],
+                "downstreamSectors": [],
+                "ontologyStatus": "UNMAPPED_RESOURCE_TYPE"
+              },
+              "dataCompleteness": {
+                "identity": "COMPLETE",
+                "resource": "COMPLETE",
+                "location": "COMPLETE",
+                "operation": "COMPLETE",
+                "ownership": "REPORTED",
+                "quantitative": {
+                  "reserve": "UNOBSERVED",
+                  "production": "UNOBSERVED",
+                  "grade": "UNOBSERVED"
+                },
+                "provenance": "PRESENT",
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
               }
             }
           ],
@@ -6831,7 +8141,8 @@
                 "grade": "UNOBSERVED",
                 "ownership": "OBSERVED",
                 "operation": "OBSERVED",
-                "extractionMethod": "OBSERVED"
+                "extractionMethod": "OBSERVED",
+                "provenance": "RESOURCE_JSON_WEB_RESEARCH_CATALOG"
               },
               "sourceAuthority": "PUBLIC_WEB_RESEARCH_CURATED",
               "provenance": {
@@ -6841,6 +8152,83 @@
                 "legacyReferenceName": "Suriname Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
+              },
+              "commercialExtraction": true,
+              "siteIdentity": {
+                "siteId": "SITE_SUR_merian_gold_mine",
+                "siteName": "Merian Gold Mine",
+                "siteClass": "MINE",
+                "countryIso3": "SUR",
+                "countryName": "Suriname",
+                "resourceTypeId": "gold",
+                "identityStatus": "OBSERVED"
+              },
+              "locationIdentity": {
+                "countryIso3": "SUR",
+                "countryName": "Suriname",
+                "adminRegion": "Sipaliwini",
+                "locality": "Sipaliwini",
+                "coordinates": {
+                  "lat": 5.85,
+                  "lng": -54.52
+                },
+                "coordinateStatus": "ESTIMATED_SITE_POINT"
+              },
+              "extractionProfile": {
+                "siteType": "MINE",
+                "method": "open-pit",
+                "lifecycleStatus": "ACTIVE_PRODUCING",
+                "operationalStatus": "ACTIVE_PRODUCING",
+                "owner": "Newmont / Staatsolie",
+                "operator": "Newmont Suriname",
+                "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
+                "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+              },
+              "quantitativeProfile": {
+                "reserve": {
+                  "quantity": null,
+                  "unit": null,
+                  "status": "UNOBSERVED"
+                },
+                "production": {
+                  "annual": null,
+                  "rate": null,
+                  "unit": null,
+                  "year": null,
+                  "status": "UNOBSERVED"
+                },
+                "grade": {
+                  "value": null,
+                  "unit": null,
+                  "status": "UNOBSERVED"
+                },
+                "quantitativeExtractionDataAvailable": false
+              },
+              "resourceIdentity": {
+                "resourceTypeId": "gold",
+                "ontologyKey": null,
+                "commodityName": null,
+                "category": null,
+                "physicalForm": null,
+                "upstreamProcess": null,
+                "midstreamProcess": null,
+                "refinedOutputs": [],
+                "downstreamSectors": [],
+                "ontologyStatus": "UNMAPPED_RESOURCE_TYPE"
+              },
+              "dataCompleteness": {
+                "identity": "COMPLETE",
+                "resource": "COMPLETE",
+                "location": "COMPLETE",
+                "operation": "COMPLETE",
+                "ownership": "REPORTED",
+                "quantitative": {
+                  "reserve": "UNOBSERVED",
+                  "production": "UNOBSERVED",
+                  "grade": "UNOBSERVED"
+                },
+                "provenance": "PRESENT",
+                "webResearch": "NOT_PER_SITE_VERIFIED"
               }
             }
           ],
@@ -7269,7 +8657,8 @@
                 "grade": "UNOBSERVED",
                 "ownership": "OBSERVED",
                 "operation": "OBSERVED",
-                "extractionMethod": "OBSERVED"
+                "extractionMethod": "OBSERVED",
+                "provenance": "RESOURCE_JSON_WEB_RESEARCH_CATALOG"
               },
               "sourceAuthority": "PUBLIC_WEB_RESEARCH_CURATED",
               "provenance": {
@@ -7279,6 +8668,83 @@
                 "legacyReferenceName": "Guyana Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
+              },
+              "commercialExtraction": true,
+              "siteIdentity": {
+                "siteId": "SITE_GUY_aurora_gold_mine",
+                "siteName": "Aurora Gold Mine",
+                "siteClass": "MINE",
+                "countryIso3": "GUY",
+                "countryName": "Guyana",
+                "resourceTypeId": "gold",
+                "identityStatus": "OBSERVED"
+              },
+              "locationIdentity": {
+                "countryIso3": "GUY",
+                "countryName": "Guyana",
+                "adminRegion": "Cuyuni-Mazaruni",
+                "locality": "Cuyuni-Mazaruni",
+                "coordinates": {
+                  "lat": 6.77,
+                  "lng": -60.71
+                },
+                "coordinateStatus": "ESTIMATED_SITE_POINT"
+              },
+              "extractionProfile": {
+                "siteType": "MINE",
+                "method": "open-pit and underground",
+                "lifecycleStatus": "ACTIVE_PRODUCING",
+                "operationalStatus": "ACTIVE_PRODUCING",
+                "owner": "Zijin / Guyana",
+                "operator": "Aurora operations",
+                "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
+                "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+              },
+              "quantitativeProfile": {
+                "reserve": {
+                  "quantity": null,
+                  "unit": null,
+                  "status": "UNOBSERVED"
+                },
+                "production": {
+                  "annual": null,
+                  "rate": null,
+                  "unit": null,
+                  "year": null,
+                  "status": "UNOBSERVED"
+                },
+                "grade": {
+                  "value": null,
+                  "unit": null,
+                  "status": "UNOBSERVED"
+                },
+                "quantitativeExtractionDataAvailable": false
+              },
+              "resourceIdentity": {
+                "resourceTypeId": "gold",
+                "ontologyKey": null,
+                "commodityName": null,
+                "category": null,
+                "physicalForm": null,
+                "upstreamProcess": null,
+                "midstreamProcess": null,
+                "refinedOutputs": [],
+                "downstreamSectors": [],
+                "ontologyStatus": "UNMAPPED_RESOURCE_TYPE"
+              },
+              "dataCompleteness": {
+                "identity": "COMPLETE",
+                "resource": "COMPLETE",
+                "location": "COMPLETE",
+                "operation": "COMPLETE",
+                "ownership": "REPORTED",
+                "quantitative": {
+                  "reserve": "UNOBSERVED",
+                  "production": "UNOBSERVED",
+                  "grade": "UNOBSERVED"
+                },
+                "provenance": "PRESENT",
+                "webResearch": "NOT_PER_SITE_VERIFIED"
               }
             }
           ],
@@ -7704,7 +9170,8 @@
                 "grade": "UNOBSERVED",
                 "ownership": "OBSERVED",
                 "operation": "OBSERVED",
-                "extractionMethod": "OBSERVED"
+                "extractionMethod": "OBSERVED",
+                "provenance": "RESOURCE_JSON_WEB_RESEARCH_CATALOG"
               },
               "sourceAuthority": "PUBLIC_WEB_RESEARCH_CURATED",
               "provenance": {
@@ -7714,6 +9181,83 @@
                 "legacyReferenceName": "Australia Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
+              },
+              "commercialExtraction": true,
+              "siteIdentity": {
+                "siteId": "SITE_AUS_boddington_gold_mine",
+                "siteName": "Boddington Gold Mine",
+                "siteClass": "MINE",
+                "countryIso3": "AUS",
+                "countryName": "Australia",
+                "resourceTypeId": "gold",
+                "identityStatus": "OBSERVED"
+              },
+              "locationIdentity": {
+                "countryIso3": "AUS",
+                "countryName": "Australia",
+                "adminRegion": "Western Australia",
+                "locality": "Western Australia",
+                "coordinates": {
+                  "lat": -32.8,
+                  "lng": 116.37
+                },
+                "coordinateStatus": "ESTIMATED_SITE_POINT"
+              },
+              "extractionProfile": {
+                "siteType": "MINE",
+                "method": "large open-pit and processing",
+                "lifecycleStatus": "ACTIVE_PRODUCING",
+                "operationalStatus": "ACTIVE_PRODUCING",
+                "owner": "Newmont",
+                "operator": "Newmont Boddington Gold",
+                "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
+                "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+              },
+              "quantitativeProfile": {
+                "reserve": {
+                  "quantity": null,
+                  "unit": null,
+                  "status": "UNOBSERVED"
+                },
+                "production": {
+                  "annual": null,
+                  "rate": null,
+                  "unit": null,
+                  "year": null,
+                  "status": "UNOBSERVED"
+                },
+                "grade": {
+                  "value": null,
+                  "unit": null,
+                  "status": "UNOBSERVED"
+                },
+                "quantitativeExtractionDataAvailable": false
+              },
+              "resourceIdentity": {
+                "resourceTypeId": "gold",
+                "ontologyKey": null,
+                "commodityName": null,
+                "category": null,
+                "physicalForm": null,
+                "upstreamProcess": null,
+                "midstreamProcess": null,
+                "refinedOutputs": [],
+                "downstreamSectors": [],
+                "ontologyStatus": "UNMAPPED_RESOURCE_TYPE"
+              },
+              "dataCompleteness": {
+                "identity": "COMPLETE",
+                "resource": "COMPLETE",
+                "location": "COMPLETE",
+                "operation": "COMPLETE",
+                "ownership": "REPORTED",
+                "quantitative": {
+                  "reserve": "UNOBSERVED",
+                  "production": "UNOBSERVED",
+                  "grade": "UNOBSERVED"
+                },
+                "provenance": "PRESENT",
+                "webResearch": "NOT_PER_SITE_VERIFIED"
               }
             }
           ],
@@ -8140,7 +9684,8 @@
                 "grade": "UNOBSERVED",
                 "ownership": "OBSERVED",
                 "operation": "OBSERVED",
-                "extractionMethod": "OBSERVED"
+                "extractionMethod": "OBSERVED",
+                "provenance": "RESOURCE_JSON_WEB_RESEARCH_CATALOG"
               },
               "sourceAuthority": "PUBLIC_WEB_RESEARCH_CURATED",
               "provenance": {
@@ -8150,6 +9695,83 @@
                 "legacyReferenceName": "New Zealand Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
+              },
+              "commercialExtraction": true,
+              "siteIdentity": {
+                "siteId": "SITE_NZL_macraes_gold_mine",
+                "siteName": "Macraes Gold Mine",
+                "siteClass": "MINE",
+                "countryIso3": "NZL",
+                "countryName": "New Zealand",
+                "resourceTypeId": "gold",
+                "identityStatus": "OBSERVED"
+              },
+              "locationIdentity": {
+                "countryIso3": "NZL",
+                "countryName": "New Zealand",
+                "adminRegion": "Otago",
+                "locality": "Otago",
+                "coordinates": {
+                  "lat": -45.37,
+                  "lng": 170.1
+                },
+                "coordinateStatus": "ESTIMATED_SITE_POINT"
+              },
+              "extractionProfile": {
+                "siteType": "MINE",
+                "method": "open-pit and underground",
+                "lifecycleStatus": "ACTIVE_PRODUCING",
+                "operationalStatus": "ACTIVE_PRODUCING",
+                "owner": "OceanaGold",
+                "operator": "OceanaGold New Zealand",
+                "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
+                "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+              },
+              "quantitativeProfile": {
+                "reserve": {
+                  "quantity": null,
+                  "unit": null,
+                  "status": "UNOBSERVED"
+                },
+                "production": {
+                  "annual": null,
+                  "rate": null,
+                  "unit": null,
+                  "year": null,
+                  "status": "UNOBSERVED"
+                },
+                "grade": {
+                  "value": null,
+                  "unit": null,
+                  "status": "UNOBSERVED"
+                },
+                "quantitativeExtractionDataAvailable": false
+              },
+              "resourceIdentity": {
+                "resourceTypeId": "gold",
+                "ontologyKey": null,
+                "commodityName": null,
+                "category": null,
+                "physicalForm": null,
+                "upstreamProcess": null,
+                "midstreamProcess": null,
+                "refinedOutputs": [],
+                "downstreamSectors": [],
+                "ontologyStatus": "UNMAPPED_RESOURCE_TYPE"
+              },
+              "dataCompleteness": {
+                "identity": "COMPLETE",
+                "resource": "COMPLETE",
+                "location": "COMPLETE",
+                "operation": "COMPLETE",
+                "ownership": "REPORTED",
+                "quantitative": {
+                  "reserve": "UNOBSERVED",
+                  "production": "UNOBSERVED",
+                  "grade": "UNOBSERVED"
+                },
+                "provenance": "PRESENT",
+                "webResearch": "NOT_PER_SITE_VERIFIED"
               }
             }
           ],
@@ -8599,7 +10221,8 @@
                 "grade": "UNOBSERVED",
                 "ownership": "OBSERVED",
                 "operation": "OBSERVED",
-                "extractionMethod": "OBSERVED"
+                "extractionMethod": "OBSERVED",
+                "provenance": "RESOURCE_JSON_WEB_RESEARCH_CATALOG"
               },
               "sourceAuthority": "PUBLIC_WEB_RESEARCH_CURATED",
               "provenance": {
@@ -8609,6 +10232,83 @@
                 "legacyReferenceName": "Papua New Guinea Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
+              },
+              "commercialExtraction": true,
+              "siteIdentity": {
+                "siteId": "SITE_PNG_lihir_gold_mine",
+                "siteName": "Lihir Gold Mine",
+                "siteClass": "MINE",
+                "countryIso3": "PNG",
+                "countryName": "Papua New Guinea",
+                "resourceTypeId": "gold",
+                "identityStatus": "OBSERVED"
+              },
+              "locationIdentity": {
+                "countryIso3": "PNG",
+                "countryName": "Papua New Guinea",
+                "adminRegion": "New Ireland",
+                "locality": "New Ireland",
+                "coordinates": {
+                  "lat": -3.13,
+                  "lng": 152.64
+                },
+                "coordinateStatus": "ESTIMATED_SITE_POINT"
+              },
+              "extractionProfile": {
+                "siteType": "MINE",
+                "method": "open-pit",
+                "lifecycleStatus": "ACTIVE_PRODUCING",
+                "operationalStatus": "ACTIVE_PRODUCING",
+                "owner": "Newmont",
+                "operator": "Lihir operation",
+                "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
+                "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+              },
+              "quantitativeProfile": {
+                "reserve": {
+                  "quantity": null,
+                  "unit": null,
+                  "status": "UNOBSERVED"
+                },
+                "production": {
+                  "annual": null,
+                  "rate": null,
+                  "unit": null,
+                  "year": null,
+                  "status": "UNOBSERVED"
+                },
+                "grade": {
+                  "value": null,
+                  "unit": null,
+                  "status": "UNOBSERVED"
+                },
+                "quantitativeExtractionDataAvailable": false
+              },
+              "resourceIdentity": {
+                "resourceTypeId": "gold",
+                "ontologyKey": null,
+                "commodityName": null,
+                "category": null,
+                "physicalForm": null,
+                "upstreamProcess": null,
+                "midstreamProcess": null,
+                "refinedOutputs": [],
+                "downstreamSectors": [],
+                "ontologyStatus": "UNMAPPED_RESOURCE_TYPE"
+              },
+              "dataCompleteness": {
+                "identity": "COMPLETE",
+                "resource": "COMPLETE",
+                "location": "COMPLETE",
+                "operation": "COMPLETE",
+                "ownership": "REPORTED",
+                "quantitative": {
+                  "reserve": "UNOBSERVED",
+                  "production": "UNOBSERVED",
+                  "grade": "UNOBSERVED"
+                },
+                "provenance": "PRESENT",
+                "webResearch": "NOT_PER_SITE_VERIFIED"
               }
             }
           ],
@@ -9058,7 +10758,8 @@
                 "grade": "UNOBSERVED",
                 "ownership": "OBSERVED",
                 "operation": "OBSERVED",
-                "extractionMethod": "OBSERVED"
+                "extractionMethod": "OBSERVED",
+                "provenance": "RESOURCE_JSON_WEB_RESEARCH_CATALOG"
               },
               "sourceAuthority": "PUBLIC_WEB_RESEARCH_CURATED",
               "provenance": {
@@ -9068,6 +10769,83 @@
                 "legacyReferenceName": "Fiji Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
+              },
+              "commercialExtraction": true,
+              "siteIdentity": {
+                "siteId": "SITE_FJI_vatukoula_gold_mine",
+                "siteName": "Vatukoula Gold Mine",
+                "siteClass": "MINE",
+                "countryIso3": "FJI",
+                "countryName": "Fiji",
+                "resourceTypeId": "gold",
+                "identityStatus": "OBSERVED"
+              },
+              "locationIdentity": {
+                "countryIso3": "FJI",
+                "countryName": "Fiji",
+                "adminRegion": "Viti Levu",
+                "locality": "Viti Levu",
+                "coordinates": {
+                  "lat": -17.59,
+                  "lng": 177.54
+                },
+                "coordinateStatus": "ESTIMATED_SITE_POINT"
+              },
+              "extractionProfile": {
+                "siteType": "MINE",
+                "method": "underground",
+                "lifecycleStatus": "ACTIVE_PRODUCING",
+                "operationalStatus": "ACTIVE_PRODUCING",
+                "owner": "Vatukoula Gold Mines",
+                "operator": "Vatukoula Gold Mines",
+                "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
+                "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+              },
+              "quantitativeProfile": {
+                "reserve": {
+                  "quantity": null,
+                  "unit": null,
+                  "status": "UNOBSERVED"
+                },
+                "production": {
+                  "annual": null,
+                  "rate": null,
+                  "unit": null,
+                  "year": null,
+                  "status": "UNOBSERVED"
+                },
+                "grade": {
+                  "value": null,
+                  "unit": null,
+                  "status": "UNOBSERVED"
+                },
+                "quantitativeExtractionDataAvailable": false
+              },
+              "resourceIdentity": {
+                "resourceTypeId": "gold",
+                "ontologyKey": null,
+                "commodityName": null,
+                "category": null,
+                "physicalForm": null,
+                "upstreamProcess": null,
+                "midstreamProcess": null,
+                "refinedOutputs": [],
+                "downstreamSectors": [],
+                "ontologyStatus": "UNMAPPED_RESOURCE_TYPE"
+              },
+              "dataCompleteness": {
+                "identity": "COMPLETE",
+                "resource": "COMPLETE",
+                "location": "COMPLETE",
+                "operation": "COMPLETE",
+                "ownership": "REPORTED",
+                "quantitative": {
+                  "reserve": "UNOBSERVED",
+                  "production": "UNOBSERVED",
+                  "grade": "UNOBSERVED"
+                },
+                "provenance": "PRESENT",
+                "webResearch": "NOT_PER_SITE_VERIFIED"
               }
             }
           ],
@@ -9488,11 +11266,11 @@
               "lat": -9.56,
               "lng": 160.03,
               "locationNodeKey": "ASSET:SLB:gold_ridge_mine",
-              "status": "RESTARTING",
+              "status": "ACTIVE_PRODUCING",
               "operationalStatus": "RESTARTING",
-              "owner": "Government/investors",
-              "operator": "Gold Ridge Community Investment",
-              "extractionMethod": "open-pit",
+              "owner": "Gold Ridge Mining Limited (majority-owned by Wanguo Gold Group; landowner-controlled minority interest)",
+              "operator": "Gold Ridge Mining Limited",
+              "extractionMethod": "OPEN_PIT_MINING",
               "startYear": 1998,
               "legacyReferenceName": "Solomon Islands Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -9517,7 +11295,8 @@
                 "grade": "UNOBSERVED",
                 "ownership": "OBSERVED",
                 "operation": "OBSERVED",
-                "extractionMethod": "OBSERVED"
+                "extractionMethod": "OBSERVED",
+                "provenance": "RESOURCE_JSON_WEB_RESEARCH_CATALOG"
               },
               "sourceAuthority": "PUBLIC_WEB_RESEARCH_CURATED",
               "provenance": {
@@ -9527,6 +11306,100 @@
                 "legacyReferenceName": "Solomon Islands Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
+              },
+              "processingPath": "HEAP_LEACH_AND_FLOTATION",
+              "productionRestartYear": 2023,
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.hkexnews.hk/listedco/listconews/sehk/2026/0315/2026031500013.pdf",
+                  "accessed": "2026-09-26",
+                  "scope": "site_identity_or_operation"
+                },
+                {
+                  "url": "https://www1.hkexnews.hk/listedco/listconews/sehk/2026/0121/2026012100933.pdf",
+                  "accessed": "2026-09-26",
+                  "scope": "site_identity_or_operation"
+                }
+              ],
+              "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+              "commercialExtraction": true,
+              "ownerEvidenceStatus": "SITE_SPECIFIC_WEB_VERIFIED",
+              "operatorEvidenceStatus": "SITE_SPECIFIC_WEB_VERIFIED",
+              "siteIdentity": {
+                "siteId": "SITE_SLB_gold_ridge_mine",
+                "siteName": "Gold Ridge Mine",
+                "siteClass": "MINE",
+                "countryIso3": "SLB",
+                "countryName": "Solomon Islands",
+                "resourceTypeId": "gold",
+                "identityStatus": "OBSERVED"
+              },
+              "locationIdentity": {
+                "countryIso3": "SLB",
+                "countryName": "Solomon Islands",
+                "adminRegion": "Guadalcanal",
+                "locality": "Guadalcanal",
+                "coordinates": {
+                  "lat": -9.56,
+                  "lng": 160.03
+                },
+                "coordinateStatus": "ESTIMATED_SITE_POINT"
+              },
+              "extractionProfile": {
+                "siteType": "MINE",
+                "method": "OPEN_PIT_MINING",
+                "lifecycleStatus": "ACTIVE_PRODUCING",
+                "operationalStatus": "RESTARTING",
+                "owner": "Gold Ridge Mining Limited (majority-owned by Wanguo Gold Group; landowner-controlled minority interest)",
+                "operator": "Gold Ridge Mining Limited",
+                "ownerEvidenceStatus": "SITE_SPECIFIC_WEB_VERIFIED",
+                "operatorEvidenceStatus": "SITE_SPECIFIC_WEB_VERIFIED"
+              },
+              "quantitativeProfile": {
+                "reserve": {
+                  "quantity": null,
+                  "unit": null,
+                  "status": "UNOBSERVED"
+                },
+                "production": {
+                  "annual": null,
+                  "rate": null,
+                  "unit": null,
+                  "year": null,
+                  "status": "UNOBSERVED"
+                },
+                "grade": {
+                  "value": null,
+                  "unit": null,
+                  "status": "UNOBSERVED"
+                },
+                "quantitativeExtractionDataAvailable": false
+              },
+              "resourceIdentity": {
+                "resourceTypeId": "gold",
+                "ontologyKey": null,
+                "commodityName": null,
+                "category": null,
+                "physicalForm": null,
+                "upstreamProcess": null,
+                "midstreamProcess": null,
+                "refinedOutputs": [],
+                "downstreamSectors": [],
+                "ontologyStatus": "UNMAPPED_RESOURCE_TYPE"
+              },
+              "dataCompleteness": {
+                "identity": "COMPLETE",
+                "resource": "COMPLETE",
+                "location": "COMPLETE",
+                "operation": "COMPLETE",
+                "ownership": "REPORTED",
+                "quantitative": {
+                  "reserve": "UNOBSERVED",
+                  "production": "UNOBSERVED",
+                  "grade": "UNOBSERVED"
+                },
+                "provenance": "PRESENT",
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
               }
             }
           ],
@@ -9926,8 +11799,8 @@
               "locationNodeKey": "ASSET:VUT:luganville_aggregate_quarry_zone",
               "status": "LIMITED",
               "operationalStatus": "LIMITED",
-              "owner": "Private operators",
-              "operator": "Licensed operators",
+              "owner": null,
+              "operator": null,
               "extractionMethod": "surface aggregate",
               "startYear": 1980,
               "legacyReferenceName": "Vanuatu Primary Mining and Extraction Sites",
@@ -9953,7 +11826,8 @@
                 "grade": "UNOBSERVED",
                 "ownership": "OBSERVED",
                 "operation": "OBSERVED",
-                "extractionMethod": "OBSERVED"
+                "extractionMethod": "OBSERVED",
+                "provenance": "RESOURCE_JSON_WEB_RESEARCH_CATALOG"
               },
               "sourceAuthority": "PUBLIC_WEB_RESEARCH_CURATED",
               "provenance": {
@@ -9963,6 +11837,89 @@
                 "legacyReferenceName": "Vanuatu Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
+              },
+              "commercialExtraction": true,
+              "unverifiedLegacyValues": {
+                "owner": "Private operators",
+                "operator": "Licensed operators"
+              },
+              "ownerEvidenceStatus": "UNOBSERVED_SITE_SPECIFIC",
+              "operatorEvidenceStatus": "UNOBSERVED_SITE_SPECIFIC",
+              "siteIdentity": {
+                "siteId": "SITE_VUT_luganville_aggregate_quarry_zone",
+                "siteName": "Luganville Aggregate Quarry Zone",
+                "siteClass": "QUARRY",
+                "countryIso3": "VUT",
+                "countryName": "Vanuatu",
+                "resourceTypeId": "construction_aggregate",
+                "identityStatus": "OBSERVED"
+              },
+              "locationIdentity": {
+                "countryIso3": "VUT",
+                "countryName": "Vanuatu",
+                "adminRegion": "Espiritu Santo",
+                "locality": "Espiritu Santo",
+                "coordinates": {
+                  "lat": -15.51,
+                  "lng": 167.17
+                },
+                "coordinateStatus": "ESTIMATED_SITE_POINT"
+              },
+              "extractionProfile": {
+                "siteType": "QUARRY",
+                "method": "surface aggregate",
+                "lifecycleStatus": "LIMITED",
+                "operationalStatus": "LIMITED",
+                "owner": null,
+                "operator": null,
+                "ownerEvidenceStatus": "UNOBSERVED_SITE_SPECIFIC",
+                "operatorEvidenceStatus": "UNOBSERVED_SITE_SPECIFIC"
+              },
+              "quantitativeProfile": {
+                "reserve": {
+                  "quantity": null,
+                  "unit": null,
+                  "status": "UNOBSERVED"
+                },
+                "production": {
+                  "annual": null,
+                  "rate": null,
+                  "unit": null,
+                  "year": null,
+                  "status": "UNOBSERVED"
+                },
+                "grade": {
+                  "value": null,
+                  "unit": null,
+                  "status": "UNOBSERVED"
+                },
+                "quantitativeExtractionDataAvailable": false
+              },
+              "resourceIdentity": {
+                "resourceTypeId": "construction_aggregate",
+                "ontologyKey": null,
+                "commodityName": null,
+                "category": null,
+                "physicalForm": null,
+                "upstreamProcess": null,
+                "midstreamProcess": null,
+                "refinedOutputs": [],
+                "downstreamSectors": [],
+                "ontologyStatus": "UNMAPPED_RESOURCE_TYPE"
+              },
+              "dataCompleteness": {
+                "identity": "COMPLETE",
+                "resource": "COMPLETE",
+                "location": "COMPLETE",
+                "operation": "COMPLETE",
+                "ownership": "UNOBSERVED",
+                "quantitative": {
+                  "reserve": "UNOBSERVED",
+                  "production": "UNOBSERVED",
+                  "grade": "UNOBSERVED"
+                },
+                "provenance": "PRESENT",
+                "webResearch": "NOT_PER_SITE_VERIFIED"
               }
             }
           ],
@@ -10362,9 +12319,9 @@
               "locationNodeKey": "ASSET:WSM:lefaga_aggregate_quarry_zone",
               "status": "LIMITED",
               "operationalStatus": "LIMITED",
-              "owner": "Private operators",
-              "operator": "Licensed operators",
-              "extractionMethod": "surface aggregate",
+              "owner": null,
+              "operator": null,
+              "extractionMethod": "VOLCANIC_BASALT_QUARRYING_AND_CRUSHING",
               "startYear": 1980,
               "legacyReferenceName": "Samoa Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -10389,7 +12346,8 @@
                 "grade": "UNOBSERVED",
                 "ownership": "OBSERVED",
                 "operation": "OBSERVED",
-                "extractionMethod": "OBSERVED"
+                "extractionMethod": "OBSERVED",
+                "provenance": "RESOURCE_JSON_WEB_RESEARCH_CATALOG"
               },
               "sourceAuthority": "PUBLIC_WEB_RESEARCH_CURATED",
               "provenance": {
@@ -10399,6 +12357,94 @@
                 "legacyReferenceName": "Samoa Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
+              },
+              "operatorEvidenceStatus": "UNOBSERVED_SITE_SPECIFIC",
+              "materialSubtype": "Olivine basalt aggregate",
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.theprif.org/sites/theprif.org/files/documents/PRIF-Aggregates-Report_final.pdf",
+                  "accessed": "2026-09-26",
+                  "scope": "site_identity_or_operation"
+                }
+              ],
+              "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+              "commercialExtraction": true,
+              "ownerEvidenceStatus": "UNOBSERVED_SITE_SPECIFIC",
+              "siteIdentity": {
+                "siteId": "SITE_WSM_lefaga_aggregate_quarry_zone",
+                "siteName": "Lefaga Aggregate Quarry Zone",
+                "siteClass": "QUARRY",
+                "countryIso3": "WSM",
+                "countryName": "Samoa",
+                "resourceTypeId": "construction_aggregate",
+                "identityStatus": "OBSERVED"
+              },
+              "locationIdentity": {
+                "countryIso3": "WSM",
+                "countryName": "Samoa",
+                "adminRegion": "Upolu",
+                "locality": "Upolu",
+                "coordinates": {
+                  "lat": -13.82,
+                  "lng": -171.96
+                },
+                "coordinateStatus": "ESTIMATED_SITE_POINT"
+              },
+              "extractionProfile": {
+                "siteType": "QUARRY",
+                "method": "VOLCANIC_BASALT_QUARRYING_AND_CRUSHING",
+                "lifecycleStatus": "LIMITED",
+                "operationalStatus": "LIMITED",
+                "owner": null,
+                "operator": null,
+                "ownerEvidenceStatus": "UNOBSERVED_SITE_SPECIFIC",
+                "operatorEvidenceStatus": "UNOBSERVED_SITE_SPECIFIC"
+              },
+              "quantitativeProfile": {
+                "reserve": {
+                  "quantity": null,
+                  "unit": null,
+                  "status": "UNOBSERVED"
+                },
+                "production": {
+                  "annual": null,
+                  "rate": null,
+                  "unit": null,
+                  "year": null,
+                  "status": "UNOBSERVED"
+                },
+                "grade": {
+                  "value": null,
+                  "unit": null,
+                  "status": "UNOBSERVED"
+                },
+                "quantitativeExtractionDataAvailable": false
+              },
+              "resourceIdentity": {
+                "resourceTypeId": "construction_aggregate",
+                "ontologyKey": null,
+                "commodityName": null,
+                "category": null,
+                "physicalForm": null,
+                "upstreamProcess": null,
+                "midstreamProcess": null,
+                "refinedOutputs": [],
+                "downstreamSectors": [],
+                "ontologyStatus": "UNMAPPED_RESOURCE_TYPE"
+              },
+              "dataCompleteness": {
+                "identity": "COMPLETE",
+                "resource": "COMPLETE",
+                "location": "COMPLETE",
+                "operation": "COMPLETE",
+                "ownership": "UNOBSERVED",
+                "quantitative": {
+                  "reserve": "UNOBSERVED",
+                  "production": "UNOBSERVED",
+                  "grade": "UNOBSERVED"
+                },
+                "provenance": "PRESENT",
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
               }
             }
           ],
@@ -10784,7 +12830,7 @@
           "mineSites": [
             {
               "id": "SITE_TON_nuku_alofa_aggregate_quarry_zone",
-              "name": "Nuku'alofa Aggregate Quarry Zone",
+              "name": "Tongatapu Quarrying / Aggregate Supply Area",
               "siteName": "Nuku'alofa Aggregate Quarry Zone",
               "siteType": "QUARRY",
               "resourceId": "construction_aggregate",
@@ -10798,9 +12844,9 @@
               "locationNodeKey": "ASSET:TON:nuku_alofa_aggregate_quarry_zone",
               "status": "LIMITED",
               "operationalStatus": "LIMITED",
-              "owner": "Private operators",
-              "operator": "Licensed operators",
-              "extractionMethod": "surface aggregate",
+              "owner": null,
+              "operator": null,
+              "extractionMethod": "VOLCANIC_AGGREGATE_QUARRYING_AND_CRUSHING",
               "startYear": 1980,
               "legacyReferenceName": "Tonga Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -10825,7 +12871,8 @@
                 "grade": "UNOBSERVED",
                 "ownership": "OBSERVED",
                 "operation": "OBSERVED",
-                "extractionMethod": "OBSERVED"
+                "extractionMethod": "OBSERVED",
+                "provenance": "RESOURCE_JSON_WEB_RESEARCH_CATALOG"
               },
               "sourceAuthority": "PUBLIC_WEB_RESEARCH_CURATED",
               "provenance": {
@@ -10835,6 +12882,103 @@
                 "legacyReferenceName": "Tonga Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
+              },
+              "operatorEvidenceStatus": "UNOBSERVED_SITE_SPECIFIC",
+              "knownOperators": [
+                "FATA KIHE HAU & SONS",
+                "Nishi Trading Limited"
+              ],
+              "siteSpecificPermitCandidate": "Vaini proposed quarry (Kiwi Tonga Ltd), public notice 2026-08-05",
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.fata200.com/",
+                  "accessed": "2026-09-26",
+                  "scope": "site_identity_or_operation"
+                },
+                {
+                  "url": "https://matangitonga.to/2026/08/05/public-notice-development-application-proposed-quarry-vaini",
+                  "accessed": "2026-09-26",
+                  "scope": "site_identity_or_operation"
+                }
+              ],
+              "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+              "commercialExtraction": true,
+              "ownerEvidenceStatus": "UNOBSERVED_SITE_SPECIFIC",
+              "siteIdentity": {
+                "siteId": "SITE_TON_nuku_alofa_aggregate_quarry_zone",
+                "siteName": "Tongatapu Quarrying / Aggregate Supply Area",
+                "siteClass": "QUARRY",
+                "countryIso3": "TON",
+                "countryName": "Tonga",
+                "resourceTypeId": "construction_aggregate",
+                "identityStatus": "OBSERVED"
+              },
+              "locationIdentity": {
+                "countryIso3": "TON",
+                "countryName": "Tonga",
+                "adminRegion": "Tongatapu",
+                "locality": "Tongatapu",
+                "coordinates": {
+                  "lat": -21.13,
+                  "lng": -175.2
+                },
+                "coordinateStatus": "ESTIMATED_SITE_POINT"
+              },
+              "extractionProfile": {
+                "siteType": "QUARRY",
+                "method": "VOLCANIC_AGGREGATE_QUARRYING_AND_CRUSHING",
+                "lifecycleStatus": "LIMITED",
+                "operationalStatus": "LIMITED",
+                "owner": null,
+                "operator": null,
+                "ownerEvidenceStatus": "UNOBSERVED_SITE_SPECIFIC",
+                "operatorEvidenceStatus": "UNOBSERVED_SITE_SPECIFIC"
+              },
+              "quantitativeProfile": {
+                "reserve": {
+                  "quantity": null,
+                  "unit": null,
+                  "status": "UNOBSERVED"
+                },
+                "production": {
+                  "annual": null,
+                  "rate": null,
+                  "unit": null,
+                  "year": null,
+                  "status": "UNOBSERVED"
+                },
+                "grade": {
+                  "value": null,
+                  "unit": null,
+                  "status": "UNOBSERVED"
+                },
+                "quantitativeExtractionDataAvailable": false
+              },
+              "resourceIdentity": {
+                "resourceTypeId": "construction_aggregate",
+                "ontologyKey": null,
+                "commodityName": null,
+                "category": null,
+                "physicalForm": null,
+                "upstreamProcess": null,
+                "midstreamProcess": null,
+                "refinedOutputs": [],
+                "downstreamSectors": [],
+                "ontologyStatus": "UNMAPPED_RESOURCE_TYPE"
+              },
+              "dataCompleteness": {
+                "identity": "COMPLETE",
+                "resource": "COMPLETE",
+                "location": "COMPLETE",
+                "operation": "COMPLETE",
+                "ownership": "UNOBSERVED",
+                "quantitative": {
+                  "reserve": "UNOBSERVED",
+                  "production": "UNOBSERVED",
+                  "grade": "UNOBSERVED"
+                },
+                "provenance": "PRESENT",
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
               }
             }
           ],
@@ -11220,9 +13364,9 @@
           "mineSites": [
             {
               "id": "SITE_KIR_betio_coral_aggregate_extraction_sites",
-              "name": "Betio Coral Aggregate Extraction Sites",
+              "name": "Betio Lagoon Aggregate Dredging Resource Area",
               "siteName": "Betio Coral Aggregate Extraction Sites",
-              "siteType": "QUARRY",
+              "siteType": "DREDGING_AND_PROCESSING_SITE",
               "resourceId": "coral_aggregate",
               "resourceTypeId": "coral_aggregate",
               "resourceTypeKey": "coral_aggregate",
@@ -11232,11 +13376,11 @@
               "lat": 1.35,
               "lng": 172.98,
               "locationNodeKey": "ASSET:KIR:betio_coral_aggregate_extraction_sites",
-              "status": "LIMITED",
+              "status": "ACTIVE_PRODUCING",
               "operationalStatus": "LIMITED",
-              "owner": "State/private operators",
-              "operator": "Licensed operators",
-              "extractionMethod": "controlled coral aggregate extraction",
+              "owner": "Te Atinimarawa Company Limited",
+              "operator": "Te Atinimarawa Company Limited",
+              "extractionMethod": "LAGOON_DREDGING_AND_CORAL_CRUSHING",
               "startYear": 1980,
               "legacyReferenceName": "Kiribati Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -11261,7 +13405,8 @@
                 "grade": "UNOBSERVED",
                 "ownership": "OBSERVED",
                 "operation": "OBSERVED",
-                "extractionMethod": "OBSERVED"
+                "extractionMethod": "OBSERVED",
+                "provenance": "RESOURCE_JSON_WEB_RESEARCH_CATALOG"
               },
               "sourceAuthority": "PUBLIC_WEB_RESEARCH_CURATED",
               "provenance": {
@@ -11271,6 +13416,115 @@
                 "legacyReferenceName": "Kiribati Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
+              },
+              "sourceAreas": [
+                "Tarawa lagoon resource area",
+                "MTC channel",
+                "Nippon Causeway Channel",
+                "LC Tekimarawa turning basin"
+              ],
+              "products": [
+                "sand",
+                "gravel",
+                "tetrapods",
+                "mixed aggregates"
+              ],
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.tacl.com.ki/",
+                  "accessed": "2026-09-26",
+                  "scope": "site_identity_or_operation"
+                },
+                {
+                  "url": "https://www.tacl.com.ki/services/",
+                  "accessed": "2026-09-26",
+                  "scope": "site_identity_or_operation"
+                },
+                {
+                  "url": "https://website.mfor.gov.ki/index.php/soes/tacl",
+                  "accessed": "2026-09-26",
+                  "scope": "site_identity_or_operation"
+                }
+              ],
+              "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+              "commercialExtraction": true,
+              "ownerEvidenceStatus": "SITE_SPECIFIC_WEB_VERIFIED",
+              "operatorEvidenceStatus": "SITE_SPECIFIC_WEB_VERIFIED",
+              "siteIdentity": {
+                "siteId": "SITE_KIR_betio_coral_aggregate_extraction_sites",
+                "siteName": "Betio Lagoon Aggregate Dredging Resource Area",
+                "siteClass": "DREDGING_AND_PROCESSING_SITE",
+                "countryIso3": "KIR",
+                "countryName": "Kiribati",
+                "resourceTypeId": "coral_aggregate",
+                "identityStatus": "OBSERVED"
+              },
+              "locationIdentity": {
+                "countryIso3": "KIR",
+                "countryName": "Kiribati",
+                "adminRegion": "South Tarawa",
+                "locality": "South Tarawa",
+                "coordinates": {
+                  "lat": 1.35,
+                  "lng": 172.98
+                },
+                "coordinateStatus": "ESTIMATED_SITE_POINT"
+              },
+              "extractionProfile": {
+                "siteType": "DREDGING_AND_PROCESSING_SITE",
+                "method": "LAGOON_DREDGING_AND_CORAL_CRUSHING",
+                "lifecycleStatus": "ACTIVE_PRODUCING",
+                "operationalStatus": "LIMITED",
+                "owner": "Te Atinimarawa Company Limited",
+                "operator": "Te Atinimarawa Company Limited",
+                "ownerEvidenceStatus": "SITE_SPECIFIC_WEB_VERIFIED",
+                "operatorEvidenceStatus": "SITE_SPECIFIC_WEB_VERIFIED"
+              },
+              "quantitativeProfile": {
+                "reserve": {
+                  "quantity": null,
+                  "unit": null,
+                  "status": "UNOBSERVED"
+                },
+                "production": {
+                  "annual": null,
+                  "rate": null,
+                  "unit": null,
+                  "year": null,
+                  "status": "UNOBSERVED"
+                },
+                "grade": {
+                  "value": null,
+                  "unit": null,
+                  "status": "UNOBSERVED"
+                },
+                "quantitativeExtractionDataAvailable": false
+              },
+              "resourceIdentity": {
+                "resourceTypeId": "coral_aggregate",
+                "ontologyKey": null,
+                "commodityName": null,
+                "category": null,
+                "physicalForm": null,
+                "upstreamProcess": null,
+                "midstreamProcess": null,
+                "refinedOutputs": [],
+                "downstreamSectors": [],
+                "ontologyStatus": "UNMAPPED_RESOURCE_TYPE"
+              },
+              "dataCompleteness": {
+                "identity": "COMPLETE",
+                "resource": "COMPLETE",
+                "location": "COMPLETE",
+                "operation": "COMPLETE",
+                "ownership": "REPORTED",
+                "quantitative": {
+                  "reserve": "UNOBSERVED",
+                  "production": "UNOBSERVED",
+                  "grade": "UNOBSERVED"
+                },
+                "provenance": "PRESENT",
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
               }
             }
           ],
@@ -11668,11 +13922,11 @@
               "lat": -8.52,
               "lng": 179.2,
               "locationNodeKey": "ASSET:TUV:funafuti_borrow_pits",
-              "status": "LIMITED",
+              "status": "HISTORICAL_INACTIVE",
               "operationalStatus": "LIMITED",
-              "owner": "Government/public works",
-              "operator": "Public works operators",
-              "extractionMethod": "borrow-pit aggregate excavation",
+              "owner": null,
+              "operator": null,
+              "extractionMethod": "CORAL_AGGREGATE_BORROW_PITS",
               "startYear": 1980,
               "legacyReferenceName": "Tuvalu Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -11697,7 +13951,8 @@
                 "grade": "UNOBSERVED",
                 "ownership": "OBSERVED",
                 "operation": "OBSERVED",
-                "extractionMethod": "OBSERVED"
+                "extractionMethod": "OBSERVED",
+                "provenance": "RESOURCE_JSON_WEB_RESEARCH_CATALOG"
               },
               "sourceAuthority": "PUBLIC_WEB_RESEARCH_CURATED",
               "provenance": {
@@ -11707,6 +13962,101 @@
                 "legacyReferenceName": "Tuvalu Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
+              },
+              "historicalUse": "WWII airstrip aggregate extraction",
+              "knownPitCount": 10,
+              "largestPit": "Borrow Pit 2",
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.theprif.org/sites/theprif.org/files/documents/PRIF-Aggregates-Report_final.pdf",
+                  "accessed": "2026-09-26",
+                  "scope": "site_identity_or_operation"
+                },
+                {
+                  "url": "https://documents1.worldbank.org/curated/en/099041024214015027/pdf/P177100153d9830581905a18caa1847ea28.pdf",
+                  "accessed": "2026-09-26",
+                  "scope": "site_identity_or_operation"
+                }
+              ],
+              "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+              "commercialExtraction": true,
+              "ownerEvidenceStatus": "UNOBSERVED_SITE_SPECIFIC",
+              "operatorEvidenceStatus": "UNOBSERVED_SITE_SPECIFIC",
+              "siteIdentity": {
+                "siteId": "SITE_TUV_funafuti_borrow_pits",
+                "siteName": "Funafuti Borrow Pits",
+                "siteClass": "QUARRY",
+                "countryIso3": "TUV",
+                "countryName": "Tuvalu",
+                "resourceTypeId": "construction_aggregate",
+                "identityStatus": "OBSERVED"
+              },
+              "locationIdentity": {
+                "countryIso3": "TUV",
+                "countryName": "Tuvalu",
+                "adminRegion": "Funafuti",
+                "locality": "Funafuti",
+                "coordinates": {
+                  "lat": -8.52,
+                  "lng": 179.2
+                },
+                "coordinateStatus": "ESTIMATED_SITE_POINT"
+              },
+              "extractionProfile": {
+                "siteType": "QUARRY",
+                "method": "CORAL_AGGREGATE_BORROW_PITS",
+                "lifecycleStatus": "HISTORICAL_INACTIVE",
+                "operationalStatus": "LIMITED",
+                "owner": null,
+                "operator": null,
+                "ownerEvidenceStatus": "UNOBSERVED_SITE_SPECIFIC",
+                "operatorEvidenceStatus": "UNOBSERVED_SITE_SPECIFIC"
+              },
+              "quantitativeProfile": {
+                "reserve": {
+                  "quantity": null,
+                  "unit": null,
+                  "status": "UNOBSERVED"
+                },
+                "production": {
+                  "annual": null,
+                  "rate": null,
+                  "unit": null,
+                  "year": null,
+                  "status": "UNOBSERVED"
+                },
+                "grade": {
+                  "value": null,
+                  "unit": null,
+                  "status": "UNOBSERVED"
+                },
+                "quantitativeExtractionDataAvailable": false
+              },
+              "resourceIdentity": {
+                "resourceTypeId": "construction_aggregate",
+                "ontologyKey": null,
+                "commodityName": null,
+                "category": null,
+                "physicalForm": null,
+                "upstreamProcess": null,
+                "midstreamProcess": null,
+                "refinedOutputs": [],
+                "downstreamSectors": [],
+                "ontologyStatus": "UNMAPPED_RESOURCE_TYPE"
+              },
+              "dataCompleteness": {
+                "identity": "COMPLETE",
+                "resource": "COMPLETE",
+                "location": "COMPLETE",
+                "operation": "COMPLETE",
+                "ownership": "UNOBSERVED",
+                "quantitative": {
+                  "reserve": "UNOBSERVED",
+                  "production": "UNOBSERVED",
+                  "grade": "UNOBSERVED"
+                },
+                "provenance": "PRESENT",
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
               }
             }
           ],
@@ -12104,10 +14454,10 @@
               "lat": -0.53,
               "lng": 166.93,
               "locationNodeKey": "ASSET:NRU:nauru_phosphate_mining_area",
-              "status": "LIMITED",
+              "status": "ACTIVE_PRODUCING",
               "operationalStatus": "LIMITED",
-              "owner": "Nauru state interests",
-              "operator": "Nauru operators",
+              "owner": "Republic of Nauru Phosphate Corporation (RONPHOS)",
+              "operator": "Republic of Nauru Phosphate Corporation (RONPHOS)",
               "extractionMethod": "secondary surface extraction",
               "startYear": 1907,
               "legacyReferenceName": "Nauru Primary Mining and Extraction Sites",
@@ -12133,7 +14483,8 @@
                 "grade": "UNOBSERVED",
                 "ownership": "OBSERVED",
                 "operation": "OBSERVED",
-                "extractionMethod": "OBSERVED"
+                "extractionMethod": "OBSERVED",
+                "provenance": "RESOURCE_JSON_WEB_RESEARCH_CATALOG"
               },
               "sourceAuthority": "PUBLIC_WEB_RESEARCH_CURATED",
               "provenance": {
@@ -12143,6 +14494,107 @@
                 "legacyReferenceName": "Nauru Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
+              },
+              "annualProduction": 130000,
+              "productionYear": 2024,
+              "productionUnit": "tonnes/year",
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.usgs.gov/centers/national-minerals-information-center/nauru",
+                  "accessed": "2026-09-26",
+                  "scope": "site_identity_or_operation"
+                }
+              ],
+              "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+              "commercialExtraction": true,
+              "ownerEvidenceStatus": "SITE_SPECIFIC_WEB_VERIFIED",
+              "operatorEvidenceStatus": "SITE_SPECIFIC_WEB_VERIFIED",
+              "siteIdentity": {
+                "siteId": "SITE_NRU_nauru_phosphate_mining_area",
+                "siteName": "Nauru Phosphate Mining Area",
+                "siteClass": "MINE",
+                "countryIso3": "NRU",
+                "countryName": "Nauru",
+                "resourceTypeId": "phosphate",
+                "identityStatus": "OBSERVED"
+              },
+              "locationIdentity": {
+                "countryIso3": "NRU",
+                "countryName": "Nauru",
+                "adminRegion": "Aiwo/Boe",
+                "locality": "Aiwo/Boe",
+                "coordinates": {
+                  "lat": -0.53,
+                  "lng": 166.93
+                },
+                "coordinateStatus": "ESTIMATED_SITE_POINT"
+              },
+              "extractionProfile": {
+                "siteType": "MINE",
+                "method": "secondary surface extraction",
+                "lifecycleStatus": "ACTIVE_PRODUCING",
+                "operationalStatus": "LIMITED",
+                "owner": "Republic of Nauru Phosphate Corporation (RONPHOS)",
+                "operator": "Republic of Nauru Phosphate Corporation (RONPHOS)",
+                "ownerEvidenceStatus": "SITE_SPECIFIC_WEB_VERIFIED",
+                "operatorEvidenceStatus": "SITE_SPECIFIC_WEB_VERIFIED"
+              },
+              "quantitativeProfile": {
+                "reserve": {
+                  "quantity": null,
+                  "unit": null,
+                  "status": "UNOBSERVED"
+                },
+                "production": {
+                  "annual": 130000,
+                  "rate": null,
+                  "unit": "tonnes/year",
+                  "year": 2024,
+                  "status": "OBSERVED"
+                },
+                "grade": {
+                  "value": null,
+                  "unit": null,
+                  "status": "UNOBSERVED"
+                },
+                "quantitativeExtractionDataAvailable": true
+              },
+              "resourceIdentity": {
+                "resourceTypeId": "phosphate",
+                "ontologyKey": "POTASH_PHOSPHATE",
+                "commodityName": "Muriate of Potash (KCl) & Phosphate Rock (P2O5)",
+                "category": "AGRO_MINERAL_FERTILIZER",
+                "physicalForm": "GRANULAR_SALT_AND_ROCK",
+                "upstreamProcess": "Deep Underground Shaft Solution Mining (Potash), Open-Cast Dragline Mining (Phosphate)",
+                "midstreamProcess": "Beneficiation, Flotation, Sulfuric Acid Acidulation to Phosphoric Acid / DAP / MAP",
+                "refinedOutputs": [
+                  "DAP_FERTILIZER",
+                  "MAP_FERTILIZER",
+                  "MOP_GRANULAR",
+                  "NPK_COMPOUND",
+                  "PURIFIED_PHOSPHORIC_ACID"
+                ],
+                "downstreamSectors": [
+                  "FOOD_AGRICULTURE",
+                  "LIVESTOCK_FEED",
+                  "LFP_BATTERIES",
+                  "CHEMICAL_PROCESSING"
+                ],
+                "ontologyStatus": "RESOLVED_FROM_RESOURCE_ONTOLOGY"
+              },
+              "dataCompleteness": {
+                "identity": "COMPLETE",
+                "resource": "COMPLETE",
+                "location": "COMPLETE",
+                "operation": "COMPLETE",
+                "ownership": "REPORTED",
+                "quantitative": {
+                  "reserve": "UNOBSERVED",
+                  "production": "OBSERVED",
+                  "grade": "UNOBSERVED"
+                },
+                "provenance": "PRESENT",
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
               }
             }
           ],
@@ -12528,7 +14980,7 @@
           "mineSites": [
             {
               "id": "SITE_MHL_majuro_aggregate_extraction_sites",
-              "name": "Majuro Aggregate Extraction Sites",
+              "name": "Majuro Quarry Products Operation",
               "siteName": "Majuro Aggregate Extraction Sites",
               "siteType": "QUARRY",
               "resourceId": "construction_aggregate",
@@ -12540,11 +14992,11 @@
               "lat": 7.09,
               "lng": 171.38,
               "locationNodeKey": "ASSET:MHL:majuro_aggregate_extraction_sites",
-              "status": "LIMITED",
+              "status": "ACTIVE_PRODUCING",
               "operationalStatus": "LIMITED",
-              "owner": "Private operators",
-              "operator": "Licensed operators",
-              "extractionMethod": "controlled aggregate extraction",
+              "owner": "Pacific International, Inc.",
+              "operator": "Pacific International, Inc.",
+              "extractionMethod": "QUARRYING_AND_AGGREGATE_CRUSHING",
               "startYear": 1980,
               "legacyReferenceName": "Marshall Islands Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -12569,7 +15021,8 @@
                 "grade": "UNOBSERVED",
                 "ownership": "OBSERVED",
                 "operation": "OBSERVED",
-                "extractionMethod": "OBSERVED"
+                "extractionMethod": "OBSERVED",
+                "provenance": "RESOURCE_JSON_WEB_RESEARCH_CATALOG"
               },
               "sourceAuthority": "PUBLIC_WEB_RESEARCH_CURATED",
               "provenance": {
@@ -12579,6 +15032,98 @@
                 "legacyReferenceName": "Marshall Islands Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
+              },
+              "materialProducts": [
+                "crushed graded aggregates",
+                "ready-mix concrete",
+                "asphalt"
+              ],
+              "webResearchEvidence": [
+                {
+                  "url": "https://piimajuro.net/",
+                  "accessed": "2026-09-26",
+                  "scope": "site_identity_or_operation"
+                }
+              ],
+              "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+              "commercialExtraction": true,
+              "ownerEvidenceStatus": "SITE_SPECIFIC_WEB_VERIFIED",
+              "operatorEvidenceStatus": "SITE_SPECIFIC_WEB_VERIFIED",
+              "siteIdentity": {
+                "siteId": "SITE_MHL_majuro_aggregate_extraction_sites",
+                "siteName": "Majuro Quarry Products Operation",
+                "siteClass": "QUARRY",
+                "countryIso3": "MHL",
+                "countryName": "Marshall Islands",
+                "resourceTypeId": "construction_aggregate",
+                "identityStatus": "OBSERVED"
+              },
+              "locationIdentity": {
+                "countryIso3": "MHL",
+                "countryName": "Marshall Islands",
+                "adminRegion": "Majuro",
+                "locality": "Majuro",
+                "coordinates": {
+                  "lat": 7.09,
+                  "lng": 171.38
+                },
+                "coordinateStatus": "ESTIMATED_SITE_POINT"
+              },
+              "extractionProfile": {
+                "siteType": "QUARRY",
+                "method": "QUARRYING_AND_AGGREGATE_CRUSHING",
+                "lifecycleStatus": "ACTIVE_PRODUCING",
+                "operationalStatus": "LIMITED",
+                "owner": "Pacific International, Inc.",
+                "operator": "Pacific International, Inc.",
+                "ownerEvidenceStatus": "SITE_SPECIFIC_WEB_VERIFIED",
+                "operatorEvidenceStatus": "SITE_SPECIFIC_WEB_VERIFIED"
+              },
+              "quantitativeProfile": {
+                "reserve": {
+                  "quantity": null,
+                  "unit": null,
+                  "status": "UNOBSERVED"
+                },
+                "production": {
+                  "annual": null,
+                  "rate": null,
+                  "unit": null,
+                  "year": null,
+                  "status": "UNOBSERVED"
+                },
+                "grade": {
+                  "value": null,
+                  "unit": null,
+                  "status": "UNOBSERVED"
+                },
+                "quantitativeExtractionDataAvailable": false
+              },
+              "resourceIdentity": {
+                "resourceTypeId": "construction_aggregate",
+                "ontologyKey": null,
+                "commodityName": null,
+                "category": null,
+                "physicalForm": null,
+                "upstreamProcess": null,
+                "midstreamProcess": null,
+                "refinedOutputs": [],
+                "downstreamSectors": [],
+                "ontologyStatus": "UNMAPPED_RESOURCE_TYPE"
+              },
+              "dataCompleteness": {
+                "identity": "COMPLETE",
+                "resource": "COMPLETE",
+                "location": "COMPLETE",
+                "operation": "COMPLETE",
+                "ownership": "REPORTED",
+                "quantitative": {
+                  "reserve": "UNOBSERVED",
+                  "production": "UNOBSERVED",
+                  "grade": "UNOBSERVED"
+                },
+                "provenance": "PRESENT",
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
               }
             }
           ],
@@ -12978,9 +15523,9 @@
               "locationNodeKey": "ASSET:FSM:pohnpei_aggregate_quarry_zone",
               "status": "LIMITED",
               "operationalStatus": "LIMITED",
-              "owner": "Private operators",
-              "operator": "Licensed operators",
-              "extractionMethod": "surface quarrying",
+              "owner": null,
+              "operator": null,
+              "extractionMethod": "VOLCANIC_AGGREGATE_QUARRYING_AND_CRUSHING",
               "startYear": 1980,
               "legacyReferenceName": "Micronesia Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -13005,7 +15550,8 @@
                 "grade": "UNOBSERVED",
                 "ownership": "OBSERVED",
                 "operation": "OBSERVED",
-                "extractionMethod": "OBSERVED"
+                "extractionMethod": "OBSERVED",
+                "provenance": "RESOURCE_JSON_WEB_RESEARCH_CATALOG"
               },
               "sourceAuthority": "PUBLIC_WEB_RESEARCH_CURATED",
               "provenance": {
@@ -13015,6 +15561,94 @@
                 "legacyReferenceName": "Micronesia Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
+              },
+              "operatorEvidenceStatus": "UNOBSERVED_SITE_SPECIFIC",
+              "materialSubtype": "Volcanic aggregate",
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.theprif.org/sites/theprif.org/files/documents/PRIF-Aggregates-Report_final.pdf",
+                  "accessed": "2026-09-26",
+                  "scope": "site_identity_or_operation"
+                }
+              ],
+              "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+              "commercialExtraction": true,
+              "ownerEvidenceStatus": "UNOBSERVED_SITE_SPECIFIC",
+              "siteIdentity": {
+                "siteId": "SITE_FSM_pohnpei_aggregate_quarry_zone",
+                "siteName": "Pohnpei Aggregate Quarry Zone",
+                "siteClass": "QUARRY",
+                "countryIso3": "FSM",
+                "countryName": "Micronesia",
+                "resourceTypeId": "construction_aggregate",
+                "identityStatus": "OBSERVED"
+              },
+              "locationIdentity": {
+                "countryIso3": "FSM",
+                "countryName": "Micronesia",
+                "adminRegion": "Pohnpei",
+                "locality": "Pohnpei",
+                "coordinates": {
+                  "lat": 6.97,
+                  "lng": 158.21
+                },
+                "coordinateStatus": "ESTIMATED_SITE_POINT"
+              },
+              "extractionProfile": {
+                "siteType": "QUARRY",
+                "method": "VOLCANIC_AGGREGATE_QUARRYING_AND_CRUSHING",
+                "lifecycleStatus": "LIMITED",
+                "operationalStatus": "LIMITED",
+                "owner": null,
+                "operator": null,
+                "ownerEvidenceStatus": "UNOBSERVED_SITE_SPECIFIC",
+                "operatorEvidenceStatus": "UNOBSERVED_SITE_SPECIFIC"
+              },
+              "quantitativeProfile": {
+                "reserve": {
+                  "quantity": null,
+                  "unit": null,
+                  "status": "UNOBSERVED"
+                },
+                "production": {
+                  "annual": null,
+                  "rate": null,
+                  "unit": null,
+                  "year": null,
+                  "status": "UNOBSERVED"
+                },
+                "grade": {
+                  "value": null,
+                  "unit": null,
+                  "status": "UNOBSERVED"
+                },
+                "quantitativeExtractionDataAvailable": false
+              },
+              "resourceIdentity": {
+                "resourceTypeId": "construction_aggregate",
+                "ontologyKey": null,
+                "commodityName": null,
+                "category": null,
+                "physicalForm": null,
+                "upstreamProcess": null,
+                "midstreamProcess": null,
+                "refinedOutputs": [],
+                "downstreamSectors": [],
+                "ontologyStatus": "UNMAPPED_RESOURCE_TYPE"
+              },
+              "dataCompleteness": {
+                "identity": "COMPLETE",
+                "resource": "COMPLETE",
+                "location": "COMPLETE",
+                "operation": "COMPLETE",
+                "ownership": "UNOBSERVED",
+                "quantitative": {
+                  "reserve": "UNOBSERVED",
+                  "production": "UNOBSERVED",
+                  "grade": "UNOBSERVED"
+                },
+                "provenance": "PRESENT",
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
               }
             }
           ],
@@ -13400,7 +16034,7 @@
           "mineSites": [
             {
               "id": "SITE_PLW_airai_limestone_quarry_zone",
-              "name": "Airai Limestone Quarry Zone",
+              "name": "Ngermellai Limestone Quarry",
               "siteName": "Airai Limestone Quarry Zone",
               "siteType": "QUARRY",
               "resourceId": "limestone",
@@ -13414,8 +16048,8 @@
               "locationNodeKey": "ASSET:PLW:airai_limestone_quarry_zone",
               "status": "LIMITED",
               "operationalStatus": "LIMITED",
-              "owner": "Private operators",
-              "operator": "Licensed operators",
+              "owner": null,
+              "operator": null,
               "extractionMethod": "surface quarrying",
               "startYear": 1980,
               "legacyReferenceName": "Palau Primary Mining and Extraction Sites",
@@ -13441,7 +16075,8 @@
                 "grade": "UNOBSERVED",
                 "ownership": "OBSERVED",
                 "operation": "OBSERVED",
-                "extractionMethod": "OBSERVED"
+                "extractionMethod": "OBSERVED",
+                "provenance": "RESOURCE_JSON_WEB_RESEARCH_CATALOG"
               },
               "sourceAuthority": "PUBLIC_WEB_RESEARCH_CURATED",
               "provenance": {
@@ -13451,6 +16086,95 @@
                 "legacyReferenceName": "Palau Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
+              },
+              "locationDetail": "Oikull, Airai, Palau",
+              "materialSubtype": "Limestone",
+              "webResearchEvidence": [
+                {
+                  "url": "https://theprif.org/sites/theprif.org/files/documents/PRIF-Aggregates-Report_final.pdf",
+                  "accessed": "2026-09-26",
+                  "scope": "site_identity_or_operation"
+                }
+              ],
+              "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+              "commercialExtraction": true,
+              "ownerEvidenceStatus": "UNOBSERVED_SITE_SPECIFIC",
+              "operatorEvidenceStatus": "UNOBSERVED_SITE_SPECIFIC",
+              "siteIdentity": {
+                "siteId": "SITE_PLW_airai_limestone_quarry_zone",
+                "siteName": "Ngermellai Limestone Quarry",
+                "siteClass": "QUARRY",
+                "countryIso3": "PLW",
+                "countryName": "Palau",
+                "resourceTypeId": "limestone",
+                "identityStatus": "OBSERVED"
+              },
+              "locationIdentity": {
+                "countryIso3": "PLW",
+                "countryName": "Palau",
+                "adminRegion": "Babeldaob/Airai",
+                "locality": "Oikull, Airai, Palau",
+                "coordinates": {
+                  "lat": 7.35,
+                  "lng": 134.55
+                },
+                "coordinateStatus": "ESTIMATED_SITE_POINT"
+              },
+              "extractionProfile": {
+                "siteType": "QUARRY",
+                "method": "surface quarrying",
+                "lifecycleStatus": "LIMITED",
+                "operationalStatus": "LIMITED",
+                "owner": null,
+                "operator": null,
+                "ownerEvidenceStatus": "UNOBSERVED_SITE_SPECIFIC",
+                "operatorEvidenceStatus": "UNOBSERVED_SITE_SPECIFIC"
+              },
+              "quantitativeProfile": {
+                "reserve": {
+                  "quantity": null,
+                  "unit": null,
+                  "status": "UNOBSERVED"
+                },
+                "production": {
+                  "annual": null,
+                  "rate": null,
+                  "unit": null,
+                  "year": null,
+                  "status": "UNOBSERVED"
+                },
+                "grade": {
+                  "value": null,
+                  "unit": null,
+                  "status": "UNOBSERVED"
+                },
+                "quantitativeExtractionDataAvailable": false
+              },
+              "resourceIdentity": {
+                "resourceTypeId": "limestone",
+                "ontologyKey": null,
+                "commodityName": null,
+                "category": null,
+                "physicalForm": null,
+                "upstreamProcess": null,
+                "midstreamProcess": null,
+                "refinedOutputs": [],
+                "downstreamSectors": [],
+                "ontologyStatus": "UNMAPPED_RESOURCE_TYPE"
+              },
+              "dataCompleteness": {
+                "identity": "COMPLETE",
+                "resource": "COMPLETE",
+                "location": "COMPLETE",
+                "operation": "COMPLETE",
+                "ownership": "UNOBSERVED",
+                "quantitative": {
+                  "reserve": "UNOBSERVED",
+                  "production": "UNOBSERVED",
+                  "grade": "UNOBSERVED"
+                },
+                "provenance": "PRESENT",
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
               }
             }
           ],
