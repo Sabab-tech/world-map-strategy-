@@ -167,10 +167,33 @@
     }
   }
   function mineSiteReferenceRows(c){
-    const reg=g.__OmegaResourceIdentityRegistry;
-    if(!reg?.getMineSiteReferencesByCountry)return[];
-    try{return clone(reg.getMineSiteReferencesByCountry(canonical(c))||[]);}catch(_){return[];}
+    const wanted=canonical(c),reg=g.__OmegaResourceIdentityRegistry,e=engine();
+    if(reg?.getMineSiteReferencesByCountry){
+      try{
+        const rows=clone(reg.getMineSiteReferencesByCountry(wanted)||[]);
+        if(rows.length)return rows;
+      }catch(_){}
+    }
+    const out=[];
+    try{
+      const refs=e?.referenceCatalog?.getAllReferences?.()||[];
+      refs.forEach(ref=>{
+        if(canonical(ref?.parentCountryId)!==wanted)return;
+        if(String(ref?.category||'').toUpperCase()!=='INFRASTRUCTURE_REFERENCE')return;
+        if(String(ref?.metadata?.subType||'')!=='mineSites')return;
+        out.push({
+          siteReferenceKey:'SITE:'+wanted+':'+tok(ref.rawReferenceString),
+          countryId:wanted,countryCode:wanted,profileKey:wanted,siteName:String(ref.rawReferenceString||'').trim(),
+          status:'ACTIVE_SITE_REFERENCE',activationState:'REFERENCE_ONLY',extractionExecutable:false,
+          quantitativeExtractionDataAvailable:false,authorityLevel:'REFERENCE_ONLY',resourceDataStatus:'UNOBSERVED',
+          sourceAuthority:'RESOURCE_JSON',sourceDatasetId:ref.sourceDatasetId||'resources.json',
+          sourcePath:ref.sourceContextPath||null,rawSiteReference:clone(ref.rawReferenceString||null),referenceId:ref.referenceId||null
+        });
+      });
+    }catch(_){}
+    return out;
   }
+
   function occurrenceRows(c){
     const reg=g.__OmegaResourceIdentityRegistry;const e=engine();if(!reg||!e)return[];
     const wanted=canonical(c),out=[];
