@@ -31,12 +31,22 @@
   function canonicalCountry(v){
     const raw=String(v??'').trim();
     if(!raw)return null;
+    const rawId=id(raw);
     try{
+      // Preserve exact resource-country keys/ISO codes before semantic alias resolution.
+      // This prevents a country alias bridge from collapsing distinct country buckets.
+      const e=engine();
+      const profiles=e?.countryProfiles&&typeof e.countryProfiles==='object'?e.countryProfiles:{};
+      if(Object.prototype.hasOwnProperty.call(profiles,raw)||Object.prototype.hasOwnProperty.call(profiles,rawId))return rawId;
+      for(const [profileKey,profile] of Object.entries(profiles)){
+        const identity=profile?.identity||profile||{};
+        if([identity.iso3,identity.iso2,identity.countryId,identity.id].some(x=>id(x)===rawId))return rawId;
+      }
       const bridge=g.OmegaCanonicalIdentityRegistry||g.OmegaCountrySemanticBridge||g.Omega?.CanonicalIdentity;
       const hit=bridge?.resolveCountry?.(raw);
       if(hit?.id)return id(hit.id);
     }catch(_){}
-    return id(raw);
+    return rawId;
   }
 
   function engine(){
@@ -225,7 +235,12 @@
       occurrenceCount:rows.length,
       siteReferenceCount:siteReferences.length,
       unifiedAssetCount:unifiedAssets.length,
-      getOccurrencesByCountry:function(countryId){return clone(byCountry.get(canonicalCountry(countryId))||[]);},
+      getOccurrencesByCountry:function(countryId){
+        const wanted=id(countryId);
+        const exact=rows.filter(function(row){return id(row.countryId)===wanted;});
+        if(exact.length)return clone(exact);
+        return clone(byCountry.get(canonicalCountry(countryId))||[]);
+      },
       getMineSiteReferencesByCountry:function(countryId){return clone(siteRefsByCountry.get(canonicalCountry(countryId))||[]);},
       listMineSiteReferences:function(){return clone(siteReferences);},
       listUnifiedAssets:function(){return clone(unifiedAssets);},
@@ -234,8 +249,11 @@
         return hit?clone(hit):null;
       },
       getUnifiedAssetsByCountry:function(countryId){
-        const wanted=canonicalCountry(countryId);
-        return clone(unifiedAssets.filter(function(asset){return canonicalCountry(asset.countryId)===wanted;}));
+        const wanted=id(countryId);
+        const exact=unifiedAssets.filter(function(asset){return id(asset.countryId)===wanted;});
+        if(exact.length)return clone(exact);
+        const fallback=canonicalCountry(countryId);
+        return clone(unifiedAssets.filter(function(asset){return canonicalCountry(asset.countryId)===fallback;}));
       },
       getDeposit:function(depositKey){
         const hit=byDeposit.get(String(depositKey||'').trim());
