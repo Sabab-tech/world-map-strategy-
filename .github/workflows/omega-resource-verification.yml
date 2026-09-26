@@ -40,49 +40,107 @@ jobs:
       - name: Single-stage resource verification and certificate
         shell: bash
         run: |
-          set -euo pipefail
-          node --check omega_resource_endowment_runtime.js
-          node --check omega_resource_part04_identity_runtime.js
-          node --check omega_resource_part05_reserve_extraction_runtime.js
-          node --check omega_resource_production_model_v2.js
-          node --check omega_resource_realism_runtime_v1.js
-          node --check omega_resource_logistics_runtime_v1.js
-          node --check omega_resource_country_boundary_guard.js
-          node --check omega_resource_action_execution_runtime.js
-          node --check omega_resource_economy_runtime_v2.js
-          node --check omega_resource_authoritative_adapter.js
-          node test/omega_resource_endowment_runtime.test.mjs
-          node test/omega_resource_site_data_completeness.test.mjs
-          node --test test/omega_resource_economy_runtime_v2.test.mjs
-          node --test test/omega_resource_authoritative_adapter.test.mjs
-          node --test test/omega_resource_action_execution_runtime.test.mjs
-          node --test test/omega_resource_country_boundary.test.mjs
-          node --test test/omega_resource_global_pipeline.test.mjs
-          node test/omega_resource_production_model_v2.test.mjs
-          node test/omega_resource_realism_runtime_v1.test.mjs
-          node test/omega_resource_logistics_runtime_v1.test.mjs
-          node test/omega_resource_request_and_settlement.test.mjs
+          set -u
+          declare -A GATES=()
+
+          run_gate() {
+            local key="$1"
+            local seconds="$2"
+            shift 2
+            echo "=== GATE $key (${seconds}s timebox) ==="
+            set +e
+            timeout --foreground --kill-after=3s "${seconds}s" "$@"
+            local rc=$?
+            set -e
+            if [ "$rc" -eq 0 ]; then
+              GATES["$key"]="PASS"
+            elif [ "$rc" -eq 124 ] || [ "$rc" -eq 137 ]; then
+              GATES["$key"]="TIMEOUT"
+              echo "::warning::$key exceeded ${seconds}s and was timeboxed; continuing."
+            else
+              GATES["$key"]="FAIL"
+              echo "::error::$key failed with exit code $rc; continuing to the next gate."
+            fi
+          }
+
+          syntax_files=(
+            omega_resource_endowment_runtime.js
+            omega_resource_part04_identity_runtime.js
+            omega_resource_part05_reserve_extraction_runtime.js
+            omega_resource_production_model_v2.js
+            omega_resource_realism_runtime_v1.js
+            omega_resource_logistics_runtime_v1.js
+            omega_resource_country_boundary_guard.js
+            omega_resource_action_execution_runtime.js
+            omega_resource_economy_runtime_v2.js
+            omega_resource_authoritative_adapter.js
+          )
+          for file in "${syntax_files[@]}"; do
+            run_gate "syntax:${file}" 3 node --check "$file"
+          done
+          syntax_status="PASS"
+          for key in "${!GATES[@]}"; do
+            case "$key" in
+              syntax:*) [ "${GATES[$key]}" = "PASS" ] || syntax_status="${GATES[$key]}" ;;
+            esac
+          done
+          GATES[syntax]="$syntax_status"
+
+          run_gate resourceEndowment 45 node test/omega_resource_endowment_runtime.test.mjs
+          run_gate siteDataCompleteness 15 node test/omega_resource_site_data_completeness.test.mjs
+          run_gate resourceEconomy 15 node --test test/omega_resource_economy_runtime_v2.test.mjs
+          run_gate authoritativeAdapter 15 node --test test/omega_resource_authoritative_adapter.test.mjs
+          run_gate resourceActions 15 node --test test/omega_resource_action_execution_runtime.test.mjs
+          run_gate countryBoundary 15 node --test test/omega_resource_country_boundary.test.mjs
+          run_gate globalPipeline 15 node --test test/omega_resource_global_pipeline.test.mjs
+          run_gate productionModelV2 15 node test/omega_resource_production_model_v2.test.mjs
+          run_gate realismV1 15 node test/omega_resource_realism_runtime_v1.test.mjs
+          run_gate logisticsV1 15 node test/omega_resource_logistics_runtime_v1.test.mjs
+          run_gate settlementCompatibility 15 node test/omega_resource_request_and_settlement.test.mjs
+
+          export OMEGA_GATE_SYNTAX="${GATES[syntax]}"
+          export OMEGA_GATE_RESOURCEENDOWMENT="${GATES[resourceEndowment]}"
+          export OMEGA_GATE_SITEDATACOMPLETENESS="${GATES[siteDataCompleteness]}"
+          export OMEGA_GATE_RESOURCEECONOMY="${GATES[resourceEconomy]}"
+          export OMEGA_GATE_AUTHORITATIVEADAPTER="${GATES[authoritativeAdapter]}"
+          export OMEGA_GATE_RESOURCEACTIONS="${GATES[resourceActions]}"
+          export OMEGA_GATE_COUNTRYBOUNDARY="${GATES[countryBoundary]}"
+          export OMEGA_GATE_GLOBALPIPELINE="${GATES[globalPipeline]}"
+          export OMEGA_GATE_PRODUCTIONMODELV2="${GATES[productionModelV2]}"
+          export OMEGA_GATE_REALISMV1="${GATES[realismV1]}"
+          export OMEGA_GATE_LOGISTICSV1="${GATES[logisticsV1]}"
+          export OMEGA_GATE_SETTLEMENTCOMPATIBILITY="${GATES[settlementCompatibility]}"
+
           node --input-type=module <<'NODE'
           import fs from 'node:fs';
+          const gates = {
+            syntax: process.env.OMEGA_GATE_SYNTAX,
+            resourceEndowment: process.env.OMEGA_GATE_RESOURCEENDOWMENT,
+            siteDataCompleteness: process.env.OMEGA_GATE_SITEDATACOMPLETENESS,
+            resourceEconomy: process.env.OMEGA_GATE_RESOURCEECONOMY,
+            authoritativeAdapter: process.env.OMEGA_GATE_AUTHORITATIVEADAPTER,
+            resourceActions: process.env.OMEGA_GATE_RESOURCEACTIONS,
+            countryBoundary: process.env.OMEGA_GATE_COUNTRYBOUNDARY,
+            globalPipeline: process.env.OMEGA_GATE_GLOBALPIPELINE,
+            productionModelV2: process.env.OMEGA_GATE_PRODUCTIONMODELV2,
+            realismV1: process.env.OMEGA_GATE_REALISMV1,
+            logisticsV1: process.env.OMEGA_GATE_LOGISTICSV1,
+            settlementCompatibility: process.env.OMEGA_GATE_SETTLEMENTCOMPATIBILITY
+          };
+          const status = Object.values(gates).every((value) => value === 'PASS') ? 'VERIFIED' : 'INCOMPLETE';
           const certificate = {
             certificate: 'OMEGA-RESOURCE-VERIFICATION',
-            status: 'VERIFIED',
+            status,
             workflow: 'OMEGA Resource Verification Certificate',
             commit: process.env.GITHUB_SHA,
             run: process.env.GITHUB_RUN_NUMBER,
             generatedAt: new Date().toISOString(),
-            gates: {
-              syntax: 'PASS',
-              resourceEndowment: 'PASS',
-              resourceEconomy: 'PASS',
-              authoritativeAdapter: 'PASS',
-              resourceActions: 'PASS',
-              countryBoundary: 'PASS',
-              globalPipeline: 'PASS',
-              productionModelV2: 'PASS',
-              realismV1: 'PASS',
-              logisticsV1: 'PASS',
-              settlementCompatibility: 'PASS'
+            gates,
+            timeboxing: {
+              longGatePolicy: 'TIMEOUT_AND_CONTINUE',
+              endowmentSeconds: 45,
+              otherTestSeconds: 15,
+              syntaxSeconds: 3
             },
             authorityPolicy: {
               observedStateCanNotBeOverwrittenBySimulatedState: true,
@@ -91,8 +149,11 @@ jobs:
           };
           fs.writeFileSync('omega_resource_verification_certificate.json', JSON.stringify(certificate, null, 2)+'\n');
           console.log(JSON.stringify(certificate, null, 2));
+          if (status !== 'VERIFIED') process.exitCode = 2;
           NODE
+
       - name: Upload verified certificate
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: omega-resource-verification-certificate
