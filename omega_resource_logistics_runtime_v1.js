@@ -54,15 +54,7 @@ function planFromFactoryInput(payload={}){
  try{return m.dispatchCommand('resource','OMEGA_RESOURCE_LOGISTICS_PLAN',c,payload,{turn:turn(),commandType:'LOGISTICS_PLAN',correlationId:payload.extractionId||payload.batchId||null});}
  catch(e){return{status:'FAILED',reason:String(e?.message||e)}}
 }
-function installEventListener(){
- if(g.__OmegaResourceLogisticsListener||typeof g.addEventListener!=='function')return;
- g.__OmegaResourceLogisticsListener=true;
- g.addEventListener('OMEGA_RESOURCE_FACTORY_INPUT_AVAILABLE',e=>{
-   const p=e?.detail?.payload||e?.detail||{}; if(!p?.countryId)return;
-   const enriched={...p};
-   try{const result=planFromFactoryInput(enriched);g.__OmegaResourceLastLogisticsPlan=result;}catch(_){}
- });
-}
+function installEventListener(){return false;}
 const API=Object.freeze({VERSION,install,plan,planFromFactoryInput,routeMode});
 g.Omega=g.Omega||{};g.Omega.ResourceLogisticsRuntime=API;g.OmegaResourceLogisticsRuntime=API;
 install();installEventListener();
