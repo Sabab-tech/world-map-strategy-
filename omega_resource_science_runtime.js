@@ -205,8 +205,8 @@
     m=raw.match(/([0-9]+(?:\.[0-9]+)?)\s*%\s*(Fe|Cu|Ni|Co|Li2O|Al2O3|U3O8|REO|NdPr|P2O5|K2O)\b/i);
     if(m){q.gradePercent=Number(m[1]);q.gradeBasis=m[2].toUpperCase();q.gradeStatus='OBSERVED';}
     if(rid==='natural_gas'){
-      m=raw.match(/([0-9]+(?:\.[0-9]+)?)\s*%\s*(?:methane|CH4|gas)\b/i) ||
-        raw.match(/(?:methane|CH4|gas)\s*[:=]?\s*([0-9]+(?:\.[0-9]+)?)\s*%/i);
+      m=raw.match(/([0-9]+(?:\.[0-9]+)?)\s*%\s*(?:pure\s+)?(?:methane|CH4|gas)\b/i) ||
+        raw.match(/(?:pure\s+)?(?:methane|CH4|gas)\s*[:=]?\s*([0-9]+(?:\.[0-9]+)?)\s*%/i);
       if(m){q.gradePercent=Number(m[1]);q.gradeBasis='METHANE_CONCENTRATION';q.gradeStatus='OBSERVED';}
     }
     m=raw.match(/([0-9]+(?:\.[0-9]+)?)\s*°?\s*API\b/i);
