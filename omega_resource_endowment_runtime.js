@@ -367,19 +367,11 @@
     if(/lithium/.test(raw))return'lithium';
     if(/cobalt/.test(raw))return'cobalt';
     if(/nickel/.test(raw))return'nickel';
-    if(/chrom/.test(raw))return'chromium';
     if(/copper/.test(raw))return'copper';
     if(/iron/.test(raw))return'iron_ore';
     if(/baux|alumin/.test(raw))return'bauxite';
     if(/coal/.test(raw))return'coal';
     if(/gold/.test(raw))return'gold';
-    if(/limestone/.test(raw))return'limestone';
-    if(/gypsum/.test(raw))return'gypsum';
-    if(/marble/.test(raw))return'marble';
-    if(/silica|sand/.test(raw))return'silica_sand';
-    if(/clay|kaolin|bentonite/.test(raw))return'clay';
-    if(/zeolite/.test(raw))return'zeolite';
-    if(/zircon/.test(raw))return'zircon';
     return null;
   }
   function simulationProfileResourceCandidates(c){
@@ -394,7 +386,8 @@
     add((h.oil||[]).map?.(x=>'crude_oil'));
     add((h.naturalGas||[]).map?.(x=>'natural_gas'));
     add((h.coal||[]).map?.(x=>'coal'));
-    return out;
+    return out.filter(x=>sci()?.RESOURCE_IDS?.includes?.(x));
+
   }
   function stableSimulationSlot(value,size){
     if(size<=1)return 0;
@@ -409,8 +402,9 @@
     for(const [ridValue,list] of Object.entries(SIM_RESOURCE_ALIASES)){
       if(list.some(a=>text.includes(String(a).toLowerCase())))return ridValue;
     }
-    const candidates=simulationProfileResourceCandidates(c);
-    return candidates.length?candidates[stableSimulationSlot(siteName,candidates.length)]:null;
+    const candidates=simulationProfileResourceCandidates(c),canonicalIds=Array.isArray(sci()?.RESOURCE_IDS)?sci().RESOURCE_IDS:[];
+    if(candidates.length)return candidates[stableSimulationSlot(siteName,candidates.length)];
+    return canonicalIds.length?canonicalIds[stableSimulationSlot(canonical(c)+'|'+siteName,canonicalIds.length)]:null;
   }
   function simulationUnit(resourceId){
     return SIM_RESOURCE_UNITS[resourceId]||'metric_tons';
