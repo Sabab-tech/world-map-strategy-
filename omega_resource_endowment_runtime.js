@@ -39,7 +39,7 @@
     try{
       const r=registry()?.resolveCountry?.(v);
       if(r?.id){
-        const resolved=id(r.id);
+        const resolved=id(r.raw?.iso3||r.raw?.iso3Code||r.raw?.countryCode||r.raw?.countryId||r.id);
         const byResolved=Object.entries(profiles).find(function(entry){
           const i=entry[1]?.identity||entry[1]||{};
           return String(entry[0]).toUpperCase()===resolved||String(i.countryId||'').toUpperCase()===resolved||String(i.iso3||'').toUpperCase()===resolved;
