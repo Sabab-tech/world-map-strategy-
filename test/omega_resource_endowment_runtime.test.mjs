@@ -35,6 +35,7 @@ const dataReport=engine.getDataLoadReport();
 assert.equal(dataReport.authority,'RESOURCE_JSON');
 assert.equal(dataReport.status,'READY');
 assert.equal(dataReport.depositCount,43);
+assert.equal(dataReport.mineSiteReferenceCount,199);
 assert.equal(dataReport.fallbackUsed,false);
 assert.equal(engine.deposits.length,43);
 assert.equal(engine.deposits.some(x=>x.sourceAuthority==='RESOURCE_JSON'),true);
