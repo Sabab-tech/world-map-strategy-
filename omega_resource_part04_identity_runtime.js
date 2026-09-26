@@ -179,7 +179,7 @@
       quality:{grade:qualityGrade,purity,concentration,recoveryRate},
       ownership:{owner:raw.owner??raw.ownerKey??null,operator:raw.operator??raw.operatorKey??null},
       flow:{warehouseId:raw.warehouseId||null,inventoryRef:raw.inventoryRef||raw.inventoryKey||null,factoryInputRoute:raw.factoryInputRoute||raw.factoryRoute||null},
-      execution:{extractionExecutable:sourceKind==='STRUCTURED_DEPOSIT'&&hasResource&&hasReserve,quantitativeDataAvailable:hasResource&&hasReserve,simulationEligible:sourceKind==='PROFILE_SITE_REFERENCE'&&!hasReserve},
+      execution:{extractionExecutable:sourceKind==='STRUCTURED_DEPOSIT'&&hasResource&&hasReserve,quantitativeDataAvailable:hasResource&&hasReserve,simulationEligible:sourceKind==='PROFILE_SITE_REFERENCE'&&(!hasResource||!hasReserve||!hasProduction)},
       dataAuthority:{
         identity:countryId&&siteName?'OBSERVED':'UNOBSERVED',
         resourceType:hasResource?'OBSERVED':'UNOBSERVED',
