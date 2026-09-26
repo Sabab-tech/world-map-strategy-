@@ -22,6 +22,7 @@
   const registry=()=>g.OmegaCanonicalIdentityRegistry||g.OmegaCountrySemanticBridge||g.Omega?.CanonicalIdentity||null;
   const canonical=v=>{
     const raw=String(v??'').trim(),u=raw.toUpperCase(),e=engine(),profiles=e?.countryProfiles&&typeof e.countryProfiles==='object'?e.countryProfiles:{};
+    try{const normalized=e?.normalizeCountryCode?.(raw);if(normalized&&profiles[String(normalized).toUpperCase()])return String(normalized).toUpperCase();}catch(_){}
     if(profiles[u])return u;
     const direct=Object.entries(profiles).find(function(entry){
       const key=String(entry[0]).toUpperCase(),p=entry[1]||{},i=p.identity||p;
@@ -193,7 +194,9 @@
     if(!out.length){
       try{
         for(const ref of e?.referenceCatalog?.getAllReferences?.()||[]){
-          if(canonical(ref?.parentCountryId)!==wanted)continue;
+          let parentCanonical=null,parentNormalized=null;
+          try{parentCanonical=canonical(ref?.parentCountryId);parentNormalized=e?.normalizeCountryCode?.(ref?.parentCountryId);}catch(_){}
+          if(parentCanonical!==wanted&&String(parentNormalized||'').toUpperCase()!==wanted)continue;
           add(ref);
         }
       }catch(_){}
