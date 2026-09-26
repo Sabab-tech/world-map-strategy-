@@ -19,6 +19,17 @@
        facilityExpansion:{capacityIncreaseFraction:0.25,durationTurns:4,budgetUnitsPerCapacityUnit:10,reservationExpiresAfterTurns:64},
        strategicBuffer:{targetDays:30,maxTransferBatches:128}
      },
+     extraction:{
+       syntheticSitePolicy:'SIMULATED_ONLY_WITH_EXPLICIT_RULESET',
+       missingCapacityPolicy:'USE_SIMULATION_BASELINE_AND_TAG_SIMULATED',
+       defaultEffortUtilization:0.82,
+       constraintFactors:{availability:0.98,maintenance:0.96,labor:0.95,power:0.98,water:0.98,logistics:0.95,security:0.99},
+       recoveryFactors:{rare_earth:0.75,lithium:0.65,cobalt:0.80,nickel:0.82,copper:0.88,crude_oil:0.60,natural_gas:0.65,uranium:0.75,gold:0.70,bauxite:0.90,phosphate:0.75,potash:0.85,iron_ore:0.90,coal:0.88},
+       baselineDailyRates:{rare_earth:100,lithium:500,cobalt:150,nickel:800,copper:1000,crude_oil:10000,natural_gas:0.01,uranium:50,gold:500,bauxite:4000,phosphate:4000,potash:3000,iron_ore:8000,coal:5000},
+       baselineRateUnits:{rare_earth:'TONNES_PER_DAY',lithium:'TONNES_PER_DAY',cobalt:'TONNES_PER_DAY',nickel:'TONNES_PER_DAY',copper:'TONNES_PER_DAY',crude_oil:'BARRELS_PER_DAY',natural_gas:'BCM_PER_YEAR',uranium:'TONNES_PER_DAY',gold:'TROY_OZ_PER_DAY',bauxite:'TONNES_PER_DAY',phosphate:'TONNES_PER_DAY',potash:'TONNES_PER_DAY',iron_ore:'TONNES_PER_DAY',coal:'TONNES_PER_DAY'}
+     },
+     industrialPhysics:{missingProcessModelPolicy:'KEEP_GENERIC_RECIPE_BUT_MARK_UNOBSERVED',defaults:{yieldFactor:1,energyPerUnit:null,waterPerUnit:null,maintenanceFactor:0.96}},
+     logistics:{sameCountryTransferMode:'DOMESTIC_UNOBSERVED_OR_ROUTE_BACKED',crossBorderTransferMode:'TRADE_SETTLEMENT_ONLY',missingRoutePolicy:'RECORD_UNOBSERVED_LOGISTICS_DO_NOT_INVENT_ROUTE'}
   };
 
   function clone(v,seen){
