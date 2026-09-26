@@ -57,5 +57,6 @@ assert.equal(cap.effectiveRate,820);
 assert.equal(sci.normalizeUnit('TCF').dimension,'VOLUME');
 assert.equal(sci.normalizeUnit('metric_tons_lce').dimension,'MASS');
 assert.equal(sci.normalizeUnit('TONNES_PER_DAY').dimension,'MASS_RATE');
+assert.equal(sci.toCanonicalQuantity(null,'TONNES','TONNES'),null);
 
 console.log('OMEGA RESOURCE INTEGRITY V2 TEST PASSED');
