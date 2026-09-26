@@ -230,20 +230,14 @@
     return list.find(x=>rid0(x?.id)===key)||null;
   }
   function mineQuality(x){
-    const raw=x?.rawDeposit||{},model=x?.siteModel?.commodityStreams?.find?.(s=>rid(s?.resourceId)===rid(x?.resourceId))?.quality;
+    const raw=x?.rawDeposit||{},stateQuality=x?.reserveState?.quality||null,model=x?.siteModel?.commodityStreams?.find?.(s=>rid(s?.resourceId)===rid(x?.resourceId))?.quality;
+    if(stateQuality)return{...clone(stateQuality),gradePercent:stateQuality.normalized?.gradePercent??null,concentrationPercent:stateQuality.normalized?.concentrationPercent??null,purity:stateQuality.normalized?.purityFraction??stateQuality.purity??null,APIGravity:stateQuality.normalized?.APIGravity??stateQuality.APIGravity??null,qualityAuthority:(stateQuality.gradeStatus==='OBSERVED'||stateQuality.concentrationStatus==='OBSERVED'||stateQuality.purityStatus==='OBSERVED'||stateQuality.apiGravityStatus==='OBSERVED')?'OBSERVED':'UNOBSERVED'};
     const q=(g.Omega?.ResourceRealism?.quality&&raw&&!model)?g.Omega.ResourceRealism.quality(raw,x.resourceId):model;
-    if(q)return{...clone(q),
-      gradePercent:q.normalized?.gradePercent??null,
-      concentrationPercent:q.normalized?.concentrationPercent??null,
-      purity:q.normalized?.purityFraction??null,
-      APIGravity:q.normalized?.APIGravity??q.APIGravity??null,
-      qualityAuthority:q.gradeStatus==='OBSERVED'||q.concentrationStatus==='OBSERVED'||q.purityStatus==='OBSERVED'||q.apiGravityStatus==='OBSERVED'?'OBSERVED':'SIMULATED'
-    };
+    if(q)return{...clone(q),gradePercent:q.normalized?.gradePercent??null,concentrationPercent:q.normalized?.concentrationPercent??null,purity:q.normalized?.purityFraction??q.purity??null,APIGravity:q.normalized?.APIGravity??q.APIGravity??null,qualityAuthority:q.gradeStatus==='OBSERVED'||q.concentrationStatus==='OBSERVED'||q.purityStatus==='OBSERVED'||q.apiGravityStatus==='OBSERVED'?'OBSERVED':'SIMULATED'};
     const legacy=parsePurityFromGrade(raw.grade,x?.resourceId);
-    return{purity:legacy.purity,purityStatus:legacy.purityStatus,gradePercent:legacy.gradePercent,gradeText:raw.grade||null,
-      qualityAuthority:'UNOBSERVED',qualitySource:'UNOBSERVED',physicalState:String(raw.physicalState||'SOLID_RUN_OF_MINE').toUpperCase()};
+    return{purity:legacy.purity,purityStatus:legacy.purityStatus,gradePercent:legacy.gradePercent,gradeText:raw.grade||null,qualityAuthority:'UNOBSERVED',qualitySource:'UNOBSERVED',physicalState:String(raw.physicalState||'SOLID_RUN_OF_MINE').toUpperCase()};
   }
-  function batchFromExtraction(x,record){
+function batchFromExtraction(x,record){
     const q=mineQuality(x),rs=record?.reserveAfter||{},base=record?.producedBatch||{},qty=n(record?.approvedQuantity)||0;
     const pa=String(record?.provenance?.productionAuthority||record?.provenance?.quantityAuthority||x?.capacity?.authority||'').toUpperCase();
     const simulatedQuantity=pa==='SIMULATED'||pa==='SIMULATION_RULESET'||x?.capacity?.stateAuthority==='SIMULATED';
