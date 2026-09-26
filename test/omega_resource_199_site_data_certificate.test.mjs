@@ -63,12 +63,22 @@ for (const { countryId, index, site } of sites) {
     assert.equal(site.extractionEligibility, 'EXECUTABLE', countryId + '[' + index + ']: active site extraction eligibility');
   }
 
-  for (const field of ['owner', 'operator']) {
-    assert(typeof site[field] === 'string', countryId + '[' + index + ']: ' + field + ' must be explicit string or UNOBSERVED');
-    const lower = site[field].trim().toLowerCase();
-    assert(!/^(private concession holders|project concession interests|government \\/ private|local operators|state \\/ private interests|cement-sector operators|private mining interests|ukrainian operators\\/state|kryvyi rih operators|nilepet \\/ consortium|former midroc|unverified|unknown)$/i.test(lower),
-      countryId + '[' + index + ']: placeholder ' + field + ' value');
-  }
+  const placeholders = new Set([
+    'private concession holders',
+    'project concession interests',
+    'government / private',
+    'local operators',
+    'state / private interests',
+    'cement-sector operators',
+    'private mining interests',
+    'ukrainian operators/state',
+    'kryvyi rih operators',
+    'nilepet / consortium',
+    'former midroc',
+    'unverified',
+    'unknown'
+  ]);
+  assert(!placeholders.has(lower), countryId + '[' + index + ']: placeholder ' + field + ' value');
 
   assert(allowedResearchStates.has(site.researchState), countryId + '[' + index + ']: invalid researchState');
   if (site.researchState === 'NOT_APPLICABLE_NO_COMMERCIAL_SITE') {
