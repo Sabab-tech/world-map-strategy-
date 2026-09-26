@@ -917,6 +917,11 @@
   function countryMines(c){return clone(state()?.resource?.[canonical(c)]?.mines||[]);}
   function install(){
     const m=interop();if(!m?.registerCommandHandler)return false;
+    try{
+      if((!Array.isArray(m.ids)||m.ids.length===0)&&typeof m.configure==='function'){
+        m.configure({});
+      }
+    }catch(_){}
     let handlerRegistered=false;
     try{
       m.registerAction?.('OMEGA_RESOURCE_ENDOWMENT_HYDRATE',{actionId:'OMEGA_RESOURCE_ENDOWMENT_HYDRATE',stateOwnerMinistry:'resource',authority:'OMEGA_RESOURCE_ENDOWMENT_RUNTIME'});
