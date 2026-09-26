@@ -155,7 +155,7 @@ for(const [countryId,row] of Object.entries(worldState)){
     controllerCountrySets.add(countryId);
   }
 }
-assert.equal(simulatedMineOutputs.length,199);
+assert.equal(profileMineOutputs.length,199);
 
 for(const [countryId,row] of Object.entries(worldState)){
   if(!row||!Array.isArray(row.mines))continue;
