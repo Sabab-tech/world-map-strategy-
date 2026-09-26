@@ -170,9 +170,14 @@
     }
   }
   function mineSiteReferenceRows(c){
-    const reg=g.__OmegaResourceIdentityRegistry;
-    if(!reg?.getMineSiteReferencesByCountry)return[];
-    try{return clone(reg.getMineSiteReferencesByCountry(canonical(c))||[]);}catch(_){return[];}
+    const wanted=canonical(c),reg=g.__OmegaResourceIdentityRegistry;
+    try{
+      const primary=reg?.getMineSiteReferencesByCountry?.(wanted)||[];
+      if(Array.isArray(primary)&&primary.length)return clone(primary);
+    }catch(_){}
+    const refs=g.__OmegaResourceKnowledgeModel?.refCatalog?.allReferences;
+    if(Array.isArray(refs))return clone(refs.filter(ref=>canonical(ref?.countryCode||ref?.countryId||ref?.country)===wanted));
+    return[];
   }
   function occurrenceRows(c){
     const reg=g.__OmegaResourceIdentityRegistry;const e=engine();const rr=g.__OmegaResourceReserveRegistry;if(!reg||!e||!rr)return[];
