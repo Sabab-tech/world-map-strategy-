@@ -201,6 +201,8 @@
   const API=Object.freeze({
     VERSION,
     ReserveState,
+    Capacity,
+    ExtractionCapacity:Capacity,
     ExtractionRequest:class ExtractionRequest{constructor(input={}){Object.assign(this,clone(input));}},
     TemporalWindowUnit:{PER_DAY:'PER_DAY'},
     ExtractionMethodEnum:{UNKNOWN:'UNKNOWN'},
