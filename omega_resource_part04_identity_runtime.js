@@ -156,7 +156,13 @@
       quality:{grade:qualityGrade,purity,concentration,recoveryRate},
       ownership:{owner:raw.owner??raw.ownerKey??null,operator:raw.operator??raw.operatorKey??null},
       flow:{warehouseId:raw.warehouseId||null,inventoryRef:raw.inventoryRef||raw.inventoryKey||null,factoryInputRoute:raw.factoryInputRoute||raw.factoryRoute||null},
-      execution:{extractionExecutable:sourceKind==='STRUCTURED_DEPOSIT'&&hasResource&&hasReserve,quantitativeDataAvailable:hasResource&&hasReserve,simulationEligible:sourceKind==='PROFILE_SITE_REFERENCE'&&(!hasResource||!hasReserve||!hasProduction)},
+      execution:{
+        extractionExecutable:sourceKind==='STRUCTURED_DEPOSIT'&&hasResource&&hasReserve,
+        runtimeExecutable:false,
+        runtimeExecutionStatus:'NOT_EVALUATED',
+        quantitativeDataAvailable:hasResource&&hasReserve,
+        simulationEligible:sourceKind==='PROFILE_SITE_REFERENCE'&&(!hasResource||!hasReserve||!hasProduction)
+      },
       dataAuthority:{
         identity:countryId&&siteName?'OBSERVED':'UNOBSERVED',
         resourceType:hasResource?'OBSERVED':'UNOBSERVED',
@@ -247,6 +253,15 @@
       getUnifiedAsset:function(assetId){
         const hit=unifiedById.get(String(assetId||'').trim().toUpperCase());
         return hit?clone(hit):null;
+      },
+      setUnifiedAssetRuntimeExecution:function(assetId,status,reason=''){
+        const hit=unifiedById.get(String(assetId||'').trim().toUpperCase());
+        if(!hit)return false;
+        hit.execution=hit.execution||{};
+        hit.execution.runtimeExecutable=!!(status==='EXECUTABLE');
+        hit.execution.runtimeExecutionStatus=String(status||'NOT_EVALUATED').toUpperCase();
+        hit.execution.runtimeExecutionReason=reason||null;
+        return true;
       },
       getUnifiedAssetsByCountry:function(countryId){
         const wanted=id(countryId);
