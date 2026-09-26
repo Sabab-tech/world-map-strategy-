@@ -56,7 +56,14 @@
 
   function authorityRank(v){
     const a=String(v||'UNOBSERVED').toUpperCase();
-    return a==='OBSERVED'?2:a==='SIMULATED'?1:0;
+    return a==='OBSERVED'||a==='WEB_SOURCE_BACKED'||a==='WEB_RESEARCHED'||a==='WEB_RESEARCHED_CURATED'?2:a==='SIMULATED'?1:0;
+  }
+
+  function normalizeAuthority(v){
+    const a=String(v||'UNOBSERVED').toUpperCase();
+    if(a==='OBSERVED'||a==='WEB_SOURCE_BACKED'||a==='WEB_RESEARCHED'||a==='WEB_RESEARCHED_CURATED')return'OBSERVED';
+    if(a==='SIMULATED')return'SIMULATED';
+    return'UNOBSERVED';
   }
 
   function overallAuthority(values){
@@ -82,18 +89,18 @@
     const cap=raw.capacity||ref.productionCapacity||{};
     const prod=raw.productionModel||raw.siteModel?.commodityStreams?.find?.(x=>String(x?.resourceId||'')===String(resourceTypeId||''))?.production||ref.production||{};
     const q=raw.qualityState||raw.quality||ref.quality||{};
-    const reserveAuthority=String(
-      raw.reserveAuthority||rs?.provenance?.quantityAuthority||raw.dataAuthority?.reserve||ref?.dataAuthority?.reserve||'UNOBSERVED'
-    ).toUpperCase();
-    const productionAuthority=String(
-      raw.productionAuthority||cap?.authority||prod?.authority||raw.dataAuthority?.production||ref?.dataAuthority?.production||'UNOBSERVED'
-    ).toUpperCase();
-    const qualityAuthority=String(
+    const reserveAuthority=normalizeAuthority(
+      raw.reserveAuthority||rs?.provenance?.quantityAuthority||raw.dataStatus?.reserve||raw.dataAuthority?.reserve||ref?.dataStatus?.reserve||ref?.dataAuthority?.reserve
+    );
+    const productionAuthority=normalizeAuthority(
+      raw.productionAuthority||cap?.authority||prod?.authority||raw.dataStatus?.production||raw.dataAuthority?.production||ref?.dataStatus?.production||ref?.dataAuthority?.production
+    );
+    const qualityAuthority=normalizeAuthority(
       raw.qualityAuthority||q?.qualityAuthority||
       q?.gradeStatus||q?.concentrationStatus||q?.purityStatus||
-      raw.dataAuthority?.quality||ref?.dataAuthority?.quality||'UNOBSERVED'
-    ).toUpperCase()==='OBSERVED'?'OBSERVED':
-      String(raw.qualityAuthority||q?.qualityAuthority||raw.dataAuthority?.quality||ref?.dataAuthority?.quality||'UNOBSERVED').toUpperCase()==='SIMULATED'?'SIMULATED':'UNOBSERVED';
+      raw.dataStatus?.grade||raw.dataStatus?.quality||raw.dataAuthority?.grade||raw.dataAuthority?.quality||
+      ref?.dataStatus?.grade||ref?.dataStatus?.quality||ref?.dataAuthority?.grade||ref?.dataAuthority?.quality
+    );
 
     const reserveQuantity=num(rs?.geologicalQuantity??raw.geologicalQuantity??raw.reserveQuantity);
     const recoverableQuantity=num(rs?.recoverableQuantity??raw.recoverableQuantity);
@@ -163,6 +170,8 @@
       extractionMethod:textOrNull(raw.extractionMethod||raw.extraction_method||ref.extractionMethod),
       startYear:num(raw.startYear??raw.start_year??ref.startYear),
       currentProduction,
+      annualProduction:raw.annualProduction||ref.annualProduction||null,
+      recoveryRate,
       warehouse:{
         id:warehouseId,
         status:warehouseId?'RUNTIME_READY':'UNAVAILABLE',
