@@ -10,6 +10,7 @@
   'use strict';
 
   const VERSION='1.0.0';
+  const UNIFIED_ASSET_SCHEMA_VERSION='1.0.0';
 
   function clone(v,seen){
     if(v===null||typeof v!=='object')return v;
@@ -121,6 +122,80 @@
     return rows;
   }
 
+  function numeric(v){
+    const x=Number(v);
+    return Number.isFinite(x)?x:null;
+  }
+
+  function normalizeUnifiedAsset(input,sourceKind,context={}){
+    const raw=clone(input&&typeof input==='object'?input:{});
+    const countryId=canonicalCountry(context.countryId||raw.countryCode||raw.countryId||raw.iso3||raw.country);
+    const siteName=String(context.siteName||raw.siteName||raw.name||raw.depositName||raw.mineName||raw.fieldName||raw.reservoirName||'').trim();
+    const resourceId=String(context.resourceId||raw.resourceTypeId||raw.resourceTypeKey||raw.resId||raw.resourceId||'').replace(/^RES_TYPE:/i,'').trim().toLowerCase()||null;
+    const occurrenceKey=context.occurrenceKey||raw.occurrenceKey||null;
+    const depositKey=context.depositKey||raw.depositKey||raw.depositId||raw.mineId||null;
+    const siteReferenceKey=context.siteReferenceKey||raw.siteReferenceKey||null;
+    const assetId=String(context.assetId||(
+      sourceKind==='PROFILE_SITE_REFERENCE'
+        ? 'ASSET:SITE:'+String(siteReferenceKey||('SITE:'+String(countryId||'GLOBAL')+':'+tok(siteName))).toUpperCase()
+        : 'ASSET:OCC:'+String(occurrenceKey||depositKey||('DEP:'+String(countryId||'GLOBAL')+':'+tok(siteName))).toUpperCase()
+    ));
+    const locationRaw=raw.location&&typeof raw.location==='object'?raw.location:{};
+    const coordinates=raw.coordinates&&typeof raw.coordinates==='object'?raw.coordinates:{};
+    const lat=numeric(raw.lat??raw.latitude??locationRaw.lat??locationRaw.latitude??coordinates.lat??coordinates.latitude);
+    const lon=numeric(raw.lon??raw.lng??raw.longitude??locationRaw.lon??locationRaw.lng??locationRaw.longitude??coordinates.lon??coordinates.lng??coordinates.longitude);
+    const reserveRaw=raw.reserves??raw.reserve??raw.geologicalQuantity??raw.reserveQuantity??null;
+    const recoverableRaw=raw.recoverableQuantity??raw.recoverableReserve??null;
+    const residualRaw=raw.residualQuantity??raw.remainingQuantity??null;
+    const productionRate=raw.productionRate??raw.dailyRate??raw.outputRate??raw.currentProductionRate??raw.currentProduction??null;
+    const nominalCapacity=raw.nominalCapacity??raw.productionCapacity??raw.capacity??null;
+    const qualityGrade=raw.grade??raw.oreGrade??raw.gradePercent??null;
+    const purity=raw.purity??raw.purityFraction??null;
+    const concentration=raw.concentration??raw.concentrationPercent??null;
+    const recoveryRate=raw.recovery??raw.recoveryRate??null;
+    const sourceAuthority=String(context.sourceAuthority||raw.sourceAuthority||'RESOURCE_JSON').toUpperCase();
+    const hasResource=!!resourceId;
+    const hasReserve=reserveRaw!==null&&reserveRaw!==undefined&&String(reserveRaw).trim()!=='';
+    const hasProduction=productionRate!==null&&productionRate!==undefined&&String(productionRate).trim()!=='';
+    const hasQuality=qualityGrade!==null||purity!==null||concentration!==null;
+    return{
+      schemaVersion:UNIFIED_ASSET_SCHEMA_VERSION,
+      assetId,
+      assetType:sourceKind,
+      sourceKind,
+      siteReferenceKey,
+      occurrenceKey,
+      depositKey,
+      siteName,
+      countryId:countryId||null,
+      countryCode:countryId||null,
+      resourceType:{id:resourceId,name:raw.resourceName||raw.resourceTypeName||null,status:hasResource?'OBSERVED':'UNOBSERVED'},
+      location:{nodeKey:raw.locationNodeKey||locationRaw.nodeKey||null,latitude:lat,longitude:lon,name:raw.locationName||locationRaw.name||null,status:(lat!==null||lon!==null||raw.locationNodeKey)?'OBSERVED':'UNOBSERVED'},
+      reserve:{geologicalQuantity:numeric(raw.geologicalQuantity??raw.reserveQuantity),recoverableQuantity:numeric(recoverableRaw),residualQuantity:numeric(residualRaw),unit:raw.unit||raw.reserveUnit||null,declared:reserveRaw},
+      production:{ratePerDay:numeric(productionRate),currentProduction:numeric(raw.currentProduction??raw.currentProductionRate),nominalCapacity:numeric(nominalCapacity),minimumCapacity:numeric(raw.minimumCapacity??raw.minimumRate),maximumCapacity:numeric(raw.maximumCapacity??raw.maximumRate)},
+      operating:{status:raw.status||raw.operatingStatus||'UNKNOWN',startYear:numeric(raw.startYear??raw.commissioningYear??raw.productionStartYear),extractionMethod:raw.extractionMethod||raw.miningMethod||null},
+      quality:{grade:qualityGrade,purity,concentration,recoveryRate},
+      ownership:{owner:raw.owner??raw.ownerKey??null,operator:raw.operator??raw.operatorKey??null},
+      flow:{warehouseId:raw.warehouseId||null,inventoryRef:raw.inventoryRef||raw.inventoryKey||null,factoryInputRoute:raw.factoryInputRoute||raw.factoryRoute||null},
+      execution:{extractionExecutable:sourceKind==='STRUCTURED_DEPOSIT'&&hasResource&&hasReserve,quantitativeDataAvailable:hasResource&&hasReserve,simulationEligible:sourceKind==='PROFILE_SITE_REFERENCE'&&!hasReserve},
+      dataAuthority:{
+        identity:countryId&&siteName?'OBSERVED':'UNOBSERVED',
+        resourceType:hasResource?'OBSERVED':'UNOBSERVED',
+        reserve:hasReserve?'OBSERVED':'UNOBSERVED',
+        production:hasProduction?'OBSERVED':'UNOBSERVED',
+        quality:hasQuality?'OBSERVED':'UNOBSERVED'
+      },
+      provenance:{
+        sourceAuthority,
+        sourceDatasetId:context.sourceDatasetId||raw.sourceDatasetId||raw.provenance?.sourceDatasetId||'resources.json',
+        sourcePath:context.sourcePath||raw.sourcePath||raw.provenance?.sourcePath||null,
+        sourceKind,
+        rawReferencePreserved:true
+      },
+      rawSource:raw
+    };
+  }
+
   function compileIdentities(){
     const deposits=sourceDeposits();
     const byCountry=new Map(),byDeposit=new Map(),rows=[];
@@ -157,14 +232,42 @@
       byCountry.get(countryId).push(occurrence);
     });
 
+    const unifiedAssets=[
+      ...rows.map(function(occurrence){
+        return normalizeUnifiedAsset(occurrence.rawDeposit||{},'STRUCTURED_DEPOSIT',{
+          countryId:occurrence.countryId,occurrenceKey:occurrence.occurrenceKey,depositKey:occurrence.depositKey,
+          resourceId:occurrence.resourceTypeId,sourceDatasetId:occurrence.sourceDatasetId,
+          sourceAuthority:'RESOURCE_JSON'
+        });
+      }),
+      ...siteReferences.map(function(site){
+        return normalizeUnifiedAsset(site.rawSiteReference&&typeof site.rawSiteReference==='object'?site.rawSiteReference:{name:site.siteName},'PROFILE_SITE_REFERENCE',{
+          countryId:site.countryId,siteName:site.siteName,siteReferenceKey:site.siteReferenceKey,
+          sourceDatasetId:site.sourceDatasetId,sourcePath:site.sourcePath,sourceAuthority:'RESOURCE_JSON'
+        });
+      })
+    ];
+    const unifiedById=new Map(unifiedAssets.map(function(asset){return [String(asset.assetId).toUpperCase(),asset];}));
+
     const registry={
       version:VERSION,
+      unifiedAssetSchemaVersion:UNIFIED_ASSET_SCHEMA_VERSION,
       authority:'RESOURCE_JSON',
       occurrenceCount:rows.length,
       siteReferenceCount:siteReferences.length,
+      unifiedAssetCount:unifiedAssets.length,
       getOccurrencesByCountry:function(countryId){return clone(byCountry.get(canonicalCountry(countryId))||[]);},
       getMineSiteReferencesByCountry:function(countryId){return clone(siteRefsByCountry.get(canonicalCountry(countryId))||[]);},
       listMineSiteReferences:function(){return clone(siteReferences);},
+      listUnifiedAssets:function(){return clone(unifiedAssets);},
+      getUnifiedAsset:function(assetId){
+        const hit=unifiedById.get(String(assetId||'').trim().toUpperCase());
+        return hit?clone(hit):null;
+      },
+      getUnifiedAssetsByCountry:function(countryId){
+        const wanted=canonicalCountry(countryId);
+        return clone(unifiedAssets.filter(function(asset){return canonicalCountry(asset.countryId)===wanted;}));
+      },
       getDeposit:function(depositKey){
         const hit=byDeposit.get(String(depositKey||'').trim());
         if(!hit)return null;
@@ -182,6 +285,7 @@
 
   const API=Object.freeze({
     VERSION,
+    UNIFIED_ASSET_SCHEMA_VERSION,
     compileIdentities
   });
 
