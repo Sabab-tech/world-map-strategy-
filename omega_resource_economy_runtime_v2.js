@@ -22,6 +22,7 @@
      extraction:{
        syntheticSitePolicy:'SIMULATED_ONLY_WITH_EXPLICIT_RULESET',
        missingCapacityPolicy:'USE_SIMULATION_BASELINE_AND_TAG_SIMULATED',
+       simulationReserveHorizonDays:3650,
        defaultEffortUtilization:0.82,
        constraintFactors:{availability:0.98,maintenance:0.96,labor:0.95,power:0.98,water:0.98,logistics:0.95,security:0.99},
        recoveryFactors:{rare_earth:0.75,lithium:0.65,cobalt:0.80,nickel:0.82,copper:0.88,crude_oil:0.60,natural_gas:0.65,uranium:0.75,gold:0.70,bauxite:0.90,phosphate:0.75,potash:0.85,iron_ore:0.90,coal:0.88},
