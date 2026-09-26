@@ -169,7 +169,9 @@
     if(!components.length)return{quantity:null,targetUnit:targetUnit||RESOURCE_DEFAULT_UNITS[rid]||null,sourceUnit:null,components:[]};
     let selected=components.find(x=>x.resourceId===rid)||components[0];
     if(rid==='gold'){
-      const oz=components.find(x=>x.resourceId==='gold'&&x.unit==='TROY_OZ');
+      const explicitOz=components.find(x=>x.resourceId==='gold'&&['OZ','OZT'].includes(String(x.sourceUnit||'').toUpperCase()));
+      const explicitTextOz=components.find(x=>x.resourceId==='gold'&&/\b(?:OZ|OZT)\b/i.test(String(x.sourceText||'')));
+      const oz=explicitOz||explicitTextOz||components.find(x=>x.resourceId==='gold'&&x.unit==='TROY_OZ');
       if(oz)selected=oz;
     }
     return{quantity:selected.quantity,targetUnit:selected.unit,sourceUnit:selected.sourceUnit,components};
