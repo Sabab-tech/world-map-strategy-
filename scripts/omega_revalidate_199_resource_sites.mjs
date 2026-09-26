@@ -147,7 +147,7 @@ async function googleSearch(site) {
   if (!html) return null;
 
   const candidates = [];
-  for (const match of html.matchAll(/<a[^>]+href="([^"]+)"[^>]*>([\\s\\S]*?)<\\/a>/gi)) {
+  for (const match of html.matchAll(new RegExp('<a[^>]+href="([^"]+)"[^>]*>([\\s\\S]*?)</a>', 'gi'))) {
     const href = decodeSearchHref(match[1]);
     if (!/^https?:\\/\\//i.test(href)) continue;
     if (/google\\.(com|co\\.|org)/i.test(href)) continue;
