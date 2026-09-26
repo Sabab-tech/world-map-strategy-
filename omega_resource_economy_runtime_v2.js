@@ -599,8 +599,8 @@
     var inv=invObj(c),rs=bucket(c,'resource')||{},prices=read(c,'trade.marketPrice')||{},offers=[];
     var fraction=num(rules().market.offerFractionOfObservedInventory);if(fraction===null)fraction=num(rules().market.referenceOfferFraction);if(fraction===null)fraction=0.25;fraction=Math.max(0,Math.min(1,fraction));
     var min=num(rules().market.minOfferQuantity);if(min===null)min=1;
-    var spr=rs.strategicReserve&&rs.strategicReserve.availableByResource||{},committed=rs.committedStock||rs.committedInventory||{},sellable=clone(rs.sellableInventory||{});
-    if(!Object.keys(sellable).length)Object.keys(inv).forEach(function(rid){sellable[rid]=Math.max(0,(num(inv[rid])||0)-(num(spr[rid])||0)-(num(committed[rid])||0));});
+    var spr=rs.strategicReserve&&rs.strategicReserve.availableByResource||{},committed=rs.committedStock||rs.committedInventory||{},sellable={};
+    Object.keys(inv).forEach(function(rid){sellable[rid]=Math.max(0,(num(inv[rid])||0)-(num(spr[rid])||0)-(num(committed[rid])||0));});
     Object.keys(sellable).forEach(function(rid){
       var q=num(sellable[rid])||0;if(q<min)return;
       var p=num(prices[rid]);if(p===null&&g.OmegaGlobalMarket&&typeof g.OmegaGlobalMarket.localPrice==='function'){try{p=num(g.OmegaGlobalMarket.localPrice(c,rid));}catch(_){}}if(p===null||p<=0)return;
