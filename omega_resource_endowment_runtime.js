@@ -368,19 +368,21 @@ function batchFromExtraction(x,record){
         const occurrenceKey=streams.length>1?baseOccurrenceKey+':COM:'+tok(stream.resourceId):baseOccurrenceKey;
         if(seen.has(occurrenceKey))continue;seen.add(occurrenceKey);
         const old=existing?.mineStates?.[occurrenceKey],unit=stream.reserve.unit,prod=stream.production,q=stream.quality;
-        const generated={occurrenceKey,countryId:canonical(c),depositKey:'SIM_'+tok(occurrenceKey),resourceId:stream.resourceId,
+        const modelAuthority=String(model?.authority||'SIMULATED').toUpperCase();
+        const modelStateAuthority=String(model?.stateAuthority||modelAuthority).toUpperCase();
+        const generated={assetId:asset?.assetId||null,occurrenceKey,countryId:canonical(c),depositKey:'SIM_'+tok(occurrenceKey),resourceId:stream.resourceId,
           geologicalQuantity:stream.reserve.quantity,recoverableQuantity:stream.reserve.quantity,residualQuantity:stream.reserve.quantity,unit,
           operationalStatus:'ACTIVE_EXTRACTION',stateVersion:1,quality:q,productionModel:prod,
-          provenance:{sourceAuthority:'RESOURCE_JSON.countryProfiles',stateAuthority:'SIMULATED',sourceDatasetId:'resources.json.countryProfiles',sourcePath:asset?.sourcePath||null,
-            quantityAuthority:stream.reserve.authority||'SIMULATED',productionAuthority:prod.authority||'SIMULATED',qualityAuthority:q.gradeStatus==='OBSERVED'?'OBSERVED':'SIMULATED',simulationRuleVersion:realism?.VERSION||null}};
+          provenance:{sourceAuthority:modelAuthority,stateAuthority:modelStateAuthority,sourceDatasetId:'resources.json.countryProfiles',sourcePath:asset?.sourcePath||null,
+            quantityAuthority:stream.reserve.authority||modelStateAuthority,productionAuthority:prod.authority||modelStateAuthority,qualityAuthority:q.gradeStatus==='OBSERVED'?'OBSERVED':'SIMULATED',simulationRuleVersion:realism?.VERSION||null}};
         const merged=realism?.firewall&&old&&typeof old==='object'?realism.firewall(clone(old),generated):generated;
         const previous=merged?new p5.ReserveState(clone(merged)):null;
         const reserve=previous||new p5.ReserveState({
           occurrenceKey,countryId:canonical(c),depositKey:'SIM_'+tok(occurrenceKey),resourceId:stream.resourceId,
           geologicalQuantity:stream.reserve.quantity,recoverableQuantity:stream.reserve.quantity,residualQuantity:stream.reserve.quantity,unit,
           operationalStatus:'ACTIVE_EXTRACTION',stateVersion:1,quality:q,productionModel:prod,
-          provenance:{sourceAuthority:'RESOURCE_JSON.countryProfiles',stateAuthority:'SIMULATED',sourceDatasetId:'resources.json.countryProfiles',sourcePath:asset?.sourcePath||null,
-            quantityAuthority:stream.reserve.authority||'SIMULATED',productionAuthority:prod.authority||'SIMULATED',qualityAuthority:q.gradeStatus==='OBSERVED'?'OBSERVED':'SIMULATED',simulationRuleVersion:realism?.VERSION||null}
+          provenance:{sourceAuthority:modelAuthority,stateAuthority:modelStateAuthority,sourceDatasetId:'resources.json.countryProfiles',sourcePath:asset?.sourcePath||null,
+            quantityAuthority:stream.reserve.authority||modelStateAuthority,productionAuthority:prod.authority||modelStateAuthority,qualityAuthority:q.gradeStatus==='OBSERVED'?'OBSERVED':'SIMULATED',simulationRuleVersion:realism?.VERSION||null}
         });
         const capacity=p5?.Capacity?new p5.Capacity({
           occurrenceKey,countryId:canonical(c),resourceId:stream.resourceId,unit,
@@ -388,23 +390,23 @@ function batchFromExtraction(x,record){
           nominalCapacity:prod.nominalCapacity,minimumCapacity:prod.minimumCapacity,maximumCapacity:prod.maximumCapacity,
           nominalRate:prod.activeRate,dailyRate:prod.activeRate,utilization:prod.utilization,recovery:prod.recovery,decline:prod.decline,
           maintenance:prod.maintenance,operatingCost:prod.operatingCost,activeRate:prod.activeRate,observedRate:prod.observedRate||null,
-          assetReference:assetType+':'+occurrenceKey,authority:prod.authority||'SIMULATED',stateAuthority:prod.authority||'SIMULATED',
+          assetId:asset?.assetId||null,assetReference:assetType+':'+occurrenceKey,authority:prod.authority||modelAuthority,stateAuthority:modelStateAuthority,
           dataStatus:prod.dataStatus||'SIMULATED',quantityAuthority:stream.reserve.authority||'SIMULATED',productionAuthority:prod.authority||'SIMULATED',
           simulationHorizonDays:Math.max(3650,Math.round(stream.reserve.quantity/Math.max(prod.activeRate,1)/365))
         }):{occurrenceKey,countryId:canonical(c),resourceId:stream.resourceId,unit,quantityUnit:unit,rateUnit:unit+'/DAY',nominalRate:prod.activeRate,dailyRate:prod.activeRate,
           nominalCapacity:prod.nominalCapacity,minimumCapacity:prod.minimumCapacity,maximumCapacity:prod.maximumCapacity,utilization:prod.utilization,recovery:prod.recovery,decline:prod.decline,maintenance:prod.maintenance,
-          operatingCost:prod.operatingCost,activeRate:prod.activeRate,authority:prod.authority||'SIMULATED',stateAuthority:prod.authority||'SIMULATED',
+          operatingCost:prod.operatingCost,activeRate:prod.activeRate,assetId:asset?.assetId||null,authority:prod.authority||modelAuthority,stateAuthority:modelStateAuthority,
           productionAuthority:prod.authority||'SIMULATED',dataStatus:prod.dataStatus||'SIMULATED',assetReference:assetType+':'+occurrenceKey,
           computeWindowCapacity(hours){const h=n(hours);return{windowCapacity:(this.activeRate||this.nominalRate||0)*(h===null?1:Math.max(0,h/24))};}};
         rows.push({
-          assetId:asset?.assetId||model?.assetId||('ASSET:'+occurrenceKey),
+          assetId:asset?.assetId||model?.assetId||('ASSET:'+occurrenceKey),sourceKind:asset?.sourceKind||'PROFILE_SITE_REFERENCE',
           occurrenceKey,parentOccurrenceKey:streams.length>1?baseOccurrenceKey:null,siteReferenceKey:siteKey,depositKey:'SIM_'+tok(occurrenceKey),depositName:siteName,resourceId:stream.resourceId,countryId:canonical(c),resourceTypeKey:stream.resourceId,
           locationNodeKey:'ASSET:'+canonical(c)+':'+tok(siteName),ownerKey:null,operatorKey:null,status:'ACTIVE_PRODUCING',
-          rawDeposit:{id:occurrenceKey,assetId:asset?.assetId||null,name:siteName,countryCode:canonical(c),resId:stream.resourceId,status:'ACTIVE_PRODUCING',assetType,simulation:true,stateAuthority:reserve.provenance?.stateAuthority||'SIMULATED',
+          rawDeposit:{id:occurrenceKey,assetId:asset?.assetId||null,name:siteName,countryCode:canonical(c),resId:stream.resourceId,status:'ACTIVE_PRODUCING',assetType,simulation:modelStateAuthority!=='OBSERVED',stateAuthority:reserve.provenance?.stateAuthority||modelStateAuthority,
             sourceDatasetId:'RESOURCE_JSON.countryProfiles',sourcePath:asset?.sourcePath||null,productionModel:prod,quality:q,reserveModel:stream.reserve},
           sourceDatasetId:'RESOURCE_JSON.countryProfiles',
-          lifecycle:{status:'ACTIVE_EXTRACTION',mode:'PROFILE_DERIVED_SITE_MODEL',assetType,authority:prod.authority||'SIMULATED'},
-          accessibility:{state:'AVAILABLE',sourceAuthority:'RESOURCE_JSON_PROFILE',stateAuthority:reserve.provenance?.stateAuthority||'SIMULATED'},
+          lifecycle:{status:'ACTIVE_EXTRACTION',mode:'PROFILE_DERIVED_SITE_MODEL',assetType,authority:modelAuthority,assetId:asset?.assetId||null},
+          accessibility:{state:'AVAILABLE',sourceAuthority:modelAuthority,stateAuthority:reserve.provenance?.stateAuthority||modelStateAuthority},
           reserveState:reserve,capacity,isSimulationGenerated:(prod.authority||'SIMULATED')!=='OBSERVED'||stream.reserve.authority!=='OBSERVED',assetType,siteModel:model,
           dataAuthority:{reserve:stream.reserve.authority||'SIMULATED',production:prod.authority||'SIMULATED',quality:q.gradeStatus==='OBSERVED'?'OBSERVED':'SIMULATED'}
         });
