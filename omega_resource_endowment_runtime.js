@@ -195,49 +195,59 @@
         referenceId:row.referenceId||null
       });
     };
+
+    try{
+      const profile=e?.getCountryResourceProfile?.(wanted)||profile(wanted);
+      const ids=Array.isArray(profile?.infrastructureReferences)?profile.infrastructureReferences:[];
+      ids.forEach(refId=>{
+        const ref=e?.referenceCatalog?.getReference?.(refId);
+        if(String(ref?.metadata?.subType||'')==='mineSites')add({
+          countryId:ref.parentCountryId||wanted,siteName:ref.rawReferenceString,profileKey:wanted,
+          sourceDatasetId:ref.sourceDatasetId,sourcePath:ref.sourceContextPath,
+          rawSiteReference:ref.rawReferenceString,referenceId:ref.referenceId,sourceAuthority:'RESOURCE_JSON'
+        });
+      });
+    }catch(_){}
+    if(out.length)return out;
+
     try{for(const row of reg?.listMineSiteReferences?.()||[])add(row);}catch(_){}
     if(out.length)return out;
+
     try{
-      const findMineSites=(node,pathParts=[],seenNodes=new WeakSet())=>{
-        if(!node||typeof node!=='object')return null;
-        if(seenNodes.has(node))return null;seenNodes.add(node);
+      const refs=g.__OmegaResourceKnowledgeModel?.refCatalog?.allReferences||[];
+      for(const row of refs){
+        if(String(row?.metadata?.subType||'')!=='mineSites')continue;
+        add({
+          countryId:row.countryId||row.countryCode||row.parentCountryId,
+          siteName:row.rawReferenceString||row.name||row.siteName,
+          profileKey:row.profileKey,
+          sourceDatasetId:row.sourceDatasetId,sourcePath:row.sourcePath||row.sourceContextPath,
+          rawSiteReference:row,referenceId:row.referenceId,sourceAuthority:'RESOURCE_JSON'
+        });
+      }
+    }catch(_){}
+    if(out.length)return out;
+
+    try{
+      const profiles=e?.countryProfiles&&typeof e.countryProfiles==='object'?e.countryProfiles:{};
+      const p=Object.values(profiles).find(p=>{
+        const i=p?.identity||p||{};
+        return canonical(i.iso2||i.iso3||i.countryCode||i.countryId||i.name)===wanted;
+      });
+      const scan=(node,pathParts=[],seenNodes=new WeakSet())=>{
+        if(!node||typeof node!=='object'||seenNodes.has(node))return null;seenNodes.add(node);
         for(const [k,v] of Object.entries(node)){
           if(String(k).toLowerCase()==='minesites'&&Array.isArray(v))return{sites:v,path:pathParts.concat(k)};
-          if(v&&typeof v==='object'){
-            const hit=findMineSites(v,pathParts.concat(k),seenNodes);
-            if(hit)return hit;
-          }
+          if(v&&typeof v==='object'){const hit=scan(v,pathParts.concat(k),seenNodes);if(hit)return hit;}
         }
         return null;
       };
-      const profile=e?.countryProfiles?.[wanted] ||
-        Object.values(e?.countryProfiles||{}).find(p=>{
-          const i=p?.identity||p||{};
-          return canonical(i.iso3||i.iso2||i.countryCode||i.countryId||i.name)===wanted;
-        })||null;
-      const found=findMineSites(profile);
-      if(found&&Array.isArray(found.sites)){
-        found.sites.forEach((site,index)=>add({
-          countryId:wanted,profileKey:wanted,
-          siteName:typeof site==='string'?site:site?.name||site?.siteName||site?.mineName||site?.depositName,
-          sourceDatasetId:'RESOURCE_JSON.countryProfiles',
-          sourcePath:'GSRSK_Master_CountryProfiles_v14.countryProfiles.'+wanted+'.'+found.path.join('.')+'['+index+']',
-          rawSiteReference:site
-        }));
-      }
-    }catch(_){}
-    try{
-      const model=g.__OmegaResourceKnowledgeModel,refs=model?.refCatalog?.allReferences||[];
-      for(const row of refs)add(row);
-    }catch(_){}
-    if(out.length)return out;
-    try{
-      const profile=e?.countryProfiles?.[wanted]||null;
-      const sites=profile?.resource_infrastructure_context?.mineSites||profile?.infrastructure_context?.mineSites||profile?.resourceInfrastructureContext?.mineSites||[];
-      sites.forEach((site,index)=>add({
-        countryId:wanted,profileKey:wanted,siteName:typeof site==='string'?site:site?.name||site?.siteName||site?.mineName||site?.depositName,
+      const hit=scan(p);
+      if(hit?.sites)hit.sites.forEach((site,index)=>add({
+        countryId:wanted,profileKey:wanted,
+        siteName:typeof site==='string'?site:site?.name||site?.siteName||site?.mineName||site?.depositName,
         sourceDatasetId:'RESOURCE_JSON.countryProfiles',
-        sourcePath:'GSRSK_Master_CountryProfiles_v14.countryProfiles.'+wanted+'.resource_infrastructure_context.mineSites['+index+']',
+        sourcePath:'GSRSK_Master_CountryProfiles_v14.countryProfiles.'+wanted+'.'+hit.path.join('.')+'['+index+']',
         rawSiteReference:site
       }));
     }catch(_){}
