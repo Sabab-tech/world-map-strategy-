@@ -54,6 +54,11 @@ await import('../omega_resource_part05_reserve_extraction_runtime.js');
 await import('../omega_resource_production_model_v2.js');
 await import('../omega_resource_realism_runtime_v1.js');
 await import('../omega_resource_endowment_runtime.js');
+const p4Diagnostic=globalThis.GSRSK_Part04||globalThis.GSRSK_ResourceIdentityEngine;
+const p4ResultProbe=p4Diagnostic?.compileIdentities?.({
+  sovereignEntities:{countries:[],resourceTypes:engine.resourceTypes},
+  refCatalog:{}
+});
 const sourceProfileProbe=Object.fromEntries(Object.entries(engine.countryProfileSources||{}).map(([k,profiles])=>[k,{profiles:Object.keys(profiles||{}).length,mineSites:Object.values(profiles||{}).reduce((n,p)=>n+(Array.isArray(p?.resource_infrastructure_context?.mineSites)?p.resource_infrastructure_context.mineSites.length:0),0)}]));
 const p4IdentityProbe=(await import('../omega_resource_part04_identity_runtime.js'),globalThis.GSRSK_Part04);
 const p4CompiledProbe=p4IdentityProbe?.compileIdentities?.({
