@@ -60,6 +60,12 @@ for (const {countryId, index, site} of sites) {
     assert(resourceTypes.has(site.resourceId.toLowerCase()), countryId + '[' + index + ']: unknown resourceId ' + site.resourceId);
     assert.equal(String(site.resourceTypeId).toLowerCase(), site.resourceId.toLowerCase(), countryId + '[' + index + ']: resourceTypeId mismatch');
     assert.equal(String(site.resourceTypeKey).toLowerCase(), site.resourceId.toLowerCase(), countryId + '[' + index + ']: resourceTypeKey mismatch');
+    if (String(site.resourceId).toLowerCase() === 'phosphate') {
+      assert.equal(site.resourceIdentity.ontologyKey, 'PHOSPHATE', countryId + '[' + index + ']: phosphate must use PHOSPHATE ontology');
+    }
+    if (String(site.resourceId).toLowerCase() === 'potash') {
+      assert.equal(site.resourceIdentity.ontologyKey, 'POTASH', countryId + '[' + index + ']: potash must use POTASH ontology');
+    }
     assert(!placeholderPattern.test(String(site.owner || '').trim()), countryId + '[' + index + ']: placeholder owner value');
     assert(!placeholderPattern.test(String(site.operator || '').trim()), countryId + '[' + index + ']: placeholder operator value');
     if (String(site.status).toUpperCase() === 'ACTIVE_PRODUCING') {
