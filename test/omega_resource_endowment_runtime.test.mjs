@@ -97,7 +97,8 @@ assert.equal(before.resourceAuthority.fullEffortPolicy,'MODEL_DRIVEN');
 
 const gasMine=before.mines.find(x=>x.depositName==='Titas Gas Field Reservoir');
 assert(gasMine);
-assert.equal(gasMine.resourceId,'natural_gas');\nconsole.log('TITAS_QUALITY_PROBE',JSON.stringify({rawDeposit:gasMine.rawDeposit||null,reserveQuality:gasMine.reserveState?.quality||null,qualityState:gasMine.qualityState||null,purity:gasMine.purity,gradePercent:gasMine.gradePercent,concentration:gasMine.qualityState?.concentration,normalized:gasMine.qualityState?.normalized||null},null,2));
+assert.equal(gasMine.resourceId,'natural_gas');
+console.log('TITAS_QUALITY_PROBE',JSON.stringify({rawDeposit:gasMine.rawDeposit||null,reserveQuality:gasMine.reserveState?.quality||null,qualityState:gasMine.qualityState||null,purity:gasMine.purity,gradePercent:gasMine.gradePercent,concentration:gasMine.qualityState?.concentration,normalized:gasMine.qualityState?.normalized||null},null,2));
 assert.equal(gasMine.purity,null);
 assert.ok(Math.abs(gasMine.qualityState.normalized.concentrationPercent-96.2)<1e-9);
 assert.equal(gasMine.qualityState.concentrationStatus,'OBSERVED');
