@@ -970,7 +970,7 @@
                 "operation": "WEB_RESEARCHED_CURATED",
                 "extractionMethod": "WEB_RESEARCHED_CURATED",
                 "reserve": "WEB_SOURCE_BACKED",
-                "production": "UNOBSERVED",
+                "production": "WEB_SOURCE_BACKED",
                 "grade": "WEB_SOURCE_BACKED"
               },
               "dataStatus": {
@@ -978,7 +978,7 @@
                 "location": "ESTIMATED_SITE_POINT",
                 "resource": "OBSERVED",
                 "reserve": "OBSERVED",
-                "production": "UNOBSERVED",
+                "production": "OBSERVED",
                 "grade": "OBSERVED",
                 "ownership": "OBSERVED",
                 "operation": "OBSERVED",
@@ -991,8 +991,11 @@
                 "sourceQuery": "Barapukuria Coal Mine, Parbatipur, Dinajpur, BGD",
                 "legacyReferenceName": "Bangladesh Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "EXPLICIT_PUBLIC_VALUE_AVAILABLE",
-                "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented."
-              }
+                "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
+                "productionSource": "EMRD dashboard September 2026"
+              },
+              "productionRate": 4896.3,
+              "productionRateUnit": "metric_tons_per_day"
             }
           ],
           "processingFacilities": [
