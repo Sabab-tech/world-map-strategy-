@@ -82,32 +82,35 @@
 
   function sourceMineSiteReferences(knowledge=null){
     const e=engine(),profiles=e?.countryProfiles&&typeof e.countryProfiles==='object'?e.countryProfiles:{},rows=[],seen=new Set();
-    try{
-      const refs=knowledge?.refCatalog?.allReferences||[];
-      refs.forEach(ref=>{if(String(ref?.metadata?.subType||'')==='mineSites')add(ref.parentCountryId||ref.countryCode||ref.countryId,ref.rawReferenceString||ref.name||ref.siteName,0,ref.sourceContextPath||ref.sourcePath,ref);});
-    }catch(_){}
     const add=(countryId,siteName,index,sourcePath,rawSite)=>{
       const c=canonicalCountry(countryId),name=String(siteName||'').trim();if(!c||!name)return;
       const siteReferenceKey='SITE:'+c+':'+tok(name);if(seen.has(siteReferenceKey))return;seen.add(siteReferenceKey);
       rows.push({siteReferenceKey,countryId:c,countryCode:c,profileKey:String(countryId),siteName:name,status:'ACTIVE_SITE_REFERENCE',
         activationState:'REFERENCE_ONLY',extractionExecutable:false,quantitativeExtractionDataAvailable:false,authorityLevel:'REFERENCE_ONLY',
         resourceDataStatus:'UNOBSERVED',sourceAuthority:'RESOURCE_JSON',sourceDatasetId:'RESOURCE_JSON.countryProfiles',
-        sourcePath:sourcePath||null,rawSiteReference:clone(rawSite)});
+        sourcePath:sourcePath||null,rawSiteReference:clone(rawSite),referenceId:rawSite?.referenceId||null});
     };
+    try{
+      const refs=knowledge?.refCatalog?.allReferences||[];
+      refs.forEach(ref=>{
+        if(String(ref?.metadata?.subType||'')!=='mineSites')return;
+        add(ref.parentCountryId||ref.countryCode||ref.countryId,ref.rawReferenceString||ref.name||ref.siteName,0,ref.sourceContextPath||ref.sourcePath,ref);
+      });
+    }catch(_){}
     for(const [profileKey,profile] of Object.entries(profiles)){
-      const identity=profile?.identity||profile||{},countryId=canonicalCountry(identity.countryId||identity.iso3||profileKey);if(!countryId)continue;
-      const sites=profileSites(profile);
-      sites.forEach((rawSite,index)=>{
+      const identity=profile?.identity||profile||{},countryId=canonicalCountry(identity.countryId||identity.iso3||identity.iso2||profileKey);if(!countryId)continue;
+      profileSites(profile).forEach((rawSite,index)=>{
         const siteName=String(typeof rawSite==='string'?rawSite:rawSite?.name||rawSite?.siteName||rawSite?.mineName||rawSite?.depositName||'').trim();
         add(countryId,siteName,index,'GSRSK_Master_CountryProfiles_v14.countryProfiles.'+String(profileKey)+'.resource_infrastructure_context.mineSites['+index+']',rawSite);
       });
     }
     if(rows.length===0&&e?.referenceCatalog?.getAllReferences){
-      e.referenceCatalog.getAllReferences().forEach(ref=>{
-        if(String(ref?.category||'').toUpperCase()!=='INFRASTRUCTURE_REFERENCE')return;
-        if(String(ref?.metadata?.subType||'')!=='mineSites')return;
-        add(ref.parentCountryId,ref.rawReferenceString,0,ref.sourceContextPath,ref);
-      });
+      try{
+        for(const ref of e.referenceCatalog.getAllReferences()){
+          if(String(ref?.metadata?.subType||'')!=='mineSites'&& !/mineSites\[/i.test(String(ref?.sourceContextPath||'')))continue;
+          add(ref.parentCountryId||ref.countryCode||ref.countryId,ref.rawReferenceString||ref.name||ref.siteName,0,ref.sourceContextPath||ref.sourcePath,ref);
+        }
+      }catch(_){}
     }
     return rows;
   }
