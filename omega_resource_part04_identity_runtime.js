@@ -27,7 +27,18 @@
   function id(v){return String(v??'').trim().toUpperCase();}
   function tok(v){return String(v??'').normalize('NFKC').trim().toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'');}
 
-undefined
+  function canonicalCountry(v){
+    const raw=String(v??'').trim();
+    if(!raw)return null;
+    try{
+      const bridge=g.OmegaCanonicalIdentityRegistry||g.OmegaCountrySemanticBridge||g.Omega?.CanonicalIdentity;
+      const hit=bridge?.resolveCountry?.(raw);
+      const resolvedIso3=hit?.raw?.iso3||hit?.raw?.iso3Code||hit?.raw?.countryCode||hit?.raw?.countryId;
+      if(resolvedIso3)return id(resolvedIso3);
+      if(hit?.id)return id(hit.id);
+    }catch(_){}
+    return id(raw);
+  }
 
   function engine(){
     return g.ResourceMinistryEngine||null;
