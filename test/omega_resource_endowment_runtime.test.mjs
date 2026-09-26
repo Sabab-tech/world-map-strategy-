@@ -74,7 +74,7 @@ assert(gasMine);
 assert.equal(gasMine.resourceId,'natural_gas');
 assert.equal(gasMine.purity,null);
 assert.equal(gasMine.qualityState.purityStatus,'UNOBSERVED');
-assert.ok(Math.abs(gasMine.qualityState.gradePercent-96.2)<1e-9, `grade drifted: ${gasMine.qualityState.gradePercent}; rawDeposit=${JSON.stringify(gasMine.rawDeposit)}`);
+assert.ok(Math.abs(gasMine.qualityState.gradePercent-96.2)<1e-9, `grade drifted: ${gasMine.qualityState.gradePercent}`);
 assert.equal(gasMine.qualityState.gradeBasis,'METHANE_CONCENTRATION');
 
 const extraction=await runtime.extractCountry('BGD',[gasMine.occurrenceKey]);
@@ -111,7 +111,7 @@ const preGlobal=runtime.diagnostics();
 const expectedCountries=countryIdentity.exportData().countries;
 const expectedResourceCountries=Object.keys(engine.countryProfiles||{});
 assert.equal(preGlobal.countryCount,expectedResourceCountries.length);
-assert.equal(preGlobal.mineSiteReferenceCount,199, `mineSiteReferenceCount=${preGlobal.mineSiteReferenceCount}; catalogMineRefs=${(engine.referenceCatalog?.getAllReferences?.()||[]).filter(r=>String(r?.category||'').includes('INFRASTRUCTURE')).filter(r=>String(r?.metadata?.subType||'').toLowerCase().includes('mine')).length}; sample=${JSON.stringify((engine.referenceCatalog?.getAllReferences?.()||[]).slice(0,5))}`);
+assert.equal(preGlobal.mineSiteReferenceCount,199);
 assert.equal(preGlobal.mineSiteControllerCount,199);
 const globalExtraction=await runtime.extractAll();
 assert.equal(globalExtraction.status,'COMPLETED');
