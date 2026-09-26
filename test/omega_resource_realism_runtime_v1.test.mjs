@@ -63,6 +63,21 @@ assert.equal(typeof stream.quality.grade,'number');
 assert.ok(stream.reserve.quantity>0);
 assert.notEqual(stream.production.activeRate,1000);
 
+const observedSite=R.siteModel({
+  siteReferenceKey:'SITE:OBS:01',siteName:'Observed Multi Commodity',
+  commodities:[
+    {resourceId:'copper',reservesQuantity:2000000,grade:'1.8%',productionRate:900,utilization:0.8},
+    {resourceId:'gold',reservesQuantity:120000,grade:'4.2 g/t',productionRate:600}
+  ],
+  productionModel:{maintenance:0.05,recovery:0.9}
+},{} ,'OBS');
+assert.equal(observedSite.commodityStreams.length,2);
+assert.equal(observedSite.commodityStreams[0].reserve.authority,'OBSERVED');
+assert.equal(observedSite.commodityStreams[0].production.authority,'OBSERVED');
+assert.equal(observedSite.commodityStreams[0].production.activeRate,900);
+assert.equal(observedSite.commodityStreams[1].reserve.quantity,120000);
+assert.equal(observedSite.commodityStreams[1].production.activeRate,600);
+
 // Priority 7: authority firewall never allows simulation to overwrite observed state.
 const observed={value:100,stateAuthority:'OBSERVED',authority:'OBSERVED'};
 const simulated={value:50,stateAuthority:'SIMULATED',authority:'SIMULATED'};
