@@ -133,6 +133,10 @@ jobs:
             'omega_opponent_adaptive_strategy_system.js',
             'omega_opponent_autonomy_system.js',
             'omega_global_trade_system.js',
+            'omega_resource_realism_runtime_v1.js',
+            'omega_resource_production_model_v2.js',
+            'omega_resource_endowment_runtime.js',
+            'omega_resource_logistics_runtime_v1.js',
             'omega_resource_economy_runtime_v2.js',
             'omega_opponent_treaty_lifecycle_system.js',
             'omega_opponent_second_order_consequence_system.js'
