@@ -7,7 +7,8 @@
  */
 (function(g){
   'use strict';
-  const VERSION='3.0.0',DAY_HOURS=24,MAX_LEDGER=2048,MAX_MINE_HISTORY=4096;\n  const sci=()=>g.Omega?.ResourceScienceRuntime||g.OmegaResourceScienceRuntime||null;
+  const VERSION='3.0.0',DAY_HOURS=24,MAX_LEDGER=2048,MAX_MINE_HISTORY=4096;
+  const sci=()=>g.Omega?.ResourceScienceRuntime||g.OmegaResourceScienceRuntime||null;
   const clone=(v,seen=new WeakMap())=>{
     if(v===null||typeof v!=='object')return v;
     if(seen.has(v))return seen.get(v);
