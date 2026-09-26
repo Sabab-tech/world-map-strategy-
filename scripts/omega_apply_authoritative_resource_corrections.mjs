@@ -120,7 +120,7 @@ const fixes = {
       sourceAuthority: 'QatarEnergy / Reuters',
       currentEvidence: 'QatarEnergy identifies North Field as the world’s largest single non-associated gas field and operates its offshore production facilities; September 2026 reporting notes damage to parts of LNG export capacity and possible delays to expansion projects.',
       currentProductionContext: 'The field remains a producing asset; downstream LNG export capacity has been affected by 2026 infrastructure damage.',
-      2025CapacityContext: 'QatarEnergy investor material lists 77 MTPA current North Field LNG capacity.'
+      capacity2025Context: 'QatarEnergy investor material lists 77 MTPA current North Field LNG capacity.'
     },
     sources: [
       evidence('https://www.qatarenergy.qa/en/MediaCenter/Publications/QatarEnergy_Investors_Presentation_November_2025.pdf', 'field_identity_reserves_and_current_lng_capacity_context', 'OPERATOR'),
