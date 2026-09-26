@@ -119,6 +119,27 @@
     return out;
   }
 
+  function normalizeMineRecord(raw,input={}){
+    const site=raw&&typeof raw==='object'?clone(raw):{};
+    const countryId=id(input.countryId||site.countryCode||site.countryId||site.country||'');
+    const name=String(input.name||site.name||site.siteName||site.mineName||site.depositName||'').trim();
+    const resourceId=String(input.resourceId||site.resourceTypeId||site.resourceTypeKey||site.resId||site.resourceId||'').replace(/^RES_TYPE:/i,'').trim().toLowerCase()||null;
+    const recordId=String(input.id||site.id||('MINE_'+countryId+'_'+tok(name))).trim();
+    const locationNodeKey=site.locationNodeKey||site.location?.nodeKey||site.locationKey||('MINE:'+countryId+':'+recordId);
+    const reserveValue=site.reserves??site.reserve??site.residualQuantity??site.geologicalQuantity??site.recoverableQuantity??null;
+    const productionRate=site.productionRate??site.dailyRate??site.outputRate??null;
+    return{
+      ...site,
+      id:recordId,name,countryCode:countryId,country:site.country||input.countryName||countryId,
+      resId:resourceId,resourceId,resourceTypeId:resourceId,resourceTypeKey:resourceId,
+      locationNodeKey,
+      owner:site.owner??site.ownerKey??null,ownerKey:site.ownerKey??site.owner??null,
+      operator:site.operator??site.operatorKey??null,operatorKey:site.operatorKey??site.operator??null,
+      reserves:reserveValue,productionRate,dailyRate:site.dailyRate??productionRate,outputRate:site.outputRate??productionRate,
+      grade:site.grade??null,physicalState:site.physicalState??null,status:site.status||'ACTIVE_PRODUCING'
+    };
+  }
+
   function resolveProfileSiteResource(profile,siteName,explicit,e){
     const direct=normalizeResourceId(explicit,e);
     if(direct)return{resourceId:direct,authority:'RESOURCE_JSON_EXPLICIT_SITE_RESOURCE'};
@@ -164,10 +185,9 @@
         );
         if(!resolved.resourceId)return;
         const idValue='SITE_DEP_'+countryId+'_'+tok(name);
+        const normalized=normalizeMineRecord(rawSite,{id:idValue,name,countryId,countryName:identity.name||countryId,resourceId:resolved.resourceId});
         runtime.push({
-          ...rawSite,
-          id:idValue,name,countryCode:countryId,country:rawSite.country||identity.name||countryId,
-          resId:resolved.resourceId,resourceId:resolved.resourceId,resourceTypeId:resolved.resourceId,resourceTypeKey:resolved.resourceId,
+          ...normalized,
           siteReferenceKey,assetType:'MINE_SITE',profileDerivedSimulation:true,
           declaredStatus:rawSite?.status||null,status:'ACTIVE_PRODUCING',
           sourceDatasetId:'resources.json.countryProfiles',
