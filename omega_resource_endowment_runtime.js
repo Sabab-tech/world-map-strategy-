@@ -800,6 +800,7 @@ function batchFromExtraction(x,record){
   function countryMines(c){return clone(state()?.resource?.[canonical(c)]?.mines||[]);}
   function install(){
     const m=interop();if(!m?.registerCommandHandler)return false;
+    try{m.configure?.({});}catch(_){}
     let handlersRegistered=false;
     try{
       m.registerCommandHandler('OMEGA_RESOURCE_ENDOWMENT_HYDRATE','resource',hydrateHandler);
