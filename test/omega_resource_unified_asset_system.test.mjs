@@ -93,11 +93,16 @@ test('199 profile site references and structured deposits expose one canonical a
   assert.equal(structured.length,structuredCount);
   assert.equal(profileRefs.length,siteReferenceCount);
   assert.ok(structured.every(asset=>asset.execution.extractionExecutable===true));
-  assert.ok(profileRefs.every(asset=>asset.execution.extractionExecutable===false));
-  assert.ok(profileRefs.every(asset=>asset.execution.quantitativeDataAvailable===false));
-  assert.ok(profileRefs.every(asset=>asset.execution.simulationEligible===true));
   assert.ok(profileRefs.every(asset=>asset.assetId.startsWith('ASSET:SITE:')));
   assert.ok(profileRefs.every(asset=>asset.siteReferenceKey));
+  assert.ok(profileRefs.every(asset=>{
+    const hasObservedQuantitative=asset.dataAuthority.resourceType==='OBSERVED'&&asset.dataAuthority.reserve==='OBSERVED';
+    return asset.execution.quantitativeDataAvailable===hasObservedQuantitative;
+  }));
+  assert.ok(profileRefs.every(asset=>{
+    const incomplete=asset.dataAuthority.resourceType!=='OBSERVED'||asset.dataAuthority.reserve!=='OBSERVED'||asset.dataAuthority.production!=='OBSERVED';
+    return asset.execution.simulationEligible===incomplete;
+  }));
 
   const sample=profileRefs[0];
   const byCountry=compiled.registry.getUnifiedAssetsByCountry(sample.countryId);
@@ -109,9 +114,9 @@ test('199 profile site references and structured deposits expose one canonical a
     assert.equal(unified.siteReferenceKey,ref.siteReferenceKey);
     assert.equal(unified.countryId,ref.countryId);
     assert.equal(unified.siteName,ref.siteName);
-    assert.equal(unified.dataAuthority.resourceType,'UNOBSERVED');
-    assert.equal(unified.dataAuthority.reserve,'UNOBSERVED');
-    assert.equal(unified.dataAuthority.production,'UNOBSERVED');
+    assert.equal(unified.dataAuthority.resourceType, unified.resourceType.id ? 'OBSERVED' : 'UNOBSERVED');
+    assert.equal(unified.dataAuthority.reserve, unified.reserve.declared!=null ? 'OBSERVED' : 'UNOBSERVED');
+    assert.equal(unified.dataAuthority.production, unified.production.ratePerDay!=null || unified.production.currentProduction!=null || unified.production.nominalCapacity!=null ? 'OBSERVED' : 'UNOBSERVED');
   }
 
   const schemaFingerprint=firstKeys.join('|');
