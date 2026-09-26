@@ -84,7 +84,7 @@
     const e=engine(),profiles=e?.countryProfiles&&typeof e.countryProfiles==='object'?e.countryProfiles:{},rows=[],seen=new Set();
     try{
       const refs=knowledge?.refCatalog?.allReferences||[];
-      refs.forEach(ref=>{if(String(ref?.metadata?.subType||'')==='mineSites')add(ref.parentCountryId,ref.rawReferenceString,0,ref.sourceContextPath,ref);});
+      refs.forEach(ref=>{if(String(ref?.metadata?.subType||'')==='mineSites')add(ref.parentCountryId||ref.countryCode||ref.countryId,ref.rawReferenceString||ref.name||ref.siteName,0,ref.sourceContextPath||ref.sourcePath,ref);});
     }catch(_){}
     const add=(countryId,siteName,index,sourcePath,rawSite)=>{
       const c=canonicalCountry(countryId),name=String(siteName||'').trim();if(!c||!name)return;
