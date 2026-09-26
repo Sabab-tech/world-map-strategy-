@@ -605,11 +605,12 @@ function batchFromExtraction(x,record){
     const extracted=[];
     const blocked=[];
     const mineOutputs=clone(ctx.stateTransaction.get('resource.mineOutputs')||{});
-    const mineSiteControllers=clone(ctx.stateTransaction.get('resource.mineSiteControllers')||{});
+    const persistedControllers=clone(ctx.stateTransaction.get('resource.mineSiteControllers')||{});
     const mines=clone(ctx.stateTransaction.get('resource.mines')||[]);
+    const mineSiteControllers=buildMineSiteControllers(c,rows,{mineSiteControllers:persistedControllers});
     for(const [siteKey,controller] of Object.entries(mineSiteControllers)){
-      controller.assetId=controller.assetId||('ASSET:SITE:'+String(siteKey).toUpperCase());
-      controller.siteReferenceKey=controller.siteReferenceKey||siteKey;
+      controller.assetId='ASSET:SITE:'+String(siteKey).toUpperCase();
+      controller.siteReferenceKey=siteKey;
     }
     const allSiteKeys=Object.keys(mineSiteControllers);
     for(const siteKey of allSiteKeys){
