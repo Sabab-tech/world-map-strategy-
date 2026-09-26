@@ -926,7 +926,7 @@ window.CountryIOS = {
                             📦 NATIONAL RESOURCE REGISTRY (18 STRATEGIC COMMODITIES)
                         </div>
                         <button onclick="if(window.ResourceMinistryEngine && typeof window.ResourceMinistryEngine.openModal === 'function') window.ResourceMinistryEngine.openModal('${countryKey}', 'deposits');" style="padding:5px 12px; background:rgba(255,215,0,0.2); border:1px solid #ffd700; color:#ffd700; font-size:11px; font-weight:bold; border-radius:6px; cursor:pointer;">
-                            🗺️ 593 WORLD DEPOSITS
+                            🗺️ ${runtimeDepositCount} RESOURCE_JSON DEPOSITS
                         </button>
                     </div>
 
