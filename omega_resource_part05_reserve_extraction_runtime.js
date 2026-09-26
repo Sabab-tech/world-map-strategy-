@@ -54,7 +54,7 @@
   }
 
   function profileSiteRate(resourceId){
-    return num(PROFILE_SITE_DAILY_RATES[String(resourceId||'').replace(/^RES_TYPE:/i,'').trim().toLowerCase())||0);
+    return num(PROFILE_SITE_DAILY_RATES[String(resourceId||'').replace(/^RES_TYPE:/i,'').trim().toLowerCase()]||0);
   }
   function profileSiteUnit(resourceId,fallback){
     const key=String(resourceId||'').replace(/^RES_TYPE:/i,'').trim().toLowerCase();
