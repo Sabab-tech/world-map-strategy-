@@ -449,7 +449,7 @@ function batchFromExtraction(x,record){
         sourcePath:x.sourcePath||raw?.sourcePath||raw?.provenance?.sourcePath||null,
         extractionExecutable:true
       })||null;
-      if(x.assetType!=='MINE_SITE'&&!x.isSimulationGenerated){
+      if((x.assetType||'RESOURCE_MINE')==='RESOURCE_MINE'&&!x.isSimulationGenerated){
       mines.push({
         occurrenceKey:x.occurrenceKey,depositKey:x.depositKey,resourceId:resource,depositName:x.depositName,
         countryId:canonical(c),locationNodeKey:x.locationNodeKey,resourceTypeKey:x.resourceTypeKey,
