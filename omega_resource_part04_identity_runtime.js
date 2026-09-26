@@ -109,7 +109,9 @@
           const dedupeKey=sourceDatasetId+'|'+countryId+'|'+index+'|'+siteName.toUpperCase();
           if(seen.has(dedupeKey))return;seen.add(dedupeKey);
           rows.push({
-            siteReferenceKey,countryId,countryCode:countryId,profileKey:String(profileKey),siteName,
+            siteReferenceKey,
+            assetId:'ASSET:SITE:'+String(siteReferenceKey).toUpperCase(),
+            countryId,countryCode:countryId,profileKey:String(profileKey),siteName,
             status:'ACTIVE_SITE_REFERENCE',activationState:'ACTIVE_REFERENCE',
             extractionExecutable:false,quantitativeExtractionDataAvailable:false,
             sourceAuthority:'RESOURCE_JSON',sourceDatasetId,
