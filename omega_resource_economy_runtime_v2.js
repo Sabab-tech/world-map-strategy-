@@ -555,7 +555,7 @@
   function executeFactories(c){
     var econ=bucket(c,'economy')||{},assets=Array.isArray(econ.productionAssets)?econ.productionAssets:[],inv=invObj(c),records=[],blocked=[],executed=[];
     assets.forEach(function(asset,index){
-      var fid=String(asset.projectId||asset.assetId||asset.id||asset.siteId||('ASSET_'+index)),st=stage(asset),rc=recipe(asset),cap=num(asset.capacity!=null?asset.capacity:(asset.productionCapacity!=null?asset.productionCapacity:asset.throughput)),row={facilityId:fid,stage:st,status:'BLOCKED',capacityObserved:cap,companyId:assetCompany(c,asset),inputCoefficients:rc.inputs,outputProfile:rc.outputs};
+      var fid=String(asset.projectId||asset.assetId||asset.id||asset.siteId||('ASSET_'+index)),st=stage(asset),rc=recipe(asset),cap=num(asset.capacity!=null?asset.capacity:(asset.productionCapacity!=null?asset.productionCapacity:asset.throughput)),pp=processProfile(asset),row={facilityId:fid,stage:st,status:'BLOCKED',capacityObserved:cap,companyId:assetCompany(c,asset),inputCoefficients:rc.inputs,outputProfile:rc.outputs,processProfile:pp};
       if(cap===null||cap<=0){row.reason='PRODUCTION_CAPACITY_UNAVAILABLE';blocked.push(row);records.push(row);return;}
       if(!Object.keys(rc.inputs).length){row.reason='INPUT_RECIPE_UNOBSERVED';blocked.push(row);records.push(row);return;}
       if(!Object.keys(rc.outputs).length){row.reason='OUTPUT_RECIPE_UNOBSERVED';blocked.push(row);records.push(row);return;}
@@ -565,9 +565,14 @@
         var a=key==null?null:num(inv[key]);available[rid]=a===null?0:a;
         if(a===null||a<scale*rc.inputs[rid])scale=Math.min(scale,a===null?0:a/rc.inputs[rid]);
       });
-      if(scale<=0){row.reason='INPUT_STOCK_UNAVAILABLE';row.inputsAvailable=available;blocked.push(row);records.push(row);return;}
+      scale*=Math.max(0,Math.min(1,pp.maintenanceFactor||1));
+      if(scale<=0){row.reason='PROCESS_CAPACITY_UNAVAILABLE';row.inputsAvailable=available;blocked.push(row);records.push(row);return;}
       row.status='READY';row.plannedScale=scale;row.inputsAvailable=available;row.computedOutputs={};
-      Object.keys(rc.outputs).forEach(function(rid){row.computedOutputs[rid]=scale*rc.outputs[rid];});
+      Object.keys(rc.outputs).forEach(function(rid){row.computedOutputs[rid]=scale*rc.outputs[rid]*(pp.yieldFactor||1);});
+      Object.keys(pp.byproducts||{}).forEach(function(rid){row.computedOutputs[rid]=(row.computedOutputs[rid]||0)+scale*(num(pp.byproducts[rid])||0);});
+      row.processModelStatus=pp.modelStatus;row.processModelAuthority=pp.modelAuthority;
+      if(pp.energyPerUnit!==null){row.energyRequirement=scale*pp.energyPerUnit;row.energyRequirementStatus='UNOBSERVED_UNLESS_ENERGY_STATE_AVAILABLE';}
+      if(pp.waterPerUnit!==null){row.waterRequirement=scale*pp.waterPerUnit;row.waterRequirementStatus='UNOBSERVED_UNLESS_WATER_STATE_AVAILABLE';}
       records.push(row);
     });
 
