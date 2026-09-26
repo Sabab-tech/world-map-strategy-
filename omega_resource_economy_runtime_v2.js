@@ -19,6 +19,18 @@
        facilityExpansion:{capacityIncreaseFraction:0.25,durationTurns:4,budgetUnitsPerCapacityUnit:10,reservationExpiresAfterTurns:64},
        strategicBuffer:{targetDays:30,maxTransferBatches:128}
      },
+     extraction:{
+       syntheticSitePolicy:'SIMULATED_ONLY_WITH_EXPLICIT_RULESET',
+       missingCapacityPolicy:'USE_SIMULATION_BASELINE_AND_TAG_SIMULATED',
+       simulationReserveHorizonDays:3650,
+       defaultEffortUtilization:0.82,
+       constraintFactors:{availability:0.98,maintenance:0.96,labor:0.95,power:0.98,water:0.98,logistics:0.95,security:0.99},
+       recoveryFactors:{rare_earth:0.75,lithium:0.65,cobalt:0.80,nickel:0.82,copper:0.88,crude_oil:0.60,natural_gas:0.65,uranium:0.75,gold:0.70,bauxite:0.90,phosphate:0.75,potash:0.85,iron_ore:0.90,coal:0.88},
+       baselineDailyRates:{rare_earth:100,lithium:500,cobalt:150,nickel:800,copper:1000,crude_oil:10000,natural_gas:0.01,uranium:50,gold:500,bauxite:4000,phosphate:4000,potash:3000,iron_ore:8000,coal:5000},
+       baselineRateUnits:{rare_earth:'TONNES_PER_DAY',lithium:'TONNES_PER_DAY',cobalt:'TONNES_PER_DAY',nickel:'TONNES_PER_DAY',copper:'TONNES_PER_DAY',crude_oil:'BARRELS_PER_DAY',natural_gas:'BCM_PER_YEAR',uranium:'TONNES_PER_DAY',gold:'TROY_OZ_PER_DAY',bauxite:'TONNES_PER_DAY',phosphate:'TONNES_PER_DAY',potash:'TONNES_PER_DAY',iron_ore:'TONNES_PER_DAY',coal:'TONNES_PER_DAY'}
+     },
+     industrialPhysics:{missingProcessModelPolicy:'KEEP_GENERIC_RECIPE_BUT_MARK_UNOBSERVED',defaults:{yieldFactor:1,energyPerUnit:null,waterPerUnit:null,maintenanceFactor:0.96}},
+     logistics:{sameCountryTransferMode:'DOMESTIC_UNOBSERVED_OR_ROUTE_BACKED',crossBorderTransferMode:'TRADE_SETTLEMENT_ONLY',missingRoutePolicy:'RECORD_UNOBSERVED_LOGISTICS_DO_NOT_INVENT_ROUTE'}
   };
 
   function clone(v,seen){
@@ -124,7 +136,10 @@
         operatingAllocation:Object.assign({},DEFAULT_RULES.operatingAllocation,d.operatingAllocation||{}),
         runtime:Object.assign({},DEFAULT_RULES.runtime,d.runtime||{}),
         market:Object.assign({},DEFAULT_RULES.market,d.market||{}),
-        actions:Object.assign({},DEFAULT_RULES.actions,d.actions||{})
+        actions:Object.assign({},DEFAULT_RULES.actions,d.actions||{}),
+        extraction:Object.assign({},DEFAULT_RULES.extraction,d.extraction||{}),
+        industrialPhysics:Object.assign({},DEFAULT_RULES.industrialPhysics,d.industrialPhysics||{}),
+        logistics:Object.assign({},DEFAULT_RULES.logistics,d.logistics||{})
       };
       return g.__OmegaResourceEconomyRules;
     }).catch(function(e){
@@ -439,6 +454,12 @@
     return{accepted:true,countryId:c,batchId:r.batchId,status:r.status};
   }
 
+  function logisticsLedgerHandler(cmd,ctx){
+    var p=cmd&&cmd.payload||{},row=clone(p.record||p);if(!row.logisticsId||!row.resourceId||num(row.quantity)===null||num(row.quantity)<=0)return{accepted:false,reason:'LOGISTICS_RECORD_INVALID'};
+    var ledger=Array.isArray(ctx.stateTransaction.get('transport.resourceLogisticsLedger'))?clone(ctx.stateTransaction.get('transport.resourceLogisticsLedger')):[];
+    ledger.push(row);while(ledger.length>(num(rules().runtime.maxLedgerEntries)||2048))ledger.shift();
+    ctx.stateTransaction.set('transport.resourceLogisticsLedger',ledger);return{accepted:true,logisticsId:row.logisticsId,status:row.status};
+  }
   function recordDomesticSaleHandler(cmd,ctx){
     var p=cmd&&cmd.payload||{},sale=clone(p.sale||p),rows=Array.isArray(ctx.stateTransaction.get('trade.domesticSales'))?clone(ctx.stateTransaction.get('trade.domesticSales')):[];
     rows.push({sale:sale,turn:turn(),status:sale.status||'SETTLED'});while(rows.length>(num(rules().runtime.maxLedgerEntries)||2048))rows.shift();ctx.stateTransaction.set('trade.domesticSales',rows);return{accepted:true};
@@ -465,13 +486,38 @@
     return{gross:gross,royalty:royalty,resourceTax:resourceTax,corporateTax:corporate,exportDuty:exportDuty,other:other,total:royalty+resourceTax+corporate+exportDuty+other,policySource:'resource_economy_rules.json'};
   }
 
+  function processProfile(asset){
+    var defaults=(rules().industrialPhysics&&rules().industrialPhysics.defaults)||{};
+    var provided=asset&&asset.processProfile&&typeof asset.processProfile==='object'?asset.processProfile:{};
+    var observed=Object.keys(provided).length>0;
+    return{
+      yieldFactor:num(provided.yieldFactor)!=null?Math.max(0,num(provided.yieldFactor)):num(defaults.yieldFactor)!=null?Math.max(0,num(defaults.yieldFactor)):1,
+      energyPerUnit:num(provided.energyPerUnit),
+      waterPerUnit:num(provided.waterPerUnit),
+      maintenanceFactor:num(provided.maintenanceFactor)!=null?Math.max(0,Math.min(1,num(provided.maintenanceFactor))):num(defaults.maintenanceFactor)!=null?Math.max(0,Math.min(1,num(defaults.maintenanceFactor))):1,
+      reagentInputs:clone(provided.reagentInputs&&typeof provided.reagentInputs==='object'?provided.reagentInputs:{}),
+      byproducts:clone(provided.byproducts&&typeof provided.byproducts==='object'?provided.byproducts:{}),
+      wasteFactors:clone(provided.wasteFactors&&typeof provided.wasteFactors==='object'?provided.wasteFactors:{}),
+      modelAuthority:observed?'RESOURCE_OR_ASSET_DECLARED':'UNOBSERVED',
+      modelStatus:observed?'OBSERVED':'UNOBSERVED_PROCESS_MODEL'
+    };
+  }
+  function resolveLogistics(c,rid,q,facility){
+    var econ=bucket(c,'economy')||{},assets=Array.isArray(econ.productionAssets)?econ.productionAssets:[],asset=assets.find(function(x){return String(x?.id||x?.facilityId||x?.projectId||'')===String(facility);})||null;
+    var routeId=asset?.routeId||asset?.logisticsRouteId||asset?.route?.id||null,network=read(c,'transport.routes')||read(c,'trade.routes')||{},route=routeId&&network&&typeof network==='object'?network[routeId]||null:null;
+    var capacity=num(route?.capacity??route?.throughput??route?.dailyCapacity),distanceKm=num(route?.distanceKm??asset?.distanceKm),transitTurns=num(route?.transitTurns??route?.transitTimeTurns),mode=route?.mode||asset?.transportMode||null;
+    var status=capacity!==null&&capacity<q?'ROUTE_CAPACITY_INSUFFICIENT':(route&&(mode||distanceKm!==null||transitTurns!==null)?'ROUTE_BACKED':'UNOBSERVED_LOGISTICS');
+    return{logisticsId:'LOG-'+turn()+'-'+canonical(c)+'-'+tok(rid)+'-'+tok(facility),countryId:canonical(c),resourceId:rid,quantity:q,facilityId:String(facility),routeId:routeId,mode:mode,distanceKm:distanceKm,transitTurns:transitTurns,capacity:capacity,status:status,authority:route?'OBSERVED_RUNTIME_ROUTE':'UNOBSERVED',policy:rules().logistics?.missingRoutePolicy||'RECORD_UNOBSERVED_LOGISTICS_DO_NOT_INVENT_ROUTE',turn:turn()};
+  }
   function settleDomestic(c,rid,q,consumed,buyer,facility,tx){
     var pm=read(c,'trade.marketPrice')||{},price=num(pm[rid]);
     if(price===null&&g.OmegaGlobalMarket&&typeof g.OmegaGlobalMarket.localPrice==='function'){try{price=num(g.OmegaGlobalMarket.localPrice(c,rid));}catch(_){}}
     var suppliers={};(consumed||[]).forEach(function(x){var o=String(x.ownerCompanyId||'').trim(),n=num(x.quantity)||0;if(o&&o!=='UNKNOWN_SOURCE'&&n>0)suppliers[o]=(suppliers[o]||0)+n;});
     if(!Object.keys(suppliers).length)suppliers[mineCompany(c,rid)]=q;
     var totalSource=Object.keys(suppliers).reduce(function(s,k){return s+suppliers[k];},0)||q;
-    var sale={saleId:'DOM-'+turn()+'-'+canonical(c)+'-'+tok(rid)+'-'+facility+'-'+tx,transactionId:tx,facilityId:facility,countryId:canonical(c),resourceId:rid,quantity:q,buyerCompanyId:buyer,supplierAllocations:clone(suppliers),direction:'DOMESTIC',simulationTurn:turn()};
+    var logistics=resolveLogistics(c,rid,q,facility);
+    dispatch('transport','OMEGA_RESOURCE_ECON_RECORD_LOGISTICS',c,{record:logistics,correlationId:logistics.logisticsId});
+    var sale={saleId:'DOM-'+turn()+'-'+canonical(c)+'-'+tok(rid)+'-'+facility+'-'+tx,transactionId:tx,facilityId:facility,countryId:canonical(c),resourceId:rid,quantity:q,buyerCompanyId:buyer,supplierAllocations:clone(suppliers),direction:'DOMESTIC',simulationTurn:turn(),logisticsId:logistics.logisticsId,logisticsStatus:logistics.status};
     if(price===null||price<=0){sale.status='PHYSICAL_TRANSFER_COMPLETED';sale.paymentStatus='UNOBSERVED';sale.valuationStatus='UNOBSERVED_MARKET_PRICE';dispatch('trade','OMEGA_RESOURCE_ECON_RECORD_DOMESTIC_SALE',c,{sale:sale,correlationId:sale.saleId});return sale;}
     sale.unitPrice=price;sale.totalValue=q*price;sale.status='SETTLED';sale.paymentStatus='SETTLED';sale.valuationStatus='OBSERVED_RUNTIME_MARKET_PRICE';
     Object.keys(suppliers).forEach(function(companyId){
@@ -512,7 +558,7 @@
   function executeFactories(c){
     var econ=bucket(c,'economy')||{},assets=Array.isArray(econ.productionAssets)?econ.productionAssets:[],inv=invObj(c),records=[],blocked=[],executed=[];
     assets.forEach(function(asset,index){
-      var fid=String(asset.projectId||asset.assetId||asset.id||asset.siteId||('ASSET_'+index)),st=stage(asset),rc=recipe(asset),cap=num(asset.capacity!=null?asset.capacity:(asset.productionCapacity!=null?asset.productionCapacity:asset.throughput)),row={facilityId:fid,stage:st,status:'BLOCKED',capacityObserved:cap,companyId:assetCompany(c,asset),inputCoefficients:rc.inputs,outputProfile:rc.outputs};
+      var fid=String(asset.projectId||asset.assetId||asset.id||asset.siteId||('ASSET_'+index)),st=stage(asset),rc=recipe(asset),cap=num(asset.capacity!=null?asset.capacity:(asset.productionCapacity!=null?asset.productionCapacity:asset.throughput)),pp=processProfile(asset),row={facilityId:fid,stage:st,status:'BLOCKED',capacityObserved:cap,companyId:assetCompany(c,asset),inputCoefficients:rc.inputs,outputProfile:rc.outputs,processProfile:pp};
       if(cap===null||cap<=0){row.reason='PRODUCTION_CAPACITY_UNAVAILABLE';blocked.push(row);records.push(row);return;}
       if(!Object.keys(rc.inputs).length){row.reason='INPUT_RECIPE_UNOBSERVED';blocked.push(row);records.push(row);return;}
       if(!Object.keys(rc.outputs).length){row.reason='OUTPUT_RECIPE_UNOBSERVED';blocked.push(row);records.push(row);return;}
@@ -522,9 +568,14 @@
         var a=key==null?null:num(inv[key]);available[rid]=a===null?0:a;
         if(a===null||a<scale*rc.inputs[rid])scale=Math.min(scale,a===null?0:a/rc.inputs[rid]);
       });
-      if(scale<=0){row.reason='INPUT_STOCK_UNAVAILABLE';row.inputsAvailable=available;blocked.push(row);records.push(row);return;}
+      scale*=Math.max(0,Math.min(1,pp.maintenanceFactor||1));
+      if(scale<=0){row.reason='PROCESS_CAPACITY_UNAVAILABLE';row.inputsAvailable=available;blocked.push(row);records.push(row);return;}
       row.status='READY';row.plannedScale=scale;row.inputsAvailable=available;row.computedOutputs={};
-      Object.keys(rc.outputs).forEach(function(rid){row.computedOutputs[rid]=scale*rc.outputs[rid];});
+      Object.keys(rc.outputs).forEach(function(rid){row.computedOutputs[rid]=scale*rc.outputs[rid]*(pp.yieldFactor||1);});
+      Object.keys(pp.byproducts||{}).forEach(function(rid){row.computedOutputs[rid]=(row.computedOutputs[rid]||0)+scale*(num(pp.byproducts[rid])||0);});
+      row.processModelStatus=pp.modelStatus;row.processModelAuthority=pp.modelAuthority;
+      if(pp.energyPerUnit!==null){row.energyRequirement=scale*pp.energyPerUnit;row.energyRequirementStatus='UNOBSERVED_UNLESS_ENERGY_STATE_AVAILABLE';}
+      if(pp.waterPerUnit!==null){row.waterRequirement=scale*pp.waterPerUnit;row.waterRequirementStatus='UNOBSERVED_UNLESS_WATER_STATE_AVAILABLE';}
       records.push(row);
     });
 
@@ -547,9 +598,17 @@
   }
 
   function publishOffers(c){
-    var inv=invObj(c),prices=read(c,'trade.marketPrice')||{},offers=[],f=num(rules().market.offerFractionOfObservedInventory);if(f===null)f=0.25;f=Math.max(0,Math.min(1,f));
+    var inv=invObj(c),rs=bucket(c,'resource')||{},prices=read(c,'trade.marketPrice')||{},offers=[];
+    var fraction=num(rules().market.offerFractionOfObservedInventory);if(fraction===null)fraction=num(rules().market.referenceOfferFraction);if(fraction===null)fraction=0.25;fraction=Math.max(0,Math.min(1,fraction));
     var min=num(rules().market.minOfferQuantity);if(min===null)min=1;
-    Object.keys(inv).forEach(function(rid){var q=num(inv[rid])||0;if(q<min)return;var p=num(prices[rid]);if(p===null&&g.OmegaGlobalMarket&&typeof g.OmegaGlobalMarket.localPrice==='function'){try{p=num(g.OmegaGlobalMarket.localPrice(c,rid));}catch(_){}}if(p===null||p<=0)return;var oq=q*f;if(oq<min)return;offers.push({offerId:'AUTO-'+turn()+'-'+canonical(c)+'-'+tok(rid),resourceId:rid,quantity:oq,available:oq,price:p,unitPrice:p,countryId:canonical(c),source:'OMEGA_RESOURCE_ECON_AUTO_OFFER',referenceOnly:false,simulationTurn:turn()});});
+    var spr=rs.strategicReserve&&rs.strategicReserve.availableByResource||{},committed=rs.committedStock||rs.committedInventory||{},sellable={};
+    Object.keys(inv).forEach(function(rid){sellable[rid]=Math.max(0,(num(inv[rid])||0)-(num(spr[rid])||0)-(num(committed[rid])||0));});
+    Object.keys(sellable).forEach(function(rid){
+      var q=num(sellable[rid])||0;if(q<min)return;
+      var p=num(prices[rid]);if(p===null&&g.OmegaGlobalMarket&&typeof g.OmegaGlobalMarket.localPrice==='function'){try{p=num(g.OmegaGlobalMarket.localPrice(c,rid));}catch(_){}}if(p===null||p<=0)return;
+      var oq=q*fraction;if(oq<min)return;
+      offers.push({offerId:'AUTO-'+turn()+'-'+canonical(c)+'-'+tok(rid),resourceId:rid,quantity:oq,available:oq,price:p,unitPrice:p,countryId:canonical(c),source:'OMEGA_RESOURCE_ECON_AUTO_OFFER',referenceOnly:false,simulationTurn:turn(),sellableInventory:q,reservedInventory:num(spr[rid])||0,committedInventory:num(committed[rid])||0});
+    });
     return dispatch('trade','OMEGA_RESOURCE_ECON_PUBLISH_OFFER_BOOK',c,{offers:offers,correlationId:'AUTO-OFFER-'+turn()+'-'+canonical(c)});
   }
 
@@ -614,6 +673,7 @@
       ['OMEGA_RESOURCE_ECON_EXTRACTION_FISCAL_PENDING','finance',extractionFiscalPendingHandler],
       ['OMEGA_RESOURCE_ECON_TRADE_CLEAR_TO_COMPANY','finance',financeClearHandler],
       ['OMEGA_RESOURCE_ECON_RECORD_DOMESTIC_SALE','trade',recordDomesticSaleHandler],
+      ['OMEGA_RESOURCE_ECON_RECORD_LOGISTICS','transport',logisticsLedgerHandler],
       ['OMEGA_RESOURCE_ECON_PUBLISH_OFFER_BOOK','trade',publishOffersHandler]
     ];
     try{list.forEach(function(x){if(m.registerAction)m.registerAction(x[0],{actionId:x[0],stateOwnerMinistry:x[1],authority:'OMEGA_RESOURCE_ECONOMY_RUNTIME_V2'});m.registerCommandHandler(x[0],x[1],x[2]);});return true;}catch(_){return false;}
@@ -768,7 +828,7 @@
   }
   function initOntology(){
     if(typeof fetch!=='function')return;
-    fetch('./resource_ontology.json',{cache:'no-store'}).then(function(r){return r&&r.ok?r.json():null;}).then(function(d){if(d)g.__OmegaResourceEconomyOntology=d.COMMODITY_ONTOLOGIES||d.commodity_ontologies||{};}).catch(function(e){g.__OmegaResourceEconomyOntologyError=String(e&&e.message||e);});
+    fetch('./resource_ontology.json',{cache:'no-store'}).then(function(r){return r&&r.ok?r.json():null;}).then(function(d){if(d){g.__OmegaResourceEconomyOntology=d.RUNTIME_RESOURCE_ONTOLOGIES||d.runtime_resource_ontologies||{};g.__OmegaResourceEconomyOntologyLegacy=d.COMMODITY_ONTOLOGIES||d.commodity_ontologies||{};g.__OmegaResourceRuntimeResourceIds=Array.isArray(d.runtimeResourceIds)?d.runtimeResourceIds.slice():Object.keys(g.__OmegaResourceEconomyOntology);}}).catch(function(e){g.__OmegaResourceEconomyOntologyError=String(e&&e.message||e);});
   }
 
   var API={VERSION:VERSION,diagnostics:diagnostics,getCountryDashboard:dashboard,processCountry:processCountry,runTurn:runTurn,reconcileCountry:function(c){installHandlers();return dispatch('resource','OMEGA_RESOURCE_ECON_RECONCILE_INVENTORY',canonical(c),{correlationId:'MANUAL-RECON-'+turn()+'-'+canonical(c)});},executeCountryFactories:executeFactories};

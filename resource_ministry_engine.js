@@ -80,6 +80,11 @@ _globalScope.GSRSK_DataFoundation = (() => {
                 LITERS: { dimension: 'VOLUME', baseMultiplier: 0.001, aliases: ['L', 'LT', 'LITER', 'LITERS', 'LITRE', 'LITRES'] },
                 BARRELS: { dimension: 'VOLUME', baseMultiplier: 0.1589873, aliases: ['BBL', 'BBLS', 'BARREL', 'BARRELS', 'BOE'] },
                 BCM: { dimension: 'VOLUME', baseMultiplier: 1000000000.0, aliases: ['BCM', 'BILLION_CUBIC_METERS'] },
+                TCF: { dimension: 'VOLUME', baseMultiplier: 28316846592.0, aliases: ['TCF', 'TRILLION_CUBIC_FEET'] },
+                METRIC_TONS_U: { dimension: 'MASS', baseMultiplier: 1.0, aliases: ['METRIC_TONS_U', 'TONNES_U', 'T_U'] },
+                METRIC_TONS_LCE: { dimension: 'MASS', baseMultiplier: 1.0, aliases: ['METRIC_TONS_LCE', 'TONNES_LCE', 'LCE_TONS'] },
+                BARRELS_PER_DAY: { dimension: 'FLOW_RATE', baseMultiplier: 1.0, aliases: ['BBL/D', 'BBLS/D', 'BARRELS/DAY', 'BARRELS_PER_DAY'] },
+                TONNES_PER_DAY: { dimension: 'FLOW_RATE', baseMultiplier: 1.0, aliases: ['T/D', 'TONNES/DAY', 'TONS/DAY', 'TONNES_PER_DAY', 'METRIC_TONS_PER_DAY'] },
 
                 // ENERGY (Base: GIGAWATT_HOURS)
                 GIGAWATT_HOURS: { dimension: 'ENERGY', baseMultiplier: 1.0, aliases: ['GWH', 'GIGAWATT_HOUR', 'GIGAWATT_HOURS'] },
@@ -120,7 +125,7 @@ _globalScope.GSRSK_DataFoundation = (() => {
         }
 
         static convert(value, fromUnit, toUnit) {
-            if (typeof value !== 'number' || isNaN(value)) return 0;
+            if (typeof value !== 'number' || !Number.isFinite(value)) return null;
             const fromRes = this.resolveUnit(fromUnit);
             const toRes = this.resolveUnit(toUnit);
 
@@ -8529,6 +8534,7 @@ _globalScope.GSRSK_DataFoundation = (() => {
             this.resourceTypes = [];
             this.deposits = [];
             this.countryProfiles = {};
+            this.mineSiteReferences = [];
             this.isReady = false;
             this.dataLoadReport = {
                 status: 'NOT_LOADED',
@@ -8577,6 +8583,7 @@ _globalScope.GSRSK_DataFoundation = (() => {
                     this.resourceTypes = [];
                     this.deposits = [];
                     this.countryProfiles = {};
+                    this.mineSiteReferences = [];
 
                     this.dataLoadReport = {
                         status: 'LOADING',
@@ -8599,6 +8606,41 @@ _globalScope.GSRSK_DataFoundation = (() => {
                         const data = entry.data;
                         const profiles = data.GSRSK_Master_CountryProfiles_v14?.countryProfiles || data.countryProfiles || {};
                         Object.assign(this.countryProfiles, profiles);
+                        for (const [profileKey, profile] of Object.entries(profiles)) {
+                            const identity = profile?.identity || profile || {};
+                            const countryId = this.normalizeCountryCode?.(
+                                identity.iso3 || identity.countryCode || identity.countryId || profileKey
+                            ) || String(identity.iso3 || identity.countryCode || identity.countryId || profileKey).trim().toUpperCase();
+                            const sites =
+                                profile?.resource_infrastructure_context?.mineSites ||
+                                profile?.infrastructure_context?.mineSites ||
+                                profile?.resourceInfrastructureContext?.mineSites ||
+                                profile?.infrastructure?.mineSites ||
+                                profile?.resource_infrastructure?.mineSites ||
+                                [];
+                            if (!Array.isArray(sites)) continue;
+                            sites.forEach((site, index) => {
+                                const siteName = typeof site === 'string'
+                                    ? site.trim()
+                                    : String(site?.name || site?.siteName || site?.mineName || site?.depositName || '').trim();
+                                if (!siteName) return;
+                                this.mineSiteReferences.push({
+                                    referenceId: 'SITE_REF_' + countryId + '_' + String(index + 1).padStart(3, '0'),
+                                    countryId,
+                                    countryCode: countryId,
+                                    profileKey: String(profileKey),
+                                    siteName,
+                                    status: 'ACTIVE_SITE_REFERENCE',
+                                    extractionExecutable: false,
+                                    quantitativeExtractionDataAvailable: false,
+                                    authorityLevel: 'REFERENCE_ONLY',
+                                    sourceAuthority: 'RESOURCE_JSON',
+                                    sourceDatasetId: entry.name,
+                                    sourcePath: 'GSRSK_Master_CountryProfiles_v14.countryProfiles.' + String(profileKey) + '.resource_infrastructure_context.mineSites[' + index + ']',
+                                    rawSiteReference: site
+                                });
+                            });
+                        }
                         if (data.resource_types) this._mergeResourceTypes(data.resource_types);
                         const nestedTypes = data.GSRSK_Master_Resource_Data_v14?.resource_types;
                         if (nestedTypes) this._mergeResourceTypes(nestedTypes);
@@ -8607,7 +8649,14 @@ _globalScope.GSRSK_DataFoundation = (() => {
 
                     this.dataLoadReport.resourceTypeCount = this.resourceTypes.length;
                     this.dataLoadReport.depositCount = this.deposits.length;
+                    const mineSiteMap = new Map();
+                    this.mineSiteReferences.forEach(refRow => {
+                        const key = String(refRow.countryCode || refRow.countryId || '') + '|' + String(refRow.siteName || '').trim().toUpperCase();
+                        if (key !== '|') mineSiteMap.set(key, refRow);
+                    });
+                    this.mineSiteReferences = Array.from(mineSiteMap.values());
                     this.dataLoadReport.countryProfileCount = Object.keys(this.countryProfiles).length;
+                    this.dataLoadReport.mineSiteReferenceCount = this.mineSiteReferences.length;
                     if (this.resourceTypes.length === 0) throw new Error('RESOURCE_JSON_NO_RESOURCE_TYPES');
                     if (this.deposits.length === 0) throw new Error('RESOURCE_JSON_NO_RUNTIME_DEPOSITS');
                     if (Object.keys(this.countryProfiles).length === 0) throw new Error('RESOURCE_JSON_NO_COUNTRY_PROFILES');
@@ -8729,9 +8778,9 @@ _globalScope.GSRSK_DataFoundation = (() => {
                         category: t.category || 'strategic_minerals',
                         color: t.color || '#00e5ff',
                         unit: t.unit || 'TONS',
-                        basePrice: t.basePrice || 1000,
-                        dailyOutput: t.dailyOutput || 5000,
-                        dailyDemand: t.dailyDemand || 4500,
+                        basePrice: t.basePrice ?? null,
+                        dailyOutput: t.dailyOutput ?? null,
+                        dailyDemand: t.dailyDemand ?? null,
                         strategicImportance: t.strategicImportance || 'high',
                         processChain: t.description || 'Extraction ➔ Refining ➔ National Stockpile'
                     });
@@ -8771,6 +8820,16 @@ _globalScope.GSRSK_DataFoundation = (() => {
                 'TURKEY': 'TUR', 'TR': 'TUR', 'EGYPT': 'EGY', 'EG': 'EGY'
             };
             return aliasMap[k] || k;
+        }
+
+        getMineSiteReferences(countryKey = null) {
+            const rows = Array.isArray(this.mineSiteReferences) ? this.mineSiteReferences : [];
+            if (countryKey == null) return rows.slice();
+            const raw = String(countryKey || '').trim().toUpperCase();
+            let normalized = raw;
+            try { normalized = String(this.normalizeCountryCode(countryKey) || raw).trim().toUpperCase(); } catch (_) {}
+            const candidates = new Set([raw, normalized]);
+            return rows.filter(row => candidates.has(String(row.countryCode || row.countryId || '').trim().toUpperCase())).slice();
         }
 
         getCountryResourceProfile(countryKey) {

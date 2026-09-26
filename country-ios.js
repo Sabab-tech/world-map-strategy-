@@ -618,6 +618,15 @@ window.CountryIOS = {
         const surveys = metrics.surveysUnderway || [];
 
         const profile25 = window.ResourceMinistryEngine && typeof window.ResourceMinistryEngine.getCountryResourceProfile === 'function' ? window.ResourceMinistryEngine.getCountryResourceProfile(countryKey) : null;
+        const resourceRuntime = window.ResourceMinistryEngine || null;
+        const runtimeCommodityCount = Array.isArray(resourceRuntime?.resourceTypes) ? resourceRuntime.resourceTypes.length : 0;
+        const runtimeDepositCount = Array.isArray(resourceRuntime?.deposits) ? resourceRuntime.deposits.length : 0;
+        const runtimeMineSiteReferenceCount = resourceRuntime?.countryProfiles && typeof resourceRuntime.countryProfiles === 'object'
+            ? Object.values(resourceRuntime.countryProfiles).reduce((sum, profile) => {
+                const sites = profile?.resource_infrastructure_context?.mineSites || profile?.infrastructure_context?.mineSites || [];
+                return sum + (Array.isArray(sites) ? sites.length : 0);
+            }, 0)
+            : 0;
         
         const launchBannerHtml = `
             <div style="display:flex; justify-content:space-between; align-items:center; background:linear-gradient(90deg, rgba(0,229,255,0.18), rgba(168,85,247,0.18), rgba(234,179,8,0.15)); border:1.5px solid #00e5ff; border-radius:10px; padding:12px 16px; margin-bottom:12px; box-shadow:0 0 25px rgba(0,229,255,0.25); flex-wrap:wrap; gap:10px;">
@@ -629,7 +638,7 @@ window.CountryIOS = {
                             <span style="font-size:10px; padding:1px 6px; border-radius:8px; background:rgba(34,197,94,0.2); border:1px solid #22c55e; color:#22c55e;">PARTS 01–13 ACTIVE</span>
                         </div>
                         <div style="font-size:10px; color:#cbd5e1; font-family:var(--font-mono); margin-top:2px;">
-                            593 Global Deposits • 18 Strategic Commodities • Spot Market Pricing • Multi-Tier Cascade Risk Sandbox
+                            ${runtimeDepositCount} RESOURCE_JSON Deposits • ${runtimeMineSiteReferenceCount} Profile Site References • ${runtimeCommodityCount} Canonical Resource IDs • Spot Market Pricing
                         </div>
                     </div>
                 </div>
@@ -899,7 +908,7 @@ window.CountryIOS = {
                         </div>
                         <div class="ios-card" style="padding:8px 12px;">
                             <div class="ios-card-title">UNIVERSAL PIPELINES</div>
-                            <div class="ios-card-val" style="color:#a855f7;">18 Strategic</div>
+                            <div class="ios-card-val" style="color:#a855f7;">${runtimeCommodityCount} Resource IDs</div>
                         </div>
                     </div>
                 </div>
@@ -917,7 +926,7 @@ window.CountryIOS = {
                             📦 NATIONAL RESOURCE REGISTRY (18 STRATEGIC COMMODITIES)
                         </div>
                         <button onclick="if(window.ResourceMinistryEngine && typeof window.ResourceMinistryEngine.openModal === 'function') window.ResourceMinistryEngine.openModal('${countryKey}', 'deposits');" style="padding:5px 12px; background:rgba(255,215,0,0.2); border:1px solid #ffd700; color:#ffd700; font-size:11px; font-weight:bold; border-radius:6px; cursor:pointer;">
-                            🗺️ 593 WORLD DEPOSITS
+                            🗺️ ${runtimeDepositCount} RESOURCE_JSON DEPOSITS
                         </button>
                     </div>
 

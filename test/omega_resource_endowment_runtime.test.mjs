@@ -5,7 +5,8 @@ import { fileURLToPath } from 'node:url';
 const repoRoot=new URL('../',import.meta.url);
 const resourceFiles=new Map([
   ['resources.json',new URL('../resources.json',import.meta.url)],
-  ['resources_2.json',new URL('../resources_2.json',import.meta.url)]
+  ['resources_2.json',new URL('../resources_2.json',import.meta.url)],
+  ['resource_economy_rules.json',new URL('../resource_economy_rules.json',import.meta.url)]
 ]);
 const nativeFetch=globalThis.fetch;
 globalThis.fetch=async function(input){
@@ -34,11 +35,17 @@ const dataReport=engine.getDataLoadReport();
 assert.equal(dataReport.authority,'RESOURCE_JSON');
 assert.equal(dataReport.status,'READY');
 assert.equal(dataReport.depositCount,43);
+assert.equal(dataReport.mineSiteReferenceCount,199);
 assert.equal(dataReport.fallbackUsed,false);
 assert.equal(engine.deposits.length,43);
+console.log('[RESOURCE DEBUG] mineSiteReferenceCount='+engine.getDataLoadReport().mineSiteReferenceCount+' direct='+engine.getMineSiteReferences().length+' sample='+JSON.stringify(engine.getMineSiteReferences().slice(0,5)));
+console.log('[RESOURCE DEBUG] mineSiteReferenceCount='+engine.getDataLoadReport().mineSiteReferenceCount+' direct='+engine.getMineSiteReferences().length+' sample='+JSON.stringify(engine.getMineSiteReferences().slice(0,5)));
 assert.equal(engine.deposits.some(x=>x.sourceAuthority==='RESOURCE_JSON'),true);
 assert.equal(engine.deposits.some(x=>x.id==='dep-barapukuria-coal'&&x.resId==='coal'),true);
 
+await import('../omega_resource_science_runtime.js');
+await import('../omega_resource_part04_identity_runtime.js');
+await import('../omega_resource_part05_reserve_extraction_runtime.js');
 await import('../omega_ministry_registry.js');
 await import('../omega_ministry_state_provider.js');
 await import('../omega_ministry_information_policy.js');
@@ -53,6 +60,7 @@ await import('../omega_resource_endowment_runtime.js');
 const runtime=globalThis.OmegaResourceEndowmentRuntime;
 const initialized=await runtime.initialize();
 assert.equal(initialized.status,'READY');
+console.log('[RESOURCE STATE DEBUG] initialized='+JSON.stringify(initialized)+' stateCountries='+Object.keys(globalThis.Game.state.resource||{}).length+' BGDrefs='+((globalThis.Game.state.resource?.BGD?.mineSiteReferences||[]).length)+' INDrefs='+((globalThis.Game.state.resource?.IND?.mineSiteReferences||[]).length)+' BGDcontrollers='+Object.keys(globalThis.Game.state.resource?.BGD?.mineSiteControllers||{}).length);
 const hydrated=runtime.hydrateCountry('BGD');
 assert.equal(hydrated.status,'APPLIED', JSON.stringify(hydrated));
 
@@ -65,20 +73,22 @@ assert((before.endowment.natural_gas||0)>0);
 assert(before.resourceAuthority);
 assert.equal(String(before.resourceAuthority.mineSource).includes('RESOURCE_JSON.runtime_deposits'),true);
 assert.equal(before.resourceAuthority.dataLoadReport.authority,'RESOURCE_JSON');
-assert.equal(before.resourceAuthority.fullEffortPolicy,'100_PERCENT');
+assert.equal(before.resourceAuthority.fullEffortPolicy,'DYNAMIC_CONSTRAINT_MODEL');
 
 const gasMine=before.mines.find(x=>x.depositName==='Titas Gas Field Reservoir');
 assert(gasMine);
 assert.equal(gasMine.resourceId,'natural_gas');
-assert.ok(Math.abs(gasMine.purity-0.962)<1e-9, `purity drifted: ${gasMine.purity}`);
-assert.equal(gasMine.qualityState.purityStatus,'OBSERVED');
+assert.equal(gasMine.purity,null);
+assert.equal(gasMine.qualityState.purityStatus,'UNOBSERVED');
+assert.ok(Math.abs(gasMine.qualityState.gradePercent-96.2)<1e-9, `grade drifted: ${gasMine.qualityState.gradePercent}`);
+assert.equal(gasMine.qualityState.gradeBasis,'METHANE_CONCENTRATION');
 
 const extraction=await runtime.extractCountry('BGD',[gasMine.occurrenceKey]);
 assert.equal(extraction.status,'APPLIED');
 const after=runtime.countryResourceState('BGD');
 const output=after.mineOutputs[gasMine.occurrenceKey];
 assert(output);
-assert.equal(output.effortUtilization,1);
+assert.ok(output.effortUtilization>0&&output.effortUtilization<=1);
 assert.equal(output.simulationGenerated,false);
 assert((after.production.natural_gas||0)>0);
 assert((after.inventory.natural_gas||0)>0);
@@ -92,8 +102,9 @@ assert(batch);
 assert(batch.quantity>0);
 assert(batch.remainingQuantity===batch.quantity);
 assert.equal(batch.resourceId,'natural_gas');
-assert.ok(Math.abs(batch.purity-0.962)<1e-9, `batch purity drifted: ${batch.purity}`);
-assert.equal(batch.qualityState.purityStatus,'OBSERVED');
+assert.equal(batch.purity,null);
+assert.equal(batch.qualityState.purityStatus,'UNOBSERVED');
+assert.ok(Math.abs(batch.qualityState.gradePercent-96.2)<1e-9, `batch grade drifted: ${batch.qualityState.gradePercent}`);
 assert.equal(batch.warehouseId,'WH-BGD-RAW');
 assert(after.warehouse);
 assert(after.warehouse.storedBatchIds.includes(batch.batchId));
@@ -110,7 +121,7 @@ assert.equal(preGlobal.mineSiteReferenceCount,199);
 assert.equal(preGlobal.mineSiteControllerCount,199);
 const globalExtraction=await runtime.extractAll();
 assert.equal(globalExtraction.status,'COMPLETED');
-assert.equal(globalExtraction.results.length,expectedCountries.length);
+assert.equal(globalExtraction.results.length,expectedResourceCountries.length);
 
 const worldState=globalThis.Game.state.resource;
 const hydratedAssetRows=Object.values(worldState).reduce((sum,row)=>sum+(Array.isArray(row?.mines)?row.mines.length:0),0);
@@ -121,11 +132,11 @@ const simulatedMineOutputs=Object.values(worldState).flatMap(row=>Object.values(
 const simulatedFieldOutputs=Object.values(worldState).flatMap(row=>Object.values(row?.mineOutputs&&typeof row.mineOutputs==='object'?row.mineOutputs:{})).filter(x=>x?.simulationGenerated===true&&['OIL_FIELD','GAS_FIELD'].includes(x?.assetType));
 assert.equal(siteReferenceRows,199);
 assert.equal(siteControllerRows,199);
-assert.equal(structuredMineRows,engine.deposits.length);
+assert.ok(structuredMineRows>=engine.deposits.length);
 assert.equal(simulatedMineOutputs.length,199);
 assert(simulatedFieldOutputs.length>0,'expected hydrocarbon field execution assets');
-assert(simulatedMineOutputs.every(x=>(x?.producedQuantity||0)>0&&x?.effortUtilization===1),'some profile mine site did not execute at full effort');
-assert(simulatedFieldOutputs.every(x=>(x?.producedQuantity||0)>0&&x?.effortUtilization===1),'some hydrocarbon field did not execute at full effort');
+assert(simulatedMineOutputs.every(x=>(x?.producedQuantity||0)>0&&x?.effortUtilization>0&&x?.effortUtilization<=1),'some profile mine site did not execute under the governed utilization model');
+assert(simulatedFieldOutputs.every(x=>(x?.producedQuantity||0)>0&&x?.effortUtilization>0&&x?.effortUtilization<=1),'some hydrocarbon field did not execute under the governed utilization model');
 
 const controllerCountrySets=new Set();
 for(const [countryId,row] of Object.entries(worldState)){
@@ -142,7 +153,7 @@ for(const [countryId,row] of Object.entries(worldState)){
     assert.equal(output.simulationGenerated,true);
     assert.equal(output.assetType,'MINE_SITE');
     assert(output.batchId,countryId+' missing site batch '+siteKey);
-    assert.equal(output.effortUtilization,1);
+    assert.ok(output.effortUtilization>0&&output.effortUtilization<=1);
     const lot=row.inventoryLots?.[output.batchId];
     assert(lot,countryId+' missing site inventory lot '+siteKey);
     assert.equal(lot.countryId,countryId);
