@@ -388,7 +388,7 @@
     return rows;
   }
 
-  function buildCountryProjection  function buildCountryProjection(c,rows,existing={}){
+  function buildCountryProjection(c,rows,existing={}){
     const byResource={},mines=[],mineSiteReferences=mineSiteReferenceRows(c),mineSiteReferenceCount=mineSiteReferences.length;
     const mineSiteControllers=buildMineSiteControllers(c,rows,existing);
     for(const x of rows){
