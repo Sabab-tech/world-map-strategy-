@@ -240,20 +240,22 @@
 
   function batchFromExtraction  function batchFromExtraction(x,record){
     const q=mineQuality(x),rs=record?.reserveAfter||{},base=record?.producedBatch||{},qty=n(record?.approvedQuantity)||0;
+    const pa=String(record?.provenance?.productionAuthority||record?.provenance?.quantityAuthority||x?.capacity?.authority||'').toUpperCase();
+    const simulatedQuantity=pa==='SIMULATED'||pa==='SIMULATION_RULESET'||x?.capacity?.stateAuthority==='SIMULATED';
     const batchId=String(base?.batchId||('BATCH_EXT_'+turn()+'_'+canonical(x.countryId)+'_'+String(x.occurrenceKey).replace(/[^A-Z0-9:_-]/gi,'')));
     const c=canonical(x.countryId);
     const local={
       batchId,resourceId:x.resourceId,materialIdentity:'RES_TYPE:'+x.resourceId,resourceIdentityKey:'RES_TYPE:'+x.resourceId,
       quantity:qty,remainingQuantity:qty,unit:base?.unit||rs?.unit||x?.capacity?.unit||resourceDefinition(x.resourceId)?.unit||null,
       stage:'RAW_EXTRACTED',quality:q.purity===null?null:q.purity,grade:q.gradePercent,purity:q.purity,qualityState:q,
-      epistemicState:x.isSimulationGenerated?'SIMULATED':'OBSERVED',stateAuthority:x.isSimulationGenerated?'SIMULATED':'OBSERVED',countryId:c,sourceCountryId:c,originCountryId:c,
+      epistemicState:simulatedQuantity?'SIMULATED':'OBSERVED',stateAuthority:simulatedQuantity?'SIMULATED':'OBSERVED',countryId:c,sourceCountryId:c,originCountryId:c,
       ownerCountryCode:c,ownerKey:x.ownerKey||null,custodianKey:c,destinationCountryId:c,
       locationNodeKey:'WAREHOUSE:'+c+':RAW',warehouseId:'WH-'+c+'-RAW',
       originKey:x.occurrenceKey,facilityKey:x.occurrenceKey,extractionReference:record?.extractionId||null,sourceBatchIds:[],
       lifecycleStatus:'AVAILABLE',timestampTurn:turn(),transferType:'LOCAL_EXTRACTION',
       provenance:{
-        sourceSubsystem:'OMEGA_RESOURCE_ENDOWMENT_RUNTIME_V2',sourceAuthority:x.isSimulationGenerated?'SIMULATED':'OBSERVED',
-        sourceDatasetId:x.sourceDatasetId||x.rawDeposit?.sourceDatasetId||null,depositKey:x.depositKey,occurrenceKey:x.occurrenceKey,simulationTurn:turn(),quantityAuthority:x.isSimulationGenerated?'SIMULATED':'OBSERVED'
+        sourceSubsystem:'OMEGA_RESOURCE_ENDOWMENT_RUNTIME_V2',sourceAuthority:simulatedQuantity?'SIMULATED':'OBSERVED',
+        sourceDatasetId:x.sourceDatasetId||x.rawDeposit?.sourceDatasetId||null,depositKey:x.depositKey,occurrenceKey:x.occurrenceKey,simulationTurn:turn(),quantityAuthority:simulatedQuantity?'SIMULATED':'OBSERVED'
       },
       reserveAfter:clone(rs)
     };
@@ -429,7 +431,13 @@
       const old=existing?.mineStates?.[occurrenceKey],model=realism?.siteModel?.({...clone(asset||{}),siteReferenceKey:siteKey,resourceId:explicitResource||asset?.resourceId||asset?.resourceTypeId},p,canonical(c));
       const stream=model?.commodityStreams?.[0];if(!stream?.resourceId)return;
       const p5=g.GSRSK_Part05||g.GSRSK_ResourceReserveExtractionEngine,unit=stream.reserve.unit,prod=stream.production,q=stream.quality;
-      const previous=old&&typeof old==='object'&&p5?.ReserveState?new p5.ReserveState(clone(old)):null;
+      const generated={occurrenceKey,countryId:canonical(c),depositKey:'SIM_'+tok(occurrenceKey),resourceId:stream.resourceId,
+        geologicalQuantity:stream.reserve.quantity,recoverableQuantity:stream.reserve.quantity,residualQuantity:stream.reserve.quantity,unit,
+        operationalStatus:'ACTIVE_EXTRACTION',stateVersion:1,quality:q,productionModel:prod,
+        provenance:{sourceAuthority:'RESOURCE_JSON.countryProfiles',stateAuthority:'SIMULATED',sourceDatasetId:'resources.json.countryProfiles',sourcePath:asset?.sourcePath||null,
+          quantityAuthority:'SIMULATED',productionAuthority:'SIMULATED',qualityAuthority:'SIMULATED',simulationRuleVersion:realism?.VERSION||null}};
+      const merged=realism?.firewall&&old&&typeof old==='object'?realism.firewall(clone(old),generated):generated;
+      const previous=merged&&p5?.ReserveState?new p5.ReserveState(clone(merged)):null;
       const reserve=previous||new p5.ReserveState({
         occurrenceKey,countryId:canonical(c),depositKey:'SIM_'+tok(occurrenceKey),resourceId:stream.resourceId,
         geologicalQuantity:stream.reserve.quantity,recoverableQuantity:stream.reserve.quantity,residualQuantity:stream.reserve.quantity,unit,
