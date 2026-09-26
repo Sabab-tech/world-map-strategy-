@@ -268,17 +268,23 @@
           const dedupeKey=sourceDatasetId+'|'+countryId+'|'+index+'|'+siteName.toUpperCase();
           if(seen.has(dedupeKey))return;seen.add(dedupeKey);
           const sourcePath='GSRSK_Master_CountryProfiles_v14.countryProfiles.'+String(profileKey)+'.resource_infrastructure_context.mineSites['+index+']';
+          const rawSiteObject=rawSite&&typeof rawSite==='object'?clone(rawSite):{name:siteName};
+          const resourceAsset=normalizeUnifiedAsset({
+            ...rawSiteObject,
+            assetType:'MINE_SITE',
+            assetId:siteReferenceKey,siteReferenceKey,
+            siteName,countryId,countryCode:countryId,
+            sourceAuthority:'RESOURCE_JSON',sourceDatasetId,sourcePath,
+            extractionExecutable:false
+          });
           rows.push({
             siteReferenceKey,countryId,countryCode:countryId,profileKey:String(profileKey),siteName,
             status:'ACTIVE_SITE_REFERENCE',activationState:'ACTIVE_REFERENCE',
-            extractionExecutable:false,quantitativeExtractionDataAvailable:false,
+            extractionExecutable:false,
+            quantitativeExtractionDataAvailable:resourceAsset.quantitativeExtractionDataAvailable===true,
             sourceAuthority:'RESOURCE_JSON',sourceDatasetId,sourcePath,
             rawSiteReference:clone(rawSite),
-            resourceAsset:normalizeUnifiedAsset({
-              assetType:'MINE_SITE',assetId:siteReferenceKey,siteReferenceKey,
-              siteName,countryId,countryCode:countryId,sourceAuthority:'RESOURCE_JSON',sourceDatasetId,sourcePath,
-              extractionExecutable:false,quantitativeExtractionDataAvailable:false
-            })
+            resourceAsset
           });
         });
       }
