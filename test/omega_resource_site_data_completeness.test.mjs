@@ -67,6 +67,23 @@ for (const {countryId, index, site} of sites) {
     }
   }
 
+  const allowedResearchStates = new Set([
+    'SITE_SPECIFIC_WEB_REVALIDATED',
+    'SITE_SPECIFIC_WEB_REVIEWED',
+    'LEGACY_CURATED_NOT_RECENTLY_REVALIDATED',
+    'NOT_APPLICABLE_NO_COMMERCIAL_SITE'
+  ]);
+  assert(allowedResearchStates.has(site.researchState), countryId + '[' + index + ']: invalid researchState ' + site.researchState);
+  if (site.researchState === 'SITE_SPECIFIC_WEB_REVALIDATED' || site.researchState === 'SITE_SPECIFIC_WEB_REVIEWED') {
+    assert(Array.isArray(site.webResearchEvidence) && site.webResearchEvidence.length > 0, countryId + '[' + index + ']: site-specific state without evidence');
+  }
+  if (site.researchState === 'LEGACY_CURATED_NOT_RECENTLY_REVALIDATED') {
+    assert.equal(site.dataCompleteness.webResearch, 'LEGACY_CURATED_NOT_RECENTLY_REVALIDATED', countryId + '[' + index + ']: legacy research state mismatch');
+  }
+  if (site.researchState === 'NOT_APPLICABLE_NO_COMMERCIAL_SITE') {
+    assert.equal(site.dataCompleteness.webResearch, 'NOT_APPLICABLE', countryId + '[' + index + ']: N/A research state mismatch');
+  }
+
   const qp = site.quantitativeProfile || {};
   const reserveObserved = qp.reserve && qp.reserve.quantity != null && qp.reserve.quantity !== '';
   const annualObserved = qp.production && qp.production.annual != null && qp.production.annual !== '';
