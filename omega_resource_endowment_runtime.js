@@ -331,6 +331,22 @@
     'fisheries','fish','coconuts','coconut','tropical_timber','timber','solar_energy','wind_energy','hydropower',
     'sugar_cane','sugarcane','tobacco','coffee','cassava','rice','food','water','potable_water','forestry'
   ]);
+  const SIM_RESOURCE_ALIASES=Object.freeze({
+    crude_oil:['crude_oil','crude oil','oil','petroleum','petroleum oil','bbl'],
+    natural_gas:['natural_gas','natural gas','gas','lng','methane'],
+    coal:['coal','lignite','anthracite','thermal coal','metallurgical coal'],
+    iron_ore:['iron_ore','iron ore','iron','hematite','magnetite'],
+    copper:['copper','copper ore','cu','copper concentrate'],
+    gold:['gold','au','gold ore'],
+    nickel:['nickel','nickel ore','ni'],
+    cobalt:['cobalt','cobalt ore','co'],
+    lithium:['lithium','lithium brine','spodumene','lce'],
+    rare_earth:['rare_earth','rare earth','rare earths','ree','neodymium','dysprosium','reo'],
+    uranium:['uranium','u3o8'],
+    bauxite:['bauxite','alumina','aluminum','aluminium'],
+    phosphate:['phosphate','phosphate rock','p2o5'],
+    potash:['potash','potassium','k2o']
+  });
   const SIM_RESOURCE_UNITS=Object.freeze({
     crude_oil:'barrels',natural_gas:'bcm',gold:'troy_ounces',uranium:'metric_tons_u',lithium:'metric_tons_lce'
   });
