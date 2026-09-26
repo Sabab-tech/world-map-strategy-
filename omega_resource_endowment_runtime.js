@@ -155,6 +155,15 @@
     const reserveResult=p5.compileReserves(identityRegistry,null,knowledge,{});
 
     if(!reserveResult?.registry)return{status:'FAILED',reason:'RESOURCE_RESERVE_COMPILATION_FAILED',detail:clone(reserveResult)};
+    for(const asset of identityRegistry.listUnifiedAssets?.()||[]){
+      if(asset?.assetType!=='STRUCTURED_DEPOSIT')continue;
+      const executable=!!(asset.occurrenceKey&&reserveResult.registry.getReserveState?.(asset.occurrenceKey)&&reserveResult.registry.getCapacityForOccurrence?.(asset.occurrenceKey));
+      identityRegistry.setUnifiedAssetRuntimeExecution?.(
+        asset.assetId,
+        executable?'EXECUTABLE':'BLOCKED',
+        executable?'PART05_RESERVE_AND_CAPACITY_READY':'PART05_RESERVE_OR_CAPACITY_UNAVAILABLE'
+      );
+    }
     g.__OmegaResourceIdentityRegistry=identityRegistry;
     g.__OmegaResourceReserveRegistry=reserveResult.registry;
     g.__OmegaResourceKnowledgeModel=knowledge;
@@ -443,6 +452,14 @@ function batchFromExtraction(x,record){
     const byResource={},mines=[],mineSiteReferences=mineSiteReferenceRows(c),mineSiteReferenceCount=mineSiteReferences.length;
     const unifiedAssets=clone(g.__OmegaResourceIdentityRegistry?.getUnifiedAssetsByCountry?.(c)||[]);
     const mineSiteControllers=buildMineSiteControllers(c,rows,existing);
+    for(const asset of unifiedAssets.filter(x=>x?.assetType==='PROFILE_SITE_REFERENCE')){
+      const attached=rows.some(x=>x?.assetId===asset.assetId);
+      g.__OmegaResourceIdentityRegistry?.setUnifiedAssetRuntimeExecution?.(
+        asset.assetId,
+        attached?'EXECUTABLE':'BLOCKED',
+        attached?'PROFILE_SITE_MODEL_READY':'RESOURCE_TYPE_OR_QUANTITATIVE_INPUT_MISSING'
+      );
+    }
     for(const x of rows){
       const rs=x.reserveState,raw=x.rawDeposit;if(!rs)continue;
       const resource=x.resourceId;
