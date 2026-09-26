@@ -232,12 +232,17 @@
   function mineQuality(x){
     const raw=x?.rawDeposit||{},model=x?.siteModel?.commodityStreams?.find?.(s=>rid(s?.resourceId)===rid(x?.resourceId))?.quality;
     const q=(g.Omega?.ResourceRealism?.quality&&raw&&!model)?g.Omega.ResourceRealism.quality(raw,x.resourceId):model;
-    if(q)return{...clone(q),qualityAuthority:q.gradeStatus==='OBSERVED'||q.purityStatus==='OBSERVED'||q.apiGravityStatus==='OBSERVED'?'OBSERVED':'SIMULATED'};
+    if(q)return{...clone(q),
+      gradePercent:q.normalized?.gradePercent??null,
+      concentrationPercent:q.normalized?.concentrationPercent??null,
+      purity:q.normalized?.purityFraction??null,
+      APIGravity:q.normalized?.APIGravity??q.APIGravity??null,
+      qualityAuthority:q.gradeStatus==='OBSERVED'||q.concentrationStatus==='OBSERVED'||q.purityStatus==='OBSERVED'||q.apiGravityStatus==='OBSERVED'?'OBSERVED':'SIMULATED'
+    };
     const legacy=parsePurityFromGrade(raw.grade,x?.resourceId);
     return{purity:legacy.purity,purityStatus:legacy.purityStatus,gradePercent:legacy.gradePercent,gradeText:raw.grade||null,
       qualityAuthority:'UNOBSERVED',qualitySource:'UNOBSERVED',physicalState:String(raw.physicalState||'SOLID_RUN_OF_MINE').toUpperCase()};
   }
-
   function batchFromExtraction  function batchFromExtraction(x,record){
     const q=mineQuality(x),rs=record?.reserveAfter||{},base=record?.producedBatch||{},qty=n(record?.approvedQuantity)||0;
     const pa=String(record?.provenance?.productionAuthority||record?.provenance?.quantityAuthority||x?.capacity?.authority||'').toUpperCase();
