@@ -112,6 +112,8 @@ test('global resource pipeline runs every RESOURCE_JSON mine and keeps each resu
   const knowledge={sovereignEntities:{resourceTypes:engine.resourceTypes},refCatalog:{allReferences:engine.deposits}};
   const idResult=part04.compileIdentities(knowledge);
   const reserveResult=part05.compileReserves(idResult,null,knowledge,{});
+  const unifiedAssets=idResult.registry.listUnifiedAssets();
+  const expectedExecutableStructuredAssetCount=unifiedAssets.filter(x=>x?.assetType==='STRUCTURED_DEPOSIT'&&x?.execution?.extractionExecutable===true).length;
   assert.equal(idResult.occurrenceCount,engine.deposits.length);
   assert.equal(reserveResult.occurrenceCount,engine.deposits.length);
   assert.equal(reserveResult.reserveCount,engine.deposits.length);
@@ -181,7 +183,7 @@ test('global resource pipeline runs every RESOURCE_JSON mine and keeps each resu
   const pathCount=Object.values(state.resource).reduce((sum,row)=>sum+(row?.minePaths&&typeof row.minePaths==='object'?Object.keys(row.minePaths).length:0),0);
   const sitePathCount=Object.values(state.resource).reduce((sum,row)=>sum+Object.keys(row?.mineSiteControllers||{}).filter(k=>row.minePaths?.[k]).length,0);
   const lotCount=Object.values(state.resource).reduce((sum,row)=>sum+(row?.inventoryLots&&typeof row.inventoryLots==='object'?Object.keys(row.inventoryLots).length:0),0);
-  assert.equal(primaryStructuredMineCount,engine.deposits.length);
+  assert.equal(primaryStructuredMineCount,expectedExecutableStructuredAssetCount);
   assert.equal(primaryStructuredMineCount+structuredOccurrenceStreamCount,mineCount);
   assert.equal(batchCount,extractedRecords.length);
   assert.equal(sitePathCount,mineSiteReferenceCount);
