@@ -197,7 +197,8 @@ test('authoritative adapter uses live resource values and disables synthetic sum
   const summary = context.ResourceMinistryEngine.getSummary('BGD');
   const iron = summary.resourcesList.find(row => row.id === 'iron_ore');
 
-  assert.equal(context.OmegaResourceAuthoritativeAdapter.VERSION, '1.0.0');\n  const authorityRow = context.OmegaResourceAuthoritativeAdapter.getSummary('BGD').resourcesList.find(row => row.id === 'iron_ore');
+  assert.equal(context.OmegaResourceAuthoritativeAdapter.VERSION, '1.0.0');
+  const authorityRow = context.OmegaResourceAuthoritativeAdapter.getSummary('BGD').resourcesList.find(row => row.id === 'iron_ore');
   assert.equal(authorityRow.reserveAuthority, 'OBSERVED');
   assert.equal(authorityRow.productionAuthority, 'SIMULATED');
   assert.equal(authorityRow.qualityAuthority, 'OBSERVED');
