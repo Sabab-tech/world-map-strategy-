@@ -111,7 +111,7 @@ test('global resource pipeline runs every RESOURCE_JSON mine and keeps each resu
   const part04=context.GSRSK_Part04,part05=context.GSRSK_Part05;
   const knowledge={sovereignEntities:{resourceTypes:engine.resourceTypes},refCatalog:{allReferences:engine.deposits}};
   const idResult=part04.compileIdentities(knowledge);
-  const reserveResult=part05.compileReserves(idResult,null,knowledge,{});
+  const reserveResult=part05.compileReserves(idResult.registry,null,knowledge,{});
   assert.equal(idResult.occurrenceCount,engine.deposits.length);
   assert.equal(reserveResult.occurrenceCount,engine.deposits.length);
   assert.equal(reserveResult.reserveCount,engine.deposits.length);
