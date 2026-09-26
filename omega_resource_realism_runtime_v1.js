@@ -165,7 +165,7 @@ function siteModel(site,profile,countryId){
  const unique=[...new Set(requested.filter(Boolean))];
  const productionInput=site?.productionModel&&typeof site.productionModel==='object'?site.productionModel:site||{};
  const streams=unique.map((resourceId,index)=>{
-   const src=explicitStreams[index]&&typeof explicitStreams[index]==='object'?explicitStreams[index]:site||{};
+   const matchedStream=explicitStreams.find(x=>rid(typeof x==='string'?x:x?.resourceId||x?.resourceTypeId||x?.resId||x?.resource)===resourceId);const src=matchedStream&&typeof matchedStream==='object'?matchedStream:site||{};
    const r=ranges[resourceId]||{unit:'TONNES',min:250,max:5000,lifeMin:8,lifeMax:30,gradeMin:1,gradeMax:50};
    const seed=hash(String(countryId||'')+'|'+name+'|'+resourceId),u=seed/4294967296;
    const nominalObs=num(src?.nominalCapacity??src?.nominalRate??productionInput?.nominalCapacity??productionInput?.nominalRate);
