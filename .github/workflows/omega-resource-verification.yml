@@ -43,6 +43,7 @@ jobs:
           node --check omega_resource_economy_runtime_v2.js
           node --check omega_resource_authoritative_adapter.js
           node test/omega_resource_endowment_runtime.test.mjs
+          node test/omega_resource_site_data_completeness.test.mjs
           node --test test/omega_resource_economy_runtime_v2.test.mjs
           node --test test/omega_resource_authoritative_adapter.test.mjs
           node --test test/omega_resource_action_execution_runtime.test.mjs
