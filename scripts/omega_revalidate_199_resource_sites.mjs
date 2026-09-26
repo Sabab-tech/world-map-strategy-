@@ -625,16 +625,6 @@ for (const file of files) {
   fs.writeFileSync(file, JSON.stringify(loaded[files.indexOf(file)], null, 2) + '\n');
 }
 
-// Remove the temporary dataset-capture hook created only to obtain the oversized resource file for this audit.
-const workflowPath = '.github/workflows/omega-resource-verification.yml';
-if (fs.existsSync(workflowPath)) {
-  const wf = fs.readFileSync(workflowPath, 'utf8');
-  const cleaned = wf.replace(
-    /\n?      - name: Capture raw resource datasets for local audit[\s\S]*?retention-days: 1\n/,'\n'
-  );
-  if (cleaned !== wf) fs.writeFileSync(workflowPath, cleaned);
-}
-
 const status = {
   totalSites: allSites.length,
   legacyTargets: legacyTargets.length,
@@ -650,7 +640,7 @@ fs.writeFileSync('resource_site_enrichment_status.json', JSON.stringify(status, 
 
 execFileSync('git', ['config', 'user.name', 'github-actions[bot]'], { stdio: 'inherit' });
 execFileSync('git', ['config', 'user.email', '41898282+github-actions[bot]@users.noreply.github.com'], { stdio: 'inherit' });
-execFileSync('git', ['add', 'resources.json', 'resources_2.json', 'resource_site_web_revalidation_report.json', 'resource_site_enriched_catalog.json', 'resource_site_enrichment_status.json', '.github/workflows/omega-resource-verification.yml'], { stdio: 'inherit' });
+execFileSync('git', ['add', 'resources.json', 'resources_2.json', 'resource_site_web_revalidation_report.json', 'resource_site_enriched_catalog.json', 'resource_site_enrichment_status.json'], { stdio: 'inherit' });
 try {
   execFileSync('git', ['diff', '--cached', '--quiet'], { stdio: 'ignore' });
   console.log(JSON.stringify(status, null, 2));
