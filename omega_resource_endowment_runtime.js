@@ -210,6 +210,12 @@
     }catch(_){}
     if(out.length)return out;
 
+    try{
+      const rows=e?.getMineSiteReferences?.(wanted)||[];
+      rows.forEach(row=>add(row));
+    }catch(_){}
+    if(out.length)return out;
+
     try{for(const row of reg?.listMineSiteReferences?.()||[])add(row);}catch(_){}
     if(out.length)return out;
 
