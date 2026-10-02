@@ -358,52 +358,6 @@
         }
       ]
     },
-    "SITE_CZE_dolni_rozinka_uranium_mine": {
-      "owner": "DIAMO, s.p. / Czech state",
-      "operator": "DIAMO, s.p.",
-      "status": "HISTORICAL_INACTIVE",
-      "operationalStatus": "HISTORICAL_INACTIVE",
-      "extractionMethod": "historical underground uranium mining; site now under remediation and post-mining management",
-      "meta": {
-        "sourceAuthority": "DIAMO",
-        "currentEvidence": "DIAMO reports that the final uranium ore was hauled from the Dolní Rožínka operation on 27 April 2017, ending the uranium-mining era there.",
-        "location": "Dolní Rožínka, Vysočina, Czech Republic"
-      },
-      "sources": [
-        {
-          "url": "https://www.diamo.cz/cs/aktuality",
-          "accessed": "2026-10-02",
-          "scope": "mine closure milestone and current post-mining context",
-          "sourceType": "STATE_MINING_COMPANY"
-        }
-      ]
-    },
-    "SITE_ROU_rosia_poieni_copper_mine": {
-      "owner": "Cupru Min S.A. Abrud / Romanian state",
-      "operator": "Cupru Min S.A. Abrud",
-      "status": "ACTIVE_PRODUCING",
-      "operationalStatus": "ACTIVE_PRODUCING",
-      "extractionMethod": "large open-pit copper mining with ore extraction, crushing and concentration",
-      "meta": {
-        "sourceAuthority": "Cupru Min / Romanian Government",
-        "currentEvidence": "Cupru Min's operating rules describe the Roșia Poieni quarry's extraction and processing of low-grade copper ore; a 2025 Romanian government legal act updated the exploitation license.",
-        "location": "Alba County, Romania"
-      },
-      "sources": [
-        {
-          "url": "https://www.cuprumin.ro/544/2025/ROF_2025.pdf",
-          "accessed": "2026-10-02",
-          "scope": "current mine operation and processing scope",
-          "sourceType": "STATE_ENTERPRISE"
-        },
-        {
-          "url": "https://legislatie.just.ro/Public/DetaliiDocument/293952",
-          "accessed": "2026-10-02",
-          "scope": "2025 exploitation-license amendment",
-          "sourceType": "GOVERNMENT"
-        }
-      ]
-    },
     "SITE_HUN_visonta_lignite_mine": {
       "owner": "MVM Mátra Energia Zrt. / MVM Group",
       "operator": "Mátrai Erőmű / Visonta mine",
@@ -422,34 +376,6 @@
           "accessed": "2026-10-02",
           "scope": "mine identity, owner and open-pit operation",
           "sourceType": "SECONDARY"
-        }
-      ]
-    },
-    "SITE_SVK_jelsava_magnesite_mine": {
-      "owner": "Slovenské Magnezitové Závody a.s. Jelšava",
-      "operator": "Slovenské Magnezitové Závody a.s. Jelšava",
-      "status": "ACTIVE_PRODUCING",
-      "operationalStatus": "ACTIVE_PRODUCING",
-      "extractionMethod": "magnesite mining and beneficiation/processing",
-      "production": {
-        "annual": {
-          "value": 253300,
-          "unit": "metric_tons_magnesite",
-          "year": 2024
-        },
-        "status": "OBSERVED"
-      },
-      "meta": {
-        "sourceAuthority": "USGS",
-        "currentEvidence": "USGS reports Jelšava as the operator of the country's major magnesite mine and 253.3 kt of magnesite production in 2024.",
-        "location": "Jelšava, Banská Bystrica Region, Slovakia"
-      },
-      "sources": [
-        {
-          "url": "https://pubs.usgs.gov/publication/myb1-2024-slovakia",
-          "accessed": "2026-10-02",
-          "scope": "2024 magnesite mine and production data",
-          "sourceType": "GOVERNMENT_GEOLOGICAL_SURVEY"
         }
       ]
     },
@@ -546,26 +472,6 @@
         }
       ]
     },
-    "SITE_LTU_akmene_limestone_quarry": {
-      "owner": "AB Akmenės Cementas",
-      "operator": "AB Akmenės Cementas",
-      "status": "ACTIVE_PRODUCING",
-      "operationalStatus": "ACTIVE_PRODUCING",
-      "extractionMethod": "surface limestone quarrying for clinker/cement manufacture; crushing and raw-meal preparation",
-      "meta": {
-        "sourceAuthority": "Akmenės Cementas",
-        "currentEvidence": "Akmenės Cementas operates the cement complex in the Akmenė region and uses local mineral raw materials for cement production.",
-        "location": "Akmenė region, Lithuania"
-      },
-      "sources": [
-        {
-          "url": "https://cementas.lt/",
-          "accessed": "2026-10-02",
-          "scope": "current company and Akmenė production complex",
-          "sourceType": "OPERATOR"
-        }
-      ]
-    },
     "SITE_BLR_soligorsk_potash_mine": {
       "owner": "Republic of Belarus / Belaruskali",
       "operator": "Belaruskali",
@@ -613,32 +519,6 @@
         }
       ]
     },
-    "SITE_ALB_bulqize_chromite_mine": {
-      "owner": "Yılmaden Holding / AlbChrome",
-      "operator": "AlbChrome",
-      "status": "ACTIVE_PRODUCING",
-      "operationalStatus": "ACTIVE_PRODUCING",
-      "extractionMethod": "underground chromite mining with ore handling, beneficiation and ferrochrome integration",
-      "meta": {
-        "sourceAuthority": "AlbChrome / Albanian mining authorities",
-        "currentEvidence": "AlbChrome identifies Bulqiza as its principal chrome operation and remains a major Albanian chromite producer.",
-        "location": "Bulqizë, Dibër County, Albania"
-      },
-      "sources": [
-        {
-          "url": "https://albchrome.al/",
-          "accessed": "2026-10-02",
-          "scope": "current company, mine and chrome production",
-          "sourceType": "OPERATOR"
-        },
-        {
-          "url": "https://www.albchrome.al/our-history",
-          "accessed": "2026-10-02",
-          "scope": "Bulqiza mine history and production development",
-          "sourceType": "OPERATOR"
-        }
-      ]
-    },
     "SITE_MNE_pljevlja_coal_mine": {
       "owner": "Rudnik uglja a.d. Pljevlja / Government of Montenegro concession",
       "operator": "Rudnik uglja a.d. Pljevlja",
@@ -656,27 +536,6 @@
           "accessed": "2026-10-02",
           "scope": "2025 concession award and mine identity",
           "sourceType": "GOVERNMENT"
-        }
-      ]
-    },
-    "SITE_ISL_holasandur_aggregate_quarry": {
-      "owner": "UNOBSERVED",
-      "operator": "UNOBSERVED",
-      "status": "LIMITED",
-      "operationalStatus": "LIMITED",
-      "extractionMethod": "surface extraction of sand and aggregate from Hólasandur; screening and grading",
-      "meta": {
-        "sourceAuthority": "Icelandic planning/environmental documentation",
-        "currentEvidence": "The Hólasandur planning record permits aggregate extraction in a defined area, but the reviewed source does not establish a continuous commercial production rate.",
-        "location": "Hólasandur, Northeast Iceland",
-        "dataLimitation": "Permit/planning evidence is not equivalent to a verified current production rate."
-      },
-      "sources": [
-        {
-          "url": "https://geo.alta.is/thing/ask24ask/",
-          "accessed": "2026-10-02",
-          "scope": "planning and permitted aggregate extraction area",
-          "sourceType": "PLANNING_AUTHORITY"
         }
       ]
     },
@@ -821,31 +680,6 @@
           "accessed": "2026-10-02",
           "scope": "Ecuacorriente project ownership and consortium context",
           "sourceType": "INVESTMENT_REVIEW"
-        }
-      ]
-    },
-    "SITE_PRY_vallemi_limestone_quarry": {
-      "owner": "Industria Nacional del Cemento (INC)",
-      "operator": "Industria Nacional del Cemento (INC)",
-      "status": "ACTIVE_PRODUCING",
-      "operationalStatus": "ACTIVE_PRODUCING",
-      "extractionMethod": "open-pit limestone quarrying with blasting, excavation, crushing and raw-material supply to cement production",
-      "reserve": {
-        "quantity": 839693335,
-        "unit": "metric_tons_limestone",
-        "status": "REPORTED"
-      },
-      "meta": {
-        "sourceAuthority": "Paraguay public information system / INC",
-        "currentEvidence": "INC operates the Vallemi limestone mine for cement production; a public technical document reports inferred limestone reserves of about 839.7 Mt.",
-        "location": "Vallemí, Concepción, Paraguay"
-      },
-      "sources": [
-        {
-          "url": "https://informacionpublica.paraguay.gov.py/public/627788-",
-          "accessed": "2026-10-02",
-          "scope": "limestone reserves and mine/cement context",
-          "sourceType": "GOVERNMENT"
         }
       ]
     },
@@ -1002,27 +836,6 @@
           "accessed": "2026-10-02",
           "scope": "ownership, concession and St Ann mining operations",
           "sourceType": "GOVERNMENT_AGENCY"
-        }
-      ]
-    },
-    "SITE_HTI_gonaives_limestone_quarry_zone": {
-      "owner": "UNOBSERVED",
-      "operator": "UNOBSERVED",
-      "status": "LIMITED",
-      "operationalStatus": "LIMITED",
-      "extractionMethod": "surface limestone quarrying for cement and construction materials",
-      "meta": {
-        "sourceAuthority": "Bureau des Mines et de l'Énergie, Haiti",
-        "currentEvidence": "Government mineral inventory material identifies limestone occurrences and quarry/cement raw-material areas around Gonaïves, but the reviewed source is historic and does not establish a current 2026 operator.",
-        "location": "Gonaïves, Artibonite, Haiti",
-        "dataLimitation": "Current license holder and production rate are not established by the cited historic inventory."
-      },
-      "sources": [
-        {
-          "url": "https://www.ht.undp.org/content/dam/haiti/docs/energy/BME-Inventaire-des-Ressources-Minerales.pdf",
-          "accessed": "2026-10-02",
-          "scope": "limestone resources and historic quarry/cement context",
-          "sourceType": "GOVERNMENT"
         }
       ]
     },
@@ -1221,6 +1034,193 @@
           "accessed": "2026-10-02",
           "scope": "crushing/screening and aggregate operation context",
           "sourceType": "OPERATOR"
+        }
+      ]
+    },
+    "SITE_CZE_doln_ro_nka_uranium_mine": {
+      "owner": "DIAMO, s.p. / Czech state",
+      "operator": "DIAMO, s.p.",
+      "status": "HISTORICAL_INACTIVE",
+      "operationalStatus": "HISTORICAL_INACTIVE",
+      "extractionMethod": "historical underground uranium mining; site now under remediation and post-mining management",
+      "meta": {
+        "sourceAuthority": "DIAMO",
+        "currentEvidence": "DIAMO reports that the final uranium ore was hauled from the Dolní Rožínka operation on 27 April 2017, ending the uranium-mining era there.",
+        "location": "Dolní Rožínka, Vysočina, Czech Republic"
+      },
+      "sources": [
+        {
+          "url": "https://www.diamo.cz/cs/aktuality",
+          "accessed": "2026-10-02",
+          "scope": "mine closure milestone and current post-mining context",
+          "sourceType": "STATE_MINING_COMPANY"
+        }
+      ]
+    },
+    "SITE_ROU_ro_ia_poieni_copper_mine": {
+      "owner": "Cupru Min S.A. Abrud / Romanian state",
+      "operator": "Cupru Min S.A. Abrud",
+      "status": "ACTIVE_PRODUCING",
+      "operationalStatus": "ACTIVE_PRODUCING",
+      "extractionMethod": "large open-pit copper mining with ore extraction, crushing and concentration",
+      "meta": {
+        "sourceAuthority": "Cupru Min / Romanian Government",
+        "currentEvidence": "Cupru Min's operating rules describe the Roșia Poieni quarry's extraction and processing of low-grade copper ore; a 2025 Romanian government legal act updated the exploitation license.",
+        "location": "Alba County, Romania"
+      },
+      "sources": [
+        {
+          "url": "https://www.cuprumin.ro/544/2025/ROF_2025.pdf",
+          "accessed": "2026-10-02",
+          "scope": "current mine operation and processing scope",
+          "sourceType": "STATE_ENTERPRISE"
+        },
+        {
+          "url": "https://legislatie.just.ro/Public/DetaliiDocument/293952",
+          "accessed": "2026-10-02",
+          "scope": "2025 exploitation-license amendment",
+          "sourceType": "GOVERNMENT"
+        }
+      ]
+    },
+    "SITE_SVK_jel_ava_magnesite_mine": {
+      "owner": "Slovenské Magnezitové Závody a.s. Jelšava",
+      "operator": "Slovenské Magnezitové Závody a.s. Jelšava",
+      "status": "ACTIVE_PRODUCING",
+      "operationalStatus": "ACTIVE_PRODUCING",
+      "extractionMethod": "magnesite mining and beneficiation/processing",
+      "production": {
+        "annual": {
+          "value": 253300,
+          "unit": "metric_tons_magnesite",
+          "year": 2024
+        },
+        "status": "OBSERVED"
+      },
+      "meta": {
+        "sourceAuthority": "USGS",
+        "currentEvidence": "USGS reports Jelšava as the operator of the country's major magnesite mine and 253.3 kt of magnesite production in 2024.",
+        "location": "Jelšava, Banská Bystrica Region, Slovakia"
+      },
+      "sources": [
+        {
+          "url": "https://pubs.usgs.gov/publication/myb1-2024-slovakia",
+          "accessed": "2026-10-02",
+          "scope": "2024 magnesite mine and production data",
+          "sourceType": "GOVERNMENT_GEOLOGICAL_SURVEY"
+        }
+      ]
+    },
+    "SITE_LTU_akmen_limestone_quarry": {
+      "owner": "AB Akmenės Cementas",
+      "operator": "AB Akmenės Cementas",
+      "status": "ACTIVE_PRODUCING",
+      "operationalStatus": "ACTIVE_PRODUCING",
+      "extractionMethod": "surface limestone quarrying for clinker/cement manufacture; crushing and raw-meal preparation",
+      "meta": {
+        "sourceAuthority": "Akmenės Cementas",
+        "currentEvidence": "Akmenės Cementas operates the cement complex in the Akmenė region and uses local mineral raw materials for cement production.",
+        "location": "Akmenė region, Lithuania"
+      },
+      "sources": [
+        {
+          "url": "https://cementas.lt/",
+          "accessed": "2026-10-02",
+          "scope": "current company and Akmenė production complex",
+          "sourceType": "OPERATOR"
+        }
+      ]
+    },
+    "SITE_ALB_bulqiz_chromite_mine": {
+      "owner": "Yılmaden Holding / AlbChrome",
+      "operator": "AlbChrome",
+      "status": "ACTIVE_PRODUCING",
+      "operationalStatus": "ACTIVE_PRODUCING",
+      "extractionMethod": "underground chromite mining with ore handling, beneficiation and ferrochrome integration",
+      "meta": {
+        "sourceAuthority": "AlbChrome / Albanian mining authorities",
+        "currentEvidence": "AlbChrome identifies Bulqiza as its principal chrome operation and remains a major Albanian chromite producer.",
+        "location": "Bulqizë, Dibër County, Albania"
+      },
+      "sources": [
+        {
+          "url": "https://albchrome.al/",
+          "accessed": "2026-10-02",
+          "scope": "current company, mine and chrome production",
+          "sourceType": "OPERATOR"
+        },
+        {
+          "url": "https://www.albchrome.al/our-history",
+          "accessed": "2026-10-02",
+          "scope": "Bulqiza mine history and production development",
+          "sourceType": "OPERATOR"
+        }
+      ]
+    },
+    "SITE_ISL_h_lasandur_aggregate_quarry": {
+      "owner": "UNOBSERVED",
+      "operator": "UNOBSERVED",
+      "status": "LIMITED",
+      "operationalStatus": "LIMITED",
+      "extractionMethod": "surface extraction of sand and aggregate from Hólasandur; screening and grading",
+      "meta": {
+        "sourceAuthority": "Icelandic planning/environmental documentation",
+        "currentEvidence": "The Hólasandur planning record permits aggregate extraction in a defined area, but the reviewed source does not establish a continuous commercial production rate.",
+        "location": "Hólasandur, Northeast Iceland",
+        "dataLimitation": "Permit/planning evidence is not equivalent to a verified current production rate."
+      },
+      "sources": [
+        {
+          "url": "https://geo.alta.is/thing/ask24ask/",
+          "accessed": "2026-10-02",
+          "scope": "planning and permitted aggregate extraction area",
+          "sourceType": "PLANNING_AUTHORITY"
+        }
+      ]
+    },
+    "SITE_PRY_vallem_limestone_quarry": {
+      "owner": "Industria Nacional del Cemento (INC)",
+      "operator": "Industria Nacional del Cemento (INC)",
+      "status": "ACTIVE_PRODUCING",
+      "operationalStatus": "ACTIVE_PRODUCING",
+      "extractionMethod": "open-pit limestone quarrying with blasting, excavation, crushing and raw-material supply to cement production",
+      "reserve": {
+        "quantity": 839693335,
+        "unit": "metric_tons_limestone",
+        "status": "REPORTED"
+      },
+      "meta": {
+        "sourceAuthority": "Paraguay public information system / INC",
+        "currentEvidence": "INC operates the Vallemi limestone mine for cement production; a public technical document reports inferred limestone reserves of about 839.7 Mt.",
+        "location": "Vallemí, Concepción, Paraguay"
+      },
+      "sources": [
+        {
+          "url": "https://informacionpublica.paraguay.gov.py/public/627788-",
+          "accessed": "2026-10-02",
+          "scope": "limestone reserves and mine/cement context",
+          "sourceType": "GOVERNMENT"
+        }
+      ]
+    },
+    "SITE_HTI_gona_ves_limestone_quarry_zone": {
+      "owner": "UNOBSERVED",
+      "operator": "UNOBSERVED",
+      "status": "LIMITED",
+      "operationalStatus": "LIMITED",
+      "extractionMethod": "surface limestone quarrying for cement and construction materials",
+      "meta": {
+        "sourceAuthority": "Bureau des Mines et de l'Énergie, Haiti",
+        "currentEvidence": "Government mineral inventory material identifies limestone occurrences and quarry/cement raw-material areas around Gonaïves, but the reviewed source is historic and does not establish a current 2026 operator.",
+        "location": "Gonaïves, Artibonite, Haiti",
+        "dataLimitation": "Current license holder and production rate are not established by the cited historic inventory."
+      },
+      "sources": [
+        {
+          "url": "https://www.ht.undp.org/content/dam/haiti/docs/energy/BME-Inventaire-des-Ressources-Minerales.pdf",
+          "accessed": "2026-10-02",
+          "scope": "limestone resources and historic quarry/cement context",
+          "sourceType": "GOVERNMENT"
         }
       ]
     }
