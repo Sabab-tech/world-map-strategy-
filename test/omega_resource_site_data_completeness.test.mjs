@@ -110,7 +110,7 @@ for (const {countryId, index, site} of sites) {
 
   assert.equal(site.dataCompleteness.identity, 'COMPLETE', countryId + '[' + index + ']: identity completeness gate');
   if (isNA) {
-    assert.equal(site.dataCompleteness.resource, 'COMPLETE', countryId + '[' + index + ']: non-commercial resource classification must be COMPLETE');
+    assert.equal(site.dataCompleteness.resource, 'NOT_APPLICABLE', countryId + '[' + index + ']: non-commercial resource classification must be NOT_APPLICABLE');
   } else {
     assert.equal(site.dataCompleteness.resource, 'COMPLETE', countryId + '[' + index + ']: resource completeness gate');
   }
