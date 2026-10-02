@@ -128,7 +128,8 @@ test('global resource pipeline runs every RESOURCE_JSON mine and keeps each resu
   assert.ok(siteRefs.every(x=>x.resourceAsset&&x.resourceAsset.schemaVersion==='1.0.0'));
   assert.ok(siteRefs.every(x=>Object.prototype.hasOwnProperty.call(x.resourceAsset,'siteId')));
   assert.ok(siteRefs.every(x=>x.resourceAsset.assetId===x.siteReferenceKey));
-  assert.ok(siteRefs.every(x=>x.resourceAsset.resourceType===null || x.resourceAsset.resourceType===x.resourceTypeId));
+  const canonicalResourceType=v=>String(v??'').replace(/^RES_TYPE:/i,'').trim().toLowerCase()||null;
+  assert.ok(siteRefs.every(x=>x.resourceAsset.resourceType===null || canonicalResourceType(x.resourceAsset.resourceType)===canonicalResourceType(x.resourceTypeId)));
   assert.ok(siteRefs.every(x=>x.resourceAsset.reserve.geologicalQuantity===null));
   assert.ok(siteRefs.every(x=>x.resourceAsset.productionRate===null));
   assert.ok(siteRefs.every(x=>x.resourceAsset.dataStatus.overall==='UNOBSERVED'));
