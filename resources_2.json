@@ -13656,9 +13656,9 @@
               "locationNodeKey": "ASSET:VUT:luganville_aggregate_quarry_zone",
               "status": "LIMITED",
               "operationalStatus": "LIMITED",
-              "owner": "UNOBSERVED",
-              "operator": "UNOBSERVED",
-              "extractionMethod": "surface aggregate",
+              "owner": "Multiple private quarry operators",
+              "operator": "KD Enterprise Ltd. / Santo Earthworks Ltd.",
+              "extractionMethod": "Rock quarrying with crushing and aggregate production",
               "startYear": 1980,
               "legacyReferenceName": "Vanuatu Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -13681,7 +13681,7 @@
                 "reserve": "UNOBSERVED",
                 "production": "UNOBSERVED",
                 "grade": "UNOBSERVED",
-                "ownership": "UNOBSERVED",
+                "ownership": "OBSERVED",
                 "operation": "OBSERVED",
                 "extractionMethod": "OBSERVED",
                 "provenance": "RESOURCE_JSON_WEB_RESEARCH_CATALOG"
@@ -13694,8 +13694,9 @@
                 "legacyReferenceName": "Vanuatu Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
-                "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
+                "reviewedAt": "2026-10-02",
+                "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH",
+                "webReview": "Targeted authoritative repair rechecked 2026-10-02"
               },
               "commercialExtraction": true,
               "unverifiedLegacyValues": {
@@ -13726,13 +13727,13 @@
               },
               "extractionProfile": {
                 "siteType": "QUARRY",
-                "method": "surface aggregate",
+                "method": "Rock quarrying with crushing and aggregate production",
                 "lifecycleStatus": "LIMITED",
                 "operationalStatus": "LIMITED",
-                "owner": "UNOBSERVED",
-                "operator": "UNOBSERVED",
-                "ownerEvidenceStatus": "UNOBSERVED",
-                "operatorEvidenceStatus": "UNOBSERVED"
+                "owner": "Multiple private quarry operators",
+                "operator": "KD Enterprise Ltd. / Santo Earthworks Ltd.",
+                "ownerEvidenceStatus": "WEB_REVIEWED",
+                "operatorEvidenceStatus": "WEB_REVIEWED"
               },
               "quantitativeProfile": {
                 "reserve": {
@@ -13777,14 +13778,14 @@
                 "resource": "COMPLETE",
                 "location": "COMPLETE",
                 "operation": "COMPLETE",
-                "ownership": "UNOBSERVED",
+                "ownership": "REPORTED",
                 "quantitative": {
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -13808,15 +13809,15 @@
                   "coordinateStatus": "ESTIMATED_SITE_POINT"
                 },
                 "ownership": {
-                  "owner": "UNOBSERVED",
-                  "operator": "UNOBSERVED",
-                  "ownerEvidenceStatus": "UNOBSERVED",
-                  "operatorEvidenceStatus": "UNOBSERVED"
+                  "owner": "Multiple private quarry operators",
+                  "operator": "KD Enterprise Ltd. / Santo Earthworks Ltd.",
+                  "ownerEvidenceStatus": "WEB_REVIEWED",
+                  "operatorEvidenceStatus": "WEB_REVIEWED"
                 },
                 "operation": {
                   "status": "LIMITED",
                   "operationalStatus": "LIMITED",
-                  "extractionMethod": "surface aggregate",
+                  "extractionMethod": "Rock quarrying with crushing and aggregate production",
                   "extractionEligibility": null,
                   "commercialExtraction": true
                 },
@@ -13852,14 +13853,37 @@
                   }
                 },
                 "verification": {
-                  "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": null,
-                  "sourceCount": 0,
-                  "sourceAuthorities": [],
+                  "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+                  "reviewedAt": "2026-10-02",
+                  "sourceCount": 2,
+                  "sourceAuthorities": [
+                    "OPERATOR",
+                    "BUSINESS_DIRECTORY"
+                  ],
                   "dataLimitations": null
                 }
               },
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+              "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+              "ownershipScope": "AREA_MULTI_OPERATOR",
+              "researchMetadata": {
+                "reviewedAt": "2026-10-02",
+                "sourceAuthority": "Current Vanuatu quarry/construction operators",
+                "currentEvidence": "KD Enterprise documents a crushing and screening plant in Luganville supplying sand and aggregate; Santo Earthworks is also publicly listed in Luganville under quarry products, sand and concrete."
+              },
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.kdentreprise.com/about",
+                  "accessed": "2026-10-02",
+                  "scope": "current_luganville_crushing_screening_and_aggregate_supply",
+                  "sourceType": "OPERATOR"
+                },
+                {
+                  "url": "https://www.yellowpages.vu/1336-santo-earthworks",
+                  "accessed": "2026-10-02",
+                  "scope": "luganville_quarry_products_operator_listing",
+                  "sourceType": "BUSINESS_DIRECTORY"
+                }
+              ]
             }
           ],
           "processingFacilities": [
@@ -14864,9 +14888,9 @@
               "locationNodeKey": "ASSET:TON:nuku_alofa_aggregate_quarry_zone",
               "status": "LIMITED",
               "operationalStatus": "LIMITED",
-              "owner": "UNOBSERVED",
-              "operator": "UNOBSERVED",
-              "extractionMethod": "VOLCANIC_AGGREGATE_QUARRYING_AND_CRUSHING",
+              "owner": "Multiple private quarry operators and land interests",
+              "operator": "Multiple operators including FATA KIHE HAU & SONS and Nishi Trading",
+              "extractionMethod": "Quarry extraction, crushing and aggregate/gravel supply",
               "startYear": 1980,
               "legacyReferenceName": "Tonga Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -14889,7 +14913,7 @@
                 "reserve": "UNOBSERVED",
                 "production": "UNOBSERVED",
                 "grade": "UNOBSERVED",
-                "ownership": "UNOBSERVED",
+                "ownership": "OBSERVED",
                 "operation": "OBSERVED",
                 "extractionMethod": "OBSERVED",
                 "provenance": "RESOURCE_JSON_WEB_RESEARCH_CATALOG"
@@ -14902,8 +14926,9 @@
                 "legacyReferenceName": "Tonga Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
-                "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
+                "reviewedAt": "2026-10-02",
+                "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH",
+                "webReview": "Targeted authoritative repair rechecked 2026-10-02"
               },
               "operatorEvidenceStatus": "UNOBSERVED",
               "knownOperators": [
@@ -14921,6 +14946,12 @@
                   "url": "https://matangitonga.to/2026/08/05/public-notice-development-application-proposed-quarry-vaini",
                   "accessed": "2026-09-26",
                   "scope": "site_identity_or_operation"
+                },
+                {
+                  "url": "https://chris-brimble-y2se.squarespace.com/contact-us",
+                  "accessed": "2026-10-02",
+                  "scope": "current_tongatapu_quarry_location",
+                  "sourceType": "OPERATOR"
                 }
               ],
               "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -14948,13 +14979,13 @@
               },
               "extractionProfile": {
                 "siteType": "QUARRY",
-                "method": "VOLCANIC_AGGREGATE_QUARRYING_AND_CRUSHING",
+                "method": "Quarry extraction, crushing and aggregate/gravel supply",
                 "lifecycleStatus": "LIMITED",
                 "operationalStatus": "LIMITED",
-                "owner": "UNOBSERVED",
-                "operator": "UNOBSERVED",
-                "ownerEvidenceStatus": "UNOBSERVED",
-                "operatorEvidenceStatus": "UNOBSERVED"
+                "owner": "Multiple private quarry operators and land interests",
+                "operator": "Multiple operators including FATA KIHE HAU & SONS and Nishi Trading",
+                "ownerEvidenceStatus": "WEB_REVIEWED",
+                "operatorEvidenceStatus": "WEB_REVIEWED"
               },
               "quantitativeProfile": {
                 "reserve": {
@@ -14999,7 +15030,7 @@
                 "resource": "COMPLETE",
                 "location": "COMPLETE",
                 "operation": "COMPLETE",
-                "ownership": "UNOBSERVED",
+                "ownership": "REPORTED",
                 "quantitative": {
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
@@ -15030,15 +15061,15 @@
                   "coordinateStatus": "ESTIMATED_SITE_POINT"
                 },
                 "ownership": {
-                  "owner": "UNOBSERVED",
-                  "operator": "UNOBSERVED",
-                  "ownerEvidenceStatus": "UNOBSERVED",
-                  "operatorEvidenceStatus": "UNOBSERVED"
+                  "owner": "Multiple private quarry operators and land interests",
+                  "operator": "Multiple operators including FATA KIHE HAU & SONS and Nishi Trading",
+                  "ownerEvidenceStatus": "WEB_REVIEWED",
+                  "operatorEvidenceStatus": "WEB_REVIEWED"
                 },
                 "operation": {
                   "status": "LIMITED",
                   "operationalStatus": "LIMITED",
-                  "extractionMethod": "VOLCANIC_AGGREGATE_QUARRYING_AND_CRUSHING",
+                  "extractionMethod": "Quarry extraction, crushing and aggregate/gravel supply",
                   "extractionEligibility": null,
                   "commercialExtraction": true
                 },
@@ -15075,11 +15106,19 @@
                 },
                 "verification": {
                   "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-                  "reviewedAt": null,
-                  "sourceCount": 2,
-                  "sourceAuthorities": [],
+                  "reviewedAt": "2026-10-02",
+                  "sourceCount": 3,
+                  "sourceAuthorities": [
+                    "OPERATOR"
+                  ],
                   "dataLimitations": null
                 }
+              },
+              "ownershipScope": "AREA_MULTI_OPERATOR",
+              "researchMetadata": {
+                "reviewedAt": "2026-10-02",
+                "sourceAuthority": "Current Tonga quarry operators",
+                "currentEvidence": "FATA KIHE HAU & SONS identifies itself as a quarrying partner operating in Nuku'alofa and describes extraction, crushing and supply. Nishi Trading independently lists a quarry at Pili, Tongatapu."
               }
             }
           ],
@@ -17949,9 +17988,9 @@
               "locationNodeKey": "ASSET:FSM:pohnpei_aggregate_quarry_zone",
               "status": "LIMITED",
               "operationalStatus": "LIMITED",
-              "owner": "UNOBSERVED",
-              "operator": "UNOBSERVED",
-              "extractionMethod": "VOLCANIC_AGGREGATE_QUARRYING_AND_CRUSHING",
+              "owner": "APSCO",
+              "operator": "APSCO",
+              "extractionMethod": "Hard-rock basalt quarrying with aggregate production",
               "startYear": 1980,
               "legacyReferenceName": "Micronesia Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -17974,7 +18013,7 @@
                 "reserve": "UNOBSERVED",
                 "production": "UNOBSERVED",
                 "grade": "UNOBSERVED",
-                "ownership": "UNOBSERVED",
+                "ownership": "OBSERVED",
                 "operation": "OBSERVED",
                 "extractionMethod": "OBSERVED",
                 "provenance": "RESOURCE_JSON_WEB_RESEARCH_CATALOG"
@@ -17987,8 +18026,9 @@
                 "legacyReferenceName": "Micronesia Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
-                "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
+                "reviewedAt": "2026-10-02",
+                "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH",
+                "webReview": "Targeted authoritative repair rechecked 2026-10-02"
               },
               "operatorEvidenceStatus": "UNOBSERVED",
               "materialSubtype": "Volcanic aggregate",
@@ -17997,6 +18037,12 @@
                   "url": "https://www.theprif.org/sites/theprif.org/files/documents/PRIF-Aggregates-Report_final.pdf",
                   "accessed": "2026-09-26",
                   "scope": "site_identity_or_operation"
+                },
+                {
+                  "url": "https://www.researchgate.net/publication/270049924_Identification_of_onshore_aggregate-quarry_sites_prospects_for_development_Pohnpei_Isand_Federated_States_of_Micronesia",
+                  "accessed": "2026-10-02",
+                  "scope": "quarry_identity_owner_operator_and_hard_rock_resource",
+                  "sourceType": "SPC_SOPAC"
                 }
               ],
               "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -18024,13 +18070,13 @@
               },
               "extractionProfile": {
                 "siteType": "QUARRY",
-                "method": "VOLCANIC_AGGREGATE_QUARRYING_AND_CRUSHING",
+                "method": "Hard-rock basalt quarrying with aggregate production",
                 "lifecycleStatus": "LIMITED",
                 "operationalStatus": "LIMITED",
-                "owner": "UNOBSERVED",
-                "operator": "UNOBSERVED",
-                "ownerEvidenceStatus": "UNOBSERVED",
-                "operatorEvidenceStatus": "UNOBSERVED"
+                "owner": "APSCO",
+                "operator": "APSCO",
+                "ownerEvidenceStatus": "WEB_REVIEWED",
+                "operatorEvidenceStatus": "WEB_REVIEWED"
               },
               "quantitativeProfile": {
                 "reserve": {
@@ -18075,7 +18121,7 @@
                 "resource": "COMPLETE",
                 "location": "COMPLETE",
                 "operation": "COMPLETE",
-                "ownership": "UNOBSERVED",
+                "ownership": "REPORTED",
                 "quantitative": {
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
@@ -18106,15 +18152,15 @@
                   "coordinateStatus": "ESTIMATED_SITE_POINT"
                 },
                 "ownership": {
-                  "owner": "UNOBSERVED",
-                  "operator": "UNOBSERVED",
-                  "ownerEvidenceStatus": "UNOBSERVED",
-                  "operatorEvidenceStatus": "UNOBSERVED"
+                  "owner": "APSCO",
+                  "operator": "APSCO",
+                  "ownerEvidenceStatus": "WEB_REVIEWED",
+                  "operatorEvidenceStatus": "WEB_REVIEWED"
                 },
                 "operation": {
                   "status": "LIMITED",
                   "operationalStatus": "LIMITED",
-                  "extractionMethod": "VOLCANIC_AGGREGATE_QUARRYING_AND_CRUSHING",
+                  "extractionMethod": "Hard-rock basalt quarrying with aggregate production",
                   "extractionEligibility": null,
                   "commercialExtraction": true
                 },
@@ -18151,11 +18197,18 @@
                 },
                 "verification": {
                   "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-                  "reviewedAt": null,
-                  "sourceCount": 1,
-                  "sourceAuthorities": [],
+                  "reviewedAt": "2026-10-02",
+                  "sourceCount": 2,
+                  "sourceAuthorities": [
+                    "SPC_SOPAC"
+                  ],
                   "dataLimitations": null
                 }
+              },
+              "researchMetadata": {
+                "reviewedAt": "2026-10-02",
+                "sourceAuthority": "SPC/SOPAC technical quarry assessment",
+                "currentEvidence": "The Pohnpei quarry assessment identifies the existing hard-rock quarry at Ipwal Sokes as owned and operated by APSCO and describes basalt aggregate use for road base, concrete, reclamation and armour rock."
               }
             }
           ],
