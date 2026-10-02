@@ -2109,9 +2109,9 @@
               "locationNodeKey": "ASSET:JAM:noranda_st_ann_bauxite_mine",
               "status": "ACTIVE_PRODUCING",
               "operationalStatus": "ACTIVE_PRODUCING",
-              "owner": "Noranda Bauxite / Jamaica",
-              "operator": "Noranda Bauxite",
-              "extractionMethod": "open-pit bauxite mining",
+              "owner": "Noranda Bauxite Limited (49%) / Government of Jamaica (51%)",
+              "operator": "Noranda Bauxite Partners II",
+              "extractionMethod": "surface bauxite mining with stripping, excavation, haulage and rail transport to port",
               "startYear": 1942,
               "legacyReferenceName": "Jamaica Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -2173,11 +2173,11 @@
               },
               "extractionProfile": {
                 "siteType": "MINE",
-                "method": "open-pit bauxite mining",
+                "method": "surface bauxite mining with stripping, excavation, haulage and rail transport to port",
                 "lifecycleStatus": "ACTIVE_PRODUCING",
                 "operationalStatus": "ACTIVE_PRODUCING",
-                "owner": "Noranda Bauxite / Jamaica",
-                "operator": "Noranda Bauxite",
+                "owner": "Noranda Bauxite Limited (49%) / Government of Jamaica (51%)",
+                "operator": "Noranda Bauxite Partners II",
                 "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
                 "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
               },
@@ -2235,7 +2235,7 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -2260,15 +2260,15 @@
                   "locationNodeKey": "ASSET:JAM:noranda_st_ann_bauxite_mine"
                 },
                 "ownership": {
-                  "owner": "Noranda Bauxite / Jamaica",
-                  "operator": "Noranda Bauxite",
+                  "owner": "Noranda Bauxite Limited (49%) / Government of Jamaica (51%)",
+                  "operator": "Noranda Bauxite Partners II",
                   "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
                   "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
                 },
                 "operation": {
                   "status": "ACTIVE_PRODUCING",
                   "operationalStatus": "ACTIVE_PRODUCING",
-                  "extractionMethod": "open-pit bauxite mining",
+                  "extractionMethod": "surface bauxite mining with stripping, excavation, haulage and rail transport to port",
                   "extractionEligibility": "EXECUTABLE",
                   "commercialExtraction": true,
                   "startYear": 1942
@@ -2309,15 +2309,32 @@
                   }
                 },
                 "verification": {
-                  "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": null,
-                  "sourceCount": 0,
-                  "sourceAuthorities": [],
+                  "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+                  "reviewedAt": "2026-10-02",
+                  "sourceCount": 1,
+                  "sourceAuthorities": [
+                    "GOVERNMENT_AGENCY"
+                  ],
                   "dataLimitations": null
                 }
               },
               "extractionEligibility": "EXECUTABLE",
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+              "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+              "researchMetadata": {
+                "sourceAuthority": "Jamaica Bauxite Institute",
+                "currentEvidence": "The Jamaica Bauxite Institute identifies Noranda Jamaica Bauxite Partners II as a 49/51 partnership with the Jamaican government and says bauxite is mined in St Ann and transported by rail.",
+                "location": "Saint Ann, Jamaica",
+                "reviewedAt": "2026-10-02",
+                "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVIEW"
+              },
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.jbi.org.jm/industry/",
+                  "accessed": "2026-10-02",
+                  "scope": "ownership, concession and St Ann mining operations",
+                  "sourceType": "GOVERNMENT_AGENCY"
+                }
+              ]
             }
           ],
           "processingFacilities": [
@@ -2718,7 +2735,7 @@
               "operationalStatus": "LIMITED",
               "owner": "UNOBSERVED",
               "operator": "UNOBSERVED",
-              "extractionMethod": "surface quarrying",
+              "extractionMethod": "surface limestone quarrying for cement and construction materials",
               "startYear": 1980,
               "legacyReferenceName": "Haiti Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -2786,7 +2803,7 @@
               },
               "extractionProfile": {
                 "siteType": "QUARRY",
-                "method": "surface quarrying",
+                "method": "surface limestone quarrying for cement and construction materials",
                 "lifecycleStatus": "LIMITED",
                 "operationalStatus": "LIMITED",
                 "owner": "UNOBSERVED",
@@ -2845,7 +2862,7 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -2878,7 +2895,7 @@
                 "operation": {
                   "status": "LIMITED",
                   "operationalStatus": "LIMITED",
-                  "extractionMethod": "surface quarrying",
+                  "extractionMethod": "surface limestone quarrying for cement and construction materials",
                   "extractionEligibility": "NON_EXECUTABLE",
                   "commercialExtraction": true,
                   "startYear": 1980
@@ -2916,14 +2933,32 @@
                   }
                 },
                 "verification": {
-                  "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": null,
-                  "sourceCount": 0,
-                  "sourceAuthorities": [],
-                  "dataLimitations": null
+                  "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+                  "reviewedAt": "2026-10-02",
+                  "sourceCount": 1,
+                  "sourceAuthorities": [
+                    "GOVERNMENT"
+                  ],
+                  "dataLimitations": "Current license holder and production rate are not established by the cited historic inventory."
                 }
               },
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+              "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+              "researchMetadata": {
+                "sourceAuthority": "Bureau des Mines et de l'Énergie, Haiti",
+                "currentEvidence": "Government mineral inventory material identifies limestone occurrences and quarry/cement raw-material areas around Gonaïves, but the reviewed source is historic and does not establish a current 2026 operator.",
+                "location": "Gonaïves, Artibonite, Haiti",
+                "dataLimitation": "Current license holder and production rate are not established by the cited historic inventory.",
+                "reviewedAt": "2026-10-02",
+                "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVIEW"
+              },
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.ht.undp.org/content/dam/haiti/docs/energy/BME-Inventaire-des-Ressources-Minerales.pdf",
+                  "accessed": "2026-10-02",
+                  "scope": "limestone resources and historic quarry/cement context",
+                  "sourceType": "GOVERNMENT"
+                }
+              ]
             }
           ],
           "processingFacilities": [
@@ -3948,9 +3983,9 @@
               "locationNodeKey": "ASSET:TTO:juniper_oil_field",
               "status": "ACTIVE_PRODUCING",
               "operationalStatus": "ACTIVE_PRODUCING",
-              "owner": "bpTT / Trinidad and Tobago",
-              "operator": "bp Trinidad and Tobago",
-              "extractionMethod": "offshore platforms and subsea wells",
+              "owner": "bp Trinidad and Tobago / Republic of Trinidad and Tobago",
+              "operator": "bp Trinidad and Tobago (bpTT)",
+              "extractionMethod": "offshore oil and gas production from subsea/well infrastructure tied to existing facilities",
               "startYear": 2017,
               "legacyReferenceName": "Trinidad and Tobago Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -4012,11 +4047,11 @@
               },
               "extractionProfile": {
                 "siteType": "OIL_FIELD",
-                "method": "offshore platforms and subsea wells",
+                "method": "offshore oil and gas production from subsea/well infrastructure tied to existing facilities",
                 "lifecycleStatus": "ACTIVE_PRODUCING",
                 "operationalStatus": "ACTIVE_PRODUCING",
-                "owner": "bpTT / Trinidad and Tobago",
-                "operator": "bp Trinidad and Tobago",
+                "owner": "bp Trinidad and Tobago / Republic of Trinidad and Tobago",
+                "operator": "bp Trinidad and Tobago (bpTT)",
                 "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
                 "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
               },
@@ -4076,7 +4111,7 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -4101,15 +4136,15 @@
                   "locationNodeKey": "ASSET:TTO:juniper_oil_field"
                 },
                 "ownership": {
-                  "owner": "bpTT / Trinidad and Tobago",
-                  "operator": "bp Trinidad and Tobago",
+                  "owner": "bp Trinidad and Tobago / Republic of Trinidad and Tobago",
+                  "operator": "bp Trinidad and Tobago (bpTT)",
                   "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
                   "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
                 },
                 "operation": {
                   "status": "ACTIVE_PRODUCING",
                   "operationalStatus": "ACTIVE_PRODUCING",
-                  "extractionMethod": "offshore platforms and subsea wells",
+                  "extractionMethod": "offshore oil and gas production from subsea/well infrastructure tied to existing facilities",
                   "extractionEligibility": "EXECUTABLE",
                   "commercialExtraction": true,
                   "startYear": 2017
@@ -4152,15 +4187,33 @@
                   }
                 },
                 "verification": {
-                  "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": null,
-                  "sourceCount": 0,
-                  "sourceAuthorities": [],
-                  "dataLimitations": null
+                  "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+                  "reviewedAt": "2026-10-02",
+                  "sourceCount": 1,
+                  "sourceAuthorities": [
+                    "CORPORATE_REPORT"
+                  ],
+                  "dataLimitations": "The cited report describes the development programme rather than a standalone Juniper 2026 production rate."
                 }
               },
               "extractionEligibility": "EXECUTABLE",
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+              "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+              "researchMetadata": {
+                "sourceAuthority": "bp annual report",
+                "currentEvidence": "bp's 2025 annual report records continuing Juniper field activity and an infill programme involving well decompletion and sidetracks in Trinidad and Tobago.",
+                "location": "Offshore Trinidad, Trinidad and Tobago",
+                "dataLimitation": "The cited report describes the development programme rather than a standalone Juniper 2026 production rate.",
+                "reviewedAt": "2026-10-02",
+                "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVIEW"
+              },
+              "webResearchEvidence": [
+                {
+                  "url": "https://companiesmarketcap.com/bp/sec-reports-20f/0000313807-26-000006/",
+                  "accessed": "2026-10-02",
+                  "scope": "2025 Juniper wells and field programme",
+                  "sourceType": "CORPORATE_REPORT"
+                }
+              ]
             }
           ],
           "processingFacilities": [
@@ -5172,9 +5225,9 @@
               "locationNodeKey": "ASSET:BRB:arawak_cement_limestone_quarry",
               "status": "ACTIVE_PRODUCING",
               "operationalStatus": "ACTIVE_PRODUCING",
-              "owner": "Arawak Cement",
-              "operator": "Arawak Cement",
-              "extractionMethod": "surface quarrying",
+              "owner": "Arawak Cement Company Limited / CEMEX interests",
+              "operator": "Arawak Cement Company Limited",
+              "extractionMethod": "surface limestone quarrying for cement raw material and aggregates",
               "startYear": 1967,
               "legacyReferenceName": "Barbados Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -5236,11 +5289,11 @@
               },
               "extractionProfile": {
                 "siteType": "QUARRY",
-                "method": "surface quarrying",
+                "method": "surface limestone quarrying for cement raw material and aggregates",
                 "lifecycleStatus": "ACTIVE_PRODUCING",
                 "operationalStatus": "ACTIVE_PRODUCING",
-                "owner": "Arawak Cement",
-                "operator": "Arawak Cement",
+                "owner": "Arawak Cement Company Limited / CEMEX interests",
+                "operator": "Arawak Cement Company Limited",
                 "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
                 "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
               },
@@ -5295,7 +5348,7 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -5320,15 +5373,15 @@
                   "locationNodeKey": "ASSET:BRB:arawak_cement_limestone_quarry"
                 },
                 "ownership": {
-                  "owner": "Arawak Cement",
-                  "operator": "Arawak Cement",
+                  "owner": "Arawak Cement Company Limited / CEMEX interests",
+                  "operator": "Arawak Cement Company Limited",
                   "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
                   "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
                 },
                 "operation": {
                   "status": "ACTIVE_PRODUCING",
                   "operationalStatus": "ACTIVE_PRODUCING",
-                  "extractionMethod": "surface quarrying",
+                  "extractionMethod": "surface limestone quarrying for cement raw material and aggregates",
                   "extractionEligibility": "EXECUTABLE",
                   "commercialExtraction": true,
                   "startYear": 1967
@@ -5366,15 +5419,39 @@
                   }
                 },
                 "verification": {
-                  "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": null,
-                  "sourceCount": 0,
-                  "sourceAuthorities": [],
+                  "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+                  "reviewedAt": "2026-10-02",
+                  "sourceCount": 2,
+                  "sourceAuthorities": [
+                    "SEC_FILING",
+                    "LOCAL_NEWS"
+                  ],
                   "dataLimitations": null
                 }
               },
               "extractionEligibility": "EXECUTABLE",
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+              "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+              "researchMetadata": {
+                "sourceAuthority": "Arawak Cement / corporate reporting",
+                "currentEvidence": "Corporate reporting identifies Arawak Cement Company Limited and one aggregates quarry in Barbados; local reporting identifies the limestone quarry feeding the plant.",
+                "location": "Saint Lucy, Barbados",
+                "reviewedAt": "2026-10-02",
+                "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVIEW"
+              },
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.sec.gov/Archives/edgar/data/0000066418/000119312525073416/d790540d20f.htm",
+                  "accessed": "2026-10-02",
+                  "scope": "Arawak Cement company and quarry context",
+                  "sourceType": "SEC_FILING"
+                },
+                {
+                  "url": "https://barbadostoday.bb/",
+                  "accessed": "2026-10-02",
+                  "scope": "quarry and plant operating context",
+                  "sourceType": "LOCAL_NEWS"
+                }
+              ]
             }
           ],
           "processingFacilities": [
@@ -6392,7 +6469,7 @@
               "operationalStatus": "LIMITED",
               "owner": "UNOBSERVED",
               "operator": "UNOBSERVED",
-              "extractionMethod": "surface aggregate quarrying",
+              "extractionMethod": "surface aggregate quarrying and crushing of hard volcanic rock",
               "startYear": 1980,
               "legacyReferenceName": "Saint Vincent and the Grenadines Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -6460,7 +6537,7 @@
               },
               "extractionProfile": {
                 "siteType": "QUARRY",
-                "method": "surface aggregate quarrying",
+                "method": "surface aggregate quarrying and crushing of hard volcanic rock",
                 "lifecycleStatus": "LIMITED",
                 "operationalStatus": "LIMITED",
                 "owner": "UNOBSERVED",
@@ -6518,7 +6595,7 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -6551,7 +6628,7 @@
                 "operation": {
                   "status": "LIMITED",
                   "operationalStatus": "LIMITED",
-                  "extractionMethod": "surface aggregate quarrying",
+                  "extractionMethod": "surface aggregate quarrying and crushing of hard volcanic rock",
                   "extractionEligibility": "NON_EXECUTABLE",
                   "commercialExtraction": true,
                   "startYear": 1980
@@ -6588,14 +6665,32 @@
                   }
                 },
                 "verification": {
-                  "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": null,
-                  "sourceCount": 0,
-                  "sourceAuthorities": [],
-                  "dataLimitations": null
+                  "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+                  "reviewedAt": "2026-10-02",
+                  "sourceCount": 1,
+                  "sourceAuthorities": [
+                    "GOVERNMENT"
+                  ],
+                  "dataLimitations": "Owner, operator and current production rate remain unobserved at site-specific level."
                 }
               },
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+              "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+              "researchMetadata": {
+                "sourceAuthority": "Saint Vincent aggregate sector",
+                "currentEvidence": "The repository reference is treated as a local quarry/aggregate site, but no single 2026 concession holder could be established from the reviewed public material.",
+                "location": "Saint Vincent, Saint Vincent and the Grenadines",
+                "dataLimitation": "Owner, operator and current production rate remain unobserved at site-specific level.",
+                "reviewedAt": "2026-10-02",
+                "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVIEW"
+              },
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.gov.vc/",
+                  "accessed": "2026-10-02",
+                  "scope": "national quarry/materials regulatory context",
+                  "sourceType": "GOVERNMENT"
+                }
+              ]
             }
           ],
           "processingFacilities": [
@@ -7610,7 +7705,7 @@
               "operationalStatus": "LIMITED",
               "owner": "UNOBSERVED",
               "operator": "UNOBSERVED",
-              "extractionMethod": "surface quarrying",
+              "extractionMethod": "surface limestone quarrying and aggregate crushing",
               "startYear": 1980,
               "legacyReferenceName": "Antigua and Barbuda Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -7678,7 +7773,7 @@
               },
               "extractionProfile": {
                 "siteType": "QUARRY",
-                "method": "surface quarrying",
+                "method": "surface limestone quarrying and aggregate crushing",
                 "lifecycleStatus": "LIMITED",
                 "operationalStatus": "LIMITED",
                 "owner": "UNOBSERVED",
@@ -7737,7 +7832,7 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -7770,7 +7865,7 @@
                 "operation": {
                   "status": "LIMITED",
                   "operationalStatus": "LIMITED",
-                  "extractionMethod": "surface quarrying",
+                  "extractionMethod": "surface limestone quarrying and aggregate crushing",
                   "extractionEligibility": "NON_EXECUTABLE",
                   "commercialExtraction": true,
                   "startYear": 1980
@@ -7808,14 +7903,32 @@
                   }
                 },
                 "verification": {
-                  "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": null,
-                  "sourceCount": 0,
-                  "sourceAuthorities": [],
-                  "dataLimitations": null
+                  "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+                  "reviewedAt": "2026-10-02",
+                  "sourceCount": 1,
+                  "sourceAuthorities": [
+                    "GOVERNMENT"
+                  ],
+                  "dataLimitations": "Site-specific operator and output rate remain unobserved."
                 }
               },
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+              "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+              "researchMetadata": {
+                "sourceAuthority": "Antigua and Barbuda quarry sector",
+                "currentEvidence": "Gunthorpes is retained as a local limestone quarry reference; a single current 2026 operator could not be reliably confirmed from the public evidence reviewed.",
+                "location": "Saint George, Antigua and Barbuda",
+                "dataLimitation": "Site-specific operator and output rate remain unobserved.",
+                "reviewedAt": "2026-10-02",
+                "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVIEW"
+              },
+              "webResearchEvidence": [
+                {
+                  "url": "https://ab.gov.ag/",
+                  "accessed": "2026-10-02",
+                  "scope": "national quarry and minerals regulatory context",
+                  "sourceType": "GOVERNMENT"
+                }
+              ]
             }
           ],
           "processingFacilities": [
@@ -8216,7 +8329,7 @@
               "operationalStatus": "LIMITED",
               "owner": "UNOBSERVED",
               "operator": "UNOBSERVED",
-              "extractionMethod": "surface quarrying",
+              "extractionMethod": "surface limestone/aggregate quarrying with crushing and screening",
               "startYear": 1980,
               "legacyReferenceName": "Saint Kitts and Nevis Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -8284,7 +8397,7 @@
               },
               "extractionProfile": {
                 "siteType": "QUARRY",
-                "method": "surface quarrying",
+                "method": "surface limestone/aggregate quarrying with crushing and screening",
                 "lifecycleStatus": "LIMITED",
                 "operationalStatus": "LIMITED",
                 "owner": "UNOBSERVED",
@@ -8343,7 +8456,7 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -8376,7 +8489,7 @@
                 "operation": {
                   "status": "LIMITED",
                   "operationalStatus": "LIMITED",
-                  "extractionMethod": "surface quarrying",
+                  "extractionMethod": "surface limestone/aggregate quarrying with crushing and screening",
                   "extractionEligibility": "NON_EXECUTABLE",
                   "commercialExtraction": true,
                   "startYear": 1980
@@ -8414,14 +8527,32 @@
                   }
                 },
                 "verification": {
-                  "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": null,
-                  "sourceCount": 0,
-                  "sourceAuthorities": [],
-                  "dataLimitations": null
+                  "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+                  "reviewedAt": "2026-10-02",
+                  "sourceCount": 1,
+                  "sourceAuthorities": [
+                    "GOVERNMENT"
+                  ],
+                  "dataLimitations": "Owner/operator and current production rate remain unobserved."
                 }
               },
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+              "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+              "researchMetadata": {
+                "sourceAuthority": "Saint Kitts and Nevis quarry sector",
+                "currentEvidence": "Ross Lands is retained as a district-level limestone quarry reference; the reviewed public material did not establish a single current operator.",
+                "location": "Ross Lands, Saint Kitts, Saint Kitts and Nevis",
+                "dataLimitation": "Owner/operator and current production rate remain unobserved.",
+                "reviewedAt": "2026-10-02",
+                "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVIEW"
+              },
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.gov.kn/",
+                  "accessed": "2026-10-02",
+                  "scope": "national minerals/quarry regulatory context",
+                  "sourceType": "GOVERNMENT"
+                }
+              ]
             }
           ],
           "processingFacilities": [
@@ -10052,9 +10183,9 @@
               "locationNodeKey": "ASSET:GUY:aurora_gold_mine",
               "status": "ACTIVE_PRODUCING",
               "operationalStatus": "ACTIVE_PRODUCING",
-              "owner": "Zijin / Guyana",
-              "operator": "Aurora operations",
-              "extractionMethod": "open-pit and underground",
+              "owner": "Zijin Mining / Guyana interests",
+              "operator": "Aurora Gold Mine / Zijin Mining",
+              "extractionMethod": "combined open-pit and underground gold mining with gravity recovery, cyanide leaching and doré production",
               "startYear": 2015,
               "legacyReferenceName": "Guyana Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -10116,11 +10247,11 @@
               },
               "extractionProfile": {
                 "siteType": "MINE",
-                "method": "open-pit and underground",
+                "method": "combined open-pit and underground gold mining with gravity recovery, cyanide leaching and doré production",
                 "lifecycleStatus": "ACTIVE_PRODUCING",
                 "operationalStatus": "ACTIVE_PRODUCING",
-                "owner": "Zijin / Guyana",
-                "operator": "Aurora operations",
+                "owner": "Zijin Mining / Guyana interests",
+                "operator": "Aurora Gold Mine / Zijin Mining",
                 "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
                 "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
               },
@@ -10131,11 +10262,15 @@
                   "status": "UNOBSERVED"
                 },
                 "production": {
-                  "annual": null,
+                  "annual": {
+                    "value": 4.5,
+                    "unit": "metric_tons_gold",
+                    "year": 2025
+                  },
                   "rate": null,
                   "unit": null,
                   "year": null,
-                  "status": "UNOBSERVED"
+                  "status": "OBSERVED"
                 },
                 "grade": {
                   "value": null,
@@ -10171,11 +10306,11 @@
                 "ownership": "REPORTED",
                 "quantitative": {
                   "reserve": "UNOBSERVED",
-                  "production": "UNOBSERVED",
+                  "production": "OBSERVED",
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -10200,15 +10335,15 @@
                   "locationNodeKey": "ASSET:GUY:aurora_gold_mine"
                 },
                 "ownership": {
-                  "owner": "Zijin / Guyana",
-                  "operator": "Aurora operations",
+                  "owner": "Zijin Mining / Guyana interests",
+                  "operator": "Aurora Gold Mine / Zijin Mining",
                   "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
                   "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
                 },
                 "operation": {
                   "status": "ACTIVE_PRODUCING",
                   "operationalStatus": "ACTIVE_PRODUCING",
-                  "extractionMethod": "open-pit and underground",
+                  "extractionMethod": "combined open-pit and underground gold mining with gravity recovery, cyanide leaching and doré production",
                   "extractionEligibility": "EXECUTABLE",
                   "commercialExtraction": true,
                   "startYear": 2015
@@ -10233,11 +10368,15 @@
                     "status": "UNOBSERVED"
                   },
                   "production": {
-                    "annual": null,
+                    "annual": {
+                      "value": 4.5,
+                      "unit": "metric_tons_gold",
+                      "year": 2025
+                    },
                     "rate": null,
                     "unit": null,
                     "year": null,
-                    "status": "UNOBSERVED"
+                    "status": "OBSERVED"
                   },
                   "grade": {
                     "value": null,
@@ -10246,15 +10385,32 @@
                   }
                 },
                 "verification": {
-                  "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": null,
-                  "sourceCount": 0,
-                  "sourceAuthorities": [],
+                  "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+                  "reviewedAt": "2026-10-02",
+                  "sourceCount": 1,
+                  "sourceAuthorities": [
+                    "OPERATOR"
+                  ],
                   "dataLimitations": null
                 }
               },
               "extractionEligibility": "EXECUTABLE",
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+              "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+              "researchMetadata": {
+                "sourceAuthority": "Zijin Mining",
+                "currentEvidence": "Zijin describes Aurora as Guyana's large-scale operating gold mine; it uses open-pit and underground mining with gravity and cyanide processing. 2025 production was reported at about 4.5 tonnes of gold, with 2026 first-half output around 2.2 tonnes.",
+                "location": "Cuyuni-Mazaruni, Guyana",
+                "reviewedAt": "2026-10-02",
+                "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVIEW"
+              },
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.zijinmining.com/global/program-detail-71743.htm",
+                  "accessed": "2026-10-02",
+                  "scope": "current mine identity, method and 2025 production",
+                  "sourceType": "OPERATOR"
+                }
+              ]
             }
           ],
           "processingFacilities": [
@@ -12569,9 +12725,9 @@
               "locationNodeKey": "ASSET:FJI:vatukoula_gold_mine",
               "status": "ACTIVE_PRODUCING",
               "operationalStatus": "ACTIVE_PRODUCING",
-              "owner": "Vatukoula Gold Mines",
-              "operator": "Vatukoula Gold Mines",
-              "extractionMethod": "underground",
+              "owner": "Shandong Zhaojin Group / Zhaojin International Gold",
+              "operator": "Vatukoula Gold Mines Pte Limited",
+              "extractionMethod": "underground gold mining with surface processing; current expansion includes concentrate production and tailings retreatment",
               "startYear": 1935,
               "legacyReferenceName": "Fiji Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -12633,11 +12789,11 @@
               },
               "extractionProfile": {
                 "siteType": "MINE",
-                "method": "underground",
+                "method": "underground gold mining with surface processing; current expansion includes concentrate production and tailings retreatment",
                 "lifecycleStatus": "ACTIVE_PRODUCING",
                 "operationalStatus": "ACTIVE_PRODUCING",
-                "owner": "Vatukoula Gold Mines",
-                "operator": "Vatukoula Gold Mines",
+                "owner": "Shandong Zhaojin Group / Zhaojin International Gold",
+                "operator": "Vatukoula Gold Mines Pte Limited",
                 "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
                 "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
               },
@@ -12692,7 +12848,7 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -12717,15 +12873,15 @@
                   "locationNodeKey": "ASSET:FJI:vatukoula_gold_mine"
                 },
                 "ownership": {
-                  "owner": "Vatukoula Gold Mines",
-                  "operator": "Vatukoula Gold Mines",
+                  "owner": "Shandong Zhaojin Group / Zhaojin International Gold",
+                  "operator": "Vatukoula Gold Mines Pte Limited",
                   "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
                   "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
                 },
                 "operation": {
                   "status": "ACTIVE_PRODUCING",
                   "operationalStatus": "ACTIVE_PRODUCING",
-                  "extractionMethod": "underground",
+                  "extractionMethod": "underground gold mining with surface processing; current expansion includes concentrate production and tailings retreatment",
                   "extractionEligibility": "EXECUTABLE",
                   "commercialExtraction": true,
                   "startYear": 1935
@@ -12763,15 +12919,46 @@
                   }
                 },
                 "verification": {
-                  "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": null,
-                  "sourceCount": 0,
-                  "sourceAuthorities": [],
-                  "dataLimitations": null
+                  "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+                  "reviewedAt": "2026-10-02",
+                  "sourceCount": 3,
+                  "sourceAuthorities": [
+                    "OPERATOR",
+                    "NEWS"
+                  ],
+                  "dataLimitations": "Current annual mine output is not asserted here because 2025 reporting separates gold ore and concentrate measures."
                 }
               },
               "extractionEligibility": "EXECUTABLE",
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+              "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+              "researchMetadata": {
+                "sourceAuthority": "Zhaojin International Gold / Fiji Reserve Bank",
+                "currentEvidence": "Zhaojin's 2026 reports show active underground operations and processing upgrades at Vatukoula; Fiji reporting confirms VGML remains the operator and shifted production toward gold concentrates.",
+                "location": "Vatukoula, Viti Levu, Fiji",
+                "dataLimitation": "Current annual mine output is not asserted here because 2025 reporting separates gold ore and concentrate measures.",
+                "reviewedAt": "2026-10-02",
+                "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVIEW"
+              },
+              "webResearchEvidence": [
+                {
+                  "url": "https://en.zjhj-gold.com/content/details112_209.html",
+                  "accessed": "2026-10-02",
+                  "scope": "2026 underground operation, production optimization and exploration",
+                  "sourceType": "OPERATOR"
+                },
+                {
+                  "url": "https://en.zjhj-gold.com/content/details112_225.html",
+                  "accessed": "2026-10-02",
+                  "scope": "2026 active mine site and production-site management",
+                  "sourceType": "OPERATOR"
+                },
+                {
+                  "url": "https://www.fijitimes.com.fj/rbf-clarifies-gold-output-calculations/",
+                  "accessed": "2026-10-02",
+                  "scope": "2025 production-measurement clarification and operator identity",
+                  "sourceType": "NEWS"
+                }
+              ]
             }
           ],
           "processingFacilities": [
@@ -13811,8 +13998,8 @@
               "status": "LIMITED",
               "operationalStatus": "LIMITED",
               "owner": "UNOBSERVED",
-              "operator": "UNOBSERVED",
-              "extractionMethod": "surface aggregate",
+              "operator": "Local quarry/aggregate suppliers including Santo Earthworks Ltd. and KD Enterprise",
+              "extractionMethod": "surface sand and aggregate extraction; crushing and screening",
               "startYear": 1980,
               "legacyReferenceName": "Vanuatu Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -13880,11 +14067,11 @@
               },
               "extractionProfile": {
                 "siteType": "QUARRY",
-                "method": "surface aggregate",
+                "method": "surface sand and aggregate extraction; crushing and screening",
                 "lifecycleStatus": "LIMITED",
                 "operationalStatus": "LIMITED",
                 "owner": "UNOBSERVED",
-                "operator": "UNOBSERVED",
+                "operator": "Local quarry/aggregate suppliers including Santo Earthworks Ltd. and KD Enterprise",
                 "ownerEvidenceStatus": "UNOBSERVED",
                 "operatorEvidenceStatus": "UNOBSERVED"
               },
@@ -13938,7 +14125,7 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -13964,14 +14151,14 @@
                 },
                 "ownership": {
                   "owner": "UNOBSERVED",
-                  "operator": "UNOBSERVED",
+                  "operator": "Local quarry/aggregate suppliers including Santo Earthworks Ltd. and KD Enterprise",
                   "ownerEvidenceStatus": "UNOBSERVED",
                   "operatorEvidenceStatus": "UNOBSERVED"
                 },
                 "operation": {
                   "status": "LIMITED",
                   "operationalStatus": "LIMITED",
-                  "extractionMethod": "surface aggregate",
+                  "extractionMethod": "surface sand and aggregate extraction; crushing and screening",
                   "extractionEligibility": "NON_EXECUTABLE",
                   "commercialExtraction": true,
                   "startYear": 1980
@@ -14008,14 +14195,39 @@
                   }
                 },
                 "verification": {
-                  "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": null,
-                  "sourceCount": 0,
-                  "sourceAuthorities": [],
-                  "dataLimitations": null
+                  "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+                  "reviewedAt": "2026-10-02",
+                  "sourceCount": 2,
+                  "sourceAuthorities": [
+                    "BUSINESS_DIRECTORY",
+                    "OPERATOR"
+                  ],
+                  "dataLimitations": "The repository is a quarry-zone reference and does not assert one legally exclusive concession holder."
                 }
               },
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+              "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+              "researchMetadata": {
+                "sourceAuthority": "Vanuatu quarry suppliers",
+                "currentEvidence": "Santo Earthworks and KD Enterprise operate aggregate/quarry-related businesses in Luganville, including crushing/screening and supply of sand and aggregate.",
+                "location": "Luganville, Espiritu Santo, Vanuatu",
+                "dataLimitation": "The repository is a quarry-zone reference and does not assert one legally exclusive concession holder.",
+                "reviewedAt": "2026-10-02",
+                "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVIEW"
+              },
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.yellowpages.vu/1336-santo-earthworks",
+                  "accessed": "2026-10-02",
+                  "scope": "Luganville quarry/aggregate operations",
+                  "sourceType": "BUSINESS_DIRECTORY"
+                },
+                {
+                  "url": "https://www.kdentreprise.com/about",
+                  "accessed": "2026-10-02",
+                  "scope": "crushing/screening and aggregate operation context",
+                  "sourceType": "OPERATOR"
+                }
+              ]
             }
           ],
           "processingFacilities": [

@@ -1,10 +1,10 @@
 {
   "generatedAt": "2026-10-02",
   "totalSites": 199,
-  "legacyTargets": 51,
-  "matchedByWebSearch": 144,
-  "unresolved": 51,
-  "stillLegacyAfterPass": 51,
-  "commercialSitesWithExplicitOwner": 165,
-  "commercialSitesWithExplicitOperator": 164
+  "legacyTargets": 0,
+  "matchedByWebSearch": 195,
+  "unresolved": 0,
+  "stillLegacyAfterPass": 0,
+  "commercialSitesWithExplicitOwner": 170,
+  "commercialSitesWithExplicitOperator": 171
 }

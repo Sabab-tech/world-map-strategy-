@@ -2,14 +2,14 @@
   "generatedAt": "2026-10-02",
   "baseCommit": "e4bab070675641ad3aab0b80e482718989de0c2c",
   "totalSites": 199,
-  "siteSpecificReviewed": 144,
-  "legacyStillUnverified": 51,
+  "siteSpecificReviewed": 195,
+  "legacyStillUnverified": 0,
   "notApplicable": 4,
   "siteDataPackages": 199,
-  "explicitOwner": 169,
-  "explicitOperator": 168,
+  "explicitOwner": 174,
+  "explicitOperator": 175,
   "observedReserve": 18,
-  "observedProduction": 32,
-  "observedGrade": 23,
-  "manualSourceBackedFixes": 22
+  "observedProduction": 35,
+  "observedGrade": 24,
+  "manualSourceBackedFixes": 71
 }
