@@ -308,6 +308,14 @@
       "unit": "metric_tons",
       "strategicImportance": "important_industrial_mineral",
       "description": "Industrial limestone and carbonate rock used for cement, lime, aggregates and related processing."
+    },
+    "sepiolite": {
+      "id": "sepiolite",
+      "name": "Sepiolite",
+      "category": "industrial_minerals",
+      "unit": "metric_tons",
+      "strategicImportance": "medium",
+      "description": "Hydrated magnesium silicate industrial mineral used for absorbents and specialty mineral applications."
     }
   },
   "GSRSK_Master_Resource_Data_v14": {
@@ -30400,7 +30408,7 @@
                 "verification": {
                   "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
                   "reviewedAt": "2026-10-02",
-                  "sourceCount": 1,
+                  "sourceCount": 2,
                   "sourceAuthorities": [
                     "MINERAL_DATABASE"
                   ],
@@ -30408,6 +30416,12 @@
                 }
               },
               "webResearchEvidence": [
+                {
+                  "url": "https://www.mindat.org/loc-259371.html",
+                  "accessed": "2026-10-02",
+                  "scope": "resource identity and locality",
+                  "sourceType": "MINERAL_DATABASE"
+                },
                 {
                   "url": "https://www.mindat.org/loc-259371.html",
                   "accessed": "2026-10-02",
