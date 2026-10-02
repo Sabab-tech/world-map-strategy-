@@ -1,0 +1,15 @@
+{
+  "generatedAt": "2026-10-02",
+  "baseCommit": "e4bab070675641ad3aab0b80e482718989de0c2c",
+  "totalSites": 199,
+  "siteSpecificReviewed": 144,
+  "legacyStillUnverified": 51,
+  "notApplicable": 4,
+  "siteDataPackages": 199,
+  "explicitOwner": 169,
+  "explicitOperator": 168,
+  "observedReserve": 18,
+  "observedProduction": 32,
+  "observedGrade": 23,
+  "manualSourceBackedFixes": 22
+}

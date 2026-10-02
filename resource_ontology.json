@@ -1,6 +1,6 @@
 {
   "VERSION": "1.0.0-CANONICAL",
-  "LAST_UPDATED": "2026-09-26",
+  "LAST_UPDATED": "2026-10-02",
   "DESCRIPTION": "Canonical Resource Ontology and Industrial Dependency Knowledge Base for Sovereign Intelligence",
   "COMMODITY_ONTOLOGIES": {
     "CRUDE_OIL": {
@@ -1536,6 +1536,39 @@
         "strategicLeverage": "Control of global potassium fertilizer supply",
         "sovereignWealth": "Mining royalties and fertilizer-processing income",
         "hazards": "Salt tailings, brine management and mine-water impacts"
+      }
+    },
+    "SEPIOLITE": {
+      "key": "SEPIOLITE",
+      "name": "Sepiolite (Hydrated Magnesium Silicate)",
+      "category": "INDUSTRIAL_MINERAL",
+      "physicalForm": "HYDRATED_MAGNESIUM_SILICATE",
+      "upstreamProcess": "Surface Quarrying / Selective Extraction",
+      "midstreamProcess": "Crushing, Drying, Screening and Sizing",
+      "refinedOutputs": [
+        "SEPIOLITE_MINERAL_PRODUCT"
+      ],
+      "downstreamSectors": [
+        "ABSORBENTS",
+        "CERAMICS",
+        "INDUSTRIAL_MINERALS"
+      ],
+      "keyUtilities": [
+        "Industrial absorbent and mineral feedstock"
+      ],
+      "baseSubstitutionElasticity": 0.3,
+      "baseGestationTicks": 20,
+      "baseCostMultiplier": 1.4,
+      "substitutes": [],
+      "lackConsequences": {
+        "shortTerm": "Supply tightening",
+        "mediumTerm": "Specialty mineral shortage",
+        "catastrophic": "Sustained specialty-mineral disruption"
+      },
+      "enrichmentDynamics": {
+        "strategicLeverage": "Niche mineral supply control",
+        "sovereignWealth": "Mineral rents and processing",
+        "hazards": "Dust and quarry liabilities"
       }
     }
   }

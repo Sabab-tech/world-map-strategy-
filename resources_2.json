@@ -1082,11 +1082,11 @@
               },
               "extractionProfile": {
                 "siteType": "MINE",
-                "method": "open-pit laterite and hydrometallurgy",
+                "method": "open-pit lateritic nickel mining feeding pressure-acid-leach processing",
                 "lifecycleStatus": "ACTIVE_PRODUCING",
                 "operationalStatus": "ACTIVE_PRODUCING",
-                "owner": "Cuban state / Sherritt framework",
-                "operator": "Moa Joint Venture",
+                "owner": "Moa Joint Venture",
+                "operator": "Moa Nickel S.A. / Sherritt-led joint venture",
                 "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
                 "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
               },
@@ -1177,7 +1177,8 @@
                     "lat": 20.65,
                     "lng": -74.93
                   },
-                  "coordinateStatus": "ESTIMATED_SITE_POINT"
+                  "coordinateStatus": "ESTIMATED_SITE_POINT",
+                  "locationNodeKey": "ASSET:CUB:moa_bay_nickel_mine"
                 },
                 "ownership": {
                   "owner": "Moa Joint Venture",
@@ -1190,7 +1191,8 @@
                   "operationalStatus": "ACTIVE_PRODUCING",
                   "extractionMethod": "open-pit lateritic nickel mining feeding pressure-acid-leach processing",
                   "extractionEligibility": "EXECUTABLE",
-                  "commercialExtraction": true
+                  "commercialExtraction": true,
+                  "startYear": 1959
                 },
                 "processing": {
                   "upstreamProcess": "Open-Pit / Underground Laterite or Sulfide Mining",
@@ -1312,7 +1314,7 @@
               "operatorEvidenceStatus": "SITE_SPECIFIC_WEB_VERIFIED",
               "siteIdentity": {
                 "siteId": "SITE_CUB_punta_gorda_extraction_facility",
-                "siteName": "Punta Gorda Nickel–Cobalt Mining & Processing Area",
+                "siteName": "Punta Gorda Extraction Facility",
                 "siteClass": "MINE",
                 "countryIso3": "CUB",
                 "countryName": "Cuba",
@@ -1412,7 +1414,8 @@
                     "lat": 20.57,
                     "lng": -75.95
                   },
-                  "coordinateStatus": "ESTIMATED_SITE_POINT"
+                  "coordinateStatus": "ESTIMATED_SITE_POINT",
+                  "locationNodeKey": "ASSET:CUB:punta_gorda_extraction_facility"
                 },
                 "ownership": {
                   "owner": "Empresa del Níquel “Comandante Ernesto Che Guevara”",
@@ -1425,7 +1428,8 @@
                   "operationalStatus": "ACTIVE_PRODUCING",
                   "extractionMethod": "laterite mining and processing",
                   "extractionEligibility": "EXECUTABLE",
-                  "commercialExtraction": true
+                  "commercialExtraction": true,
+                  "startYear": 1960
                 },
                 "processing": {
                   "upstreamProcess": "Open-Pit / Underground Laterite or Sulfide Mining",
@@ -1545,7 +1549,7 @@
               "operatorEvidenceStatus": "UNOBSERVED",
               "siteIdentity": {
                 "siteId": "SITE_CUB_nicaro_nickel_complex",
-                "siteName": "Nicaro Nickel Plant / René Ramos Latour",
+                "siteName": "Nicaro Nickel Complex",
                 "siteClass": "MINE",
                 "countryIso3": "CUB",
                 "countryName": "Cuba",
@@ -1617,7 +1621,7 @@
                 "resource": "COMPLETE",
                 "location": "COMPLETE",
                 "operation": "COMPLETE",
-                "ownership": "UNOBSERVED",
+                "ownership": "PARTIAL",
                 "quantitative": {
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
@@ -1645,7 +1649,8 @@
                     "lat": 20.69,
                     "lng": -75.52
                   },
-                  "coordinateStatus": "ESTIMATED_SITE_POINT"
+                  "coordinateStatus": "ESTIMATED_SITE_POINT",
+                  "locationNodeKey": "ASSET:CUB:nicaro_nickel_complex"
                 },
                 "ownership": {
                   "owner": "UNOBSERVED",
@@ -1657,8 +1662,9 @@
                   "status": "HISTORICAL_INACTIVE",
                   "operationalStatus": "CLOSED",
                   "extractionMethod": "LATERITIC_NICKEL_MINING_AND_CARON_PROCESS_HISTORY",
-                  "extractionEligibility": null,
-                  "commercialExtraction": true
+                  "extractionEligibility": "NON_EXECUTABLE",
+                  "commercialExtraction": true,
+                  "startYear": 1943
                 },
                 "processing": {
                   "upstreamProcess": "Open-Pit / Underground Laterite or Sulfide Mining",
@@ -2250,7 +2256,8 @@
                     "lat": 18.42,
                     "lng": -77.16
                   },
-                  "coordinateStatus": "ESTIMATED_SITE_POINT"
+                  "coordinateStatus": "ESTIMATED_SITE_POINT",
+                  "locationNodeKey": "ASSET:JAM:noranda_st_ann_bauxite_mine"
                 },
                 "ownership": {
                   "owner": "Noranda Bauxite / Jamaica",
@@ -2263,7 +2270,8 @@
                   "operationalStatus": "ACTIVE_PRODUCING",
                   "extractionMethod": "open-pit bauxite mining",
                   "extractionEligibility": "EXECUTABLE",
-                  "commercialExtraction": true
+                  "commercialExtraction": true,
+                  "startYear": 1942
                 },
                 "processing": {
                   "upstreamProcess": "Open-Cast Strip Mining in Tropical / Subtropical Laterite Belts",
@@ -2830,7 +2838,7 @@
                 "resource": "COMPLETE",
                 "location": "COMPLETE",
                 "operation": "COMPLETE",
-                "ownership": "UNOBSERVED",
+                "ownership": "PARTIAL",
                 "quantitative": {
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
@@ -2858,7 +2866,8 @@
                     "lat": 19.45,
                     "lng": -72.69
                   },
-                  "coordinateStatus": "ESTIMATED_SITE_POINT"
+                  "coordinateStatus": "ESTIMATED_SITE_POINT",
+                  "locationNodeKey": "ASSET:HTI:gona_ves_limestone_quarry_zone"
                 },
                 "ownership": {
                   "owner": "UNOBSERVED",
@@ -2870,8 +2879,9 @@
                   "status": "LIMITED",
                   "operationalStatus": "LIMITED",
                   "extractionMethod": "surface quarrying",
-                  "extractionEligibility": null,
-                  "commercialExtraction": true
+                  "extractionEligibility": "NON_EXECUTABLE",
+                  "commercialExtraction": true,
+                  "startYear": 1980
                 },
                 "processing": {
                   "upstreamProcess": "Drilling, Blasting, Quarry Excavation",
@@ -3312,9 +3322,9 @@
               "locationNodeKey": "ASSET:DOM:pueblo_viejo_gold_mine",
               "status": "ACTIVE_PRODUCING",
               "operationalStatus": "ACTIVE_PRODUCING",
-              "owner": "Barrick / Dominican state",
+              "owner": "Barrick / Dominican Republic state interests",
               "operator": "Pueblo Viejo Dominicana",
-              "extractionMethod": "open-pit and refractory processing",
+              "extractionMethod": "open-pit mining; refractory ore processing and autoclave",
               "startYear": 2012,
               "legacyReferenceName": "Dominican Republic Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -3376,10 +3386,10 @@
               },
               "extractionProfile": {
                 "siteType": "MINE",
-                "method": "open-pit and refractory processing",
+                "method": "open-pit mining; refractory ore processing and autoclave",
                 "lifecycleStatus": "ACTIVE_PRODUCING",
                 "operationalStatus": "ACTIVE_PRODUCING",
-                "owner": "Barrick / Dominican state",
+                "owner": "Barrick / Dominican Republic state interests",
                 "operator": "Pueblo Viejo Dominicana",
                 "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
                 "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
@@ -3435,7 +3445,7 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -3456,10 +3466,11 @@
                     "lat": 18.94,
                     "lng": -70.1
                   },
-                  "coordinateStatus": "ESTIMATED_SITE_POINT"
+                  "coordinateStatus": "ESTIMATED_SITE_POINT",
+                  "locationNodeKey": "ASSET:DOM:pueblo_viejo_gold_mine"
                 },
                 "ownership": {
-                  "owner": "Barrick / Dominican state",
+                  "owner": "Barrick / Dominican Republic state interests",
                   "operator": "Pueblo Viejo Dominicana",
                   "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
                   "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
@@ -3467,9 +3478,10 @@
                 "operation": {
                   "status": "ACTIVE_PRODUCING",
                   "operationalStatus": "ACTIVE_PRODUCING",
-                  "extractionMethod": "open-pit and refractory processing",
+                  "extractionMethod": "open-pit mining; refractory ore processing and autoclave",
                   "extractionEligibility": "EXECUTABLE",
-                  "commercialExtraction": true
+                  "commercialExtraction": true,
+                  "startYear": 2012
                 },
                 "processing": {
                   "upstreamProcess": "Open-Pit / Underground Mining, Gravity, Flotation",
@@ -3504,15 +3516,40 @@
                   }
                 },
                 "verification": {
-                  "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": null,
-                  "sourceCount": 0,
-                  "sourceAuthorities": [],
+                  "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+                  "reviewedAt": "2026-10-02",
+                  "sourceCount": 1,
+                  "sourceAuthorities": [
+                    "OPERATOR"
+                  ],
                   "dataLimitations": null
                 }
               },
               "extractionEligibility": "EXECUTABLE",
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+              "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+              "researchMetadata": {
+                "sourceAuthority": "Barrick",
+                "currentEvidence": "Pueblo Viejo is a producing gold-silver operation in the Dominican Republic operated through Pueblo Viejo Dominicana in partnership with Dominican state interests.",
+                "location": "Dominican Republic",
+                "associatedCommodities": [
+                  "gold",
+                  "silver"
+                ],
+                "reviewedAt": "2026-10-02",
+                "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVIEW"
+              },
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.barrick.com/operations/pueblo-viejo/",
+                  "accessed": "2026-10-02",
+                  "scope": "current ownership, operator and processing context",
+                  "sourceType": "OPERATOR"
+                }
+              ],
+              "associatedResourceTypes": [
+                "gold",
+                "silver"
+              ]
             }
           ],
           "processingFacilities": [
@@ -4060,7 +4097,8 @@
                     "lat": 10.08,
                     "lng": -60.9
                   },
-                  "coordinateStatus": "ESTIMATED_SITE_POINT"
+                  "coordinateStatus": "ESTIMATED_SITE_POINT",
+                  "locationNodeKey": "ASSET:TTO:juniper_oil_field"
                 },
                 "ownership": {
                   "owner": "bpTT / Trinidad and Tobago",
@@ -4073,7 +4111,8 @@
                   "operationalStatus": "ACTIVE_PRODUCING",
                   "extractionMethod": "offshore platforms and subsea wells",
                   "extractionEligibility": "EXECUTABLE",
-                  "commercialExtraction": true
+                  "commercialExtraction": true,
+                  "startYear": 2017
                 },
                 "processing": {
                   "upstreamProcess": "Deep Drilling, Subsea Extraction, Thermal EOR",
@@ -4679,7 +4718,8 @@
                     "lat": 25.45,
                     "lng": -79.15
                   },
-                  "coordinateStatus": "ESTIMATED_SITE_POINT"
+                  "coordinateStatus": "ESTIMATED_SITE_POINT",
+                  "locationNodeKey": "ASSET:BHS:ocean_cay_aragonite_site"
                 },
                 "ownership": {
                   "owner": "Ocean Industries Incorporated",
@@ -4691,8 +4731,9 @@
                   "status": "HISTORICAL_INACTIVE",
                   "operationalStatus": "HISTORICAL_INACTIVE",
                   "extractionMethod": "MARINE_DREDGING",
-                  "extractionEligibility": null,
-                  "commercialExtraction": true
+                  "extractionEligibility": "NON_EXECUTABLE",
+                  "commercialExtraction": true,
+                  "startYear": 1960
                 },
                 "processing": {
                   "upstreamProcess": "Marine Dredging / Sand Extraction",
@@ -5275,7 +5316,8 @@
                     "lat": 13.33,
                     "lng": -59.64
                   },
-                  "coordinateStatus": "ESTIMATED_SITE_POINT"
+                  "coordinateStatus": "ESTIMATED_SITE_POINT",
+                  "locationNodeKey": "ASSET:BRB:arawak_cement_limestone_quarry"
                 },
                 "ownership": {
                   "owner": "Arawak Cement",
@@ -5288,7 +5330,8 @@
                   "operationalStatus": "ACTIVE_PRODUCING",
                   "extractionMethod": "surface quarrying",
                   "extractionEligibility": "EXECUTABLE",
-                  "commercialExtraction": true
+                  "commercialExtraction": true,
+                  "startYear": 1967
                 },
                 "processing": {
                   "upstreamProcess": "Drilling, Blasting, Quarry Excavation",
@@ -5793,7 +5836,7 @@
               "operatorEvidenceStatus": "SITE_SPECIFIC_WEB_VERIFIED",
               "siteIdentity": {
                 "siteId": "SITE_LCA_cul_de_sac_aggregate_quarry_zone",
-                "siteName": "RG Quarry – Cul de Sac",
+                "siteName": "Cul de Sac Aggregate Quarry Zone",
                 "siteClass": "QUARRY",
                 "countryIso3": "LCA",
                 "countryName": "Saint Lucia",
@@ -5892,7 +5935,8 @@
                     "lat": 13.99,
                     "lng": -60.97
                   },
-                  "coordinateStatus": "ESTIMATED_SITE_POINT"
+                  "coordinateStatus": "ESTIMATED_SITE_POINT",
+                  "locationNodeKey": "ASSET:LCA:cul_de_sac_aggregate_quarry_zone"
                 },
                 "ownership": {
                   "owner": "RG Quarry Limited",
@@ -5905,7 +5949,8 @@
                   "operationalStatus": "LIMITED",
                   "extractionMethod": "surface aggregate quarrying",
                   "extractionEligibility": "EXECUTABLE",
-                  "commercialExtraction": true
+                  "commercialExtraction": true,
+                  "startYear": 1980
                 },
                 "processing": {
                   "upstreamProcess": "Quarrying, Dredging, Borrow-Pit Extraction",
@@ -6466,7 +6511,7 @@
                 "resource": "COMPLETE",
                 "location": "COMPLETE",
                 "operation": "COMPLETE",
-                "ownership": "UNOBSERVED",
+                "ownership": "PARTIAL",
                 "quantitative": {
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
@@ -6494,7 +6539,8 @@
                     "lat": 13.15,
                     "lng": -61.22
                   },
-                  "coordinateStatus": "ESTIMATED_SITE_POINT"
+                  "coordinateStatus": "ESTIMATED_SITE_POINT",
+                  "locationNodeKey": "ASSET:VCT:diamond_quarry"
                 },
                 "ownership": {
                   "owner": "UNOBSERVED",
@@ -6506,8 +6552,9 @@
                   "status": "LIMITED",
                   "operationalStatus": "LIMITED",
                   "extractionMethod": "surface aggregate quarrying",
-                  "extractionEligibility": null,
-                  "commercialExtraction": true
+                  "extractionEligibility": "NON_EXECUTABLE",
+                  "commercialExtraction": true,
+                  "startYear": 1980
                 },
                 "processing": {
                   "upstreamProcess": "Quarrying, Dredging, Borrow-Pit Extraction",
@@ -7007,7 +7054,7 @@
               "operatorEvidenceStatus": "SITE_SPECIFIC_WEB_VERIFIED",
               "siteIdentity": {
                 "siteId": "SITE_GRD_telescope_quarry",
-                "siteName": "Telescope Point Basalt Quarry",
+                "siteName": "Telescope Quarry",
                 "siteClass": "QUARRY",
                 "countryIso3": "GRD",
                 "countryName": "Grenada",
@@ -7106,7 +7153,8 @@
                     "lat": 12.08,
                     "lng": -61.72
                   },
-                  "coordinateStatus": "ESTIMATED_SITE_POINT"
+                  "coordinateStatus": "ESTIMATED_SITE_POINT",
+                  "locationNodeKey": "ASSET:GRD:telescope_quarry"
                 },
                 "ownership": {
                   "owner": "Gravel, Concrete & Emulsion Production Corporation",
@@ -7119,7 +7167,8 @@
                   "operationalStatus": "LIMITED",
                   "extractionMethod": "HARD_ROCK_BASALT_QUARRYING_AND_CRUSHING",
                   "extractionEligibility": "EXECUTABLE",
-                  "commercialExtraction": true
+                  "commercialExtraction": true,
+                  "startYear": 1944
                 },
                 "processing": {
                   "upstreamProcess": "Quarrying, Dredging, Borrow-Pit Extraction",
@@ -7681,7 +7730,7 @@
                 "resource": "COMPLETE",
                 "location": "COMPLETE",
                 "operation": "COMPLETE",
-                "ownership": "UNOBSERVED",
+                "ownership": "PARTIAL",
                 "quantitative": {
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
@@ -7709,7 +7758,8 @@
                     "lat": 17.08,
                     "lng": -61.82
                   },
-                  "coordinateStatus": "ESTIMATED_SITE_POINT"
+                  "coordinateStatus": "ESTIMATED_SITE_POINT",
+                  "locationNodeKey": "ASSET:ATG:gunthorpes_quarry"
                 },
                 "ownership": {
                   "owner": "UNOBSERVED",
@@ -7721,8 +7771,9 @@
                   "status": "LIMITED",
                   "operationalStatus": "LIMITED",
                   "extractionMethod": "surface quarrying",
-                  "extractionEligibility": null,
-                  "commercialExtraction": true
+                  "extractionEligibility": "NON_EXECUTABLE",
+                  "commercialExtraction": true,
+                  "startYear": 1980
                 },
                 "processing": {
                   "upstreamProcess": "Drilling, Blasting, Quarry Excavation",
@@ -8285,7 +8336,7 @@
                 "resource": "COMPLETE",
                 "location": "COMPLETE",
                 "operation": "COMPLETE",
-                "ownership": "UNOBSERVED",
+                "ownership": "PARTIAL",
                 "quantitative": {
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
@@ -8313,7 +8364,8 @@
                     "lat": 17.35,
                     "lng": -62.76
                   },
-                  "coordinateStatus": "ESTIMATED_SITE_POINT"
+                  "coordinateStatus": "ESTIMATED_SITE_POINT",
+                  "locationNodeKey": "ASSET:KNA:ross_lands_quarry_zone"
                 },
                 "ownership": {
                   "owner": "UNOBSERVED",
@@ -8325,8 +8377,9 @@
                   "status": "LIMITED",
                   "operationalStatus": "LIMITED",
                   "extractionMethod": "surface quarrying",
-                  "extractionEligibility": null,
-                  "commercialExtraction": true
+                  "extractionEligibility": "NON_EXECUTABLE",
+                  "commercialExtraction": true,
+                  "startYear": 1980
                 },
                 "processing": {
                   "upstreamProcess": "Drilling, Blasting, Quarry Excavation",
@@ -8822,7 +8875,7 @@
               "operatorEvidenceStatus": "SITE_SPECIFIC_WEB_VERIFIED",
               "siteIdentity": {
                 "siteId": "SITE_DMA_pointe_michel_stone_quarry",
-                "siteName": "Pointe Michel Pumice Quarry",
+                "siteName": "Pointe Michel Stone Quarry",
                 "siteClass": "QUARRY",
                 "countryIso3": "DMA",
                 "countryName": "Dominica",
@@ -8921,7 +8974,8 @@
                     "lat": 15.23,
                     "lng": -61.39
                   },
-                  "coordinateStatus": "ESTIMATED_SITE_POINT"
+                  "coordinateStatus": "ESTIMATED_SITE_POINT",
+                  "locationNodeKey": "ASSET:DMA:pointe_michel_stone_quarry"
                 },
                 "ownership": {
                   "owner": "Carib Sand and Stone Ltd. (CSS)",
@@ -8934,7 +8988,8 @@
                   "operationalStatus": "LIMITED",
                   "extractionMethod": "QUARRYING_AND_CRUSHING",
                   "extractionEligibility": "EXECUTABLE",
-                  "commercialExtraction": true
+                  "commercialExtraction": true,
+                  "startYear": 1980
                 },
                 "processing": {
                   "upstreamProcess": "Quarrying, Dredging, Borrow-Pit Extraction",
@@ -9379,7 +9434,7 @@
               "operationalStatus": "ACTIVE_PRODUCING",
               "owner": "Newmont / Staatsolie",
               "operator": "Newmont Suriname",
-              "extractionMethod": "open-pit",
+              "extractionMethod": "open-pit gold mining; processing to doré",
               "startYear": 2016,
               "legacyReferenceName": "Suriname Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -9441,7 +9496,7 @@
               },
               "extractionProfile": {
                 "siteType": "MINE",
-                "method": "open-pit",
+                "method": "open-pit gold mining; processing to doré",
                 "lifecycleStatus": "ACTIVE_PRODUCING",
                 "operationalStatus": "ACTIVE_PRODUCING",
                 "owner": "Newmont / Staatsolie",
@@ -9500,7 +9555,7 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -9521,7 +9576,8 @@
                     "lat": 5.85,
                     "lng": -54.52
                   },
-                  "coordinateStatus": "ESTIMATED_SITE_POINT"
+                  "coordinateStatus": "ESTIMATED_SITE_POINT",
+                  "locationNodeKey": "ASSET:SUR:merian_gold_mine"
                 },
                 "ownership": {
                   "owner": "Newmont / Staatsolie",
@@ -9532,9 +9588,10 @@
                 "operation": {
                   "status": "ACTIVE_PRODUCING",
                   "operationalStatus": "ACTIVE_PRODUCING",
-                  "extractionMethod": "open-pit",
+                  "extractionMethod": "open-pit gold mining; processing to doré",
                   "extractionEligibility": "EXECUTABLE",
-                  "commercialExtraction": true
+                  "commercialExtraction": true,
+                  "startYear": 2016
                 },
                 "processing": {
                   "upstreamProcess": "Open-Pit / Underground Mining, Gravity, Flotation",
@@ -9569,15 +9626,32 @@
                   }
                 },
                 "verification": {
-                  "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": null,
-                  "sourceCount": 0,
-                  "sourceAuthorities": [],
+                  "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+                  "reviewedAt": "2026-10-02",
+                  "sourceCount": 1,
+                  "sourceAuthorities": [
+                    "OPERATOR"
+                  ],
                   "dataLimitations": null
                 }
               },
               "extractionEligibility": "EXECUTABLE",
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+              "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+              "researchMetadata": {
+                "sourceAuthority": "Newmont / Staatsolie",
+                "currentEvidence": "Merian is a producing open-pit gold operation in Suriname operated through the Newmont-Staatsolie partnership.",
+                "location": "Suriname",
+                "reviewedAt": "2026-10-02",
+                "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVIEW"
+              },
+              "webResearchEvidence": [
+                {
+                  "url": "https://operations.newmont.com/suriname/merian/",
+                  "accessed": "2026-10-02",
+                  "scope": "current mine identity and operator context",
+                  "sourceType": "OPERATOR"
+                }
+              ]
             }
           ],
           "processingFacilities": [
@@ -10122,7 +10196,8 @@
                     "lat": 6.77,
                     "lng": -60.71
                   },
-                  "coordinateStatus": "ESTIMATED_SITE_POINT"
+                  "coordinateStatus": "ESTIMATED_SITE_POINT",
+                  "locationNodeKey": "ASSET:GUY:aurora_gold_mine"
                 },
                 "ownership": {
                   "owner": "Zijin / Guyana",
@@ -10135,7 +10210,8 @@
                   "operationalStatus": "ACTIVE_PRODUCING",
                   "extractionMethod": "open-pit and underground",
                   "extractionEligibility": "EXECUTABLE",
-                  "commercialExtraction": true
+                  "commercialExtraction": true,
+                  "startYear": 2015
                 },
                 "processing": {
                   "upstreamProcess": "Open-Pit / Underground Mining, Gravity, Flotation",
@@ -10578,7 +10654,7 @@
               "operationalStatus": "ACTIVE_PRODUCING",
               "owner": "Newmont",
               "operator": "Newmont Boddington Gold",
-              "extractionMethod": "large open-pit and processing",
+              "extractionMethod": "large open-pit mining; ore processing",
               "startYear": 1987,
               "legacyReferenceName": "Australia Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -10640,7 +10716,7 @@
               },
               "extractionProfile": {
                 "siteType": "MINE",
-                "method": "large open-pit and processing",
+                "method": "large open-pit mining; ore processing",
                 "lifecycleStatus": "ACTIVE_PRODUCING",
                 "operationalStatus": "ACTIVE_PRODUCING",
                 "owner": "Newmont",
@@ -10650,9 +10726,9 @@
               },
               "quantitativeProfile": {
                 "reserve": {
-                  "quantity": null,
-                  "unit": null,
-                  "status": "UNOBSERVED"
+                  "quantity": 10200000,
+                  "unit": "troy_ounces_gold",
+                  "status": "OBSERVED"
                 },
                 "production": {
                   "annual": null,
@@ -10694,12 +10770,12 @@
                 "operation": "COMPLETE",
                 "ownership": "REPORTED",
                 "quantitative": {
-                  "reserve": "UNOBSERVED",
+                  "reserve": "OBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -10720,7 +10796,8 @@
                     "lat": -32.8,
                     "lng": 116.37
                   },
-                  "coordinateStatus": "ESTIMATED_SITE_POINT"
+                  "coordinateStatus": "ESTIMATED_SITE_POINT",
+                  "locationNodeKey": "ASSET:AUS:boddington_gold_mine"
                 },
                 "ownership": {
                   "owner": "Newmont",
@@ -10731,9 +10808,10 @@
                 "operation": {
                   "status": "ACTIVE_PRODUCING",
                   "operationalStatus": "ACTIVE_PRODUCING",
-                  "extractionMethod": "large open-pit and processing",
+                  "extractionMethod": "large open-pit mining; ore processing",
                   "extractionEligibility": "EXECUTABLE",
-                  "commercialExtraction": true
+                  "commercialExtraction": true,
+                  "startYear": 1987
                 },
                 "processing": {
                   "upstreamProcess": "Open-Pit / Underground Mining, Gravity, Flotation",
@@ -10750,9 +10828,9 @@
                 },
                 "quantitative": {
                   "reserve": {
-                    "quantity": null,
-                    "unit": null,
-                    "status": "UNOBSERVED"
+                    "quantity": 10200000,
+                    "unit": "troy_ounces_gold",
+                    "status": "OBSERVED"
                   },
                   "production": {
                     "annual": null,
@@ -10768,15 +10846,40 @@
                   }
                 },
                 "verification": {
-                  "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": null,
-                  "sourceCount": 0,
-                  "sourceAuthorities": [],
+                  "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+                  "reviewedAt": "2026-10-02",
+                  "sourceCount": 1,
+                  "sourceAuthorities": [
+                    "OPERATOR"
+                  ],
                   "dataLimitations": null
                 }
               },
               "extractionEligibility": "EXECUTABLE",
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+              "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+              "researchMetadata": {
+                "sourceAuthority": "Newmont",
+                "currentEvidence": "Boddington is a producing open-pit gold-copper mine in Western Australia. Newmont reports about 10.2 Moz gold and 500 kt copper reserves.",
+                "location": "Western Australia",
+                "associatedCommodities": [
+                  "gold",
+                  "copper"
+                ],
+                "reviewedAt": "2026-10-02",
+                "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVIEW"
+              },
+              "webResearchEvidence": [
+                {
+                  "url": "https://operations.newmont.com/australia/boddington/",
+                  "accessed": "2026-10-02",
+                  "scope": "current mine identity and reserve context",
+                  "sourceType": "OPERATOR"
+                }
+              ],
+              "associatedResourceTypes": [
+                "gold",
+                "copper"
+              ]
             }
           ],
           "processingFacilities": [
@@ -11177,7 +11280,7 @@
               "operationalStatus": "ACTIVE_PRODUCING",
               "owner": "OceanaGold",
               "operator": "OceanaGold New Zealand",
-              "extractionMethod": "open-pit and underground",
+              "extractionMethod": "open-pit and underground mining; CIL and pressure-oxidation processing",
               "startYear": 1990,
               "legacyReferenceName": "New Zealand Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -11239,7 +11342,7 @@
               },
               "extractionProfile": {
                 "siteType": "MINE",
-                "method": "open-pit and underground",
+                "method": "open-pit and underground mining; CIL and pressure-oxidation processing",
                 "lifecycleStatus": "ACTIVE_PRODUCING",
                 "operationalStatus": "ACTIVE_PRODUCING",
                 "owner": "OceanaGold",
@@ -11254,11 +11357,15 @@
                   "status": "UNOBSERVED"
                 },
                 "production": {
-                  "annual": null,
+                  "annual": {
+                    "value": 147000,
+                    "unit": "troy_ounces_gold",
+                    "year": 2025
+                  },
                   "rate": null,
                   "unit": null,
                   "year": null,
-                  "status": "UNOBSERVED"
+                  "status": "OBSERVED"
                 },
                 "grade": {
                   "value": null,
@@ -11294,11 +11401,11 @@
                 "ownership": "REPORTED",
                 "quantitative": {
                   "reserve": "UNOBSERVED",
-                  "production": "UNOBSERVED",
+                  "production": "OBSERVED",
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -11319,7 +11426,8 @@
                     "lat": -45.37,
                     "lng": 170.1
                   },
-                  "coordinateStatus": "ESTIMATED_SITE_POINT"
+                  "coordinateStatus": "ESTIMATED_SITE_POINT",
+                  "locationNodeKey": "ASSET:NZL:macraes_gold_mine"
                 },
                 "ownership": {
                   "owner": "OceanaGold",
@@ -11330,9 +11438,10 @@
                 "operation": {
                   "status": "ACTIVE_PRODUCING",
                   "operationalStatus": "ACTIVE_PRODUCING",
-                  "extractionMethod": "open-pit and underground",
+                  "extractionMethod": "open-pit and underground mining; CIL and pressure-oxidation processing",
                   "extractionEligibility": "EXECUTABLE",
-                  "commercialExtraction": true
+                  "commercialExtraction": true,
+                  "startYear": 1990
                 },
                 "processing": {
                   "upstreamProcess": "Open-Pit / Underground Mining, Gravity, Flotation",
@@ -11354,11 +11463,15 @@
                     "status": "UNOBSERVED"
                   },
                   "production": {
-                    "annual": null,
+                    "annual": {
+                      "value": 147000,
+                      "unit": "troy_ounces_gold",
+                      "year": 2025
+                    },
                     "rate": null,
                     "unit": null,
                     "year": null,
-                    "status": "UNOBSERVED"
+                    "status": "OBSERVED"
                   },
                   "grade": {
                     "value": null,
@@ -11367,15 +11480,33 @@
                   }
                 },
                 "verification": {
-                  "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": null,
-                  "sourceCount": 0,
-                  "sourceAuthorities": [],
+                  "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+                  "reviewedAt": "2026-10-02",
+                  "sourceCount": 1,
+                  "sourceAuthorities": [
+                    "OPERATOR"
+                  ],
                   "dataLimitations": null
                 }
               },
               "extractionEligibility": "EXECUTABLE",
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+              "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+              "researchMetadata": {
+                "sourceAuthority": "OceanaGold",
+                "currentEvidence": "Macraes is an operating open-pit and underground gold mine. OceanaGold reported 147 koz gold in 2025 and 2026 guidance of 135–155 koz.",
+                "location": "Otago, New Zealand",
+                "processing": "CIL and pressure oxidation",
+                "reviewedAt": "2026-10-02",
+                "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVIEW"
+              },
+              "webResearchEvidence": [
+                {
+                  "url": "https://oceanagold.com/operations/macraes/",
+                  "accessed": "2026-10-02",
+                  "scope": "current mine identity, method, processing and production",
+                  "sourceType": "OPERATOR"
+                }
+              ]
             }
           ],
           "processingFacilities": [
@@ -11798,8 +11929,8 @@
               "status": "ACTIVE_PRODUCING",
               "operationalStatus": "ACTIVE_PRODUCING",
               "owner": "Newmont",
-              "operator": "Lihir operation",
-              "extractionMethod": "open-pit",
+              "operator": "Newmont Lihir",
+              "extractionMethod": "open-pit gold mining; processing and pressure oxidation",
               "startYear": 1997,
               "legacyReferenceName": "Papua New Guinea Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -11861,11 +11992,11 @@
               },
               "extractionProfile": {
                 "siteType": "MINE",
-                "method": "open-pit",
+                "method": "open-pit gold mining; processing and pressure oxidation",
                 "lifecycleStatus": "ACTIVE_PRODUCING",
                 "operationalStatus": "ACTIVE_PRODUCING",
                 "owner": "Newmont",
-                "operator": "Lihir operation",
+                "operator": "Newmont Lihir",
                 "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
                 "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
               },
@@ -11920,7 +12051,7 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -11941,20 +12072,22 @@
                     "lat": -3.13,
                     "lng": 152.64
                   },
-                  "coordinateStatus": "ESTIMATED_SITE_POINT"
+                  "coordinateStatus": "ESTIMATED_SITE_POINT",
+                  "locationNodeKey": "ASSET:PNG:lihir_gold_mine"
                 },
                 "ownership": {
                   "owner": "Newmont",
-                  "operator": "Lihir operation",
+                  "operator": "Newmont Lihir",
                   "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
                   "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
                 },
                 "operation": {
                   "status": "ACTIVE_PRODUCING",
                   "operationalStatus": "ACTIVE_PRODUCING",
-                  "extractionMethod": "open-pit",
+                  "extractionMethod": "open-pit gold mining; processing and pressure oxidation",
                   "extractionEligibility": "EXECUTABLE",
-                  "commercialExtraction": true
+                  "commercialExtraction": true,
+                  "startYear": 1997
                 },
                 "processing": {
                   "upstreamProcess": "Open-Pit / Underground Mining, Gravity, Flotation",
@@ -11989,15 +12122,32 @@
                   }
                 },
                 "verification": {
-                  "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": null,
-                  "sourceCount": 0,
-                  "sourceAuthorities": [],
+                  "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+                  "reviewedAt": "2026-10-02",
+                  "sourceCount": 1,
+                  "sourceAuthorities": [
+                    "OPERATOR"
+                  ],
                   "dataLimitations": null
                 }
               },
               "extractionEligibility": "EXECUTABLE",
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+              "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+              "researchMetadata": {
+                "sourceAuthority": "Newmont",
+                "currentEvidence": "Lihir is a current Newmont gold operation in Papua New Guinea.",
+                "location": "New Ireland Province, Papua New Guinea",
+                "reviewedAt": "2026-10-02",
+                "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVIEW"
+              },
+              "webResearchEvidence": [
+                {
+                  "url": "https://operations.newmont.com/papua-new-guinea/lihir/",
+                  "accessed": "2026-10-02",
+                  "scope": "current operator and mine identity",
+                  "sourceType": "OPERATOR"
+                }
+              ]
             }
           ],
           "processingFacilities": [
@@ -12563,7 +12713,8 @@
                     "lat": -17.59,
                     "lng": 177.54
                   },
-                  "coordinateStatus": "ESTIMATED_SITE_POINT"
+                  "coordinateStatus": "ESTIMATED_SITE_POINT",
+                  "locationNodeKey": "ASSET:FJI:vatukoula_gold_mine"
                 },
                 "ownership": {
                   "owner": "Vatukoula Gold Mines",
@@ -12576,7 +12727,8 @@
                   "operationalStatus": "ACTIVE_PRODUCING",
                   "extractionMethod": "underground",
                   "extractionEligibility": "EXECUTABLE",
-                  "commercialExtraction": true
+                  "commercialExtraction": true,
+                  "startYear": 1935
                 },
                 "processing": {
                   "upstreamProcess": "Open-Pit / Underground Mining, Gravity, Flotation",
@@ -13202,7 +13354,8 @@
                     "lat": -9.56,
                     "lng": 160.03
                   },
-                  "coordinateStatus": "ESTIMATED_SITE_POINT"
+                  "coordinateStatus": "ESTIMATED_SITE_POINT",
+                  "locationNodeKey": "ASSET:SLB:gold_ridge_mine"
                 },
                 "ownership": {
                   "owner": "Gold Ridge Mining Limited (majority-owned by Wanguo Gold Group; landowner-controlled minority interest)",
@@ -13215,7 +13368,8 @@
                   "operationalStatus": "RESTARTING",
                   "extractionMethod": "OPEN_PIT_MINING",
                   "extractionEligibility": "EXECUTABLE",
-                  "commercialExtraction": true
+                  "commercialExtraction": true,
+                  "startYear": 1998
                 },
                 "processing": {
                   "upstreamProcess": "Open-Pit / Underground Mining, Gravity, Flotation",
@@ -13777,7 +13931,7 @@
                 "resource": "COMPLETE",
                 "location": "COMPLETE",
                 "operation": "COMPLETE",
-                "ownership": "UNOBSERVED",
+                "ownership": "PARTIAL",
                 "quantitative": {
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
@@ -13805,7 +13959,8 @@
                     "lat": -15.51,
                     "lng": 167.17
                   },
-                  "coordinateStatus": "ESTIMATED_SITE_POINT"
+                  "coordinateStatus": "ESTIMATED_SITE_POINT",
+                  "locationNodeKey": "ASSET:VUT:luganville_aggregate_quarry_zone"
                 },
                 "ownership": {
                   "owner": "UNOBSERVED",
@@ -13817,8 +13972,9 @@
                   "status": "LIMITED",
                   "operationalStatus": "LIMITED",
                   "extractionMethod": "surface aggregate",
-                  "extractionEligibility": null,
-                  "commercialExtraction": true
+                  "extractionEligibility": "NON_EXECUTABLE",
+                  "commercialExtraction": true,
+                  "startYear": 1980
                 },
                 "processing": {
                   "upstreamProcess": "Quarrying, Dredging, Borrow-Pit Extraction",
@@ -14384,7 +14540,7 @@
                 "resource": "COMPLETE",
                 "location": "COMPLETE",
                 "operation": "COMPLETE",
-                "ownership": "UNOBSERVED",
+                "ownership": "PARTIAL",
                 "quantitative": {
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
@@ -14412,7 +14568,8 @@
                     "lat": -13.82,
                     "lng": -171.96
                   },
-                  "coordinateStatus": "ESTIMATED_SITE_POINT"
+                  "coordinateStatus": "ESTIMATED_SITE_POINT",
+                  "locationNodeKey": "ASSET:WSM:lefaga_aggregate_quarry_zone"
                 },
                 "ownership": {
                   "owner": "UNOBSERVED",
@@ -14424,8 +14581,9 @@
                   "status": "LIMITED",
                   "operationalStatus": "LIMITED",
                   "extractionMethod": "VOLCANIC_BASALT_QUARRYING_AND_CRUSHING",
-                  "extractionEligibility": null,
-                  "commercialExtraction": true
+                  "extractionEligibility": "NON_EXECUTABLE",
+                  "commercialExtraction": true,
+                  "startYear": 1980
                 },
                 "processing": {
                   "upstreamProcess": "Quarrying, Dredging, Borrow-Pit Extraction",
@@ -14928,7 +15086,7 @@
               "ownerEvidenceStatus": "UNOBSERVED",
               "siteIdentity": {
                 "siteId": "SITE_TON_nuku_alofa_aggregate_quarry_zone",
-                "siteName": "Tongatapu Quarrying / Aggregate Supply Area",
+                "siteName": "Nuku'alofa Aggregate Quarry Zone",
                 "siteClass": "QUARRY",
                 "countryIso3": "TON",
                 "countryName": "Tonga",
@@ -14999,7 +15157,7 @@
                 "resource": "COMPLETE",
                 "location": "COMPLETE",
                 "operation": "COMPLETE",
-                "ownership": "UNOBSERVED",
+                "ownership": "PARTIAL",
                 "quantitative": {
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
@@ -15027,7 +15185,8 @@
                     "lat": -21.13,
                     "lng": -175.2
                   },
-                  "coordinateStatus": "ESTIMATED_SITE_POINT"
+                  "coordinateStatus": "ESTIMATED_SITE_POINT",
+                  "locationNodeKey": "ASSET:TON:nuku_alofa_aggregate_quarry_zone"
                 },
                 "ownership": {
                   "owner": "UNOBSERVED",
@@ -15039,8 +15198,9 @@
                   "status": "LIMITED",
                   "operationalStatus": "LIMITED",
                   "extractionMethod": "VOLCANIC_AGGREGATE_QUARRYING_AND_CRUSHING",
-                  "extractionEligibility": null,
-                  "commercialExtraction": true
+                  "extractionEligibility": "NON_EXECUTABLE",
+                  "commercialExtraction": true,
+                  "startYear": 1980
                 },
                 "processing": {
                   "upstreamProcess": "Quarrying, Dredging, Borrow-Pit Extraction",
@@ -15555,7 +15715,7 @@
               "operatorEvidenceStatus": "SITE_SPECIFIC_WEB_VERIFIED",
               "siteIdentity": {
                 "siteId": "SITE_KIR_betio_coral_aggregate_extraction_sites",
-                "siteName": "Betio Lagoon Aggregate Dredging Resource Area",
+                "siteName": "Betio Coral Aggregate Extraction Sites",
                 "siteClass": "DREDGING_AND_PROCESSING_SITE",
                 "countryIso3": "KIR",
                 "countryName": "Kiribati",
@@ -15654,7 +15814,8 @@
                     "lat": 1.35,
                     "lng": 172.98
                   },
-                  "coordinateStatus": "ESTIMATED_SITE_POINT"
+                  "coordinateStatus": "ESTIMATED_SITE_POINT",
+                  "locationNodeKey": "ASSET:KIR:betio_coral_aggregate_extraction_sites"
                 },
                 "ownership": {
                   "owner": "Te Atinimarawa Company Limited",
@@ -15667,7 +15828,8 @@
                   "operationalStatus": "LIMITED",
                   "extractionMethod": "LAGOON_DREDGING_AND_CORAL_CRUSHING",
                   "extractionEligibility": "EXECUTABLE",
-                  "commercialExtraction": true
+                  "commercialExtraction": true,
+                  "startYear": 1980
                 },
                 "processing": {
                   "upstreamProcess": "Lagoon Dredging, Coral Sand/Gravel Extraction",
@@ -16240,7 +16402,7 @@
                 "resource": "COMPLETE",
                 "location": "COMPLETE",
                 "operation": "COMPLETE",
-                "ownership": "UNOBSERVED",
+                "ownership": "PARTIAL",
                 "quantitative": {
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
@@ -16268,7 +16430,8 @@
                     "lat": -8.52,
                     "lng": 179.2
                   },
-                  "coordinateStatus": "ESTIMATED_SITE_POINT"
+                  "coordinateStatus": "ESTIMATED_SITE_POINT",
+                  "locationNodeKey": "ASSET:TUV:funafuti_borrow_pits"
                 },
                 "ownership": {
                   "owner": "UNOBSERVED",
@@ -16280,8 +16443,9 @@
                   "status": "HISTORICAL_INACTIVE",
                   "operationalStatus": "LIMITED",
                   "extractionMethod": "CORAL_AGGREGATE_BORROW_PITS",
-                  "extractionEligibility": null,
-                  "commercialExtraction": true
+                  "extractionEligibility": "NON_EXECUTABLE",
+                  "commercialExtraction": true,
+                  "startYear": 1980
                 },
                 "processing": {
                   "upstreamProcess": "Quarrying, Dredging, Borrow-Pit Extraction",
@@ -16881,7 +17045,8 @@
                     "lat": -0.53,
                     "lng": 166.93
                   },
-                  "coordinateStatus": "ESTIMATED_SITE_POINT"
+                  "coordinateStatus": "ESTIMATED_SITE_POINT",
+                  "locationNodeKey": "ASSET:NRU:nauru_phosphate_mining_area"
                 },
                 "ownership": {
                   "owner": "Republic of Nauru Phosphate Corporation (RONPHOS)",
@@ -16894,7 +17059,8 @@
                   "operationalStatus": "LIMITED",
                   "extractionMethod": "secondary surface extraction",
                   "extractionEligibility": "EXECUTABLE",
-                  "commercialExtraction": true
+                  "commercialExtraction": true,
+                  "startYear": 1907
                 },
                 "processing": {
                   "upstreamProcess": "Open-pit phosphate mining, excavation or dragline mining, crushing and screening",
@@ -17397,7 +17563,7 @@
               "operatorEvidenceStatus": "SITE_SPECIFIC_WEB_VERIFIED",
               "siteIdentity": {
                 "siteId": "SITE_MHL_majuro_aggregate_extraction_sites",
-                "siteName": "Majuro Quarry Products Operation",
+                "siteName": "Majuro Aggregate Extraction Sites",
                 "siteClass": "QUARRY",
                 "countryIso3": "MHL",
                 "countryName": "Marshall Islands",
@@ -17496,7 +17662,8 @@
                     "lat": 7.09,
                     "lng": 171.38
                   },
-                  "coordinateStatus": "ESTIMATED_SITE_POINT"
+                  "coordinateStatus": "ESTIMATED_SITE_POINT",
+                  "locationNodeKey": "ASSET:MHL:majuro_aggregate_extraction_sites"
                 },
                 "ownership": {
                   "owner": "Pacific International, Inc.",
@@ -17509,7 +17676,8 @@
                   "operationalStatus": "LIMITED",
                   "extractionMethod": "QUARRYING_AND_AGGREGATE_CRUSHING",
                   "extractionEligibility": "EXECUTABLE",
-                  "commercialExtraction": true
+                  "commercialExtraction": true,
+                  "startYear": 1980
                 },
                 "processing": {
                   "upstreamProcess": "Quarrying, Dredging, Borrow-Pit Extraction",
@@ -18075,7 +18243,7 @@
                 "resource": "COMPLETE",
                 "location": "COMPLETE",
                 "operation": "COMPLETE",
-                "ownership": "UNOBSERVED",
+                "ownership": "PARTIAL",
                 "quantitative": {
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
@@ -18103,7 +18271,8 @@
                     "lat": 6.97,
                     "lng": 158.21
                   },
-                  "coordinateStatus": "ESTIMATED_SITE_POINT"
+                  "coordinateStatus": "ESTIMATED_SITE_POINT",
+                  "locationNodeKey": "ASSET:FSM:pohnpei_aggregate_quarry_zone"
                 },
                 "ownership": {
                   "owner": "UNOBSERVED",
@@ -18115,8 +18284,9 @@
                   "status": "LIMITED",
                   "operationalStatus": "LIMITED",
                   "extractionMethod": "VOLCANIC_AGGREGATE_QUARRYING_AND_CRUSHING",
-                  "extractionEligibility": null,
-                  "commercialExtraction": true
+                  "extractionEligibility": "NON_EXECUTABLE",
+                  "commercialExtraction": true,
+                  "startYear": 1980
                 },
                 "processing": {
                   "upstreamProcess": "Quarrying, Dredging, Borrow-Pit Extraction",
@@ -18611,7 +18781,7 @@
               "operatorEvidenceStatus": "UNOBSERVED",
               "siteIdentity": {
                 "siteId": "SITE_PLW_airai_limestone_quarry_zone",
-                "siteName": "Ngermellai Limestone Quarry",
+                "siteName": "Airai Limestone Quarry Zone",
                 "siteClass": "QUARRY",
                 "countryIso3": "PLW",
                 "countryName": "Palau",
@@ -18683,7 +18853,7 @@
                 "resource": "COMPLETE",
                 "location": "COMPLETE",
                 "operation": "COMPLETE",
-                "ownership": "UNOBSERVED",
+                "ownership": "PARTIAL",
                 "quantitative": {
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
@@ -18711,7 +18881,8 @@
                     "lat": 7.35,
                     "lng": 134.55
                   },
-                  "coordinateStatus": "ESTIMATED_SITE_POINT"
+                  "coordinateStatus": "ESTIMATED_SITE_POINT",
+                  "locationNodeKey": "ASSET:PLW:airai_limestone_quarry_zone"
                 },
                 "ownership": {
                   "owner": "UNOBSERVED",
@@ -18723,8 +18894,9 @@
                   "status": "LIMITED",
                   "operationalStatus": "LIMITED",
                   "extractionMethod": "surface quarrying",
-                  "extractionEligibility": null,
-                  "commercialExtraction": true
+                  "extractionEligibility": "NON_EXECUTABLE",
+                  "commercialExtraction": true,
+                  "startYear": 1980
                 },
                 "processing": {
                   "upstreamProcess": "Drilling, Blasting, Quarry Excavation",

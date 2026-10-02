@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generatedAt": "2026-09-27",
+  "generatedAt": "2026-10-02",
   "siteCount": 199,
   "sites": [
     {
@@ -3748,13 +3748,13 @@
     {
       "countryId": "SOM",
       "siteId": "SITE_SOM_el_buur_gold_mining_area",
-      "siteName": "El Buur Gold Mining Area",
-      "resourceTypeId": "gold",
-      "siteType": "EXTRACTION_SITE",
-      "status": "ARTISANAL_AND_LIMITED",
+      "siteName": "El Buur Sepiolite Mineral Area",
+      "resourceTypeId": "sepiolite",
+      "siteType": "DEPOSIT_AREA",
+      "status": "LIMITED",
       "owner": "UNOBSERVED",
       "operator": "UNOBSERVED",
-      "extractionMethod": "small-scale surface mining",
+      "extractionMethod": "small-scale surface sepiolite quarrying",
       "location": {
         "countryIso3": "SOM",
         "countryName": "Somalia",
@@ -3767,21 +3767,20 @@
         "coordinateStatus": "ESTIMATED_SITE_POINT"
       },
       "resourceIdentity": {
-        "resourceTypeId": "gold",
-        "ontologyKey": "GOLD",
-        "commodityName": "Gold Ore & Doré",
-        "category": "PRECIOUS_METAL",
-        "physicalForm": "SOLID_ORE_AND_DORE",
-        "upstreamProcess": "Open-Pit / Underground Mining, Gravity, Flotation",
-        "midstreamProcess": "Crushing, Grinding, Gravity/Flotation, Cyanide Leaching, Smelting",
+        "resourceTypeId": "sepiolite",
+        "ontologyKey": "SEPIOLITE",
+        "commodityName": "Sepiolite (Hydrated Magnesium Silicate)",
+        "category": "INDUSTRIAL_MINERAL",
+        "physicalForm": "HYDRATED_MAGNESIUM_SILICATE",
+        "upstreamProcess": "Surface quarrying / selective extraction",
+        "midstreamProcess": "Crushing, drying, screening and sizing",
         "refinedOutputs": [
-          "GOLD_DORE",
-          "JEWELRY",
-          "ELECTRONICS"
+          "SEPIOLITE_MINERAL_PRODUCT"
         ],
         "downstreamSectors": [
-          "CENTRAL_BANK_RESERVES",
-          "INDUSTRIAL_CHEMICALS"
+          "ABSORBENTS",
+          "CERAMICS",
+          "INDUSTRIAL_MINERALS"
         ],
         "ontologyStatus": "RESOLVED_FROM_RESOURCE_ONTOLOGY"
       },
@@ -3805,15 +3804,25 @@
         },
         "quantitativeExtractionDataAvailable": false
       },
-      "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+      "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
       "researchMetadata": {
-        "reviewedAt": "2026-09-27",
-        "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
+        "reviewedAt": "2026-10-02",
+        "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVIEW",
         "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
         "webSearchMethod": "SITE_NAME + COUNTRY",
-        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
+        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
+        "sourceAuthority": "USGS MRDS / Mindat",
+        "currentEvidence": "El Buur is documented as a sepiolite deposit/mineral area in Galguduud, Somalia; the repository gold classification was incorrect.",
+        "location": "El Buur, Galguduud Region, Somalia"
       },
-      "webResearchEvidence": []
+      "webResearchEvidence": [
+        {
+          "url": "https://www.mindat.org/loc-259371.html",
+          "accessed": "2026-10-02",
+          "scope": "resource identity and locality",
+          "sourceType": "MINERAL_DATABASE"
+        }
+      ]
     },
     {
       "countryId": "DJI",
@@ -3907,21 +3916,20 @@
         "coordinateStatus": "ESTIMATED_SITE_POINT"
       },
       "resourceIdentity": {
-        "resourceTypeId": "gold",
-        "ontologyKey": "GOLD",
-        "commodityName": "Gold Ore & Doré",
-        "category": "PRECIOUS_METAL",
-        "physicalForm": "SOLID_ORE_AND_DORE",
-        "upstreamProcess": "Open-Pit / Underground Mining, Gravity, Flotation",
-        "midstreamProcess": "Crushing, Grinding, Gravity/Flotation, Cyanide Leaching, Smelting",
+        "resourceTypeId": "zinc",
+        "ontologyKey": "ZINC",
+        "commodityName": "Zinc Ore & Concentrates",
+        "category": "BASE_METAL",
+        "physicalForm": "SOLID_ORE_AND_CONCENTRATE",
+        "upstreamProcess": "Underground / Open-Pit Sulfide Mining",
+        "midstreamProcess": "Flotation, Roasting, Leaching, Electrowinning",
         "refinedOutputs": [
-          "GOLD_DORE",
-          "JEWELRY",
-          "ELECTRONICS"
+          "SPECIAL_HIGH_GRADE_ZINC",
+          "GALVANIZED_STEEL",
+          "BRASS"
         ],
         "downstreamSectors": [
-          "CENTRAL_BANK_RESERVES",
-          "INDUSTRIAL_CHEMICALS"
+          "BATTERIES"
         ],
         "ontologyStatus": "RESOLVED_FROM_RESOURCE_ONTOLOGY",
         "canonicalResourceId": "zinc",
@@ -5011,7 +5019,7 @@
       "siteType": "HISTORICAL_MINE",
       "status": "HISTORICAL_INACTIVE",
       "owner": "Eswatini / heritage authorities",
-      "operator": "None",
+      "operator": "NO_CURRENT_OPERATOR",
       "extractionMethod": "historical surface workings",
       "location": {
         "countryIso3": "SWZ",
@@ -6503,9 +6511,9 @@
       "resourceTypeId": "limestone",
       "siteType": "MINE",
       "status": "ACTIVE_PRODUCING",
-      "owner": "UNOBSERVED",
-      "operator": "UNOBSERVED",
-      "extractionMethod": "large surface quarrying",
+      "owner": "Multiple licensed limestone concession holders",
+      "operator": "Multiple Samcheok limestone mine operators",
+      "extractionMethod": "large-scale surface limestone quarrying",
       "location": {
         "countryIso3": "KOR",
         "countryName": "South Korea",
@@ -6556,15 +6564,26 @@
         },
         "quantitativeExtractionDataAvailable": false
       },
-      "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+      "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
       "researchMetadata": {
-        "reviewedAt": "2026-09-27",
-        "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
+        "reviewedAt": "2026-10-02",
+        "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVIEW",
         "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
         "webSearchMethod": "SITE_NAME + COUNTRY",
-        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
+        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
+        "sourceAuthority": "SAMPYO / Ssangyong C&E",
+        "currentEvidence": "Samcheok is a major limestone mining district supplying cement and industrial uses; public operator material describes large-scale limestone extraction in the area.",
+        "location": "Samcheok, Gangwon-do, Republic of Korea",
+        "dataLimitation": "District-level record; no single legal concession owner is asserted."
       },
-      "webResearchEvidence": []
+      "webResearchEvidence": [
+        {
+          "url": "https://www.sampyo.co.kr/",
+          "accessed": "2026-10-02",
+          "scope": "district identity, limestone extraction and operator context",
+          "sourceType": "OPERATOR"
+        }
+      ]
     },
     {
       "countryId": "PRK",
@@ -6575,7 +6594,7 @@
       "status": "ACTIVE_PRODUCING",
       "owner": "North Korean state",
       "operator": "Musan Mining Complex",
-      "extractionMethod": "open-pit and beneficiation",
+      "extractionMethod": "open-pit iron ore mining and beneficiation",
       "location": {
         "countryIso3": "PRK",
         "countryName": "North Korea",
@@ -6626,15 +6645,25 @@
         },
         "quantitativeExtractionDataAvailable": false
       },
-      "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+      "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
       "researchMetadata": {
-        "reviewedAt": "2026-09-27",
-        "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
+        "reviewedAt": "2026-10-02",
+        "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVIEW",
         "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
         "webSearchMethod": "SITE_NAME + COUNTRY",
-        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
+        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
+        "sourceAuthority": "Global Energy Monitor",
+        "currentEvidence": "Musan Mine is an operating iron-ore mine in Musan County, North Hamgyong, DPRK.",
+        "location": "Musan County, North Hamgyong, DPRK"
       },
-      "webResearchEvidence": []
+      "webResearchEvidence": [
+        {
+          "url": "https://www.gem.wiki/Musan_Mine",
+          "accessed": "2026-10-02",
+          "scope": "current operating mine identity and location",
+          "sourceType": "INDUSTRY_DATABASE"
+        }
+      ]
     },
     {
       "countryId": "MNG",
@@ -6879,10 +6908,10 @@
       "siteName": "Penjom Gold Mine",
       "resourceTypeId": "gold",
       "siteType": "MINE",
-      "status": "LIMITED",
-      "owner": "UNOBSERVED",
-      "operator": "Penjom Gold Mine",
-      "extractionMethod": "open-pit and underground",
+      "status": "ACTIVE_PRODUCING",
+      "owner": "J Resources Gold (UK) Limited / J Resources",
+      "operator": "J Resources",
+      "extractionMethod": "open-pit gold mining; resin-in-leach processing",
       "location": {
         "countryIso3": "MYS",
         "countryName": "Malaysia",
@@ -6915,9 +6944,9 @@
       },
       "quantitativeProfile": {
         "reserve": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
+          "quantity": 414000,
+          "unit": "troy_ounces_gold",
+          "status": "OBSERVED"
         },
         "production": {
           "annual": null,
@@ -6933,15 +6962,25 @@
         },
         "quantitativeExtractionDataAvailable": false
       },
-      "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+      "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
       "researchMetadata": {
-        "reviewedAt": "2026-09-27",
-        "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
+        "reviewedAt": "2026-10-02",
+        "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVIEW",
         "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
         "webSearchMethod": "SITE_NAME + COUNTRY",
-        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
+        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
+        "sourceAuthority": "J Resources",
+        "currentEvidence": "Penjom is a producing J Resources gold mine in Pahang; production since late 1996. JORC Proven & Probable Ore Reserves were 414,000 oz gold at 31 Dec 2023.",
+        "location": "Pahang State, Malaysia"
       },
-      "webResearchEvidence": []
+      "webResearchEvidence": [
+        {
+          "url": "https://www.jresources.com/penjom-mine",
+          "accessed": "2026-10-02",
+          "scope": "owner, location, production history and 2023 ore reserves",
+          "sourceType": "OPERATOR"
+        }
+      ]
     },
     {
       "countryId": "VNM",
@@ -7276,8 +7315,8 @@
       "siteType": "HISTORICAL_MINE",
       "status": "HISTORICAL_INACTIVE",
       "owner": "Government of Singapore",
-      "operator": "None",
-      "extractionMethod": "historical quarrying",
+      "operator": "NO_CURRENT_OPERATOR",
+      "extractionMethod": "historical granite quarrying; multiple quarry pits",
       "location": {
         "countryIso3": "SGP",
         "countryName": "Singapore",
@@ -7327,15 +7366,25 @@
         },
         "quantitativeExtractionDataAvailable": false
       },
-      "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+      "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
       "researchMetadata": {
-        "reviewedAt": "2026-09-27",
-        "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
+        "reviewedAt": "2026-10-02",
+        "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVIEW",
         "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
         "webSearchMethod": "SITE_NAME + COUNTRY",
-        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
+        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
+        "sourceAuthority": "National Parks Board / National Heritage Board",
+        "currentEvidence": "Pulau Ubin was a granite-quarrying hub; the last operational quarry closed in 1999 and the six named quarries are inactive today.",
+        "location": "Pulau Ubin, Singapore"
       },
-      "webResearchEvidence": []
+      "webResearchEvidence": [
+        {
+          "url": "https://pulau-ubin.nparks.gov.sg/biodiversity/placesofinterest/quarries-of-pulau-ubin/",
+          "accessed": "2026-10-02",
+          "scope": "quarry identity, historical operation and current inactive status",
+          "sourceType": "GOVERNMENT"
+        }
+      ]
     },
     {
       "countryId": "BRN",
@@ -7509,9 +7558,9 @@
       "resourceTypeId": "copper",
       "siteType": "MINE",
       "status": "ACTIVE_PRODUCING",
-      "owner": "PanAust / Laos",
-      "operator": "Phu Kham Mining",
-      "extractionMethod": "open-pit and flotation",
+      "owner": "Phu Bia Mining Limited / PanAust",
+      "operator": "Phu Bia Mining Limited",
+      "extractionMethod": "open-pit mining; conventional milling and flotation",
       "location": {
         "countryIso3": "LAO",
         "countryName": "Laos",
@@ -7566,15 +7615,29 @@
         },
         "quantitativeExtractionDataAvailable": false
       },
-      "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+      "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
       "researchMetadata": {
-        "reviewedAt": "2026-09-27",
-        "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
+        "reviewedAt": "2026-10-02",
+        "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVIEW",
         "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
         "webSearchMethod": "SITE_NAME + COUNTRY",
-        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
+        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
+        "sourceAuthority": "PanAust",
+        "currentEvidence": "Phu Kham is a producing open-pit operation feeding conventional milling and flotation and producing copper and precious-metals concentrate for export.",
+        "location": "Phu Bia Mining Contract Area, Laos",
+        "associatedCommodities": [
+          "copper",
+          "gold"
+        ]
       },
-      "webResearchEvidence": []
+      "webResearchEvidence": [
+        {
+          "url": "https://panaust.com.au/operations/phu-kham-copper-gold-operation/",
+          "accessed": "2026-10-02",
+          "scope": "current mine identity, location, method, processing and exports",
+          "sourceType": "OPERATOR"
+        }
+      ]
     },
     {
       "countryId": "TLS",
@@ -8606,9 +8669,9 @@
       "resourceTypeId": "marble",
       "siteType": "QUARRY",
       "status": "ACTIVE_PRODUCING",
-      "owner": "UNOBSERVED",
-      "operator": "UNOBSERVED",
-      "extractionMethod": "bench and block extraction",
+      "owner": "Multiple licensed quarry concession holders",
+      "operator": "Multiple licensed Carrara marble quarry operators",
+      "extractionMethod": "bench quarrying and block extraction; diamond-wire cutting and sizing",
       "location": {
         "countryIso3": "ITA",
         "countryName": "Italy",
@@ -8656,15 +8719,26 @@
         },
         "quantitativeExtractionDataAvailable": false
       },
-      "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+      "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
       "researchMetadata": {
-        "reviewedAt": "2026-09-27",
-        "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
+        "reviewedAt": "2026-10-02",
+        "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVIEW",
         "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
         "webSearchMethod": "SITE_NAME + COUNTRY",
-        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
+        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
+        "sourceAuthority": "Carrara municipal/quarry records",
+        "currentEvidence": "Carrara remains an active marble-producing quarry district with many licensed quarries in the Apuan Alps.",
+        "location": "Carrara, Tuscany, Italy",
+        "dataLimitation": "District record; no single operator or district-wide annual output asserted."
       },
-      "webResearchEvidence": []
+      "webResearchEvidence": [
+        {
+          "url": "https://www.comune.carrara.ms.it/",
+          "accessed": "2026-10-02",
+          "scope": "district identity and current quarry context",
+          "sourceType": "MUNICIPAL_GOVERNMENT"
+        }
+      ]
     },
     {
       "countryId": "ESP",
@@ -8672,10 +8746,10 @@
       "siteName": "Cobre Las Cruces Mine",
       "resourceTypeId": "copper",
       "siteType": "MINE",
-      "status": "ACTIVE_PRODUCING",
-      "owner": "First Quantum Minerals",
-      "operator": "Cobre Las Cruces",
-      "extractionMethod": "open-pit and underground",
+      "status": "DEVELOPMENT",
+      "owner": "Global Panduro S.L.U. / Resource Capital Funds",
+      "operator": "Cobre Las Cruces S.A.U.",
+      "extractionMethod": "underground mining with polymetallic refining (redevelopment)",
       "location": {
         "countryIso3": "ESP",
         "countryName": "Spain",
@@ -8730,15 +8804,26 @@
         },
         "quantitativeExtractionDataAvailable": false
       },
-      "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+      "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
       "researchMetadata": {
-        "reviewedAt": "2026-09-27",
-        "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
+        "reviewedAt": "2026-10-02",
+        "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVIEW",
         "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
         "webSearchMethod": "SITE_NAME + COUNTRY",
-        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
+        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
+        "sourceAuthority": "Cobre Las Cruces",
+        "currentEvidence": "Global Panduro, controlled by Resource Capital Funds, acquired 100% of CLC in June 2026; the current strategic project is the underground mine and polymetallic refinery following the former open-pit phase.",
+        "currentEvidenceDate": "2026-06-03",
+        "location": "Andalucía, about 20 km northwest of Seville"
       },
-      "webResearchEvidence": []
+      "webResearchEvidence": [
+        {
+          "url": "https://www.cobrelascruces.com/index.php/category/noticias/",
+          "accessed": "2026-10-02",
+          "scope": "2026 ownership change and current redevelopment status",
+          "sourceType": "OPERATOR"
+        }
+      ]
     },
     {
       "countryId": "POL",
@@ -9175,8 +9260,8 @@
       "siteType": "MINE",
       "status": "ACTIVE_PRODUCING",
       "owner": "Titania AS",
-      "operator": "Titania",
-      "extractionMethod": "open-pit and beneficiation",
+      "operator": "Titania AS",
+      "extractionMethod": "open-pit mining; beneficiation to ilmenite concentrate",
       "location": {
         "countryIso3": "NOR",
         "countryName": "Norway",
@@ -9206,9 +9291,9 @@
       },
       "quantitativeProfile": {
         "reserve": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
+          "quantity": 380000000,
+          "unit": "metric_tons_ore",
+          "status": "OBSERVED"
         },
         "production": {
           "annual": null,
@@ -9218,21 +9303,32 @@
           "status": "UNOBSERVED"
         },
         "grade": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
+          "value": 18,
+          "unit": "percent_TiO2",
+          "status": "OBSERVED"
         },
         "quantitativeExtractionDataAvailable": false
       },
-      "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+      "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
       "researchMetadata": {
-        "reviewedAt": "2026-09-27",
-        "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
+        "reviewedAt": "2026-10-02",
+        "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVIEW",
         "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
         "webSearchMethod": "SITE_NAME + COUNTRY",
-        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
+        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
+        "sourceAuthority": "Geological Survey of Norway",
+        "currentEvidence": "Tellnes has produced ilmenite since 1960. NGU reports approximately 380 Mt reserves averaging 18% TiO2; current annual output is not disclosed in that source.",
+        "location": "Rogaland, Norway",
+        "dataLimitation": "Current annual production not disclosed in cited source"
       },
-      "webResearchEvidence": []
+      "webResearchEvidence": [
+        {
+          "url": "https://www.ngu.no/",
+          "accessed": "2026-10-02",
+          "scope": "deposit identity, reserve and grade context",
+          "sourceType": "GOVERNMENT_GEOLOGICAL_SURVEY"
+        }
+      ]
     },
     {
       "countryId": "AUT",
@@ -9241,9 +9337,9 @@
       "resourceTypeId": "iron_ore",
       "siteType": "MINE",
       "status": "ACTIVE_PRODUCING",
-      "owner": "VA Erzberg",
-      "operator": "VA Erzberg",
-      "extractionMethod": "open-pit bench mining",
+      "owner": "VA Erzberg GmbH",
+      "operator": "VA Erzberg GmbH",
+      "extractionMethod": "open-pit bench mining; crushing and processing",
       "location": {
         "countryIso3": "AUT",
         "countryName": "Austria",
@@ -9281,11 +9377,15 @@
           "status": "UNOBSERVED"
         },
         "production": {
-          "annual": null,
+          "annual": {
+            "value": 3000000,
+            "unit": "metric_tons_ore",
+            "year": 2026
+          },
           "rate": null,
           "unit": null,
           "year": null,
-          "status": "UNOBSERVED"
+          "status": "REPORTED"
         },
         "grade": {
           "value": null,
@@ -9294,15 +9394,25 @@
         },
         "quantitativeExtractionDataAvailable": false
       },
-      "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+      "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
       "researchMetadata": {
-        "reviewedAt": "2026-09-27",
-        "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
+        "reviewedAt": "2026-10-02",
+        "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVIEW",
         "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
         "webSearchMethod": "SITE_NAME + COUNTRY",
-        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
+        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
+        "sourceAuthority": "VA Erzberg",
+        "currentEvidence": "VA Erzberg operates the active Erzberg mine and reports around 3 Mt of ore shipped annually, with roughly 12 Mt crude material handled.",
+        "location": "Eisenerz, Styria, Austria"
       },
-      "webResearchEvidence": []
+      "webResearchEvidence": [
+        {
+          "url": "https://www.vaerzberg.at/",
+          "accessed": "2026-10-02",
+          "scope": "current operator, mining method and output context",
+          "sourceType": "OPERATOR"
+        }
+      ]
     },
     {
       "countryId": "FIN",
@@ -9530,8 +9640,8 @@
       "siteType": "MINE",
       "status": "ACTIVE_PRODUCING",
       "owner": "Almonty Industries",
-      "operator": "Beralt Tin and Wolfram",
-      "extractionMethod": "underground room-and-pillar",
+      "operator": "Beralt Tin and Wolfram / Almonty",
+      "extractionMethod": "underground tungsten mining; processing to tungsten concentrate",
       "location": {
         "countryIso3": "PRT",
         "countryName": "Portugal",
@@ -9581,15 +9691,25 @@
         },
         "quantitativeExtractionDataAvailable": false
       },
-      "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+      "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
       "researchMetadata": {
-        "reviewedAt": "2026-09-27",
-        "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
+        "reviewedAt": "2026-10-02",
+        "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVIEW",
         "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
         "webSearchMethod": "SITE_NAME + COUNTRY",
-        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
+        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
+        "sourceAuthority": "Almonty Industries",
+        "currentEvidence": "Panasqueira remains a producing underground tungsten operation with mining, processing and shipment of tungsten concentrate.",
+        "location": "Central Portugal"
       },
-      "webResearchEvidence": []
+      "webResearchEvidence": [
+        {
+          "url": "https://almonty.com/panasqueira/",
+          "accessed": "2026-10-02",
+          "scope": "current mine identity, ownership, mining and processing",
+          "sourceType": "OPERATOR"
+        }
+      ]
     },
     {
       "countryId": "GRC",
@@ -9599,8 +9719,8 @@
       "siteType": "MINE",
       "status": "ACTIVE_PRODUCING",
       "owner": "Eldorado Gold",
-      "operator": "Hellinikos Chrysos",
-      "extractionMethod": "underground mining",
+      "operator": "Hellenic Gold / Hellinikos Chrysos",
+      "extractionMethod": "underground mining; flotation and concentrate production",
       "location": {
         "countryIso3": "GRC",
         "countryName": "Greece",
@@ -9638,28 +9758,49 @@
           "status": "UNOBSERVED"
         },
         "production": {
-          "annual": null,
+          "annual": {
+            "value": 59877,
+            "unit": "troy_ounces_gold",
+            "year": 2025
+          },
           "rate": null,
           "unit": null,
           "year": null,
-          "status": "UNOBSERVED"
+          "status": "OBSERVED"
         },
         "grade": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
+          "value": 8.28,
+          "unit": "g_per_ton_gold",
+          "status": "OBSERVED"
         },
         "quantitativeExtractionDataAvailable": false
       },
-      "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+      "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
       "researchMetadata": {
-        "reviewedAt": "2026-09-27",
-        "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
+        "reviewedAt": "2026-10-02",
+        "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVIEW",
         "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
         "webSearchMethod": "SITE_NAME + COUNTRY",
-        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
+        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
+        "sourceAuthority": "Eldorado Gold",
+        "currentEvidence": "Olympias is an operating underground gold-silver-lead-zinc mine. 2025 production was 59,877 oz gold from 431,116 t milled at 8.28 g/t Au.",
+        "currentEvidenceDate": "2025-12-31",
+        "location": "Halkidiki, Greece",
+        "associatedCommodities": [
+          "gold",
+          "silver",
+          "lead",
+          "zinc"
+        ]
       },
-      "webResearchEvidence": []
+      "webResearchEvidence": [
+        {
+          "url": "https://www.eldoradogold.com/",
+          "accessed": "2026-10-02",
+          "scope": "current mine identity and 2025 operating data",
+          "sourceType": "OPERATOR"
+        }
+      ]
     },
     {
       "countryId": "CZE",
@@ -9958,8 +10099,8 @@
       "siteType": "MINE",
       "status": "ACTIVE_PRODUCING",
       "owner": "Dundee Precious Metals",
-      "operator": "Chelopech Mining",
-      "extractionMethod": "underground",
+      "operator": "Chelopech Mining EAD",
+      "extractionMethod": "underground sub-level long-hole stoping with paste backfill; flotation",
       "location": {
         "countryIso3": "BGR",
         "countryName": "Bulgaria",
@@ -10014,15 +10155,29 @@
         },
         "quantitativeExtractionDataAvailable": false
       },
-      "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+      "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
       "researchMetadata": {
-        "reviewedAt": "2026-09-27",
-        "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
+        "reviewedAt": "2026-10-02",
+        "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVIEW",
         "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
         "webSearchMethod": "SITE_NAME + COUNTRY",
-        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
+        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
+        "sourceAuthority": "Dundee Precious Metals",
+        "currentEvidence": "Chelopech is a producing underground copper-gold mine. DPM reports 2025 production of about 174,434 oz gold and 30 million lb copper.",
+        "location": "Chelopech, Bulgaria",
+        "associatedCommodities": [
+          "copper",
+          "gold"
+        ]
       },
-      "webResearchEvidence": []
+      "webResearchEvidence": [
+        {
+          "url": "https://www.dundeeprecious.com/operations/chelopech/",
+          "accessed": "2026-10-02",
+          "scope": "current mine identity, method and production context",
+          "sourceType": "OPERATOR"
+        }
+      ]
     },
     {
       "countryId": "SRB",
@@ -10662,8 +10817,8 @@
       "siteType": "MINE",
       "status": "ACTIVE_PRODUCING",
       "owner": "Central Asia Metals",
-      "operator": "Sasa Mine",
-      "extractionMethod": "underground and flotation",
+      "operator": "Sasa Mine / Central Asia Metals",
+      "extractionMethod": "underground mining; cut-and-fill and long-hole stoping with paste backfill; flotation",
       "location": {
         "countryIso3": "MKD",
         "countryName": "North Macedonia",
@@ -10700,28 +10855,46 @@
           "status": "UNOBSERVED"
         },
         "production": {
-          "annual": null,
+          "annual": {
+            "value": 35614,
+            "unit": "metric_tons_zinc_concentrate",
+            "year": 2025
+          },
           "rate": null,
           "unit": null,
           "year": null,
-          "status": "UNOBSERVED"
+          "status": "OBSERVED"
         },
         "grade": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
+          "value": 2.61,
+          "unit": "percent_zinc_in_feed",
+          "status": "OBSERVED"
         },
         "quantitativeExtractionDataAvailable": false
       },
-      "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+      "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
       "researchMetadata": {
-        "reviewedAt": "2026-09-27",
-        "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
+        "reviewedAt": "2026-10-02",
+        "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVIEW",
         "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
         "webSearchMethod": "SITE_NAME + COUNTRY",
-        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
+        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
+        "sourceAuthority": "Central Asia Metals",
+        "currentEvidence": "Sasa is a producing underground zinc-lead mine. CAML reports 2025 feed of 799,080 t at 2.61% Zn and 3.35% Pb, with 35,614 t zinc concentrate and 35,643 t lead concentrate.",
+        "location": "North Macedonia",
+        "associatedCommodities": [
+          "zinc",
+          "lead"
+        ]
       },
-      "webResearchEvidence": []
+      "webResearchEvidence": [
+        {
+          "url": "https://centralasiametals.com/",
+          "accessed": "2026-10-02",
+          "scope": "current owner/operator, method and 2025 production context",
+          "sourceType": "OPERATOR"
+        }
+      ]
     },
     {
       "countryId": "BIH",
@@ -10732,7 +10905,7 @@
       "status": "ACTIVE_PRODUCING",
       "owner": "Adriatic Metals",
       "operator": "Eastern Mining",
-      "extractionMethod": "underground mining",
+      "extractionMethod": "underground Rupice mine; processing to polymetallic concentrates",
       "location": {
         "countryIso3": "BIH",
         "countryName": "Bosnia and Herzegovina",
@@ -10782,15 +10955,27 @@
         },
         "quantitativeExtractionDataAvailable": false
       },
-      "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+      "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
       "researchMetadata": {
-        "reviewedAt": "2026-09-27",
-        "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
+        "reviewedAt": "2026-10-02",
+        "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVIEW",
         "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
         "webSearchMethod": "SITE_NAME + COUNTRY",
-        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
+        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
+        "sourceAuthority": "Adriatic Metals",
+        "currentEvidence": "Commercial production at Vares began on 10 August 2026. The operation combines the Rupice underground mine with a processing plant and is ramping toward about 850,000 t/y.",
+        "currentEvidenceDate": "2026-08-10",
+        "location": "Vares, Bosnia and Herzegovina",
+        "capacity": "~850,000 tonnes/year planned"
       },
-      "webResearchEvidence": []
+      "webResearchEvidence": [
+        {
+          "url": "https://www.adriaticmetals.com/",
+          "accessed": "2026-10-02",
+          "scope": "2026 commercial production and project identity",
+          "sourceType": "OPERATOR"
+        }
+      ]
     },
     {
       "countryId": "MNE",
@@ -10942,7 +11127,7 @@
       "siteType": "HISTORICAL_MINE",
       "status": "HISTORICAL_INACTIVE",
       "owner": "Luxembourg state/heritage",
-      "operator": "None",
+      "operator": "NO_CURRENT_OPERATOR",
       "extractionMethod": "historical underground mining",
       "location": {
         "countryIso3": "LUX",
@@ -11156,7 +11341,7 @@
       "siteType": "HISTORICAL_MINE",
       "status": "HISTORICAL_INACTIVE",
       "owner": "Government of Andorra",
-      "operator": "None",
+      "operator": "NO_CURRENT_OPERATOR",
       "extractionMethod": "historical underground mining",
       "location": {
         "countryIso3": "AND",
@@ -11222,11 +11407,11 @@
       "countryId": "MCO",
       "siteId": "SITE_MCO_no_verified_commercial_mining_site",
       "siteName": "No Verified Commercial Mining Site",
-      "resourceTypeId": null,
+      "resourceTypeId": "NOT_APPLICABLE",
       "siteType": "NO_COMMERCIAL_EXTRACTION",
       "status": "NOT_APPLICABLE",
-      "owner": "UNOBSERVED",
-      "operator": "UNOBSERVED",
+      "owner": "NOT_APPLICABLE",
+      "operator": "NOT_APPLICABLE",
       "extractionMethod": "no commercial mineral extraction",
       "location": {
         "countryIso3": "MCO",
@@ -11279,11 +11464,11 @@
       "countryId": "SMR",
       "siteId": "SITE_SMR_no_verified_commercial_mining_site",
       "siteName": "No Verified Commercial Mining Site",
-      "resourceTypeId": null,
+      "resourceTypeId": "NOT_APPLICABLE",
       "siteType": "NO_COMMERCIAL_EXTRACTION",
       "status": "NOT_APPLICABLE",
-      "owner": "UNOBSERVED",
-      "operator": "UNOBSERVED",
+      "owner": "NOT_APPLICABLE",
+      "operator": "NOT_APPLICABLE",
       "extractionMethod": "no commercial mineral extraction",
       "location": {
         "countryIso3": "SMR",
@@ -11336,11 +11521,11 @@
       "countryId": "LIE",
       "siteId": "SITE_LIE_no_verified_commercial_mining_site",
       "siteName": "No Verified Commercial Mining Site",
-      "resourceTypeId": null,
+      "resourceTypeId": "NOT_APPLICABLE",
       "siteType": "NO_COMMERCIAL_EXTRACTION",
       "status": "NOT_APPLICABLE",
-      "owner": "UNOBSERVED",
-      "operator": "UNOBSERVED",
+      "owner": "NOT_APPLICABLE",
+      "operator": "NOT_APPLICABLE",
       "extractionMethod": "no commercial mineral extraction",
       "location": {
         "countryIso3": "LIE",
@@ -11393,11 +11578,11 @@
       "countryId": "VAT",
       "siteId": "SITE_VAT_no_verified_commercial_mining_site",
       "siteName": "No Verified Commercial Mining Site",
-      "resourceTypeId": null,
+      "resourceTypeId": "NOT_APPLICABLE",
       "siteType": "NO_COMMERCIAL_EXTRACTION",
       "status": "NOT_APPLICABLE",
-      "owner": "UNOBSERVED",
-      "operator": "UNOBSERVED",
+      "owner": "NOT_APPLICABLE",
+      "operator": "NOT_APPLICABLE",
       "extractionMethod": "no commercial mineral extraction",
       "location": {
         "countryIso3": "VAT",
@@ -11921,7 +12106,7 @@
       "status": "ACTIVE_PRODUCING",
       "owner": "Glencore",
       "operator": "Cerrejón",
-      "extractionMethod": "large open-pit truck and shovel",
+      "extractionMethod": "large open-pit truck-and-shovel coal mining",
       "location": {
         "countryIso3": "COL",
         "countryName": "Colombia",
@@ -11962,11 +12147,15 @@
           "status": "UNOBSERVED"
         },
         "production": {
-          "annual": null,
+          "annual": {
+            "value": 16800000,
+            "unit": "metric_tons_coal",
+            "year": 2025
+          },
           "rate": null,
           "unit": null,
           "year": null,
-          "status": "UNOBSERVED"
+          "status": "OBSERVED"
         },
         "grade": {
           "value": null,
@@ -11975,15 +12164,25 @@
         },
         "quantitativeExtractionDataAvailable": false
       },
-      "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+      "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
       "researchMetadata": {
-        "reviewedAt": "2026-09-27",
-        "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
+        "reviewedAt": "2026-10-02",
+        "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVIEW",
         "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
         "webSearchMethod": "SITE_NAME + COUNTRY",
-        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
+        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
+        "sourceAuthority": "Cerrejón / Glencore",
+        "currentEvidence": "Cerrejón reported 16.8 Mt of coal production in 2025.",
+        "location": "La Guajira, Colombia"
       },
-      "webResearchEvidence": []
+      "webResearchEvidence": [
+        {
+          "url": "https://www.cerrejon.com/en",
+          "accessed": "2026-10-02",
+          "scope": "current operator and 2025 production",
+          "sourceType": "OPERATOR"
+        }
+      ]
     },
     {
       "countryId": "PER",
@@ -12610,7 +12809,7 @@
       "status": "ACTIVE_PRODUCING",
       "owner": "Calibre Mining",
       "operator": "Calibre Mining Nicaragua",
-      "extractionMethod": "open-pit and underground",
+      "extractionMethod": "open-pit and underground gold mining; milling/leaching",
       "location": {
         "countryIso3": "NIC",
         "countryName": "Nicaragua",
@@ -12661,15 +12860,25 @@
         },
         "quantitativeExtractionDataAvailable": false
       },
-      "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+      "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
       "researchMetadata": {
-        "reviewedAt": "2026-09-27",
-        "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
+        "reviewedAt": "2026-10-02",
+        "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVIEW",
         "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
         "webSearchMethod": "SITE_NAME + COUNTRY",
-        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
+        "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
+        "sourceAuthority": "Calibre Mining",
+        "currentEvidence": "El Limón is a producing gold operation in Nicaragua under Calibre Mining.",
+        "location": "Nicaragua"
       },
-      "webResearchEvidence": []
+      "webResearchEvidence": [
+        {
+          "url": "https://www.calibremining.com/",
+          "accessed": "2026-10-02",
+          "scope": "current operator and producing status",
+          "sourceType": "OPERATOR"
+        }
+      ]
     },
     {
       "countryId": "HND",
@@ -13261,6 +13470,7 @@
         },
         "quantitativeExtractionDataAvailable": false
       },
+      "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
       "researchMetadata": {},
       "webResearchEvidence": []
     },
@@ -13324,6 +13534,7 @@
         },
         "quantitativeExtractionDataAvailable": false
       },
+      "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
       "researchMetadata": {},
       "webResearchEvidence": []
     },
@@ -13334,9 +13545,9 @@
       "resourceTypeId": "gold",
       "siteType": "MINE",
       "status": "ACTIVE_PRODUCING",
-      "owner": "Barrick / Dominican state",
+      "owner": "Barrick / Dominican Republic state interests",
       "operator": "Pueblo Viejo Dominicana",
-      "extractionMethod": "open-pit and refractory processing",
+      "extractionMethod": "open-pit mining; refractory ore processing and autoclave",
       "location": {
         "countryIso3": "DOM",
         "countryName": "Dominican Republic",
@@ -13387,8 +13598,26 @@
         },
         "quantitativeExtractionDataAvailable": false
       },
-      "researchMetadata": {},
-      "webResearchEvidence": []
+      "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+      "researchMetadata": {
+        "sourceAuthority": "Barrick",
+        "currentEvidence": "Pueblo Viejo is a producing gold-silver operation in the Dominican Republic operated through Pueblo Viejo Dominicana in partnership with Dominican state interests.",
+        "location": "Dominican Republic",
+        "associatedCommodities": [
+          "gold",
+          "silver"
+        ],
+        "reviewedAt": "2026-10-02",
+        "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVIEW"
+      },
+      "webResearchEvidence": [
+        {
+          "url": "https://www.barrick.com/operations/pueblo-viejo/",
+          "accessed": "2026-10-02",
+          "scope": "current ownership, operator and processing context",
+          "sourceType": "OPERATOR"
+        }
+      ]
     },
     {
       "countryId": "TTO",
@@ -13455,6 +13684,7 @@
         },
         "quantitativeExtractionDataAvailable": false
       },
+      "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
       "researchMetadata": {},
       "webResearchEvidence": []
     },
@@ -13592,6 +13822,7 @@
         },
         "quantitativeExtractionDataAvailable": false
       },
+      "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
       "researchMetadata": {},
       "webResearchEvidence": []
     },
@@ -13723,6 +13954,7 @@
         },
         "quantitativeExtractionDataAvailable": false
       },
+      "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
       "researchMetadata": {},
       "webResearchEvidence": []
     },
@@ -13860,6 +14092,7 @@
         },
         "quantitativeExtractionDataAvailable": false
       },
+      "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
       "researchMetadata": {},
       "webResearchEvidence": []
     },
@@ -13923,6 +14156,7 @@
         },
         "quantitativeExtractionDataAvailable": false
       },
+      "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
       "researchMetadata": {},
       "webResearchEvidence": []
     },
@@ -14004,7 +14238,7 @@
       "status": "ACTIVE_PRODUCING",
       "owner": "Newmont / Staatsolie",
       "operator": "Newmont Suriname",
-      "extractionMethod": "open-pit",
+      "extractionMethod": "open-pit gold mining; processing to doré",
       "location": {
         "countryIso3": "SUR",
         "countryName": "Suriname",
@@ -14055,8 +14289,22 @@
         },
         "quantitativeExtractionDataAvailable": false
       },
-      "researchMetadata": {},
-      "webResearchEvidence": []
+      "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+      "researchMetadata": {
+        "sourceAuthority": "Newmont / Staatsolie",
+        "currentEvidence": "Merian is a producing open-pit gold operation in Suriname operated through the Newmont-Staatsolie partnership.",
+        "location": "Suriname",
+        "reviewedAt": "2026-10-02",
+        "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVIEW"
+      },
+      "webResearchEvidence": [
+        {
+          "url": "https://operations.newmont.com/suriname/merian/",
+          "accessed": "2026-10-02",
+          "scope": "current mine identity and operator context",
+          "sourceType": "OPERATOR"
+        }
+      ]
     },
     {
       "countryId": "GUY",
@@ -14118,6 +14366,7 @@
         },
         "quantitativeExtractionDataAvailable": false
       },
+      "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
       "researchMetadata": {},
       "webResearchEvidence": []
     },
@@ -14130,7 +14379,7 @@
       "status": "ACTIVE_PRODUCING",
       "owner": "Newmont",
       "operator": "Newmont Boddington Gold",
-      "extractionMethod": "large open-pit and processing",
+      "extractionMethod": "large open-pit mining; ore processing",
       "location": {
         "countryIso3": "AUS",
         "countryName": "Australia",
@@ -14163,9 +14412,9 @@
       },
       "quantitativeProfile": {
         "reserve": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
+          "quantity": 10200000,
+          "unit": "troy_ounces_gold",
+          "status": "OBSERVED"
         },
         "production": {
           "annual": null,
@@ -14181,8 +14430,26 @@
         },
         "quantitativeExtractionDataAvailable": false
       },
-      "researchMetadata": {},
-      "webResearchEvidence": []
+      "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+      "researchMetadata": {
+        "sourceAuthority": "Newmont",
+        "currentEvidence": "Boddington is a producing open-pit gold-copper mine in Western Australia. Newmont reports about 10.2 Moz gold and 500 kt copper reserves.",
+        "location": "Western Australia",
+        "associatedCommodities": [
+          "gold",
+          "copper"
+        ],
+        "reviewedAt": "2026-10-02",
+        "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVIEW"
+      },
+      "webResearchEvidence": [
+        {
+          "url": "https://operations.newmont.com/australia/boddington/",
+          "accessed": "2026-10-02",
+          "scope": "current mine identity and reserve context",
+          "sourceType": "OPERATOR"
+        }
+      ]
     },
     {
       "countryId": "NZL",
@@ -14193,7 +14460,7 @@
       "status": "ACTIVE_PRODUCING",
       "owner": "OceanaGold",
       "operator": "OceanaGold New Zealand",
-      "extractionMethod": "open-pit and underground",
+      "extractionMethod": "open-pit and underground mining; CIL and pressure-oxidation processing",
       "location": {
         "countryIso3": "NZL",
         "countryName": "New Zealand",
@@ -14231,11 +14498,15 @@
           "status": "UNOBSERVED"
         },
         "production": {
-          "annual": null,
+          "annual": {
+            "value": 147000,
+            "unit": "troy_ounces_gold",
+            "year": 2025
+          },
           "rate": null,
           "unit": null,
           "year": null,
-          "status": "UNOBSERVED"
+          "status": "OBSERVED"
         },
         "grade": {
           "value": null,
@@ -14244,8 +14515,23 @@
         },
         "quantitativeExtractionDataAvailable": false
       },
-      "researchMetadata": {},
-      "webResearchEvidence": []
+      "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+      "researchMetadata": {
+        "sourceAuthority": "OceanaGold",
+        "currentEvidence": "Macraes is an operating open-pit and underground gold mine. OceanaGold reported 147 koz gold in 2025 and 2026 guidance of 135–155 koz.",
+        "location": "Otago, New Zealand",
+        "processing": "CIL and pressure oxidation",
+        "reviewedAt": "2026-10-02",
+        "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVIEW"
+      },
+      "webResearchEvidence": [
+        {
+          "url": "https://oceanagold.com/operations/macraes/",
+          "accessed": "2026-10-02",
+          "scope": "current mine identity, method, processing and production",
+          "sourceType": "OPERATOR"
+        }
+      ]
     },
     {
       "countryId": "PNG",
@@ -14255,8 +14541,8 @@
       "siteType": "MINE",
       "status": "ACTIVE_PRODUCING",
       "owner": "Newmont",
-      "operator": "Lihir operation",
-      "extractionMethod": "open-pit",
+      "operator": "Newmont Lihir",
+      "extractionMethod": "open-pit gold mining; processing and pressure oxidation",
       "location": {
         "countryIso3": "PNG",
         "countryName": "Papua New Guinea",
@@ -14307,8 +14593,22 @@
         },
         "quantitativeExtractionDataAvailable": false
       },
-      "researchMetadata": {},
-      "webResearchEvidence": []
+      "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+      "researchMetadata": {
+        "sourceAuthority": "Newmont",
+        "currentEvidence": "Lihir is a current Newmont gold operation in Papua New Guinea.",
+        "location": "New Ireland Province, Papua New Guinea",
+        "reviewedAt": "2026-10-02",
+        "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVIEW"
+      },
+      "webResearchEvidence": [
+        {
+          "url": "https://operations.newmont.com/papua-new-guinea/lihir/",
+          "accessed": "2026-10-02",
+          "scope": "current operator and mine identity",
+          "sourceType": "OPERATOR"
+        }
+      ]
     },
     {
       "countryId": "FJI",
@@ -14370,6 +14670,7 @@
         },
         "quantitativeExtractionDataAvailable": false
       },
+      "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
       "researchMetadata": {},
       "webResearchEvidence": []
     },
@@ -14507,6 +14808,7 @@
         },
         "quantitativeExtractionDataAvailable": false
       },
+      "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
       "researchMetadata": {},
       "webResearchEvidence": []
     },
