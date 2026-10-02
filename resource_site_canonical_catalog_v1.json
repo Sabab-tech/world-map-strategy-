@@ -9,6 +9,7 @@
       "siteId": "SITE_BGD_barapukuria_coal_mine",
       "siteName": "Barapukuria Coal Mine",
       "identity": {
+        "siteName": "Barapukuria Coal Mine",
         "countryIso3": "BGD",
         "siteType": "COAL_MINE",
         "resourceTypeId": "coal",
@@ -89,6 +90,7 @@
       "siteId": "SITE_IND_gevra_oc_mine",
       "siteName": "Gevra OC Mine",
       "identity": {
+        "siteName": "Gevra OC Mine",
         "countryIso3": "IND",
         "siteType": "COAL_MINE",
         "resourceTypeId": "coal",
@@ -173,6 +175,7 @@
       "siteId": "SITE_PAK_thar_block_ii_coal_mine",
       "siteName": "Thar Block II Coal Mine",
       "identity": {
+        "siteName": "Thar Block II Coal Mine",
         "countryIso3": "PAK",
         "siteType": "COAL_MINE",
         "resourceTypeId": "coal",
@@ -253,6 +256,7 @@
       "siteId": "SITE_LKA_kahatagaha_graphite_mine",
       "siteName": "Kahatagaha Graphite Mine",
       "identity": {
+        "siteName": "Kahatagaha Graphite Mine",
         "countryIso3": "LKA",
         "siteType": "MINE",
         "resourceTypeId": "graphite",
@@ -334,6 +338,7 @@
       "siteId": "SITE_NPL_udayapur_limestone_mine",
       "siteName": "Udayapur Limestone Mine",
       "identity": {
+        "siteName": "Udayapur Limestone Mine",
         "countryIso3": "NPL",
         "siteType": "QUARRY",
         "resourceTypeId": "limestone",
@@ -415,6 +420,7 @@
       "siteId": "SITE_BTN_tsirang_limestone_quarries",
       "siteName": "Tsirang Limestone Quarries",
       "identity": {
+        "siteName": "Tsirang Limestone Quarries",
         "countryIso3": "BTN",
         "siteType": "QUARRY",
         "resourceTypeId": "limestone",
@@ -492,6 +498,7 @@
       "siteId": "SITE_AFG_mes_aynak_copper_mine",
       "siteName": "Mes Aynak Copper Mine",
       "identity": {
+        "siteName": "Mes Aynak Copper Mine",
         "countryIso3": "AFG",
         "siteType": "PROJECT",
         "resourceTypeId": "copper",
@@ -573,6 +580,7 @@
       "siteId": "SITE_MDV_mal_atoll_coral_aggregate_sites",
       "siteName": "Malé Atoll Coral Aggregate Sites",
       "identity": {
+        "siteName": "Malé Atoll Coral Aggregate Sites",
         "countryIso3": "MDV",
         "siteType": "EXTRACTION_SITE",
         "resourceTypeId": "coral_aggregate",
@@ -649,6 +657,7 @@
       "siteId": "SITE_DZA_gara_djebilet_iron_mine",
       "siteName": "Gara Djebilet Iron Mine",
       "identity": {
+        "siteName": "Gara Djebilet Iron Mine",
         "countryIso3": "DZA",
         "siteType": "PROJECT",
         "resourceTypeId": "iron_ore",
@@ -726,6 +735,7 @@
       "siteId": "SITE_EGY_sukari_gold_mine",
       "siteName": "Sukari Gold Mine",
       "identity": {
+        "siteName": "Sukari Gold Mine",
         "countryIso3": "EGY",
         "siteType": "MINE",
         "resourceTypeId": "gold",
@@ -807,6 +817,7 @@
       "siteId": "SITE_LBY_sharara_oil_field",
       "siteName": "Sharara Oil Field",
       "identity": {
+        "siteName": "Sharara Oil Field",
         "countryIso3": "LBY",
         "siteType": "OIL_FIELD",
         "resourceTypeId": "crude_oil",
@@ -889,6 +900,7 @@
       "siteId": "SITE_MAR_khouribga_phosphate_mine",
       "siteName": "Khouribga Phosphate Mine",
       "identity": {
+        "siteName": "Khouribga Phosphate Mine",
         "countryIso3": "MAR",
         "siteType": "MINE",
         "resourceTypeId": "phosphate",
@@ -971,6 +983,7 @@
       "siteId": "SITE_TUN_mdhilla_phosphate_mine",
       "siteName": "Mdhilla Phosphate Mine",
       "identity": {
+        "siteName": "Mdhilla Phosphate Mine",
         "countryIso3": "TUN",
         "siteType": "MINE",
         "resourceTypeId": "phosphate",
@@ -1053,6 +1066,7 @@
       "siteId": "SITE_SDN_hassai_gold_mine",
       "siteName": "Hassai Gold Mine",
       "identity": {
+        "siteName": "Hassai Gold Mine",
         "countryIso3": "SDN",
         "siteType": "MINE",
         "resourceTypeId": "gold",
@@ -1132,6 +1146,7 @@
       "siteId": "SITE_MRT_guelb_el_rhein_iron_ore_mine",
       "siteName": "Guelb el Rhein Iron Ore Mine",
       "identity": {
+        "siteName": "Guelb el Rhein Iron Ore Mine",
         "countryIso3": "MRT",
         "siteType": "MINE",
         "resourceTypeId": "iron_ore",
@@ -1209,6 +1224,7 @@
       "siteId": "SITE_SEN_sabodala_massawa_gold_mine",
       "siteName": "Sabodala-Massawa Gold Mine",
       "identity": {
+        "siteName": "Sabodala-Massawa Gold Mine",
         "countryIso3": "SEN",
         "siteType": "MINE",
         "resourceTypeId": "gold",
@@ -1290,6 +1306,7 @@
       "siteId": "SITE_GMB_western_gambia_aggregate_quarry_zone",
       "siteName": "Western Gambia Aggregate Quarry Zone",
       "identity": {
+        "siteName": "Western Gambia Aggregate Quarry Zone",
         "countryIso3": "GMB",
         "siteType": "QUARRY",
         "resourceTypeId": "construction_aggregate",
@@ -1366,6 +1383,7 @@
       "siteId": "SITE_GNB_farim_phosphate_project",
       "siteName": "Farim Phosphate Project",
       "identity": {
+        "siteName": "Farim Phosphate Project",
         "countryIso3": "GNB",
         "siteType": "PROJECT",
         "resourceTypeId": "phosphate",
@@ -1446,6 +1464,7 @@
       "siteId": "SITE_GIN_sangaredi_bauxite_mine",
       "siteName": "Sangaredi Bauxite Mine",
       "identity": {
+        "siteName": "Sangaredi Bauxite Mine",
         "countryIso3": "GIN",
         "siteType": "MINE",
         "resourceTypeId": "bauxite",
@@ -1526,6 +1545,7 @@
       "siteId": "SITE_SLE_sierra_rutile_area_1",
       "siteName": "Sierra Rutile Area 1",
       "identity": {
+        "siteName": "Sierra Rutile Area 1",
         "countryIso3": "SLE",
         "siteType": "MINERAL_SANDS",
         "resourceTypeId": "rutile",
@@ -1607,6 +1627,7 @@
       "siteId": "SITE_LBR_yekepa_iron_ore_mine",
       "siteName": "Nimba (Yekepa) Iron Ore Operations",
       "identity": {
+        "siteName": "Nimba (Yekepa) Iron Ore Operations",
         "countryIso3": "LBR",
         "siteType": "MINE",
         "resourceTypeId": "iron_ore",
@@ -1686,6 +1707,7 @@
       "siteId": "SITE_CIV_ity_gold_mine",
       "siteName": "Ity Gold Mine",
       "identity": {
+        "siteName": "Ity Gold Mine",
         "countryIso3": "CIV",
         "siteType": "MINE",
         "resourceTypeId": "gold",
@@ -1763,6 +1785,7 @@
       "siteId": "SITE_GHA_tarkwa_gold_mine",
       "siteName": "Tarkwa Gold Mine",
       "identity": {
+        "siteName": "Tarkwa Gold Mine",
         "countryIso3": "GHA",
         "siteType": "MINE",
         "resourceTypeId": "gold",
@@ -1844,6 +1867,7 @@
       "siteId": "SITE_TGO_hahoto_kpogam_phosphate_mine",
       "siteName": "Hahotoé-Kpogamé Phosphate Mine",
       "identity": {
+        "siteName": "Hahotoé-Kpogamé Phosphate Mine",
         "countryIso3": "TGO",
         "siteType": "MINE",
         "resourceTypeId": "phosphate",
@@ -1926,6 +1950,7 @@
       "siteId": "SITE_BEN_onigbolo_limestone_quarry",
       "siteName": "Onigbolo Limestone Quarry",
       "identity": {
+        "siteName": "Onigbolo Limestone Quarry",
         "countryIso3": "BEN",
         "siteType": "QUARRY",
         "resourceTypeId": "limestone",
@@ -2003,6 +2028,7 @@
       "siteId": "SITE_BFA_essakane_gold_mine",
       "siteName": "Essakane Gold Mine",
       "identity": {
+        "siteName": "Essakane Gold Mine",
         "countryIso3": "BFA",
         "siteType": "MINE",
         "resourceTypeId": "gold",
@@ -2080,6 +2106,7 @@
       "siteId": "SITE_MLI_loulo_gounkoto_complex",
       "siteName": "Loulo-Gounkoto Complex",
       "identity": {
+        "siteName": "Loulo-Gounkoto Complex",
         "countryIso3": "MLI",
         "siteType": "MINE",
         "resourceTypeId": "gold",
@@ -2157,6 +2184,7 @@
       "siteId": "SITE_NER_soma_r_uranium_mine",
       "siteName": "Somaïr Uranium Mine",
       "identity": {
+        "siteName": "Somaïr Uranium Mine",
         "countryIso3": "NER",
         "siteType": "MINE",
         "resourceTypeId": "uranium",
@@ -2241,6 +2269,7 @@
       "siteId": "SITE_NGA_okaba_coal_mine",
       "siteName": "Okaba Coal Mine",
       "identity": {
+        "siteName": "Okaba Coal Mine",
         "countryIso3": "NGA",
         "siteType": "COAL_MINE",
         "resourceTypeId": "coal",
@@ -2321,6 +2350,7 @@
       "siteId": "SITE_CPV_santiago_pozzolana_quarry_zone",
       "siteName": "Santiago Pozzolana Quarry Zone",
       "identity": {
+        "siteName": "Santiago Pozzolana Quarry Zone",
         "countryIso3": "CPV",
         "siteType": "QUARRY",
         "resourceTypeId": "construction_aggregate",
@@ -2399,6 +2429,7 @@
       "siteId": "SITE_ESH_bou_craa_phosphate_mine",
       "siteName": "Bou Craa Phosphate Mine",
       "identity": {
+        "siteName": "Bou Craa Phosphate Mine",
         "countryIso3": "ESH",
         "siteType": "MINE",
         "resourceTypeId": "phosphate",
@@ -2479,6 +2510,7 @@
       "siteId": "SITE_CMR_mbalam_nabeba_iron_ore_project",
       "siteName": "Mbalam-Nabeba Iron Ore Project",
       "identity": {
+        "siteName": "Mbalam-Nabeba Iron Ore Project",
         "countryIso3": "CMR",
         "siteType": "PROJECT",
         "resourceTypeId": "iron_ore",
@@ -2556,6 +2588,7 @@
       "siteId": "SITE_CAF_ndassima_gold_project",
       "siteName": "Ndassima Gold Project",
       "identity": {
+        "siteName": "Ndassima Gold Project",
         "countryIso3": "CAF",
         "siteType": "PROJECT",
         "resourceTypeId": "gold",
@@ -2635,6 +2668,7 @@
       "siteId": "SITE_TCD_kouri_bougoudi_gold_mining_area",
       "siteName": "Kouri Bougoudi Gold Mining Area",
       "identity": {
+        "siteName": "Kouri Bougoudi Gold Mining Area",
         "countryIso3": "TCD",
         "siteType": "EXTRACTION_SITE",
         "resourceTypeId": "gold",
@@ -2714,6 +2748,7 @@
       "siteId": "SITE_COG_mayoko_iron_ore_mine",
       "siteName": "Mayoko Iron Ore Mine",
       "identity": {
+        "siteName": "Mayoko Iron Ore Mine",
         "countryIso3": "COG",
         "siteType": "MINE",
         "resourceTypeId": "iron_ore",
@@ -2794,6 +2829,7 @@
       "siteId": "SITE_AGO_catoca_diamond_mine",
       "siteName": "Catoca Diamond Mine",
       "identity": {
+        "siteName": "Catoca Diamond Mine",
         "countryIso3": "AGO",
         "siteType": "MINE",
         "resourceTypeId": "diamond",
@@ -2873,6 +2909,7 @@
       "siteId": "SITE_COD_kamoa_kakula_copper_complex",
       "siteName": "Kamoa-Kakula Copper Complex",
       "identity": {
+        "siteName": "Kamoa-Kakula Copper Complex",
         "countryIso3": "COD",
         "siteType": "MINE",
         "resourceTypeId": "copper",
@@ -2958,6 +2995,7 @@
       "siteId": "SITE_GAB_moanda_manganese_mine",
       "siteName": "Moanda Manganese Mine",
       "identity": {
+        "siteName": "Moanda Manganese Mine",
         "countryIso3": "GAB",
         "siteType": "MINE",
         "resourceTypeId": "manganese",
@@ -3038,6 +3076,7 @@
       "siteId": "SITE_GNQ_zafiro_oil_field",
       "siteName": "Zafiro Oil Field",
       "identity": {
+        "siteName": "Zafiro Oil Field",
         "countryIso3": "GNQ",
         "siteType": "OIL_FIELD",
         "resourceTypeId": "crude_oil",
@@ -3122,6 +3161,7 @@
       "siteId": "SITE_STP_s_o_tom_aggregate_quarry_zone",
       "siteName": "São Tomé Aggregate Quarry Zone",
       "identity": {
+        "siteName": "São Tomé Aggregate Quarry Zone",
         "countryIso3": "STP",
         "siteType": "QUARRY",
         "resourceTypeId": "construction_aggregate",
@@ -3200,6 +3240,7 @@
       "siteId": "SITE_ETH_lega_dembi_gold_mine",
       "siteName": "Lega Dembi Gold Mine",
       "identity": {
+        "siteName": "Lega Dembi Gold Mine",
         "countryIso3": "ETH",
         "siteType": "MINE",
         "resourceTypeId": "gold",
@@ -3219,14 +3260,14 @@
       },
       "ownership": {
         "owner": "Ethiopian state / former concession",
-        "operator": "UNOBSERVED",
+        "operator": "NO_CURRENT_OPERATOR",
         "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
         "operatorEvidenceStatus": "UNOBSERVED"
       },
       "operation": {
         "status": "SUSPENDED",
         "operationalStatus": "SUSPENDED",
-        "extractionMethod": "open-pit and underground",
+        "extractionMethod": "historical gold mining and processing; commercial operation suspended",
         "extractionEligibility": "NON_EXECUTABLE",
         "commercialExtraction": true,
         "startYear": 1990
@@ -3265,12 +3306,12 @@
       },
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-        "reviewedAt": "2026-09-27",
+        "reviewedAt": "2026-10-02",
         "sourceCount": 1,
         "sourceAuthorities": [
           "WIKIPEDIA"
         ],
-        "dataLimitations": null
+        "dataLimitations": "Current ownership/operator details are separated from the historical concession record."
       }
     },
     {
@@ -3279,6 +3320,7 @@
       "siteId": "SITE_KEN_kariandusi_diatomite_mine",
       "siteName": "Kariandusi Diatomite Mine",
       "identity": {
+        "siteName": "Kariandusi Diatomite Mine",
         "countryIso3": "KEN",
         "siteType": "MINE",
         "resourceTypeId": "diatomite",
@@ -3355,6 +3397,7 @@
       "siteId": "SITE_TZA_geita_gold_mine",
       "siteName": "Geita Gold Mine",
       "identity": {
+        "siteName": "Geita Gold Mine",
         "countryIso3": "TZA",
         "siteType": "MINE",
         "resourceTypeId": "gold",
@@ -3432,6 +3475,7 @@
       "siteId": "SITE_UGA_tororo_limestone_quarry",
       "siteName": "Tororo Limestone Quarry",
       "identity": {
+        "siteName": "Tororo Limestone Quarry",
         "countryIso3": "UGA",
         "siteType": "QUARRY",
         "resourceTypeId": "limestone",
@@ -3511,6 +3555,7 @@
       "siteId": "SITE_RWA_rutongo_tin_mine",
       "siteName": "Rutongo Tin Mine",
       "identity": {
+        "siteName": "Rutongo Tin Mine",
         "countryIso3": "RWA",
         "siteType": "MINE",
         "resourceTypeId": "tin",
@@ -3587,6 +3632,7 @@
       "siteId": "SITE_BDI_musongati_nickel_project",
       "siteName": "Musongati Nickel Project",
       "identity": {
+        "siteName": "Musongati Nickel Project",
         "countryIso3": "BDI",
         "siteType": "PROJECT",
         "resourceTypeId": "nickel",
@@ -3664,6 +3710,7 @@
       "siteId": "SITE_SOM_el_buur_gold_mining_area",
       "siteName": "El Buur Sepiolite Mineral Area",
       "identity": {
+        "siteName": "El Buur Sepiolite Mineral Area",
         "countryIso3": "SOM",
         "siteType": "DEPOSIT_AREA",
         "resourceTypeId": "sepiolite",
@@ -3729,7 +3776,7 @@
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
         "reviewedAt": "2026-10-02",
-        "sourceCount": 8,
+        "sourceCount": 1,
         "sourceAuthorities": [
           "MINERAL_DATABASE"
         ],
@@ -3742,6 +3789,7 @@
       "siteId": "SITE_DJI_ali_sabieh_limestone_quarry_zone",
       "siteName": "Ali Sabieh Limestone Quarry Zone",
       "identity": {
+        "siteName": "Ali Sabieh Limestone Quarry Zone",
         "countryIso3": "DJI",
         "siteType": "QUARRY",
         "resourceTypeId": "limestone",
@@ -3819,6 +3867,7 @@
       "siteId": "SITE_ERI_bisha_mine",
       "siteName": "Bisha Mine",
       "identity": {
+        "siteName": "Bisha Mine",
         "countryIso3": "ERI",
         "siteType": "MINE",
         "resourceTypeId": "zinc",
@@ -3897,6 +3946,7 @@
       "siteId": "SITE_SSD_paloch_oil_field",
       "siteName": "Paloch Oil Field",
       "identity": {
+        "siteName": "Paloch Oil Field",
         "countryIso3": "SSD",
         "siteType": "OIL_FIELD",
         "resourceTypeId": "crude_oil",
@@ -3981,6 +4031,7 @@
       "siteId": "SITE_MWI_kayelekera_uranium_mine",
       "siteName": "Kayelekera Uranium Mine",
       "identity": {
+        "siteName": "Kayelekera Uranium Mine",
         "countryIso3": "MWI",
         "siteType": "MINE",
         "resourceTypeId": "uranium",
@@ -4061,6 +4112,7 @@
       "siteId": "SITE_MDG_ambatovy_mine",
       "siteName": "Ambatovy Mine",
       "identity": {
+        "siteName": "Ambatovy Mine",
         "countryIso3": "MDG",
         "siteType": "MINE",
         "resourceTypeId": "nickel",
@@ -4138,6 +4190,7 @@
       "siteId": "SITE_MUS_basalt_aggregate_quarry_zone",
       "siteName": "Basalt Aggregate Quarry Zone",
       "identity": {
+        "siteName": "Basalt Aggregate Quarry Zone",
         "countryIso3": "MUS",
         "siteType": "QUARRY",
         "resourceTypeId": "basalt",
@@ -4156,15 +4209,15 @@
         "locationNodeKey": "ASSET:MUS:basalt_aggregate_quarry_zone"
       },
       "ownership": {
-        "owner": "UNOBSERVED",
-        "operator": "UNOBSERVED",
+        "owner": "Gamma Materials Ltd.",
+        "operator": "Gamma Materials Ltd.",
         "ownerEvidenceStatus": "UNOBSERVED",
         "operatorEvidenceStatus": "UNOBSERVED"
       },
       "operation": {
         "status": "ACTIVE_PRODUCING",
         "operationalStatus": "ACTIVE_PRODUCING",
-        "extractionMethod": "surface basalt quarrying",
+        "extractionMethod": "surface basalt quarrying; crushing and screening into aggregate and road materials",
         "extractionEligibility": "EXECUTABLE",
         "commercialExtraction": true,
         "startYear": 1970
@@ -4203,9 +4256,11 @@
       },
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-        "reviewedAt": null,
-        "sourceCount": 2,
-        "sourceAuthorities": [],
+        "reviewedAt": "2026-10-02",
+        "sourceCount": 3,
+        "sourceAuthorities": [
+          "OPERATOR"
+        ],
         "dataLimitations": null
       }
     },
@@ -4215,6 +4270,7 @@
       "siteId": "SITE_SYC_mah_granite_quarry_zone",
       "siteName": "Mahé Granite Quarry Zone",
       "identity": {
+        "siteName": "Mahé Granite Quarry Zone",
         "countryIso3": "SYC",
         "siteType": "QUARRY",
         "resourceTypeId": "granite",
@@ -4291,6 +4347,7 @@
       "siteId": "SITE_COM_grande_comore_basalt_aggregate_sites",
       "siteName": "Grande Comore Basalt Aggregate Sites",
       "identity": {
+        "siteName": "Grande Comore Basalt Aggregate Sites",
         "countryIso3": "COM",
         "siteType": "QUARRY",
         "resourceTypeId": "basalt",
@@ -4370,6 +4427,7 @@
       "siteId": "SITE_ZAF_mogalakwena_pgm_mine",
       "siteName": "Mogalakwena PGM Mine",
       "identity": {
+        "siteName": "Mogalakwena PGM Mine",
         "countryIso3": "ZAF",
         "siteType": "MINE",
         "resourceTypeId": "platinum",
@@ -4447,6 +4505,7 @@
       "siteId": "SITE_ZMB_kansanshi_copper_gold_mine",
       "siteName": "Kansanshi Copper-Gold Mine",
       "identity": {
+        "siteName": "Kansanshi Copper-Gold Mine",
         "countryIso3": "ZMB",
         "siteType": "MINE",
         "resourceTypeId": "copper",
@@ -4532,6 +4591,7 @@
       "siteId": "SITE_ZWE_ngezi_platinum_mine",
       "siteName": "Ngezi Platinum Mine",
       "identity": {
+        "siteName": "Ngezi Platinum Mine",
         "countryIso3": "ZWE",
         "siteType": "MINE",
         "resourceTypeId": "platinum",
@@ -4609,6 +4669,7 @@
       "siteId": "SITE_NAM_husab_uranium_mine",
       "siteName": "Husab Uranium Mine",
       "identity": {
+        "siteName": "Husab Uranium Mine",
         "countryIso3": "NAM",
         "siteType": "MINE",
         "resourceTypeId": "uranium",
@@ -4689,6 +4750,7 @@
       "siteId": "SITE_BWA_jwaneng_diamond_mine",
       "siteName": "Jwaneng Diamond Mine",
       "identity": {
+        "siteName": "Jwaneng Diamond Mine",
         "countryIso3": "BWA",
         "siteType": "MINE",
         "resourceTypeId": "diamond",
@@ -4770,6 +4832,7 @@
       "siteId": "SITE_MOZ_moatize_coal_mine",
       "siteName": "Moatize Coal Mine",
       "identity": {
+        "siteName": "Moatize Coal Mine",
         "countryIso3": "MOZ",
         "siteType": "COAL_MINE",
         "resourceTypeId": "coal",
@@ -4852,6 +4915,7 @@
       "siteId": "SITE_LSO_letseng_diamond_mine",
       "siteName": "Letseng Diamond Mine",
       "identity": {
+        "siteName": "Letseng Diamond Mine",
         "countryIso3": "LSO",
         "siteType": "MINE",
         "resourceTypeId": "diamond",
@@ -4931,6 +4995,7 @@
       "siteId": "SITE_SWZ_ngwenya_iron_mine",
       "siteName": "Ngwenya Iron Mine",
       "identity": {
+        "siteName": "Ngwenya Iron Mine",
         "countryIso3": "SWZ",
         "siteType": "HISTORICAL_MINE",
         "resourceTypeId": "iron_ore",
@@ -5010,6 +5075,7 @@
       "siteId": "SITE_SAU_ad_duwayhi_gold_mine",
       "siteName": "Ad Duwayhi Gold Mine",
       "identity": {
+        "siteName": "Ad Duwayhi Gold Mine",
         "countryIso3": "SAU",
         "siteType": "MINE",
         "resourceTypeId": "gold",
@@ -5090,6 +5156,7 @@
       "siteId": "SITE_ARE_fujairah_aggregate_quarries",
       "siteName": "Fujairah Aggregate Quarries",
       "identity": {
+        "siteName": "Fujairah Aggregate Quarries",
         "countryIso3": "ARE",
         "siteType": "QUARRY",
         "resourceTypeId": "construction_aggregate",
@@ -5166,6 +5233,7 @@
       "siteId": "SITE_QAT_north_field_gas",
       "siteName": "North Field Gas",
       "identity": {
+        "siteName": "North Field Gas",
         "countryIso3": "QAT",
         "siteType": "GAS_FIELD",
         "resourceTypeId": "natural_gas",
@@ -5250,6 +5318,7 @@
       "siteId": "SITE_KWT_greater_burgan_oilfield",
       "siteName": "Greater Burgan Oilfield",
       "identity": {
+        "siteName": "Greater Burgan Oilfield",
         "countryIso3": "KWT",
         "siteType": "OIL_FIELD",
         "resourceTypeId": "crude_oil",
@@ -5334,6 +5403,7 @@
       "siteId": "SITE_OMN_lasail_copper_mine",
       "siteName": "Lasail Copper Mine",
       "identity": {
+        "siteName": "Lasail Copper Mine",
         "countryIso3": "OMN",
         "siteType": "MINE",
         "resourceTypeId": "copper",
@@ -5418,6 +5488,7 @@
       "siteId": "SITE_BHR_awali_oil_field",
       "siteName": "Awali Oil Field",
       "identity": {
+        "siteName": "Awali Oil Field",
         "countryIso3": "BHR",
         "siteType": "OIL_FIELD",
         "resourceTypeId": "crude_oil",
@@ -5503,6 +5574,7 @@
       "siteId": "SITE_YEM_marib_jawf_oil_fields",
       "siteName": "Marib-Jawf Oil Fields",
       "identity": {
+        "siteName": "Marib-Jawf Oil Fields",
         "countryIso3": "YEM",
         "siteType": "OIL_FIELD",
         "resourceTypeId": "crude_oil",
@@ -5587,6 +5659,7 @@
       "siteId": "SITE_IRQ_rumaila_oil_field",
       "siteName": "Rumaila Oil Field",
       "identity": {
+        "siteName": "Rumaila Oil Field",
         "countryIso3": "IRQ",
         "siteType": "OIL_FIELD",
         "resourceTypeId": "crude_oil",
@@ -5671,6 +5744,7 @@
       "siteId": "SITE_IRN_sarcheshmeh_copper_mine",
       "siteName": "Sarcheshmeh Copper Mine",
       "identity": {
+        "siteName": "Sarcheshmeh Copper Mine",
         "countryIso3": "IRN",
         "siteType": "MINE",
         "resourceTypeId": "copper",
@@ -5754,6 +5828,7 @@
       "siteId": "SITE_TUR_k_rka_boron_mining_complex",
       "siteName": "Kırka Boron Mining Complex",
       "identity": {
+        "siteName": "Kırka Boron Mining Complex",
         "countryIso3": "TUR",
         "siteType": "MINE",
         "resourceTypeId": "boron",
@@ -5833,6 +5908,7 @@
       "siteId": "SITE_SYR_al_omar_oil_field",
       "siteName": "Al-Omar Oil Field",
       "identity": {
+        "siteName": "Al-Omar Oil Field",
         "countryIso3": "SYR",
         "siteType": "OIL_FIELD",
         "resourceTypeId": "crude_oil",
@@ -5917,6 +5993,7 @@
       "siteId": "SITE_JOR_eshidiya_phosphate_mine",
       "siteName": "Eshidiya Phosphate Mine",
       "identity": {
+        "siteName": "Eshidiya Phosphate Mine",
         "countryIso3": "JOR",
         "siteType": "MINE",
         "resourceTypeId": "phosphate",
@@ -5999,6 +6076,7 @@
       "siteId": "SITE_LBN_chekka_limestone_quarry_zone",
       "siteName": "Chekka Limestone Quarry Zone",
       "identity": {
+        "siteName": "Chekka Limestone Quarry Zone",
         "countryIso3": "LBN",
         "siteType": "QUARRY",
         "resourceTypeId": "limestone",
@@ -6076,6 +6154,7 @@
       "siteId": "SITE_ISR_leviathan_gas_field",
       "siteName": "Leviathan Gas Field",
       "identity": {
+        "siteName": "Leviathan Gas Field",
         "countryIso3": "ISR",
         "siteType": "GAS_FIELD",
         "resourceTypeId": "natural_gas",
@@ -6157,6 +6236,7 @@
       "siteId": "SITE_PSE_gaza_marine_gas_field",
       "siteName": "Gaza Marine Gas Field",
       "identity": {
+        "siteName": "Gaza Marine Gas Field",
         "countryIso3": "PSE",
         "siteType": "GAS_FIELD",
         "resourceTypeId": "natural_gas",
@@ -6238,6 +6318,7 @@
       "siteId": "SITE_CHN_jinchuan_nickel_mine_complex",
       "siteName": "Jinchuan Nickel Mine Complex",
       "identity": {
+        "siteName": "Jinchuan Nickel Mine Complex",
         "countryIso3": "CHN",
         "siteType": "MINE",
         "resourceTypeId": "nickel",
@@ -6317,6 +6398,7 @@
       "siteId": "SITE_JPN_kushiro_coal_mine",
       "siteName": "Kushiro Coal Mine",
       "identity": {
+        "siteName": "Kushiro Coal Mine",
         "countryIso3": "JPN",
         "siteType": "COAL_MINE",
         "resourceTypeId": "coal",
@@ -6399,6 +6481,7 @@
       "siteId": "SITE_KOR_samcheok_limestone_mining_district",
       "siteName": "Samcheok Limestone Mining District",
       "identity": {
+        "siteName": "Samcheok Limestone Mining District",
         "countryIso3": "KOR",
         "siteType": "MINE",
         "resourceTypeId": "limestone",
@@ -6478,6 +6561,7 @@
       "siteId": "SITE_PRK_musan_iron_mine",
       "siteName": "Musan Iron Mine",
       "identity": {
+        "siteName": "Musan Iron Mine",
         "countryIso3": "PRK",
         "siteType": "MINE",
         "resourceTypeId": "iron_ore",
@@ -6557,6 +6641,7 @@
       "siteId": "SITE_MNG_oyu_tolgoi_copper_gold_mine",
       "siteName": "Oyu Tolgoi Copper-Gold Mine",
       "identity": {
+        "siteName": "Oyu Tolgoi Copper-Gold Mine",
         "countryIso3": "MNG",
         "siteType": "MINE",
         "resourceTypeId": "copper",
@@ -6638,6 +6723,7 @@
       "siteId": "SITE_TWN_hualien_marble_quarry_zone",
       "siteName": "Hualien Marble Quarry Zone",
       "identity": {
+        "siteName": "Hualien Marble Quarry Zone",
         "countryIso3": "TWN",
         "siteType": "QUARRY",
         "resourceTypeId": "marble",
@@ -6714,6 +6800,7 @@
       "siteId": "SITE_IDN_batu_hijau_copper_gold_mine",
       "siteName": "Batu Hijau Copper-Gold Mine",
       "identity": {
+        "siteName": "Batu Hijau Copper-Gold Mine",
         "countryIso3": "IDN",
         "siteType": "MINE",
         "resourceTypeId": "copper",
@@ -6797,6 +6884,7 @@
       "siteId": "SITE_MYS_penjom_gold_mine",
       "siteName": "Penjom Gold Mine",
       "identity": {
+        "siteName": "Penjom Gold Mine",
         "countryIso3": "MYS",
         "siteType": "MINE",
         "resourceTypeId": "gold",
@@ -6876,6 +6964,7 @@
       "siteId": "SITE_VNM_nui_phao_polymetallic_mine",
       "siteName": "Nui Phao Polymetallic Mine",
       "identity": {
+        "siteName": "Nui Phao Polymetallic Mine",
         "countryIso3": "VNM",
         "siteType": "MINE",
         "resourceTypeId": "tungsten",
@@ -6954,6 +7043,7 @@
       "siteId": "SITE_THA_mae_moh_lignite_mine",
       "siteName": "Mae Moh Lignite Mine",
       "identity": {
+        "siteName": "Mae Moh Lignite Mine",
         "countryIso3": "THA",
         "siteType": "COAL_MINE",
         "resourceTypeId": "coal",
@@ -7034,6 +7124,7 @@
       "siteId": "SITE_PHL_didipio_gold_copper_mine",
       "siteName": "Didipio Gold-Copper Mine",
       "identity": {
+        "siteName": "Didipio Gold-Copper Mine",
         "countryIso3": "PHL",
         "siteType": "MINE",
         "resourceTypeId": "gold",
@@ -7115,6 +7206,7 @@
       "siteId": "SITE_MMR_letpadaung_copper_mine",
       "siteName": "Letpadaung Copper Mine",
       "identity": {
+        "siteName": "Letpadaung Copper Mine",
         "countryIso3": "MMR",
         "siteType": "MINE",
         "resourceTypeId": "copper",
@@ -7198,6 +7290,7 @@
       "siteId": "SITE_SGP_pulau_ubin_granite_quarry_sites",
       "siteName": "Pulau Ubin Granite Quarry Sites",
       "identity": {
+        "siteName": "Pulau Ubin Granite Quarry Sites",
         "countryIso3": "SGP",
         "siteType": "HISTORICAL_MINE",
         "resourceTypeId": "granite",
@@ -7276,6 +7369,7 @@
       "siteId": "SITE_BRN_champion_west_oil_field",
       "siteName": "Champion West Oil Field",
       "identity": {
+        "siteName": "Champion West Oil Field",
         "countryIso3": "BRN",
         "siteType": "OIL_FIELD",
         "resourceTypeId": "crude_oil",
@@ -7360,6 +7454,7 @@
       "siteId": "SITE_KHM_okvau_gold_mine",
       "siteName": "Okvau Gold Mine",
       "identity": {
+        "siteName": "Okvau Gold Mine",
         "countryIso3": "KHM",
         "siteType": "MINE",
         "resourceTypeId": "gold",
@@ -7441,6 +7536,7 @@
       "siteId": "SITE_LAO_phu_kham_copper_gold_mine",
       "siteName": "Phu Kham Copper-Gold Mine",
       "identity": {
+        "siteName": "Phu Kham Copper-Gold Mine",
         "countryIso3": "LAO",
         "siteType": "MINE",
         "resourceTypeId": "copper",
@@ -7524,6 +7620,7 @@
       "siteId": "SITE_TLS_bayu_undan_gas_and_condensate_field",
       "siteName": "Bayu-Undan Gas and Condensate Field",
       "identity": {
+        "siteName": "Bayu-Undan Gas and Condensate Field",
         "countryIso3": "TLS",
         "siteType": "GAS_FIELD",
         "resourceTypeId": "natural_gas",
@@ -7605,6 +7702,7 @@
       "siteId": "SITE_KAZ_bogatyr_komir_coal_mine",
       "siteName": "Bogatyr Komir Coal Mine",
       "identity": {
+        "siteName": "Bogatyr Komir Coal Mine",
         "countryIso3": "KAZ",
         "siteType": "COAL_MINE",
         "resourceTypeId": "coal",
@@ -7687,6 +7785,7 @@
       "siteId": "SITE_UZB_muruntau_gold_mine",
       "siteName": "Muruntau Gold Mine",
       "identity": {
+        "siteName": "Muruntau Gold Mine",
         "countryIso3": "UZB",
         "siteType": "MINE",
         "resourceTypeId": "gold",
@@ -7764,6 +7863,7 @@
       "siteId": "SITE_TKM_galkynysh_gas_field",
       "siteName": "Galkynysh Gas Field",
       "identity": {
+        "siteName": "Galkynysh Gas Field",
         "countryIso3": "TKM",
         "siteType": "GAS_FIELD",
         "resourceTypeId": "natural_gas",
@@ -7845,6 +7945,7 @@
       "siteId": "SITE_KGZ_kumtor_gold_mine",
       "siteName": "Kumtor Gold Mine",
       "identity": {
+        "siteName": "Kumtor Gold Mine",
         "countryIso3": "KGZ",
         "siteType": "MINE",
         "resourceTypeId": "gold",
@@ -7923,6 +8024,7 @@
       "siteId": "SITE_TJK_jilau_gold_mine",
       "siteName": "Jilau Gold Mine",
       "identity": {
+        "siteName": "Jilau Gold Mine",
         "countryIso3": "TJK",
         "siteType": "MINE",
         "resourceTypeId": "gold",
@@ -8000,6 +8102,7 @@
       "siteId": "SITE_GEO_chiatura_manganese_mining_district",
       "siteName": "Chiatura Manganese Mining District",
       "identity": {
+        "siteName": "Chiatura Manganese Mining District",
         "countryIso3": "GEO",
         "siteType": "MINE",
         "resourceTypeId": "manganese",
@@ -8078,6 +8181,7 @@
       "siteId": "SITE_ARM_zangezur_copper_molybdenum_mine",
       "siteName": "Zangezur Copper-Molybdenum Mine",
       "identity": {
+        "siteName": "Zangezur Copper-Molybdenum Mine",
         "countryIso3": "ARM",
         "siteType": "MINE",
         "resourceTypeId": "copper",
@@ -8159,6 +8263,7 @@
       "siteId": "SITE_AZE_azeri_chirag_gunashli_oil_field",
       "siteName": "Azeri-Chirag-Gunashli Oil Field",
       "identity": {
+        "siteName": "Azeri-Chirag-Gunashli Oil Field",
         "countryIso3": "AZE",
         "siteType": "OIL_FIELD",
         "resourceTypeId": "crude_oil",
@@ -8241,6 +8346,7 @@
       "siteId": "SITE_RUS_lebedinsky_iron_ore_mine",
       "siteName": "Lebedinsky Iron Ore Mine",
       "identity": {
+        "siteName": "Lebedinsky Iron Ore Mine",
         "countryIso3": "RUS",
         "siteType": "MINE",
         "resourceTypeId": "iron_ore",
@@ -8320,6 +8426,7 @@
       "siteId": "SITE_DEU_hambach_lignite_mine",
       "siteName": "Hambach Lignite Mine",
       "identity": {
+        "siteName": "Hambach Lignite Mine",
         "countryIso3": "DEU",
         "siteType": "COAL_MINE",
         "resourceTypeId": "coal",
@@ -8402,6 +8509,7 @@
       "siteId": "SITE_FRA_prasville_limestone_quarry",
       "siteName": "Prasville Limestone Quarry",
       "identity": {
+        "siteName": "Prasville Limestone Quarry",
         "countryIso3": "FRA",
         "siteType": "QUARRY",
         "resourceTypeId": "limestone",
@@ -8481,6 +8589,7 @@
       "siteId": "SITE_GBR_boulby_potash_mine",
       "siteName": "Boulby Potash Mine",
       "identity": {
+        "siteName": "Boulby Potash Mine",
         "countryIso3": "GBR",
         "siteType": "MINE",
         "resourceTypeId": "potash",
@@ -8560,6 +8669,7 @@
       "siteId": "SITE_ITA_carrara_marble_quarries",
       "siteName": "Carrara Marble Quarries",
       "identity": {
+        "siteName": "Carrara Marble Quarries",
         "countryIso3": "ITA",
         "siteType": "QUARRY",
         "resourceTypeId": "marble",
@@ -8636,6 +8746,7 @@
       "siteId": "SITE_ESP_cobre_las_cruces_mine",
       "siteName": "Cobre Las Cruces Mine",
       "identity": {
+        "siteName": "Cobre Las Cruces Mine",
         "countryIso3": "ESP",
         "siteType": "MINE",
         "resourceTypeId": "copper",
@@ -8719,6 +8830,7 @@
       "siteId": "SITE_POL_be_chat_w_lignite_mine",
       "siteName": "Bełchatów Lignite Mine",
       "identity": {
+        "siteName": "Bełchatów Lignite Mine",
         "countryIso3": "POL",
         "siteType": "COAL_MINE",
         "resourceTypeId": "coal",
@@ -8802,6 +8914,7 @@
       "siteId": "SITE_UKR_kryvyi_rih_iron_ore_district",
       "siteName": "Kryvyi Rih Iron Ore District",
       "identity": {
+        "siteName": "Kryvyi Rih Iron Ore District",
         "countryIso3": "UKR",
         "siteType": "MINE",
         "resourceTypeId": "iron_ore",
@@ -8881,6 +8994,7 @@
       "siteId": "SITE_NLD_veendam_salt_mine",
       "siteName": "Veendam Salt Mine",
       "identity": {
+        "siteName": "Veendam Salt Mine",
         "countryIso3": "NLD",
         "siteType": "MINE",
         "resourceTypeId": "salt",
@@ -8959,6 +9073,7 @@
       "siteId": "SITE_BEL_antoing_limestone_quarry",
       "siteName": "Antoing Limestone Quarry",
       "identity": {
+        "siteName": "Antoing Limestone Quarry",
         "countryIso3": "BEL",
         "siteType": "QUARRY",
         "resourceTypeId": "limestone",
@@ -9038,6 +9153,7 @@
       "siteId": "SITE_CHE_bex_salt_mine",
       "siteName": "Bex Salt Mine",
       "identity": {
+        "siteName": "Bex Salt Mine",
         "countryIso3": "CHE",
         "siteType": "MINE",
         "resourceTypeId": "salt",
@@ -9116,6 +9232,7 @@
       "siteId": "SITE_SWE_kiruna_iron_mine",
       "siteName": "Kiruna Iron Mine",
       "identity": {
+        "siteName": "Kiruna Iron Mine",
         "countryIso3": "SWE",
         "siteType": "MINE",
         "resourceTypeId": "iron_ore",
@@ -9194,6 +9311,7 @@
       "siteId": "SITE_NOR_tellnes_ilmenite_mine",
       "siteName": "Tellnes Ilmenite Mine",
       "identity": {
+        "siteName": "Tellnes Ilmenite Mine",
         "countryIso3": "NOR",
         "siteType": "MINE",
         "resourceTypeId": "ilmenite",
@@ -9270,6 +9388,7 @@
       "siteId": "SITE_AUT_erzberg_iron_ore_mine",
       "siteName": "Erzberg Iron Ore Mine",
       "identity": {
+        "siteName": "Erzberg Iron Ore Mine",
         "countryIso3": "AUT",
         "siteType": "MINE",
         "resourceTypeId": "iron_ore",
@@ -9353,6 +9472,7 @@
       "siteId": "SITE_FIN_kittil_gold_mine",
       "siteName": "Kittilä Gold Mine",
       "identity": {
+        "siteName": "Kittilä Gold Mine",
         "countryIso3": "FIN",
         "siteType": "MINE",
         "resourceTypeId": "gold",
@@ -9432,6 +9552,7 @@
       "siteId": "SITE_DNK_faxe_limestone_quarry",
       "siteName": "Faxe Limestone Quarry",
       "identity": {
+        "siteName": "Faxe Limestone Quarry",
         "countryIso3": "DNK",
         "siteType": "QUARRY",
         "resourceTypeId": "limestone",
@@ -9511,6 +9632,7 @@
       "siteId": "SITE_IRL_tara_zinc_mine",
       "siteName": "Tara Zinc Mine",
       "identity": {
+        "siteName": "Tara Zinc Mine",
         "countryIso3": "IRL",
         "siteType": "MINE",
         "resourceTypeId": "zinc",
@@ -9593,6 +9715,7 @@
       "siteId": "SITE_PRT_panasqueira_tungsten_mine",
       "siteName": "Panasqueira Tungsten Mine",
       "identity": {
+        "siteName": "Panasqueira Tungsten Mine",
         "countryIso3": "PRT",
         "siteType": "MINE",
         "resourceTypeId": "tungsten",
@@ -9671,6 +9794,7 @@
       "siteId": "SITE_GRC_olympias_gold_mine",
       "siteName": "Olympias Gold Mine",
       "identity": {
+        "siteName": "Olympias Gold Mine",
         "countryIso3": "GRC",
         "siteType": "MINE",
         "resourceTypeId": "gold",
@@ -9754,6 +9878,7 @@
       "siteId": "SITE_CZE_doln_ro_nka_uranium_mine",
       "siteName": "Dolní Rožínka Uranium Mine",
       "identity": {
+        "siteName": "Dolní Rožínka Uranium Mine",
         "countryIso3": "CZE",
         "siteType": "HISTORICAL_MINE",
         "resourceTypeId": "uranium",
@@ -9836,6 +9961,7 @@
       "siteId": "SITE_ROU_ro_ia_poieni_copper_mine",
       "siteName": "Roșia Poieni Copper Mine",
       "identity": {
+        "siteName": "Roșia Poieni Copper Mine",
         "countryIso3": "ROU",
         "siteType": "MINE",
         "resourceTypeId": "copper",
@@ -9920,6 +10046,7 @@
       "siteId": "SITE_HUN_visonta_lignite_mine",
       "siteName": "Visonta Lignite Mine",
       "identity": {
+        "siteName": "Visonta Lignite Mine",
         "countryIso3": "HUN",
         "siteType": "COAL_MINE",
         "resourceTypeId": "coal",
@@ -10002,6 +10129,7 @@
       "siteId": "SITE_SVK_jel_ava_magnesite_mine",
       "siteName": "Jelšava Magnesite Mine",
       "identity": {
+        "siteName": "Jelšava Magnesite Mine",
         "countryIso3": "SVK",
         "siteType": "MINE",
         "resourceTypeId": "magnesite",
@@ -10084,6 +10212,7 @@
       "siteId": "SITE_BGR_chelopech_copper_gold_mine",
       "siteName": "Chelopech Copper-Gold Mine",
       "identity": {
+        "siteName": "Chelopech Copper-Gold Mine",
         "countryIso3": "BGR",
         "siteType": "MINE",
         "resourceTypeId": "copper",
@@ -10167,6 +10296,7 @@
       "siteId": "SITE_SRB_majdanpek_copper_mine",
       "siteName": "Majdanpek Copper Mine",
       "identity": {
+        "siteName": "Majdanpek Copper Mine",
         "countryIso3": "SRB",
         "siteType": "MINE",
         "resourceTypeId": "copper",
@@ -10251,6 +10381,7 @@
       "siteId": "SITE_HRV_koroma_no_limestone_quarry",
       "siteName": "Koromačno Limestone Quarry",
       "identity": {
+        "siteName": "Koromačno Limestone Quarry",
         "countryIso3": "HRV",
         "siteType": "QUARRY",
         "resourceTypeId": "limestone",
@@ -10330,6 +10461,7 @@
       "siteId": "SITE_SVN_trbovlje_limestone_quarry_zone",
       "siteName": "Trbovlje Limestone Quarry Zone",
       "identity": {
+        "siteName": "Trbovlje Limestone Quarry Zone",
         "countryIso3": "SVN",
         "siteType": "QUARRY",
         "resourceTypeId": "limestone",
@@ -10348,15 +10480,15 @@
         "locationNodeKey": "ASSET:SVN:trbovlje_limestone_quarry_zone"
       },
       "ownership": {
-        "owner": "UNOBSERVED",
-        "operator": "UNOBSERVED",
+        "owner": "Republic of Slovenia (mineral-resource ownership)",
+        "operator": "NO_CURRENT_OPERATOR",
         "ownerEvidenceStatus": "UNOBSERVED",
         "operatorEvidenceStatus": "UNOBSERVED"
       },
       "operation": {
         "status": "NO_CURRENT_CONCESSION",
-        "operationalStatus": "LIMITED",
-        "extractionMethod": "LIMESTONE_QUARRYING",
+        "operationalStatus": "NO_CURRENT_CONCESSION",
+        "extractionMethod": "historical surface limestone and marl quarrying; no current exploitation concession",
         "extractionEligibility": "CONDITIONAL",
         "commercialExtraction": true,
         "startYear": 1900
@@ -10395,10 +10527,12 @@
       },
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-        "reviewedAt": null,
-        "sourceCount": 1,
-        "sourceAuthorities": [],
-        "dataLimitations": null
+        "reviewedAt": "2026-10-02",
+        "sourceCount": 2,
+        "sourceAuthorities": [
+          "GOVERNMENT"
+        ],
+        "dataLimitations": "No current operating concession was verified, so no operator is asserted."
       }
     },
     {
@@ -10407,6 +10541,7 @@
       "siteId": "SITE_EST_narva_oil_shale_mine",
       "siteName": "Narva Oil Shale Mine",
       "identity": {
+        "siteName": "Narva Oil Shale Mine",
         "countryIso3": "EST",
         "siteType": "MINE",
         "resourceTypeId": "oil_shale",
@@ -10483,6 +10618,7 @@
       "siteId": "SITE_LVA_saulkalne_dolomite_quarry",
       "siteName": "Saulkalne Dolomite Quarry",
       "identity": {
+        "siteName": "Saulkalne Dolomite Quarry",
         "countryIso3": "LVA",
         "siteType": "QUARRY",
         "resourceTypeId": "dolomite",
@@ -10561,6 +10697,7 @@
       "siteId": "SITE_LTU_akmen_limestone_quarry",
       "siteName": "Akmenė Limestone Quarry",
       "identity": {
+        "siteName": "Akmenė Limestone Quarry",
         "countryIso3": "LTU",
         "siteType": "QUARRY",
         "resourceTypeId": "limestone",
@@ -10640,6 +10777,7 @@
       "siteId": "SITE_BLR_soligorsk_potash_mine",
       "siteName": "Soligorsk Potash Mine",
       "identity": {
+        "siteName": "Soligorsk Potash Mine",
         "countryIso3": "BLR",
         "siteType": "MINE",
         "resourceTypeId": "potash",
@@ -10720,6 +10858,7 @@
       "siteId": "SITE_MDA_cricova_limestone_mine",
       "siteName": "Cricova Limestone Mine",
       "identity": {
+        "siteName": "Cricova Limestone Mine",
         "countryIso3": "MDA",
         "siteType": "HISTORICAL_MINE",
         "resourceTypeId": "limestone",
@@ -10799,6 +10938,7 @@
       "siteId": "SITE_ALB_bulqiz_chromite_mine",
       "siteName": "Bulqizë Chromite Mine",
       "identity": {
+        "siteName": "Bulqizë Chromite Mine",
         "countryIso3": "ALB",
         "siteType": "MINE",
         "resourceTypeId": "chromite",
@@ -10877,6 +11017,7 @@
       "siteId": "SITE_MKD_sasa_lead_zinc_mine",
       "siteName": "Sasa Lead-Zinc Mine",
       "identity": {
+        "siteName": "Sasa Lead-Zinc Mine",
         "countryIso3": "MKD",
         "siteType": "MINE",
         "resourceTypeId": "zinc",
@@ -10959,6 +11100,7 @@
       "siteId": "SITE_BIH_vare_silver_lead_zinc_mine",
       "siteName": "Vareš Silver-Lead-Zinc Mine",
       "identity": {
+        "siteName": "Vareš Silver-Lead-Zinc Mine",
         "countryIso3": "BIH",
         "siteType": "MINE",
         "resourceTypeId": "silver",
@@ -11037,6 +11179,7 @@
       "siteId": "SITE_MNE_pljevlja_coal_mine",
       "siteName": "Pljevlja Coal Mine",
       "identity": {
+        "siteName": "Pljevlja Coal Mine",
         "countryIso3": "MNE",
         "siteType": "COAL_MINE",
         "resourceTypeId": "coal",
@@ -11119,6 +11262,7 @@
       "siteId": "SITE_ISL_h_lasandur_aggregate_quarry",
       "siteName": "Hólasandur Aggregate Quarry",
       "identity": {
+        "siteName": "Hólasandur Aggregate Quarry",
         "countryIso3": "ISL",
         "siteType": "QUARRY",
         "resourceTypeId": "construction_aggregate",
@@ -11197,6 +11341,7 @@
       "siteId": "SITE_LUX_rumelange_iron_mine",
       "siteName": "Rumelange Iron Mine",
       "identity": {
+        "siteName": "Rumelange Iron Mine",
         "countryIso3": "LUX",
         "siteType": "HISTORICAL_MINE",
         "resourceTypeId": "iron_ore",
@@ -11277,6 +11422,7 @@
       "siteId": "SITE_MLT_al_far_limestone_quarry",
       "siteName": "Ħal Far Limestone Quarry",
       "identity": {
+        "siteName": "Ħal Far Limestone Quarry",
         "countryIso3": "MLT",
         "siteType": "QUARRY",
         "resourceTypeId": "limestone",
@@ -11354,6 +11500,7 @@
       "siteId": "SITE_CYP_skouriotissa_copper_mine",
       "siteName": "Skouriotissa Copper Mine",
       "identity": {
+        "siteName": "Skouriotissa Copper Mine",
         "countryIso3": "CYP",
         "siteType": "MINE",
         "resourceTypeId": "copper",
@@ -11437,6 +11584,7 @@
       "siteId": "SITE_AND_llorts_iron_mine",
       "siteName": "Llorts Iron Mine",
       "identity": {
+        "siteName": "Llorts Iron Mine",
         "countryIso3": "AND",
         "siteType": "HISTORICAL_MINE",
         "resourceTypeId": "iron_ore",
@@ -11516,6 +11664,7 @@
       "siteId": "SITE_MCO_no_verified_commercial_mining_site",
       "siteName": "No Verified Commercial Mining Site",
       "identity": {
+        "siteName": "No Verified Commercial Mining Site",
         "countryIso3": "MCO",
         "siteType": "NO_COMMERCIAL_EXTRACTION",
         "resourceTypeId": "NOT_APPLICABLE",
@@ -11586,6 +11735,7 @@
       "siteId": "SITE_SMR_no_verified_commercial_mining_site",
       "siteName": "No Verified Commercial Mining Site",
       "identity": {
+        "siteName": "No Verified Commercial Mining Site",
         "countryIso3": "SMR",
         "siteType": "NO_COMMERCIAL_EXTRACTION",
         "resourceTypeId": "NOT_APPLICABLE",
@@ -11656,6 +11806,7 @@
       "siteId": "SITE_LIE_no_verified_commercial_mining_site",
       "siteName": "No Verified Commercial Mining Site",
       "identity": {
+        "siteName": "No Verified Commercial Mining Site",
         "countryIso3": "LIE",
         "siteType": "NO_COMMERCIAL_EXTRACTION",
         "resourceTypeId": "NOT_APPLICABLE",
@@ -11726,6 +11877,7 @@
       "siteId": "SITE_VAT_no_verified_commercial_mining_site",
       "siteName": "No Verified Commercial Mining Site",
       "identity": {
+        "siteName": "No Verified Commercial Mining Site",
         "countryIso3": "VAT",
         "siteType": "NO_COMMERCIAL_EXTRACTION",
         "resourceTypeId": "NOT_APPLICABLE",
@@ -11796,6 +11948,7 @@
       "siteId": "SITE_USA_morenci_copper_mine",
       "siteName": "Morenci Copper Mine",
       "identity": {
+        "siteName": "Morenci Copper Mine",
         "countryIso3": "USA",
         "siteType": "MINE",
         "resourceTypeId": "copper",
@@ -11879,6 +12032,7 @@
       "siteId": "SITE_CAN_voisey_s_bay_nickel_mine",
       "siteName": "Voisey's Bay Nickel Mine",
       "identity": {
+        "siteName": "Voisey's Bay Nickel Mine",
         "countryIso3": "CAN",
         "siteType": "MINE",
         "resourceTypeId": "nickel",
@@ -11958,6 +12112,7 @@
       "siteId": "SITE_MEX_pe_asquito_gold_silver_mine",
       "siteName": "Peñasquito Gold-Silver Mine",
       "identity": {
+        "siteName": "Peñasquito Gold-Silver Mine",
         "countryIso3": "MEX",
         "siteType": "MINE",
         "resourceTypeId": "gold",
@@ -12037,6 +12192,7 @@
       "siteId": "SITE_BRA_s11d_iron_ore_mine",
       "siteName": "S11D Iron Ore Mine",
       "identity": {
+        "siteName": "S11D Iron Ore Mine",
         "countryIso3": "BRA",
         "siteType": "MINE",
         "resourceTypeId": "iron_ore",
@@ -12116,6 +12272,7 @@
       "siteId": "SITE_ARG_cerro_negro_gold_mine",
       "siteName": "Cerro Negro Gold Mine",
       "identity": {
+        "siteName": "Cerro Negro Gold Mine",
         "countryIso3": "ARG",
         "siteType": "MINE",
         "resourceTypeId": "gold",
@@ -12196,6 +12353,7 @@
       "siteId": "SITE_CHL_chuquicamata_copper_mine",
       "siteName": "Chuquicamata Copper Mine",
       "identity": {
+        "siteName": "Chuquicamata Copper Mine",
         "countryIso3": "CHL",
         "siteType": "MINE",
         "resourceTypeId": "copper",
@@ -12279,6 +12437,7 @@
       "siteId": "SITE_COL_cerrej_n_coal_mine",
       "siteName": "Cerrejón Coal Mine",
       "identity": {
+        "siteName": "Cerrejón Coal Mine",
         "countryIso3": "COL",
         "siteType": "COAL_MINE",
         "resourceTypeId": "coal",
@@ -12365,6 +12524,7 @@
       "siteId": "SITE_PER_antamina_copper_zinc_mine",
       "siteName": "Antamina Copper-Zinc Mine",
       "identity": {
+        "siteName": "Antamina Copper-Zinc Mine",
         "countryIso3": "PER",
         "siteType": "MINE",
         "resourceTypeId": "copper",
@@ -12448,6 +12608,7 @@
       "siteId": "SITE_VEN_bachaquero_lagunillas_oil_field",
       "siteName": "Bachaquero-Lagunillas Oil Field",
       "identity": {
+        "siteName": "Bachaquero-Lagunillas Oil Field",
         "countryIso3": "VEN",
         "siteType": "OIL_FIELD",
         "resourceTypeId": "crude_oil",
@@ -12532,6 +12693,7 @@
       "siteId": "SITE_ECU_mirador_copper_mine",
       "siteName": "Mirador Copper Mine",
       "identity": {
+        "siteName": "Mirador Copper Mine",
         "countryIso3": "ECU",
         "siteType": "MINE",
         "resourceTypeId": "copper",
@@ -12616,6 +12778,7 @@
       "siteId": "SITE_BOL_san_crist_bal_silver_zinc_lead_mine",
       "siteName": "San Cristóbal Silver-Zinc-Lead Mine",
       "identity": {
+        "siteName": "San Cristóbal Silver-Zinc-Lead Mine",
         "countryIso3": "BOL",
         "siteType": "MINE",
         "resourceTypeId": "silver",
@@ -12692,6 +12855,7 @@
       "siteId": "SITE_PRY_vallem_limestone_quarry",
       "siteName": "Vallemí Limestone Quarry",
       "identity": {
+        "siteName": "Vallemí Limestone Quarry",
         "countryIso3": "PRY",
         "siteType": "QUARRY",
         "resourceTypeId": "limestone",
@@ -12771,6 +12935,7 @@
       "siteId": "SITE_URY_minas_de_corrales_gold_mining_district",
       "siteName": "Minas de Corrales Gold Mining District",
       "identity": {
+        "siteName": "Minas de Corrales Gold Mining District",
         "countryIso3": "URY",
         "siteType": "EXTRACTION_SITE",
         "resourceTypeId": "gold",
@@ -12850,6 +13015,7 @@
       "siteId": "SITE_PAN_cobre_panam_mine",
       "siteName": "Cobre Panamá Mine",
       "identity": {
+        "siteName": "Cobre Panamá Mine",
         "countryIso3": "PAN",
         "siteType": "MINE",
         "resourceTypeId": "copper",
@@ -12933,6 +13099,7 @@
       "siteId": "SITE_CRI_bellavista_gold_mine",
       "siteName": "Bellavista Gold Mine",
       "identity": {
+        "siteName": "Bellavista Gold Mine",
         "countryIso3": "CRI",
         "siteType": "HISTORICAL_MINE",
         "resourceTypeId": "gold",
@@ -13013,6 +13180,7 @@
       "siteId": "SITE_NIC_el_lim_n_gold_mine",
       "siteName": "El Limón Gold Mine",
       "identity": {
+        "siteName": "El Limón Gold Mine",
         "countryIso3": "NIC",
         "siteType": "MINE",
         "resourceTypeId": "gold",
@@ -13092,6 +13260,7 @@
       "siteId": "SITE_HND_el_mochito_mine",
       "siteName": "El Mochito Mine",
       "identity": {
+        "siteName": "El Mochito Mine",
         "countryIso3": "HND",
         "siteType": "MINE",
         "resourceTypeId": "zinc",
@@ -13171,6 +13340,7 @@
       "siteId": "SITE_SLV_el_dorado_gold_project",
       "siteName": "El Dorado Gold Project",
       "identity": {
+        "siteName": "El Dorado Gold Project",
         "countryIso3": "SLV",
         "siteType": "HISTORICAL_MINE",
         "resourceTypeId": "gold",
@@ -13250,6 +13420,7 @@
       "siteId": "SITE_GTM_fenix_nickel_mine",
       "siteName": "Fenix Nickel Mine",
       "identity": {
+        "siteName": "Fenix Nickel Mine",
         "countryIso3": "GTM",
         "siteType": "MINE",
         "resourceTypeId": "nickel",
@@ -13331,6 +13502,7 @@
       "siteId": "SITE_BLZ_hattieville_sand_and_aggregate_sites",
       "siteName": "Hattieville Sand and Aggregate Sites",
       "identity": {
+        "siteName": "Hattieville Sand and Aggregate Sites",
         "countryIso3": "BLZ",
         "siteType": "QUARRY",
         "resourceTypeId": "construction_aggregate",
@@ -13409,6 +13581,7 @@
       "siteId": "SITE_CUB_moa_bay_nickel_mine",
       "siteName": "Moa Bay Nickel Mine",
       "identity": {
+        "siteName": "Moa Bay Nickel Mine",
         "countryIso3": "CUB",
         "siteType": "MINE",
         "resourceTypeId": "nickel",
@@ -13488,6 +13661,7 @@
       "siteId": "SITE_CUB_punta_gorda_extraction_facility",
       "siteName": "Punta Gorda Extraction Facility",
       "identity": {
+        "siteName": "Punta Gorda Extraction Facility",
         "countryIso3": "CUB",
         "siteType": "MINE",
         "resourceTypeId": "nickel",
@@ -13565,6 +13739,7 @@
       "siteId": "SITE_CUB_nicaro_nickel_complex",
       "siteName": "Nicaro Nickel Complex",
       "identity": {
+        "siteName": "Nicaro Nickel Complex",
         "countryIso3": "CUB",
         "siteType": "MINE",
         "resourceTypeId": "nickel",
@@ -13584,14 +13759,14 @@
       },
       "ownership": {
         "owner": "UNOBSERVED",
-        "operator": "UNOBSERVED",
+        "operator": "NO_CURRENT_OPERATOR",
         "ownerEvidenceStatus": "UNOBSERVED",
         "operatorEvidenceStatus": "UNOBSERVED"
       },
       "operation": {
         "status": "HISTORICAL_INACTIVE",
-        "operationalStatus": "CLOSED",
-        "extractionMethod": "LATERITIC_NICKEL_MINING_AND_CARON_PROCESS_HISTORY",
+        "operationalStatus": "HISTORICAL_INACTIVE",
+        "extractionMethod": "historical nickel mining and hydrometallurgical processing; operation closed at end-2012",
         "extractionEligibility": "NON_EXECUTABLE",
         "commercialExtraction": true,
         "startYear": 1943
@@ -13630,10 +13805,10 @@
       },
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-        "reviewedAt": null,
+        "reviewedAt": "2026-10-02",
         "sourceCount": 2,
         "sourceAuthorities": [],
-        "dataLimitations": null
+        "dataLimitations": "No current owner was asserted because the cited current asset report establishes closure rather than a present legal ownership arrangement."
       }
     },
     {
@@ -13642,6 +13817,7 @@
       "siteId": "SITE_JAM_noranda_st_ann_bauxite_mine",
       "siteName": "Noranda St Ann Bauxite Mine",
       "identity": {
+        "siteName": "Noranda St Ann Bauxite Mine",
         "countryIso3": "JAM",
         "siteType": "MINE",
         "resourceTypeId": "bauxite",
@@ -13724,6 +13900,7 @@
       "siteId": "SITE_HTI_gona_ves_limestone_quarry_zone",
       "siteName": "Gonaïves Limestone Quarry Zone",
       "identity": {
+        "siteName": "Gonaïves Limestone Quarry Zone",
         "countryIso3": "HTI",
         "siteType": "QUARRY",
         "resourceTypeId": "limestone",
@@ -13803,6 +13980,7 @@
       "siteId": "SITE_DOM_pueblo_viejo_gold_mine",
       "siteName": "Pueblo Viejo Gold Mine",
       "identity": {
+        "siteName": "Pueblo Viejo Gold Mine",
         "countryIso3": "DOM",
         "siteType": "MINE",
         "resourceTypeId": "gold",
@@ -13882,6 +14060,7 @@
       "siteId": "SITE_TTO_juniper_oil_field",
       "siteName": "Juniper Oil Field",
       "identity": {
+        "siteName": "Juniper Oil Field",
         "countryIso3": "TTO",
         "siteType": "OIL_FIELD",
         "resourceTypeId": "crude_oil",
@@ -13966,6 +14145,7 @@
       "siteId": "SITE_BHS_ocean_cay_aragonite_site",
       "siteName": "Ocean Cay Aragonite Site",
       "identity": {
+        "siteName": "Ocean Cay Aragonite Site",
         "countryIso3": "BHS",
         "siteType": "EXTRACTION_SITE",
         "resourceTypeId": "aragonite",
@@ -14042,6 +14222,7 @@
       "siteId": "SITE_BRB_arawak_cement_limestone_quarry",
       "siteName": "Arawak Cement Limestone Quarry",
       "identity": {
+        "siteName": "Arawak Cement Limestone Quarry",
         "countryIso3": "BRB",
         "siteType": "QUARRY",
         "resourceTypeId": "limestone",
@@ -14122,6 +14303,7 @@
       "siteId": "SITE_LCA_cul_de_sac_aggregate_quarry_zone",
       "siteName": "Cul de Sac Aggregate Quarry Zone",
       "identity": {
+        "siteName": "Cul de Sac Aggregate Quarry Zone",
         "countryIso3": "LCA",
         "siteType": "QUARRY",
         "resourceTypeId": "construction_aggregate",
@@ -14198,6 +14380,7 @@
       "siteId": "SITE_VCT_diamond_quarry",
       "siteName": "Diamond Quarry",
       "identity": {
+        "siteName": "Diamond Quarry",
         "countryIso3": "VCT",
         "siteType": "QUARRY",
         "resourceTypeId": "construction_aggregate",
@@ -14276,6 +14459,7 @@
       "siteId": "SITE_GRD_telescope_quarry",
       "siteName": "Telescope Quarry",
       "identity": {
+        "siteName": "Telescope Quarry",
         "countryIso3": "GRD",
         "siteType": "QUARRY",
         "resourceTypeId": "construction_aggregate",
@@ -14352,6 +14536,7 @@
       "siteId": "SITE_ATG_gunthorpes_quarry",
       "siteName": "Gunthorpes Quarry",
       "identity": {
+        "siteName": "Gunthorpes Quarry",
         "countryIso3": "ATG",
         "siteType": "QUARRY",
         "resourceTypeId": "limestone",
@@ -14431,6 +14616,7 @@
       "siteId": "SITE_KNA_ross_lands_quarry_zone",
       "siteName": "Ross Lands Quarry Zone",
       "identity": {
+        "siteName": "Ross Lands Quarry Zone",
         "countryIso3": "KNA",
         "siteType": "QUARRY",
         "resourceTypeId": "limestone",
@@ -14510,6 +14696,7 @@
       "siteId": "SITE_DMA_pointe_michel_stone_quarry",
       "siteName": "Pointe Michel Stone Quarry",
       "identity": {
+        "siteName": "Pointe Michel Stone Quarry",
         "countryIso3": "DMA",
         "siteType": "QUARRY",
         "resourceTypeId": "construction_aggregate",
@@ -14586,6 +14773,7 @@
       "siteId": "SITE_SUR_merian_gold_mine",
       "siteName": "Merian Gold Mine",
       "identity": {
+        "siteName": "Merian Gold Mine",
         "countryIso3": "SUR",
         "siteType": "MINE",
         "resourceTypeId": "gold",
@@ -14665,6 +14853,7 @@
       "siteId": "SITE_GUY_aurora_gold_mine",
       "siteName": "Aurora Gold Mine",
       "identity": {
+        "siteName": "Aurora Gold Mine",
         "countryIso3": "GUY",
         "siteType": "MINE",
         "resourceTypeId": "gold",
@@ -14748,6 +14937,7 @@
       "siteId": "SITE_AUS_boddington_gold_mine",
       "siteName": "Boddington Gold Mine",
       "identity": {
+        "siteName": "Boddington Gold Mine",
         "countryIso3": "AUS",
         "siteType": "MINE",
         "resourceTypeId": "gold",
@@ -14827,6 +15017,7 @@
       "siteId": "SITE_NZL_macraes_gold_mine",
       "siteName": "Macraes Gold Mine",
       "identity": {
+        "siteName": "Macraes Gold Mine",
         "countryIso3": "NZL",
         "siteType": "MINE",
         "resourceTypeId": "gold",
@@ -14910,6 +15101,7 @@
       "siteId": "SITE_PNG_lihir_gold_mine",
       "siteName": "Lihir Gold Mine",
       "identity": {
+        "siteName": "Lihir Gold Mine",
         "countryIso3": "PNG",
         "siteType": "MINE",
         "resourceTypeId": "gold",
@@ -14989,6 +15181,7 @@
       "siteId": "SITE_FJI_vatukoula_gold_mine",
       "siteName": "Vatukoula Gold Mine",
       "identity": {
+        "siteName": "Vatukoula Gold Mine",
         "countryIso3": "FJI",
         "siteType": "MINE",
         "resourceTypeId": "gold",
@@ -15069,6 +15262,7 @@
       "siteId": "SITE_SLB_gold_ridge_mine",
       "siteName": "Gold Ridge Mine",
       "identity": {
+        "siteName": "Gold Ridge Mine",
         "countryIso3": "SLB",
         "siteType": "MINE",
         "resourceTypeId": "gold",
@@ -15146,6 +15340,7 @@
       "siteId": "SITE_VUT_luganville_aggregate_quarry_zone",
       "siteName": "Luganville Aggregate Quarry Zone",
       "identity": {
+        "siteName": "Luganville Aggregate Quarry Zone",
         "countryIso3": "VUT",
         "siteType": "QUARRY",
         "resourceTypeId": "construction_aggregate",
@@ -15225,6 +15420,7 @@
       "siteId": "SITE_WSM_lefaga_aggregate_quarry_zone",
       "siteName": "Lefaga Aggregate Quarry Zone",
       "identity": {
+        "siteName": "Lefaga Aggregate Quarry Zone",
         "countryIso3": "WSM",
         "siteType": "QUARRY",
         "resourceTypeId": "construction_aggregate",
@@ -15301,6 +15497,7 @@
       "siteId": "SITE_TON_nuku_alofa_aggregate_quarry_zone",
       "siteName": "Nuku'alofa Aggregate Quarry Zone",
       "identity": {
+        "siteName": "Nuku'alofa Aggregate Quarry Zone",
         "countryIso3": "TON",
         "siteType": "QUARRY",
         "resourceTypeId": "construction_aggregate",
@@ -15377,6 +15574,7 @@
       "siteId": "SITE_KIR_betio_coral_aggregate_extraction_sites",
       "siteName": "Betio Coral Aggregate Extraction Sites",
       "identity": {
+        "siteName": "Betio Coral Aggregate Extraction Sites",
         "countryIso3": "KIR",
         "siteType": "DREDGING_AND_PROCESSING_SITE",
         "resourceTypeId": "coral_aggregate",
@@ -15453,6 +15651,7 @@
       "siteId": "SITE_TUV_funafuti_borrow_pits",
       "siteName": "Funafuti Borrow Pits",
       "identity": {
+        "siteName": "Funafuti Borrow Pits",
         "countryIso3": "TUV",
         "siteType": "QUARRY",
         "resourceTypeId": "construction_aggregate",
@@ -15529,6 +15728,7 @@
       "siteId": "SITE_NRU_nauru_phosphate_mining_area",
       "siteName": "Nauru Phosphate Mining Area",
       "identity": {
+        "siteName": "Nauru Phosphate Mining Area",
         "countryIso3": "NRU",
         "siteType": "MINE",
         "resourceTypeId": "phosphate",
@@ -15609,6 +15809,7 @@
       "siteId": "SITE_MHL_majuro_aggregate_extraction_sites",
       "siteName": "Majuro Aggregate Extraction Sites",
       "identity": {
+        "siteName": "Majuro Aggregate Extraction Sites",
         "countryIso3": "MHL",
         "siteType": "QUARRY",
         "resourceTypeId": "construction_aggregate",
@@ -15685,6 +15886,7 @@
       "siteId": "SITE_FSM_pohnpei_aggregate_quarry_zone",
       "siteName": "Pohnpei Aggregate Quarry Zone",
       "identity": {
+        "siteName": "Pohnpei Aggregate Quarry Zone",
         "countryIso3": "FSM",
         "siteType": "QUARRY",
         "resourceTypeId": "construction_aggregate",
@@ -15761,6 +15963,7 @@
       "siteId": "SITE_PLW_airai_limestone_quarry_zone",
       "siteName": "Airai Limestone Quarry Zone",
       "identity": {
+        "siteName": "Airai Limestone Quarry Zone",
         "countryIso3": "PLW",
         "siteType": "QUARRY",
         "resourceTypeId": "limestone",

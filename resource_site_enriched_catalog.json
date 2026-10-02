@@ -3289,8 +3289,8 @@
       "siteType": "MINE",
       "status": "SUSPENDED",
       "owner": "Ethiopian state / former concession",
-      "operator": "UNOBSERVED",
-      "extractionMethod": "open-pit and underground",
+      "operator": "NO_CURRENT_OPERATOR",
+      "extractionMethod": "historical gold mining and processing; commercial operation suspended",
       "location": {
         "countryIso3": "ETH",
         "countryName": "Ethiopia",
@@ -3343,8 +3343,8 @@
       },
       "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
       "researchMetadata": {
-        "reviewedAt": "2026-09-27",
-        "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
+        "reviewedAt": "2026-10-02",
+        "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVIEW",
         "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
         "webSearchMethod": "SITE_NAME + COUNTRY",
         "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
@@ -3356,7 +3356,11 @@
           "owner": "MIDROC",
           "products": "Gold and silver",
           "location": "near Shakiso, Oromia, Oromia"
-        }
+        },
+        "sourceAuthority": "Lega Dembi historical mine record",
+        "currentEvidence": "The site is retained as a suspended gold operation; no current commercial operator is asserted in the present evidence set.",
+        "location": "Southern Nations, Nationalities and Peoples' Region, Ethiopia",
+        "dataLimitation": "Current ownership/operator details are separated from the historical concession record."
       },
       "webResearchEvidence": [
         {
@@ -3854,48 +3858,6 @@
           "accessed": "2026-10-02",
           "scope": "resource identity and locality",
           "sourceType": "MINERAL_DATABASE"
-        },
-        {
-          "url": "https://www.mindat.org/loc-259371.html",
-          "accessed": "2026-10-02",
-          "scope": "resource identity and locality",
-          "sourceType": "MINERAL_DATABASE"
-        },
-        {
-          "url": "https://www.mindat.org/loc-259371.html",
-          "accessed": "2026-10-02",
-          "scope": "resource identity and locality",
-          "sourceType": "MINERAL_DATABASE"
-        },
-        {
-          "url": "https://www.mindat.org/loc-259371.html",
-          "accessed": "2026-10-02",
-          "scope": "resource identity and locality",
-          "sourceType": "MINERAL_DATABASE"
-        },
-        {
-          "url": "https://www.mindat.org/loc-259371.html",
-          "accessed": "2026-10-02",
-          "scope": "resource identity and locality",
-          "sourceType": "MINERAL_DATABASE"
-        },
-        {
-          "url": "https://www.mindat.org/loc-259371.html",
-          "accessed": "2026-10-02",
-          "scope": "resource identity and locality",
-          "sourceType": "MINERAL_DATABASE"
-        },
-        {
-          "url": "https://www.mindat.org/loc-259371.html",
-          "accessed": "2026-10-02",
-          "scope": "resource identity and locality",
-          "sourceType": "MINERAL_DATABASE"
-        },
-        {
-          "url": "https://www.mindat.org/loc-259371.html",
-          "accessed": "2026-10-02",
-          "scope": "resource identity and locality",
-          "sourceType": "MINERAL_DATABASE"
         }
       ]
     },
@@ -4300,9 +4262,9 @@
       "resourceTypeId": "basalt",
       "siteType": "QUARRY",
       "status": "ACTIVE_PRODUCING",
-      "owner": "UNOBSERVED",
-      "operator": "UNOBSERVED",
-      "extractionMethod": "surface basalt quarrying",
+      "owner": "Gamma Materials Ltd.",
+      "operator": "Gamma Materials Ltd.",
+      "extractionMethod": "surface basalt quarrying; crushing and screening into aggregate and road materials",
       "location": {
         "countryIso3": "MUS",
         "countryName": "Mauritius",
@@ -4354,7 +4316,13 @@
         "quantitativeExtractionDataAvailable": false
       },
       "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-      "researchMetadata": {},
+      "researchMetadata": {
+        "sourceAuthority": "Gamma Materials Ltd.",
+        "currentEvidence": "Gamma Materials states that its raw materials are extracted from its quarries, including basalt, and processed through crushers into Rocksand and Macadam for ready-mix, blocks and road construction.",
+        "location": "Mauritius",
+        "reviewedAt": "2026-10-02",
+        "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVIEW"
+      },
       "webResearchEvidence": [
         {
           "url": "https://www.gammamaterials.mu/en/3-building-materials",
@@ -4365,6 +4333,12 @@
           "url": "https://competitioncommission.mu/wp-content/uploads/2019/08/MS005-Report.pdf",
           "accessed": "2026-09-26",
           "scope": "site_identity_or_operation"
+        },
+        {
+          "url": "https://gammamaterials.mu/en/3-building-materials",
+          "accessed": "2026-10-02",
+          "scope": "quarry operator, basalt extraction and processing",
+          "sourceType": "OPERATOR"
         }
       ]
     },
@@ -10644,9 +10618,9 @@
       "resourceTypeId": "limestone",
       "siteType": "QUARRY",
       "status": "NO_CURRENT_CONCESSION",
-      "owner": "UNOBSERVED",
-      "operator": "UNOBSERVED",
-      "extractionMethod": "LIMESTONE_QUARRYING",
+      "owner": "Republic of Slovenia (mineral-resource ownership)",
+      "operator": "NO_CURRENT_OPERATOR",
+      "extractionMethod": "historical surface limestone and marl quarrying; no current exploitation concession",
       "location": {
         "countryIso3": "SVN",
         "countryName": "Slovenia",
@@ -10698,12 +10672,25 @@
         "quantitativeExtractionDataAvailable": false
       },
       "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-      "researchMetadata": {},
+      "researchMetadata": {
+        "sourceAuthority": "Geological Survey of Slovenia / Republic of Slovenia",
+        "currentEvidence": "The 2026 Slovenian mining database lists no current concessionaire for the Retje-Plesko limestone/marl extraction area; Slovenian law treats mineral resources as state-owned.",
+        "location": "Hrastnik and Trbovlje, Slovenia",
+        "dataLimitation": "No current operating concession was verified, so no operator is asserted.",
+        "reviewedAt": "2026-10-02",
+        "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVIEW"
+      },
       "webResearchEvidence": [
         {
           "url": "https://ms.geo-zs.si/en-gb/Prostor/Podrobnosti/126",
           "accessed": "2026-09-26",
           "scope": "site_identity_or_operation"
+        },
+        {
+          "url": "https://www.gov.si/novice/2026-09-15-rudarska-koncesnina-in-usmerjeni-nadzori-rudarske-inšpekcije/",
+          "accessed": "2026-10-02",
+          "scope": "state ownership of mineral resources",
+          "sourceType": "GOVERNMENT"
         }
       ]
     },
@@ -13917,8 +13904,8 @@
       "siteType": "MINE",
       "status": "HISTORICAL_INACTIVE",
       "owner": "UNOBSERVED",
-      "operator": "UNOBSERVED",
-      "extractionMethod": "LATERITIC_NICKEL_MINING_AND_CARON_PROCESS_HISTORY",
+      "operator": "NO_CURRENT_OPERATOR",
+      "extractionMethod": "historical nickel mining and hydrometallurgical processing; operation closed at end-2012",
       "location": {
         "countryIso3": "CUB",
         "countryName": "Cuba",
@@ -13970,7 +13957,14 @@
         "quantitativeExtractionDataAvailable": false
       },
       "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-      "researchMetadata": {},
+      "researchMetadata": {
+        "sourceAuthority": "Wood Mackenzie",
+        "currentEvidence": "Wood Mackenzie records the Nicaro operation as a closed nickel operation that ran for more than 70 years and closed at the end of 2012.",
+        "location": "Nicaro, Holguín, Cuba",
+        "dataLimitation": "No current owner was asserted because the cited current asset report establishes closure rather than a present legal ownership arrangement.",
+        "reviewedAt": "2026-10-02",
+        "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVIEW"
+      },
       "webResearchEvidence": [
         {
           "url": "https://www.woodmac.com/reports/metals-nicaro-closed-nickel-operation-15929805/",

@@ -6,10 +6,10 @@
   "legacyStillUnverified": 0,
   "notApplicable": 4,
   "siteDataPackages": 199,
-  "explicitOwner": 174,
-  "explicitOperator": 175,
+  "explicitOwner": 176,
+  "explicitOperator": 179,
   "observedReserve": 18,
   "observedProduction": 35,
   "observedGrade": 24,
-  "manualSourceBackedFixes": 71
+  "manualSourceBackedFixes": 75
 }
