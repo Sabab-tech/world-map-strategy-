@@ -1223,6 +1223,95 @@
           "sourceType": "GOVERNMENT"
         }
       ]
+    },
+    "SITE_MUS_basalt_aggregate_quarry_zone": {
+      "owner": "Gamma Materials Ltd.",
+      "operator": "Gamma Materials Ltd.",
+      "status": "ACTIVE_PRODUCING",
+      "operationalStatus": "ACTIVE_PRODUCING",
+      "extractionMethod": "surface basalt quarrying; crushing and screening into aggregate and road materials",
+      "meta": {
+        "sourceAuthority": "Gamma Materials Ltd.",
+        "currentEvidence": "Gamma Materials states that its raw materials are extracted from its quarries, including basalt, and processed through crushers into Rocksand and Macadam for ready-mix, blocks and road construction.",
+        "location": "Mauritius"
+      },
+      "sources": [
+        {
+          "url": "https://gammamaterials.mu/en/3-building-materials",
+          "accessed": "2026-10-02",
+          "scope": "quarry operator, basalt extraction and processing",
+          "sourceType": "OPERATOR"
+        }
+      ]
+    },
+    "SITE_SVN_trbovlje_limestone_quarry_zone": {
+      "owner": "Republic of Slovenia (mineral-resource ownership)",
+      "operator": "NO_CURRENT_OPERATOR",
+      "status": "NO_CURRENT_CONCESSION",
+      "operationalStatus": "NO_CURRENT_CONCESSION",
+      "extractionMethod": "historical surface limestone and marl quarrying; no current exploitation concession",
+      "meta": {
+        "sourceAuthority": "Geological Survey of Slovenia / Republic of Slovenia",
+        "currentEvidence": "The 2026 Slovenian mining database lists no current concessionaire for the Retje-Plesko limestone/marl extraction area; Slovenian law treats mineral resources as state-owned.",
+        "location": "Hrastnik and Trbovlje, Slovenia",
+        "dataLimitation": "No current operating concession was verified, so no operator is asserted."
+      },
+      "sources": [
+        {
+          "url": "https://ms.geo-zs.si/en-gb/Prostor/Podrobnosti/126",
+          "accessed": "2026-10-02",
+          "scope": "2026 concession and site status",
+          "sourceType": "GOVERNMENT_GEOLOGICAL_SURVEY"
+        },
+        {
+          "url": "https://www.gov.si/novice/2026-09-15-rudarska-koncesnina-in-usmerjeni-nadzori-rudarske-inšpekcije/",
+          "accessed": "2026-10-02",
+          "scope": "state ownership of mineral resources",
+          "sourceType": "GOVERNMENT"
+        }
+      ]
+    },
+    "SITE_CUB_nicaro_nickel_complex": {
+      "owner": "UNOBSERVED",
+      "operator": "NO_CURRENT_OPERATOR",
+      "status": "HISTORICAL_INACTIVE",
+      "operationalStatus": "HISTORICAL_INACTIVE",
+      "extractionMethod": "historical nickel mining and hydrometallurgical processing; operation closed at end-2012",
+      "meta": {
+        "sourceAuthority": "Wood Mackenzie",
+        "currentEvidence": "Wood Mackenzie records the Nicaro operation as a closed nickel operation that ran for more than 70 years and closed at the end of 2012.",
+        "location": "Nicaro, Holguín, Cuba",
+        "dataLimitation": "No current owner was asserted because the cited current asset report establishes closure rather than a present legal ownership arrangement."
+      },
+      "sources": [
+        {
+          "url": "https://www.woodmac.com/reports/metals-nicaro-closed-nickel-operation-15929805/",
+          "accessed": "2026-10-02",
+          "scope": "closure status and historical operation",
+          "sourceType": "INDUSTRY_ANALYSIS"
+        }
+      ]
+    },
+    "SITE_ETH_lega_dembi_gold_mine": {
+      "owner": "Ethiopian state / former concession",
+      "operator": "NO_CURRENT_OPERATOR",
+      "status": "SUSPENDED",
+      "operationalStatus": "SUSPENDED",
+      "extractionMethod": "historical gold mining and processing; commercial operation suspended",
+      "meta": {
+        "sourceAuthority": "Lega Dembi historical mine record",
+        "currentEvidence": "The site is retained as a suspended gold operation; no current commercial operator is asserted in the present evidence set.",
+        "location": "Southern Nations, Nationalities and Peoples' Region, Ethiopia",
+        "dataLimitation": "Current ownership/operator details are separated from the historical concession record."
+      },
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Lega_Dembi_Mine",
+          "accessed": "2026-10-02",
+          "scope": "mine identity and suspension/closure context",
+          "sourceType": "SECONDARY"
+        }
+      ]
     }
   }
 }
