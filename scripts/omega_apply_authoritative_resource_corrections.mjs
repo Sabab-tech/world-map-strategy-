@@ -559,6 +559,119 @@ const fixes = {
     ]
   }
 
+  SITE_BTN_tsirang_limestone_quarries: {
+    owner: 'Historical operators including Mr. Pasang Tamang and Wakleytar Taksha Mining Private Limited',
+    operator: 'Historical operators including Mr. Pasang Tamang and Wakleytar Taksha Mining Private Limited',
+    ownershipScope: 'HISTORICAL_MULTI_OPERATOR',
+    status: 'HISTORICAL_INACTIVE',
+    operationalStatus: 'HISTORICAL_INACTIVE',
+    extractionEligibility: 'NON_EXECUTABLE',
+    metadata: {
+      sourceAuthority: 'Royal Audit Authority of Bhutan',
+      currentEvidence: 'Bhutan audit records identify Kuchikhola Stone Quarry in Tsirang under Mr. Pasang Tamang with a permit ending in 2014 and Wakletar Stone Quarry under Wakleytar Taksha Mining Private Limited with a permit ending in 2019. The repository record therefore must not be treated as an unqualified active 2026 mine without a newer site-specific concession record.'
+    },
+    sources: [
+      evidence('https://www.bhutanaudit.gov.bt/wp-content/uploads/2020/08/Performance_Audit_Report_on_Mining_and_Quarry_2014.pdf', 'historical_tsirang_quarry_operators_permit_dates_and_quarry_identity', 'GOVERNMENT_AUDIT')
+    ]
+  },
+  SITE_CPV_santiago_pozzolana_quarry_zone: {
+    owner: 'CIMPOR – Cabo Verde, SA (project proponent)',
+    operator: 'CIMPOR – Cabo Verde, SA (project proponent; operator not separately verified)',
+    status: 'DEVELOPMENT',
+    operationalStatus: 'DEVELOPMENT',
+    extractionEligibility: 'NON_EXECUTABLE',
+    extractionMethod: 'Surface extraction of volcanic pozzolana for construction-material use',
+    metadata: {
+      sourceAuthority: 'Ministry of Agriculture and Environment, Cabo Verde',
+      currentEvidence: 'The Cabo Verde environmental authority published the EIA for the Monte Vermelho pozzolana extraction project in Praia, Santiago, naming CIMPOR – Cabo Verde, SA as the project proponent. This is a development/EIA-stage project, not verified current commercial extraction.',
+      resourceIdentityNote: 'Keep ontology resourceTypeId as construction_aggregate because the repository ontology has no dedicated pozzolana type; explicitly record pozzolana as the material subtype.'
+    },
+    sources: [
+      evidence('https://maa.gov.cv/index.php/min-a-a/83-ambiente/avaliacao-do-impacte-ambiental/estudos-da-eia/324-estudo-de-impacte-ambiental-do-projeto-extracao-de-pozolanas-do-monte-vermelho', 'santiago_pozzolana_project_identity_proponent_and_development_stage', 'GOVERNMENT')
+    ]
+  },
+  SITE_MUS_basalt_aggregate_quarry_zone: {
+    owner: 'Multiple basalt quarry interests including United Basalt Products Limited',
+    operator: 'United Basalt Products Limited (major basalt-aggregate operator)',
+    ownershipScope: 'AREA_REPRESENTATIVE_OPERATOR',
+    extractionMethod: 'Surface basalt extraction, crushing and aggregate production',
+    metadata: {
+      sourceAuthority: 'United Basalt Products Limited / Stock Exchange of Mauritius',
+      currentEvidence: 'UBP reports current basaltic-rock extraction and crushing for aggregate production and describes itself as the main supplier of aggregates in its Mauritian building-materials value chain. The repository record is an area-level basalt zone rather than a single concession.'
+    },
+    sources: [
+      evidence('https://integratedreport.ubp.mu/2025/', 'current_basalt_extraction_crushing_and_aggregate_supply', 'OPERATOR'),
+      evidence('https://www.stockexchangeofmauritius.com/company-snapshot/official-market/the-united-basalt-products-limited?market=Official', 'current_company_identity_and_mauritius_operations', 'REGULATORY_MARKET')
+    ]
+  },
+  SITE_TWN_hualien_marble_quarry_zone: {
+    owner: 'Multiple Hualien quarry interests including Asia Cement Corporation',
+    operator: 'Multiple Hualien quarry operators including Asia Cement Corporation',
+    ownershipScope: 'DISTRICT_MULTI_OPERATOR',
+    status: 'LIMITED',
+    operationalStatus: 'LIMITED',
+    extractionEligibility: 'CONDITIONAL',
+    extractionMethod: 'Surface marble/stone quarrying with cutting and stone processing',
+    metadata: {
+      sourceAuthority: 'Taiwan Ministry of Economic Affairs / public Hualien quarry records',
+      currentEvidence: 'Public reporting documents Asia Cement Corporation operating a marble quarry in Hualien County and also documents permit/litigation constraints. Separate Hualien stone businesses are registered by the county government. The repository record is therefore modeled as a multi-operator Hualien quarry zone, not a single company mine.'
+    },
+    sources: [
+      evidence('https://www.taipeitimes.com/News/front/archives/2019/07/12/2003718520', 'hualien_marble_quarry_operator_and_mining_right_status', 'NEWS'),
+      evidence('https://www.taipeitimes.com/News/taiwan/archives/2018/03/01/2003688480', 'hualien_quarry_operator_and_regulatory_context', 'NEWS'),
+      evidence('https://findbiz.nat.gov.tw/fts/factory/45/07610099122696?fhl=en', 'hualien_stone_company_registration', 'GOVERNMENT_REGISTER')
+    ]
+  },
+  SITE_MLT_al_far_limestone_quarry: {
+    owner: 'UNOBSERVED',
+    operator: 'UNOBSERVED',
+    status: 'PERMIT_PROCESSING',
+    operationalStatus: 'PERMIT_PROCESSING',
+    extractionEligibility: 'CONDITIONAL',
+    extractionMethod: 'Hardstone extraction, inert-waste recycling and quarry backfilling',
+    metadata: {
+      sourceAuthority: 'Environment and Resources Authority, Malta',
+      permit: 'EP 0025/19, Quarry HM18 Wied Moqbol, Hal Far',
+      currentEvidence: 'ERA currently lists HM18 Wied Moqbol, Hal Far under EP 0025/19 for extraction of hardstone, recycling of inert waste and backfilling, with the application status shown as Being Processed. No site-specific owner/operator is asserted from the permit summary alone.'
+    },
+    sources: [
+      evidence('https://era.org.mt/topic/quarries/', 'current_hal_far_quarry_permit_status_and_activity', 'GOVERNMENT'),
+      evidence('https://www.servizz.gov.mt/en/Services/web-01887', 'malta_quarry_permit_requirement_for_mineral_extraction', 'GOVERNMENT')
+    ]
+  },
+  SITE_SLV_el_dorado_gold_project: {
+    owner: 'Pacific Rim Mining Corporation (historical project interest)',
+    operator: 'Pacific Rim Mining Corporation (historical project operator)',
+    ownershipScope: 'HISTORICAL_PROJECT_INTEREST',
+    status: 'HISTORICAL_INACTIVE',
+    operationalStatus: 'HISTORICAL_INACTIVE',
+    extractionEligibility: 'NON_EXECUTABLE',
+    extractionMethod: 'Historical underground gold mining and exploration; no confirmed current commercial operation',
+    metadata: {
+      sourceAuthority: 'Pacific Rim Mining Corporation SEC filing / public historical record',
+      currentEvidence: 'Pacific Rim filings identify the El Dorado gold project in Cabañas and state that Pacific Rim owned 100% of the project through its subsidiaries. The historical mine operated from 1948 to 1953; later exploration did not result in a current commercial mining operation. Current data should therefore preserve historical ownership separately from present-day executable extraction.'
+    },
+    sources: [
+      evidence('https://www.sec.gov/Archives/edgar/data/1056512/000106299312002578/form20f.htm', 'historical_project_owner_location_exploration_licenses_and_project_status', 'SEC_FILING'),
+      evidence('https://www.sec.gov/Archives/edgar/data/1056512/000106299303001283/exhibit99-1.htm', 'historical_mining_and_resource_project_identity', 'SEC_FILING')
+    ]
+  },
+  SITE_SOM_el_buur_gold_mining_area: {
+    status: 'RESOURCE_IDENTITY_UNVERIFIED',
+    operationalStatus: 'RESOURCE_IDENTITY_UNVERIFIED',
+    extractionEligibility: 'NON_EXECUTABLE',
+    extractionMethod: 'Unverified small-scale mineral extraction; gold-specific commercial operation not established',
+    metadata: {
+      sourceAuthority: 'USGS-derived mineral locality record / public mineralogical references',
+      currentEvidence: 'Current public locality evidence identifies El Bur/El Buur in Galguduud as a sepiolite deposit and a traditional quarrying center. It does not establish a site-specific commercial gold mine or gold operator. The repository gold identity is therefore flagged as unverified rather than executed as a gold-producing asset.',
+      resourceIdentityConflict: 'Repository resourceTypeId=gold conflicts with available site-level evidence supporting sepiolite. The ontology has no dedicated sepiolite resource type, so the gold identity is retained only as UNVERIFIED and extraction is disabled pending authoritative resource-ontology expansion or a site-specific gold source.'
+    },
+    sources: [
+      evidence('https://www.mindat.org/locentry-900101.html', 'el_buur_sepiolite_deposit_identity_and_location', 'MINERAL_LOCALITY_DATABASE'),
+      evidence('https://en.wikipedia.org/wiki/El_Buur', 'el_buur_quarrying_and_sepiolite_context', 'SECONDARY_REFERENCE')
+    ]
+  }
+
 };
 
 function applyFix(site, fix) {
