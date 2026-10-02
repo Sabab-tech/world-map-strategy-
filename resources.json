@@ -26297,9 +26297,9 @@
               "locationNodeKey": "ASSET:ETH:lega_dembi_gold_mine",
               "status": "SUSPENDED",
               "operationalStatus": "SUSPENDED",
-              "owner": "Ethiopian state / former concession",
-              "operator": "UNOBSERVED",
-              "extractionMethod": "open-pit and underground",
+              "owner": "MIDROC Investment Group",
+              "operator": "MIDROC Gold Mine PLC",
+              "extractionMethod": "Open-pit and underground mining; ROM ore crushing followed by cyanide processing",
               "startYear": 1990,
               "legacyReferenceName": "Ethiopia Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -26322,7 +26322,7 @@
                 "reserve": "UNOBSERVED",
                 "production": "UNOBSERVED",
                 "grade": "UNOBSERVED",
-                "ownership": "UNOBSERVED",
+                "ownership": "OBSERVED",
                 "operation": "OBSERVED",
                 "extractionMethod": "OBSERVED",
                 "provenance": "RESOURCE_JSON_WEB_RESEARCH_CATALOG"
@@ -26335,8 +26335,9 @@
                 "legacyReferenceName": "Ethiopia Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
-                "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
+                "reviewedAt": "2026-10-02",
+                "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH",
+                "webReview": "Targeted authoritative repair rechecked 2026-10-02"
               },
               "extractionEligibility": "NON_EXECUTABLE",
               "currentStatus": "SUSPENDED",
@@ -26364,13 +26365,13 @@
               },
               "extractionProfile": {
                 "siteType": "MINE",
-                "method": "open-pit and underground",
+                "method": "Open-pit and underground mining; ROM ore crushing followed by cyanide processing",
                 "lifecycleStatus": "SUSPENDED",
                 "operationalStatus": "SUSPENDED",
-                "owner": "Ethiopian state / former concession",
-                "operator": "UNOBSERVED",
-                "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-                "operatorEvidenceStatus": "UNOBSERVED"
+                "owner": "MIDROC Investment Group",
+                "operator": "MIDROC Gold Mine PLC",
+                "ownerEvidenceStatus": "WEB_REVIEWED",
+                "operatorEvidenceStatus": "WEB_REVIEWED"
               },
               "quantitativeProfile": {
                 "reserve": {
@@ -26416,7 +26417,7 @@
                 "resource": "COMPLETE",
                 "location": "COMPLETE",
                 "operation": "COMPLETE",
-                "ownership": "UNOBSERVED",
+                "ownership": "REPORTED",
                 "quantitative": {
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
@@ -26427,7 +26428,7 @@
               },
               "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-02",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
@@ -26440,7 +26441,9 @@
                   "owner": "MIDROC",
                   "products": "Gold and silver",
                   "location": "near Shakiso, Oromia, Oromia"
-                }
+                },
+                "sourceAuthority": "International Cyanide Management Institute / MIDROC",
+                "currentEvidence": "The 2025 audit identifies MIDROC Investment Group as owner and MIDROC Gold Mine PLC as operator. Ore is sourced from open-pit, Legadembi underground and Sakaro underground workings and processed through a multi-stage crushing circuit."
               },
               "webResearchEvidence": [
                 {
@@ -26450,6 +26453,12 @@
                   "sourceType": "WIKIPEDIA",
                   "matchScore": 1,
                   "sourceTitle": "Lega Dembi Mine"
+                },
+                {
+                  "url": "https://cyanidecode.org/wp-content/uploads/2024/02/MIDROCLegadembiSAR2026.pdf",
+                  "accessed": "2026-10-02",
+                  "scope": "owner_operator_location_mining_method_crushing_processing",
+                  "sourceType": "AUDIT"
                 }
               ],
               "siteDataPackage": {
@@ -26474,15 +26483,15 @@
                   "coordinateStatus": "ESTIMATED_SITE_POINT"
                 },
                 "ownership": {
-                  "owner": "Ethiopian state / former concession",
-                  "operator": "UNOBSERVED",
-                  "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-                  "operatorEvidenceStatus": "UNOBSERVED"
+                  "owner": "MIDROC Investment Group",
+                  "operator": "MIDROC Gold Mine PLC",
+                  "ownerEvidenceStatus": "WEB_REVIEWED",
+                  "operatorEvidenceStatus": "WEB_REVIEWED"
                 },
                 "operation": {
                   "status": "SUSPENDED",
                   "operationalStatus": "SUSPENDED",
-                  "extractionMethod": "open-pit and underground",
+                  "extractionMethod": "Open-pit and underground mining; ROM ore crushing followed by cyanide processing",
                   "extractionEligibility": "NON_EXECUTABLE",
                   "commercialExtraction": true
                 },
@@ -26520,10 +26529,11 @@
                 },
                 "verification": {
                   "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-                  "reviewedAt": "2026-09-27",
-                  "sourceCount": 1,
+                  "reviewedAt": "2026-10-02",
+                  "sourceCount": 2,
                   "sourceAuthorities": [
-                    "WIKIPEDIA"
+                    "WIKIPEDIA",
+                    "AUDIT"
                   ],
                   "dataLimitations": null
                 }
@@ -35100,9 +35110,9 @@
               "locationNodeKey": "ASSET:COM:grande_comore_basalt_aggregate_sites",
               "status": "LIMITED",
               "operationalStatus": "LIMITED",
-              "owner": "UNOBSERVED",
-              "operator": "UNOBSERVED",
-              "extractionMethod": "surface quarrying",
+              "owner": "CBE BTP",
+              "operator": "CBE BTP",
+              "extractionMethod": "Basalt quarrying with crushing and aggregate production",
               "startYear": 1980,
               "legacyReferenceName": "Comoros Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -35125,7 +35135,7 @@
                 "reserve": "UNOBSERVED",
                 "production": "UNOBSERVED",
                 "grade": "UNOBSERVED",
-                "ownership": "UNOBSERVED",
+                "ownership": "OBSERVED",
                 "operation": "OBSERVED",
                 "extractionMethod": "OBSERVED",
                 "provenance": "RESOURCE_JSON_WEB_RESEARCH_CATALOG"
@@ -35138,8 +35148,9 @@
                 "legacyReferenceName": "Comoros Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
-                "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
+                "reviewedAt": "2026-10-02",
+                "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH",
+                "webReview": "Targeted authoritative repair rechecked 2026-10-02"
               },
               "extractionEligibility": "CONDITIONAL",
               "currentStatus": "LIMITED",
@@ -35173,13 +35184,13 @@
               },
               "extractionProfile": {
                 "siteType": "QUARRY",
-                "method": "surface quarrying",
+                "method": "Basalt quarrying with crushing and aggregate production",
                 "lifecycleStatus": "LIMITED",
                 "operationalStatus": "LIMITED",
-                "owner": "UNOBSERVED",
-                "operator": "UNOBSERVED",
-                "ownerEvidenceStatus": "UNOBSERVED",
-                "operatorEvidenceStatus": "UNOBSERVED"
+                "owner": "CBE BTP",
+                "operator": "CBE BTP",
+                "ownerEvidenceStatus": "WEB_REVIEWED",
+                "operatorEvidenceStatus": "WEB_REVIEWED"
               },
               "quantitativeProfile": {
                 "reserve": {
@@ -35225,22 +35236,24 @@
                 "resource": "COMPLETE",
                 "location": "COMPLETE",
                 "operation": "COMPLETE",
-                "ownership": "UNOBSERVED",
+                "ownership": "REPORTED",
                 "quantitative": {
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
               },
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-02",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
-                "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
+                "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
+                "sourceAuthority": "CBE BTP",
+                "currentEvidence": "CBE identifies its principal aggregate quarries at Handouli and Pvanamboini on Grande Comore and states that it operates crushing stations and aggregate production across the Comoros."
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -35264,15 +35277,15 @@
                   "coordinateStatus": "ESTIMATED_SITE_POINT"
                 },
                 "ownership": {
-                  "owner": "UNOBSERVED",
-                  "operator": "UNOBSERVED",
-                  "ownerEvidenceStatus": "UNOBSERVED",
-                  "operatorEvidenceStatus": "UNOBSERVED"
+                  "owner": "CBE BTP",
+                  "operator": "CBE BTP",
+                  "ownerEvidenceStatus": "WEB_REVIEWED",
+                  "operatorEvidenceStatus": "WEB_REVIEWED"
                 },
                 "operation": {
                   "status": "LIMITED",
                   "operationalStatus": "LIMITED",
-                  "extractionMethod": "surface quarrying",
+                  "extractionMethod": "Basalt quarrying with crushing and aggregate production",
                   "extractionEligibility": "CONDITIONAL",
                   "commercialExtraction": true
                 },
@@ -35309,13 +35322,23 @@
                   }
                 },
                 "verification": {
-                  "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": "2026-09-27",
-                  "sourceCount": 0,
-                  "sourceAuthorities": [],
+                  "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+                  "reviewedAt": "2026-10-02",
+                  "sourceCount": 1,
+                  "sourceAuthorities": [
+                    "COMPANY"
+                  ],
                   "dataLimitations": null
                 }
-              }
+              },
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.wiya.info/en/company/cbe",
+                  "accessed": "2026-10-02",
+                  "scope": "operator_quarries_crushing_and_aggregate_production",
+                  "sourceType": "COMPANY"
+                }
+              ]
             }
           ],
           "processingFacilities": [
@@ -41361,9 +41384,9 @@
               "locationNodeKey": "ASSET:ARE:fujairah_aggregate_quarries",
               "status": "ACTIVE_PRODUCING",
               "operationalStatus": "ACTIVE_PRODUCING",
-              "owner": "UNOBSERVED",
-              "operator": "UNOBSERVED",
-              "extractionMethod": "surface drilling, blasting and crushing",
+              "owner": "United Quarries",
+              "operator": "United Quarries",
+              "extractionMethod": "Hard-rock gabbro quarrying with blasting, crushing, sizing and marine export logistics",
               "startYear": 1980,
               "legacyReferenceName": "United Arab Emirates Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -41386,7 +41409,7 @@
                 "reserve": "UNOBSERVED",
                 "production": "UNOBSERVED",
                 "grade": "UNOBSERVED",
-                "ownership": "UNOBSERVED",
+                "ownership": "OBSERVED",
                 "operation": "OBSERVED",
                 "extractionMethod": "OBSERVED",
                 "provenance": "RESOURCE_JSON_WEB_RESEARCH_CATALOG"
@@ -41399,8 +41422,9 @@
                 "legacyReferenceName": "United Arab Emirates Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
-                "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
+                "reviewedAt": "2026-10-02",
+                "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH",
+                "webReview": "Targeted authoritative repair rechecked 2026-10-02"
               },
               "extractionEligibility": "EXECUTABLE",
               "currentStatus": "ACTIVE_PRODUCING",
@@ -41418,6 +41442,18 @@
                   "url": "https://www.fujtown.com/public/business/crushers",
                   "accessed": "2026-09-26",
                   "scope": "site_identity_or_operation"
+                },
+                {
+                  "url": "https://www.unitedquarries.com/united-quarries-operation-sites.html",
+                  "accessed": "2026-10-02",
+                  "scope": "current_operator_sites_mining_method_capacity_and_logistics",
+                  "sourceType": "OPERATOR"
+                },
+                {
+                  "url": "https://www.unitedquarries.com/company-overview.html",
+                  "accessed": "2026-10-02",
+                  "scope": "company_identity_and_fujairah_quarry_operations",
+                  "sourceType": "OPERATOR"
                 }
               ],
               "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -41445,13 +41481,13 @@
               },
               "extractionProfile": {
                 "siteType": "QUARRY",
-                "method": "surface drilling, blasting and crushing",
+                "method": "Hard-rock gabbro quarrying with blasting, crushing, sizing and marine export logistics",
                 "lifecycleStatus": "ACTIVE_PRODUCING",
                 "operationalStatus": "ACTIVE_PRODUCING",
-                "owner": "UNOBSERVED",
-                "operator": "UNOBSERVED",
-                "ownerEvidenceStatus": "UNOBSERVED",
-                "operatorEvidenceStatus": "UNOBSERVED"
+                "owner": "United Quarries",
+                "operator": "United Quarries",
+                "ownerEvidenceStatus": "WEB_REVIEWED",
+                "operatorEvidenceStatus": "WEB_REVIEWED"
               },
               "quantitativeProfile": {
                 "reserve": {
@@ -41496,7 +41532,7 @@
                 "resource": "COMPLETE",
                 "location": "COMPLETE",
                 "operation": "COMPLETE",
-                "ownership": "UNOBSERVED",
+                "ownership": "REPORTED",
                 "quantitative": {
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
@@ -41527,15 +41563,15 @@
                   "coordinateStatus": "ESTIMATED_SITE_POINT"
                 },
                 "ownership": {
-                  "owner": "UNOBSERVED",
-                  "operator": "UNOBSERVED",
-                  "ownerEvidenceStatus": "UNOBSERVED",
-                  "operatorEvidenceStatus": "UNOBSERVED"
+                  "owner": "United Quarries",
+                  "operator": "United Quarries",
+                  "ownerEvidenceStatus": "WEB_REVIEWED",
+                  "operatorEvidenceStatus": "WEB_REVIEWED"
                 },
                 "operation": {
                   "status": "ACTIVE_PRODUCING",
                   "operationalStatus": "ACTIVE_PRODUCING",
-                  "extractionMethod": "surface drilling, blasting and crushing",
+                  "extractionMethod": "Hard-rock gabbro quarrying with blasting, crushing, sizing and marine export logistics",
                   "extractionEligibility": "EXECUTABLE",
                   "commercialExtraction": true
                 },
@@ -41572,11 +41608,18 @@
                 },
                 "verification": {
                   "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-                  "reviewedAt": null,
-                  "sourceCount": 1,
-                  "sourceAuthorities": [],
+                  "reviewedAt": "2026-10-02",
+                  "sourceCount": 3,
+                  "sourceAuthorities": [
+                    "OPERATOR"
+                  ],
                   "dataLimitations": null
                 }
+              },
+              "researchMetadata": {
+                "reviewedAt": "2026-10-02",
+                "sourceAuthority": "United Quarries",
+                "currentEvidence": "United Quarries identifies Al Hayl and Al Nujaimat as operating quarry sites in Fujairah and documents blasting, aggregate production and export logistics. This repository record represents the Fujairah operator area rather than one concession polygon."
               }
             }
           ],
@@ -48352,11 +48395,11 @@
               "lat": 34.32,
               "lng": 35.7,
               "locationNodeKey": "ASSET:LBN:chekka_limestone_quarry_zone",
-              "status": "REGULATED_REOPENING_2026",
-              "operationalStatus": "ACTIVE_PRODUCING",
-              "owner": "UNOBSERVED",
-              "operator": "UNOBSERVED",
-              "extractionMethod": "surface quarrying and blasting",
+              "status": "LIMITED",
+              "operationalStatus": "LIMITED",
+              "owner": "Holcim Lebanon",
+              "operator": "Holcim Lebanon",
+              "extractionMethod": "Limestone quarrying subject to quarry licensing and environmental controls",
               "startYear": 1950,
               "legacyReferenceName": "Lebanon Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -48379,7 +48422,7 @@
                 "reserve": "UNOBSERVED",
                 "production": "UNOBSERVED",
                 "grade": "UNOBSERVED",
-                "ownership": "UNOBSERVED",
+                "ownership": "OBSERVED",
                 "operation": "OBSERVED",
                 "extractionMethod": "OBSERVED",
                 "provenance": "RESOURCE_JSON_WEB_RESEARCH_CATALOG"
@@ -48392,10 +48435,11 @@
                 "legacyReferenceName": "Lebanon Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
-                "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
+                "reviewedAt": "2026-10-02",
+                "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH",
+                "webReview": "Targeted authoritative repair rechecked 2026-10-02"
               },
-              "extractionEligibility": "EXECUTABLE",
+              "extractionEligibility": "CONDITIONAL",
               "currentStatus": "ACTIVE_PRODUCING",
               "statusAuthority": "OBSERVED",
               "licenseContext": "Chekka/Koura cement companies subject to annual quarry licensing and environmental conditions",
@@ -48418,6 +48462,18 @@
                   "url": "https://today.lorientlejour.com/article/1503905/cabinets-decision-on-cement-quarrying-taken-on-a-day-of-national-mourning",
                   "accessed": "2026-09-26",
                   "scope": "site_identity_or_operation"
+                },
+                {
+                  "url": "https://www.holcim.com.lb/quarry-rehabilitation-project-chekka",
+                  "accessed": "2026-10-02",
+                  "scope": "operator_identity_quarry_location_and_rehabilitation",
+                  "sourceType": "OPERATOR"
+                },
+                {
+                  "url": "https://today.lorientlejour.com/article/1542195/state-council-halts-government-measures-reopening-cement-quarries.html",
+                  "accessed": "2026-10-02",
+                  "scope": "2026_quarry_reopening_legal_constraint",
+                  "sourceType": "NEWS"
                 }
               ],
               "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -48446,13 +48502,13 @@
               },
               "extractionProfile": {
                 "siteType": "QUARRY",
-                "method": "surface quarrying and blasting",
+                "method": "Limestone quarrying subject to quarry licensing and environmental controls",
                 "lifecycleStatus": "REGULATED_REOPENING_2026",
                 "operationalStatus": "ACTIVE_PRODUCING",
-                "owner": "UNOBSERVED",
-                "operator": "UNOBSERVED",
-                "ownerEvidenceStatus": "UNOBSERVED",
-                "operatorEvidenceStatus": "UNOBSERVED"
+                "owner": "Holcim Lebanon",
+                "operator": "Holcim Lebanon",
+                "ownerEvidenceStatus": "WEB_REVIEWED",
+                "operatorEvidenceStatus": "WEB_REVIEWED"
               },
               "quantitativeProfile": {
                 "reserve": {
@@ -48498,7 +48554,7 @@
                 "resource": "COMPLETE",
                 "location": "COMPLETE",
                 "operation": "COMPLETE",
-                "ownership": "UNOBSERVED",
+                "ownership": "REPORTED",
                 "quantitative": {
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
@@ -48529,16 +48585,16 @@
                   "coordinateStatus": "ESTIMATED_SITE_POINT"
                 },
                 "ownership": {
-                  "owner": "UNOBSERVED",
-                  "operator": "UNOBSERVED",
-                  "ownerEvidenceStatus": "UNOBSERVED",
-                  "operatorEvidenceStatus": "UNOBSERVED"
+                  "owner": "Holcim Lebanon",
+                  "operator": "Holcim Lebanon",
+                  "ownerEvidenceStatus": "WEB_REVIEWED",
+                  "operatorEvidenceStatus": "WEB_REVIEWED"
                 },
                 "operation": {
-                  "status": "REGULATED_REOPENING_2026",
-                  "operationalStatus": "ACTIVE_PRODUCING",
-                  "extractionMethod": "surface quarrying and blasting",
-                  "extractionEligibility": "EXECUTABLE",
+                  "status": "LIMITED",
+                  "operationalStatus": "LIMITED",
+                  "extractionMethod": "Limestone quarrying subject to quarry licensing and environmental controls",
+                  "extractionEligibility": "CONDITIONAL",
                   "commercialExtraction": true
                 },
                 "processing": {
@@ -48575,11 +48631,19 @@
                 },
                 "verification": {
                   "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-                  "reviewedAt": null,
-                  "sourceCount": 3,
-                  "sourceAuthorities": [],
+                  "reviewedAt": "2026-10-02",
+                  "sourceCount": 5,
+                  "sourceAuthorities": [
+                    "OPERATOR",
+                    "NEWS"
+                  ],
                   "dataLimitations": null
                 }
+              },
+              "researchMetadata": {
+                "reviewedAt": "2026-10-02",
+                "sourceAuthority": "Holcim Lebanon / Lebanese public reporting",
+                "currentEvidence": "Holcim documents quarry rehabilitation in Chekka. 2026 reporting shows cement-quarry reopening is subject to licensing and was affected by a State Council suspension, so unconditional continuous extraction is not assumed."
               }
             }
           ],
@@ -51532,9 +51596,9 @@
               "locationNodeKey": "ASSET:KOR:samcheok_limestone_mining_district",
               "status": "ACTIVE_PRODUCING",
               "operationalStatus": "ACTIVE_PRODUCING",
-              "owner": "UNOBSERVED",
-              "operator": "UNOBSERVED",
-              "extractionMethod": "large surface quarrying",
+              "owner": "Multiple limestone mine concessionaires",
+              "operator": "Multiple limestone mining operators",
+              "extractionMethod": "Limestone mining using open-pit/glory-hole and underground methods depending on the mine seat",
               "startYear": 1970,
               "legacyReferenceName": "South Korea Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -51557,7 +51621,7 @@
                 "reserve": "UNOBSERVED",
                 "production": "UNOBSERVED",
                 "grade": "UNOBSERVED",
-                "ownership": "UNOBSERVED",
+                "ownership": "OBSERVED",
                 "operation": "OBSERVED",
                 "extractionMethod": "OBSERVED",
                 "provenance": "RESOURCE_JSON_WEB_RESEARCH_CATALOG"
@@ -51570,8 +51634,9 @@
                 "legacyReferenceName": "South Korea Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
-                "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
+                "reviewedAt": "2026-10-02",
+                "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH",
+                "webReview": "Targeted authoritative repair rechecked 2026-10-02"
               },
               "extractionEligibility": "EXECUTABLE",
               "currentStatus": "ACTIVE_PRODUCING",
@@ -51605,13 +51670,13 @@
               },
               "extractionProfile": {
                 "siteType": "MINE",
-                "method": "large surface quarrying",
+                "method": "Limestone mining using open-pit/glory-hole and underground methods depending on the mine seat",
                 "lifecycleStatus": "ACTIVE_PRODUCING",
                 "operationalStatus": "ACTIVE_PRODUCING",
-                "owner": "UNOBSERVED",
-                "operator": "UNOBSERVED",
-                "ownerEvidenceStatus": "UNOBSERVED",
-                "operatorEvidenceStatus": "UNOBSERVED"
+                "owner": "Multiple limestone mine concessionaires",
+                "operator": "Multiple limestone mining operators",
+                "ownerEvidenceStatus": "WEB_REVIEWED",
+                "operatorEvidenceStatus": "WEB_REVIEWED"
               },
               "quantitativeProfile": {
                 "reserve": {
@@ -51657,22 +51722,24 @@
                 "resource": "COMPLETE",
                 "location": "COMPLETE",
                 "operation": "COMPLETE",
-                "ownership": "UNOBSERVED",
+                "ownership": "REPORTED",
                 "quantitative": {
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
               },
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-02",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
-                "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
+                "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
+                "sourceAuthority": "SAMPYO Cement / Epiroc",
+                "currentEvidence": "Current public operator sources document more than one Samcheok limestone operation, including a Daesung MDI-operated mine and SAMPYO Cement limestone mining using glory-hole methods. The repository record is therefore area-level and multi-operator."
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -51696,15 +51763,15 @@
                   "coordinateStatus": "ESTIMATED_SITE_POINT"
                 },
                 "ownership": {
-                  "owner": "UNOBSERVED",
-                  "operator": "UNOBSERVED",
-                  "ownerEvidenceStatus": "UNOBSERVED",
-                  "operatorEvidenceStatus": "UNOBSERVED"
+                  "owner": "Multiple limestone mine concessionaires",
+                  "operator": "Multiple limestone mining operators",
+                  "ownerEvidenceStatus": "WEB_REVIEWED",
+                  "operatorEvidenceStatus": "WEB_REVIEWED"
                 },
                 "operation": {
                   "status": "ACTIVE_PRODUCING",
                   "operationalStatus": "ACTIVE_PRODUCING",
-                  "extractionMethod": "large surface quarrying",
+                  "extractionMethod": "Limestone mining using open-pit/glory-hole and underground methods depending on the mine seat",
                   "extractionEligibility": "EXECUTABLE",
                   "commercialExtraction": true
                 },
@@ -51741,13 +51808,31 @@
                   }
                 },
                 "verification": {
-                  "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": "2026-09-27",
-                  "sourceCount": 0,
-                  "sourceAuthorities": [],
+                  "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+                  "reviewedAt": "2026-10-02",
+                  "sourceCount": 2,
+                  "sourceAuthorities": [
+                    "EQUIPMENT_SUPPLIER",
+                    "OPERATOR"
+                  ],
                   "dataLimitations": null
                 }
-              }
+              },
+              "ownershipScope": "DISTRICT_MULTI_OPERATOR",
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.epiroc.com/en-ca/customer-stories/2025/boomer-s2-part-of-an-autonomous-future",
+                  "accessed": "2026-10-02",
+                  "scope": "samcheok_mine_operator_and_mining_context",
+                  "sourceType": "EQUIPMENT_SUPPLIER"
+                },
+                {
+                  "url": "https://www.sampyocement.co.kr/eng/product/product_sub1.php",
+                  "accessed": "2026-10-02",
+                  "scope": "samcheok_limestone_mine_and_glory_hole_method",
+                  "sourceType": "OPERATOR"
+                }
+              ]
             }
           ],
           "processingFacilities": [
@@ -54641,9 +54726,9 @@
               "locationNodeKey": "ASSET:MYS:penjom_gold_mine",
               "status": "LIMITED",
               "operationalStatus": "LIMITED",
-              "owner": "UNOBSERVED",
-              "operator": "Penjom Gold Mine",
-              "extractionMethod": "open-pit and underground",
+              "owner": "J Resources Gold (UK) Limited / J Resources group",
+              "operator": "J Resources Asia Pasifik / Penjom Mine",
+              "extractionMethod": "Conventional open-pit mining with resin-in-leach processing",
               "startYear": 1996,
               "legacyReferenceName": "Malaysia Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -54666,7 +54751,7 @@
                 "reserve": "UNOBSERVED",
                 "production": "UNOBSERVED",
                 "grade": "UNOBSERVED",
-                "ownership": "UNOBSERVED",
+                "ownership": "OBSERVED",
                 "operation": "OBSERVED",
                 "extractionMethod": "OBSERVED",
                 "provenance": "RESOURCE_JSON_WEB_RESEARCH_CATALOG"
@@ -54679,8 +54764,9 @@
                 "legacyReferenceName": "Malaysia Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
-                "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
+                "reviewedAt": "2026-10-02",
+                "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH",
+                "webReview": "Targeted authoritative repair rechecked 2026-10-02"
               },
               "extractionEligibility": "CONDITIONAL",
               "currentStatus": "LIMITED",
@@ -54708,19 +54794,20 @@
               },
               "extractionProfile": {
                 "siteType": "MINE",
-                "method": "open-pit and underground",
+                "method": "Conventional open-pit mining with resin-in-leach processing",
                 "lifecycleStatus": "LIMITED",
                 "operationalStatus": "LIMITED",
-                "owner": "UNOBSERVED",
-                "operator": "Penjom Gold Mine",
-                "ownerEvidenceStatus": "UNOBSERVED",
-                "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+                "owner": "J Resources Gold (UK) Limited / J Resources group",
+                "operator": "J Resources Asia Pasifik / Penjom Mine",
+                "ownerEvidenceStatus": "WEB_REVIEWED",
+                "operatorEvidenceStatus": "WEB_REVIEWED"
               },
               "quantitativeProfile": {
                 "reserve": {
-                  "quantity": null,
-                  "unit": null,
-                  "status": "UNOBSERVED"
+                  "quantity": 414000,
+                  "unit": "troy_ounces_gold",
+                  "year": 2023,
+                  "status": "OBSERVED"
                 },
                 "production": {
                   "annual": null,
@@ -54760,22 +54847,24 @@
                 "resource": "COMPLETE",
                 "location": "COMPLETE",
                 "operation": "COMPLETE",
-                "ownership": "UNOBSERVED",
+                "ownership": "REPORTED",
                 "quantitative": {
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
               },
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-02",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
-                "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
+                "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
+                "sourceAuthority": "J Resources",
+                "currentEvidence": "J Resources states that Penjom is owned through J Resources Gold (UK) Limited, has been in production since late 1996, and had 414,000 oz JORC Proven & Probable gold reserves as of 31 December 2023. Penjom uses resin-in-leach processing."
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -54799,15 +54888,15 @@
                   "coordinateStatus": "ESTIMATED_SITE_POINT"
                 },
                 "ownership": {
-                  "owner": "UNOBSERVED",
-                  "operator": "Penjom Gold Mine",
-                  "ownerEvidenceStatus": "UNOBSERVED",
-                  "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+                  "owner": "J Resources Gold (UK) Limited / J Resources group",
+                  "operator": "J Resources Asia Pasifik / Penjom Mine",
+                  "ownerEvidenceStatus": "WEB_REVIEWED",
+                  "operatorEvidenceStatus": "WEB_REVIEWED"
                 },
                 "operation": {
                   "status": "LIMITED",
                   "operationalStatus": "LIMITED",
-                  "extractionMethod": "open-pit and underground",
+                  "extractionMethod": "Conventional open-pit mining with resin-in-leach processing",
                   "extractionEligibility": "CONDITIONAL",
                   "commercialExtraction": true
                 },
@@ -54826,9 +54915,10 @@
                 },
                 "quantitative": {
                   "reserve": {
-                    "quantity": null,
-                    "unit": null,
-                    "status": "UNOBSERVED"
+                    "quantity": 414000,
+                    "unit": "troy_ounces_gold",
+                    "year": 2023,
+                    "status": "OBSERVED"
                   },
                   "production": {
                     "annual": null,
@@ -54844,13 +54934,29 @@
                   }
                 },
                 "verification": {
-                  "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": "2026-09-27",
-                  "sourceCount": 0,
-                  "sourceAuthorities": [],
+                  "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+                  "reviewedAt": "2026-10-02",
+                  "sourceCount": 2,
+                  "sourceAuthorities": [
+                    "OPERATOR"
+                  ],
                   "dataLimitations": null
                 }
-              }
+              },
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.jresources.com/penjom-mine",
+                  "accessed": "2026-10-02",
+                  "scope": "current_owner_production_history_reserves_and_location",
+                  "sourceType": "OPERATOR"
+                },
+                {
+                  "url": "https://www.jresources.com/about-us",
+                  "accessed": "2026-10-02",
+                  "scope": "current_group_operation_and_processing_method",
+                  "sourceType": "OPERATOR"
+                }
+              ]
             }
           ],
           "processingFacilities": [
@@ -67152,9 +67258,9 @@
               "locationNodeKey": "ASSET:FRA:prasville_limestone_quarry",
               "status": "ACTIVE_PRODUCING",
               "operationalStatus": "ACTIVE_PRODUCING",
-              "owner": "UNOBSERVED",
-              "operator": "UNOBSERVED",
-              "extractionMethod": "surface limestone quarrying",
+              "owner": "Société des Matériaux de Beauce (SMB)",
+              "operator": "Société des Matériaux de Beauce (SMB)",
+              "extractionMethod": "Limestone quarry extraction with crushing and mineral processing",
               "startYear": 1980,
               "legacyReferenceName": "France Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -67177,7 +67283,7 @@
                 "reserve": "UNOBSERVED",
                 "production": "UNOBSERVED",
                 "grade": "UNOBSERVED",
-                "ownership": "UNOBSERVED",
+                "ownership": "OBSERVED",
                 "operation": "OBSERVED",
                 "extractionMethod": "OBSERVED",
                 "provenance": "RESOURCE_JSON_WEB_RESEARCH_CATALOG"
@@ -67190,8 +67296,9 @@
                 "legacyReferenceName": "France Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
-                "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
+                "reviewedAt": "2026-10-02",
+                "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH",
+                "webReview": "Targeted authoritative repair rechecked 2026-10-02"
               },
               "extractionEligibility": "EXECUTABLE",
               "currentStatus": "ACTIVE_PRODUCING",
@@ -67225,13 +67332,13 @@
               },
               "extractionProfile": {
                 "siteType": "QUARRY",
-                "method": "surface limestone quarrying",
+                "method": "Limestone quarry extraction with crushing and mineral processing",
                 "lifecycleStatus": "ACTIVE_PRODUCING",
                 "operationalStatus": "ACTIVE_PRODUCING",
-                "owner": "UNOBSERVED",
-                "operator": "UNOBSERVED",
-                "ownerEvidenceStatus": "UNOBSERVED",
-                "operatorEvidenceStatus": "UNOBSERVED"
+                "owner": "Société des Matériaux de Beauce (SMB)",
+                "operator": "Société des Matériaux de Beauce (SMB)",
+                "ownerEvidenceStatus": "WEB_REVIEWED",
+                "operatorEvidenceStatus": "WEB_REVIEWED"
               },
               "quantitativeProfile": {
                 "reserve": {
@@ -67277,22 +67384,24 @@
                 "resource": "COMPLETE",
                 "location": "COMPLETE",
                 "operation": "COMPLETE",
-                "ownership": "UNOBSERVED",
+                "ownership": "REPORTED",
                 "quantitative": {
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
               },
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-02",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
-                "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
+                "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
+                "sourceAuthority": "French government public business and environmental registers",
+                "currentEvidence": "French public registers list SMB as an active Prasville quarry establishment with a quarry exploitation authorization; the site is also registered for crushing and mineral processing activities."
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -67316,15 +67425,15 @@
                   "coordinateStatus": "ESTIMATED_SITE_POINT"
                 },
                 "ownership": {
-                  "owner": "UNOBSERVED",
-                  "operator": "UNOBSERVED",
-                  "ownerEvidenceStatus": "UNOBSERVED",
-                  "operatorEvidenceStatus": "UNOBSERVED"
+                  "owner": "Société des Matériaux de Beauce (SMB)",
+                  "operator": "Société des Matériaux de Beauce (SMB)",
+                  "ownerEvidenceStatus": "WEB_REVIEWED",
+                  "operatorEvidenceStatus": "WEB_REVIEWED"
                 },
                 "operation": {
                   "status": "ACTIVE_PRODUCING",
                   "operationalStatus": "ACTIVE_PRODUCING",
-                  "extractionMethod": "surface limestone quarrying",
+                  "extractionMethod": "Limestone quarry extraction with crushing and mineral processing",
                   "extractionEligibility": "EXECUTABLE",
                   "commercialExtraction": true
                 },
@@ -67361,13 +67470,29 @@
                   }
                 },
                 "verification": {
-                  "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": "2026-09-27",
-                  "sourceCount": 0,
-                  "sourceAuthorities": [],
+                  "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+                  "reviewedAt": "2026-10-02",
+                  "sourceCount": 2,
+                  "sourceAuthorities": [
+                    "GOVERNMENT_REGISTER"
+                  ],
                   "dataLimitations": null
                 }
-              }
+              },
+              "webResearchEvidence": [
+                {
+                  "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/301894887",
+                  "accessed": "2026-10-02",
+                  "scope": "current_legal_entity_and_prasville_quarry_activity",
+                  "sourceType": "GOVERNMENT_REGISTER"
+                },
+                {
+                  "url": "https://www.georisques.gouv.fr/risques/installations/donnees/details/0010002647",
+                  "accessed": "2026-10-02",
+                  "scope": "current_prasville_quarry_authorization_and_operating_status",
+                  "sourceType": "GOVERNMENT_REGISTER"
+                }
+              ]
             }
           ],
           "processingFacilities": [
@@ -68393,9 +68518,9 @@
               "locationNodeKey": "ASSET:ITA:carrara_marble_quarries",
               "status": "ACTIVE_PRODUCING",
               "operationalStatus": "ACTIVE_PRODUCING",
-              "owner": "UNOBSERVED",
-              "operator": "UNOBSERVED",
-              "extractionMethod": "bench and block extraction",
+              "owner": "Multiple private quarry concessionaires",
+              "operator": "Multiple private marble quarry operators",
+              "extractionMethod": "Open-air and underground dimension-stone quarrying",
               "startYear": 1800,
               "legacyReferenceName": "Italy Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -68418,7 +68543,7 @@
                 "reserve": "UNOBSERVED",
                 "production": "UNOBSERVED",
                 "grade": "UNOBSERVED",
-                "ownership": "UNOBSERVED",
+                "ownership": "OBSERVED",
                 "operation": "OBSERVED",
                 "extractionMethod": "OBSERVED",
                 "provenance": "RESOURCE_JSON_WEB_RESEARCH_CATALOG"
@@ -68431,8 +68556,9 @@
                 "legacyReferenceName": "Italy Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
-                "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
+                "reviewedAt": "2026-10-02",
+                "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH",
+                "webReview": "Targeted authoritative repair rechecked 2026-10-02"
               },
               "extractionEligibility": "EXECUTABLE",
               "currentStatus": "ACTIVE_PRODUCING",
@@ -68466,13 +68592,13 @@
               },
               "extractionProfile": {
                 "siteType": "QUARRY",
-                "method": "bench and block extraction",
+                "method": "Open-air and underground dimension-stone quarrying",
                 "lifecycleStatus": "ACTIVE_PRODUCING",
                 "operationalStatus": "ACTIVE_PRODUCING",
-                "owner": "UNOBSERVED",
-                "operator": "UNOBSERVED",
-                "ownerEvidenceStatus": "UNOBSERVED",
-                "operatorEvidenceStatus": "UNOBSERVED"
+                "owner": "Multiple private quarry concessionaires",
+                "operator": "Multiple private marble quarry operators",
+                "ownerEvidenceStatus": "WEB_REVIEWED",
+                "operatorEvidenceStatus": "WEB_REVIEWED"
               },
               "quantitativeProfile": {
                 "reserve": {
@@ -68515,22 +68641,24 @@
                 "resource": "COMPLETE",
                 "location": "COMPLETE",
                 "operation": "COMPLETE",
-                "ownership": "UNOBSERVED",
+                "ownership": "REPORTED",
                 "quantitative": {
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
               },
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-02",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
-                "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
+                "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
+                "sourceAuthority": "Current Carrara quarry operators",
+                "currentEvidence": "Carrara is a multi-concession marble basin. Current operator pages document separate active quarry concessions, including Gualtiero Corsi and F.lli Antonioli, so the repository record is explicitly modeled as multi-operator."
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -68554,15 +68682,15 @@
                   "coordinateStatus": "ESTIMATED_SITE_POINT"
                 },
                 "ownership": {
-                  "owner": "UNOBSERVED",
-                  "operator": "UNOBSERVED",
-                  "ownerEvidenceStatus": "UNOBSERVED",
-                  "operatorEvidenceStatus": "UNOBSERVED"
+                  "owner": "Multiple private quarry concessionaires",
+                  "operator": "Multiple private marble quarry operators",
+                  "ownerEvidenceStatus": "WEB_REVIEWED",
+                  "operatorEvidenceStatus": "WEB_REVIEWED"
                 },
                 "operation": {
                   "status": "ACTIVE_PRODUCING",
                   "operationalStatus": "ACTIVE_PRODUCING",
-                  "extractionMethod": "bench and block extraction",
+                  "extractionMethod": "Open-air and underground dimension-stone quarrying",
                   "extractionEligibility": "EXECUTABLE",
                   "commercialExtraction": true
                 },
@@ -68596,13 +68724,30 @@
                   }
                 },
                 "verification": {
-                  "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": "2026-09-27",
-                  "sourceCount": 0,
-                  "sourceAuthorities": [],
+                  "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+                  "reviewedAt": "2026-10-02",
+                  "sourceCount": 2,
+                  "sourceAuthorities": [
+                    "OPERATOR"
+                  ],
                   "dataLimitations": null
                 }
-              }
+              },
+              "ownershipScope": "DISTRICT_MULTI_OPERATOR",
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.gualtierocorsi.it/en/the-company/",
+                  "accessed": "2026-10-02",
+                  "scope": "current_carrara_quarry_operator_and_concession",
+                  "sourceType": "OPERATOR"
+                },
+                {
+                  "url": "https://www.antonioli.com/en/",
+                  "accessed": "2026-10-02",
+                  "scope": "current_carrara_quarry_operator_and_own_quarry",
+                  "sourceType": "OPERATOR"
+                }
+              ]
             }
           ],
           "processingFacilities": [
@@ -70240,9 +70385,9 @@
               "locationNodeKey": "ASSET:UKR:kryvyi_rih_iron_ore_district",
               "status": "DISRUPTED",
               "operationalStatus": "DISRUPTED",
-              "owner": "UNOBSERVED",
-              "operator": "UNOBSERVED",
-              "extractionMethod": "open-pit and underground",
+              "owner": "Multiple iron-ore companies and state-linked concession interests",
+              "operator": "Multiple iron-ore mining and beneficiation operators",
+              "extractionMethod": "Open-pit and underground iron-ore mining with crushing and beneficiation",
               "startYear": 1881,
               "legacyReferenceName": "Ukraine Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -70265,7 +70410,7 @@
                 "reserve": "UNOBSERVED",
                 "production": "UNOBSERVED",
                 "grade": "UNOBSERVED",
-                "ownership": "UNOBSERVED",
+                "ownership": "OBSERVED",
                 "operation": "OBSERVED",
                 "extractionMethod": "OBSERVED",
                 "provenance": "RESOURCE_JSON_WEB_RESEARCH_CATALOG"
@@ -70278,8 +70423,9 @@
                 "legacyReferenceName": "Ukraine Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
-                "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
+                "reviewedAt": "2026-10-02",
+                "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH",
+                "webReview": "Targeted authoritative repair rechecked 2026-10-02"
               },
               "extractionEligibility": "NON_EXECUTABLE",
               "currentStatus": "DISRUPTED",
@@ -70307,13 +70453,13 @@
               },
               "extractionProfile": {
                 "siteType": "MINE",
-                "method": "open-pit and underground",
+                "method": "Open-pit and underground iron-ore mining with crushing and beneficiation",
                 "lifecycleStatus": "DISRUPTED",
                 "operationalStatus": "DISRUPTED",
-                "owner": "UNOBSERVED",
-                "operator": "UNOBSERVED",
-                "ownerEvidenceStatus": "UNOBSERVED",
-                "operatorEvidenceStatus": "UNOBSERVED"
+                "owner": "Multiple iron-ore companies and state-linked concession interests",
+                "operator": "Multiple iron-ore mining and beneficiation operators",
+                "ownerEvidenceStatus": "WEB_REVIEWED",
+                "operatorEvidenceStatus": "WEB_REVIEWED"
               },
               "quantitativeProfile": {
                 "reserve": {
@@ -70359,22 +70505,24 @@
                 "resource": "COMPLETE",
                 "location": "COMPLETE",
                 "operation": "COMPLETE",
-                "ownership": "UNOBSERVED",
+                "ownership": "REPORTED",
                 "quantitative": {
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
               },
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-02",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
-                "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
+                "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
+                "sourceAuthority": "ArcelorMittal Kryvyi Rih / Dnipropetrovsk Investment Agency",
+                "currentEvidence": "The Kryvyi Rih record is a district-level aggregate. ArcelorMittal Kryvyi Rih documents underground mining plus open-cast mining and beneficiation, while regional reporting documents wider wartime disruption and multiple facilities across the district."
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -70398,15 +70546,15 @@
                   "coordinateStatus": "ESTIMATED_SITE_POINT"
                 },
                 "ownership": {
-                  "owner": "UNOBSERVED",
-                  "operator": "UNOBSERVED",
-                  "ownerEvidenceStatus": "UNOBSERVED",
-                  "operatorEvidenceStatus": "UNOBSERVED"
+                  "owner": "Multiple iron-ore companies and state-linked concession interests",
+                  "operator": "Multiple iron-ore mining and beneficiation operators",
+                  "ownerEvidenceStatus": "WEB_REVIEWED",
+                  "operatorEvidenceStatus": "WEB_REVIEWED"
                 },
                 "operation": {
                   "status": "DISRUPTED",
                   "operationalStatus": "DISRUPTED",
-                  "extractionMethod": "open-pit and underground",
+                  "extractionMethod": "Open-pit and underground iron-ore mining with crushing and beneficiation",
                   "extractionEligibility": "NON_EXECUTABLE",
                   "commercialExtraction": true
                 },
@@ -70443,13 +70591,31 @@
                   }
                 },
                 "verification": {
-                  "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": "2026-09-27",
-                  "sourceCount": 0,
-                  "sourceAuthorities": [],
+                  "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+                  "reviewedAt": "2026-10-02",
+                  "sourceCount": 2,
+                  "sourceAuthorities": [
+                    "OPERATOR",
+                    "REGIONAL_GOVERNMENT"
+                  ],
                   "dataLimitations": null
                 }
-              }
+              },
+              "ownershipScope": "DISTRICT_MULTI_OPERATOR",
+              "webResearchEvidence": [
+                {
+                  "url": "https://ukraine.arcelormittal.com/en/production-sycle/iron-ore-mining-and-processing",
+                  "accessed": "2026-10-02",
+                  "scope": "mine_methods_beneficiation_products_and_capacity",
+                  "sourceType": "OPERATOR"
+                },
+                {
+                  "url": "https://dia.dp.gov.ua/en/investments-and-support-mechanisms-for-the-mining-and-metallurgical-complex/",
+                  "accessed": "2026-10-02",
+                  "scope": "2026_district_operational_context",
+                  "sourceType": "REGIONAL_GOVERNMENT"
+                }
+              ]
             }
           ],
           "processingFacilities": [
@@ -81893,10 +82059,10 @@
               "lng": 15.05,
               "locationNodeKey": "ASSET:SVN:trbovlje_limestone_quarry_zone",
               "status": "NO_CURRENT_CONCESSION",
-              "operationalStatus": "LIMITED",
+              "operationalStatus": "NO_CURRENT_CONCESSION",
               "owner": "UNOBSERVED",
               "operator": "UNOBSERVED",
-              "extractionMethod": "LIMESTONE_QUARRYING",
+              "extractionMethod": "Historical industrial limestone extraction; no current concession verified",
               "startYear": 1900,
               "legacyReferenceName": "Slovenia Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -81932,10 +82098,11 @@
                 "legacyReferenceName": "Slovenia Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
-                "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
+                "reviewedAt": "2026-10-02",
+                "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH",
+                "webReview": "Targeted authoritative repair rechecked 2026-10-02"
               },
-              "extractionEligibility": "CONDITIONAL",
+              "extractionEligibility": "NON_EXECUTABLE",
               "currentStatus": "LIMITED",
               "statusAuthority": "OBSERVED",
               "historicalConcessionaire": "Holcim, prodaja cementa, d.o.o. (2023); Lafarge Cement d.o.o. (historical)",
@@ -81945,6 +82112,12 @@
                   "url": "https://ms.geo-zs.si/en-gb/Prostor/Podrobnosti/126",
                   "accessed": "2026-09-26",
                   "scope": "site_identity_or_operation"
+                },
+                {
+                  "url": "https://ms.geo-zs.si/en-gb/Prostor/Podrobnosti/154",
+                  "accessed": "2026-10-02",
+                  "scope": "historical_limestone_right_and_end_of_concession",
+                  "sourceType": "GOVERNMENT_GEOLOGICAL_SURVEY"
                 }
               ],
               "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -81973,7 +82146,7 @@
               },
               "extractionProfile": {
                 "siteType": "QUARRY",
-                "method": "LIMESTONE_QUARRYING",
+                "method": "Historical industrial limestone extraction; no current concession verified",
                 "lifecycleStatus": "NO_CURRENT_CONCESSION",
                 "operationalStatus": "LIMITED",
                 "owner": "UNOBSERVED",
@@ -82063,9 +82236,9 @@
                 },
                 "operation": {
                   "status": "NO_CURRENT_CONCESSION",
-                  "operationalStatus": "LIMITED",
-                  "extractionMethod": "LIMESTONE_QUARRYING",
-                  "extractionEligibility": "CONDITIONAL",
+                  "operationalStatus": "NO_CURRENT_CONCESSION",
+                  "extractionMethod": "Historical industrial limestone extraction; no current concession verified",
+                  "extractionEligibility": "NON_EXECUTABLE",
                   "commercialExtraction": true
                 },
                 "processing": {
@@ -82102,11 +82275,18 @@
                 },
                 "verification": {
                   "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-                  "reviewedAt": null,
-                  "sourceCount": 1,
-                  "sourceAuthorities": [],
+                  "reviewedAt": "2026-10-02",
+                  "sourceCount": 2,
+                  "sourceAuthorities": [
+                    "GOVERNMENT_GEOLOGICAL_SURVEY"
+                  ],
                   "dataLimitations": null
                 }
+              },
+              "researchMetadata": {
+                "reviewedAt": "2026-10-02",
+                "sourceAuthority": "Geological Survey of Slovenia mining database",
+                "currentEvidence": "The official database records the Trbovlje-Hrastnik limestone mining right through 31 December 2018 with no concessionaire from 2019 onward. Related Retje-Plesko limestone/marl records show no concessionaire in 2026."
               }
             }
           ],
@@ -100899,11 +101079,11 @@
               "lat": -31.57,
               "lng": -55.47,
               "locationNodeKey": "ASSET:URY:minas_de_corrales_gold_mining_district",
-              "status": "LIMITED",
-              "operationalStatus": "LIMITED",
-              "owner": "UNOBSERVED",
-              "operator": "UNOBSERVED",
-              "extractionMethod": "small-scale mining",
+              "status": "RESTARTING",
+              "operationalStatus": "RESTARTING",
+              "owner": "Domo Minerales",
+              "operator": "Domo Minerales",
+              "extractionMethod": "Gold mining district with ore-processing plant rehabilitation and restart",
               "startYear": 1884,
               "legacyReferenceName": "Uruguay Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -100926,7 +101106,7 @@
                 "reserve": "UNOBSERVED",
                 "production": "UNOBSERVED",
                 "grade": "UNOBSERVED",
-                "ownership": "UNOBSERVED",
+                "ownership": "OBSERVED",
                 "operation": "OBSERVED",
                 "extractionMethod": "OBSERVED",
                 "provenance": "RESOURCE_JSON_WEB_RESEARCH_CATALOG"
@@ -100939,8 +101119,9 @@
                 "legacyReferenceName": "Uruguay Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
-                "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
+                "reviewedAt": "2026-10-02",
+                "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH",
+                "webReview": "Targeted authoritative repair rechecked 2026-10-02"
               },
               "extractionEligibility": "CONDITIONAL",
               "currentStatus": "LIMITED",
@@ -100974,13 +101155,13 @@
               },
               "extractionProfile": {
                 "siteType": "EXTRACTION_SITE",
-                "method": "small-scale mining",
+                "method": "Gold mining district with ore-processing plant rehabilitation and restart",
                 "lifecycleStatus": "LIMITED",
                 "operationalStatus": "LIMITED",
-                "owner": "UNOBSERVED",
-                "operator": "UNOBSERVED",
-                "ownerEvidenceStatus": "UNOBSERVED",
-                "operatorEvidenceStatus": "UNOBSERVED"
+                "owner": "Domo Minerales",
+                "operator": "Domo Minerales",
+                "ownerEvidenceStatus": "WEB_REVIEWED",
+                "operatorEvidenceStatus": "WEB_REVIEWED"
               },
               "quantitativeProfile": {
                 "reserve": {
@@ -101026,22 +101207,24 @@
                 "resource": "COMPLETE",
                 "location": "COMPLETE",
                 "operation": "COMPLETE",
-                "ownership": "UNOBSERVED",
+                "ownership": "REPORTED",
                 "quantitative": {
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
               },
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-02",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
-                "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
+                "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
+                "sourceAuthority": "Intendencia Departamental de Rivera",
+                "currentEvidence": "On 29 September 2026 the Rivera departmental government reported that Domo Minerales was resuming activities at the gold production plant in Minas de Corrales and rehabilitating the installations."
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -101065,15 +101248,15 @@
                   "coordinateStatus": "ESTIMATED_SITE_POINT"
                 },
                 "ownership": {
-                  "owner": "UNOBSERVED",
-                  "operator": "UNOBSERVED",
-                  "ownerEvidenceStatus": "UNOBSERVED",
-                  "operatorEvidenceStatus": "UNOBSERVED"
+                  "owner": "Domo Minerales",
+                  "operator": "Domo Minerales",
+                  "ownerEvidenceStatus": "WEB_REVIEWED",
+                  "operatorEvidenceStatus": "WEB_REVIEWED"
                 },
                 "operation": {
-                  "status": "LIMITED",
-                  "operationalStatus": "LIMITED",
-                  "extractionMethod": "small-scale mining",
+                  "status": "RESTARTING",
+                  "operationalStatus": "RESTARTING",
+                  "extractionMethod": "Gold mining district with ore-processing plant rehabilitation and restart",
                   "extractionEligibility": "CONDITIONAL",
                   "commercialExtraction": true
                 },
@@ -101110,13 +101293,23 @@
                   }
                 },
                 "verification": {
-                  "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": "2026-09-27",
-                  "sourceCount": 0,
-                  "sourceAuthorities": [],
+                  "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+                  "reviewedAt": "2026-10-02",
+                  "sourceCount": 1,
+                  "sourceAuthorities": [
+                    "GOVERNMENT"
+                  ],
                   "dataLimitations": null
                 }
-              }
+              },
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.rivera.gub.uy/portal/buenas-noticias-para-rivera-domo-minerales-retoma-actividades-en-minas-de-corrales/",
+                  "accessed": "2026-10-02",
+                  "scope": "2026_current_operator_and_reactivation_status",
+                  "sourceType": "GOVERNMENT"
+                }
+              ]
             }
           ],
           "processingFacilities": [
