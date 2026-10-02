@@ -52,6 +52,7 @@
   const UNIFIED_ASSET_SCHEMA_VERSION='1.0.0';
 
   function num(v){
+    if(v===null||v===undefined||v==='')return null;
     const x=Number(v);
     return Number.isFinite(x)?x:null;
   }
