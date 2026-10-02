@@ -606,6 +606,7 @@
     if(!c||!s)return;
     const check=sellerCanSettle(req);
     g.__OMEGA_SETTLEMENT_TRACE={requestId:req.requestId,check:clone(check)};
+    g.__OMEGA_LAST_TRADE_PROCESS_TRACE.settlementCheck=clone(check);
     if(!check.ok){command('trade','OMEGA_TRADE_CLOSE_REQUEST',c,{requestId:req.requestId,status:TYPES.FAILED,stage:'SETTLEMENT_BLOCKED',reason:check.reason});emit('OMEGA_TRADE_SETTLEMENT_FAILED',c,{requestId:req.requestId,reason:check.reason,targetCountryId:s});return;}
     const sid='SET-'+turn()+'-'+c+'-'+s+'-'+String(req.requestId);
     const debit=command('finance','OMEGA_TRADE_FINANCE_DEBIT',c,{amount:check.buyerTotal,settlementId:sid,requestId:req.requestId,currency:check.buyerCurrency});
