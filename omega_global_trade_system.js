@@ -588,7 +588,9 @@
         if(response?.status==='APPLIED'){
           const next=response.result?.request;
           g.__OMEGA_LAST_TRADE_PROCESS_TRACE.nextRequest=clone(next||null);
-          if(String(next?.status||'').toUpperCase()==='ACCEPTED')settleRequest(next);
+          const acceptedForSettlement=String(next?.status||'').toUpperCase()==='ACCEPTED';
+          g.__OMEGA_LAST_TRADE_PROCESS_TRACE.settlementAttempt=acceptedForSettlement;
+          if(acceptedForSettlement)settleRequest(next);
           if(String(next?.status||'').toUpperCase()==='REJECTED'&&d?.decision==='REJECT')handleRejection(next,d);
         }
       }
@@ -599,6 +601,8 @@
 
   function settleRequest(req){
     const c=canonical(req.countryId),s=canonical(req.targetCountryId);
+    g.__OMEGA_LAST_TRADE_PROCESS_TRACE=g.__OMEGA_LAST_TRADE_PROCESS_TRACE||{};
+    g.__OMEGA_LAST_TRADE_PROCESS_TRACE.settlementCanonical={buyer:c,seller:s};
     if(!c||!s)return;
     const check=sellerCanSettle(req);
     g.__OMEGA_SETTLEMENT_TRACE={requestId:req.requestId,check:clone(check)};
