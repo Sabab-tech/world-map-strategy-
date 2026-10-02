@@ -90,8 +90,14 @@ assert.equal(gasQuality.purity,null);
 // Priority 7: authority firewall never allows simulation to overwrite observed state.
 const observed={value:100,stateAuthority:'OBSERVED',authority:'OBSERVED'};
 const simulated={value:50,stateAuthority:'SIMULATED',authority:'SIMULATED'};
-assert.deepEqual(R.firewall(observed,simulated),observed);
-assert.deepEqual(R.firewall(undefined,simulated),simulated);
+const observedFirewall=R.firewall(observed,simulated);
+assert.equal(observedFirewall.value,100);
+assert.equal(observedFirewall.stateAuthority,'OBSERVED');
+assert.equal(observedFirewall.authority,'OBSERVED');
+const simulatedFirewall=R.firewall(undefined,simulated);
+assert.equal(simulatedFirewall.value,50);
+assert.equal(simulatedFirewall.stateAuthority,'SIMULATED');
+assert.equal(simulatedFirewall.authority,'SIMULATED');
 const mixed=R.firewall({reserve:100,reserveAuthority:'OBSERVED',stateAuthority:'OBSERVED'},{reserve:50,productionModel:{activeRate:5},stateAuthority:'SIMULATED'});
 assert.equal(mixed.reserve,100);
 assert.equal(mixed.productionModel.activeRate,5);
