@@ -11668,8 +11668,8 @@
         "countryIso3": "MCO",
         "siteType": "NO_COMMERCIAL_EXTRACTION",
         "resourceTypeId": "NOT_APPLICABLE",
-        "resourceName": null,
-        "ontologyKey": null
+        "resourceName": "NOT_APPLICABLE",
+        "ontologyKey": "NOT_APPLICABLE"
       },
       "location": {
         "countryName": "Monaco",
@@ -11697,8 +11697,8 @@
         "startYear": null
       },
       "processing": {
-        "upstreamProcess": null,
-        "midstreamProcess": null,
+        "upstreamProcess": "NOT_APPLICABLE",
+        "midstreamProcess": "NOT_APPLICABLE",
         "refinedOutputs": [],
         "downstreamSectors": []
       },
@@ -11739,8 +11739,8 @@
         "countryIso3": "SMR",
         "siteType": "NO_COMMERCIAL_EXTRACTION",
         "resourceTypeId": "NOT_APPLICABLE",
-        "resourceName": null,
-        "ontologyKey": null
+        "resourceName": "NOT_APPLICABLE",
+        "ontologyKey": "NOT_APPLICABLE"
       },
       "location": {
         "countryName": "San Marino",
@@ -11768,8 +11768,8 @@
         "startYear": null
       },
       "processing": {
-        "upstreamProcess": null,
-        "midstreamProcess": null,
+        "upstreamProcess": "NOT_APPLICABLE",
+        "midstreamProcess": "NOT_APPLICABLE",
         "refinedOutputs": [],
         "downstreamSectors": []
       },
@@ -11810,8 +11810,8 @@
         "countryIso3": "LIE",
         "siteType": "NO_COMMERCIAL_EXTRACTION",
         "resourceTypeId": "NOT_APPLICABLE",
-        "resourceName": null,
-        "ontologyKey": null
+        "resourceName": "NOT_APPLICABLE",
+        "ontologyKey": "NOT_APPLICABLE"
       },
       "location": {
         "countryName": "Liechtenstein",
@@ -11839,8 +11839,8 @@
         "startYear": null
       },
       "processing": {
-        "upstreamProcess": null,
-        "midstreamProcess": null,
+        "upstreamProcess": "NOT_APPLICABLE",
+        "midstreamProcess": "NOT_APPLICABLE",
         "refinedOutputs": [],
         "downstreamSectors": []
       },
@@ -11881,8 +11881,8 @@
         "countryIso3": "VAT",
         "siteType": "NO_COMMERCIAL_EXTRACTION",
         "resourceTypeId": "NOT_APPLICABLE",
-        "resourceName": null,
-        "ontologyKey": null
+        "resourceName": "NOT_APPLICABLE",
+        "ontologyKey": "NOT_APPLICABLE"
       },
       "location": {
         "countryName": "Vatican City",
@@ -11910,8 +11910,8 @@
         "startYear": null
       },
       "processing": {
-        "upstreamProcess": null,
-        "midstreamProcess": null,
+        "upstreamProcess": "NOT_APPLICABLE",
+        "midstreamProcess": "NOT_APPLICABLE",
         "refinedOutputs": [],
         "downstreamSectors": []
       },

@@ -11863,13 +11863,13 @@
         "coordinateStatus": "ESTIMATED_SITE_POINT"
       },
       "resourceIdentity": {
-        "resourceTypeId": null,
-        "ontologyKey": null,
-        "commodityName": null,
-        "category": null,
-        "physicalForm": null,
-        "upstreamProcess": null,
-        "midstreamProcess": null,
+        "resourceTypeId": "NOT_APPLICABLE",
+        "ontologyKey": "NOT_APPLICABLE",
+        "commodityName": "NOT_APPLICABLE",
+        "category": "NOT_APPLICABLE",
+        "physicalForm": "NOT_APPLICABLE",
+        "upstreamProcess": "NOT_APPLICABLE",
+        "midstreamProcess": "NOT_APPLICABLE",
         "refinedOutputs": [],
         "downstreamSectors": [],
         "ontologyStatus": "NOT_APPLICABLE"
@@ -11920,13 +11920,13 @@
         "coordinateStatus": "ESTIMATED_SITE_POINT"
       },
       "resourceIdentity": {
-        "resourceTypeId": null,
-        "ontologyKey": null,
-        "commodityName": null,
-        "category": null,
-        "physicalForm": null,
-        "upstreamProcess": null,
-        "midstreamProcess": null,
+        "resourceTypeId": "NOT_APPLICABLE",
+        "ontologyKey": "NOT_APPLICABLE",
+        "commodityName": "NOT_APPLICABLE",
+        "category": "NOT_APPLICABLE",
+        "physicalForm": "NOT_APPLICABLE",
+        "upstreamProcess": "NOT_APPLICABLE",
+        "midstreamProcess": "NOT_APPLICABLE",
         "refinedOutputs": [],
         "downstreamSectors": [],
         "ontologyStatus": "NOT_APPLICABLE"
@@ -11977,13 +11977,13 @@
         "coordinateStatus": "ESTIMATED_SITE_POINT"
       },
       "resourceIdentity": {
-        "resourceTypeId": null,
-        "ontologyKey": null,
-        "commodityName": null,
-        "category": null,
-        "physicalForm": null,
-        "upstreamProcess": null,
-        "midstreamProcess": null,
+        "resourceTypeId": "NOT_APPLICABLE",
+        "ontologyKey": "NOT_APPLICABLE",
+        "commodityName": "NOT_APPLICABLE",
+        "category": "NOT_APPLICABLE",
+        "physicalForm": "NOT_APPLICABLE",
+        "upstreamProcess": "NOT_APPLICABLE",
+        "midstreamProcess": "NOT_APPLICABLE",
         "refinedOutputs": [],
         "downstreamSectors": [],
         "ontologyStatus": "NOT_APPLICABLE"
@@ -12034,13 +12034,13 @@
         "coordinateStatus": "ESTIMATED_SITE_POINT"
       },
       "resourceIdentity": {
-        "resourceTypeId": null,
-        "ontologyKey": null,
-        "commodityName": null,
-        "category": null,
-        "physicalForm": null,
-        "upstreamProcess": null,
-        "midstreamProcess": null,
+        "resourceTypeId": "NOT_APPLICABLE",
+        "ontologyKey": "NOT_APPLICABLE",
+        "commodityName": "NOT_APPLICABLE",
+        "category": "NOT_APPLICABLE",
+        "physicalForm": "NOT_APPLICABLE",
+        "upstreamProcess": "NOT_APPLICABLE",
+        "midstreamProcess": "NOT_APPLICABLE",
         "refinedOutputs": [],
         "downstreamSectors": [],
         "ontologyStatus": "NOT_APPLICABLE"

@@ -92425,13 +92425,13 @@
                 "quantitativeExtractionDataAvailable": false
               },
               "resourceIdentity": {
-                "resourceTypeId": null,
-                "ontologyKey": null,
-                "commodityName": null,
-                "category": null,
-                "physicalForm": null,
-                "upstreamProcess": null,
-                "midstreamProcess": null,
+                "resourceTypeId": "NOT_APPLICABLE",
+                "ontologyKey": "NOT_APPLICABLE",
+                "commodityName": "NOT_APPLICABLE",
+                "category": "NOT_APPLICABLE",
+                "physicalForm": "NOT_APPLICABLE",
+                "upstreamProcess": "NOT_APPLICABLE",
+                "midstreamProcess": "NOT_APPLICABLE",
                 "refinedOutputs": [],
                 "downstreamSectors": [],
                 "ontologyStatus": "NOT_APPLICABLE"
@@ -92460,8 +92460,8 @@
                   "countryIso3": "MCO",
                   "siteType": "NO_COMMERCIAL_EXTRACTION",
                   "resourceTypeId": "NOT_APPLICABLE",
-                  "resourceName": null,
-                  "ontologyKey": null
+                  "resourceName": "NOT_APPLICABLE",
+                  "ontologyKey": "NOT_APPLICABLE"
                 },
                 "location": {
                   "countryName": "Monaco",
@@ -92489,8 +92489,8 @@
                   "startYear": null
                 },
                 "processing": {
-                  "upstreamProcess": null,
-                  "midstreamProcess": null,
+                  "upstreamProcess": "NOT_APPLICABLE",
+                  "midstreamProcess": "NOT_APPLICABLE",
                   "refinedOutputs": [],
                   "downstreamSectors": []
                 },
@@ -93020,13 +93020,13 @@
                 "quantitativeExtractionDataAvailable": false
               },
               "resourceIdentity": {
-                "resourceTypeId": null,
-                "ontologyKey": null,
-                "commodityName": null,
-                "category": null,
-                "physicalForm": null,
-                "upstreamProcess": null,
-                "midstreamProcess": null,
+                "resourceTypeId": "NOT_APPLICABLE",
+                "ontologyKey": "NOT_APPLICABLE",
+                "commodityName": "NOT_APPLICABLE",
+                "category": "NOT_APPLICABLE",
+                "physicalForm": "NOT_APPLICABLE",
+                "upstreamProcess": "NOT_APPLICABLE",
+                "midstreamProcess": "NOT_APPLICABLE",
                 "refinedOutputs": [],
                 "downstreamSectors": [],
                 "ontologyStatus": "NOT_APPLICABLE"
@@ -93055,8 +93055,8 @@
                   "countryIso3": "SMR",
                   "siteType": "NO_COMMERCIAL_EXTRACTION",
                   "resourceTypeId": "NOT_APPLICABLE",
-                  "resourceName": null,
-                  "ontologyKey": null
+                  "resourceName": "NOT_APPLICABLE",
+                  "ontologyKey": "NOT_APPLICABLE"
                 },
                 "location": {
                   "countryName": "San Marino",
@@ -93084,8 +93084,8 @@
                   "startYear": null
                 },
                 "processing": {
-                  "upstreamProcess": null,
-                  "midstreamProcess": null,
+                  "upstreamProcess": "NOT_APPLICABLE",
+                  "midstreamProcess": "NOT_APPLICABLE",
                   "refinedOutputs": [],
                   "downstreamSectors": []
                 },
@@ -93615,13 +93615,13 @@
                 "quantitativeExtractionDataAvailable": false
               },
               "resourceIdentity": {
-                "resourceTypeId": null,
-                "ontologyKey": null,
-                "commodityName": null,
-                "category": null,
-                "physicalForm": null,
-                "upstreamProcess": null,
-                "midstreamProcess": null,
+                "resourceTypeId": "NOT_APPLICABLE",
+                "ontologyKey": "NOT_APPLICABLE",
+                "commodityName": "NOT_APPLICABLE",
+                "category": "NOT_APPLICABLE",
+                "physicalForm": "NOT_APPLICABLE",
+                "upstreamProcess": "NOT_APPLICABLE",
+                "midstreamProcess": "NOT_APPLICABLE",
                 "refinedOutputs": [],
                 "downstreamSectors": [],
                 "ontologyStatus": "NOT_APPLICABLE"
@@ -93650,8 +93650,8 @@
                   "countryIso3": "LIE",
                   "siteType": "NO_COMMERCIAL_EXTRACTION",
                   "resourceTypeId": "NOT_APPLICABLE",
-                  "resourceName": null,
-                  "ontologyKey": null
+                  "resourceName": "NOT_APPLICABLE",
+                  "ontologyKey": "NOT_APPLICABLE"
                 },
                 "location": {
                   "countryName": "Liechtenstein",
@@ -93679,8 +93679,8 @@
                   "startYear": null
                 },
                 "processing": {
-                  "upstreamProcess": null,
-                  "midstreamProcess": null,
+                  "upstreamProcess": "NOT_APPLICABLE",
+                  "midstreamProcess": "NOT_APPLICABLE",
                   "refinedOutputs": [],
                   "downstreamSectors": []
                 },
@@ -94210,13 +94210,13 @@
                 "quantitativeExtractionDataAvailable": false
               },
               "resourceIdentity": {
-                "resourceTypeId": null,
-                "ontologyKey": null,
-                "commodityName": null,
-                "category": null,
-                "physicalForm": null,
-                "upstreamProcess": null,
-                "midstreamProcess": null,
+                "resourceTypeId": "NOT_APPLICABLE",
+                "ontologyKey": "NOT_APPLICABLE",
+                "commodityName": "NOT_APPLICABLE",
+                "category": "NOT_APPLICABLE",
+                "physicalForm": "NOT_APPLICABLE",
+                "upstreamProcess": "NOT_APPLICABLE",
+                "midstreamProcess": "NOT_APPLICABLE",
                 "refinedOutputs": [],
                 "downstreamSectors": [],
                 "ontologyStatus": "NOT_APPLICABLE"
@@ -94245,8 +94245,8 @@
                   "countryIso3": "VAT",
                   "siteType": "NO_COMMERCIAL_EXTRACTION",
                   "resourceTypeId": "NOT_APPLICABLE",
-                  "resourceName": null,
-                  "ontologyKey": null
+                  "resourceName": "NOT_APPLICABLE",
+                  "ontologyKey": "NOT_APPLICABLE"
                 },
                 "location": {
                   "countryName": "Vatican City",
@@ -94274,8 +94274,8 @@
                   "startYear": null
                 },
                 "processing": {
-                  "upstreamProcess": null,
-                  "midstreamProcess": null,
+                  "upstreamProcess": "NOT_APPLICABLE",
+                  "midstreamProcess": "NOT_APPLICABLE",
                   "refinedOutputs": [],
                   "downstreamSectors": []
                 },
