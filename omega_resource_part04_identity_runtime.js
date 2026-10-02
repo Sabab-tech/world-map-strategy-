@@ -64,12 +64,12 @@
 
   function authorityRank(v){
     const a=String(v||'UNOBSERVED').toUpperCase();
-    return a==='OBSERVED'||a==='WEB_SOURCE_BACKED'||a==='WEB_RESEARCHED'||a==='WEB_RESEARCHED_CURATED'?2:a==='SIMULATED'?1:0;
+    return ['OBSERVED','REPORTED','SOURCE_BACKED','WEB_SOURCE_BACKED','WEB_RESEARCHED','WEB_RESEARCHED_CURATED'].includes(a)?2:a==='SIMULATED'?1:0;
   }
 
   function normalizeAuthority(v){
     const a=String(v||'UNOBSERVED').toUpperCase();
-    if(a==='OBSERVED'||a==='WEB_SOURCE_BACKED'||a==='WEB_RESEARCHED'||a==='WEB_RESEARCHED_CURATED')return'OBSERVED';
+    if(a==='OBSERVED'||a==='REPORTED'||a==='SOURCE_BACKED'||a==='WEB_SOURCE_BACKED'||a==='WEB_RESEARCHED'||a==='WEB_RESEARCHED_CURATED')return'OBSERVED';
     if(a==='SIMULATED')return'SIMULATED';
     return'UNOBSERVED';
   }
