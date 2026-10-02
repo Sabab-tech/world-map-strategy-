@@ -50,7 +50,10 @@ console.log('REVIEW_DIAG', JSON.stringify(trade.reviewRequest(globalThis.Game.st
 trade.processAll();
 console.log('PROCESS_TRACE', JSON.stringify(globalThis.__OMEGA_LAST_TRADE_PROCESS_TRACE, null, 2));
 console.log('SETTLEMENT_TRACE', JSON.stringify(globalThis.__OMEGA_SETTLEMENT_TRACE, null, 2));
-const req=globalThis.Game.state.trade.BDG.importRequests[0];
+const finalTrade=globalThis.Game.state.trade.BDG;
+assert.equal(Object.prototype.hasOwnProperty.call(finalTrade,'undefined'),false,'country trade bucket must never contain an undefined child key');
+const req=finalTrade.importRequests.find(x=>String(x.requestId)==='REQ-LIVE-1');
+assert(req,'settled trade request must remain addressable by requestId');
 assert.equal(req.status,'SETTLED');
 assert.equal(globalThis.Game.state.resource.BDG.inventory.crude_oil,1000);
 assert.equal(globalThis.Game.state.resource.SAU.inventory.crude_oil,4000);
