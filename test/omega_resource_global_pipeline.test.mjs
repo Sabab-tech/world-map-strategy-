@@ -128,7 +128,7 @@ test('global resource pipeline runs every RESOURCE_JSON mine and keeps each resu
   assert.ok(siteRefs.every(x=>x.resourceAsset&&x.resourceAsset.schemaVersion==='1.0.0'));
   assert.ok(siteRefs.every(x=>Object.prototype.hasOwnProperty.call(x.resourceAsset,'siteId')));
   assert.ok(siteRefs.every(x=>x.resourceAsset.assetId===x.siteReferenceKey));
-  assert.ok(siteRefs.every(x=>x.resourceAsset.resourceType===null));
+  assert.ok(siteRefs.every(x=>x.resourceAsset.resourceType===x.resourceTypeId));
   const numberOrNull=v=>{
     if(v===null||v===undefined||v==='') return null;
     const n=Number(v); return Number.isFinite(n)?n:null;
