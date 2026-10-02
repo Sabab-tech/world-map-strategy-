@@ -110,7 +110,7 @@ function parseReserve(raw,resourceId){
  if(!x)return missing(text);
  const value=convertReserve(x.value,x.unitFamily,spec.family);
  if(value===null)return missing(text);
- return{status:'OBSERVED',value,unit:spec.unit,unitFamily:spec.family,sourceUnit:x.sourceUnit,sourceUnitFamily:x.unitFamily,raw:x.raw,resourceId:r};
+ return{status:'OBSERVED',value,unit:spec.unit,unitFamily:x.unitFamily,sourceUnit:x.sourceUnit,sourceUnitFamily:x.unitFamily,resourceFamily:spec.family,raw:x.raw,resourceId:r};
 }
 function missing(raw){return{status:'UNOBSERVED',value:null,unitFamily:null,sourceUnit:null,raw:String(raw??'')}}
 function commodityText(raw,resourceId){
