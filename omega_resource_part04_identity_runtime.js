@@ -98,26 +98,29 @@
     const prod=raw.productionModel||raw.siteModel?.commodityStreams?.find?.(x=>String(x?.resourceId||'')===String(resourceTypeId||''))?.production||ref.production||qp.production||{};
     const q=raw.qualityState||raw.quality||ref.quality||qp.grade||{};
     const reserveAuthority=normalizeAuthority(
-      raw.reserveAuthority||rs?.provenance?.quantityAuthority||raw.dataStatus?.reserve||raw.dataAuthority?.reserve||ref?.dataStatus?.reserve||ref?.dataAuthority?.reserve
+      raw.reserveAuthority||rs?.provenance?.quantityAuthority||rs?.status||raw.dataStatus?.reserve||raw.dataAuthority?.reserve||ref?.dataStatus?.reserve||ref?.dataAuthority?.reserve
     );
     const productionAuthority=normalizeAuthority(
-      raw.productionAuthority||cap?.authority||prod?.authority||raw.dataStatus?.production||raw.dataAuthority?.production||ref?.dataStatus?.production||ref?.dataAuthority?.production
+      raw.productionAuthority||cap?.authority||prod?.authority||prod?.status||raw.dataStatus?.production||raw.dataAuthority?.production||ref?.dataStatus?.production||ref?.dataAuthority?.production
     );
     const qualityAuthority=normalizeAuthority(
       raw.qualityAuthority||q?.qualityAuthority||
-      q?.gradeStatus||q?.concentrationStatus||q?.purityStatus||
+      q?.gradeStatus||q?.concentrationStatus||q?.purityStatus||q?.status||
       raw.dataStatus?.grade||raw.dataStatus?.quality||raw.dataAuthority?.grade||raw.dataAuthority?.quality||
       ref?.dataStatus?.grade||ref?.dataStatus?.quality||ref?.dataAuthority?.grade||ref?.dataAuthority?.quality
     );
 
-    const reserveQuantity=num(rs?.geologicalQuantity??rs?.quantity??raw.geologicalQuantity??raw.reserveQuantity);
+    const hasProfileReserve=Object.prototype.hasOwnProperty.call(qp?.reserve||{},'quantity');
+    const reserveQuantity=num(hasProfileReserve ? qp.reserve.quantity : rs?.geologicalQuantity??rs?.quantity??raw.geologicalQuantity??raw.reserveQuantity);
     const recoverableQuantity=num(rs?.recoverableQuantity??raw.recoverableQuantity);
     const residualQuantity=num(rs?.residualQuantity??raw.residualQuantity);
-    const unit=textOrNull(rs?.unit||raw.unit||cap?.unit);
-    const productionRate=num(raw.productionRate??cap?.activeRate??cap?.dailyRate??cap?.nominalRate??prod?.activeRate??prod?.observedRate??prod?.rate);
+    const unit=textOrNull(qp?.reserve?.unit||rs?.unit||raw.unit||cap?.unit||qp?.production?.unit);
+    const hasProfileProductionRate=Object.prototype.hasOwnProperty.call(qp?.production||{},'rate');
+    const productionRate=num(hasProfileProductionRate ? qp.production.rate : raw.productionRate??cap?.activeRate??cap?.dailyRate??cap?.nominalRate??prod?.activeRate??prod?.observedRate??prod?.rate);
     const currentProduction=num(raw.currentProduction??raw.currentProductionRate??raw.lastOutputQuantity);
     const recoveryRate=num(raw.recoveryRate??cap?.recovery??prod?.recovery);
-    const grade=num(raw.gradePercent??q?.gradePercent??q?.normalized?.gradePercent??q?.value);
+    const hasProfileGrade=Object.prototype.hasOwnProperty.call(qp?.grade||{},'value');
+    const grade=num(hasProfileGrade ? qp.grade.value : raw.gradePercent??q?.gradePercent??q?.normalized?.gradePercent??q?.value);
     const purity=num(raw.purity??q?.purity??q?.normalized?.purityFraction);
     const concentration=num(raw.concentrationPercent??q?.concentrationPercent??q?.normalized?.concentrationPercent);
 
