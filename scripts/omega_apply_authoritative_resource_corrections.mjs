@@ -693,6 +693,13 @@ function applyFix(site, fix) {
     site.quantitativeProfile = site.quantitativeProfile || {};
     site.quantitativeProfile.grade = { ...fix.quantitativeGrade };
   }
+  if (fix.ownershipScope !== undefined) site.ownershipScope = fix.ownershipScope;
+  if (fix.process && typeof fix.process === 'object') {
+    site.resourceIdentity = {
+      ...(site.resourceIdentity || {}),
+      ...fix.process
+    };
+  }
   if (fix.sources?.length) {
     const existing = Array.isArray(site.webResearchEvidence) ? site.webResearchEvidence : [];
     for (const item of fix.sources) if (!existing.some((x) => x?.url === item.url)) existing.push(item);
