@@ -640,14 +640,15 @@
       emit('OMEGA_TRADE_SETTLEMENT_FAILED',c,{requestId:req.requestId,settlementId:sid,reason:'MULTI_LEDGER_COMMIT_FAILED',compensated:true});
       return;
     }
-    const closeResult=command('trade','OMEGA_TRADE_CLOSE_REQUEST',c,{requestId:req.requestId,status:TYPES.SETTLED,stage:'SETTLED',settlementId:sid});
-    g.__OMEGA_SETTLEMENT_TRACE.close=clone(closeResult);
     command('trade','OMEGA_TRADE_RECORD_SELLER_SETTLEMENT',s,{settlementId:sid,requestId:req.requestId,buyerCountryId:c,resourceId:req.resourceId,quantity:req.quantity,unitPrice:req.unitPrice,totalValue:check.sellerTotal,buyerValue:check.buyerTotal,fx:check.fx,buyerCurrency:check.buyerCurrency,sellerCurrency:check.sellerCurrency,status:'SETTLED',turn:turn()});
     const reservationId=req.reservationId;
     if(reservationId)command('cabinet','OMEGA_AUTO_RELEASE_RESERVATION',c,{reservationId,correlationId:req.requestId});
     emit('OMEGA_TRADE_SHIPMENT_CREATED',c,{settlementId:sid,requestId:req.requestId,targetCountryId:s,resourceId:req.resourceId,quantity:req.quantity,sourceCountryId:s,destinationCountryId:c,transferType:'TRADE'});
     emit('OMEGA_TRADE_SETTLEMENT_COMPLETED',c,{settlementId:sid,requestId:req.requestId,targetCountryId:s,resourceId:req.resourceId,quantity:req.quantity,totalValue:check.sellerTotal,buyerValue:check.buyerTotal,fx:check.fx,buyerCurrency:check.buyerCurrency,sellerCurrency:check.sellerCurrency,sourceCountryId:s,destinationCountryId:c,transferType:'TRADE'});
     try{memory()?.record?.(c,{type:'RELATIONAL',sourceEvent:'OMEGA_TRADE_SETTLEMENT_COMPLETED',targetCountryId:s,action:'IMPORT',outcome:{status:'SETTLED'},importance:.9,confidence:.9,evidence:{settlementId:sid}});}catch(_){}
+    const closeResult=command('trade','OMEGA_TRADE_CLOSE_REQUEST',c,{requestId:req.requestId,status:TYPES.SETTLED,stage:'SETTLED',settlementId:sid});
+    g.__OMEGA_SETTLEMENT_TRACE.close=clone(closeResult);
+    if(closeResult?.status!=='APPLIED')throw new Error('TRADE_CLOSE_COMMIT_FAILED');
   }
 
   function handleRejection(req,decision){
