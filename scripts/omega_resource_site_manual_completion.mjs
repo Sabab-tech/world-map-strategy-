@@ -2,6 +2,7 @@
 import fs from 'node:fs';
 
 const REVIEW_DATE='2026-10-02';
+const SEPIOLITE_RESOURCE_TYPE={id:'sepiolite',name:'Sepiolite',category:'industrial_minerals',unit:'metric_tons',strategicImportance:'medium',description:'Hydrated magnesium silicate industrial mineral used for absorbents and specialty mineral applications.'};
 const load=p=>JSON.parse(fs.readFileSync(p,'utf8'));
 const a=load('resources.json'), b=load('resources_2.json'), ontology=load('resource_ontology.json');
 const profiles={...(a.GSRSK_Master_CountryProfiles_v14?.countryProfiles||{}),...(b.GSRSK_Master_CountryProfiles_v14?.countryProfiles||{})};
