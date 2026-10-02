@@ -4153,10 +4153,10 @@
               "lat": 27.03,
               "lng": 90.18,
               "locationNodeKey": "ASSET:BTN:tsirang_limestone_quarries",
-              "status": "ACTIVE_PRODUCING",
-              "operationalStatus": "ACTIVE_PRODUCING",
-              "owner": "UNOBSERVED",
-              "operator": "UNOBSERVED",
+              "status": "HISTORICAL_INACTIVE",
+              "operationalStatus": "HISTORICAL_INACTIVE",
+              "owner": "Historical operators including Mr. Pasang Tamang and Wakleytar Taksha Mining Private Limited",
+              "operator": "Historical operators including Mr. Pasang Tamang and Wakleytar Taksha Mining Private Limited",
               "extractionMethod": "SURFACE_MINING_QUARRYING",
               "startYear": 1990,
               "legacyReferenceName": "Bhutan Primary Mining and Extraction Sites",
@@ -4180,7 +4180,7 @@
                 "reserve": "UNOBSERVED",
                 "production": "UNOBSERVED",
                 "grade": "UNOBSERVED",
-                "ownership": "UNOBSERVED",
+                "ownership": "OBSERVED",
                 "operation": "OBSERVED",
                 "extractionMethod": "OBSERVED",
                 "provenance": "RESOURCE_JSON_WEB_RESEARCH_CATALOG"
@@ -4193,10 +4193,11 @@
                 "legacyReferenceName": "Bhutan Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
-                "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
+                "reviewedAt": "2026-10-02",
+                "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH",
+                "webReview": "Targeted authoritative repair rechecked 2026-10-02"
               },
-              "extractionEligibility": "EXECUTABLE",
+              "extractionEligibility": "NON_EXECUTABLE",
               "currentStatus": "ACTIVE_PRODUCING",
               "statusAuthority": "OBSERVED",
               "operatorEvidenceStatus": "UNOBSERVED",
@@ -4206,6 +4207,12 @@
                   "url": "https://data.gov.bt/department-of-geology-and-mines/location-of-mines-in-the-country",
                   "accessed": "2026-09-26",
                   "scope": "site_identity_or_operation"
+                },
+                {
+                  "url": "https://www.bhutanaudit.gov.bt/wp-content/uploads/2020/08/Performance_Audit_Report_on_Mining_and_Quarry_2014.pdf",
+                  "accessed": "2026-10-02",
+                  "scope": "historical_tsirang_quarry_operators_permit_dates_and_quarry_identity",
+                  "sourceType": "GOVERNMENT_AUDIT"
                 }
               ],
               "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -4236,10 +4243,10 @@
                 "method": "SURFACE_MINING_QUARRYING",
                 "lifecycleStatus": "ACTIVE_PRODUCING",
                 "operationalStatus": "ACTIVE_PRODUCING",
-                "owner": "UNOBSERVED",
-                "operator": "UNOBSERVED",
-                "ownerEvidenceStatus": "UNOBSERVED",
-                "operatorEvidenceStatus": "UNOBSERVED"
+                "owner": "Historical operators including Mr. Pasang Tamang and Wakleytar Taksha Mining Private Limited",
+                "operator": "Historical operators including Mr. Pasang Tamang and Wakleytar Taksha Mining Private Limited",
+                "ownerEvidenceStatus": "WEB_REVIEWED",
+                "operatorEvidenceStatus": "WEB_REVIEWED"
               },
               "quantitativeProfile": {
                 "reserve": {
@@ -4285,7 +4292,7 @@
                 "resource": "COMPLETE",
                 "location": "COMPLETE",
                 "operation": "COMPLETE",
-                "ownership": "UNOBSERVED",
+                "ownership": "REPORTED",
                 "quantitative": {
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
@@ -4316,16 +4323,16 @@
                   "coordinateStatus": "ESTIMATED_SITE_POINT"
                 },
                 "ownership": {
-                  "owner": "UNOBSERVED",
-                  "operator": "UNOBSERVED",
-                  "ownerEvidenceStatus": "UNOBSERVED",
-                  "operatorEvidenceStatus": "UNOBSERVED"
+                  "owner": "Historical operators including Mr. Pasang Tamang and Wakleytar Taksha Mining Private Limited",
+                  "operator": "Historical operators including Mr. Pasang Tamang and Wakleytar Taksha Mining Private Limited",
+                  "ownerEvidenceStatus": "WEB_REVIEWED",
+                  "operatorEvidenceStatus": "WEB_REVIEWED"
                 },
                 "operation": {
-                  "status": "ACTIVE_PRODUCING",
-                  "operationalStatus": "ACTIVE_PRODUCING",
+                  "status": "HISTORICAL_INACTIVE",
+                  "operationalStatus": "HISTORICAL_INACTIVE",
                   "extractionMethod": "SURFACE_MINING_QUARRYING",
-                  "extractionEligibility": "EXECUTABLE",
+                  "extractionEligibility": "NON_EXECUTABLE",
                   "commercialExtraction": true
                 },
                 "processing": {
@@ -4362,11 +4369,19 @@
                 },
                 "verification": {
                   "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-                  "reviewedAt": null,
-                  "sourceCount": 1,
-                  "sourceAuthorities": [],
+                  "reviewedAt": "2026-10-02",
+                  "sourceCount": 2,
+                  "sourceAuthorities": [
+                    "GOVERNMENT_AUDIT"
+                  ],
                   "dataLimitations": null
                 }
+              },
+              "ownershipScope": "HISTORICAL_MULTI_OPERATOR",
+              "researchMetadata": {
+                "reviewedAt": "2026-10-02",
+                "sourceAuthority": "Royal Audit Authority of Bhutan",
+                "currentEvidence": "Bhutan audit records identify Kuchikhola Stone Quarry in Tsirang under Mr. Pasang Tamang with a permit ending in 2014 and Wakletar Stone Quarry under Wakleytar Taksha Mining Private Limited with a permit ending in 2019. The repository record must not be treated as an unqualified active mine without newer site-specific evidence."
               }
             }
           ],
@@ -19387,11 +19402,11 @@
               "lat": 15.1,
               "lng": -23.55,
               "locationNodeKey": "ASSET:CPV:santiago_pozzolana_quarry_zone",
-              "status": "LIMITED",
-              "operationalStatus": "LIMITED",
-              "owner": "UNOBSERVED",
-              "operator": "UNOBSERVED",
-              "extractionMethod": "surface quarrying",
+              "status": "DEVELOPMENT",
+              "operationalStatus": "DEVELOPMENT",
+              "owner": "CIMPOR – Cabo Verde, SA (project proponent)",
+              "operator": "CIMPOR – Cabo Verde, SA (project proponent; operator not separately verified)",
+              "extractionMethod": "Surface extraction of volcanic pozzolana for construction-material use",
               "startYear": 1990,
               "legacyReferenceName": "Cabo Verde Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -19414,7 +19429,7 @@
                 "reserve": "UNOBSERVED",
                 "production": "UNOBSERVED",
                 "grade": "UNOBSERVED",
-                "ownership": "UNOBSERVED",
+                "ownership": "OBSERVED",
                 "operation": "OBSERVED",
                 "extractionMethod": "OBSERVED",
                 "provenance": "RESOURCE_JSON_WEB_RESEARCH_CATALOG"
@@ -19427,10 +19442,11 @@
                 "legacyReferenceName": "Cabo Verde Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
-                "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
+                "reviewedAt": "2026-10-02",
+                "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH",
+                "webReview": "Targeted authoritative repair rechecked 2026-10-02"
               },
-              "extractionEligibility": "CONDITIONAL",
+              "extractionEligibility": "NON_EXECUTABLE",
               "currentStatus": "LIMITED",
               "statusAuthority": "OBSERVED",
               "commercialExtraction": true,
@@ -19462,13 +19478,13 @@
               },
               "extractionProfile": {
                 "siteType": "QUARRY",
-                "method": "surface quarrying",
+                "method": "Surface extraction of volcanic pozzolana for construction-material use",
                 "lifecycleStatus": "LIMITED",
                 "operationalStatus": "LIMITED",
-                "owner": "UNOBSERVED",
-                "operator": "UNOBSERVED",
-                "ownerEvidenceStatus": "UNOBSERVED",
-                "operatorEvidenceStatus": "UNOBSERVED"
+                "owner": "CIMPOR – Cabo Verde, SA (project proponent)",
+                "operator": "CIMPOR – Cabo Verde, SA (project proponent; operator not separately verified)",
+                "ownerEvidenceStatus": "WEB_REVIEWED",
+                "operatorEvidenceStatus": "WEB_REVIEWED"
               },
               "quantitativeProfile": {
                 "reserve": {
@@ -19493,18 +19509,19 @@
               "resourceIdentity": {
                 "resourceTypeId": "construction_aggregate",
                 "ontologyKey": "CONSTRUCTION_AGGREGATE",
-                "commodityName": "Construction Aggregates, Sand & Gravel",
-                "category": "CONSTRUCTION_MATERIAL",
-                "physicalForm": "CRUSHED_STONE_SAND_GRAVEL",
-                "upstreamProcess": "Quarrying, Dredging, Borrow-Pit Extraction",
-                "midstreamProcess": "Crushing, Screening, Washing, Grading",
+                "commodityName": "Pozzolana",
+                "category": "VOLCANIC_POZZOLANIC_MATERIAL",
+                "physicalForm": "volcanic ash/pozzolanic material",
+                "upstreamProcess": "Surface extraction of pozzolana",
+                "midstreamProcess": "Screening/crushing and preparation for cementitious use",
                 "refinedOutputs": [
                   "GRADED_AGGREGATE",
                   "READY_MIX_CONCRETE",
                   "ASPHALT_FEED"
                 ],
                 "downstreamSectors": [
-                  "ROAD_BASE"
+                  "Cement",
+                  "Construction materials"
                 ],
                 "ontologyStatus": "RESOLVED_FROM_RESOURCE_ONTOLOGY"
               },
@@ -19513,22 +19530,25 @@
                 "resource": "COMPLETE",
                 "location": "COMPLETE",
                 "operation": "COMPLETE",
-                "ownership": "UNOBSERVED",
+                "ownership": "REPORTED",
                 "quantitative": {
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
               },
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-02",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
-                "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
+                "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
+                "sourceAuthority": "Ministry of Agriculture and Environment, Cabo Verde",
+                "currentEvidence": "The Cabo Verde environmental authority published the EIA for the Monte Vermelho pozzolana extraction project in Praia, Santiago, naming CIMPOR – Cabo Verde, SA as the project proponent. This is development/EIA-stage evidence, not verified current commercial extraction.",
+                "resourceIdentityNote": "The ontology has no dedicated pozzolana resource type, so resourceTypeId remains construction_aggregate while materialSubtype is explicitly recorded as pozzolana."
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -19538,7 +19558,7 @@
                   "countryIso3": "CPV",
                   "siteType": "QUARRY",
                   "resourceTypeId": "construction_aggregate",
-                  "resourceName": "Construction Aggregates, Sand & Gravel",
+                  "resourceName": "Pozzolana",
                   "ontologyKey": "CONSTRUCTION_AGGREGATE"
                 },
                 "location": {
@@ -19552,28 +19572,29 @@
                   "coordinateStatus": "ESTIMATED_SITE_POINT"
                 },
                 "ownership": {
-                  "owner": "UNOBSERVED",
-                  "operator": "UNOBSERVED",
-                  "ownerEvidenceStatus": "UNOBSERVED",
-                  "operatorEvidenceStatus": "UNOBSERVED"
+                  "owner": "CIMPOR – Cabo Verde, SA (project proponent)",
+                  "operator": "CIMPOR – Cabo Verde, SA (project proponent; operator not separately verified)",
+                  "ownerEvidenceStatus": "WEB_REVIEWED",
+                  "operatorEvidenceStatus": "WEB_REVIEWED"
                 },
                 "operation": {
-                  "status": "LIMITED",
-                  "operationalStatus": "LIMITED",
-                  "extractionMethod": "surface quarrying",
-                  "extractionEligibility": "CONDITIONAL",
+                  "status": "DEVELOPMENT",
+                  "operationalStatus": "DEVELOPMENT",
+                  "extractionMethod": "Surface extraction of volcanic pozzolana for construction-material use",
+                  "extractionEligibility": "NON_EXECUTABLE",
                   "commercialExtraction": true
                 },
                 "processing": {
-                  "upstreamProcess": "Quarrying, Dredging, Borrow-Pit Extraction",
-                  "midstreamProcess": "Crushing, Screening, Washing, Grading",
+                  "upstreamProcess": "Surface extraction of pozzolana",
+                  "midstreamProcess": "Screening/crushing and preparation for cementitious use",
                   "refinedOutputs": [
                     "GRADED_AGGREGATE",
                     "READY_MIX_CONCRETE",
                     "ASPHALT_FEED"
                   ],
                   "downstreamSectors": [
-                    "ROAD_BASE"
+                    "Cement",
+                    "Construction materials"
                   ]
                 },
                 "quantitative": {
@@ -19596,13 +19617,23 @@
                   }
                 },
                 "verification": {
-                  "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": "2026-09-27",
-                  "sourceCount": 0,
-                  "sourceAuthorities": [],
+                  "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+                  "reviewedAt": "2026-10-02",
+                  "sourceCount": 1,
+                  "sourceAuthorities": [
+                    "GOVERNMENT"
+                  ],
                   "dataLimitations": null
                 }
-              }
+              },
+              "webResearchEvidence": [
+                {
+                  "url": "https://maa.gov.cv/index.php/min-a-a/83-ambiente/avaliacao-do-impacte-ambiental/estudos-da-eia/324-estudo-de-impacte-ambiental-do-projeto-extracao-de-pozolanas-do-monte-vermelho",
+                  "accessed": "2026-10-02",
+                  "scope": "santiago_pozzolana_project_identity_proponent_and_development_stage",
+                  "sourceType": "GOVERNMENT"
+                }
+              ]
             }
           ],
           "processingFacilities": [
@@ -30102,11 +30133,11 @@
               "lat": 2.95,
               "lng": 44.45,
               "locationNodeKey": "ASSET:SOM:el_buur_gold_mining_area",
-              "status": "ARTISANAL_AND_LIMITED",
-              "operationalStatus": "ARTISANAL_AND_LIMITED",
+              "status": "RESOURCE_IDENTITY_UNVERIFIED",
+              "operationalStatus": "RESOURCE_IDENTITY_UNVERIFIED",
               "owner": "UNOBSERVED",
               "operator": "UNOBSERVED",
-              "extractionMethod": "small-scale surface mining",
+              "extractionMethod": "Unverified small-scale mineral extraction; gold-specific commercial operation not established",
               "startYear": 2000,
               "legacyReferenceName": "Somalia Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -30142,10 +30173,11 @@
                 "legacyReferenceName": "Somalia Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
-                "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
+                "reviewedAt": "2026-10-02",
+                "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH",
+                "webReview": "Targeted authoritative repair rechecked 2026-10-02"
               },
-              "extractionEligibility": "CONDITIONAL",
+              "extractionEligibility": "NON_EXECUTABLE",
               "currentStatus": "ARTISANAL_AND_LIMITED",
               "statusAuthority": "OBSERVED",
               "commercialExtraction": true,
@@ -30177,7 +30209,7 @@
               },
               "extractionProfile": {
                 "siteType": "EXTRACTION_SITE",
-                "method": "small-scale surface mining",
+                "method": "Unverified small-scale mineral extraction; gold-specific commercial operation not established",
                 "lifecycleStatus": "ARTISANAL_AND_LIMITED",
                 "operationalStatus": "ARTISANAL_AND_LIMITED",
                 "owner": "UNOBSERVED",
@@ -30236,15 +30268,18 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
               },
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-02",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
-                "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
+                "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
+                "sourceAuthority": "USGS-derived mineral locality record / public mineralogical references",
+                "currentEvidence": "Public locality evidence identifies El Bur/El Buur in Galguduud as a sepiolite deposit and a traditional quarrying center, but does not establish a site-specific commercial gold mine or gold operator. The repository gold identity is therefore flagged as unverified and extraction is disabled.",
+                "resourceIdentityConflict": "repository resourceTypeId=gold conflicts with available site-level evidence supporting sepiolite; the ontology has no dedicated sepiolite resource type, so gold remains only an UNVERIFIED identity pending authoritative ontology expansion or a site-specific gold source."
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -30274,10 +30309,10 @@
                   "operatorEvidenceStatus": "UNOBSERVED"
                 },
                 "operation": {
-                  "status": "ARTISANAL_AND_LIMITED",
-                  "operationalStatus": "ARTISANAL_AND_LIMITED",
-                  "extractionMethod": "small-scale surface mining",
-                  "extractionEligibility": "CONDITIONAL",
+                  "status": "RESOURCE_IDENTITY_UNVERIFIED",
+                  "operationalStatus": "RESOURCE_IDENTITY_UNVERIFIED",
+                  "extractionMethod": "Unverified small-scale mineral extraction; gold-specific commercial operation not established",
+                  "extractionEligibility": "NON_EXECUTABLE",
                   "commercialExtraction": true
                 },
                 "processing": {
@@ -30313,13 +30348,30 @@
                   }
                 },
                 "verification": {
-                  "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": "2026-09-27",
-                  "sourceCount": 0,
-                  "sourceAuthorities": [],
+                  "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+                  "reviewedAt": "2026-10-02",
+                  "sourceCount": 2,
+                  "sourceAuthorities": [
+                    "MINERAL_LOCALITY_DATABASE",
+                    "SECONDARY_REFERENCE"
+                  ],
                   "dataLimitations": null
                 }
-              }
+              },
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.mindat.org/locentry-900101.html",
+                  "accessed": "2026-10-02",
+                  "scope": "el_buur_sepiolite_deposit_identity_and_location",
+                  "sourceType": "MINERAL_LOCALITY_DATABASE"
+                },
+                {
+                  "url": "https://en.wikipedia.org/wiki/El_Buur",
+                  "accessed": "2026-10-02",
+                  "scope": "el_buur_quarrying_and_sepiolite_context",
+                  "sourceType": "SECONDARY_REFERENCE"
+                }
+              ]
             }
           ],
           "processingFacilities": [
@@ -33872,9 +33924,9 @@
               "locationNodeKey": "ASSET:MUS:basalt_aggregate_quarry_zone",
               "status": "ACTIVE_PRODUCING",
               "operationalStatus": "ACTIVE_PRODUCING",
-              "owner": "UNOBSERVED",
-              "operator": "UNOBSERVED",
-              "extractionMethod": "surface basalt quarrying",
+              "owner": "Multiple basalt quarry interests including United Basalt Products Limited",
+              "operator": "United Basalt Products Limited (major basalt-aggregate operator)",
+              "extractionMethod": "Surface basalt extraction, crushing and aggregate production",
               "startYear": 1970,
               "legacyReferenceName": "Mauritius Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -33897,7 +33949,7 @@
                 "reserve": "UNOBSERVED",
                 "production": "UNOBSERVED",
                 "grade": "UNOBSERVED",
-                "ownership": "UNOBSERVED",
+                "ownership": "OBSERVED",
                 "operation": "OBSERVED",
                 "extractionMethod": "OBSERVED",
                 "provenance": "RESOURCE_JSON_WEB_RESEARCH_CATALOG"
@@ -33910,8 +33962,9 @@
                 "legacyReferenceName": "Mauritius Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
-                "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
+                "reviewedAt": "2026-10-02",
+                "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH",
+                "webReview": "Targeted authoritative repair rechecked 2026-10-02"
               },
               "extractionEligibility": "EXECUTABLE",
               "currentStatus": "ACTIVE_PRODUCING",
@@ -33931,6 +33984,18 @@
                   "url": "https://competitioncommission.mu/wp-content/uploads/2019/08/MS005-Report.pdf",
                   "accessed": "2026-09-26",
                   "scope": "site_identity_or_operation"
+                },
+                {
+                  "url": "https://integratedreport.ubp.mu/2025/",
+                  "accessed": "2026-10-02",
+                  "scope": "current_basalt_extraction_crushing_and_aggregate_supply",
+                  "sourceType": "OPERATOR"
+                },
+                {
+                  "url": "https://www.stockexchangeofmauritius.com/company-snapshot/official-market/the-united-basalt-products-limited?market=Official",
+                  "accessed": "2026-10-02",
+                  "scope": "current_company_identity_and_mauritius_operations",
+                  "sourceType": "REGULATORY_MARKET"
                 }
               ],
               "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -33958,13 +34023,13 @@
               },
               "extractionProfile": {
                 "siteType": "QUARRY",
-                "method": "surface basalt quarrying",
+                "method": "Surface basalt extraction, crushing and aggregate production",
                 "lifecycleStatus": "ACTIVE_PRODUCING",
                 "operationalStatus": "ACTIVE_PRODUCING",
-                "owner": "UNOBSERVED",
-                "operator": "UNOBSERVED",
-                "ownerEvidenceStatus": "UNOBSERVED",
-                "operatorEvidenceStatus": "UNOBSERVED"
+                "owner": "Multiple basalt quarry interests including United Basalt Products Limited",
+                "operator": "United Basalt Products Limited (major basalt-aggregate operator)",
+                "ownerEvidenceStatus": "WEB_REVIEWED",
+                "operatorEvidenceStatus": "WEB_REVIEWED"
               },
               "quantitativeProfile": {
                 "reserve": {
@@ -34010,7 +34075,7 @@
                 "resource": "COMPLETE",
                 "location": "COMPLETE",
                 "operation": "COMPLETE",
-                "ownership": "UNOBSERVED",
+                "ownership": "REPORTED",
                 "quantitative": {
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
@@ -34041,15 +34106,15 @@
                   "coordinateStatus": "ESTIMATED_SITE_POINT"
                 },
                 "ownership": {
-                  "owner": "UNOBSERVED",
-                  "operator": "UNOBSERVED",
-                  "ownerEvidenceStatus": "UNOBSERVED",
-                  "operatorEvidenceStatus": "UNOBSERVED"
+                  "owner": "Multiple basalt quarry interests including United Basalt Products Limited",
+                  "operator": "United Basalt Products Limited (major basalt-aggregate operator)",
+                  "ownerEvidenceStatus": "WEB_REVIEWED",
+                  "operatorEvidenceStatus": "WEB_REVIEWED"
                 },
                 "operation": {
                   "status": "ACTIVE_PRODUCING",
                   "operationalStatus": "ACTIVE_PRODUCING",
-                  "extractionMethod": "surface basalt quarrying",
+                  "extractionMethod": "Surface basalt extraction, crushing and aggregate production",
                   "extractionEligibility": "EXECUTABLE",
                   "commercialExtraction": true
                 },
@@ -34087,11 +34152,20 @@
                 },
                 "verification": {
                   "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-                  "reviewedAt": null,
-                  "sourceCount": 2,
-                  "sourceAuthorities": [],
+                  "reviewedAt": "2026-10-02",
+                  "sourceCount": 4,
+                  "sourceAuthorities": [
+                    "OPERATOR",
+                    "REGULATORY_MARKET"
+                  ],
                   "dataLimitations": null
                 }
+              },
+              "ownershipScope": "AREA_REPRESENTATIVE_OPERATOR",
+              "researchMetadata": {
+                "reviewedAt": "2026-10-02",
+                "sourceAuthority": "United Basalt Products Limited / Stock Exchange of Mauritius",
+                "currentEvidence": "UBP reports current basaltic-rock extraction and crushing for aggregate production and describes itself as the main supplier of aggregates in its Mauritian building-materials value chain. The repository record is an area-level basalt zone rather than a single concession."
               }
             }
           ],
@@ -53484,11 +53558,11 @@
               "lat": 24.05,
               "lng": 121.6,
               "locationNodeKey": "ASSET:TWN:hualien_marble_quarry_zone",
-              "status": "ACTIVE_PRODUCING",
-              "operationalStatus": "ACTIVE_PRODUCING",
-              "owner": "UNOBSERVED",
-              "operator": "UNOBSERVED",
-              "extractionMethod": "surface quarrying",
+              "status": "LIMITED",
+              "operationalStatus": "LIMITED",
+              "owner": "Multiple Hualien quarry interests including Asia Cement Corporation",
+              "operator": "Multiple Hualien quarry operators including Asia Cement Corporation",
+              "extractionMethod": "Surface marble/stone quarrying with cutting and stone processing",
               "startYear": 1960,
               "legacyReferenceName": "Taiwan Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -53511,7 +53585,7 @@
                 "reserve": "UNOBSERVED",
                 "production": "UNOBSERVED",
                 "grade": "UNOBSERVED",
-                "ownership": "UNOBSERVED",
+                "ownership": "OBSERVED",
                 "operation": "OBSERVED",
                 "extractionMethod": "OBSERVED",
                 "provenance": "RESOURCE_JSON_WEB_RESEARCH_CATALOG"
@@ -53524,10 +53598,11 @@
                 "legacyReferenceName": "Taiwan Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
-                "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
+                "reviewedAt": "2026-10-02",
+                "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH",
+                "webReview": "Targeted authoritative repair rechecked 2026-10-02"
               },
-              "extractionEligibility": "EXECUTABLE",
+              "extractionEligibility": "CONDITIONAL",
               "currentStatus": "ACTIVE_PRODUCING",
               "statusAuthority": "OBSERVED",
               "commercialExtraction": true,
@@ -53559,13 +53634,13 @@
               },
               "extractionProfile": {
                 "siteType": "QUARRY",
-                "method": "surface quarrying",
+                "method": "Surface marble/stone quarrying with cutting and stone processing",
                 "lifecycleStatus": "ACTIVE_PRODUCING",
                 "operationalStatus": "ACTIVE_PRODUCING",
-                "owner": "UNOBSERVED",
-                "operator": "UNOBSERVED",
-                "ownerEvidenceStatus": "UNOBSERVED",
-                "operatorEvidenceStatus": "UNOBSERVED"
+                "owner": "Multiple Hualien quarry interests including Asia Cement Corporation",
+                "operator": "Multiple Hualien quarry operators including Asia Cement Corporation",
+                "ownerEvidenceStatus": "WEB_REVIEWED",
+                "operatorEvidenceStatus": "WEB_REVIEWED"
               },
               "quantitativeProfile": {
                 "reserve": {
@@ -53608,22 +53683,24 @@
                 "resource": "COMPLETE",
                 "location": "COMPLETE",
                 "operation": "COMPLETE",
-                "ownership": "UNOBSERVED",
+                "ownership": "REPORTED",
                 "quantitative": {
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
               },
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-02",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
-                "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
+                "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
+                "sourceAuthority": "Taiwan Ministry of Economic Affairs / public Hualien quarry records",
+                "currentEvidence": "Public reporting documents Asia Cement Corporation operating a marble quarry in Hualien County and documents permit/litigation constraints. Separate Hualien stone businesses are registered by the county government. The repository record is modeled as a multi-operator Hualien quarry zone, not a single-company mine."
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -53647,16 +53724,16 @@
                   "coordinateStatus": "ESTIMATED_SITE_POINT"
                 },
                 "ownership": {
-                  "owner": "UNOBSERVED",
-                  "operator": "UNOBSERVED",
-                  "ownerEvidenceStatus": "UNOBSERVED",
-                  "operatorEvidenceStatus": "UNOBSERVED"
+                  "owner": "Multiple Hualien quarry interests including Asia Cement Corporation",
+                  "operator": "Multiple Hualien quarry operators including Asia Cement Corporation",
+                  "ownerEvidenceStatus": "WEB_REVIEWED",
+                  "operatorEvidenceStatus": "WEB_REVIEWED"
                 },
                 "operation": {
-                  "status": "ACTIVE_PRODUCING",
-                  "operationalStatus": "ACTIVE_PRODUCING",
-                  "extractionMethod": "surface quarrying",
-                  "extractionEligibility": "EXECUTABLE",
+                  "status": "LIMITED",
+                  "operationalStatus": "LIMITED",
+                  "extractionMethod": "Surface marble/stone quarrying with cutting and stone processing",
+                  "extractionEligibility": "CONDITIONAL",
                   "commercialExtraction": true
                 },
                 "processing": {
@@ -53689,13 +53766,37 @@
                   }
                 },
                 "verification": {
-                  "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": "2026-09-27",
-                  "sourceCount": 0,
-                  "sourceAuthorities": [],
+                  "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+                  "reviewedAt": "2026-10-02",
+                  "sourceCount": 3,
+                  "sourceAuthorities": [
+                    "NEWS",
+                    "GOVERNMENT_REGISTER"
+                  ],
                   "dataLimitations": null
                 }
-              }
+              },
+              "ownershipScope": "DISTRICT_MULTI_OPERATOR",
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.taipeitimes.com/News/front/archives/2019/07/12/2003718520",
+                  "accessed": "2026-10-02",
+                  "scope": "hualien_marble_quarry_operator_and_mining_right_status",
+                  "sourceType": "NEWS"
+                },
+                {
+                  "url": "https://www.taipeitimes.com/News/taiwan/archives/2018/03/01/2003688480",
+                  "accessed": "2026-10-02",
+                  "scope": "hualien_quarry_operator_and_regulatory_context",
+                  "sourceType": "NEWS"
+                },
+                {
+                  "url": "https://findbiz.nat.gov.tw/fts/factory/45/07610099122696?fhl=en",
+                  "accessed": "2026-10-02",
+                  "scope": "hualien_stone_company_registration",
+                  "sourceType": "GOVERNMENT_REGISTER"
+                }
+              ]
             }
           ],
           "processingFacilities": [
@@ -89406,10 +89507,10 @@
               "lng": 14.52,
               "locationNodeKey": "ASSET:MLT:al_far_limestone_quarry",
               "status": "PERMIT_PROCESSING",
-              "operationalStatus": "ACTIVE_PRODUCING",
+              "operationalStatus": "PERMIT_PROCESSING",
               "owner": "UNOBSERVED",
               "operator": "UNOBSERVED",
-              "extractionMethod": "HARDSTONE_EXTRACTION_AND_QUARRY_BACKFILLING",
+              "extractionMethod": "Hardstone extraction, inert-waste recycling and quarry backfilling",
               "startYear": 1950,
               "legacyReferenceName": "Malta Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -89445,10 +89546,11 @@
                 "legacyReferenceName": "Malta Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
-                "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
+                "reviewedAt": "2026-10-02",
+                "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH",
+                "webReview": "Targeted authoritative repair rechecked 2026-10-02"
               },
-              "extractionEligibility": "EXECUTABLE",
+              "extractionEligibility": "CONDITIONAL",
               "currentStatus": "ACTIVE_PRODUCING",
               "statusAuthority": "OBSERVED",
               "permitStatus": "BEING PROCESSED",
@@ -89458,6 +89560,12 @@
                   "url": "https://era.org.mt/topic/quarries/",
                   "accessed": "2026-09-26",
                   "scope": "site_identity_or_operation"
+                },
+                {
+                  "url": "https://www.servizz.gov.mt/en/Services/web-01887",
+                  "accessed": "2026-10-02",
+                  "scope": "malta_quarry_permit_requirement_for_mineral_extraction",
+                  "sourceType": "GOVERNMENT"
                 }
               ],
               "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -89486,7 +89594,7 @@
               },
               "extractionProfile": {
                 "siteType": "QUARRY",
-                "method": "HARDSTONE_EXTRACTION_AND_QUARRY_BACKFILLING",
+                "method": "Hardstone extraction, inert-waste recycling and quarry backfilling",
                 "lifecycleStatus": "PERMIT_PROCESSING",
                 "operationalStatus": "ACTIVE_PRODUCING",
                 "owner": "UNOBSERVED",
@@ -89576,9 +89684,9 @@
                 },
                 "operation": {
                   "status": "PERMIT_PROCESSING",
-                  "operationalStatus": "ACTIVE_PRODUCING",
-                  "extractionMethod": "HARDSTONE_EXTRACTION_AND_QUARRY_BACKFILLING",
-                  "extractionEligibility": "EXECUTABLE",
+                  "operationalStatus": "PERMIT_PROCESSING",
+                  "extractionMethod": "Hardstone extraction, inert-waste recycling and quarry backfilling",
+                  "extractionEligibility": "CONDITIONAL",
                   "commercialExtraction": true
                 },
                 "processing": {
@@ -89615,11 +89723,19 @@
                 },
                 "verification": {
                   "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-                  "reviewedAt": null,
-                  "sourceCount": 1,
-                  "sourceAuthorities": [],
+                  "reviewedAt": "2026-10-02",
+                  "sourceCount": 2,
+                  "sourceAuthorities": [
+                    "GOVERNMENT"
+                  ],
                   "dataLimitations": null
                 }
+              },
+              "researchMetadata": {
+                "reviewedAt": "2026-10-02",
+                "sourceAuthority": "Environment and Resources Authority, Malta",
+                "permit": "EP 0025/19, Quarry HM18 Wied Moqbol, Hal Far",
+                "currentEvidence": "ERA currently lists HM18 Wied Moqbol, Hal Far under EP 0025/19 for extraction of hardstone, recycling of inert waste and backfilling, with the application status shown as Being Processed. No site-specific owner/operator is asserted from the permit summary alone."
               }
             }
           ],
@@ -104186,9 +104302,9 @@
               "locationNodeKey": "ASSET:SLV:el_dorado_gold_project",
               "status": "HISTORICAL_INACTIVE",
               "operationalStatus": "HISTORICAL_INACTIVE",
-              "owner": "UNOBSERVED",
-              "operator": "UNOBSERVED",
-              "extractionMethod": "historical underground gold mining; no confirmed current commercial operation",
+              "owner": "Pacific Rim Mining Corporation (historical project interest)",
+              "operator": "Pacific Rim Mining Corporation (historical project operator)",
+              "extractionMethod": "Historical underground gold mining and exploration; no confirmed current commercial operation",
               "startYear": 2004,
               "legacyReferenceName": "El Salvador Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -104211,7 +104327,7 @@
                 "reserve": "UNOBSERVED",
                 "production": "UNOBSERVED",
                 "grade": "UNOBSERVED",
-                "ownership": "UNOBSERVED",
+                "ownership": "OBSERVED",
                 "operation": "OBSERVED",
                 "extractionMethod": "OBSERVED",
                 "provenance": "RESOURCE_JSON_WEB_RESEARCH_CATALOG"
@@ -104224,8 +104340,9 @@
                 "legacyReferenceName": "El Salvador Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Historical El Dorado identity retained. Current ownership/operator is not asserted without evidence. Public sources document closure by OceanaGold and the later restoration of a national metal-mining legal framework; no current commercial operator is assigned.",
-                "reviewedAt": "2026-09-27",
-                "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
+                "reviewedAt": "2026-10-02",
+                "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH",
+                "webReview": "Targeted authoritative repair rechecked 2026-10-02"
               },
               "extractionEligibility": "NON_EXECUTABLE",
               "currentStatus": "HISTORICAL_INACTIVE",
@@ -104253,13 +104370,13 @@
               },
               "extractionProfile": {
                 "siteType": "HISTORICAL_MINE",
-                "method": "historical underground gold mining; no confirmed current commercial operation",
+                "method": "Historical underground gold mining and exploration; no confirmed current commercial operation",
                 "lifecycleStatus": "HISTORICAL_INACTIVE",
                 "operationalStatus": "HISTORICAL_INACTIVE",
-                "owner": "UNOBSERVED",
-                "operator": "UNOBSERVED",
-                "ownerEvidenceStatus": "UNOBSERVED_SITE_SPECIFIC",
-                "operatorEvidenceStatus": "UNOBSERVED_SITE_SPECIFIC"
+                "owner": "Pacific Rim Mining Corporation (historical project interest)",
+                "operator": "Pacific Rim Mining Corporation (historical project operator)",
+                "ownerEvidenceStatus": "WEB_REVIEWED",
+                "operatorEvidenceStatus": "WEB_REVIEWED"
               },
               "quantitativeProfile": {
                 "reserve": {
@@ -104305,14 +104422,14 @@
                 "resource": "COMPLETE",
                 "location": "COMPLETE",
                 "operation": "COMPLETE",
-                "ownership": "UNOBSERVED",
+                "ownership": "REPORTED",
                 "quantitative": {
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
               },
               "webResearchEvidence": [
                 {
@@ -104324,15 +104441,29 @@
                   "url": "https://www.asamblea.gob.sv/node/13444",
                   "accessed": "2026-09-27",
                   "scope": "current_metal_mining_legal_framework"
+                },
+                {
+                  "url": "https://www.sec.gov/Archives/edgar/data/1056512/000106299312002578/form20f.htm",
+                  "accessed": "2026-10-02",
+                  "scope": "historical_project_owner_location_exploration_licenses_and_project_status",
+                  "sourceType": "SEC_FILING"
+                },
+                {
+                  "url": "https://www.sec.gov/Archives/edgar/data/1056512/000106299303001283/exhibit99-1.htm",
+                  "accessed": "2026-10-02",
+                  "scope": "historical_mining_and_resource_project_identity",
+                  "sourceType": "SEC_FILING"
                 }
               ],
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-02",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
-                "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
+                "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
+                "sourceAuthority": "Pacific Rim Mining Corporation SEC filing / public historical record",
+                "currentEvidence": "Pacific Rim filings identify the El Dorado gold project in Cabañas and state that Pacific Rim owned 100% of the project through subsidiaries. The historical mine operated from 1948 to 1953; later exploration did not produce a current commercial mining operation. Historical ownership is therefore kept separate from present-day executable extraction."
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -104356,15 +104487,15 @@
                   "coordinateStatus": "ESTIMATED_SITE_POINT"
                 },
                 "ownership": {
-                  "owner": "UNOBSERVED",
-                  "operator": "UNOBSERVED",
-                  "ownerEvidenceStatus": "UNOBSERVED_SITE_SPECIFIC",
-                  "operatorEvidenceStatus": "UNOBSERVED_SITE_SPECIFIC"
+                  "owner": "Pacific Rim Mining Corporation (historical project interest)",
+                  "operator": "Pacific Rim Mining Corporation (historical project operator)",
+                  "ownerEvidenceStatus": "WEB_REVIEWED",
+                  "operatorEvidenceStatus": "WEB_REVIEWED"
                 },
                 "operation": {
                   "status": "HISTORICAL_INACTIVE",
                   "operationalStatus": "HISTORICAL_INACTIVE",
-                  "extractionMethod": "historical underground gold mining; no confirmed current commercial operation",
+                  "extractionMethod": "Historical underground gold mining and exploration; no confirmed current commercial operation",
                   "extractionEligibility": "NON_EXECUTABLE",
                   "commercialExtraction": true
                 },
@@ -104401,13 +104532,16 @@
                   }
                 },
                 "verification": {
-                  "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": "2026-09-27",
-                  "sourceCount": 2,
-                  "sourceAuthorities": [],
+                  "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+                  "reviewedAt": "2026-10-02",
+                  "sourceCount": 4,
+                  "sourceAuthorities": [
+                    "SEC_FILING"
+                  ],
                   "dataLimitations": null
                 }
-              }
+              },
+              "ownershipScope": "HISTORICAL_PROJECT_INTEREST"
             }
           ],
           "processingFacilities": [
