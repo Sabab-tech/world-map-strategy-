@@ -23,7 +23,7 @@ function parseReserve(text,resourceId,targetUnit){
  const external=g.Omega?.ResourceRealism?.parseReserve;
  if(typeof external==='function'){const x=external(text,resourceId);if(x?.status){
    const family=x.unitFamily||x.sourceUnit||null;
-   const target=targetUnit||family;
+   const target=targetUnit||x.unit||family;
    let value=x.value;
    if(family==='TCF'&&target==='BCM')value=Number(x.value)*28.316846592;
    else if(family==='BCF'&&target==='BCM')value=Number(x.value)*0.028316846592;
