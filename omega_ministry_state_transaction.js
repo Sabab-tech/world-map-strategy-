@@ -121,15 +121,20 @@
       const applied=[];
       for(const operation of this.operations){
         const ref=this._countryContainer(operation.path,true);
-        let cur=ref.container;
-        for(let i=0;i<ref.parts.length-1;i++){
-          const part=ref.parts[i];
-          if(!cur[part]||typeof cur[part]!=='object')cur[part]={};
-          cur=cur[part];
+        if(ref.parts.length===0){
+          if(operation.op==='SET')this.state[ref.domain][this.countryId]=clone(operation.after);
+          else if(operation.op==='DELETE')delete this.state[ref.domain][this.countryId];
+        }else{
+          let cur=ref.container;
+          for(let i=0;i<ref.parts.length-1;i++){
+            const part=ref.parts[i];
+            if(!cur[part]||typeof cur[part]!=='object')cur[part]={};
+            cur=cur[part];
+          }
+          const leaf=ref.parts[ref.parts.length-1];
+          if(operation.op==='SET')cur[leaf]=clone(operation.after);
+          else if(operation.op==='DELETE')delete cur[leaf];
         }
-        const leaf=ref.parts[ref.parts.length-1];
-        if(operation.op==='SET')cur[leaf]=clone(operation.after);
-        else if(operation.op==='DELETE')delete cur[leaf];
         applied.push({
           op:operation.op,
           path:operation.path,
