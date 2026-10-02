@@ -215,8 +215,19 @@
   function command(owner,type,c,payload={}){
     const mesh=interop();
     if(!mesh?.dispatchCommand)return{status:'UNAVAILABLE',reason:'MINISTRY_INTEROPERABILITY_UNAVAILABLE'};
-    try{return mesh.dispatchCommand(owner,type,canonical(c),payload,{turn:turn(),commandType:type,correlationId:payload?.requestId||payload?.settlementId||payload?.decisionId||null});}
-    catch(e){return{status:'FAILED',reason:String(e?.message||e)};}
+    try{
+      const result=mesh.dispatchCommand(owner,type,canonical(c),payload,{turn:turn(),commandType:type,correlationId:payload?.requestId||payload?.settlementId||payload?.decisionId||null});
+      if(g.__OMEGA_SETTLEMENT_TRACE&&payload?.requestId){
+        g.__OMEGA_SETTLEMENT_TRACE.commands=[...(g.__OMEGA_SETTLEMENT_TRACE.commands||[]),{owner,type,countryId:canonical(c),requestId:String(payload.requestId),status:result?.status||null,result:clone(result?.result||result||null)}].slice(-16);
+      }
+      return result;
+    }catch(e){
+      const failed={status:'FAILED',reason:String(e?.message||e)};
+      if(g.__OMEGA_SETTLEMENT_TRACE&&payload?.requestId){
+        g.__OMEGA_SETTLEMENT_TRACE.commands=[...(g.__OMEGA_SETTLEMENT_TRACE.commands||[]),{owner,type,countryId:canonical(c),requestId:String(payload.requestId),status:'FAILED',reason:failed.reason}].slice(-16);
+      }
+      return failed;
+    }
   }
 
   function sellerReviewDecision(request){
