@@ -49,6 +49,7 @@ const trade=globalThis.OmegaGlobalTrade;
 console.log('REVIEW_DIAG', JSON.stringify(trade.reviewRequest(globalThis.Game.state.trade.BDG.importRequests[0]), null, 2));
 trade.processAll();
 console.log('PROCESS_TRACE', JSON.stringify(globalThis.__OMEGA_LAST_TRADE_PROCESS_TRACE, null, 2));
+console.log('SETTLEMENT_TRACE', JSON.stringify(globalThis.__OMEGA_SETTLEMENT_TRACE, null, 2));
 const req=globalThis.Game.state.trade.BDG.importRequests[0];
 assert.equal(req.status,'SETTLED');
 assert.equal(globalThis.Game.state.resource.BDG.inventory.crude_oil,1000);
