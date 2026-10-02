@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0.0",
-  "generatedAt": "2026-09-27",
+  "generatedAt": "2026-10-02",
   "siteCount": 199,
   "sites": [
     {
@@ -3131,15 +3131,15 @@
         "coordinateStatus": "ESTIMATED_SITE_POINT"
       },
       "ownership": {
-        "owner": "Ethiopian state / former concession",
-        "operator": "UNOBSERVED",
-        "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-        "operatorEvidenceStatus": "UNOBSERVED"
+        "owner": "MIDROC Investment Group",
+        "operator": "MIDROC Gold Mine PLC",
+        "ownerEvidenceStatus": "WEB_REVIEWED",
+        "operatorEvidenceStatus": "WEB_REVIEWED"
       },
       "operation": {
         "status": "SUSPENDED",
         "operationalStatus": "SUSPENDED",
-        "extractionMethod": "open-pit and underground",
+        "extractionMethod": "Open-pit and underground mining; ROM ore crushing followed by cyanide processing",
         "extractionEligibility": "NON_EXECUTABLE",
         "commercialExtraction": true
       },
@@ -3177,10 +3177,11 @@
       },
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-        "reviewedAt": "2026-09-27",
-        "sourceCount": 1,
+        "reviewedAt": "2026-10-02",
+        "sourceCount": 2,
         "sourceAuthorities": [
-          "WIKIPEDIA"
+          "WIKIPEDIA",
+          "AUDIT"
         ],
         "dataLimitations": null
       }
@@ -4194,15 +4195,15 @@
         "coordinateStatus": "ESTIMATED_SITE_POINT"
       },
       "ownership": {
-        "owner": "UNOBSERVED",
-        "operator": "UNOBSERVED",
-        "ownerEvidenceStatus": "UNOBSERVED",
-        "operatorEvidenceStatus": "UNOBSERVED"
+        "owner": "CBE BTP",
+        "operator": "CBE BTP",
+        "ownerEvidenceStatus": "WEB_REVIEWED",
+        "operatorEvidenceStatus": "WEB_REVIEWED"
       },
       "operation": {
         "status": "LIMITED",
         "operationalStatus": "LIMITED",
-        "extractionMethod": "surface quarrying",
+        "extractionMethod": "Basalt quarrying with crushing and aggregate production",
         "extractionEligibility": "CONDITIONAL",
         "commercialExtraction": true
       },
@@ -4239,10 +4240,12 @@
         }
       },
       "verification": {
-        "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-        "reviewedAt": "2026-09-27",
-        "sourceCount": 0,
-        "sourceAuthorities": [],
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+        "reviewedAt": "2026-10-02",
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "COMPANY"
+        ],
         "dataLimitations": null
       }
     },
@@ -4969,15 +4972,15 @@
         "coordinateStatus": "ESTIMATED_SITE_POINT"
       },
       "ownership": {
-        "owner": "UNOBSERVED",
-        "operator": "UNOBSERVED",
-        "ownerEvidenceStatus": "UNOBSERVED",
-        "operatorEvidenceStatus": "UNOBSERVED"
+        "owner": "United Quarries",
+        "operator": "United Quarries",
+        "ownerEvidenceStatus": "WEB_REVIEWED",
+        "operatorEvidenceStatus": "WEB_REVIEWED"
       },
       "operation": {
         "status": "ACTIVE_PRODUCING",
         "operationalStatus": "ACTIVE_PRODUCING",
-        "extractionMethod": "surface drilling, blasting and crushing",
+        "extractionMethod": "Hard-rock gabbro quarrying with blasting, crushing, sizing and marine export logistics",
         "extractionEligibility": "EXECUTABLE",
         "commercialExtraction": true
       },
@@ -5014,9 +5017,11 @@
       },
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-        "reviewedAt": null,
-        "sourceCount": 1,
-        "sourceAuthorities": [],
+        "reviewedAt": "2026-10-02",
+        "sourceCount": 3,
+        "sourceAuthorities": [
+          "OPERATOR"
+        ],
         "dataLimitations": null
       }
     },
@@ -5853,16 +5858,16 @@
         "coordinateStatus": "ESTIMATED_SITE_POINT"
       },
       "ownership": {
-        "owner": "UNOBSERVED",
-        "operator": "UNOBSERVED",
-        "ownerEvidenceStatus": "UNOBSERVED",
-        "operatorEvidenceStatus": "UNOBSERVED"
+        "owner": "Holcim Lebanon",
+        "operator": "Holcim Lebanon",
+        "ownerEvidenceStatus": "WEB_REVIEWED",
+        "operatorEvidenceStatus": "WEB_REVIEWED"
       },
       "operation": {
-        "status": "REGULATED_REOPENING_2026",
-        "operationalStatus": "ACTIVE_PRODUCING",
-        "extractionMethod": "surface quarrying and blasting",
-        "extractionEligibility": "EXECUTABLE",
+        "status": "LIMITED",
+        "operationalStatus": "LIMITED",
+        "extractionMethod": "Limestone quarrying subject to quarry licensing and environmental controls",
+        "extractionEligibility": "CONDITIONAL",
         "commercialExtraction": true
       },
       "processing": {
@@ -5899,9 +5904,12 @@
       },
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-        "reviewedAt": null,
-        "sourceCount": 3,
-        "sourceAuthorities": [],
+        "reviewedAt": "2026-10-02",
+        "sourceCount": 5,
+        "sourceAuthorities": [
+          "OPERATOR",
+          "NEWS"
+        ],
         "dataLimitations": null
       }
     },
@@ -6243,15 +6251,15 @@
         "coordinateStatus": "ESTIMATED_SITE_POINT"
       },
       "ownership": {
-        "owner": "UNOBSERVED",
-        "operator": "UNOBSERVED",
-        "ownerEvidenceStatus": "UNOBSERVED",
-        "operatorEvidenceStatus": "UNOBSERVED"
+        "owner": "Multiple limestone mine concessionaires",
+        "operator": "Multiple limestone mining operators",
+        "ownerEvidenceStatus": "WEB_REVIEWED",
+        "operatorEvidenceStatus": "WEB_REVIEWED"
       },
       "operation": {
         "status": "ACTIVE_PRODUCING",
         "operationalStatus": "ACTIVE_PRODUCING",
-        "extractionMethod": "large surface quarrying",
+        "extractionMethod": "Limestone mining using open-pit/glory-hole and underground methods depending on the mine seat",
         "extractionEligibility": "EXECUTABLE",
         "commercialExtraction": true
       },
@@ -6288,10 +6296,13 @@
         }
       },
       "verification": {
-        "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-        "reviewedAt": "2026-09-27",
-        "sourceCount": 0,
-        "sourceAuthorities": [],
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+        "reviewedAt": "2026-10-02",
+        "sourceCount": 2,
+        "sourceAuthorities": [
+          "EQUIPMENT_SUPPLIER",
+          "OPERATOR"
+        ],
         "dataLimitations": null
       }
     },
@@ -6625,15 +6636,15 @@
         "coordinateStatus": "ESTIMATED_SITE_POINT"
       },
       "ownership": {
-        "owner": "UNOBSERVED",
-        "operator": "Penjom Gold Mine",
-        "ownerEvidenceStatus": "UNOBSERVED",
-        "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+        "owner": "J Resources Gold (UK) Limited / J Resources group",
+        "operator": "J Resources Asia Pasifik / Penjom Mine",
+        "ownerEvidenceStatus": "WEB_REVIEWED",
+        "operatorEvidenceStatus": "WEB_REVIEWED"
       },
       "operation": {
         "status": "LIMITED",
         "operationalStatus": "LIMITED",
-        "extractionMethod": "open-pit and underground",
+        "extractionMethod": "Conventional open-pit mining with resin-in-leach processing",
         "extractionEligibility": "CONDITIONAL",
         "commercialExtraction": true
       },
@@ -6652,9 +6663,10 @@
       },
       "quantitative": {
         "reserve": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
+          "quantity": 414000,
+          "unit": "troy_ounces_gold",
+          "year": 2023,
+          "status": "OBSERVED"
         },
         "production": {
           "annual": null,
@@ -6670,10 +6682,12 @@
         }
       },
       "verification": {
-        "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-        "reviewedAt": "2026-09-27",
-        "sourceCount": 0,
-        "sourceAuthorities": [],
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+        "reviewedAt": "2026-10-02",
+        "sourceCount": 2,
+        "sourceAuthorities": [
+          "OPERATOR"
+        ],
         "dataLimitations": null
       }
     },
@@ -8184,15 +8198,15 @@
         "coordinateStatus": "ESTIMATED_SITE_POINT"
       },
       "ownership": {
-        "owner": "UNOBSERVED",
-        "operator": "UNOBSERVED",
-        "ownerEvidenceStatus": "UNOBSERVED",
-        "operatorEvidenceStatus": "UNOBSERVED"
+        "owner": "Société des Matériaux de Beauce (SMB)",
+        "operator": "Société des Matériaux de Beauce (SMB)",
+        "ownerEvidenceStatus": "WEB_REVIEWED",
+        "operatorEvidenceStatus": "WEB_REVIEWED"
       },
       "operation": {
         "status": "ACTIVE_PRODUCING",
         "operationalStatus": "ACTIVE_PRODUCING",
-        "extractionMethod": "surface limestone quarrying",
+        "extractionMethod": "Limestone quarry extraction with crushing and mineral processing",
         "extractionEligibility": "EXECUTABLE",
         "commercialExtraction": true
       },
@@ -8229,10 +8243,12 @@
         }
       },
       "verification": {
-        "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-        "reviewedAt": "2026-09-27",
-        "sourceCount": 0,
-        "sourceAuthorities": [],
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+        "reviewedAt": "2026-10-02",
+        "sourceCount": 2,
+        "sourceAuthorities": [
+          "GOVERNMENT_REGISTER"
+        ],
         "dataLimitations": null
       }
     },
@@ -8336,15 +8352,15 @@
         "coordinateStatus": "ESTIMATED_SITE_POINT"
       },
       "ownership": {
-        "owner": "UNOBSERVED",
-        "operator": "UNOBSERVED",
-        "ownerEvidenceStatus": "UNOBSERVED",
-        "operatorEvidenceStatus": "UNOBSERVED"
+        "owner": "Multiple private quarry concessionaires",
+        "operator": "Multiple private marble quarry operators",
+        "ownerEvidenceStatus": "WEB_REVIEWED",
+        "operatorEvidenceStatus": "WEB_REVIEWED"
       },
       "operation": {
         "status": "ACTIVE_PRODUCING",
         "operationalStatus": "ACTIVE_PRODUCING",
-        "extractionMethod": "bench and block extraction",
+        "extractionMethod": "Open-air and underground dimension-stone quarrying",
         "extractionEligibility": "EXECUTABLE",
         "commercialExtraction": true
       },
@@ -8378,10 +8394,12 @@
         }
       },
       "verification": {
-        "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-        "reviewedAt": "2026-09-27",
-        "sourceCount": 0,
-        "sourceAuthorities": [],
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+        "reviewedAt": "2026-10-02",
+        "sourceCount": 2,
+        "sourceAuthorities": [
+          "OPERATOR"
+        ],
         "dataLimitations": null
       }
     },
@@ -8565,15 +8583,15 @@
         "coordinateStatus": "ESTIMATED_SITE_POINT"
       },
       "ownership": {
-        "owner": "UNOBSERVED",
-        "operator": "UNOBSERVED",
-        "ownerEvidenceStatus": "UNOBSERVED",
-        "operatorEvidenceStatus": "UNOBSERVED"
+        "owner": "Multiple iron-ore companies and state-linked concession interests",
+        "operator": "Multiple iron-ore mining and beneficiation operators",
+        "ownerEvidenceStatus": "WEB_REVIEWED",
+        "operatorEvidenceStatus": "WEB_REVIEWED"
       },
       "operation": {
         "status": "DISRUPTED",
         "operationalStatus": "DISRUPTED",
-        "extractionMethod": "open-pit and underground",
+        "extractionMethod": "Open-pit and underground iron-ore mining with crushing and beneficiation",
         "extractionEligibility": "NON_EXECUTABLE",
         "commercialExtraction": true
       },
@@ -8610,10 +8628,13 @@
         }
       },
       "verification": {
-        "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-        "reviewedAt": "2026-09-27",
-        "sourceCount": 0,
-        "sourceAuthorities": [],
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+        "reviewedAt": "2026-10-02",
+        "sourceCount": 2,
+        "sourceAuthorities": [
+          "OPERATOR",
+          "REGIONAL_GOVERNMENT"
+        ],
         "dataLimitations": null
       }
     },
@@ -10010,9 +10031,9 @@
       },
       "operation": {
         "status": "NO_CURRENT_CONCESSION",
-        "operationalStatus": "LIMITED",
-        "extractionMethod": "LIMESTONE_QUARRYING",
-        "extractionEligibility": "CONDITIONAL",
+        "operationalStatus": "NO_CURRENT_CONCESSION",
+        "extractionMethod": "Historical industrial limestone extraction; no current concession verified",
+        "extractionEligibility": "NON_EXECUTABLE",
         "commercialExtraction": true
       },
       "processing": {
@@ -10049,9 +10070,11 @@
       },
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-        "reviewedAt": null,
-        "sourceCount": 1,
-        "sourceAuthorities": [],
+        "reviewedAt": "2026-10-02",
+        "sourceCount": 2,
+        "sourceAuthorities": [
+          "GOVERNMENT_GEOLOGICAL_SURVEY"
+        ],
         "dataLimitations": null
       }
     },
@@ -12335,15 +12358,15 @@
         "coordinateStatus": "ESTIMATED_SITE_POINT"
       },
       "ownership": {
-        "owner": "UNOBSERVED",
-        "operator": "UNOBSERVED",
-        "ownerEvidenceStatus": "UNOBSERVED",
-        "operatorEvidenceStatus": "UNOBSERVED"
+        "owner": "Domo Minerales",
+        "operator": "Domo Minerales",
+        "ownerEvidenceStatus": "WEB_REVIEWED",
+        "operatorEvidenceStatus": "WEB_REVIEWED"
       },
       "operation": {
-        "status": "LIMITED",
-        "operationalStatus": "LIMITED",
-        "extractionMethod": "small-scale mining",
+        "status": "RESTARTING",
+        "operationalStatus": "RESTARTING",
+        "extractionMethod": "Gold mining district with ore-processing plant rehabilitation and restart",
         "extractionEligibility": "CONDITIONAL",
         "commercialExtraction": true
       },
@@ -12380,10 +12403,12 @@
         }
       },
       "verification": {
-        "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-        "reviewedAt": "2026-09-27",
-        "sourceCount": 0,
-        "sourceAuthorities": [],
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+        "reviewedAt": "2026-10-02",
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "GOVERNMENT"
+        ],
         "dataLimitations": null
       }
     },
@@ -14598,15 +14623,15 @@
         "coordinateStatus": "ESTIMATED_SITE_POINT"
       },
       "ownership": {
-        "owner": "UNOBSERVED",
-        "operator": "UNOBSERVED",
-        "ownerEvidenceStatus": "UNOBSERVED",
-        "operatorEvidenceStatus": "UNOBSERVED"
+        "owner": "Multiple private quarry operators",
+        "operator": "KD Enterprise Ltd. / Santo Earthworks Ltd.",
+        "ownerEvidenceStatus": "WEB_REVIEWED",
+        "operatorEvidenceStatus": "WEB_REVIEWED"
       },
       "operation": {
         "status": "LIMITED",
         "operationalStatus": "LIMITED",
-        "extractionMethod": "surface aggregate",
+        "extractionMethod": "Rock quarrying with crushing and aggregate production",
         "extractionEligibility": null,
         "commercialExtraction": true
       },
@@ -14642,10 +14667,13 @@
         }
       },
       "verification": {
-        "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-        "reviewedAt": null,
-        "sourceCount": 0,
-        "sourceAuthorities": [],
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+        "reviewedAt": "2026-10-02",
+        "sourceCount": 2,
+        "sourceAuthorities": [
+          "OPERATOR",
+          "BUSINESS_DIRECTORY"
+        ],
         "dataLimitations": null
       }
     },
@@ -14746,15 +14774,15 @@
         "coordinateStatus": "ESTIMATED_SITE_POINT"
       },
       "ownership": {
-        "owner": "UNOBSERVED",
-        "operator": "UNOBSERVED",
-        "ownerEvidenceStatus": "UNOBSERVED",
-        "operatorEvidenceStatus": "UNOBSERVED"
+        "owner": "Multiple private quarry operators and land interests",
+        "operator": "Multiple operators including FATA KIHE HAU & SONS and Nishi Trading",
+        "ownerEvidenceStatus": "WEB_REVIEWED",
+        "operatorEvidenceStatus": "WEB_REVIEWED"
       },
       "operation": {
         "status": "LIMITED",
         "operationalStatus": "LIMITED",
-        "extractionMethod": "VOLCANIC_AGGREGATE_QUARRYING_AND_CRUSHING",
+        "extractionMethod": "Quarry extraction, crushing and aggregate/gravel supply",
         "extractionEligibility": null,
         "commercialExtraction": true
       },
@@ -14791,9 +14819,11 @@
       },
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-        "reviewedAt": null,
-        "sourceCount": 2,
-        "sourceAuthorities": [],
+        "reviewedAt": "2026-10-02",
+        "sourceCount": 3,
+        "sourceAuthorities": [
+          "OPERATOR"
+        ],
         "dataLimitations": null
       }
     },
@@ -15120,15 +15150,15 @@
         "coordinateStatus": "ESTIMATED_SITE_POINT"
       },
       "ownership": {
-        "owner": "UNOBSERVED",
-        "operator": "UNOBSERVED",
-        "ownerEvidenceStatus": "UNOBSERVED",
-        "operatorEvidenceStatus": "UNOBSERVED"
+        "owner": "APSCO",
+        "operator": "APSCO",
+        "ownerEvidenceStatus": "WEB_REVIEWED",
+        "operatorEvidenceStatus": "WEB_REVIEWED"
       },
       "operation": {
         "status": "LIMITED",
         "operationalStatus": "LIMITED",
-        "extractionMethod": "VOLCANIC_AGGREGATE_QUARRYING_AND_CRUSHING",
+        "extractionMethod": "Hard-rock basalt quarrying with aggregate production",
         "extractionEligibility": null,
         "commercialExtraction": true
       },
@@ -15165,9 +15195,11 @@
       },
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-        "reviewedAt": null,
-        "sourceCount": 1,
-        "sourceAuthorities": [],
+        "reviewedAt": "2026-10-02",
+        "sourceCount": 2,
+        "sourceAuthorities": [
+          "SPC_SOPAC"
+        ],
         "dataLimitations": null
       }
     },
