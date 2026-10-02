@@ -3851,6 +3851,12 @@
           "accessed": "2026-10-02",
           "scope": "resource identity and locality",
           "sourceType": "MINERAL_DATABASE"
+        },
+        {
+          "url": "https://www.mindat.org/loc-259371.html",
+          "accessed": "2026-10-02",
+          "scope": "resource identity and locality",
+          "sourceType": "MINERAL_DATABASE"
         }
       ]
     },

@@ -30408,7 +30408,7 @@
                 "verification": {
                   "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
                   "reviewedAt": "2026-10-02",
-                  "sourceCount": 6,
+                  "sourceCount": 7,
                   "sourceAuthorities": [
                     "MINERAL_DATABASE"
                   ],
@@ -30416,6 +30416,12 @@
                 }
               },
               "webResearchEvidence": [
+                {
+                  "url": "https://www.mindat.org/loc-259371.html",
+                  "accessed": "2026-10-02",
+                  "scope": "resource identity and locality",
+                  "sourceType": "MINERAL_DATABASE"
+                },
                 {
                   "url": "https://www.mindat.org/loc-259371.html",
                   "accessed": "2026-10-02",
