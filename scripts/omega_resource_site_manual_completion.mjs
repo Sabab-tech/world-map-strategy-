@@ -98,5 +98,5 @@ fs.writeFileSync('resource_site_canonical_catalog_v1.json',JSON.stringify(canoni
 fs.writeFileSync('resource_site_enriched_catalog.json',JSON.stringify(enriched,null,2)+'\n');
 fs.writeFileSync('resource_site_enrichment_status.json',JSON.stringify(status,null,2)+'\n');
 fs.writeFileSync('resource_site_manual_completion_report.json',JSON.stringify(report,null,2)+'\n');
-const p='test/omega_resource_global_pipeline.test.mjs';const t=fs.readFileSync(p,'utf8');const u=t.replace("assert.ok(siteRefs.every(x=>x.resourceAsset.resourceType===null));","assert.ok(siteRefs.every(x=>x.resourceAsset.resourceType===null || x.resourceAsset.resourceType===x.resourceTypeId));");if(u===t)throw new Error('global-pipeline assertion not found');fs.writeFileSync(p,u);
+const p='test/omega_resource_global_pipeline.test.mjs';const t=fs.readFileSync(p,'utf8');if(!t.includes('resourceAsset.resourceType'))throw new Error('global-pipeline resourceType assertion missing');
 console.log(JSON.stringify(report,null,2));
