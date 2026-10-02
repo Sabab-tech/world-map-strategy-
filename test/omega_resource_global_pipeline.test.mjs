@@ -1,3 +1,4 @@
+// Verification re-trigger: latest resource data contract is intentionally checked on the current branch head.
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
