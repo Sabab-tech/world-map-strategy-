@@ -422,16 +422,16 @@
         "coordinateStatus": "ESTIMATED_SITE_POINT"
       },
       "ownership": {
-        "owner": "UNOBSERVED",
-        "operator": "UNOBSERVED",
-        "ownerEvidenceStatus": "UNOBSERVED",
-        "operatorEvidenceStatus": "UNOBSERVED"
+        "owner": "Historical operators including Mr. Pasang Tamang and Wakleytar Taksha Mining Private Limited",
+        "operator": "Historical operators including Mr. Pasang Tamang and Wakleytar Taksha Mining Private Limited",
+        "ownerEvidenceStatus": "WEB_REVIEWED",
+        "operatorEvidenceStatus": "WEB_REVIEWED"
       },
       "operation": {
-        "status": "ACTIVE_PRODUCING",
-        "operationalStatus": "ACTIVE_PRODUCING",
+        "status": "HISTORICAL_INACTIVE",
+        "operationalStatus": "HISTORICAL_INACTIVE",
         "extractionMethod": "SURFACE_MINING_QUARRYING",
-        "extractionEligibility": "EXECUTABLE",
+        "extractionEligibility": "NON_EXECUTABLE",
         "commercialExtraction": true
       },
       "processing": {
@@ -468,9 +468,11 @@
       },
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-        "reviewedAt": null,
-        "sourceCount": 1,
-        "sourceAuthorities": [],
+        "reviewedAt": "2026-10-02",
+        "sourceCount": 2,
+        "sourceAuthorities": [
+          "GOVERNMENT_AUDIT"
+        ],
         "dataLimitations": null
       }
     },
@@ -2266,7 +2268,7 @@
         "countryIso3": "CPV",
         "siteType": "QUARRY",
         "resourceTypeId": "construction_aggregate",
-        "resourceName": "Construction Aggregates, Sand & Gravel",
+        "resourceName": "Pozzolana",
         "ontologyKey": "CONSTRUCTION_AGGREGATE"
       },
       "location": {
@@ -2280,28 +2282,29 @@
         "coordinateStatus": "ESTIMATED_SITE_POINT"
       },
       "ownership": {
-        "owner": "UNOBSERVED",
-        "operator": "UNOBSERVED",
-        "ownerEvidenceStatus": "UNOBSERVED",
-        "operatorEvidenceStatus": "UNOBSERVED"
+        "owner": "CIMPOR – Cabo Verde, SA (project proponent)",
+        "operator": "CIMPOR – Cabo Verde, SA (project proponent; operator not separately verified)",
+        "ownerEvidenceStatus": "WEB_REVIEWED",
+        "operatorEvidenceStatus": "WEB_REVIEWED"
       },
       "operation": {
-        "status": "LIMITED",
-        "operationalStatus": "LIMITED",
-        "extractionMethod": "surface quarrying",
-        "extractionEligibility": "CONDITIONAL",
+        "status": "DEVELOPMENT",
+        "operationalStatus": "DEVELOPMENT",
+        "extractionMethod": "Surface extraction of volcanic pozzolana for construction-material use",
+        "extractionEligibility": "NON_EXECUTABLE",
         "commercialExtraction": true
       },
       "processing": {
-        "upstreamProcess": "Quarrying, Dredging, Borrow-Pit Extraction",
-        "midstreamProcess": "Crushing, Screening, Washing, Grading",
+        "upstreamProcess": "Surface extraction of pozzolana",
+        "midstreamProcess": "Screening/crushing and preparation for cementitious use",
         "refinedOutputs": [
           "GRADED_AGGREGATE",
           "READY_MIX_CONCRETE",
           "ASPHALT_FEED"
         ],
         "downstreamSectors": [
-          "ROAD_BASE"
+          "Cement",
+          "Construction materials"
         ]
       },
       "quantitative": {
@@ -2324,10 +2327,12 @@
         }
       },
       "verification": {
-        "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-        "reviewedAt": "2026-09-27",
-        "sourceCount": 0,
-        "sourceAuthorities": [],
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+        "reviewedAt": "2026-10-02",
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "GOVERNMENT"
+        ],
         "dataLimitations": null
       }
     },
@@ -3590,10 +3595,10 @@
         "operatorEvidenceStatus": "UNOBSERVED"
       },
       "operation": {
-        "status": "ARTISANAL_AND_LIMITED",
-        "operationalStatus": "ARTISANAL_AND_LIMITED",
-        "extractionMethod": "small-scale surface mining",
-        "extractionEligibility": "CONDITIONAL",
+        "status": "RESOURCE_IDENTITY_UNVERIFIED",
+        "operationalStatus": "RESOURCE_IDENTITY_UNVERIFIED",
+        "extractionMethod": "Unverified small-scale mineral extraction; gold-specific commercial operation not established",
+        "extractionEligibility": "NON_EXECUTABLE",
         "commercialExtraction": true
       },
       "processing": {
@@ -3629,10 +3634,13 @@
         }
       },
       "verification": {
-        "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-        "reviewedAt": "2026-09-27",
-        "sourceCount": 0,
-        "sourceAuthorities": [],
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+        "reviewedAt": "2026-10-02",
+        "sourceCount": 2,
+        "sourceAuthorities": [
+          "MINERAL_LOCALITY_DATABASE",
+          "SECONDARY_REFERENCE"
+        ],
         "dataLimitations": null
       }
     },
@@ -4046,15 +4054,15 @@
         "coordinateStatus": "ESTIMATED_SITE_POINT"
       },
       "ownership": {
-        "owner": "UNOBSERVED",
-        "operator": "UNOBSERVED",
-        "ownerEvidenceStatus": "UNOBSERVED",
-        "operatorEvidenceStatus": "UNOBSERVED"
+        "owner": "Multiple basalt quarry interests including United Basalt Products Limited",
+        "operator": "United Basalt Products Limited (major basalt-aggregate operator)",
+        "ownerEvidenceStatus": "WEB_REVIEWED",
+        "operatorEvidenceStatus": "WEB_REVIEWED"
       },
       "operation": {
         "status": "ACTIVE_PRODUCING",
         "operationalStatus": "ACTIVE_PRODUCING",
-        "extractionMethod": "surface basalt quarrying",
+        "extractionMethod": "Surface basalt extraction, crushing and aggregate production",
         "extractionEligibility": "EXECUTABLE",
         "commercialExtraction": true
       },
@@ -4092,9 +4100,12 @@
       },
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-        "reviewedAt": null,
-        "sourceCount": 2,
-        "sourceAuthorities": [],
+        "reviewedAt": "2026-10-02",
+        "sourceCount": 4,
+        "sourceAuthorities": [
+          "OPERATOR",
+          "REGULATORY_MARKET"
+        ],
         "dataLimitations": null
       }
     },
@@ -6483,16 +6494,16 @@
         "coordinateStatus": "ESTIMATED_SITE_POINT"
       },
       "ownership": {
-        "owner": "UNOBSERVED",
-        "operator": "UNOBSERVED",
-        "ownerEvidenceStatus": "UNOBSERVED",
-        "operatorEvidenceStatus": "UNOBSERVED"
+        "owner": "Multiple Hualien quarry interests including Asia Cement Corporation",
+        "operator": "Multiple Hualien quarry operators including Asia Cement Corporation",
+        "ownerEvidenceStatus": "WEB_REVIEWED",
+        "operatorEvidenceStatus": "WEB_REVIEWED"
       },
       "operation": {
-        "status": "ACTIVE_PRODUCING",
-        "operationalStatus": "ACTIVE_PRODUCING",
-        "extractionMethod": "surface quarrying",
-        "extractionEligibility": "EXECUTABLE",
+        "status": "LIMITED",
+        "operationalStatus": "LIMITED",
+        "extractionMethod": "Surface marble/stone quarrying with cutting and stone processing",
+        "extractionEligibility": "CONDITIONAL",
         "commercialExtraction": true
       },
       "processing": {
@@ -6525,10 +6536,13 @@
         }
       },
       "verification": {
-        "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-        "reviewedAt": "2026-09-27",
-        "sourceCount": 0,
-        "sourceAuthorities": [],
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+        "reviewedAt": "2026-10-02",
+        "sourceCount": 3,
+        "sourceAuthorities": [
+          "NEWS",
+          "GOVERNMENT_REGISTER"
+        ],
         "dataLimitations": null
       }
     },
@@ -10928,9 +10942,9 @@
       },
       "operation": {
         "status": "PERMIT_PROCESSING",
-        "operationalStatus": "ACTIVE_PRODUCING",
-        "extractionMethod": "HARDSTONE_EXTRACTION_AND_QUARRY_BACKFILLING",
-        "extractionEligibility": "EXECUTABLE",
+        "operationalStatus": "PERMIT_PROCESSING",
+        "extractionMethod": "Hardstone extraction, inert-waste recycling and quarry backfilling",
+        "extractionEligibility": "CONDITIONAL",
         "commercialExtraction": true
       },
       "processing": {
@@ -10967,9 +10981,11 @@
       },
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-        "reviewedAt": null,
-        "sourceCount": 1,
-        "sourceAuthorities": [],
+        "reviewedAt": "2026-10-02",
+        "sourceCount": 2,
+        "sourceAuthorities": [
+          "GOVERNMENT"
+        ],
         "dataLimitations": null
       }
     },
@@ -12740,15 +12756,15 @@
         "coordinateStatus": "ESTIMATED_SITE_POINT"
       },
       "ownership": {
-        "owner": "UNOBSERVED",
-        "operator": "UNOBSERVED",
-        "ownerEvidenceStatus": "UNOBSERVED_SITE_SPECIFIC",
-        "operatorEvidenceStatus": "UNOBSERVED_SITE_SPECIFIC"
+        "owner": "Pacific Rim Mining Corporation (historical project interest)",
+        "operator": "Pacific Rim Mining Corporation (historical project operator)",
+        "ownerEvidenceStatus": "WEB_REVIEWED",
+        "operatorEvidenceStatus": "WEB_REVIEWED"
       },
       "operation": {
         "status": "HISTORICAL_INACTIVE",
         "operationalStatus": "HISTORICAL_INACTIVE",
-        "extractionMethod": "historical underground gold mining; no confirmed current commercial operation",
+        "extractionMethod": "Historical underground gold mining and exploration; no confirmed current commercial operation",
         "extractionEligibility": "NON_EXECUTABLE",
         "commercialExtraction": true
       },
@@ -12785,10 +12801,12 @@
         }
       },
       "verification": {
-        "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-        "reviewedAt": "2026-09-27",
-        "sourceCount": 2,
-        "sourceAuthorities": [],
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+        "reviewedAt": "2026-10-02",
+        "sourceCount": 4,
+        "sourceAuthorities": [
+          "SEC_FILING"
+        ],
         "dataLimitations": null
       }
     },
