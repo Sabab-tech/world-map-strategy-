@@ -15,7 +15,9 @@ assert.equal(R.VERSION,'1.1.0');
 // Priority 3: separate unit families.
 assert.equal(R.parseReserve('120 million BBL','crude_oil').unitFamily,'BBL');
 assert.equal(R.parseReserve('4.2 trillion TCF','natural_gas').unitFamily,'GAS');
-assert.equal(R.parseReserve('2.5 million oz','gold').unitFamily,'TROY_OUNCES');
+const parsedGoldReserve=R.parseReserve('2.5 million oz','gold');
+assert.equal(parsedGoldReserve.unitFamily,'GOLD');
+assert.equal(parsedGoldReserve.sourceUnitFamily,'TROY_OUNCES');
 assert.equal(R.parseReserve('18 million tonnes','copper').unitFamily,'TONNES');
 assert.equal(R.unitFamily('API'),'API');
 assert.equal(R.unitFamily('g/t'),'GT');
