@@ -1,4 +1,3 @@
-// Verification re-trigger: latest resource data contract is intentionally checked on the current branch head.
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
@@ -129,8 +128,7 @@ test('global resource pipeline runs every RESOURCE_JSON mine and keeps each resu
   assert.ok(siteRefs.every(x=>x.resourceAsset&&x.resourceAsset.schemaVersion==='1.0.0'));
   assert.ok(siteRefs.every(x=>Object.prototype.hasOwnProperty.call(x.resourceAsset,'siteId')));
   assert.ok(siteRefs.every(x=>x.resourceAsset.assetId===x.siteReferenceKey));
-  const canonicalResourceType=v=>String(v??'').replace(/^RES_TYPE:/i,'').trim().toLowerCase()||null;
-  assert.ok(siteRefs.every(x=>x.resourceAsset.resourceType===null || canonicalResourceType(x.resourceAsset.resourceType)===canonicalResourceType(x.resourceTypeId)));
+  assert.ok(siteRefs.every(x=>x.resourceAsset.resourceType===null));
   const numberOrNull=v=>{
     if(v===null||v===undefined||v==='') return null;
     const n=Number(v); return Number.isFinite(n)?n:null;
@@ -140,11 +138,8 @@ test('global resource pipeline runs every RESOURCE_JSON mine and keeps each resu
     const expectedReserve=numberOrNull(raw.quantitativeProfile?.reserve?.quantity);
     const expectedRate=numberOrNull(raw.quantitativeProfile?.production?.rate);
     const expectedGrade=numberOrNull(raw.quantitativeProfile?.grade?.value);
-    assert.equal(x.resourceAsset.reserve.geologicalQuantity,expectedReserve,
-      'reserve mismatch site='+String(x.siteReferenceKey||x.resourceAsset.siteId));
-    assert.equal(x.resourceAsset.productionRate,expectedRate,
-      'productionRate mismatch site='+String(x.siteReferenceKey||x.resourceAsset.siteId));
-    const expectedObserved=expectedReserve!==null||expectedRate!==null||expectedGrade!==null;
+    assert.equal(x.resourceAsset.reserve.geologicalQuantity,expectedReserve,'reserve mismatch site='+String(x.siteReferenceKey||x.resourceAsset.siteId));
+    assert.equal(x.resourceAsset.productionRate,expectedRate,'productionRate mismatch site='+String(x.siteReferenceKey||x.resourceAsset.siteId));
     const expectedOverall=(expectedReserve!==null&&expectedRate!==null&&expectedGrade!==null)?'OBSERVED':'UNOBSERVED';
     assert.equal(x.resourceAsset.dataStatus.overall,expectedOverall,
       'overall authority mismatch site='+String(x.siteReferenceKey||x.resourceAsset.siteId)+
@@ -224,3 +219,49 @@ test('global resource pipeline runs every RESOURCE_JSON mine and keeps each resu
   assert.equal(lotCount,engine.deposits.length);
 
   for(const [countryId,row] of Object.entries(state.resource)){
+    const batches=Array.isArray(row.batches)?row.batches:[];
+    const lots=row.inventoryLots&&typeof row.inventoryLots==='object'?row.inventoryLots:{};
+    const paths=row.minePaths&&typeof row.minePaths==='object'?row.minePaths:{};
+    for(const batch of batches){
+      assert.equal(batch.countryId,countryId);
+      assert.equal(batch.sourceCountryId,countryId);
+      assert.equal(batch.originCountryId,countryId);
+      assert.equal(batch.ownerCountryCode,countryId);
+      assert.equal(batch.destinationCountryId,countryId);
+      assert.equal(batch.warehouseId,'WH-'+countryId+'-RAW');
+      assert.ok(lots[batch.batchId]);
+      assert.equal(lots[batch.batchId].countryId,countryId);
+      assert.equal(lots[batch.batchId].pathId,'MINE_PATH:'+countryId+':'+batch.originKey);
+    }
+    for(const path of Object.values(paths)){
+      assert.equal(path.countryId,countryId);
+      assert.equal(path.sourceCountryId,countryId);
+      assert.equal(path.destinationCountryId,countryId);
+      assert.ok(path.batchIds.length>=1);
+      assert.ok(path.inventoryAllocations.length>=1);
+    }
+    for(const [rid,quantity] of Object.entries(row.inventory||{})){
+      const batchTotal=batches.filter(b=>String(b.resourceId)===String(rid)).reduce((sum,b)=>sum+(Number(b.remainingQuantity)||0),0);
+      assert.equal(Number(quantity),batchTotal);
+      assert.equal(Number(row.warehouse?.availableByResource?.[rid]||0),batchTotal);
+    }
+  }
+
+  const crossCountryViolations=[];
+  const countryIds=Object.keys(state.resource);
+  for(const a of countryIds)for(const b of countryIds)if(a!==b){
+    if((state.resource[a].batches||[]).some(x=>x.countryId===b))crossCountryViolations.push([a,b]);
+  }
+  assert.equal(crossCountryViolations.length,0);
+  assert.equal(fiscalPendingCount,engine.deposits.length);
+  const siteRefsByCountry=new Map();
+  for(const s of siteRefs){
+    const arr=siteRefsByCountry.get(s.countryId)||[];arr.push(s.siteName);siteRefsByCountry.set(s.countryId,arr);
+  }
+  for(const [countryId,row] of Object.entries(state.resource)){
+    const expected=siteRefsByCountry.get(countryId)||[];
+    const actual=Array.isArray(row.mineSiteReferences)?row.mineSiteReferences.map(x=>x.siteName):[];
+    assert.equal(actual.length,expected.length);
+    assert.deepEqual(new Set(actual),new Set(expected));
+  }
+});
