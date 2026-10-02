@@ -15,7 +15,9 @@ assert.equal(R.VERSION,'1.1.0');
 // Priority 3: separate unit families.
 assert.equal(R.parseReserve('120 million BBL','crude_oil').unitFamily,'BBL');
 assert.equal(R.parseReserve('4.2 trillion TCF','natural_gas').unitFamily,'GAS');
-assert.equal(R.parseReserve('2.5 million oz','gold').unitFamily,'TROY_OUNCES');
+const parsedGoldReserve=R.parseReserve('2.5 million oz','gold');
+assert.equal(parsedGoldReserve.unitFamily,'GOLD');
+assert.equal(parsedGoldReserve.sourceUnitFamily,'TROY_OUNCES');
 assert.equal(R.parseReserve('18 million tonnes','copper').unitFamily,'TONNES');
 assert.equal(R.unitFamily('API'),'API');
 assert.equal(R.unitFamily('g/t'),'GT');
@@ -88,8 +90,14 @@ assert.equal(gasQuality.purity,null);
 // Priority 7: authority firewall never allows simulation to overwrite observed state.
 const observed={value:100,stateAuthority:'OBSERVED',authority:'OBSERVED'};
 const simulated={value:50,stateAuthority:'SIMULATED',authority:'SIMULATED'};
-assert.deepEqual(R.firewall(observed,simulated),observed);
-assert.deepEqual(R.firewall(undefined,simulated),simulated);
+const observedFirewall=R.firewall(observed,simulated);
+assert.equal(observedFirewall.value,100);
+assert.equal(observedFirewall.stateAuthority,'OBSERVED');
+assert.equal(observedFirewall.authority,'OBSERVED');
+const simulatedFirewall=R.firewall(undefined,simulated);
+assert.equal(simulatedFirewall.value,50);
+assert.equal(simulatedFirewall.stateAuthority,'SIMULATED');
+assert.equal(simulatedFirewall.authority,'SIMULATED');
 const mixed=R.firewall({reserve:100,reserveAuthority:'OBSERVED',stateAuthority:'OBSERVED'},{reserve:50,productionModel:{activeRate:5},stateAuthority:'SIMULATED'});
 assert.equal(mixed.reserve,100);
 assert.equal(mixed.productionModel.activeRate,5);

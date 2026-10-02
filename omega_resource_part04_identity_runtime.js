@@ -52,6 +52,7 @@
   const UNIFIED_ASSET_SCHEMA_VERSION='1.0.0';
 
   function num(v){
+    if(v===null||v===undefined||v==='')return null;
     const x=Number(v);
     return Number.isFinite(x)?x:null;
   }
@@ -63,12 +64,12 @@
 
   function authorityRank(v){
     const a=String(v||'UNOBSERVED').toUpperCase();
-    return a==='OBSERVED'||a==='WEB_SOURCE_BACKED'||a==='WEB_RESEARCHED'||a==='WEB_RESEARCHED_CURATED'?2:a==='SIMULATED'?1:0;
+    return ['OBSERVED','REPORTED','SOURCE_BACKED','ESTIMATED','WEB_SOURCE_BACKED','WEB_RESEARCHED','WEB_RESEARCHED_CURATED'].includes(a)?2:a==='SIMULATED'?1:0;
   }
 
   function normalizeAuthority(v){
     const a=String(v||'UNOBSERVED').toUpperCase();
-    if(a==='OBSERVED'||a==='WEB_SOURCE_BACKED'||a==='WEB_RESEARCHED'||a==='WEB_RESEARCHED_CURATED')return'OBSERVED';
+    if(a==='OBSERVED'||a==='REPORTED'||a==='SOURCE_BACKED'||a==='ESTIMATED'||a==='WEB_SOURCE_BACKED'||a==='WEB_RESEARCHED'||a==='WEB_RESEARCHED_CURATED')return'OBSERVED';
     if(a==='SIMULATED')return'SIMULATED';
     return'UNOBSERVED';
   }
@@ -92,31 +93,35 @@
       raw.resourceTypeId||raw.resourceTypeKey||raw.resourceId||raw.resId||
       raw.reserveState?.resourceId||ref.resourceTypeId||ref.resourceType||ref.resourceId
     )?.replace(/^RES_TYPE:/i,'').toLowerCase()||null;
-    const rs=raw.reserveState||ref.reserve||{};
+    const qp=raw.quantitativeProfile&&typeof raw.quantitativeProfile==='object'?raw.quantitativeProfile:{};
+    const rs=raw.reserveState||ref.reserve||qp.reserve||{};
     const cap=raw.capacity||ref.productionCapacity||{};
-    const prod=raw.productionModel||raw.siteModel?.commodityStreams?.find?.(x=>String(x?.resourceId||'')===String(resourceTypeId||''))?.production||ref.production||{};
-    const q=raw.qualityState||raw.quality||ref.quality||{};
+    const prod=raw.productionModel||raw.siteModel?.commodityStreams?.find?.(x=>String(x?.resourceId||'')===String(resourceTypeId||''))?.production||ref.production||qp.production||{};
+    const q=raw.qualityState||raw.quality||ref.quality||qp.grade||{};
     const reserveAuthority=normalizeAuthority(
-      raw.reserveAuthority||rs?.provenance?.quantityAuthority||raw.dataStatus?.reserve||raw.dataAuthority?.reserve||ref?.dataStatus?.reserve||ref?.dataAuthority?.reserve
+      raw.reserveAuthority||rs?.provenance?.quantityAuthority||rs?.status||raw.dataStatus?.reserve||raw.dataAuthority?.reserve||ref?.dataStatus?.reserve||ref?.dataAuthority?.reserve
     );
     const productionAuthority=normalizeAuthority(
-      raw.productionAuthority||cap?.authority||prod?.authority||raw.dataStatus?.production||raw.dataAuthority?.production||ref?.dataStatus?.production||ref?.dataAuthority?.production
+      raw.productionAuthority||cap?.authority||prod?.authority||prod?.status||raw.dataStatus?.production||raw.dataAuthority?.production||ref?.dataStatus?.production||ref?.dataAuthority?.production
     );
     const qualityAuthority=normalizeAuthority(
       raw.qualityAuthority||q?.qualityAuthority||
-      q?.gradeStatus||q?.concentrationStatus||q?.purityStatus||
+      q?.gradeStatus||q?.concentrationStatus||q?.purityStatus||q?.status||
       raw.dataStatus?.grade||raw.dataStatus?.quality||raw.dataAuthority?.grade||raw.dataAuthority?.quality||
       ref?.dataStatus?.grade||ref?.dataStatus?.quality||ref?.dataAuthority?.grade||ref?.dataAuthority?.quality
     );
 
-    const reserveQuantity=num(rs?.geologicalQuantity??raw.geologicalQuantity??raw.reserveQuantity);
+    const hasProfileReserve=Object.prototype.hasOwnProperty.call(qp?.reserve||{},'quantity');
+    const reserveQuantity=num(hasProfileReserve ? qp.reserve.quantity : rs?.geologicalQuantity??rs?.quantity??raw.geologicalQuantity??raw.reserveQuantity);
     const recoverableQuantity=num(rs?.recoverableQuantity??raw.recoverableQuantity);
     const residualQuantity=num(rs?.residualQuantity??raw.residualQuantity);
-    const unit=textOrNull(rs?.unit||raw.unit||cap?.unit);
-    const productionRate=num(raw.productionRate??cap?.activeRate??cap?.dailyRate??cap?.nominalRate??prod?.activeRate??prod?.observedRate);
+    const unit=textOrNull(qp?.reserve?.unit||rs?.unit||raw.unit||cap?.unit||qp?.production?.unit);
+    const hasProfileProductionRate=Object.prototype.hasOwnProperty.call(qp?.production||{},'rate');
+    const productionRate=num(hasProfileProductionRate ? qp.production.rate : raw.productionRate??cap?.activeRate??cap?.dailyRate??cap?.nominalRate??prod?.activeRate??prod?.observedRate??prod?.rate);
     const currentProduction=num(raw.currentProduction??raw.currentProductionRate??raw.lastOutputQuantity);
     const recoveryRate=num(raw.recoveryRate??cap?.recovery??prod?.recovery);
-    const grade=num(raw.gradePercent??q?.gradePercent??q?.normalized?.gradePercent);
+    const hasProfileGrade=Object.prototype.hasOwnProperty.call(qp?.grade||{},'value');
+    const grade=num(hasProfileGrade ? qp.grade.value : raw.gradePercent??q?.gradePercent??q?.normalized?.gradePercent??q?.value);
     const purity=num(raw.purity??q?.purity??q?.normalized?.purityFraction);
     const concentration=num(raw.concentrationPercent??q?.concentrationPercent??q?.normalized?.concentrationPercent);
 
@@ -259,6 +264,7 @@
           });
           rows.push({
             siteReferenceKey,countryId,countryCode:countryId,profileKey:String(profileKey),siteName,
+            resourceTypeId:resourceAsset.resourceTypeId||null,
             status:'ACTIVE_SITE_REFERENCE',activationState:'ACTIVE_REFERENCE',
             extractionExecutable:false,
             quantitativeExtractionDataAvailable:resourceAsset.quantitativeExtractionDataAvailable===true,

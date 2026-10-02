@@ -1,0 +1,57 @@
+name: OMEGA Manual 199 Resource Data Repair
+
+on:
+  push:
+    branches:
+      - repair/199-resource-site-data-completion
+    paths-ignore:
+      - resources.json
+      - resources_2.json
+      - resource_ontology.json
+      - resource_site_canonical_catalog_v1.json
+      - resource_site_enriched_catalog.json
+      - resource_site_enrichment_status.json
+      - resource_site_manual_completion_report.json
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: omega-manual-199-site-repair
+  cancel-in-progress: true
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Apply manual 199-site completion
+        run: timeout 120s node scripts/omega_resource_site_manual_completion.mjs
+
+      - name: Validate JSON
+        run: |
+          node -e "for (const p of ['resources.json','resources_2.json','resource_ontology.json','resource_site_canonical_catalog_v1.json','resource_site_enriched_catalog.json','resource_site_enrichment_status.json','resource_site_manual_completion_report.json']) JSON.parse(require('fs').readFileSync(p,'utf8')); console.log('JSON_PASS')"
+
+      - name: Commit repaired data
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add resources.json resources_2.json resource_ontology.json resource_site_canonical_catalog_v1.json resource_site_enriched_catalog.json resource_site_enrichment_status.json resource_site_manual_completion_report.json test/omega_resource_global_pipeline.test.mjs
+          if git diff --cached --quiet; then
+            echo "NO_CHANGES"
+            exit 0
+          fi
+          git commit -m "fix(resource): apply 199-site data completion pass"
+          git push origin HEAD:$GITHUB_REF_NAME

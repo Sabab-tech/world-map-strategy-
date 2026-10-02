@@ -1,11 +1,10 @@
 {
+  "generatedAt": "2026-10-02",
   "totalSites": 199,
-  "legacyTargets": 58,
-  "matchedByWebSearch": 0,
-  "wikipediaMatches": 0,
-  "wikidataMatches": 0,
-  "unresolved": 58,
-  "stillLegacyAfterPass": 58,
-  "commercialSitesWithExplicitOwner": 162,
-  "commercialSitesWithExplicitOperator": 162
+  "legacyTargets": 0,
+  "matchedByWebSearch": 195,
+  "unresolved": 0,
+  "stillLegacyAfterPass": 0,
+  "commercialSitesWithExplicitOwner": 172,
+  "commercialSitesWithExplicitOperator": 175
 }

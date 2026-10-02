@@ -30,7 +30,7 @@ const required = [
   'quantitativeProfile','dataCompleteness'
 ];
 
-const placeholderPattern = /^(private concession holders|project concession interests|government \/ private|local operators|state \/ private interests)$/i;
+const placeholderPattern = /^(private concession holders|project concession interests|government \/ private|local operators|state \/ private interests|cement-sector operators|private mining interests|ukrainian operators\/state|kryvyi rih operators|nilepet \/ consortium|former midroc)$/i;
 
 let commercial=0;
 let notApplicable=0;
@@ -83,6 +83,10 @@ for (const {countryId, index, site} of sites) {
   if (site.researchState === 'SITE_SPECIFIC_WEB_REVALIDATED' || site.researchState === 'SITE_SPECIFIC_WEB_REVIEWED') {
     assert(Array.isArray(site.webResearchEvidence) && site.webResearchEvidence.length > 0, countryId + '[' + index + ']: site-specific state without evidence');
   }
+  if (!isNA) {
+    assert(['SITE_SPECIFIC_WEB_REVALIDATED','SITE_SPECIFIC_WEB_REVIEWED'].includes(site.researchState), countryId + '[' + index + ']: commercial site is still legacy/unverified');
+    assert(Array.isArray(site.webResearchEvidence) && site.webResearchEvidence.length > 0, countryId + '[' + index + ']: commercial site missing web evidence');
+  }
   if (site.researchState === 'LEGACY_CURATED_NOT_RECENTLY_REVALIDATED') {
     assert.equal(site.dataCompleteness.webResearch, 'LEGACY_CURATED_NOT_RECENTLY_REVALIDATED', countryId + '[' + index + ']: legacy research state mismatch');
   }
@@ -106,7 +110,7 @@ for (const {countryId, index, site} of sites) {
 
   assert.equal(site.dataCompleteness.identity, 'COMPLETE', countryId + '[' + index + ']: identity completeness gate');
   if (isNA) {
-    assert.equal(site.dataCompleteness.resource, 'COMPLETE', countryId + '[' + index + ']: non-commercial resource classification must be COMPLETE');
+    assert.equal(site.dataCompleteness.resource, 'NOT_APPLICABLE', countryId + '[' + index + ']: non-commercial resource classification must be NOT_APPLICABLE');
   } else {
     assert.equal(site.dataCompleteness.resource, 'COMPLETE', countryId + '[' + index + ']: resource completeness gate');
   }
@@ -117,7 +121,9 @@ for (const {countryId, index, site} of sites) {
 
 assert.equal(commercial + notApplicable, 199);
 assert.equal(notApplicable, 4);
-assert(researched > 0, 'expected site-level web research coverage');
+assert(researched >= commercial, 'expected every commercial site to carry site-level web research state');
+const legacyCount = sites.filter(({site}) => site.researchState === 'LEGACY_CURATED_NOT_RECENTLY_REVALIDATED').length;
+assert.equal(legacyCount, 0, 'no legacy/unrevalidated commercial site may remain');
 console.log(JSON.stringify({
   certificate: 'OMEGA-RESOURCE-SITE-DATA-COMPLETENESS',
   status: 'PASS',

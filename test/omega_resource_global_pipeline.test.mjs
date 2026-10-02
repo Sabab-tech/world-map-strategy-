@@ -129,9 +129,23 @@ test('global resource pipeline runs every RESOURCE_JSON mine and keeps each resu
   assert.ok(siteRefs.every(x=>Object.prototype.hasOwnProperty.call(x.resourceAsset,'siteId')));
   assert.ok(siteRefs.every(x=>x.resourceAsset.assetId===x.siteReferenceKey));
   assert.ok(siteRefs.every(x=>x.resourceAsset.resourceType===null));
-  assert.ok(siteRefs.every(x=>x.resourceAsset.reserve.geologicalQuantity===null));
-  assert.ok(siteRefs.every(x=>x.resourceAsset.productionRate===null));
-  assert.ok(siteRefs.every(x=>x.resourceAsset.dataStatus.overall==='UNOBSERVED'));
+  const numberOrNull=v=>{
+    if(v===null||v===undefined||v==='') return null;
+    const n=Number(v); return Number.isFinite(n)?n:null;
+  };
+  for(const x of siteRefs){
+    const raw=x.rawSiteReference||{};
+    const expectedReserve=numberOrNull(raw.quantitativeProfile?.reserve?.quantity);
+    const expectedRate=numberOrNull(raw.quantitativeProfile?.production?.rate);
+    const expectedGrade=numberOrNull(raw.quantitativeProfile?.grade?.value);
+    assert.equal(x.resourceAsset.reserve.geologicalQuantity,expectedReserve,'reserve mismatch site='+String(x.siteReferenceKey||x.resourceAsset.siteId));
+    assert.equal(x.resourceAsset.productionRate,expectedRate,'productionRate mismatch site='+String(x.siteReferenceKey||x.resourceAsset.siteId));
+    const expectedOverall=(expectedReserve!==null&&expectedRate!==null&&expectedGrade!==null)?'OBSERVED':'UNOBSERVED';
+    assert.equal(x.resourceAsset.dataStatus.overall,expectedOverall,
+      'overall authority mismatch site='+String(x.siteReferenceKey||x.resourceAsset.siteId)+
+      ' reserve='+String(expectedReserve)+' rate='+String(expectedRate)+' grade='+String(expectedGrade)+
+      ' actual='+String(x.resourceAsset.dataStatus.overall));
+  }
   const unifiedSiteKeys=Object.keys(siteRefs[0]?.resourceAsset||{}).sort();
   const occurrenceRows=idResult.registry.listOccurrences();
   assert.equal(occurrenceRows.length,engine.deposits.length);
