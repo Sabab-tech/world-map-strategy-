@@ -3723,7 +3723,7 @@
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
         "reviewedAt": "2026-10-02",
-        "sourceCount": 3,
+        "sourceCount": 4,
         "sourceAuthorities": [
           "MINERAL_DATABASE"
         ],
@@ -6809,7 +6809,7 @@
         "status": "ACTIVE_PRODUCING",
         "operationalStatus": "ACTIVE_PRODUCING",
         "extractionMethod": "open-pit gold mining; resin-in-leach processing",
-        "extractionEligibility": "CONDITIONAL",
+        "extractionEligibility": "EXECUTABLE",
         "commercialExtraction": true,
         "startYear": 1996
       },
