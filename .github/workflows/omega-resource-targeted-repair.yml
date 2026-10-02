@@ -1,0 +1,49 @@
+name: OMEGA Targeted 199 Resource Repair
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    if: contains(github.event.head_commit.message, '[resource-targeted-repair]') || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Syntax gate
+        run: node --check scripts/omega_apply_authoritative_resource_corrections.mjs
+
+      - name: Apply targeted authoritative repairs
+        run: node scripts/omega_apply_authoritative_resource_corrections.mjs
+
+      - name: Commit and push repaired data
+        run: |
+          set -euo pipefail
+          if git diff --cached --quiet; then
+            echo "No staged data changes."
+            exit 0
+          fi
+          git commit -m "chore(resource): apply targeted authoritative repairs to 199-site data"
+          for attempt in 1 2 3; do
+            git fetch origin main
+            git rebase origin/main
+            if git push origin HEAD:main; then
+              exit 0
+            fi
+          done
+          echo "Failed to push targeted repairs after three synchronized attempts." >&2
+          exit 1
