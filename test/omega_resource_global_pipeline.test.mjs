@@ -131,9 +131,20 @@ test('global resource pipeline runs every RESOURCE_JSON mine and keeps each resu
   assert.ok(siteRefs.every(x=>x.resourceAsset.assetId===x.siteReferenceKey));
   const canonicalResourceType=v=>String(v??'').replace(/^RES_TYPE:/i,'').trim().toLowerCase()||null;
   assert.ok(siteRefs.every(x=>x.resourceAsset.resourceType===null || canonicalResourceType(x.resourceAsset.resourceType)===canonicalResourceType(x.resourceTypeId)));
-  assert.ok(siteRefs.every(x=>x.resourceAsset.reserve.geologicalQuantity===null));
-  assert.ok(siteRefs.every(x=>x.resourceAsset.productionRate===null));
-  assert.ok(siteRefs.every(x=>x.resourceAsset.dataStatus.overall==='UNOBSERVED'));
+  const numberOrNull=v=>{
+    if(v===null||v===undefined||v==='') return null;
+    const n=Number(v); return Number.isFinite(n)?n:null;
+  };
+  for(const x of siteRefs){
+    const raw=x.rawSiteReference||{};
+    const expectedReserve=numberOrNull(raw.quantitativeProfile?.reserve?.quantity);
+    const expectedRate=numberOrNull(raw.quantitativeProfile?.production?.rate);
+    const expectedGrade=numberOrNull(raw.quantitativeProfile?.grade?.value);
+    assert.equal(x.resourceAsset.reserve.geologicalQuantity,expectedReserve);
+    assert.equal(x.resourceAsset.productionRate,expectedRate);
+    const expectedObserved=expectedReserve!==null||expectedRate!==null||expectedGrade!==null;
+    assert.equal(x.resourceAsset.dataStatus.overall,expectedObserved?'OBSERVED':'UNOBSERVED');
+  }
   const unifiedSiteKeys=Object.keys(siteRefs[0]?.resourceAsset||{}).sort();
   const occurrenceRows=idResult.registry.listOccurrences();
   assert.equal(occurrenceRows.length,engine.deposits.length);
