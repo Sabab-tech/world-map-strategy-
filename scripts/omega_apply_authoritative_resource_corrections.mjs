@@ -2,7 +2,7 @@
 import fs from 'node:fs';
 import { execFileSync } from 'node:child_process';
 
-const REVIEW_DATE = '2026-09-27';
+const REVIEW_DATE = '2026-10-02';
 const files = ['resources.json', 'resources_2.json'];
 const loaded = files.map((name) => JSON.parse(fs.readFileSync(name, 'utf8')));
 const profiles = Object.assign(
