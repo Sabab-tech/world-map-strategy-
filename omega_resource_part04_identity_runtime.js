@@ -259,6 +259,7 @@
           });
           rows.push({
             siteReferenceKey,countryId,countryCode:countryId,profileKey:String(profileKey),siteName,
+            resourceTypeId:resourceAsset.resourceTypeId||null,
             status:'ACTIVE_SITE_REFERENCE',activationState:'ACTIVE_REFERENCE',
             extractionExecutable:false,
             quantitativeExtractionDataAvailable:resourceAsset.quantitativeExtractionDataAvailable===true,
