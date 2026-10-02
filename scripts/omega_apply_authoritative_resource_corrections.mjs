@@ -359,11 +359,211 @@ const fixes = {
       evidence('https://solwaygroup.com/our-business/fenix-project-guatemala/', 'reserve_grade_mining_and_processing_context', 'PROJECT_OWNER')
     ]
   }
+  SITE_ETH_lega_dembi_gold_mine: {
+    owner: 'MIDROC Investment Group',
+    operator: 'MIDROC Gold Mine PLC',
+    status: 'SUSPENDED',
+    operationalStatus: 'SUSPENDED',
+    extractionEligibility: 'NON_EXECUTABLE',
+    extractionMethod: 'Open-pit and underground mining; ROM ore crushing followed by cyanide processing',
+    metadata: {
+      sourceAuthority: 'International Cyanide Management Institute / MIDROC',
+      currentEvidence: 'The 2025 audit identifies MIDROC Investment Group as owner and MIDROC Gold Mine PLC as operator. Ore is sourced from open-pit, Legadembi underground and Sakaro underground workings and processed through a multi-stage crushing circuit.'
+    },
+    sources: [
+      evidence('https://cyanidecode.org/wp-content/uploads/2024/02/MIDROCLegadembiSAR2026.pdf', 'owner_operator_location_mining_method_crushing_processing', 'AUDIT')
+    ]
+  },
+  SITE_COM_grande_comore_basalt_aggregate_sites: {
+    owner: 'CBE BTP',
+    operator: 'CBE BTP',
+    extractionMethod: 'Basalt quarrying with crushing and aggregate production',
+    metadata: {
+      sourceAuthority: 'CBE BTP',
+      currentEvidence: 'CBE identifies its principal aggregate quarries at Handouli and Pvanamboini on Grande Comore and states that it operates crushing stations and aggregate production across the Comoros.'
+    },
+    sources: [
+      evidence('https://www.wiya.info/en/company/cbe', 'operator_quarries_crushing_and_aggregate_production', 'COMPANY')
+    ]
+  },
+  SITE_ARE_fujairah_aggregate_quarries: {
+    owner: 'United Quarries',
+    operator: 'United Quarries',
+    extractionMethod: 'Hard-rock gabbro quarrying with blasting, crushing, sizing and marine export logistics',
+    metadata: {
+      sourceAuthority: 'United Quarries',
+      currentEvidence: 'United Quarries identifies Al Hayl and Al Nujaimat as operating quarry sites in Fujairah and documents blasting, aggregate production and export logistics. This repository record represents the Fujairah operator area rather than one concession polygon.'
+    },
+    sources: [
+      evidence('https://www.unitedquarries.com/united-quarries-operation-sites.html', 'current_operator_sites_mining_method_capacity_and_logistics', 'OPERATOR'),
+      evidence('https://www.unitedquarries.com/company-overview.html', 'company_identity_and_fujairah_quarry_operations', 'OPERATOR')
+    ]
+  },
+  SITE_LBN_chekka_limestone_quarry_zone: {
+    owner: 'Holcim Lebanon',
+    operator: 'Holcim Lebanon',
+    status: 'LIMITED',
+    operationalStatus: 'LIMITED',
+    extractionEligibility: 'CONDITIONAL',
+    extractionMethod: 'Limestone quarrying subject to quarry licensing and environmental controls',
+    metadata: {
+      sourceAuthority: 'Holcim Lebanon / Lebanese public reporting',
+      currentEvidence: 'Holcim documents quarry rehabilitation in Chekka. 2026 reporting shows cement-quarry reopening is subject to licensing and was affected by a State Council suspension, so unconditional continuous extraction is not assumed.'
+    },
+    sources: [
+      evidence('https://www.holcim.com.lb/quarry-rehabilitation-project-chekka', 'operator_identity_quarry_location_and_rehabilitation', 'OPERATOR'),
+      evidence('https://today.lorientlejour.com/article/1542195/state-council-halts-government-measures-reopening-cement-quarries.html', '2026_quarry_reopening_legal_constraint', 'NEWS')
+    ]
+  },
+  SITE_KOR_samcheok_limestone_mining_district: {
+    owner: 'Multiple limestone mine concessionaires',
+    operator: 'Multiple limestone mining operators',
+    ownershipScope: 'DISTRICT_MULTI_OPERATOR',
+    extractionMethod: 'Limestone mining using open-pit/glory-hole and underground methods depending on the mine seat',
+    metadata: {
+      sourceAuthority: 'SAMPYO Cement / Epiroc',
+      currentEvidence: 'Current public operator sources document more than one Samcheok limestone operation, including a Daesung MDI-operated mine and SAMPYO Cement limestone mining using glory-hole methods. The repository record is therefore area-level and multi-operator.'
+    },
+    sources: [
+      evidence('https://www.epiroc.com/en-ca/customer-stories/2025/boomer-s2-part-of-an-autonomous-future', 'samcheok_mine_operator_and_mining_context', 'EQUIPMENT_SUPPLIER'),
+      evidence('https://www.sampyocement.co.kr/eng/product/product_sub1.php', 'samcheok_limestone_mine_and_glory_hole_method', 'OPERATOR')
+    ]
+  },
+  SITE_MYS_penjom_gold_mine: {
+    owner: 'J Resources Gold (UK) Limited / J Resources group',
+    operator: 'J Resources Asia Pasifik / Penjom Mine',
+    extractionMethod: 'Conventional open-pit mining with resin-in-leach processing',
+    quantitativeReserve: { quantity: 414000, unit: 'troy_ounces_gold', year: 2023, status: 'OBSERVED' },
+    metadata: {
+      sourceAuthority: 'J Resources',
+      currentEvidence: 'J Resources states that Penjom is owned through J Resources Gold (UK) Limited, has been in production since late 1996, and had 414,000 oz JORC Proven & Probable gold reserves as of 31 December 2023. Penjom uses resin-in-leach processing.'
+    },
+    sources: [
+      evidence('https://www.jresources.com/penjom-mine', 'current_owner_production_history_reserves_and_location', 'OPERATOR'),
+      evidence('https://www.jresources.com/about-us', 'current_group_operation_and_processing_method', 'OPERATOR')
+    ]
+  },
+  SITE_FRA_prasville_limestone_quarry: {
+    owner: 'Société des Matériaux de Beauce (SMB)',
+    operator: 'Société des Matériaux de Beauce (SMB)',
+    status: 'ACTIVE_PRODUCING',
+    operationalStatus: 'ACTIVE_PRODUCING',
+    extractionEligibility: 'EXECUTABLE',
+    extractionMethod: 'Limestone quarry extraction with crushing and mineral processing',
+    metadata: {
+      sourceAuthority: 'French government public business and environmental registers',
+      currentEvidence: 'French public registers list SMB as an active Prasville quarry establishment with a quarry exploitation authorization; the site is also registered for crushing and mineral processing activities.'
+    },
+    sources: [
+      evidence('https://annuaire-entreprises.data.gouv.fr/entreprise/301894887', 'current_legal_entity_and_prasville_quarry_activity', 'GOVERNMENT_REGISTER'),
+      evidence('https://www.georisques.gouv.fr/risques/installations/donnees/details/0010002647', 'current_prasville_quarry_authorization_and_operating_status', 'GOVERNMENT_REGISTER')
+    ]
+  },
+  SITE_ITA_carrara_marble_quarries: {
+    owner: 'Multiple private quarry concessionaires',
+    operator: 'Multiple private marble quarry operators',
+    ownershipScope: 'DISTRICT_MULTI_OPERATOR',
+    extractionMethod: 'Open-air and underground dimension-stone quarrying',
+    metadata: {
+      sourceAuthority: 'Current Carrara quarry operators',
+      currentEvidence: 'Carrara is a multi-concession marble basin. Current operator pages document separate active quarry concessions, including Gualtiero Corsi and F.lli Antonioli, so the repository record is explicitly modeled as multi-operator.'
+    },
+    sources: [
+      evidence('https://www.gualtierocorsi.it/en/the-company/', 'current_carrara_quarry_operator_and_concession', 'OPERATOR'),
+      evidence('https://www.antonioli.com/en/', 'current_carrara_quarry_operator_and_own_quarry', 'OPERATOR')
+    ]
+  },
+  SITE_UKR_kryvyi_rih_iron_ore_district: {
+    owner: 'Multiple iron-ore companies and state-linked concession interests',
+    operator: 'Multiple iron-ore mining and beneficiation operators',
+    ownershipScope: 'DISTRICT_MULTI_OPERATOR',
+    extractionMethod: 'Open-pit and underground iron-ore mining with crushing and beneficiation',
+    metadata: {
+      sourceAuthority: 'ArcelorMittal Kryvyi Rih / Dnipropetrovsk Investment Agency',
+      currentEvidence: 'The Kryvyi Rih record is a district-level aggregate. ArcelorMittal Kryvyi Rih documents underground mining plus open-cast mining and beneficiation, while regional reporting documents wider wartime disruption and multiple facilities across the district.'
+    },
+    sources: [
+      evidence('https://ukraine.arcelormittal.com/en/production-sycle/iron-ore-mining-and-processing', 'mine_methods_beneficiation_products_and_capacity', 'OPERATOR'),
+      evidence('https://dia.dp.gov.ua/en/investments-and-support-mechanisms-for-the-mining-and-metallurgical-complex/', '2026_district_operational_context', 'REGIONAL_GOVERNMENT')
+    ]
+  },
+  SITE_SVN_trbovlje_limestone_quarry_zone: {
+    owner: 'UNOBSERVED',
+    operator: 'UNOBSERVED',
+    status: 'NO_CURRENT_CONCESSION',
+    operationalStatus: 'NO_CURRENT_CONCESSION',
+    extractionEligibility: 'NON_EXECUTABLE',
+    extractionMethod: 'Historical industrial limestone extraction; no current concession verified',
+    metadata: {
+      sourceAuthority: 'Geological Survey of Slovenia mining database',
+      currentEvidence: 'The official database records the Trbovlje-Hrastnik limestone mining right through 31 December 2018 with no concessionaire from 2019 onward. Related Retje-Plesko limestone/marl records show no concessionaire in 2026.'
+    },
+    sources: [
+      evidence('https://ms.geo-zs.si/en-gb/Prostor/Podrobnosti/154', 'historical_limestone_right_and_end_of_concession', 'GOVERNMENT_GEOLOGICAL_SURVEY'),
+      evidence('https://ms.geo-zs.si/en-gb/Prostor/Podrobnosti/126', '2026_no_concessionaire_for_related_limestone_site', 'GOVERNMENT_GEOLOGICAL_SURVEY')
+    ]
+  },
+  SITE_URY_minas_de_corrales_gold_mining_district: {
+    owner: 'Domo Minerales',
+    operator: 'Domo Minerales',
+    status: 'RESTARTING',
+    operationalStatus: 'RESTARTING',
+    extractionEligibility: 'CONDITIONAL',
+    extractionMethod: 'Gold mining district with ore-processing plant rehabilitation and restart',
+    metadata: {
+      sourceAuthority: 'Intendencia Departamental de Rivera',
+      currentEvidence: 'On 29 September 2026 the Rivera departmental government reported that Domo Minerales was resuming activities at the gold production plant in Minas de Corrales and rehabilitating the installations.'
+    },
+    sources: [
+      evidence('https://www.rivera.gub.uy/portal/buenas-noticias-para-rivera-domo-minerales-retoma-actividades-en-minas-de-corrales/', '2026_current_operator_and_reactivation_status', 'GOVERNMENT')
+    ]
+  },
+  SITE_VUT_luganville_aggregate_quarry_zone: {
+    owner: 'Multiple private quarry operators',
+    operator: 'KD Enterprise Ltd. / Santo Earthworks Ltd.',
+    ownershipScope: 'AREA_MULTI_OPERATOR',
+    extractionMethod: 'Rock quarrying with crushing and aggregate production',
+    metadata: {
+      sourceAuthority: 'Current Vanuatu quarry/construction operators',
+      currentEvidence: 'KD Enterprise documents a crushing and screening plant in Luganville supplying sand and aggregate; Santo Earthworks is also publicly listed in Luganville under quarry products, sand and concrete.'
+    },
+    sources: [
+      evidence('https://www.kdentreprise.com/about', 'current_luganville_crushing_screening_and_aggregate_supply', 'OPERATOR'),
+      evidence('https://www.yellowpages.vu/1336-santo-earthworks', 'luganville_quarry_products_operator_listing', 'BUSINESS_DIRECTORY')
+    ]
+  },
+  SITE_TON_nuku_alofa_aggregate_quarry_zone: {
+    owner: 'Multiple private quarry operators and land interests',
+    operator: 'Multiple operators including FATA KIHE HAU & SONS and Nishi Trading',
+    ownershipScope: 'AREA_MULTI_OPERATOR',
+    extractionMethod: 'Quarry extraction, crushing and aggregate/gravel supply',
+    metadata: {
+      sourceAuthority: 'Current Tonga quarry operators',
+      currentEvidence: 'FATA KIHE HAU & SONS identifies itself as a quarrying partner operating in Nuku\'alofa and describes extraction, crushing and supply. Nishi Trading independently lists a quarry at Pili, Tongatapu.'
+    },
+    sources: [
+      evidence('https://www.fata200.com/', 'current_nukualofa_quarry_operator_and_process', 'OPERATOR'),
+      evidence('https://chris-brimble-y2se.squarespace.com/contact-us', 'current_tongatapu_quarry_location', 'OPERATOR')
+    ]
+  },
+  SITE_FSM_pohnpei_aggregate_quarry_zone: {
+    owner: 'APSCO',
+    operator: 'APSCO',
+    extractionMethod: 'Hard-rock basalt quarrying with aggregate production',
+    metadata: {
+      sourceAuthority: 'SPC/SOPAC technical quarry assessment',
+      currentEvidence: 'The Pohnpei quarry assessment identifies the existing hard-rock quarry at Ipwal Sokes as owned and operated by APSCO and describes basalt aggregate use for road base, concrete, reclamation and armour rock.'
+    },
+    sources: [
+      evidence('https://www.researchgate.net/publication/270049924_Identification_of_onshore_aggregate-quarry_sites_prospects_for_development_Pohnpei_Isand_Federated_States_of_Micronesia', 'quarry_identity_owner_operator_and_hard_rock_resource', 'SPC_SOPAC')
+    ]
+  }
+
 };
 
 function applyFix(site, fix) {
   if (!fix) return;
-  for (const key of ['owner','operator','status','operationalStatus']) {
+  for (const key of ['owner','operator','status','operationalStatus','extractionEligibility','extractionMethod']) {
     if (fix[key] !== undefined) site[key] = fix[key];
   }
   site.researchMetadata = {
