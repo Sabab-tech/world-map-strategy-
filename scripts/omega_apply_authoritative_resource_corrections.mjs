@@ -766,6 +766,9 @@ const fixes = {
     extra: {
       currentStatus: 'Current ERA permit application EP 0025/19 for HM18 Wied Moqbol, Hal Far is being processed for hardstone extraction, inert-waste recycling and quarry backfilling; current site owner/operator is not established from the permit summary.'
     },
+    extra: {
+      currentStatus: 'Current ERA permit application EP 0025/19 for HM18 Wied Moqbol, Hal Far is being processed for hardstone extraction, inert-waste recycling and quarry backfilling; current site owner/operator is not established from the permit summary.'
+    },
     metadata: {
       sourceAuthority: 'Environment and Resources Authority, Malta / historical quarry records',
       historicalOwner: 'Hal Far Quarries Limited',
@@ -774,6 +777,145 @@ const fixes = {
     sources: [
       evidence('https://era.org.mt/topic/quarries/', 'current_hm18_permit_status_and_activity', 'GOVERNMENT'),
       evidence('https://www.independent.com.mt/articles/2010-12-15/news/from-the-law-courts-284766/', 'historical_hal_far_quarries_owner_of_qh18_wied_moqbol', 'NEWS')
+    ]
+  },
+  SITE_MDV_mal_atoll_coral_aggregate_sites: {
+    ownershipScope: 'AREA_MULTI_OPERATOR',
+    extra: {
+      knownNationwideDredgingOperators: ['Maldives Transport and Contracting Company Plc (MTCC)'],
+      operatorEvidenceScope: 'NATIONWIDE_NOT_SITE_SPECIFIC',
+      dataLimitation: 'MTCC reports dredging and reclamation operations across all 20 atolls, but the reviewed source does not identify a single operator for this generic Malé Atoll coral-aggregate site record.'
+    },
+    metadata: {
+      sourceAuthority: 'Maldives Transport and Contracting Company Plc (MTCC)',
+      currentEvidence: 'MTCC reports a nationwide dredging and reclamation footprint across all 20 atolls, with six dredgers and sand-search capability. This is sector/operator context, not proof of a single Malé Atoll borrow-site operator.'
+    },
+    sources: [
+      evidence('https://corporate.mtcc.mv/', 'nationwide_dredging_reclamation_operator_and_maldivian_atoll_coverage', 'OPERATOR')
+    ]
+  },
+  SITE_ISL_h_lasandur_aggregate_quarry: {
+    extra: {
+      permittedExtractionLimit: {
+        area: 25000,
+        areaUnit: 'm2',
+        volume: 49000,
+        volumeUnit: 'm3',
+        sourcePlanningYear: 2025,
+        identifier: 'E452'
+      },
+      quantitativeEvidenceScope: 'PLANNING_EXTRACTION_LIMIT_NOT_RESERVE'
+    },
+    metadata: {
+      sourceAuthority: 'Iceland municipal planning / Hólasandur planning record',
+      currentEvidence: 'The published planning proposal lists E452 Hólasandur as a 2.5 ha extraction area with a limit of up to 25,000 m² and 49,000 m³. This is a planning extraction limit, not a mineral reserve estimate, and it does not establish a named operator.'
+    },
+    sources: [
+      evidence('https://geo.alta.is/thing/ask24ask/', 'Holasandur_E452_planning_extraction_area_and_volume_limit', 'PLANNING_DOCUMENT')
+    ]
+  },
+  SITE_HTI_gona_ves_limestone_quarry_zone: {
+    ownershipScope: 'AREA_MULTI_OPERATOR',
+    extra: {
+      historicalAreaResourceEvidence: {
+        sourceYear: 1990,
+        deposits: [
+          {
+            locality: 'Morne Blanc, Gonaïves',
+            resource: 'limestone_marl',
+            exploitableVolume: 2000000,
+            unit: 'm3',
+            caCO3Range: '85-92 percent',
+            evidenceScope: 'HISTORICAL_AREA_RESOURCE'
+          }
+        ],
+        dataLimitation: 'Historical 1990 departmental mineral inventory; this is area geology/resource evidence, not a current concession-level reserve statement.'
+      }
+    },
+    metadata: {
+      sourceAuthority: 'Bureau des Mines et de l’Energie / Haiti mineral inventory',
+      currentEvidence: 'The Artibonite mineral inventory documents limestone and cement raw-material occurrences around Gonaïves, including Morne Blanc with an estimated 2,000,000 m³ exploitable volume and CaCO3 of 85-92%. The repository record remains area-level and does not assign a single current operator.'
+    },
+    sources: [
+      evidence('https://www.haitidocs.org/doc/bme-inventaire-minier-artibonite', 'gonaives_limestone_area_identity_and_historical_resource_characteristics', 'MINERAL_INVENTORY')
+    ]
+  },
+  SITE_WSM_lefaga_aggregate_quarry_zone: {
+    ownershipScope: 'AREA_MULTI_OPERATOR',
+    extra: {
+      regulatoryAuthority: 'Planning and Urban Management Authority (PUMA)',
+      dataLimitation: 'Public aggregate review identifies Lefaga volcanic/alluvial sources and requires PUMA applications for extraction; the reviewed source does not establish one operator for this area-level record.'
+    },
+    metadata: {
+      sourceAuthority: 'Samoa environmental and aggregate planning sources',
+      currentEvidence: 'Samoa earth-material extraction, including aggregates, requires PUMA applications. Public aggregate reviews identify volcanic hard rock and alluvial/coastal aggregate sources in the Lefaga area.'
+    },
+    sources: [
+      evidence('https://www.mnre.gov.ws/wp-content/uploads/2024/09/Final-Samoa-SOE-2023-v39-digital-1.pdf', 'Samoa_PUMA_regulatory_requirement_for_aggregate_extraction', 'GOVERNMENT'),
+      evidence('https://theprif.org/sites/theprif.org/files/documents/PRIF-Aggregates-Report_final.pdf', 'Lefaga_volcanic_and_alluvial_aggregate_source_context', 'DEVELOPMENT_AGENCY')
+    ]
+  },
+  SITE_TUV_funafuti_borrow_pits: {
+    extra: {
+      historicalOperationalAuthority: 'Tuvalu Public Works Department',
+      historicalOwnershipContext: 'Government of Tuvalu / public infrastructure programme',
+      dataLimitation: 'The Funafuti borrow-pit system has mixed historical excavation, reclamation and waste-use history; no current commercial quarry operator is asserted.'
+    },
+    metadata: {
+      sourceAuthority: 'Tuvalu Public Works Department / SOPAC',
+      currentEvidence: 'Historical Funafuti borrow-pit programmes were coordinated with the Public Works Department and Lands and Survey departments; current documentation treats these primarily as legacy reclamation/infrastructure sites rather than active commercial mines.'
+    },
+    sources: [
+      evidence('https://spccfpstore1.blob.core.windows.net/digitallibrary-docs/files/9a/9a1a6f11d0c7ea5515b0fb98fa60edbd.pdf', 'Funafuti_borrow_pit_public_works_and_lands_survey_involvement', 'SOPAC'),
+      evidence('https://spccfpstore1.blob.core.windows.net/digitallibrary-docs/files/28/28a5f508625b3a152d75ae3ca4a3a231.pdf', 'Funafuti_borrow_pit_lagoon_sand_reclamation_and_government_equipment_context', 'SOPAC')
+    ]
+  },
+  SITE_VCT_diamond_quarry: {
+    status: 'RESOURCE_IDENTITY_UNVERIFIED',
+    operationalStatus: 'RESOURCE_IDENTITY_UNVERIFIED',
+    extractionEligibility: 'NON_EXECUTABLE',
+    ownershipScope: 'IDENTITY_UNVERIFIED',
+    extra: {
+      knownCurrentAggregateAuthority: 'Roads, Buildings and General Services Authority (BRAGSA)',
+      knownCurrentAggregateFacility: 'Rabacca Government Quarry',
+      identityLimitation: 'Current 2025 evidence confirms BRAGSA operates a 100 TPH aggregate crushing facility at Rabacca, but the reviewed sources do not establish that this facility is the repository record named Diamond Quarry.'
+    },
+    metadata: {
+      sourceAuthority: 'BRAGSA / St Vincent public reporting',
+      currentEvidence: 'BRAGSA commissioned a 100 TPH crushing plant at Rabacca in March 2025. No reviewed current source established a concession specifically named Diamond Quarry.'
+    },
+    sources: [
+      evidence('https://www.stvincenttimes.com/st-vincent-bragsa-new-5m-crusher-plant-rabacca/', 'current_BRAGSA_Rabacca_aggregate_crushing_facility', 'PUBLIC_AUTHORITY_REPORT')
+    ]
+  },
+  SITE_ATG_gunthorpes_quarry: {
+    status: 'RESOURCE_IDENTITY_UNVERIFIED',
+    operationalStatus: 'RESOURCE_IDENTITY_UNVERIFIED',
+    extractionEligibility: 'NON_EXECUTABLE',
+    ownershipScope: 'IDENTITY_UNVERIFIED',
+    extra: {
+      identityLimitation: 'Reviewed authoritative material identifies Gunthorpes as the historic site of the Antigua Central Sugar Factory, but no reliable current quarry concession named Gunthorpes Quarry was established. The record is fail-closed pending site-specific quarry evidence.'
+    },
+    metadata: {
+      sourceAuthority: 'Government of Antigua and Barbuda',
+      currentEvidence: 'Government material identifies Gunthorpes as the site of the twentieth-century Central Sugar Factory. The reviewed search did not establish a current quarry concession with that exact name.'
+    },
+    sources: [
+      evidence('https://ab.gov.ag/detail_template.php?page=aboutAB%2Fantigua_about', 'Gunthorpes_historical_identity_as_Central_Sugar_Factory_site', 'GOVERNMENT')
+    ]
+  },
+  SITE_KNA_ross_lands_quarry_zone: {
+    extra: {
+      knownNationalAggregateAuthority: 'Government of Saint Kitts and Nevis Public Works Department, Quarry Division',
+      identityScope: 'NATIONAL_QUARRY_OPERATOR_CONTEXT_NOT_SITE_SPECIFIC',
+      dataLimitation: 'Government reporting confirms the national Quarry Division operates a government quarry producing aggregates, but the reviewed evidence does not independently map that facility to the repository Ross Lands Quarry Zone record.'
+    },
+    metadata: {
+      sourceAuthority: 'Government of Saint Kitts and Nevis',
+      currentEvidence: 'The Public Works Department Quarry Division is the single largest aggregate provider in Saint Kitts and Nevis and was modernised with new crushing and screening equipment in 2024-2025. Site-specific Ross Lands attribution was not established.'
+    },
+    sources: [
+      evidence('https://www.sknis.gov.kn/2025/03/04/two-new-plants-commissioned-at-government-quarry-to-boost-efficiency-and-production-capacity/', 'government_quarry_division_current_operator_and_aggregate_output_context', 'GOVERNMENT')
     ]
   },
   SITE_SOM_el_buur_gold_mining_area: {
