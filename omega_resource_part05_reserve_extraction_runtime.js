@@ -101,7 +101,7 @@
         quantity=firstNumber(text,/([\d,.]+)\s*(?:trillion|billion|million|thousand)?\s*KG\b/i);
         if(quantity!==null){quantity*=32.15074656862745;sourceUnit='KILOGRAMS';outputUnit='TROY_OUNCES';}
         else {
-          quantity=firstNumber(text,/([\d,.]+)\s*(?:trillion|billion|million|thousand)?\s*(?:TONNES?|METRIC\s+TONS?|MT)\b/i);
+          quantity=firstNumber(text,/([\d,.]+)\s*(?:trillion|billion|million|thousand)?\s*(?:TONS?|TONNES?|METRIC\s+TONS?|MT)\b/i);
           if(quantity!==null){quantity*=32150.74656862745;sourceUnit='METRIC_TONS';outputUnit='TROY_OUNCES';}
         }
       }
