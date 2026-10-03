@@ -945,18 +945,17 @@
         "reserve": {
           "quantity": 193000,
           "unit": "kilograms",
-          "status": "OBSERVED"
+          "status": "OBSERVED",
+          "year": 2025,
+          "basis": "attributable"
         },
         "production": {
-          "annual": {
-            "value": 537796,
-            "unit": "troy_ounces",
-            "year": 2025
-          },
+          "annual": 500000,
           "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "OBSERVED"
+          "unit": "troy_ounces",
+          "year": 2025,
+          "status": "OBSERVED",
+          "basis": "attributable"
         },
         "grade": {
           "value": "1.37 g/t Au",
@@ -2155,7 +2154,7 @@
           "annual": 319000,
           "rate": null,
           "unit": "troy_ounces",
-          "year": null,
+          "year": 2025,
           "status": "OBSERVED",
           "basis": "site_production"
         },
@@ -2253,20 +2252,18 @@
           "status": "UNOBSERVED"
         },
         "production": {
-          "annual": {
-            "value": 500000,
-            "unit": "troy_ounces",
-            "year": 2024
-          },
+          "annual": 474500,
           "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "OBSERVED"
+          "unit": "troy_ounces",
+          "year": 2024,
+          "status": "OBSERVED",
+          "basis": "site_production"
         },
         "grade": {
-          "value": "Gold-bearing Tarkwaian ore",
-          "unit": null,
-          "status": "OBSERVED"
+          "value": 1.23,
+          "unit": "grams_per_tonne_gold",
+          "status": "OBSERVED",
+          "year": 2025
         },
         "recovery": {
           "value": null,
@@ -2568,7 +2565,7 @@
           "annual": 427200,
           "rate": null,
           "unit": "troy_ounces",
-          "year": null,
+          "year": 2025,
           "status": "OBSERVED",
           "basis": "100% mine"
         },
@@ -2576,7 +2573,7 @@
           "value": 1.18,
           "unit": "grams_per_tonne_gold",
           "status": "OBSERVED",
-          "year": null
+          "year": 2025
         },
         "recovery": {
           "value": 90,
@@ -3660,15 +3657,12 @@
           "status": "UNOBSERVED"
         },
         "production": {
-          "annual": {
-            "value": 388838,
-            "unit": "metric_tons",
-            "year": 2025
-          },
+          "annual": 388841,
           "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "OBSERVED"
+          "unit": "metric_tons",
+          "year": 2025,
+          "status": "OBSERVED",
+          "basis": "SITE_SPECIFIC"
         },
         "grade": {
           "value": null,
@@ -4257,7 +4251,7 @@
           "annual": 491644,
           "rate": null,
           "unit": "troy_ounces",
-          "year": null,
+          "year": 2025,
           "status": "OBSERVED",
           "basis": "SITE_SPECIFIC"
         },
@@ -4265,7 +4259,7 @@
           "value": 3.26,
           "unit": "grams_per_tonne_gold",
           "status": "OBSERVED",
-          "year": null
+          "year": 2025
         },
         "recovery": {
           "value": 90.2,
@@ -7704,7 +7698,9 @@
         "reserve": {
           "quantity": 31,
           "unit": "billion_cubic_meters",
-          "status": "OBSERVED"
+          "status": "OBSERVED",
+          "year": null,
+          "basis": "PIF declared estimate"
         },
         "production": {
           "annual": null,
@@ -9509,13 +9505,11 @@
           "status": "UNOBSERVED"
         },
         "production": {
-          "annual": {
-            "value": 45251000,
-            "unit": "metric_tons_coal",
-            "year": 2025,
-            "status": "OBSERVED"
-          },
-          "status": "OBSERVED"
+          "annual": 45251000,
+          "status": "OBSERVED",
+          "unit": "metric_tons_coal",
+          "year": 2025,
+          "basis": "SITE_SPECIFIC"
         },
         "grade": {
           "value": null,
