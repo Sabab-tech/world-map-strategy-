@@ -78617,15 +78617,16 @@
                 "operationalStatus": "ACTIVE_PRODUCING",
                 "owner": "LKAB",
                 "operator": "LKAB – Kiruna Mine",
-                "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-                "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+                "ownerEvidenceStatus": "WEB_REVIEWED",
+                "operatorEvidenceStatus": "WEB_REVIEWED"
               },
               "quantitativeProfile": {
                 "reserve": {
                   "quantity": 544000000,
                   "unit": "metric_tons_iron_ore",
                   "year": 2025,
-                  "status": "OBSERVED"
+                  "status": "OBSERVED",
+                  "basis": "MINERAL_RESERVE"
                 },
                 "production": {
                   "annual": null,
@@ -78636,8 +78637,10 @@
                 },
                 "grade": {
                   "value": 45.5,
-                  "unit": "percent_Fe",
-                  "status": "OBSERVED"
+                  "unit": "percent_iron",
+                  "year": 2025,
+                  "status": "OBSERVED",
+                  "basis": "MINERAL_RESERVE"
                 },
                 "quantitativeExtractionDataAvailable": true,
                 "quantitativeProvenance": {
@@ -78649,15 +78652,14 @@
               "resourceIdentity": {
                 "resourceTypeId": "iron_ore",
                 "ontologyKey": "IRON_ORE",
-                "commodityName": "Iron Ore & Concentrates",
+                "commodityName": "Iron ore products",
                 "category": "FERROUS_BASE_METAL",
                 "physicalForm": "SOLID_ORE",
-                "upstreamProcess": "Open-Pit Mining, Drilling, Blasting",
-                "midstreamProcess": "Crushing, Beneficiation, Sinter/Pellet Preparation",
+                "upstreamProcess": "Underground Mining",
+                "midstreamProcess": "Crushing, Concentration and Pelletizing",
                 "refinedOutputs": [
-                  "IRON_CONCENTRATE",
-                  "IRON_PELLETS",
-                  "STEEL"
+                  "IRON_ORE_CONCENTRATE",
+                  "PELLETS"
                 ],
                 "downstreamSectors": [
                   "CONSTRUCTION",
@@ -78678,12 +78680,12 @@
                   "overall": "PARTIAL"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED",
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
                 "quantitativeOverall": "PARTIAL"
               },
-              "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
+              "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVALIDATION",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "currentEvidence": "LKAB reports 544 Mt Kiruna mineral reserves at 45.5% Fe in 2025."
@@ -78708,7 +78710,7 @@
                   "countryIso3": "SWE",
                   "siteType": "MINE",
                   "resourceTypeId": "iron_ore",
-                  "resourceName": "Iron Ore & Concentrates",
+                  "resourceName": "Iron ore products",
                   "ontologyKey": "IRON_ORE"
                 },
                 "location": {
@@ -78724,8 +78726,8 @@
                 "ownership": {
                   "owner": "LKAB",
                   "operator": "LKAB – Kiruna Mine",
-                  "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-                  "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+                  "ownerEvidenceStatus": "WEB_REVIEWED",
+                  "operatorEvidenceStatus": "WEB_REVIEWED"
                 },
                 "operation": {
                   "status": "ACTIVE_PRODUCING",
@@ -78735,12 +78737,11 @@
                   "commercialExtraction": true
                 },
                 "processing": {
-                  "upstreamProcess": "Open-Pit Mining, Drilling, Blasting",
-                  "midstreamProcess": "Crushing, Beneficiation, Sinter/Pellet Preparation",
+                  "upstreamProcess": "Underground Mining",
+                  "midstreamProcess": "Crushing, Concentration and Pelletizing",
                   "refinedOutputs": [
-                    "IRON_CONCENTRATE",
-                    "IRON_PELLETS",
-                    "STEEL"
+                    "IRON_ORE_CONCENTRATE",
+                    "PELLETS"
                   ],
                   "downstreamSectors": [
                     "CONSTRUCTION",
@@ -78752,7 +78753,8 @@
                     "quantity": 544000000,
                     "unit": "metric_tons_iron_ore",
                     "year": 2025,
-                    "status": "OBSERVED"
+                    "status": "OBSERVED",
+                    "basis": "MINERAL_RESERVE"
                   },
                   "production": {
                     "annual": null,
@@ -78763,8 +78765,10 @@
                   },
                   "grade": {
                     "value": 45.5,
-                    "unit": "percent_Fe",
-                    "status": "OBSERVED"
+                    "unit": "percent_iron",
+                    "year": 2025,
+                    "status": "OBSERVED",
+                    "basis": "MINERAL_RESERVE"
                   },
                   "recovery": {
                     "value": null,
@@ -78799,12 +78803,24 @@
                   }
                 },
                 "verification": {
-                  "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
-                  "reviewedAt": "2026-09-27",
+                  "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 1,
                   "sourceAuthorities": [],
                   "dataLimitations": null
                 }
+              },
+              "mineralResourcesExclusiveOfReserves": {
+                "value": 1129000000,
+                "unit": "metric_tons_iron_ore",
+                "year": 2025,
+                "status": "OBSERVED"
+              },
+              "reserveGradePrevious2024": {
+                "value": 46.7,
+                "unit": "percent_iron",
+                "year": 2024,
+                "status": "OBSERVED"
               }
             }
           ],
@@ -82620,16 +82636,18 @@
                   "year": 2025
                 },
                 "production": {
-                  "annual": null,
-                  "rate": null,
-                  "unit": null,
-                  "year": null,
-                  "status": "UNOBSERVED"
+                  "annual": 588,
+                  "unit": "metric_tons_WO3_concentrate",
+                  "year": 2024,
+                  "status": "REPORTED",
+                  "basis": "ANNUALIZED_OUTPUT_EQUIVALENT_58750_MTU"
                 },
                 "grade": {
-                  "value": null,
-                  "unit": null,
-                  "status": "UNOBSERVED"
+                  "value": 70,
+                  "unit": "percent_WO3_concentrate",
+                  "year": 2025,
+                  "status": "REPORTED",
+                  "basis": "PRIMARY_CONCENTRATE_PRODUCT"
                 },
                 "quantitativeExtractionDataAvailable": false,
                 "quantitativeProvenance": {
@@ -82668,13 +82686,13 @@
                 "ownership": "REPORTED",
                 "quantitative": {
                   "reserve": "OBSERVED",
-                  "production": "UNOBSERVED",
-                  "grade": "UNOBSERVED",
-                  "overall": "PARTIAL"
+                  "production": "REPORTED",
+                  "grade": "REPORTED",
+                  "overall": "COMPLETE"
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
-                "quantitativeOverall": "PARTIAL"
+                "quantitativeOverall": "COMPLETE"
               },
               "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
               "researchMetadata": {
@@ -82739,16 +82757,18 @@
                     "year": 2025
                   },
                   "production": {
-                    "annual": null,
-                    "rate": null,
-                    "unit": null,
-                    "year": null,
-                    "status": "UNOBSERVED"
+                    "annual": 588,
+                    "unit": "metric_tons_WO3_concentrate",
+                    "year": 2024,
+                    "status": "REPORTED",
+                    "basis": "ANNUALIZED_OUTPUT_EQUIVALENT_58750_MTU"
                   },
                   "grade": {
-                    "value": null,
-                    "unit": null,
-                    "status": "UNOBSERVED"
+                    "value": 70,
+                    "unit": "percent_WO3_concentrate",
+                    "year": 2025,
+                    "status": "REPORTED",
+                    "basis": "PRIMARY_CONCENTRATE_PRODUCT"
                   },
                   "recovery": {
                     "value": null,
@@ -82777,15 +82797,15 @@
                   },
                   "completeness": {
                     "reserve": "OBSERVED",
-                    "production": "UNOBSERVED",
-                    "grade": "UNOBSERVED",
-                    "overall": "PARTIAL"
+                    "production": "REPORTED",
+                    "grade": "REPORTED",
+                    "overall": "COMPLETE"
                   }
                 },
                 "verification": {
                   "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
                   "reviewedAt": "2026-10-03",
-                  "sourceCount": 3,
+                  "sourceCount": 4,
                   "sourceAuthorities": [
                     "REGULATORY_FILING",
                     "OPERATOR"
@@ -82811,8 +82831,25 @@
                   "accessed": "2026-10-03",
                   "scope": "tungsten_concentrate_process_and_product_grade",
                   "sourceType": "OPERATOR"
+                },
+                {
+                  "url": "https://almonty.com/wp-content/uploads/2025/10/ALM-Investor-Deck-October-2025.pdf",
+                  "accessed": "2026-10-03",
+                  "scope": "Panasqueira_annualized_output_and_expansion_potential",
+                  "sourceType": "OPERATOR"
                 }
-              ]
+              ],
+              "annualizedOutputMTU": {
+                "value": 58750,
+                "unit": "MTU_WO3",
+                "year": 2024,
+                "status": "REPORTED_ANNUALIZED"
+              },
+              "expansionPotentialOutput": {
+                "value": 1240,
+                "unit": "metric_tons_WO3_concentrate_per_year",
+                "status": "PROJECTED"
+              }
             }
           ],
           "processingFacilities": [

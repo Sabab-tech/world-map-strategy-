@@ -12734,7 +12734,7 @@
         "countryIso3": "SWE",
         "siteType": "MINE",
         "resourceTypeId": "iron_ore",
-        "resourceName": "Iron Ore & Concentrates",
+        "resourceName": "Iron ore products",
         "ontologyKey": "IRON_ORE"
       },
       "location": {
@@ -12750,8 +12750,8 @@
       "ownership": {
         "owner": "LKAB",
         "operator": "LKAB – Kiruna Mine",
-        "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-        "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+        "ownerEvidenceStatus": "WEB_REVIEWED",
+        "operatorEvidenceStatus": "WEB_REVIEWED"
       },
       "operation": {
         "status": "ACTIVE_PRODUCING",
@@ -12761,12 +12761,11 @@
         "commercialExtraction": true
       },
       "processing": {
-        "upstreamProcess": "Open-Pit Mining, Drilling, Blasting",
-        "midstreamProcess": "Crushing, Beneficiation, Sinter/Pellet Preparation",
+        "upstreamProcess": "Underground Mining",
+        "midstreamProcess": "Crushing, Concentration and Pelletizing",
         "refinedOutputs": [
-          "IRON_CONCENTRATE",
-          "IRON_PELLETS",
-          "STEEL"
+          "IRON_ORE_CONCENTRATE",
+          "PELLETS"
         ],
         "downstreamSectors": [
           "CONSTRUCTION",
@@ -12778,7 +12777,8 @@
           "quantity": 544000000,
           "unit": "metric_tons_iron_ore",
           "year": 2025,
-          "status": "OBSERVED"
+          "status": "OBSERVED",
+          "basis": "MINERAL_RESERVE"
         },
         "production": {
           "annual": null,
@@ -12789,8 +12789,10 @@
         },
         "grade": {
           "value": 45.5,
-          "unit": "percent_Fe",
-          "status": "OBSERVED"
+          "unit": "percent_iron",
+          "year": 2025,
+          "status": "OBSERVED",
+          "basis": "MINERAL_RESERVE"
         },
         "recovery": {
           "value": null,
@@ -12825,8 +12827,8 @@
         }
       },
       "verification": {
-        "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
-        "reviewedAt": "2026-09-27",
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 1,
         "sourceAuthorities": [],
         "dataLimitations": null
@@ -13424,16 +13426,18 @@
           "year": 2025
         },
         "production": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
+          "annual": 588,
+          "unit": "metric_tons_WO3_concentrate",
+          "year": 2024,
+          "status": "REPORTED",
+          "basis": "ANNUALIZED_OUTPUT_EQUIVALENT_58750_MTU"
         },
         "grade": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
+          "value": 70,
+          "unit": "percent_WO3_concentrate",
+          "year": 2025,
+          "status": "REPORTED",
+          "basis": "PRIMARY_CONCENTRATE_PRODUCT"
         },
         "recovery": {
           "value": null,
@@ -13462,15 +13466,15 @@
         },
         "completeness": {
           "reserve": "OBSERVED",
-          "production": "UNOBSERVED",
-          "grade": "UNOBSERVED",
-          "overall": "PARTIAL"
+          "production": "REPORTED",
+          "grade": "REPORTED",
+          "overall": "COMPLETE"
         }
       },
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
         "reviewedAt": "2026-10-03",
-        "sourceCount": 3,
+        "sourceCount": 4,
         "sourceAuthorities": [
           "REGULATORY_FILING",
           "OPERATOR"
@@ -20292,9 +20296,10 @@
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
         "reviewedAt": "2026-10-03",
-        "sourceCount": 2,
+        "sourceCount": 3,
         "sourceAuthorities": [
-          "REGULATORY_FILING"
+          "REGULATORY_FILING",
+          "OPERATOR"
         ],
         "dataLimitations": null
       }
@@ -20445,7 +20450,7 @@
       },
       "processing": {
         "upstreamProcess": "Open-Pit Mining",
-        "midstreamProcess": "Crushing, grinding, flotation and gold recovery",
+        "midstreamProcess": "Crushing, Grinding, Flotation and Gold Recovery",
         "refinedOutputs": [
           "GOLD_DORE",
           "COPPER_CONCENTRATE"
@@ -20459,16 +20464,16 @@
         "reserve": {
           "quantity": 10200000,
           "unit": "troy_ounces_gold",
-          "status": "OBSERVED",
           "year": 2025,
-          "sourceScope": "FY2025_RESERVE"
+          "status": "OBSERVED",
+          "basis": "FY2025_MINERAL_RESERVE"
         },
         "production": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
+          "annual": 160000,
+          "unit": "troy_ounces_gold",
+          "year": 2026,
+          "status": "REPORTED",
+          "basis": "CURRENT_ANNUAL_PRODUCTION_GUIDANCE"
         },
         "grade": {
           "value": null,
@@ -20502,7 +20507,7 @@
         },
         "completeness": {
           "reserve": "OBSERVED",
-          "production": "UNOBSERVED",
+          "production": "REPORTED",
           "grade": "UNOBSERVED",
           "overall": "PARTIAL"
         }

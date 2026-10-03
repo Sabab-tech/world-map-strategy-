@@ -10402,9 +10402,10 @@
                 "verification": {
                   "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
                   "reviewedAt": "2026-10-03",
-                  "sourceCount": 2,
+                  "sourceCount": 3,
                   "sourceAuthorities": [
-                    "REGULATORY_FILING"
+                    "REGULATORY_FILING",
+                    "OPERATOR"
                   ],
                   "dataLimitations": null
                 }
@@ -10430,8 +10431,20 @@
                   "accessed": "2026-10-03",
                   "scope": "2025_Merian_resource_extraction_payment_and_project_identity",
                   "sourceType": "REGULATORY_FILING"
+                },
+                {
+                  "url": "https://www.newmont.com/investors/news-release/news-details/2026/Newmont-Reports-Fourth-Quarter-and-Full-Year-2025-Results-Provides-2026-Guidance-and-Announces-Enhanced-Capital-Allocation-Framework/",
+                  "accessed": "2026-10-03",
+                  "scope": "2026_Merian_gold_production_guidance",
+                  "sourceType": "OPERATOR"
                 }
-              ]
+              ],
+              "annualGoldProductionGuidance2026": {
+                "value": 225000,
+                "unit": "troy_ounces_gold",
+                "year": 2026,
+                "status": "GUIDANCE"
+              }
             }
           ],
           "processingFacilities": [
@@ -11573,16 +11586,16 @@
                 "reserve": {
                   "quantity": 10200000,
                   "unit": "troy_ounces_gold",
-                  "status": "OBSERVED",
                   "year": 2025,
-                  "sourceScope": "FY2025_RESERVE"
+                  "status": "OBSERVED",
+                  "basis": "FY2025_MINERAL_RESERVE"
                 },
                 "production": {
-                  "annual": null,
-                  "rate": null,
-                  "unit": null,
-                  "year": null,
-                  "status": "UNOBSERVED"
+                  "annual": 160000,
+                  "unit": "troy_ounces_gold",
+                  "year": 2026,
+                  "status": "REPORTED",
+                  "basis": "CURRENT_ANNUAL_PRODUCTION_GUIDANCE"
                 },
                 "grade": {
                   "value": null,
@@ -11603,7 +11616,7 @@
                 "category": "PRECIOUS_METAL",
                 "physicalForm": "SOLID_ORE_AND_DORE",
                 "upstreamProcess": "Open-Pit Mining",
-                "midstreamProcess": "Crushing, grinding, flotation and gold recovery",
+                "midstreamProcess": "Crushing, Grinding, Flotation and Gold Recovery",
                 "refinedOutputs": [
                   "GOLD_DORE",
                   "COPPER_CONCENTRATE"
@@ -11626,7 +11639,7 @@
                 "ownership": "REPORTED",
                 "quantitative": {
                   "reserve": "OBSERVED",
-                  "production": "UNOBSERVED",
+                  "production": "REPORTED",
                   "grade": "UNOBSERVED",
                   "overall": "PARTIAL"
                 },
@@ -11670,7 +11683,7 @@
                 },
                 "processing": {
                   "upstreamProcess": "Open-Pit Mining",
-                  "midstreamProcess": "Crushing, grinding, flotation and gold recovery",
+                  "midstreamProcess": "Crushing, Grinding, Flotation and Gold Recovery",
                   "refinedOutputs": [
                     "GOLD_DORE",
                     "COPPER_CONCENTRATE"
@@ -11684,16 +11697,16 @@
                   "reserve": {
                     "quantity": 10200000,
                     "unit": "troy_ounces_gold",
-                    "status": "OBSERVED",
                     "year": 2025,
-                    "sourceScope": "FY2025_RESERVE"
+                    "status": "OBSERVED",
+                    "basis": "FY2025_MINERAL_RESERVE"
                   },
                   "production": {
-                    "annual": null,
-                    "rate": null,
-                    "unit": null,
-                    "year": null,
-                    "status": "UNOBSERVED"
+                    "annual": 160000,
+                    "unit": "troy_ounces_gold",
+                    "year": 2026,
+                    "status": "REPORTED",
+                    "basis": "CURRENT_ANNUAL_PRODUCTION_GUIDANCE"
                   },
                   "grade": {
                     "value": null,
@@ -11727,7 +11740,7 @@
                   },
                   "completeness": {
                     "reserve": "OBSERVED",
-                    "production": "UNOBSERVED",
+                    "production": "REPORTED",
                     "grade": "UNOBSERVED",
                     "overall": "PARTIAL"
                   }
@@ -11776,7 +11789,31 @@
                   "scope": "current_Boddington_production_reserves_status_and_processing_context",
                   "sourceType": "OPERATOR"
                 }
-              ]
+              ],
+              "annualCopperProductionGuidance": {
+                "value": 5000,
+                "unit": "metric_tons_copper_per_year",
+                "year": 2026,
+                "status": "REPORTED"
+              },
+              "copperReserve": {
+                "value": 500000,
+                "unit": "metric_tons_copper",
+                "year": 2025,
+                "status": "OBSERVED"
+              },
+              "goldResourcesFY2025": {
+                "value": 4400000,
+                "unit": "troy_ounces_gold",
+                "year": 2025,
+                "status": "OBSERVED"
+              },
+              "copperResourcesFY2025": {
+                "value": 300000,
+                "unit": "metric_tons_copper",
+                "year": 2025,
+                "status": "OBSERVED"
+              }
             }
           ],
           "processingFacilities": [

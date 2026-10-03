@@ -1,8 +1,8 @@
 {
   "generatedAt": "2026-10-03",
   "totalSites": 199,
-  "explicitFixCount": 127,
-  "sourceBackedReviewedSites": 140,
+  "explicitFixCount": 128,
+  "sourceBackedReviewedSites": 141,
   "stillLegacySites": 0,
   "explicitOwnerSites": 179,
   "explicitOperatorSites": 181,
@@ -116,6 +116,7 @@
     "SITE_NLD_veendam_salt_mine",
     "SITE_BEL_antoing_limestone_quarry",
     "SITE_CHE_bex_salt_mine",
+    "SITE_SWE_kiruna_iron_mine",
     "SITE_NOR_tellnes_ilmenite_mine",
     "SITE_AUT_erzberg_iron_ore_mine",
     "SITE_FIN_kittil_gold_mine",
