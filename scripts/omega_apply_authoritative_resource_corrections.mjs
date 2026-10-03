@@ -2383,6 +2383,27 @@ function promoteStructuredQuantitative(site) {
   };
 }
 
+function updateQuantitativeCompleteness(site) {
+  const qp = site.quantitativeProfile || {};
+  const reserve = qp.reserve?.quantity != null && qp.reserve.quantity !== '';
+  const production = qp.production?.annual != null || qp.production?.rate != null;
+  const gradeNumber = Number(qp.grade?.value);
+  const grade = Number.isFinite(gradeNumber) && gradeNumber > 0;
+  const isNA = String(site.status || '').toUpperCase() === 'NOT_APPLICABLE' || site.commercialExtraction === false;
+  const core = { reserve, production, grade };
+  const count = Object.values(core).filter(Boolean).length;
+  const overall = isNA ? 'NOT_APPLICABLE' : count === 3 ? 'COMPLETE' : count > 0 ? 'PARTIAL' : 'UNOBSERVED';
+  site.dataCompleteness = site.dataCompleteness || {};
+  site.dataCompleteness.quantitative = {
+    ...(site.dataCompleteness.quantitative || {}),
+    reserve: qp.reserve?.status || 'UNOBSERVED',
+    production: qp.production?.status || 'UNOBSERVED',
+    grade: qp.grade?.status || 'UNOBSERVED',
+    overall
+  };
+  site.dataCompleteness.quantitativeOverall = overall;
+}
+
 function buildSiteDataPackage(countryId, site) {
   const rp = site.resourceIdentity || {};
   const lp = site.locationIdentity || {};
@@ -2433,7 +2454,8 @@ function buildSiteDataPackage(countryId, site) {
       throughput: qp.throughput || { value: null, unit: null, year: null, status: 'UNOBSERVED' },
       capacity: qp.capacity || {},
       reportedMetrics: qp.reportedMetrics || {},
-      quantitativeProvenance: qp.quantitativeProvenance || {}
+      quantitativeProvenance: qp.quantitativeProvenance || {},
+      completeness: site.dataCompleteness?.quantitative || {}
     },
     verification: {
       researchState: site.researchState,
@@ -2599,6 +2621,7 @@ const placeholders = new Set([
   'former midroc'
 ]);
 for (const { site } of sites) {
+  updateQuantitativeCompleteness(site);
   promoteStructuredQuantitative(site);
   site.dataCompleteness = site.dataCompleteness || {};
   if (String(site.status).toUpperCase() === 'NOT_APPLICABLE' || site.commercialExtraction === false) {
