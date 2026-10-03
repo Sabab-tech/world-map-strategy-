@@ -1146,7 +1146,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "OBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "PARTIAL"
+                  "overall": "PARTIAL",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 1
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED",
@@ -1261,7 +1263,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "OBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "PARTIAL"
+                    "overall": "PARTIAL",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 1
                   }
                 },
                 "verification": {
@@ -1432,7 +1436,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -1532,7 +1538,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -1715,7 +1723,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -1815,7 +1825,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -2367,7 +2379,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -2470,7 +2484,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -3050,7 +3066,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -3087,7 +3105,7 @@
                   "status": "LIMITED",
                   "operationalStatus": "LIMITED",
                   "extractionMethod": "surface quarrying",
-                  "extractionEligibility": null,
+                  "extractionEligibility": "CONDITIONAL",
                   "commercialExtraction": true
                 },
                 "processing": {
@@ -3150,7 +3168,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -3169,7 +3189,8 @@
                 "webSearchMethod": "SITE_NAME + COUNTRY",
                 "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
                 "sourceAuthority": "Bureau des Mines et de l’Energie / Haiti mineral inventory",
-                "currentEvidence": "The Artibonite mineral inventory documents limestone and cement raw-material occurrences around Gonaïves, including Morne Blanc with an estimated 2,000,000 m³ exploitable volume and CaCO3 of 85-92%. The repository record remains area-level and does not assign a single current operator."
+                "currentEvidence": "The Artibonite mineral inventory documents limestone and cement raw-material occurrences around Gonaïves, including Morne Blanc with an estimated 2,000,000 m³ exploitable volume and CaCO3 of 85-92%. The repository record remains area-level and does not assign a single current operator.",
+                "currentDataState": "Regional quarry zone; no single current commercial operator established in repository evidence"
               },
               "ownershipScope": "AREA_MULTI_OPERATOR",
               "historicalAreaResourceEvidence": {
@@ -3193,7 +3214,8 @@
                   "scope": "gonaives_limestone_area_identity_and_historical_resource_characteristics",
                   "sourceType": "MINERAL_INVENTORY"
                 }
-              ]
+              ],
+              "extractionEligibility": "CONDITIONAL"
             }
           ],
           "processingFacilities": [
@@ -3718,7 +3740,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -3818,7 +3842,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -4387,7 +4413,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -4492,7 +4520,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -5061,7 +5091,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -5160,7 +5192,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -5695,7 +5729,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -5795,7 +5831,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -6377,7 +6415,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -6476,7 +6516,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -7017,7 +7059,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -7116,7 +7160,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -7689,7 +7735,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -7788,7 +7836,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -8330,7 +8380,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -8430,7 +8482,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -8992,7 +9046,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -9029,7 +9085,7 @@
                   "status": "LIMITED",
                   "operationalStatus": "LIMITED",
                   "extractionMethod": "surface quarrying",
-                  "extractionEligibility": null,
+                  "extractionEligibility": "CONDITIONAL",
                   "commercialExtraction": true
                 },
                 "processing": {
@@ -9092,7 +9148,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -9111,7 +9169,8 @@
                 "webSearchMethod": "SITE_NAME + COUNTRY",
                 "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
                 "sourceAuthority": "Government of Saint Kitts and Nevis",
-                "currentEvidence": "The Public Works Department Quarry Division is the single largest aggregate provider in Saint Kitts and Nevis and was modernised with new crushing and screening equipment in 2024-2025. Site-specific Ross Lands attribution was not established."
+                "currentEvidence": "The Public Works Department Quarry Division is the single largest aggregate provider in Saint Kitts and Nevis and was modernised with new crushing and screening equipment in 2024-2025. Site-specific Ross Lands attribution was not established.",
+                "currentDataState": "Regional quarry zone; no single current commercial operator established in repository evidence"
               },
               "knownNationalAggregateAuthority": "Government of Saint Kitts and Nevis Public Works Department, Quarry Division",
               "identityScope": "NATIONAL_QUARRY_OPERATOR_CONTEXT_NOT_SITE_SPECIFIC",
@@ -9123,7 +9182,8 @@
                   "scope": "government_quarry_division_current_operator_and_aggregate_output_context",
                   "sourceType": "GOVERNMENT"
                 }
-              ]
+              ],
+              "extractionEligibility": "CONDITIONAL"
             }
           ],
           "processingFacilities": [
@@ -9658,7 +9718,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -9757,7 +9819,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -10296,7 +10360,9 @@
                   "reserve": "OBSERVED_ATTRIBUTABLE",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "PARTIAL"
+                  "overall": "PARTIAL",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 1
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -10396,7 +10462,9 @@
                     "reserve": "OBSERVED_ATTRIBUTABLE",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "PARTIAL"
+                    "overall": "PARTIAL",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 1
                   }
                 },
                 "verification": {
@@ -10972,7 +11040,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "OBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "PARTIAL"
+                  "overall": "PARTIAL",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 1
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -11073,7 +11143,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "OBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "PARTIAL"
+                    "overall": "PARTIAL",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 1
                   }
                 },
                 "verification": {
@@ -11641,7 +11713,9 @@
                   "reserve": "OBSERVED",
                   "production": "REPORTED",
                   "grade": "UNOBSERVED",
-                  "overall": "PARTIAL"
+                  "overall": "PARTIAL",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 2
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -11742,7 +11816,9 @@
                     "reserve": "OBSERVED",
                     "production": "REPORTED",
                     "grade": "UNOBSERVED",
-                    "overall": "PARTIAL"
+                    "overall": "PARTIAL",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 2
                   }
                 },
                 "verification": {
@@ -12339,7 +12415,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "OBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "PARTIAL"
+                  "overall": "PARTIAL",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 1
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -12440,7 +12518,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "OBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "PARTIAL"
+                    "overall": "PARTIAL",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 1
                   }
                 },
                 "verification": {
@@ -13023,7 +13103,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -13123,7 +13205,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -13705,7 +13789,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -13804,7 +13890,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -14407,7 +14495,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -14507,7 +14597,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -15049,7 +15141,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -15148,7 +15242,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -15729,7 +15825,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -15766,7 +15864,7 @@
                   "status": "LIMITED",
                   "operationalStatus": "LIMITED",
                   "extractionMethod": "VOLCANIC_BASALT_QUARRYING_AND_CRUSHING",
-                  "extractionEligibility": null,
+                  "extractionEligibility": "CONDITIONAL",
                   "commercialExtraction": true
                 },
                 "processing": {
@@ -15828,7 +15926,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -15845,11 +15945,13 @@
               "researchMetadata": {
                 "reviewedAt": "2026-10-03",
                 "sourceAuthority": "Samoa environmental and aggregate planning sources",
-                "currentEvidence": "Samoa earth-material extraction, including aggregates, requires PUMA applications. Public aggregate reviews identify volcanic hard rock and alluvial/coastal aggregate sources in the Lefaga area."
+                "currentEvidence": "Samoa earth-material extraction, including aggregates, requires PUMA applications. Public aggregate reviews identify volcanic hard rock and alluvial/coastal aggregate sources in the Lefaga area.",
+                "currentDataState": "Regional aggregate quarry zone; no single current commercial operator established in repository evidence"
               },
               "ownershipScope": "AREA_MULTI_OPERATOR",
               "regulatoryAuthority": "Planning and Urban Management Authority (PUMA)",
-              "dataLimitation": "Public aggregate review identifies Lefaga volcanic/alluvial sources and requires PUMA applications for extraction; the reviewed source does not establish one operator for this area-level record."
+              "dataLimitation": "Public aggregate review identifies Lefaga volcanic/alluvial sources and requires PUMA applications for extraction; the reviewed source does not establish one operator for this area-level record.",
+              "extractionEligibility": "CONDITIONAL"
             }
           ],
           "processingFacilities": [
@@ -16400,7 +16502,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -16499,7 +16603,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -17073,7 +17179,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -17172,7 +17280,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -17737,7 +17847,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -17774,7 +17886,7 @@
                   "status": "HISTORICAL_INACTIVE",
                   "operationalStatus": "LIMITED",
                   "extractionMethod": "CORAL_AGGREGATE_BORROW_PITS",
-                  "extractionEligibility": null,
+                  "extractionEligibility": "NON_EXECUTABLE",
                   "commercialExtraction": true
                 },
                 "processing": {
@@ -17836,7 +17948,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -17852,11 +17966,13 @@
               "researchMetadata": {
                 "reviewedAt": "2026-10-03",
                 "sourceAuthority": "Tuvalu Public Works Department / SOPAC",
-                "currentEvidence": "Historical Funafuti borrow-pit programmes were coordinated with the Public Works Department and Lands and Survey departments; current documentation treats these primarily as legacy reclamation/infrastructure sites rather than active commercial mines."
+                "currentEvidence": "Historical Funafuti borrow-pit programmes were coordinated with the Public Works Department and Lands and Survey departments; current documentation treats these primarily as legacy reclamation/infrastructure sites rather than active commercial mines.",
+                "currentDataState": "Historical borrow-pit reference; current commercial extraction operator is not established"
               },
               "historicalOperationalAuthority": "Tuvalu Public Works Department",
               "historicalOwnershipContext": "Government of Tuvalu / public infrastructure programme",
-              "dataLimitation": "The Funafuti borrow-pit system has mixed historical excavation, reclamation and waste-use history; no current commercial quarry operator is asserted."
+              "dataLimitation": "The Funafuti borrow-pit system has mixed historical excavation, reclamation and waste-use history; no current commercial quarry operator is asserted.",
+              "extractionEligibility": "NON_EXECUTABLE"
             }
           ],
           "processingFacilities": [
@@ -18398,7 +18514,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "OBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "PARTIAL"
+                  "overall": "PARTIAL",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 1
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -18501,7 +18619,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "OBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "PARTIAL"
+                    "overall": "PARTIAL",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 1
                   }
                 },
                 "verification": {
@@ -19051,7 +19171,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -19150,7 +19272,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -19703,7 +19827,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -19802,7 +19928,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -20368,7 +20496,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -20468,7 +20598,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {

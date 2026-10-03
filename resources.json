@@ -1109,7 +1109,9 @@
                   "reserve": "REPORTED",
                   "production": "OBSERVED",
                   "grade": "OBSERVED",
-                  "overall": "PARTIAL"
+                  "overall": "PARTIAL",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 2
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -1234,7 +1236,9 @@
                     "reserve": "REPORTED",
                     "production": "OBSERVED",
                     "grade": "OBSERVED",
-                    "overall": "PARTIAL"
+                    "overall": "PARTIAL",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 2
                   }
                 },
                 "verification": {
@@ -1803,7 +1807,9 @@
                   "reserve": "OBSERVED",
                   "production": "OBSERVED",
                   "grade": "OBSERVED",
-                  "overall": "PARTIAL"
+                  "overall": "PARTIAL",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 2
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED",
@@ -1928,7 +1934,9 @@
                     "reserve": "OBSERVED",
                     "production": "OBSERVED",
                     "grade": "OBSERVED",
-                    "overall": "PARTIAL"
+                    "overall": "PARTIAL",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 2
                   }
                 },
                 "verification": {
@@ -2475,7 +2483,9 @@
                   "reserve": "OBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "OBSERVED",
-                  "overall": "PARTIAL"
+                  "overall": "PARTIAL",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 1
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED",
@@ -2593,7 +2603,9 @@
                     "reserve": "OBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "OBSERVED",
-                    "overall": "PARTIAL"
+                    "overall": "PARTIAL",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 1
                   }
                 },
                 "verification": {
@@ -3166,7 +3178,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "OBSERVED",
                   "grade": "REPORTED",
-                  "overall": "PARTIAL"
+                  "overall": "PARTIAL",
+                  "structuredEvidence": true,
+                  "coreFieldCount": 2
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -3330,7 +3344,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "OBSERVED",
                     "grade": "REPORTED",
-                    "overall": "PARTIAL"
+                    "overall": "PARTIAL",
+                    "structuredEvidence": true,
+                    "coreFieldCount": 2
                   }
                 },
                 "verification": {
@@ -3892,7 +3908,9 @@
                   "reserve": "OBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "OBSERVED",
-                  "overall": "PARTIAL"
+                  "overall": "PARTIAL",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 2
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED",
@@ -4024,7 +4042,9 @@
                     "reserve": "OBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "OBSERVED",
-                    "overall": "PARTIAL"
+                    "overall": "PARTIAL",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 2
                   }
                 },
                 "verification": {
@@ -4582,7 +4602,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -4682,7 +4704,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -5235,7 +5259,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED",
@@ -5357,7 +5383,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -5918,7 +5946,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -6017,7 +6047,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -6580,7 +6612,9 @@
                   "reserve": "REPORTED",
                   "production": "UNOBSERVED",
                   "grade": "REPORTED",
-                  "overall": "PARTIAL"
+                  "overall": "PARTIAL",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 2
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -6722,7 +6756,9 @@
                     "reserve": "REPORTED",
                     "production": "UNOBSERVED",
                     "grade": "REPORTED",
-                    "overall": "PARTIAL"
+                    "overall": "PARTIAL",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 2
                   }
                 },
                 "verification": {
@@ -7305,7 +7341,9 @@
                   "reserve": "OBSERVED_ATTRIBUTABLE",
                   "production": "OBSERVED",
                   "grade": "OBSERVED",
-                  "overall": "COMPLETE"
+                  "overall": "COMPLETE",
+                  "structuredEvidence": true,
+                  "coreFieldCount": 3
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -7463,7 +7501,9 @@
                     "reserve": "OBSERVED_ATTRIBUTABLE",
                     "production": "OBSERVED",
                     "grade": "OBSERVED",
-                    "overall": "COMPLETE"
+                    "overall": "COMPLETE",
+                    "structuredEvidence": true,
+                    "coreFieldCount": 3
                   }
                 },
                 "verification": {
@@ -8033,7 +8073,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED",
@@ -8153,7 +8195,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -8709,11 +8753,13 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "PARTIAL",
+                  "structuredEvidence": true,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED",
-                "quantitativeOverall": "UNOBSERVED"
+                "quantitativeOverall": "PARTIAL"
               },
               "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
               "researchMetadata": {
@@ -8853,7 +8899,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "PARTIAL",
+                    "structuredEvidence": true,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -9404,7 +9452,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -9531,7 +9581,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -10078,7 +10130,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -10196,7 +10250,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -10745,7 +10801,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "OBSERVED",
-                  "overall": "PARTIAL"
+                  "overall": "PARTIAL",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 1
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED",
@@ -10861,7 +10919,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "OBSERVED",
-                    "overall": "PARTIAL"
+                    "overall": "PARTIAL",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 1
                   }
                 },
                 "verification": {
@@ -11410,7 +11470,9 @@
                   "reserve": "OBSERVED",
                   "production": "OBSERVED",
                   "grade": "OBSERVED",
-                  "overall": "COMPLETE"
+                  "overall": "COMPLETE",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 3
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -11538,7 +11600,9 @@
                     "reserve": "OBSERVED",
                     "production": "OBSERVED",
                     "grade": "OBSERVED",
-                    "overall": "COMPLETE"
+                    "overall": "COMPLETE",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 3
                   }
                 },
                 "verification": {
@@ -12103,7 +12167,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -12202,7 +12268,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -12762,7 +12830,9 @@
                   "reserve": "OBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "OBSERVED",
-                  "overall": "PARTIAL"
+                  "overall": "PARTIAL",
+                  "structuredEvidence": true,
+                  "coreFieldCount": 2
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED",
@@ -12906,7 +12976,9 @@
                     "reserve": "OBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "OBSERVED",
-                    "overall": "PARTIAL"
+                    "overall": "PARTIAL",
+                    "structuredEvidence": true,
+                    "coreFieldCount": 2
                   }
                 },
                 "verification": {
@@ -13457,11 +13529,13 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "PARTIAL",
+                  "structuredEvidence": true,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED",
-                "quantitativeOverall": "UNOBSERVED"
+                "quantitativeOverall": "PARTIAL"
               },
               "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
               "webResearchEvidence": [
@@ -13593,7 +13667,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "PARTIAL",
+                    "structuredEvidence": true,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -14151,7 +14227,9 @@
                   "reserve": "OBSERVED",
                   "production": "OBSERVED",
                   "grade": "OBSERVED",
-                  "overall": "COMPLETE"
+                  "overall": "COMPLETE",
+                  "structuredEvidence": true,
+                  "coreFieldCount": 3
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED",
@@ -14297,7 +14375,9 @@
                     "reserve": "OBSERVED",
                     "production": "OBSERVED",
                     "grade": "OBSERVED",
-                    "overall": "COMPLETE"
+                    "overall": "COMPLETE",
+                    "structuredEvidence": true,
+                    "coreFieldCount": 3
                   }
                 },
                 "verification": {
@@ -14847,11 +14927,13 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "PARTIAL",
+                  "structuredEvidence": true,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED",
-                "quantitativeOverall": "UNOBSERVED"
+                "quantitativeOverall": "PARTIAL"
               },
               "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
               "researchMetadata": {
@@ -14992,7 +15074,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "PARTIAL",
+                    "structuredEvidence": true,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -15543,7 +15627,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "OBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "PARTIAL"
+                  "overall": "PARTIAL",
+                  "structuredEvidence": true,
+                  "coreFieldCount": 1
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED",
@@ -15673,7 +15759,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "OBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "PARTIAL"
+                    "overall": "PARTIAL",
+                    "structuredEvidence": true,
+                    "coreFieldCount": 1
                   }
                 },
                 "verification": {
@@ -16248,7 +16336,9 @@
                   "reserve": "OBSERVED_ATTRIBUTABLE",
                   "production": "OBSERVED",
                   "grade": "OBSERVED_ATTRIBUTABLE",
-                  "overall": "COMPLETE"
+                  "overall": "COMPLETE",
+                  "structuredEvidence": true,
+                  "coreFieldCount": 3
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -16413,7 +16503,9 @@
                     "reserve": "OBSERVED_ATTRIBUTABLE",
                     "production": "OBSERVED",
                     "grade": "OBSERVED_ATTRIBUTABLE",
-                    "overall": "COMPLETE"
+                    "overall": "COMPLETE",
+                    "structuredEvidence": true,
+                    "coreFieldCount": 3
                   }
                 },
                 "verification": {
@@ -16966,7 +17058,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED",
@@ -17087,7 +17181,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -17642,11 +17738,13 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "PARTIAL",
+                  "structuredEvidence": true,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED",
-                "quantitativeOverall": "UNOBSERVED"
+                "quantitativeOverall": "PARTIAL"
               },
               "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
               "researchMetadata": {
@@ -17773,7 +17871,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "PARTIAL",
+                    "structuredEvidence": true,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -18352,7 +18452,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "OBSERVED",
                   "grade": "OBSERVED",
-                  "overall": "PARTIAL"
+                  "overall": "PARTIAL",
+                  "structuredEvidence": true,
+                  "coreFieldCount": 2
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED",
@@ -18522,7 +18624,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "OBSERVED",
                     "grade": "OBSERVED",
-                    "overall": "PARTIAL"
+                    "overall": "PARTIAL",
+                    "structuredEvidence": true,
+                    "coreFieldCount": 2
                   }
                 },
                 "verification": {
@@ -19070,11 +19174,13 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "PARTIAL",
+                  "structuredEvidence": true,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED",
-                "quantitativeOverall": "UNOBSERVED"
+                "quantitativeOverall": "PARTIAL"
               },
               "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
               "webResearchEvidence": [
@@ -19202,7 +19308,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "PARTIAL",
+                    "structuredEvidence": true,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -19747,7 +19855,9 @@
                   "reserve": "OBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "PARTIAL"
+                  "overall": "PARTIAL",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 1
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED",
@@ -19879,7 +19989,9 @@
                     "reserve": "OBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "PARTIAL"
+                    "overall": "PARTIAL",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 1
                   }
                 },
                 "verification": {
@@ -20441,7 +20553,9 @@
                   "reserve": "OBSERVED",
                   "production": "OBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "PARTIAL"
+                  "overall": "PARTIAL",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 2
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -20544,7 +20658,9 @@
                     "reserve": "OBSERVED",
                     "production": "OBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "PARTIAL"
+                    "overall": "PARTIAL",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 2
                   }
                 },
                 "verification": {
@@ -21091,7 +21207,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -21202,7 +21320,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -21761,7 +21881,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED",
@@ -21883,7 +22005,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -22423,7 +22547,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED",
@@ -22550,7 +22676,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -23090,7 +23218,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -23200,7 +23330,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -23760,7 +23892,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -23870,7 +24004,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -24439,7 +24575,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -24564,7 +24702,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -25110,7 +25250,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "OBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "PARTIAL"
+                  "overall": "PARTIAL",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 1
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED",
@@ -25245,7 +25387,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "OBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "PARTIAL"
+                    "overall": "PARTIAL",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 1
                   }
                 },
                 "verification": {
@@ -25820,7 +25964,9 @@
                   "reserve": "OBSERVED",
                   "production": "OBSERVED",
                   "grade": "OBSERVED",
-                  "overall": "COMPLETE"
+                  "overall": "COMPLETE",
+                  "structuredEvidence": true,
+                  "coreFieldCount": 3
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -25983,7 +26129,9 @@
                     "reserve": "OBSERVED",
                     "production": "OBSERVED",
                     "grade": "OBSERVED",
-                    "overall": "COMPLETE"
+                    "overall": "COMPLETE",
+                    "structuredEvidence": true,
+                    "coreFieldCount": 3
                   }
                 },
                 "verification": {
@@ -26535,7 +26683,9 @@
                   "reserve": "OBSERVED",
                   "production": "OBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "PARTIAL"
+                  "overall": "PARTIAL",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 2
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED",
@@ -26656,7 +26806,9 @@
                     "reserve": "OBSERVED",
                     "production": "OBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "PARTIAL"
+                    "overall": "PARTIAL",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 2
                   }
                 },
                 "verification": {
@@ -27202,7 +27354,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED",
@@ -27321,7 +27475,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -27868,7 +28024,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -27986,7 +28144,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -28529,7 +28689,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -28664,7 +28826,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -29206,7 +29370,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED",
@@ -29327,7 +29493,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -29893,7 +30061,9 @@
                   "reserve": "OBSERVED_ATTRIBUTABLE",
                   "production": "OBSERVED",
                   "grade": "OBSERVED_ATTRIBUTABLE",
-                  "overall": "COMPLETE"
+                  "overall": "COMPLETE",
+                  "structuredEvidence": true,
+                  "coreFieldCount": 3
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -30046,7 +30216,9 @@
                     "reserve": "OBSERVED_ATTRIBUTABLE",
                     "production": "OBSERVED",
                     "grade": "OBSERVED_ATTRIBUTABLE",
-                    "overall": "COMPLETE"
+                    "overall": "COMPLETE",
+                    "structuredEvidence": true,
+                    "coreFieldCount": 3
                   }
                 },
                 "verification": {
@@ -30592,7 +30764,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -30717,7 +30891,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -31258,7 +31434,9 @@
                   "reserve": "OBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "OBSERVED",
-                  "overall": "PARTIAL"
+                  "overall": "PARTIAL",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 2
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED",
@@ -31389,7 +31567,9 @@
                     "reserve": "OBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "OBSERVED",
-                    "overall": "PARTIAL"
+                    "overall": "PARTIAL",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 2
                   }
                 },
                 "verification": {
@@ -31930,7 +32110,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED",
@@ -32072,7 +32254,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -32619,7 +32803,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -32730,7 +32916,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -33299,7 +33487,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -33399,7 +33589,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -33952,7 +34144,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "OBSERVED",
                   "grade": "REPORTED",
-                  "overall": "PARTIAL"
+                  "overall": "PARTIAL",
+                  "structuredEvidence": true,
+                  "coreFieldCount": 2
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -34098,7 +34292,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "OBSERVED",
                     "grade": "REPORTED",
-                    "overall": "PARTIAL"
+                    "overall": "PARTIAL",
+                    "structuredEvidence": true,
+                    "coreFieldCount": 2
                   }
                 },
                 "verification": {
@@ -34669,7 +34865,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -34792,7 +34990,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -35338,7 +35538,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED",
@@ -35458,7 +35660,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -36007,11 +36211,13 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "PARTIAL",
+                  "structuredEvidence": true,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED",
-                "quantitativeOverall": "UNOBSERVED"
+                "quantitativeOverall": "PARTIAL"
               },
               "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
               "researchMetadata": {
@@ -36147,7 +36353,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "PARTIAL",
+                    "structuredEvidence": true,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -36719,7 +36927,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -36819,7 +37029,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -37384,7 +37596,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -37483,7 +37697,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -38030,7 +38246,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -38140,7 +38358,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -38691,7 +38911,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED",
@@ -38805,7 +39027,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -39360,7 +39584,9 @@
                   "reserve": "OBSERVED",
                   "production": "OBSERVED",
                   "grade": "OBSERVED",
-                  "overall": "COMPLETE"
+                  "overall": "COMPLETE",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 3
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -39496,7 +39722,9 @@
                     "reserve": "OBSERVED",
                     "production": "OBSERVED",
                     "grade": "OBSERVED",
-                    "overall": "COMPLETE"
+                    "overall": "COMPLETE",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 3
                   }
                 },
                 "verification": {
@@ -40077,7 +40305,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED",
@@ -40200,7 +40430,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -40743,7 +40975,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED",
@@ -40865,7 +41099,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -41410,7 +41646,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "OBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "PARTIAL"
+                  "overall": "PARTIAL",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 1
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED",
@@ -41528,7 +41766,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "OBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "PARTIAL"
+                    "overall": "PARTIAL",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 1
                   }
                 },
                 "verification": {
@@ -42071,7 +42311,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -42198,7 +42440,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -42748,7 +42992,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "OBSERVED",
                   "grade": "OBSERVED",
-                  "overall": "PARTIAL"
+                  "overall": "PARTIAL",
+                  "structuredEvidence": true,
+                  "coreFieldCount": 2
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED",
@@ -42877,7 +43123,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "OBSERVED",
                     "grade": "OBSERVED",
-                    "overall": "PARTIAL"
+                    "overall": "PARTIAL",
+                    "structuredEvidence": true,
+                    "coreFieldCount": 2
                   }
                 },
                 "verification": {
@@ -43417,7 +43665,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -43527,7 +43777,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -44102,7 +44354,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -44226,7 +44480,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -44803,7 +45059,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -44902,7 +45160,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -45458,7 +45718,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -45588,7 +45850,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -46141,7 +46405,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -46264,7 +46530,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -46815,7 +47083,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -46929,7 +47199,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -47510,7 +47782,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -47639,7 +47913,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -48192,7 +48468,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -48321,7 +48599,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -48874,7 +49154,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "OBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "PARTIAL"
+                  "overall": "PARTIAL",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 1
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED",
@@ -49006,7 +49288,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "OBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "PARTIAL"
+                    "overall": "PARTIAL",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 1
                   }
                 },
                 "verification": {
@@ -49566,7 +49850,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "OBSERVED",
                   "grade": "OBSERVED",
-                  "overall": "PARTIAL"
+                  "overall": "PARTIAL",
+                  "structuredEvidence": true,
+                  "coreFieldCount": 2
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED",
@@ -49699,7 +49985,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "OBSERVED",
                     "grade": "OBSERVED",
-                    "overall": "PARTIAL"
+                    "overall": "PARTIAL",
+                    "structuredEvidence": true,
+                    "coreFieldCount": 2
                   }
                 },
                 "verification": {
@@ -50246,7 +50534,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -50365,7 +50655,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -50917,7 +51209,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -51040,7 +51334,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -51595,7 +51891,9 @@
                   "reserve": "REPORTED",
                   "production": "OBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "PARTIAL"
+                  "overall": "PARTIAL",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 2
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -51728,7 +52026,9 @@
                     "reserve": "REPORTED",
                     "production": "OBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "PARTIAL"
+                    "overall": "PARTIAL",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 2
                   }
                 },
                 "verification": {
@@ -52331,7 +52631,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -52431,7 +52733,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -52989,7 +53293,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED",
@@ -53115,7 +53421,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -53681,7 +53989,9 @@
                   "reserve": "OBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "PARTIAL"
+                  "overall": "PARTIAL",
+                  "structuredEvidence": true,
+                  "coreFieldCount": 1
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED",
@@ -53840,7 +54150,9 @@
                     "reserve": "OBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "PARTIAL"
+                    "overall": "PARTIAL",
+                    "structuredEvidence": true,
+                    "coreFieldCount": 1
                   }
                 },
                 "verification": {
@@ -54380,7 +54692,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -54498,7 +54812,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -55043,7 +55359,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -55171,7 +55489,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -55720,7 +56040,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -55830,7 +56152,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -56388,7 +56712,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -56504,7 +56830,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -57098,11 +57426,13 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "PARTIAL",
+                  "structuredEvidence": true,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED",
-                "quantitativeOverall": "UNOBSERVED"
+                "quantitativeOverall": "PARTIAL"
               },
               "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
               "researchMetadata": {
@@ -57258,7 +57588,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "PARTIAL",
+                    "structuredEvidence": true,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -57831,7 +58163,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -57938,7 +58272,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -58506,7 +58842,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -58628,7 +58966,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -59172,7 +59512,9 @@
                   "reserve": "OBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "PARTIAL"
+                  "overall": "PARTIAL",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 1
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -59283,7 +59625,9 @@
                     "reserve": "OBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "PARTIAL"
+                    "overall": "PARTIAL",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 1
                   }
                 },
                 "verification": {
@@ -59840,7 +60184,9 @@
                   "reserve": "REPORTED",
                   "production": "OBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "PARTIAL"
+                  "overall": "PARTIAL",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 2
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -59968,7 +60314,9 @@
                     "reserve": "REPORTED",
                     "production": "OBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "PARTIAL"
+                    "overall": "PARTIAL",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 2
                   }
                 },
                 "verification": {
@@ -60532,11 +60880,13 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "PARTIAL",
+                  "structuredEvidence": true,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED",
-                "quantitativeOverall": "UNOBSERVED"
+                "quantitativeOverall": "PARTIAL"
               },
               "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
               "researchMetadata": {
@@ -60667,7 +61017,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "PARTIAL",
+                    "structuredEvidence": true,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -61212,7 +61564,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "OBSERVED",
                   "grade": "OBSERVED",
-                  "overall": "PARTIAL"
+                  "overall": "PARTIAL",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 2
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED",
@@ -61337,7 +61691,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "OBSERVED",
                     "grade": "OBSERVED",
-                    "overall": "PARTIAL"
+                    "overall": "PARTIAL",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 2
                   }
                 },
                 "verification": {
@@ -61881,7 +62237,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -62003,7 +62361,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -62544,7 +62904,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -62653,7 +63015,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -63218,7 +63582,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -63341,7 +63707,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -63888,7 +64256,9 @@
                   "reserve": "OBSERVED",
                   "production": "OBSERVED",
                   "grade": "OBSERVED",
-                  "overall": "COMPLETE"
+                  "overall": "COMPLETE",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 3
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED",
@@ -64008,7 +64378,9 @@
                     "reserve": "OBSERVED",
                     "production": "OBSERVED",
                     "grade": "OBSERVED",
-                    "overall": "COMPLETE"
+                    "overall": "COMPLETE",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 3
                   }
                 },
                 "verification": {
@@ -64556,7 +64928,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "OBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "PARTIAL"
+                  "overall": "PARTIAL",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 1
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -64669,7 +65043,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "OBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "PARTIAL"
+                    "overall": "PARTIAL",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 1
                   }
                 },
                 "verification": {
@@ -65230,7 +65606,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED",
@@ -65348,7 +65726,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -65899,7 +66279,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "OBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "PARTIAL"
+                  "overall": "PARTIAL",
+                  "structuredEvidence": true,
+                  "coreFieldCount": 1
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED",
@@ -66035,7 +66417,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "OBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "PARTIAL"
+                    "overall": "PARTIAL",
+                    "structuredEvidence": true,
+                    "coreFieldCount": 1
                   }
                 },
                 "verification": {
@@ -66594,7 +66978,9 @@
                   "reserve": "OBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "PARTIAL"
+                  "overall": "PARTIAL",
+                  "structuredEvidence": true,
+                  "coreFieldCount": 1
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED",
@@ -66747,7 +67133,9 @@
                     "reserve": "OBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "PARTIAL"
+                    "overall": "PARTIAL",
+                    "structuredEvidence": true,
+                    "coreFieldCount": 1
                   }
                 },
                 "verification": {
@@ -67321,11 +67709,13 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "PARTIAL",
+                  "structuredEvidence": true,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED",
-                "quantitativeOverall": "UNOBSERVED"
+                "quantitativeOverall": "PARTIAL"
               },
               "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
               "researchMetadata": {
@@ -67465,7 +67855,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "PARTIAL",
+                    "structuredEvidence": true,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -68020,7 +68412,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "OBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "PARTIAL"
+                  "overall": "PARTIAL",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 1
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED",
@@ -68134,7 +68528,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "OBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "PARTIAL"
+                    "overall": "PARTIAL",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 1
                   }
                 },
                 "verification": {
@@ -68674,7 +69070,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED",
@@ -68802,7 +69200,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -69341,7 +69741,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -69458,7 +69860,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -70004,7 +70408,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED",
@@ -70130,7 +70536,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -70676,7 +71084,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED",
@@ -70794,7 +71204,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -71334,7 +71746,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -71452,7 +71866,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -71997,7 +72413,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -72118,7 +72536,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -72668,7 +73088,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -72778,7 +73200,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -73336,7 +73760,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -73454,7 +73880,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -74001,7 +74429,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -74108,7 +74538,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -74670,7 +75102,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -74784,7 +75218,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -75348,7 +75784,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -75468,7 +75906,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -76022,7 +76462,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -76132,7 +76574,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -76690,7 +77134,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -76799,7 +77245,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -77349,7 +77797,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -77458,7 +77908,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -78008,7 +78460,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -78117,7 +78571,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -78677,7 +79133,9 @@
                   "reserve": "OBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "OBSERVED",
-                  "overall": "PARTIAL"
+                  "overall": "PARTIAL",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 2
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -78799,7 +79257,9 @@
                     "reserve": "OBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "OBSERVED",
-                    "overall": "PARTIAL"
+                    "overall": "PARTIAL",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 2
                   }
                 },
                 "verification": {
@@ -79348,7 +79808,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -79454,7 +79916,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -80005,7 +80469,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -80115,7 +80581,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -80676,7 +81144,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -80794,7 +81264,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -81337,7 +81809,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -81447,7 +81921,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -82000,7 +82476,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "OBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "PARTIAL"
+                  "overall": "PARTIAL",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 1
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -82112,7 +82590,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "OBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "PARTIAL"
+                    "overall": "PARTIAL",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 1
                   }
                 },
                 "verification": {
@@ -82688,7 +83168,9 @@
                   "reserve": "OBSERVED",
                   "production": "REPORTED",
                   "grade": "REPORTED",
-                  "overall": "COMPLETE"
+                  "overall": "COMPLETE",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 3
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -82799,7 +83281,9 @@
                     "reserve": "OBSERVED",
                     "production": "REPORTED",
                     "grade": "REPORTED",
-                    "overall": "COMPLETE"
+                    "overall": "COMPLETE",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 3
                   }
                 },
                 "verification": {
@@ -83394,7 +83878,9 @@
                   "reserve": "OBSERVED",
                   "production": "OBSERVED",
                   "grade": "OBSERVED",
-                  "overall": "COMPLETE"
+                  "overall": "COMPLETE",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 3
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -83512,7 +83998,9 @@
                     "reserve": "OBSERVED",
                     "production": "OBSERVED",
                     "grade": "OBSERVED",
-                    "overall": "COMPLETE"
+                    "overall": "COMPLETE",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 3
                   }
                 },
                 "verification": {
@@ -84116,7 +84604,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -84229,7 +84719,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -84784,7 +85276,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -84898,7 +85392,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -85475,7 +85971,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -85588,7 +86086,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -86151,7 +86651,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "OBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "PARTIAL"
+                  "overall": "PARTIAL",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 1
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -86262,7 +86764,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "OBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "PARTIAL"
+                    "overall": "PARTIAL",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 1
                   }
                 },
                 "verification": {
@@ -86817,7 +87321,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -86931,7 +87437,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -87486,7 +87994,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -87600,7 +88110,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -88151,7 +88663,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -88261,7 +88775,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -88838,7 +89354,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -88938,7 +89456,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -89483,7 +90003,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -89590,7 +90112,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -90140,7 +90664,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -90249,7 +90775,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -90799,7 +91327,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -90908,7 +91438,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -91459,7 +91991,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -91568,7 +92102,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -92127,7 +92663,9 @@
                   "reserve": "OBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "PARTIAL"
+                  "overall": "PARTIAL",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 1
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -92239,7 +92777,9 @@
                     "reserve": "OBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "PARTIAL"
+                    "overall": "PARTIAL",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 1
                   }
                 },
                 "verification": {
@@ -92789,7 +93329,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -92898,7 +93440,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -93476,7 +94020,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -93584,7 +94130,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -94144,7 +94692,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -94253,7 +94803,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -94816,7 +95368,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -94929,7 +95483,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -95485,7 +96041,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -95594,7 +96152,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -96154,7 +96714,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -96264,7 +96826,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -96840,7 +97404,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -96940,7 +97506,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -97495,7 +98063,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -97609,7 +98179,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -98173,7 +98745,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -98283,7 +98857,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -98830,7 +99406,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "NOT_APPLICABLE"
+                  "overall": "NOT_APPLICABLE",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "NOT_APPLICABLE",
@@ -98924,7 +99502,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "NOT_APPLICABLE"
+                    "overall": "NOT_APPLICABLE",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -99459,7 +100039,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "NOT_APPLICABLE"
+                  "overall": "NOT_APPLICABLE",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "NOT_APPLICABLE",
@@ -99553,7 +100135,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "NOT_APPLICABLE"
+                    "overall": "NOT_APPLICABLE",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -100088,7 +100672,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "NOT_APPLICABLE"
+                  "overall": "NOT_APPLICABLE",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "NOT_APPLICABLE",
@@ -100182,7 +100768,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "NOT_APPLICABLE"
+                    "overall": "NOT_APPLICABLE",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -100717,7 +101305,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "NOT_APPLICABLE"
+                  "overall": "NOT_APPLICABLE",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "NOT_APPLICABLE",
@@ -100811,7 +101401,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "NOT_APPLICABLE"
+                    "overall": "NOT_APPLICABLE",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -101363,7 +101955,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "OBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "PARTIAL"
+                  "overall": "PARTIAL",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 1
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -101478,7 +102072,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "OBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "PARTIAL"
+                    "overall": "PARTIAL",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 1
                   }
                 },
                 "verification": {
@@ -102037,7 +102633,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "OBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "PARTIAL"
+                  "overall": "PARTIAL",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 1
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED",
@@ -102153,7 +102751,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "OBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "PARTIAL"
+                    "overall": "PARTIAL",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 1
                   }
                 },
                 "verification": {
@@ -102695,7 +103295,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "OBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "PARTIAL"
+                  "overall": "PARTIAL",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 1
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED",
@@ -102818,7 +103420,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "OBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "PARTIAL"
+                    "overall": "PARTIAL",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 1
                   }
                 },
                 "verification": {
@@ -103360,7 +103964,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "OBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "PARTIAL"
+                  "overall": "PARTIAL",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 1
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED",
@@ -103476,7 +104082,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "OBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "PARTIAL"
+                    "overall": "PARTIAL",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 1
                   }
                 },
                 "verification": {
@@ -104017,7 +104625,9 @@
                   "reserve": "OBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "PARTIAL"
+                  "overall": "PARTIAL",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 1
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -104136,7 +104746,9 @@
                     "reserve": "OBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "PARTIAL"
+                    "overall": "PARTIAL",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 1
                   }
                 },
                 "verification": {
@@ -104684,7 +105296,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "OBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "PARTIAL"
+                  "overall": "PARTIAL",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 1
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED",
@@ -104804,7 +105418,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "OBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "PARTIAL"
+                    "overall": "PARTIAL",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 1
                   }
                 },
                 "verification": {
@@ -105347,7 +105963,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -105460,7 +106078,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -106021,7 +106641,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -106143,7 +106765,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -106690,7 +107314,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -106805,7 +107431,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -107357,7 +107985,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -107467,7 +108097,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -108016,7 +108648,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED",
@@ -108147,7 +108781,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -108687,7 +109323,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -108797,7 +109435,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -109367,7 +110007,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -109477,7 +110119,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -110031,7 +110675,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -110159,7 +110805,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -110701,7 +111349,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -110829,7 +111479,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -111372,7 +112024,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "OBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "PARTIAL"
+                  "overall": "PARTIAL",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 1
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -111483,7 +112137,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "OBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "PARTIAL"
+                    "overall": "PARTIAL",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 1
                   }
                 },
                 "verification": {
@@ -112039,7 +112695,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -112148,7 +112806,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -112714,7 +113374,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -112848,7 +113510,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
@@ -113392,7 +114056,9 @@
                   "reserve": "OBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "OBSERVED",
-                  "overall": "PARTIAL"
+                  "overall": "PARTIAL",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 2
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -113518,7 +114184,9 @@
                     "reserve": "OBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "OBSERVED",
-                    "overall": "PARTIAL"
+                    "overall": "PARTIAL",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 2
                   }
                 },
                 "verification": {
@@ -114066,7 +114734,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED"
+                  "overall": "UNOBSERVED",
+                  "structuredEvidence": false,
+                  "coreFieldCount": 0
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -114175,7 +114845,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED"
+                    "overall": "UNOBSERVED",
+                    "structuredEvidence": false,
+                    "coreFieldCount": 0
                   }
                 },
                 "verification": {
