@@ -5263,8 +5263,8 @@
               "lat": 13.33,
               "lng": -59.64,
               "locationNodeKey": "ASSET:BRB:arawak_cement_limestone_quarry",
-              "status": "MILL_ONLY_NO_QUARRY_VERIFIED",
-              "operationalStatus": "MILL_ONLY_NO_QUARRY_VERIFIED",
+              "status": "LIMITED",
+              "operationalStatus": "LIMITED",
               "owner": "Arawak Cement Company Limited / TCL Group",
               "operator": "Arawak Cement Company Limited",
               "extractionMethod": "No current quarry extraction at Checker Hall is established; current site operation is cement grinding",
@@ -5418,8 +5418,8 @@
                   "operatorEvidenceStatus": "WEB_REVIEWED"
                 },
                 "operation": {
-                  "status": "MILL_ONLY_NO_QUARRY_VERIFIED",
-                  "operationalStatus": "MILL_ONLY_NO_QUARRY_VERIFIED",
+                  "status": "LIMITED",
+                  "operationalStatus": "LIMITED",
                   "extractionMethod": "No current quarry extraction at Checker Hall is established; current site operation is cement grinding",
                   "extractionEligibility": "NON_EXECUTABLE",
                   "commercialExtraction": true

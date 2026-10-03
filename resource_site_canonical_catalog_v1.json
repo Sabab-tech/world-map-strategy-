@@ -13723,8 +13723,8 @@
         "operatorEvidenceStatus": "WEB_REVIEWED"
       },
       "operation": {
-        "status": "MILL_ONLY_NO_QUARRY_VERIFIED",
-        "operationalStatus": "MILL_ONLY_NO_QUARRY_VERIFIED",
+        "status": "LIMITED",
+        "operationalStatus": "LIMITED",
         "extractionMethod": "No current quarry extraction at Checker Hall is established; current site operation is cement grinding",
         "extractionEligibility": "NON_EXECUTABLE",
         "commercialExtraction": true
