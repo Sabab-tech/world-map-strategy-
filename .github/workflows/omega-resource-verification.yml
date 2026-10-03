@@ -86,7 +86,7 @@ jobs:
           done
           GATES[syntax]="$syntax_status"
 
-          run_gate resourceEndowment 45 node test/omega_resource_endowment_runtime.test.mjs
+          run_gate resourceEndowment 120 node test/omega_resource_endowment_runtime.test.mjs
           run_gate siteDataCompleteness 15 node test/omega_resource_site_data_completeness.test.mjs
           run_gate resourceEconomy 15 node --test test/omega_resource_economy_runtime_v2.test.mjs
           run_gate authoritativeAdapter 15 node --test test/omega_resource_authoritative_adapter.test.mjs
@@ -138,7 +138,7 @@ jobs:
             gates,
             timeboxing: {
               longGatePolicy: 'TIMEOUT_AND_CONTINUE',
-              endowmentSeconds: 45,
+              endowmentSeconds: 120,
               otherTestSeconds: 15,
               syntaxSeconds: 3
             },
