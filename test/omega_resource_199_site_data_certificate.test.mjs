@@ -28,7 +28,7 @@ const allowedResearchStates = new Set([
   'LEGACY_CURATED_NOT_RECENTLY_REVALIDATED',
   'NOT_APPLICABLE_NO_COMMERCIAL_SITE'
 ]);
-const allowedAuthorityStates = new Set(['AVAILABLE', 'UNOBSERVED', 'UNAVAILABLE', 'STALE', 'INVALID', 'NOT_APPLICABLE', 'ESTIMATED', 'OBSERVED', 'REPORTED', 'DERIVED_FROM_OBSERVED_RATE']);
+const allowedAuthorityStates = new Set(['AVAILABLE', 'UNOBSERVED', 'UNAVAILABLE', 'STALE', 'INVALID', 'NOT_APPLICABLE', 'ESTIMATED', 'OBSERVED', 'OBSERVED_ATTRIBUTABLE', 'REPORTED', 'DERIVED_FROM_OBSERVED_RATE']);
 
 const ids = new Set();
 const packageCount = sites.filter(({ site }) => site?.siteDataPackage && typeof site.siteDataPackage === 'object').length;
