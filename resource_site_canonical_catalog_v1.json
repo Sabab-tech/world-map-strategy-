@@ -7000,10 +7000,11 @@
         },
         "production": {
           "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
+          "rate": 1470000,
+          "unit": "BBL_PER_DAY",
+          "year": 2026,
+          "status": "OBSERVED",
+          "basis": "FIELD_AVERAGE"
         },
         "grade": {
           "value": null,
@@ -7031,9 +7032,9 @@
         }
       },
       "verification": {
-        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+        "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
         "reviewedAt": "2026-10-03",
-        "sourceCount": 1,
+        "sourceCount": 2,
         "sourceAuthorities": [
           "OPERATOR"
         ],
@@ -8217,18 +8218,46 @@
           "status": "UNOBSERVED"
         },
         "capacity": {},
-        "reportedMetrics": {},
+        "reportedMetrics": {
+          "h1_2026OreTreatedTotal": {
+            "value": 20736000,
+            "unit": "metric_tons_ore",
+            "basis": "H1_2026_SITE_TOTAL"
+          },
+          "h1_2026CopperInConcentrates": {
+            "value": 198500,
+            "unit": "metric_tons_copper",
+            "basis": "H1_2026_SITE_TOTAL"
+          },
+          "h1_2026GoldInConcentrates": {
+            "value": 250400,
+            "unit": "troy_ounces_gold",
+            "basis": "H1_2026_SITE_TOTAL"
+          },
+          "h1_2026SilverInConcentrates": {
+            "value": 1210000,
+            "unit": "troy_ounces_silver",
+            "basis": "H1_2026_SITE_TOTAL"
+          },
+          "h1_2026TotalCopperHeadGrade": {
+            "value": 1.08,
+            "unit": "percent_copper",
+            "basis": "H1_2026_TOTAL_MILL_HEAD_GRADE"
+          }
+        },
         "quantitativeProvenance": {
-          "structuredSource": null,
+          "structuredSource": "site.webVerifiedMetrics",
           "capacitySource": null,
           "promotedAt": "2026-10-03"
         }
       },
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
-        "reviewedAt": "2026-09-27",
-        "sourceCount": 2,
-        "sourceAuthorities": [],
+        "reviewedAt": "2026-10-03",
+        "sourceCount": 3,
+        "sourceAuthorities": [
+          "REGULATORY_FILING"
+        ],
         "dataLimitations": null
       }
     },
@@ -9591,18 +9620,36 @@
           "status": "UNOBSERVED"
         },
         "capacity": {},
-        "reportedMetrics": {},
+        "reportedMetrics": {
+          "indicatedMineralResources": {
+            "value": 60000000,
+            "unit": "troy_ounces_gold",
+            "basis": "INDICATED_MINERAL_RESOURCES"
+          },
+          "inferredMineralResources": {
+            "value": 19100000,
+            "unit": "troy_ounces_gold",
+            "basis": "INFERRED_MINERAL_RESOURCES"
+          },
+          "runOfMineMaterialTransported2025": {
+            "value": 120000000,
+            "unit": "cubic_meters",
+            "basis": "2025_OPERATIONAL_PERFORMANCE"
+          }
+        },
         "quantitativeProvenance": {
-          "structuredSource": null,
+          "structuredSource": "site.webVerifiedMetrics",
           "capacitySource": null,
           "promotedAt": "2026-10-03"
         }
       },
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
-        "reviewedAt": "2026-09-27",
-        "sourceCount": 2,
-        "sourceAuthorities": [],
+        "reviewedAt": "2026-10-03",
+        "sourceCount": 3,
+        "sourceAuthorities": [
+          "OPERATOR"
+        ],
         "dataLimitations": null
       }
     },
@@ -9688,19 +9735,31 @@
           "year": null,
           "status": "UNOBSERVED"
         },
-        "capacity": {},
+        "capacity": {
+          "productionWells": 52,
+          "readyForCommissioningWells": 7,
+          "activeDrillingWells": 8,
+          "designedWellProductivity": 1500000,
+          "maximumPotentialSustainedFlowPerWell": 3000000,
+          "unit": "M3_PER_DAY_PER_WELL",
+          "status": "REPORTED",
+          "year": 2025,
+          "scope": "FIELD_DEVELOPMENT_STAGE_1"
+        },
         "reportedMetrics": {},
         "quantitativeProvenance": {
           "structuredSource": null,
-          "capacitySource": null,
+          "capacitySource": "site.capacityProfile",
           "promotedAt": "2026-10-03"
         }
       },
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
-        "reviewedAt": "2026-09-27",
-        "sourceCount": 1,
-        "sourceAuthorities": [],
+        "reviewedAt": "2026-10-03",
+        "sourceCount": 2,
+        "sourceAuthorities": [
+          "GOVERNMENT"
+        ],
         "dataLimitations": null
       }
     },

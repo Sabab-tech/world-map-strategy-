@@ -47547,10 +47547,11 @@
                 },
                 "production": {
                   "annual": null,
-                  "rate": null,
-                  "unit": null,
-                  "year": null,
-                  "status": "UNOBSERVED"
+                  "rate": 1470000,
+                  "unit": "BBL_PER_DAY",
+                  "year": 2026,
+                  "status": "OBSERVED",
+                  "basis": "FIELD_AVERAGE"
                 },
                 "grade": {
                   "value": null,
@@ -47600,9 +47601,9 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED"
               },
-              "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+              "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
               "researchMetadata": {
                 "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
@@ -47610,13 +47611,21 @@
                 "webSearchMethod": "SITE_NAME + COUNTRY",
                 "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
                 "sourceAuthority": "Rumaila Operating Organisation",
-                "currentEvidence": "The Rumaila field is operated by ROO under a Technical Service Contract involving Basra Oil Company, Basra Energy Company Limited (PetroChina and bp) and SOMO; this is an Iraqi state field, not a BP-owned field."
+                "currentEvidence": "The Rumaila field is operated by ROO under a Technical Service Contract involving Basra Oil Company, Basra Energy Company Limited (PetroChina and bp) and SOMO; this is an Iraqi state field, not a BP-owned field.",
+                "structuredMetricsRevalidatedAt": "2026-10-03",
+                "structuredMetricsSourceCount": 1
               },
               "webResearchEvidence": [
                 {
                   "url": "https://rumaila.iq/english/home/",
                   "accessed": "2026-09-27",
                   "scope": "field_identity_ownership_operating_structure_and_current_operation",
+                  "sourceType": "OPERATOR"
+                },
+                {
+                  "url": "https://rumaila.iq/english/about-us/what-we-do-3/",
+                  "accessed": "2026-10-03",
+                  "scope": "current_field_average_oil_rate_and_operating_context",
                   "sourceType": "OPERATOR"
                 }
               ],
@@ -47680,10 +47689,11 @@
                   },
                   "production": {
                     "annual": null,
-                    "rate": null,
-                    "unit": null,
-                    "year": null,
-                    "status": "UNOBSERVED"
+                    "rate": 1470000,
+                    "unit": "BBL_PER_DAY",
+                    "year": 2026,
+                    "status": "OBSERVED",
+                    "basis": "FIELD_AVERAGE"
                   },
                   "grade": {
                     "value": null,
@@ -47711,9 +47721,9 @@
                   }
                 },
                 "verification": {
-                  "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+                  "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
                   "reviewedAt": "2026-10-03",
-                  "sourceCount": 1,
+                  "sourceCount": 2,
                   "sourceAuthorities": [
                     "OPERATOR"
                   ],
@@ -55540,9 +55550,36 @@
                 },
                 "quantitativeExtractionDataAvailable": false,
                 "quantitativeProvenance": {
-                  "structuredSource": null,
+                  "structuredSource": "site.webVerifiedMetrics",
                   "capacitySource": null,
                   "promotedAt": "2026-10-03"
+                },
+                "reportedMetrics": {
+                  "h1_2026OreTreatedTotal": {
+                    "value": 20736000,
+                    "unit": "metric_tons_ore",
+                    "basis": "H1_2026_SITE_TOTAL"
+                  },
+                  "h1_2026CopperInConcentrates": {
+                    "value": 198500,
+                    "unit": "metric_tons_copper",
+                    "basis": "H1_2026_SITE_TOTAL"
+                  },
+                  "h1_2026GoldInConcentrates": {
+                    "value": 250400,
+                    "unit": "troy_ounces_gold",
+                    "basis": "H1_2026_SITE_TOTAL"
+                  },
+                  "h1_2026SilverInConcentrates": {
+                    "value": 1210000,
+                    "unit": "troy_ounces_silver",
+                    "basis": "H1_2026_SITE_TOTAL"
+                  },
+                  "h1_2026TotalCopperHeadGrade": {
+                    "value": 1.08,
+                    "unit": "percent_copper",
+                    "basis": "H1_2026_TOTAL_MILL_HEAD_GRADE"
+                  }
                 }
               },
               "resourceIdentity": {
@@ -55584,13 +55621,15 @@
               },
               "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "production2025": "345.2 kt copper in concentrates (100% basis)",
                 "oreTreated2025": "41.422 Mt total",
                 "undergroundOreTreated2025": "11.908 Mt",
                 "totalCopperGrade2025": "0.97%",
                 "ownership": "66% Rio Tinto / 34% Government of Mongolia",
-                "mineMethod": "open pit + underground; underground ramp-up"
+                "mineMethod": "open pit + underground; underground ramp-up",
+                "structuredMetricsRevalidatedAt": "2026-10-03",
+                "structuredMetricsSourceCount": 1
               },
               "webResearchEvidence": [
                 {
@@ -55602,6 +55641,12 @@
                   "url": "https://www.sec.gov/Archives/edgar/data/863064/000086306426000006/ex1_2025-q4results.htm",
                   "accessed": "2026-09-27",
                   "scope": "2025_ore_grade_and_production"
+                },
+                {
+                  "url": "https://www.sec.gov/Archives/edgar/data/863064/000086306426000035/ex991results.htm",
+                  "accessed": "2026-10-03",
+                  "scope": "H1_2026_Oyu_Tolgoi_ore_treatment_grades_and_concentrate_metals",
+                  "sourceType": "REGULATORY_FILING"
                 }
               ],
               "siteDataPackage": {
@@ -55686,19 +55731,74 @@
                     "status": "UNOBSERVED"
                   },
                   "capacity": {},
-                  "reportedMetrics": {},
+                  "reportedMetrics": {
+                    "h1_2026OreTreatedTotal": {
+                      "value": 20736000,
+                      "unit": "metric_tons_ore",
+                      "basis": "H1_2026_SITE_TOTAL"
+                    },
+                    "h1_2026CopperInConcentrates": {
+                      "value": 198500,
+                      "unit": "metric_tons_copper",
+                      "basis": "H1_2026_SITE_TOTAL"
+                    },
+                    "h1_2026GoldInConcentrates": {
+                      "value": 250400,
+                      "unit": "troy_ounces_gold",
+                      "basis": "H1_2026_SITE_TOTAL"
+                    },
+                    "h1_2026SilverInConcentrates": {
+                      "value": 1210000,
+                      "unit": "troy_ounces_silver",
+                      "basis": "H1_2026_SITE_TOTAL"
+                    },
+                    "h1_2026TotalCopperHeadGrade": {
+                      "value": 1.08,
+                      "unit": "percent_copper",
+                      "basis": "H1_2026_TOTAL_MILL_HEAD_GRADE"
+                    }
+                  },
                   "quantitativeProvenance": {
-                    "structuredSource": null,
+                    "structuredSource": "site.webVerifiedMetrics",
                     "capacitySource": null,
                     "promotedAt": "2026-10-03"
                   }
                 },
                 "verification": {
                   "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
-                  "reviewedAt": "2026-09-27",
-                  "sourceCount": 2,
-                  "sourceAuthorities": [],
+                  "reviewedAt": "2026-10-03",
+                  "sourceCount": 3,
+                  "sourceAuthorities": [
+                    "REGULATORY_FILING"
+                  ],
                   "dataLimitations": null
+                }
+              },
+              "webVerifiedMetrics": {
+                "h1_2026OreTreatedTotal": {
+                  "value": 20736000,
+                  "unit": "metric_tons_ore",
+                  "basis": "H1_2026_SITE_TOTAL"
+                },
+                "h1_2026CopperInConcentrates": {
+                  "value": 198500,
+                  "unit": "metric_tons_copper",
+                  "basis": "H1_2026_SITE_TOTAL"
+                },
+                "h1_2026GoldInConcentrates": {
+                  "value": 250400,
+                  "unit": "troy_ounces_gold",
+                  "basis": "H1_2026_SITE_TOTAL"
+                },
+                "h1_2026SilverInConcentrates": {
+                  "value": 1210000,
+                  "unit": "troy_ounces_silver",
+                  "basis": "H1_2026_SITE_TOTAL"
+                },
+                "h1_2026TotalCopperHeadGrade": {
+                  "value": 1.08,
+                  "unit": "percent_copper",
+                  "basis": "H1_2026_TOTAL_MILL_HEAD_GRADE"
                 }
               }
             }
@@ -64732,9 +64832,26 @@
                 },
                 "quantitativeExtractionDataAvailable": false,
                 "quantitativeProvenance": {
-                  "structuredSource": null,
+                  "structuredSource": "site.webVerifiedMetrics",
                   "capacitySource": null,
                   "promotedAt": "2026-10-03"
+                },
+                "reportedMetrics": {
+                  "indicatedMineralResources": {
+                    "value": 60000000,
+                    "unit": "troy_ounces_gold",
+                    "basis": "INDICATED_MINERAL_RESOURCES"
+                  },
+                  "inferredMineralResources": {
+                    "value": 19100000,
+                    "unit": "troy_ounces_gold",
+                    "basis": "INFERRED_MINERAL_RESOURCES"
+                  },
+                  "runOfMineMaterialTransported2025": {
+                    "value": 120000000,
+                    "unit": "cubic_meters",
+                    "basis": "2025_OPERATIONAL_PERFORMANCE"
+                  }
                 }
               },
               "resourceIdentity": {
@@ -64772,12 +64889,14 @@
               },
               "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVALIDATION",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "currentEvidence": "NMMC reports completion of Phase V Stage 1 and 120 million m3 of run-of-mine material transported at Muruntau in 2025.",
                 "currentEvidenceDate": "2026-09-27",
-                "sourceAuthority": "NMMC"
+                "sourceAuthority": "NMMC",
+                "structuredMetricsRevalidatedAt": "2026-10-03",
+                "structuredMetricsSourceCount": 2
               },
               "processingProfile": {
                 "rockMassMovedOrTransported2025": 120000000,
@@ -64795,6 +64914,12 @@
                   "url": "https://www.ngmk.uz/wp-content/uploads/2026/01/PR-13.01.2026-en.pdf",
                   "accessed": "2026-09-27",
                   "scope": "2025_nmmc_results"
+                },
+                {
+                  "url": "https://www.ngmk.uz/en/our-business/gold-production/",
+                  "accessed": "2026-10-03",
+                  "scope": "Muruntau_site_indicated_and_inferred_mineral_resources",
+                  "sourceType": "OPERATOR"
                 }
               ],
               "siteDataPackage": {
@@ -64875,19 +65000,54 @@
                     "status": "UNOBSERVED"
                   },
                   "capacity": {},
-                  "reportedMetrics": {},
+                  "reportedMetrics": {
+                    "indicatedMineralResources": {
+                      "value": 60000000,
+                      "unit": "troy_ounces_gold",
+                      "basis": "INDICATED_MINERAL_RESOURCES"
+                    },
+                    "inferredMineralResources": {
+                      "value": 19100000,
+                      "unit": "troy_ounces_gold",
+                      "basis": "INFERRED_MINERAL_RESOURCES"
+                    },
+                    "runOfMineMaterialTransported2025": {
+                      "value": 120000000,
+                      "unit": "cubic_meters",
+                      "basis": "2025_OPERATIONAL_PERFORMANCE"
+                    }
+                  },
                   "quantitativeProvenance": {
-                    "structuredSource": null,
+                    "structuredSource": "site.webVerifiedMetrics",
                     "capacitySource": null,
                     "promotedAt": "2026-10-03"
                   }
                 },
                 "verification": {
                   "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
-                  "reviewedAt": "2026-09-27",
-                  "sourceCount": 2,
-                  "sourceAuthorities": [],
+                  "reviewedAt": "2026-10-03",
+                  "sourceCount": 3,
+                  "sourceAuthorities": [
+                    "OPERATOR"
+                  ],
                   "dataLimitations": null
+                }
+              },
+              "webVerifiedMetrics": {
+                "indicatedMineralResources": {
+                  "value": 60000000,
+                  "unit": "troy_ounces_gold",
+                  "basis": "INDICATED_MINERAL_RESOURCES"
+                },
+                "inferredMineralResources": {
+                  "value": 19100000,
+                  "unit": "troy_ounces_gold",
+                  "basis": "INFERRED_MINERAL_RESOURCES"
+                },
+                "runOfMineMaterialTransported2025": {
+                  "value": 120000000,
+                  "unit": "cubic_meters",
+                  "basis": "2025_OPERATIONAL_PERFORMANCE"
                 }
               }
             }
@@ -65386,8 +65546,19 @@
                 "quantitativeExtractionDataAvailable": false,
                 "quantitativeProvenance": {
                   "structuredSource": null,
-                  "capacitySource": null,
+                  "capacitySource": "site.capacityProfile",
                   "promotedAt": "2026-10-03"
+                },
+                "capacity": {
+                  "productionWells": 52,
+                  "readyForCommissioningWells": 7,
+                  "activeDrillingWells": 8,
+                  "designedWellProductivity": 1500000,
+                  "maximumPotentialSustainedFlowPerWell": 3000000,
+                  "unit": "M3_PER_DAY_PER_WELL",
+                  "status": "REPORTED",
+                  "year": 2025,
+                  "scope": "FIELD_DEVELOPMENT_STAGE_1"
                 }
               },
               "resourceIdentity": {
@@ -65429,11 +65600,13 @@
               },
               "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVALIDATION",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "currentEvidence": "Turkmenistan's oil and gas authority reported pilot production at Galkynysh with 52 active production wells, seven preparing for connection and eight drilling wells; the field is being developed in seven stages.",
-                "sourceAuthority": "Turkmenistan State Concern Turkmengas / oilgas.gov.tm"
+                "sourceAuthority": "Turkmenistan State Concern Turkmengas / oilgas.gov.tm",
+                "structuredMetricsRevalidatedAt": "2026-10-03",
+                "structuredMetricsSourceCount": 1
               },
               "operationalProfile": {
                 "activeProductionWells": 52,
@@ -65447,6 +65620,12 @@
                   "url": "https://www.oilgas.gov.tm/en/posts/habarlar/15416/galkynysh-field-development-stages-presented-at-ogt-2025",
                   "accessed": "2026-09-27",
                   "scope": "2025_current_well_and_development_state"
+                },
+                {
+                  "url": "https://oilgas.gov.tm/en/posts/habarlar/15416/",
+                  "accessed": "2026-10-03",
+                  "scope": "2025_Galkynysh_well_stock_design_flow_and_development_stage",
+                  "sourceType": "GOVERNMENT"
                 }
               ],
               "siteDataPackage": {
@@ -65530,21 +65709,44 @@
                     "year": null,
                     "status": "UNOBSERVED"
                   },
-                  "capacity": {},
+                  "capacity": {
+                    "productionWells": 52,
+                    "readyForCommissioningWells": 7,
+                    "activeDrillingWells": 8,
+                    "designedWellProductivity": 1500000,
+                    "maximumPotentialSustainedFlowPerWell": 3000000,
+                    "unit": "M3_PER_DAY_PER_WELL",
+                    "status": "REPORTED",
+                    "year": 2025,
+                    "scope": "FIELD_DEVELOPMENT_STAGE_1"
+                  },
                   "reportedMetrics": {},
                   "quantitativeProvenance": {
                     "structuredSource": null,
-                    "capacitySource": null,
+                    "capacitySource": "site.capacityProfile",
                     "promotedAt": "2026-10-03"
                   }
                 },
                 "verification": {
                   "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
-                  "reviewedAt": "2026-09-27",
-                  "sourceCount": 1,
-                  "sourceAuthorities": [],
+                  "reviewedAt": "2026-10-03",
+                  "sourceCount": 2,
+                  "sourceAuthorities": [
+                    "GOVERNMENT"
+                  ],
                   "dataLimitations": null
                 }
+              },
+              "capacityProfile": {
+                "productionWells": 52,
+                "readyForCommissioningWells": 7,
+                "activeDrillingWells": 8,
+                "designedWellProductivity": 1500000,
+                "maximumPotentialSustainedFlowPerWell": 3000000,
+                "unit": "M3_PER_DAY_PER_WELL",
+                "status": "REPORTED",
+                "year": 2025,
+                "scope": "FIELD_DEVELOPMENT_STAGE_1"
               }
             }
           ],
