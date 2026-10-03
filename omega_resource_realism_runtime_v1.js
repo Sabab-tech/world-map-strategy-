@@ -108,7 +108,7 @@ function parseReserve(raw,resourceId){
  else if(r==='gold'){for(const f of ['TROY_OUNCES','TONNES']){x=extractMeasure(text,f);if(x)break;}}
  else x=extractMeasure(text,'TONNES');
  if(!x)return missing(text);
- const targetFamily=unitFamily(spec.unit);
+ const targetFamily=spec.family==='GOLD'?'TROY_OUNCES':(spec.family==='GAS'?'BCM':(unitFamily(spec.unit)||spec.family));
  const value=convertReserve(x.value,x.unitFamily,targetFamily);
  if(value===null)return missing(text);
  return{status:'OBSERVED',value,unit:spec.unit,unitFamily:spec.family,sourceUnit:x.sourceUnit,sourceUnitFamily:x.unitFamily,raw:x.raw,resourceId:r};
