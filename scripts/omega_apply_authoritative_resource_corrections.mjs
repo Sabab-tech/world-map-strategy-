@@ -2196,6 +2196,94 @@ const fixes = {
       evidence('https://www.feraal.dz/fr/actualite/', 'FERAAL_operator_and_4Mt_primary_pretreatment_unit', 'OPERATOR'),
       evidence('https://www.mindat.org/loc-296328.html', 'deposit_location_reserve_and_iron_grade_context', 'GEOLOGICAL_DATABASE')
     ]
+  },
+  SITE_SEN_sabodala_massawa_gold_mine: {
+    quantitativeReserve: {
+      quantity: 42800000,
+      unit: 'metric_tons_ore',
+      year: 2025,
+      status: 'OBSERVED',
+      basis: 'PROVEN_PLUS_PROBABLE_RESERVE_100_PERCENT'
+    },
+    quantitativeGrade: {
+      value: 2.01,
+      unit: 'grams_per_tonne_gold',
+      year: 2025,
+      status: 'OBSERVED',
+      basis: 'PROVEN_PLUS_PROBABLE_RESERVE'
+    },
+    extra: {
+      containedGold: { value: 2768000, unit: 'troy_ounces_gold', year: 2025, status: 'OBSERVED' }
+    },
+    sources: [
+      evidence('https://www.endeavourmining.com/our-portfolio/sabodala-massawa-mine/', '2025_proven_probable_reserve_tonnage_grade_and_contained_gold', 'OPERATOR')
+    ]
+  },
+  SITE_GHA_tarkwa_gold_mine: {
+    quantitativeReserve: {
+      quantity: 216212000,
+      unit: 'metric_tons_ore',
+      year: 2025,
+      status: 'OBSERVED_ATTRIBUTABLE',
+      basis: 'TOTAL_MINERAL_RESERVES_90_PERCENT_GOLD_FIELDS'
+    },
+    quantitativeGrade: {
+      value: 1.0,
+      unit: 'grams_per_tonne_gold',
+      year: 2025,
+      status: 'OBSERVED_ATTRIBUTABLE',
+      basis: 'TOTAL_MINERAL_RESERVES'
+    },
+    extra: {
+      containedGold: { value: 6617000, unit: 'troy_ounces_gold', year: 2025, status: 'OBSERVED_ATTRIBUTABLE' }
+    },
+    sources: [
+      evidence('https://www.sec.gov/Archives/edgar/data/1172724/000162828026021904/exhibit962_tarkwatrs.htm', '2025_Tarkwa_total_mineral_reserves_tonnage_grade_and_contained_gold', 'REGULATORY_FILING')
+    ]
+  },
+  SITE_COD_kamoa_kakula_copper_complex: {
+    quantitativeReserve: {
+      quantity: 466000000,
+      unit: 'metric_tons_ore',
+      year: 2025,
+      status: 'OBSERVED',
+      basis: 'PROBABLE_MINERAL_RESERVE_100_PERCENT_PROJECT'
+    },
+    quantitativeGrade: {
+      value: 2.82,
+      unit: 'percent_copper',
+      year: 2025,
+      status: 'OBSERVED',
+      basis: 'PROBABLE_MINERAL_RESERVE_100_PERCENT_PROJECT'
+    },
+    extra: {
+      containedCopper: { value: 13100000, unit: 'metric_tons_copper', year: 2025, status: 'OBSERVED' }
+    },
+    sources: [
+      evidence('https://ivanhoe.blendermedia.com/news-stories/news-release/ivanhoe-mines-announces-updated-independent-study-results-for-the-kamoa-kakula-copper-complex/', '2025_mineral_reserve_ore_tonnage_copper_grade_and_contained_copper', 'OPERATOR')
+    ]
+  },
+  SITE_TZA_geita_gold_mine: {
+    quantitativeReserve: {
+      quantity: 75690000,
+      unit: 'metric_tons_ore',
+      year: 2025,
+      status: 'OBSERVED_ATTRIBUTABLE',
+      basis: 'TOTAL_PROVEN_PLUS_PROBABLE_MINERAL_RESERVE'
+    },
+    quantitativeGrade: {
+      value: 1.65,
+      unit: 'grams_per_tonne_gold',
+      year: 2025,
+      status: 'OBSERVED_ATTRIBUTABLE',
+      basis: 'TOTAL_PROVEN_PLUS_PROBABLE_MINERAL_RESERVE'
+    },
+    extra: {
+      containedGold: { value: 4020000, unit: 'troy_ounces_gold', year: 2025, status: 'OBSERVED_ATTRIBUTABLE' }
+    },
+    sources: [
+      evidence('https://www.sec.gov/Archives/edgar/data/1973832/000197383226000062/geitatechnicalreportsumm.htm', '2025_geita_proven_probable_reserve_tonnage_grade_and_contained_gold', 'REGULATORY_FILING')
+    ]
   }
 };
 
