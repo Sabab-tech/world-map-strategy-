@@ -1,16 +1,11 @@
 {
-  "runDate": "2026-09-27",
+  "runDate": "2026-10-03",
   "totalSites": 199,
-  "legacyTargets": 58,
+  "legacyTargets": 60,
   "matchedByWebSearch": 0,
-  "wikipediaMatches": 0,
+  "wikipediaMatches": 1,
   "wikidataMatches": 0,
   "unresolved": [
-    {
-      "id": "SITE_CPV_santiago_pozzolana_quarry_zone",
-      "siteName": "Santiago Pozzolana Quarry Zone",
-      "countryCode": "CPV"
-    },
     {
       "id": "SITE_CAF_ndassima_gold_project",
       "siteName": "Ndassima Gold Project",
@@ -20,16 +15,6 @@
       "id": "SITE_TCD_kouri_bougoudi_gold_mining_area",
       "siteName": "Kouri Bougoudi Gold Mining Area",
       "countryCode": "TCD"
-    },
-    {
-      "id": "SITE_SOM_el_buur_gold_mining_area",
-      "siteName": "El Buur Gold Mining Area",
-      "countryCode": "SOM"
-    },
-    {
-      "id": "SITE_COM_grande_comore_basalt_aggregate_sites",
-      "siteName": "Grande Comore Basalt Aggregate Sites",
-      "countryCode": "COM"
     },
     {
       "id": "SITE_SWZ_ngwenya_iron_mine",
@@ -42,26 +27,6 @@
       "countryCode": "OMN"
     },
     {
-      "id": "SITE_KOR_samcheok_limestone_mining_district",
-      "siteName": "Samcheok Limestone Mining District",
-      "countryCode": "KOR"
-    },
-    {
-      "id": "SITE_PRK_musan_iron_mine",
-      "siteName": "Musan Iron Mine",
-      "countryCode": "PRK"
-    },
-    {
-      "id": "SITE_TWN_hualien_marble_quarry_zone",
-      "siteName": "Hualien Marble Quarry Zone",
-      "countryCode": "TWN"
-    },
-    {
-      "id": "SITE_MYS_penjom_gold_mine",
-      "siteName": "Penjom Gold Mine",
-      "countryCode": "MYS"
-    },
-    {
       "id": "SITE_SGP_pulau_ubin_granite_quarry_sites",
       "siteName": "Pulau Ubin Granite Quarry Sites",
       "countryCode": "SGP"
@@ -72,16 +37,6 @@
       "countryCode": "LAO"
     },
     {
-      "id": "SITE_FRA_prasville_limestone_quarry",
-      "siteName": "Prasville Limestone Quarry",
-      "countryCode": "FRA"
-    },
-    {
-      "id": "SITE_ITA_carrara_marble_quarries",
-      "siteName": "Carrara Marble Quarries",
-      "countryCode": "ITA"
-    },
-    {
       "id": "SITE_ESP_cobre_las_cruces_mine",
       "siteName": "Cobre Las Cruces Mine",
       "countryCode": "ESP"
@@ -90,11 +45,6 @@
       "id": "SITE_POL_be_chat_w_lignite_mine",
       "siteName": "Bełchatów Lignite Mine",
       "countryCode": "POL"
-    },
-    {
-      "id": "SITE_UKR_kryvyi_rih_iron_ore_district",
-      "siteName": "Kryvyi Rih Iron Ore District",
-      "countryCode": "UKR"
     },
     {
       "id": "SITE_NLD_veendam_salt_mine",
@@ -267,11 +217,6 @@
       "countryCode": "PRY"
     },
     {
-      "id": "SITE_URY_minas_de_corrales_gold_mining_district",
-      "siteName": "Minas de Corrales Gold Mining District",
-      "countryCode": "URY"
-    },
-    {
       "id": "SITE_CRI_bellavista_gold_mine",
       "siteName": "Bellavista Gold Mine",
       "countryCode": "CRI"
@@ -287,14 +232,74 @@
       "countryCode": "HND"
     },
     {
-      "id": "SITE_SLV_el_dorado_gold_project",
-      "siteName": "El Dorado Gold Project",
-      "countryCode": "SLV"
+      "id": "SITE_JAM_noranda_st_ann_bauxite_mine",
+      "siteName": "Noranda St Ann Bauxite Mine",
+      "countryCode": "JAM"
     },
     {
-      "id": "SITE_BLZ_hattieville_sand_and_aggregate_sites",
-      "siteName": "Hattieville Sand and Aggregate Sites",
-      "countryCode": "BLZ"
+      "id": "SITE_HTI_gona_ves_limestone_quarry_zone",
+      "siteName": "Gonaïves Limestone Quarry Zone",
+      "countryCode": "HTI"
+    },
+    {
+      "id": "SITE_DOM_pueblo_viejo_gold_mine",
+      "siteName": "Pueblo Viejo Gold Mine",
+      "countryCode": "DOM"
+    },
+    {
+      "id": "SITE_TTO_juniper_oil_field",
+      "siteName": "Juniper Oil Field",
+      "countryCode": "TTO"
+    },
+    {
+      "id": "SITE_BRB_arawak_cement_limestone_quarry",
+      "siteName": "Arawak Cement Limestone Quarry",
+      "countryCode": "BRB"
+    },
+    {
+      "id": "SITE_VCT_diamond_quarry",
+      "siteName": "Diamond Quarry",
+      "countryCode": "VCT"
+    },
+    {
+      "id": "SITE_ATG_gunthorpes_quarry",
+      "siteName": "Gunthorpes Quarry",
+      "countryCode": "ATG"
+    },
+    {
+      "id": "SITE_KNA_ross_lands_quarry_zone",
+      "siteName": "Ross Lands Quarry Zone",
+      "countryCode": "KNA"
+    },
+    {
+      "id": "SITE_SUR_merian_gold_mine",
+      "siteName": "Merian Gold Mine",
+      "countryCode": "SUR"
+    },
+    {
+      "id": "SITE_GUY_aurora_gold_mine",
+      "siteName": "Aurora Gold Mine",
+      "countryCode": "GUY"
+    },
+    {
+      "id": "SITE_AUS_boddington_gold_mine",
+      "siteName": "Boddington Gold Mine",
+      "countryCode": "AUS"
+    },
+    {
+      "id": "SITE_NZL_macraes_gold_mine",
+      "siteName": "Macraes Gold Mine",
+      "countryCode": "NZL"
+    },
+    {
+      "id": "SITE_PNG_lihir_gold_mine",
+      "siteName": "Lihir Gold Mine",
+      "countryCode": "PNG"
+    },
+    {
+      "id": "SITE_FJI_vatukoula_gold_mine",
+      "siteName": "Vatukoula Gold Mine",
+      "countryCode": "FJI"
     }
   ]
 }

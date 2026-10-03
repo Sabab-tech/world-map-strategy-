@@ -393,7 +393,7 @@
       },
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
-        "reviewedAt": "2026-09-27",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 2,
         "sourceAuthorities": [],
         "dataLimitations": null
@@ -935,7 +935,7 @@
       },
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
-        "reviewedAt": "2026-09-27",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 3,
         "sourceAuthorities": [
           "OPERATOR"
@@ -1555,7 +1555,7 @@
       },
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
-        "reviewedAt": "2026-09-27",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 2,
         "sourceAuthorities": [
           "OPERATOR"
@@ -1632,7 +1632,7 @@
       },
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
-        "reviewedAt": "2026-09-27",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 3,
         "sourceAuthorities": [
           "OPERATOR"
@@ -1866,7 +1866,7 @@
       },
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
-        "reviewedAt": "2026-09-27",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 1,
         "sourceAuthorities": [
           "OPERATOR"
@@ -1943,7 +1943,7 @@
       },
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
-        "reviewedAt": "2026-09-27",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 1,
         "sourceAuthorities": [],
         "dataLimitations": null
@@ -2172,7 +2172,7 @@
       },
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
-        "reviewedAt": "2026-09-27",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 3,
         "sourceAuthorities": [
           "INDUSTRY_NEWS",
@@ -2558,7 +2558,7 @@
       },
       "verification": {
         "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-        "reviewedAt": "2026-09-27",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 0,
         "sourceAuthorities": [],
         "dataLimitations": null
@@ -2633,7 +2633,7 @@
       },
       "verification": {
         "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-        "reviewedAt": "2026-09-27",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 0,
         "sourceAuthorities": [],
         "dataLimitations": null
@@ -2788,7 +2788,7 @@
       },
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
-        "reviewedAt": "2026-09-27",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 3,
         "sourceAuthorities": [],
         "dataLimitations": null
@@ -3029,7 +3029,7 @@
       },
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
-        "reviewedAt": "2026-09-27",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 1,
         "sourceAuthorities": [
           "INDUSTRY_SOURCE"
@@ -3560,7 +3560,7 @@
       },
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
-        "reviewedAt": "2026-09-27",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 2,
         "sourceAuthorities": [],
         "dataLimitations": null
@@ -4874,7 +4874,7 @@
       },
       "verification": {
         "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-        "reviewedAt": "2026-09-27",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 0,
         "sourceAuthorities": [],
         "dataLimitations": null
@@ -5271,7 +5271,7 @@
       },
       "verification": {
         "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-        "reviewedAt": "2026-09-27",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 0,
         "sourceAuthorities": [],
         "dataLimitations": null
@@ -6383,10 +6383,12 @@
         }
       },
       "verification": {
-        "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-        "reviewedAt": "2026-09-27",
-        "sourceCount": 0,
-        "sourceAuthorities": [],
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+        "reviewedAt": "2026-10-03",
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "WIKIPEDIA"
+        ],
         "dataLimitations": null
       }
     },
@@ -7085,7 +7087,7 @@
       },
       "verification": {
         "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-        "reviewedAt": "2026-09-27",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 0,
         "sourceAuthorities": [],
         "dataLimitations": null
@@ -7325,7 +7327,7 @@
       },
       "verification": {
         "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-        "reviewedAt": "2026-09-27",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 0,
         "sourceAuthorities": [],
         "dataLimitations": null
@@ -8488,7 +8490,7 @@
       },
       "verification": {
         "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-        "reviewedAt": "2026-09-27",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 0,
         "sourceAuthorities": [],
         "dataLimitations": null
@@ -8566,7 +8568,7 @@
       },
       "verification": {
         "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-        "reviewedAt": "2026-09-27",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 0,
         "sourceAuthorities": [],
         "dataLimitations": null
@@ -8718,7 +8720,7 @@
       },
       "verification": {
         "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-        "reviewedAt": "2026-09-27",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 0,
         "sourceAuthorities": [],
         "dataLimitations": null
@@ -8793,7 +8795,7 @@
       },
       "verification": {
         "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-        "reviewedAt": "2026-09-27",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 0,
         "sourceAuthorities": [],
         "dataLimitations": null
@@ -8867,7 +8869,7 @@
       },
       "verification": {
         "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-        "reviewedAt": "2026-09-27",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 0,
         "sourceAuthorities": [],
         "dataLimitations": null
@@ -9015,7 +9017,7 @@
       },
       "verification": {
         "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-        "reviewedAt": "2026-09-27",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 0,
         "sourceAuthorities": [],
         "dataLimitations": null
@@ -9090,7 +9092,7 @@
       },
       "verification": {
         "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-        "reviewedAt": "2026-09-27",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 0,
         "sourceAuthorities": [],
         "dataLimitations": null
@@ -9242,7 +9244,7 @@
       },
       "verification": {
         "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-        "reviewedAt": "2026-09-27",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 0,
         "sourceAuthorities": [],
         "dataLimitations": null
@@ -9316,7 +9318,7 @@
       },
       "verification": {
         "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-        "reviewedAt": "2026-09-27",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 0,
         "sourceAuthorities": [],
         "dataLimitations": null
@@ -9390,7 +9392,7 @@
       },
       "verification": {
         "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-        "reviewedAt": "2026-09-27",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 0,
         "sourceAuthorities": [],
         "dataLimitations": null
@@ -9465,7 +9467,7 @@
       },
       "verification": {
         "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-        "reviewedAt": "2026-09-27",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 0,
         "sourceAuthorities": [],
         "dataLimitations": null
@@ -9543,7 +9545,7 @@
       },
       "verification": {
         "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-        "reviewedAt": "2026-09-27",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 0,
         "sourceAuthorities": [],
         "dataLimitations": null
@@ -9622,7 +9624,7 @@
       },
       "verification": {
         "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-        "reviewedAt": "2026-09-27",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 0,
         "sourceAuthorities": [],
         "dataLimitations": null
@@ -9700,7 +9702,7 @@
       },
       "verification": {
         "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-        "reviewedAt": "2026-09-27",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 0,
         "sourceAuthorities": [],
         "dataLimitations": null
@@ -9774,7 +9776,7 @@
       },
       "verification": {
         "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-        "reviewedAt": "2026-09-27",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 0,
         "sourceAuthorities": [],
         "dataLimitations": null
@@ -9853,7 +9855,7 @@
       },
       "verification": {
         "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-        "reviewedAt": "2026-09-27",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 0,
         "sourceAuthorities": [],
         "dataLimitations": null
@@ -9932,7 +9934,7 @@
       },
       "verification": {
         "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-        "reviewedAt": "2026-09-27",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 0,
         "sourceAuthorities": [],
         "dataLimitations": null
@@ -10007,7 +10009,7 @@
       },
       "verification": {
         "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-        "reviewedAt": "2026-09-27",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 0,
         "sourceAuthorities": [],
         "dataLimitations": null
@@ -10156,7 +10158,7 @@
       },
       "verification": {
         "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-        "reviewedAt": "2026-09-27",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 0,
         "sourceAuthorities": [],
         "dataLimitations": null
@@ -10230,7 +10232,7 @@
       },
       "verification": {
         "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-        "reviewedAt": "2026-09-27",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 0,
         "sourceAuthorities": [],
         "dataLimitations": null
@@ -10305,7 +10307,7 @@
       },
       "verification": {
         "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-        "reviewedAt": "2026-09-27",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 0,
         "sourceAuthorities": [],
         "dataLimitations": null
@@ -10380,7 +10382,7 @@
       },
       "verification": {
         "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-        "reviewedAt": "2026-09-27",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 0,
         "sourceAuthorities": [],
         "dataLimitations": null
@@ -10455,7 +10457,7 @@
       },
       "verification": {
         "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-        "reviewedAt": "2026-09-27",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 0,
         "sourceAuthorities": [],
         "dataLimitations": null
@@ -10529,7 +10531,7 @@
       },
       "verification": {
         "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-        "reviewedAt": "2026-09-27",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 0,
         "sourceAuthorities": [],
         "dataLimitations": null
@@ -10603,7 +10605,7 @@
       },
       "verification": {
         "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-        "reviewedAt": "2026-09-27",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 0,
         "sourceAuthorities": [],
         "dataLimitations": null
@@ -10677,7 +10679,7 @@
       },
       "verification": {
         "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-        "reviewedAt": "2026-09-27",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 0,
         "sourceAuthorities": [],
         "dataLimitations": null
@@ -10755,7 +10757,7 @@
       },
       "verification": {
         "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-        "reviewedAt": "2026-09-27",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 0,
         "sourceAuthorities": [],
         "dataLimitations": null
@@ -10829,7 +10831,7 @@
       },
       "verification": {
         "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-        "reviewedAt": "2026-09-27",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 0,
         "sourceAuthorities": [],
         "dataLimitations": null
@@ -10904,7 +10906,7 @@
       },
       "verification": {
         "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-        "reviewedAt": "2026-09-27",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 0,
         "sourceAuthorities": [],
         "dataLimitations": null
@@ -11061,7 +11063,7 @@
       },
       "verification": {
         "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-        "reviewedAt": "2026-09-27",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 0,
         "sourceAuthorities": [],
         "dataLimitations": null
@@ -11136,7 +11138,7 @@
       },
       "verification": {
         "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-        "reviewedAt": "2026-09-27",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 0,
         "sourceAuthorities": [],
         "dataLimitations": null
@@ -11487,7 +11489,7 @@
       },
       "verification": {
         "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-        "reviewedAt": "2026-09-27",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 0,
         "sourceAuthorities": [],
         "dataLimitations": null
@@ -11955,7 +11957,7 @@
       },
       "verification": {
         "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-        "reviewedAt": "2026-09-27",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 0,
         "sourceAuthorities": [],
         "dataLimitations": null
@@ -12116,7 +12118,7 @@
       },
       "verification": {
         "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-        "reviewedAt": "2026-09-27",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 0,
         "sourceAuthorities": [],
         "dataLimitations": null
@@ -12195,7 +12197,7 @@
       },
       "verification": {
         "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-        "reviewedAt": "2026-09-27",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 0,
         "sourceAuthorities": [],
         "dataLimitations": null
@@ -12344,7 +12346,7 @@
       },
       "verification": {
         "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-        "reviewedAt": "2026-09-27",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 0,
         "sourceAuthorities": [],
         "dataLimitations": null
@@ -12577,7 +12579,7 @@
       },
       "verification": {
         "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-        "reviewedAt": "2026-09-27",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 2,
         "sourceAuthorities": [],
         "dataLimitations": null
@@ -12652,7 +12654,7 @@
       },
       "verification": {
         "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-        "reviewedAt": "2026-09-27",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 0,
         "sourceAuthorities": [],
         "dataLimitations": null
@@ -12726,7 +12728,7 @@
       },
       "verification": {
         "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-        "reviewedAt": "2026-09-27",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 0,
         "sourceAuthorities": [],
         "dataLimitations": null
@@ -13265,7 +13267,7 @@
       },
       "verification": {
         "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-        "reviewedAt": null,
+        "reviewedAt": "2026-10-03",
         "sourceCount": 0,
         "sourceAuthorities": [],
         "dataLimitations": null
@@ -13340,7 +13342,7 @@
       },
       "verification": {
         "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-        "reviewedAt": null,
+        "reviewedAt": "2026-10-03",
         "sourceCount": 0,
         "sourceAuthorities": [],
         "dataLimitations": null
@@ -13415,7 +13417,7 @@
       },
       "verification": {
         "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-        "reviewedAt": null,
+        "reviewedAt": "2026-10-03",
         "sourceCount": 0,
         "sourceAuthorities": [],
         "dataLimitations": null
@@ -13495,7 +13497,7 @@
       },
       "verification": {
         "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-        "reviewedAt": null,
+        "reviewedAt": "2026-10-03",
         "sourceCount": 0,
         "sourceAuthorities": [],
         "dataLimitations": null
@@ -13644,7 +13646,7 @@
       },
       "verification": {
         "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-        "reviewedAt": null,
+        "reviewedAt": "2026-10-03",
         "sourceCount": 0,
         "sourceAuthorities": [],
         "dataLimitations": null
@@ -13792,7 +13794,7 @@
       },
       "verification": {
         "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-        "reviewedAt": null,
+        "reviewedAt": "2026-10-03",
         "sourceCount": 0,
         "sourceAuthorities": [],
         "dataLimitations": null
@@ -13941,7 +13943,7 @@
       },
       "verification": {
         "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-        "reviewedAt": null,
+        "reviewedAt": "2026-10-03",
         "sourceCount": 0,
         "sourceAuthorities": [],
         "dataLimitations": null
@@ -14016,7 +14018,7 @@
       },
       "verification": {
         "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-        "reviewedAt": null,
+        "reviewedAt": "2026-10-03",
         "sourceCount": 0,
         "sourceAuthorities": [],
         "dataLimitations": null
@@ -14165,7 +14167,7 @@
       },
       "verification": {
         "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-        "reviewedAt": null,
+        "reviewedAt": "2026-10-03",
         "sourceCount": 0,
         "sourceAuthorities": [],
         "dataLimitations": null
@@ -14240,7 +14242,7 @@
       },
       "verification": {
         "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-        "reviewedAt": null,
+        "reviewedAt": "2026-10-03",
         "sourceCount": 0,
         "sourceAuthorities": [],
         "dataLimitations": null
@@ -14315,7 +14317,7 @@
       },
       "verification": {
         "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-        "reviewedAt": null,
+        "reviewedAt": "2026-10-03",
         "sourceCount": 0,
         "sourceAuthorities": [],
         "dataLimitations": null
@@ -14390,7 +14392,7 @@
       },
       "verification": {
         "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-        "reviewedAt": null,
+        "reviewedAt": "2026-10-03",
         "sourceCount": 0,
         "sourceAuthorities": [],
         "dataLimitations": null
@@ -14465,7 +14467,7 @@
       },
       "verification": {
         "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-        "reviewedAt": null,
+        "reviewedAt": "2026-10-03",
         "sourceCount": 0,
         "sourceAuthorities": [],
         "dataLimitations": null
@@ -14540,7 +14542,7 @@
       },
       "verification": {
         "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-        "reviewedAt": null,
+        "reviewedAt": "2026-10-03",
         "sourceCount": 0,
         "sourceAuthorities": [],
         "dataLimitations": null

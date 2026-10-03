@@ -1011,7 +1011,7 @@
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
                 "productionSource": "EMRD dashboard September 2026",
                 "webReview": "BCMCL public company site rechecked 2026-09-27",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "productionRate": 4896.3,
@@ -1644,7 +1644,7 @@
                 "quantitativeSourceStatus": "EXPLICIT_PUBLIC_VALUE_AVAILABLE",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
                 "webReview": "Coal India/SECL and GEM rechecked 2026-09-27",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -2282,7 +2282,7 @@
                 "quantitativeSourceStatus": "EXPLICIT_PUBLIC_VALUE_AVAILABLE",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
                 "webReview": "Site-specific current/recent source rechecked 2026-09-27",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -2912,7 +2912,7 @@
                 "quantitativeSourceStatus": "EXPLICIT_PUBLIC_VALUE_AVAILABLE",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
                 "webReview": "Sri Lankan ministry 2025 progress report rechecked 2026-09-27",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -3555,7 +3555,7 @@
                 "legacyReferenceName": "Nepal Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "NON_EXECUTABLE",
@@ -3651,7 +3651,7 @@
               },
               "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVALIDATION",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "currentEvidence": "The company mine is about 27 km from the plant; August 2026 reporting states production had halted and the mine is estimated at 73–75 Mt limestone.",
@@ -3749,7 +3749,7 @@
                 },
                 "verification": {
                   "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
-                  "reviewedAt": "2026-09-27",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 2,
                   "sourceAuthorities": [],
                   "dataLimitations": null
@@ -4193,7 +4193,7 @@
                 "legacyReferenceName": "Bhutan Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-10-02",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH",
                 "webReview": "Targeted authoritative repair rechecked 2026-10-02"
               },
@@ -4822,7 +4822,7 @@
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
                 "webReview": "MoMP 2026 pages rechecked 2026-09-27",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "NON_EXECUTABLE",
@@ -5450,7 +5450,7 @@
                 "legacyReferenceName": "Maldives Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "NON_EXECUTABLE",
@@ -6072,7 +6072,7 @@
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
                 "webReview": "Site-specific current/recent source rechecked 2026-09-27",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "NON_EXECUTABLE",
@@ -6702,7 +6702,7 @@
                 "quantitativeSourceStatus": "EXPLICIT_PUBLIC_VALUE_AVAILABLE",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
                 "webReview": "AngloGold Ashanti 2025 operational report and current asset page rechecked 2026-09-27",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -7351,7 +7351,7 @@
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
                 "webReview": "Reuters/NOC current event rechecked 2026-09-27",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -7983,9 +7983,9 @@
                 "legacyReferenceName": "Morocco Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH",
-                "webReview": "OCP Group rechecked 2026-09-27"
+                "webReview": "OCP Group rechecked 2026-10-03"
               },
               "extractionEligibility": "EXECUTABLE",
               "currentStatus": "ACTIVE_PRODUCING",
@@ -8080,7 +8080,7 @@
               },
               "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVALIDATION",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "currentEvidence": "OCP identifies Khouribga as a principal phosphate mining centre; its 2023 reference document reports 34.025 Mt extraction capacity.",
@@ -8185,7 +8185,7 @@
                 },
                 "verification": {
                   "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
-                  "reviewedAt": "2026-09-27",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 3,
                   "sourceAuthorities": [
                     "OPERATOR"
@@ -8636,7 +8636,7 @@
                 "legacyReferenceName": "Tunisia Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -9276,7 +9276,7 @@
                 "legacyReferenceName": "Sudan Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "NON_EXECUTABLE",
@@ -9905,7 +9905,7 @@
                 "quantitativeSourceStatus": "EXPLICIT_PUBLIC_VALUE_AVAILABLE",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
                 "webReview": "Site-specific current/recent source rechecked 2026-09-27",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -10524,7 +10524,7 @@
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
                 "webReview": "Site-specific current/recent source rechecked 2026-09-27",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -11154,7 +11154,7 @@
                 "legacyReferenceName": "Gambia Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "CONDITIONAL",
@@ -11783,7 +11783,7 @@
                 "legacyReferenceName": "Guinea-Bissau Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "NON_EXECUTABLE",
@@ -12428,7 +12428,7 @@
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
                 "webReview": "Rio Tinto/CBG and IFC CAO current pages rechecked 2026-09-27",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -13071,9 +13071,9 @@
                 "legacyReferenceName": "Sierra Leone Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "EXPLICIT_PUBLIC_VALUE_AVAILABLE",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH",
-                "webReview": "Sierra Rutile Limited rechecked 2026-09-27"
+                "webReview": "Sierra Rutile Limited rechecked 2026-10-03"
               },
               "extractionEligibility": "EXECUTABLE",
               "currentStatus": "ACTIVE_PRODUCING",
@@ -13166,7 +13166,7 @@
               },
               "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVALIDATION",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "currentEvidence": "Sierra Rutile reports Area 1 in Bonthe District as in production with three wet concentrator plants, a mineral separation plant and 120,000 t/y capacity.",
@@ -13272,7 +13272,7 @@
                 },
                 "verification": {
                   "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
-                  "reviewedAt": "2026-09-27",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 2,
                   "sourceAuthorities": [
                     "OPERATOR"
@@ -13718,9 +13718,9 @@
                 "legacyReferenceName": "Liberia Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH",
-                "webReview": "ArcelorMittal Liberia rechecked 2026-09-27"
+                "webReview": "ArcelorMittal Liberia rechecked 2026-10-03"
               },
               "extractionEligibility": "EXECUTABLE",
               "currentStatus": "ACTIVE_PRODUCING",
@@ -13811,7 +13811,7 @@
               },
               "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVALIDATION",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "currentEvidence": "ArcelorMittal's 2025 report identifies ArcelorMittal Liberia as operator of the Western Range iron deposits; Liberia's Mines Ministry inspected Yekepa operations in June 2026.",
@@ -13916,7 +13916,7 @@
                 },
                 "verification": {
                   "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
-                  "reviewedAt": "2026-09-27",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 3,
                   "sourceAuthorities": [
                     "OPERATOR"
@@ -14363,7 +14363,7 @@
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
                 "webReview": "Endeavour Mining current Ity asset page rechecked 2026-09-27",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -14995,7 +14995,7 @@
                 "quantitativeSourceStatus": "EXPLICIT_PUBLIC_VALUE_AVAILABLE",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
                 "webReview": "Gold Fields and Ghana Minerals Commission current data rechecked 2026-09-27",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -15643,9 +15643,9 @@
                 "legacyReferenceName": "Togo Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH",
-                "webReview": "SNPT rechecked 2026-09-27"
+                "webReview": "SNPT rechecked 2026-10-03"
               },
               "extractionEligibility": "EXECUTABLE",
               "currentStatus": "ACTIVE_PRODUCING",
@@ -15740,7 +15740,7 @@
               },
               "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "sourceAuthority": "SNPT",
@@ -15827,7 +15827,7 @@
                 },
                 "verification": {
                   "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
-                  "reviewedAt": "2026-09-27",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 1,
                   "sourceAuthorities": [
                     "OPERATOR"
@@ -16273,9 +16273,9 @@
                 "legacyReferenceName": "Benin Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH",
-                "webReview": "Government of Benin + SCB-Lafarge rechecked 2026-09-27"
+                "webReview": "Government of Benin + SCB-Lafarge rechecked 2026-10-03"
               },
               "extractionEligibility": "EXECUTABLE",
               "currentStatus": "ACTIVE_PRODUCING",
@@ -16372,7 +16372,7 @@
               },
               "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVALIDATION",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "currentEvidence": "Benin Ministry of Water and Mines states that limestone deposits at Onigbolo, Massè and Bakpodji total more than 140 Mt and that the Onigbolo deposit is being exploited by SCB LAFARGE.",
@@ -16464,7 +16464,7 @@
                 },
                 "verification": {
                   "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
-                  "reviewedAt": "2026-09-27",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 1,
                   "sourceAuthorities": [],
                   "dataLimitations": null
@@ -16909,7 +16909,7 @@
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
                 "webReview": "IAMGOLD 2025 annual SEC filings rechecked 2026-09-27",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -17557,7 +17557,7 @@
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
                 "webReview": "Barrick SEC filing and Reuters September 2026 coverage rechecked 2026-09-27",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -18185,9 +18185,9 @@
                 "legacyReferenceName": "Niger Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH",
-                "webReview": "WEB_RESEARCH rechecked 2026-09-27"
+                "webReview": "WEB_RESEARCH rechecked 2026-10-03"
               },
               "extractionEligibility": "NON_EXECUTABLE",
               "currentStatus": "DISPUTED_OPERATION",
@@ -18282,7 +18282,7 @@
               },
               "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVALIDATION",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "currentEvidence": "Orano reports that Niger expropriated Orano on 19 June 2025 and that Somaïr's total proven plus probable reserves at end-2024 were 40,108 tU.",
@@ -18380,7 +18380,7 @@
                 },
                 "verification": {
                   "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
-                  "reviewedAt": "2026-09-27",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 3,
                   "sourceAuthorities": [
                     "INDUSTRY_NEWS",
@@ -18827,7 +18827,7 @@
                 "legacyReferenceName": "Nigeria Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -19451,7 +19451,7 @@
                 "legacyReferenceName": "Cabo Verde Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-10-02",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH",
                 "webReview": "Targeted authoritative repair rechecked 2026-10-02"
               },
@@ -20086,7 +20086,7 @@
                 "legacyReferenceName": "Western Sahara Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -20714,7 +20714,7 @@
                 "legacyReferenceName": "Cameroon Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "NON_EXECUTABLE",
@@ -21343,7 +21343,7 @@
                 "legacyReferenceName": "Central African Republic Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "NON_EXECUTABLE",
@@ -21435,7 +21435,7 @@
               },
               "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
@@ -21509,7 +21509,7 @@
                 },
                 "verification": {
                   "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": "2026-09-27",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 0,
                   "sourceAuthorities": [],
                   "dataLimitations": null
@@ -21953,7 +21953,7 @@
                 "legacyReferenceName": "Chad Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "CONDITIONAL",
@@ -22045,7 +22045,7 @@
               },
               "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
@@ -22119,7 +22119,7 @@
                 },
                 "verification": {
                   "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": "2026-09-27",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 0,
                   "sourceAuthorities": [],
                   "dataLimitations": null
@@ -22563,7 +22563,7 @@
                 "legacyReferenceName": "Republic of the Congo Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "NON_EXECUTABLE",
@@ -23193,9 +23193,9 @@
                 "legacyReferenceName": "Angola Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH",
-                "webReview": "USGS / Catoca rechecked 2026-09-27"
+                "webReview": "USGS / Catoca rechecked 2026-10-03"
               },
               "extractionEligibility": "EXECUTABLE",
               "currentStatus": "ACTIVE_PRODUCING",
@@ -23288,7 +23288,7 @@
               },
               "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVALIDATION",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "currentEvidence": "Catoca confirms current ownership, Lunda Sul location and open-pit extraction; USGS estimated 2024 output at 6.5 million carats.",
@@ -23389,7 +23389,7 @@
                 },
                 "verification": {
                   "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
-                  "reviewedAt": "2026-09-27",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 3,
                   "sourceAuthorities": [],
                   "dataLimitations": null
@@ -23839,7 +23839,7 @@
                 "quantitativeSourceStatus": "EXPLICIT_PUBLIC_VALUE_AVAILABLE",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
                 "webReview": "Ivanhoe Mines and Kamoa Copper current pages rechecked 2026-09-27",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -24493,7 +24493,7 @@
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
                 "webReview": "Site-specific current/recent source rechecked 2026-09-27",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -25119,9 +25119,9 @@
                 "legacyReferenceName": "Equatorial Guinea Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH",
-                "webReview": "WEB_RESEARCH rechecked 2026-09-27"
+                "webReview": "WEB_RESEARCH rechecked 2026-10-03"
               },
               "extractionEligibility": "EXECUTABLE",
               "currentStatus": "ACTIVE_PRODUCING",
@@ -25217,7 +25217,7 @@
               },
               "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass."
               },
@@ -25302,7 +25302,7 @@
                 },
                 "verification": {
                   "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
-                  "reviewedAt": "2026-09-27",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 1,
                   "sourceAuthorities": [
                     "INDUSTRY_SOURCE"
@@ -25748,7 +25748,7 @@
                 "legacyReferenceName": "São Tomé and Príncipe Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "CONDITIONAL",
@@ -26375,7 +26375,7 @@
                 "legacyReferenceName": "Ethiopia Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-10-02",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH",
                 "webReview": "Targeted authoritative repair rechecked 2026-10-02"
               },
@@ -27016,7 +27016,7 @@
                 "legacyReferenceName": "Kenya Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -27639,7 +27639,7 @@
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
                 "webReview": "AngloGold Ashanti 2025 technical report and annual report rechecked 2026-09-27",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -28276,7 +28276,7 @@
                 "legacyReferenceName": "Uganda Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -28905,7 +28905,7 @@
                 "legacyReferenceName": "Rwanda Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -29537,9 +29537,9 @@
                 "legacyReferenceName": "Burundi Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH",
-                "webReview": "Lifezone Metals rechecked 2026-09-27"
+                "webReview": "Lifezone Metals rechecked 2026-10-03"
               },
               "extractionEligibility": "NON_EXECUTABLE",
               "currentStatus": "EVALUATION_AND_EXPLORATION",
@@ -29630,7 +29630,7 @@
               },
               "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVALIDATION",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "currentEvidence": "Lifezone entered a 14-month exclusivity agreement with Burundi on 2026-03-10. Historical 2011 work defined >140 Mt at 1.31% Ni, but Lifezone states this estimate is historical and requires updating; current work is evaluation and planned infill drilling.",
@@ -29738,7 +29738,7 @@
                 },
                 "verification": {
                   "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
-                  "reviewedAt": "2026-09-27",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 2,
                   "sourceAuthorities": [],
                   "dataLimitations": null
@@ -30182,7 +30182,7 @@
                 "legacyReferenceName": "Somalia Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-10-02",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH",
                 "webReview": "Targeted authoritative repair rechecked 2026-10-02"
               },
@@ -30819,7 +30819,7 @@
                 "legacyReferenceName": "Djibouti Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -31433,7 +31433,7 @@
                 "legacyReferenceName": "Eritrea Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -32075,7 +32075,7 @@
                 "legacyReferenceName": "South Sudan Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -32708,7 +32708,7 @@
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
                 "webReview": "Site-specific current/recent source rechecked 2026-09-27",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "NON_EXECUTABLE",
@@ -33333,7 +33333,7 @@
                 "legacyReferenceName": "Madagascar Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -33967,7 +33967,7 @@
                 "legacyReferenceName": "Mauritius Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-10-02",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH",
                 "webReview": "Targeted authoritative repair rechecked 2026-10-02"
               },
@@ -34610,7 +34610,7 @@
                 "legacyReferenceName": "Seychelles Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "CONDITIONAL",
@@ -35227,7 +35227,7 @@
                 "legacyReferenceName": "Comoros Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-10-02",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH",
                 "webReview": "Targeted authoritative repair rechecked 2026-10-02"
               },
@@ -35857,7 +35857,7 @@
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
                 "webReview": "Site-specific current/recent source rechecked 2026-09-27",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -36474,7 +36474,7 @@
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
                 "webReview": "Site-specific current/recent source rechecked 2026-09-27",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -37113,7 +37113,7 @@
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
                 "webReview": "Site-specific current/recent source rechecked 2026-09-27",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -37738,7 +37738,7 @@
                 "legacyReferenceName": "Namibia Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -38366,7 +38366,7 @@
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
                 "webReview": "Site-specific current/recent source rechecked 2026-09-27",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -38990,7 +38990,7 @@
                 "legacyReferenceName": "Mozambique Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -39624,7 +39624,7 @@
                 "legacyReferenceName": "Lesotho Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -40252,7 +40252,7 @@
                 "legacyReferenceName": "Eswatini Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "NON_EXECUTABLE",
@@ -40344,7 +40344,7 @@
               },
               "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
@@ -40418,7 +40418,7 @@
                 },
                 "verification": {
                   "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": "2026-09-27",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 0,
                   "sourceAuthorities": [],
                   "dataLimitations": null
@@ -40867,7 +40867,7 @@
                 "legacyReferenceName": "Saudi Arabia Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -41501,7 +41501,7 @@
                 "legacyReferenceName": "United Arab Emirates Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-10-02",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH",
                 "webReview": "Targeted authoritative repair rechecked 2026-10-02"
               },
@@ -42143,7 +42143,7 @@
                 "legacyReferenceName": "Qatar Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -42787,7 +42787,7 @@
                 "legacyReferenceName": "Kuwait Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -43424,7 +43424,7 @@
                 "legacyReferenceName": "Oman Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -43520,7 +43520,7 @@
               },
               "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
@@ -43598,7 +43598,7 @@
                 },
                 "verification": {
                   "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": "2026-09-27",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 0,
                   "sourceAuthorities": [],
                   "dataLimitations": null
@@ -44047,7 +44047,7 @@
                 "legacyReferenceName": "Bahrain Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -44691,7 +44691,7 @@
                 "legacyReferenceName": "Yemen Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "NON_EXECUTABLE",
@@ -45334,7 +45334,7 @@
                 "legacyReferenceName": "Iraq Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -45971,7 +45971,7 @@
                 "legacyReferenceName": "Iran Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -46613,7 +46613,7 @@
                 "legacyReferenceName": "Turkey Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -47241,7 +47241,7 @@
                 "legacyReferenceName": "Syria Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "NON_EXECUTABLE",
@@ -47880,7 +47880,7 @@
                 "legacyReferenceName": "Jordan Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -48514,7 +48514,7 @@
                 "legacyReferenceName": "Lebanon Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-10-02",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH",
                 "webReview": "Targeted authoritative repair rechecked 2026-10-02"
               },
@@ -49168,7 +49168,7 @@
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
                 "webReview": "Chevron and GEM current pages rechecked 2026-09-27",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -49806,7 +49806,7 @@
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
                 "webReview": "PIF, PIF projects and CC Energy current pages rechecked 2026-09-27",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "NON_EXECUTABLE",
@@ -50456,7 +50456,7 @@
                 "legacyReferenceName": "China Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -51078,7 +51078,7 @@
                 "legacyReferenceName": "Japan Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -51713,7 +51713,7 @@
                 "legacyReferenceName": "South Korea Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-10-02",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH",
                 "webReview": "Targeted authoritative repair rechecked 2026-10-02"
               },
@@ -52350,7 +52350,7 @@
                 "legacyReferenceName": "North Korea Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -52438,15 +52438,23 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
               },
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
-                "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
+                "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
+                "secondarySourceAuthority": "Wikipedia/MediaWiki (secondary)",
+                "secondarySourceTitle": "Musan mine",
+                "secondarySourceType": "WIKIPEDIA",
+                "webSearchMatchScore": 1,
+                "webInfobox": {
+                  "products": "Iron ore",
+                  "location": "Musan County, North Hamgyong Province, North Korea"
+                }
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -52515,13 +52523,25 @@
                   }
                 },
                 "verification": {
-                  "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": "2026-09-27",
-                  "sourceCount": 0,
-                  "sourceAuthorities": [],
+                  "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+                  "reviewedAt": "2026-10-03",
+                  "sourceCount": 1,
+                  "sourceAuthorities": [
+                    "WIKIPEDIA"
+                  ],
                   "dataLimitations": null
                 }
-              }
+              },
+              "webResearchEvidence": [
+                {
+                  "url": "https://en.wikipedia.org/wiki/Musan_mine",
+                  "accessed": "2026-10-03",
+                  "scope": "site_identity_location_resource_operation_web_revalidation",
+                  "sourceType": "WIKIPEDIA",
+                  "matchScore": 1,
+                  "sourceTitle": "Musan mine"
+                }
+              ]
             }
           ],
           "processingFacilities": [
@@ -52971,7 +52991,7 @@
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
                 "webReview": "Site-specific current/recent source rechecked 2026-09-27",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -53603,7 +53623,7 @@
                 "legacyReferenceName": "Taiwan Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-10-02",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH",
                 "webReview": "Targeted authoritative repair rechecked 2026-10-02"
               },
@@ -54240,7 +54260,7 @@
                 "legacyReferenceName": "Indonesia Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -54870,7 +54890,7 @@
                 "legacyReferenceName": "Malaysia Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-10-02",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH",
                 "webReview": "Targeted authoritative repair rechecked 2026-10-02"
               },
@@ -54927,7 +54947,7 @@
                   "unit": null,
                   "status": "UNOBSERVED"
                 },
-                "quantitativeExtractionDataAvailable": false
+                "quantitativeExtractionDataAvailable": true
               },
               "resourceIdentity": {
                 "resourceTypeId": "gold",
@@ -54955,7 +54975,7 @@
                 "operation": "COMPLETE",
                 "ownership": "REPORTED",
                 "quantitative": {
-                  "reserve": "UNOBSERVED",
+                  "reserve": "OBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED"
                 },
@@ -55501,7 +55521,7 @@
                 "legacyReferenceName": "Vietnam Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -56120,7 +56140,7 @@
                 "legacyReferenceName": "Thailand Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -56755,7 +56775,7 @@
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
                 "webReview": "Site-specific current/recent source rechecked 2026-09-27",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -57386,7 +57406,7 @@
                 "legacyReferenceName": "Myanmar Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -58016,7 +58036,7 @@
                 "legacyReferenceName": "Singapore Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "NON_EXECUTABLE",
@@ -58107,7 +58127,7 @@
               },
               "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
@@ -58180,7 +58200,7 @@
                 },
                 "verification": {
                   "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": "2026-09-27",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 0,
                   "sourceAuthorities": [],
                   "dataLimitations": null
@@ -58624,7 +58644,7 @@
                 "legacyReferenceName": "Brunei Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -59257,7 +59277,7 @@
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
                 "webReview": "Site-specific current/recent source rechecked 2026-09-27",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -59883,7 +59903,7 @@
                 "legacyReferenceName": "Laos Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -59979,7 +59999,7 @@
               },
               "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
@@ -60057,7 +60077,7 @@
                 },
                 "verification": {
                   "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": "2026-09-27",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 0,
                   "sourceAuthorities": [],
                   "dataLimitations": null
@@ -60502,7 +60522,7 @@
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
                 "webReview": "Site-specific current/recent source rechecked 2026-09-27",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "NON_EXECUTABLE",
@@ -61126,7 +61146,7 @@
                 "legacyReferenceName": "Kazakhstan Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -61764,7 +61784,7 @@
                 "legacyReferenceName": "Uzbekistan Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -62393,7 +62413,7 @@
                 "legacyReferenceName": "Turkmenistan Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -63026,7 +63046,7 @@
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
                 "webReview": "Site-specific current/recent source rechecked 2026-09-27",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -63643,7 +63663,7 @@
                 "legacyReferenceName": "Tajikistan Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -64273,7 +64293,7 @@
                 "legacyReferenceName": "Georgia Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "CONDITIONAL",
@@ -64893,7 +64913,7 @@
                 "legacyReferenceName": "Armenia Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -65526,7 +65546,7 @@
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
                 "webReview": "Site-specific current/recent source rechecked 2026-09-27",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -66151,7 +66171,7 @@
                 "legacyReferenceName": "Russia Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -66773,7 +66793,7 @@
                 "legacyReferenceName": "Germany Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -67402,7 +67422,7 @@
                 "legacyReferenceName": "France Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-10-02",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH",
                 "webReview": "Targeted authoritative repair rechecked 2026-10-02"
               },
@@ -68038,7 +68058,7 @@
                 "legacyReferenceName": "United Kingdom Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -68662,7 +68682,7 @@
                 "legacyReferenceName": "Italy Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-10-02",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH",
                 "webReview": "Targeted authoritative repair rechecked 2026-10-02"
               },
@@ -69293,7 +69313,7 @@
                 "legacyReferenceName": "Spain Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -69389,7 +69409,7 @@
               },
               "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
@@ -69467,7 +69487,7 @@
                 },
                 "verification": {
                   "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": "2026-09-27",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 0,
                   "sourceAuthorities": [],
                   "dataLimitations": null
@@ -69912,7 +69932,7 @@
                 "legacyReferenceName": "Poland Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -70007,7 +70027,7 @@
               },
               "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
@@ -70084,7 +70104,7 @@
                 },
                 "verification": {
                   "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": "2026-09-27",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 0,
                   "sourceAuthorities": [],
                   "dataLimitations": null
@@ -70529,7 +70549,7 @@
                 "legacyReferenceName": "Ukraine Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-10-02",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH",
                 "webReview": "Targeted authoritative repair rechecked 2026-10-02"
               },
@@ -71161,7 +71181,7 @@
                 "legacyReferenceName": "Netherlands Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -71252,7 +71272,7 @@
               },
               "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
@@ -71325,7 +71345,7 @@
                 },
                 "verification": {
                   "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": "2026-09-27",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 0,
                   "sourceAuthorities": [],
                   "dataLimitations": null
@@ -71770,7 +71790,7 @@
                 "legacyReferenceName": "Belgium Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -71862,7 +71882,7 @@
               },
               "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
@@ -71936,7 +71956,7 @@
                 },
                 "verification": {
                   "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": "2026-09-27",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 0,
                   "sourceAuthorities": [],
                   "dataLimitations": null
@@ -72381,7 +72401,7 @@
                 "legacyReferenceName": "Switzerland Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -72472,7 +72492,7 @@
               },
               "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
@@ -72545,7 +72565,7 @@
                 },
                 "verification": {
                   "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": "2026-09-27",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 0,
                   "sourceAuthorities": [],
                   "dataLimitations": null
@@ -72990,7 +73010,7 @@
                 "legacyReferenceName": "Sweden Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -73614,7 +73634,7 @@
                 "legacyReferenceName": "Norway Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -73703,7 +73723,7 @@
               },
               "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
@@ -73774,7 +73794,7 @@
                 },
                 "verification": {
                   "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": "2026-09-27",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 0,
                   "sourceAuthorities": [],
                   "dataLimitations": null
@@ -74219,7 +74239,7 @@
                 "legacyReferenceName": "Austria Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -74311,7 +74331,7 @@
               },
               "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
@@ -74385,7 +74405,7 @@
                 },
                 "verification": {
                   "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": "2026-09-27",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 0,
                   "sourceAuthorities": [],
                   "dataLimitations": null
@@ -74830,7 +74850,7 @@
                 "legacyReferenceName": "Finland Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -75453,7 +75473,7 @@
                 "legacyReferenceName": "Denmark Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -75545,7 +75565,7 @@
               },
               "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
@@ -75619,7 +75639,7 @@
                 },
                 "verification": {
                   "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": "2026-09-27",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 0,
                   "sourceAuthorities": [],
                   "dataLimitations": null
@@ -76064,7 +76084,7 @@
                 "legacyReferenceName": "Ireland Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -76155,7 +76175,7 @@
               },
               "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
@@ -76228,7 +76248,7 @@
                 },
                 "verification": {
                   "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": "2026-09-27",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 0,
                   "sourceAuthorities": [],
                   "dataLimitations": null
@@ -76673,7 +76693,7 @@
                 "legacyReferenceName": "Portugal Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -76764,7 +76784,7 @@
               },
               "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
@@ -76837,7 +76857,7 @@
                 },
                 "verification": {
                   "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": "2026-09-27",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 0,
                   "sourceAuthorities": [],
                   "dataLimitations": null
@@ -77282,7 +77302,7 @@
                 "legacyReferenceName": "Greece Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -77374,7 +77394,7 @@
               },
               "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
@@ -77448,7 +77468,7 @@
                 },
                 "verification": {
                   "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": "2026-09-27",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 0,
                   "sourceAuthorities": [],
                   "dataLimitations": null
@@ -77893,7 +77913,7 @@
                 "legacyReferenceName": "Czech Republic Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "NON_EXECUTABLE",
@@ -77988,7 +78008,7 @@
               },
               "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
@@ -78065,7 +78085,7 @@
                 },
                 "verification": {
                   "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": "2026-09-27",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 0,
                   "sourceAuthorities": [],
                   "dataLimitations": null
@@ -78510,7 +78530,7 @@
                 "legacyReferenceName": "Romania Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -78606,7 +78626,7 @@
               },
               "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
@@ -78684,7 +78704,7 @@
                 },
                 "verification": {
                   "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": "2026-09-27",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 0,
                   "sourceAuthorities": [],
                   "dataLimitations": null
@@ -79129,7 +79149,7 @@
                 "legacyReferenceName": "Hungary Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -79224,7 +79244,7 @@
               },
               "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
@@ -79301,7 +79321,7 @@
                 },
                 "verification": {
                   "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": "2026-09-27",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 0,
                   "sourceAuthorities": [],
                   "dataLimitations": null
@@ -79746,7 +79766,7 @@
                 "legacyReferenceName": "Slovakia Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -79837,7 +79857,7 @@
               },
               "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
@@ -79910,7 +79930,7 @@
                 },
                 "verification": {
                   "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": "2026-09-27",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 0,
                   "sourceAuthorities": [],
                   "dataLimitations": null
@@ -80355,7 +80375,7 @@
                 "legacyReferenceName": "Bulgaria Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -80451,7 +80471,7 @@
               },
               "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
@@ -80529,7 +80549,7 @@
                 },
                 "verification": {
                   "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": "2026-09-27",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 0,
                   "sourceAuthorities": [],
                   "dataLimitations": null
@@ -80974,7 +80994,7 @@
                 "legacyReferenceName": "Serbia Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -81070,7 +81090,7 @@
               },
               "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
@@ -81148,7 +81168,7 @@
                 },
                 "verification": {
                   "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": "2026-09-27",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 0,
                   "sourceAuthorities": [],
                   "dataLimitations": null
@@ -81593,7 +81613,7 @@
                 "legacyReferenceName": "Croatia Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -81685,7 +81705,7 @@
               },
               "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
@@ -81759,7 +81779,7 @@
                 },
                 "verification": {
                   "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": "2026-09-27",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 0,
                   "sourceAuthorities": [],
                   "dataLimitations": null
@@ -82204,7 +82224,7 @@
                 "legacyReferenceName": "Slovenia Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-10-02",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH",
                 "webReview": "Targeted authoritative repair rechecked 2026-10-02"
               },
@@ -82833,7 +82853,7 @@
                 "legacyReferenceName": "Estonia Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -82922,7 +82942,7 @@
               },
               "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
@@ -82993,7 +83013,7 @@
                 },
                 "verification": {
                   "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": "2026-09-27",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 0,
                   "sourceAuthorities": [],
                   "dataLimitations": null
@@ -83438,7 +83458,7 @@
                 "legacyReferenceName": "Latvia Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -83529,7 +83549,7 @@
               },
               "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
@@ -83602,7 +83622,7 @@
                 },
                 "verification": {
                   "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": "2026-09-27",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 0,
                   "sourceAuthorities": [],
                   "dataLimitations": null
@@ -84047,7 +84067,7 @@
                 "legacyReferenceName": "Lithuania Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -84139,7 +84159,7 @@
               },
               "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
@@ -84213,7 +84233,7 @@
                 },
                 "verification": {
                   "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": "2026-09-27",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 0,
                   "sourceAuthorities": [],
                   "dataLimitations": null
@@ -84658,7 +84678,7 @@
                 "legacyReferenceName": "Belarus Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -84751,7 +84771,7 @@
               },
               "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
@@ -84825,7 +84845,7 @@
                 },
                 "verification": {
                   "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": "2026-09-27",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 0,
                   "sourceAuthorities": [],
                   "dataLimitations": null
@@ -85270,7 +85290,7 @@
                 "legacyReferenceName": "Moldova Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -85362,7 +85382,7 @@
               },
               "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
@@ -85436,7 +85456,7 @@
                 },
                 "verification": {
                   "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": "2026-09-27",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 0,
                   "sourceAuthorities": [],
                   "dataLimitations": null
@@ -85881,7 +85901,7 @@
                 "legacyReferenceName": "Albania Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -85972,7 +85992,7 @@
               },
               "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
@@ -86045,7 +86065,7 @@
                 },
                 "verification": {
                   "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": "2026-09-27",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 0,
                   "sourceAuthorities": [],
                   "dataLimitations": null
@@ -86490,7 +86510,7 @@
                 "legacyReferenceName": "North Macedonia Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -86581,7 +86601,7 @@
               },
               "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
@@ -86654,7 +86674,7 @@
                 },
                 "verification": {
                   "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": "2026-09-27",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 0,
                   "sourceAuthorities": [],
                   "dataLimitations": null
@@ -87099,7 +87119,7 @@
                 "legacyReferenceName": "Bosnia and Herzegovina Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -87190,7 +87210,7 @@
               },
               "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
@@ -87263,7 +87283,7 @@
                 },
                 "verification": {
                   "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": "2026-09-27",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 0,
                   "sourceAuthorities": [],
                   "dataLimitations": null
@@ -87708,7 +87728,7 @@
                 "legacyReferenceName": "Montenegro Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -87803,7 +87823,7 @@
               },
               "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
@@ -87880,7 +87900,7 @@
                 },
                 "verification": {
                   "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": "2026-09-27",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 0,
                   "sourceAuthorities": [],
                   "dataLimitations": null
@@ -88325,7 +88345,7 @@
                 "legacyReferenceName": "Iceland Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -88422,7 +88442,7 @@
               },
               "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
@@ -88495,7 +88515,7 @@
                 },
                 "verification": {
                   "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": "2026-09-27",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 0,
                   "sourceAuthorities": [],
                   "dataLimitations": null
@@ -88940,7 +88960,7 @@
                 "legacyReferenceName": "Luxembourg Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "NON_EXECUTABLE",
@@ -89032,7 +89052,7 @@
               },
               "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
@@ -89106,7 +89126,7 @@
                 },
                 "verification": {
                   "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": "2026-09-27",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 0,
                   "sourceAuthorities": [],
                   "dataLimitations": null
@@ -89551,7 +89571,7 @@
                 "legacyReferenceName": "Malta Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-10-02",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH",
                 "webReview": "Targeted authoritative repair rechecked 2026-10-02"
               },
@@ -90189,7 +90209,7 @@
                 "legacyReferenceName": "Cyprus Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "CONDITIONAL",
@@ -90285,7 +90305,7 @@
               },
               "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
@@ -90363,7 +90383,7 @@
                 },
                 "verification": {
                   "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": "2026-09-27",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 0,
                   "sourceAuthorities": [],
                   "dataLimitations": null
@@ -90808,7 +90828,7 @@
                 "legacyReferenceName": "Andorra Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "NON_EXECUTABLE",
@@ -90900,7 +90920,7 @@
               },
               "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
@@ -90974,7 +90994,7 @@
                 },
                 "verification": {
                   "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": "2026-09-27",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 0,
                   "sourceAuthorities": [],
                   "dataLimitations": null
@@ -91419,7 +91439,7 @@
                 "legacyReferenceName": "Monaco Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Explicit non-commercial reference, not a mine. Resource identity is NOT_APPLICABLE; missing resource quantities are not zero.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "NON_EXECUTABLE",
@@ -92010,7 +92030,7 @@
                 "legacyReferenceName": "San Marino Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Explicit non-commercial reference, not a mine. Resource identity is NOT_APPLICABLE; missing resource quantities are not zero.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "NON_EXECUTABLE",
@@ -92601,7 +92621,7 @@
                 "legacyReferenceName": "Liechtenstein Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Explicit non-commercial reference, not a mine. Resource identity is NOT_APPLICABLE; missing resource quantities are not zero.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "NON_EXECUTABLE",
@@ -93192,7 +93212,7 @@
                 "legacyReferenceName": "Vatican City Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Explicit non-commercial reference, not a mine. Resource identity is NOT_APPLICABLE; missing resource quantities are not zero.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "NON_EXECUTABLE",
@@ -93783,7 +93803,7 @@
                 "legacyReferenceName": "United States Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -93879,7 +93899,7 @@
               },
               "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
@@ -93957,7 +93977,7 @@
                 },
                 "verification": {
                   "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": "2026-09-27",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 0,
                   "sourceAuthorities": [],
                   "dataLimitations": null
@@ -94401,7 +94421,7 @@
                 "legacyReferenceName": "Canada Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -95021,7 +95041,7 @@
                 "legacyReferenceName": "Mexico Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -95648,7 +95668,7 @@
                 "legacyReferenceName": "Brazil Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -96268,7 +96288,7 @@
                 "legacyReferenceName": "Argentina Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -96892,7 +96912,7 @@
                 "legacyReferenceName": "Chile Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -97520,7 +97540,7 @@
                 "legacyReferenceName": "Colombia Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -97615,7 +97635,7 @@
               },
               "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
@@ -97692,7 +97712,7 @@
                 },
                 "verification": {
                   "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": "2026-09-27",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 0,
                   "sourceAuthorities": [],
                   "dataLimitations": null
@@ -98136,7 +98156,7 @@
                 "legacyReferenceName": "Peru Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -98766,7 +98786,7 @@
                 "legacyReferenceName": "Venezuela Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -98863,7 +98883,7 @@
               },
               "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
@@ -98942,7 +98962,7 @@
                 },
                 "verification": {
                   "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": "2026-09-27",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 0,
                   "sourceAuthorities": [],
                   "dataLimitations": null
@@ -99388,7 +99408,7 @@
                 "legacyReferenceName": "Ecuador Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -99484,7 +99504,7 @@
               },
               "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
@@ -99562,7 +99582,7 @@
                 },
                 "verification": {
                   "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": "2026-09-27",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 0,
                   "sourceAuthorities": [],
                   "dataLimitations": null
@@ -100006,7 +100026,7 @@
                 "legacyReferenceName": "Bolivia Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -100638,7 +100658,7 @@
                 "legacyReferenceName": "Paraguay Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -100730,7 +100750,7 @@
               },
               "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
@@ -100804,7 +100824,7 @@
                 },
                 "verification": {
                   "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": "2026-09-27",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 0,
                   "sourceAuthorities": [],
                   "dataLimitations": null
@@ -101248,7 +101268,7 @@
                 "legacyReferenceName": "Uruguay Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-10-02",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH",
                 "webReview": "Targeted authoritative repair rechecked 2026-10-02"
               },
@@ -101877,7 +101897,7 @@
                 "legacyReferenceName": "Panama Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "NON_EXECUTABLE",
@@ -102513,7 +102533,7 @@
                 "legacyReferenceName": "Costa Rica Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_CURRENT_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Ownership/operator identity updated from public investor disclosures. Historical production figures are not treated as current production.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "NON_EXECUTABLE",
@@ -102617,7 +102637,7 @@
               ],
               "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
@@ -102691,7 +102711,7 @@
                 },
                 "verification": {
                   "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": "2026-09-27",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 2,
                   "sourceAuthorities": [],
                   "dataLimitations": null
@@ -103135,7 +103155,7 @@
                 "legacyReferenceName": "Nicaragua Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -103227,7 +103247,7 @@
               },
               "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
@@ -103301,7 +103321,7 @@
                 },
                 "verification": {
                   "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": "2026-09-27",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 0,
                   "sourceAuthorities": [],
                   "dataLimitations": null
@@ -103745,7 +103765,7 @@
                 "legacyReferenceName": "Honduras Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "CONDITIONAL",
@@ -103836,7 +103856,7 @@
               },
               "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
@@ -103909,7 +103929,7 @@
                 },
                 "verification": {
                   "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": "2026-09-27",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 0,
                   "sourceAuthorities": [],
                   "dataLimitations": null
@@ -104353,7 +104373,7 @@
                 "legacyReferenceName": "El Salvador Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Historical El Dorado identity retained. Current ownership/operator is not asserted without evidence. Public sources document closure by OceanaGold and the later restoration of a national metal-mining legal framework; no current commercial operator is assigned.",
-                "reviewedAt": "2026-10-02",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH",
                 "webReview": "Targeted authoritative repair rechecked 2026-10-02"
               },
@@ -104993,7 +105013,7 @@
                 "legacyReferenceName": "Guatemala Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "EXECUTABLE",
@@ -105625,7 +105645,7 @@
                 "legacyReferenceName": "Belize Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "extractionEligibility": "CONDITIONAL",

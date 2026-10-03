@@ -1056,7 +1056,7 @@
                 "legacyReferenceName": "Moa Bay Nickel Mine",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "commercialExtraction": true,
@@ -1290,7 +1290,7 @@
                 "legacyReferenceName": "Punta Gorda Extraction Facility",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "mineralTarget": "limonite and serpentine",
@@ -1523,7 +1523,7 @@
                 "legacyReferenceName": "Nicaro Nickel Complex",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "closedYear": 2012,
@@ -2162,7 +2162,7 @@
                 "legacyReferenceName": "Jamaica Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "commercialExtraction": true,
@@ -2323,14 +2323,19 @@
                 },
                 "verification": {
                   "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": null,
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 0,
                   "sourceAuthorities": [],
                   "dataLimitations": null
                 }
               },
               "extractionEligibility": "EXECUTABLE",
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchMetadata": {
+                "reviewedAt": "2026-10-03",
+                "webSearchMethod": "SITE_NAME + COUNTRY",
+                "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
+              }
             }
           ],
           "processingFacilities": [
@@ -2767,7 +2772,7 @@
                 "legacyReferenceName": "Haiti Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "commercialExtraction": true,
@@ -2928,13 +2933,18 @@
                 },
                 "verification": {
                   "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": null,
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 0,
                   "sourceAuthorities": [],
                   "dataLimitations": null
                 }
               },
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchMetadata": {
+                "reviewedAt": "2026-10-03",
+                "webSearchMethod": "SITE_NAME + COUNTRY",
+                "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
+              }
             }
           ],
           "processingFacilities": [
@@ -3371,7 +3381,7 @@
                 "legacyReferenceName": "Dominican Republic Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "commercialExtraction": true,
@@ -3526,14 +3536,19 @@
                 },
                 "verification": {
                   "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": null,
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 0,
                   "sourceAuthorities": [],
                   "dataLimitations": null
                 }
               },
               "extractionEligibility": "EXECUTABLE",
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchMetadata": {
+                "reviewedAt": "2026-10-03",
+                "webSearchMethod": "SITE_NAME + COUNTRY",
+                "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
+              }
             }
           ],
           "processingFacilities": [
@@ -3970,7 +3985,7 @@
                 "legacyReferenceName": "Trinidad and Tobago Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "commercialExtraction": true,
@@ -4135,14 +4150,19 @@
                 },
                 "verification": {
                   "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": null,
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 0,
                   "sourceAuthorities": [],
                   "dataLimitations": null
                 }
               },
               "extractionEligibility": "EXECUTABLE",
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchMetadata": {
+                "reviewedAt": "2026-10-03",
+                "webSearchMethod": "SITE_NAME + COUNTRY",
+                "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
+              }
             }
           ],
           "processingFacilities": [
@@ -4579,7 +4599,7 @@
                 "legacyReferenceName": "Bahamas Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "historicalUse": "Industrial aragonite sand mining; artificial-island and access-channel dredging",
@@ -5190,7 +5210,7 @@
                 "legacyReferenceName": "Barbados Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "commercialExtraction": true,
@@ -5345,14 +5365,19 @@
                 },
                 "verification": {
                   "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": null,
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 0,
                   "sourceAuthorities": [],
                   "dataLimitations": null
                 }
               },
               "extractionEligibility": "EXECUTABLE",
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchMetadata": {
+                "reviewedAt": "2026-10-03",
+                "webSearchMethod": "SITE_NAME + COUNTRY",
+                "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
+              }
             }
           ],
           "processingFacilities": [
@@ -5789,7 +5814,7 @@
                 "legacyReferenceName": "Saint Lucia Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "materialProducts": [
@@ -6404,7 +6429,7 @@
                 "legacyReferenceName": "Saint Vincent and the Grenadines Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "commercialExtraction": true,
@@ -6563,13 +6588,18 @@
                 },
                 "verification": {
                   "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": null,
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 0,
                   "sourceAuthorities": [],
                   "dataLimitations": null
                 }
               },
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchMetadata": {
+                "reviewedAt": "2026-10-03",
+                "webSearchMethod": "SITE_NAME + COUNTRY",
+                "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
+              }
             }
           ],
           "processingFacilities": [
@@ -7006,7 +7036,7 @@
                 "legacyReferenceName": "Grenada Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "materialSubtype": "Basalt aggregate",
@@ -7618,7 +7648,7 @@
                 "legacyReferenceName": "Antigua and Barbuda Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "commercialExtraction": true,
@@ -7779,13 +7809,18 @@
                 },
                 "verification": {
                   "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": null,
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 0,
                   "sourceAuthorities": [],
                   "dataLimitations": null
                 }
               },
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchMetadata": {
+                "reviewedAt": "2026-10-03",
+                "webSearchMethod": "SITE_NAME + COUNTRY",
+                "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
+              }
             }
           ],
           "processingFacilities": [
@@ -8222,7 +8257,7 @@
                 "legacyReferenceName": "Saint Kitts and Nevis Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "commercialExtraction": true,
@@ -8383,13 +8418,18 @@
                 },
                 "verification": {
                   "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": null,
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 0,
                   "sourceAuthorities": [],
                   "dataLimitations": null
                 }
               },
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchMetadata": {
+                "reviewedAt": "2026-10-03",
+                "webSearchMethod": "SITE_NAME + COUNTRY",
+                "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
+              }
             }
           ],
           "processingFacilities": [
@@ -8826,7 +8866,7 @@
                 "legacyReferenceName": "Dominica Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "materialSubtype": "Pumice",
@@ -9436,7 +9476,7 @@
                 "legacyReferenceName": "Suriname Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "commercialExtraction": true,
@@ -9591,14 +9631,19 @@
                 },
                 "verification": {
                   "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": null,
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 0,
                   "sourceAuthorities": [],
                   "dataLimitations": null
                 }
               },
               "extractionEligibility": "EXECUTABLE",
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchMetadata": {
+                "reviewedAt": "2026-10-03",
+                "webSearchMethod": "SITE_NAME + COUNTRY",
+                "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
+              }
             }
           ],
           "processingFacilities": [
@@ -10037,7 +10082,7 @@
                 "legacyReferenceName": "Guyana Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "commercialExtraction": true,
@@ -10192,14 +10237,19 @@
                 },
                 "verification": {
                   "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": null,
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 0,
                   "sourceAuthorities": [],
                   "dataLimitations": null
                 }
               },
               "extractionEligibility": "EXECUTABLE",
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchMetadata": {
+                "reviewedAt": "2026-10-03",
+                "webSearchMethod": "SITE_NAME + COUNTRY",
+                "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
+              }
             }
           ],
           "processingFacilities": [
@@ -10635,7 +10685,7 @@
                 "legacyReferenceName": "Australia Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "commercialExtraction": true,
@@ -10790,14 +10840,19 @@
                 },
                 "verification": {
                   "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": null,
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 0,
                   "sourceAuthorities": [],
                   "dataLimitations": null
                 }
               },
               "extractionEligibility": "EXECUTABLE",
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchMetadata": {
+                "reviewedAt": "2026-10-03",
+                "webSearchMethod": "SITE_NAME + COUNTRY",
+                "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
+              }
             }
           ],
           "processingFacilities": [
@@ -11234,7 +11289,7 @@
                 "legacyReferenceName": "New Zealand Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "commercialExtraction": true,
@@ -11389,14 +11444,19 @@
                 },
                 "verification": {
                   "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": null,
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 0,
                   "sourceAuthorities": [],
                   "dataLimitations": null
                 }
               },
               "extractionEligibility": "EXECUTABLE",
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchMetadata": {
+                "reviewedAt": "2026-10-03",
+                "webSearchMethod": "SITE_NAME + COUNTRY",
+                "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
+              }
             }
           ],
           "processingFacilities": [
@@ -11856,7 +11916,7 @@
                 "legacyReferenceName": "Papua New Guinea Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "commercialExtraction": true,
@@ -12011,14 +12071,19 @@
                 },
                 "verification": {
                   "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": null,
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 0,
                   "sourceAuthorities": [],
                   "dataLimitations": null
                 }
               },
               "extractionEligibility": "EXECUTABLE",
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchMetadata": {
+                "reviewedAt": "2026-10-03",
+                "webSearchMethod": "SITE_NAME + COUNTRY",
+                "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
+              }
             }
           ],
           "processingFacilities": [
@@ -12478,7 +12543,7 @@
                 "legacyReferenceName": "Fiji Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "commercialExtraction": true,
@@ -12633,14 +12698,19 @@
                 },
                 "verification": {
                   "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": null,
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 0,
                   "sourceAuthorities": [],
                   "dataLimitations": null
                 }
               },
               "extractionEligibility": "EXECUTABLE",
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchMetadata": {
+                "reviewedAt": "2026-10-03",
+                "webSearchMethod": "SITE_NAME + COUNTRY",
+                "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
+              }
             }
           ],
           "processingFacilities": [
@@ -13100,7 +13170,7 @@
                 "legacyReferenceName": "Solomon Islands Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "processingPath": "HEAP_LEACH_AND_FLOTATION",
@@ -13715,7 +13785,7 @@
                 "legacyReferenceName": "Vanuatu Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-10-02",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH",
                 "webReview": "Targeted authoritative repair rechecked 2026-10-02"
               },
@@ -14341,7 +14411,7 @@
                 "legacyReferenceName": "Samoa Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "operatorEvidenceStatus": "UNOBSERVED",
@@ -14947,7 +15017,7 @@
                 "legacyReferenceName": "Tonga Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-10-02",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH",
                 "webReview": "Targeted authoritative repair rechecked 2026-10-02"
               },
@@ -15577,7 +15647,7 @@
                 "legacyReferenceName": "Kiribati Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "sourceAreas": [
@@ -16205,7 +16275,7 @@
                 "legacyReferenceName": "Tuvalu Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "historicalUse": "WWII airstrip aggregate extraction",
@@ -16818,7 +16888,7 @@
                 "legacyReferenceName": "Nauru Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "annualProduction": 130000,
@@ -17436,7 +17506,7 @@
                 "legacyReferenceName": "Marshall Islands Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "materialProducts": [
@@ -18047,7 +18117,7 @@
                 "legacyReferenceName": "Micronesia Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-10-02",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH",
                 "webReview": "Targeted authoritative repair rechecked 2026-10-02"
               },
@@ -18667,7 +18737,7 @@
                 "legacyReferenceName": "Palau Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "locationDetail": "Oikull, Airai, Palau",
