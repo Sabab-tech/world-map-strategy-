@@ -135,9 +135,38 @@ test('global resource pipeline runs every RESOURCE_JSON mine and keeps each resu
     ).trim().toLowerCase() || null;
     assert.equal(x.resourceAsset.resourceType, expectedResourceType);
   }
-  assert.ok(siteRefs.every(x=>x.resourceAsset.reserve.geologicalQuantity===null));
-  assert.ok(siteRefs.every(x=>x.resourceAsset.productionRate===null));
-  assert.ok(siteRefs.every(x=>x.resourceAsset.dataStatus.overall==='UNOBSERVED'));
+  const normalizeAuthority=value=>{
+    const a=String(value||'UNOBSERVED').toUpperCase();
+    if(['OBSERVED','WEB_SOURCE_BACKED','WEB_RESEARCHED','WEB_RESEARCHED_CURATED'].includes(a))return 'OBSERVED';
+    if(a==='SIMULATED')return 'SIMULATED';
+    return 'UNOBSERVED';
+  };
+  for(const x of siteRefs){
+    const raw=x.rawSiteReference&&typeof x.rawSiteReference==='object'?x.rawSiteReference:{};
+    const expectedReserve=Number.isFinite(Number(raw.geologicalQuantity))&&Number(raw.geologicalQuantity)>0
+      ?Number(raw.geologicalQuantity)
+      :(Number.isFinite(Number(raw.reserveQuantity))&&Number(raw.reserveQuantity)>0?Number(raw.reserveQuantity):null);
+    const expectedRate=Number.isFinite(Number(raw.productionRate))&&Number(raw.productionRate)>0
+      ?Number(raw.productionRate)
+      :(
+        Number.isFinite(Number(raw.dailyRate))&&Number(raw.dailyRate)>0?Number(raw.dailyRate):
+        (Number.isFinite(Number(raw.outputRate))&&Number(raw.outputRate)>0?Number(raw.outputRate):
+          (Number.isFinite(Number(raw.nominalRate))&&Number(raw.nominalRate)>0?Number(raw.nominalRate):null))
+      );
+    assert.equal(x.resourceAsset.reserve.geologicalQuantity,expectedReserve);
+    assert.equal(x.resourceAsset.productionRate,expectedRate);
+    const reserveAuthority=expectedReserve===null?'UNOBSERVED':
+      normalizeAuthority(raw.reserveAuthority||raw.dataStatus?.reserve||raw.dataAuthority?.reserve);
+    const productionAuthority=expectedRate===null?'UNOBSERVED':
+      normalizeAuthority(raw.productionAuthority||raw.dataStatus?.production||raw.dataAuthority?.production);
+    const qualityValue=raw.gradePercent??raw.quality?.gradePercent??raw.quality?.grade??raw.grade??raw.purity??raw.concentrationPercent??raw.concentration;
+    const qualityAuthority=qualityValue===null||qualityValue===undefined||qualityValue===''?'UNOBSERVED':
+      normalizeAuthority(raw.qualityAuthority||raw.dataStatus?.grade||raw.dataStatus?.quality||raw.dataAuthority?.grade||raw.dataAuthority?.quality);
+    const authorities=[reserveAuthority,productionAuthority,qualityAuthority];
+    const expectedOverall=authorities.length&&authorities.every(v=>v==='OBSERVED')?'OBSERVED':
+      authorities.some(v=>v==='SIMULATED')?'SIMULATED':'UNOBSERVED';
+    assert.equal(x.resourceAsset.dataStatus.overall,expectedOverall);
+  }
   const unifiedSiteKeys=Object.keys(siteRefs[0]?.resourceAsset||{}).sort();
   const occurrenceRows=idResult.registry.listOccurrences();
   assert.equal(occurrenceRows.length,engine.deposits.length);
