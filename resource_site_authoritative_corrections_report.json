@@ -1,8 +1,8 @@
 {
   "generatedAt": "2026-10-03",
   "totalSites": 199,
-  "explicitFixCount": 116,
-  "sourceBackedReviewedSites": 129,
+  "explicitFixCount": 117,
+  "sourceBackedReviewedSites": 130,
   "stillLegacySites": 0,
   "explicitOwnerSites": 179,
   "explicitOperatorSites": 181,
@@ -52,6 +52,7 @@
   "reviewedSiteIds": [
     "SITE_BTN_tsirang_limestone_quarries",
     "SITE_MDV_mal_atoll_coral_aggregate_sites",
+    "SITE_DZA_gara_djebilet_iron_mine",
     "SITE_TUN_mdhilla_phosphate_mine",
     "SITE_SDN_hassai_gold_mine",
     "SITE_GMB_western_gambia_aggregate_quarry_zone",

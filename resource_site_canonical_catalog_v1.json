@@ -822,16 +822,16 @@
         "coordinateStatus": "ESTIMATED_SITE_POINT"
       },
       "ownership": {
-        "owner": "Algerian state / SNIM",
-        "operator": "FERAAL / partners",
-        "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-        "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+        "owner": "Algerian state / SONAREM Group",
+        "operator": "FERAAL Spa",
+        "ownerEvidenceStatus": "WEB_REVIEWED",
+        "operatorEvidenceStatus": "WEB_REVIEWED"
       },
       "operation": {
-        "status": "DEVELOPMENT",
-        "operationalStatus": "DEVELOPMENT",
-        "extractionMethod": "open-pit iron mining",
-        "extractionEligibility": "NON_EXECUTABLE",
+        "status": "LIMITED",
+        "operationalStatus": "LIMITED_RAMP_UP",
+        "extractionMethod": "Open-pit iron-ore mining with primary crushing, screening and dry separation; downstream beneficiation under development",
+        "extractionEligibility": "EXECUTABLE",
         "commercialExtraction": true
       },
       "processing": {
@@ -849,9 +849,11 @@
       },
       "quantitative": {
         "reserve": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
+          "quantity": 3500000000,
+          "unit": "metric_tons_iron_ore",
+          "year": 2026,
+          "status": "REPORTED",
+          "basis": "ALGERIAN_GOVERNMENT_ESTIMATE"
         },
         "production": {
           "annual": null,
@@ -861,9 +863,11 @@
           "status": "UNOBSERVED"
         },
         "grade": {
-          "value": "Iron ore; primary processing unit nearing completion",
-          "unit": null,
-          "status": "OBSERVED"
+          "value": 57,
+          "unit": "percent_iron",
+          "year": 2026,
+          "status": "REPORTED",
+          "basis": "CURRENT_PROJECT_MATERIAL_CONTEXT"
         },
         "recovery": {
           "value": null,
@@ -886,10 +890,14 @@
         }
       },
       "verification": {
-        "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
-        "reviewedAt": "2026-09-27",
-        "sourceCount": 1,
-        "sourceAuthorities": [],
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+        "reviewedAt": "2026-10-03",
+        "sourceCount": 5,
+        "sourceAuthorities": [
+          "GOVERNMENT",
+          "OPERATOR",
+          "GEOLOGICAL_DATABASE"
+        ],
         "dataLimitations": null
       }
     },

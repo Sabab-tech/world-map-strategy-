@@ -6275,11 +6275,11 @@
               "lat": 27.63,
               "lng": -8.57,
               "locationNodeKey": "ASSET:DZA:gara_djebilet_iron_mine",
-              "status": "DEVELOPMENT",
-              "operationalStatus": "DEVELOPMENT",
-              "owner": "Algerian state / SNIM",
-              "operator": "FERAAL / partners",
-              "extractionMethod": "open-pit iron mining",
+              "status": "LIMITED",
+              "operationalStatus": "LIMITED_RAMP_UP",
+              "owner": "Algerian state / SONAREM Group",
+              "operator": "FERAAL Spa",
+              "extractionMethod": "Open-pit iron-ore mining with primary crushing, screening and dry separation; downstream beneficiation under development",
               "startYear": 2022,
               "legacyReferenceName": "Algeria Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -6319,7 +6319,7 @@
                 "reviewedAt": "2026-10-03",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
-              "extractionEligibility": "NON_EXECUTABLE",
+              "extractionEligibility": "EXECUTABLE",
               "currentStatus": "DEVELOPMENT",
               "statusAuthority": "OBSERVED",
               "commercialExtraction": true,
@@ -6348,16 +6348,18 @@
                 "method": "open-pit iron mining",
                 "lifecycleStatus": "DEVELOPMENT",
                 "operationalStatus": "DEVELOPMENT",
-                "owner": "Algerian state / SNIM",
-                "operator": "FERAAL / partners",
-                "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-                "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+                "owner": "Algerian state / SONAREM Group",
+                "operator": "FERAAL Spa",
+                "ownerEvidenceStatus": "WEB_REVIEWED",
+                "operatorEvidenceStatus": "WEB_REVIEWED"
               },
               "quantitativeProfile": {
                 "reserve": {
-                  "quantity": null,
-                  "unit": null,
-                  "status": "UNOBSERVED"
+                  "quantity": 3500000000,
+                  "unit": "metric_tons_iron_ore",
+                  "year": 2026,
+                  "status": "REPORTED",
+                  "basis": "ALGERIAN_GOVERNMENT_ESTIMATE"
                 },
                 "production": {
                   "annual": null,
@@ -6367,9 +6369,11 @@
                   "status": "UNOBSERVED"
                 },
                 "grade": {
-                  "value": "Iron ore; primary processing unit nearing completion",
-                  "unit": null,
-                  "status": "OBSERVED"
+                  "value": 57,
+                  "unit": "percent_iron",
+                  "year": 2026,
+                  "status": "REPORTED",
+                  "basis": "CURRENT_PROJECT_MATERIAL_CONTEXT"
                 },
                 "quantitativeExtractionDataAvailable": true,
                 "quantitativeProvenance": {
@@ -6409,20 +6413,45 @@
                   "grade": "OBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
               },
-              "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
+              "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
               "webResearchEvidence": [
                 {
                   "url": "https://www.aps.dz/fr/economie/industrieenergie-et-mines/mqfivp9v-le-taux-d-avancement-des-travaux-depasse-95",
                   "accessed": "2026-09-27",
                   "scope": "2026_project_progress"
+                },
+                {
+                  "url": "https://www.aps.dz/en/presidency-news/ml43gnz8-president-tebboune-flags-off-first-iron-ore-shipment-from-gara-djebilet-mine",
+                  "accessed": "2026-10-03",
+                  "scope": "2026_first_iron_ore_shipment_and_operational_launch",
+                  "sourceType": "GOVERNMENT"
+                },
+                {
+                  "url": "https://news.radioalgerie.dz/en/node/78553",
+                  "accessed": "2026-10-03",
+                  "scope": "2026_first_shipment_and_effective_mine_operation",
+                  "sourceType": "GOVERNMENT"
+                },
+                {
+                  "url": "https://www.feraal.dz/fr/actualite/",
+                  "accessed": "2026-10-03",
+                  "scope": "FERAAL_operator_and_4Mt_primary_pretreatment_unit",
+                  "sourceType": "OPERATOR"
+                },
+                {
+                  "url": "https://www.mindat.org/loc-296328.html",
+                  "accessed": "2026-10-03",
+                  "scope": "deposit_location_reserve_and_iron_grade_context",
+                  "sourceType": "GEOLOGICAL_DATABASE"
                 }
               ],
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "currentStatus": "Primary ore processing unit construction exceeded 95% in June 2026, with exploitation/commissioning approaching",
-                "sourceAuthority": "Algeria Press Service"
+                "sourceAuthority": "FERAAL / Algerian government",
+                "currentEvidence": "Gara Djebilet entered the operational phase in 2026 with the first iron-ore shipment launched in February 2026. The mine is being developed and operated through FERAAL under SONAREM, while the primary pre-treatment unit is designed for 4 Mt/year."
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -6446,16 +6475,16 @@
                   "coordinateStatus": "ESTIMATED_SITE_POINT"
                 },
                 "ownership": {
-                  "owner": "Algerian state / SNIM",
-                  "operator": "FERAAL / partners",
-                  "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-                  "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+                  "owner": "Algerian state / SONAREM Group",
+                  "operator": "FERAAL Spa",
+                  "ownerEvidenceStatus": "WEB_REVIEWED",
+                  "operatorEvidenceStatus": "WEB_REVIEWED"
                 },
                 "operation": {
-                  "status": "DEVELOPMENT",
-                  "operationalStatus": "DEVELOPMENT",
-                  "extractionMethod": "open-pit iron mining",
-                  "extractionEligibility": "NON_EXECUTABLE",
+                  "status": "LIMITED",
+                  "operationalStatus": "LIMITED_RAMP_UP",
+                  "extractionMethod": "Open-pit iron-ore mining with primary crushing, screening and dry separation; downstream beneficiation under development",
+                  "extractionEligibility": "EXECUTABLE",
                   "commercialExtraction": true
                 },
                 "processing": {
@@ -6473,9 +6502,11 @@
                 },
                 "quantitative": {
                   "reserve": {
-                    "quantity": null,
-                    "unit": null,
-                    "status": "UNOBSERVED"
+                    "quantity": 3500000000,
+                    "unit": "metric_tons_iron_ore",
+                    "year": 2026,
+                    "status": "REPORTED",
+                    "basis": "ALGERIAN_GOVERNMENT_ESTIMATE"
                   },
                   "production": {
                     "annual": null,
@@ -6485,9 +6516,11 @@
                     "status": "UNOBSERVED"
                   },
                   "grade": {
-                    "value": "Iron ore; primary processing unit nearing completion",
-                    "unit": null,
-                    "status": "OBSERVED"
+                    "value": 57,
+                    "unit": "percent_iron",
+                    "year": 2026,
+                    "status": "REPORTED",
+                    "basis": "CURRENT_PROJECT_MATERIAL_CONTEXT"
                   },
                   "recovery": {
                     "value": null,
@@ -6510,13 +6543,26 @@
                   }
                 },
                 "verification": {
-                  "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
-                  "reviewedAt": "2026-09-27",
-                  "sourceCount": 1,
-                  "sourceAuthorities": [],
+                  "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+                  "reviewedAt": "2026-10-03",
+                  "sourceCount": 5,
+                  "sourceAuthorities": [
+                    "GOVERNMENT",
+                    "OPERATOR",
+                    "GEOLOGICAL_DATABASE"
+                  ],
                   "dataLimitations": null
                 }
-              }
+              },
+              "primaryTreatmentCapacity": {
+                "value": 4000000,
+                "unit": "metric_tons_iron_ore_per_year",
+                "year": 2026,
+                "status": "REPORTED",
+                "basis": "FERAAL_PRIMARY_PRETREATMENT_UNIT"
+              },
+              "firstShipmentYear": 2026,
+              "primaryTreatmentScope": "Crushing, screening and dry separation before downstream concentration"
             }
           ],
           "processingFacilities": [
