@@ -2213,77 +2213,103 @@ function applyFix(site, fix) {
 
 function promoteStructuredQuantitative(site) {
   const qp = site.quantitativeProfile || (site.quantitativeProfile = {});
-  const web = site.webVerifiedMetrics && typeof site.webVerifiedMetrics === 'object'
-    ? site.webVerifiedMetrics : {};
-  const capacity = site.capacityProfile && typeof site.capacityProfile === 'object'
-    ? site.capacityProfile : {};
+  const web = site.webVerifiedMetrics && typeof site.webVerifiedMetrics === 'object' ? site.webVerifiedMetrics : {};
+  const capacity = site.capacityProfile && typeof site.capacityProfile === 'object' ? site.capacityProfile : {};
+  const allStructured = { ...capacity, ...web };
 
-  if (Object.keys(web).length) {
-    qp.reportedMetrics = { ...(qp.reportedMetrics || {}), ...web };
-  }
+  if (Object.keys(web).length) qp.reportedMetrics = { ...(qp.reportedMetrics || {}), ...web };
+  if (Object.keys(capacity).length) qp.capacity = { ...(qp.capacity || {}), ...capacity };
 
   const numericMetric = (predicate) => {
-    for (const [key, metric] of Object.entries(web)) {
+    for (const [key, metric] of Object.entries(allStructured)) {
       if (!predicate(key, metric)) continue;
-      const value = Number(metric?.value);
-      if (Number.isFinite(value) && value > 0) return { key, metric, value };
+      const value = Number(metric?.value ?? metric);
+      if (Number.isFinite(value) && value > 0) return { key, metric: (metric && typeof metric === 'object') ? metric : { value }, value };
     }
     return null;
   };
 
-  const annualProduction = numericMetric((key) =>
-    /Production\d{4}$/.test(key) && !/attributable/i.test(key)
+  const yearFromKey = (key) => {
+    const m = String(key).match(/(20\d{2})$/);
+    return m ? Number(m[1]) : null;
+  };
+
+  const production = numericMetric((key, metric) =>
+    /Production20\d{2}$/.test(key) &&
+    !/attributable/i.test(key) &&
+    !(metric?.basis && /h1|q[1-4]/i.test(String(metric.basis)))
   );
-  if (annualProduction && !(qp.production?.annual != null && qp.production?.annual !== '')) {
-    const yearMatch = annualProduction.key.match(/(\d{4})$/);
+  if (production && !(qp.production?.annual != null && qp.production.annual !== '')) {
     qp.production = {
       ...(qp.production || {}),
-      annual: annualProduction.value,
-      unit: annualProduction.metric?.unit || qp.production?.unit || null,
-      year: yearMatch ? Number(yearMatch[1]) : qp.production?.year || null,
-      status: 'OBSERVED',
-      basis: annualProduction.metric?.basis || 'SITE_SPECIFIC'
+      annual: production.value,
+      unit: production.metric?.unit || qp.production?.unit || null,
+      year: yearFromKey(production.key) || qp.production?.year || null,
+      status: /declared|estimate|target/i.test(String(production.metric?.epistemicState || production.metric?.basis || '')) ? 'REPORTED' : 'OBSERVED',
+      basis: production.metric?.basis || 'SITE_SPECIFIC'
     };
   }
 
-  const headGrade = numericMetric((key) => /headGrade\d{4}$/.test(key));
+  const productionCapacity = numericMetric((key) =>
+    /(?:annualProductionAndSalesCapacity|annual[A-Za-z]*ProductionCapacity|ProductionCapacity|phase\d+Target|phase\d+ConcentrateCapacity|oreExtractionAnnual|refined[A-Za-z]+Annual|annualCoalProduction20\d{2})/i.test(key)
+  );
+  if (productionCapacity) {
+    qp.capacity = {
+      ...(qp.capacity || {}),
+      [productionCapacity.key]: productionCapacity.value,
+      [productionCapacity.key + 'Unit']: productionCapacity.metric?.unit || null,
+      [productionCapacity.key + 'Status']: 'REPORTED'
+    };
+  }
+
+  const reserve = numericMetric((key) =>
+    /(?:reserve|resource)/i.test(key) &&
+    !/capacity|production|output|oreMilled|oreMined|oreTreated|throughput/i.test(key)
+  );
+  if (reserve && !(qp.reserve?.quantity != null && qp.reserve.quantity !== '')) {
+    const epistemic = String(reserve.metric?.epistemicState || '').toUpperCase();
+    const reserveStatus = epistemic === 'DECLARED' ? 'REPORTED' : /ATTRIBUTABLE/i.test(reserve.key) ? 'OBSERVED_ATTRIBUTABLE' : 'OBSERVED';
+    qp.reserve = {
+      ...(qp.reserve || {}),
+      quantity: reserve.value,
+      unit: reserve.metric?.unit || qp.reserve?.unit || null,
+      year: yearFromKey(reserve.key) || qp.reserve?.year || null,
+      status: reserveStatus,
+      basis: reserve.metric?.basis || null
+    };
+  }
+
+  const headGrade = numericMetric((key) => /(?:headGrade|feedGrade|averageGrade|gradeMined)20\d{2}$/.test(key));
   if (headGrade && !(qp.grade?.value != null && qp.grade.value !== '')) {
-    const yearMatch = headGrade.key.match(/(\d{4})$/);
     qp.grade = {
       ...(qp.grade || {}),
       value: headGrade.value,
       unit: headGrade.metric?.unit || qp.grade?.unit || null,
-      year: yearMatch ? Number(yearMatch[1]) : qp.grade?.year || null,
+      year: yearFromKey(headGrade.key) || qp.grade?.year || null,
       status: 'OBSERVED'
     };
   }
 
-  const recovery = numericMetric((key) => /(?:^|_)recovery\d{4}$/.test(key) || /plantRecovery\d{4}$/.test(key));
+  const recovery = numericMetric((key) => /(?:recovery|plantRecovery)20\d{2}$/.test(key));
   if (recovery) {
-    const yearMatch = recovery.key.match(/(\d{4})$/);
     qp.recovery = {
       ...(qp.recovery || {}),
       value: recovery.value,
       unit: recovery.metric?.unit || qp.recovery?.unit || null,
-      year: yearMatch ? Number(yearMatch[1]) : qp.recovery?.year || null,
+      year: yearFromKey(recovery.key) || qp.recovery?.year || null,
       status: 'OBSERVED'
     };
   }
 
-  const throughput = numericMetric((key) => /oreMilled\d{4}$/.test(key) || /throughput\d{4}$/.test(key));
+  const throughput = numericMetric((key) => /(?:oreMilled|oreMined|oreTreated|throughput)20\d{2}$/.test(key));
   if (throughput) {
-    const yearMatch = throughput.key.match(/(\d{4})$/);
     qp.throughput = {
       ...(qp.throughput || {}),
       value: throughput.value,
       unit: throughput.metric?.unit || qp.throughput?.unit || null,
-      year: yearMatch ? Number(yearMatch[1]) : qp.throughput?.year || null,
+      year: yearFromKey(throughput.key) || qp.throughput?.year || null,
       status: 'OBSERVED'
     };
-  }
-
-  if (Object.keys(capacity).length) {
-    qp.capacity = { ...(qp.capacity || {}), ...capacity };
   }
 
   qp.quantitativeProvenance = {
