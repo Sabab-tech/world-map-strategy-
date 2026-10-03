@@ -137,6 +137,9 @@ assert.equal(catalog.siteCount, 199);
 assert(Array.isArray(catalog.sites) && catalog.sites.length === 199);
 assert.equal(new Set(catalog.sites.map((x) => x.siteId)).size, 199);
 
+const currentLegacySites = sites.filter(({ site }) => site.researchState === 'LEGACY_CURATED_NOT_RECENTLY_REVALIDATED');
+assert.equal(currentLegacySites.length, 0, 'no legacy site should remain after the 199-site web-revalidation pass');
+
 const sourceIds = sites.map(({ site }) => site.id).sort();
 const catalogIds = catalog.sites.map((x) => x.siteId).sort();
 assert.deepEqual(catalogIds, sourceIds, 'canonical catalog site IDs must match the 199 source site IDs');
