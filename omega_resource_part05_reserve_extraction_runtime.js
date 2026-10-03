@@ -63,6 +63,13 @@
     const rid=String(resourceId||'').toLowerCase();
     const sourceObject=raw&&typeof raw==='object'?raw:null;
     const direct=Number(sourceObject?.reserveQuantity);
+    const finish=(quantity,sourceUnit,outputUnit)=>{
+      if(quantity===null||!Number.isFinite(quantity)||quantity<=0){
+        return{quantity:null,value:null,sourceUnit:null,targetUnit:targetUnit||null,unit:targetUnit||null};
+      }
+      const unit=outputUnit||targetUnit||sourceUnit||null;
+      return{quantity,value:quantity,sourceUnit,targetUnit:unit,unit};
+    };
     if(Number.isFinite(direct)&&direct>0){
       const sourceUnit=String(sourceObject?.reserveUnit||targetUnit||'').trim().toLowerCase();
       const normalizedUnit=sourceUnit.includes('kilogram')||sourceUnit==='kg'?'KILOGRAMS':
@@ -70,45 +77,40 @@
         sourceUnit.includes('carat')?'CARATS':
         sourceUnit.includes('barrel')||sourceUnit==='bbl'?'BBL':
         sourceUnit.includes('tcf')?'TCF':
-        sourceUnit.includes('bcm')?'BCM':'METRIC_TONS';
-      let quantity=direct;
-      let outputUnit=targetUnit||sourceUnit||null;
-      if(rid==='gold'&&normalizedUnit==='KILOGRAMS'){
-        quantity*=32.1507465686;
-        outputUnit='troy_ounces';
-      }else if(rid==='natural_gas'&&normalizedUnit==='TCF'){
-        quantity*=28.316846592;
-        outputUnit='BCM';
-      }else if(normalizedUnit==='CARATS'){
-        outputUnit='carats';
-      }
-      return{quantity,sourceUnit:normalizedUnit,targetUnit:outputUnit||normalizedUnit};
+        sourceUnit.includes('bcm')?'BCM':
+        sourceUnit.includes('ton')||sourceUnit==='t'||sourceUnit==='mt'?'METRIC_TONS':
+        sourceUnit.toUpperCase();
+      let quantity=direct,outputUnit=targetUnit||normalizedUnit;
+      if(rid==='gold'&&normalizedUnit==='KILOGRAMS'){quantity*=32.15074656862745;outputUnit='TROY_OUNCES';}
+      else if(rid==='gold'&&normalizedUnit==='METRIC_TONS'){quantity*=32150.74656862745;outputUnit='TROY_OUNCES';}
+      else if(rid==='natural_gas'&&normalizedUnit==='TCF'){quantity*=28.316846592;outputUnit='BCM';}
+      return finish(quantity,normalizedUnit,outputUnit);
     }
-
     const text=String(sourceObject?.reserves??sourceObject?.reserve??raw??'').trim();
-    let quantity=null,sourceUnit=null;
+    let quantity=null,sourceUnit=null,outputUnit=targetUnit||null;
     if(rid==='crude_oil'){
-      quantity=firstNumber(text,/([\d,.]+)\s*(?:trillion|billion|million|thousand)?\s*BBL/i);
-      sourceUnit='BBL';
+      quantity=firstNumber(text,/([\d,.]+)\s*(?:trillion|billion|million|thousand)?\s*BBL/i);sourceUnit='BBL';outputUnit=targetUnit||'BBL';
     }else if(rid==='natural_gas'){
-      quantity=firstNumber(text,/([\d,.]+)\s*(?:trillion|billion|million|thousand)?\s*TCF/i);
-      sourceUnit='TCF';
-      if(quantity!==null)quantity*=28.316846592;
+      quantity=firstNumber(text,/([\d,.]+)\s*(?:trillion|billion|million|thousand)?\s*TCF/i);sourceUnit='TCF';
+      if(quantity!==null){quantity*=28.316846592;outputUnit='BCM';}
+      else {quantity=firstNumber(text,/([\d,.]+)\s*(?:trillion|billion|million|thousand)?\s*BCM/i);sourceUnit='BCM';outputUnit='BCM';}
     }else if(rid==='gold'){
       quantity=firstNumber(text,/([\d,.]+)\s*(?:trillion|billion|million|thousand)?\s*(?:MILLION\s+)?OZ\b/i);
-      if(quantity===null)quantity=firstNumber(text,/([\d,.]+)\s*(?:trillion|billion|million|thousand)?\s*KG\b/i);
-      if(quantity!==null&&/KG\b/i.test(text)&&! /OZ\b/i.test(text))quantity*=32.1507465686;
-      if(quantity===null)quantity=firstNumber(text,/([\d,.]+)\s*(?:trillion|billion|million|thousand)?\s*TONS?/i);
-      sourceUnit=/KG\b/i.test(text)?'KILOGRAMS':'TROY_OUNCES';
+      if(quantity!==null){sourceUnit='TROY_OUNCES';outputUnit='TROY_OUNCES';}
+      else {
+        quantity=firstNumber(text,/([\d,.]+)\s*(?:trillion|billion|million|thousand)?\s*KG\b/i);
+        if(quantity!==null){quantity*=32.15074656862745;sourceUnit='KILOGRAMS';outputUnit='TROY_OUNCES';}
+        else {
+          quantity=firstNumber(text,/([\d,.]+)\s*(?:trillion|billion|million|thousand)?\s*(?:TONNES?|METRIC\s+TONS?|MT)\b/i);
+          if(quantity!==null){quantity*=32150.74656862745;sourceUnit='METRIC_TONS';outputUnit='TROY_OUNCES';}
+        }
+      }
     }else{
-      quantity=firstNumber(text,/([\d,.]+)\s*(?:trillion|billion|million|thousand)?\s*(?:M|MT|MN)?\s*T(?:ONS)?\b/i);
+      quantity=firstNumber(text,/([\d,.]+)\s*(?:trillion|billion|million|thousand)?\s*(?:M|MT|MN)?\s*T(?:ONS?)?\b/i);
       if(quantity===null)quantity=firstNumber(text,/([\d,.]+)\s*(?:trillion|billion|million|thousand)?\s*M\s*T\b/i);
-      sourceUnit=targetUnit||'metric_tons';
+      sourceUnit='METRIC_TONS';outputUnit=targetUnit||'METRIC_TONS';
     }
-    if(quantity===null||quantity<=0){
-      return{quantity:null,sourceUnit:null,targetUnit:targetUnit||null};
-    }
-    return{quantity,sourceUnit,targetUnit:targetUnit||sourceUnit||null};
+    return finish(quantity,sourceUnit,outputUnit);
   }
 
   class ReserveState{
