@@ -2371,6 +2371,130 @@ if (sites.length !== 199) throw new Error('Expected exactly 199 mine-site refere
 
 for (const { site, countryId } of sites) applyFix(site, fixes[site.id]);
 
+const structuredMetricFixes = {
+  SITE_IRQ_rumaila_oil_field: {
+    quantitativeProduction: {
+      annual: null,
+      rate: 1470000,
+      unit: 'BBL_PER_DAY',
+      year: 2026,
+      status: 'OBSERVED',
+      basis: 'FIELD_AVERAGE'
+    },
+    sources: [
+      evidence('https://rumaila.iq/english/about-us/what-we-do-3/', 'current_field_average_oil_rate_and_operating_context', 'OPERATOR')
+    ]
+  },
+  SITE_MNG_oyu_tolgoi_copper_gold_mine: {
+    webVerifiedMetrics: {
+      h1_2026OreTreatedTotal: {
+        value: 20736000,
+        unit: 'metric_tons_ore',
+        basis: 'H1_2026_SITE_TOTAL'
+      },
+      h1_2026CopperInConcentrates: {
+        value: 198500,
+        unit: 'metric_tons_copper',
+        basis: 'H1_2026_SITE_TOTAL'
+      },
+      h1_2026GoldInConcentrates: {
+        value: 250400,
+        unit: 'troy_ounces_gold',
+        basis: 'H1_2026_SITE_TOTAL'
+      },
+      h1_2026SilverInConcentrates: {
+        value: 1210000,
+        unit: 'troy_ounces_silver',
+        basis: 'H1_2026_SITE_TOTAL'
+      },
+      h1_2026TotalCopperHeadGrade: {
+        value: 1.08,
+        unit: 'percent_copper',
+        basis: 'H1_2026_TOTAL_MILL_HEAD_GRADE'
+      }
+    },
+    sources: [
+      evidence('https://www.sec.gov/Archives/edgar/data/863064/000086306426000035/ex991results.htm', 'H1_2026_Oyu_Tolgoi_ore_treatment_grades_and_concentrate_metals', 'REGULATORY_FILING')
+    ]
+  },
+  SITE_TKM_galkynysh_gas_field: {
+    capacityProfile: {
+      productionWells: 52,
+      readyForCommissioningWells: 7,
+      activeDrillingWells: 8,
+      designedWellProductivity: 1500000,
+      maximumPotentialSustainedFlowPerWell: 3000000,
+      unit: 'M3_PER_DAY_PER_WELL',
+      status: 'REPORTED',
+      year: 2025,
+      scope: 'FIELD_DEVELOPMENT_STAGE_1'
+    },
+    sources: [
+      evidence('https://oilgas.gov.tm/en/posts/habarlar/15416/', '2025_Galkynysh_well_stock_design_flow_and_development_stage', 'GOVERNMENT')
+    ]
+  },
+  SITE_UZB_muruntau_gold_mine: {
+    webVerifiedMetrics: {
+      indicatedMineralResources: {
+        value: 60000000,
+        unit: 'troy_ounces_gold',
+        basis: 'INDICATED_MINERAL_RESOURCES'
+      },
+      inferredMineralResources: {
+        value: 19100000,
+        unit: 'troy_ounces_gold',
+        basis: 'INFERRED_MINERAL_RESOURCES'
+      },
+      runOfMineMaterialTransported2025: {
+        value: 120000000,
+        unit: 'cubic_meters',
+        basis: '2025_OPERATIONAL_PERFORMANCE'
+      }
+    },
+    sources: [
+      evidence('https://www.ngmk.uz/en/our-business/gold-production/', 'Muruntau_site_indicated_and_inferred_mineral_resources', 'OPERATOR'),
+      evidence('https://www.ngmk.uz/en/press-center/news-and-press-releases/Muruntov-konida-2025-yil-sarhisobi/', '2025_Muruntau_run_of_mine_material_transport_and_development_project', 'OPERATOR')
+    ]
+  }
+};
+
+for (const { site } of sites) {
+  const metricFix = structuredMetricFixes[site.id];
+  if (!metricFix) continue;
+  if (metricFix.quantitativeProduction) {
+    site.quantitativeProfile = site.quantitativeProfile || {};
+    site.quantitativeProfile.production = { ...metricFix.quantitativeProduction };
+  }
+  if (metricFix.webVerifiedMetrics) {
+    site.webVerifiedMetrics = {
+      ...(site.webVerifiedMetrics || {}),
+      ...metricFix.webVerifiedMetrics
+    };
+  }
+  if (metricFix.capacityProfile) {
+    site.capacityProfile = {
+      ...(site.capacityProfile || {}),
+      ...metricFix.capacityProfile
+    };
+  }
+  if (metricFix.sources?.length) {
+    const existing = Array.isArray(site.webResearchEvidence) ? site.webResearchEvidence : [];
+    for (const item of metricFix.sources) {
+      if (!existing.some((x) => x?.url === item.url)) existing.push(item);
+    }
+    site.webResearchEvidence = existing;
+    site.researchState = 'SITE_SPECIFIC_WEB_REVALIDATED';
+    site.dataCompleteness = site.dataCompleteness || {};
+    site.dataCompleteness.webResearch = 'SITE_SPECIFIC_WEB_REVALIDATED';
+    site.researchMetadata = {
+      ...(site.researchMetadata || {}),
+      reviewedAt: REVIEW_DATE,
+      structuredMetricsRevalidatedAt: REVIEW_DATE,
+      structuredMetricsSourceCount: metricFix.sources.length
+    };
+  }
+}
+
 // Prevent semantically unsupported placeholder identities from surviving as if they were real companies.
 const placeholders = new Set([
   'private concession holders',
