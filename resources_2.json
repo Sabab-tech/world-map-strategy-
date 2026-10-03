@@ -1485,8 +1485,8 @@
               "locationNodeKey": "ASSET:CUB:nicaro_nickel_complex",
               "status": "HISTORICAL_INACTIVE",
               "operationalStatus": "CLOSED",
-              "owner": "UNOBSERVED",
-              "operator": "UNOBSERVED",
+              "owner": "Empresa de Servicios Comandante René Ramos Latour",
+              "operator": "Empresa de Servicios Comandante René Ramos Latour",
               "extractionMethod": "LATERITIC_NICKEL_MINING_AND_CARON_PROCESS_HISTORY",
               "startYear": 1943,
               "legacyReferenceName": "Nicaro Nickel Complex",
@@ -1510,7 +1510,7 @@
                 "reserve": "UNOBSERVED",
                 "production": "UNOBSERVED",
                 "grade": "UNOBSERVED",
-                "ownership": "UNOBSERVED",
+                "ownership": "OBSERVED",
                 "operation": "OBSERVED",
                 "extractionMethod": "OBSERVED",
                 "provenance": "RESOURCE_JSON_WEB_RESEARCH_CATALOG"
@@ -1537,6 +1537,18 @@
                   "url": "https://cubanew.com/opportunity/factory-nicaro-nickel",
                   "accessed": "2026-09-26",
                   "scope": "site_identity_or_operation"
+                },
+                {
+                  "url": "https://www.cibercuba.com/s/gacetaoficial/acuerdo-8764-de-2020-de-consejo-de-ministros",
+                  "accessed": "2026-10-03",
+                  "scope": "concession_holder_exploitation_processing_and_nicaro_area",
+                  "sourceType": "GOVERNMENT"
+                },
+                {
+                  "url": "https://www.directoriocubano.com/servicios/gaceta-oficial/2007/ordinaria/69/",
+                  "accessed": "2026-10-03",
+                  "scope": "historical_nicaro_concession_holder_and_partial_closure",
+                  "sourceType": "GOVERNMENT"
                 }
               ],
               "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -1568,10 +1580,10 @@
                 "method": "LATERITIC_NICKEL_MINING_AND_CARON_PROCESS_HISTORY",
                 "lifecycleStatus": "HISTORICAL_INACTIVE",
                 "operationalStatus": "CLOSED",
-                "owner": "UNOBSERVED",
-                "operator": "UNOBSERVED",
-                "ownerEvidenceStatus": "UNOBSERVED",
-                "operatorEvidenceStatus": "UNOBSERVED"
+                "owner": "Empresa de Servicios Comandante René Ramos Latour",
+                "operator": "Empresa de Servicios Comandante René Ramos Latour",
+                "ownerEvidenceStatus": "WEB_REVIEWED",
+                "operatorEvidenceStatus": "WEB_REVIEWED"
               },
               "quantitativeProfile": {
                 "reserve": {
@@ -1617,7 +1629,7 @@
                 "resource": "COMPLETE",
                 "location": "COMPLETE",
                 "operation": "COMPLETE",
-                "ownership": "UNOBSERVED",
+                "ownership": "REPORTED",
                 "quantitative": {
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
@@ -1648,10 +1660,10 @@
                   "coordinateStatus": "ESTIMATED_SITE_POINT"
                 },
                 "ownership": {
-                  "owner": "UNOBSERVED",
-                  "operator": "UNOBSERVED",
-                  "ownerEvidenceStatus": "UNOBSERVED",
-                  "operatorEvidenceStatus": "UNOBSERVED"
+                  "owner": "Empresa de Servicios Comandante René Ramos Latour",
+                  "operator": "Empresa de Servicios Comandante René Ramos Latour",
+                  "ownerEvidenceStatus": "WEB_REVIEWED",
+                  "operatorEvidenceStatus": "WEB_REVIEWED"
                 },
                 "operation": {
                   "status": "HISTORICAL_INACTIVE",
@@ -1694,12 +1706,21 @@
                 },
                 "verification": {
                   "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-                  "reviewedAt": null,
-                  "sourceCount": 2,
-                  "sourceAuthorities": [],
+                  "reviewedAt": "2026-10-03",
+                  "sourceCount": 4,
+                  "sourceAuthorities": [
+                    "GOVERNMENT"
+                  ],
                   "dataLimitations": null
                 }
-              }
+              },
+              "researchMetadata": {
+                "reviewedAt": "2026-10-03",
+                "sourceAuthority": "Cuba Council of Ministers / Gaceta Oficial",
+                "currentEvidence": "Cuban Council of Ministers records identify Empresa del Níquel Comandante René Ramos Latour, later Empresa de Servicios René Ramos Latour, as the concession holder for exploitation and processing in the Nicaro area for nickeliferous limonite and serpentinite used to produce nickel and cobalt concentrate.",
+                "temporalScope": "Concession-holder identity is historical/legal context; the site remains CLOSED and non-executable in the runtime."
+              },
+              "ownershipScope": "HISTORICAL_CONCESSION_HOLDER"
             }
           ],
           "processingFacilities": [
@@ -13854,7 +13875,7 @@
                 },
                 "verification": {
                   "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-                  "reviewedAt": "2026-10-02",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 2,
                   "sourceAuthorities": [
                     "OPERATOR",
@@ -13866,7 +13887,7 @@
               "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
               "ownershipScope": "AREA_MULTI_OPERATOR",
               "researchMetadata": {
-                "reviewedAt": "2026-10-02",
+                "reviewedAt": "2026-10-03",
                 "sourceAuthority": "Current Vanuatu quarry/construction operators",
                 "currentEvidence": "KD Enterprise documents a crushing and screening plant in Luganville supplying sand and aggregate; Santo Earthworks is also publicly listed in Luganville under quarry products, sand and concrete."
               },
@@ -15106,7 +15127,7 @@
                 },
                 "verification": {
                   "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-                  "reviewedAt": "2026-10-02",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 3,
                   "sourceAuthorities": [
                     "OPERATOR"
@@ -15116,7 +15137,7 @@
               },
               "ownershipScope": "AREA_MULTI_OPERATOR",
               "researchMetadata": {
-                "reviewedAt": "2026-10-02",
+                "reviewedAt": "2026-10-03",
                 "sourceAuthority": "Current Tonga quarry operators",
                 "currentEvidence": "FATA KIHE HAU & SONS identifies itself as a quarrying partner operating in Nuku'alofa and describes extraction, crushing and supply. Nishi Trading independently lists a quarry at Pili, Tongatapu."
               }
@@ -18197,7 +18218,7 @@
                 },
                 "verification": {
                   "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-                  "reviewedAt": "2026-10-02",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 2,
                   "sourceAuthorities": [
                     "SPC_SOPAC"
@@ -18206,7 +18227,7 @@
                 }
               },
               "researchMetadata": {
-                "reviewedAt": "2026-10-02",
+                "reviewedAt": "2026-10-03",
                 "sourceAuthority": "SPC/SOPAC technical quarry assessment",
                 "currentEvidence": "The Pohnpei quarry assessment identifies the existing hard-rock quarry at Ipwal Sokes as owned and operated by APSCO and describes basalt aggregate use for road base, concrete, reclamation and armour rock."
               }
@@ -18608,9 +18629,9 @@
               "locationNodeKey": "ASSET:PLW:airai_limestone_quarry_zone",
               "status": "LIMITED",
               "operationalStatus": "LIMITED",
-              "owner": "UNOBSERVED",
-              "operator": "UNOBSERVED",
-              "extractionMethod": "surface quarrying",
+              "owner": "Surangel & Sons Company",
+              "operator": "Surangel & Sons Company",
+              "extractionMethod": "Limestone quarrying with crushing and aggregate-product production",
               "startYear": 1980,
               "legacyReferenceName": "Palau Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -18633,7 +18654,7 @@
                 "reserve": "UNOBSERVED",
                 "production": "UNOBSERVED",
                 "grade": "UNOBSERVED",
-                "ownership": "UNOBSERVED",
+                "ownership": "OBSERVED",
                 "operation": "OBSERVED",
                 "extractionMethod": "OBSERVED",
                 "provenance": "RESOURCE_JSON_WEB_RESEARCH_CATALOG"
@@ -18656,6 +18677,18 @@
                   "url": "https://theprif.org/sites/theprif.org/files/documents/PRIF-Aggregates-Report_final.pdf",
                   "accessed": "2026-09-26",
                   "scope": "site_identity_or_operation"
+                },
+                {
+                  "url": "https://surangel.com/oldconstruction/services-revised/mrp/rock-quarry/",
+                  "accessed": "2026-10-03",
+                  "scope": "site_specific_airai_limestone_quarry_operator_and_crusher_operation",
+                  "sourceType": "OPERATOR"
+                },
+                {
+                  "url": "https://www.palaugov.pw/wp-content/uploads/PGST-Registry-as-of-03-05-2026.pdf",
+                  "accessed": "2026-10-03",
+                  "scope": "current_registered_surangel_rock_quarry_and_mason_rock_products_entities",
+                  "sourceType": "GOVERNMENT_REGISTER"
                 }
               ],
               "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -18687,10 +18720,10 @@
                 "method": "surface quarrying",
                 "lifecycleStatus": "LIMITED",
                 "operationalStatus": "LIMITED",
-                "owner": "UNOBSERVED",
-                "operator": "UNOBSERVED",
-                "ownerEvidenceStatus": "UNOBSERVED",
-                "operatorEvidenceStatus": "UNOBSERVED"
+                "owner": "Surangel & Sons Company",
+                "operator": "Surangel & Sons Company",
+                "ownerEvidenceStatus": "WEB_REVIEWED",
+                "operatorEvidenceStatus": "WEB_REVIEWED"
               },
               "quantitativeProfile": {
                 "reserve": {
@@ -18736,7 +18769,7 @@
                 "resource": "COMPLETE",
                 "location": "COMPLETE",
                 "operation": "COMPLETE",
-                "ownership": "UNOBSERVED",
+                "ownership": "REPORTED",
                 "quantitative": {
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
@@ -18767,15 +18800,15 @@
                   "coordinateStatus": "ESTIMATED_SITE_POINT"
                 },
                 "ownership": {
-                  "owner": "UNOBSERVED",
-                  "operator": "UNOBSERVED",
-                  "ownerEvidenceStatus": "UNOBSERVED",
-                  "operatorEvidenceStatus": "UNOBSERVED"
+                  "owner": "Surangel & Sons Company",
+                  "operator": "Surangel & Sons Company",
+                  "ownerEvidenceStatus": "WEB_REVIEWED",
+                  "operatorEvidenceStatus": "WEB_REVIEWED"
                 },
                 "operation": {
                   "status": "LIMITED",
                   "operationalStatus": "LIMITED",
-                  "extractionMethod": "surface quarrying",
+                  "extractionMethod": "Limestone quarrying with crushing and aggregate-product production",
                   "extractionEligibility": null,
                   "commercialExtraction": true
                 },
@@ -18813,12 +18846,22 @@
                 },
                 "verification": {
                   "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-                  "reviewedAt": null,
-                  "sourceCount": 1,
-                  "sourceAuthorities": [],
+                  "reviewedAt": "2026-10-03",
+                  "sourceCount": 3,
+                  "sourceAuthorities": [
+                    "OPERATOR",
+                    "GOVERNMENT_REGISTER"
+                  ],
                   "dataLimitations": null
                 }
-              }
+              },
+              "researchMetadata": {
+                "reviewedAt": "2026-10-03",
+                "sourceAuthority": "Surangel & Sons Company / Republic of Palau",
+                "currentEvidence": "Surangel & Sons identifies its Ngermellal Quarry in Oikull, Airai as a limestone-products and crusher operation. The repository record is explicitly tied to Ngermellai Limestone Quarry and therefore the company can be named rather than leaving ownership/operator unobserved."
+              },
+              "ownershipScope": "SITE_OPERATOR",
+              "siteOperatorEvidenceScope": "SITE_SPECIFIC"
             }
           ],
           "processingFacilities": [

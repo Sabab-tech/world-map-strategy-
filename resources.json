@@ -4369,7 +4369,7 @@
                 },
                 "verification": {
                   "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-                  "reviewedAt": "2026-10-02",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 2,
                   "sourceAuthorities": [
                     "GOVERNMENT_AUDIT"
@@ -4379,9 +4379,9 @@
               },
               "ownershipScope": "HISTORICAL_MULTI_OPERATOR",
               "researchMetadata": {
-                "reviewedAt": "2026-10-02",
+                "reviewedAt": "2026-10-03",
                 "sourceAuthority": "Royal Audit Authority of Bhutan",
-                "currentEvidence": "Bhutan audit records identify Kuchikhola Stone Quarry in Tsirang under Mr. Pasang Tamang with a permit ending in 2014 and Wakletar Stone Quarry under Wakleytar Taksha Mining Private Limited with a permit ending in 2019. The repository record must not be treated as an unqualified active mine without newer site-specific evidence."
+                "currentEvidence": "Bhutan audit records identify Kuchikhola Stone Quarry in Tsirang under Mr. Pasang Tamang with a permit ending in 2014 and Wakletar Stone Quarry under Wakleytar Taksha Mining Private Limited with a permit ending in 2019. The repository record therefore must not be treated as an unqualified active 2026 mine without a newer site-specific concession record."
               }
             }
           ],
@@ -8732,7 +8732,7 @@
               },
               "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
@@ -8825,7 +8825,7 @@
                 },
                 "verification": {
                   "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-                  "reviewedAt": "2026-09-27",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 2,
                   "sourceAuthorities": [
                     "GOVERNMENT"
@@ -9368,7 +9368,7 @@
               },
               "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
@@ -9452,7 +9452,7 @@
                 },
                 "verification": {
                   "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-                  "reviewedAt": "2026-09-27",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 1,
                   "sourceAuthorities": [
                     "OPERATOR"
@@ -11330,12 +11330,21 @@
                 },
                 "verification": {
                   "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-                  "reviewedAt": null,
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 1,
                   "sourceAuthorities": [],
                   "dataLimitations": null
                 }
-              }
+              },
+              "researchMetadata": {
+                "reviewedAt": "2026-10-03",
+                "sourceAuthority": "Gambia Ministry of Petroleum, Energy and Mines",
+                "currentEvidence": "The ministry lists multiple licensed construction-aggregate and construction-sand operators in its mining/quarrying sector. Because this repository record is an area-level quarry zone rather than a single concession polygon, the operator remains UNOBSERVED at site level and the licensed-operator pool is preserved separately."
+              },
+              "ownershipScope": "AREA_MULTI_OPERATOR",
+              "operatorScope": "AREA_LICENSE_POOL",
+              "knownLicensedOperatorsSourceStatus": "GOVERNMENT_REPORTED",
+              "dataLimitation": "No source reviewed identifies which licensed operator controls this exact area-level record."
             }
           ],
           "processingFacilities": [
@@ -19541,14 +19550,14 @@
               },
               "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
               "researchMetadata": {
-                "reviewedAt": "2026-10-02",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
                 "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
                 "sourceAuthority": "Ministry of Agriculture and Environment, Cabo Verde",
-                "currentEvidence": "The Cabo Verde environmental authority published the EIA for the Monte Vermelho pozzolana extraction project in Praia, Santiago, naming CIMPOR – Cabo Verde, SA as the project proponent. This is development/EIA-stage evidence, not verified current commercial extraction.",
-                "resourceIdentityNote": "The ontology has no dedicated pozzolana resource type, so resourceTypeId remains construction_aggregate while materialSubtype is explicitly recorded as pozzolana."
+                "currentEvidence": "The Cabo Verde environmental authority published the EIA for the Monte Vermelho pozzolana extraction project in Praia, Santiago, naming CIMPOR – Cabo Verde, SA as the project proponent. This is a development/EIA-stage project, not verified current commercial extraction.",
+                "resourceIdentityNote": "Keep ontology resourceTypeId as construction_aggregate because the repository ontology has no dedicated pozzolana type; explicitly record pozzolana as the material subtype."
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -19618,7 +19627,7 @@
                 },
                 "verification": {
                   "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-                  "reviewedAt": "2026-10-02",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 1,
                   "sourceAuthorities": [
                     "GOVERNMENT"
@@ -22646,7 +22655,7 @@
               },
               "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
@@ -22737,7 +22746,7 @@
                 },
                 "verification": {
                   "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-                  "reviewedAt": "2026-09-27",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 2,
                   "sourceAuthorities": [
                     "INDUSTRY_ANALYSIS",
@@ -25836,7 +25845,7 @@
               },
               "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
@@ -25920,7 +25929,7 @@
                 },
                 "verification": {
                   "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-                  "reviewedAt": "2026-09-27",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 1,
                   "sourceAuthorities": [
                     "GOVERNMENT_GEOLOGICAL_SURVEY"
@@ -26459,7 +26468,7 @@
               },
               "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
               "researchMetadata": {
-                "reviewedAt": "2026-10-02",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
@@ -26560,7 +26569,7 @@
                 },
                 "verification": {
                   "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-                  "reviewedAt": "2026-10-02",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 2,
                   "sourceAuthorities": [
                     "WIKIPEDIA",
@@ -28359,7 +28368,7 @@
               },
               "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
@@ -28450,7 +28459,7 @@
                 },
                 "verification": {
                   "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-                  "reviewedAt": "2026-09-27",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 2,
                   "sourceAuthorities": [
                     "OPERATOR"
@@ -30272,14 +30281,14 @@
               },
               "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
               "researchMetadata": {
-                "reviewedAt": "2026-10-02",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
                 "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
                 "sourceAuthority": "USGS-derived mineral locality record / public mineralogical references",
-                "currentEvidence": "Public locality evidence identifies El Bur/El Buur in Galguduud as a sepiolite deposit and a traditional quarrying center, but does not establish a site-specific commercial gold mine or gold operator. The repository gold identity is therefore flagged as unverified and extraction is disabled.",
-                "resourceIdentityConflict": "repository resourceTypeId=gold conflicts with available site-level evidence supporting sepiolite; the ontology has no dedicated sepiolite resource type, so gold remains only an UNVERIFIED identity pending authoritative ontology expansion or a site-specific gold source."
+                "currentEvidence": "Current public locality evidence identifies El Bur/El Buur in Galguduud as a sepiolite deposit and a traditional quarrying center. It does not establish a site-specific commercial gold mine or gold operator. The repository gold identity is therefore flagged as unverified rather than executed as a gold-producing asset.",
+                "resourceIdentityConflict": "Repository resourceTypeId=gold conflicts with available site-level evidence supporting sepiolite. The ontology has no dedicated sepiolite resource type, so the gold identity is retained only as UNVERIFIED and extraction is disabled pending authoritative resource-ontology expansion or a site-specific gold source."
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -30349,7 +30358,7 @@
                 },
                 "verification": {
                   "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-                  "reviewedAt": "2026-10-02",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 2,
                   "sourceAuthorities": [
                     "MINERAL_LOCALITY_DATABASE",
@@ -32167,7 +32176,7 @@
               },
               "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
@@ -32256,7 +32265,7 @@
                 },
                 "verification": {
                   "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-                  "reviewedAt": "2026-09-27",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 1,
                   "sourceAuthorities": [
                     "INDUSTRY_DATABASE"
@@ -34152,7 +34161,7 @@
                 },
                 "verification": {
                   "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-                  "reviewedAt": "2026-10-02",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 4,
                   "sourceAuthorities": [
                     "OPERATOR",
@@ -34163,7 +34172,7 @@
               },
               "ownershipScope": "AREA_REPRESENTATIVE_OPERATOR",
               "researchMetadata": {
-                "reviewedAt": "2026-10-02",
+                "reviewedAt": "2026-10-03",
                 "sourceAuthority": "United Basalt Products Limited / Stock Exchange of Mauritius",
                 "currentEvidence": "UBP reports current basaltic-rock extraction and crushing for aggregate production and describes itself as the main supplier of aggregates in its Mauritian building-materials value chain. The repository record is an area-level basalt zone rather than a single concession."
               }
@@ -35321,7 +35330,7 @@
               },
               "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
               "researchMetadata": {
-                "reviewedAt": "2026-10-02",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
@@ -35397,7 +35406,7 @@
                 },
                 "verification": {
                   "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-                  "reviewedAt": "2026-10-02",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 1,
                   "sourceAuthorities": [
                     "COMPANY"
@@ -39080,7 +39089,7 @@
               },
               "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
@@ -39173,7 +39182,7 @@
                 },
                 "verification": {
                   "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-                  "reviewedAt": "2026-09-27",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 2,
                   "sourceAuthorities": [
                     "OPERATOR"
@@ -40954,7 +40963,7 @@
               },
               "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
@@ -41044,7 +41053,7 @@
                 },
                 "verification": {
                   "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-                  "reviewedAt": "2026-09-27",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 2,
                   "sourceAuthorities": [
                     "GOVERNMENT",
@@ -41682,7 +41691,7 @@
                 },
                 "verification": {
                   "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-                  "reviewedAt": "2026-10-02",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 3,
                   "sourceAuthorities": [
                     "OPERATOR"
@@ -41691,7 +41700,7 @@
                 }
               },
               "researchMetadata": {
-                "reviewedAt": "2026-10-02",
+                "reviewedAt": "2026-10-03",
                 "sourceAuthority": "United Quarries",
                 "currentEvidence": "United Quarries identifies Al Hayl and Al Nujaimat as operating quarry sites in Fujairah and documents blasting, aggregate production and export logistics. This repository record represents the Fujairah operator area rather than one concession polygon."
               }
@@ -42234,7 +42243,7 @@
               },
               "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
@@ -42330,7 +42339,7 @@
                 },
                 "verification": {
                   "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-                  "reviewedAt": "2026-09-27",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 2,
                   "sourceAuthorities": [
                     "OPERATOR",
@@ -42879,7 +42888,7 @@
               },
               "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
@@ -42968,7 +42977,7 @@
                 },
                 "verification": {
                   "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-                  "reviewedAt": "2026-09-27",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 1,
                   "sourceAuthorities": [
                     "SECONDARY_REFERENCE"
@@ -44139,7 +44148,7 @@
               },
               "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
@@ -44234,7 +44243,7 @@
                 },
                 "verification": {
                   "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-                  "reviewedAt": "2026-09-27",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 2,
                   "sourceAuthorities": [
                     "OPERATOR",
@@ -44783,7 +44792,7 @@
               },
               "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
@@ -44878,7 +44887,7 @@
                 },
                 "verification": {
                   "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-                  "reviewedAt": "2026-09-27",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 2,
                   "sourceAuthorities": [
                     "OPERATOR"
@@ -45426,7 +45435,7 @@
               },
               "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
@@ -45515,7 +45524,7 @@
                 },
                 "verification": {
                   "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-                  "reviewedAt": "2026-09-27",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 1,
                   "sourceAuthorities": [
                     "OPERATOR"
@@ -46700,7 +46709,7 @@
               },
               "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
@@ -46785,7 +46794,7 @@
                 },
                 "verification": {
                   "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-                  "reviewedAt": "2026-09-27",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 1,
                   "sourceAuthorities": [
                     "OPERATOR"
@@ -47333,7 +47342,7 @@
               },
               "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
@@ -47422,7 +47431,7 @@
                 },
                 "verification": {
                   "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-                  "reviewedAt": "2026-09-27",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 1,
                   "sourceAuthorities": [
                     "SECONDARY_REFERENCE"
@@ -48705,7 +48714,7 @@
                 },
                 "verification": {
                   "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-                  "reviewedAt": "2026-10-02",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 5,
                   "sourceAuthorities": [
                     "OPERATOR",
@@ -48715,7 +48724,7 @@
                 }
               },
               "researchMetadata": {
-                "reviewedAt": "2026-10-02",
+                "reviewedAt": "2026-10-03",
                 "sourceAuthority": "Holcim Lebanon / Lebanese public reporting",
                 "currentEvidence": "Holcim documents quarry rehabilitation in Chekka. 2026 reporting shows cement-quarry reopening is subject to licensing and was affected by a State Council suspension, so unconditional continuous extraction is not assumed."
               }
@@ -50543,7 +50552,7 @@
               },
               "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
@@ -50627,7 +50636,7 @@
                 },
                 "verification": {
                   "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-                  "reviewedAt": "2026-09-27",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 1,
                   "sourceAuthorities": [
                     "SECONDARY_REFERENCE"
@@ -51168,7 +51177,7 @@
               },
               "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
@@ -51262,7 +51271,7 @@
                 },
                 "verification": {
                   "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-                  "reviewedAt": "2026-09-27",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 2,
                   "sourceAuthorities": [
                     "GOVERNMENT"
@@ -51807,7 +51816,7 @@
               },
               "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
               "researchMetadata": {
-                "reviewedAt": "2026-10-02",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
@@ -51883,7 +51892,7 @@
                 },
                 "verification": {
                   "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-                  "reviewedAt": "2026-10-02",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 2,
                   "sourceAuthorities": [
                     "EQUIPMENT_SUPPLIER",
@@ -53694,13 +53703,13 @@
               },
               "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
               "researchMetadata": {
-                "reviewedAt": "2026-10-02",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
                 "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
                 "sourceAuthority": "Taiwan Ministry of Economic Affairs / public Hualien quarry records",
-                "currentEvidence": "Public reporting documents Asia Cement Corporation operating a marble quarry in Hualien County and documents permit/litigation constraints. Separate Hualien stone businesses are registered by the county government. The repository record is modeled as a multi-operator Hualien quarry zone, not a single-company mine."
+                "currentEvidence": "Public reporting documents Asia Cement Corporation operating a marble quarry in Hualien County and also documents permit/litigation constraints. Separate Hualien stone businesses are registered by the county government. The repository record is therefore modeled as a multi-operator Hualien quarry zone, not a single company mine."
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -53767,7 +53776,7 @@
                 },
                 "verification": {
                   "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-                  "reviewedAt": "2026-10-02",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 3,
                   "sourceAuthorities": [
                     "NEWS",
@@ -54331,7 +54340,7 @@
               },
               "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
@@ -54419,7 +54428,7 @@
                 },
                 "verification": {
                   "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-                  "reviewedAt": "2026-09-27",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 1,
                   "sourceAuthorities": [
                     "OPERATOR"
@@ -54959,7 +54968,7 @@
               },
               "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
               "researchMetadata": {
-                "reviewedAt": "2026-10-02",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
@@ -55036,7 +55045,7 @@
                 },
                 "verification": {
                   "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-                  "reviewedAt": "2026-10-02",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 2,
                   "sourceAuthorities": [
                     "OPERATOR"
@@ -57477,7 +57486,7 @@
               },
               "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
@@ -57565,7 +57574,7 @@
                 },
                 "verification": {
                   "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-                  "reviewedAt": "2026-09-27",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 1,
                   "sourceAuthorities": [
                     "GOVERNMENT"
@@ -58716,7 +58725,7 @@
               },
               "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
@@ -58805,7 +58814,7 @@
                 },
                 "verification": {
                   "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-                  "reviewedAt": "2026-09-27",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 1,
                   "sourceAuthorities": [
                     "SECONDARY_REFERENCE"
@@ -64359,7 +64368,7 @@
               },
               "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
@@ -64442,7 +64451,7 @@
                 },
                 "verification": {
                   "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-                  "reviewedAt": "2026-09-27",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 1,
                   "sourceAuthorities": [
                     "OPERATOR"
@@ -66238,7 +66247,7 @@
               },
               "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
@@ -66322,7 +66331,7 @@
                 },
                 "verification": {
                   "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-                  "reviewedAt": "2026-09-27",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 1,
                   "sourceAuthorities": [
                     "OPERATOR"
@@ -66863,7 +66872,7 @@
               },
               "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
@@ -66950,7 +66959,7 @@
                 },
                 "verification": {
                   "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-                  "reviewedAt": "2026-09-27",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 1,
                   "sourceAuthorities": [
                     "OPERATOR"
@@ -67496,7 +67505,7 @@
               },
               "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
               "researchMetadata": {
-                "reviewedAt": "2026-10-02",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
@@ -67572,7 +67581,7 @@
                 },
                 "verification": {
                   "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-                  "reviewedAt": "2026-10-02",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 2,
                   "sourceAuthorities": [
                     "GOVERNMENT_REGISTER"
@@ -68126,7 +68135,7 @@
               },
               "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
@@ -68210,7 +68219,7 @@
                 },
                 "verification": {
                   "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-                  "reviewedAt": "2026-09-27",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 1,
                   "sourceAuthorities": [
                     "SECONDARY_REFERENCE"
@@ -68753,7 +68762,7 @@
               },
               "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
               "researchMetadata": {
-                "reviewedAt": "2026-10-02",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
@@ -68826,7 +68835,7 @@
                 },
                 "verification": {
                   "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-                  "reviewedAt": "2026-10-02",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 2,
                   "sourceAuthorities": [
                     "OPERATOR"
@@ -70617,7 +70626,7 @@
               },
               "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
               "researchMetadata": {
-                "reviewedAt": "2026-10-02",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
@@ -70693,7 +70702,7 @@
                 },
                 "verification": {
                   "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-                  "reviewedAt": "2026-10-02",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 2,
                   "sourceAuthorities": [
                     "OPERATOR",
@@ -74917,7 +74926,7 @@
               },
               "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
@@ -75001,7 +75010,7 @@
                 },
                 "verification": {
                   "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-                  "reviewedAt": "2026-09-27",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 1,
                   "sourceAuthorities": [
                     "OPERATOR"
@@ -82376,7 +82385,7 @@
                 },
                 "verification": {
                   "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-                  "reviewedAt": "2026-10-02",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 2,
                   "sourceAuthorities": [
                     "GOVERNMENT_GEOLOGICAL_SURVEY"
@@ -82385,7 +82394,7 @@
                 }
               },
               "researchMetadata": {
-                "reviewedAt": "2026-10-02",
+                "reviewedAt": "2026-10-03",
                 "sourceAuthority": "Geological Survey of Slovenia mining database",
                 "currentEvidence": "The official database records the Trbovlje-Hrastnik limestone mining right through 31 December 2018 with no concessionaire from 2019 onward. Related Retje-Plesko limestone/marl records show no concessionaire in 2026."
               }
@@ -89566,6 +89575,12 @@
                   "accessed": "2026-10-02",
                   "scope": "malta_quarry_permit_requirement_for_mineral_extraction",
                   "sourceType": "GOVERNMENT"
+                },
+                {
+                  "url": "https://www.independent.com.mt/articles/2010-12-15/news/from-the-law-courts-284766/",
+                  "accessed": "2026-10-03",
+                  "scope": "historical_hal_far_quarries_owner_of_qh18_wied_moqbol",
+                  "sourceType": "NEWS"
                 }
               ],
               "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -89723,19 +89738,21 @@
                 },
                 "verification": {
                   "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-                  "reviewedAt": "2026-10-02",
-                  "sourceCount": 2,
+                  "reviewedAt": "2026-10-03",
+                  "sourceCount": 3,
                   "sourceAuthorities": [
-                    "GOVERNMENT"
+                    "GOVERNMENT",
+                    "NEWS"
                   ],
                   "dataLimitations": null
                 }
               },
               "researchMetadata": {
-                "reviewedAt": "2026-10-02",
-                "sourceAuthority": "Environment and Resources Authority, Malta",
+                "reviewedAt": "2026-10-03",
+                "sourceAuthority": "Environment and Resources Authority, Malta / historical quarry records",
                 "permit": "EP 0025/19, Quarry HM18 Wied Moqbol, Hal Far",
-                "currentEvidence": "ERA currently lists HM18 Wied Moqbol, Hal Far under EP 0025/19 for extraction of hardstone, recycling of inert waste and backfilling, with the application status shown as Being Processed. No site-specific owner/operator is asserted from the permit summary alone."
+                "currentEvidence": "ERA currently lists HM18 Wied Moqbol, Hal Far under EP 0025/19 for hardstone extraction, inert-waste recycling and quarry backfilling, with the application status shown as Being Processed. Historical court reporting identifies Hal Far Quarries Limited as the owner of quarry QH18 at Wied Moqbol. The current HM18 permit record does not independently establish that the same entity is the current applicant, so current owner/operator remains UNOBSERVED.",
+                "historicalOwner": "Hal Far Quarries Limited"
               }
             }
           ],
@@ -96348,7 +96365,7 @@
               },
               "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
@@ -96433,7 +96450,7 @@
                 },
                 "verification": {
                   "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-                  "reviewedAt": "2026-09-27",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 1,
                   "sourceAuthorities": [
                     "OPERATOR"
@@ -98219,7 +98236,7 @@
               },
               "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
@@ -98307,7 +98324,7 @@
                 },
                 "verification": {
                   "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-                  "reviewedAt": "2026-09-27",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 1,
                   "sourceAuthorities": [
                     "REGULATORY_FILING"
@@ -101334,7 +101351,7 @@
               },
               "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
               "researchMetadata": {
-                "reviewedAt": "2026-10-02",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
@@ -101410,7 +101427,7 @@
                 },
                 "verification": {
                   "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-                  "reviewedAt": "2026-10-02",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 1,
                   "sourceAuthorities": [
                     "GOVERNMENT"
@@ -101960,7 +101977,7 @@
               },
               "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
@@ -102054,7 +102071,7 @@
                 },
                 "verification": {
                   "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-                  "reviewedAt": "2026-09-27",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 2,
                   "sourceAuthorities": [
                     "OPERATOR"
@@ -104457,13 +104474,13 @@
               ],
               "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
               "researchMetadata": {
-                "reviewedAt": "2026-10-02",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
                 "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
                 "sourceAuthority": "Pacific Rim Mining Corporation SEC filing / public historical record",
-                "currentEvidence": "Pacific Rim filings identify the El Dorado gold project in Cabañas and state that Pacific Rim owned 100% of the project through subsidiaries. The historical mine operated from 1948 to 1953; later exploration did not produce a current commercial mining operation. Historical ownership is therefore kept separate from present-day executable extraction."
+                "currentEvidence": "Pacific Rim filings identify the El Dorado gold project in Cabañas and state that Pacific Rim owned 100% of the project through its subsidiaries. The historical mine operated from 1948 to 1953; later exploration did not result in a current commercial mining operation. Current data should therefore preserve historical ownership separately from present-day executable extraction."
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -104533,7 +104550,7 @@
                 },
                 "verification": {
                   "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-                  "reviewedAt": "2026-10-02",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 4,
                   "sourceAuthorities": [
                     "SEC_FILING"
@@ -105073,7 +105090,7 @@
               },
               "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
@@ -105165,7 +105182,7 @@
                 },
                 "verification": {
                   "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-                  "reviewedAt": "2026-09-27",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 2,
                   "sourceAuthorities": [
                     "OPERATOR",
@@ -105705,15 +105722,17 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
               },
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
-                "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
+                "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
+                "sourceAuthority": "JICA Belize infrastructure survey / GeoTech Belize",
+                "currentEvidence": "A recent Belize infrastructure survey maps several quarry locations in the Hattieville/Western Highway area, including Rockville Quarry, Excel Construction, National Sand & Gravel, Haynessee Limited and Caves Branch. The record remains area-level, so no single operator is asserted for the whole site."
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -105781,13 +105800,32 @@
                   }
                 },
                 "verification": {
-                  "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-                  "reviewedAt": "2026-09-27",
-                  "sourceCount": 0,
-                  "sourceAuthorities": [],
+                  "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+                  "reviewedAt": "2026-10-03",
+                  "sourceCount": 1,
+                  "sourceAuthorities": [
+                    "DEVELOPMENT_AGENCY"
+                  ],
                   "dataLimitations": null
                 }
-              }
+              },
+              "ownershipScope": "AREA_MULTI_OPERATOR",
+              "knownSectorOperators": [
+                "Rockville Quarry",
+                "Excel Construction",
+                "National Sand & Gravel",
+                "Haynessee Limited",
+                "Caves Branch"
+              ],
+              "dataLimitation": "The survey identifies multiple quarry locations in the Hattieville area but does not establish one operator for this aggregate-zone record.",
+              "webResearchEvidence": [
+                {
+                  "url": "https://openjicareport.jica.go.jp/pdf/12394235.pdf",
+                  "accessed": "2026-10-03",
+                  "scope": "recent_belize_hattieville_area_quarry_locations_and_operator_labels",
+                  "sourceType": "DEVELOPMENT_AGENCY"
+                }
+              ]
             }
           ],
           "processingFacilities": [

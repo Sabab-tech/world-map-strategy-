@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0.0",
-  "generatedAt": "2026-10-02",
+  "generatedAt": "2026-10-03",
   "siteCount": 199,
   "sites": [
     {
@@ -468,7 +468,7 @@
       },
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-        "reviewedAt": "2026-10-02",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 2,
         "sourceAuthorities": [
           "GOVERNMENT_AUDIT"
@@ -1015,7 +1015,7 @@
       },
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-        "reviewedAt": "2026-09-27",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 2,
         "sourceAuthorities": [
           "GOVERNMENT"
@@ -1092,7 +1092,7 @@
       },
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-        "reviewedAt": "2026-09-27",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 1,
         "sourceAuthorities": [
           "OPERATOR"
@@ -1322,7 +1322,7 @@
       },
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-        "reviewedAt": null,
+        "reviewedAt": "2026-10-03",
         "sourceCount": 1,
         "sourceAuthorities": [],
         "dataLimitations": null
@@ -2328,7 +2328,7 @@
       },
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-        "reviewedAt": "2026-10-02",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 1,
         "sourceAuthorities": [
           "GOVERNMENT"
@@ -2708,7 +2708,7 @@
       },
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-        "reviewedAt": "2026-09-27",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 2,
         "sourceAuthorities": [
           "INDUSTRY_ANALYSIS",
@@ -3105,7 +3105,7 @@
       },
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-        "reviewedAt": "2026-09-27",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 1,
         "sourceAuthorities": [
           "GOVERNMENT_GEOLOGICAL_SURVEY"
@@ -3182,7 +3182,7 @@
       },
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-        "reviewedAt": "2026-10-02",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 2,
         "sourceAuthorities": [
           "WIKIPEDIA",
@@ -3409,7 +3409,7 @@
       },
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-        "reviewedAt": "2026-09-27",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 2,
         "sourceAuthorities": [
           "OPERATOR"
@@ -3635,7 +3635,7 @@
       },
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-        "reviewedAt": "2026-10-02",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 2,
         "sourceAuthorities": [
           "MINERAL_LOCALITY_DATABASE",
@@ -3870,7 +3870,7 @@
       },
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-        "reviewedAt": "2026-09-27",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 1,
         "sourceAuthorities": [
           "INDUSTRY_DATABASE"
@@ -4100,7 +4100,7 @@
       },
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-        "reviewedAt": "2026-10-02",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 4,
         "sourceAuthorities": [
           "OPERATOR",
@@ -4252,7 +4252,7 @@
       },
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-        "reviewedAt": "2026-10-02",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 1,
         "sourceAuthorities": [
           "COMPANY"
@@ -4722,7 +4722,7 @@
       },
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-        "reviewedAt": "2026-09-27",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 2,
         "sourceAuthorities": [
           "OPERATOR"
@@ -4951,7 +4951,7 @@
       },
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-        "reviewedAt": "2026-09-27",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 2,
         "sourceAuthorities": [
           "GOVERNMENT",
@@ -5028,7 +5028,7 @@
       },
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-        "reviewedAt": "2026-10-02",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 3,
         "sourceAuthorities": [
           "OPERATOR"
@@ -5109,7 +5109,7 @@
       },
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-        "reviewedAt": "2026-09-27",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 2,
         "sourceAuthorities": [
           "OPERATOR",
@@ -5192,7 +5192,7 @@
       },
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-        "reviewedAt": "2026-09-27",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 1,
         "sourceAuthorities": [
           "SECONDARY_REFERENCE"
@@ -5353,7 +5353,7 @@
       },
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-        "reviewedAt": "2026-09-27",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 2,
         "sourceAuthorities": [
           "OPERATOR",
@@ -5436,7 +5436,7 @@
       },
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-        "reviewedAt": "2026-09-27",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 2,
         "sourceAuthorities": [
           "OPERATOR"
@@ -5518,7 +5518,7 @@
       },
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-        "reviewedAt": "2026-09-27",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 1,
         "sourceAuthorities": [
           "OPERATOR"
@@ -5676,7 +5676,7 @@
       },
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-        "reviewedAt": "2026-09-27",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 1,
         "sourceAuthorities": [
           "OPERATOR"
@@ -5758,7 +5758,7 @@
       },
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-        "reviewedAt": "2026-09-27",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 1,
         "sourceAuthorities": [
           "SECONDARY_REFERENCE"
@@ -5915,7 +5915,7 @@
       },
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-        "reviewedAt": "2026-10-02",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 5,
         "sourceAuthorities": [
           "OPERATOR",
@@ -6151,7 +6151,7 @@
       },
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-        "reviewedAt": "2026-09-27",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 1,
         "sourceAuthorities": [
           "SECONDARY_REFERENCE"
@@ -6231,7 +6231,7 @@
       },
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-        "reviewedAt": "2026-09-27",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 2,
         "sourceAuthorities": [
           "GOVERNMENT"
@@ -6308,7 +6308,7 @@
       },
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-        "reviewedAt": "2026-10-02",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 2,
         "sourceAuthorities": [
           "EQUIPMENT_SUPPLIER",
@@ -6537,7 +6537,7 @@
       },
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-        "reviewedAt": "2026-10-02",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 3,
         "sourceAuthorities": [
           "NEWS",
@@ -6619,7 +6619,7 @@
       },
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-        "reviewedAt": "2026-09-27",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 1,
         "sourceAuthorities": [
           "OPERATOR"
@@ -6697,7 +6697,7 @@
       },
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-        "reviewedAt": "2026-10-02",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 2,
         "sourceAuthorities": [
           "OPERATOR"
@@ -7011,7 +7011,7 @@
       },
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-        "reviewedAt": "2026-09-27",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 1,
         "sourceAuthorities": [
           "GOVERNMENT"
@@ -7167,7 +7167,7 @@
       },
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-        "reviewedAt": "2026-09-27",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 1,
         "sourceAuthorities": [
           "SECONDARY_REFERENCE"
@@ -7865,7 +7865,7 @@
       },
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-        "reviewedAt": "2026-09-27",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 1,
         "sourceAuthorities": [
           "OPERATOR"
@@ -8101,7 +8101,7 @@
       },
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-        "reviewedAt": "2026-09-27",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 1,
         "sourceAuthorities": [
           "OPERATOR"
@@ -8181,7 +8181,7 @@
       },
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-        "reviewedAt": "2026-09-27",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 1,
         "sourceAuthorities": [
           "OPERATOR"
@@ -8258,7 +8258,7 @@
       },
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-        "reviewedAt": "2026-10-02",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 2,
         "sourceAuthorities": [
           "GOVERNMENT_REGISTER"
@@ -8335,7 +8335,7 @@
       },
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-        "reviewedAt": "2026-09-27",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 1,
         "sourceAuthorities": [
           "SECONDARY_REFERENCE"
@@ -8409,7 +8409,7 @@
       },
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-        "reviewedAt": "2026-10-02",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 2,
         "sourceAuthorities": [
           "OPERATOR"
@@ -8643,7 +8643,7 @@
       },
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-        "reviewedAt": "2026-10-02",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 2,
         "sourceAuthorities": [
           "OPERATOR",
@@ -9167,7 +9167,7 @@
       },
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-        "reviewedAt": "2026-09-27",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 1,
         "sourceAuthorities": [
           "OPERATOR"
@@ -10084,7 +10084,7 @@
       },
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-        "reviewedAt": "2026-10-02",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 2,
         "sourceAuthorities": [
           "GOVERNMENT_GEOLOGICAL_SURVEY"
@@ -10981,10 +10981,11 @@
       },
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-        "reviewedAt": "2026-10-02",
-        "sourceCount": 2,
+        "reviewedAt": "2026-10-03",
+        "sourceCount": 3,
         "sourceAuthorities": [
-          "GOVERNMENT"
+          "GOVERNMENT",
+          "NEWS"
         ],
         "dataLimitations": null
       }
@@ -11795,7 +11796,7 @@
       },
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-        "reviewedAt": "2026-09-27",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 1,
         "sourceAuthorities": [
           "OPERATOR"
@@ -12035,7 +12036,7 @@
       },
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-        "reviewedAt": "2026-09-27",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 1,
         "sourceAuthorities": [
           "REGULATORY_FILING"
@@ -12420,7 +12421,7 @@
       },
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-        "reviewedAt": "2026-10-02",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 1,
         "sourceAuthorities": [
           "GOVERNMENT"
@@ -12501,7 +12502,7 @@
       },
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-        "reviewedAt": "2026-09-27",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 2,
         "sourceAuthorities": [
           "OPERATOR"
@@ -12802,7 +12803,7 @@
       },
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-        "reviewedAt": "2026-10-02",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 4,
         "sourceAuthorities": [
           "SEC_FILING"
@@ -12880,7 +12881,7 @@
       },
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-        "reviewedAt": "2026-09-27",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 2,
         "sourceAuthorities": [
           "OPERATOR",
@@ -12956,10 +12957,12 @@
         }
       },
       "verification": {
-        "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
-        "reviewedAt": "2026-09-27",
-        "sourceCount": 0,
-        "sourceAuthorities": [],
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+        "reviewedAt": "2026-10-03",
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "DEVELOPMENT_AGENCY"
+        ],
         "dataLimitations": null
       }
     },
@@ -13138,10 +13141,10 @@
         "coordinateStatus": "ESTIMATED_SITE_POINT"
       },
       "ownership": {
-        "owner": "UNOBSERVED",
-        "operator": "UNOBSERVED",
-        "ownerEvidenceStatus": "UNOBSERVED",
-        "operatorEvidenceStatus": "UNOBSERVED"
+        "owner": "Empresa de Servicios Comandante René Ramos Latour",
+        "operator": "Empresa de Servicios Comandante René Ramos Latour",
+        "ownerEvidenceStatus": "WEB_REVIEWED",
+        "operatorEvidenceStatus": "WEB_REVIEWED"
       },
       "operation": {
         "status": "HISTORICAL_INACTIVE",
@@ -13184,9 +13187,11 @@
       },
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-        "reviewedAt": null,
-        "sourceCount": 2,
-        "sourceAuthorities": [],
+        "reviewedAt": "2026-10-03",
+        "sourceCount": 4,
+        "sourceAuthorities": [
+          "GOVERNMENT"
+        ],
         "dataLimitations": null
       }
     },
@@ -14686,7 +14691,7 @@
       },
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-        "reviewedAt": "2026-10-02",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 2,
         "sourceAuthorities": [
           "OPERATOR",
@@ -14837,7 +14842,7 @@
       },
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-        "reviewedAt": "2026-10-02",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 3,
         "sourceAuthorities": [
           "OPERATOR"
@@ -15213,7 +15218,7 @@
       },
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-        "reviewedAt": "2026-10-02",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 2,
         "sourceAuthorities": [
           "SPC_SOPAC"
@@ -15244,15 +15249,15 @@
         "coordinateStatus": "ESTIMATED_SITE_POINT"
       },
       "ownership": {
-        "owner": "UNOBSERVED",
-        "operator": "UNOBSERVED",
-        "ownerEvidenceStatus": "UNOBSERVED",
-        "operatorEvidenceStatus": "UNOBSERVED"
+        "owner": "Surangel & Sons Company",
+        "operator": "Surangel & Sons Company",
+        "ownerEvidenceStatus": "WEB_REVIEWED",
+        "operatorEvidenceStatus": "WEB_REVIEWED"
       },
       "operation": {
         "status": "LIMITED",
         "operationalStatus": "LIMITED",
-        "extractionMethod": "surface quarrying",
+        "extractionMethod": "Limestone quarrying with crushing and aggregate-product production",
         "extractionEligibility": null,
         "commercialExtraction": true
       },
@@ -15290,9 +15295,12 @@
       },
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-        "reviewedAt": null,
-        "sourceCount": 1,
-        "sourceAuthorities": [],
+        "reviewedAt": "2026-10-03",
+        "sourceCount": 3,
+        "sourceAuthorities": [
+          "OPERATOR",
+          "GOVERNMENT_REGISTER"
+        ],
         "dataLimitations": null
       }
     }
