@@ -17784,13 +17784,13 @@
                 "recovery": {
                   "value": 90,
                   "unit": "percent",
-                  "year": null,
+                  "year": 2025,
                   "status": "OBSERVED"
                 },
                 "throughput": {
                   "value": 12560000,
                   "unit": "metric_tons",
-                  "year": null,
+                  "year": 2025,
                   "status": "OBSERVED"
                 }
               },
@@ -17942,13 +17942,13 @@
                   "recovery": {
                     "value": 90,
                     "unit": "percent",
-                    "year": null,
+                    "year": 2025,
                     "status": "OBSERVED"
                   },
                   "throughput": {
                     "value": 12560000,
                     "unit": "metric_tons",
-                    "year": null,
+                    "year": 2025,
                     "status": "OBSERVED"
                   },
                   "capacity": {},
@@ -25099,7 +25099,7 @@
                 "throughput": {
                   "value": 14300000,
                   "unit": "metric_tons",
-                  "year": null,
+                  "year": 2025,
                   "status": "OBSERVED"
                 }
               },
@@ -25257,7 +25257,7 @@
                   "throughput": {
                     "value": 14300000,
                     "unit": "metric_tons",
-                    "year": null,
+                    "year": 2025,
                     "status": "OBSERVED"
                   },
                   "capacity": {},
@@ -29074,7 +29074,7 @@
                 "recovery": {
                   "value": 90.2,
                   "unit": "percent",
-                  "year": null,
+                  "year": 2025,
                   "status": "OBSERVED"
                 }
               },
@@ -29216,7 +29216,7 @@
                   "recovery": {
                     "value": 90.2,
                     "unit": "percent",
-                    "year": null,
+                    "year": 2025,
                     "status": "OBSERVED"
                   },
                   "throughput": {
