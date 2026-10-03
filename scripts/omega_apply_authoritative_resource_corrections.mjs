@@ -2546,6 +2546,104 @@ const fixes = {
       evidence('https://www.industry.gov.lk/web/wp-content/uploads/2025/12/KGLL-English.pdf', 'Kahatagaha_high_purity_vein_graphite_over_99_percent_carbon_and_state_ownership', 'GOVERNMENT'),
       evidence('https://www.industry.gov.lk/web/wp-content/uploads/2026/03/Kahatagaha-Graphite_V7_1.pdf', '2026_Kahatagaha_mine_development_and_reserve_estimation_programme', 'GOVERNMENT')
     ]
+  },
+  SITE_SWE_kiruna_iron_mine: {
+    quantitativeReserve: {
+      quantity: 544000000,
+      unit: 'metric_tons_iron_ore',
+      year: 2025,
+      status: 'OBSERVED',
+      basis: 'MINERAL_RESERVE'
+    },
+    quantitativeGrade: {
+      value: 45.5,
+      unit: 'percent_iron',
+      year: 2025,
+      status: 'OBSERVED',
+      basis: 'MINERAL_RESERVE'
+    },
+    extra: {
+      mineralResourcesExclusiveOfReserves: { value: 1129000000, unit: 'metric_tons_iron_ore', year: 2025, status: 'OBSERVED' },
+      reserveGradePrevious2024: { value: 46.7, unit: 'percent_iron', year: 2024, status: 'OBSERVED' }
+    },
+    process: {
+      resourceTypeId: 'iron_ore',
+      ontologyKey: 'IRON_ORE',
+      commodityName: 'Iron ore products',
+      upstreamProcess: 'Underground Mining',
+      midstreamProcess: 'Crushing, Concentration and Pelletizing',
+      refinedOutputs: ['IRON_ORE_CONCENTRATE', 'PELLETS']
+    },
+    sources: [
+      evidence('https://lkab.com/wp-content/uploads/2026/04/LKAB_Annual-and-Sustainability-Report-2025_260423.pdf', '2025_Kiruna_mineral_reserve_tonnage_and_iron_grade', 'OPERATOR')
+    ]
+  },
+  SITE_PRT_panasqueira_tungsten_mine: {
+    quantitativeProduction: {
+      annual: 588,
+      unit: 'metric_tons_WO3_concentrate',
+      year: 2024,
+      status: 'REPORTED',
+      basis: 'ANNUALIZED_OUTPUT_EQUIVALENT_58750_MTU'
+    },
+    quantitativeGrade: {
+      value: 70,
+      unit: 'percent_WO3_concentrate',
+      year: 2025,
+      status: 'REPORTED',
+      basis: 'PRIMARY_CONCENTRATE_PRODUCT'
+    },
+    extra: {
+      annualizedOutputMTU: { value: 58750, unit: 'MTU_WO3', year: 2024, status: 'REPORTED_ANNUALIZED' },
+      expansionPotentialOutput: { value: 1240, unit: 'metric_tons_WO3_concentrate_per_year', status: 'PROJECTED' }
+    },
+    sources: [
+      evidence('https://almonty.com/wp-content/uploads/2026/03/AII-AIF-FY25CAN_DMS_1015843488.1.pdf', 'Panasqueira_current_milling_process_and_typical_70_percent_WO3_concentrate', 'OPERATOR'),
+      evidence('https://almonty.com/wp-content/uploads/2025/10/ALM-Investor-Deck-October-2025.pdf', 'Panasqueira_annualized_output_and_expansion_potential', 'OPERATOR')
+    ]
+  },
+  SITE_AUS_boddington_gold_mine: {
+    quantitativeReserve: {
+      quantity: 10200000,
+      unit: 'troy_ounces_gold',
+      year: 2025,
+      status: 'OBSERVED',
+      basis: 'FY2025_MINERAL_RESERVE'
+    },
+    quantitativeProduction: {
+      annual: 160000,
+      unit: 'troy_ounces_gold',
+      year: 2026,
+      status: 'REPORTED',
+      basis: 'CURRENT_ANNUAL_PRODUCTION_GUIDANCE'
+    },
+    extra: {
+      annualCopperProductionGuidance: { value: 5000, unit: 'metric_tons_copper_per_year', year: 2026, status: 'REPORTED' },
+      copperReserve: { value: 500000, unit: 'metric_tons_copper', year: 2025, status: 'OBSERVED' },
+      goldResourcesFY2025: { value: 4400000, unit: 'troy_ounces_gold', year: 2025, status: 'OBSERVED' },
+      copperResourcesFY2025: { value: 300000, unit: 'metric_tons_copper', year: 2025, status: 'OBSERVED' }
+    },
+    process: {
+      resourceTypeId: 'gold',
+      ontologyKey: 'GOLD',
+      commodityName: 'Gold and copper concentrate',
+      primaryCommodity: 'gold',
+      secondaryCommodities: ['copper'],
+      upstreamProcess: 'Open-Pit Mining',
+      midstreamProcess: 'Crushing, Grinding, Flotation and Gold Recovery',
+      refinedOutputs: ['GOLD_DORE', 'COPPER_CONCENTRATE']
+    },
+    sources: [
+      evidence('https://operations.newmont.com/australia/boddington/', 'current_Boddington_reserves_2025_and_2026_annual_production_guidance', 'OPERATOR')
+    ]
+  },
+  SITE_SUR_merian_gold_mine: {
+    extra: {
+      annualGoldProductionGuidance2026: { value: 225000, unit: 'troy_ounces_gold', year: 2026, status: 'GUIDANCE' }
+    },
+    sources: [
+      evidence('https://www.newmont.com/investors/news-release/news-details/2026/Newmont-Reports-Fourth-Quarter-and-Full-Year-2025-Results-Provides-2026-Guidance-and-Announces-Enhanced-Capital-Allocation-Framework/', '2026_Merian_gold_production_guidance', 'OPERATOR')
+    ]
   }
 };
 
