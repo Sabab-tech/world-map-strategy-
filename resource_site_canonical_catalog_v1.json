@@ -28,8 +28,8 @@
       "ownership": {
         "owner": "BCMCL / Petrobangla",
         "operator": "BCMCL",
-        "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-        "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+        "ownerEvidenceStatus": "WEB_REVIEWED",
+        "operatorEvidenceStatus": "WEB_REVIEWED"
       },
       "operation": {
         "status": "ACTIVE_PRODUCING",
@@ -56,9 +56,11 @@
       },
       "quantitative": {
         "reserve": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
+          "quantity": 410000000,
+          "unit": "metric_tons_geological_coal",
+          "year": 2023,
+          "status": "REPORTED",
+          "basis": "PETROBANGLA_GEOLOGICAL_RESERVE"
         },
         "production": {
           "annual": null,
@@ -84,6 +86,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -92,17 +100,19 @@
           "promotedAt": "2026-10-03"
         },
         "completeness": {
-          "reserve": "UNOBSERVED",
+          "reserve": "REPORTED",
           "production": "OBSERVED",
           "grade": "OBSERVED",
           "overall": "PARTIAL"
         }
       },
       "verification": {
-        "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
-        "reviewedAt": "2026-09-27",
-        "sourceCount": 1,
-        "sourceAuthorities": [],
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+        "reviewedAt": "2026-10-03",
+        "sourceCount": 2,
+        "sourceAuthorities": [
+          "GOVERNMENT"
+        ],
         "dataLimitations": null
       }
     },
@@ -186,6 +196,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -294,6 +310,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -378,9 +400,11 @@
           "basis": "FY2024_25_MINE_OUTPUT"
         },
         "grade": {
-          "value": "High-quality vein graphite",
-          "unit": null,
-          "status": "OBSERVED"
+          "value": 99,
+          "unit": "percent_carbon",
+          "year": 2025,
+          "status": "REPORTED",
+          "basis": "HIGH_PURITY_VEIN_GRAPHITE_PRODUCT"
         },
         "recovery": {
           "value": null,
@@ -389,6 +413,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -420,15 +450,17 @@
         "completeness": {
           "reserve": "UNOBSERVED",
           "production": "OBSERVED",
-          "grade": "OBSERVED",
+          "grade": "REPORTED",
           "overall": "PARTIAL"
         }
       },
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
         "reviewedAt": "2026-10-03",
-        "sourceCount": 1,
-        "sourceAuthorities": [],
+        "sourceCount": 3,
+        "sourceAuthorities": [
+          "GOVERNMENT"
+        ],
         "dataLimitations": null
       }
     },
@@ -509,6 +541,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -609,6 +647,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -720,6 +764,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -814,6 +864,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -925,6 +981,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -1026,6 +1088,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -1149,6 +1217,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -1247,6 +1321,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -1362,6 +1442,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -1464,6 +1550,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -1561,6 +1653,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -1674,6 +1772,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -1768,6 +1872,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -1871,6 +1981,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -1985,6 +2101,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {
           "annualCapacity": {
@@ -2088,6 +2210,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -2201,6 +2329,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {
           "phase2ConcentrateCapacity": 15000000,
           "unit": "metric_tons_per_year",
@@ -2305,6 +2439,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -2420,6 +2560,12 @@
           "unit": "metric_tons",
           "year": 2025,
           "status": "OBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
         },
         "capacity": {},
         "reportedMetrics": {
@@ -2542,6 +2688,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -2639,6 +2791,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -2750,6 +2908,12 @@
           "unit": "metric_tons",
           "year": 2025,
           "status": "OBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
         },
         "capacity": {},
         "reportedMetrics": {
@@ -2874,6 +3038,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {
           "goldProduction2026H1": {
@@ -2979,6 +3149,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -3090,6 +3266,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -3185,6 +3367,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -3295,6 +3483,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -3395,6 +3589,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -3490,6 +3690,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -3598,6 +3804,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -3696,6 +3908,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -3801,6 +4019,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -3914,6 +4138,12 @@
           "unit": "metric_tons",
           "year": 2025,
           "status": "OBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
         },
         "capacity": {},
         "reportedMetrics": {
@@ -4033,6 +4263,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -4138,6 +4374,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -4234,6 +4476,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -4341,6 +4589,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -4438,6 +4692,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -4543,6 +4803,12 @@
           "status": "OBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -4661,6 +4927,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -4757,6 +5029,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -4862,6 +5140,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -4957,6 +5241,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -5065,6 +5355,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -5160,6 +5456,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -5278,6 +5580,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -5383,6 +5691,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -5478,6 +5792,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -5591,6 +5911,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -5688,6 +6014,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -5793,6 +6125,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -5890,6 +6228,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -6005,6 +6349,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -6102,6 +6452,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -6205,6 +6561,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -6314,6 +6676,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -6412,6 +6780,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -6516,6 +6890,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -6626,6 +7006,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -6723,6 +7109,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -6830,6 +7222,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -6931,6 +7329,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -7044,6 +7448,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -7145,6 +7555,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -7252,6 +7668,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -7365,6 +7787,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -7468,6 +7896,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -7581,6 +8015,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {
           "copperConcentrateProductionCapacity": 810000,
           "unit": "metric_tons_per_year",
@@ -7682,6 +8122,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -7794,6 +8240,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -7901,6 +8353,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -7998,6 +8456,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -8110,6 +8574,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -8211,6 +8681,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -8329,6 +8805,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -8434,6 +8916,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -8531,6 +9019,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -8639,6 +9133,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -8740,6 +9240,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -8870,6 +9376,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -8972,6 +9484,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -9080,6 +9598,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -9178,6 +9702,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -9283,6 +9813,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -9398,6 +9934,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -9502,6 +10044,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -9598,6 +10146,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -9710,6 +10264,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -9816,6 +10376,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -9914,6 +10480,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -10025,6 +10597,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -10123,6 +10701,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -10232,6 +10816,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -10359,6 +10949,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {
           "productionWells": 52,
           "readyForCommissioningWells": 7,
@@ -10472,6 +11068,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -10572,6 +11174,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -10666,6 +11274,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -10777,6 +11391,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -10882,6 +11502,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -10977,6 +11603,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -11087,6 +11719,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -11184,6 +11822,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -11291,6 +11935,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -11385,6 +12035,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -11496,6 +12152,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -11597,6 +12259,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -11704,6 +12372,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -11801,6 +12475,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -11907,6 +12587,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -12003,6 +12689,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -12111,6 +12803,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -12202,6 +12900,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -12309,6 +13013,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -12411,6 +13121,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -12508,6 +13224,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -12617,6 +13339,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -12713,6 +13441,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -12829,6 +13563,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -12930,6 +13670,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -13041,6 +13787,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -13147,6 +13899,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -13245,6 +14003,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -13356,6 +14120,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -13462,6 +14232,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -13559,6 +14335,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -13667,6 +14449,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -13761,6 +14549,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -13867,6 +14661,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -13968,6 +14768,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -14064,6 +14870,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -14173,6 +14985,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -14269,6 +15087,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -14375,6 +15199,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -14471,6 +15301,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -14581,6 +15417,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -14677,6 +15519,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -14784,6 +15632,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -14881,6 +15735,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -14993,6 +15853,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -15095,6 +15961,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -15185,6 +16057,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -15283,6 +16161,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -15376,6 +16260,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -15464,6 +16354,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -15574,6 +16470,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -15674,6 +16576,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -15781,6 +16689,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -15883,6 +16797,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -15979,6 +16899,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -16092,6 +17018,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -16190,6 +17122,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -16296,6 +17234,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -16408,6 +17352,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -16505,6 +17455,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -16611,6 +17567,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -16706,6 +17668,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -16809,6 +17777,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -16920,6 +17894,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -17017,6 +17997,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -17125,6 +18111,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -17222,6 +18214,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -17330,6 +18328,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -17433,6 +18437,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -17530,6 +18540,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -17639,6 +18655,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -17739,6 +18761,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -17834,6 +18862,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -17944,6 +18978,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -18047,6 +19087,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -18144,6 +19190,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -18256,6 +19308,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -18357,6 +19415,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -18452,6 +19516,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -18559,6 +19629,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -18653,6 +19729,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -18759,6 +19841,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -18854,6 +19942,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -18961,6 +20055,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -19062,6 +20162,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -19157,6 +20263,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -19265,6 +20377,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -19363,6 +20481,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -19471,6 +20595,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -19573,6 +20703,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -19669,6 +20805,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -19777,6 +20919,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -19871,6 +21019,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -19978,6 +21132,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -20075,6 +21235,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -20181,6 +21347,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -20275,6 +21447,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -20385,6 +21563,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -20479,6 +21663,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,
@@ -20583,6 +21773,12 @@
           "year": null,
           "status": "UNOBSERVED"
         },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
         "capacity": {},
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -20680,6 +21876,12 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
           "value": null,
           "unit": null,
           "year": null,

@@ -1047,14 +1047,16 @@
                 "operationalStatus": "ACTIVE_PRODUCING",
                 "owner": "BCMCL / Petrobangla",
                 "operator": "BCMCL",
-                "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-                "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+                "ownerEvidenceStatus": "WEB_REVIEWED",
+                "operatorEvidenceStatus": "WEB_REVIEWED"
               },
               "quantitativeProfile": {
                 "reserve": {
-                  "quantity": null,
-                  "unit": null,
-                  "status": "UNOBSERVED"
+                  "quantity": 410000000,
+                  "unit": "metric_tons_geological_coal",
+                  "year": 2023,
+                  "status": "REPORTED",
+                  "basis": "PETROBANGLA_GEOLOGICAL_RESERVE"
                 },
                 "production": {
                   "annual": null,
@@ -1104,25 +1106,31 @@
                 "operation": "COMPLETE",
                 "ownership": "REPORTED",
                 "quantitative": {
-                  "reserve": "UNOBSERVED",
+                  "reserve": "REPORTED",
                   "production": "OBSERVED",
                   "grade": "OBSERVED",
                   "overall": "PARTIAL"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED",
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
                 "quantitativeOverall": "PARTIAL"
               },
-              "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
+              "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
               "webResearchEvidence": [
                 {
                   "url": "https://bcmcl.org.bd/",
                   "accessed": "2026-09-27",
                   "scope": "site_identity_operator_current_production"
+                },
+                {
+                  "url": "https://petrobangla.org.bd/sites/default/files/files/petrobangla.portal.gov.bd/annual_reports/22137eda_60d5_4f48_be2d_8ae973e87ffc/2024-12-04-11-04-31d5f6a0fc3eb6d8f0ab8c17c71e3060.pdf",
+                  "accessed": "2026-10-03",
+                  "scope": "Barapukuria_geological_coal_reserve_area_coal_type_and_sulfur_content",
+                  "sourceType": "GOVERNMENT"
                 }
               ],
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "currentEvidence": "BCMCL identifies the Barapukuria operation and publishes current coal extraction/dispatch figures.",
                 "currentEvidenceDate": "2026-06-13",
                 "sourceAuthority": "BCMCL"
@@ -1151,8 +1159,8 @@
                 "ownership": {
                   "owner": "BCMCL / Petrobangla",
                   "operator": "BCMCL",
-                  "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-                  "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+                  "ownerEvidenceStatus": "WEB_REVIEWED",
+                  "operatorEvidenceStatus": "WEB_REVIEWED"
                 },
                 "operation": {
                   "status": "ACTIVE_PRODUCING",
@@ -1179,9 +1187,11 @@
                 },
                 "quantitative": {
                   "reserve": {
-                    "quantity": null,
-                    "unit": null,
-                    "status": "UNOBSERVED"
+                    "quantity": 410000000,
+                    "unit": "metric_tons_geological_coal",
+                    "year": 2023,
+                    "status": "REPORTED",
+                    "basis": "PETROBANGLA_GEOLOGICAL_RESERVE"
                   },
                   "production": {
                     "annual": null,
@@ -1207,6 +1217,12 @@
                     "year": null,
                     "status": "UNOBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {},
                   "reportedMetrics": {},
                   "quantitativeProvenance": {
@@ -1215,19 +1231,32 @@
                     "promotedAt": "2026-10-03"
                   },
                   "completeness": {
-                    "reserve": "UNOBSERVED",
+                    "reserve": "REPORTED",
                     "production": "OBSERVED",
                     "grade": "OBSERVED",
                     "overall": "PARTIAL"
                   }
                 },
                 "verification": {
-                  "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
-                  "reviewedAt": "2026-09-27",
-                  "sourceCount": 1,
-                  "sourceAuthorities": [],
+                  "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+                  "reviewedAt": "2026-10-03",
+                  "sourceCount": 2,
+                  "sourceAuthorities": [
+                    "GOVERNMENT"
+                  ],
                   "dataLimitations": null
                 }
+              },
+              "coalType": "High-quality bituminous coal",
+              "sulfurContent": {
+                "value": 0.53,
+                "unit": "percent_sulfur",
+                "status": "REPORTED"
+              },
+              "reserveArea": {
+                "value": 8.03,
+                "unit": "square_km",
+                "status": "REPORTED"
               }
             }
           ],
@@ -1877,6 +1906,12 @@
                     "status": "UNOBSERVED"
                   },
                   "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "purity": {
                     "value": null,
                     "unit": null,
                     "year": null,
@@ -2541,6 +2576,12 @@
                     "year": null,
                     "status": "UNOBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {},
                   "reportedMetrics": {},
                   "quantitativeProvenance": {
@@ -3059,9 +3100,11 @@
                   "basis": "FY2024_25_MINE_OUTPUT"
                 },
                 "grade": {
-                  "value": "High-quality vein graphite",
-                  "unit": null,
-                  "status": "OBSERVED"
+                  "value": 99,
+                  "unit": "percent_carbon",
+                  "year": 2025,
+                  "status": "REPORTED",
+                  "basis": "HIGH_PURITY_VEIN_GRAPHITE_PRODUCT"
                 },
                 "quantitativeExtractionDataAvailable": true,
                 "reportedMetrics": {
@@ -3115,7 +3158,7 @@
                 "quantitative": {
                   "reserve": "UNOBSERVED",
                   "production": "OBSERVED",
-                  "grade": "OBSERVED",
+                  "grade": "REPORTED",
                   "overall": "PARTIAL"
                 },
                 "provenance": "PRESENT",
@@ -3128,6 +3171,18 @@
                   "url": "https://www.industry.gov.lk/web/wp-content/uploads/2025/11/Ministry-of-Industry-and-Entrepreneurship-Development-_E_compressed.pdf",
                   "accessed": "2026-09-27",
                   "scope": "site_operator_production_2024_2025_mining_method"
+                },
+                {
+                  "url": "https://www.industry.gov.lk/web/wp-content/uploads/2025/12/KGLL-English.pdf",
+                  "accessed": "2026-10-03",
+                  "scope": "Kahatagaha_high_purity_vein_graphite_over_99_percent_carbon_and_state_ownership",
+                  "sourceType": "GOVERNMENT"
+                },
+                {
+                  "url": "https://www.industry.gov.lk/web/wp-content/uploads/2026/03/Kahatagaha-Graphite_V7_1.pdf",
+                  "accessed": "2026-10-03",
+                  "scope": "2026_Kahatagaha_mine_development_and_reserve_estimation_programme",
+                  "sourceType": "GOVERNMENT"
                 }
               ],
               "researchMetadata": {
@@ -3216,9 +3271,11 @@
                     "basis": "FY2024_25_MINE_OUTPUT"
                   },
                   "grade": {
-                    "value": "High-quality vein graphite",
-                    "unit": null,
-                    "status": "OBSERVED"
+                    "value": 99,
+                    "unit": "percent_carbon",
+                    "year": 2025,
+                    "status": "REPORTED",
+                    "basis": "HIGH_PURITY_VEIN_GRAPHITE_PRODUCT"
                   },
                   "recovery": {
                     "value": null,
@@ -3227,6 +3284,12 @@
                     "status": "UNOBSERVED"
                   },
                   "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "purity": {
                     "value": null,
                     "unit": null,
                     "year": null,
@@ -3258,15 +3321,17 @@
                   "completeness": {
                     "reserve": "UNOBSERVED",
                     "production": "OBSERVED",
-                    "grade": "OBSERVED",
+                    "grade": "REPORTED",
                     "overall": "PARTIAL"
                   }
                 },
                 "verification": {
                   "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
                   "reviewedAt": "2026-10-03",
-                  "sourceCount": 1,
-                  "sourceAuthorities": [],
+                  "sourceCount": 3,
+                  "sourceAuthorities": [
+                    "GOVERNMENT"
+                  ],
                   "dataLimitations": null
                 }
               },
@@ -3282,7 +3347,10 @@
                 "year": 2025,
                 "status": "OBSERVED"
               },
-              "reserveStatus": "UNRESOLVED_RESERVE_ESTIMATION_IN_PROGRESS"
+              "reserveStatus": "UNRESOLVED_RESERVE_ESTIMATION_IN_PROGRESS",
+              "productQuality": "High-carbon natural crystalline vein graphite",
+              "purityStatement": "Over 99% carbon",
+              "reserveEstimationStatus": "Updated mapping completed; reserve calculation/program refinement under way"
             }
           ],
           "processingFacilities": [
@@ -3926,6 +3994,12 @@
                     "status": "UNOBSERVED"
                   },
                   "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "purity": {
                     "value": null,
                     "unit": null,
                     "year": null,
@@ -4578,6 +4652,12 @@
                     "status": "UNOBSERVED"
                   },
                   "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "purity": {
                     "value": null,
                     "unit": null,
                     "year": null,
@@ -5252,6 +5332,12 @@
                     "year": null,
                     "status": "UNOBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {},
                   "reportedMetrics": {},
                   "quantitativeProvenance": {
@@ -5901,6 +5987,12 @@
                     "status": "UNOBSERVED"
                   },
                   "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "purity": {
                     "value": null,
                     "unit": null,
                     "year": null,
@@ -6600,6 +6692,12 @@
                     "status": "UNOBSERVED"
                   },
                   "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "purity": {
                     "value": null,
                     "unit": null,
                     "year": null,
@@ -7329,6 +7427,12 @@
                     "year": null,
                     "status": "UNOBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {},
                   "reportedMetrics": {
                     "goldProduction2025": {
@@ -8024,6 +8128,12 @@
                     "year": null,
                     "status": "UNOBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {},
                   "reportedMetrics": {},
                   "quantitativeProvenance": {
@@ -8713,6 +8823,12 @@
                     "year": null,
                     "status": "UNOBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {
                     "annualCapacity": 34025000,
                     "unit": "metric_tons_per_year",
@@ -9390,6 +9506,12 @@
                     "year": null,
                     "status": "UNOBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {},
                   "reportedMetrics": {},
                   "quantitativeProvenance": {
@@ -10049,6 +10171,12 @@
                     "year": null,
                     "status": "UNOBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {},
                   "reportedMetrics": {},
                   "quantitativeProvenance": {
@@ -10703,6 +10831,12 @@
                     "status": "UNOBSERVED"
                   },
                   "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "purity": {
                     "value": null,
                     "unit": null,
                     "year": null,
@@ -11379,6 +11513,12 @@
                     "year": null,
                     "status": "UNOBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {},
                   "reportedMetrics": {},
                   "quantitativeProvenance": {
@@ -12032,6 +12172,12 @@
                     "status": "UNOBSERVED"
                   },
                   "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "purity": {
                     "value": null,
                     "unit": null,
                     "year": null,
@@ -12729,6 +12875,12 @@
                     "year": null,
                     "status": "UNOBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {
                     "annualProductionAndSalesCapacity": 1300000,
                     "unit": "metric_tons_per_year",
@@ -13405,6 +13557,12 @@
                     "status": "UNOBSERVED"
                   },
                   "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "purity": {
                     "value": null,
                     "unit": null,
                     "year": null,
@@ -14108,6 +14266,12 @@
                     "year": null,
                     "status": "UNOBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {
                     "annualRutileProductionCapacity": 120000,
                     "unit": "metric_tons_per_year",
@@ -14797,6 +14961,12 @@
                     "year": null,
                     "status": "UNOBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {
                     "phase2ConcentrateCapacity": 15000000,
                     "unit": "metric_tons_per_year",
@@ -15467,6 +15637,12 @@
                     "status": "UNOBSERVED"
                   },
                   "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "purity": {
                     "value": null,
                     "unit": null,
                     "year": null,
@@ -16196,6 +16372,12 @@
                     "year": 2025,
                     "status": "OBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {},
                   "reportedMetrics": {
                     "goldProduction2025": {
@@ -16880,6 +17062,12 @@
                     "year": null,
                     "status": "UNOBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {},
                   "reportedMetrics": {},
                   "quantitativeProvenance": {
@@ -17550,6 +17738,12 @@
                     "status": "UNOBSERVED"
                   },
                   "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "purity": {
                     "value": null,
                     "unit": null,
                     "year": null,
@@ -18280,6 +18474,12 @@
                     "year": 2025,
                     "status": "OBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {},
                   "reportedMetrics": {
                     "goldProduction2025": {
@@ -18971,6 +19171,12 @@
                     "year": null,
                     "status": "UNOBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {},
                   "reportedMetrics": {
                     "goldProduction2026H1": {
@@ -19648,6 +19854,12 @@
                     "year": null,
                     "status": "UNOBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {},
                   "reportedMetrics": {},
                   "quantitativeProvenance": {
@@ -20307,6 +20519,12 @@
                     "year": null,
                     "status": "UNOBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {},
                   "reportedMetrics": {},
                   "quantitativeProvenance": {
@@ -20954,6 +21172,12 @@
                     "status": "UNOBSERVED"
                   },
                   "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "purity": {
                     "value": null,
                     "unit": null,
                     "year": null,
@@ -21634,6 +21858,12 @@
                     "year": null,
                     "status": "UNOBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {},
                   "reportedMetrics": {},
                   "quantitativeProvenance": {
@@ -22295,6 +22525,12 @@
                     "year": null,
                     "status": "UNOBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {},
                   "reportedMetrics": {},
                   "quantitativeProvenance": {
@@ -22934,6 +23170,12 @@
                     "status": "UNOBSERVED"
                   },
                   "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "purity": {
                     "value": null,
                     "unit": null,
                     "year": null,
@@ -23598,6 +23840,12 @@
                     "status": "UNOBSERVED"
                   },
                   "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "purity": {
                     "value": null,
                     "unit": null,
                     "year": null,
@@ -24291,6 +24539,12 @@
                     "year": null,
                     "status": "UNOBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {},
                   "reportedMetrics": {},
                   "quantitativeProvenance": {
@@ -24961,6 +25215,12 @@
                     "status": "UNOBSERVED"
                   },
                   "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "purity": {
                     "value": null,
                     "unit": null,
                     "year": null,
@@ -25685,6 +25945,12 @@
                     "year": 2025,
                     "status": "OBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {},
                   "reportedMetrics": {
                     "copperProduction2025": {
@@ -26365,6 +26631,12 @@
                     "year": null,
                     "status": "UNOBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {},
                   "reportedMetrics": {},
                   "quantitativeProvenance": {
@@ -27024,6 +27296,12 @@
                     "year": null,
                     "status": "UNOBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {},
                   "reportedMetrics": {},
                   "quantitativeProvenance": {
@@ -27678,6 +27956,12 @@
                     "status": "UNOBSERVED"
                   },
                   "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "purity": {
                     "value": null,
                     "unit": null,
                     "year": null,
@@ -28355,6 +28639,12 @@
                     "year": null,
                     "status": "UNOBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {},
                   "reportedMetrics": {},
                   "quantitativeProvenance": {
@@ -29007,6 +29297,12 @@
                     "status": "UNOBSERVED"
                   },
                   "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "purity": {
                     "value": null,
                     "unit": null,
                     "year": null,
@@ -29712,6 +30008,12 @@
                     "year": null,
                     "status": "UNOBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {},
                   "reportedMetrics": {
                     "goldProduction2025": {
@@ -30390,6 +30692,12 @@
                     "year": null,
                     "status": "UNOBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {},
                   "reportedMetrics": {},
                   "quantitativeProvenance": {
@@ -31051,6 +31359,12 @@
                     "status": "UNOBSERVED"
                   },
                   "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "purity": {
                     "value": null,
                     "unit": null,
                     "year": null,
@@ -31733,6 +32047,12 @@
                     "year": null,
                     "status": "UNOBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {},
                   "reportedMetrics": {},
                   "quantitativeProvenance": {
@@ -32380,6 +32700,12 @@
                     "status": "UNOBSERVED"
                   },
                   "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "purity": {
                     "value": null,
                     "unit": null,
                     "year": null,
@@ -33043,6 +33369,12 @@
                     "status": "UNOBSERVED"
                   },
                   "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "purity": {
                     "value": null,
                     "unit": null,
                     "year": null,
@@ -33730,6 +34062,12 @@
                     "status": "UNOBSERVED"
                   },
                   "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "purity": {
                     "value": null,
                     "unit": null,
                     "year": null,
@@ -34429,6 +34767,12 @@
                     "year": null,
                     "status": "UNOBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {},
                   "reportedMetrics": {},
                   "quantitativeProvenance": {
@@ -35084,6 +35428,12 @@
                     "status": "UNOBSERVED"
                   },
                   "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "purity": {
                     "value": null,
                     "unit": null,
                     "year": null,
@@ -35764,6 +36114,12 @@
                     "year": null,
                     "status": "UNOBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {
                     "refinedNickelAnnual": 40000,
                     "refinedCobaltAnnual": 4000,
@@ -36438,6 +36794,12 @@
                     "year": null,
                     "status": "UNOBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {},
                   "reportedMetrics": {},
                   "quantitativeProvenance": {
@@ -37096,6 +37458,12 @@
                     "year": null,
                     "status": "UNOBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {},
                   "reportedMetrics": {},
                   "quantitativeProvenance": {
@@ -37742,6 +38110,12 @@
                     "status": "UNOBSERVED"
                   },
                   "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "purity": {
                     "value": null,
                     "unit": null,
                     "year": null,
@@ -38401,6 +38775,12 @@
                     "status": "UNOBSERVED"
                   },
                   "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "purity": {
                     "value": null,
                     "unit": null,
                     "year": null,
@@ -39086,6 +39466,12 @@
                     "status": "UNOBSERVED"
                   },
                   "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "purity": {
                     "value": null,
                     "unit": null,
                     "year": null,
@@ -39789,6 +40175,12 @@
                     "year": null,
                     "status": "UNOBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {},
                   "reportedMetrics": {},
                   "quantitativeProvenance": {
@@ -40448,6 +40840,12 @@
                     "year": null,
                     "status": "UNOBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {},
                   "reportedMetrics": {},
                   "quantitativeProvenance": {
@@ -41100,6 +41498,12 @@
                     "status": "UNOBSERVED"
                   },
                   "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "purity": {
                     "value": null,
                     "unit": null,
                     "year": null,
@@ -41764,6 +42168,12 @@
                     "status": "UNOBSERVED"
                   },
                   "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "purity": {
                     "value": null,
                     "unit": null,
                     "year": null,
@@ -42437,6 +42847,12 @@
                     "year": null,
                     "status": "UNOBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {
                     "oreTreatedAnnual": 5200000,
                     "unit": "metric_tons_per_year",
@@ -43081,6 +43497,12 @@
                     "status": "UNOBSERVED"
                   },
                   "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "purity": {
                     "value": null,
                     "unit": null,
                     "year": null,
@@ -43779,6 +44201,12 @@
                     "year": null,
                     "status": "UNOBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {},
                   "reportedMetrics": {},
                   "quantitativeProvenance": {
@@ -44444,6 +44872,12 @@
                     "status": "UNOBSERVED"
                   },
                   "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "purity": {
                     "value": null,
                     "unit": null,
                     "year": null,
@@ -45129,6 +45563,12 @@
                     "year": null,
                     "status": "UNOBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {},
                   "reportedMetrics": {},
                   "quantitativeProvenance": {
@@ -45799,6 +46239,12 @@
                     "year": null,
                     "status": "UNOBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {},
                   "reportedMetrics": {},
                   "quantitativeProvenance": {
@@ -46453,6 +46899,12 @@
                     "status": "UNOBSERVED"
                   },
                   "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "purity": {
                     "value": null,
                     "unit": null,
                     "year": null,
@@ -47162,6 +47614,12 @@
                     "year": null,
                     "status": "UNOBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {},
                   "reportedMetrics": {},
                   "quantitativeProvenance": {
@@ -47833,6 +48291,12 @@
                     "status": "UNOBSERVED"
                   },
                   "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "purity": {
                     "value": null,
                     "unit": null,
                     "year": null,
@@ -48512,6 +48976,12 @@
                     "status": "UNOBSERVED"
                   },
                   "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "purity": {
                     "value": null,
                     "unit": null,
                     "year": null,
@@ -49198,6 +49668,12 @@
                     "year": null,
                     "status": "UNOBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {
                     "copperConcentrateProductionCapacity": 810000,
                     "unit": "metric_tons_per_year",
@@ -49859,6 +50335,12 @@
                     "status": "UNOBSERVED"
                   },
                   "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "purity": {
                     "value": null,
                     "unit": null,
                     "year": null,
@@ -50528,6 +51010,12 @@
                     "status": "UNOBSERVED"
                   },
                   "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "purity": {
                     "value": null,
                     "unit": null,
                     "year": null,
@@ -51210,6 +51698,12 @@
                     "status": "UNOBSERVED"
                   },
                   "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "purity": {
                     "value": null,
                     "unit": null,
                     "year": null,
@@ -51912,6 +52406,12 @@
                     "year": null,
                     "status": "UNOBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {},
                   "reportedMetrics": {},
                   "quantitativeProvenance": {
@@ -52585,6 +53085,12 @@
                     "status": "UNOBSERVED"
                   },
                   "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "purity": {
                     "value": null,
                     "unit": null,
                     "year": null,
@@ -53296,6 +53802,12 @@
                     "year": null,
                     "status": "UNOBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {},
                   "reportedMetrics": {
                     "declaredGasReserve": {
@@ -53956,6 +54468,12 @@
                     "status": "UNOBSERVED"
                   },
                   "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "purity": {
                     "value": null,
                     "unit": null,
                     "year": null,
@@ -54628,6 +55146,12 @@
                     "year": null,
                     "status": "UNOBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {},
                   "reportedMetrics": {},
                   "quantitativeProvenance": {
@@ -55276,6 +55800,12 @@
                     "status": "UNOBSERVED"
                   },
                   "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "purity": {
                     "value": null,
                     "unit": null,
                     "year": null,
@@ -55944,6 +56474,12 @@
                     "status": "UNOBSERVED"
                   },
                   "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "purity": {
                     "value": null,
                     "unit": null,
                     "year": null,
@@ -56671,6 +57207,12 @@
                     "year": null,
                     "status": "UNOBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {},
                   "reportedMetrics": {
                     "h1_2026OreTreatedTotal": {
@@ -57371,6 +57913,12 @@
                     "year": null,
                     "status": "UNOBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {},
                   "reportedMetrics": {},
                   "quantitativeProvenance": {
@@ -58055,6 +58603,12 @@
                     "year": null,
                     "status": "UNOBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {},
                   "reportedMetrics": {},
                   "quantitativeProvenance": {
@@ -58699,6 +59253,12 @@
                     "status": "UNOBSERVED"
                   },
                   "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "purity": {
                     "value": null,
                     "unit": null,
                     "year": null,
@@ -59378,6 +59938,12 @@
                     "status": "UNOBSERVED"
                   },
                   "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "purity": {
                     "value": null,
                     "unit": null,
                     "year": null,
@@ -60070,6 +60636,12 @@
                     "year": null,
                     "status": "UNOBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {
                     "annualLigniteProductionCapacity": 16000000,
                     "unit": "metric_tons_per_year",
@@ -60740,6 +61312,12 @@
                     "year": null,
                     "status": "UNOBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {},
                   "reportedMetrics": {},
                   "quantitativeProvenance": {
@@ -61400,6 +61978,12 @@
                     "year": null,
                     "status": "UNOBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {},
                   "reportedMetrics": {},
                   "quantitativeProvenance": {
@@ -62039,6 +62623,12 @@
                     "status": "UNOBSERVED"
                   },
                   "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "purity": {
                     "value": null,
                     "unit": null,
                     "year": null,
@@ -62726,6 +63316,12 @@
                     "year": null,
                     "status": "UNOBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {},
                   "reportedMetrics": {},
                   "quantitativeProvenance": {
@@ -63387,6 +63983,12 @@
                     "year": null,
                     "status": "UNOBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {},
                   "reportedMetrics": {},
                   "quantitativeProvenance": {
@@ -64037,6 +64639,12 @@
                     "status": "UNOBSERVED"
                   },
                   "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "purity": {
                     "value": null,
                     "unit": null,
                     "year": null,
@@ -64715,6 +65323,12 @@
                     "year": null,
                     "status": "UNOBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {},
                   "reportedMetrics": {},
                   "quantitativeProvenance": {
@@ -65384,6 +65998,12 @@
                     "status": "UNOBSERVED"
                   },
                   "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "purity": {
                     "value": null,
                     "unit": null,
                     "year": null,
@@ -66081,6 +66701,12 @@
                     "status": "UNOBSERVED"
                   },
                   "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "purity": {
                     "value": null,
                     "unit": null,
                     "year": null,
@@ -66804,6 +67430,12 @@
                     "year": null,
                     "status": "UNOBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {
                     "productionWells": 52,
                     "readyForCommissioningWells": 7,
@@ -67477,6 +68109,12 @@
                     "year": null,
                     "status": "UNOBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {},
                   "reportedMetrics": {},
                   "quantitativeProvenance": {
@@ -68139,6 +68777,12 @@
                     "year": null,
                     "status": "UNOBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {},
                   "reportedMetrics": {},
                   "quantitativeProvenance": {
@@ -68784,6 +69428,12 @@
                     "status": "UNOBSERVED"
                   },
                   "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "purity": {
                     "value": null,
                     "unit": null,
                     "year": null,
@@ -69455,6 +70105,12 @@
                     "year": null,
                     "status": "UNOBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {},
                   "reportedMetrics": {},
                   "quantitativeProvenance": {
@@ -70113,6 +70769,12 @@
                     "year": null,
                     "status": "UNOBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {},
                   "reportedMetrics": {},
                   "quantitativeProvenance": {
@@ -70760,6 +71422,12 @@
                     "status": "UNOBSERVED"
                   },
                   "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "purity": {
                     "value": null,
                     "unit": null,
                     "year": null,
@@ -71425,6 +72093,12 @@
                     "year": null,
                     "status": "UNOBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {},
                   "reportedMetrics": {},
                   "quantitativeProvenance": {
@@ -72074,6 +72748,12 @@
                     "status": "UNOBSERVED"
                   },
                   "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "purity": {
                     "value": null,
                     "unit": null,
                     "year": null,
@@ -72749,6 +73429,12 @@
                     "year": null,
                     "status": "UNOBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {},
                   "reportedMetrics": {},
                   "quantitativeProvenance": {
@@ -73392,6 +74078,12 @@
                     "status": "UNOBSERVED"
                   },
                   "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "purity": {
                     "value": null,
                     "unit": null,
                     "year": null,
@@ -74062,6 +74754,12 @@
                     "status": "UNOBSERVED"
                   },
                   "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "purity": {
                     "value": null,
                     "unit": null,
                     "year": null,
@@ -74745,6 +75443,12 @@
                     "year": null,
                     "status": "UNOBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {},
                   "reportedMetrics": {},
                   "quantitativeProvenance": {
@@ -75398,6 +76102,12 @@
                     "status": "UNOBSERVED"
                   },
                   "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "purity": {
                     "value": null,
                     "unit": null,
                     "year": null,
@@ -76064,6 +76774,12 @@
                     "year": null,
                     "status": "UNOBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {},
                   "reportedMetrics": {},
                   "quantitativeProvenance": {
@@ -76717,6 +77433,12 @@
                     "year": null,
                     "status": "UNOBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {},
                   "reportedMetrics": {},
                   "quantitativeProvenance": {
@@ -77365,6 +78087,12 @@
                     "status": "UNOBSERVED"
                   },
                   "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "purity": {
                     "value": null,
                     "unit": null,
                     "year": null,
@@ -78042,6 +78770,12 @@
                     "year": null,
                     "status": "UNOBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {},
                   "reportedMetrics": {},
                   "quantitativeProvenance": {
@@ -78674,6 +79408,12 @@
                     "status": "UNOBSERVED"
                   },
                   "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "purity": {
                     "value": null,
                     "unit": null,
                     "year": null,
@@ -79329,6 +80069,12 @@
                     "status": "UNOBSERVED"
                   },
                   "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "purity": {
                     "value": null,
                     "unit": null,
                     "year": null,
@@ -80007,6 +80753,12 @@
                     "year": null,
                     "status": "UNOBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {},
                   "reportedMetrics": {},
                   "quantitativeProvenance": {
@@ -80649,6 +81401,12 @@
                     "status": "UNOBSERVED"
                   },
                   "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "purity": {
                     "value": null,
                     "unit": null,
                     "year": null,
@@ -81308,6 +82066,12 @@
                     "status": "UNOBSERVED"
                   },
                   "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "purity": {
                     "value": null,
                     "unit": null,
                     "year": null,
@@ -81985,6 +82749,12 @@
                     "status": "UNOBSERVED"
                   },
                   "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "purity": {
                     "value": null,
                     "unit": null,
                     "year": null,
@@ -82675,6 +83445,12 @@
                     "status": "UNOBSERVED"
                   },
                   "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "purity": {
                     "value": null,
                     "unit": null,
                     "year": null,
@@ -83391,6 +84167,12 @@
                     "year": null,
                     "status": "UNOBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {},
                   "reportedMetrics": {},
                   "quantitativeProvenance": {
@@ -84049,6 +84831,12 @@
                     "status": "UNOBSERVED"
                   },
                   "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "purity": {
                     "value": null,
                     "unit": null,
                     "year": null,
@@ -84738,6 +85526,12 @@
                     "year": null,
                     "status": "UNOBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {},
                   "reportedMetrics": {},
                   "quantitativeProvenance": {
@@ -85406,6 +86200,12 @@
                     "year": null,
                     "status": "UNOBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {},
                   "reportedMetrics": {},
                   "quantitativeProvenance": {
@@ -86064,6 +86864,12 @@
                     "status": "UNOBSERVED"
                   },
                   "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "purity": {
                     "value": null,
                     "unit": null,
                     "year": null,
@@ -86732,6 +87538,12 @@
                     "year": null,
                     "status": "UNOBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {},
                   "reportedMetrics": {},
                   "quantitativeProvenance": {
@@ -87382,6 +88194,12 @@
                     "status": "UNOBSERVED"
                   },
                   "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "purity": {
                     "value": null,
                     "unit": null,
                     "year": null,
@@ -88058,6 +88876,12 @@
                     "year": null,
                     "status": "UNOBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {},
                   "reportedMetrics": {},
                   "quantitativeProvenance": {
@@ -88699,6 +89523,12 @@
                     "status": "UNOBSERVED"
                   },
                   "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "purity": {
                     "value": null,
                     "unit": null,
                     "year": null,
@@ -89357,6 +90187,12 @@
                     "year": null,
                     "status": "UNOBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {},
                   "reportedMetrics": {},
                   "quantitativeProvenance": {
@@ -90005,6 +90841,12 @@
                     "status": "UNOBSERVED"
                   },
                   "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "purity": {
                     "value": null,
                     "unit": null,
                     "year": null,
@@ -90659,6 +91501,12 @@
                     "status": "UNOBSERVED"
                   },
                   "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "purity": {
                     "value": null,
                     "unit": null,
                     "year": null,
@@ -91329,6 +92177,12 @@
                     "year": null,
                     "status": "UNOBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {},
                   "reportedMetrics": {},
                   "quantitativeProvenance": {
@@ -91977,6 +92831,12 @@
                     "status": "UNOBSERVED"
                   },
                   "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "purity": {
                     "value": null,
                     "unit": null,
                     "year": null,
@@ -92662,6 +93522,12 @@
                     "year": null,
                     "status": "UNOBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {},
                   "reportedMetrics": {},
                   "quantitativeProvenance": {
@@ -93320,6 +94186,12 @@
                     "status": "UNOBSERVED"
                   },
                   "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "purity": {
                     "value": null,
                     "unit": null,
                     "year": null,
@@ -93995,6 +94867,12 @@
                     "year": null,
                     "status": "UNOBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {},
                   "reportedMetrics": {},
                   "quantitativeProvenance": {
@@ -94649,6 +95527,12 @@
                     "status": "UNOBSERVED"
                   },
                   "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "purity": {
                     "value": null,
                     "unit": null,
                     "year": null,
@@ -95313,6 +96197,12 @@
                     "status": "UNOBSERVED"
                   },
                   "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "purity": {
                     "value": null,
                     "unit": null,
                     "year": null,
@@ -95988,6 +96878,12 @@
                     "year": null,
                     "status": "UNOBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {},
                   "reportedMetrics": {},
                   "quantitativeProvenance": {
@@ -96646,6 +97542,12 @@
                     "status": "UNOBSERVED"
                   },
                   "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "purity": {
                     "value": null,
                     "unit": null,
                     "year": null,
@@ -97319,6 +98221,12 @@
                     "year": null,
                     "status": "UNOBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {},
                   "reportedMetrics": {},
                   "quantitativeProvenance": {
@@ -97954,6 +98862,12 @@
                     "year": null,
                     "status": "UNOBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {},
                   "reportedMetrics": {},
                   "quantitativeProvenance": {
@@ -98572,6 +99486,12 @@
                     "status": "UNOBSERVED"
                   },
                   "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "purity": {
                     "value": null,
                     "unit": null,
                     "year": null,
@@ -99200,6 +100120,12 @@
                     "year": null,
                     "status": "UNOBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {},
                   "reportedMetrics": {},
                   "quantitativeProvenance": {
@@ -99818,6 +100744,12 @@
                     "status": "UNOBSERVED"
                   },
                   "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "purity": {
                     "value": null,
                     "unit": null,
                     "year": null,
@@ -100479,6 +101411,12 @@
                     "status": "UNOBSERVED"
                   },
                   "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "purity": {
                     "value": null,
                     "unit": null,
                     "year": null,
@@ -101153,6 +102091,12 @@
                     "year": null,
                     "status": "UNOBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {},
                   "reportedMetrics": {},
                   "quantitativeProvenance": {
@@ -101812,6 +102756,12 @@
                     "year": null,
                     "status": "UNOBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {},
                   "reportedMetrics": {},
                   "quantitativeProvenance": {
@@ -102459,6 +103409,12 @@
                     "status": "UNOBSERVED"
                   },
                   "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "purity": {
                     "value": null,
                     "unit": null,
                     "year": null,
@@ -103113,6 +104069,12 @@
                     "status": "UNOBSERVED"
                   },
                   "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "purity": {
                     "value": null,
                     "unit": null,
                     "year": null,
@@ -103780,6 +104742,12 @@
                     "year": null,
                     "status": "UNOBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {},
                   "reportedMetrics": {},
                   "quantitativeProvenance": {
@@ -104425,6 +105393,12 @@
                     "status": "UNOBSERVED"
                   },
                   "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "purity": {
                     "value": null,
                     "unit": null,
                     "year": null,
@@ -105107,6 +106081,12 @@
                     "year": null,
                     "status": "UNOBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {},
                   "reportedMetrics": {},
                   "quantitativeProvenance": {
@@ -105763,6 +106743,12 @@
                     "year": null,
                     "status": "UNOBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {},
                   "reportedMetrics": {},
                   "quantitativeProvenance": {
@@ -106414,6 +107400,12 @@
                     "status": "UNOBSERVED"
                   },
                   "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "purity": {
                     "value": null,
                     "unit": null,
                     "year": null,
@@ -107093,6 +108085,12 @@
                     "year": null,
                     "status": "UNOBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {},
                   "reportedMetrics": {},
                   "quantitativeProvenance": {
@@ -107732,6 +108730,12 @@
                     "status": "UNOBSERVED"
                   },
                   "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "purity": {
                     "value": null,
                     "unit": null,
                     "year": null,
@@ -108406,6 +109410,12 @@
                     "status": "UNOBSERVED"
                   },
                   "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "purity": {
                     "value": null,
                     "unit": null,
                     "year": null,
@@ -109087,6 +110097,12 @@
                     "year": null,
                     "status": "UNOBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {},
                   "reportedMetrics": {},
                   "quantitativeProvenance": {
@@ -109751,6 +110767,12 @@
                     "year": null,
                     "status": "UNOBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {},
                   "reportedMetrics": {},
                   "quantitativeProvenance": {
@@ -110394,6 +111416,12 @@
                     "status": "UNOBSERVED"
                   },
                   "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "purity": {
                     "value": null,
                     "unit": null,
                     "year": null,
@@ -111053,6 +112081,12 @@
                     "status": "UNOBSERVED"
                   },
                   "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "purity": {
                     "value": null,
                     "unit": null,
                     "year": null,
@@ -111752,6 +112786,12 @@
                     "year": null,
                     "status": "UNOBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {},
                   "reportedMetrics": {},
                   "quantitativeProvenance": {
@@ -112416,6 +113456,12 @@
                     "year": null,
                     "status": "UNOBSERVED"
                   },
+                  "purity": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
                   "capacity": {},
                   "reportedMetrics": {},
                   "quantitativeProvenance": {
@@ -113062,6 +114108,12 @@
                     "status": "UNOBSERVED"
                   },
                   "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "purity": {
                     "value": null,
                     "unit": null,
                     "year": null,
