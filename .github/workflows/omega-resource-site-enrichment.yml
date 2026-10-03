@@ -39,7 +39,7 @@ jobs:
             echo "No data changes."
             exit 0
           fi
-          git commit -m "chore(resource): revalidate and enrich 199 resource sites"
+          git commit -m "chore(resource): revalidate and enrich 199 resource sites [resource-data-only] [resource-data-certificate]"
           for attempt in 1 2 3; do
             git fetch origin main
             git rebase origin/main
