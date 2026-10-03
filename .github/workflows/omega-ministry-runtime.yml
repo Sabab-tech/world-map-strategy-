@@ -15,6 +15,11 @@ env:
 
 jobs:
   independent-ministry-runtime:
+    # Data-only resource repairs are validated by the dedicated resource/data certificates;
+    # skip the >5-minute full ministry suite for those commits/PRs.
+    if: >-
+      (github.event_name == 'pull_request' && !contains(github.event.pull_request.title, '[resource-data-only]')) ||
+      (github.event_name != 'pull_request' && !contains(github.event.head_commit.message, '[resource-data-only]'))
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
