@@ -1,3 +1,4 @@
+// [resource-targeted-repair] [resource-data-only] current authoritative correction pass v3
 #!/usr/bin/env node
 // [resource-targeted-repair] [resource-data-only] current authoritative correction pass v2
 import fs from 'node:fs';
@@ -987,6 +988,75 @@ const fixes = {
       evidence('https://swazigov.gov.sz/index.php/departments-sp-623334762/mining-department', 'Ngwenya_defunct_mine_and_Salgaocar_2011_iron_ore_dump_lease', 'GOVERNMENT'),
       evidence('https://www.gov.sz/images/planningministry/Company-Survey-Report-for-2022.pdf', 'later_Ngwenya_dump_mining_licence_and_reprocessing_context', 'GOVERNMENT'),
       evidence('https://www.gov.sz/images/stories/mining/Swaziland%20Mineral%20Resources%20Summary.pdf', 'Ngwenya_iron_ore_grade_and_dormant_mine_context', 'GOVERNMENT')
+    ]
+  },
+  SITE_IRL_tara_zinc_mine: {
+    status: 'ACTIVE_PRODUCING',
+    operationalStatus: 'ACTIVE_PRODUCING',
+    extractionMethod: 'Underground mining',
+    quantitativeProduction: {
+      annual: {
+        value: 1440000,
+        unit: 'metric_tons_ore_milled',
+        year: 2025
+      },
+      status: 'OBSERVED',
+      measurementType: 'ORE_MILLED',
+      sourceScope: 'SITE_SPECIFIC'
+    },
+    extra: {
+      2025_2026ProductionTarget: {
+        value: 1800000,
+        unit: 'metric_tons_ore_per_year',
+        period: '2025-2026',
+        status: 'PLANNED'
+      },
+      expansionTarget: {
+        value: 2200000,
+        unit: 'metric_tons_ore_per_year',
+        horizonYears: 4,
+        status: 'PLANNED'
+      }
+    },
+    metadata: {
+      sourceAuthority: 'Boliden Tara Mines',
+      currentEvidence: 'Boliden states Tara Mines is an underground zinc and lead mine, reopened after care and maintenance from July 2023 to October 2024. It reports 1.44 Mt milled in 2025, with a 2025-2026 ore production target of 1.8 Mt/year and a planned increase to 2.2 Mt/year over the following four years.'
+    },
+    sources: [
+      evidence('https://www.boliden.com/4a175d/globalassets/sustainability/sustainability-2/biodiversity-and-reclamation/gistm-2025/public-disclosure-tara-2025.pdf', 'Tara_underground_mining_reopening_2025_milled_volume_and_forward_ore_target', 'OPERATOR'),
+      evidence('https://investors.boliden.com/sv/node/5981', 'Tara_2025_mineral_reserve_review_and_1_44_Mt_milled', 'OPERATOR')
+    ]
+  },
+  SITE_GRC_olympias_gold_mine: {
+    status: 'ACTIVE_PRODUCING',
+    operationalStatus: 'ACTIVE_PRODUCING',
+    extractionMethod: 'Underground mining',
+    quantitativeProduction: {
+      annual: {
+        value: 59877,
+        unit: 'troy_ounces_gold',
+        year: 2025
+      },
+      status: 'OBSERVED',
+      measurementType: 'GOLD_PRODUCTION',
+      sourceScope: 'SITE_SPECIFIC'
+    },
+    extra: {
+      2026ProductionGuidance: {
+        low: 70000,
+        high: 80000,
+        unit: 'troy_ounces_gold',
+        year: 2026,
+        status: 'PLANNED'
+      }
+    },
+    metadata: {
+      sourceAuthority: 'Eldorado Gold',
+      currentEvidence: 'Eldorado reports that Olympias produced 59,877 ounces of gold in 2025. The company provides 2026 gold production guidance of 70,000-80,000 ounces for Olympias and describes the operation as an underground mine.'
+    },
+    sources: [
+      evidence('https://www.eldoradogold.com/investors/news-releases/eldorado-gold-delivers-strong-2025-full-year-and-fourth-quarter-financial', 'Olympias_2025_actual_gold_production_and_2026_guidance', 'OPERATOR'),
+      evidence('https://www.eldoradogold.com/investors/news-releases/eldorado-gold-provides-skouries-project-update-2025-detailed-company', 'Olympias_underground_production_guidance_and_throughput_context', 'OPERATOR')
     ]
   },
   SITE_OMN_lasail_copper_mine: {
