@@ -2572,6 +2572,10 @@ function applyFix(site, fix) {
     site.quantitativeProfile = site.quantitativeProfile || {};
     site.quantitativeProfile.production = { ...fix.quantitativeProduction };
   }
+  if (fix.quantitativePurity) {
+    site.quantitativeProfile = site.quantitativeProfile || {};
+    site.quantitativeProfile.purity = { ...fix.quantitativePurity };
+  }
   if (fix.ownershipScope !== undefined) site.ownershipScope = fix.ownershipScope;
   if (fix.extra && typeof fix.extra === 'object') Object.assign(site, fix.extra);
   if (fix.process && typeof fix.process === 'object') {
