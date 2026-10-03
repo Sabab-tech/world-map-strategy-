@@ -90,6 +90,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "OBSERVED",
+          "grade": "OBSERVED",
+          "overall": "PARTIAL"
         }
       },
       "verification": {
@@ -191,6 +197,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "OBSERVED",
+          "production": "OBSERVED",
+          "grade": "OBSERVED",
+          "overall": "PARTIAL"
         }
       },
       "verification": {
@@ -288,6 +300,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "OBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "OBSERVED",
+          "overall": "PARTIAL"
         }
       },
       "verification": {
@@ -402,6 +420,12 @@
           "structuredSource": "site.webVerifiedMetrics",
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "OBSERVED",
+          "grade": "OBSERVED",
+          "overall": "PARTIAL"
         }
       },
       "verification": {
@@ -500,6 +524,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "OBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "OBSERVED",
+          "overall": "PARTIAL"
         }
       },
       "verification": {
@@ -594,6 +624,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -694,6 +730,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -787,6 +829,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -887,6 +935,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "REPORTED",
+          "production": "UNOBSERVED",
+          "grade": "REPORTED",
+          "overall": "PARTIAL"
         }
       },
       "verification": {
@@ -999,6 +1053,12 @@
           "structuredSource": "site.webVerifiedMetrics",
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "OBSERVED",
+          "production": "OBSERVED",
+          "grade": "OBSERVED",
+          "overall": "PARTIAL"
         }
       },
       "verification": {
@@ -1098,6 +1158,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -1200,6 +1266,12 @@
           "structuredSource": null,
           "capacitySource": "site.capacityProfile",
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -1299,6 +1371,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -1395,6 +1473,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -1491,6 +1575,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "OBSERVED",
+          "overall": "PARTIAL"
         }
       },
       "verification": {
@@ -1526,8 +1616,8 @@
       "ownership": {
         "owner": "Endeavour Mining",
         "operator": "Sabodala-Massawa SA",
-        "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-        "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+        "ownerEvidenceStatus": "WEB_REVIEWED",
+        "operatorEvidenceStatus": "WEB_REVIEWED"
       },
       "operation": {
         "status": "ACTIVE_PRODUCING",
@@ -1551,9 +1641,11 @@
       },
       "quantitative": {
         "reserve": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
+          "quantity": 42800000,
+          "unit": "metric_tons_ore",
+          "year": 2025,
+          "status": "OBSERVED",
+          "basis": "PROVEN_PLUS_PROBABLE_RESERVE_100_PERCENT"
         },
         "production": {
           "annual": {
@@ -1569,7 +1661,9 @@
         "grade": {
           "value": 2.01,
           "unit": "grams_per_tonne_gold",
-          "status": "OBSERVED"
+          "year": 2025,
+          "status": "OBSERVED",
+          "basis": "PROVEN_PLUS_PROBABLE_RESERVE"
         },
         "recovery": {
           "value": null,
@@ -1589,11 +1683,17 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "OBSERVED",
+          "production": "OBSERVED",
+          "grade": "OBSERVED",
+          "overall": "COMPLETE"
         }
       },
       "verification": {
-        "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
-        "reviewedAt": "2026-09-27",
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 2,
         "sourceAuthorities": [],
         "dataLimitations": null
@@ -1682,6 +1782,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -1785,6 +1891,12 @@
           "structuredSource": null,
           "capacitySource": "site.capacityProfile",
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "OBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "OBSERVED",
+          "overall": "PARTIAL"
         }
       },
       "verification": {
@@ -1888,6 +2000,12 @@
           "structuredSource": "site.webVerifiedMetrics",
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -1990,6 +2108,12 @@
           "structuredSource": null,
           "capacitySource": "site.capacityProfile",
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "OBSERVED",
+          "production": "OBSERVED",
+          "grade": "OBSERVED",
+          "overall": "COMPLETE"
         }
       },
       "verification": {
@@ -2092,6 +2216,12 @@
           "structuredSource": null,
           "capacitySource": "site.capacityProfile",
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -2195,6 +2325,12 @@
           "structuredSource": "site.webVerifiedMetrics",
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "OBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "PARTIAL"
         }
       },
       "verification": {
@@ -2230,8 +2366,8 @@
       "ownership": {
         "owner": "Gold Fields Ghana 90% / Ghana 10%",
         "operator": "Gold Fields Ghana",
-        "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-        "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+        "ownerEvidenceStatus": "WEB_REVIEWED",
+        "operatorEvidenceStatus": "WEB_REVIEWED"
       },
       "operation": {
         "status": "ACTIVE_PRODUCING",
@@ -2255,9 +2391,11 @@
       },
       "quantitative": {
         "reserve": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
+          "quantity": 216212000,
+          "unit": "metric_tons_ore",
+          "year": 2025,
+          "status": "OBSERVED_ATTRIBUTABLE",
+          "basis": "TOTAL_MINERAL_RESERVES_90_PERCENT_GOLD_FIELDS"
         },
         "production": {
           "annual": 474500,
@@ -2268,10 +2406,11 @@
           "basis": "site_production"
         },
         "grade": {
-          "value": 1.23,
+          "value": 1,
           "unit": "grams_per_tonne_gold",
-          "status": "OBSERVED",
-          "year": 2025
+          "year": 2025,
+          "status": "OBSERVED_ATTRIBUTABLE",
+          "basis": "TOTAL_MINERAL_RESERVES"
         },
         "recovery": {
           "value": null,
@@ -2307,13 +2446,21 @@
           "structuredSource": "site.webVerifiedMetrics",
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "OBSERVED_ATTRIBUTABLE",
+          "production": "OBSERVED",
+          "grade": "OBSERVED_ATTRIBUTABLE",
+          "overall": "COMPLETE"
         }
       },
       "verification": {
-        "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
-        "reviewedAt": "2026-09-27",
-        "sourceCount": 2,
-        "sourceAuthorities": [],
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+        "reviewedAt": "2026-10-03",
+        "sourceCount": 3,
+        "sourceAuthorities": [
+          "REGULATORY_FILING"
+        ],
         "dataLimitations": null
       }
     },
@@ -2404,6 +2551,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -2505,6 +2658,12 @@
           "structuredSource": null,
           "capacitySource": "site.capacityProfile",
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -2624,6 +2783,12 @@
           "structuredSource": "site.webVerifiedMetrics",
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "OBSERVED",
+          "grade": "OBSERVED",
+          "overall": "PARTIAL"
         }
       },
       "verification": {
@@ -2724,6 +2889,12 @@
           "structuredSource": "site.webVerifiedMetrics",
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -2822,6 +2993,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "OBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "PARTIAL"
         }
       },
       "verification": {
@@ -2922,6 +3099,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "OBSERVED",
+          "production": "OBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "PARTIAL"
         }
       },
       "verification": {
@@ -3016,6 +3199,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -3115,6 +3304,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -3209,6 +3404,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -3303,6 +3504,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -3400,6 +3607,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -3497,6 +3710,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -3596,6 +3815,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "OBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "PARTIAL"
         }
       },
       "verification": {
@@ -3631,8 +3856,8 @@
       "ownership": {
         "owner": "Ivanhoe / Zijin / DRC state",
         "operator": "Kamoa Copper SA",
-        "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-        "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+        "ownerEvidenceStatus": "WEB_REVIEWED",
+        "operatorEvidenceStatus": "WEB_REVIEWED"
       },
       "operation": {
         "status": "ACTIVE_PRODUCING",
@@ -3660,9 +3885,11 @@
       },
       "quantitative": {
         "reserve": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
+          "quantity": 466000000,
+          "unit": "metric_tons_ore",
+          "year": 2025,
+          "status": "OBSERVED",
+          "basis": "PROBABLE_MINERAL_RESERVE_100_PERCENT_PROJECT"
         },
         "production": {
           "annual": 388841,
@@ -3673,9 +3900,11 @@
           "basis": "SITE_SPECIFIC"
         },
         "grade": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
+          "value": 2.82,
+          "unit": "percent_copper",
+          "year": 2025,
+          "status": "OBSERVED",
+          "basis": "PROBABLE_MINERAL_RESERVE_100_PERCENT_PROJECT"
         },
         "recovery": {
           "value": null,
@@ -3708,13 +3937,21 @@
           "structuredSource": "site.webVerifiedMetrics",
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "OBSERVED",
+          "production": "OBSERVED",
+          "grade": "OBSERVED",
+          "overall": "COMPLETE"
         }
       },
       "verification": {
-        "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
-        "reviewedAt": "2026-09-27",
-        "sourceCount": 2,
-        "sourceAuthorities": [],
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+        "reviewedAt": "2026-10-03",
+        "sourceCount": 3,
+        "sourceAuthorities": [
+          "OPERATOR"
+        ],
         "dataLimitations": null
       }
     },
@@ -3805,6 +4042,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "OBSERVED",
+          "production": "OBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "PARTIAL"
         }
       },
       "verification": {
@@ -3904,6 +4147,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -3999,6 +4248,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -4095,6 +4350,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -4191,6 +4452,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -4226,8 +4493,8 @@
       "ownership": {
         "owner": "AngloGold Ashanti",
         "operator": "Geita Gold Mining",
-        "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-        "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+        "ownerEvidenceStatus": "WEB_REVIEWED",
+        "operatorEvidenceStatus": "WEB_REVIEWED"
       },
       "operation": {
         "status": "ACTIVE_PRODUCING",
@@ -4251,9 +4518,11 @@
       },
       "quantitative": {
         "reserve": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
+          "quantity": 75690000,
+          "unit": "metric_tons_ore",
+          "year": 2025,
+          "status": "OBSERVED_ATTRIBUTABLE",
+          "basis": "TOTAL_PROVEN_PLUS_PROBABLE_MINERAL_RESERVE"
         },
         "production": {
           "annual": 491644,
@@ -4264,10 +4533,11 @@
           "basis": "SITE_SPECIFIC"
         },
         "grade": {
-          "value": 3.26,
+          "value": 1.65,
           "unit": "grams_per_tonne_gold",
-          "status": "OBSERVED",
-          "year": 2025
+          "year": 2025,
+          "status": "OBSERVED_ATTRIBUTABLE",
+          "basis": "TOTAL_PROVEN_PLUS_PROBABLE_MINERAL_RESERVE"
         },
         "recovery": {
           "value": 90.2,
@@ -4300,11 +4570,17 @@
           "structuredSource": "site.webVerifiedMetrics",
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "OBSERVED_ATTRIBUTABLE",
+          "production": "OBSERVED",
+          "grade": "OBSERVED_ATTRIBUTABLE",
+          "overall": "COMPLETE"
         }
       },
       "verification": {
-        "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
-        "reviewedAt": "2026-09-27",
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 2,
         "sourceAuthorities": [],
         "dataLimitations": null
@@ -4394,6 +4670,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -4489,6 +4771,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "OBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "OBSERVED",
+          "overall": "PARTIAL"
         }
       },
       "verification": {
@@ -4583,6 +4871,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -4677,6 +4971,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -4774,6 +5074,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -4877,6 +5183,12 @@
           "structuredSource": null,
           "capacitySource": "site.capacityProfile",
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "OBSERVED",
+          "grade": "OBSERVED",
+          "overall": "PARTIAL"
         }
       },
       "verification": {
@@ -4976,6 +5288,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -5075,6 +5393,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -5177,6 +5501,12 @@
           "structuredSource": null,
           "capacitySource": "site.capacityProfile",
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -5271,6 +5601,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -5367,6 +5703,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -5461,6 +5803,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -5557,6 +5905,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -5659,6 +6013,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "OBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "PARTIAL"
         }
       },
       "verification": {
@@ -5753,6 +6113,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -5850,6 +6216,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -5948,6 +6320,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "OBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "PARTIAL"
         }
       },
       "verification": {
@@ -6045,6 +6423,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -6148,6 +6532,12 @@
           "structuredSource": null,
           "capacitySource": "site.capacityProfile",
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "OBSERVED",
+          "grade": "OBSERVED",
+          "overall": "PARTIAL"
         }
       },
       "verification": {
@@ -6242,6 +6632,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -6338,6 +6734,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -6434,6 +6836,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -6534,6 +6942,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -6636,6 +7050,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -6736,6 +7156,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -6837,6 +7263,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -6939,6 +7371,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -7041,6 +7479,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "OBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "PARTIAL"
         }
       },
       "verification": {
@@ -7149,6 +7593,12 @@
           "structuredSource": null,
           "capacitySource": "site.capacityProfile",
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "OBSERVED",
+          "grade": "OBSERVED",
+          "overall": "PARTIAL"
         }
       },
       "verification": {
@@ -7243,6 +7693,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -7344,6 +7800,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -7445,6 +7907,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "OBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "PARTIAL"
         }
       },
       "verification": {
@@ -7539,6 +8007,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -7640,6 +8114,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -7753,6 +8233,12 @@
           "structuredSource": "site.webVerifiedMetrics",
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "OBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "PARTIAL"
         }
       },
       "verification": {
@@ -7847,6 +8333,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -7946,6 +8438,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -8042,6 +8540,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -8139,6 +8643,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -8265,6 +8775,12 @@
           "structuredSource": "site.webVerifiedMetrics",
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -8358,6 +8874,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -8459,6 +8981,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -8556,6 +9084,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "OBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "PARTIAL"
         }
       },
       "verification": {
@@ -8653,6 +9187,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "OBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "PARTIAL"
         }
       },
       "verification": {
@@ -8756,6 +9296,12 @@
           "structuredSource": null,
           "capacitySource": "site.capacityProfile",
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -8854,6 +9400,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "OBSERVED",
+          "grade": "OBSERVED",
+          "overall": "PARTIAL"
         }
       },
       "verification": {
@@ -8952,6 +9504,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -9047,6 +9605,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -9148,6 +9712,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -9248,6 +9818,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "OBSERVED",
+          "production": "OBSERVED",
+          "grade": "OBSERVED",
+          "overall": "COMPLETE"
         }
       },
       "verification": {
@@ -9345,6 +9921,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "OBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "PARTIAL"
         }
       },
       "verification": {
@@ -9445,6 +10027,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -9549,6 +10137,12 @@
           "structuredSource": null,
           "capacitySource": "site.capacityProfile",
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "OBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "PARTIAL"
         }
       },
       "verification": {
@@ -9661,6 +10255,12 @@
           "structuredSource": "site.webVerifiedMetrics",
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "OBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "PARTIAL"
         }
       },
       "verification": {
@@ -9771,6 +10371,12 @@
           "structuredSource": null,
           "capacitySource": "site.capacityProfile",
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -9868,6 +10474,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "OBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "PARTIAL"
         }
       },
       "verification": {
@@ -9962,6 +10574,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -10055,6 +10673,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -10155,6 +10779,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -10254,6 +10884,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -10348,6 +10984,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -10447,6 +11089,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -10543,6 +11191,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -10639,6 +11293,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -10732,6 +11392,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -10832,6 +11498,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -10932,6 +11604,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -11028,6 +11706,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -11124,6 +11808,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -11219,6 +11909,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -11314,6 +12010,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -11411,6 +12113,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "OBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "OBSERVED",
+          "overall": "PARTIAL"
         }
       },
       "verification": {
@@ -11501,6 +12209,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -11597,6 +12311,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -11693,6 +12413,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -11789,6 +12515,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -11887,6 +12619,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "OBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "PARTIAL"
         }
       },
       "verification": {
@@ -11982,6 +12720,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "OBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "PARTIAL"
         }
       },
       "verification": {
@@ -12082,6 +12826,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "OBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "PARTIAL"
         }
       },
       "verification": {
@@ -12181,6 +12931,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -12281,6 +13037,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -12381,6 +13143,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -12478,6 +13246,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "OBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "PARTIAL"
         }
       },
       "verification": {
@@ -12578,6 +13352,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -12678,6 +13458,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -12774,6 +13560,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -12871,6 +13663,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -12964,6 +13762,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -13059,6 +13863,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -13154,6 +13964,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -13249,6 +14065,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -13347,6 +14169,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "OBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "PARTIAL"
         }
       },
       "verification": {
@@ -13442,6 +14270,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -13537,6 +14371,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -13632,6 +14472,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -13731,6 +14577,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -13826,6 +14678,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -13922,6 +14780,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -14018,6 +14882,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -14119,6 +14989,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -14215,6 +15091,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -14304,6 +15186,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "NOT_APPLICABLE"
         }
       },
       "verification": {
@@ -14391,6 +15279,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "NOT_APPLICABLE"
         }
       },
       "verification": {
@@ -14478,6 +15372,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "NOT_APPLICABLE"
         }
       },
       "verification": {
@@ -14565,6 +15465,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "NOT_APPLICABLE"
         }
       },
       "verification": {
@@ -14664,6 +15570,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "OBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "PARTIAL"
         }
       },
       "verification": {
@@ -14763,6 +15675,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "OBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "PARTIAL"
         }
       },
       "verification": {
@@ -14859,6 +15777,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "OBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "PARTIAL"
         }
       },
       "verification": {
@@ -14955,6 +15879,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "OBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "PARTIAL"
         }
       },
       "verification": {
@@ -15050,6 +15980,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "OBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "PARTIAL"
         }
       },
       "verification": {
@@ -15152,6 +16088,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "OBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "PARTIAL"
         }
       },
       "verification": {
@@ -15249,6 +16191,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -15349,6 +16297,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -15450,6 +16404,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -15546,6 +16506,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -15641,6 +16607,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -15735,6 +16707,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -15832,6 +16810,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -15932,6 +16916,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -16028,6 +17018,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -16125,6 +17121,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "OBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "PARTIAL"
         }
       },
       "verification": {
@@ -16221,6 +17223,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -16318,6 +17326,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -16415,6 +17429,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "OBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "OBSERVED",
+          "overall": "PARTIAL"
         }
       },
       "verification": {
@@ -16511,6 +17531,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -16609,6 +17635,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "OBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "PARTIAL"
         }
       },
       "verification": {
@@ -16703,6 +17735,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -16797,6 +17835,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -16896,6 +17940,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -16993,6 +18043,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -17089,6 +18145,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -17190,6 +18252,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -17285,6 +18353,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -17379,6 +18453,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -17475,6 +18555,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -17568,6 +18654,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -17663,6 +18755,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -17757,6 +18855,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -17853,6 +18957,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -17948,6 +19058,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -18042,6 +19158,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "OBSERVED_ATTRIBUTABLE",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "PARTIAL"
         }
       },
       "verification": {
@@ -18139,6 +19261,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "OBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "PARTIAL"
         }
       },
       "verification": {
@@ -18236,6 +19364,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "OBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "PARTIAL"
         }
       },
       "verification": {
@@ -18333,6 +19467,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "OBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "PARTIAL"
         }
       },
       "verification": {
@@ -18429,6 +19569,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -18524,6 +19670,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -18621,6 +19773,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -18714,6 +19872,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -18810,6 +19974,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -18906,6 +20076,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -19001,6 +20177,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -19094,6 +20276,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -19193,6 +20381,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "OBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "PARTIAL"
         }
       },
       "verification": {
@@ -19286,6 +20480,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -19379,6 +20579,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {
@@ -19475,6 +20681,12 @@
           "structuredSource": null,
           "capacitySource": null,
           "promotedAt": "2026-10-03"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "overall": "UNOBSERVED"
         }
       },
       "verification": {

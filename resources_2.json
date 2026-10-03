@@ -1145,10 +1145,12 @@
                 "quantitative": {
                   "reserve": "UNOBSERVED",
                   "production": "OBSERVED",
-                  "grade": "UNOBSERVED"
+                  "grade": "UNOBSERVED",
+                  "overall": "PARTIAL"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED",
+                "quantitativeOverall": "PARTIAL"
               },
               "webResearchEvidence": [
                 {
@@ -1248,6 +1250,12 @@
                     "structuredSource": null,
                     "capacitySource": null,
                     "promotedAt": "2026-10-03"
+                  },
+                  "completeness": {
+                    "reserve": "UNOBSERVED",
+                    "production": "OBSERVED",
+                    "grade": "UNOBSERVED",
+                    "overall": "PARTIAL"
                   }
                 },
                 "verification": {
@@ -1417,10 +1425,12 @@
                 "quantitative": {
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
-                  "grade": "UNOBSERVED"
+                  "grade": "UNOBSERVED",
+                  "overall": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
+                "quantitativeOverall": "UNOBSERVED"
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -1505,6 +1515,12 @@
                     "structuredSource": null,
                     "capacitySource": null,
                     "promotedAt": "2026-10-03"
+                  },
+                  "completeness": {
+                    "reserve": "UNOBSERVED",
+                    "production": "UNOBSERVED",
+                    "grade": "UNOBSERVED",
+                    "overall": "UNOBSERVED"
                   }
                 },
                 "verification": {
@@ -1686,10 +1702,12 @@
                 "quantitative": {
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
-                  "grade": "UNOBSERVED"
+                  "grade": "UNOBSERVED",
+                  "overall": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
+                "quantitativeOverall": "UNOBSERVED"
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -1774,6 +1792,12 @@
                     "structuredSource": null,
                     "capacitySource": null,
                     "promotedAt": "2026-10-03"
+                  },
+                  "completeness": {
+                    "reserve": "UNOBSERVED",
+                    "production": "UNOBSERVED",
+                    "grade": "UNOBSERVED",
+                    "overall": "UNOBSERVED"
                   }
                 },
                 "verification": {
@@ -2324,10 +2348,12 @@
                 "quantitative": {
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
-                  "grade": "UNOBSERVED"
+                  "grade": "UNOBSERVED",
+                  "overall": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
+                "quantitativeOverall": "UNOBSERVED"
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -2415,6 +2441,12 @@
                     "structuredSource": null,
                     "capacitySource": null,
                     "promotedAt": "2026-10-03"
+                  },
+                  "completeness": {
+                    "reserve": "UNOBSERVED",
+                    "production": "UNOBSERVED",
+                    "grade": "UNOBSERVED",
+                    "overall": "UNOBSERVED"
                   }
                 },
                 "verification": {
@@ -2993,10 +3025,12 @@
                 "quantitative": {
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
-                  "grade": "UNOBSERVED"
+                  "grade": "UNOBSERVED",
+                  "overall": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
+                "quantitativeOverall": "UNOBSERVED"
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -3081,6 +3115,12 @@
                     "structuredSource": null,
                     "capacitySource": null,
                     "promotedAt": "2026-10-03"
+                  },
+                  "completeness": {
+                    "reserve": "UNOBSERVED",
+                    "production": "UNOBSERVED",
+                    "grade": "UNOBSERVED",
+                    "overall": "UNOBSERVED"
                   }
                 },
                 "verification": {
@@ -3647,10 +3687,12 @@
                 "quantitative": {
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
-                  "grade": "UNOBSERVED"
+                  "grade": "UNOBSERVED",
+                  "overall": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
+                "quantitativeOverall": "UNOBSERVED"
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -3735,6 +3777,12 @@
                     "structuredSource": null,
                     "capacitySource": null,
                     "promotedAt": "2026-10-03"
+                  },
+                  "completeness": {
+                    "reserve": "UNOBSERVED",
+                    "production": "UNOBSERVED",
+                    "grade": "UNOBSERVED",
+                    "overall": "UNOBSERVED"
                   }
                 },
                 "verification": {
@@ -4302,10 +4350,12 @@
                 "quantitative": {
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
-                  "grade": "UNOBSERVED"
+                  "grade": "UNOBSERVED",
+                  "overall": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
+                "quantitativeOverall": "UNOBSERVED"
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -4395,6 +4445,12 @@
                     "structuredSource": null,
                     "capacitySource": null,
                     "promotedAt": "2026-10-03"
+                  },
+                  "completeness": {
+                    "reserve": "UNOBSERVED",
+                    "production": "UNOBSERVED",
+                    "grade": "UNOBSERVED",
+                    "overall": "UNOBSERVED"
                   }
                 },
                 "verification": {
@@ -4962,10 +5018,12 @@
                 "quantitative": {
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
-                  "grade": "UNOBSERVED"
+                  "grade": "UNOBSERVED",
+                  "overall": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
+                "quantitativeOverall": "UNOBSERVED"
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -5049,6 +5107,12 @@
                     "structuredSource": null,
                     "capacitySource": null,
                     "promotedAt": "2026-10-03"
+                  },
+                  "completeness": {
+                    "reserve": "UNOBSERVED",
+                    "production": "UNOBSERVED",
+                    "grade": "UNOBSERVED",
+                    "overall": "UNOBSERVED"
                   }
                 },
                 "verification": {
@@ -5582,10 +5646,12 @@
                 "quantitative": {
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
-                  "grade": "UNOBSERVED"
+                  "grade": "UNOBSERVED",
+                  "overall": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
+                "quantitativeOverall": "UNOBSERVED"
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -5670,6 +5736,12 @@
                     "structuredSource": null,
                     "capacitySource": null,
                     "promotedAt": "2026-10-03"
+                  },
+                  "completeness": {
+                    "reserve": "UNOBSERVED",
+                    "production": "UNOBSERVED",
+                    "grade": "UNOBSERVED",
+                    "overall": "UNOBSERVED"
                   }
                 },
                 "verification": {
@@ -6250,10 +6322,12 @@
                 "quantitative": {
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
-                  "grade": "UNOBSERVED"
+                  "grade": "UNOBSERVED",
+                  "overall": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
+                "quantitativeOverall": "UNOBSERVED"
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -6337,6 +6411,12 @@
                     "structuredSource": null,
                     "capacitySource": null,
                     "promotedAt": "2026-10-03"
+                  },
+                  "completeness": {
+                    "reserve": "UNOBSERVED",
+                    "production": "UNOBSERVED",
+                    "grade": "UNOBSERVED",
+                    "overall": "UNOBSERVED"
                   }
                 },
                 "verification": {
@@ -6876,10 +6956,12 @@
                 "quantitative": {
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
-                  "grade": "UNOBSERVED"
+                  "grade": "UNOBSERVED",
+                  "overall": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
+                "quantitativeOverall": "UNOBSERVED"
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -6963,6 +7045,12 @@
                     "structuredSource": null,
                     "capacitySource": null,
                     "promotedAt": "2026-10-03"
+                  },
+                  "completeness": {
+                    "reserve": "UNOBSERVED",
+                    "production": "UNOBSERVED",
+                    "grade": "UNOBSERVED",
+                    "overall": "UNOBSERVED"
                   }
                 },
                 "verification": {
@@ -7534,10 +7622,12 @@
                 "quantitative": {
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
-                  "grade": "UNOBSERVED"
+                  "grade": "UNOBSERVED",
+                  "overall": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
+                "quantitativeOverall": "UNOBSERVED"
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -7621,6 +7711,12 @@
                     "structuredSource": null,
                     "capacitySource": null,
                     "promotedAt": "2026-10-03"
+                  },
+                  "completeness": {
+                    "reserve": "UNOBSERVED",
+                    "production": "UNOBSERVED",
+                    "grade": "UNOBSERVED",
+                    "overall": "UNOBSERVED"
                   }
                 },
                 "verification": {
@@ -8161,10 +8257,12 @@
                 "quantitative": {
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
-                  "grade": "UNOBSERVED"
+                  "grade": "UNOBSERVED",
+                  "overall": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
+                "quantitativeOverall": "UNOBSERVED"
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -8249,6 +8347,12 @@
                     "structuredSource": null,
                     "capacitySource": null,
                     "promotedAt": "2026-10-03"
+                  },
+                  "completeness": {
+                    "reserve": "UNOBSERVED",
+                    "production": "UNOBSERVED",
+                    "grade": "UNOBSERVED",
+                    "overall": "UNOBSERVED"
                   }
                 },
                 "verification": {
@@ -8809,10 +8913,12 @@
                 "quantitative": {
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
-                  "grade": "UNOBSERVED"
+                  "grade": "UNOBSERVED",
+                  "overall": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
+                "quantitativeOverall": "UNOBSERVED"
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -8897,6 +9003,12 @@
                     "structuredSource": null,
                     "capacitySource": null,
                     "promotedAt": "2026-10-03"
+                  },
+                  "completeness": {
+                    "reserve": "UNOBSERVED",
+                    "production": "UNOBSERVED",
+                    "grade": "UNOBSERVED",
+                    "overall": "UNOBSERVED"
                   }
                 },
                 "verification": {
@@ -9461,10 +9573,12 @@
                 "quantitative": {
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
-                  "grade": "UNOBSERVED"
+                  "grade": "UNOBSERVED",
+                  "overall": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
+                "quantitativeOverall": "UNOBSERVED"
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -9548,6 +9662,12 @@
                     "structuredSource": null,
                     "capacitySource": null,
                     "promotedAt": "2026-10-03"
+                  },
+                  "completeness": {
+                    "reserve": "UNOBSERVED",
+                    "production": "UNOBSERVED",
+                    "grade": "UNOBSERVED",
+                    "overall": "UNOBSERVED"
                   }
                 },
                 "verification": {
@@ -10083,12 +10203,14 @@
                 "operation": "COMPLETE",
                 "ownership": "REPORTED",
                 "quantitative": {
-                  "reserve": "UNOBSERVED",
+                  "reserve": "OBSERVED_ATTRIBUTABLE",
                   "production": "UNOBSERVED",
-                  "grade": "UNOBSERVED"
+                  "grade": "UNOBSERVED",
+                  "overall": "PARTIAL"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
+                "quantitativeOverall": "PARTIAL"
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -10173,6 +10295,12 @@
                     "structuredSource": null,
                     "capacitySource": null,
                     "promotedAt": "2026-10-03"
+                  },
+                  "completeness": {
+                    "reserve": "OBSERVED_ATTRIBUTABLE",
+                    "production": "UNOBSERVED",
+                    "grade": "UNOBSERVED",
+                    "overall": "PARTIAL"
                   }
                 },
                 "verification": {
@@ -10733,11 +10861,13 @@
                 "ownership": "REPORTED",
                 "quantitative": {
                   "reserve": "UNOBSERVED",
-                  "production": "UNOBSERVED",
-                  "grade": "UNOBSERVED"
+                  "production": "OBSERVED",
+                  "grade": "UNOBSERVED",
+                  "overall": "PARTIAL"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
+                "quantitativeOverall": "PARTIAL"
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -10823,6 +10953,12 @@
                     "structuredSource": null,
                     "capacitySource": null,
                     "promotedAt": "2026-10-03"
+                  },
+                  "completeness": {
+                    "reserve": "UNOBSERVED",
+                    "production": "OBSERVED",
+                    "grade": "UNOBSERVED",
+                    "overall": "PARTIAL"
                   }
                 },
                 "verification": {
@@ -11387,12 +11523,14 @@
                 "operation": "COMPLETE",
                 "ownership": "REPORTED",
                 "quantitative": {
-                  "reserve": "UNOBSERVED",
+                  "reserve": "OBSERVED",
                   "production": "UNOBSERVED",
-                  "grade": "UNOBSERVED"
+                  "grade": "UNOBSERVED",
+                  "overall": "PARTIAL"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
+                "quantitativeOverall": "PARTIAL"
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -11478,6 +11616,12 @@
                     "structuredSource": null,
                     "capacitySource": null,
                     "promotedAt": "2026-10-03"
+                  },
+                  "completeness": {
+                    "reserve": "OBSERVED",
+                    "production": "UNOBSERVED",
+                    "grade": "UNOBSERVED",
+                    "overall": "PARTIAL"
                   }
                 },
                 "verification": {
@@ -12048,11 +12192,13 @@
                 "ownership": "REPORTED",
                 "quantitative": {
                   "reserve": "UNOBSERVED",
-                  "production": "UNOBSERVED",
-                  "grade": "UNOBSERVED"
+                  "production": "OBSERVED",
+                  "grade": "UNOBSERVED",
+                  "overall": "PARTIAL"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
+                "quantitativeOverall": "PARTIAL"
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -12138,6 +12284,12 @@
                     "structuredSource": null,
                     "capacitySource": null,
                     "promotedAt": "2026-10-03"
+                  },
+                  "completeness": {
+                    "reserve": "UNOBSERVED",
+                    "production": "OBSERVED",
+                    "grade": "UNOBSERVED",
+                    "overall": "PARTIAL"
                   }
                 },
                 "verification": {
@@ -12719,10 +12871,12 @@
                 "quantitative": {
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
-                  "grade": "UNOBSERVED"
+                  "grade": "UNOBSERVED",
+                  "overall": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
+                "quantitativeOverall": "UNOBSERVED"
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -12807,6 +12961,12 @@
                     "structuredSource": null,
                     "capacitySource": null,
                     "promotedAt": "2026-10-03"
+                  },
+                  "completeness": {
+                    "reserve": "UNOBSERVED",
+                    "production": "UNOBSERVED",
+                    "grade": "UNOBSERVED",
+                    "overall": "UNOBSERVED"
                   }
                 },
                 "verification": {
@@ -13387,10 +13547,12 @@
                 "quantitative": {
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
-                  "grade": "UNOBSERVED"
+                  "grade": "UNOBSERVED",
+                  "overall": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
+                "quantitativeOverall": "UNOBSERVED"
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -13474,6 +13636,12 @@
                     "structuredSource": null,
                     "capacitySource": null,
                     "promotedAt": "2026-10-03"
+                  },
+                  "completeness": {
+                    "reserve": "UNOBSERVED",
+                    "production": "UNOBSERVED",
+                    "grade": "UNOBSERVED",
+                    "overall": "UNOBSERVED"
                   }
                 },
                 "verification": {
@@ -14075,10 +14243,12 @@
                 "quantitative": {
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
-                  "grade": "UNOBSERVED"
+                  "grade": "UNOBSERVED",
+                  "overall": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
+                "quantitativeOverall": "UNOBSERVED"
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -14163,6 +14333,12 @@
                     "structuredSource": null,
                     "capacitySource": null,
                     "promotedAt": "2026-10-03"
+                  },
+                  "completeness": {
+                    "reserve": "UNOBSERVED",
+                    "production": "UNOBSERVED",
+                    "grade": "UNOBSERVED",
+                    "overall": "UNOBSERVED"
                   }
                 },
                 "verification": {
@@ -14703,10 +14879,12 @@
                 "quantitative": {
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
-                  "grade": "UNOBSERVED"
+                  "grade": "UNOBSERVED",
+                  "overall": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
+                "quantitativeOverall": "UNOBSERVED"
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -14790,6 +14968,12 @@
                     "structuredSource": null,
                     "capacitySource": null,
                     "promotedAt": "2026-10-03"
+                  },
+                  "completeness": {
+                    "reserve": "UNOBSERVED",
+                    "production": "UNOBSERVED",
+                    "grade": "UNOBSERVED",
+                    "overall": "UNOBSERVED"
                   }
                 },
                 "verification": {
@@ -15369,10 +15553,12 @@
                 "quantitative": {
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
-                  "grade": "UNOBSERVED"
+                  "grade": "UNOBSERVED",
+                  "overall": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
+                "quantitativeOverall": "UNOBSERVED"
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -15456,6 +15642,12 @@
                     "structuredSource": null,
                     "capacitySource": null,
                     "promotedAt": "2026-10-03"
+                  },
+                  "completeness": {
+                    "reserve": "UNOBSERVED",
+                    "production": "UNOBSERVED",
+                    "grade": "UNOBSERVED",
+                    "overall": "UNOBSERVED"
                   }
                 },
                 "verification": {
@@ -16026,10 +16218,12 @@
                 "quantitative": {
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
-                  "grade": "UNOBSERVED"
+                  "grade": "UNOBSERVED",
+                  "overall": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
+                "quantitativeOverall": "UNOBSERVED"
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -16113,6 +16307,12 @@
                     "structuredSource": null,
                     "capacitySource": null,
                     "promotedAt": "2026-10-03"
+                  },
+                  "completeness": {
+                    "reserve": "UNOBSERVED",
+                    "production": "UNOBSERVED",
+                    "grade": "UNOBSERVED",
+                    "overall": "UNOBSERVED"
                   }
                 },
                 "verification": {
@@ -16685,10 +16885,12 @@
                 "quantitative": {
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
-                  "grade": "UNOBSERVED"
+                  "grade": "UNOBSERVED",
+                  "overall": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
+                "quantitativeOverall": "UNOBSERVED"
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -16772,6 +16974,12 @@
                     "structuredSource": null,
                     "capacitySource": null,
                     "promotedAt": "2026-10-03"
+                  },
+                  "completeness": {
+                    "reserve": "UNOBSERVED",
+                    "production": "UNOBSERVED",
+                    "grade": "UNOBSERVED",
+                    "overall": "UNOBSERVED"
                   }
                 },
                 "verification": {
@@ -17335,10 +17543,12 @@
                 "quantitative": {
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
-                  "grade": "UNOBSERVED"
+                  "grade": "UNOBSERVED",
+                  "overall": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
+                "quantitativeOverall": "UNOBSERVED"
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -17422,6 +17632,12 @@
                     "structuredSource": null,
                     "capacitySource": null,
                     "promotedAt": "2026-10-03"
+                  },
+                  "completeness": {
+                    "reserve": "UNOBSERVED",
+                    "production": "UNOBSERVED",
+                    "grade": "UNOBSERVED",
+                    "overall": "UNOBSERVED"
                   }
                 },
                 "verification": {
@@ -17982,10 +18198,12 @@
                 "quantitative": {
                   "reserve": "UNOBSERVED",
                   "production": "OBSERVED",
-                  "grade": "UNOBSERVED"
+                  "grade": "UNOBSERVED",
+                  "overall": "PARTIAL"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
+                "quantitativeOverall": "PARTIAL"
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -18073,6 +18291,12 @@
                     "structuredSource": null,
                     "capacitySource": null,
                     "promotedAt": "2026-10-03"
+                  },
+                  "completeness": {
+                    "reserve": "UNOBSERVED",
+                    "production": "OBSERVED",
+                    "grade": "UNOBSERVED",
+                    "overall": "PARTIAL"
                   }
                 },
                 "verification": {
@@ -18621,10 +18845,12 @@
                 "quantitative": {
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
-                  "grade": "UNOBSERVED"
+                  "grade": "UNOBSERVED",
+                  "overall": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
+                "quantitativeOverall": "UNOBSERVED"
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -18708,6 +18934,12 @@
                     "structuredSource": null,
                     "capacitySource": null,
                     "promotedAt": "2026-10-03"
+                  },
+                  "completeness": {
+                    "reserve": "UNOBSERVED",
+                    "production": "UNOBSERVED",
+                    "grade": "UNOBSERVED",
+                    "overall": "UNOBSERVED"
                   }
                 },
                 "verification": {
@@ -19259,10 +19491,12 @@
                 "quantitative": {
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
-                  "grade": "UNOBSERVED"
+                  "grade": "UNOBSERVED",
+                  "overall": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
+                "quantitativeOverall": "UNOBSERVED"
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -19346,6 +19580,12 @@
                     "structuredSource": null,
                     "capacitySource": null,
                     "promotedAt": "2026-10-03"
+                  },
+                  "completeness": {
+                    "reserve": "UNOBSERVED",
+                    "production": "UNOBSERVED",
+                    "grade": "UNOBSERVED",
+                    "overall": "UNOBSERVED"
                   }
                 },
                 "verification": {
@@ -19910,10 +20150,12 @@
                 "quantitative": {
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
-                  "grade": "UNOBSERVED"
+                  "grade": "UNOBSERVED",
+                  "overall": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
+                "quantitativeOverall": "UNOBSERVED"
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -19998,6 +20240,12 @@
                     "structuredSource": null,
                     "capacitySource": null,
                     "promotedAt": "2026-10-03"
+                  },
+                  "completeness": {
+                    "reserve": "UNOBSERVED",
+                    "production": "UNOBSERVED",
+                    "grade": "UNOBSERVED",
+                    "overall": "UNOBSERVED"
                   }
                 },
                 "verification": {
