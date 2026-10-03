@@ -5099,7 +5099,7 @@
         "countryIso3": "ERI",
         "siteType": "MINE",
         "resourceTypeId": "zinc",
-        "resourceName": "Zinc Ore & Concentrates",
+        "resourceName": "Zinc-copper-silver polymetallic ore",
         "ontologyKey": "ZINC"
       },
       "location": {
@@ -5126,12 +5126,11 @@
         "commercialExtraction": true
       },
       "processing": {
-        "upstreamProcess": "Open-Pit / Underground Sulfide Mining",
-        "midstreamProcess": "Flotation, Roasting, Leaching, Electrowinning",
+        "upstreamProcess": "Open-Pit Mining and Underground Mining",
+        "midstreamProcess": "Crushing, Grinding and Flotation",
         "refinedOutputs": [
-          "SPECIAL_HIGH_GRADE_ZINC",
-          "GALVANIZED_STEEL",
-          "BRASS"
+          "ZINC_CONCENTRATE",
+          "COPPER_CONCENTRATE"
         ],
         "downstreamSectors": [
           "BATTERIES"
@@ -5144,20 +5143,18 @@
           "status": "UNOBSERVED"
         },
         "production": {
-          "annual": {
-            "value": 83000,
-            "unit": "metric_tons_zinc",
-            "year": 2025
-          },
-          "rate": null,
+          "annual": 83000,
           "unit": "metric_tons_zinc",
           "year": 2025,
-          "status": "OBSERVED"
+          "status": "OBSERVED",
+          "basis": "100_PERCENT_SITE_ZINC_PRODUCTION"
         },
         "grade": {
           "value": 3.64,
           "unit": "percent_zinc",
-          "status": "OBSERVED"
+          "year": 2025,
+          "status": "REPORTED",
+          "basis": "CONTAINED_ZINC_RESOURCE_GRADE"
         },
         "recovery": {
           "value": null,
@@ -5187,15 +5184,17 @@
         "completeness": {
           "reserve": "UNOBSERVED",
           "production": "OBSERVED",
-          "grade": "OBSERVED",
+          "grade": "REPORTED",
           "overall": "PARTIAL"
         }
       },
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
         "reviewedAt": "2026-10-03",
-        "sourceCount": 1,
-        "sourceAuthorities": [],
+        "sourceCount": 2,
+        "sourceAuthorities": [
+          "OPERATOR"
+        ],
         "dataLimitations": null
       }
     },
@@ -5930,7 +5929,7 @@
         "countryIso3": "ZMB",
         "siteType": "MINE",
         "resourceTypeId": "copper",
-        "resourceName": "Refined Copper & Concentrates",
+        "resourceName": "Copper with gold by-product",
         "ontologyKey": "COPPER"
       },
       "location": {
@@ -5946,8 +5945,8 @@
       "ownership": {
         "owner": "First Quantum / ZCCM-IH",
         "operator": "Kansanshi Mining",
-        "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-        "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+        "ownerEvidenceStatus": "WEB_REVIEWED",
+        "operatorEvidenceStatus": "WEB_REVIEWED"
       },
       "operation": {
         "status": "ACTIVE_PRODUCING",
@@ -5957,14 +5956,12 @@
         "commercialExtraction": true
       },
       "processing": {
-        "upstreamProcess": "Open-Pit Mining, Heap Bio-Leaching, Froth Flotation",
-        "midstreamProcess": "Flash Smelting, Electro-Refining to Grade-A Cathode 99.99%",
+        "upstreamProcess": "Open-Pit Mining",
+        "midstreamProcess": "Milling, Flotation, Leaching, SX-EW and Smelting",
         "refinedOutputs": [
-          "COPPER_WIRE_ROD",
-          "BUSBARS",
-          "BRASS_ALLOY",
-          "BRONZE_ALLOY",
-          "COPPER_FOIL"
+          "COPPER_CONCENTRATE",
+          "COPPER_CATHODE",
+          "GOLD_BULLION"
         ],
         "downstreamSectors": [
           "POWER_GRID_INFRASTRUCTURE",
@@ -5975,9 +5972,11 @@
       },
       "quantitative": {
         "reserve": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
+          "quantity": 1070000000,
+          "unit": "metric_tons_ore",
+          "year": 2024,
+          "status": "OBSERVED",
+          "basis": "PROVEN_PLUS_PROBABLE_MINERAL_RESERVE"
         },
         "production": {
           "annual": {
@@ -5991,9 +5990,11 @@
           "status": "OBSERVED"
         },
         "grade": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
+          "value": 0.52,
+          "unit": "percent_copper",
+          "year": 2024,
+          "status": "OBSERVED",
+          "basis": "PROVEN_PLUS_PROBABLE_MINERAL_RESERVE"
         },
         "recovery": {
           "value": null,
@@ -6015,17 +6016,19 @@
           "promotedAt": "2026-10-03"
         },
         "completeness": {
-          "reserve": "UNOBSERVED",
+          "reserve": "OBSERVED",
           "production": "OBSERVED",
-          "grade": "UNOBSERVED",
-          "overall": "PARTIAL"
+          "grade": "OBSERVED",
+          "overall": "COMPLETE"
         }
       },
       "verification": {
-        "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
-        "reviewedAt": "2026-09-27",
-        "sourceCount": 2,
-        "sourceAuthorities": [],
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+        "reviewedAt": "2026-10-03",
+        "sourceCount": 3,
+        "sourceAuthorities": [
+          "REGULATORY_FILING"
+        ],
         "dataLimitations": null
       }
     },
@@ -7843,8 +7846,8 @@
       "ownership": {
         "owner": "Jordan Phosphate Mines Company (JPMC)",
         "operator": "Jordan Phosphate Mines Company (JPMC)",
-        "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-        "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+        "ownerEvidenceStatus": "WEB_REVIEWED",
+        "operatorEvidenceStatus": "WEB_REVIEWED"
       },
       "operation": {
         "status": "ACTIVE_PRODUCING",
@@ -7871,18 +7874,18 @@
       },
       "quantitative": {
         "reserve": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
+          "quantity": 372980000,
+          "unit": "cubic_meters_phosphate_ore",
+          "year": 2026,
+          "status": "REPORTED",
+          "basis": "PROVEN_PLUS_POSSIBLE_PLUS_POTENTIAL_GEOLOGICAL_RESERVE"
         },
         "production": {
-          "annual": {
-            "value": 7500000,
-            "unit": "metric_tons_phosphate_ore",
-            "year": 2024,
-            "status": "OBSERVED"
-          },
-          "status": "OBSERVED"
+          "annual": 7440345,
+          "unit": "metric_tons_dry_phosphate",
+          "year": 2025,
+          "status": "OBSERVED",
+          "basis": "MINE_OUTPUT"
         },
         "grade": {
           "value": null,
@@ -7909,17 +7912,19 @@
           "promotedAt": "2026-10-03"
         },
         "completeness": {
-          "reserve": "UNOBSERVED",
+          "reserve": "REPORTED",
           "production": "OBSERVED",
           "grade": "UNOBSERVED",
           "overall": "PARTIAL"
         }
       },
       "verification": {
-        "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
-        "reviewedAt": "2026-09-27",
-        "sourceCount": 1,
-        "sourceAuthorities": [],
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+        "reviewedAt": "2026-10-03",
+        "sourceCount": 3,
+        "sourceAuthorities": [
+          "OPERATOR_GOVERNMENT"
+        ],
         "dataLimitations": null
       }
     },
@@ -9127,8 +9132,8 @@
       "ownership": {
         "owner": "Masan High-Tech Materials",
         "operator": "Nui Phao Mining Company Limited",
-        "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-        "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+        "ownerEvidenceStatus": "WEB_REVIEWED",
+        "operatorEvidenceStatus": "WEB_REVIEWED"
       },
       "operation": {
         "status": "ACTIVE_PRODUCING",
@@ -9151,18 +9156,18 @@
       },
       "quantitative": {
         "reserve": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
+          "quantity": 83000000,
+          "unit": "metric_tons_ore",
+          "year": 2025,
+          "status": "REPORTED",
+          "basis": "TOTAL_NUI_PHAO_ORE_RESERVES"
         },
         "production": {
-          "annual": {
-            "value": 2005420,
-            "unit": "metric_tons_mined_ore",
-            "year": 2025,
-            "status": "OBSERVED"
-          },
-          "status": "OBSERVED"
+          "annual": 2005420,
+          "unit": "metric_tons_ore_mined",
+          "year": 2025,
+          "status": "OBSERVED",
+          "basis": "TOTAL_MINED_ORE"
         },
         "grade": {
           "value": null,
@@ -9189,17 +9194,19 @@
           "promotedAt": "2026-10-03"
         },
         "completeness": {
-          "reserve": "UNOBSERVED",
+          "reserve": "REPORTED",
           "production": "OBSERVED",
           "grade": "UNOBSERVED",
           "overall": "PARTIAL"
         }
       },
       "verification": {
-        "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
-        "reviewedAt": "2026-09-27",
-        "sourceCount": 1,
-        "sourceAuthorities": [],
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+        "reviewedAt": "2026-10-03",
+        "sourceCount": 3,
+        "sourceAuthorities": [
+          "OPERATOR"
+        ],
         "dataLimitations": null
       }
     },
@@ -12748,7 +12755,7 @@
         "countryIso3": "GRC",
         "siteType": "MINE",
         "resourceTypeId": "gold",
-        "resourceName": "Gold Ore & Doré",
+        "resourceName": "Gold, silver, lead and zinc polymetallic ore",
         "ontologyKey": "GOLD"
       },
       "location": {
@@ -12775,12 +12782,13 @@
         "commercialExtraction": true
       },
       "processing": {
-        "upstreamProcess": "Open-Pit / Underground Mining, Gravity, Flotation",
-        "midstreamProcess": "Crushing, Grinding, Gravity/Flotation, Cyanide Leaching, Smelting",
+        "upstreamProcess": "Underground Mining",
+        "midstreamProcess": "Crushing, Grinding, Flotation and Concentrate Production",
         "refinedOutputs": [
-          "GOLD_DORE",
-          "JEWELRY",
-          "ELECTRONICS"
+          "GOLD_CONCENTRATE",
+          "SILVER_CONCENTRATE",
+          "LEAD_CONCENTRATE",
+          "ZINC_CONCENTRATE"
         ],
         "downstreamSectors": [
           "CENTRAL_BANK_RESERVES",
@@ -12789,9 +12797,11 @@
       },
       "quantitative": {
         "reserve": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
+          "quantity": 9191000,
+          "unit": "metric_tons_ore",
+          "year": 2025,
+          "status": "OBSERVED",
+          "basis": "PROVEN_PLUS_PROBABLE_MINERAL_RESERVE"
         },
         "production": {
           "annual": {
@@ -12804,9 +12814,11 @@
           "sourceScope": "SITE_SPECIFIC"
         },
         "grade": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
+          "value": 6.02,
+          "unit": "grams_per_tonne_gold",
+          "year": 2025,
+          "status": "OBSERVED",
+          "basis": "PROVEN_PLUS_PROBABLE_MINERAL_RESERVE"
         },
         "recovery": {
           "value": null,
@@ -12828,18 +12840,19 @@
           "promotedAt": "2026-10-03"
         },
         "completeness": {
-          "reserve": "UNOBSERVED",
+          "reserve": "OBSERVED",
           "production": "OBSERVED",
-          "grade": "UNOBSERVED",
-          "overall": "PARTIAL"
+          "grade": "OBSERVED",
+          "overall": "COMPLETE"
         }
       },
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
         "reviewedAt": "2026-10-03",
-        "sourceCount": 2,
+        "sourceCount": 4,
         "sourceAuthorities": [
-          "OPERATOR"
+          "OPERATOR",
+          "REGULATORY_FILING"
         ],
         "dataLimitations": null
       }
