@@ -2,7 +2,7 @@
 import fs from 'node:fs';
 import { execFileSync } from 'node:child_process';
 
-const REVIEW_DATE = '2026-10-02';
+const REVIEW_DATE = '2026-10-03';
 const files = ['resources.json', 'resources_2.json'];
 const loaded = files.map((name) => JSON.parse(fs.readFileSync(name, 'utf8')));
 const profiles = Object.assign(
@@ -656,6 +656,83 @@ const fixes = {
       evidence('https://www.sec.gov/Archives/edgar/data/1056512/000106299303001283/exhibit99-1.htm', 'historical_mining_and_resource_project_identity', 'SEC_FILING')
     ]
   },
+  SITE_CUB_nicaro_nickel_complex: {
+    owner: 'Empresa de Servicios Comandante René Ramos Latour',
+    operator: 'Empresa de Servicios Comandante René Ramos Latour',
+    ownershipScope: 'HISTORICAL_CONCESSION_HOLDER',
+    metadata: {
+      sourceAuthority: 'Cuba Council of Ministers / Gaceta Oficial',
+      currentEvidence: 'Cuban Council of Ministers records identify Empresa del Níquel Comandante René Ramos Latour, later Empresa de Servicios René Ramos Latour, as the concession holder for exploitation and processing in the Nicaro area for nickeliferous limonite and serpentinite used to produce nickel and cobalt concentrate.',
+      temporalScope: 'Concession-holder identity is historical/legal context; the site remains CLOSED and non-executable in the runtime.'
+    },
+    sources: [
+      evidence('https://www.cibercuba.com/s/gacetaoficial/acuerdo-8764-de-2020-de-consejo-de-ministros', 'concession_holder_exploitation_processing_and_nicaro_area', 'GOVERNMENT'),
+      evidence('https://www.directoriocubano.com/servicios/gaceta-oficial/2007/ordinaria/69/', 'historical_nicaro_concession_holder_and_partial_closure', 'GOVERNMENT')
+    ]
+  },
+  SITE_GMB_western_gambia_aggregate_quarry_zone: {
+    metadata: {
+      sourceAuthority: 'Gambia Ministry of Petroleum, Energy and Mines',
+      currentEvidence: 'The ministry lists multiple licensed construction-aggregate and construction-sand operators in its mining/quarrying sector. Because this repository record is an area-level quarry zone rather than a single concession polygon, the operator remains UNOBSERVED at site level and the licensed-operator pool is preserved separately.'
+    },
+    ownershipScope: 'AREA_MULTI_OPERATOR',
+    extra: {
+      operatorScope: 'AREA_LICENSE_POOL',
+      knownLicensedOperatorsSourceStatus: 'GOVERNMENT_REPORTED',
+      dataLimitation: 'No source reviewed identifies which licensed operator controls this exact area-level record.'
+    },
+    sources: [
+      evidence('https://mopem.gov.gm/mining-quarrying/', 'licensed_quarry_operator_pool_and_quarry_regulatory_context', 'GOVERNMENT')
+    ]
+  },
+  SITE_PLW_airai_limestone_quarry_zone: {
+    owner: 'Surangel & Sons Company',
+    operator: 'Surangel & Sons Company',
+    ownershipScope: 'SITE_OPERATOR',
+    extractionMethod: 'Limestone quarrying with crushing and aggregate-product production',
+    metadata: {
+      sourceAuthority: 'Surangel & Sons Company / Republic of Palau',
+      currentEvidence: 'Surangel & Sons identifies its Ngermellal Quarry in Oikull, Airai as a limestone-products and crusher operation. The repository record is explicitly tied to Ngermellai Limestone Quarry and therefore the company can be named rather than leaving ownership/operator unobserved.'
+    },
+    extra: {
+      siteOperatorEvidenceScope: 'SITE_SPECIFIC'
+    },
+    sources: [
+      evidence('https://surangel.com/oldconstruction/services-revised/mrp/rock-quarry/', 'site_specific_airai_limestone_quarry_operator_and_crusher_operation', 'OPERATOR'),
+      evidence('https://www.palaugov.pw/wp-content/uploads/PGST-Registry-as-of-03-05-2026.pdf', 'current_registered_surangel_rock_quarry_and_mason_rock_products_entities', 'GOVERNMENT_REGISTER')
+    ]
+  },
+  SITE_BLZ_hattieville_sand_and_aggregate_sites: {
+    metadata: {
+      sourceAuthority: 'JICA Belize infrastructure survey / GeoTech Belize',
+      currentEvidence: 'A recent Belize infrastructure survey maps several quarry locations in the Hattieville/Western Highway area, including Rockville Quarry, Excel Construction, National Sand & Gravel, Haynessee Limited and Caves Branch. The record remains area-level, so no single operator is asserted for the whole site.'
+    },
+    ownershipScope: 'AREA_MULTI_OPERATOR',
+    extra: {
+      knownSectorOperators: [
+        'Rockville Quarry',
+        'Excel Construction',
+        'National Sand & Gravel',
+        'Haynessee Limited',
+        'Caves Branch'
+      ],
+      dataLimitation: 'The survey identifies multiple quarry locations in the Hattieville area but does not establish one operator for this aggregate-zone record.'
+    },
+    sources: [
+      evidence('https://openjicareport.jica.go.jp/pdf/12394235.pdf', 'recent_belize_hattieville_area_quarry_locations_and_operator_labels', 'DEVELOPMENT_AGENCY')
+    ]
+  },
+  SITE_MLT_al_far_limestone_quarry: {
+    metadata: {
+      sourceAuthority: 'Environment and Resources Authority, Malta / historical quarry records',
+      historicalOwner: 'Hal Far Quarries Limited',
+      currentEvidence: 'ERA currently lists HM18 Wied Moqbol, Hal Far under EP 0025/19 for hardstone extraction, inert-waste recycling and quarry backfilling, with the application status shown as Being Processed. Historical court reporting identifies Hal Far Quarries Limited as the owner of quarry QH18 at Wied Moqbol. The current HM18 permit record does not independently establish that the same entity is the current applicant, so current owner/operator remains UNOBSERVED.'
+    },
+    sources: [
+      evidence('https://era.org.mt/topic/quarries/', 'current_hm18_permit_status_and_activity', 'GOVERNMENT'),
+      evidence('https://www.independent.com.mt/articles/2010-12-15/news/from-the-law-courts-284766/', 'historical_hal_far_quarries_owner_of_qh18_wied_moqbol', 'NEWS')
+    ]
+  },
   SITE_SOM_el_buur_gold_mining_area: {
     status: 'RESOURCE_IDENTITY_UNVERIFIED',
     operationalStatus: 'RESOURCE_IDENTITY_UNVERIFIED',
@@ -694,6 +771,7 @@ function applyFix(site, fix) {
     site.quantitativeProfile.grade = { ...fix.quantitativeGrade };
   }
   if (fix.ownershipScope !== undefined) site.ownershipScope = fix.ownershipScope;
+  if (fix.extra && typeof fix.extra === 'object') Object.assign(site, fix.extra);
   if (fix.process && typeof fix.process === 'object') {
     site.resourceIdentity = {
       ...(site.resourceIdentity || {}),
