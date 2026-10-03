@@ -2504,6 +2504,48 @@ const fixes = {
       evidence('https://reports.anglogoldashanti.com/25/author/katherinerasc-co-za/page/5/', '2025_Sukari_gold_production_head_grade_ore_treated_and_recovery', 'OPERATOR'),
       evidence('https://www.anglogoldashanti.com/investors/reporting/annual-reports/2025/', '2025_Sukari_mineral_reserve_reporting_package', 'OPERATOR')
     ]
+  },
+  SITE_BGD_barapukuria_coal_mine: {
+    quantitativeReserve: {
+      quantity: 410000000,
+      unit: 'metric_tons_geological_coal',
+      year: 2023,
+      status: 'REPORTED',
+      basis: 'PETROBANGLA_GEOLOGICAL_RESERVE'
+    },
+    extra: {
+      coalType: 'High-quality bituminous coal',
+      sulfurContent: { value: 0.53, unit: 'percent_sulfur', status: 'REPORTED' },
+      reserveArea: { value: 8.03, unit: 'square_km', status: 'REPORTED' }
+    },
+    sources: [
+      evidence('https://petrobangla.org.bd/sites/default/files/files/petrobangla.portal.gov.bd/annual_reports/22137eda_60d5_4f48_be2d_8ae973e87ffc/2024-12-04-11-04-31d5f6a0fc3eb6d8f0ab8c17c71e3060.pdf', 'Barapukuria_geological_coal_reserve_area_coal_type_and_sulfur_content', 'GOVERNMENT')
+    ]
+  },
+  SITE_LKA_kahatagaha_graphite_mine: {
+    quantitativeGrade: {
+      value: 99,
+      unit: 'percent_carbon',
+      year: 2025,
+      status: 'REPORTED',
+      basis: 'HIGH_PURITY_VEIN_GRAPHITE_PRODUCT'
+    },
+    quantitativePurity: {
+      value: 99,
+      unit: 'percent_carbon',
+      year: 2025,
+      status: 'REPORTED',
+      basis: 'HIGH_PURITY_VEIN_GRAPHITE_PRODUCT'
+    },
+    extra: {
+      productQuality: 'High-carbon natural crystalline vein graphite',
+      purityStatement: 'Over 99% carbon',
+      reserveEstimationStatus: 'Updated mapping completed; reserve calculation/program refinement under way'
+    },
+    sources: [
+      evidence('https://www.industry.gov.lk/web/wp-content/uploads/2025/12/KGLL-English.pdf', 'Kahatagaha_high_purity_vein_graphite_over_99_percent_carbon_and_state_ownership', 'GOVERNMENT'),
+      evidence('https://www.industry.gov.lk/web/wp-content/uploads/2026/03/Kahatagaha-Graphite_V7_1.pdf', '2026_Kahatagaha_mine_development_and_reserve_estimation_programme', 'GOVERNMENT')
+    ]
   }
 };
 
@@ -2683,6 +2725,17 @@ function promoteStructuredQuantitative(site) {
     };
   }
 
+  const purity = numericMetric((key) => /purity20\d{2}$/.test(key) || /carbon20\d{2}$/.test(key));
+  if (purity) {
+    qp.purity = {
+      ...(qp.purity || {}),
+      value: purity.value,
+      unit: purity.metric?.unit || qp.purity?.unit || null,
+      year: yearFromValue(qp.purity?.year) || yearFromKey(purity.key) || null,
+      status: 'OBSERVED'
+    };
+  }
+
   qp.quantitativeProvenance = {
     ...(qp.quantitativeProvenance || {}),
     structuredSource: Object.keys(web).length ? 'site.webVerifiedMetrics' : qp.quantitativeProvenance?.structuredSource || null,
@@ -2760,6 +2813,7 @@ function buildSiteDataPackage(countryId, site) {
       grade: qp.grade || { value: null, unit: null, status: 'UNOBSERVED' },
       recovery: qp.recovery || { value: null, unit: null, year: null, status: 'UNOBSERVED' },
       throughput: qp.throughput || { value: null, unit: null, year: null, status: 'UNOBSERVED' },
+      purity: qp.purity || { value: null, unit: null, year: null, status: 'UNOBSERVED' },
       capacity: qp.capacity || {},
       reportedMetrics: qp.reportedMetrics || {},
       quantitativeProvenance: qp.quantitativeProvenance || {},
