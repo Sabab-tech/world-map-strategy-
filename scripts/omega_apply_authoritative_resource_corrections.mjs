@@ -369,9 +369,12 @@ const fixes = {
       annual: {
         value: 83000,
         unit: 'metric_tons_zinc',
-        year: 2025,
-        status: 'OBSERVED'
-      }
+        year: 2025
+      },
+      rate: null,
+      unit: 'metric_tons_zinc',
+      year: 2025,
+      status: 'OBSERVED'
     },
     quantitativeGrade: {
       value: 3.64,
