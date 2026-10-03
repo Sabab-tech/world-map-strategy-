@@ -2153,6 +2153,49 @@ const fixes = {
       evidence('https://www.fijitimes.com.fj/rbf-clarifies-gold-output-calculations/', '2026_clarification_of_2025_VGML_gold_production_measurement_and_product_shift', 'NEWS'),
       evidence('https://www.rbf.gov.fj/wp-content/uploads/2025/09/Quarterly-Review-June-2025-2.pdf', '2025_VGML_gold_concentration_and_ore_production_measurement_context', 'CENTRAL_BANK')
     ]
+  },
+  SITE_DZA_gara_djebilet_iron_mine: {
+    owner: 'Algerian state / SONAREM Group',
+    operator: 'FERAAL Spa',
+    status: 'LIMITED',
+    operationalStatus: 'LIMITED_RAMP_UP',
+    extractionEligibility: 'EXECUTABLE',
+    extractionMethod: 'Open-pit iron-ore mining with primary crushing, screening and dry separation; downstream beneficiation under development',
+    quantitativeReserve: {
+      quantity: 3500000000,
+      unit: 'metric_tons_iron_ore',
+      year: 2026,
+      status: 'REPORTED',
+      basis: 'ALGERIAN_GOVERNMENT_ESTIMATE'
+    },
+    quantitativeGrade: {
+      value: 57,
+      unit: 'percent_iron',
+      year: 2026,
+      status: 'REPORTED',
+      basis: 'CURRENT_PROJECT_MATERIAL_CONTEXT'
+    },
+    extra: {
+      primaryTreatmentCapacity: {
+        value: 4000000,
+        unit: 'metric_tons_iron_ore_per_year',
+        year: 2026,
+        status: 'REPORTED',
+        basis: 'FERAAL_PRIMARY_PRETREATMENT_UNIT'
+      },
+      firstShipmentYear: 2026,
+      primaryTreatmentScope: 'Crushing, screening and dry separation before downstream concentration'
+    },
+    metadata: {
+      sourceAuthority: 'FERAAL / Algerian government',
+      currentEvidence: 'Gara Djebilet entered the operational phase in 2026 with the first iron-ore shipment launched in February 2026. The mine is being developed and operated through FERAAL under SONAREM, while the primary pre-treatment unit is designed for 4 Mt/year.'
+    },
+    sources: [
+      evidence('https://www.aps.dz/en/presidency-news/ml43gnz8-president-tebboune-flags-off-first-iron-ore-shipment-from-gara-djebilet-mine', '2026_first_iron_ore_shipment_and_operational_launch', 'GOVERNMENT'),
+      evidence('https://news.radioalgerie.dz/en/node/78553', '2026_first_shipment_and_effective_mine_operation', 'GOVERNMENT'),
+      evidence('https://www.feraal.dz/fr/actualite/', 'FERAAL_operator_and_4Mt_primary_pretreatment_unit', 'OPERATOR'),
+      evidence('https://www.mindat.org/loc-296328.html', 'deposit_location_reserve_and_iron_grade_context', 'GEOLOGICAL_DATABASE')
+    ]
   }
 };
 
