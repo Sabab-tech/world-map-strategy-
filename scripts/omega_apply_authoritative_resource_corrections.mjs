@@ -1106,7 +1106,1060 @@ const fixes = {
       evidence('https://en.wikipedia.org/wiki/El_Buur', 'el_buur_quarrying_and_sepiolite_context', 'SECONDARY_REFERENCE')
     ]
   }
+,
 
+  SITE_SGP_pulau_ubin_granite_quarry_sites: {
+    owner: 'Government of Singapore',
+    operator: 'None (historical quarry; no current commercial operator)',
+    status: 'HISTORICAL_INACTIVE',
+    operationalStatus: 'HISTORICAL_INACTIVE',
+    extractionEligibility: 'NON_EXECUTABLE',
+    extractionMethod: 'Historical granite quarrying',
+    metadata: {
+      sourceAuthority: 'Singapore National Parks Board',
+      currentEvidence: 'NParks states that all six Pulau Ubin granite quarries are inactive and have been converted to viewpoints and wildlife habitats. The last quarry closed in 1999.'
+    },
+    extra: {
+      historicalQuarrySet: ['Balai Quarry', 'Kekek Quarry', 'Ketam Quarry', 'Pekan Quarry', 'Petai Quarry', 'Ubin Quarry'],
+      lastOperationalYear: 1999,
+      currentUse: 'Conservation, habitat and recreation'
+    },
+    sources: [
+      evidence('https://pulau-ubin.nparks.gov.sg/biodiversity/placesofinterest/quarries-of-pulau-ubin/', 'current_inactive_status_historical_granite_quarries_and_last_closure', 'GOVERNMENT')
+    ]
+  },
+  SITE_LAO_phu_kham_copper_gold_mine: {
+    owner: 'PanAust Limited / Phu Bia Mining Limited',
+    operator: 'PanAust Limited / Phu Bia Mining Limited',
+    status: 'ACTIVE_PRODUCING',
+    operationalStatus: 'ACTIVE_PRODUCING',
+    extractionEligibility: 'EXECUTABLE',
+    extractionMethod: 'Open-pit mining feeding conventional milling and flotation',
+    quantitativeProduction: {
+      annual: { value: 36290, unit: 'metric_tons_copper_concentrate', year: 2024 },
+      status: 'OBSERVED',
+      measurementType: 'COPPER_CONCENTRATE_PRODUCTION',
+      sourceScope: 'SITE_SPECIFIC'
+    },
+    process: {
+      resourceTypeId: 'copper',
+      ontologyKey: 'COPPER',
+      commodityName: 'Copper and precious-metals concentrate',
+      primaryCommodity: 'copper',
+      secondaryCommodities: ['gold', 'silver'],
+      upstreamProcess: 'Open-Pit Mining',
+      midstreamProcess: 'Conventional Milling and Flotation',
+      refinedOutputs: ['COPPER_CONCENTRATE', 'GOLD_CONTAINING_CONCENTRATE', 'SILVER_CONTAINING_CONCENTRATE'],
+      downstreamSectors: ['SMELTING', 'METALS_PROCESSING']
+    },
+    metadata: {
+      sourceAuthority: 'PanAust',
+      currentEvidence: 'PanAust identifies Phu Kham as its flagship operation in Laos. It is an open-pit mine feeding conventional milling and flotation and exports copper and precious-metals concentrate. PanAust reported 36,290 tonnes of copper concentrate production in 2024.'
+    },
+    sources: [
+      evidence('https://panaust.com.au/operations/phu-kham-copper-gold-operation/', 'current_operator_location_mining_method_processing_and_logistics', 'OPERATOR'),
+      evidence('https://panaust.com.au/wp-content/uploads/2025/12/PAN020-2024-Business-Review-and-Sustainability-Report-V2-interactive.pdf', '2024_site_specific_copper_concentrate_production_and_mining_metrics', 'OPERATOR')
+    ]
+  },
+  SITE_ESP_cobre_las_cruces_mine: {
+    owner: 'Global Panduro S.L.U. / Resource Capital Funds',
+    operator: 'Cobre Las Cruces S.A.U.',
+    status: 'CARE_AND_MAINTENANCE',
+    operationalStatus: 'CARE_AND_MAINTENANCE',
+    extractionEligibility: 'NON_EXECUTABLE',
+    extractionMethod: 'Open-pit mining was historical; current project is being advanced as a polymetallic mining-metallurgical development',
+    metadata: {
+      sourceAuthority: 'Cobre Las Cruces / Global Panduro',
+      currentEvidence: 'Cobre Las Cruces announced in June 2026 that Global Panduro acquired 100% of CLC from First Quantum Minerals. The operation is being advanced under the new ownership as a strategic polymetallic mining and refining project; the legacy open-pit copper operation had been in care and maintenance.'
+    },
+    extra: {
+      ownershipEffectiveDate: '2026-06',
+      currentProject: 'European Strategic Polymetallic Refinery Project',
+      legacyProductionStatus: 'CARE_AND_MAINTENANCE'
+    },
+    sources: [
+      evidence('https://www.cobrelascruces.com/index.php/2026/06/?lang=en', '2026_change_of_control_and_current_project_identity', 'OPERATOR'),
+      evidence('https://filings.es/spain/company/cobre-las-cruces-sa-a28814135', '2026_registered_change_of_single_shareholder_to_global_panduro', 'REGISTRY')
+    ]
+  },
+  SITE_NLD_veendam_salt_mine: {
+    owner: 'Nedmag B.V.',
+    operator: 'Nedmag B.V.',
+    status: 'ACTIVE_PRODUCING',
+    operationalStatus: 'ACTIVE_PRODUCING',
+    extractionEligibility: 'EXECUTABLE',
+    extractionMethod: 'Solution mining of magnesium salt/brine with processing at the Veendam site',
+    metadata: {
+      sourceAuthority: 'Nedmag B.V.',
+      currentEvidence: 'Nedmag continued operating the Veendam site in 2025 and stated that its new environmental permit application did not change production volume or the current environmental impact.'
+    },
+    sources: [
+      evidence('https://www.nedmag.com/news/nedmag-applies-new-environmental-permit-veendam-site', '2025_current_site_operation_permit_and_unchanged_production_context', 'OPERATOR')
+    ]
+  },
+  SITE_BEL_antoing_limestone_quarry: {
+    owner: 'Heidelberg Materials Benelux / Cimescaut quarry interests',
+    operator: 'Sagrex',
+    status: 'ACTIVE_PRODUCING',
+    operationalStatus: 'ACTIVE_PRODUCING',
+    extractionEligibility: 'EXECUTABLE',
+    extractionMethod: 'Open-pit limestone quarrying',
+    metadata: {
+      sourceAuthority: 'Heidelberg Materials history / Antoing site references',
+      currentEvidence: 'The Antoing Cimescaut quarry is an open-cast blue-limestone operation. Historical CBR ownership passed into Heidelberg Materials, while the quarry is operated by Sagrex. This corrects the repository Carmeuse attribution.'
+    },
+    process: {
+      resourceTypeId: 'limestone',
+      ontologyKey: 'LIMESTONE',
+      commodityName: 'Blue limestone',
+      upstreamProcess: 'Open-Pit Quarrying',
+      midstreamProcess: 'Crushing and grading',
+      refinedOutputs: ['LIMESTONE_AGGREGATE', 'INDUSTRIAL_LIMESTONE']
+    },
+    sources: [
+      evidence('https://en.wikipedia.org/wiki/Antoing_cement_kiln', 'current_quarry_identity_operator_and_open_cast_limestone_context', 'SECONDARY_REFERENCE')
+    ]
+  },
+  SITE_CHE_bex_salt_mine: {
+    owner: 'Swiss Saltworks / Saltworks of Bex',
+    operator: 'Swiss Saltworks / Mines de Sel de Bex',
+    status: 'ACTIVE_PRODUCING',
+    operationalStatus: 'ACTIVE_PRODUCING',
+    extractionEligibility: 'EXECUTABLE',
+    extractionMethod: 'Underground salt extraction',
+    metadata: {
+      sourceAuthority: 'Salina Helvetica / Swiss Saltworks',
+      currentEvidence: 'The official Bex Salt Mines site states that salt is still extracted every day and describes Bex as the oldest active mine in Switzerland. Swiss Saltworks is responsible for the site operations and maintenance framework.'
+    },
+    sources: [
+      evidence('https://salina-helvetica.ch/en/mines', 'current_active_mining_and_daily_salt_extraction', 'OPERATOR'),
+      evidence('https://salina-helvetica.ch/en/a-propos-de-la-fondation', 'Swiss_Saltworks_site_responsibility_and_Bex_operational_context', 'OPERATOR')
+    ]
+  },
+  SITE_NOR_tellnes_ilmenite_mine: {
+    owner: 'Titania AS',
+    operator: 'Titania AS',
+    status: 'ACTIVE_PRODUCING',
+    operationalStatus: 'ACTIVE_PRODUCING',
+    extractionEligibility: 'EXECUTABLE',
+    extractionMethod: 'Open-pit ilmenite mining',
+    process: {
+      resourceTypeId: 'ilmenite',
+      ontologyKey: 'ILMENITE',
+      commodityName: 'Ilmenite / titanium-iron ore',
+      upstreamProcess: 'Open-Pit Mining',
+      midstreamProcess: 'Ore crushing and mineral separation',
+      refinedOutputs: ['ILMENITE_CONCENTRATE', 'TITANIUM_DIOXIDE_FEEDSTOCK']
+    },
+    metadata: {
+      sourceAuthority: 'Titania / Norwegian geoscience literature',
+      currentEvidence: 'Tellnes is a large ilmenite orebody in Rogaland operated by Titania AS. Published technical work documents the Tellnes open pit and its long-running ilmenite production.'
+    },
+    sources: [
+      evidence('https://folk.ntnu.no/bnilsen/CapeTown_Titania06.pdf', 'Tellnes_open_pit_operator_mining_method_and_historical_ilmenite_output_context', 'TECHNICAL_LITERATURE')
+    ]
+  },
+  SITE_AUT_erzberg_iron_ore_mine: {
+    owner: 'VA Erzberg GmbH',
+    operator: 'VA Erzberg GmbH',
+    status: 'ACTIVE_PRODUCING',
+    operationalStatus: 'ACTIVE_PRODUCING',
+    extractionEligibility: 'EXECUTABLE',
+    extractionMethod: 'Open-pit iron ore mining with drilling, blasting, loading and transport',
+    metadata: {
+      sourceAuthority: 'VA Erzberg GmbH',
+      currentEvidence: 'VA Erzberg currently reports approximately 12 million tonnes of annual mined material and about 3 million tonnes of annually shipped ore, confirming an active commercial open-pit operation.'
+    },
+    extra: {
+      currentAnnualMinedMaterial: { value: 12000000, unit: 'metric_tons', status: 'CURRENT_REPORTED' },
+      currentAnnualShippedOre: { value: 3000000, unit: 'metric_tons', status: 'CURRENT_REPORTED' }
+    },
+    sources: [
+      evidence('https://www.vaerzberg.at/zahlen-fakten/', 'current_annual_mined_material_and_shipped_ore_metrics', 'OPERATOR')
+    ]
+  },
+  SITE_DNK_faxe_limestone_quarry: {
+    owner: 'Faxe Kalk A/S',
+    operator: 'Faxe Kalk A/S',
+    status: 'ACTIVE_PRODUCING',
+    operationalStatus: 'ACTIVE_PRODUCING',
+    extractionEligibility: 'EXECUTABLE',
+    extractionMethod: 'Open-pit limestone quarrying',
+    process: {
+      resourceTypeId: 'limestone',
+      ontologyKey: 'LIMESTONE',
+      commodityName: 'Limestone',
+      upstreamProcess: 'Open-Pit Quarrying',
+      midstreamProcess: 'Processing into agricultural limestone, milled limestone and quicklime products',
+      refinedOutputs: ['AGRICULTURAL_LIMESTONE', 'MILLED_LIMESTONE', 'QUICKLIME']
+    },
+    metadata: {
+      sourceAuthority: 'Faxe Kalk A/S 2025 annual report',
+      currentEvidence: 'Faxe Kalk states that limestone is extracted from its Faxe Kalkbrud quarry and used for agricultural limestone and milled limestone products. The 2025 annual report confirms continued quarrying as the company main activity.'
+    },
+    sources: [
+      evidence('https://cdn.yahoofinance.com/prod/sec-filings/0000831259/000083125926000006/a4q2025exhibit991.htm', 'company_context_only', 'SECONDARY_FINANCIAL_SOURCE'),
+      evidence('https://regnskaber.cvrapi.dk/28128802/amNsb3VkczovLzAzLzU0L2NlL2U1LzBjLzBiY2UtNDljNS1hMjFlLWYzODM4Y2IyNjMxNQ.pdf', '2025_quarrying_business_description_and_faxe_quarry_identity', 'REGULATORY_FILING')
+    ]
+  },
+  SITE_PRT_panasqueira_tungsten_mine: {
+    owner: 'Almonty Industries Inc.',
+    operator: 'Beralt Tin and Wolfram / Almonty Industries',
+    status: 'ACTIVE_PRODUCING',
+    operationalStatus: 'ACTIVE_PRODUCING',
+    extractionEligibility: 'EXECUTABLE',
+    extractionMethod: 'Underground tungsten mining with gravity-based milling and concentrate production',
+    quantitativeReserve: { quantity: 3000000, unit: 'metric_tons_ore', status: 'OBSERVED', sourceScope: 'SITE_SPECIFIC', year: 2025 },
+    process: {
+      resourceTypeId: 'tungsten',
+      ontologyKey: 'TUNGSTEN',
+      commodityName: 'Tungsten, with tin and copper by-products',
+      primaryCommodity: 'tungsten',
+      secondaryCommodities: ['tin', 'copper'],
+      upstreamProcess: 'Underground Mining',
+      midstreamProcess: 'Crushing, gravity separation, shaking tables and spiral banks',
+      refinedOutputs: ['TUNGSTEN_CONCENTRATE'],
+      concentrationTarget: 'Typically 70% or greater WO3'
+    },
+    metadata: {
+      sourceAuthority: 'Almonty Industries / SEC filings',
+      currentEvidence: 'Almonty states that Panasqueira is currently mining, processing and shipping tungsten concentrate. The mine has 3.0 Mt of reported reserves and uses crushing followed by gravity separation in its milling circuits.'
+    },
+    sources: [
+      evidence('https://www.sec.gov/Archives/edgar/data/1670061/000149315226011503/ex99-1.htm', 'current_operator_mining_processing_and_reserve_context', 'REGULATORY_FILING'),
+      evidence('https://www.sec.gov/Archives/edgar/data/1670061/000149315226022338/ex99-3.htm', '2026_current_mining_processing_shipping_and_recovery_context', 'REGULATORY_FILING'),
+      evidence('https://almonty.com/wp-content/uploads/2026/03/AII-AIF-FY25CAN_DMS_1015843488.1.pdf', 'tungsten_concentrate_process_and_product_grade', 'OPERATOR')
+    ]
+  },
+  SITE_CZE_doln_ro_nka_uranium_mine: {
+    owner: 'DIAMO, state enterprise',
+    operator: 'DIAMO, state enterprise',
+    status: 'HISTORICAL_INACTIVE',
+    operationalStatus: 'HISTORICAL_INACTIVE',
+    extractionEligibility: 'NON_EXECUTABLE',
+    extractionMethod: 'Historical underground uranium mining',
+    metadata: {
+      sourceAuthority: 'DIAMO / Czech state mining legacy',
+      currentEvidence: 'The Dolní Rožínka uranium operation is historical and no longer a commercial producing mine. DIAMO remains the Czech state enterprise responsible for uranium mining legacy assets and remediation.'
+    },
+    sources: [
+      evidence('https://www.diamo.cz/', 'Czech_state_uranium_mining_legacy_and_DIAMO_role', 'GOVERNMENT')
+    ]
+  },
+  SITE_ROU_ro_ia_poieni_copper_mine: {
+    owner: 'Cupru Min S.A. Abrud / Romanian state',
+    operator: 'Cupru Min S.A. Abrud',
+    status: 'ACTIVE_PRODUCING',
+    operationalStatus: 'ACTIVE_PRODUCING',
+    extractionEligibility: 'EXECUTABLE',
+    extractionMethod: 'Large open-pit copper mining with crushing and flotation processing',
+    metadata: {
+      sourceAuthority: 'Cupru Min S.A. Abrud / Romanian Ministry of Economy',
+      currentEvidence: 'Cupru Min documents the Roșia Poieni open-pit quarry and Dealul Piciorului processing plant as its core copper business, including extraction and processing of low-grade copper ores.'
+    },
+    extra: {
+      processingPlant: 'Dealul Piciorului Processing Plant',
+      designedProcessingCapacity: { value: 9000000, unit: 'metric_tons_ore_per_year', status: 'DESIGN_CAPACITY' },
+      depositGradeContext: { value: 0.36, unit: 'percent_copper', status: 'REPORTED_DEPOSIT_ESTIMATE' },
+      depositTonnageContext: { value: 1000000000, unit: 'metric_tons_ore', status: 'REPORTED_DEPOSIT_ESTIMATE' }
+    },
+    sources: [
+      evidence('https://www.cuprumin.ro/544/2025/ROF_2025.pdf', '2025_current_quarry_processing_plant_and_copper_extraction_identity', 'GOVERNMENT_OPERATOR'),
+      evidence('https://www.izvoznookno.si/Dokumenti/xCupruMin%20_3_.pdf', 'deposit_tonnage_grade_and_processing_capacity_context', 'PUBLIC_COMPANY_PROFILE')
+    ]
+  },
+  SITE_HUN_visonta_lignite_mine: {
+    owner: 'Mátrai Erőmű Zrt. / MVM',
+    operator: 'Mátrai Erőmű Zrt.',
+    status: 'ACTIVE_PRODUCING',
+    operationalStatus: 'ACTIVE_PRODUCING',
+    extractionEligibility: 'EXECUTABLE',
+    extractionMethod: 'Open-pit lignite mining supplying the Mátra power plant',
+    metadata: {
+      sourceAuthority: 'Global Coal Mine Tracker / current operator records',
+      currentEvidence: 'Visonta is an operating surface lignite mine in Hungary. Current mine records identify a large lignite resource base and the operation as an open-pit mine supplying thermal power generation.'
+    },
+    extra: {
+      currentResourceContext: { quantity: 2150000000, unit: 'metric_tons_lignite', status: 'REPORTED_RESOURCE_ESTIMATE', year: 2022 },
+      resourceGradeContext: { value: 80, unit: 'thermal_lignite_grade_index', status: 'REPORTED' }
+    },
+    sources: [
+      evidence('https://www.gem.wiki/Visonta_Coal_Mine', 'current_operating_status_mine_type_resource_and_ownership_context', 'INDUSTRY_DATABASE')
+    ]
+  },
+  SITE_SVK_jel_ava_magnesite_mine: {
+    owner: 'Slovenské Magnezitové Závody a.s. Jelšava',
+    operator: 'Slovenské Magnezitové Závody a.s. Jelšava',
+    status: 'ACTIVE_PRODUCING',
+    operationalStatus: 'ACTIVE_PRODUCING',
+    extractionEligibility: 'EXECUTABLE',
+    extractionMethod: 'Magnesite mining with beneficiation/concentrate production',
+    quantitativeProduction: {
+      annual: { value: 253300, unit: 'metric_tons_magnesite_mined', year: 2024 },
+      status: 'OBSERVED',
+      measurementType: 'MINE_OUTPUT',
+      sourceScope: 'SITE_SPECIFIC'
+    },
+    process: {
+      resourceTypeId: 'magnesite',
+      ontologyKey: 'MAGNESITE',
+      commodityName: 'Magnesite',
+      upstreamProcess: 'Mine Extraction',
+      midstreamProcess: 'Crushing and Concentration',
+      refinedOutputs: ['MAGNESIA_FEEDSTOCK', 'MAGNESITE_CONCENTRATE']
+    },
+    metadata: {
+      sourceAuthority: 'USGS National Minerals Information Center',
+      currentEvidence: 'USGS reports 253,300 tonnes of magnesite mined in 2024 from the Jelsava mine, operated by Slovenské Magnezitové Závody a.s. Jelsava.'
+    },
+    sources: [
+      evidence('https://www.usgs.gov/centers/national-minerals-information-center/slovakia', '2024_Jelsava_site_specific_magnesite_output_and_operator', 'GOVERNMENT_GEOLOGICAL_SURVEY')
+    ]
+  },
+  SITE_BGR_chelopech_copper_gold_mine: {
+    owner: 'Dundee Precious Metals Inc.',
+    operator: 'Chelopech Mining EAD',
+    status: 'ACTIVE_PRODUCING',
+    operationalStatus: 'ACTIVE_PRODUCING',
+    extractionEligibility: 'EXECUTABLE',
+    extractionMethod: 'Underground sub-level long-hole open stoping with paste backfill',
+    metadata: {
+      sourceAuthority: 'Dundee Precious Metals',
+      currentEvidence: 'DPM identifies Chelopech as its underground copper-gold mine in Bulgaria and reports a current production operation with a mine life extending into the 2030s.'
+    },
+    sources: [
+      evidence('https://www.dundeeprecious.com/operations/chelopech', 'current_operator_mining_method_resource_and_operating_context', 'OPERATOR')
+    ]
+  },
+  SITE_SRB_majdanpek_copper_mine: {
+    owner: 'Serbia Zijin Copper DOO / Serbia',
+    operator: 'Serbia Zijin Copper DOO',
+    status: 'ACTIVE_PRODUCING',
+    operationalStatus: 'ACTIVE_PRODUCING',
+    extractionEligibility: 'EXECUTABLE',
+    extractionMethod: 'Open-pit copper mining with crushing, flotation and integrated smelting within the Bor operation',
+    metadata: {
+      sourceAuthority: 'Zijin Mining',
+      currentEvidence: 'Zijin identifies its Serbia Bor operation as in production and undergoing expansion, with four mines in production and integrated open-pit/underground mining and flotation. Majdanpek is part of the Serbia Zijin Copper operating complex.'
+    },
+    sources: [
+      evidence('https://www.zijinmining.com/global/program-detail-71737.htm', 'current_Serbia_Zijin_Copper_operation_status_and_mining_processing_methods', 'OPERATOR')
+    ]
+  },
+  SITE_HRV_koroma_no_limestone_quarry: {
+    owner: 'Holcim Hrvatska d.o.o.',
+    operator: 'Holcim Hrvatska d.o.o.',
+    status: 'ACTIVE_PRODUCING',
+    operationalStatus: 'ACTIVE_PRODUCING',
+    extractionEligibility: 'EXECUTABLE',
+    extractionMethod: 'Open-pit quarrying of limestone/technical stone and industrial mineral aggregate',
+    metadata: {
+      sourceAuthority: 'Croatian Ministry / Holcim Croatia',
+      currentEvidence: 'Croatian government records identify Holcim Hrvatska at Koromačno and Holcim Croatia states that Koromačno is one of its operating quarries supplying construction and industrial aggregates.'
+    },
+    sources: [
+      evidence('https://mingo.gov.hr/holcim-hrvatska-d-o-o-koromacno/7234', 'current_environmental_permit_and_Koromacno_operator_identity', 'GOVERNMENT'),
+      evidence('https://www.holcim.hr/en/node/70', 'current_Koromacno_quarry_operation_and_aggregate_products', 'OPERATOR')
+    ]
+  },
+  SITE_EST_narva_oil_shale_mine: {
+    owner: 'Eesti Energia AS',
+    operator: 'Eesti Energia AS',
+    status: 'ACTIVE_PRODUCING',
+    operationalStatus: 'ACTIVE_PRODUCING',
+    extractionEligibility: 'EXECUTABLE',
+    extractionMethod: 'Surface oil-shale mining supplying oil-shale processing and power-generation value chains',
+    process: {
+      resourceTypeId: 'oil_shale',
+      ontologyKey: 'OIL_SHALE',
+      commodityName: 'Oil shale',
+      upstreamProcess: 'Surface Mining',
+      midstreamProcess: 'Crushing, beneficiation and retorting/combustion',
+      refinedOutputs: ['SHALE_OIL', 'ELECTRICITY', 'SHALE_ASH']
+    },
+    metadata: {
+      sourceAuthority: 'Eesti Energia / Estonian mineral-sector records',
+      currentEvidence: 'Narva is part of Estonia oil-shale mining and processing infrastructure operated by Eesti Energia. The asset is a producing surface-mining operation rather than a generic mineral occurrence.'
+    },
+    sources: [
+      evidence('https://www.energia.ee/en', 'current_Eesti_Energia_operator_and_oil_shale_value_chain_context', 'OPERATOR')
+    ]
+  },
+  SITE_LVA_saulkalne_dolomite_quarry: {
+    owner: 'SCHWENK Latvija / Saulkalne SIA',
+    operator: 'Saulkalne SIA',
+    status: 'ACTIVE_PRODUCING',
+    operationalStatus: 'ACTIVE_PRODUCING',
+    extractionEligibility: 'EXECUTABLE',
+    extractionMethod: 'Quarrying and crushing of dolomite for aggregates',
+    process: {
+      resourceTypeId: 'dolomite',
+      ontologyKey: 'DOLOMITE',
+      commodityName: 'Dolomite aggregates and crushed stone',
+      upstreamProcess: 'Quarrying',
+      midstreamProcess: 'Washing, drying and crushing',
+      refinedOutputs: ['DOLOMITE_CRUSHED_STONE', 'DOLOMITE_SAND', 'CONSTRUCTION_AGGREGATES']
+    },
+    metadata: {
+      sourceAuthority: 'Saulkalne SIA',
+      currentEvidence: 'Saulkalne documents active dolomite quarrying and processing, including its Salenieku Dolomīts subsidiary, washed/dried/crushed dolomite production and multiple quarry developments.'
+    },
+    sources: [
+      evidence('https://www.saulkalne.lv/en/par-mums', 'current_quarry_processing_history_and_dolomite_products', 'OPERATOR')
+    ]
+  },
+  SITE_LTU_akmen_limestone_quarry: {
+    owner: 'AB Akmenės cementas',
+    operator: 'AB Akmenės cementas',
+    status: 'ACTIVE_PRODUCING',
+    operationalStatus: 'ACTIVE_PRODUCING',
+    extractionEligibility: 'EXECUTABLE',
+    extractionMethod: 'Open-pit limestone quarrying feeding the Akmenės cement plant',
+    process: {
+      resourceTypeId: 'limestone',
+      ontologyKey: 'LIMESTONE',
+      commodityName: 'Limestone for cement manufacture',
+      upstreamProcess: 'Open-Pit Quarrying',
+      midstreamProcess: 'Crushing and cement raw-mix preparation',
+      refinedOutputs: ['CEMENT_CLINKER', 'CEMENT']
+    },
+    metadata: {
+      sourceAuthority: 'Akmenės cementas',
+      currentEvidence: 'Akmenės cementas operates the integrated cement manufacturing complex in northern Lithuania. The repository site is retained as its limestone raw-material source and is explicitly linked to the cement production chain.'
+    },
+    sources: [
+      evidence('https://cementas.lt/', 'current_operator_and_integrated_cement_production_identity', 'OPERATOR')
+    ]
+  },
+  SITE_BLR_soligorsk_potash_mine: {
+    owner: 'Belaruskali',
+    operator: 'Belaruskali',
+    status: 'ACTIVE_PRODUCING',
+    operationalStatus: 'ACTIVE_PRODUCING',
+    extractionEligibility: 'EXECUTABLE',
+    extractionMethod: 'Underground potash mining with beneficiation into K2O-equivalent potash fertilizer products',
+    process: {
+      resourceTypeId: 'potash',
+      ontologyKey: 'POTASH',
+      commodityName: 'Potash / sylvinite / potassium chloride feedstock',
+      upstreamProcess: 'Underground Mining',
+      midstreamProcess: 'Crushing, beneficiation and potash processing',
+      refinedOutputs: ['POTASH_FERTILIZER', 'POTASSIUM_CHLORIDE']
+    },
+    metadata: {
+      sourceAuthority: 'USGS National Minerals Information Center',
+      currentEvidence: 'USGS reports that Belaruskali operates mines at the Starobin and Petrikov deposits and had seven mines with combined capacity of about 9 Mt/year of K2O-equivalent potash. The 2024 company output was about 7.1 Mt K2O equivalent. The value is company/national context and is not assigned as a Soligorsk-only production figure.'
+    },
+    extra: {
+      companyProductionContext2024: { value: 7084000, unit: 'metric_tons_K2O_equivalent', year: 2024, status: 'NATIONAL_COMPANY_CONTEXT_NOT_SITE_SPECIFIC' }
+    },
+    sources: [
+      evidence('https://www.usgs.gov/centers/national-minerals-information-center/belarus', 'Belaruskali_mining_locations_company_capacity_and_2024_production_context', 'GOVERNMENT_GEOLOGICAL_SURVEY')
+    ]
+  },
+  SITE_MDA_cricova_limestone_mine: {
+    owner: 'CP “MINA FĂURARI”',
+    operator: 'CP “MINA FĂURARI”',
+    status: 'ACTIVE_PRODUCING',
+    operationalStatus: 'ACTIVE_PRODUCING',
+    extractionEligibility: 'EXECUTABLE',
+    extractionMethod: 'Limestone/chalk quarrying for cutting-block raw material',
+    quantitativeReserve: {
+      quantity: 52649000,
+      unit: 'cubic_meters',
+      status: 'OBSERVED',
+      year: 2019,
+      sourceScope: 'Cricova_II_quarry_zone'
+    },
+    metadata: {
+      sourceAuthority: 'Republic of Moldova Mineral Resources Platform',
+      currentEvidence: 'The national mineral-resources platform identifies Cricova II, about 1 km northwest of Pașcani, as an excavation operated by CP “MINA FĂURARI”, with 52,649 thousand cubic metres of reported reserves as of 1 January 2019.'
+    },
+    sources: [
+      evidence('https://resurseminerale.md/en/quarry_details/202/cricova-or-cricova-mun-chisinau', 'site_specific_quarry_identity_operator_location_and_reported_reserves', 'GOVERNMENT_MINERAL_REGISTRY')
+    ]
+  },
+  SITE_ALB_bulqiz_chromite_mine: {
+    owner: 'Albchrome / Balfin Group',
+    operator: 'Albchrome',
+    status: 'ACTIVE_PRODUCING',
+    operationalStatus: 'ACTIVE_PRODUCING',
+    extractionEligibility: 'EXECUTABLE',
+    extractionMethod: 'Underground and surface chromite mining with ore beneficiation',
+    metadata: {
+      sourceAuthority: 'Albania National Agency of Natural Resources / Bulqiza industry reporting',
+      currentEvidence: 'Albania maintains an active mining-licence register covering the Bulqizë chromite district. Industry reporting tied to the Bulqizë processing operation describes a 2025 target of about 25,000 tonnes of chromite concentrate at 38–52% Cr2O3 across its mining and beneficiation assets.'
+    },
+    extra: {
+      productionTarget2025: { value: 25000, unit: 'metric_tons_chromite_concentrate', year: 2025, status: 'MANAGEMENT_TARGET' },
+      concentrateGradeTarget2025: { low: 38, high: 52, unit: 'percent_Cr2O3', year: 2025, status: 'MANAGEMENT_TARGET' }
+    },
+    sources: [
+      evidence('https://www.akbn.gov.al/category/raporte-te-akbn/raporte-drejtoria-minerare/', '2026_active_mining_licence_registry_and_Bulqiza_mineral_reports', 'GOVERNMENT'),
+      evidence('https://www.gazetabulqiza.com/2024/12/23/bukurosh-koci-investime-qe-garantojne-perspektiven/', '2025_chromite_concentrate_target_and_grade_context', 'INDUSTRY_INTERVIEW')
+    ]
+  },
+  SITE_MKD_sasa_lead_zinc_mine: {
+    owner: 'Central Asia Metals PLC',
+    operator: 'Sasa Mine / Central Asia Metals PLC',
+    status: 'ACTIVE_PRODUCING',
+    operationalStatus: 'ACTIVE_PRODUCING',
+    extractionEligibility: 'EXECUTABLE',
+    extractionMethod: 'Underground zinc-lead mining with paste backfill, dry-stack tailings and flotation',
+    process: {
+      resourceTypeId: 'zinc',
+      ontologyKey: 'ZINC',
+      commodityName: 'Zinc and lead concentrates with payable silver',
+      primaryCommodity: 'zinc',
+      secondaryCommodities: ['lead', 'silver'],
+      upstreamProcess: 'Underground Mining',
+      midstreamProcess: 'Crushing, milling and flotation',
+      refinedOutputs: ['ZINC_CONCENTRATE', 'LEAD_CONCENTRATE'],
+      tailingsHandling: ['PASTE_BACKFILL', 'DRY_STACK_TAILINGS']
+    },
+    metadata: {
+      sourceAuthority: 'Central Asia Metals / FCA RNS',
+      currentEvidence: 'CAML reported H1 2026 Sasa production of 403,665 tonnes ore mined, 400,798 tonnes plant feed, 9,094 tonnes contained zinc in concentrate and 13,312 tonnes contained lead in concentrate, with zinc and lead head grades of 2.65% and 3.52%.'
+    },
+    extra: {
+      h1_2026Production: {
+        oreMined: 403665,
+        plantFeed: 400798,
+        zincConcentrate: 17980,
+        containedZinc: 9094,
+        leadConcentrate: 18808,
+        containedLead: 13312,
+        zincHeadGradePercent: 2.65,
+        leadHeadGradePercent: 3.52
+      }
+    },
+    sources: [
+      evidence('https://data.fca.org.uk/artefacts/NSM/RNS/2635fd0b-44dd-443c-b9d6-97197d63aca4.html', 'H1_2026_site_specific_Sasa_production_grades_and_processing_metrics', 'REGULATORY_FILING')
+    ]
+  },
+  SITE_BIH_vare_silver_lead_zinc_mine: {
+    owner: 'Adriatic Metals PLC',
+    operator: 'Eastern Mining d.o.o.',
+    status: 'ACTIVE_PRODUCING',
+    operationalStatus: 'ACTIVE_PRODUCING',
+    extractionEligibility: 'EXECUTABLE',
+    extractionMethod: 'Underground mining at Rupice with crushing, flotation and concentrate production',
+    metadata: {
+      sourceAuthority: 'Adriatic Metals',
+      currentEvidence: 'Adriatic Metals has declared commercial production at Vareš and continues underground development and ore production from the Rupice deposit. The operation produces zinc, lead, silver and gold-bearing concentrates.'
+    },
+    extra: {
+      commercialProductionDeclared: true,
+      primaryMine: 'Rupice',
+      currentMiningMethod: 'UNDERGROUND',
+      polymetallicOutputs: ['ZINC', 'LEAD', 'SILVER', 'GOLD']
+    },
+    sources: [
+      evidence('https://adriaticmetals.com/operations/vares/', 'current_Vares_commercial_production_Rupice_operator_and_polymetallic_processing_context', 'OPERATOR')
+    ]
+  },
+  SITE_MNE_pljevlja_coal_mine: {
+    owner: 'Rudnik uglja Pljevlja / Government of Montenegro',
+    operator: 'Rudnik uglja Pljevlja',
+    status: 'ACTIVE_PRODUCING',
+    operationalStatus: 'ACTIVE_PRODUCING',
+    extractionEligibility: 'EXECUTABLE',
+    extractionMethod: 'Open-pit lignite/coal mining supplying thermal power generation',
+    metadata: {
+      sourceAuthority: 'Global Energy Monitor / current mine records',
+      currentEvidence: 'The current mine record identifies Pljevlja as an operating coal mine in Montenegro with an exact mine location and an open-pit operating history dating to 1952.'
+    },
+    sources: [
+      evidence('https://www.gem.wiki/Pljevlja_Coal_Mine', 'current_operating_status_exact_location_and_mine_history', 'INDUSTRY_DATABASE')
+    ]
+  },
+  SITE_LUX_rumelange_iron_mine: {
+    owner: 'Luxembourg state / heritage',
+    operator: 'None (historical mine)',
+    status: 'HISTORICAL_INACTIVE',
+    operationalStatus: 'HISTORICAL_INACTIVE',
+    extractionEligibility: 'NON_EXECUTABLE',
+    extractionMethod: 'Historical underground iron-ore mining',
+    metadata: {
+      sourceAuthority: 'National Mining Museum / Luxembourg mining heritage',
+      currentEvidence: 'The Rumelange mining heritage record documents historic iron-ore extraction and closure of the last Lorraine-area mine operations in the late twentieth century. It is not a current producing mine.'
+    },
+    sources: [
+      evidence('https://en.wikipedia.org/wiki/Rumelange', 'historical_iron_mining_and_current_non_producing_context', 'SECONDARY_REFERENCE')
+    ]
+  },
+  SITE_CYP_skouriotissa_copper_mine: {
+    owner: 'Hellenic Copper Mines / Cyprus historical mining interests',
+    operator: 'None for current commercial extraction',
+    status: 'HISTORICAL_INACTIVE',
+    operationalStatus: 'HISTORICAL_INACTIVE',
+    extractionEligibility: 'NON_EXECUTABLE',
+    extractionMethod: 'Historical underground/surface mining; later leaching and SX-EW processing',
+    metadata: {
+      sourceAuthority: 'Cyprus Mines and Quarries Service',
+      currentEvidence: 'The Cyprus government states that Skouriotissa was the only mining activity in Cyprus from 1996 to 2019. The historical operation used surface/underground extraction and later leaching/SX-EW, but the government page does not establish a current commercial producing mine.'
+    },
+    extra: {
+      lastDocumentedCommercialMiningYear: 2019,
+      historicalCathodePurity: { value: 99.999, unit: 'percent_copper', status: 'HISTORICAL_REPORTED' },
+      historicalOperationMethod: 'Leaching-SX-EW'
+    },
+    sources: [
+      evidence('https://www.gov.cy/moa-mines/en/documents/mines/', 'current_Cyprus_mining_status_and_Skouriotissa_last_activity_2019', 'GOVERNMENT'),
+      evidence('https://www.gov.cy/moa-mines/en/documents/mines/information/copper-and-gold/', 'Skouriotissa_historical_mining_methods_and_copper_cathode_processing', 'GOVERNMENT'),
+      evidence('https://www.gov.cy/moa-mines/en/documents/mines/information/copper-and-gold/', 'historical_Skouriotissa_ore_and_processing_context', 'GOVERNMENT')
+    ]
+  },
+  SITE_AND_llorts_iron_mine: {
+    owner: 'Government of Andorra / cultural heritage',
+    operator: 'None (heritage site)',
+    status: 'HISTORICAL_INACTIVE',
+    operationalStatus: 'HISTORICAL_INACTIVE',
+    extractionEligibility: 'NON_EXECUTABLE',
+    extractionMethod: 'Historical underground iron-ore extraction',
+    metadata: {
+      sourceAuthority: 'Government of Andorra',
+      currentEvidence: 'The Government of Andorra identifies the Llorts iron mine as a nineteenth-century iron-ore mine associated with the country historic iron industry and now open as a heritage route rather than a producing mine.'
+    },
+    extra: {
+      historicalPeriod: '19th century',
+      currentUse: 'Cultural heritage and visitor route'
+    },
+    sources: [
+      evidence('https://www.govern.ad/', 'Andorra_state_heritage_and_historical_mining_context', 'GOVERNMENT')
+    ]
+  },
+  SITE_USA_morenci_copper_mine: {
+    owner: 'Freeport-McMoRan Inc. 72% / Sumitomo 28%',
+    operator: 'Freeport-McMoRan',
+    status: 'ACTIVE_PRODUCING',
+    operationalStatus: 'ACTIVE_PRODUCING',
+    extractionEligibility: 'EXECUTABLE',
+    extractionMethod: 'Large-scale open-pit porphyry copper mining with concentration, heap leaching and SX-EW',
+    quantitativeProduction: {
+      annual: { value: 700000000, unit: 'pounds_copper', year: 2025 },
+      status: 'OBSERVED',
+      measurementType: 'TOTAL_JV_COPPER_PRODUCTION',
+      sourceScope: 'SITE_SPECIFIC'
+    },
+    quantitativeGrade: {
+      value: 0,
+      unit: 'not_stored_as_single_average_grade',
+      status: 'UNOBSERVED'
+    },
+    process: {
+      resourceTypeId: 'copper',
+      ontologyKey: 'COPPER',
+      commodityName: 'Copper with molybdenum by-product',
+      primaryCommodity: 'copper',
+      secondaryCommodities: ['molybdenum', 'gold', 'silver'],
+      upstreamProcess: 'Open-Pit Mining',
+      midstreamProcess: 'Milling/Flotation, Leach, SX-EW',
+      refinedOutputs: ['COPPER_CONCENTRATE', 'COPPER_CATHODE', 'MOLYBDENUM_CONCENTRATE']
+    },
+    metadata: {
+      sourceAuthority: 'Freeport-McMoRan SEC 2025 annual report',
+      currentEvidence: 'Freeport reports Morenci as a large open-pit porphyry copper operation with two concentrators, a 132,000 t/day milling design capacity, a 72,500 t/day leach pad system and about 900 million lb/year EW cathode capacity. Total 2025 copper production including partners was 0.7 billion lb and molybdenum production was 7 million lb.'
+    },
+    sources: [
+      evidence('https://www.sec.gov/Archives/edgar/data/831259/000083125926000012/fcx-20251231.htm', '2025_Morenci_production_processing_capacity_and_ownership', 'REGULATORY_FILING'),
+      evidence('https://s22.q4cdn.com/529358580/files/doc_news/2026/FCX_260423.pdf', 'Q1_2026_Morenci_current_production_context', 'OPERATOR')
+    ]
+  },
+  SITE_COL_cerrej_n_coal_mine: {
+    owner: 'Glencore plc',
+    operator: 'Cerrejón',
+    status: 'ACTIVE_PRODUCING',
+    operationalStatus: 'ACTIVE_PRODUCING',
+    extractionEligibility: 'EXECUTABLE',
+    extractionMethod: 'Large-scale open-pit thermal coal mining with rail and port logistics',
+    metadata: {
+      sourceAuthority: 'Glencore Resources and Reserves Report 2025',
+      currentEvidence: 'Glencore continues to report Cerrejón as a coal operation. Its 2025 reserves and resources report states Cerrejón had about 5,123 Mt of coal resources before depletion and that reserve estimates account for mining rights, rail, port and environmental constraints.'
+    },
+    extra: {
+      resourceEstimate2025: { quantity: 5123000000, unit: 'metric_tons_in_situ_coal_resource', year: 2025, status: 'OBSERVED_RESOURCE_ESTIMATE' },
+      miningRightsExpiryYear: 2034
+    },
+    sources: [
+      evidence('https://www.glencore.com/.rest/api/v1/documents/static/a17cc44b-7947-4169-9b6b-b882403fb42b/GLENCORE-Resources-and-Reserves-report-2025.pdf', '2025_Cerrejon_resource_reserve_and_operational_constraints', 'OPERATOR')
+    ]
+  },
+  SITE_VEN_bachaquero_lagunillas_oil_field: {
+    owner: 'Petróleos de Venezuela S.A. (PDVSA)',
+    operator: 'Petróleos de Venezuela S.A. (PDVSA)',
+    status: 'ACTIVE_PRODUCING',
+    operationalStatus: 'ACTIVE_PRODUCING',
+    extractionEligibility: 'EXECUTABLE',
+    extractionMethod: 'Onshore and shallow-water oil wells with gathering and field processing',
+    metadata: {
+      sourceAuthority: 'Current oil-field reference data',
+      currentEvidence: 'Bachaquero-Lagunillas is retained as a producing Lake Maracaibo petroleum field under PDVSA. Site-specific current production is not asserted where a current public field-level output series is not available.'
+    },
+    sources: [
+      evidence('https://www.gem.wiki/Bachaquero-Lagunillas_Oil_Field', 'field_identity_location_operator_and_production_scope_limitation', 'INDUSTRY_DATABASE')
+    ]
+  },
+  SITE_ECU_mirador_copper_mine: {
+    owner: 'Ecuacorriente S.A. / CRCC-Tongguan investment group',
+    operator: 'Ecuacorriente S.A.',
+    status: 'ACTIVE_PRODUCING',
+    operationalStatus: 'ACTIVE_PRODUCING',
+    extractionEligibility: 'EXECUTABLE',
+    extractionMethod: 'Large open-pit copper mining with crushing, grinding and flotation concentration',
+    process: {
+      resourceTypeId: 'copper',
+      ontologyKey: 'COPPER',
+      commodityName: 'Copper concentrate',
+      upstreamProcess: 'Open-Pit Mining',
+      midstreamProcess: 'Crushing, Grinding and Flotation',
+      refinedOutputs: ['COPPER_CONCENTRATE']
+    },
+    metadata: {
+      sourceAuthority: 'Ecuacorriente S.A.',
+      currentEvidence: 'Mirador is an operating open-pit copper mine in Zamora-Chinchipe, Ecuador, operated by Ecuacorriente S.A. The repository record is kept executable as a producing asset, while unsupported site-specific quantitative figures remain unobserved.'
+    },
+    sources: [
+      evidence('https://www.ecuacorriente.com/', 'current_operator_and_Mirador_copper_operation_context', 'OPERATOR')
+    ]
+  },
+  SITE_PRY_vallem_limestone_quarry: {
+    owner: 'Industria Nacional del Cemento (INC) / Paraguay',
+    operator: 'Industria Nacional del Cemento (INC)',
+    status: 'ACTIVE_PRODUCING',
+    operationalStatus: 'ACTIVE_PRODUCING',
+    extractionEligibility: 'EXECUTABLE',
+    extractionMethod: 'Quarrying of limestone and associated cement raw materials feeding the Vallemí plant',
+    metadata: {
+      sourceAuthority: 'Industria Nacional del Cemento',
+      currentEvidence: 'INC documents the Vallemí plant and limestone, marl and shale deposits that supply cement manufacture. An inferred resource figure of more than 839 Mt is reported for the Itapucumí group and is not incorrectly assigned as a single quarry reserve.'
+    },
+    extra: {
+      inferredItapucumiResource: { quantity: 839000000, unit: 'metric_tons', status: 'REPORTED_GROUP_RESOURCE', scope: 'ITAPUCUMI_GROUP_NOT_SINGLE_QUARRY' }
+    },
+    sources: [
+      evidence('https://inc.gov.py/2024/11/', 'Vallemi_limestone_marl_shale_resource_context_and_extraction_process', 'GOVERNMENT_OPERATOR'),
+      evidence('https://inc.gov.py/presidente-pena-destaca-aumento-de-produccion-y-reposicionamiento-del-cemento-vallemi/', 'current_Vallemi_cement_production_and_operational_continuity', 'GOVERNMENT')
+    ]
+  },
+  SITE_CRI_bellavista_gold_mine: {
+    owner: 'UNOBSERVED',
+    operator: 'None (historical mine)',
+    status: 'HISTORICAL_INACTIVE',
+    operationalStatus: 'HISTORICAL_INACTIVE',
+    extractionEligibility: 'NON_EXECUTABLE',
+    extractionMethod: 'Historical gold mining',
+    metadata: {
+      sourceAuthority: 'Public historical mine references',
+      currentEvidence: 'Bellavista is treated as a historical non-producing gold mine. Current site-specific commercial ownership is not sufficiently established in the current source set, so the old private-company attribution is not presented as a current owner.'
+    },
+    sources: [
+      evidence('https://en.wikipedia.org/wiki/Bellavista_mine', 'historical_Bellavista_gold_mine_identity_and_non_producing_context', 'SECONDARY_REFERENCE')
+    ]
+  },
+  SITE_NIC_el_lim_n_gold_mine: {
+    owner: 'Equinox Gold Corp.',
+    operator: 'Equinox Gold Nicaragua / Limon Mine',
+    status: 'ACTIVE_PRODUCING',
+    operationalStatus: 'ACTIVE_PRODUCING',
+    extractionEligibility: 'EXECUTABLE',
+    extractionMethod: 'Combination of open-pit and underground gold mining feeding the Limon mill',
+    quantitativeProduction: {
+      annual: { value: 71605, unit: 'troy_ounces_gold', year: 2025 },
+      status: 'OBSERVED',
+      measurementType: 'EL_LIMON_MILL_GOLD_PRODUCTION',
+      sourceScope: 'SITE_SPECIFIC_MILL'
+    },
+    process: {
+      resourceTypeId: 'gold',
+      ontologyKey: 'GOLD',
+      commodityName: 'Gold',
+      upstreamProcess: 'Open-Pit and Underground Mining',
+      midstreamProcess: 'Crushing, grinding, leaching and gold recovery',
+      refinedOutputs: ['GOLD_DORE']
+    },
+    metadata: {
+      sourceAuthority: 'Equinox Gold / SEC filing',
+      currentEvidence: 'Equinox Gold acquired Limon in June 2025. The Limon complex includes Limon Central open pit and Santa Pancha, Panteon and Veta Nueva underground mines. The Limon mill reported 71,605 ounces of gold produced in 2025.'
+    },
+    sources: [
+      evidence('https://www.equinoxgold.com/our-mines/libertad-gold-mine/', 'current_Limon_owner_mine_scope_and_hub_and_spoke_structure', 'OPERATOR'),
+      evidence('https://www.sec.gov/Archives/edgar/data/1756607/000162828026022120/eqx-20251231mda.htm', '2025_Limon_mill_site_specific_gold_production_grade_processing_and_recovery', 'REGULATORY_FILING')
+    ]
+  },
+  SITE_HND_el_mochito_mine: {
+    owner: 'Kirungu Corporation',
+    operator: 'American Pacific Honduras S.A. de C.V. / Kirungu operating interests',
+    status: 'LIMITED',
+    operationalStatus: 'LIMITED',
+    extractionEligibility: 'EXECUTABLE',
+    extractionMethod: 'Underground zinc-lead-silver mining with crushing and flotation',
+    metadata: {
+      sourceAuthority: 'Wood Mackenzie / 2025 El Mochito asset record',
+      currentEvidence: 'A 2025 asset report states Kirungu Corporation acquired El Mochito in 2020 and describes an underground mine with a 2.8 kt/day mill producing zinc and lead concentrates. Current public output is not asserted as an observed annual site series.'
+    },
+    extra: {
+      millCapacity: { value: 2800, unit: 'metric_tons_ore_per_day', status: 'REPORTED_CAPACITY' },
+      byproducts: ['silver']
+    },
+    sources: [
+      evidence('https://www.woodmac.com/reports/metals-el-mochito-zinc-mine-16299107/', '2025_current_owner_mine_type_and_mill_capacity', 'INDUSTRY_ANALYSIS'),
+      evidence('https://www.sec.gov/Archives/edgar/data/1829726/000110465926036188/R11.htm', '2025_settlement_and_Kirungu_El_Mochito_asset_context', 'REGULATORY_FILING')
+    ]
+  },
+  SITE_JAM_noranda_st_ann_bauxite_mine: {
+    owner: 'Noranda Jamaica Bauxite Partners II / Government of Jamaica 51%',
+    operator: 'Noranda Bauxite Limited',
+    status: 'ACTIVE_PRODUCING',
+    operationalStatus: 'ACTIVE_PRODUCING',
+    extractionEligibility: 'EXECUTABLE',
+    extractionMethod: 'Surface bauxite mining, rail haulage to port, drying and export',
+    metadata: {
+      sourceAuthority: 'Jamaica Bauxite Institute / Jamaica Mines and Geology Division',
+      currentEvidence: 'JBI states Noranda Jamaica Bauxite Partners II is a partnership in which Noranda Bauxite holds and operates the physical mining assets and the Government of Jamaica owns 51%. The mining concession runs through 2030. A 2025 environmental report gives production capacity around 5.4 Mt/year.'
+    },
+    extra: {
+      concessionExpiryYear: 2030,
+      nominalProductionCapacity: { value: 5400000, unit: 'metric_tons_bauxite_per_year', year: 2025, status: 'REPORTED_CAPACITY' }
+    },
+    sources: [
+      evidence('https://www.jbi.org.jm/industry/', 'current_Noranda_partnership_operator_and_St_Ann_mining_logistics', 'GOVERNMENT'),
+      evidence('https://mgd.gov.jm/mining-licence/', 'current_special_mining_lease_for_Noranda_Jamaica_Bauxite_Partners', 'GOVERNMENT'),
+      evidence('https://www.nepa.gov.jm/sites/default/files/2025-10/SDR%20EIA%20WO%20CHAPEL%20WO%20TC%20le.pdf', '2025_St_Ann_bauxite_production_capacity', 'GOVERNMENT_ENVIRONMENTAL_REPORT')
+    ]
+  },
+  SITE_DOM_pueblo_viejo_gold_mine: {
+    owner: 'Barrick Gold 60% / Newmont 40%',
+    operator: 'Barrick Gold Corporation',
+    status: 'ACTIVE_PRODUCING',
+    operationalStatus: 'ACTIVE_PRODUCING',
+    extractionEligibility: 'EXECUTABLE',
+    extractionMethod: 'Open-pit truck-and-shovel mining with CIL processing and stockpile blending',
+    metadata: {
+      sourceAuthority: 'Barrick SEC Annual Information Form',
+      currentEvidence: 'Barrick reports Pueblo Viejo as a 60%-owned joint venture with Barrick as operator. The mine is an open-pit conventional truck-and-shovel operation and produced 379,014 ounces attributable to Barrick in 2025. Mining is projected to continue through 2048 under current reserves and tailings plans.'
+    },
+    extra: {
+      2025BarrickAttributableGoldProduction: { value: 379014, unit: 'troy_ounces_gold', year: 2025, status: 'OBSERVED_60_PERCENT_ATTRIBUTABLE' },
+      mineLifeContext: { openPitThroughYear: 2048, processingThroughYear: 2049 }
+    },
+    sources: [
+      evidence('https://www.sec.gov/Archives/edgar/data/756894/000119312526079253/d833573dex991.htm', '2025_production_operator_mining_method_and_mine_life', 'REGULATORY_FILING')
+    ]
+  },
+  SITE_TTO_juniper_oil_field: {
+    owner: 'bp Trinidad and Tobago LLC / Republic of Trinidad and Tobago state interests',
+    operator: 'bp Trinidad and Tobago LLC',
+    status: 'ACTIVE_PRODUCING',
+    operationalStatus: 'ACTIVE_PRODUCING',
+    extractionEligibility: 'EXECUTABLE',
+    extractionMethod: 'Offshore oil and gas wells with subsea/wellhead gathering and field processing',
+    metadata: {
+      sourceAuthority: 'bp Trinidad and Tobago',
+      currentEvidence: 'Juniper is retained as an offshore bp Trinidad and Tobago producing field. Current site-specific production is left unobserved in the absence of a public current field-level series in the retrieved source set.'
+    },
+    sources: [
+      evidence('https://www.bptt.com/', 'current_bp_Trinidad_and_Tobago_operator_and_offshore_asset_context', 'OPERATOR')
+    ]
+  },
+  SITE_BRB_arawak_cement_limestone_quarry: {
+    owner: 'Arawak Cement Company Limited / TCL Group',
+    operator: 'Arawak Cement Company Limited',
+    status: 'MILL_ONLY_NO_QUARRY_VERIFIED',
+    operationalStatus: 'MILL_ONLY_NO_QUARRY_VERIFIED',
+    extractionEligibility: 'NON_EXECUTABLE',
+    extractionMethod: 'No current quarry extraction at Checker Hall is established; current site operation is cement grinding',
+    metadata: {
+      sourceAuthority: 'Export Barbados / current cement-sector records',
+      currentEvidence: 'Current records describe Arawak Cement at Checker Hall as a grinding operation. Clinker production at the St Lucy plant ceased in March 2023, with imported clinker subsequently ground at the site. Therefore the repository must not execute this record as a limestone mine without evidence of a current quarry at the exact site.'
+    },
+    extra: {
+      currentProcess: 'CEMENT_GRINDING',
+      clinkerProductionAtCheckerHall: false,
+      mineIdentityStatus: 'SITE_SHOULD_BE_TREATED_AS_CEMENT_GRINDING_FACILITY_UNTIL_QUARRY_SOURCE_IS_ESTABLISHED'
+    },
+    sources: [
+      evidence('https://exportbarbados.org/arawak-cement-co-ltd', 'current_Arawak_Cement_business_identity_and_Checker_Hall_location', 'GOVERNMENT_TRADE_AGENCY'),
+      evidence('https://www.investcaricom.org/market-rating-index/evidence/cement-operators/cement-supply-position/', '2026_current_grinding_only_status_and_ceasing_clinker_production', 'INDUSTRY_DATABASE')
+    ]
+  },
+  SITE_SUR_merian_gold_mine: {
+    owner: 'Newmont 75% / Staatsolie 25%',
+    operator: 'Newmont Suriname',
+    status: 'ACTIVE_PRODUCING',
+    operationalStatus: 'ACTIVE_PRODUCING',
+    extractionEligibility: 'EXECUTABLE',
+    extractionMethod: 'Open-pit gold mining with conventional milling, gravity and carbon-in-leach processing',
+    quantitativeReserve: {
+      quantity: 4500000,
+      unit: 'troy_ounces_gold',
+      status: 'OBSERVED_ATTRIBUTABLE',
+      year: 2025,
+      sourceScope: 'Newmont_75_percent_attributable_reserve'
+    },
+    process: {
+      resourceTypeId: 'gold',
+      ontologyKey: 'GOLD',
+      commodityName: 'Gold doré',
+      upstreamProcess: 'Open-Pit Mining',
+      midstreamProcess: 'Crushing, comminution, gravity, cyanide leach, carbon-in-leach, elution, electrowinning and smelting',
+      refinedOutputs: ['GOLD_DORE']
+    },
+    metadata: {
+      sourceAuthority: 'Newmont 2025 SEC annual report',
+      currentEvidence: 'Newmont reports Merian as an open-pit operation comprising the Merian 1, Merian 2, Maraba and Kupari pits, with a conventional gold mill using gravity and CIL recovery to produce gold doré. Newmont reported 4.5 million attributable ounces of gold reserves at December 31, 2025.'
+    },
+    sources: [
+      evidence('https://www.sec.gov/Archives/edgar/data/1164727/000116472726000010/nem-20251231.htm', '2025_Merian_pits_processing_method_operator_and_attributable_reserves', 'REGULATORY_FILING'),
+      evidence('https://www.sec.gov/Archives/edgar/data/1164727/000116472726000027/nmnt-20251231.htm', '2025_Merian_resource_extraction_payment_and_project_identity', 'REGULATORY_FILING')
+    ]
+  },
+  SITE_GUY_aurora_gold_mine: {
+    owner: 'Zijin Mining 85% / Guyana interests',
+    operator: 'Aurora Gold Mine / Zijin Mining',
+    status: 'ACTIVE_PRODUCING',
+    operationalStatus: 'ACTIVE_PRODUCING',
+    extractionEligibility: 'EXECUTABLE',
+    extractionMethod: 'Open-pit and underground gold mining with gravity separation and cyanide leaching',
+    quantitativeProduction: {
+      annual: { value: 4.5, unit: 'metric_tons_gold', year: 2025 },
+      status: 'OBSERVED',
+      measurementType: 'TOTAL_SITE_GOLD_PRODUCTION',
+      sourceScope: 'SITE_SPECIFIC'
+    },
+    process: {
+      resourceTypeId: 'gold',
+      ontologyKey: 'GOLD',
+      commodityName: 'Gold',
+      upstreamProcess: 'Open-Pit Mining and Underground Development',
+      midstreamProcess: 'Gravity Separation and Cyanide Leaching',
+      refinedOutputs: ['GOLD_DORE']
+    },
+    metadata: {
+      sourceAuthority: 'Zijin Mining',
+      currentEvidence: 'Zijin identifies Aurora as Guyana’s only large-scale operating gold mine, 85%-owned, in production and undergoing debottlenecking and expansion. It reports 4.5 tonnes of gold production in 2025 and a 10,000 t/day processing capacity.'
+    },
+    extra: {
+      processingCapacity: { value: 10000, unit: 'metric_tons_ore_per_day', status: 'CURRENT_REPORTED_CAPACITY' },
+      fullCapacityGoldTarget: { value: 6, unit: 'metric_tons_gold_per_year', status: 'PLANNED_EXPANSION' }
+    },
+    sources: [
+      evidence('https://www.zijinmining.com/global/program-detail-71743.htm', '2025_site_specific_production_capacity_owner_and_mining_processing_methods', 'OPERATOR')
+    ]
+  },
+  SITE_AUS_boddington_gold_mine: {
+    owner: 'Newmont Corporation',
+    operator: 'Newmont Boddington Gold',
+    status: 'ACTIVE_PRODUCING',
+    operationalStatus: 'ACTIVE_PRODUCING',
+    extractionEligibility: 'EXECUTABLE',
+    extractionMethod: 'Large open-pit gold-copper mining with concentrator and processing plant',
+    quantitativeReserve: {
+      quantity: 10200000,
+      unit: 'troy_ounces_gold',
+      status: 'OBSERVED',
+      year: 2025,
+      sourceScope: 'FY2025_RESERVE'
+    },
+    process: {
+      resourceTypeId: 'gold',
+      ontologyKey: 'GOLD',
+      commodityName: 'Gold and copper concentrate',
+      primaryCommodity: 'gold',
+      secondaryCommodities: ['copper'],
+      upstreamProcess: 'Open-Pit Mining',
+      midstreamProcess: 'Crushing, grinding, flotation and gold recovery',
+      refinedOutputs: ['GOLD_DORE', 'COPPER_CONCENTRATE']
+    },
+    metadata: {
+      sourceAuthority: 'Newmont',
+      currentEvidence: 'Newmont reports Boddington as an active large Australian gold mine producing gold and copper concentrate. FY2025 reserves were 10.2 Moz gold and 0.5 Mt copper. The operation was affected by December 2025 bushfires but returned to higher throughput during 2026.'
+    },
+    extra: {
+      annualGoldProductionGuidance2026: { value: 160000, unit: 'troy_ounces_gold', year: 2026, status: 'CURRENT_ANNUAL_GUIDANCE' },
+      annualCopperProductionGuidance2026: { value: 5000, unit: 'metric_tons_copper', year: 2026, status: 'CURRENT_ANNUAL_GUIDANCE' },
+      copperReserveFY2025: { value: 500000, unit: 'metric_tons_copper', year: 2025, status: 'OBSERVED' }
+    },
+    sources: [
+      evidence('https://operations.newmont.com/australia/boddington/', 'current_Boddington_production_reserves_status_and_processing_context', 'OPERATOR')
+    ]
+  },
+  SITE_NZL_macraes_gold_mine: {
+    owner: 'OceanaGold Corporation',
+    operator: 'OceanaGold New Zealand',
+    status: 'ACTIVE_PRODUCING',
+    operationalStatus: 'ACTIVE_PRODUCING',
+    extractionEligibility: 'EXECUTABLE',
+    extractionMethod: 'Open-pit and underground gold mining with carbon-in-leach and pressure oxidation processing',
+    quantitativeProduction: {
+      annual: { value: 147000, unit: 'troy_ounces_gold', year: 2025 },
+      status: 'OBSERVED',
+      measurementType: 'TOTAL_SITE_GOLD_PRODUCTION',
+      sourceScope: 'SITE_SPECIFIC'
+    },
+    process: {
+      resourceTypeId: 'gold',
+      ontologyKey: 'GOLD',
+      commodityName: 'Gold',
+      upstreamProcess: 'Open-Pit and Underground Mining',
+      midstreamProcess: 'Carbon-in-leach and pressure oxidation',
+      refinedOutputs: ['GOLD_DORE']
+    },
+    metadata: {
+      sourceAuthority: 'OceanaGold',
+      currentEvidence: 'OceanaGold reports Macraes as the largest gold mine in New Zealand, using both open-pit and underground methods. The mine produced 147,000 ounces of gold in 2025 and has a reserve mine life to 2032.'
+    },
+    sources: [
+      evidence('https://oceanagoldcorporation.com/operations/macraes.html', 'current_Macraes_mine_type_ownership_processing_2025_output_and_mine_life', 'OPERATOR'),
+      evidence('https://investors.oceanagold.com/2026-08-05-OceanaGold-Reports-Second-Quarter-2026-Results', 'Q2_2026_current_Macraes_production_and_2026_operating_context', 'OPERATOR')
+    ]
+  },
+  SITE_PNG_lihir_gold_mine: {
+    owner: 'Newmont Corporation',
+    operator: 'Newmont Lihir',
+    status: 'ACTIVE_PRODUCING',
+    operationalStatus: 'ACTIVE_PRODUCING',
+    extractionEligibility: 'EXECUTABLE',
+    extractionMethod: 'Large open-pit gold mining with stockpile processing and conventional gold recovery',
+    metadata: {
+      sourceAuthority: 'Newmont',
+      currentEvidence: 'Newmont identifies Lihir as an active managed gold mine and expects 2026 production of about 560,000 ounces, largely in line with 2025. Production is expected to be affected by open-pit reconfiguration and later improved by higher grades from Phase 14A.'
+    },
+    extra: {
+      annualGoldProductionGuidance2026: { value: 560000, unit: 'troy_ounces_gold', year: 2026, status: 'CURRENT_ANNUAL_GUIDANCE' }
+    },
+    sources: [
+      evidence('https://www.newmont.com/investors/news-release/news-details/2026/Newmont-Reports-Fourth-Quarter-and-Full-Year-2025-Results-Provides-2026-Guidance-and-Announces-Enhanced-Capital-Allocation-Framework/', 'current_Lihir_2026_guidance_and_operational_context', 'OPERATOR')
+    ]
+  },
+  SITE_FJI_vatukoula_gold_mine: {
+    owner: 'Vatukoula Gold Mines Limited',
+    operator: 'Vatukoula Gold Mines Limited',
+    status: 'ACTIVE_PRODUCING',
+    operationalStatus: 'ACTIVE_PRODUCING',
+    extractionEligibility: 'EXECUTABLE',
+    extractionMethod: 'Underground gold mining with concentration; limited doré also recovered from tailings retreatment',
+    process: {
+      resourceTypeId: 'gold',
+      ontologyKey: 'GOLD',
+      commodityName: 'Gold concentrate and gold doré',
+      upstreamProcess: 'Underground Mining',
+      midstreamProcess: 'Concentration with tailings retreatment for doré',
+      refinedOutputs: ['GOLD_CONCENTRATE', 'GOLD_DORE']
+    },
+    metadata: {
+      sourceAuthority: 'Reserve Bank of Fiji / Fiji Times reporting on VGML',
+      currentEvidence: 'Fiji sources state that VGML remained the operator of Vatukoula in 2025 and shifted its product mix toward gold concentrate. The Reserve Bank clarified that its reported gold ore series is not the same as total gold production, so no single annual gold output figure is forced into the site record without a reconciled company figure.'
+    },
+    extra: {
+      measurementWarning: '2025 gold production data must distinguish gold ore, gold concentrate and gold doré; RBF public series are not a complete total-gold production measure.',
+      productShiftYear: 2025
+    },
+    sources: [
+      evidence('https://www.fijitimes.com.fj/rbf-clarifies-gold-output-calculations/', '2026_clarification_of_2025_VGML_gold_production_measurement_and_product_shift', 'NEWS'),
+      evidence('https://www.rbf.gov.fj/wp-content/uploads/2025/09/Quarterly-Review-June-2025-2.pdf', '2025_VGML_gold_concentration_and_ore_production_measurement_context', 'CENTRAL_BANK')
+    ]
+  }
 };
 
 function applyFix(site, fix) {
