@@ -3128,6 +3128,13 @@
                   "structuredSource": "site.webVerifiedMetrics",
                   "capacitySource": null,
                   "promotedAt": "2026-10-03"
+                },
+                "purity": {
+                  "value": 99,
+                  "unit": "percent_carbon",
+                  "year": 2025,
+                  "status": "REPORTED",
+                  "basis": "HIGH_PURITY_VEIN_GRAPHITE_PRODUCT"
                 }
               },
               "resourceIdentity": {
@@ -3290,10 +3297,11 @@
                     "status": "UNOBSERVED"
                   },
                   "purity": {
-                    "value": null,
-                    "unit": null,
-                    "year": null,
-                    "status": "UNOBSERVED"
+                    "value": 99,
+                    "unit": "percent_carbon",
+                    "year": 2025,
+                    "status": "REPORTED",
+                    "basis": "HIGH_PURITY_VEIN_GRAPHITE_PRODUCT"
                   },
                   "capacity": {},
                   "reportedMetrics": {
