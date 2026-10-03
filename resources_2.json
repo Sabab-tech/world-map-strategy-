@@ -2124,9 +2124,9 @@
               "locationNodeKey": "ASSET:JAM:noranda_st_ann_bauxite_mine",
               "status": "ACTIVE_PRODUCING",
               "operationalStatus": "ACTIVE_PRODUCING",
-              "owner": "Noranda Bauxite / Jamaica",
-              "operator": "Noranda Bauxite",
-              "extractionMethod": "open-pit bauxite mining",
+              "owner": "Noranda Jamaica Bauxite Partners II / Government of Jamaica 51%",
+              "operator": "Noranda Bauxite Limited",
+              "extractionMethod": "Surface bauxite mining, rail haulage to port, drying and export",
               "startYear": 1942,
               "legacyReferenceName": "Jamaica Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -2191,10 +2191,10 @@
                 "method": "open-pit bauxite mining",
                 "lifecycleStatus": "ACTIVE_PRODUCING",
                 "operationalStatus": "ACTIVE_PRODUCING",
-                "owner": "Noranda Bauxite / Jamaica",
-                "operator": "Noranda Bauxite",
-                "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-                "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+                "owner": "Noranda Jamaica Bauxite Partners II / Government of Jamaica 51%",
+                "operator": "Noranda Bauxite Limited",
+                "ownerEvidenceStatus": "WEB_REVIEWED",
+                "operatorEvidenceStatus": "WEB_REVIEWED"
               },
               "quantitativeProfile": {
                 "reserve": {
@@ -2250,7 +2250,7 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -2274,15 +2274,15 @@
                   "coordinateStatus": "ESTIMATED_SITE_POINT"
                 },
                 "ownership": {
-                  "owner": "Noranda Bauxite / Jamaica",
-                  "operator": "Noranda Bauxite",
-                  "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-                  "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+                  "owner": "Noranda Jamaica Bauxite Partners II / Government of Jamaica 51%",
+                  "operator": "Noranda Bauxite Limited",
+                  "ownerEvidenceStatus": "WEB_REVIEWED",
+                  "operatorEvidenceStatus": "WEB_REVIEWED"
                 },
                 "operation": {
                   "status": "ACTIVE_PRODUCING",
                   "operationalStatus": "ACTIVE_PRODUCING",
-                  "extractionMethod": "open-pit bauxite mining",
+                  "extractionMethod": "Surface bauxite mining, rail haulage to port, drying and export",
                   "extractionEligibility": "EXECUTABLE",
                   "commercialExtraction": true
                 },
@@ -2322,20 +2322,52 @@
                   }
                 },
                 "verification": {
-                  "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+                  "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
                   "reviewedAt": "2026-10-03",
-                  "sourceCount": 0,
-                  "sourceAuthorities": [],
+                  "sourceCount": 3,
+                  "sourceAuthorities": [
+                    "GOVERNMENT",
+                    "GOVERNMENT_ENVIRONMENTAL_REPORT"
+                  ],
                   "dataLimitations": null
                 }
               },
               "extractionEligibility": "EXECUTABLE",
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
               "researchMetadata": {
                 "reviewedAt": "2026-10-03",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
-                "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
-              }
+                "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
+                "sourceAuthority": "Jamaica Bauxite Institute / Jamaica Mines and Geology Division",
+                "currentEvidence": "JBI states Noranda Jamaica Bauxite Partners II is a partnership in which Noranda Bauxite holds and operates the physical mining assets and the Government of Jamaica owns 51%. The mining concession runs through 2030. A 2025 environmental report gives production capacity around 5.4 Mt/year."
+              },
+              "concessionExpiryYear": 2030,
+              "nominalProductionCapacity": {
+                "value": 5400000,
+                "unit": "metric_tons_bauxite_per_year",
+                "year": 2025,
+                "status": "REPORTED_CAPACITY"
+              },
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.jbi.org.jm/industry/",
+                  "accessed": "2026-10-03",
+                  "scope": "current_Noranda_partnership_operator_and_St_Ann_mining_logistics",
+                  "sourceType": "GOVERNMENT"
+                },
+                {
+                  "url": "https://mgd.gov.jm/mining-licence/",
+                  "accessed": "2026-10-03",
+                  "scope": "current_special_mining_lease_for_Noranda_Jamaica_Bauxite_Partners",
+                  "sourceType": "GOVERNMENT"
+                },
+                {
+                  "url": "https://www.nepa.gov.jm/sites/default/files/2025-10/SDR%20EIA%20WO%20CHAPEL%20WO%20TC%20le.pdf",
+                  "accessed": "2026-10-03",
+                  "scope": "2025_St_Ann_bauxite_production_capacity",
+                  "sourceType": "GOVERNMENT_ENVIRONMENTAL_REPORT"
+                }
+              ]
             }
           ],
           "processingFacilities": [
@@ -3370,9 +3402,9 @@
               "locationNodeKey": "ASSET:DOM:pueblo_viejo_gold_mine",
               "status": "ACTIVE_PRODUCING",
               "operationalStatus": "ACTIVE_PRODUCING",
-              "owner": "Barrick / Dominican state",
-              "operator": "Pueblo Viejo Dominicana",
-              "extractionMethod": "open-pit and refractory processing",
+              "owner": "Barrick Gold 60% / Newmont 40%",
+              "operator": "Barrick Gold Corporation",
+              "extractionMethod": "Open-pit truck-and-shovel mining with CIL processing and stockpile blending",
               "startYear": 2012,
               "legacyReferenceName": "Dominican Republic Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -3437,10 +3469,10 @@
                 "method": "open-pit and refractory processing",
                 "lifecycleStatus": "ACTIVE_PRODUCING",
                 "operationalStatus": "ACTIVE_PRODUCING",
-                "owner": "Barrick / Dominican state",
-                "operator": "Pueblo Viejo Dominicana",
-                "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-                "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+                "owner": "Barrick Gold 60% / Newmont 40%",
+                "operator": "Barrick Gold Corporation",
+                "ownerEvidenceStatus": "WEB_REVIEWED",
+                "operatorEvidenceStatus": "WEB_REVIEWED"
               },
               "quantitativeProfile": {
                 "reserve": {
@@ -3493,7 +3525,7 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -3517,15 +3549,15 @@
                   "coordinateStatus": "ESTIMATED_SITE_POINT"
                 },
                 "ownership": {
-                  "owner": "Barrick / Dominican state",
-                  "operator": "Pueblo Viejo Dominicana",
-                  "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-                  "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+                  "owner": "Barrick Gold 60% / Newmont 40%",
+                  "operator": "Barrick Gold Corporation",
+                  "ownerEvidenceStatus": "WEB_REVIEWED",
+                  "operatorEvidenceStatus": "WEB_REVIEWED"
                 },
                 "operation": {
                   "status": "ACTIVE_PRODUCING",
                   "operationalStatus": "ACTIVE_PRODUCING",
-                  "extractionMethod": "open-pit and refractory processing",
+                  "extractionMethod": "Open-pit truck-and-shovel mining with CIL processing and stockpile blending",
                   "extractionEligibility": "EXECUTABLE",
                   "commercialExtraction": true
                 },
@@ -3562,20 +3594,42 @@
                   }
                 },
                 "verification": {
-                  "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+                  "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
                   "reviewedAt": "2026-10-03",
-                  "sourceCount": 0,
-                  "sourceAuthorities": [],
+                  "sourceCount": 1,
+                  "sourceAuthorities": [
+                    "REGULATORY_FILING"
+                  ],
                   "dataLimitations": null
                 }
               },
               "extractionEligibility": "EXECUTABLE",
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
               "researchMetadata": {
                 "reviewedAt": "2026-10-03",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
-                "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
-              }
+                "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
+                "sourceAuthority": "Barrick SEC Annual Information Form",
+                "currentEvidence": "Barrick reports Pueblo Viejo as a 60%-owned joint venture with Barrick as operator. The mine is an open-pit conventional truck-and-shovel operation and produced 379,014 ounces attributable to Barrick in 2025. Mining is projected to continue through 2048 under current reserves and tailings plans."
+              },
+              "2025BarrickAttributableGoldProduction": {
+                "value": 379014,
+                "unit": "troy_ounces_gold",
+                "year": 2025,
+                "status": "OBSERVED_60_PERCENT_ATTRIBUTABLE"
+              },
+              "mineLifeContext": {
+                "openPitThroughYear": 2048,
+                "processingThroughYear": 2049
+              },
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.sec.gov/Archives/edgar/data/756894/000119312526079253/d833573dex991.htm",
+                  "accessed": "2026-10-03",
+                  "scope": "2025_production_operator_mining_method_and_mine_life",
+                  "sourceType": "REGULATORY_FILING"
+                }
+              ]
             }
           ],
           "processingFacilities": [
@@ -3974,9 +4028,9 @@
               "locationNodeKey": "ASSET:TTO:juniper_oil_field",
               "status": "ACTIVE_PRODUCING",
               "operationalStatus": "ACTIVE_PRODUCING",
-              "owner": "bpTT / Trinidad and Tobago",
-              "operator": "bp Trinidad and Tobago",
-              "extractionMethod": "offshore platforms and subsea wells",
+              "owner": "bp Trinidad and Tobago LLC / Republic of Trinidad and Tobago state interests",
+              "operator": "bp Trinidad and Tobago LLC",
+              "extractionMethod": "Offshore oil and gas wells with subsea/wellhead gathering and field processing",
               "startYear": 2017,
               "legacyReferenceName": "Trinidad and Tobago Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -4041,10 +4095,10 @@
                 "method": "offshore platforms and subsea wells",
                 "lifecycleStatus": "ACTIVE_PRODUCING",
                 "operationalStatus": "ACTIVE_PRODUCING",
-                "owner": "bpTT / Trinidad and Tobago",
-                "operator": "bp Trinidad and Tobago",
-                "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-                "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+                "owner": "bp Trinidad and Tobago LLC / Republic of Trinidad and Tobago state interests",
+                "operator": "bp Trinidad and Tobago LLC",
+                "ownerEvidenceStatus": "WEB_REVIEWED",
+                "operatorEvidenceStatus": "WEB_REVIEWED"
               },
               "quantitativeProfile": {
                 "reserve": {
@@ -4102,7 +4156,7 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -4126,15 +4180,15 @@
                   "coordinateStatus": "ESTIMATED_SITE_POINT"
                 },
                 "ownership": {
-                  "owner": "bpTT / Trinidad and Tobago",
-                  "operator": "bp Trinidad and Tobago",
-                  "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-                  "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+                  "owner": "bp Trinidad and Tobago LLC / Republic of Trinidad and Tobago state interests",
+                  "operator": "bp Trinidad and Tobago LLC",
+                  "ownerEvidenceStatus": "WEB_REVIEWED",
+                  "operatorEvidenceStatus": "WEB_REVIEWED"
                 },
                 "operation": {
                   "status": "ACTIVE_PRODUCING",
                   "operationalStatus": "ACTIVE_PRODUCING",
-                  "extractionMethod": "offshore platforms and subsea wells",
+                  "extractionMethod": "Offshore oil and gas wells with subsea/wellhead gathering and field processing",
                   "extractionEligibility": "EXECUTABLE",
                   "commercialExtraction": true
                 },
@@ -4176,20 +4230,32 @@
                   }
                 },
                 "verification": {
-                  "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+                  "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
                   "reviewedAt": "2026-10-03",
-                  "sourceCount": 0,
-                  "sourceAuthorities": [],
+                  "sourceCount": 1,
+                  "sourceAuthorities": [
+                    "OPERATOR"
+                  ],
                   "dataLimitations": null
                 }
               },
               "extractionEligibility": "EXECUTABLE",
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
               "researchMetadata": {
                 "reviewedAt": "2026-10-03",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
-                "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
-              }
+                "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
+                "sourceAuthority": "bp Trinidad and Tobago",
+                "currentEvidence": "Juniper is retained as an offshore bp Trinidad and Tobago producing field. Current site-specific production is left unobserved in the absence of a public current field-level series in the retrieved source set."
+              },
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.bptt.com/",
+                  "accessed": "2026-10-03",
+                  "scope": "current_bp_Trinidad_and_Tobago_operator_and_offshore_asset_context",
+                  "sourceType": "OPERATOR"
+                }
+              ]
             }
           ],
           "processingFacilities": [
@@ -5197,11 +5263,11 @@
               "lat": 13.33,
               "lng": -59.64,
               "locationNodeKey": "ASSET:BRB:arawak_cement_limestone_quarry",
-              "status": "ACTIVE_PRODUCING",
-              "operationalStatus": "ACTIVE_PRODUCING",
-              "owner": "Arawak Cement",
-              "operator": "Arawak Cement",
-              "extractionMethod": "surface quarrying",
+              "status": "MILL_ONLY_NO_QUARRY_VERIFIED",
+              "operationalStatus": "MILL_ONLY_NO_QUARRY_VERIFIED",
+              "owner": "Arawak Cement Company Limited / TCL Group",
+              "operator": "Arawak Cement Company Limited",
+              "extractionMethod": "No current quarry extraction at Checker Hall is established; current site operation is cement grinding",
               "startYear": 1967,
               "legacyReferenceName": "Barbados Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -5266,10 +5332,10 @@
                 "method": "surface quarrying",
                 "lifecycleStatus": "ACTIVE_PRODUCING",
                 "operationalStatus": "ACTIVE_PRODUCING",
-                "owner": "Arawak Cement",
-                "operator": "Arawak Cement",
-                "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-                "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+                "owner": "Arawak Cement Company Limited / TCL Group",
+                "operator": "Arawak Cement Company Limited",
+                "ownerEvidenceStatus": "WEB_REVIEWED",
+                "operatorEvidenceStatus": "WEB_REVIEWED"
               },
               "quantitativeProfile": {
                 "reserve": {
@@ -5322,7 +5388,7 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -5346,16 +5412,16 @@
                   "coordinateStatus": "ESTIMATED_SITE_POINT"
                 },
                 "ownership": {
-                  "owner": "Arawak Cement",
-                  "operator": "Arawak Cement",
-                  "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-                  "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+                  "owner": "Arawak Cement Company Limited / TCL Group",
+                  "operator": "Arawak Cement Company Limited",
+                  "ownerEvidenceStatus": "WEB_REVIEWED",
+                  "operatorEvidenceStatus": "WEB_REVIEWED"
                 },
                 "operation": {
-                  "status": "ACTIVE_PRODUCING",
-                  "operationalStatus": "ACTIVE_PRODUCING",
-                  "extractionMethod": "surface quarrying",
-                  "extractionEligibility": "EXECUTABLE",
+                  "status": "MILL_ONLY_NO_QUARRY_VERIFIED",
+                  "operationalStatus": "MILL_ONLY_NO_QUARRY_VERIFIED",
+                  "extractionMethod": "No current quarry extraction at Checker Hall is established; current site operation is cement grinding",
+                  "extractionEligibility": "NON_EXECUTABLE",
                   "commercialExtraction": true
                 },
                 "processing": {
@@ -5391,20 +5457,42 @@
                   }
                 },
                 "verification": {
-                  "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+                  "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
                   "reviewedAt": "2026-10-03",
-                  "sourceCount": 0,
-                  "sourceAuthorities": [],
+                  "sourceCount": 2,
+                  "sourceAuthorities": [
+                    "GOVERNMENT_TRADE_AGENCY",
+                    "INDUSTRY_DATABASE"
+                  ],
                   "dataLimitations": null
                 }
               },
-              "extractionEligibility": "EXECUTABLE",
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "extractionEligibility": "NON_EXECUTABLE",
+              "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
               "researchMetadata": {
                 "reviewedAt": "2026-10-03",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
-                "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
-              }
+                "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
+                "sourceAuthority": "Export Barbados / current cement-sector records",
+                "currentEvidence": "Current records describe Arawak Cement at Checker Hall as a grinding operation. Clinker production at the St Lucy plant ceased in March 2023, with imported clinker subsequently ground at the site. Therefore the repository must not execute this record as a limestone mine without evidence of a current quarry at the exact site."
+              },
+              "currentProcess": "CEMENT_GRINDING",
+              "clinkerProductionAtCheckerHall": false,
+              "mineIdentityStatus": "SITE_SHOULD_BE_TREATED_AS_CEMENT_GRINDING_FACILITY_UNTIL_QUARRY_SOURCE_IS_ESTABLISHED",
+              "webResearchEvidence": [
+                {
+                  "url": "https://exportbarbados.org/arawak-cement-co-ltd",
+                  "accessed": "2026-10-03",
+                  "scope": "current_Arawak_Cement_business_identity_and_Checker_Hall_location",
+                  "sourceType": "GOVERNMENT_TRADE_AGENCY"
+                },
+                {
+                  "url": "https://www.investcaricom.org/market-rating-index/evidence/cement-operators/cement-supply-position/",
+                  "accessed": "2026-10-03",
+                  "scope": "2026_current_grinding_only_status_and_ceasing_clinker_production",
+                  "sourceType": "INDUSTRY_DATABASE"
+                }
+              ]
             }
           ],
           "processingFacilities": [
@@ -9512,9 +9600,9 @@
               "locationNodeKey": "ASSET:SUR:merian_gold_mine",
               "status": "ACTIVE_PRODUCING",
               "operationalStatus": "ACTIVE_PRODUCING",
-              "owner": "Newmont / Staatsolie",
+              "owner": "Newmont 75% / Staatsolie 25%",
               "operator": "Newmont Suriname",
-              "extractionMethod": "open-pit",
+              "extractionMethod": "Open-pit gold mining with conventional milling, gravity and carbon-in-leach processing",
               "startYear": 2016,
               "legacyReferenceName": "Suriname Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -9579,16 +9667,18 @@
                 "method": "open-pit",
                 "lifecycleStatus": "ACTIVE_PRODUCING",
                 "operationalStatus": "ACTIVE_PRODUCING",
-                "owner": "Newmont / Staatsolie",
+                "owner": "Newmont 75% / Staatsolie 25%",
                 "operator": "Newmont Suriname",
-                "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-                "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+                "ownerEvidenceStatus": "WEB_REVIEWED",
+                "operatorEvidenceStatus": "WEB_REVIEWED"
               },
               "quantitativeProfile": {
                 "reserve": {
-                  "quantity": null,
-                  "unit": null,
-                  "status": "UNOBSERVED"
+                  "quantity": 4500000,
+                  "unit": "troy_ounces_gold",
+                  "status": "OBSERVED_ATTRIBUTABLE",
+                  "year": 2025,
+                  "sourceScope": "Newmont_75_percent_attributable_reserve"
                 },
                 "production": {
                   "annual": null,
@@ -9607,15 +9697,13 @@
               "resourceIdentity": {
                 "resourceTypeId": "gold",
                 "ontologyKey": "GOLD",
-                "commodityName": "Gold Ore & Doré",
+                "commodityName": "Gold doré",
                 "category": "PRECIOUS_METAL",
                 "physicalForm": "SOLID_ORE_AND_DORE",
-                "upstreamProcess": "Open-Pit / Underground Mining, Gravity, Flotation",
-                "midstreamProcess": "Crushing, Grinding, Gravity/Flotation, Cyanide Leaching, Smelting",
+                "upstreamProcess": "Open-Pit Mining",
+                "midstreamProcess": "Crushing, comminution, gravity, cyanide leach, carbon-in-leach, elution, electrowinning and smelting",
                 "refinedOutputs": [
-                  "GOLD_DORE",
-                  "JEWELRY",
-                  "ELECTRONICS"
+                  "GOLD_DORE"
                 ],
                 "downstreamSectors": [
                   "CENTRAL_BANK_RESERVES",
@@ -9635,7 +9723,7 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -9645,7 +9733,7 @@
                   "countryIso3": "SUR",
                   "siteType": "MINE",
                   "resourceTypeId": "gold",
-                  "resourceName": "Gold Ore & Doré",
+                  "resourceName": "Gold doré",
                   "ontologyKey": "GOLD"
                 },
                 "location": {
@@ -9659,25 +9747,23 @@
                   "coordinateStatus": "ESTIMATED_SITE_POINT"
                 },
                 "ownership": {
-                  "owner": "Newmont / Staatsolie",
+                  "owner": "Newmont 75% / Staatsolie 25%",
                   "operator": "Newmont Suriname",
-                  "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-                  "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+                  "ownerEvidenceStatus": "WEB_REVIEWED",
+                  "operatorEvidenceStatus": "WEB_REVIEWED"
                 },
                 "operation": {
                   "status": "ACTIVE_PRODUCING",
                   "operationalStatus": "ACTIVE_PRODUCING",
-                  "extractionMethod": "open-pit",
+                  "extractionMethod": "Open-pit gold mining with conventional milling, gravity and carbon-in-leach processing",
                   "extractionEligibility": "EXECUTABLE",
                   "commercialExtraction": true
                 },
                 "processing": {
-                  "upstreamProcess": "Open-Pit / Underground Mining, Gravity, Flotation",
-                  "midstreamProcess": "Crushing, Grinding, Gravity/Flotation, Cyanide Leaching, Smelting",
+                  "upstreamProcess": "Open-Pit Mining",
+                  "midstreamProcess": "Crushing, comminution, gravity, cyanide leach, carbon-in-leach, elution, electrowinning and smelting",
                   "refinedOutputs": [
-                    "GOLD_DORE",
-                    "JEWELRY",
-                    "ELECTRONICS"
+                    "GOLD_DORE"
                   ],
                   "downstreamSectors": [
                     "CENTRAL_BANK_RESERVES",
@@ -9686,9 +9772,11 @@
                 },
                 "quantitative": {
                   "reserve": {
-                    "quantity": null,
-                    "unit": null,
-                    "status": "UNOBSERVED"
+                    "quantity": 4500000,
+                    "unit": "troy_ounces_gold",
+                    "status": "OBSERVED_ATTRIBUTABLE",
+                    "year": 2025,
+                    "sourceScope": "Newmont_75_percent_attributable_reserve"
                   },
                   "production": {
                     "annual": null,
@@ -9704,20 +9792,38 @@
                   }
                 },
                 "verification": {
-                  "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+                  "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
                   "reviewedAt": "2026-10-03",
-                  "sourceCount": 0,
-                  "sourceAuthorities": [],
+                  "sourceCount": 2,
+                  "sourceAuthorities": [
+                    "REGULATORY_FILING"
+                  ],
                   "dataLimitations": null
                 }
               },
               "extractionEligibility": "EXECUTABLE",
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
               "researchMetadata": {
                 "reviewedAt": "2026-10-03",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
-                "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
-              }
+                "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
+                "sourceAuthority": "Newmont 2025 SEC annual report",
+                "currentEvidence": "Newmont reports Merian as an open-pit operation comprising the Merian 1, Merian 2, Maraba and Kupari pits, with a conventional gold mill using gravity and CIL recovery to produce gold doré. Newmont reported 4.5 million attributable ounces of gold reserves at December 31, 2025."
+              },
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.sec.gov/Archives/edgar/data/1164727/000116472726000010/nem-20251231.htm",
+                  "accessed": "2026-10-03",
+                  "scope": "2025_Merian_pits_processing_method_operator_and_attributable_reserves",
+                  "sourceType": "REGULATORY_FILING"
+                },
+                {
+                  "url": "https://www.sec.gov/Archives/edgar/data/1164727/000116472726000027/nmnt-20251231.htm",
+                  "accessed": "2026-10-03",
+                  "scope": "2025_Merian_resource_extraction_payment_and_project_identity",
+                  "sourceType": "REGULATORY_FILING"
+                }
+              ]
             }
           ],
           "processingFacilities": [
@@ -10118,9 +10224,9 @@
               "locationNodeKey": "ASSET:GUY:aurora_gold_mine",
               "status": "ACTIVE_PRODUCING",
               "operationalStatus": "ACTIVE_PRODUCING",
-              "owner": "Zijin / Guyana",
-              "operator": "Aurora operations",
-              "extractionMethod": "open-pit and underground",
+              "owner": "Zijin Mining 85% / Guyana interests",
+              "operator": "Aurora Gold Mine / Zijin Mining",
+              "extractionMethod": "Open-pit and underground gold mining with gravity separation and cyanide leaching",
               "startYear": 2015,
               "legacyReferenceName": "Guyana Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -10185,10 +10291,10 @@
                 "method": "open-pit and underground",
                 "lifecycleStatus": "ACTIVE_PRODUCING",
                 "operationalStatus": "ACTIVE_PRODUCING",
-                "owner": "Zijin / Guyana",
-                "operator": "Aurora operations",
-                "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-                "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+                "owner": "Zijin Mining 85% / Guyana interests",
+                "operator": "Aurora Gold Mine / Zijin Mining",
+                "ownerEvidenceStatus": "WEB_REVIEWED",
+                "operatorEvidenceStatus": "WEB_REVIEWED"
               },
               "quantitativeProfile": {
                 "reserve": {
@@ -10197,11 +10303,14 @@
                   "status": "UNOBSERVED"
                 },
                 "production": {
-                  "annual": null,
-                  "rate": null,
-                  "unit": null,
-                  "year": null,
-                  "status": "UNOBSERVED"
+                  "annual": {
+                    "value": 4.5,
+                    "unit": "metric_tons_gold",
+                    "year": 2025
+                  },
+                  "status": "OBSERVED",
+                  "measurementType": "TOTAL_SITE_GOLD_PRODUCTION",
+                  "sourceScope": "SITE_SPECIFIC"
                 },
                 "grade": {
                   "value": null,
@@ -10213,15 +10322,13 @@
               "resourceIdentity": {
                 "resourceTypeId": "gold",
                 "ontologyKey": "GOLD",
-                "commodityName": "Gold Ore & Doré",
+                "commodityName": "Gold",
                 "category": "PRECIOUS_METAL",
                 "physicalForm": "SOLID_ORE_AND_DORE",
-                "upstreamProcess": "Open-Pit / Underground Mining, Gravity, Flotation",
-                "midstreamProcess": "Crushing, Grinding, Gravity/Flotation, Cyanide Leaching, Smelting",
+                "upstreamProcess": "Open-Pit Mining and Underground Development",
+                "midstreamProcess": "Gravity Separation and Cyanide Leaching",
                 "refinedOutputs": [
-                  "GOLD_DORE",
-                  "JEWELRY",
-                  "ELECTRONICS"
+                  "GOLD_DORE"
                 ],
                 "downstreamSectors": [
                   "CENTRAL_BANK_RESERVES",
@@ -10241,7 +10348,7 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -10251,7 +10358,7 @@
                   "countryIso3": "GUY",
                   "siteType": "MINE",
                   "resourceTypeId": "gold",
-                  "resourceName": "Gold Ore & Doré",
+                  "resourceName": "Gold",
                   "ontologyKey": "GOLD"
                 },
                 "location": {
@@ -10265,25 +10372,23 @@
                   "coordinateStatus": "ESTIMATED_SITE_POINT"
                 },
                 "ownership": {
-                  "owner": "Zijin / Guyana",
-                  "operator": "Aurora operations",
-                  "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-                  "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+                  "owner": "Zijin Mining 85% / Guyana interests",
+                  "operator": "Aurora Gold Mine / Zijin Mining",
+                  "ownerEvidenceStatus": "WEB_REVIEWED",
+                  "operatorEvidenceStatus": "WEB_REVIEWED"
                 },
                 "operation": {
                   "status": "ACTIVE_PRODUCING",
                   "operationalStatus": "ACTIVE_PRODUCING",
-                  "extractionMethod": "open-pit and underground",
+                  "extractionMethod": "Open-pit and underground gold mining with gravity separation and cyanide leaching",
                   "extractionEligibility": "EXECUTABLE",
                   "commercialExtraction": true
                 },
                 "processing": {
-                  "upstreamProcess": "Open-Pit / Underground Mining, Gravity, Flotation",
-                  "midstreamProcess": "Crushing, Grinding, Gravity/Flotation, Cyanide Leaching, Smelting",
+                  "upstreamProcess": "Open-Pit Mining and Underground Development",
+                  "midstreamProcess": "Gravity Separation and Cyanide Leaching",
                   "refinedOutputs": [
-                    "GOLD_DORE",
-                    "JEWELRY",
-                    "ELECTRONICS"
+                    "GOLD_DORE"
                   ],
                   "downstreamSectors": [
                     "CENTRAL_BANK_RESERVES",
@@ -10297,11 +10402,14 @@
                     "status": "UNOBSERVED"
                   },
                   "production": {
-                    "annual": null,
-                    "rate": null,
-                    "unit": null,
-                    "year": null,
-                    "status": "UNOBSERVED"
+                    "annual": {
+                      "value": 4.5,
+                      "unit": "metric_tons_gold",
+                      "year": 2025
+                    },
+                    "status": "OBSERVED",
+                    "measurementType": "TOTAL_SITE_GOLD_PRODUCTION",
+                    "sourceScope": "SITE_SPECIFIC"
                   },
                   "grade": {
                     "value": null,
@@ -10310,20 +10418,42 @@
                   }
                 },
                 "verification": {
-                  "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+                  "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
                   "reviewedAt": "2026-10-03",
-                  "sourceCount": 0,
-                  "sourceAuthorities": [],
+                  "sourceCount": 1,
+                  "sourceAuthorities": [
+                    "OPERATOR"
+                  ],
                   "dataLimitations": null
                 }
               },
               "extractionEligibility": "EXECUTABLE",
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
               "researchMetadata": {
                 "reviewedAt": "2026-10-03",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
-                "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
-              }
+                "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
+                "sourceAuthority": "Zijin Mining",
+                "currentEvidence": "Zijin identifies Aurora as Guyana’s only large-scale operating gold mine, 85%-owned, in production and undergoing debottlenecking and expansion. It reports 4.5 tonnes of gold production in 2025 and a 10,000 t/day processing capacity."
+              },
+              "processingCapacity": {
+                "value": 10000,
+                "unit": "metric_tons_ore_per_day",
+                "status": "CURRENT_REPORTED_CAPACITY"
+              },
+              "fullCapacityGoldTarget": {
+                "value": 6,
+                "unit": "metric_tons_gold_per_year",
+                "status": "PLANNED_EXPANSION"
+              },
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.zijinmining.com/global/program-detail-71743.htm",
+                  "accessed": "2026-10-03",
+                  "scope": "2025_site_specific_production_capacity_owner_and_mining_processing_methods",
+                  "sourceType": "OPERATOR"
+                }
+              ]
             }
           ],
           "processingFacilities": [
@@ -10721,9 +10851,9 @@
               "locationNodeKey": "ASSET:AUS:boddington_gold_mine",
               "status": "ACTIVE_PRODUCING",
               "operationalStatus": "ACTIVE_PRODUCING",
-              "owner": "Newmont",
+              "owner": "Newmont Corporation",
               "operator": "Newmont Boddington Gold",
-              "extractionMethod": "large open-pit and processing",
+              "extractionMethod": "Large open-pit gold-copper mining with concentrator and processing plant",
               "startYear": 1987,
               "legacyReferenceName": "Australia Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -10788,16 +10918,18 @@
                 "method": "large open-pit and processing",
                 "lifecycleStatus": "ACTIVE_PRODUCING",
                 "operationalStatus": "ACTIVE_PRODUCING",
-                "owner": "Newmont",
+                "owner": "Newmont Corporation",
                 "operator": "Newmont Boddington Gold",
-                "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-                "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+                "ownerEvidenceStatus": "WEB_REVIEWED",
+                "operatorEvidenceStatus": "WEB_REVIEWED"
               },
               "quantitativeProfile": {
                 "reserve": {
-                  "quantity": null,
-                  "unit": null,
-                  "status": "UNOBSERVED"
+                  "quantity": 10200000,
+                  "unit": "troy_ounces_gold",
+                  "status": "OBSERVED",
+                  "year": 2025,
+                  "sourceScope": "FY2025_RESERVE"
                 },
                 "production": {
                   "annual": null,
@@ -10816,21 +10948,24 @@
               "resourceIdentity": {
                 "resourceTypeId": "gold",
                 "ontologyKey": "GOLD",
-                "commodityName": "Gold Ore & Doré",
+                "commodityName": "Gold and copper concentrate",
                 "category": "PRECIOUS_METAL",
                 "physicalForm": "SOLID_ORE_AND_DORE",
-                "upstreamProcess": "Open-Pit / Underground Mining, Gravity, Flotation",
-                "midstreamProcess": "Crushing, Grinding, Gravity/Flotation, Cyanide Leaching, Smelting",
+                "upstreamProcess": "Open-Pit Mining",
+                "midstreamProcess": "Crushing, grinding, flotation and gold recovery",
                 "refinedOutputs": [
                   "GOLD_DORE",
-                  "JEWELRY",
-                  "ELECTRONICS"
+                  "COPPER_CONCENTRATE"
                 ],
                 "downstreamSectors": [
                   "CENTRAL_BANK_RESERVES",
                   "INDUSTRIAL_CHEMICALS"
                 ],
-                "ontologyStatus": "RESOLVED_FROM_RESOURCE_ONTOLOGY"
+                "ontologyStatus": "RESOLVED_FROM_RESOURCE_ONTOLOGY",
+                "primaryCommodity": "gold",
+                "secondaryCommodities": [
+                  "copper"
+                ]
               },
               "dataCompleteness": {
                 "identity": "COMPLETE",
@@ -10844,7 +10979,7 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -10854,7 +10989,7 @@
                   "countryIso3": "AUS",
                   "siteType": "MINE",
                   "resourceTypeId": "gold",
-                  "resourceName": "Gold Ore & Doré",
+                  "resourceName": "Gold and copper concentrate",
                   "ontologyKey": "GOLD"
                 },
                 "location": {
@@ -10868,25 +11003,24 @@
                   "coordinateStatus": "ESTIMATED_SITE_POINT"
                 },
                 "ownership": {
-                  "owner": "Newmont",
+                  "owner": "Newmont Corporation",
                   "operator": "Newmont Boddington Gold",
-                  "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-                  "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+                  "ownerEvidenceStatus": "WEB_REVIEWED",
+                  "operatorEvidenceStatus": "WEB_REVIEWED"
                 },
                 "operation": {
                   "status": "ACTIVE_PRODUCING",
                   "operationalStatus": "ACTIVE_PRODUCING",
-                  "extractionMethod": "large open-pit and processing",
+                  "extractionMethod": "Large open-pit gold-copper mining with concentrator and processing plant",
                   "extractionEligibility": "EXECUTABLE",
                   "commercialExtraction": true
                 },
                 "processing": {
-                  "upstreamProcess": "Open-Pit / Underground Mining, Gravity, Flotation",
-                  "midstreamProcess": "Crushing, Grinding, Gravity/Flotation, Cyanide Leaching, Smelting",
+                  "upstreamProcess": "Open-Pit Mining",
+                  "midstreamProcess": "Crushing, grinding, flotation and gold recovery",
                   "refinedOutputs": [
                     "GOLD_DORE",
-                    "JEWELRY",
-                    "ELECTRONICS"
+                    "COPPER_CONCENTRATE"
                   ],
                   "downstreamSectors": [
                     "CENTRAL_BANK_RESERVES",
@@ -10895,9 +11029,11 @@
                 },
                 "quantitative": {
                   "reserve": {
-                    "quantity": null,
-                    "unit": null,
-                    "status": "UNOBSERVED"
+                    "quantity": 10200000,
+                    "unit": "troy_ounces_gold",
+                    "status": "OBSERVED",
+                    "year": 2025,
+                    "sourceScope": "FY2025_RESERVE"
                   },
                   "production": {
                     "annual": null,
@@ -10913,20 +11049,50 @@
                   }
                 },
                 "verification": {
-                  "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+                  "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
                   "reviewedAt": "2026-10-03",
-                  "sourceCount": 0,
-                  "sourceAuthorities": [],
+                  "sourceCount": 1,
+                  "sourceAuthorities": [
+                    "OPERATOR"
+                  ],
                   "dataLimitations": null
                 }
               },
               "extractionEligibility": "EXECUTABLE",
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
               "researchMetadata": {
                 "reviewedAt": "2026-10-03",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
-                "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
-              }
+                "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
+                "sourceAuthority": "Newmont",
+                "currentEvidence": "Newmont reports Boddington as an active large Australian gold mine producing gold and copper concentrate. FY2025 reserves were 10.2 Moz gold and 0.5 Mt copper. The operation was affected by December 2025 bushfires but returned to higher throughput during 2026."
+              },
+              "annualGoldProductionGuidance2026": {
+                "value": 160000,
+                "unit": "troy_ounces_gold",
+                "year": 2026,
+                "status": "CURRENT_ANNUAL_GUIDANCE"
+              },
+              "annualCopperProductionGuidance2026": {
+                "value": 5000,
+                "unit": "metric_tons_copper",
+                "year": 2026,
+                "status": "CURRENT_ANNUAL_GUIDANCE"
+              },
+              "copperReserveFY2025": {
+                "value": 500000,
+                "unit": "metric_tons_copper",
+                "year": 2025,
+                "status": "OBSERVED"
+              },
+              "webResearchEvidence": [
+                {
+                  "url": "https://operations.newmont.com/australia/boddington/",
+                  "accessed": "2026-10-03",
+                  "scope": "current_Boddington_production_reserves_status_and_processing_context",
+                  "sourceType": "OPERATOR"
+                }
+              ]
             }
           ],
           "processingFacilities": [
@@ -11325,9 +11491,9 @@
               "locationNodeKey": "ASSET:NZL:macraes_gold_mine",
               "status": "ACTIVE_PRODUCING",
               "operationalStatus": "ACTIVE_PRODUCING",
-              "owner": "OceanaGold",
+              "owner": "OceanaGold Corporation",
               "operator": "OceanaGold New Zealand",
-              "extractionMethod": "open-pit and underground",
+              "extractionMethod": "Open-pit and underground gold mining with carbon-in-leach and pressure oxidation processing",
               "startYear": 1990,
               "legacyReferenceName": "New Zealand Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -11392,10 +11558,10 @@
                 "method": "open-pit and underground",
                 "lifecycleStatus": "ACTIVE_PRODUCING",
                 "operationalStatus": "ACTIVE_PRODUCING",
-                "owner": "OceanaGold",
+                "owner": "OceanaGold Corporation",
                 "operator": "OceanaGold New Zealand",
-                "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-                "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+                "ownerEvidenceStatus": "WEB_REVIEWED",
+                "operatorEvidenceStatus": "WEB_REVIEWED"
               },
               "quantitativeProfile": {
                 "reserve": {
@@ -11404,11 +11570,14 @@
                   "status": "UNOBSERVED"
                 },
                 "production": {
-                  "annual": null,
-                  "rate": null,
-                  "unit": null,
-                  "year": null,
-                  "status": "UNOBSERVED"
+                  "annual": {
+                    "value": 147000,
+                    "unit": "troy_ounces_gold",
+                    "year": 2025
+                  },
+                  "status": "OBSERVED",
+                  "measurementType": "TOTAL_SITE_GOLD_PRODUCTION",
+                  "sourceScope": "SITE_SPECIFIC"
                 },
                 "grade": {
                   "value": null,
@@ -11420,15 +11589,13 @@
               "resourceIdentity": {
                 "resourceTypeId": "gold",
                 "ontologyKey": "GOLD",
-                "commodityName": "Gold Ore & Doré",
+                "commodityName": "Gold",
                 "category": "PRECIOUS_METAL",
                 "physicalForm": "SOLID_ORE_AND_DORE",
-                "upstreamProcess": "Open-Pit / Underground Mining, Gravity, Flotation",
-                "midstreamProcess": "Crushing, Grinding, Gravity/Flotation, Cyanide Leaching, Smelting",
+                "upstreamProcess": "Open-Pit and Underground Mining",
+                "midstreamProcess": "Carbon-in-leach and pressure oxidation",
                 "refinedOutputs": [
-                  "GOLD_DORE",
-                  "JEWELRY",
-                  "ELECTRONICS"
+                  "GOLD_DORE"
                 ],
                 "downstreamSectors": [
                   "CENTRAL_BANK_RESERVES",
@@ -11448,7 +11615,7 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -11458,7 +11625,7 @@
                   "countryIso3": "NZL",
                   "siteType": "MINE",
                   "resourceTypeId": "gold",
-                  "resourceName": "Gold Ore & Doré",
+                  "resourceName": "Gold",
                   "ontologyKey": "GOLD"
                 },
                 "location": {
@@ -11472,25 +11639,23 @@
                   "coordinateStatus": "ESTIMATED_SITE_POINT"
                 },
                 "ownership": {
-                  "owner": "OceanaGold",
+                  "owner": "OceanaGold Corporation",
                   "operator": "OceanaGold New Zealand",
-                  "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-                  "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+                  "ownerEvidenceStatus": "WEB_REVIEWED",
+                  "operatorEvidenceStatus": "WEB_REVIEWED"
                 },
                 "operation": {
                   "status": "ACTIVE_PRODUCING",
                   "operationalStatus": "ACTIVE_PRODUCING",
-                  "extractionMethod": "open-pit and underground",
+                  "extractionMethod": "Open-pit and underground gold mining with carbon-in-leach and pressure oxidation processing",
                   "extractionEligibility": "EXECUTABLE",
                   "commercialExtraction": true
                 },
                 "processing": {
-                  "upstreamProcess": "Open-Pit / Underground Mining, Gravity, Flotation",
-                  "midstreamProcess": "Crushing, Grinding, Gravity/Flotation, Cyanide Leaching, Smelting",
+                  "upstreamProcess": "Open-Pit and Underground Mining",
+                  "midstreamProcess": "Carbon-in-leach and pressure oxidation",
                   "refinedOutputs": [
-                    "GOLD_DORE",
-                    "JEWELRY",
-                    "ELECTRONICS"
+                    "GOLD_DORE"
                   ],
                   "downstreamSectors": [
                     "CENTRAL_BANK_RESERVES",
@@ -11504,11 +11669,14 @@
                     "status": "UNOBSERVED"
                   },
                   "production": {
-                    "annual": null,
-                    "rate": null,
-                    "unit": null,
-                    "year": null,
-                    "status": "UNOBSERVED"
+                    "annual": {
+                      "value": 147000,
+                      "unit": "troy_ounces_gold",
+                      "year": 2025
+                    },
+                    "status": "OBSERVED",
+                    "measurementType": "TOTAL_SITE_GOLD_PRODUCTION",
+                    "sourceScope": "SITE_SPECIFIC"
                   },
                   "grade": {
                     "value": null,
@@ -11517,20 +11685,38 @@
                   }
                 },
                 "verification": {
-                  "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+                  "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
                   "reviewedAt": "2026-10-03",
-                  "sourceCount": 0,
-                  "sourceAuthorities": [],
+                  "sourceCount": 2,
+                  "sourceAuthorities": [
+                    "OPERATOR"
+                  ],
                   "dataLimitations": null
                 }
               },
               "extractionEligibility": "EXECUTABLE",
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
               "researchMetadata": {
                 "reviewedAt": "2026-10-03",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
-                "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
-              }
+                "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
+                "sourceAuthority": "OceanaGold",
+                "currentEvidence": "OceanaGold reports Macraes as the largest gold mine in New Zealand, using both open-pit and underground methods. The mine produced 147,000 ounces of gold in 2025 and has a reserve mine life to 2032."
+              },
+              "webResearchEvidence": [
+                {
+                  "url": "https://oceanagoldcorporation.com/operations/macraes.html",
+                  "accessed": "2026-10-03",
+                  "scope": "current_Macraes_mine_type_ownership_processing_2025_output_and_mine_life",
+                  "sourceType": "OPERATOR"
+                },
+                {
+                  "url": "https://investors.oceanagold.com/2026-08-05-OceanaGold-Reports-Second-Quarter-2026-Results",
+                  "accessed": "2026-10-03",
+                  "scope": "Q2_2026_current_Macraes_production_and_2026_operating_context",
+                  "sourceType": "OPERATOR"
+                }
+              ]
             }
           ],
           "processingFacilities": [
@@ -11952,9 +12138,9 @@
               "locationNodeKey": "ASSET:PNG:lihir_gold_mine",
               "status": "ACTIVE_PRODUCING",
               "operationalStatus": "ACTIVE_PRODUCING",
-              "owner": "Newmont",
-              "operator": "Lihir operation",
-              "extractionMethod": "open-pit",
+              "owner": "Newmont Corporation",
+              "operator": "Newmont Lihir",
+              "extractionMethod": "Large open-pit gold mining with stockpile processing and conventional gold recovery",
               "startYear": 1997,
               "legacyReferenceName": "Papua New Guinea Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -12019,10 +12205,10 @@
                 "method": "open-pit",
                 "lifecycleStatus": "ACTIVE_PRODUCING",
                 "operationalStatus": "ACTIVE_PRODUCING",
-                "owner": "Newmont",
-                "operator": "Lihir operation",
-                "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-                "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+                "owner": "Newmont Corporation",
+                "operator": "Newmont Lihir",
+                "ownerEvidenceStatus": "WEB_REVIEWED",
+                "operatorEvidenceStatus": "WEB_REVIEWED"
               },
               "quantitativeProfile": {
                 "reserve": {
@@ -12075,7 +12261,7 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -12099,15 +12285,15 @@
                   "coordinateStatus": "ESTIMATED_SITE_POINT"
                 },
                 "ownership": {
-                  "owner": "Newmont",
-                  "operator": "Lihir operation",
-                  "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-                  "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+                  "owner": "Newmont Corporation",
+                  "operator": "Newmont Lihir",
+                  "ownerEvidenceStatus": "WEB_REVIEWED",
+                  "operatorEvidenceStatus": "WEB_REVIEWED"
                 },
                 "operation": {
                   "status": "ACTIVE_PRODUCING",
                   "operationalStatus": "ACTIVE_PRODUCING",
-                  "extractionMethod": "open-pit",
+                  "extractionMethod": "Large open-pit gold mining with stockpile processing and conventional gold recovery",
                   "extractionEligibility": "EXECUTABLE",
                   "commercialExtraction": true
                 },
@@ -12144,20 +12330,38 @@
                   }
                 },
                 "verification": {
-                  "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+                  "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
                   "reviewedAt": "2026-10-03",
-                  "sourceCount": 0,
-                  "sourceAuthorities": [],
+                  "sourceCount": 1,
+                  "sourceAuthorities": [
+                    "OPERATOR"
+                  ],
                   "dataLimitations": null
                 }
               },
               "extractionEligibility": "EXECUTABLE",
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
               "researchMetadata": {
                 "reviewedAt": "2026-10-03",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
-                "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
-              }
+                "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
+                "sourceAuthority": "Newmont",
+                "currentEvidence": "Newmont identifies Lihir as an active managed gold mine and expects 2026 production of about 560,000 ounces, largely in line with 2025. Production is expected to be affected by open-pit reconfiguration and later improved by higher grades from Phase 14A."
+              },
+              "annualGoldProductionGuidance2026": {
+                "value": 560000,
+                "unit": "troy_ounces_gold",
+                "year": 2026,
+                "status": "CURRENT_ANNUAL_GUIDANCE"
+              },
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.newmont.com/investors/news-release/news-details/2026/Newmont-Reports-Fourth-Quarter-and-Full-Year-2025-Results-Provides-2026-Guidance-and-Announces-Enhanced-Capital-Allocation-Framework/",
+                  "accessed": "2026-10-03",
+                  "scope": "current_Lihir_2026_guidance_and_operational_context",
+                  "sourceType": "OPERATOR"
+                }
+              ]
             }
           ],
           "processingFacilities": [
@@ -12579,9 +12783,9 @@
               "locationNodeKey": "ASSET:FJI:vatukoula_gold_mine",
               "status": "ACTIVE_PRODUCING",
               "operationalStatus": "ACTIVE_PRODUCING",
-              "owner": "Vatukoula Gold Mines",
-              "operator": "Vatukoula Gold Mines",
-              "extractionMethod": "underground",
+              "owner": "Vatukoula Gold Mines Limited",
+              "operator": "Vatukoula Gold Mines Limited",
+              "extractionMethod": "Underground gold mining with concentration; limited doré also recovered from tailings retreatment",
               "startYear": 1935,
               "legacyReferenceName": "Fiji Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -12646,10 +12850,10 @@
                 "method": "underground",
                 "lifecycleStatus": "ACTIVE_PRODUCING",
                 "operationalStatus": "ACTIVE_PRODUCING",
-                "owner": "Vatukoula Gold Mines",
-                "operator": "Vatukoula Gold Mines",
-                "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-                "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+                "owner": "Vatukoula Gold Mines Limited",
+                "operator": "Vatukoula Gold Mines Limited",
+                "ownerEvidenceStatus": "WEB_REVIEWED",
+                "operatorEvidenceStatus": "WEB_REVIEWED"
               },
               "quantitativeProfile": {
                 "reserve": {
@@ -12674,15 +12878,14 @@
               "resourceIdentity": {
                 "resourceTypeId": "gold",
                 "ontologyKey": "GOLD",
-                "commodityName": "Gold Ore & Doré",
+                "commodityName": "Gold concentrate and gold doré",
                 "category": "PRECIOUS_METAL",
                 "physicalForm": "SOLID_ORE_AND_DORE",
-                "upstreamProcess": "Open-Pit / Underground Mining, Gravity, Flotation",
-                "midstreamProcess": "Crushing, Grinding, Gravity/Flotation, Cyanide Leaching, Smelting",
+                "upstreamProcess": "Underground Mining",
+                "midstreamProcess": "Concentration with tailings retreatment for doré",
                 "refinedOutputs": [
-                  "GOLD_DORE",
-                  "JEWELRY",
-                  "ELECTRONICS"
+                  "GOLD_CONCENTRATE",
+                  "GOLD_DORE"
                 ],
                 "downstreamSectors": [
                   "CENTRAL_BANK_RESERVES",
@@ -12702,7 +12905,7 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -12712,7 +12915,7 @@
                   "countryIso3": "FJI",
                   "siteType": "MINE",
                   "resourceTypeId": "gold",
-                  "resourceName": "Gold Ore & Doré",
+                  "resourceName": "Gold concentrate and gold doré",
                   "ontologyKey": "GOLD"
                 },
                 "location": {
@@ -12726,25 +12929,24 @@
                   "coordinateStatus": "ESTIMATED_SITE_POINT"
                 },
                 "ownership": {
-                  "owner": "Vatukoula Gold Mines",
-                  "operator": "Vatukoula Gold Mines",
-                  "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-                  "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+                  "owner": "Vatukoula Gold Mines Limited",
+                  "operator": "Vatukoula Gold Mines Limited",
+                  "ownerEvidenceStatus": "WEB_REVIEWED",
+                  "operatorEvidenceStatus": "WEB_REVIEWED"
                 },
                 "operation": {
                   "status": "ACTIVE_PRODUCING",
                   "operationalStatus": "ACTIVE_PRODUCING",
-                  "extractionMethod": "underground",
+                  "extractionMethod": "Underground gold mining with concentration; limited doré also recovered from tailings retreatment",
                   "extractionEligibility": "EXECUTABLE",
                   "commercialExtraction": true
                 },
                 "processing": {
-                  "upstreamProcess": "Open-Pit / Underground Mining, Gravity, Flotation",
-                  "midstreamProcess": "Crushing, Grinding, Gravity/Flotation, Cyanide Leaching, Smelting",
+                  "upstreamProcess": "Underground Mining",
+                  "midstreamProcess": "Concentration with tailings retreatment for doré",
                   "refinedOutputs": [
-                    "GOLD_DORE",
-                    "JEWELRY",
-                    "ELECTRONICS"
+                    "GOLD_CONCENTRATE",
+                    "GOLD_DORE"
                   ],
                   "downstreamSectors": [
                     "CENTRAL_BANK_RESERVES",
@@ -12771,20 +12973,41 @@
                   }
                 },
                 "verification": {
-                  "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+                  "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
                   "reviewedAt": "2026-10-03",
-                  "sourceCount": 0,
-                  "sourceAuthorities": [],
+                  "sourceCount": 2,
+                  "sourceAuthorities": [
+                    "NEWS",
+                    "CENTRAL_BANK"
+                  ],
                   "dataLimitations": null
                 }
               },
               "extractionEligibility": "EXECUTABLE",
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
               "researchMetadata": {
                 "reviewedAt": "2026-10-03",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
-                "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
-              }
+                "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
+                "sourceAuthority": "Reserve Bank of Fiji / Fiji Times reporting on VGML",
+                "currentEvidence": "Fiji sources state that VGML remained the operator of Vatukoula in 2025 and shifted its product mix toward gold concentrate. The Reserve Bank clarified that its reported gold ore series is not the same as total gold production, so no single annual gold output figure is forced into the site record without a reconciled company figure."
+              },
+              "measurementWarning": "2025 gold production data must distinguish gold ore, gold concentrate and gold doré; RBF public series are not a complete total-gold production measure.",
+              "productShiftYear": 2025,
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.fijitimes.com.fj/rbf-clarifies-gold-output-calculations/",
+                  "accessed": "2026-10-03",
+                  "scope": "2026_clarification_of_2025_VGML_gold_production_measurement_and_product_shift",
+                  "sourceType": "NEWS"
+                },
+                {
+                  "url": "https://www.rbf.gov.fj/wp-content/uploads/2025/09/Quarterly-Review-June-2025-2.pdf",
+                  "accessed": "2026-10-03",
+                  "scope": "2025_VGML_gold_concentration_and_ore_production_measurement_context",
+                  "sourceType": "CENTRAL_BANK"
+                }
+              ]
             }
           ],
           "processingFacilities": [

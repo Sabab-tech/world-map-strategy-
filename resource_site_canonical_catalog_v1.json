@@ -7058,14 +7058,14 @@
       },
       "ownership": {
         "owner": "Government of Singapore",
-        "operator": "None",
-        "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-        "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+        "operator": "None (historical quarry; no current commercial operator)",
+        "ownerEvidenceStatus": "WEB_REVIEWED",
+        "operatorEvidenceStatus": "WEB_REVIEWED"
       },
       "operation": {
         "status": "HISTORICAL_INACTIVE",
         "operationalStatus": "HISTORICAL_INACTIVE",
-        "extractionMethod": "historical quarrying",
+        "extractionMethod": "Historical granite quarrying",
         "extractionEligibility": "NON_EXECUTABLE",
         "commercialExtraction": true
       },
@@ -7101,10 +7101,12 @@
         }
       },
       "verification": {
-        "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
         "reviewedAt": "2026-10-03",
-        "sourceCount": 0,
-        "sourceAuthorities": [],
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "GOVERNMENT"
+        ],
         "dataLimitations": null
       }
     },
@@ -7278,7 +7280,7 @@
         "countryIso3": "LAO",
         "siteType": "MINE",
         "resourceTypeId": "copper",
-        "resourceName": "Refined Copper & Concentrates",
+        "resourceName": "Copper and precious-metals concentrate",
         "ontologyKey": "COPPER"
       },
       "location": {
@@ -7292,33 +7294,29 @@
         "coordinateStatus": "ESTIMATED_SITE_POINT"
       },
       "ownership": {
-        "owner": "PanAust / Laos",
-        "operator": "Phu Kham Mining",
-        "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-        "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+        "owner": "PanAust Limited / Phu Bia Mining Limited",
+        "operator": "PanAust Limited / Phu Bia Mining Limited",
+        "ownerEvidenceStatus": "WEB_REVIEWED",
+        "operatorEvidenceStatus": "WEB_REVIEWED"
       },
       "operation": {
         "status": "ACTIVE_PRODUCING",
         "operationalStatus": "ACTIVE_PRODUCING",
-        "extractionMethod": "open-pit and flotation",
+        "extractionMethod": "Open-pit mining feeding conventional milling and flotation",
         "extractionEligibility": "EXECUTABLE",
         "commercialExtraction": true
       },
       "processing": {
-        "upstreamProcess": "Open-Pit Mining, Heap Bio-Leaching, Froth Flotation",
-        "midstreamProcess": "Flash Smelting, Electro-Refining to Grade-A Cathode 99.99%",
+        "upstreamProcess": "Open-Pit Mining",
+        "midstreamProcess": "Conventional Milling and Flotation",
         "refinedOutputs": [
-          "COPPER_WIRE_ROD",
-          "BUSBARS",
-          "BRASS_ALLOY",
-          "BRONZE_ALLOY",
-          "COPPER_FOIL"
+          "COPPER_CONCENTRATE",
+          "GOLD_CONTAINING_CONCENTRATE",
+          "SILVER_CONTAINING_CONCENTRATE"
         ],
         "downstreamSectors": [
-          "POWER_GRID_INFRASTRUCTURE",
-          "ELECTRONICS_SEMICONDUCTORS",
-          "ELECTRIC_VEHICLES",
-          "CONSTRUCTION"
+          "SMELTING",
+          "METALS_PROCESSING"
         ]
       },
       "quantitative": {
@@ -7328,11 +7326,14 @@
           "status": "UNOBSERVED"
         },
         "production": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
+          "annual": {
+            "value": 36290,
+            "unit": "metric_tons_copper_concentrate",
+            "year": 2024
+          },
+          "status": "OBSERVED",
+          "measurementType": "COPPER_CONCENTRATE_PRODUCTION",
+          "sourceScope": "SITE_SPECIFIC"
         },
         "grade": {
           "value": null,
@@ -7341,10 +7342,12 @@
         }
       },
       "verification": {
-        "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
         "reviewedAt": "2026-10-03",
-        "sourceCount": 0,
-        "sourceAuthorities": [],
+        "sourceCount": 2,
+        "sourceAuthorities": [
+          "OPERATOR"
+        ],
         "dataLimitations": null
       }
     },
@@ -8455,16 +8458,16 @@
         "coordinateStatus": "ESTIMATED_SITE_POINT"
       },
       "ownership": {
-        "owner": "First Quantum Minerals",
-        "operator": "Cobre Las Cruces",
-        "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-        "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+        "owner": "Global Panduro S.L.U. / Resource Capital Funds",
+        "operator": "Cobre Las Cruces S.A.U.",
+        "ownerEvidenceStatus": "WEB_REVIEWED",
+        "operatorEvidenceStatus": "WEB_REVIEWED"
       },
       "operation": {
-        "status": "ACTIVE_PRODUCING",
-        "operationalStatus": "ACTIVE_PRODUCING",
-        "extractionMethod": "open-pit and underground",
-        "extractionEligibility": "EXECUTABLE",
+        "status": "CARE_AND_MAINTENANCE",
+        "operationalStatus": "CARE_AND_MAINTENANCE",
+        "extractionMethod": "Open-pit mining was historical; current project is being advanced as a polymetallic mining-metallurgical development",
+        "extractionEligibility": "NON_EXECUTABLE",
         "commercialExtraction": true
       },
       "processing": {
@@ -8504,10 +8507,13 @@
         }
       },
       "verification": {
-        "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
         "reviewedAt": "2026-10-03",
-        "sourceCount": 0,
-        "sourceAuthorities": [],
+        "sourceCount": 2,
+        "sourceAuthorities": [
+          "OPERATOR",
+          "REGISTRY"
+        ],
         "dataLimitations": null
       }
     },
@@ -8692,15 +8698,15 @@
         "coordinateStatus": "ESTIMATED_SITE_POINT"
       },
       "ownership": {
-        "owner": "Nedmag",
-        "operator": "Nedmag",
-        "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-        "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+        "owner": "Nedmag B.V.",
+        "operator": "Nedmag B.V.",
+        "ownerEvidenceStatus": "WEB_REVIEWED",
+        "operatorEvidenceStatus": "WEB_REVIEWED"
       },
       "operation": {
         "status": "ACTIVE_PRODUCING",
         "operationalStatus": "ACTIVE_PRODUCING",
-        "extractionMethod": "solution mining",
+        "extractionMethod": "Solution mining of magnesium salt/brine with processing at the Veendam site",
         "extractionEligibility": "EXECUTABLE",
         "commercialExtraction": true
       },
@@ -8736,10 +8742,12 @@
         }
       },
       "verification": {
-        "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
         "reviewedAt": "2026-10-03",
-        "sourceCount": 0,
-        "sourceAuthorities": [],
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "OPERATOR"
+        ],
         "dataLimitations": null
       }
     },
@@ -8752,7 +8760,7 @@
         "countryIso3": "BEL",
         "siteType": "QUARRY",
         "resourceTypeId": "limestone",
-        "resourceName": "Limestone & Industrial Carbonate Rock",
+        "resourceName": "Blue limestone",
         "ontologyKey": "LIMESTONE"
       },
       "location": {
@@ -8766,25 +8774,24 @@
         "coordinateStatus": "ESTIMATED_SITE_POINT"
       },
       "ownership": {
-        "owner": "Carmeuse",
-        "operator": "Carmeuse",
-        "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-        "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+        "owner": "Heidelberg Materials Benelux / Cimescaut quarry interests",
+        "operator": "Sagrex",
+        "ownerEvidenceStatus": "WEB_REVIEWED",
+        "operatorEvidenceStatus": "WEB_REVIEWED"
       },
       "operation": {
         "status": "ACTIVE_PRODUCING",
         "operationalStatus": "ACTIVE_PRODUCING",
-        "extractionMethod": "surface limestone quarrying",
+        "extractionMethod": "Open-pit limestone quarrying",
         "extractionEligibility": "EXECUTABLE",
         "commercialExtraction": true
       },
       "processing": {
-        "upstreamProcess": "Drilling, Blasting, Quarry Excavation",
-        "midstreamProcess": "Crushing, Screening, Calcination, Cement Kiln Feed",
+        "upstreamProcess": "Open-Pit Quarrying",
+        "midstreamProcess": "Crushing and grading",
         "refinedOutputs": [
-          "CEMENT_CLINKER",
-          "CONSTRUCTION_AGGREGATES",
-          "CEMENT"
+          "LIMESTONE_AGGREGATE",
+          "INDUSTRIAL_LIMESTONE"
         ],
         "downstreamSectors": [
           "LIME",
@@ -8811,10 +8818,12 @@
         }
       },
       "verification": {
-        "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
         "reviewedAt": "2026-10-03",
-        "sourceCount": 0,
-        "sourceAuthorities": [],
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "SECONDARY_REFERENCE"
+        ],
         "dataLimitations": null
       }
     },
@@ -8841,15 +8850,15 @@
         "coordinateStatus": "ESTIMATED_SITE_POINT"
       },
       "ownership": {
-        "owner": "Saline de Bex",
-        "operator": "Saline de Bex",
-        "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-        "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+        "owner": "Swiss Saltworks / Saltworks of Bex",
+        "operator": "Swiss Saltworks / Mines de Sel de Bex",
+        "ownerEvidenceStatus": "WEB_REVIEWED",
+        "operatorEvidenceStatus": "WEB_REVIEWED"
       },
       "operation": {
         "status": "ACTIVE_PRODUCING",
         "operationalStatus": "ACTIVE_PRODUCING",
-        "extractionMethod": "solution mining/brine",
+        "extractionMethod": "Underground salt extraction",
         "extractionEligibility": "EXECUTABLE",
         "commercialExtraction": true
       },
@@ -8885,10 +8894,12 @@
         }
       },
       "verification": {
-        "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
         "reviewedAt": "2026-10-03",
-        "sourceCount": 0,
-        "sourceAuthorities": [],
+        "sourceCount": 2,
+        "sourceAuthorities": [
+          "OPERATOR"
+        ],
         "dataLimitations": null
       }
     },
@@ -8977,7 +8988,7 @@
         "countryIso3": "NOR",
         "siteType": "MINE",
         "resourceTypeId": "ilmenite",
-        "resourceName": "Ilmenite Mineral Sands",
+        "resourceName": "Ilmenite / titanium-iron ore",
         "ontologyKey": "ILMENITE"
       },
       "location": {
@@ -8992,24 +9003,23 @@
       },
       "ownership": {
         "owner": "Titania AS",
-        "operator": "Titania",
-        "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-        "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+        "operator": "Titania AS",
+        "ownerEvidenceStatus": "WEB_REVIEWED",
+        "operatorEvidenceStatus": "WEB_REVIEWED"
       },
       "operation": {
         "status": "ACTIVE_PRODUCING",
         "operationalStatus": "ACTIVE_PRODUCING",
-        "extractionMethod": "open-pit and beneficiation",
+        "extractionMethod": "Open-pit ilmenite mining",
         "extractionEligibility": "EXECUTABLE",
         "commercialExtraction": true
       },
       "processing": {
-        "upstreamProcess": "Surface Mining / Dredging of Mineral Sands",
-        "midstreamProcess": "Gravity, Magnetic Separation, Upgrading, Smelting",
+        "upstreamProcess": "Open-Pit Mining",
+        "midstreamProcess": "Ore crushing and mineral separation",
         "refinedOutputs": [
-          "TITANIUM_SLAG",
-          "SYNTHETIC_RUTILE",
-          "TITANIUM_DIOXIDE_PIGMENT"
+          "ILMENITE_CONCENTRATE",
+          "TITANIUM_DIOXIDE_FEEDSTOCK"
         ],
         "downstreamSectors": []
       },
@@ -9033,10 +9043,12 @@
         }
       },
       "verification": {
-        "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
         "reviewedAt": "2026-10-03",
-        "sourceCount": 0,
-        "sourceAuthorities": [],
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "TECHNICAL_LITERATURE"
+        ],
         "dataLimitations": null
       }
     },
@@ -9063,15 +9075,15 @@
         "coordinateStatus": "ESTIMATED_SITE_POINT"
       },
       "ownership": {
-        "owner": "VA Erzberg",
-        "operator": "VA Erzberg",
-        "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-        "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+        "owner": "VA Erzberg GmbH",
+        "operator": "VA Erzberg GmbH",
+        "ownerEvidenceStatus": "WEB_REVIEWED",
+        "operatorEvidenceStatus": "WEB_REVIEWED"
       },
       "operation": {
         "status": "ACTIVE_PRODUCING",
         "operationalStatus": "ACTIVE_PRODUCING",
-        "extractionMethod": "open-pit bench mining",
+        "extractionMethod": "Open-pit iron ore mining with drilling, blasting, loading and transport",
         "extractionEligibility": "EXECUTABLE",
         "commercialExtraction": true
       },
@@ -9108,10 +9120,12 @@
         }
       },
       "verification": {
-        "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
         "reviewedAt": "2026-10-03",
-        "sourceCount": 0,
-        "sourceAuthorities": [],
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "OPERATOR"
+        ],
         "dataLimitations": null
       }
     },
@@ -9201,7 +9215,7 @@
         "countryIso3": "DNK",
         "siteType": "QUARRY",
         "resourceTypeId": "limestone",
-        "resourceName": "Limestone & Industrial Carbonate Rock",
+        "resourceName": "Limestone",
         "ontologyKey": "LIMESTONE"
       },
       "location": {
@@ -9215,25 +9229,25 @@
         "coordinateStatus": "ESTIMATED_SITE_POINT"
       },
       "ownership": {
-        "owner": "Faxe Kalk",
-        "operator": "Faxe Kalk",
-        "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-        "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+        "owner": "Faxe Kalk A/S",
+        "operator": "Faxe Kalk A/S",
+        "ownerEvidenceStatus": "WEB_REVIEWED",
+        "operatorEvidenceStatus": "WEB_REVIEWED"
       },
       "operation": {
         "status": "ACTIVE_PRODUCING",
         "operationalStatus": "ACTIVE_PRODUCING",
-        "extractionMethod": "open-pit quarrying",
+        "extractionMethod": "Open-pit limestone quarrying",
         "extractionEligibility": "EXECUTABLE",
         "commercialExtraction": true
       },
       "processing": {
-        "upstreamProcess": "Drilling, Blasting, Quarry Excavation",
-        "midstreamProcess": "Crushing, Screening, Calcination, Cement Kiln Feed",
+        "upstreamProcess": "Open-Pit Quarrying",
+        "midstreamProcess": "Processing into agricultural limestone, milled limestone and quicklime products",
         "refinedOutputs": [
-          "CEMENT_CLINKER",
-          "CONSTRUCTION_AGGREGATES",
-          "CEMENT"
+          "AGRICULTURAL_LIMESTONE",
+          "MILLED_LIMESTONE",
+          "QUICKLIME"
         ],
         "downstreamSectors": [
           "LIME",
@@ -9260,10 +9274,12 @@
         }
       },
       "verification": {
-        "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
         "reviewedAt": "2026-10-03",
-        "sourceCount": 0,
-        "sourceAuthorities": [],
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "REGULATORY_FILING"
+        ],
         "dataLimitations": null
       }
     },
@@ -9355,7 +9371,7 @@
         "countryIso3": "PRT",
         "siteType": "MINE",
         "resourceTypeId": "tungsten",
-        "resourceName": "Tungsten Ore & Concentrates",
+        "resourceName": "Tungsten, with tin and copper by-products",
         "ontologyKey": "TUNGSTEN"
       },
       "location": {
@@ -9369,25 +9385,23 @@
         "coordinateStatus": "ESTIMATED_SITE_POINT"
       },
       "ownership": {
-        "owner": "Almonty Industries",
-        "operator": "Beralt Tin and Wolfram",
-        "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-        "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+        "owner": "Almonty Industries Inc.",
+        "operator": "Beralt Tin and Wolfram / Almonty Industries",
+        "ownerEvidenceStatus": "WEB_REVIEWED",
+        "operatorEvidenceStatus": "WEB_REVIEWED"
       },
       "operation": {
         "status": "ACTIVE_PRODUCING",
         "operationalStatus": "ACTIVE_PRODUCING",
-        "extractionMethod": "underground room-and-pillar",
+        "extractionMethod": "Underground tungsten mining with gravity-based milling and concentrate production",
         "extractionEligibility": "EXECUTABLE",
         "commercialExtraction": true
       },
       "processing": {
-        "upstreamProcess": "Underground / Open-Pit Mining",
-        "midstreamProcess": "Crushing, Gravity, Flotation, Roasting, Chemical Conversion",
+        "upstreamProcess": "Underground Mining",
+        "midstreamProcess": "Crushing, gravity separation, shaking tables and spiral banks",
         "refinedOutputs": [
-          "TUNGSTEN_CONCENTRATE",
-          "AMMONIUM_PARATUNGSTATE",
-          "TUNGSTEN_CARBIDE"
+          "TUNGSTEN_CONCENTRATE"
         ],
         "downstreamSectors": [
           "HARD_METALS"
@@ -9395,9 +9409,11 @@
       },
       "quantitative": {
         "reserve": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
+          "quantity": 3000000,
+          "unit": "metric_tons_ore",
+          "status": "OBSERVED",
+          "sourceScope": "SITE_SPECIFIC",
+          "year": 2025
         },
         "production": {
           "annual": null,
@@ -9413,10 +9429,13 @@
         }
       },
       "verification": {
-        "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
         "reviewedAt": "2026-10-03",
-        "sourceCount": 0,
-        "sourceAuthorities": [],
+        "sourceCount": 3,
+        "sourceAuthorities": [
+          "REGULATORY_FILING",
+          "OPERATOR"
+        ],
         "dataLimitations": null
       }
     },
@@ -9523,15 +9542,15 @@
         "coordinateStatus": "ESTIMATED_SITE_POINT"
       },
       "ownership": {
-        "owner": "DIAMO / Czech state",
-        "operator": "DIAMO",
-        "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-        "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+        "owner": "DIAMO, state enterprise",
+        "operator": "DIAMO, state enterprise",
+        "ownerEvidenceStatus": "WEB_REVIEWED",
+        "operatorEvidenceStatus": "WEB_REVIEWED"
       },
       "operation": {
         "status": "HISTORICAL_INACTIVE",
         "operationalStatus": "HISTORICAL_INACTIVE",
-        "extractionMethod": "underground uranium mining",
+        "extractionMethod": "Historical underground uranium mining",
         "extractionEligibility": "NON_EXECUTABLE",
         "commercialExtraction": true
       },
@@ -9571,10 +9590,12 @@
         }
       },
       "verification": {
-        "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
         "reviewedAt": "2026-10-03",
-        "sourceCount": 0,
-        "sourceAuthorities": [],
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "GOVERNMENT"
+        ],
         "dataLimitations": null
       }
     },
@@ -9601,15 +9622,15 @@
         "coordinateStatus": "ESTIMATED_SITE_POINT"
       },
       "ownership": {
-        "owner": "Cupru Min",
-        "operator": "Cupru Min Abrud",
-        "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-        "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+        "owner": "Cupru Min S.A. Abrud / Romanian state",
+        "operator": "Cupru Min S.A. Abrud",
+        "ownerEvidenceStatus": "WEB_REVIEWED",
+        "operatorEvidenceStatus": "WEB_REVIEWED"
       },
       "operation": {
         "status": "ACTIVE_PRODUCING",
         "operationalStatus": "ACTIVE_PRODUCING",
-        "extractionMethod": "open-pit mining",
+        "extractionMethod": "Large open-pit copper mining with crushing and flotation processing",
         "extractionEligibility": "EXECUTABLE",
         "commercialExtraction": true
       },
@@ -9650,10 +9671,13 @@
         }
       },
       "verification": {
-        "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
         "reviewedAt": "2026-10-03",
-        "sourceCount": 0,
-        "sourceAuthorities": [],
+        "sourceCount": 2,
+        "sourceAuthorities": [
+          "GOVERNMENT_OPERATOR",
+          "PUBLIC_COMPANY_PROFILE"
+        ],
         "dataLimitations": null
       }
     },
@@ -9680,15 +9704,15 @@
         "coordinateStatus": "ESTIMATED_SITE_POINT"
       },
       "ownership": {
-        "owner": "MVM / Mátrai Erőmű",
-        "operator": "Mátrai Erőmű",
-        "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-        "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+        "owner": "Mátrai Erőmű Zrt. / MVM",
+        "operator": "Mátrai Erőmű Zrt.",
+        "ownerEvidenceStatus": "WEB_REVIEWED",
+        "operatorEvidenceStatus": "WEB_REVIEWED"
       },
       "operation": {
         "status": "ACTIVE_PRODUCING",
         "operationalStatus": "ACTIVE_PRODUCING",
-        "extractionMethod": "open-pit mining",
+        "extractionMethod": "Open-pit lignite mining supplying the Mátra power plant",
         "extractionEligibility": "EXECUTABLE",
         "commercialExtraction": true
       },
@@ -9728,10 +9752,12 @@
         }
       },
       "verification": {
-        "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
         "reviewedAt": "2026-10-03",
-        "sourceCount": 0,
-        "sourceAuthorities": [],
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "INDUSTRY_DATABASE"
+        ],
         "dataLimitations": null
       }
     },
@@ -9744,7 +9770,7 @@
         "countryIso3": "SVK",
         "siteType": "MINE",
         "resourceTypeId": "magnesite",
-        "resourceName": "Magnesite Ore & Concentrate",
+        "resourceName": "Magnesite",
         "ontologyKey": "MAGNESITE"
       },
       "location": {
@@ -9758,25 +9784,24 @@
         "coordinateStatus": "ESTIMATED_SITE_POINT"
       },
       "ownership": {
-        "owner": "Slovmag",
-        "operator": "Slovmag",
-        "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-        "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+        "owner": "Slovenské Magnezitové Závody a.s. Jelšava",
+        "operator": "Slovenské Magnezitové Závody a.s. Jelšava",
+        "ownerEvidenceStatus": "WEB_REVIEWED",
+        "operatorEvidenceStatus": "WEB_REVIEWED"
       },
       "operation": {
         "status": "ACTIVE_PRODUCING",
         "operationalStatus": "ACTIVE_PRODUCING",
-        "extractionMethod": "underground/open-pit",
+        "extractionMethod": "Magnesite mining with beneficiation/concentrate production",
         "extractionEligibility": "EXECUTABLE",
         "commercialExtraction": true
       },
       "processing": {
-        "upstreamProcess": "Open-Pit Quarrying / Mining",
-        "midstreamProcess": "Crushing, Beneficiation, Calcination, Sintering",
+        "upstreamProcess": "Mine Extraction",
+        "midstreamProcess": "Crushing and Concentration",
         "refinedOutputs": [
-          "DEAD_BURNED_MAGNESIA",
-          "CAUSTIC_CALCINED_MAGNESIA",
-          "REFRACTORIES"
+          "MAGNESIA_FEEDSTOCK",
+          "MAGNESITE_CONCENTRATE"
         ],
         "downstreamSectors": [
           "STEEL"
@@ -9789,11 +9814,14 @@
           "status": "UNOBSERVED"
         },
         "production": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
+          "annual": {
+            "value": 253300,
+            "unit": "metric_tons_magnesite_mined",
+            "year": 2024
+          },
+          "status": "OBSERVED",
+          "measurementType": "MINE_OUTPUT",
+          "sourceScope": "SITE_SPECIFIC"
         },
         "grade": {
           "value": null,
@@ -9802,10 +9830,12 @@
         }
       },
       "verification": {
-        "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
         "reviewedAt": "2026-10-03",
-        "sourceCount": 0,
-        "sourceAuthorities": [],
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "GOVERNMENT_GEOLOGICAL_SURVEY"
+        ],
         "dataLimitations": null
       }
     },
@@ -9832,15 +9862,15 @@
         "coordinateStatus": "ESTIMATED_SITE_POINT"
       },
       "ownership": {
-        "owner": "Dundee Precious Metals",
-        "operator": "Chelopech Mining",
-        "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-        "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+        "owner": "Dundee Precious Metals Inc.",
+        "operator": "Chelopech Mining EAD",
+        "ownerEvidenceStatus": "WEB_REVIEWED",
+        "operatorEvidenceStatus": "WEB_REVIEWED"
       },
       "operation": {
         "status": "ACTIVE_PRODUCING",
         "operationalStatus": "ACTIVE_PRODUCING",
-        "extractionMethod": "underground",
+        "extractionMethod": "Underground sub-level long-hole open stoping with paste backfill",
         "extractionEligibility": "EXECUTABLE",
         "commercialExtraction": true
       },
@@ -9881,10 +9911,12 @@
         }
       },
       "verification": {
-        "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
         "reviewedAt": "2026-10-03",
-        "sourceCount": 0,
-        "sourceAuthorities": [],
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "OPERATOR"
+        ],
         "dataLimitations": null
       }
     },
@@ -9911,15 +9943,15 @@
         "coordinateStatus": "ESTIMATED_SITE_POINT"
       },
       "ownership": {
-        "owner": "Zijin / Serbia",
-        "operator": "Serbia Zijin Copper",
-        "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-        "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+        "owner": "Serbia Zijin Copper DOO / Serbia",
+        "operator": "Serbia Zijin Copper DOO",
+        "ownerEvidenceStatus": "WEB_REVIEWED",
+        "operatorEvidenceStatus": "WEB_REVIEWED"
       },
       "operation": {
         "status": "ACTIVE_PRODUCING",
         "operationalStatus": "ACTIVE_PRODUCING",
-        "extractionMethod": "open-pit and underground",
+        "extractionMethod": "Open-pit copper mining with crushing, flotation and integrated smelting within the Bor operation",
         "extractionEligibility": "EXECUTABLE",
         "commercialExtraction": true
       },
@@ -9960,10 +9992,12 @@
         }
       },
       "verification": {
-        "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
         "reviewedAt": "2026-10-03",
-        "sourceCount": 0,
-        "sourceAuthorities": [],
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "OPERATOR"
+        ],
         "dataLimitations": null
       }
     },
@@ -9990,15 +10024,15 @@
         "coordinateStatus": "ESTIMATED_SITE_POINT"
       },
       "ownership": {
-        "owner": "Holcim Croatia",
-        "operator": "Holcim Croatia",
-        "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-        "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+        "owner": "Holcim Hrvatska d.o.o.",
+        "operator": "Holcim Hrvatska d.o.o.",
+        "ownerEvidenceStatus": "WEB_REVIEWED",
+        "operatorEvidenceStatus": "WEB_REVIEWED"
       },
       "operation": {
         "status": "ACTIVE_PRODUCING",
         "operationalStatus": "ACTIVE_PRODUCING",
-        "extractionMethod": "surface quarrying",
+        "extractionMethod": "Open-pit quarrying of limestone/technical stone and industrial mineral aggregate",
         "extractionEligibility": "EXECUTABLE",
         "commercialExtraction": true
       },
@@ -10035,10 +10069,13 @@
         }
       },
       "verification": {
-        "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
         "reviewedAt": "2026-10-03",
-        "sourceCount": 0,
-        "sourceAuthorities": [],
+        "sourceCount": 2,
+        "sourceAuthorities": [
+          "GOVERNMENT",
+          "OPERATOR"
+        ],
         "dataLimitations": null
       }
     },
@@ -10128,7 +10165,7 @@
         "countryIso3": "EST",
         "siteType": "MINE",
         "resourceTypeId": "oil_shale",
-        "resourceName": "Oil Shale",
+        "resourceName": "Oil shale",
         "ontologyKey": "OIL_SHALE"
       },
       "location": {
@@ -10142,25 +10179,25 @@
         "coordinateStatus": "ESTIMATED_SITE_POINT"
       },
       "ownership": {
-        "owner": "Eesti Energia",
-        "operator": "Eesti Energia",
-        "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-        "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+        "owner": "Eesti Energia AS",
+        "operator": "Eesti Energia AS",
+        "ownerEvidenceStatus": "WEB_REVIEWED",
+        "operatorEvidenceStatus": "WEB_REVIEWED"
       },
       "operation": {
         "status": "ACTIVE_PRODUCING",
         "operationalStatus": "ACTIVE_PRODUCING",
-        "extractionMethod": "open-pit oil-shale mining",
+        "extractionMethod": "Surface oil-shale mining supplying oil-shale processing and power-generation value chains",
         "extractionEligibility": "EXECUTABLE",
         "commercialExtraction": true
       },
       "processing": {
-        "upstreamProcess": "Surface Mining / Underground Mining",
-        "midstreamProcess": "Crushing, Retorting, Thermal Processing, Gas Treatment",
+        "upstreamProcess": "Surface Mining",
+        "midstreamProcess": "Crushing, beneficiation and retorting/combustion",
         "refinedOutputs": [
           "SHALE_OIL",
-          "SHALE_GAS",
-          "PROCESS_HEAT"
+          "ELECTRICITY",
+          "SHALE_ASH"
         ],
         "downstreamSectors": []
       },
@@ -10184,10 +10221,12 @@
         }
       },
       "verification": {
-        "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
         "reviewedAt": "2026-10-03",
-        "sourceCount": 0,
-        "sourceAuthorities": [],
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "OPERATOR"
+        ],
         "dataLimitations": null
       }
     },
@@ -10200,7 +10239,7 @@
         "countryIso3": "LVA",
         "siteType": "QUARRY",
         "resourceTypeId": "dolomite",
-        "resourceName": "Dolomite Rock & Industrial Carbonate",
+        "resourceName": "Dolomite aggregates and crushed stone",
         "ontologyKey": "DOLOMITE"
       },
       "location": {
@@ -10214,25 +10253,25 @@
         "coordinateStatus": "ESTIMATED_SITE_POINT"
       },
       "ownership": {
-        "owner": "SCHWENK Latvija",
-        "operator": "SCHWENK Latvija",
-        "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-        "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+        "owner": "SCHWENK Latvija / Saulkalne SIA",
+        "operator": "Saulkalne SIA",
+        "ownerEvidenceStatus": "WEB_REVIEWED",
+        "operatorEvidenceStatus": "WEB_REVIEWED"
       },
       "operation": {
         "status": "ACTIVE_PRODUCING",
         "operationalStatus": "ACTIVE_PRODUCING",
-        "extractionMethod": "surface dolomite quarrying",
+        "extractionMethod": "Quarrying and crushing of dolomite for aggregates",
         "extractionEligibility": "EXECUTABLE",
         "commercialExtraction": true
       },
       "processing": {
-        "upstreamProcess": "Quarrying, Open-Pit Mining",
-        "midstreamProcess": "Crushing, Screening, Calcination, Sintering",
+        "upstreamProcess": "Quarrying",
+        "midstreamProcess": "Washing, drying and crushing",
         "refinedOutputs": [
-          "DOLOMITE_AGGREGATE",
-          "DOLOMA",
-          "REFRACTORIES"
+          "DOLOMITE_CRUSHED_STONE",
+          "DOLOMITE_SAND",
+          "CONSTRUCTION_AGGREGATES"
         ],
         "downstreamSectors": [
           "STEEL_FLUX"
@@ -10258,10 +10297,12 @@
         }
       },
       "verification": {
-        "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
         "reviewedAt": "2026-10-03",
-        "sourceCount": 0,
-        "sourceAuthorities": [],
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "OPERATOR"
+        ],
         "dataLimitations": null
       }
     },
@@ -10274,7 +10315,7 @@
         "countryIso3": "LTU",
         "siteType": "QUARRY",
         "resourceTypeId": "limestone",
-        "resourceName": "Limestone & Industrial Carbonate Rock",
+        "resourceName": "Limestone for cement manufacture",
         "ontologyKey": "LIMESTONE"
       },
       "location": {
@@ -10288,24 +10329,23 @@
         "coordinateStatus": "ESTIMATED_SITE_POINT"
       },
       "ownership": {
-        "owner": "Akmenės Cementas",
-        "operator": "Akmenės Cementas",
-        "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-        "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+        "owner": "AB Akmenės cementas",
+        "operator": "AB Akmenės cementas",
+        "ownerEvidenceStatus": "WEB_REVIEWED",
+        "operatorEvidenceStatus": "WEB_REVIEWED"
       },
       "operation": {
         "status": "ACTIVE_PRODUCING",
         "operationalStatus": "ACTIVE_PRODUCING",
-        "extractionMethod": "surface quarrying",
+        "extractionMethod": "Open-pit limestone quarrying feeding the Akmenės cement plant",
         "extractionEligibility": "EXECUTABLE",
         "commercialExtraction": true
       },
       "processing": {
-        "upstreamProcess": "Drilling, Blasting, Quarry Excavation",
-        "midstreamProcess": "Crushing, Screening, Calcination, Cement Kiln Feed",
+        "upstreamProcess": "Open-Pit Quarrying",
+        "midstreamProcess": "Crushing and cement raw-mix preparation",
         "refinedOutputs": [
           "CEMENT_CLINKER",
-          "CONSTRUCTION_AGGREGATES",
           "CEMENT"
         ],
         "downstreamSectors": [
@@ -10333,10 +10373,12 @@
         }
       },
       "verification": {
-        "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
         "reviewedAt": "2026-10-03",
-        "sourceCount": 0,
-        "sourceAuthorities": [],
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "OPERATOR"
+        ],
         "dataLimitations": null
       }
     },
@@ -10349,7 +10391,7 @@
         "countryIso3": "BLR",
         "siteType": "MINE",
         "resourceTypeId": "potash",
-        "resourceName": "Potash (Potassium Chloride, KCl)",
+        "resourceName": "Potash / sylvinite / potassium chloride feedstock",
         "ontologyKey": "POTASH"
       },
       "location": {
@@ -10365,23 +10407,22 @@
       "ownership": {
         "owner": "Belaruskali",
         "operator": "Belaruskali",
-        "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-        "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+        "ownerEvidenceStatus": "WEB_REVIEWED",
+        "operatorEvidenceStatus": "WEB_REVIEWED"
       },
       "operation": {
         "status": "ACTIVE_PRODUCING",
         "operationalStatus": "ACTIVE_PRODUCING",
-        "extractionMethod": "deep underground potash mining",
+        "extractionMethod": "Underground potash mining with beneficiation into K2O-equivalent potash fertilizer products",
         "extractionEligibility": "EXECUTABLE",
         "commercialExtraction": true
       },
       "processing": {
-        "upstreamProcess": "Underground potash mining of sylvinite or solution mining",
-        "midstreamProcess": "Crushing, screening and flotation/separation to marketable muriate of potash",
+        "upstreamProcess": "Underground Mining",
+        "midstreamProcess": "Crushing, beneficiation and potash processing",
         "refinedOutputs": [
-          "MOP_GRANULAR",
-          "SOP_GRANULAR",
-          "POTASSIUM_FERTILIZER"
+          "POTASH_FERTILIZER",
+          "POTASSIUM_CHLORIDE"
         ],
         "downstreamSectors": [
           "FOOD_AGRICULTURE",
@@ -10408,10 +10449,12 @@
         }
       },
       "verification": {
-        "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
         "reviewedAt": "2026-10-03",
-        "sourceCount": 0,
-        "sourceAuthorities": [],
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "GOVERNMENT_GEOLOGICAL_SURVEY"
+        ],
         "dataLimitations": null
       }
     },
@@ -10438,15 +10481,15 @@
         "coordinateStatus": "ESTIMATED_SITE_POINT"
       },
       "ownership": {
-        "owner": "Cricova",
-        "operator": "Cricova",
-        "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-        "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+        "owner": "CP “MINA FĂURARI”",
+        "operator": "CP “MINA FĂURARI”",
+        "ownerEvidenceStatus": "WEB_REVIEWED",
+        "operatorEvidenceStatus": "WEB_REVIEWED"
       },
       "operation": {
         "status": "ACTIVE_PRODUCING",
         "operationalStatus": "ACTIVE_PRODUCING",
-        "extractionMethod": "underground room extraction",
+        "extractionMethod": "Limestone/chalk quarrying for cutting-block raw material",
         "extractionEligibility": "EXECUTABLE",
         "commercialExtraction": true
       },
@@ -10465,9 +10508,11 @@
       },
       "quantitative": {
         "reserve": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
+          "quantity": 52649000,
+          "unit": "cubic_meters",
+          "status": "OBSERVED",
+          "year": 2019,
+          "sourceScope": "Cricova_II_quarry_zone"
         },
         "production": {
           "annual": null,
@@ -10483,10 +10528,12 @@
         }
       },
       "verification": {
-        "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
         "reviewedAt": "2026-10-03",
-        "sourceCount": 0,
-        "sourceAuthorities": [],
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "GOVERNMENT_MINERAL_REGISTRY"
+        ],
         "dataLimitations": null
       }
     },
@@ -10513,15 +10560,15 @@
         "coordinateStatus": "ESTIMATED_SITE_POINT"
       },
       "ownership": {
-        "owner": "Albchrome / Balfin",
+        "owner": "Albchrome / Balfin Group",
         "operator": "Albchrome",
-        "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-        "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+        "ownerEvidenceStatus": "WEB_REVIEWED",
+        "operatorEvidenceStatus": "WEB_REVIEWED"
       },
       "operation": {
         "status": "ACTIVE_PRODUCING",
         "operationalStatus": "ACTIVE_PRODUCING",
-        "extractionMethod": "underground chromite mining",
+        "extractionMethod": "Underground and surface chromite mining with ore beneficiation",
         "extractionEligibility": "EXECUTABLE",
         "commercialExtraction": true
       },
@@ -10557,10 +10604,13 @@
         }
       },
       "verification": {
-        "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
         "reviewedAt": "2026-10-03",
-        "sourceCount": 0,
-        "sourceAuthorities": [],
+        "sourceCount": 2,
+        "sourceAuthorities": [
+          "GOVERNMENT",
+          "INDUSTRY_INTERVIEW"
+        ],
         "dataLimitations": null
       }
     },
@@ -10573,7 +10623,7 @@
         "countryIso3": "MKD",
         "siteType": "MINE",
         "resourceTypeId": "zinc",
-        "resourceName": "Zinc Ore & Concentrates",
+        "resourceName": "Zinc and lead concentrates with payable silver",
         "ontologyKey": "ZINC"
       },
       "location": {
@@ -10587,25 +10637,24 @@
         "coordinateStatus": "ESTIMATED_SITE_POINT"
       },
       "ownership": {
-        "owner": "Central Asia Metals",
-        "operator": "Sasa Mine",
-        "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-        "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+        "owner": "Central Asia Metals PLC",
+        "operator": "Sasa Mine / Central Asia Metals PLC",
+        "ownerEvidenceStatus": "WEB_REVIEWED",
+        "operatorEvidenceStatus": "WEB_REVIEWED"
       },
       "operation": {
         "status": "ACTIVE_PRODUCING",
         "operationalStatus": "ACTIVE_PRODUCING",
-        "extractionMethod": "underground and flotation",
+        "extractionMethod": "Underground zinc-lead mining with paste backfill, dry-stack tailings and flotation",
         "extractionEligibility": "EXECUTABLE",
         "commercialExtraction": true
       },
       "processing": {
-        "upstreamProcess": "Underground / Open-Pit Sulfide Mining",
-        "midstreamProcess": "Flotation, Roasting, Leaching, Electrowinning",
+        "upstreamProcess": "Underground Mining",
+        "midstreamProcess": "Crushing, milling and flotation",
         "refinedOutputs": [
-          "SPECIAL_HIGH_GRADE_ZINC",
-          "GALVANIZED_STEEL",
-          "BRASS"
+          "ZINC_CONCENTRATE",
+          "LEAD_CONCENTRATE"
         ],
         "downstreamSectors": [
           "BATTERIES"
@@ -10631,10 +10680,12 @@
         }
       },
       "verification": {
-        "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
         "reviewedAt": "2026-10-03",
-        "sourceCount": 0,
-        "sourceAuthorities": [],
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "REGULATORY_FILING"
+        ],
         "dataLimitations": null
       }
     },
@@ -10661,15 +10712,15 @@
         "coordinateStatus": "ESTIMATED_SITE_POINT"
       },
       "ownership": {
-        "owner": "Adriatic Metals",
-        "operator": "Eastern Mining",
-        "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-        "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+        "owner": "Adriatic Metals PLC",
+        "operator": "Eastern Mining d.o.o.",
+        "ownerEvidenceStatus": "WEB_REVIEWED",
+        "operatorEvidenceStatus": "WEB_REVIEWED"
       },
       "operation": {
         "status": "ACTIVE_PRODUCING",
         "operationalStatus": "ACTIVE_PRODUCING",
-        "extractionMethod": "underground mining",
+        "extractionMethod": "Underground mining at Rupice with crushing, flotation and concentrate production",
         "extractionEligibility": "EXECUTABLE",
         "commercialExtraction": true
       },
@@ -10705,10 +10756,12 @@
         }
       },
       "verification": {
-        "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
         "reviewedAt": "2026-10-03",
-        "sourceCount": 0,
-        "sourceAuthorities": [],
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "OPERATOR"
+        ],
         "dataLimitations": null
       }
     },
@@ -10735,15 +10788,15 @@
         "coordinateStatus": "ESTIMATED_SITE_POINT"
       },
       "ownership": {
-        "owner": "Rudnik uglja Pljevlja",
+        "owner": "Rudnik uglja Pljevlja / Government of Montenegro",
         "operator": "Rudnik uglja Pljevlja",
-        "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-        "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+        "ownerEvidenceStatus": "WEB_REVIEWED",
+        "operatorEvidenceStatus": "WEB_REVIEWED"
       },
       "operation": {
         "status": "ACTIVE_PRODUCING",
         "operationalStatus": "ACTIVE_PRODUCING",
-        "extractionMethod": "open-pit mining",
+        "extractionMethod": "Open-pit lignite/coal mining supplying thermal power generation",
         "extractionEligibility": "EXECUTABLE",
         "commercialExtraction": true
       },
@@ -10783,10 +10836,12 @@
         }
       },
       "verification": {
-        "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
         "reviewedAt": "2026-10-03",
-        "sourceCount": 0,
-        "sourceAuthorities": [],
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "INDUSTRY_DATABASE"
+        ],
         "dataLimitations": null
       }
     },
@@ -10889,15 +10944,15 @@
         "coordinateStatus": "ESTIMATED_SITE_POINT"
       },
       "ownership": {
-        "owner": "Luxembourg state/heritage",
-        "operator": "None",
-        "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-        "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+        "owner": "Luxembourg state / heritage",
+        "operator": "None (historical mine)",
+        "ownerEvidenceStatus": "WEB_REVIEWED",
+        "operatorEvidenceStatus": "WEB_REVIEWED"
       },
       "operation": {
         "status": "HISTORICAL_INACTIVE",
         "operationalStatus": "HISTORICAL_INACTIVE",
-        "extractionMethod": "historical underground mining",
+        "extractionMethod": "Historical underground iron-ore mining",
         "extractionEligibility": "NON_EXECUTABLE",
         "commercialExtraction": true
       },
@@ -10934,10 +10989,12 @@
         }
       },
       "verification": {
-        "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
         "reviewedAt": "2026-10-03",
-        "sourceCount": 0,
-        "sourceAuthorities": [],
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "SECONDARY_REFERENCE"
+        ],
         "dataLimitations": null
       }
     },
@@ -11042,16 +11099,16 @@
         "coordinateStatus": "ESTIMATED_SITE_POINT"
       },
       "ownership": {
-        "owner": "Hellenic Copper Mines / Cyprus",
-        "operator": "Hellenic Copper Mines",
-        "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-        "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+        "owner": "Hellenic Copper Mines / Cyprus historical mining interests",
+        "operator": "None for current commercial extraction",
+        "ownerEvidenceStatus": "WEB_REVIEWED",
+        "operatorEvidenceStatus": "WEB_REVIEWED"
       },
       "operation": {
-        "status": "LIMITED",
-        "operationalStatus": "LIMITED",
-        "extractionMethod": "open-pit and leaching",
-        "extractionEligibility": "CONDITIONAL",
+        "status": "HISTORICAL_INACTIVE",
+        "operationalStatus": "HISTORICAL_INACTIVE",
+        "extractionMethod": "Historical underground/surface mining; later leaching and SX-EW processing",
+        "extractionEligibility": "NON_EXECUTABLE",
         "commercialExtraction": true
       },
       "processing": {
@@ -11091,10 +11148,12 @@
         }
       },
       "verification": {
-        "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
         "reviewedAt": "2026-10-03",
-        "sourceCount": 0,
-        "sourceAuthorities": [],
+        "sourceCount": 2,
+        "sourceAuthorities": [
+          "GOVERNMENT"
+        ],
         "dataLimitations": null
       }
     },
@@ -11121,15 +11180,15 @@
         "coordinateStatus": "ESTIMATED_SITE_POINT"
       },
       "ownership": {
-        "owner": "Government of Andorra",
-        "operator": "None",
-        "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-        "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+        "owner": "Government of Andorra / cultural heritage",
+        "operator": "None (heritage site)",
+        "ownerEvidenceStatus": "WEB_REVIEWED",
+        "operatorEvidenceStatus": "WEB_REVIEWED"
       },
       "operation": {
         "status": "HISTORICAL_INACTIVE",
         "operationalStatus": "HISTORICAL_INACTIVE",
-        "extractionMethod": "historical underground mining",
+        "extractionMethod": "Historical underground iron-ore extraction",
         "extractionEligibility": "NON_EXECUTABLE",
         "commercialExtraction": true
       },
@@ -11166,10 +11225,12 @@
         }
       },
       "verification": {
-        "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
         "reviewedAt": "2026-10-03",
-        "sourceCount": 0,
-        "sourceAuthorities": [],
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "GOVERNMENT"
+        ],
         "dataLimitations": null
       }
     },
@@ -11454,7 +11515,7 @@
         "countryIso3": "USA",
         "siteType": "MINE",
         "resourceTypeId": "copper",
-        "resourceName": "Refined Copper & Concentrates",
+        "resourceName": "Copper with molybdenum by-product",
         "ontologyKey": "COPPER"
       },
       "location": {
@@ -11468,27 +11529,25 @@
         "coordinateStatus": "ESTIMATED_SITE_POINT"
       },
       "ownership": {
-        "owner": "Freeport-McMoRan / partners",
+        "owner": "Freeport-McMoRan Inc. 72% / Sumitomo 28%",
         "operator": "Freeport-McMoRan",
-        "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-        "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+        "ownerEvidenceStatus": "WEB_REVIEWED",
+        "operatorEvidenceStatus": "WEB_REVIEWED"
       },
       "operation": {
         "status": "ACTIVE_PRODUCING",
         "operationalStatus": "ACTIVE_PRODUCING",
-        "extractionMethod": "large open-pit mining and leaching",
+        "extractionMethod": "Large-scale open-pit porphyry copper mining with concentration, heap leaching and SX-EW",
         "extractionEligibility": "EXECUTABLE",
         "commercialExtraction": true
       },
       "processing": {
-        "upstreamProcess": "Open-Pit Mining, Heap Bio-Leaching, Froth Flotation",
-        "midstreamProcess": "Flash Smelting, Electro-Refining to Grade-A Cathode 99.99%",
+        "upstreamProcess": "Open-Pit Mining",
+        "midstreamProcess": "Milling/Flotation, Leach, SX-EW",
         "refinedOutputs": [
-          "COPPER_WIRE_ROD",
-          "BUSBARS",
-          "BRASS_ALLOY",
-          "BRONZE_ALLOY",
-          "COPPER_FOIL"
+          "COPPER_CONCENTRATE",
+          "COPPER_CATHODE",
+          "MOLYBDENUM_CONCENTRATE"
         ],
         "downstreamSectors": [
           "POWER_GRID_INFRASTRUCTURE",
@@ -11504,11 +11563,14 @@
           "status": "UNOBSERVED"
         },
         "production": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
+          "annual": {
+            "value": 700000000,
+            "unit": "pounds_copper",
+            "year": 2025
+          },
+          "status": "OBSERVED",
+          "measurementType": "TOTAL_JV_COPPER_PRODUCTION",
+          "sourceScope": "SITE_SPECIFIC"
         },
         "grade": {
           "value": null,
@@ -11517,10 +11579,13 @@
         }
       },
       "verification": {
-        "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
         "reviewedAt": "2026-10-03",
-        "sourceCount": 0,
-        "sourceAuthorities": [],
+        "sourceCount": 2,
+        "sourceAuthorities": [
+          "REGULATORY_FILING",
+          "OPERATOR"
+        ],
         "dataLimitations": null
       }
     },
@@ -11937,15 +12002,15 @@
         "coordinateStatus": "ESTIMATED_SITE_POINT"
       },
       "ownership": {
-        "owner": "Glencore",
+        "owner": "Glencore plc",
         "operator": "Cerrejón",
-        "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-        "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+        "ownerEvidenceStatus": "WEB_REVIEWED",
+        "operatorEvidenceStatus": "WEB_REVIEWED"
       },
       "operation": {
         "status": "ACTIVE_PRODUCING",
         "operationalStatus": "ACTIVE_PRODUCING",
-        "extractionMethod": "large open-pit truck and shovel",
+        "extractionMethod": "Large-scale open-pit thermal coal mining with rail and port logistics",
         "extractionEligibility": "EXECUTABLE",
         "commercialExtraction": true
       },
@@ -11985,10 +12050,12 @@
         }
       },
       "verification": {
-        "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
         "reviewedAt": "2026-10-03",
-        "sourceCount": 0,
-        "sourceAuthorities": [],
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "OPERATOR"
+        ],
         "dataLimitations": null
       }
     },
@@ -12096,15 +12163,15 @@
         "coordinateStatus": "ESTIMATED_SITE_POINT"
       },
       "ownership": {
-        "owner": "PDVSA",
-        "operator": "PDVSA",
-        "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-        "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+        "owner": "Petróleos de Venezuela S.A. (PDVSA)",
+        "operator": "Petróleos de Venezuela S.A. (PDVSA)",
+        "ownerEvidenceStatus": "WEB_REVIEWED",
+        "operatorEvidenceStatus": "WEB_REVIEWED"
       },
       "operation": {
         "status": "ACTIVE_PRODUCING",
         "operationalStatus": "ACTIVE_PRODUCING",
-        "extractionMethod": "onshore wells and gathering",
+        "extractionMethod": "Onshore and shallow-water oil wells with gathering and field processing",
         "extractionEligibility": "EXECUTABLE",
         "commercialExtraction": true
       },
@@ -12146,10 +12213,12 @@
         }
       },
       "verification": {
-        "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
         "reviewedAt": "2026-10-03",
-        "sourceCount": 0,
-        "sourceAuthorities": [],
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "INDUSTRY_DATABASE"
+        ],
         "dataLimitations": null
       }
     },
@@ -12162,7 +12231,7 @@
         "countryIso3": "ECU",
         "siteType": "MINE",
         "resourceTypeId": "copper",
-        "resourceName": "Refined Copper & Concentrates",
+        "resourceName": "Copper concentrate",
         "ontologyKey": "COPPER"
       },
       "location": {
@@ -12176,27 +12245,23 @@
         "coordinateStatus": "ESTIMATED_SITE_POINT"
       },
       "ownership": {
-        "owner": "Ecuacorriente / Chinese investors",
-        "operator": "Ecuacorriente SA",
-        "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-        "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+        "owner": "Ecuacorriente S.A. / CRCC-Tongguan investment group",
+        "operator": "Ecuacorriente S.A.",
+        "ownerEvidenceStatus": "WEB_REVIEWED",
+        "operatorEvidenceStatus": "WEB_REVIEWED"
       },
       "operation": {
         "status": "ACTIVE_PRODUCING",
         "operationalStatus": "ACTIVE_PRODUCING",
-        "extractionMethod": "open-pit truck and shovel",
+        "extractionMethod": "Large open-pit copper mining with crushing, grinding and flotation concentration",
         "extractionEligibility": "EXECUTABLE",
         "commercialExtraction": true
       },
       "processing": {
-        "upstreamProcess": "Open-Pit Mining, Heap Bio-Leaching, Froth Flotation",
-        "midstreamProcess": "Flash Smelting, Electro-Refining to Grade-A Cathode 99.99%",
+        "upstreamProcess": "Open-Pit Mining",
+        "midstreamProcess": "Crushing, Grinding and Flotation",
         "refinedOutputs": [
-          "COPPER_WIRE_ROD",
-          "BUSBARS",
-          "BRASS_ALLOY",
-          "BRONZE_ALLOY",
-          "COPPER_FOIL"
+          "COPPER_CONCENTRATE"
         ],
         "downstreamSectors": [
           "POWER_GRID_INFRASTRUCTURE",
@@ -12225,10 +12290,12 @@
         }
       },
       "verification": {
-        "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
         "reviewedAt": "2026-10-03",
-        "sourceCount": 0,
-        "sourceAuthorities": [],
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "OPERATOR"
+        ],
         "dataLimitations": null
       }
     },
@@ -12329,15 +12396,15 @@
         "coordinateStatus": "ESTIMATED_SITE_POINT"
       },
       "ownership": {
-        "owner": "Industria Nacional del Cemento",
-        "operator": "INC",
-        "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-        "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+        "owner": "Industria Nacional del Cemento (INC) / Paraguay",
+        "operator": "Industria Nacional del Cemento (INC)",
+        "ownerEvidenceStatus": "WEB_REVIEWED",
+        "operatorEvidenceStatus": "WEB_REVIEWED"
       },
       "operation": {
         "status": "ACTIVE_PRODUCING",
         "operationalStatus": "ACTIVE_PRODUCING",
-        "extractionMethod": "surface quarrying",
+        "extractionMethod": "Quarrying of limestone and associated cement raw materials feeding the Vallemí plant",
         "extractionEligibility": "EXECUTABLE",
         "commercialExtraction": true
       },
@@ -12374,10 +12441,13 @@
         }
       },
       "verification": {
-        "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
         "reviewedAt": "2026-10-03",
-        "sourceCount": 0,
-        "sourceAuthorities": [],
+        "sourceCount": 2,
+        "sourceAuthorities": [
+          "GOVERNMENT_OPERATOR",
+          "GOVERNMENT"
+        ],
         "dataLimitations": null
       }
     },
@@ -12562,15 +12632,15 @@
         "coordinateStatus": "ESTIMATED_SITE_POINT"
       },
       "ownership": {
-        "owner": "Golden Sun Resources Ltd.",
-        "operator": "Golden Sun Resources Ltd.",
-        "ownerEvidenceStatus": "REPORTED_PUBLIC_SOURCE",
-        "operatorEvidenceStatus": "REPORTED_PUBLIC_SOURCE"
+        "owner": "UNOBSERVED",
+        "operator": "None (historical mine)",
+        "ownerEvidenceStatus": "UNOBSERVED",
+        "operatorEvidenceStatus": "WEB_REVIEWED"
       },
       "operation": {
         "status": "HISTORICAL_INACTIVE",
         "operationalStatus": "HISTORICAL_INACTIVE",
-        "extractionMethod": "historical open-pit mining; mine suspended after 2007 landslide; later redevelopment and processing activity reported",
+        "extractionMethod": "Historical gold mining",
         "extractionEligibility": "NON_EXECUTABLE",
         "commercialExtraction": true
       },
@@ -12607,10 +12677,12 @@
         }
       },
       "verification": {
-        "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
         "reviewedAt": "2026-10-03",
-        "sourceCount": 2,
-        "sourceAuthorities": [],
+        "sourceCount": 3,
+        "sourceAuthorities": [
+          "SECONDARY_REFERENCE"
+        ],
         "dataLimitations": null
       }
     },
@@ -12623,7 +12695,7 @@
         "countryIso3": "NIC",
         "siteType": "MINE",
         "resourceTypeId": "gold",
-        "resourceName": "Gold Ore & Doré",
+        "resourceName": "Gold",
         "ontologyKey": "GOLD"
       },
       "location": {
@@ -12637,25 +12709,23 @@
         "coordinateStatus": "ESTIMATED_SITE_POINT"
       },
       "ownership": {
-        "owner": "Calibre Mining",
-        "operator": "Calibre Mining Nicaragua",
-        "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-        "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+        "owner": "Equinox Gold Corp.",
+        "operator": "Equinox Gold Nicaragua / Limon Mine",
+        "ownerEvidenceStatus": "WEB_REVIEWED",
+        "operatorEvidenceStatus": "WEB_REVIEWED"
       },
       "operation": {
         "status": "ACTIVE_PRODUCING",
         "operationalStatus": "ACTIVE_PRODUCING",
-        "extractionMethod": "open-pit and underground",
+        "extractionMethod": "Combination of open-pit and underground gold mining feeding the Limon mill",
         "extractionEligibility": "EXECUTABLE",
         "commercialExtraction": true
       },
       "processing": {
-        "upstreamProcess": "Open-Pit / Underground Mining, Gravity, Flotation",
-        "midstreamProcess": "Crushing, Grinding, Gravity/Flotation, Cyanide Leaching, Smelting",
+        "upstreamProcess": "Open-Pit and Underground Mining",
+        "midstreamProcess": "Crushing, grinding, leaching and gold recovery",
         "refinedOutputs": [
-          "GOLD_DORE",
-          "JEWELRY",
-          "ELECTRONICS"
+          "GOLD_DORE"
         ],
         "downstreamSectors": [
           "CENTRAL_BANK_RESERVES",
@@ -12669,11 +12739,14 @@
           "status": "UNOBSERVED"
         },
         "production": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
+          "annual": {
+            "value": 71605,
+            "unit": "troy_ounces_gold",
+            "year": 2025
+          },
+          "status": "OBSERVED",
+          "measurementType": "EL_LIMON_MILL_GOLD_PRODUCTION",
+          "sourceScope": "SITE_SPECIFIC_MILL"
         },
         "grade": {
           "value": null,
@@ -12682,10 +12755,13 @@
         }
       },
       "verification": {
-        "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
         "reviewedAt": "2026-10-03",
-        "sourceCount": 0,
-        "sourceAuthorities": [],
+        "sourceCount": 2,
+        "sourceAuthorities": [
+          "OPERATOR",
+          "REGULATORY_FILING"
+        ],
         "dataLimitations": null
       }
     },
@@ -12712,16 +12788,16 @@
         "coordinateStatus": "ESTIMATED_SITE_POINT"
       },
       "ownership": {
-        "owner": "Private concession interests",
-        "operator": "El Mochito operators",
-        "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-        "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+        "owner": "Kirungu Corporation",
+        "operator": "American Pacific Honduras S.A. de C.V. / Kirungu operating interests",
+        "ownerEvidenceStatus": "WEB_REVIEWED",
+        "operatorEvidenceStatus": "WEB_REVIEWED"
       },
       "operation": {
         "status": "LIMITED",
         "operationalStatus": "LIMITED",
-        "extractionMethod": "underground and flotation",
-        "extractionEligibility": "CONDITIONAL",
+        "extractionMethod": "Underground zinc-lead-silver mining with crushing and flotation",
+        "extractionEligibility": "EXECUTABLE",
         "commercialExtraction": true
       },
       "processing": {
@@ -12756,10 +12832,13 @@
         }
       },
       "verification": {
-        "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
         "reviewedAt": "2026-10-03",
-        "sourceCount": 0,
-        "sourceAuthorities": [],
+        "sourceCount": 2,
+        "sourceAuthorities": [
+          "INDUSTRY_ANALYSIS",
+          "REGULATORY_FILING"
+        ],
         "dataLimitations": null
       }
     },
@@ -13247,15 +13326,15 @@
         "coordinateStatus": "ESTIMATED_SITE_POINT"
       },
       "ownership": {
-        "owner": "Noranda Bauxite / Jamaica",
-        "operator": "Noranda Bauxite",
-        "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-        "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+        "owner": "Noranda Jamaica Bauxite Partners II / Government of Jamaica 51%",
+        "operator": "Noranda Bauxite Limited",
+        "ownerEvidenceStatus": "WEB_REVIEWED",
+        "operatorEvidenceStatus": "WEB_REVIEWED"
       },
       "operation": {
         "status": "ACTIVE_PRODUCING",
         "operationalStatus": "ACTIVE_PRODUCING",
-        "extractionMethod": "open-pit bauxite mining",
+        "extractionMethod": "Surface bauxite mining, rail haulage to port, drying and export",
         "extractionEligibility": "EXECUTABLE",
         "commercialExtraction": true
       },
@@ -13295,10 +13374,13 @@
         }
       },
       "verification": {
-        "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
         "reviewedAt": "2026-10-03",
-        "sourceCount": 0,
-        "sourceAuthorities": [],
+        "sourceCount": 3,
+        "sourceAuthorities": [
+          "GOVERNMENT",
+          "GOVERNMENT_ENVIRONMENTAL_REPORT"
+        ],
         "dataLimitations": null
       }
     },
@@ -13402,15 +13484,15 @@
         "coordinateStatus": "ESTIMATED_SITE_POINT"
       },
       "ownership": {
-        "owner": "Barrick / Dominican state",
-        "operator": "Pueblo Viejo Dominicana",
-        "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-        "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+        "owner": "Barrick Gold 60% / Newmont 40%",
+        "operator": "Barrick Gold Corporation",
+        "ownerEvidenceStatus": "WEB_REVIEWED",
+        "operatorEvidenceStatus": "WEB_REVIEWED"
       },
       "operation": {
         "status": "ACTIVE_PRODUCING",
         "operationalStatus": "ACTIVE_PRODUCING",
-        "extractionMethod": "open-pit and refractory processing",
+        "extractionMethod": "Open-pit truck-and-shovel mining with CIL processing and stockpile blending",
         "extractionEligibility": "EXECUTABLE",
         "commercialExtraction": true
       },
@@ -13447,10 +13529,12 @@
         }
       },
       "verification": {
-        "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
         "reviewedAt": "2026-10-03",
-        "sourceCount": 0,
-        "sourceAuthorities": [],
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "REGULATORY_FILING"
+        ],
         "dataLimitations": null
       }
     },
@@ -13477,15 +13561,15 @@
         "coordinateStatus": "ESTIMATED_SITE_POINT"
       },
       "ownership": {
-        "owner": "bpTT / Trinidad and Tobago",
-        "operator": "bp Trinidad and Tobago",
-        "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-        "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+        "owner": "bp Trinidad and Tobago LLC / Republic of Trinidad and Tobago state interests",
+        "operator": "bp Trinidad and Tobago LLC",
+        "ownerEvidenceStatus": "WEB_REVIEWED",
+        "operatorEvidenceStatus": "WEB_REVIEWED"
       },
       "operation": {
         "status": "ACTIVE_PRODUCING",
         "operationalStatus": "ACTIVE_PRODUCING",
-        "extractionMethod": "offshore platforms and subsea wells",
+        "extractionMethod": "Offshore oil and gas wells with subsea/wellhead gathering and field processing",
         "extractionEligibility": "EXECUTABLE",
         "commercialExtraction": true
       },
@@ -13527,10 +13611,12 @@
         }
       },
       "verification": {
-        "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
         "reviewedAt": "2026-10-03",
-        "sourceCount": 0,
-        "sourceAuthorities": [],
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "OPERATOR"
+        ],
         "dataLimitations": null
       }
     },
@@ -13631,16 +13717,16 @@
         "coordinateStatus": "ESTIMATED_SITE_POINT"
       },
       "ownership": {
-        "owner": "Arawak Cement",
-        "operator": "Arawak Cement",
-        "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-        "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+        "owner": "Arawak Cement Company Limited / TCL Group",
+        "operator": "Arawak Cement Company Limited",
+        "ownerEvidenceStatus": "WEB_REVIEWED",
+        "operatorEvidenceStatus": "WEB_REVIEWED"
       },
       "operation": {
-        "status": "ACTIVE_PRODUCING",
-        "operationalStatus": "ACTIVE_PRODUCING",
-        "extractionMethod": "surface quarrying",
-        "extractionEligibility": "EXECUTABLE",
+        "status": "MILL_ONLY_NO_QUARRY_VERIFIED",
+        "operationalStatus": "MILL_ONLY_NO_QUARRY_VERIFIED",
+        "extractionMethod": "No current quarry extraction at Checker Hall is established; current site operation is cement grinding",
+        "extractionEligibility": "NON_EXECUTABLE",
         "commercialExtraction": true
       },
       "processing": {
@@ -13676,10 +13762,13 @@
         }
       },
       "verification": {
-        "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
         "reviewedAt": "2026-10-03",
-        "sourceCount": 0,
-        "sourceAuthorities": [],
+        "sourceCount": 2,
+        "sourceAuthorities": [
+          "GOVERNMENT_TRADE_AGENCY",
+          "INDUSTRY_DATABASE"
+        ],
         "dataLimitations": null
       }
     },
@@ -14144,7 +14233,7 @@
         "countryIso3": "SUR",
         "siteType": "MINE",
         "resourceTypeId": "gold",
-        "resourceName": "Gold Ore & Doré",
+        "resourceName": "Gold doré",
         "ontologyKey": "GOLD"
       },
       "location": {
@@ -14158,25 +14247,23 @@
         "coordinateStatus": "ESTIMATED_SITE_POINT"
       },
       "ownership": {
-        "owner": "Newmont / Staatsolie",
+        "owner": "Newmont 75% / Staatsolie 25%",
         "operator": "Newmont Suriname",
-        "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-        "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+        "ownerEvidenceStatus": "WEB_REVIEWED",
+        "operatorEvidenceStatus": "WEB_REVIEWED"
       },
       "operation": {
         "status": "ACTIVE_PRODUCING",
         "operationalStatus": "ACTIVE_PRODUCING",
-        "extractionMethod": "open-pit",
+        "extractionMethod": "Open-pit gold mining with conventional milling, gravity and carbon-in-leach processing",
         "extractionEligibility": "EXECUTABLE",
         "commercialExtraction": true
       },
       "processing": {
-        "upstreamProcess": "Open-Pit / Underground Mining, Gravity, Flotation",
-        "midstreamProcess": "Crushing, Grinding, Gravity/Flotation, Cyanide Leaching, Smelting",
+        "upstreamProcess": "Open-Pit Mining",
+        "midstreamProcess": "Crushing, comminution, gravity, cyanide leach, carbon-in-leach, elution, electrowinning and smelting",
         "refinedOutputs": [
-          "GOLD_DORE",
-          "JEWELRY",
-          "ELECTRONICS"
+          "GOLD_DORE"
         ],
         "downstreamSectors": [
           "CENTRAL_BANK_RESERVES",
@@ -14185,9 +14272,11 @@
       },
       "quantitative": {
         "reserve": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
+          "quantity": 4500000,
+          "unit": "troy_ounces_gold",
+          "status": "OBSERVED_ATTRIBUTABLE",
+          "year": 2025,
+          "sourceScope": "Newmont_75_percent_attributable_reserve"
         },
         "production": {
           "annual": null,
@@ -14203,10 +14292,12 @@
         }
       },
       "verification": {
-        "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
         "reviewedAt": "2026-10-03",
-        "sourceCount": 0,
-        "sourceAuthorities": [],
+        "sourceCount": 2,
+        "sourceAuthorities": [
+          "REGULATORY_FILING"
+        ],
         "dataLimitations": null
       }
     },
@@ -14219,7 +14310,7 @@
         "countryIso3": "GUY",
         "siteType": "MINE",
         "resourceTypeId": "gold",
-        "resourceName": "Gold Ore & Doré",
+        "resourceName": "Gold",
         "ontologyKey": "GOLD"
       },
       "location": {
@@ -14233,25 +14324,23 @@
         "coordinateStatus": "ESTIMATED_SITE_POINT"
       },
       "ownership": {
-        "owner": "Zijin / Guyana",
-        "operator": "Aurora operations",
-        "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-        "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+        "owner": "Zijin Mining 85% / Guyana interests",
+        "operator": "Aurora Gold Mine / Zijin Mining",
+        "ownerEvidenceStatus": "WEB_REVIEWED",
+        "operatorEvidenceStatus": "WEB_REVIEWED"
       },
       "operation": {
         "status": "ACTIVE_PRODUCING",
         "operationalStatus": "ACTIVE_PRODUCING",
-        "extractionMethod": "open-pit and underground",
+        "extractionMethod": "Open-pit and underground gold mining with gravity separation and cyanide leaching",
         "extractionEligibility": "EXECUTABLE",
         "commercialExtraction": true
       },
       "processing": {
-        "upstreamProcess": "Open-Pit / Underground Mining, Gravity, Flotation",
-        "midstreamProcess": "Crushing, Grinding, Gravity/Flotation, Cyanide Leaching, Smelting",
+        "upstreamProcess": "Open-Pit Mining and Underground Development",
+        "midstreamProcess": "Gravity Separation and Cyanide Leaching",
         "refinedOutputs": [
-          "GOLD_DORE",
-          "JEWELRY",
-          "ELECTRONICS"
+          "GOLD_DORE"
         ],
         "downstreamSectors": [
           "CENTRAL_BANK_RESERVES",
@@ -14265,11 +14354,14 @@
           "status": "UNOBSERVED"
         },
         "production": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
+          "annual": {
+            "value": 4.5,
+            "unit": "metric_tons_gold",
+            "year": 2025
+          },
+          "status": "OBSERVED",
+          "measurementType": "TOTAL_SITE_GOLD_PRODUCTION",
+          "sourceScope": "SITE_SPECIFIC"
         },
         "grade": {
           "value": null,
@@ -14278,10 +14370,12 @@
         }
       },
       "verification": {
-        "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
         "reviewedAt": "2026-10-03",
-        "sourceCount": 0,
-        "sourceAuthorities": [],
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "OPERATOR"
+        ],
         "dataLimitations": null
       }
     },
@@ -14294,7 +14388,7 @@
         "countryIso3": "AUS",
         "siteType": "MINE",
         "resourceTypeId": "gold",
-        "resourceName": "Gold Ore & Doré",
+        "resourceName": "Gold and copper concentrate",
         "ontologyKey": "GOLD"
       },
       "location": {
@@ -14308,25 +14402,24 @@
         "coordinateStatus": "ESTIMATED_SITE_POINT"
       },
       "ownership": {
-        "owner": "Newmont",
+        "owner": "Newmont Corporation",
         "operator": "Newmont Boddington Gold",
-        "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-        "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+        "ownerEvidenceStatus": "WEB_REVIEWED",
+        "operatorEvidenceStatus": "WEB_REVIEWED"
       },
       "operation": {
         "status": "ACTIVE_PRODUCING",
         "operationalStatus": "ACTIVE_PRODUCING",
-        "extractionMethod": "large open-pit and processing",
+        "extractionMethod": "Large open-pit gold-copper mining with concentrator and processing plant",
         "extractionEligibility": "EXECUTABLE",
         "commercialExtraction": true
       },
       "processing": {
-        "upstreamProcess": "Open-Pit / Underground Mining, Gravity, Flotation",
-        "midstreamProcess": "Crushing, Grinding, Gravity/Flotation, Cyanide Leaching, Smelting",
+        "upstreamProcess": "Open-Pit Mining",
+        "midstreamProcess": "Crushing, grinding, flotation and gold recovery",
         "refinedOutputs": [
           "GOLD_DORE",
-          "JEWELRY",
-          "ELECTRONICS"
+          "COPPER_CONCENTRATE"
         ],
         "downstreamSectors": [
           "CENTRAL_BANK_RESERVES",
@@ -14335,9 +14428,11 @@
       },
       "quantitative": {
         "reserve": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
+          "quantity": 10200000,
+          "unit": "troy_ounces_gold",
+          "status": "OBSERVED",
+          "year": 2025,
+          "sourceScope": "FY2025_RESERVE"
         },
         "production": {
           "annual": null,
@@ -14353,10 +14448,12 @@
         }
       },
       "verification": {
-        "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
         "reviewedAt": "2026-10-03",
-        "sourceCount": 0,
-        "sourceAuthorities": [],
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "OPERATOR"
+        ],
         "dataLimitations": null
       }
     },
@@ -14369,7 +14466,7 @@
         "countryIso3": "NZL",
         "siteType": "MINE",
         "resourceTypeId": "gold",
-        "resourceName": "Gold Ore & Doré",
+        "resourceName": "Gold",
         "ontologyKey": "GOLD"
       },
       "location": {
@@ -14383,25 +14480,23 @@
         "coordinateStatus": "ESTIMATED_SITE_POINT"
       },
       "ownership": {
-        "owner": "OceanaGold",
+        "owner": "OceanaGold Corporation",
         "operator": "OceanaGold New Zealand",
-        "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-        "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+        "ownerEvidenceStatus": "WEB_REVIEWED",
+        "operatorEvidenceStatus": "WEB_REVIEWED"
       },
       "operation": {
         "status": "ACTIVE_PRODUCING",
         "operationalStatus": "ACTIVE_PRODUCING",
-        "extractionMethod": "open-pit and underground",
+        "extractionMethod": "Open-pit and underground gold mining with carbon-in-leach and pressure oxidation processing",
         "extractionEligibility": "EXECUTABLE",
         "commercialExtraction": true
       },
       "processing": {
-        "upstreamProcess": "Open-Pit / Underground Mining, Gravity, Flotation",
-        "midstreamProcess": "Crushing, Grinding, Gravity/Flotation, Cyanide Leaching, Smelting",
+        "upstreamProcess": "Open-Pit and Underground Mining",
+        "midstreamProcess": "Carbon-in-leach and pressure oxidation",
         "refinedOutputs": [
-          "GOLD_DORE",
-          "JEWELRY",
-          "ELECTRONICS"
+          "GOLD_DORE"
         ],
         "downstreamSectors": [
           "CENTRAL_BANK_RESERVES",
@@ -14415,11 +14510,14 @@
           "status": "UNOBSERVED"
         },
         "production": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
+          "annual": {
+            "value": 147000,
+            "unit": "troy_ounces_gold",
+            "year": 2025
+          },
+          "status": "OBSERVED",
+          "measurementType": "TOTAL_SITE_GOLD_PRODUCTION",
+          "sourceScope": "SITE_SPECIFIC"
         },
         "grade": {
           "value": null,
@@ -14428,10 +14526,12 @@
         }
       },
       "verification": {
-        "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
         "reviewedAt": "2026-10-03",
-        "sourceCount": 0,
-        "sourceAuthorities": [],
+        "sourceCount": 2,
+        "sourceAuthorities": [
+          "OPERATOR"
+        ],
         "dataLimitations": null
       }
     },
@@ -14458,15 +14558,15 @@
         "coordinateStatus": "ESTIMATED_SITE_POINT"
       },
       "ownership": {
-        "owner": "Newmont",
-        "operator": "Lihir operation",
-        "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-        "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+        "owner": "Newmont Corporation",
+        "operator": "Newmont Lihir",
+        "ownerEvidenceStatus": "WEB_REVIEWED",
+        "operatorEvidenceStatus": "WEB_REVIEWED"
       },
       "operation": {
         "status": "ACTIVE_PRODUCING",
         "operationalStatus": "ACTIVE_PRODUCING",
-        "extractionMethod": "open-pit",
+        "extractionMethod": "Large open-pit gold mining with stockpile processing and conventional gold recovery",
         "extractionEligibility": "EXECUTABLE",
         "commercialExtraction": true
       },
@@ -14503,10 +14603,12 @@
         }
       },
       "verification": {
-        "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
         "reviewedAt": "2026-10-03",
-        "sourceCount": 0,
-        "sourceAuthorities": [],
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "OPERATOR"
+        ],
         "dataLimitations": null
       }
     },
@@ -14519,7 +14621,7 @@
         "countryIso3": "FJI",
         "siteType": "MINE",
         "resourceTypeId": "gold",
-        "resourceName": "Gold Ore & Doré",
+        "resourceName": "Gold concentrate and gold doré",
         "ontologyKey": "GOLD"
       },
       "location": {
@@ -14533,25 +14635,24 @@
         "coordinateStatus": "ESTIMATED_SITE_POINT"
       },
       "ownership": {
-        "owner": "Vatukoula Gold Mines",
-        "operator": "Vatukoula Gold Mines",
-        "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-        "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+        "owner": "Vatukoula Gold Mines Limited",
+        "operator": "Vatukoula Gold Mines Limited",
+        "ownerEvidenceStatus": "WEB_REVIEWED",
+        "operatorEvidenceStatus": "WEB_REVIEWED"
       },
       "operation": {
         "status": "ACTIVE_PRODUCING",
         "operationalStatus": "ACTIVE_PRODUCING",
-        "extractionMethod": "underground",
+        "extractionMethod": "Underground gold mining with concentration; limited doré also recovered from tailings retreatment",
         "extractionEligibility": "EXECUTABLE",
         "commercialExtraction": true
       },
       "processing": {
-        "upstreamProcess": "Open-Pit / Underground Mining, Gravity, Flotation",
-        "midstreamProcess": "Crushing, Grinding, Gravity/Flotation, Cyanide Leaching, Smelting",
+        "upstreamProcess": "Underground Mining",
+        "midstreamProcess": "Concentration with tailings retreatment for doré",
         "refinedOutputs": [
-          "GOLD_DORE",
-          "JEWELRY",
-          "ELECTRONICS"
+          "GOLD_CONCENTRATE",
+          "GOLD_DORE"
         ],
         "downstreamSectors": [
           "CENTRAL_BANK_RESERVES",
@@ -14578,10 +14679,13 @@
         }
       },
       "verification": {
-        "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
         "reviewedAt": "2026-10-03",
-        "sourceCount": 0,
-        "sourceAuthorities": [],
+        "sourceCount": 2,
+        "sourceAuthorities": [
+          "NEWS",
+          "CENTRAL_BANK"
+        ],
         "dataLimitations": null
       }
     },
