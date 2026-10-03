@@ -1005,7 +1005,7 @@ const fixes = {
       sourceScope: 'SITE_SPECIFIC'
     },
     extra: {
-      2025_2026ProductionTarget: {
+      '2025_2026ProductionTarget': {
         value: 1800000,
         unit: 'metric_tons_ore_per_year',
         period: '2025-2026',
