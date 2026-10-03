@@ -358,7 +358,7 @@ const fixes = {
       evidence('https://fenixnickel.com/2026/05/26/fenix-nickel-commenced-operations-in-el-estor-following-a-comprehensive-business-transformation/', '2026_current_processing_operations_and_corporate_structure', 'OPERATOR'),
       evidence('https://solwaygroup.com/our-business/fenix-project-guatemala/', 'reserve_grade_mining_and_processing_context', 'PROJECT_OWNER')
     ]
-  }
+  },
   SITE_ETH_lega_dembi_gold_mine: {
     owner: 'MIDROC Investment Group',
     operator: 'MIDROC Gold Mine PLC',
