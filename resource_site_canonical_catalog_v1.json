@@ -3728,8 +3728,8 @@
         "countryIso3": "ERI",
         "siteType": "MINE",
         "resourceTypeId": "zinc",
-        "resourceName": "Gold Ore & Doré",
-        "ontologyKey": "GOLD"
+        "resourceName": "Zinc Ore & Concentrates",
+        "ontologyKey": "ZINC"
       },
       "location": {
         "countryName": "Eritrea",
@@ -3744,8 +3744,8 @@
       "ownership": {
         "owner": "Zijin Mining 55%; Eritrean National Mining Corporation (ENAMCO) 45%",
         "operator": "Bisha Mining Share Company / Zijin-managed",
-        "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-        "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+        "ownerEvidenceStatus": "WEB_REVIEWED",
+        "operatorEvidenceStatus": "WEB_REVIEWED"
       },
       "operation": {
         "status": "ACTIVE_PRODUCING",
@@ -3755,16 +3755,15 @@
         "commercialExtraction": true
       },
       "processing": {
-        "upstreamProcess": "Open-Pit / Underground Mining, Gravity, Flotation",
-        "midstreamProcess": "Crushing, Grinding, Gravity/Flotation, Cyanide Leaching, Smelting",
+        "upstreamProcess": "Open-Pit / Underground Sulfide Mining",
+        "midstreamProcess": "Flotation, Roasting, Leaching, Electrowinning",
         "refinedOutputs": [
-          "GOLD_DORE",
-          "JEWELRY",
-          "ELECTRONICS"
+          "SPECIAL_HIGH_GRADE_ZINC",
+          "GALVANIZED_STEEL",
+          "BRASS"
         ],
         "downstreamSectors": [
-          "CENTRAL_BANK_RESERVES",
-          "INDUSTRIAL_CHEMICALS"
+          "BATTERIES"
         ]
       },
       "quantitative": {
@@ -3779,8 +3778,7 @@
             "unit": "metric_tons_zinc",
             "year": 2025,
             "status": "OBSERVED"
-          },
-          "status": "OBSERVED"
+          }
         },
         "grade": {
           "value": 3.64,
@@ -3789,8 +3787,8 @@
         }
       },
       "verification": {
-        "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
-        "reviewedAt": "2026-09-27",
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+        "reviewedAt": "2026-10-03",
         "sourceCount": 1,
         "sourceAuthorities": [],
         "dataLimitations": null

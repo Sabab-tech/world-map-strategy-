@@ -1,8 +1,8 @@
 {
   "generatedAt": "2026-10-03",
   "totalSites": 199,
-  "explicitFixCount": 54,
-  "sourceBackedReviewedSites": 69,
+  "explicitFixCount": 55,
+  "sourceBackedReviewedSites": 70,
   "stillLegacySites": 60,
   "explicitOwnerSites": 181,
   "explicitOperatorSites": 181,
@@ -61,6 +61,7 @@
     "SITE_UGA_tororo_limestone_quarry",
     "SITE_SOM_el_buur_gold_mining_area",
     "SITE_DJI_ali_sabieh_limestone_quarry_zone",
+    "SITE_ERI_bisha_mine",
     "SITE_SSD_paloch_oil_field",
     "SITE_MUS_basalt_aggregate_quarry_zone",
     "SITE_SYC_mah_granite_quarry_zone",

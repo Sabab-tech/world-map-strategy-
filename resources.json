@@ -31446,7 +31446,7 @@
                 "siteClass": "MINE",
                 "countryIso3": "ERI",
                 "countryName": "Eritrea",
-                "resourceTypeId": "gold",
+                "resourceTypeId": "zinc",
                 "identityStatus": "OBSERVED"
               },
               "locationIdentity": {
@@ -31465,10 +31465,10 @@
                 "method": "open-pit and underground",
                 "lifecycleStatus": "ACTIVE_PRODUCING",
                 "operationalStatus": "ACTIVE_PRODUCING",
-                "owner": "Eritrean state / legacy Nevsun interests",
-                "operator": "Bisha Mining",
-                "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-                "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+                "owner": "Zijin Mining 55%; Eritrean National Mining Corporation (ENAMCO) 45%",
+                "operator": "Bisha Mining Share Company / Zijin-managed",
+                "ownerEvidenceStatus": "WEB_REVIEWED",
+                "operatorEvidenceStatus": "WEB_REVIEWED"
               },
               "quantitativeProfile": {
                 "reserve": {
@@ -31482,8 +31482,7 @@
                     "unit": "metric_tons_zinc",
                     "year": 2025,
                     "status": "OBSERVED"
-                  },
-                  "status": "OBSERVED"
+                  }
                 },
                 "grade": {
                   "value": 3.64,
@@ -31493,21 +31492,20 @@
                 "quantitativeExtractionDataAvailable": true
               },
               "resourceIdentity": {
-                "resourceTypeId": "gold",
-                "ontologyKey": "GOLD",
-                "commodityName": "Gold Ore & Doré",
-                "category": "PRECIOUS_METAL",
-                "physicalForm": "SOLID_ORE_AND_DORE",
-                "upstreamProcess": "Open-Pit / Underground Mining, Gravity, Flotation",
-                "midstreamProcess": "Crushing, Grinding, Gravity/Flotation, Cyanide Leaching, Smelting",
+                "resourceTypeId": "zinc",
+                "ontologyKey": "ZINC",
+                "commodityName": "Zinc Ore & Concentrates",
+                "category": "BASE_METAL",
+                "physicalForm": "SOLID_ORE_AND_CONCENTRATE",
+                "upstreamProcess": "Open-Pit / Underground Sulfide Mining",
+                "midstreamProcess": "Flotation, Roasting, Leaching, Electrowinning",
                 "refinedOutputs": [
-                  "GOLD_DORE",
-                  "JEWELRY",
-                  "ELECTRONICS"
+                  "SPECIAL_HIGH_GRADE_ZINC",
+                  "GALVANIZED_STEEL",
+                  "BRASS"
                 ],
                 "downstreamSectors": [
-                  "CENTRAL_BANK_RESERVES",
-                  "INDUSTRIAL_CHEMICALS"
+                  "BATTERIES"
                 ],
                 "ontologyStatus": "RESOLVED_FROM_RESOURCE_ONTOLOGY",
                 "canonicalResourceId": "zinc",
@@ -31529,14 +31527,14 @@
                   "grade": "OBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
               },
-              "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
+              "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "stateBasis": "CURRENT_SITE_SPECIFIC_WEB_REVALIDATION",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
-                "currentEvidence": "Zijin identifies Bisha as a producing copper-zinc mine in Eritrea, with 2.9 Mt/y ore, open-pit plus underground mining, flotation, and 2025 output of 83 kt zinc, 23 kt copper and 63.4 t silver.",
+                "currentEvidence": "Zijin identifies Bisha as a producing copper-zinc mine in Eritrea. The site operates open-pit and underground mining with flotation; 2025 reported output included 83 kt zinc, 23 kt copper and 63.4 t silver.",
                 "sourceAuthority": "Zijin Mining"
               },
               "secondaryResourceIds": [
@@ -31573,8 +31571,8 @@
                   "countryIso3": "ERI",
                   "siteType": "MINE",
                   "resourceTypeId": "zinc",
-                  "resourceName": "Gold Ore & Doré",
-                  "ontologyKey": "GOLD"
+                  "resourceName": "Zinc Ore & Concentrates",
+                  "ontologyKey": "ZINC"
                 },
                 "location": {
                   "countryName": "Eritrea",
@@ -31589,8 +31587,8 @@
                 "ownership": {
                   "owner": "Zijin Mining 55%; Eritrean National Mining Corporation (ENAMCO) 45%",
                   "operator": "Bisha Mining Share Company / Zijin-managed",
-                  "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-                  "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+                  "ownerEvidenceStatus": "WEB_REVIEWED",
+                  "operatorEvidenceStatus": "WEB_REVIEWED"
                 },
                 "operation": {
                   "status": "ACTIVE_PRODUCING",
@@ -31600,16 +31598,15 @@
                   "commercialExtraction": true
                 },
                 "processing": {
-                  "upstreamProcess": "Open-Pit / Underground Mining, Gravity, Flotation",
-                  "midstreamProcess": "Crushing, Grinding, Gravity/Flotation, Cyanide Leaching, Smelting",
+                  "upstreamProcess": "Open-Pit / Underground Sulfide Mining",
+                  "midstreamProcess": "Flotation, Roasting, Leaching, Electrowinning",
                   "refinedOutputs": [
-                    "GOLD_DORE",
-                    "JEWELRY",
-                    "ELECTRONICS"
+                    "SPECIAL_HIGH_GRADE_ZINC",
+                    "GALVANIZED_STEEL",
+                    "BRASS"
                   ],
                   "downstreamSectors": [
-                    "CENTRAL_BANK_RESERVES",
-                    "INDUSTRIAL_CHEMICALS"
+                    "BATTERIES"
                   ]
                 },
                 "quantitative": {
@@ -31624,8 +31621,7 @@
                       "unit": "metric_tons_zinc",
                       "year": 2025,
                       "status": "OBSERVED"
-                    },
-                    "status": "OBSERVED"
+                    }
                   },
                   "grade": {
                     "value": 3.64,
@@ -31634,8 +31630,8 @@
                   }
                 },
                 "verification": {
-                  "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
-                  "reviewedAt": "2026-09-27",
+                  "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 1,
                   "sourceAuthorities": [],
                   "dataLimitations": null
