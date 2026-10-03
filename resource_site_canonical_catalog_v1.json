@@ -9292,13 +9292,13 @@
       "ownership": {
         "owner": "Boliden",
         "operator": "Boliden Tara Mines",
-        "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-        "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+        "ownerEvidenceStatus": "WEB_REVIEWED",
+        "operatorEvidenceStatus": "WEB_REVIEWED"
       },
       "operation": {
         "status": "ACTIVE_PRODUCING",
         "operationalStatus": "ACTIVE_PRODUCING",
-        "extractionMethod": "underground room-and-pillar",
+        "extractionMethod": "Underground mining",
         "extractionEligibility": "EXECUTABLE",
         "commercialExtraction": true
       },
@@ -9321,11 +9321,14 @@
           "status": "UNOBSERVED"
         },
         "production": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
+          "annual": {
+            "value": 1440000,
+            "unit": "metric_tons_ore_milled",
+            "year": 2025
+          },
+          "status": "OBSERVED",
+          "measurementType": "ORE_MILLED",
+          "sourceScope": "SITE_SPECIFIC"
         },
         "grade": {
           "value": null,
@@ -9334,10 +9337,12 @@
         }
       },
       "verification": {
-        "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
         "reviewedAt": "2026-10-03",
-        "sourceCount": 0,
-        "sourceAuthorities": [],
+        "sourceCount": 2,
+        "sourceAuthorities": [
+          "OPERATOR"
+        ],
         "dataLimitations": null
       }
     },
@@ -9440,13 +9445,13 @@
       "ownership": {
         "owner": "Eldorado Gold",
         "operator": "Hellinikos Chrysos",
-        "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-        "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+        "ownerEvidenceStatus": "WEB_REVIEWED",
+        "operatorEvidenceStatus": "WEB_REVIEWED"
       },
       "operation": {
         "status": "ACTIVE_PRODUCING",
         "operationalStatus": "ACTIVE_PRODUCING",
-        "extractionMethod": "underground mining",
+        "extractionMethod": "Underground mining",
         "extractionEligibility": "EXECUTABLE",
         "commercialExtraction": true
       },
@@ -9470,11 +9475,14 @@
           "status": "UNOBSERVED"
         },
         "production": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
+          "annual": {
+            "value": 59877,
+            "unit": "troy_ounces_gold",
+            "year": 2025
+          },
+          "status": "OBSERVED",
+          "measurementType": "GOLD_PRODUCTION",
+          "sourceScope": "SITE_SPECIFIC"
         },
         "grade": {
           "value": null,
@@ -9483,10 +9491,12 @@
         }
       },
       "verification": {
-        "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
         "reviewedAt": "2026-10-03",
-        "sourceCount": 0,
-        "sourceAuthorities": [],
+        "sourceCount": 2,
+        "sourceAuthorities": [
+          "OPERATOR"
+        ],
         "dataLimitations": null
       }
     },

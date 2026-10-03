@@ -76212,7 +76212,7 @@
               "operationalStatus": "ACTIVE_PRODUCING",
               "owner": "Boliden",
               "operator": "Boliden Tara Mines",
-              "extractionMethod": "underground room-and-pillar",
+              "extractionMethod": "Underground mining",
               "startYear": 1977,
               "legacyReferenceName": "Ireland Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -76282,8 +76282,8 @@
                 "operationalStatus": "ACTIVE_PRODUCING",
                 "owner": "Boliden",
                 "operator": "Boliden Tara Mines",
-                "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-                "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+                "ownerEvidenceStatus": "WEB_REVIEWED",
+                "operatorEvidenceStatus": "WEB_REVIEWED"
               },
               "quantitativeProfile": {
                 "reserve": {
@@ -76292,11 +76292,14 @@
                   "status": "UNOBSERVED"
                 },
                 "production": {
-                  "annual": null,
-                  "rate": null,
-                  "unit": null,
-                  "year": null,
-                  "status": "UNOBSERVED"
+                  "annual": {
+                    "value": 1440000,
+                    "unit": "metric_tons_ore_milled",
+                    "year": 2025
+                  },
+                  "status": "OBSERVED",
+                  "measurementType": "ORE_MILLED",
+                  "sourceScope": "SITE_SPECIFIC"
                 },
                 "grade": {
                   "value": null,
@@ -76335,15 +76338,17 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
               },
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
               "researchMetadata": {
                 "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
-                "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
+                "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
+                "sourceAuthority": "Boliden Tara Mines",
+                "currentEvidence": "Boliden states Tara Mines is an underground zinc and lead mine, reopened after care and maintenance from July 2023 to October 2024. It reports 1.44 Mt milled in 2025, with a 2025-2026 ore production target of 1.8 Mt/year and a planned increase to 2.2 Mt/year over the following four years."
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -76369,13 +76374,13 @@
                 "ownership": {
                   "owner": "Boliden",
                   "operator": "Boliden Tara Mines",
-                  "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-                  "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+                  "ownerEvidenceStatus": "WEB_REVIEWED",
+                  "operatorEvidenceStatus": "WEB_REVIEWED"
                 },
                 "operation": {
                   "status": "ACTIVE_PRODUCING",
                   "operationalStatus": "ACTIVE_PRODUCING",
-                  "extractionMethod": "underground room-and-pillar",
+                  "extractionMethod": "Underground mining",
                   "extractionEligibility": "EXECUTABLE",
                   "commercialExtraction": true
                 },
@@ -76398,11 +76403,14 @@
                     "status": "UNOBSERVED"
                   },
                   "production": {
-                    "annual": null,
-                    "rate": null,
-                    "unit": null,
-                    "year": null,
-                    "status": "UNOBSERVED"
+                    "annual": {
+                      "value": 1440000,
+                      "unit": "metric_tons_ore_milled",
+                      "year": 2025
+                    },
+                    "status": "OBSERVED",
+                    "measurementType": "ORE_MILLED",
+                    "sourceScope": "SITE_SPECIFIC"
                   },
                   "grade": {
                     "value": null,
@@ -76411,13 +76419,41 @@
                   }
                 },
                 "verification": {
-                  "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+                  "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
                   "reviewedAt": "2026-10-03",
-                  "sourceCount": 0,
-                  "sourceAuthorities": [],
+                  "sourceCount": 2,
+                  "sourceAuthorities": [
+                    "OPERATOR"
+                  ],
                   "dataLimitations": null
                 }
-              }
+              },
+              "2025_2026ProductionTarget": {
+                "value": 1800000,
+                "unit": "metric_tons_ore_per_year",
+                "period": "2025-2026",
+                "status": "PLANNED"
+              },
+              "expansionTarget": {
+                "value": 2200000,
+                "unit": "metric_tons_ore_per_year",
+                "horizonYears": 4,
+                "status": "PLANNED"
+              },
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.boliden.com/4a175d/globalassets/sustainability/sustainability-2/biodiversity-and-reclamation/gistm-2025/public-disclosure-tara-2025.pdf",
+                  "accessed": "2026-10-03",
+                  "scope": "Tara_underground_mining_reopening_2025_milled_volume_and_forward_ore_target",
+                  "sourceType": "OPERATOR"
+                },
+                {
+                  "url": "https://investors.boliden.com/sv/node/5981",
+                  "accessed": "2026-10-03",
+                  "scope": "Tara_2025_mineral_reserve_review_and_1_44_Mt_milled",
+                  "sourceType": "OPERATOR"
+                }
+              ]
             }
           ],
           "processingFacilities": [
@@ -77430,7 +77466,7 @@
               "operationalStatus": "ACTIVE_PRODUCING",
               "owner": "Eldorado Gold",
               "operator": "Hellinikos Chrysos",
-              "extractionMethod": "underground mining",
+              "extractionMethod": "Underground mining",
               "startYear": 2017,
               "legacyReferenceName": "Greece Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -77500,8 +77536,8 @@
                 "operationalStatus": "ACTIVE_PRODUCING",
                 "owner": "Eldorado Gold",
                 "operator": "Hellinikos Chrysos",
-                "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-                "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+                "ownerEvidenceStatus": "WEB_REVIEWED",
+                "operatorEvidenceStatus": "WEB_REVIEWED"
               },
               "quantitativeProfile": {
                 "reserve": {
@@ -77510,11 +77546,14 @@
                   "status": "UNOBSERVED"
                 },
                 "production": {
-                  "annual": null,
-                  "rate": null,
-                  "unit": null,
-                  "year": null,
-                  "status": "UNOBSERVED"
+                  "annual": {
+                    "value": 59877,
+                    "unit": "troy_ounces_gold",
+                    "year": 2025
+                  },
+                  "status": "OBSERVED",
+                  "measurementType": "GOLD_PRODUCTION",
+                  "sourceScope": "SITE_SPECIFIC"
                 },
                 "grade": {
                   "value": null,
@@ -77554,15 +77593,17 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
               },
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
               "researchMetadata": {
                 "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
-                "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
+                "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
+                "sourceAuthority": "Eldorado Gold",
+                "currentEvidence": "Eldorado reports that Olympias produced 59,877 ounces of gold in 2025. The company provides 2026 gold production guidance of 70,000-80,000 ounces for Olympias and describes the operation as an underground mine."
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -77588,13 +77629,13 @@
                 "ownership": {
                   "owner": "Eldorado Gold",
                   "operator": "Hellinikos Chrysos",
-                  "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-                  "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+                  "ownerEvidenceStatus": "WEB_REVIEWED",
+                  "operatorEvidenceStatus": "WEB_REVIEWED"
                 },
                 "operation": {
                   "status": "ACTIVE_PRODUCING",
                   "operationalStatus": "ACTIVE_PRODUCING",
-                  "extractionMethod": "underground mining",
+                  "extractionMethod": "Underground mining",
                   "extractionEligibility": "EXECUTABLE",
                   "commercialExtraction": true
                 },
@@ -77618,11 +77659,14 @@
                     "status": "UNOBSERVED"
                   },
                   "production": {
-                    "annual": null,
-                    "rate": null,
-                    "unit": null,
-                    "year": null,
-                    "status": "UNOBSERVED"
+                    "annual": {
+                      "value": 59877,
+                      "unit": "troy_ounces_gold",
+                      "year": 2025
+                    },
+                    "status": "OBSERVED",
+                    "measurementType": "GOLD_PRODUCTION",
+                    "sourceScope": "SITE_SPECIFIC"
                   },
                   "grade": {
                     "value": null,
@@ -77631,13 +77675,36 @@
                   }
                 },
                 "verification": {
-                  "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+                  "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
                   "reviewedAt": "2026-10-03",
-                  "sourceCount": 0,
-                  "sourceAuthorities": [],
+                  "sourceCount": 2,
+                  "sourceAuthorities": [
+                    "OPERATOR"
+                  ],
                   "dataLimitations": null
                 }
-              }
+              },
+              "2026ProductionGuidance": {
+                "low": 70000,
+                "high": 80000,
+                "unit": "troy_ounces_gold",
+                "year": 2026,
+                "status": "PLANNED"
+              },
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.eldoradogold.com/investors/news-releases/eldorado-gold-delivers-strong-2025-full-year-and-fourth-quarter-financial",
+                  "accessed": "2026-10-03",
+                  "scope": "Olympias_2025_actual_gold_production_and_2026_guidance",
+                  "sourceType": "OPERATOR"
+                },
+                {
+                  "url": "https://www.eldoradogold.com/investors/news-releases/eldorado-gold-provides-skouries-project-update-2025-detailed-company",
+                  "accessed": "2026-10-03",
+                  "scope": "Olympias_underground_production_guidance_and_throughput_context",
+                  "sourceType": "OPERATOR"
+                }
+              ]
             }
           ],
           "processingFacilities": [
