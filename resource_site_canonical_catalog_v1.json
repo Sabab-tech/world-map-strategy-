@@ -1769,7 +1769,9 @@
         "capacity": {
           "annualProductionAndSalesCapacity": 1300000,
           "unit": "metric_tons_per_year",
-          "status": "REPORTED"
+          "status": "REPORTED",
+          "annualProductionAndSalesCapacityUnit": null,
+          "annualProductionAndSalesCapacityStatus": "REPORTED"
         },
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -1972,7 +1974,9 @@
         "capacity": {
           "annualRutileProductionCapacity": 120000,
           "unit": "metric_tons_per_year",
-          "status": "REPORTED"
+          "status": "REPORTED",
+          "annualRutileProductionCapacityUnit": null,
+          "annualRutileProductionCapacityStatus": "REPORTED"
         },
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -2072,7 +2076,9 @@
         "capacity": {
           "phase2ConcentrateCapacity": 15000000,
           "unit": "metric_tons_per_year",
-          "status": "REPORTED_DESIGN_CAPACITY"
+          "status": "REPORTED_DESIGN_CAPACITY",
+          "phase2ConcentrateCapacityUnit": null,
+          "phase2ConcentrateCapacityStatus": "REPORTED"
         },
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -2269,10 +2275,10 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
-          "value": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
+          "value": 10649000,
+          "unit": "metric_tons",
+          "year": 2025,
+          "status": "OBSERVED"
         },
         "capacity": {},
         "reportedMetrics": {
@@ -4860,7 +4866,9 @@
         "capacity": {
           "oreExtractionAnnual": 2900000,
           "unit": "metric_tons_per_year",
-          "status": "REPORTED"
+          "status": "REPORTED",
+          "oreExtractionAnnualUnit": null,
+          "oreExtractionAnnualStatus": "REPORTED"
         },
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -5158,7 +5166,9 @@
           "refinedCobaltAnnual": 4000,
           "ammoniumSulfateAnnual": 120000,
           "unit": "metric_tons_per_year",
-          "status": "REPORTED_OPERATIONAL_DESIGN"
+          "status": "REPORTED_OPERATIONAL_DESIGN",
+          "refinedNickelAnnualUnit": null,
+          "refinedNickelAnnualStatus": "REPORTED"
         },
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -7128,7 +7138,9 @@
         "capacity": {
           "copperConcentrateProductionCapacity": 810000,
           "unit": "metric_tons_per_year",
-          "status": "REPORTED_AFTER_2025_EXPANSION"
+          "status": "REPORTED_AFTER_2025_EXPANSION",
+          "copperConcentrateProductionCapacityUnit": null,
+          "copperConcentrateProductionCapacityStatus": "REPORTED"
         },
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -8731,7 +8743,9 @@
         "capacity": {
           "annualLigniteProductionCapacity": 16000000,
           "unit": "metric_tons_per_year",
-          "status": "REPORTED"
+          "status": "REPORTED",
+          "annualLigniteProductionCapacityUnit": null,
+          "annualLigniteProductionCapacityStatus": "REPORTED"
         },
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -9524,7 +9538,9 @@
           "annualCoalProduction2025": 45251000,
           "unit": "metric_tons_per_year",
           "year": 2025,
-          "status": "OBSERVED"
+          "status": "OBSERVED",
+          "annualCoalProduction2025Unit": null,
+          "annualCoalProduction2025Status": "REPORTED"
         },
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -9591,9 +9607,11 @@
       },
       "quantitative": {
         "reserve": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
+          "quantity": 60000000,
+          "unit": "troy_ounces_gold",
+          "status": "OBSERVED",
+          "year": null,
+          "basis": "INDICATED_MINERAL_RESOURCES"
         },
         "production": {
           "annual": null,
