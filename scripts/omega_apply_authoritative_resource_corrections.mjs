@@ -763,6 +763,9 @@ const fixes = {
     ]
   },
   SITE_MLT_al_far_limestone_quarry: {
+    extra: {
+      currentStatus: 'Current ERA permit application EP 0025/19 for HM18 Wied Moqbol, Hal Far is being processed for hardstone extraction, inert-waste recycling and quarry backfilling; current site owner/operator is not established from the permit summary.'
+    },
     metadata: {
       sourceAuthority: 'Environment and Resources Authority, Malta / historical quarry records',
       historicalOwner: 'Hal Far Quarries Limited',
