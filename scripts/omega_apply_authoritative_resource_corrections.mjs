@@ -2220,18 +2220,29 @@ function promoteStructuredQuantitative(site) {
   if (Object.keys(web).length) qp.reportedMetrics = { ...(qp.reportedMetrics || {}), ...web };
   if (Object.keys(capacity).length) qp.capacity = { ...(qp.capacity || {}), ...capacity };
 
+  const numericValue = (metric) => {
+    const value = Number(metric?.value ?? metric);
+    return Number.isFinite(value) && value > 0 ? value : null;
+  };
   const numericMetric = (predicate) => {
     for (const [key, metric] of Object.entries(allStructured)) {
       if (!predicate(key, metric)) continue;
-      const value = Number(metric?.value ?? metric);
-      if (Number.isFinite(value) && value > 0) return { key, metric: (metric && typeof metric === 'object') ? metric : { value }, value };
+      const value = numericValue(metric);
+      if (value !== null) return { key, metric: (metric && typeof metric === 'object') ? metric : { value }, value };
     }
     return null;
   };
-
   const yearFromKey = (key) => {
     const m = String(key).match(/(20\d{2})$/);
     return m ? Number(m[1]) : null;
+  };
+  const yearFromValue = (value) => {
+    const y = Number(value);
+    return Number.isInteger(y) && y >= 1900 && y <= 2100 ? y : null;
+  };
+  const existingNumber = (value) => {
+    const n = Number(value);
+    return Number.isFinite(n) && n > 0 ? n : null;
   };
 
   const production = numericMetric((key, metric) =>
@@ -2239,14 +2250,19 @@ function promoteStructuredQuantitative(site) {
     !/attributable/i.test(key) &&
     !(metric?.basis && /h1|q[1-4]/i.test(String(metric.basis)))
   );
-  if (production && !(qp.production?.annual != null && qp.production.annual !== '')) {
+  if (production) {
+    const currentAnnual = existingNumber(qp.production?.annual);
+    const annualObject = qp.production?.annual && typeof qp.production.annual === 'object' ? qp.production.annual : null;
+    const candidateYear = yearFromKey(production.key);
     qp.production = {
       ...(qp.production || {}),
-      annual: production.value,
-      unit: production.metric?.unit || qp.production?.unit || null,
-      year: yearFromKey(production.key) || qp.production?.year || null,
-      status: /declared|estimate|target/i.test(String(production.metric?.epistemicState || production.metric?.basis || '')) ? 'REPORTED' : 'OBSERVED',
-      basis: production.metric?.basis || 'SITE_SPECIFIC'
+      annual: currentAnnual ?? production.value,
+      unit: qp.production?.unit || annualObject?.unit || production.metric?.unit || null,
+      year: yearFromValue(qp.production?.year) || yearFromValue(annualObject?.year) || candidateYear || null,
+      status: currentAnnual !== null && qp.production?.status && qp.production.status !== 'UNOBSERVED'
+        ? qp.production.status
+        : (/declared|estimate|target/i.test(String(production.metric?.epistemicState || production.metric?.basis || '')) ? 'REPORTED' : 'OBSERVED'),
+      basis: qp.production?.basis || production.metric?.basis || 'SITE_SPECIFIC'
     };
   }
 
@@ -2266,27 +2282,31 @@ function promoteStructuredQuantitative(site) {
     /(?:reserve|resource)/i.test(key) &&
     !/capacity|production|output|oreMilled|oreMined|oreTreated|throughput/i.test(key)
   );
-  if (reserve && !(qp.reserve?.quantity != null && qp.reserve.quantity !== '')) {
+  if (reserve) {
+    const currentQuantity = existingNumber(qp.reserve?.quantity);
+    const reserveObject = qp.reserve?.quantity && typeof qp.reserve.quantity === 'object' ? qp.reserve.quantity : null;
     const epistemic = String(reserve.metric?.epistemicState || '').toUpperCase();
     const reserveStatus = epistemic === 'DECLARED' ? 'REPORTED' : /ATTRIBUTABLE/i.test(reserve.key) ? 'OBSERVED_ATTRIBUTABLE' : 'OBSERVED';
     qp.reserve = {
       ...(qp.reserve || {}),
-      quantity: reserve.value,
-      unit: reserve.metric?.unit || qp.reserve?.unit || null,
-      year: yearFromKey(reserve.key) || qp.reserve?.year || null,
-      status: reserveStatus,
-      basis: reserve.metric?.basis || null
+      quantity: currentQuantity ?? reserve.value,
+      unit: qp.reserve?.unit || reserveObject?.unit || reserve.metric?.unit || null,
+      year: yearFromValue(qp.reserve?.year) || yearFromValue(reserveObject?.year) || yearFromKey(reserve.key) || null,
+      status: currentQuantity !== null && qp.reserve?.status && qp.reserve.status !== 'UNOBSERVED' ? qp.reserve.status : reserveStatus,
+      basis: qp.reserve?.basis || reserve.metric?.basis || null
     };
   }
 
   const headGrade = numericMetric((key) => /(?:headGrade|feedGrade|averageGrade|gradeMined)20\d{2}$/.test(key));
-  if (headGrade && !(qp.grade?.value != null && qp.grade.value !== '')) {
+  if (headGrade) {
+    const currentGradeNumber = existingNumber(qp.grade?.value);
+    const existingGradeObject = qp.grade?.value && typeof qp.grade.value === 'object' ? qp.grade.value : null;
     qp.grade = {
       ...(qp.grade || {}),
-      value: headGrade.value,
-      unit: headGrade.metric?.unit || qp.grade?.unit || null,
-      year: yearFromKey(headGrade.key) || qp.grade?.year || null,
-      status: 'OBSERVED'
+      value: currentGradeNumber ?? headGrade.value,
+      unit: qp.grade?.unit || existingGradeObject?.unit || headGrade.metric?.unit || null,
+      year: yearFromValue(qp.grade?.year) || yearFromValue(existingGradeObject?.year) || yearFromKey(headGrade.key) || null,
+      status: currentGradeNumber !== null && qp.grade?.status && qp.grade.status !== 'UNOBSERVED' ? qp.grade.status : 'OBSERVED'
     };
   }
 
@@ -2295,8 +2315,8 @@ function promoteStructuredQuantitative(site) {
     qp.recovery = {
       ...(qp.recovery || {}),
       value: recovery.value,
-      unit: recovery.metric?.unit || qp.recovery?.unit || null,
-      year: yearFromKey(recovery.key) || qp.recovery?.year || null,
+      unit: qp.recovery?.unit || recovery.metric?.unit || null,
+      year: yearFromValue(qp.recovery?.year) || yearFromKey(recovery.key) || null,
       status: 'OBSERVED'
     };
   }
@@ -2306,8 +2326,8 @@ function promoteStructuredQuantitative(site) {
     qp.throughput = {
       ...(qp.throughput || {}),
       value: throughput.value,
-      unit: throughput.metric?.unit || qp.throughput?.unit || null,
-      year: yearFromKey(throughput.key) || qp.throughput?.year || null,
+      unit: qp.throughput?.unit || throughput.metric?.unit || null,
+      year: yearFromValue(qp.throughput?.year) || yearFromKey(throughput.key) || null,
       status: 'OBSERVED'
     };
   }
