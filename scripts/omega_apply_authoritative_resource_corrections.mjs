@@ -918,6 +918,105 @@ const fixes = {
       evidence('https://www.sknis.gov.kn/2025/03/04/two-new-plants-commissioned-at-government-quarry-to-boost-efficiency-and-production-capacity/', 'government_quarry_division_current_operator_and_aggregate_output_context', 'GOVERNMENT')
     ]
   },
+  SITE_CAF_ndassima_gold_project: {
+    owner: 'AXMIN Inc. (legal concession holder; historical/current legal ownership context)',
+    operator: 'Midas Resources',
+    ownershipScope: 'LEGAL_OWNER_VS_REPORTED_DE_FACTO_CONTROL',
+    status: 'DEVELOPMENT',
+    operationalStatus: 'DEVELOPMENT',
+    extractionMethod: 'Open-pit and underground project development',
+    extra: {
+      ownershipEvidenceScope: 'LEGAL_AND_REPORTED_DE_FACTO',
+      temporalNote: 'Public reporting distinguishes AXMIN Inc. as the de jure concession owner and Midas Resources / reported de facto control; this record does not assert an unverified transfer of legal title.'
+    },
+    metadata: {
+      sourceAuthority: 'EITI Central African Republic / public mining records',
+      currentEvidence: 'CAR EITI identifies Midas Resources as the reported operator of Ndassima and notes the mine in the license register, while public reporting describes AXMIN Inc. as the legal owner. Current production status remains disputed in public reporting, so the repository remains NON_EXECUTABLE.'
+    },
+    sources: [
+      evidence('https://eiti.org/news/central-african-republic-temporarily-suspended-eiti-board', 'Ndassima_operator_Midas_Resources_and_license_register_context', 'EITI'),
+      evidence('https://www.eiti.org/sites/default/files/2024-10/Central%20African%20Republic%20EITI%202024%20Validation%20-%20Final%20Validation%20report%20%28October%202024%29.pdf', 'Ndassima_legal_owner_operator_and_production_status_uncertainty', 'EITI_VALIDATION')
+    ]
+  },
+  SITE_TCD_kouri_bougoudi_gold_mining_area: {
+    owner: 'UNOBSERVED',
+    operator: 'Artisanal and licensed miners',
+    ownershipScope: 'AREA_MULTI_OPERATOR',
+    extra: {
+      resourceEvidence: {
+        sourceName: 'World Bank / Africa Mineral Resources',
+        resourceRange: {
+          low: 100000,
+          high: 1000000,
+          unit: 'troy_ounces_gold',
+          interpretation: 'regional_estimate_range'
+        },
+        evidenceScope: 'DISTRICT_ESTIMATE_NOT_SITE_RESERVE'
+      },
+      dataLimitation: 'The cited estimate is for the Kouri Bougoudi District rather than a single concession/site reserve. Owner remains UNOBSERVED rather than assigning a generic state/private holder as exact ownership.'
+    },
+    metadata: {
+      sourceAuthority: 'World Bank Mineral Resources of Africa / Chad mining authorities',
+      currentEvidence: 'The World Bank mineral-resources appendix lists Kouri Bougoudi District as an operating gold mine/district and gives an estimated pre-mined resource range of 0.1-1 million ounces. Exact concession-level reserve and ownership are not established in the cited source.'
+    },
+    sources: [
+      evidence('https://egps.worldbank.org/sites/default/files/2025-10/WB_Mineral%20Resources%20of%20Africa_WEB.pdf', 'Kouri_Bougoudi_operating_status_and_0_1_to_1_Moz_estimate', 'WORLD_BANK'),
+      evidence('https://www.usgs.gov/centers/national-minerals-information-center/chad', 'Chad_mining_sector_and_data_limitations', 'USGS')
+    ]
+  },
+  SITE_SWZ_ngwenya_iron_mine: {
+    extra: {
+      historicalLease: {
+        lessee: 'Salgaocar Swaziland (Pty) Ltd',
+        leasePurpose: 'iron ore dumps at the defunct Ngwenya mine',
+        leaseStartYear: 2011,
+        initialLeaseTermYears: 7,
+        laterEvidenceYear: 2022
+      },
+      currentStatusLimitation: 'The site itself is a dormant historical mine, while later government reporting documents a licence to re-mine dumps. The legacy mine should not be marked active solely from the later dump-reprocessing licence.'
+    },
+    metadata: {
+      sourceAuthority: 'Eswatini Mining Department / Government of Eswatini',
+      currentEvidence: 'Government records state Salgaocar Swaziland was granted a mining lease for iron-ore dumps at the defunct Ngwenya mine from June 2011, while later government reporting documents a local company licensed to mine the dumps for seven years. The repository keeps the historical mine non-executable and records the dump-reprocessing history separately.'
+    },
+    sources: [
+      evidence('https://swazigov.gov.sz/index.php/departments-sp-623334762/mining-department', 'Ngwenya_defunct_mine_and_Salgaocar_2011_iron_ore_dump_lease', 'GOVERNMENT'),
+      evidence('https://www.gov.sz/images/planningministry/Company-Survey-Report-for-2022.pdf', 'later_Ngwenya_dump_mining_licence_and_reprocessing_context', 'GOVERNMENT'),
+      evidence('https://www.gov.sz/images/stories/mining/Swaziland%20Mineral%20Resources%20Summary.pdf', 'Ngwenya_iron_ore_grade_and_dormant_mine_context', 'GOVERNMENT')
+    ]
+  },
+  SITE_OMN_lasail_copper_mine: {
+    owner: 'Minerals Development Oman (MDO) / Oman state mining interests',
+    operator: 'Minerals Development Oman (MDO)',
+    ownershipScope: 'STATE_PROJECT_OWNER_CURRENT_REDEVELOPMENT',
+    status: 'ACTIVE_PRODUCING',
+    operationalStatus: 'ACTIVE_PRODUCING',
+    extractionMethod: 'Open-pit copper mining with beneficiation/concentration',
+    extra: {
+      block4ResourceEvidence: {
+        estimatedCommercialCopperOre: 2780000,
+        unit: 'metric_tons',
+        scope: 'Lasail_and_Al_Baydha_Block_4_combined',
+        productionCapacity: 800000,
+        productionCapacityUnit: 'metric_tons_copper_ore_per_year',
+        phaseNote: 'Combined Block 4 estimate; not assignable to Lasail alone without a site allocation source.'
+      },
+      currentMilestones: {
+        preStrippingStarted: 2024,
+        copperOreProductionStarted: '2024-07',
+        firstConcentrateShipment: '2024',
+        processingPlant: 'Mawarid concentrator'
+      }
+    },
+    metadata: {
+      sourceAuthority: 'Minerals Development Oman (MDO)',
+      currentEvidence: 'MDO reports redevelopment of the Lasail and Al Baydha copper mines in Block 4. Site preparation and pre-stripping occurred at Lasail in 2024; copper ore production began in July 2024 and the first shipment of copper concentrate was exported. MDO reports the combined Block 4 commercial copper-ore estimate and annual production capacity, so those values are kept explicitly as combined-project evidence.'
+    },
+    sources: [
+      evidence('https://www.mdo.om/exploration.php', 'MDO_Lasail_Al_Baydha_Block4_resource_estimate_and_capacity', 'OPERATOR'),
+      evidence('https://www.mdo.om/uploads/publications/MDO%20Audited%20FS%202024%20Arab%20consolidated%201-1758439855.pdf', 'Lasail_2024_prestripping_production_and_first_concentrate_shipment', 'OPERATOR')
+    ]
+  },
   SITE_SOM_el_buur_gold_mining_area: {
     status: 'RESOURCE_IDENTITY_UNVERIFIED',
     operationalStatus: 'RESOURCE_IDENTITY_UNVERIFIED',
