@@ -1,3 +1,4 @@
+// CERTIFICATE_TRIGGER: verify generated 199-site dataset after targeted repair
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
