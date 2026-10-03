@@ -1,4 +1,4 @@
-// [resource-targeted-repair] [resource-data-only] current authoritative correction pass
+// [resource-targeted-repair] [resource-data-only] current authoritative correction pass v2
 #!/usr/bin/env node
 import fs from 'node:fs';
 import { execFileSync } from 'node:child_process';
