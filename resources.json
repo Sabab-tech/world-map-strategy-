@@ -15037,11 +15037,12 @@
                   "status": "UNOBSERVED"
                 },
                 "production": {
-                  "annual": null,
+                  "annual": 319000,
                   "rate": null,
-                  "unit": null,
+                  "unit": "troy_ounces",
                   "year": null,
-                  "status": "UNOBSERVED"
+                  "status": "OBSERVED",
+                  "basis": "site_production"
                 },
                 "grade": {
                   "value": null,
@@ -15172,11 +15173,12 @@
                     "status": "UNOBSERVED"
                   },
                   "production": {
-                    "annual": null,
+                    "annual": 319000,
                     "rate": null,
-                    "unit": null,
+                    "unit": "troy_ounces",
                     "year": null,
-                    "status": "UNOBSERVED"
+                    "status": "OBSERVED",
+                    "basis": "site_production"
                   },
                   "grade": {
                     "value": null,
@@ -17736,16 +17738,18 @@
                   "status": "UNOBSERVED"
                 },
                 "production": {
-                  "annual": null,
+                  "annual": 427200,
                   "rate": null,
-                  "unit": null,
+                  "unit": "troy_ounces",
                   "year": null,
-                  "status": "UNOBSERVED"
+                  "status": "OBSERVED",
+                  "basis": "100% mine"
                 },
                 "grade": {
-                  "value": null,
-                  "unit": null,
-                  "status": "UNOBSERVED"
+                  "value": 1.18,
+                  "unit": "grams_per_tonne_gold",
+                  "status": "OBSERVED",
+                  "year": null
                 },
                 "quantitativeExtractionDataAvailable": false,
                 "reportedMetrics": {
@@ -17776,6 +17780,18 @@
                   "structuredSource": "site.webVerifiedMetrics",
                   "capacitySource": null,
                   "promotedAt": "2026-10-03"
+                },
+                "recovery": {
+                  "value": 90,
+                  "unit": "percent",
+                  "year": null,
+                  "status": "OBSERVED"
+                },
+                "throughput": {
+                  "value": 12560000,
+                  "unit": "metric_tons",
+                  "year": null,
+                  "status": "OBSERVED"
                 }
               },
               "resourceIdentity": {
@@ -17910,28 +17926,30 @@
                     "status": "UNOBSERVED"
                   },
                   "production": {
-                    "annual": null,
+                    "annual": 427200,
                     "rate": null,
-                    "unit": null,
+                    "unit": "troy_ounces",
                     "year": null,
-                    "status": "UNOBSERVED"
+                    "status": "OBSERVED",
+                    "basis": "100% mine"
                   },
                   "grade": {
-                    "value": null,
-                    "unit": null,
-                    "status": "UNOBSERVED"
+                    "value": 1.18,
+                    "unit": "grams_per_tonne_gold",
+                    "status": "OBSERVED",
+                    "year": null
                   },
                   "recovery": {
-                    "value": null,
-                    "unit": null,
+                    "value": 90,
+                    "unit": "percent",
                     "year": null,
-                    "status": "UNOBSERVED"
+                    "status": "OBSERVED"
                   },
                   "throughput": {
-                    "value": null,
-                    "unit": null,
+                    "value": 12560000,
+                    "unit": "metric_tons",
                     "year": null,
-                    "status": "UNOBSERVED"
+                    "status": "OBSERVED"
                   },
                   "capacity": {},
                   "reportedMetrics": {
@@ -25077,6 +25095,12 @@
                   "structuredSource": "site.webVerifiedMetrics",
                   "capacitySource": null,
                   "promotedAt": "2026-10-03"
+                },
+                "throughput": {
+                  "value": 14300000,
+                  "unit": "metric_tons",
+                  "year": null,
+                  "status": "OBSERVED"
                 }
               },
               "resourceIdentity": {
@@ -25231,10 +25255,10 @@
                     "status": "UNOBSERVED"
                   },
                   "throughput": {
-                    "value": null,
-                    "unit": null,
+                    "value": 14300000,
+                    "unit": "metric_tons",
                     "year": null,
-                    "status": "UNOBSERVED"
+                    "status": "OBSERVED"
                   },
                   "capacity": {},
                   "reportedMetrics": {
@@ -29014,16 +29038,18 @@
                   "status": "UNOBSERVED"
                 },
                 "production": {
-                  "annual": null,
+                  "annual": 491644,
                   "rate": null,
-                  "unit": null,
+                  "unit": "troy_ounces",
                   "year": null,
-                  "status": "UNOBSERVED"
+                  "status": "OBSERVED",
+                  "basis": "SITE_SPECIFIC"
                 },
                 "grade": {
-                  "value": null,
-                  "unit": null,
-                  "status": "UNOBSERVED"
+                  "value": 3.26,
+                  "unit": "grams_per_tonne_gold",
+                  "status": "OBSERVED",
+                  "year": null
                 },
                 "quantitativeExtractionDataAvailable": false,
                 "reportedMetrics": {
@@ -29044,6 +29070,12 @@
                   "structuredSource": "site.webVerifiedMetrics",
                   "capacitySource": null,
                   "promotedAt": "2026-10-03"
+                },
+                "recovery": {
+                  "value": 90.2,
+                  "unit": "percent",
+                  "year": null,
+                  "status": "OBSERVED"
                 }
               },
               "resourceIdentity": {
@@ -29168,22 +29200,24 @@
                     "status": "UNOBSERVED"
                   },
                   "production": {
-                    "annual": null,
+                    "annual": 491644,
                     "rate": null,
-                    "unit": null,
+                    "unit": "troy_ounces",
                     "year": null,
-                    "status": "UNOBSERVED"
+                    "status": "OBSERVED",
+                    "basis": "SITE_SPECIFIC"
                   },
                   "grade": {
-                    "value": null,
-                    "unit": null,
-                    "status": "UNOBSERVED"
+                    "value": 3.26,
+                    "unit": "grams_per_tonne_gold",
+                    "status": "OBSERVED",
+                    "year": null
                   },
                   "recovery": {
-                    "value": null,
-                    "unit": null,
+                    "value": 90.2,
+                    "unit": "percent",
                     "year": null,
-                    "status": "UNOBSERVED"
+                    "status": "OBSERVED"
                   },
                   "throughput": {
                     "value": null,
