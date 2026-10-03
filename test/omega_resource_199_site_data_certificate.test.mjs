@@ -41,6 +41,8 @@ for (const { countryId, index, site } of sites) {
   assert.equal(String(site.siteIdentity?.countryIso3).toUpperCase(), String(countryId).toUpperCase(), countryId + '[' + index + ']: siteIdentity country mismatch');
   assert.equal(String(site.locationIdentity?.countryIso3).toUpperCase(), String(countryId).toUpperCase(), countryId + '[' + index + ']: locationIdentity country mismatch');
 
+  const isNA = String(site.status).toUpperCase() === 'NOT_APPLICABLE' || site.commercialExtraction === false;
+
   for (const [field, value] of Object.entries({
     resourceId: site.resourceId,
     resourceTypeId: site.resourceTypeId,
@@ -51,12 +53,16 @@ for (const { countryId, index, site } of sites) {
     operationalStatus: site.operationalStatus,
     extractionMethod: site.extractionMethod
   })) {
+    const resourceIdentityField = field === 'resourceId' || field === 'resourceTypeId' || field === 'resourceTypeKey';
+    if (resourceIdentityField && isNA) {
+      assert(value === null || (typeof value === 'string' && value.trim() === ''),
+        countryId + '[' + index + ']: N/A resource identity must remain explicitly null/empty');
+      continue;
+    }
     assert.notEqual(value, null, countryId + '[' + index + ']: ' + field + ' is null');
     assert.notEqual(value, undefined, countryId + '[' + index + ']: ' + field + ' is undefined');
     if (typeof value === 'string') assert.notEqual(value.trim(), '', countryId + '[' + index + ']: ' + field + ' is empty');
   }
-
-  const isNA = String(site.status).toUpperCase() === 'NOT_APPLICABLE' || site.commercialExtraction === false;
   if (isNA) {
     assert.equal(site.extractionEligibility, 'NON_EXECUTABLE', countryId + '[' + index + ']: N/A extraction eligibility');
   } else if (String(site.status).toUpperCase() === 'ACTIVE_PRODUCING') {

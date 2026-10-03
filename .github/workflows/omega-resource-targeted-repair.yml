@@ -37,7 +37,7 @@ jobs:
             echo "No staged data changes."
             exit 0
           fi
-          git commit -m "chore(resource): apply targeted authoritative repairs to 199-site data"
+          git commit -m "chore(resource): apply targeted authoritative repairs to 199-site data [resource-data-only] [resource-data-certificate]"
           for attempt in 1 2 3; do
             git fetch origin main
             git rebase origin/main
