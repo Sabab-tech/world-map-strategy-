@@ -2514,15 +2514,15 @@
         "coordinateStatus": "ESTIMATED_SITE_POINT"
       },
       "ownership": {
-        "owner": "CAR / concession interests",
-        "operator": "Axmin-related project",
-        "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-        "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+        "owner": "AXMIN Inc. (legal concession holder; historical/current legal ownership context)",
+        "operator": "Midas Resources",
+        "ownerEvidenceStatus": "WEB_REVIEWED",
+        "operatorEvidenceStatus": "WEB_REVIEWED"
       },
       "operation": {
         "status": "DEVELOPMENT",
         "operationalStatus": "DEVELOPMENT",
-        "extractionMethod": "planned open-pit and underground",
+        "extractionMethod": "Open-pit and underground project development",
         "extractionEligibility": "NON_EXECUTABLE",
         "commercialExtraction": true
       },
@@ -2559,10 +2559,13 @@
         }
       },
       "verification": {
-        "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
         "reviewedAt": "2026-10-03",
-        "sourceCount": 0,
-        "sourceAuthorities": [],
+        "sourceCount": 2,
+        "sourceAuthorities": [
+          "EITI",
+          "EITI_VALIDATION"
+        ],
         "dataLimitations": null
       }
     },
@@ -2589,10 +2592,10 @@
         "coordinateStatus": "ESTIMATED_SITE_POINT"
       },
       "ownership": {
-        "owner": "Chad / local operators",
+        "owner": "UNOBSERVED",
         "operator": "Artisanal and licensed miners",
-        "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-        "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+        "ownerEvidenceStatus": "UNOBSERVED",
+        "operatorEvidenceStatus": "WEB_REVIEWED"
       },
       "operation": {
         "status": "ARTISANAL_AND_LIMITED",
@@ -2634,10 +2637,13 @@
         }
       },
       "verification": {
-        "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
         "reviewedAt": "2026-10-03",
-        "sourceCount": 0,
-        "sourceAuthorities": [],
+        "sourceCount": 2,
+        "sourceAuthorities": [
+          "WORLD_BANK",
+          "USGS"
+        ],
         "dataLimitations": null
       }
     },
@@ -3778,9 +3784,12 @@
           "annual": {
             "value": 83000,
             "unit": "metric_tons_zinc",
-            "year": 2025,
-            "status": "OBSERVED"
-          }
+            "year": 2025
+          },
+          "rate": null,
+          "unit": "metric_tons_zinc",
+          "year": 2025,
+          "status": "OBSERVED"
         },
         "grade": {
           "value": 3.64,
@@ -4832,8 +4841,8 @@
       "ownership": {
         "owner": "Eswatini / heritage authorities",
         "operator": "None",
-        "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-        "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+        "ownerEvidenceStatus": "WEB_REVIEWED",
+        "operatorEvidenceStatus": "WEB_REVIEWED"
       },
       "operation": {
         "status": "HISTORICAL_INACTIVE",
@@ -4875,10 +4884,12 @@
         }
       },
       "verification": {
-        "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
         "reviewedAt": "2026-10-03",
-        "sourceCount": 0,
-        "sourceAuthorities": [],
+        "sourceCount": 3,
+        "sourceAuthorities": [
+          "GOVERNMENT"
+        ],
         "dataLimitations": null
       }
     },
@@ -5223,15 +5234,15 @@
         "coordinateStatus": "ESTIMATED_SITE_POINT"
       },
       "ownership": {
-        "owner": "Alara / state partners",
-        "operator": "Al Hadeetha Resources",
-        "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-        "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+        "owner": "Minerals Development Oman (MDO) / Oman state mining interests",
+        "operator": "Minerals Development Oman (MDO)",
+        "ownerEvidenceStatus": "WEB_REVIEWED",
+        "operatorEvidenceStatus": "WEB_REVIEWED"
       },
       "operation": {
         "status": "ACTIVE_PRODUCING",
         "operationalStatus": "ACTIVE_PRODUCING",
-        "extractionMethod": "open-pit",
+        "extractionMethod": "Open-pit copper mining with beneficiation/concentration",
         "extractionEligibility": "EXECUTABLE",
         "commercialExtraction": true
       },
@@ -5272,10 +5283,12 @@
         }
       },
       "verification": {
-        "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
         "reviewedAt": "2026-10-03",
-        "sourceCount": 0,
-        "sourceAuthorities": [],
+        "sourceCount": 2,
+        "sourceAuthorities": [
+          "OPERATOR"
+        ],
         "dataLimitations": null
       }
     },

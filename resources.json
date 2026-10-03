@@ -21324,9 +21324,9 @@
               "locationNodeKey": "ASSET:CAF:ndassima_gold_project",
               "status": "DEVELOPMENT",
               "operationalStatus": "DEVELOPMENT",
-              "owner": "CAR / concession interests",
-              "operator": "Axmin-related project",
-              "extractionMethod": "planned open-pit and underground",
+              "owner": "AXMIN Inc. (legal concession holder; historical/current legal ownership context)",
+              "operator": "Midas Resources",
+              "extractionMethod": "Open-pit and underground project development",
               "startYear": 2010,
               "legacyReferenceName": "Central African Republic Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -21394,10 +21394,10 @@
                 "method": "planned open-pit and underground",
                 "lifecycleStatus": "DEVELOPMENT",
                 "operationalStatus": "DEVELOPMENT",
-                "owner": "CAR / concession interests",
-                "operator": "Axmin-related project",
-                "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-                "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+                "owner": "AXMIN Inc. (legal concession holder; historical/current legal ownership context)",
+                "operator": "Midas Resources",
+                "ownerEvidenceStatus": "WEB_REVIEWED",
+                "operatorEvidenceStatus": "WEB_REVIEWED"
               },
               "quantitativeProfile": {
                 "reserve": {
@@ -21450,15 +21450,17 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
               },
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
               "researchMetadata": {
                 "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
-                "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
+                "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
+                "sourceAuthority": "EITI Central African Republic / public mining records",
+                "currentEvidence": "CAR EITI identifies Midas Resources as the reported operator of Ndassima and notes the mine in the license register, while public reporting describes AXMIN Inc. as the legal owner. Current production status remains disputed in public reporting, so the repository remains NON_EXECUTABLE."
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -21482,15 +21484,15 @@
                   "coordinateStatus": "ESTIMATED_SITE_POINT"
                 },
                 "ownership": {
-                  "owner": "CAR / concession interests",
-                  "operator": "Axmin-related project",
-                  "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-                  "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+                  "owner": "AXMIN Inc. (legal concession holder; historical/current legal ownership context)",
+                  "operator": "Midas Resources",
+                  "ownerEvidenceStatus": "WEB_REVIEWED",
+                  "operatorEvidenceStatus": "WEB_REVIEWED"
                 },
                 "operation": {
                   "status": "DEVELOPMENT",
                   "operationalStatus": "DEVELOPMENT",
-                  "extractionMethod": "planned open-pit and underground",
+                  "extractionMethod": "Open-pit and underground project development",
                   "extractionEligibility": "NON_EXECUTABLE",
                   "commercialExtraction": true
                 },
@@ -21527,13 +21529,33 @@
                   }
                 },
                 "verification": {
-                  "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+                  "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
                   "reviewedAt": "2026-10-03",
-                  "sourceCount": 0,
-                  "sourceAuthorities": [],
+                  "sourceCount": 2,
+                  "sourceAuthorities": [
+                    "EITI",
+                    "EITI_VALIDATION"
+                  ],
                   "dataLimitations": null
                 }
-              }
+              },
+              "ownershipScope": "LEGAL_OWNER_VS_REPORTED_DE_FACTO_CONTROL",
+              "ownershipEvidenceScope": "LEGAL_AND_REPORTED_DE_FACTO",
+              "temporalNote": "Public reporting distinguishes AXMIN Inc. as the de jure concession owner and Midas Resources / reported de facto control; this record does not assert an unverified transfer of legal title.",
+              "webResearchEvidence": [
+                {
+                  "url": "https://eiti.org/news/central-african-republic-temporarily-suspended-eiti-board",
+                  "accessed": "2026-10-03",
+                  "scope": "Ndassima_operator_Midas_Resources_and_license_register_context",
+                  "sourceType": "EITI"
+                },
+                {
+                  "url": "https://www.eiti.org/sites/default/files/2024-10/Central%20African%20Republic%20EITI%202024%20Validation%20-%20Final%20Validation%20report%20%28October%202024%29.pdf",
+                  "accessed": "2026-10-03",
+                  "scope": "Ndassima_legal_owner_operator_and_production_status_uncertainty",
+                  "sourceType": "EITI_VALIDATION"
+                }
+              ]
             }
           ],
           "processingFacilities": [
@@ -21934,7 +21956,7 @@
               "locationNodeKey": "ASSET:TCD:kouri_bougoudi_gold_mining_area",
               "status": "ARTISANAL_AND_LIMITED",
               "operationalStatus": "ARTISANAL_AND_LIMITED",
-              "owner": "Chad / local operators",
+              "owner": "UNOBSERVED",
               "operator": "Artisanal and licensed miners",
               "extractionMethod": "surface small-scale mining",
               "startYear": 2000,
@@ -21959,7 +21981,7 @@
                 "reserve": "UNOBSERVED",
                 "production": "UNOBSERVED",
                 "grade": "UNOBSERVED",
-                "ownership": "OBSERVED",
+                "ownership": "UNOBSERVED",
                 "operation": "OBSERVED",
                 "extractionMethod": "OBSERVED",
                 "provenance": "RESOURCE_JSON_WEB_RESEARCH_CATALOG"
@@ -22004,10 +22026,10 @@
                 "method": "surface small-scale mining",
                 "lifecycleStatus": "ARTISANAL_AND_LIMITED",
                 "operationalStatus": "ARTISANAL_AND_LIMITED",
-                "owner": "Chad / local operators",
+                "owner": "UNOBSERVED",
                 "operator": "Artisanal and licensed miners",
-                "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-                "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+                "ownerEvidenceStatus": "UNOBSERVED",
+                "operatorEvidenceStatus": "WEB_REVIEWED"
               },
               "quantitativeProfile": {
                 "reserve": {
@@ -22053,22 +22075,24 @@
                 "resource": "COMPLETE",
                 "location": "COMPLETE",
                 "operation": "COMPLETE",
-                "ownership": "REPORTED",
+                "ownership": "UNOBSERVED",
                 "quantitative": {
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
               },
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
               "researchMetadata": {
                 "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
-                "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
+                "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
+                "sourceAuthority": "World Bank Mineral Resources of Africa / Chad mining authorities",
+                "currentEvidence": "The World Bank mineral-resources appendix lists Kouri Bougoudi District as an operating gold mine/district and gives an estimated pre-mined resource range of 0.1-1 million ounces. Exact concession-level reserve and ownership are not established in the cited source."
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -22092,10 +22116,10 @@
                   "coordinateStatus": "ESTIMATED_SITE_POINT"
                 },
                 "ownership": {
-                  "owner": "Chad / local operators",
+                  "owner": "UNOBSERVED",
                   "operator": "Artisanal and licensed miners",
-                  "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-                  "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+                  "ownerEvidenceStatus": "UNOBSERVED",
+                  "operatorEvidenceStatus": "WEB_REVIEWED"
                 },
                 "operation": {
                   "status": "ARTISANAL_AND_LIMITED",
@@ -22137,13 +22161,42 @@
                   }
                 },
                 "verification": {
-                  "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+                  "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
                   "reviewedAt": "2026-10-03",
-                  "sourceCount": 0,
-                  "sourceAuthorities": [],
+                  "sourceCount": 2,
+                  "sourceAuthorities": [
+                    "WORLD_BANK",
+                    "USGS"
+                  ],
                   "dataLimitations": null
                 }
-              }
+              },
+              "ownershipScope": "AREA_MULTI_OPERATOR",
+              "resourceEvidence": {
+                "sourceName": "World Bank / Africa Mineral Resources",
+                "resourceRange": {
+                  "low": 100000,
+                  "high": 1000000,
+                  "unit": "troy_ounces_gold",
+                  "interpretation": "regional_estimate_range"
+                },
+                "evidenceScope": "DISTRICT_ESTIMATE_NOT_SITE_RESERVE"
+              },
+              "dataLimitation": "The cited estimate is for the Kouri Bougoudi District rather than a single concession/site reserve. Owner remains UNOBSERVED rather than assigning a generic state/private holder as exact ownership.",
+              "webResearchEvidence": [
+                {
+                  "url": "https://egps.worldbank.org/sites/default/files/2025-10/WB_Mineral%20Resources%20of%20Africa_WEB.pdf",
+                  "accessed": "2026-10-03",
+                  "scope": "Kouri_Bougoudi_operating_status_and_0_1_to_1_Moz_estimate",
+                  "sourceType": "WORLD_BANK"
+                },
+                {
+                  "url": "https://www.usgs.gov/centers/national-minerals-information-center/chad",
+                  "accessed": "2026-10-03",
+                  "scope": "Chad_mining_sector_and_data_limitations",
+                  "sourceType": "USGS"
+                }
+              ]
             }
           ],
           "processingFacilities": [
@@ -31499,9 +31552,12 @@
                   "annual": {
                     "value": 83000,
                     "unit": "metric_tons_zinc",
-                    "year": 2025,
-                    "status": "OBSERVED"
-                  }
+                    "year": 2025
+                  },
+                  "rate": null,
+                  "unit": "metric_tons_zinc",
+                  "year": 2025,
+                  "status": "OBSERVED"
                 },
                 "grade": {
                   "value": 3.64,
@@ -31638,9 +31694,12 @@
                     "annual": {
                       "value": 83000,
                       "unit": "metric_tons_zinc",
-                      "year": 2025,
-                      "status": "OBSERVED"
-                    }
+                      "year": 2025
+                    },
+                    "rate": null,
+                    "unit": "metric_tons_zinc",
+                    "year": 2025,
+                    "status": "OBSERVED"
                   },
                   "grade": {
                     "value": 3.64,
@@ -40305,8 +40364,8 @@
                 "operationalStatus": "HISTORICAL_INACTIVE",
                 "owner": "Eswatini / heritage authorities",
                 "operator": "None",
-                "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-                "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+                "ownerEvidenceStatus": "WEB_REVIEWED",
+                "operatorEvidenceStatus": "WEB_REVIEWED"
               },
               "quantitativeProfile": {
                 "reserve": {
@@ -40359,15 +40418,17 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
               },
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
               "researchMetadata": {
                 "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
-                "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
+                "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
+                "sourceAuthority": "Eswatini Mining Department / Government of Eswatini",
+                "currentEvidence": "Government records state Salgaocar Swaziland was granted a mining lease for iron-ore dumps at the defunct Ngwenya mine from June 2011, while later government reporting documents a local company licensed to mine the dumps for seven years. The repository keeps the historical mine non-executable and records the dump-reprocessing history separately."
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -40393,8 +40454,8 @@
                 "ownership": {
                   "owner": "Eswatini / heritage authorities",
                   "operator": "None",
-                  "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-                  "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+                  "ownerEvidenceStatus": "WEB_REVIEWED",
+                  "operatorEvidenceStatus": "WEB_REVIEWED"
                 },
                 "operation": {
                   "status": "HISTORICAL_INACTIVE",
@@ -40436,13 +40497,43 @@
                   }
                 },
                 "verification": {
-                  "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+                  "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
                   "reviewedAt": "2026-10-03",
-                  "sourceCount": 0,
-                  "sourceAuthorities": [],
+                  "sourceCount": 3,
+                  "sourceAuthorities": [
+                    "GOVERNMENT"
+                  ],
                   "dataLimitations": null
                 }
-              }
+              },
+              "historicalLease": {
+                "lessee": "Salgaocar Swaziland (Pty) Ltd",
+                "leasePurpose": "iron ore dumps at the defunct Ngwenya mine",
+                "leaseStartYear": 2011,
+                "initialLeaseTermYears": 7,
+                "laterEvidenceYear": 2022
+              },
+              "currentStatusLimitation": "The site itself is a dormant historical mine, while later government reporting documents a licence to re-mine dumps. The legacy mine should not be marked active solely from the later dump-reprocessing licence.",
+              "webResearchEvidence": [
+                {
+                  "url": "https://swazigov.gov.sz/index.php/departments-sp-623334762/mining-department",
+                  "accessed": "2026-10-03",
+                  "scope": "Ngwenya_defunct_mine_and_Salgaocar_2011_iron_ore_dump_lease",
+                  "sourceType": "GOVERNMENT"
+                },
+                {
+                  "url": "https://www.gov.sz/images/planningministry/Company-Survey-Report-for-2022.pdf",
+                  "accessed": "2026-10-03",
+                  "scope": "later_Ngwenya_dump_mining_licence_and_reprocessing_context",
+                  "sourceType": "GOVERNMENT"
+                },
+                {
+                  "url": "https://www.gov.sz/images/stories/mining/Swaziland%20Mineral%20Resources%20Summary.pdf",
+                  "accessed": "2026-10-03",
+                  "scope": "Ngwenya_iron_ore_grade_and_dormant_mine_context",
+                  "sourceType": "GOVERNMENT"
+                }
+              ]
             }
           ],
           "processingFacilities": [
@@ -43405,9 +43496,9 @@
               "locationNodeKey": "ASSET:OMN:lasail_copper_mine",
               "status": "ACTIVE_PRODUCING",
               "operationalStatus": "ACTIVE_PRODUCING",
-              "owner": "Alara / state partners",
-              "operator": "Al Hadeetha Resources",
-              "extractionMethod": "open-pit",
+              "owner": "Minerals Development Oman (MDO) / Oman state mining interests",
+              "operator": "Minerals Development Oman (MDO)",
+              "extractionMethod": "Open-pit copper mining with beneficiation/concentration",
               "startYear": 1980,
               "legacyReferenceName": "Oman Primary Mining and Extraction Sites",
               "canonicalAssetClass": "RESOURCE_SITE",
@@ -43475,10 +43566,10 @@
                 "method": "open-pit",
                 "lifecycleStatus": "ACTIVE_PRODUCING",
                 "operationalStatus": "ACTIVE_PRODUCING",
-                "owner": "Alara / state partners",
-                "operator": "Al Hadeetha Resources",
-                "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-                "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+                "owner": "Minerals Development Oman (MDO) / Oman state mining interests",
+                "operator": "Minerals Development Oman (MDO)",
+                "ownerEvidenceStatus": "WEB_REVIEWED",
+                "operatorEvidenceStatus": "WEB_REVIEWED"
               },
               "quantitativeProfile": {
                 "reserve": {
@@ -43535,15 +43626,17 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
               },
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
               "researchMetadata": {
                 "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
-                "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
+                "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
+                "sourceAuthority": "Minerals Development Oman (MDO)",
+                "currentEvidence": "MDO reports redevelopment of the Lasail and Al Baydha copper mines in Block 4. Site preparation and pre-stripping occurred at Lasail in 2024; copper ore production began in July 2024 and the first shipment of copper concentrate was exported. MDO reports the combined Block 4 commercial copper-ore estimate and annual production capacity, so those values are kept explicitly as combined-project evidence."
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -43567,15 +43660,15 @@
                   "coordinateStatus": "ESTIMATED_SITE_POINT"
                 },
                 "ownership": {
-                  "owner": "Alara / state partners",
-                  "operator": "Al Hadeetha Resources",
-                  "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-                  "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+                  "owner": "Minerals Development Oman (MDO) / Oman state mining interests",
+                  "operator": "Minerals Development Oman (MDO)",
+                  "ownerEvidenceStatus": "WEB_REVIEWED",
+                  "operatorEvidenceStatus": "WEB_REVIEWED"
                 },
                 "operation": {
                   "status": "ACTIVE_PRODUCING",
                   "operationalStatus": "ACTIVE_PRODUCING",
-                  "extractionMethod": "open-pit",
+                  "extractionMethod": "Open-pit copper mining with beneficiation/concentration",
                   "extractionEligibility": "EXECUTABLE",
                   "commercialExtraction": true
                 },
@@ -43616,13 +43709,44 @@
                   }
                 },
                 "verification": {
-                  "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+                  "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
                   "reviewedAt": "2026-10-03",
-                  "sourceCount": 0,
-                  "sourceAuthorities": [],
+                  "sourceCount": 2,
+                  "sourceAuthorities": [
+                    "OPERATOR"
+                  ],
                   "dataLimitations": null
                 }
-              }
+              },
+              "ownershipScope": "STATE_PROJECT_OWNER_CURRENT_REDEVELOPMENT",
+              "block4ResourceEvidence": {
+                "estimatedCommercialCopperOre": 2780000,
+                "unit": "metric_tons",
+                "scope": "Lasail_and_Al_Baydha_Block_4_combined",
+                "productionCapacity": 800000,
+                "productionCapacityUnit": "metric_tons_copper_ore_per_year",
+                "phaseNote": "Combined Block 4 estimate; not assignable to Lasail alone without a site allocation source."
+              },
+              "currentMilestones": {
+                "preStrippingStarted": 2024,
+                "copperOreProductionStarted": "2024-07",
+                "firstConcentrateShipment": "2024",
+                "processingPlant": "Mawarid concentrator"
+              },
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.mdo.om/exploration.php",
+                  "accessed": "2026-10-03",
+                  "scope": "MDO_Lasail_Al_Baydha_Block4_resource_estimate_and_capacity",
+                  "sourceType": "OPERATOR"
+                },
+                {
+                  "url": "https://www.mdo.om/uploads/publications/MDO%20Audited%20FS%202024%20Arab%20consolidated%201-1758439855.pdf",
+                  "accessed": "2026-10-03",
+                  "scope": "Lasail_2024_prestripping_production_and_first_concentrate_shipment",
+                  "sourceType": "OPERATOR"
+                }
+              ]
             }
           ],
           "processingFacilities": [
